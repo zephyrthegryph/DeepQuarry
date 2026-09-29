@@ -9,21 +9,22 @@
 	icon_state = "synth_facemask"
 	var/lstat
 	var/visor_state = "Neutral" //Separating this from lstat so that it could potentially be used for an override system or something
-	var/maskmaster_handle
 	resistance_flags = FIRE_PROOF | ACID_PROOF | INDESTRUCTIBLE | BOMB_PROOF |FREEZE_PROOF
+
+/// The wearer it is installed on (om_handle); the visor follows their state while set.
+OM_FIELD(/obj/item/clothing/mask/synthfacemask, maskmaster_handle, null, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/clothing/mask/synthfacemask, PERIODIC_SECOND, "maskmaster_handle")
 
 /obj/item/clothing/mask/synthfacemask/equipped()
 	..()
 	var/mob/living/carbon/human/H = loc
 	if(istype(H) && H.get_equipped_item(SLOT_ID_MASK) == src)
 		canremove = FALSE
-		maskmaster_handle = om_handle(H)
-		om_task_periodic(src, PERIODIC_SECOND)
+		set_maskmaster_handle(om_handle(H))
 
 /obj/item/clothing/mask/synthfacemask/dropped(mob/user, equipping, slot)
 	canremove = TRUE
-	maskmaster_handle = null
-	om_task_periodic_stop(src)
+	set_maskmaster_handle(null)
 	..()
 
 TYPE_TABLE(/obj/item/clothing/mask/synthfacemask, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/mask/synthfacemask/proc/robotic_head, "you must have a compatible robotic head to install this upgrade"))))

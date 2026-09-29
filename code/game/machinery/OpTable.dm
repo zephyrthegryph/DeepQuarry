@@ -11,9 +11,12 @@
 	active_power_usage = 5
 	surgery_cleanliness = 100
 	throwpass = 1
-	var/mob/living/carbon/human/victim = null
 	var/strapped = 0.0
 	var/obj/machinery/computer/operating/computer = null
+
+/// The patient lying on it; the table checks on them every machine frame while there is one.
+OM_FIELD_TYPED(/obj/machinery/optable, mob/living/carbon/human, victim, null, CHANGE_MACHINE_OCCUPANT)
+DECLARE_PERIODIC_WHILE(/obj/machinery/optable, MACHINE_PIPELINE, "victim")
 
 /obj/machinery/optable/Initialize(mapload)
 	. = ..()
@@ -54,7 +57,7 @@ EXTEND_INTERACTIONS(/obj/machinery/optable, \
 		// `lying` is only recomputed by update_canmove(); a patient just laid
 		// down via take_victim() has resting set but may not be lying yet.
 		if(M.lying || M.resting)
-			victim = M
+			set_victim(M)
 			if(M.pulse)
 				if(M.stat)
 					icon_state = "table2-sleep"
@@ -63,13 +66,13 @@ EXTEND_INTERACTIONS(/obj/machinery/optable, \
 			else
 				icon_state = "table2-dead"
 			return 1
-	victim = null
+	set_victim(null)
 	icon_state = "table2-idle"
 	return 0
 
 /obj/machinery/optable/machine_step()
 	if(!check_victim())
-		return PROCESS_KILL
+		return // check_victim() cleared the victim, which ends the declared work
 	if(computer)
 		MACHINE_WAKE(computer)
 
@@ -90,8 +93,7 @@ EXTEND_INTERACTIONS(/obj/machinery/optable, \
 	add_fingerprint(user)
 	if(ishuman(C))
 		var/mob/living/carbon/human/H = C
-		victim = H
-		MACHINE_WAKE(src)
+		set_victim(H)
 		if(computer)
 			MACHINE_WAKE(computer)
 		icon_state = H.pulse ? "table2-active" : "table2-idle"

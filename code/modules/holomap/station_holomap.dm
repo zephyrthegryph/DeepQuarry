@@ -25,7 +25,6 @@
 	var/light_range_on = 2
 	light_color = "#64C864"
 
-	var/tmp/watching_mob_handle
 	var/image/small_station_map = null
 	var/image/floor_markings = null
 	var/image/panel = null
@@ -35,6 +34,10 @@
 	var/datum/station_holomap/holomap_datum
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/station_holomap)
+
+/// OM handle of the mob looking at the map (startWatching()/stopWatching()); it checks on them while set.
+OM_FIELD_TYPED(/obj/machinery/station_map, tmp, watching_mob_handle, null, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_mob_handle")
 
 /obj/machinery/station_map/Initialize(mapload)
 	. = ..()
@@ -127,8 +130,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 			user.client.screen |= GLOB.global_hud.holomap // TODO - HACK! This should be there permenently really.
 			user.client.images |= holomap_datum.station_map
 
-			watching_mob_handle = om_handle(user)
-			MACHINE_WAKE(src)
+			set_watching_mob_handle(om_handle(user))
 			dq_add_recursive_move(watching_mob())
 			om_hook(watching_mob(), /datum/om/event/movable_attempted_move, src, PROC_REF(checkPosition))
 			om_hook(watching_mob(), /datum/om/event/qdeleting, src, PROC_REF(on_watcher_deleted))
@@ -143,10 +145,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 // user.station_holomap.toggleHolomap(user, isAI(user))
 
 /obj/machinery/station_map/machine_step()
-	if((!operable()) || !anchored)
+	if((!operable()) || !anchored || !watching_mob())
 		stopWatching()
-	if(!watching_mob())
-		return PROCESS_KILL
 
 /obj/machinery/station_map/proc/checkPosition()
 	SHOULD_NOT_SLEEP(TRUE)
@@ -170,7 +170,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 			else
 				om_after(watcher, 5, /proc/remove_client_image, watcher, holomap_datum.station_map) //we give it time to fade out
 		om_unhook(watcher, list(/datum/om/event/movable_attempted_move, /datum/om/event/qdeleting), src)
-	watching_mob_handle = null
+	set_watching_mob_handle(null)
 	set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/station_map/power_change()

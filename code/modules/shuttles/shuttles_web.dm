@@ -5,7 +5,7 @@
 
 //This shuttle traverses a "web" of route_datums to have a wider range of places to go and make flying feel like movement is actually occuring.
 /datum/shuttle/autodock/web_shuttle
-	flags = SHUTTLE_FLAGS_ZERO_G
+	shuttle_flags = SHUTTLE_FLAGS_ZERO_G
 	var/visible_name = null // The pretty name shown to people in announcements, since the regular name var is used internally for other things.
 	var/cloaked = FALSE
 	var/can_cloak = FALSE
@@ -26,7 +26,7 @@
 	web_master = new web_master_type(src)
 	build_destinations()
 	if(autopilot)
-		flags |= SHUTTLE_FLAGS_PROCESS
+		shuttle_flags_add(SHUTTLE_FLAGS_PROCESS)
 		set_process_state(DO_AUTOPILOT)
 		if(autopilot_first_delay)
 			autopilot_delay = autopilot_first_delay
@@ -132,18 +132,16 @@ DECLARE_REF(/datum/shuttle/autodock/web_shuttle, "web_master", OWNED, null)
 		if(autopilot)
 			return
 		autopilot = TRUE
-		flags |= SHUTTLE_FLAGS_PROCESS
+		shuttle_flags_add(SHUTTLE_FLAGS_PROCESS)
 		SSshuttles.process_shuttles |= src
 		autopilot_delay = initial(autopilot_delay)
 		if(process_state == IDLE_STATE)
 			set_process_state(DO_AUTOPILOT)
-		else
-			SSshuttles.refresh_processing_shuttle(src)
 	else
 		if(!autopilot)
 			return
 		autopilot = FALSE
-		flags &= ~SHUTTLE_FLAGS_PROCESS
+		shuttle_flags_remove(SHUTTLE_FLAGS_PROCESS)
 		SSshuttles.process_shuttles -= src
 		if (process_state == DO_AUTOPILOT)
 			set_process_state(initial(process_state))

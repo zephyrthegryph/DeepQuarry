@@ -382,6 +382,14 @@ accident or assume they work:
   `doc/material_engineering_implementation.md` describes the model and
   `doc/material_engineering_playtest.md` how to exercise it in game. The earlier
   "substance" system was removed in favour of this.
+- **Periodic work is declared by state** (`code/__defines/sys_periodic.dm`, doc/rewrite/systems.md §5).
+  Work that runs while some state holds is `DECLARE_PERIODIC_WHILE(T, cadence, "field")` /
+  `DECLARE_PERIODIC_WHILE_ALL(T, cadence, list("a", "!b"))` (cadence a `PERIODIC_*` lane for
+  `periodic_step()`, or `MACHINE_PIPELINE` for `machine_step()`), and a timer loop is
+  `DECLARE_REPEAT(T, delay, proc, "field")`. The fields are declared fields (`OM_FIELD`, …, `operable`);
+  their setters start and stop the work. Don't guard a body with `if(!on) return PROCESS_KILL`, don't
+  `om_task_periodic()`/`MACHINE_WAKE()` next to a state write, don't re-arm `om_after()` from inside the
+  proc it calls: `tools/ci/sys_rules/periodic.py` rejects all three (baseline empty).
 - **Variants.** Families of subtypes that differ only in data are collapsed into one type
   plus a registry to save memory. See `code/datums/variants/README.md`.
 - **Material behaviour system — rewritten; material synergies removed.** A material's three active

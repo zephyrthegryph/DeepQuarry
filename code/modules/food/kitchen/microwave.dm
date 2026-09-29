@@ -32,6 +32,10 @@
 	var/advanced_microwave = FALSE // is this an advanced microwave?
 	var/always_advanced = FALSE // is this advanced no matter what?
 	var/efficiency = 0
+	/// The running cook loop (begin_cook_loop()): MICROWAVE_NORMAL/PRE/MUCK, cycles left, delay.
+	var/loop_type = MICROWAVE_NORMAL
+	var/loop_cycles = 0
+	var/loop_wait = 1 SECOND
 
 	var/item_capacity = 20
 	var/appliancetype = MICROWAVE
@@ -414,39 +418,55 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 
 	start()
 
+/// A cook loop is running: cook_loop() every loop_wait until its cycles run out.
+OM_FIELD(/obj/machinery/microwave, loop_running, FALSE, CHANGE_MACHINE_SETTINGS)
+DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
+
 /obj/machinery/microwave/proc/start()
 	wzhzhzh()
-	cook_loop()
+	begin_cook_loop()
 
 /obj/machinery/microwave/proc/start_can_fail()
 	wzhzhzh()
-	cook_loop(type = MICROWAVE_PRE, cycles = 4)
+	begin_cook_loop(MICROWAVE_PRE, 4)
 
 /obj/machinery/microwave/proc/muck()
 	wzhzhzh()
 	play_sfx(src, SFX_EFFECTS_SPLAT) // Play a splat sound
 	src.dirty = MAX_MICROWAVE_DIRTINESS // Make it dirty so it can't be used util cleaned
 	post_state_change()
-	cook_loop(type = MICROWAVE_MUCK, cycles = 4)
+	begin_cook_loop(MICROWAVE_MUCK, 4)
 
-/obj/machinery/microwave/proc/cook_loop(type = MICROWAVE_NORMAL, cycles = 10, wait = max(12 - 2 * efficiency, 2))
-	if((has_stat(BROKEN)) && type == MICROWAVE_PRE)
+/// Starts (or restarts) the cook loop: the first cook_loop() runs now, the rest every loop_wait.
+/obj/machinery/microwave/proc/begin_cook_loop(type = MICROWAVE_NORMAL, cycles = 10)
+	loop_type = type
+	loop_cycles = cycles
+	loop_wait = max(12 - 2 * efficiency, 2)
+	if(cook_loop() != REPEAT_STOP)
+		set_loop_running(TRUE)
+
+/// One cook-loop cycle (DECLARE_REPEAT while loop_running).
+/obj/machinery/microwave/proc/cook_loop()
+	if((has_stat(BROKEN)) && loop_type == MICROWAVE_PRE)
+		set_loop_running(FALSE)
 		broke()
-		return
+		return REPEAT_STOP
 
-	if(cycles <= 0 || !length(cookingContents()))
-		switch(type)
+	if(loop_cycles <= 0 || !length(cookingContents()))
+		switch(loop_type)
 			if(MICROWAVE_NORMAL)
-				loop_finish()
+				set_loop_running(FALSE)
+				loop_finish() // may muck(), which begins a new loop
 			if(MICROWAVE_MUCK)
+				set_loop_running(FALSE)
 				muck_finish()
 				stop(FALSE)
 			if(MICROWAVE_PRE)
-				cook_loop(type = MICROWAVE_NORMAL, cycles = 10)
-		return
+				begin_cook_loop(MICROWAVE_NORMAL, 10)
+				return
+		return REPEAT_STOP
 
-	cycles--
-	om_after(src, wait, PROC_REF(cook_loop), type, cycles, wait)
+	loop_cycles--
 
 /obj/machinery/microwave/power_change()
 	. = ..()

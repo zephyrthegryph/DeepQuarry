@@ -1265,22 +1265,22 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 	outdoors = FALSE
 	var/mob/living/simple_mob/vore/overmap/stardog/linked_mob
 	var/mobstuff = TRUE		//if false, we don't care about dogs, and that's terrible
-	var/we_process = FALSE	//don't start another process while you're processing, idiot
+
+/// Something on it is still being digested. A field: it digests every 2 s while set.
+OM_FIELD(/turf/simulated/floor/water/digestive_enzymes, we_process, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/turf/simulated/floor/water/digestive_enzymes, PERIODIC_SLOW, "we_process")
 
 /turf/simulated/floor/water/digestive_enzymes/Entered(atom/movable/source)
-	if(digest_stuff(source) && !we_process)
-		om_task_periodic(src, PERIODIC_SLOW)
-		we_process = TRUE
+	if(digest_stuff(source))
+		set_we_process(TRUE)
 
 /turf/simulated/floor/water/digestive_enzymes/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
-	if(digest_stuff(source) && !we_process)
-		om_task_periodic(src, PERIODIC_SLOW)
-		we_process = TRUE
+	if(digest_stuff(source))
+		set_we_process(TRUE)
 
 /turf/simulated/floor/water/digestive_enzymes/periodic_step()
 	if(!digest_stuff())
-		we_process = FALSE
-		return PROCESS_KILL
+		set_we_process(FALSE)
 
 /turf/simulated/floor/water/digestive_enzymes/proc/can_digest(atom/movable/digest_target)
 	. = FALSE

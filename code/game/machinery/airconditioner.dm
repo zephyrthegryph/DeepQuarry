@@ -50,8 +50,6 @@
 	*/
 
 /obj/machinery/power/thermoregulator/southerncross/machine_step()
-	if(!on)
-		return PROCESS_KILL
 	if(!power_region)
 		turn_off()
 		return PROCESS_KILL
@@ -114,6 +112,8 @@
 	var/regulator_carnot_fraction = 0.4
 	/// Upper bound on the pump's COP (a pump across a tiny gap is not free).
 	var/regulator_max_cop = 25
+
+DECLARE_PERIODIC_WHILE(/obj/machinery/power/thermoregulator, MACHINE_PIPELINE, "on")
 
 /// One vg_heat_regulator_step() call against `removed`'s current heat
 /// capacity/temperature, applied with add_thermal_energy(). `watts` is the
@@ -221,8 +221,6 @@
 	update_icon()
 
 /obj/machinery/power/thermoregulator/machine_step()
-	if(!on)
-		return PROCESS_KILL
 	if(!power_region)
 		turn_off()
 		return PROCESS_KILL
@@ -287,7 +285,7 @@
 /obj/machinery/power/thermoregulator/proc/hibernate_until_temperature_changes()
 	var/datum/gas_mixture/environment = loc.return_air()
 	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_TEMPERATURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_for_state_change)))
-	MACHINE_SLEEP(src)
+	// Every machine_step() caller returns PROCESS_KILL right after; while off the declaration keeps it parked.
 
 /obj/machinery/power/thermoregulator/proc/gas_wake_condition()
 	var/datum/gas_mixture/environment = loc?.return_air()

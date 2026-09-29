@@ -233,7 +233,7 @@ DECLARE_REF(/obj/machinery/atmospherics/unary/engine, "controller", OWNED, null)
 
 	for(var/obj/machinery/atmospherics/target in get_step(one_step,node_connect))
 		if(can_be_node(target, 1))
-			node = target
+			set_node(target)
 			break
 
 	update_icon()
@@ -274,7 +274,7 @@ DECLARE_REF(/obj/machinery/atmospherics/unary/engine, "controller", OWNED, null)
 
 	for(var/obj/machinery/atmospherics/target in get_step(two_step,node_connect))
 		if(can_be_node(target, 1))
-			node = target
+			set_node(target)
 			break
 
 	update_icon()

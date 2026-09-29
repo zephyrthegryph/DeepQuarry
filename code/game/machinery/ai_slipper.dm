@@ -11,8 +11,10 @@
 	locked = 1
 	var/cooldown_time = 0
 	var/cooldown_timeleft = 0
-	var/cooldown_on = 0
 	req_access = list(ACCESS_AI_UPLOAD)
+
+OM_FIELD(/obj/machinery/ai_slipper, cooldown_on, 0, CHANGE_MACHINE_SETTINGS)
+DECLARE_REPEAT(/obj/machinery/ai_slipper, 0.5 SECONDS, slip_process, "cooldown_on")
 
 /obj/machinery/ai_slipper/Initialize(mapload)
 	. = ..()
@@ -117,9 +119,8 @@
 				return TRUE
 			new /obj/effect/effect/foam(src.loc)
 			uses--
-			cooldown_on = 1
-			cooldown_time = world.timeofday + 100
-			slip_process()
+			cooldown_time = world.timeofday + 10 SECONDS
+			set_cooldown_on(1)
 			return TRUE
 
 /obj/machinery/ai_slipper/proc/slip_process()
@@ -128,11 +129,8 @@
 		if(ticksleft > 1e5)
 			cooldown_time = world.timeofday + 10	// midnight rollover
 		cooldown_timeleft = (ticksleft / 10)
-		om_after(src, 5, PROC_REF(slip_process))
 		return
 	if(uses <= 0)
-		return
-	if(uses >= 0)
-		cooldown_on = 0
+		return REPEAT_STOP
+	set_cooldown_on(0)
 	power_change()
-	return

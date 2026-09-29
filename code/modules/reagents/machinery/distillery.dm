@@ -127,8 +127,8 @@ DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "ov
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/toggle_power(mob/user = usr)
 	if(powered())
+		// set_on() raises CHANGE_MACHINE_SETTINGS, which wakes the distillery's power/step stage.
 		set_on(!on)
-		MACHINE_WAKE(src)
 		to_chat(user, span_notice("You turn \the [src] [on ? "on" : "off"]."))
 	else
 		to_chat(user, span_notice(" Nothing happens."))

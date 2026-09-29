@@ -91,14 +91,17 @@ DECLARE_REF(/obj/machinery/clonepod, "containers", SPILL_LIST, null)
 	if(target.get_occupant() == source)
 		target.set_occupant(null)
 
+OM_DERIVE_FIELD(/obj/machinery/clonepod, clonepod_occupied, CHANGE_MACHINE_OCCUPANT)
+DECLARE_PERIODIC_WHILE(/obj/machinery/clonepod, MACHINE_PIPELINE, "clonepod_occupied")
+
+/// Derived field: the pod holds a clone (set_occupant() raises CHANGE_MACHINE_OCCUPANT).
+/obj/machinery/clonepod/proc/clonepod_occupied()
+	return occupant_handle ? TRUE : FALSE
+
 /obj/machinery/clonepod/proc/set_occupant(mob/living/L)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	if(!L)
-		occupant_handle = null
-		MACHINE_SLEEP(src)
-		return
-	occupant_handle = om_handle(L)
-	MACHINE_WAKE(src)
+	occupant_handle = L ? om_handle(L) : null
+	om_changed(src, CHANGE_MACHINE_OCCUPANT)
 
 /obj/machinery/clonepod/proc/get_occupant()
 	RETURN_TYPE(/mob/living)

@@ -382,7 +382,7 @@ DECLARE_REF(/mob/living/silicon, "queued_alarms", STATIC, null)
 
 /mob/living/silicon/reset_perspective(atom/new_eye)
 	. = ..()
-	cameraFollow = null
+	set_cameraFollow(null)
 
 /mob/living/silicon/flash_eyes(intensity = FLASH_PROTECTION_MODERATE, override_blindness_check = FALSE, affect_silicon = FALSE, visual = FALSE, type = /atom/movable/screen/fullscreen/flash)
 	if(affect_silicon)

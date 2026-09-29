@@ -133,17 +133,14 @@ DECLARE_REF(/obj/machinery/mining/drill, "cell", OWNED, null)
 /obj/machinery/mining/drill/loaded
 	cell = /obj/item/cell/high
 
-/// Drills every machine frame while active; stopped (or waiting for a player), it sleeps until a
-/// player switches it on (interaction_ran() wakes it).
+/// Drills every machine frame while active (declared; a fault clears active, and need_player_check
+/// is only ever set together with that, so the drill sleeps until a player switches it back on).
+DECLARE_PERIODIC_WHILE(/obj/machinery/mining/drill, MACHINE_PIPELINE, "active")
 /obj/machinery/mining/drill/machine_step()
 
-	if(need_player_check)
-		return PROCESS_KILL
-
 	check_supports()
-
-	if(!active)
-		return PROCESS_KILL
+	if(!active) // check_supports() just lost the bracing and stopped the drill
+		return
 
 	if(!anchored || !use_cell_power())
 		system_error("System configuration or charge error.")

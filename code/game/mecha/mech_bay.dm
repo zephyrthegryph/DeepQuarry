@@ -9,13 +9,16 @@
 	layer = TURF_LAYER + 0.1
 	circuit = /obj/item/circuitboard/mech_recharger
 
-	var/charging_handle
 	var/charge = 45
 	var/repair = 0
 	var/static/list/chargable_types = list(
 		/obj/mecha,
 		/mob/living/silicon/robot/platform
 	)
+/// What stands on the pad being charged (an OM handle). A field: charging runs while it is set.
+OM_FIELD(/obj/machinery/mech_recharger, charging_handle, null, CHANGE_MACHINE_OCCUPANT)
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/mech_recharger, MACHINE_PIPELINE, list("charging_handle", "operable"))
+
 /obj/machinery/mech_recharger/alien
 	icon = 'icons/turf/shuttle_alien_blue.dmi'
 
@@ -35,7 +38,7 @@
 /obj/machinery/mech_recharger/Uncrossed(atom/movable/M)
 	. = ..()
 	if(M == charging())
-		charging_handle = null
+		set_charging_handle(null)
 
 /obj/machinery/mech_recharger/RefreshParts()
 	..()
@@ -48,10 +51,8 @@
 
 /obj/machinery/mech_recharger/machine_step()
 	..()
-	if(!charging())
-		return PROCESS_KILL
-	if(charging().loc != src.loc) // Could be qdel or teleport or something
-		charging_handle = null
+	if(!charging() || charging().loc != src.loc) // Could be qdel or teleport or something
+		set_charging_handle(null)
 		return
 
 	var/done = FALSE
@@ -77,8 +78,7 @@
 		else
 			done = FALSE
 	if(done)
-		charging_handle = null
-		return PROCESS_KILL
+		set_charging_handle(null)
 
 /obj/machinery/mech_recharger/declare_interactions(list/into)
 	into += list(
@@ -100,14 +100,8 @@
 			mech.occupant_message(span_notice("Now charging..."))
 		else
 			to_chat(M, span_notice("Now charging..."))
-		charging_handle = om_handle(M)
-		MACHINE_WAKE(src)
+		set_charging_handle(om_handle(M))
 	return
-
-/obj/machinery/mech_recharger/power_change()
-	. = ..()
-	if(. && charging())
-		MACHINE_WAKE(src)
 
 /// LC-refs: charging -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/mech_recharger/proc/charging() as /atom/movable

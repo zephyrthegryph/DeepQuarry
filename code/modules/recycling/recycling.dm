@@ -157,6 +157,10 @@
 	var/list/materials = list() // ALLOW(instance_list): d: sorter filter table set at init
 	working = FALSE
 
+/// TRUE while it hands out dust piles (after a sort): dispense_if_possible() every 2 seconds.
+OM_FIELD(/obj/machinery/recycling/sorter, dispensing, FALSE, CHANGE_MACHINE_SETTINGS)
+DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible, "dispensing")
+
 /obj/machinery/recycling/sorter/can_accept_item(obj/item/O)
 	if(istype(O, /obj/item/debris_pack))
 		return ..()
@@ -171,7 +175,7 @@
 
 /obj/machinery/recycling/sorter/proc/sort_done(obj/item/O)
 	sort_item(O)
-	dispense_if_possible()
+	set_dispensing(TRUE)
 
 /obj/machinery/recycling/sorter/proc/sort_item(obj/item/O)
 	var/list/item_matter = O.material_totals()
@@ -182,17 +186,19 @@
 			materials[mat] = item_matter[mat]
 	qdel(O)
 
-/// Dispenses one dust pile every 2 seconds while any material has a sheet's worth, then idles.
+/// Dispenses one dust pile every 2 seconds (declared: while dispensing) while any material has a
+/// sheet's worth, then idles.
 /obj/machinery/recycling/sorter/proc/dispense_if_possible()
 	for(var/mat in materials)
 		if(materials[mat] >= (SHEET_MATERIAL_AMOUNT))
 			materials[mat] -= (SHEET_MATERIAL_AMOUNT)
 			new /obj/item/material_dust(get_step(src, dir), mat)
-			om_after(src, 2 SECONDS, PROC_REF(dispense_if_possible))
 			return
+	set_dispensing(FALSE)
 	set_use_power(USE_POWER_IDLE)
 	icon_state = "sorter"
 	working = FALSE
+	return REPEAT_STOP
 
 /**
  * This machine makes sheets after being provided with material dust from a sorter.

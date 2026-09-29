@@ -111,8 +111,6 @@
 	to_chat(user, "You [anchored ? "attach" : "detach"] [src] [anchored ? "to" : "from"] the ground")
 	playsound(src, tool.usesound, 75, TRUE)
 	update_icon()
-	if(anchored)
-		MACHINE_WAKE(src) // machine_step() slept while unanchored; let it settle power state / resume charging.
 	return ITEM_INTERACT_SUCCESS
 
 /// Take the charging cell out.

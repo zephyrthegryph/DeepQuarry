@@ -17,7 +17,11 @@ state". Each is replaced by DECLARE_PERIODIC_WHILE / DECLARE_PERIODIC_WHILE_ALL 
 `periodic_toggle`  A hand start/stop on a state toggle: om_task_periodic(src, ...),
                    om_task_periodic_stop(src), MACHINE_WAKE(src) or MACHINE_SLEEP(src) directly
                    next to a write of a var (`x = ...`, `set_x(...)`, `x_add/x_remove(...)`) or as
-                   the first statement of an `if(<state>)` / `else` branch over fields.
+                   the first statement of an `if(<state>)` / `else` branch over fields; and every
+                   hand stop (om_task_periodic_stop(src), MACHINE_SLEEP(src)) outside the body
+                   itself (periodic_step/machine_step) and the lifecycle teardown hooks
+                   (on_dematerialize, lifecycle_dematerialize, on_destroy, lifecycle_prerelease):
+                   something ended the work, and that something is the state to declare.
 """
 import re
 
@@ -47,6 +51,9 @@ START_STOP = re.compile(
 WRITE = re.compile(
     r"^(?:src\.)?([A-Za-z_]\w*)\s*(?:=(?!=)|\+=|-=|\|=|&=|\^=|\+\+|--)"
     r"|^(?:src\.)?set_(\w+)\s*\(|^(?:src\.)?(\w+)_(?:add|remove)\s*\(")
+STOP = re.compile(r"\b(?:om_task_periodic_stop\s*\(\s*src\s*\)|MACHINE_SLEEP\s*\(\s*src\s*\))")
+# Where a hand stop is the body's own decision or the lifecycle's teardown, not a state toggle.
+STOP_OK = STEP_PROCS + ("on_dematerialize", "lifecycle_dematerialize", "on_destroy", "lifecycle_prerelease")
 REARM = re.compile(r"\bom_after(?:_slot)?\s*\(\s*src\s*,(.*)$")
 PROC_ARG = re.compile(r"(?:PROC_REF|TYPE_PROC_REF)\s*\(\s*(?:[\w/]+\s*,\s*)?(\w+)\s*\)")
 CONSTANT = re.compile(r"^(?:[A-Z_][A-Z0-9_]*|-?\d+(?:\.\d+)?|TRUE|FALSE|null|\"[^\"]*\")$")
@@ -125,6 +132,10 @@ def _stmts(body):
 def _scan_guard(name, stmts, hits):
     if name not in STEP_PROCS:
         return
+    local_names = set()
+    for _n, _i, c in stmts:
+        for m in re.finditer(r"(?<![\w/])var/(?:[\w/]+/)?(\w+)", c):
+            local_names.add(m.group(1))
     for idx, (number, indent, code) in enumerate(stmts):
         if indent != 1:
             continue
@@ -139,7 +150,7 @@ def _scan_guard(name, stmts, hits):
             after = stmts[idx + 2] if idx + 2 < len(stmts) else None
             kill = nxt and nxt[1] == 2 and re.match(r"^return\s+PROCESS_KILL\b", nxt[2]) and \
                 (not after or after[1] <= 1)
-        if kill and _cond_is_state(cond):
+        if kill and _cond_is_state(cond) and not (set(re.findall(r"[A-Za-z_]\w*", cond)) & local_names):
             hits.append(number)
 
 
@@ -204,9 +215,14 @@ def _is_write(code):
     return word not in ("var", ".") and not code.startswith("var/")
 
 
-def _scan_toggle(stmts, hits):
+def _scan_toggle(name, stmts, hits):
     for idx, (number, indent, code) in enumerate(stmts):
         if not START_STOP.search(code):
+            continue
+        if STOP.search(code) and name not in STOP_OK:
+            # A hand stop outside the body and the lifecycle's own teardown: the state that ended the
+            # work is what should be declared.
+            hits.append(number)
             continue
         near = []
         if idx > 0 and stmts[idx - 1][1] == indent:
@@ -230,7 +246,7 @@ def scan(files):
             g, r, t = [], [], []
             _scan_guard(name, stmts, g)
             _scan_rearm(name, params, stmts, r)
-            _scan_toggle(stmts, t)
+            _scan_toggle(name, stmts, t)
             out["periodic_guard"] += [(rel, n) for n in g]
             out["om_after_rearm"] += [(rel, n) for n in r]
             out["periodic_toggle"] += [(rel, n) for n in t]

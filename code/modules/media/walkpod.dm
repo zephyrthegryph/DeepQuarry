@@ -14,7 +14,6 @@
 
 	var/loop_mode = JUKEMODE_PLAY_ONCE	// Behavior when finished playing a song
 	var/tmp/current_track_handle	// Current track playing
-	var/tmp/listener_handle	// Person whomst is listening to us
 
 	var/playing = 0
 	var/volume = 1
@@ -26,6 +25,10 @@
 
 	w_class = ITEMSIZE_COST_SMALL
 	slot_flags = SLOT_BELT
+
+/// Person whomst is listening to us. periodic_step() checks on them and plays music while set (DECLARE_PERIODIC_WHILE).
+OM_FIELD_TYPED(/obj/item/walkpod, tmp, listener_handle, null, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/walkpod, PERIODIC_SLOW, "listener_handle")
 
 // stops listening.
 /obj/item/walkpod/on_destroy(force)
@@ -54,18 +57,16 @@
 /obj/item/walkpod/proc/remove_listener()
 	if(playing)
 		StopPlaying()
-	om_task_periodic_stop(src)
 	if(deployed_headpods)
 		restore_headpods()
 	to_chat(listener(), span_notice("You are no longer wearing the [src]'s headphones."))
-	listener_handle = null
+	set_listener_handle(null)
 	update_icon()
 
 /obj/item/walkpod/proc/set_listener(mob/living/L)
 	if(listener())
 		remove_listener()
-	listener_handle = om_handle(L)
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_listener_handle(om_handle(L))
 	to_chat(L, span_notice("You put the [src]'s headphones on and power it up, preparing to listen to some <b>sick tunes</b>."))
 	update_icon()
 

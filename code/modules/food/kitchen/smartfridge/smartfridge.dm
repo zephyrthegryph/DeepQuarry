@@ -196,7 +196,7 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 	return INTERACTION_HANDLED_PASS
 
 /obj/machinery/smartfridge/screwdriver_act(mob/user, obj/item/tool)
-	panel_open = !panel_open
+	set_panel_open(!panel_open)
 	user.visible_message(span_filter_notice("[user] [panel_open ? "opens" : "closes"] the maintenance panel of \the [src]."), span_notice("You [panel_open ? "open" : "close"] the maintenance panel of \the [src]."))
 	playsound(src, tool.usesound, 50, TRUE)
 	update_icon()

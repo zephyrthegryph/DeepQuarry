@@ -28,12 +28,9 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	light_color = "#FFFFFF" //LIGHT_COLOR_INCANDESCENT_FLASHLIGHT	//lighting colour when on
 	light_cone_y_offset = -7
 
-	var/on = 0
-
 	var/obj/item/cell/cell
 	var/cell_type = /obj/item/cell/device
 	var/power_usage = 1
-	var/power_use = 1
 	var/flickering = FALSE
 	var/single_use = FALSE
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
@@ -46,6 +43,10 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	. = ..()
 	update_brightness()
 
+OM_FIELD(/obj/item/flashlight, on, 0, CHANGE_EXPLICIT)
+OM_FIELD(/obj/item/flashlight, power_use, 1, CHANGE_EXPLICIT)
+// Battery drain runs while a powered light is on.
+DECLARE_PERIODIC_WHILE_ALL(/obj/item/flashlight, PERIODIC_SLOW, list("on", "power_use"))
 DECLARE_REF(/obj/item/flashlight, "cell", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/flashlight, "cell", "cell_type") // unpowered subtypes clear cell_type
 
@@ -53,16 +54,15 @@ DECLARE_DEFAULT_CHILD(/obj/item/flashlight, "cell", "cell_type") // unpowered su
 	return cell
 
 /obj/item/flashlight/periodic_step()
-	if(!on || !cell)
-		return PROCESS_KILL
+	if(!cell)
+		return
 
 	if(power_usage)
 		if(cell.use(power_usage) != power_usage) // we weren't able to use our full power_usage amount!
 			visible_message(span_warning("\The [src] flickers before going dull."))
 			play_sfx(src, SFX_EFFECTS_SPARKS3) // Small cue that your light went dull in your pocket. //
-			on = 0
+			set_on(0)
 			update_brightness()
-			return PROCESS_KILL
 
 /obj/item/flashlight/proc/update_brightness()
 	if(on)
@@ -108,11 +108,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 		if(!cell || cell.charge == 0)
 			to_chat(user, "You flick the switch on [src], but nothing happens.")
 			return FALSE
-	on = !on
-	if(on && power_use)
-		om_task_periodic(src, PERIODIC_SLOW)
-	else if(power_use)
-		om_task_periodic_stop(src)
+	set_on(!on)
 	play_sfx(src, SFX_WEAPONS_EMPTY, 0.3, extrarange = -3)
 	update_brightness()
 	user.update_mob_action_buttons()
@@ -179,7 +175,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 		cell = null
 		to_chat(user, span_notice("You remove the cell from the [src]."))
 		play_sfx(src, SFX_MACHINES_BUTTON)
-		on = 0
+		set_on(0)
 		update_brightness()
 		return TRUE
 	return FALSE
@@ -270,7 +266,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 	if(ticker >= amount) //We have flickered enough times. Terminate the cycle.
 		finish_flicker(original_color, original_on, OL)
 		return
-	on = !on
+	set_on(!on)
 	update_brightness()
 	if(!on) // Only play when the light turns off.
 		play_sfx(src, SFX_EFFECTS_LIGHT_FLICKER)
@@ -279,7 +275,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 /obj/item/flashlight/proc/finish_flicker(original_color, original_on, datum/overlay_lighting/OL)
 	set_light_color(original_color)
 	OL.directional_atom?.color = original_color
-	on = original_on
+	set_on(original_on)
 	flickering = FALSE
 	update_brightness()
 
@@ -411,6 +407,9 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 	light_system = MOVABLE_LIGHT
 	single_use = TRUE
 
+// Flares burn fuel while lit (they have no cell, so power_use is off).
+DECLARE_PERIODIC_WHILE(/obj/item/flashlight/flare, PERIODIC_SLOW, "on")
+
 /obj/item/flashlight/flare/Initialize(mapload)
 	fuel += rand(0, 200)
 	. = ..()
@@ -420,14 +419,12 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 	if(pos)
 		pos.hotspot_expose(produce_heat, 5)
 	fuel = max(fuel - 1, 0)
-	if(!fuel || !on)
+	if(!fuel)
 		turn_off()
-		if(!fuel)
-			src.icon_state = "[initial(icon_state)]-empty"
-		om_task_periodic_stop(src)
+		src.icon_state = "[initial(icon_state)]-empty"
 
 /obj/item/flashlight/flare/proc/turn_off()
-	on = 0
+	set_on(0)
 	src.force = initial(src.force)
 	src.injury_kind = initial(src.injury_kind)
 	update_brightness()
@@ -445,14 +442,12 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 		act_message(user, null, MSG_SELF(span_notice("You pull the cord on the flare, activating it!")), MSG_OTHERS(span_notice("%U% activates the flare.")))
 		force = on_damage
 		injury_kind = INJURY_BURN
-		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/flashlight/flare/proc/ignite() //Used for flare launchers.
-	on = !on
+	set_on(!on)
 	update_brightness()
 	force = on_damage
 	injury_kind = INJURY_BURN
-	om_task_periodic(src, PERIODIC_SLOW)
 	return 1
 
 /*
@@ -474,20 +469,20 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 	cell_type = null
 	single_use = TRUE
 
+DECLARE_PERIODIC_WHILE(/obj/item/flashlight/glowstick, PERIODIC_SLOW, "on")
+
 /obj/item/flashlight/glowstick/Initialize(mapload)
 	fuel += rand(0, 400)
 	. = ..()
 
 /obj/item/flashlight/glowstick/periodic_step()
 	fuel = max(fuel - 1, 0)
-	if(!fuel || !on)
+	if(!fuel)
 		turn_off()
-		if(!fuel)
-			src.icon_state = "[initial(icon_state)]-empty"
-		om_task_periodic_stop(src)
+		src.icon_state = "[initial(icon_state)]-empty"
 
 /obj/item/flashlight/glowstick/proc/turn_off()
-	on = FALSE
+	set_on(FALSE)
 	update_brightness()
 
 /obj/item/flashlight/glowstick/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -500,7 +495,6 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 
 	if(. == CAN_USE)
 		act_message(user, src, MSG_SELF(span_notice("You crack and shake %T%, turning it on!")), MSG_OTHERS(span_notice("%U% cracks and shakes \the [name].")))
-		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/flashlight/glowstick/red
 	name = "red glowstick"

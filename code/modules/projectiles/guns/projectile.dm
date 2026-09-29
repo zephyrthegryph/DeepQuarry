@@ -683,6 +683,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	if(loaded.len >= max_shells)
 		to_chat(user, span_warning("[src] is full."))
 		return
+	// ALLOW(sys_om_after_rearm): a finite sequence, not a loop over state: each run consumes one round from `rounds` (cut in place, so the list is the counter) and it ends when the list or the magazine runs out
 	om_after(src, 1 SECOND, PROC_REF(load_from_storage), user, rounds)
 
 /datum/om/task/timed/projectile_chamber_round

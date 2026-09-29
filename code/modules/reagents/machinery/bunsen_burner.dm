@@ -4,10 +4,13 @@
 	desc = "A small, self-heating device designed for bringing chemical mixtures to a boil."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "bunsen0"
-	var/heating = FALSE
 	/// Heat the flame puts into the burner and what sits on it, W.
 	var/heat_power = BUNSEN_HEAT_POWER
 	var/obj/item/reagent_containers/held_container
+
+OM_FIELD(/obj/machinery/bunsen_burner, heating, FALSE, CHANGE_MACHINE_SETTINGS)
+/// Boils its container while heating (start_boiling() .. end_boil()).
+DECLARE_PERIODIC_WHILE(/obj/machinery/bunsen_burner, MACHINE_PIPELINE, "heating")
 
 // The holder resizes to match the boiling container.
 DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/distilling)
@@ -107,8 +110,7 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/di
 
 	// Begin boiling: the flame is a heat source on the burner's heat body.
 	visible_message(span_notice("\The [src] starts to heat \the [held_container]."))
-	heating = TRUE
-	MACHINE_WAKE(src)
+	set_heating(TRUE)
 	if(create_heat_body(TRUE))
 		vg_heat_body_keep(heat_body, TRUE)
 		vg_heat_body_power(heat_body, heat_power)
@@ -120,11 +122,8 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/di
 	held_container.forceMove(get_turf(src))
 	held_container = null
 
-/// Boils its container while heating; otherwise it sleeps until start_boiling().
+/// Boils its container; runs while heating (declared).
 /obj/machinery/bunsen_burner/machine_step()
-	if(!heating)
-		return PROCESS_KILL
-
 	if(held_container && !anchored)
 		drop_held_container()
 		end_boil()
@@ -168,7 +167,7 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/di
 			end_boil()
 
 /obj/machinery/bunsen_burner/proc/end_boil()
-	heating = FALSE
+	set_heating(FALSE)
 	bunsen_last_temp = null
 	if(!isnull(heat_body))
 		vg_heat_body_power(heat_body, 0)

@@ -134,10 +134,33 @@
 		)
 
 	var/leech = 50
-	var/chain_number = 0
 
 /mob/living/simple_mob/vore/boss_jellyfish
 	delete_on_death = TRUE
+
+/// Attacks still to chain after a warp. A field: one chained attack every 4 s while it is non-zero.
+OM_FIELD(/mob/living/simple_mob/vore/boss_jellyfish, chain_number, 0, CHANGE_MOB_CONDITIONS)
+/// Who the chained attacks go at (an OM handle).
+/mob/living/simple_mob/vore/boss_jellyfish/var/chain_target_handle
+DECLARE_REPEAT(/mob/living/simple_mob/vore/boss_jellyfish, 4 SECONDS, chain_attack, "chain_number")
+
+/// DECLARE_REPEAT while attacks remain in the chain: a dash or a puddle summon at the target.
+/mob/living/simple_mob/vore/boss_jellyfish/proc/chain_attack()
+	var/atom/A = om_resolve(chain_target_handle)
+	if(!A)
+		set_chain_number(0)
+		icon_state = "jellyfish"
+		icon_living = "jellyfish"
+		return REPEAT_STOP
+	set_chain_number(chain_number - 1)
+	if(prob(50))
+		icon_state = "jellyfish_yellow"
+		icon_living = "jellyfish_yellow"
+		dash_attack(A)
+	else
+		icon_state = "jellyfish_red"
+		icon_living = "jellyfish_red"
+		summon_puddles(A)
 
 /mob/living/simple_mob/vore/boss_jellyfish/on_death(gibbed)
 	..()
@@ -166,17 +189,20 @@
 		Beam(A, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 		om_after(src, 4 SECONDS, PROC_REF(sniper_shot), A)
 	else if(vitality() < 0.25) //phase 4 where it teleports then chains 3 attacks
-		chain_number = 3
+		chain_target_handle = om_handle(A)
+		set_chain_number(3)
 		om_after(src, 3 SECONDS, PROC_REF(astral_sea_warp), A)
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
 	else if(vitality() < 0.5) //teleports then chains 2 attacks
-		chain_number = 2
+		chain_target_handle = om_handle(A)
+		set_chain_number(2)
 		om_after(src, 3 SECONDS, PROC_REF(astral_sea_warp), A)
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
 	else if(vitality() < 0.75) //teleports then attacks
-		chain_number = 1
+		chain_target_handle = om_handle(A)
+		set_chain_number(1)
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
 		om_after(src, 3 SECONDS, PROC_REF(astral_sea_warp), A)
@@ -231,17 +257,7 @@
 		. = TRUE
 
 	ai_busy_end()
-	if(chain_number > 0)
-		chain_number -= 1
-		if(prob(50))
-			icon_state = "jellyfish_yellow"
-			icon_living = "jellyfish_yellow"
-			om_after(src, 4 SECONDS, PROC_REF(dash_attack), A)
-		else
-			icon_state = "jellyfish_red"
-			icon_living = "jellyfish_red"
-			om_after(src, 4 SECONDS, PROC_REF(summon_puddles), A)
-	else
+	if(!chain_number)
 		icon_state = "jellyfish"
 		icon_living = "jellyfish"
 
@@ -253,19 +269,9 @@
 	for(var/mob/living/L in view(src, 7))
 		if(L.stat != DEAD || !IIsAlly(L))
 			L.apply_body_effect(/datum/body_effect/mmo_drop/jelly_fish, 3, src)
-		if(chain_number > 0)
-			chain_number -= 1
-			if(prob(50))
-				icon_state = "jellyfish_yellow"
-				icon_living = "jellyfish_yellow"
-				om_after(src, 4 SECONDS, PROC_REF(dash_attack), A)
-			else
-				icon_state = "jellyfish_red"
-				icon_living = "jellyfish_red"
-				om_after(src, 4 SECONDS, PROC_REF(summon_puddles), A)
-		else
-			icon_state = "jellyfish"
-			icon_living = "jellyfish"
+	if(!chain_number)
+		icon_state = "jellyfish"
+		icon_living = "jellyfish"
 
 /obj/item/projectile/beam/nutrition_gigabeam
 	damage = 40
@@ -312,13 +318,3 @@
 
 	target_turf.visible_message(span_warning("\The [src] appears!"))
 	s2.start()
-	if(chain_number > 0)
-		chain_number -= 1
-		if(prob(50))
-			icon_state = "jellyfish_yellow"
-			icon_living = "jellyfish_yellow"
-			om_after(src, 4 SECONDS, PROC_REF(dash_attack), target)
-		else
-			icon_state = "jellyfish_red"
-			icon_living = "jellyfish_red"
-			om_after(src, 4 SECONDS, PROC_REF(summon_puddles), target)

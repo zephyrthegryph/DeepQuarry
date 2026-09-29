@@ -17,7 +17,6 @@
 	var/dissipation_rate = 20000	// Passive dissipation of drained power. In Watts.
 	var/power_drained = 0 			// Amount of power drained.
 	var/max_power = 1e9				// Detonation point.
-	var/mode = 0					// 0 = off, 1=clamped (off), 2=operating
 	var/drained_this_tick = 0		// One drain per step, however many callers ask.
 
 	var/PN = 0			// The power region we drain
@@ -25,6 +24,15 @@
 
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
+
+/// 0 = off, 1 = clamped (off), 2 = operating
+OM_FIELD(/obj/item/powersink, mode, 0, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/item/powersink, operating, CHANGE_EXPLICIT)
+// Drains the attached powernet while operating.
+DECLARE_PERIODIC_WHILE(/obj/item/powersink, PERIODIC_SLOW, "operating")
+
+/obj/item/powersink/proc/operating()
+	return mode == 2
 
 /obj/item/powersink/screwdriver_act(mob/user, obj/item/tool)
 	if(mode == 0)
@@ -37,14 +45,13 @@
 			to_chat(user, "No exposed cable here to attach to.")
 			return ITEM_INTERACT_BLOCKING
 		set_anchored(TRUE)
-		mode = 1
+		set_mode(1)
 		act_message(user, src, others = span_notice("%U% attaches %T% to the cable!"))
 		playsound(src, tool.usesound, 50, 1)
 		return ITEM_INTERACT_SUCCESS
 	if(mode == 2)
-		om_task_periodic_stop(src)
 		set_anchored(FALSE)
-	mode = 0
+	set_mode(0)
 	act_message(user, src, others = span_notice("%U% detaches %T% from the cable!"))
 	set_light(0)
 	playsound(src, tool.usesound, 50, 1)
@@ -60,15 +67,13 @@ DECLARE_INTERACTIONS(/obj/item/powersink, INTERACT_HAND(null, PROC_REF(interacti
 			return FALSE
 		if(1)
 			act_message(user, src, others = span_notice("%U% activates %T%!"))
-			mode = 2
+			set_mode(2)
 			icon_state = "powersink1"
-			om_task_periodic(src, PERIODIC_SLOW)
 		if(2)  //This switch option wasn't originally included. It exists now. --NeoFite
 			act_message(user, src, others = span_notice("%U% deactivates %T%!"))
-			mode = 1
+			set_mode(1)
 			set_light(0)
 			icon_state = "powersink0"
-			om_task_periodic_stop(src)
 		
 	return TRUE
 /obj/item/powersink/pwr_drain()

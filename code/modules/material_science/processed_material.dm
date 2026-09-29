@@ -303,6 +303,10 @@ DECLARE_REF(/datum/material/processed_alloy, "batch_template", OWNED, null)
 
 DECLARE_REF(/obj/item/stack/material/processed_alloy, "batch_state", OWNED, null)
 
+/// Hot stock glowing and cooling towards ambient (update_thermal_processing(), periodic_step()).
+OM_FIELD(/obj/item/stack/material/processed_alloy, hot, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, "hot")
+
 /obj/item/stack/material/processed_alloy/proc/physical_batch() as /datum/material_batch
 	if(batch_state)
 		return batch_state
@@ -314,15 +318,16 @@ DECLARE_REF(/obj/item/stack/material/processed_alloy, "batch_state", OWNED, null
 	var/datum/material_batch/batch = physical_batch()
 	if(batch?.temperature > T20C + 40)
 		set_light(2, 1, "#ff7b22")
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_hot(TRUE)
 	else
 		set_light(0)
-		om_task_periodic_stop(src)
+		set_hot(FALSE)
 
 /obj/item/stack/material/processed_alloy/periodic_step()
 	var/datum/material_batch/batch = physical_batch()
 	if(!batch)
-		return PROCESS_KILL
+		set_hot(FALSE)
+		return
 	var/ambient_temperature = T20C
 	var/turf/open/turf = get_turf(src)
 	if(istype(turf) && turf.air)
@@ -331,7 +336,7 @@ DECLARE_REF(/obj/item/stack/material/processed_alloy, "batch_state", OWNED, null
 	if(abs(batch.temperature - ambient_temperature) < 5)
 		batch.temperature = ambient_temperature
 		set_light(0)
-		return PROCESS_KILL
+		set_hot(FALSE)
 	return
 
 /obj/item/stack/material/processed_alloy/split(tamount)

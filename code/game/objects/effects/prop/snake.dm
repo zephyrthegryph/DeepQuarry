@@ -3,6 +3,7 @@
 	name = "snake head"
 	pulses_remaining = 20
 	pulse_delay = 0.5 SECONDS
+	pulsing = FALSE // runs its own loop (snake_pulse_wait), not the declared pulse repeat
 
 	icon_state = "arrow_omni"
 

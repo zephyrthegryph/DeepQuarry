@@ -12,8 +12,7 @@
 	var/current_location_tag	// the tag it starts as; resolved into current_location at init
 
 	EXPIRY_TMP_DECLARE(arrive_time) //the time at which the shuttle arrives when long jumping
-	var/flags = SHUTTLE_FLAGS_NONE
-	var/process_state = IDLE_STATE // Used with SHUTTLE_FLAGS_PROCESS, as well as to store current state.
+	var/process_state = IDLE_STATE // Used with SHUTTLE_FLAGS_PROCESS, as well as to store current state. Written by set_process_state().
 	var/always_process = FALSE // Automated shuttles may need idle-state checks.
 	var/category = /datum/shuttle
 	var/multiz = 0	//how many multiz levels, starts at 0 TODO Leshana - Are we porting this?
@@ -37,6 +36,22 @@
 	var/debug_logging = FALSE // If set to true, the shuttle will start broadcasting its debug messages to admins
 
 	// Future Thoughts: Baystation put "docking" stuff in a subtype, leaving base type pure and free of docking stuff. Is this best?
+
+OM_FLAG_FIELD(/datum/shuttle, shuttle_flags, SHUTTLE_FLAGS_NONE, CHANGE_DATUM_A)
+OM_FIELD_SETTER(/datum/shuttle, process_state, CHANGE_DATUM_A)
+/// TRUE while the shuttle has launch/move work: it processes and it is launching, moving or always processing.
+OM_DERIVE_FIELD(/datum/shuttle, shuttle_working, CHANGE_DATUM_A)
+/// Long jump in transit: the destination landmark (OM handle), null otherwise.
+OM_FIELD_TYPED(/datum/shuttle, tmp, transit_dest_handle, null, CHANGE_DATUM_B)
+/// Long jump in transit: where it started (OM handle), and whether the landing warning was made.
+/datum/shuttle/var/tmp/transit_start_handle
+/datum/shuttle/var/tmp/transit_warned = FALSE
+DECLARE_REPEAT(/datum/shuttle, 5, long_jump_transit, "transit_dest_handle")
+/// One shuttle_step() every 2 s while it has work (code/controllers/subsystems/shuttles.dm).
+DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
+
+/datum/shuttle/proc/shuttle_working()
+	return (shuttle_flags & SHUTTLE_FLAGS_PROCESS) && (always_process || process_state != IDLE_STATE)
 
 /datum/shuttle/New(_name, obj/effect/shuttle_landmark/initial_location)
 	..()
@@ -67,27 +82,29 @@
 	if(src.name in SSshuttles.shuttles)
 		CRASH("A shuttle with the name '[name]' is already defined.")
 	SSshuttles.shuttles[src.name] = src
-	if(flags & SHUTTLE_FLAGS_PROCESS)
+	if(shuttle_flags & SHUTTLE_FLAGS_PROCESS)
 		SSshuttles.process_shuttles += src
-		SSshuttles.refresh_processing_shuttle(src)
-	if(flags & SHUTTLE_FLAGS_SUPPLY)
+	if(shuttle_flags & SHUTTLE_FLAGS_SUPPLY)
 		if(GLOB.supply_service.shuttle)
 			CRASH("A supply shuttle is already defined.")
 		GLOB.supply_service.shuttle = src
+	lifecycle_decls_init(src) // starts DECLARE_PERIODIC_WHILE (a non-atom has no materialize)
 
 // leaves SSshuttles and the supply shuttle slot.
 /datum/shuttle/lifecycle_dematerialize()
 	SSshuttles.shuttles -= src.name
 	SSshuttles.process_shuttles -= src
-	SSshuttles.active_process_shuttles -= src
 	SSshuttles.shuttle_logs -= src
 	if(GLOB.supply_service.shuttle == src)
 		GLOB.supply_service.shuttle = null
 	return ..()
 
 /datum/shuttle/proc/set_process_state(new_state)
+	if(process_state == new_state)
+		return FALSE
 	process_state = new_state
-	SSshuttles?.refresh_processing_shuttle(src)
+	om_changed(src, CHANGE_DATUM_A)
+	return TRUE
 
 // This is called after all shuttles have been initialized by SSshuttles, but before sectors have been initialized.
 // Importantly for subtypes, all shuttles will have been initialized and mothershuttles hooked up by the time this is called.
@@ -210,12 +227,19 @@
 		return // It handled it for us (shuttle crash or such)
 
 	COOLDOWN_RESET(src, progress_sound_cooldown)
-	long_jump_transit(start_location, destination, FALSE)
+	transit_start_handle = om_handle(start_location)
+	transit_warned = FALSE
+	set_transit_dest_handle(om_handle(destination)) // the transit repeat runs while this is set
+	long_jump_transit()
 
-/// In transit: every half second until arrival time, the travel sound every four seconds
-/// (the sound file is five) and the landing warning five seconds out.
-/datum/shuttle/proc/long_jump_transit(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination, made_warning)
+/// In transit: every half second until arrival time (DECLARE_REPEAT while transit_dest_handle is set),
+/// the travel sound every four seconds (the sound file is five) and the landing warning five seconds out.
+/datum/shuttle/proc/long_jump_transit()
+	var/obj/effect/shuttle_landmark/start_location = om_resolve(transit_start_handle)
+	var/obj/effect/shuttle_landmark/destination = om_resolve(transit_dest_handle)
 	if(EXPIRY_EXPIRED(src, arrive_time, CLOCK_WORLD))
+		set_transit_dest_handle(null)
+		transit_start_handle = null
 		if(!attempt_move(destination))
 			attempt_move(start_location) //try to go back to where we started. If that fails, I guess we're stuck in the interim location
 		long_jump_arrived(start_location, destination)
@@ -224,10 +248,9 @@
 		make_sounds(HYPERSPACE_PROGRESS)
 		COOLDOWN_START(src, progress_sound_cooldown, 4 SECONDS)
 
-	if(arrive_time - world.time <= 5 SECONDS && !made_warning)
-		made_warning = TRUE
+	if(EXPIRY_LEFT(src, arrive_time, CLOCK_WORLD) <= 5 SECONDS && !transit_warned)
+		transit_warned = TRUE
 		create_warning_effect(destination)
-	om_after(src, 5, PROC_REF(long_jump_transit), start_location, destination, made_warning)
 
 /datum/shuttle/proc/long_jump_arrived(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination)
 	moving_status = SHUTTLE_IDLE
@@ -320,7 +343,7 @@
 
 	ASSERT(current_location() != destination)
 	// If shuttle has no internal gravity, update our gravity with destination gravity
-	if((flags & SHUTTLE_FLAGS_ZERO_G))
+	if((shuttle_flags & SHUTTLE_FLAGS_ZERO_G))
 		var/new_grav = 1
 		if(destination.flags & SLANDMARK_FLAG_ZERO_G)
 			var/area/new_area = get_area(destination)

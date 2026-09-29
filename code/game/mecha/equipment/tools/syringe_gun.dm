@@ -17,6 +17,12 @@
 	required_type = list(/obj/mecha/medical)
 
 DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_volume", null)
+OM_DERIVE_FIELD(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, synthesizing, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, PERIODIC_FAST, "synthesizing")
+
+/// Derived field: mounted with reagents selected for synthesis (raised by set_chassis and select_reagents).
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/synthesizing()
+	return chassis && length(processed_reagents)
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/Initialize(mapload)
 	. = ..()
@@ -24,10 +30,6 @@ DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_vo
 	syringes = new
 	known_reagents = list(REAGENT_ID_INAPROVALINE=REAGENT_INAPROVALINE,REAGENT_ID_ANTITOXIN=REAGENT_ANTITOXIN)
 	processed_reagents = new
-
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/detach()
-	om_task_periodic_stop(src)
-	return ..()
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/critfail()
 	..()
@@ -143,8 +145,8 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_all"
 				if(reagent_id in known_reagents)
 					processed_reagents += reagent_id
 					m++
+			om_changed(src, CHANGE_EXPLICIT) // processed_reagents feeds the derived `synthesizing`
 			if(processed_reagents.len)
-				om_task_periodic(src, PERIODIC_FAST)
 				occupant_message("Reagent processing started.")
 				src.mecha_log_message("Reagent processing started.")
 			return TRUE
@@ -281,8 +283,6 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_all"
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/periodic_step()
-	if(!chassis)
-		return PROCESS_KILL
 	if(!processed_reagents.len || reagents.total_volume >= reagents.maximum_volume || !chassis.has_charge(energy_drain))
 		occupant_message(span_warning("Reagent processing stopped."))
 		src.mecha_log_message("Reagent processing stopped.")
@@ -323,23 +323,22 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_all"
 
 	equip_type = EQUIP_HULL
 
+/// Jammed by a critical failure: the drone stays down until it is detached (and so reset).
+OM_FIELD(/obj/item/mecha_parts/mecha_equipment/crisis_drone, jammed, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE_ALL(/obj/item/mecha_parts/mecha_equipment/crisis_drone, PERIODIC_SLOW, list("chassis", "!jammed"))
+
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/Initialize(mapload)
 	. = ..()
 	drone_overlay = new(src.icon, icon_state = droid_state)
 
-/obj/item/mecha_parts/mecha_equipment/crisis_drone/attach(obj/mecha/M as obj)
-	. = ..(M)
-	if(chassis)
-		om_task_periodic(src, PERIODIC_SLOW)
-
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/detach(atom/moveto=null)
 	shut_down()
 	. = ..(moveto)
-	om_task_periodic_stop(src)
+	set_jammed(FALSE)
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/critfail()
 	. = ..()
-	om_task_periodic_stop(src)
+	set_jammed(TRUE)
 	shut_down()
 	if(chassis && chassis?.slot_item(MECHA_SLOT_PILOT))
 		to_chat(chassis?.slot_item(MECHA_SLOT_PILOT), span_notice("\The [chassis] shudders as something jams!"))

@@ -18,8 +18,6 @@
 	var/list/queue_producer_accounts = list() // ALLOW(instance_list): d: kept index-parallel with queue (Cut() by index)
 	var/current_producer_account = 0
 
-	/// Whether or not the machine is building the entire queue automagically.
-	var/process_queue = FALSE
 
 	/// World time when the build will finish.
 	EXPIRY_DECLARE(build_finish)
@@ -30,8 +28,6 @@
 	/// The job ID of the part currently being processed. This is used for ordering list items for the client UI.
 	var/top_job_id = 0
 
-	/// Part currently stored in the Exofab.
-	var/obj/item/stored_part
 
 	/// Coefficient for the speed of item building. Based on the installed parts.
 	var/time_coeff = 1
@@ -61,6 +57,17 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "queue", DEF, null)
 DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "available_designs", DEF, null)
 DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "illegal_local_designs", DEF, null)
 /// The current design datum that the machine is building.
+/// Whether or not the machine is building the entire queue automagically.
+OM_FIELD(/obj/machinery/mecha_part_fabricator_tg, process_queue, FALSE, CHANGE_MACHINE_SETTINGS)
+/// Part currently stored in the Exofab (its exit was obstructed when it finished).
+OM_FIELD_TYPED(/obj/machinery/mecha_part_fabricator_tg, obj/item, stored_part, null, CHANGE_MACHINE_SETTINGS)
+/// Building the queue, or holding a finished part to dispense once the exit clears.
+OM_DERIVE_FIELD(/obj/machinery/mecha_part_fabricator_tg, fab_has_work, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "fab_has_work")
+
+/obj/machinery/mecha_part_fabricator_tg/proc/fab_has_work()
+	return process_queue || stored_part
+
 /obj/machinery/mecha_part_fabricator_tg/var/datum/design_techweb/being_built
 DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "being_built", DEF, null)
 
@@ -195,7 +202,7 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
 	cut_overlay("fab-active")
 	set_use_power(USE_POWER_IDLE)
 	desc = initial(desc)
-	process_queue = FALSE
+	set_process_queue(FALSE)
 	print_sound.stop()
 
 /**
@@ -268,17 +275,17 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
 
 		atom_say("Obstruction cleared. The fabrication of [stored_part] is now complete.")
 		stored_part.forceMove(exit)
-		stored_part = null
+		set_stored_part(null)
 
 	if(!process_queue)
-		return PROCESS_KILL
+		return
 
 	// If there's nothing being built, try to build something
 	if(!being_built())
 		// First, check if it's safe to actually print anything; if not, abort now!
 		if(exit.density)
 			atom_say("Warning. Exit port obstructed. Please clear obstructions or reorient machine, then retry.")
-			process_queue = FALSE
+			set_process_queue(FALSE)
 			return
 		// If we're not processing the queue anymore or there's nothing to build, end processing.
 		if(!process_queue || !build_next_in_queue())
@@ -313,7 +320,7 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
 	if(exit.density)
 		atom_say("Error! The part outlet is obstructed.")
 		desc = "It's trying to dispense the fabricated [dispensed_design.name], but the part outlet is obstructed."
-		stored_part = built_part
+		set_stored_part(built_part)
 		return FALSE
 
 	atom_say("The fabrication of [built_part] is now complete.")
@@ -490,8 +497,7 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
 				if(process_queue)
 					return
 
-				process_queue = TRUE
-				om_task_periodic(src, PERIODIC_FAST)
+				set_process_queue(TRUE)
 			return
 
 		if("del_queue_part")
@@ -513,13 +519,12 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
 			if(process_queue)
 				return
 
-			process_queue = TRUE
-			om_task_periodic(src, PERIODIC_FAST)
+			set_process_queue(TRUE)
 			return
 
 		if("stop_queue")
 			// Pause queue building. Also known as stop.
-			process_queue = FALSE
+			set_process_queue(FALSE)
 			return
 
 		if("remove_mat")
@@ -575,10 +580,6 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
 	category = INTERACTION_CAT_MAINTAIN
 	held_type = /obj/item/storage/part_replacer
 	effect = /obj/machinery/proc/interaction_part_replacement
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/mecha_part_fabricator_tg/step_start_condition()
-	return process_queue
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/mecha_part_fabricator_tg/proc/stored_research() as /datum/techweb

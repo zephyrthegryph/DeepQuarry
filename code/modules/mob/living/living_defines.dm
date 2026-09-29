@@ -26,7 +26,6 @@
 	var/mob_push_flags = 0
 	var/mob_always_swap = 0
 
-	var/mob/living/cameraFollow = null
 
 	var/tod = null // Time of death
 	/// TRUE only inside return_from_death(): the one place set_stat() may leave DEAD.
@@ -146,6 +145,8 @@
 DECLARE_REF(/mob/living, "inventory_panel", OWNED, null)
 DECLARE_REF(/mob/living, "dsoverlay", OWNED, null)
 DECLARE_REF(/mob/living, "selected_image", OWNED, null)
+/// The mob an AI's follow-camera mode is tracking (camera/tracking.dm declares the follow loop on it).
+OM_FIELD_TYPED(/mob/living, mob/living, cameraFollow, null, CHANGE_MOB_CONDITIONS)
 DECLARE_REF(/mob/living, "cameraFollow", HELD, null)
 DECLARE_REF(/mob/living, "tf_form", HELD, null)
 DECLARE_REF(/mob/living, "tf_form_mind", HELD, null)

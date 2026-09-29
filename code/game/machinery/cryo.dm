@@ -52,6 +52,7 @@
 	update_icon()
 
 DECLARE_REF(/obj/machinery/atmospherics/unary/cryo_cell, "beaker", SPILL, null)
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/unary/cryo_cell, MACHINE_PIPELINE, list("on", "node"))
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
 /datum/om/relation/slot/occupant/cryo
@@ -66,9 +67,6 @@ DECLARE_REF(/obj/machinery/atmospherics/unary/cryo_cell, "beaker", SPILL, null)
 /obj/machinery/atmospherics/unary/cryo_cell/machine_step()
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
 	..()
-	if(!on || !node)
-		return PROCESS_KILL // switching it on, or connecting it, wakes it
-
 	if(air_contents)
 		temperature_archived = air_contents.return_temperature()
 
@@ -164,7 +162,6 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 	switch(action)
 		if("switchOn")
 			set_on(1)
-			MACHINE_WAKE(src)
 			update_icon()
 		if("switchOff")
 			set_on(0)
@@ -353,8 +350,6 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 	M.extinguish_mob()
 	if(M.stat != DEAD && (M.is_critical() || M.has_status(EFFECT_SLEEPING)))
 		to_chat(M, span_boldnotice("You feel a cold liquid surround you. Your skin starts to freeze up."))
-	if(on)
-		MACHINE_WAKE(src)
 	occupant.cozyloop.start() // Cozy Music
 	buckle_mob(occupant, forced = TRUE, check_loc = FALSE)
 	vis_contents |= occupant

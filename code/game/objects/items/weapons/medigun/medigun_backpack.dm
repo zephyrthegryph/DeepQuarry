@@ -16,10 +16,7 @@
 	var/medigun_path = /obj/item/bork_medigun/linked
 	var/obj/item/cell/bcell = /obj/item/cell
 	var/obj/item/cell/ccell = null
-	var/obj/item/stock_parts/matter_bin/sbin = /obj/item/stock_parts/matter_bin
 	var/obj/item/stock_parts/scanning_module/smodule = /obj/item/stock_parts/scanning_module
-	var/obj/item/stock_parts/manipulator/smanipulator = /obj/item/stock_parts/manipulator
-	var/obj/item/stock_parts/capacitor/scapacitor = /obj/item/stock_parts/capacitor
 	var/obj/item/stock_parts/micro_laser/slaser = /obj/item/stock_parts/micro_laser
 	var/charging = FALSE
 	var/brutecharge = 0
@@ -291,9 +288,13 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 		medigun.update_icon()
 	if(bcell) // declared default: starts empty
 		bcell.charge = 0
-	if(smodule)
-		om_task_periodic(src, PERIODIC_SLOW) // ALLOW(decl): only with a scanning module fitted
 	update_icon()
+
+OM_FIELD_TYPED(/obj/item/medigun_backpack, obj/item/stock_parts/matter_bin, sbin, /obj/item/stock_parts/matter_bin, CHANGE_EXPLICIT)
+OM_FIELD_TYPED(/obj/item/medigun_backpack, obj/item/stock_parts/manipulator, smanipulator, /obj/item/stock_parts/manipulator, CHANGE_EXPLICIT)
+OM_FIELD_TYPED(/obj/item/medigun_backpack, obj/item/stock_parts/capacitor, scapacitor, /obj/item/stock_parts/capacitor, CHANGE_EXPLICIT)
+/// Recharges its tanks and cell every 2 s while its manipulator, capacitor and matter bin are all fitted.
+DECLARE_PERIODIC_WHILE_ALL(/obj/item/medigun_backpack, PERIODIC_SLOW, list("smanipulator", "scapacitor", "sbin"))
 
 DECLARE_REF(/obj/item/medigun_backpack, "bcell", OWNED, null)
 DECLARE_REF(/obj/item/medigun_backpack, "smodule", OWNED, null)
@@ -351,9 +352,8 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			smodule = null
 
 		if(smanipulator)
-			om_task_periodic_stop(src)
 			smanipulator.forceMove(get_turf(loc))
-			smanipulator = null
+			set_smanipulator(null)
 			smaniptier = 0
 
 		if(slaser)
@@ -361,14 +361,12 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			slaser = null
 
 		if(scapacitor)
-			om_task_periodic_stop(src)
 			scapacitor.forceMove(get_turf(loc))
-			scapacitor = null
+			set_scapacitor(null)
 
 		if(sbin)
-			om_task_periodic_stop(src)
 			sbin.forceMove(get_turf(loc))
-			sbin = null
+			set_sbin(null)
 			sbintier = 0
 
 		to_chat(user, span_notice("You remove the Components from \the [src]."))
@@ -417,9 +415,8 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(!user.unEquip(W))
 				return INTERACTION_HANDLED_PASS
 			W.forceMove(src)
-			smanipulator = W
+			set_smanipulator(W)
 			smaniptier = smanipulator.get_rating()
-			if(sbin && scapacitor)om_task_periodic(src, PERIODIC_SLOW)
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
 			return INTERACTION_HANDLED_PASS
@@ -443,7 +440,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(!user.unEquip(W))
 				return INTERACTION_HANDLED_PASS
 			W.forceMove(src)
-			scapacitor = W
+			set_scapacitor(W)
 			var/scaptier = scapacitor.get_rating()
 			if(scaptier == 1)
 				chargecap = 1000
@@ -471,7 +468,6 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 				if(bcell.charge > chargecap)
 					bcell.charge = chargecap
 
-			if(sbin && smanipulator)om_task_periodic(src, PERIODIC_SLOW)
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
 			return INTERACTION_HANDLED_PASS
@@ -483,7 +479,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(!user.unEquip(W))
 				return INTERACTION_HANDLED_PASS
 			W.forceMove(src)
-			sbin = W
+			set_sbin(W)
 			sbintier = sbin.get_rating()
 			if(sbintier >= 5)
 				chemcap = 300
@@ -503,7 +499,6 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 				burncharge = tankmax
 			if(toxcharge > tankmax)
 				toxcharge = tankmax
-			if(scapacitor && smanipulator)om_task_periodic(src, PERIODIC_SLOW)
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
 			return INTERACTION_HANDLED_PASS

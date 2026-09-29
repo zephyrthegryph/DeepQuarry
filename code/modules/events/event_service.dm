@@ -41,7 +41,7 @@ GLOBAL_DATUM_INIT(event_service, /datum/world_service/events, new)
 
 /datum/world_service/events/proc/event_complete(datum/event/E)
 	registry_leave(REGISTRY_ACTIVE_EVENTS, E)
-	om_task_periodic_stop(E)
+	E.set_event_active(FALSE)
 
 	if(!E.event_meta() || !E.severity)	// datum/event is used here and there for random reasons, maintaining "backwards compatibility"
 		log_game("Event of '[E.type]' with missing meta-data has completed.")

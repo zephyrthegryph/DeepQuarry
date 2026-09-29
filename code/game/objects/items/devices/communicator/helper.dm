@@ -306,7 +306,7 @@
 	var/list/extgps = list() // Gps devices not inside the commcard -- Print locations if a gps is on
 	var/list/stagps = list() // Gps net status, location, whether it's on, if it's got long range
 	var/obj/item/gps/cumulative = new(src)
-	cumulative.tracking = FALSE
+	cumulative.set_tracking(FALSE)
 	cumulative.local_mode = TRUE // Won't detect long-range signals automatically
 	cumulative.long_range = FALSE
 	var/list/toggled_gps = list() // List of GPS units that are turned off before display_list() is called
@@ -314,7 +314,7 @@
 	for(var/obj/item/gps/G in internal_devices)
 		var/gpsdata[0]
 		if(G.tracking && !G.emped)
-			cumulative.tracking = TRUE // Turn it on
+			cumulative.set_tracking(TRUE) // Turn it on
 			if(G.long_range)
 				cumulative.long_range = TRUE // It can detect long-range
 				if(!G.local_mode)
@@ -331,11 +331,11 @@
 		intgps[++intgps.len] = gpsdata // Add it to the list
 
 		if(G.tracking)
-			G.tracking = FALSE // Disable the internal gps units so they don't show up in the report
+			G.set_tracking(FALSE) // Disable the internal gps units so they don't show up in the report
 			toggled_gps += G
 
 	for(var/obj/item/gps/G in toggled_gps) // Reenable any internal GPS units
-		G.tracking = TRUE
+		G.set_tracking(TRUE)
 
 	stagps["enabled"] = cumulative.tracking
 	stagps["long_range_en"] = (cumulative.long_range && !cumulative.local_mode)

@@ -7,20 +7,27 @@
 
 	//gas stuff
 	var/obj/item/tank/tank
-	var/breather_handle
 	var/obj/item/clothing/mask/breath/contained
 
 	var/spawn_type = null
 	var/mask_type = /obj/item/clothing/mask/breath/medical
 
 	var/is_loosen = TRUE
-	var/valve_opened = FALSE
 	//blood stuff
-	var/attached_handle
 	var/mode = 1 // 1 is injecting, 0 is taking blood.
 	var/obj/item/reagent_containers/beaker
 	var/static/list/transfer_amounts = list(REM, 1, 2)
 	var/transfer_amount = 1
+
+OM_FIELD(/obj/structure/medical_stand, breather_handle, null, CHANGE_EXPLICIT)
+OM_FIELD(/obj/structure/medical_stand, valve_opened, FALSE, CHANGE_EXPLICIT)
+OM_FIELD(/obj/structure/medical_stand, attached_handle, null, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/structure/medical_stand, stand_working, CHANGE_EXPLICIT)
+/// Feeds gas and reagents every 2 s while its valve is open or it has a patient on the mask or needle.
+DECLARE_PERIODIC_WHILE(/obj/structure/medical_stand, PERIODIC_SLOW, "stand_working")
+
+/obj/structure/medical_stand/proc/stand_working()
+	return valve_opened || breather_handle || attached_handle
 
 /obj/structure/medical_stand/Initialize(mapload)
 	. = ..()
@@ -138,7 +145,7 @@
 	if(!attached())
 		return
 	visible_message("\The [attached()] is taken off \the [src]")
-	attached_handle = null
+	set_attached_handle(null)
 	update_icon()
 
 /obj/structure/medical_stand/proc/needle_slipped(datum/om/task/timed/medical_stand_needle_inserted/task)
@@ -162,8 +169,7 @@
 		return
 	user.visible_message(span_infoplain(span_bold("\The [user]") + "hooks \the [target] up to \the [src]."),
 					span_notice("You hook \the [target] up to \the [src]."))
-	attached_handle = om_handle(target)
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_attached_handle(om_handle(target))
 	update_icon()
 
 /obj/structure/medical_stand/proc/MouseDrop_timed_done(mob/living/carbon/human/target, mob/user)
@@ -177,7 +183,7 @@
 	else
 		qdel(contained)
 		contained = new mask_type(src)
-	breather_handle = null
+	set_breather_handle(null)
 	src.visible_message(span_infoplain(span_bold("\The [contained]") + " slips to \the [src]!"))
 	update_icon()
 	return
@@ -190,7 +196,6 @@
 	if(attach_mask(target))
 		src.add_fingerprint(user)
 		update_icon()
-		om_task_periodic(src, PERIODIC_SLOW)
 	return
 
 DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
@@ -227,8 +232,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 				user.visible_message(span_warningplain(span_bold("\The [user]") + " removes \the [tank] from \the [src]."), span_warning("You remove \the [tank] from \the [src]."))
 				user.put_in_hands(tank)
 				tank = null
-				valve_opened = FALSE
-				om_task_periodic_stop(src)
+				set_valve_opened(FALSE)
 				update_icon()
 				return
 			else if (!is_loosen)
@@ -245,7 +249,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 					if(breather())
 						breather().internals?.icon_state = "internal0"
 						breather().internal = null
-					valve_opened = FALSE
+					set_valve_opened(FALSE)
 					update_icon()
 				else
 					src.visible_message(span_infoplain(span_bold("\The [user]") + " opens valve on \the [src]!"),
@@ -253,9 +257,8 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 					if(breather())
 						breather().internal = tank
 						breather().internals?.icon_state = "internal1"
-					valve_opened = TRUE
+					set_valve_opened(TRUE)
 					update_icon()
-					om_task_periodic(src, PERIODIC_SLOW)
 		if ("Remove vessel")
 			if(beaker)
 				beaker.forceMove(loc)
@@ -287,7 +290,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 		if(C.equip_to_slot_if_possible(contained, SLOT_ID_MASK))
 			if(tank)
 				tank.forceMove(C)
-			breather_handle = om_handle(C)
+			set_breather_handle(om_handle(C))
 			return TRUE
 
 /obj/structure/medical_stand/proc/can_apply_to_target(mob/living/carbon/human/target, mob/user)
@@ -407,7 +410,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 				qdel(contained)
 				contained = new mask_type (src)
 			src.visible_message(span_bold("\The [contained]") + " slips to \the [src]!")
-			breather_handle = null
+			set_breather_handle(null)
 			update_icon()
 			return
 		if(valve_opened)
@@ -427,7 +430,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 		if(!Adjacent(attached()))
 			visible_message("The needle is ripped out of [src.attached()], doesn't that hurt?")
 			attached().injure(INJURY_PIERCE, 3, pick(BP_R_ARM, BP_L_ARM), src)
-			attached_handle = null
+			set_attached_handle(null)
 			update_icon()
 
 	if(beaker)

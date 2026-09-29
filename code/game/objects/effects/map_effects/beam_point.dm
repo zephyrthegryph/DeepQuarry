@@ -13,12 +13,12 @@
 
 	// Controls how and when the beam is created.
 	var/make_beams_on_init = FALSE
-	var/use_timer = FALSE // Sadly not the /tg/ timers.
 	var/static/list/on_duration = list(2 SECONDS, 2 SECONDS, 2 SECONDS) // How long the beam should stay on for, if use_timer is true. Alternates between each duration in the list.
 	var/static/list/off_duration = list(3 SECONDS, 0.5 SECOND, 0.5 SECOND) // How long it should stay off for. List length is not needed to be the same as on_duration.
 	var/timer_on_index = 1 // Index to use for on_duration list.
 	var/timer_off_index = 1// Ditto, for off_duration list.
 	var/initial_delay = 0 // How long to wait before first turning on the beam, to sync beam times or create a specific pattern.
+	var/next_beam_delay = 0 // How long until handle_beam_timer() next runs (read by the declared repeat each time it re-arms).
 	var/beam_creation_sound = null // Optional sound played when one or more beams are created.
 	var/beam_destruction_sound = null // Optional sound played when a beam is destroyed.
 
@@ -32,11 +32,14 @@
 
 REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 
+/// Turns the beams on and off on a timer while set.
+OM_FIELD(/obj/effect/map_effect/beam_point, use_timer, FALSE, CHANGE_EXPLICIT)
+DECLARE_REPEAT(/obj/effect/map_effect/beam_point, "next_beam_delay", handle_beam_timer, "use_timer")
+
 /obj/effect/map_effect/beam_point/Initialize(mapload)
 	if(make_beams_on_init)
 		create_beams()
-	if(use_timer)
-		om_after(src, initial_delay, PROC_REF(handle_beam_timer))
+	next_beam_delay = initial_delay
 	return ..()
 
 // its beams go with it.
@@ -122,8 +125,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 
 // This code makes me sad.
 /obj/effect/map_effect/beam_point/proc/handle_beam_timer()
-	if(!use_timer || QDELETED(src))
-		return
+	if(QDELETED(src))
+		return REPEAT_STOP
 
 	if(length(my_beams)) // Currently on.
 		destroy_all_beams()
@@ -133,12 +136,12 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 		if(timer_off_index > off_duration.len)
 			timer_off_index = 1
 
-		om_after(src, off_duration[timer_off_index], PROC_REF(handle_beam_timer))
+		next_beam_delay = off_duration[timer_off_index]
 
 	else // Currently off.
 		// If nobody's around, keep the beams off to avoid wasteful beam process(), if they have one.
 		if(!always_run && !check_for_player_proximity(src, proximity_needed, ignore_ghosts, ignore_afk))
-			om_after(src, retry_delay, PROC_REF(handle_beam_timer))
+			next_beam_delay = retry_delay
 			return
 
 		create_beams()
@@ -148,7 +151,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 		if(timer_on_index > on_duration.len)
 			timer_on_index = 1
 
-		om_after(src, on_duration[timer_on_index], PROC_REF(handle_beam_timer))
+		next_beam_delay = on_duration[timer_on_index]
 
 // Subtypes to use in maps and adminbuse.
 // Remember, beam_points ONLY connect to other beam_points with the same id variable.

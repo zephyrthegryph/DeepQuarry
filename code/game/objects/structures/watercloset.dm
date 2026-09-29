@@ -506,6 +506,8 @@
 DECLARE_REAGENT_FROM_VAR(/obj/machinery/shower, "reaction_volume", "reagent_id", "reaction_volume")
 
 DECLARE_REF(/obj/machinery/shower, "soundloop", OWNED, null)
+/// Washes its tile every machine step while running.
+DECLARE_PERIODIC_WHILE(/obj/machinery/shower, MACHINE_PIPELINE, "on")
 DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
 
 /obj/structure/toilet/crowbar_act(mob/user, obj/item/I)
@@ -556,7 +558,6 @@ DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
 	handle_mist()
 	add_fingerprint(user)
 	if(on)
-		MACHINE_WAKE(src)
 		machine_step()
 		soundloop.start()
 	else
@@ -675,13 +676,10 @@ DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
 		C.touching.remove_any(remove_amount)
 
 /obj/machinery/shower/machine_step()
-	if(on)
-		if(isturf(loc)) //Wash the turf.
-			wash_atom(loc)
-		for(var/AM in turf_contents_of_type(loc, /atom/movable)) //Wash everything in the same loc (technically doesnt need to be a turf.)
-			wash_atom(AM)
-	else
-		return PROCESS_KILL
+	if(isturf(loc)) //Wash the turf.
+		wash_atom(loc)
+	for(var/AM in turf_contents_of_type(loc, /atom/movable)) //Wash everything in the same loc (technically doesnt need to be a turf.)
+		wash_atom(AM)
 
 /obj/machinery/shower/proc/check_heat(mob/living/L)
 	var/static/list/temperature_settings = list(SHOWER_FREEZING = SHOWER_TEMP_FREEZING, SHOWER_NORMAL = SHOWER_TEMP_NORMAL, SHOWER_BOILING = SHOWER_TEMP_BOILING)

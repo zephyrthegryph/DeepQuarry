@@ -274,7 +274,7 @@
 	if(istype(O, /obj/item/gps))
 		var/obj/item/gps/tracker = O
 		if(tracker.tracking)
-			tracker.tracking = FALSE
+			tracker.set_tracking(FALSE)
 			tracker.toggle_tracking()
 	recompute_power_demand()
 	update_items()

@@ -30,7 +30,6 @@
 
 	flags = OPENCONTAINER
 
-	var/scanning = 0
 	var/report_num = 0
 	var/tmp/scanned_item_handle
 	var/last_scan_data = "No scans on record."
@@ -184,11 +183,11 @@ DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 			radiation = CLAMP(radiation + RADIATION_INJECTION_AMT, 0, RADIATION_MAX)
 			return TRUE
 
-/// Runs the scan while scanning; otherwise it sleeps until start_scanning().
-/obj/machinery/radiocarbon_spectrometer/machine_step()
-	if(!scanning)
-		return PROCESS_KILL
+OM_FIELD(/obj/machinery/radiocarbon_spectrometer, scanning, FALSE, CHANGE_MACHINE_SETTINGS)
+/// Runs the scan while scanning (start_scanning() .. stop_scanning()).
+DECLARE_PERIODIC_WHILE(/obj/machinery/radiocarbon_spectrometer, MACHINE_PIPELINE, "scanning")
 
+/obj/machinery/radiocarbon_spectrometer/machine_step()
 	if(!scanned_item() || scanned_item().loc != src)
 		scanned_item_handle = null
 		stop_scanning()
@@ -232,8 +231,7 @@ DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 
 /obj/machinery/radiocarbon_spectrometer/proc/start_scanning()
 	icon_state = "analyser_processing"
-	scanning = TRUE
-	MACHINE_WAKE(src)
+	set_scanning(TRUE)
 	scan_progress = 0
 	scanner_rpm_delta = 0
 	scanner_rpm = 0
@@ -242,7 +240,7 @@ DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 
 /obj/machinery/radiocarbon_spectrometer/proc/stop_scanning()
 	icon_state = "analyser"
-	scanning = FALSE
+	set_scanning(FALSE)
 	scan_progress = 0
 	scanner_rpm_delta = 0
 	scanner_rpm = 0

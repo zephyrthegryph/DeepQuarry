@@ -682,8 +682,7 @@ DECLARE_REF(/obj/item/robot_module, "synths", OWNED_LIST, null)
 
 	src.modules += new /obj/item/reagent_containers/dropper/industrial(src)
 
-	var/obj/item/flame/lighter/zippo/L = new /obj/item/flame/lighter/zippo(src)
-	L.lit = 1
+	var/obj/item/flame/lighter/zippo/L = new /obj/item/flame/lighter/zippo(src) // starts unlit: lit, it would burn on the slow lane from module creation
 	src.modules += L
 
 	src.modules += new /obj/item/tray/robotray(src)
@@ -730,8 +729,7 @@ DECLARE_REF(/obj/item/robot_module, "synths", OWNED_LIST, null)
 
 	src.modules += new /obj/item/reagent_containers/dropper/industrial(src)
 
-	var/obj/item/flame/lighter/zippo/L = new /obj/item/flame/lighter/zippo(src)
-	L.lit = 1
+	var/obj/item/flame/lighter/zippo/L = new /obj/item/flame/lighter/zippo(src) // starts unlit: lit, it would burn on the slow lane from module creation
 	src.modules += L
 
 	src.modules += new /obj/item/tray/robotray(src)

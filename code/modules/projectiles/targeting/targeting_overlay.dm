@@ -11,12 +11,15 @@
 	mouse_opacity = 0
 
 	var/mob/living/aiming_at   // Who are we currently targeting, if anyone?
-	var/tmp/aiming_with_handle	// What are we targeting with?
 	var/tmp/owner_handle	// Who do we belong to?
 	var/locked =    0          // Have we locked on?
 	EXPIRY_DECLARE(lock_time) // When -will- we lock on?
 	var/active =    0          // Is our owner intending to take hostages?
 	var/target_permissions = 0 // Permission bitflags.
+
+/// What are we targeting with? Set while aiming; the aim is tracked every slow tick while it is.
+OM_FIELD_TYPED(/obj/aiming_overlay, tmp, aiming_with_handle, null, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/aiming_overlay, PERIODIC_SLOW, "aiming_with_handle")
 
 /obj/aiming_overlay/Initialize(mapload)
 	. = ..()
@@ -164,12 +167,11 @@ DECLARE_REF(/obj/aiming_overlay, "aiming_at", BACKLIST, "aimed")
 		owner().client.add_gun_icons()
 	to_chat(target, span_danger("You now have a gun pointed at you. No sudden moves!"))
 	to_chat(target, span_critical("If you fail to comply with your assailant, you accept the consequences of your actions."))
-	aiming_with_handle = om_handle(thing)
+	set_aiming_with_handle(om_handle(thing))
 	aiming_at = target
 	if(istype(aiming_with(), /obj/item/gun))
 		play_sfx(owner(), SFX_WEAPONS_TARGETON)
 	forceMove(get_turf(target))
-	om_task_periodic(src, PERIODIC_SLOW)
 
 	aiming_at.aimed |= src
 	toggle_active(1)
@@ -211,11 +213,10 @@ DECLARE_REF(/obj/aiming_overlay, "aiming_at", BACKLIST, "aimed")
 	if(!no_message)
 		owner().visible_message(span_infoplain(span_bold("\The [owner()]") + " lowers \the [aiming_with()]."))
 
-	aiming_with_handle = null
+	set_aiming_with_handle(null)
 	aiming_at.aimed -= src
 	aiming_at = null
 	moveToNullspace()
-	om_task_periodic_stop(src)
 
 /// LC-refs: What are we targeting with? -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/aiming_overlay/proc/aiming_with() as /obj/item

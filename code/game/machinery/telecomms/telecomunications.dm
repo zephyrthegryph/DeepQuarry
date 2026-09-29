@@ -20,6 +20,8 @@
 OM_TIMER_SLOT(/obj/machinery/telecomms, thermal_timer)
 
 /obj/machinery/telecomms
+	// Any power or break change (power_change(), EMP, EMP recovery) runs one step to reconcile.
+	step_on_power_change = TRUE
 	icon = 'icons/obj/stationobjs.dmi'
 	unacidable = TRUE
 	var/list/links // list of machines this machine is linked to
@@ -232,12 +234,6 @@ DECLARE_REF(/obj/machinery/telecomms, "soundloop", OWNED, null)
 /obj/machinery/telecomms/proc/thermal_check_due()
 	MACHINE_WAKE(src)
 
-/obj/machinery/telecomms/power_change()
-	var/changed = ..()
-	if(changed)
-		MACHINE_WAKE(src)
-	return changed
-
 /obj/machinery/telecomms/emp_act(severity, recursive)
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
@@ -245,7 +241,6 @@ DECLARE_REF(/obj/machinery/telecomms, "soundloop", OWNED, null)
 	if(prob(100/severity))
 		if(!has_stat(EMPED))
 			stat_add(EMPED)
-			MACHINE_WAKE(src)
 			play_sfx(src, SFX_MACHINES_TCOMMS_TCOMMS_PULSE)
 			var/duration = (300 * 10)/severity
 			om_after(src, rand(duration - 20, duration + 20), PROC_REF(emp_recover)) // Takes a long time for the machines to reboot.
@@ -702,7 +697,6 @@ DECLARE_REF(/obj/machinery/telecomms, "soundloop", OWNED, null)
 
 /obj/machinery/telecomms/proc/emp_recover()
 	stat_remove(EMPED)
-	MACHINE_WAKE(src)
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/telecomms/step_start_condition()

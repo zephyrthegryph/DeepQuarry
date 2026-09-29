@@ -9,7 +9,6 @@
 	var/equip_cooldown = 0
 	var/equip_ready = TRUE
 	var/energy_drain = 0
-	var/obj/mecha/chassis = null
 	var/range = MECH_MELEE //bitflags
 	/// Bitflag. Used by exosuit fabricator to assign sub-categories based on which exosuits can equip this.
 	var/mech_flags = NONE
@@ -21,6 +20,9 @@
 	var/enable_special = FALSE	// Will the tool do its special?
 
 	var/step_delay = 0	// Does the component slow/speed up the suit?
+
+/// The mech this is mounted on. A field: equipment declares its periodic work on it.
+OM_FIELD_TYPED(/obj/item/mecha_parts/mecha_equipment, obj/mecha, chassis, null, CHANGE_EXPLICIT)
 
 /// Starts the equipment cooldown (ready again after equip_cooldown). TRUE while it can act on
 /// `target`: the act no longer waits for the cooldown.
@@ -199,7 +201,7 @@
 	if(equip_type != EQUIP_SPECIAL && length(M.universal_equipment) < M.max_universal_equip && !has_equipped)
 		LAZYADD(M.universal_equipment, src)
 	M.equipment += src
-	chassis = M
+	set_chassis(M)
 	if(!move_into(M, MECHA_SLOT_EQUIPMENT))
 		forceMove(M) // the equipment lists above already committed; guarantee the move
 
@@ -245,7 +247,7 @@
 		chassis.selected = null
 	update_chassis_page()
 	chassis.mecha_log_message("[src] removed from equipment.")
-	chassis = null
+	set_chassis(null)
 	set_ready_state(TRUE)
 	enable_special = FALSE
 	return

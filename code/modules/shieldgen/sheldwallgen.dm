@@ -24,6 +24,12 @@
 		var/max_stored_power = 50000 //50 kW
 		use_power = USE_POWER_OFF	//Draws directly from power net. Does not use APC power.
 
+/// Runs while switched on, or while bolted down to charge its store (it parks once full).
+OM_DERIVE_FIELD(/obj/machinery/shieldwallgen, wallgen_has_work, CHANGE_MACHINE_SETTINGS | CHANGE_MACHINE_ANCHORED)
+/obj/machinery/shieldwallgen/proc/wallgen_has_work()
+	return active || anchored
+DECLARE_PERIODIC_WHILE(/obj/machinery/shieldwallgen, MACHINE_PIPELINE, "wallgen_has_work")
+
 /obj/machinery/shieldwallgen/Initialize(mapload)
 	. = ..()
 	make_climbable()
@@ -55,8 +61,6 @@
 
 	if(src.active >= 1)
 		set_active(0)
-		if(storedpower >= max_stored_power)
-			MACHINE_SLEEP(src)
 		icon_state = "Shield_Gen"
 
 		user.visible_message("[user] turned the shield generator off.", \
@@ -65,7 +69,6 @@
 		for(var/dir in list(1,2,4,8)) src.cleanup(dir)
 	else
 		set_active(1)
-		MACHINE_WAKE(src)
 		icon_state = "Shield_Gen_on"
 		user.visible_message("[user] turned the shield generator on.", \
 			"You turn on the shield generator.", \
@@ -100,12 +103,9 @@
 	return 1
 
 /obj/machinery/shieldwallgen/machine_step()
-	if(!active)
-		if(!anchored)
-			return PROCESS_KILL
-		if(storedpower >= max_stored_power)
-			storedpower = max_stored_power
-			return PROCESS_KILL
+	if(!active && storedpower >= max_stored_power)
+		storedpower = max_stored_power
+		return PROCESS_KILL // charged: parks until switched on (or re-bolted)
 	power()
 	if(power && active)
 		storedpower -= 2500 //the generator post itself uses some power
@@ -211,10 +211,6 @@
 	set_anchored(state)
 	playsound(src, W.usesound, 75, 1)
 	to_chat(user, "You [anchored ? "secure" : "undo"] the external reinforcing bolts[anchored ? " to" : " from"] the floor.")
-	// machine_step() sleeps while unanchored; an anchored generator with an
-	// unfilled buffer needs ticks to draw from the cable underneath.
-	if(anchored && storedpower < max_stored_power)
-		MACHINE_WAKE(src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/shieldwallgen/proc/cleanup(NSEW)
@@ -333,10 +329,6 @@
 	if(istype(mover, /obj/item/projectile))
 		return prob(10)
 	return !density
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/shieldwallgen/step_start_condition()
-	return active
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/shieldwall/step_start_condition()

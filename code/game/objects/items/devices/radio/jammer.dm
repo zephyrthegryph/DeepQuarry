@@ -24,13 +24,16 @@
 	var/active_state = "jammer1"
 	var/last_overlay_percent = null // Stores overlay icon_state to avoid excessive recreation of overlays.
 
-	var/on = 0
 	var/jam_range = 7
 	var/obj/item/cell/device/weapon/power_source
 	var/tick_cost = 5 // For the ERPs.
 
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
+
+OM_FIELD(/obj/item/radio_jammer, on, FALSE, CHANGE_EXPLICIT)
+/// Drains its cell while switched on.
+DECLARE_PERIODIC_WHILE(/obj/item/radio_jammer, PERIODIC_SLOW, "on")
 
 /obj/item/radio_jammer/Initialize(mapload)
 	. = ..()
@@ -53,17 +56,15 @@ REGISTRY_MEMBERSHIP(/obj/item/radio_jammer, REGISTRY_RADIO_JAMMERS)
 /obj/item/radio_jammer/proc/turn_off(mob/user)
 	if(user)
 		to_chat(user,span_warning("\The [src] deactivates."))
-	om_task_periodic_stop(src)
 	registry_leave(REGISTRY_RADIO_JAMMERS, src)
-	on = FALSE
+	set_on(FALSE)
 	update_icon()
 
 /obj/item/radio_jammer/proc/turn_on(mob/user)
 	if(user)
 		to_chat(user,span_notice("\The [src] is now active."))
-	om_task_periodic(src, PERIODIC_SLOW)
 	registry_join(REGISTRY_RADIO_JAMMERS, src)
-	on = TRUE
+	set_on(TRUE)
 	update_icon()
 
 /obj/item/radio_jammer/periodic_step()

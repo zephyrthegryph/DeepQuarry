@@ -198,8 +198,8 @@ DECLARE_PERIODIC(/obj/effect/shadow_wight, PERIODIC_SLOW)
 
 			src.moveToNullspace()
 	else
-		om_task_periodic_stop(src)
 		qdel(src) //Let's not just sit in nullspace forever, yeah?
+		return PROCESS_KILL
 
 /obj/effect/shadow_wight/Bump(atom/obstacle)
 	to_chat(obstacle, span_red("You feel a chill run down your spine!"))

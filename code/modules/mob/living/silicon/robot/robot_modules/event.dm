@@ -105,8 +105,7 @@
 	src.modules += new /obj/item/stamp(src)
 	src.modules += new /obj/item/stamp/denied(src)
 
-	var/obj/item/flame/lighter/zippo/L = new /obj/item/flame/lighter/zippo(src)
-	L.lit = 1
+	var/obj/item/flame/lighter/zippo/L = new /obj/item/flame/lighter/zippo(src) // starts unlit: lit, it would burn on the slow lane from module creation
 	src.modules += L
 
 	var/datum/matter_synth/metal = new /datum/matter_synth/metal(50000)

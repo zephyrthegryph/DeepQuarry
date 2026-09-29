@@ -6,8 +6,6 @@
 
 	var/datum/gas_mixture/air_contents
 
-	var/obj/machinery/atmospherics/node
-
 	var/datum/pipe_network/network
 
 	var/welded = FALSE //defining this here for ventcrawl stuff
@@ -33,6 +31,10 @@
 		if(!isnull(id))
 			mixture_ids |= id
 	om_watch_arm_condition(src, "gas", mixture_ids, gas_dependency_mask, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+
+/// Its one pipe neighbour. A field: connecting or disconnecting raises CHANGE_MACHINE_SETTINGS, so
+/// a device whose declared work depends on being connected re-evaluates.
+OM_FIELD_TYPED(/obj/machinery/atmospherics/unary, obj/machinery/atmospherics, node, null, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/atmospherics/unary/proc/unregister_gas_dependencies()
 	om_watch_disarm(src, "gas")
@@ -80,10 +82,8 @@
 
 	for(var/obj/machinery/atmospherics/target in get_step(src,node_connect))
 		if(can_be_node(target, 1))
-			node = target
+			set_node(target)
 			break
-	if(node)
-		MACHINE_WAKE(src) // connected: a device with DM work re-evaluates (others don't listen)
 
 	update_icon()
 	update_underlays()
@@ -121,7 +121,7 @@
 	invalidate_gas_dependencies()
 	if(reference==node)
 		rust_release_network_wrapper(network)
-		node = null
+		set_node(null)
 
 	update_icon()
 	update_underlays()

@@ -30,7 +30,7 @@
 
 	originMachine_handle = DEFAULTPICK(vendingMachines, null)
 	LAZYREMOVE(vendingMachines, originMachine_handle)
-	originMachine().shut_up = 0
+	originMachine().set_shut_up(FALSE)
 	originMachine().shoot_inventory = 1
 
 
@@ -53,7 +53,7 @@
 			var/obj/machinery/vending/infectedMachine = om_resolve(infected_handle)
 			if(infectedMachine)
 				LAZYADD(infectedVendingMachines, infected_handle)
-				infectedMachine.shut_up = 0
+				infectedMachine.set_shut_up(FALSE)
 				infectedMachine.shoot_inventory = 1
 
 			if(ISMULTIPLE(activeFor, 12))
@@ -61,7 +61,7 @@
 
 /datum/event/brand_intelligence/end()
 	for(var/obj/machinery/vending/infectedMachine in om_resolve_all(infectedVendingMachines))
-		infectedMachine.shut_up = 1
+		infectedMachine.set_shut_up(TRUE)
 		infectedMachine.shoot_inventory = 0
 
 /// LC-refs: the originMachine this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.

@@ -100,19 +100,22 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 						/mob/living/simple_mob/animal/space/carp/large/huge/roguemines = 1)
 	)
 
+/// Difficulty decays every RM_DIFF_DECAY_TIME while set (DECLARE_REPEAT).
+OM_FIELD(/datum/controller/rogue, decaying, FALSE, CHANGE_DATUM_A)
+DECLARE_REPEAT(/datum/controller/rogue, RM_DIFF_DECAY_TIME, decay, "decaying")
+
 /datum/controller/rogue/New()
+	..()
+	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
 	//How many zones are we working with here
 	for(var/area/asteroid/rogue/A in world)
 		LAZYADD(all_zones, new /datum/rogue/zonemaster(A))
-	//decay() //Decay removed for now, since people aren't getting high scores as it is.
+	//set_decaying(TRUE) //Decay removed for now, since people aren't getting high scores as it is.
 
-/datum/controller/rogue/proc/decay(manual = 0)
+/// One difficulty decay (DECLARE_REPEAT while decaying; may also be called by hand).
+/datum/controller/rogue/proc/decay()
 	log_world("RM(stats): DECAY on controller from [difficulty] to [difficulty+(RM_DIFF_DECAY_AMT)] min 100.") //DEBUG code for playtest stats gathering.
 	adjust_difficulty(RM_DIFF_DECAY_AMT)
-
-	if(!manual) //If it was called manually somehow, then don't start the timer, just decay now.
-		om_after(src, RM_DIFF_DECAY_TIME, PROC_REF(decay))
-	return difficulty
 
 /datum/controller/rogue/proc/dbg(message)
 	ASSERT(message) //I want a stack trace if there's no message

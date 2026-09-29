@@ -20,6 +20,8 @@
 	var/open = 0
 
 DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
+/// Pumps every machine frame while on (set_pump_on()).
+DECLARE_PERIODIC_WHILE(/obj/machinery/pump, MACHINE_PIPELINE, "on")
 
 /obj/machinery/pump/Initialize(mapload)
 	. = ..()
@@ -70,11 +72,8 @@ DECLARE_REF(/obj/machinery/pump, "cell", OWNED, null)
 
 	icon_state = "[initial(icon_state)][on ? "-running" : ""]"
 
-/// Pumps every machine frame while on; off, it sleeps until set_pump_on() turns it on.
+/// Pumps every machine frame; runs while on (declared).
 /obj/machinery/pump/machine_step()
-	if(!on)
-		return PROCESS_KILL
-
 	if(!anchored || !(cell?.use(active_power_usage)))
 		set_pump_on(FALSE)
 		return
@@ -100,8 +99,6 @@ DECLARE_REF(/obj/machinery/pump, "cell", OWNED, null)
 
 	set_on(!on)
 	update_icon()
-	if(on)
-		MACHINE_WAKE(src)
 	if(message)
 		if(on)
 			message = span_notice("\The [src] turns on.")

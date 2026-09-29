@@ -14,7 +14,6 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 	var/effectchance = 20
 	var/cooldown = 10
 	EXPIRY_DECLARE(last_used_time)
-	var/recharging = 0
 	var/recharge_locked = 0
 	var/obj/item/stock_parts/micro_laser/diode //used for upgrading!
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
@@ -207,9 +206,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 	EXPIRY_STAMP(src, last_used_time, CLOCK_WORLD)
 	energy -= 1
 	if(energy <= max_energy)
-		if(!recharging)
-			recharging = TRUE
-			om_task_periodic(src, PERIODIC_SLOW)
+		set_recharging(TRUE)
 		if(energy <= 0)
 			to_chat(user, span_warning("You've overused the battery of [src], now it needs time to recharge!"))
 			recharge_locked = TRUE
@@ -225,10 +222,12 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 		energy++
 		if(energy >= max_energy)
 			energy = max_energy
-			recharging = FALSE
+			set_recharging(FALSE)
 			recharge_locked = FALSE
-			..()
 
+OM_FIELD(/obj/item/laser_pointer, recharging, 0, CHANGE_EXPLICIT)
+// The battery trickles back while recharging.
+DECLARE_PERIODIC_WHILE(/obj/item/laser_pointer, PERIODIC_SLOW, "recharging")
 DECLARE_REF(/obj/item/laser_pointer, "diode", HELD, null)
 
 /// LC-refs: pointer loc -- an OM handle (om_handle()), so it reads null once that is deleted.

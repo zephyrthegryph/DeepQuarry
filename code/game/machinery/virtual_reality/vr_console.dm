@@ -43,6 +43,20 @@
 	slot_id = OCCUPANT_SLOT_VR_POD
 	name = "VR pod"
 
+/datum/om/relation/slot/occupant/vr_pod/on_link(mob/living/source, obj/machinery/vr_sleeper/target, datum/om/edge/edge)
+	om_changed(target, CHANGE_MACHINE_OCCUPANT)
+
+/datum/om/relation/slot/occupant/vr_pod/on_unlink(mob/living/source, obj/machinery/vr_sleeper/target, datum/om/edge/edge)
+	om_changed(target, CHANGE_MACHINE_OCCUPANT)
+
+/// Derived field: the pod holds someone. The slot's on_link()/on_unlink() raise CHANGE_MACHINE_OCCUPANT.
+OM_DERIVE_FIELD(/obj/machinery/vr_sleeper, vr_occupied, CHANGE_MACHINE_OCCUPANT)
+/obj/machinery/vr_sleeper/proc/vr_occupied()
+	return slot_item(OCCUPANT_SLOT_VR_POD) ? TRUE : FALSE
+
+/// Watches its occupant (death, power loss) while it has one.
+DECLARE_PERIODIC_WHILE(/obj/machinery/vr_sleeper, MACHINE_PIPELINE, "vr_occupied")
+
 /obj/machinery/vr_sleeper/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
@@ -56,12 +70,9 @@
 		occupant.vr_link.exit_vr()
 	..()
 
-/// Watches its occupant (death, power loss) while it has one; empty, it sleeps until someone
-/// gets in.
+/// Watches its occupant (death, power loss) while it has one (the declaration above).
 /obj/machinery/vr_sleeper/machine_step()
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
-	if(!occupant)
-		return PROCESS_KILL
 	if(!operable())
 		if(occupant)
 			occupant.exit_vr(FALSE)

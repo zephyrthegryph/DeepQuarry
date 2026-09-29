@@ -120,7 +120,7 @@
 
 //Do not override this proc, instead use the appropiate procs.
 //This proc will handle the calls to the appropiate procs.
-/// One event step every 2 s while the event is active (New() starts it, kill() ends it).
+/// One event step every 2 s while the event is active (DECLARE_PERIODIC_WHILE on event_active).
 /datum/event/periodic_step()
 	if(!processing_active)
 		return
@@ -169,11 +169,16 @@
 
 REGISTRY_MEMBERSHIP(/datum/event, REGISTRY_ACTIVE_EVENTS)
 
+/// TRUE from New() until the event service completes it: one event step every 2 s while set
+/// (DECLARE_PERIODIC_WHILE). Events made with external_use never step on their own.
+OM_FIELD_TYPED(/datum/event, tmp, event_active, FALSE, CHANGE_DATUM_A)
+DECLARE_PERIODIC_WHILE(/datum/event, PERIODIC_SLOW, "event_active")
+
 /datum/event/New(datum/event_meta/EM, external_use = FALSE)
 	// event needs to be responsible for this, as stuff like APLUs currently make their own events for curious reasons
 	if(!external_use)
 		registry_join(REGISTRY_ACTIVE_EVENTS, src)
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_event_active(TRUE)
 
 		event_meta_handle = om_handle(EM)
 		severity = event_meta().severity
@@ -187,6 +192,7 @@ REGISTRY_MEMBERSHIP(/datum/event, REGISTRY_ACTIVE_EVENTS)
 
 	setup()
 	..()
+	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
 
 /datum/event/proc/location_name()
 	if(victim())

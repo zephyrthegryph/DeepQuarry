@@ -99,7 +99,7 @@
 
 /datum/unit_test/proc/dq_lit_welder(turf/T)
 	var/obj/item/weldingtool/welder = allocate(/obj/item/weldingtool, T)
-	welder.welding = TRUE
+	welder.set_welding(TRUE)
 	return welder
 
 // ---- Definitions ----
@@ -199,7 +199,7 @@
 	TEST_ASSERT_EQUAL(deconstruct.why_not(H, machine, crowbar), "the maintenance panel is closed", "a closed panel blocks it")
 	TEST_ASSERT(!deconstruct.perform(H, machine, crowbar), "blocked, it does nothing")
 	TEST_ASSERT_EQUAL(machine.dismantled, 0, "not dismantled while blocked")
-	machine.panel_open = TRUE
+	machine.set_panel_open(TRUE)
 	TEST_ASSERT(deconstruct.perform(H, machine, crowbar), "with the panel open it runs")
 	TEST_ASSERT_EQUAL(machine.dismantled, 1, "dismantled once")
 
@@ -217,9 +217,9 @@
 	TEST_ASSERT(anchor.perform(H, machine, wrench), "unsecuring runs")
 	TEST_ASSERT(!machine.anchored, "unsecured")
 	TEST_ASSERT_EQUAL(anchor.display_name(H, machine), "Secure", "a loose machine is secured")
-	machine.panel_open = TRUE
+	machine.set_panel_open(TRUE)
 	TEST_ASSERT_EQUAL(anchor.why_not(H, machine, wrench), "the maintenance panel is open", "an open panel blocks it")
-	machine.panel_open = FALSE
+	machine.set_panel_open(FALSE)
 	TEST_ASSERT(anchor.perform(H, machine, wrench), "securing runs")
 	TEST_ASSERT(machine.anchored, "secured")
 	machine.maintenance_wrench_time = 2 SECONDS
@@ -240,7 +240,7 @@
 	machine.take_damage(machine.max_integrity / 2, BRUTE, MELEE, FALSE)
 	TEST_ASSERT(machine.get_integrity() < machine.max_integrity, "the probe took damage")
 	TEST_ASSERT_EQUAL(repair.why_not(H, machine, welder), "the welding tool must be on", "an unlit welder is refused")
-	welder.welding = TRUE
+	welder.set_welding(TRUE)
 	TEST_ASSERT(repair.perform(H, machine, welder), "repair runs")
 	TEST_ASSERT_EQUAL(machine.get_integrity(), machine.max_integrity, "fully repaired")
 	TEST_ASSERT_EQUAL(repair.category, INTERACTION_CAT_REPAIR, "repair is in the Repair category")

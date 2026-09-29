@@ -20,6 +20,8 @@
 	var/assembled = 0
 	var/parts = null
 
+DECLARE_PERIODIC_WHILE(/obj/machinery/particle_accelerator/control_box, MACHINE_PIPELINE, "active")
+
 /obj/machinery/particle_accelerator/control_box/Initialize(mapload)
 	. = ..()
 	set_wires(new /datum/wires/particle_acc/control_box(src))
@@ -124,19 +126,16 @@
 
 /// Emits every machine frame while active; off, it sleeps until toggle_power() turns it on.
 /obj/machinery/particle_accelerator/control_box/machine_step()
-	if(!active)
-		return PROCESS_KILL
-	if(src.active)
-		//a part is missing!
-		if( length(om_resolve_all(connected_parts)) < 6 )
-			log_game("PACCEL([x],[y],[z]) Failed due to missing parts.")
-			investigate_log("lost a connected part; It " + span_red("powered down") + ".","singulo")
-			toggle_power()
-			return
-		//emit some particles
-		for(var/obj/structure/particle_accelerator/particle_emitter/PE in om_resolve_all(connected_parts))
-			if(PE)
-				PE.emit_particle(src.strength)
+	//a part is missing!
+	if( length(om_resolve_all(connected_parts)) < 6 )
+		log_game("PACCEL([x],[y],[z]) Failed due to missing parts.")
+		investigate_log("lost a connected part; It " + span_red("powered down") + ".","singulo")
+		toggle_power()
+		return
+	//emit some particles
+	for(var/obj/structure/particle_accelerator/particle_emitter/PE in om_resolve_all(connected_parts))
+		if(PE)
+			PE.emit_particle(src.strength)
 
 /obj/machinery/particle_accelerator/control_box/proc/part_scan()
 	for(var/obj/structure/particle_accelerator/fuel_chamber/F in orange(1,src))
@@ -197,7 +196,6 @@
 	log_game("PACCEL([x],[y],[z]) [user ? key_name(user, user.client) : "outside forces"] turned [active?"ON":"OFF"].")
 	if(active)
 		set_use_power(USE_POWER_ACTIVE)
-		MACHINE_WAKE(src)
 		for(var/obj/structure/particle_accelerator/part in om_resolve_all(connected_parts))
 			part.strength = src.strength
 			part.powered = 1

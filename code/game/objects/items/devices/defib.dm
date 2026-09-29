@@ -612,10 +612,13 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 
 /obj/item/shockpaddles/standalone
 	desc = "A pair of shockpaddles powered by an experimental miniaturized reactor" //Inspired by the advanced e-gun
-	var/fail_counter = 0
 	var/last_event = 0
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
+
+/// Reactor overload ticks left after an EMP; it irradiates the area while nonzero.
+OM_FIELD(/obj/item/shockpaddles/standalone, fail_counter, 0, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/shockpaddles/standalone, PERIODIC_SLOW, "fail_counter")
 
 /obj/item/shockpaddles/standalone/check_charge(charge_amt)
 	return 1
@@ -631,17 +634,14 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	return 1
 
 /obj/item/shockpaddles/standalone/periodic_step()
-	if(fail_counter > 0)
-		radiation_pulse(
-			src,
-			max_range = 5,
-			threshold = RAD_MEDIUM_INSULATION,
-			chance = URANIUM_IRRADIATION_CHANCE,
-			strength = 15
-		)
-		fail_counter--
-	else
-		om_task_periodic_stop(src)
+	radiation_pulse(
+		src,
+		max_range = 5,
+		threshold = RAD_MEDIUM_INSULATION,
+		chance = URANIUM_IRRADIATION_CHANCE,
+		strength = 15
+	)
+	set_fail_counter(max(fail_counter - 1, 0))
 
 /obj/item/shockpaddles/standalone/emp_act(severity, recursive)
 	. = ..()
@@ -657,9 +657,8 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 			if(ismob(loc))
 				to_chat(loc, span_warning("\The [src] feel pleasantly warm."))
 
-	if(new_fail && !fail_counter)
-		om_task_periodic(src, PERIODIC_SLOW)
-	fail_counter = new_fail
+	if(new_fail)
+		set_fail_counter(new_fail)
 
 /* From the Bay port, this doesn't seem to have a sprite.
 /obj/item/shockpaddles/standalone/traitor

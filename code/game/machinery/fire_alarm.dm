@@ -20,7 +20,7 @@ FIRE ALARM
 	idle_power_usage = 2
 	active_power_usage = 6
 	power_channel = ENVIRON
-	panel_open = FALSE
+	set_panel_open(FALSE)
 	var/seclevel
 	circuit = /obj/item/circuitboard/firealarm
 	var/alarms_hidden = FALSE //If the alarms from this machine are visible on consoles
@@ -157,7 +157,7 @@ DECLARE_REF(/obj/machinery/firealarm, "causality", OWNED, null)
 
 /obj/machinery/firealarm/screwdriver_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)
-	panel_open = !panel_open
+	set_panel_open(!panel_open)
 	to_chat(user, "The wires have been [panel_open ? "exposed" : "unexposed"]")
 	update_icon()
 	return ITEM_INTERACT_SUCCESS

@@ -170,12 +170,14 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 		if(open)
 			. += "It's equipped with [english_list(installed_modules)]."
 
+/// TRUE while it is on a mob; set by Moved().
+OM_FIELD(/obj/item/rig, carried_by_mob, FALSE, CHANGE_EXPLICIT)
 // We only care about processing when we're on a mob
+DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
+
 /obj/item/rig/Moved(old_loc, direction, forced)
-	if(ismob(loc))
-		om_task_periodic(src, PERIODIC_SLOW)
-	else
-		om_task_periodic_stop(src)
+	set_carried_by_mob(ismob(loc) ? TRUE : FALSE)
+	if(!ismob(loc))
 		QDEL_NULL(minihud) // Just in case we get removed some other way
 
 		// The control module has left the wearer's body — dropped, force-dropped on
@@ -191,6 +193,10 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 		// next wearer's first seal toggle inverts (seal_target = !canremove).
 		if(!canremove)
 			reset()
+		// Off a mob the slow step no longer runs (carried_by_mob), so let go of the wearer here.
+		if(wearer()?.wearing_rig == src)
+			wearer().wearing_rig = null
+		wearer_handle = null
 
 	// If we've lost any parts, grab them back.
 	var/mob/living/M
@@ -484,13 +490,6 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 	power_system.run_cooling(H)
 
 /obj/item/rig/periodic_step()
-	// Not on a mob...?
-	if(!ismob(loc))
-		if(wearer()?.wearing_rig == src)
-			wearer().wearing_rig = null
-		wearer_handle = null
-		return PROCESS_KILL
-
 	// Run through cooling.
 	coolingProcess()
 

@@ -19,7 +19,6 @@
 	var/datum/transhuman/body_record/loaded_BR
 	var/obj/item/disk/body_record/diskette = null // Traitgenes - Storing the entire body record
 	var/loading = 0 // Nice loading text
-	var/autoprocess = 0
 	var/selected_pod_handle
 	// 0: Standard body scan
 	// 1: The "Best" scan available
@@ -35,6 +34,8 @@
 	updatemodules()
 
 DECLARE_REF(/obj/machinery/computer/cloning, "records", OWNED_LIST, null)
+OM_FIELD(/obj/machinery/computer/cloning, autoprocess, 0, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/computer/cloning, MACHINE_PIPELINE, "autoprocess")
 
 // its linked cloners are released.
 /obj/machinery/computer/cloning/on_destroy(force)
@@ -42,8 +43,6 @@ DECLARE_REF(/obj/machinery/computer/cloning, "records", OWNED_LIST, null)
 	..()
 
 /obj/machinery/computer/cloning/machine_step()
-	if(!autoprocess)
-		return PROCESS_KILL
 	if(!scanner() || !pods.len || has_stat(NOPOWER))
 		return
 
@@ -245,11 +244,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 
 			om_after(src, 2 SECONDS, PROC_REF(delayed_scan), scanner_occupant)
 		if("autoprocess")
-			autoprocess = text2num(params["on"]) > 0
-			if(autoprocess)
-				MACHINE_WAKE(src)
-			else
-				MACHINE_SLEEP(src)
+			set_autoprocess(text2num(params["on"]) > 0)
 		if("lock")
 			if(isnull(scanner()) || !scanner_occupant) //No locking an open scanner.
 				return

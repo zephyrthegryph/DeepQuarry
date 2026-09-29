@@ -198,12 +198,12 @@ DECLARE_REF(/obj/item/assembly_holder, "a_right", BACK_VIA, "holder_handle")
 	. = ..()
 
 	var/obj/item/assembly/igniter/ign = new(src)
-	ign.secured = 1
+	ign.set_secured(TRUE)
 	ign.holder_handle = om_handle(src)
 
 	var/obj/item/assembly/timer/tmr = new(src)
 	tmr.time = 5
-	tmr.secured = 1
+	tmr.set_secured(TRUE)
 	tmr.holder_handle = om_handle(src)
 
 	a_left = tmr

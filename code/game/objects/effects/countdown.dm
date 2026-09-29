@@ -10,9 +10,12 @@
 	plane = PLANE_GHOSTS
 	color = "#ff0000"
 	var/text_size = 3 // Larger values clip when the displayed text is larger than 2 digits
-	var/started = FALSE
 	var/displayed_text
 	var/atom/attached_to
+
+/// Ticks its display every fast tick while started.
+OM_FIELD(/obj/effect/countdown, started, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/effect/countdown, PERIODIC_FAST, "started")
 
 /obj/effect/countdown/Initialize(mapload)
 	. = ..()
@@ -40,15 +43,12 @@
 	om_unhook(attached_to, /datum/om/event/moved, src)
 
 /obj/effect/countdown/proc/start()
-	if(!started)
-		om_task_periodic(src, PERIODIC_FAST)
-		started = TRUE
+	set_started(TRUE)
 
 /obj/effect/countdown/proc/stop()
 	if(started)
 		maptext = null
-		om_task_periodic_stop(src)
-		started = FALSE
+		set_started(FALSE)
 
 /obj/effect/countdown/proc/get_value()
 	// Get the value from our atom

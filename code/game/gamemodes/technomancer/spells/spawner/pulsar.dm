@@ -26,11 +26,13 @@
 	empulse(hit_atom, 1, 1, 1, 1, log=1)
 
 // Does something every so often. Deletes itself when pulses_remaining hits zero.
-OM_TIMER_SLOT(/obj/effect/temporary_effect/pulse, pulsetimer)
-
 /obj/effect/temporary_effect/pulse
 	var/pulses_remaining = 3
 	var/pulse_delay = 2 SECONDS
+
+/// Pulses on the declared repeat. A subtype that runs its own loop (the snake) sets it FALSE.
+OM_FIELD(/obj/effect/temporary_effect/pulse, pulsing, TRUE, CHANGE_EXPLICIT)
+DECLARE_REPEAT(/obj/effect/temporary_effect/pulse, "pulse_delay", pulse_step, "pulsing")
 
 /obj/effect/temporary_effect/pulse/Initialize(mapload)
 	..()
@@ -39,14 +41,18 @@ OM_TIMER_SLOT(/obj/effect/temporary_effect/pulse, pulsetimer)
 /obj/effect/temporary_effect/pulse/LateInitialize()
 	pulse_loop()
 
+/// The first pulse, at once; the declared repeat runs the rest every pulse_delay.
 /obj/effect/temporary_effect/pulse/proc/pulse_loop()
+	return pulse_step()
 
+/// DECLARE_REPEAT: one pulse, or the end of the effect once pulses_remaining is spent.
+/obj/effect/temporary_effect/pulse/proc/pulse_step()
 	if(pulses_remaining > 0)
-		om_after_slot(src, "pulsetimer", pulse_delay, PROC_REF(pulse_loop))
 		pulses_remaining--
 		on_pulse()
-	else
-		qdel(src)
+		return
+	qdel(src)
+	return REPEAT_STOP
 
 // Override for specific effects.
 /obj/effect/temporary_effect/pulse/proc/on_pulse()

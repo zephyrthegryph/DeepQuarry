@@ -11,12 +11,19 @@
 	force = 0
 	slot_flags = SLOT_BELT
 	var/beam_range = 4 // How many tiles away it can scan. Changing this also changes the box size.
-	var/busy = FALSE // Set to true when scanning, to stop multiple scans.
+	/// The running beam (sizegun_step()): target, user and held-item handles, the target's starting
+	/// scale, the beam handle, the outline filter, the box segments and the user's client.
+	var/tmp/list/beam_state
 	var/sizeshift_mode = SIZE_SHRINK
 	var/dorm_size = TRUE
 	var/size_increment = 0.01
 	var/current_target
 	var/trading = 0
+
+/// Set to true when scanning, to stop multiple scans.
+OM_FIELD(/obj/item/slow_sizegun, busy, FALSE, CHANGE_EXPLICIT)
+/// The beam steps every 0.3 s while busy.
+DECLARE_REPEAT(/obj/item/slow_sizegun, 0.3 SECONDS, sizegun_step, "busy")
 
 /obj/item/slow_sizegun/update_icon()
 	icon_state = "[base_icon_state]-[sizeshift_mode]"
@@ -102,7 +109,7 @@
 		return
 
 	if(target == current_target && busy)
-		busy = FALSE
+		sizegun_finish()
 		return
 
 	var/unresizable = FALSE
@@ -123,8 +130,6 @@
 
 	// Start the effects
 	current_target = target
-	busy = TRUE
-	update_icon()
 	var/datum/beam/scan_beam = user.Beam(target, icon = 'icons/effects/beam_vr.dmi', icon_state = "zappy1", time = 6000)
 	var/filter = filter(type = "outline", size = 1, color = "#00FF00")
 	target.filters += filter
@@ -138,23 +143,27 @@
 	var/active_hand = user.get_active_hand()
 	var/previous_scale = L.size_multiplier
 
-	// The beam steps every 0.3 s on om_after() timers until should_stop() (S10b: was a
-	// stoplag() loop). Objects travel as OM handles so a deleted target or user still
-	// reaches sizegun_finish() and the effects are cleaned up.
-	var/list/state = list(om_handle(L), om_handle(user), active_hand ? om_handle(active_hand) : null, previous_scale, om_handle(scan_beam), filter, box_segments, user.client)
+	// The beam steps every 0.3 s while busy (DECLARE_REPEAT; S10b: was a stoplag() loop) until
+	// should_stop(). Objects travel as OM handles so a deleted target or user still reaches
+	// sizegun_finish() and the effects are cleaned up.
+	beam_state = list(om_handle(L), om_handle(user), active_hand ? om_handle(active_hand) : null, previous_scale, om_handle(scan_beam), filter, box_segments, user.client)
+	set_busy(TRUE)
+	update_icon()
 	if(should_stop(L, user, active_hand))
-		sizegun_finish(state)
-		return
-	om_after(src, 0.3 SECONDS, PROC_REF(sizegun_step), state)
+		sizegun_finish()
 
-/// One step of the beam: resize, then stop or schedule the next step.
-/obj/item/slow_sizegun/proc/sizegun_step(list/state)
+/// One step of the beam (DECLARE_REPEAT while busy): resize, then stop if it should.
+/obj/item/slow_sizegun/proc/sizegun_step()
+	var/list/state = beam_state
+	if(!state)
+		set_busy(FALSE)
+		return REPEAT_STOP
 	var/mob/living/L = om_resolve(state[1])
 	var/mob/living/U = om_resolve(state[2])
 	var/active_hand = om_resolve(state[3])
-	if(!L || !U || !busy)
-		sizegun_finish(state)
-		return
+	if(!L || !U)
+		sizegun_finish()
+		return REPEAT_STOP
 	if(sizeshift_mode == SIZE_SHRINK)
 		L.resize((L.size_multiplier - size_increment), uncapped = L.has_large_resize_bounds(), aura_animation = FALSE)
 		if(trading == 1)
@@ -164,20 +173,24 @@
 		if(trading == 1)
 			U.resize((U.size_multiplier - size_increment), uncapped = U.has_large_resize_bounds(), aura_animation = FALSE)
 	if(should_stop(L, U, active_hand))
-		sizegun_finish(state)
-		return
-	om_after(src, 0.3 SECONDS, PROC_REF(sizegun_step), state)
+		sizegun_finish()
+		return REPEAT_STOP
 
 /// The beam ends: size-strip the target if it changed enough, then clean up the effects.
-/obj/item/slow_sizegun/proc/sizegun_finish(list/state)
+/obj/item/slow_sizegun/proc/sizegun_finish()
+	var/list/state = beam_state
+	beam_state = null
+	set_busy(FALSE)
+	current_target = null
+	if(!state)
+		update_icon()
+		return
 	var/mob/living/L = om_resolve(state[1])
 	var/previous_scale = state[4]
 	var/datum/beam/scan_beam = om_resolve(state[5])
 	var/filter = state[6]
 	var/list/box_segments = state[7]
 	var/client/C = state[8]
-	busy = FALSE
-	current_target = null
 
 	if(ishuman(L))
 		var/mob/living/carbon/human/our_target = L
@@ -202,7 +215,7 @@ EXTEND_INTERACTIONS(/obj/item/slow_sizegun, 	INTERACT_USE("Switch mode", PROC_RE
 /// Old attack_self: stop a scan in progress, or swap between growing and shrinking.
 /obj/item/slow_sizegun/proc/slow_sizegun_mode_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(busy)
-		busy = !busy
+		sizegun_finish()
 	else
 		sizeshift_mode = !sizeshift_mode
 		update_icon()

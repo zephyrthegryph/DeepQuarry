@@ -389,12 +389,11 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 	else
 		close()
 
-// CHECK PRESSURE
+// CHECK PRESSURE (only while closed)
+DECLARE_PERIODIC_WHILE(/obj/machinery/door/firedoor, MACHINE_PIPELINE, "density")
 /obj/machinery/door/firedoor/machine_step()
 	..()
 
-	if(!density)
-		return PROCESS_KILL
 	var/changed = FALSE
 	lockdown = FALSE
 	pdiff = getOPressureDifferential(src.loc)
@@ -441,7 +440,7 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 			continue
 		LAZYSET(sleeping_mixture_ids, "turf[index]", mixture_id)
 		om_watch_arm_value(src, "turf[index]", mixture_id, GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_TEMPERATURE, getter, wake_callback = wake)
-	MACHINE_SLEEP(src)
+	// machine_step() returns PROCESS_KILL right after; while open the declaration keeps it parked.
 
 // Gas subscriptions are keyed by the mixtures of the turf we sat on and its
 // neighbours. After a move those ids are stale, so drop them and re-sample.

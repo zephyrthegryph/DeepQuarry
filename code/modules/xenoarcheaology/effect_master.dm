@@ -34,7 +34,6 @@
 DECLARE_REF(/atom, "artifact_master", OWNED, null)
 
 /datum/artifact_master
-	var/tmp/holder_handle
 	var/list/my_effects
 
 	var/effect_generation_chance = 100
@@ -48,17 +47,20 @@ DECLARE_REF(/atom, "artifact_master", OWNED, null)
 	var/static/list/volatile_reagents = list(PHORON_PATH, HYDROPHORON_PATH, THERMITE_PATH)
 	var/static/list/toxic_reagents = list(TOXIN_PATH)
 
+/// The anomalous atom this state belongs to (an OM handle); the master runs its effects while it has one.
+OM_FIELD_TYPED(/datum/artifact_master, tmp, holder_handle, null, CHANGE_DATUM_A)
+DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder_handle")
+
 /datum/artifact_master/New(atom/new_holder)
 	. = ..()
 	if(!istype(new_holder) || new_holder.artifact_master)
 		qdel(src)
 		return
-	holder_handle = om_handle(new_holder)
+	set_holder_handle(om_handle(new_holder))
 	new_holder.artifact_master = src
 
 	my_effects = list()
-
-	om_task_periodic(src, PERIODIC_SLOW)
+	lifecycle_decls_init(src) // a non-atom: starts the holder_handle declaration
 
 	do_setup()
 	return
@@ -138,7 +140,7 @@ DECLARE_REF(/atom, "artifact_master", OWNED, null)
 	var/atom/H = holder()
 	if(H?.artifact_master == src)
 		H.artifact_master = null
-	holder_handle = null
+	set_holder_handle(null)
 	for(var/datum/artifact_effect/AE in my_effects)
 		AE.master_handle = null
 		my_effects -= AE

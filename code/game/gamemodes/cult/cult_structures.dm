@@ -20,7 +20,6 @@
 	name = "Pylon"
 	desc = "A floating crystal that hums with an unearthly energy."
 	icon_state = "pylon"
-	var/isbroken = 0
 	light_range = 5
 	light_color = "#3e0000"
 	var/wepon_handle
@@ -32,7 +31,9 @@
 	var/activation_cooldown = 30 SECONDS
 	COOLDOWN_DECLARE(activation_cooldown_until)
 
-DECLARE_PERIODIC(/obj/structure/cult/pylon, PERIODIC_SLOW)
+OM_FIELD(/obj/structure/cult/pylon, isbroken, FALSE, CHANGE_EXPLICIT)
+/// Surges near players while intact; a broken pylon does nothing until repaired.
+DECLARE_PERIODIC_WHILE(/obj/structure/cult/pylon, PERIODIC_SLOW, "!isbroken")
 
 DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
@@ -62,9 +63,8 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 	if(!isbroken)
 		if(prob(1+ damage * 5))
 			visible_message(span_danger("[shatter_message]"))
-			om_task_periodic_stop(src)
 			playsound(src,shatter_sound, 75, 1)
-			isbroken = 1
+			set_isbroken(TRUE)
 			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
 			set_light(0)
@@ -77,10 +77,9 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 				span_warning("You hit \the [src], and its crystal breaks apart!"),
 				"You hear a tinkle of crystal shards."
 				)
-			om_task_periodic_stop(src)
 			user.do_attack_animation(src)
 			playsound(src,shatter_sound, 75, 1)
-			isbroken = 1
+			set_isbroken(TRUE)
 			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
 			set_light(0)
@@ -97,9 +96,8 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 
 /obj/structure/cult/pylon/proc/repair(mob/user as mob)
 	if(isbroken)
-		om_task_periodic(src, PERIODIC_SLOW)
 		to_chat(user, "You repair \the [src].")
-		isbroken = 0
+		set_isbroken(FALSE)
 		set_density(TRUE)
 		icon_state = initial(icon_state)
 		set_light(5)
@@ -113,7 +111,7 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 /obj/structure/cult/pylon/periodic_step()
 	if(!mob_near(world.view, TRUE))
 		return sleep_until_mob_near(world.view, TRUE)
-	if(!isbroken && (COOLDOWN_FINISHED(src, activation_cooldown_until)) && pylon_unique())
+	if(COOLDOWN_FINISHED(src, activation_cooldown_until) && pylon_unique())
 		flick("[initial(icon_state)]-surge",src)
 
 /obj/structure/cult/tome

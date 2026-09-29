@@ -14,9 +14,12 @@
 	throwforce = 0
 	w_class = ITEMSIZE_NORMAL
 	var/deployed = FALSE
-	///The entity we currently have captured.
-	var/captured_entity
 	var/obj/item/radio/intercom/science/ghost_reporter
+
+///The entity we currently have captured (a handle).
+OM_FIELD(/obj/item/ghost_trap, captured_entity, null, CHANGE_EXPLICIT)
+/// Watches its catch every 2 s while it holds one; empty, it sleeps.
+DECLARE_PERIODIC_WHILE(/obj/item/ghost_trap, PERIODIC_SLOW, "captured_entity")
 
 /obj/item/ghost_trap/Initialize(mapload)
 	. = ..()
@@ -60,7 +63,7 @@ DECLARE_REF(/obj/item/ghost_trap, "ghost_reporter", OWNED, null)
 		var/mob/our_entity = om_resolve(captured_entity)
 		if(our_entity && (our_entity.loc == src))
 			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
-			captured_entity = null
+			set_captured_entity(null)
 			our_entity.forceMove(get_turf(src))
 			update_icon()
 			return
@@ -88,15 +91,13 @@ DECLARE_REF(/obj/item/ghost_trap, "ghost_reporter", OWNED, null)
 /obj/item/ghost_trap/start_active
 	deployed = TRUE
 
-/// Watches its catch every 2 s while it holds one (catch_ghost() starts it); empty, it sleeps.
+/// Watches its catch every 2 s while it holds one (declared above); empty, it sleeps.
 /obj/item/ghost_trap/periodic_step()
-	if(!captured_entity)
-		return PROCESS_KILL
 	if(captured_entity)
 		var/mob/our_entity = om_resolve(captured_entity)
 		if(our_entity && our_entity.loc != src)
 			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
-			captured_entity = null
+			set_captured_entity(null)
 			announce_escape(our_entity)
 			update_icon()
 
@@ -143,7 +144,7 @@ DECLARE_REF(/obj/item/ghost_trap, "ghost_reporter", OWNED, null)
 
 /obj/item/ghost_trap/proc/container_resist_timed_done(mob/living/escapee)
 	remove_trait(escapee, TRAIT_NO_TRANSFORM, src)
-	captured_entity = null
+	set_captured_entity(null)
 	escapee.forceMove(get_turf(src))
 	announce_escape(escapee)
 	visible_message(span_danger("A loud buzzer rings out as \the [src] suddenly opens, alerting that a containment breach has ocurred!"))
@@ -186,8 +187,7 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 /obj/item/ghost_trap/proc/catch_ghost(mob/passing_entity)
 	if(!ismob(passing_entity)) //wtf did you do
 		return
-	captured_entity = om_handle(passing_entity)
-	om_task_periodic(src, PERIODIC_SLOW) // watches for an escape while it holds something
+	set_captured_entity(om_handle(passing_entity))
 
 	if(isliving(passing_entity))
 		var/mob/living/living_entity = passing_entity
@@ -250,7 +250,7 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 		var/mob/our_entity = om_resolve(captured_entity)
 		if(our_entity && (our_entity.loc == src) && our_entity.devourable)
 			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
-			captured_entity = null
+			set_captured_entity(null)
 			user.begin_instant_nom(user, our_entity, user, user.vore_selected)
 			return
 

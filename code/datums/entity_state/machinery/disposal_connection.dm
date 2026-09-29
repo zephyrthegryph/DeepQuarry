@@ -85,11 +85,10 @@ DECLARE_REF(/datum/disposal_system_connection, "owner", BACK, "disposal_connecti
 	var/obj/structure/disposalholder/packet = new()	// virtual holder object which actually travels through the pipes.
 	packet.init(flushed_items, flush_gas)
 
-	// start the holder processing movement
+	// start the holder processing movement (its active declaration runs move())
 	packet.forceMove(connected_trunk())
-	packet.active = TRUE
 	packet.set_dir(DOWN)
-	packet.move()
+	packet.set_active(TRUE)
 	return TRUE
 
 // Expel handling, can be override by subtypes but excepts parent proc to handle core logic
@@ -101,7 +100,7 @@ DECLARE_REF(/datum/disposal_system_connection, "owner", BACK, "disposal_connecti
 		return FALSE
 
 	// We need to store the data in the packet to handle it with delays, then delete the packet so nothing else can handle it
-	packet.active = FALSE // So it stops trying to move
+	packet.set_active(FALSE) // So it stops trying to move
 	var/list/expelled_items = list()
 	for(var/atom/movable/AM in packet)
 		expelled_items += AM

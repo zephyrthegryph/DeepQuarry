@@ -16,7 +16,6 @@ MATERIAL_MIX(/obj/item/suit_cooling_unit, list(MAT_STEEL = 15000, MAT_GLASS = 35
 	actions_types = list(/datum/action/item_action/toggle_heatsink)
 
 
-	var/on = 0				//is it turned on?
 	var/cover_open = 0		//is the cover open?
 	var/obj/item/cell/cell = /obj/item/cell/high
 	var/max_cooling = 15				// in degrees per second - probably don't need to mess with heat capacity here
@@ -31,12 +30,16 @@ MATERIAL_MIX(/obj/item/suit_cooling_unit, list(MAT_STEEL = 15000, MAT_GLASS = 35
 	toggle(user)
 
 
+/// Is it turned on?
+OM_FIELD(/obj/item/suit_cooling_unit, on, 0, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/suit_cooling_unit, PERIODIC_SLOW, "on")
 DECLARE_REF(/obj/item/suit_cooling_unit, "cell", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/suit_cooling_unit, "cell", null)
 
 /obj/item/suit_cooling_unit/periodic_step()
-	if (!on || !cell)
-		return PROCESS_KILL
+	if (!cell)
+		turn_off()
+		return
 
 	if (!ismob(loc))
 		return
@@ -107,14 +110,12 @@ DECLARE_DEFAULT_CHILD(/obj/item/suit_cooling_unit, "cell", null)
 	if(cell.charge <= 0)
 		return
 
-	on = 1
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_on(1)
 	update_icon()
 
 /obj/item/suit_cooling_unit/proc/turn_off(failed)
 	if(failed) visible_message("\The [src] clicks and whines as it powers down.")
-	on = 0
-	om_task_periodic_stop(src)
+	set_on(0)
 	update_icon()
 
 DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \

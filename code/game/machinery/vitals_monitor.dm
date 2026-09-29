@@ -17,8 +17,12 @@
 	idle_power_usage = 10
 	active_power_usage = 100
 
-	var/victim_handle
 	var/beep = TRUE
+
+/// The patient on the monitor (a handle), or null.
+OM_FIELD(/obj/machinery/vitals_monitor, victim_handle, null, CHANGE_MACHINE_OCCUPANT)
+/// Tracks its patient while connected to someone.
+DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim_handle")
 
 /obj/machinery/vitals_monitor/Initialize(mapload)
 	. = ..()
@@ -60,16 +64,14 @@
 		. += span_notice("Brain activity: [brain_activity]")
 		. += span_notice("Breathing: [breathing]")
 
-/// Tracks its patient while it has one; otherwise it sleeps until connected to someone.
+/// Tracks its patient while it has one (the declaration above).
 /obj/machinery/vitals_monitor/machine_step()
-	if(!victim())
-		return PROCESS_KILL
-	if(QDELETED(victim()))
-		victim_handle = null
+	if(!victim() || QDELETED(victim()))
+		set_victim_handle(null)
 		update_icon()
 		set_use_power(USE_POWER_IDLE)
 	if(victim() && !Adjacent(victim()))
-		victim_handle = null
+		set_victim_handle(null)
 		update_icon()
 		set_use_power(USE_POWER_IDLE)
 	if(victim())
@@ -81,12 +83,11 @@
 	if(!CanMouseDrop(over_object))
 		return
 	if(victim())
-		victim_handle = null
+		set_victim_handle(null)
 		set_use_power(USE_POWER_IDLE)
 	else if(ishuman(over_object))
-		victim_handle = om_handle(over_object)
+		set_victim_handle(om_handle(over_object))
 		set_use_power(USE_POWER_ACTIVE)
-		MACHINE_WAKE(src)
 		visible_message(span_notice("\The [src] is now showing data for [victim()]."))
 
 /obj/machinery/vitals_monitor/update_icon()

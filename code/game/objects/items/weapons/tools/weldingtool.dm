@@ -24,7 +24,6 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	tool_qualities = list(TOOL_WELDER)
 
 	//Welding tool specific stuff
-	var/welding = 0 	//Whether or not the welding tool is off(0), on(1) or currently welding(2)
 	var/status = 1 		//Whether the welder is secured or unsecured (able to attach rods to it to make a flamethrower)
 	var/max_fuel = 20 	//The max amount of fuel the welder can hold
 
@@ -43,6 +42,16 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	pickup_sound = SFX_ITEMS_PICKUP_WELDINGTOOL
 	tool_qualities = list(TOOL_WELDER)
 
+//Whether or not the welding tool is off(0), on(1) or currently welding(2)
+OM_FIELD(/obj/item/weldingtool, welding, 0, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/item/weldingtool, burner_active, CHANGE_EXPLICIT)
+/// Burns fuel (or regenerates it, for always_process welders) every 2 s while lit.
+DECLARE_PERIODIC_WHILE(/obj/item/weldingtool, PERIODIC_SLOW, "burner_active")
+
+/// Whether the periodic burn/regeneration runs: lit, or a welder that always processes.
+/obj/item/weldingtool/proc/burner_active()
+	return welding || always_process
+
 /obj/item/weldingtool/Initialize(mapload)
 	. = ..()
 	var/datum/reagents/R = new/datum/reagents(max_fuel)
@@ -50,8 +59,6 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	R.my_atom = src
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
 	update_icon()
-	if(always_process)
-		om_task_periodic(src, PERIODIC_SLOW) // ALLOW(decl): only when always_process
 
 /obj/item/weldingtool/get_welder()
 	return src
@@ -280,10 +287,8 @@ DECLARE_INTERACTIONS(/obj/item/weldingtool, \
 			src.injury_kind = INJURY_BURN
 			src.w_class = ITEMSIZE_LARGE
 			src.hitsound = 'sound/items/Welder.ogg'
-			welding = 1
+			set_welding(1)
 			update_icon()
-			if(!always_process)
-				om_task_periodic(src, PERIODIC_SLOW)
 		else
 			if(M)
 				var/msg = max_fuel ? "welding fuel" : "charge"
@@ -291,8 +296,6 @@ DECLARE_INTERACTIONS(/obj/item/weldingtool, \
 			return
 	//Otherwise
 	else if(!set_welding && welding)
-		if(!always_process)
-			om_task_periodic_stop(src)
 		if(M)
 			to_chat(M, span_notice("You switch \the [src] off."))
 		else if(T)
@@ -301,7 +304,7 @@ DECLARE_INTERACTIONS(/obj/item/weldingtool, \
 		src.force = 3
 		src.injury_kind = initial(src.injury_kind)
 		src.w_class = initial(src.w_class)
-		src.welding = 0
+		set_welding(0)
 		src.hitsound = initial(src.hitsound)
 		update_icon()
 
@@ -480,13 +483,14 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 		return INITIALIZE_HINT_QDEL
 
 DECLARE_REF(/obj/item/weldingtool/tubefed, "mounted_pack", PAIR, "nozzle")
+OM_DERIVE_FIELD(/obj/item/weldingtool/tubefed, burner_active, CHANGE_ITEM_LOC)
+
+/// A nozzle works (and watches its hose) only while it is out of its pack.
+/obj/item/weldingtool/tubefed/burner_active()
+	return mounted_pack && loc != mounted_pack
 DECLARE_REF(/obj/item/weldpack, "nozzle", PAIR, "mounted_pack")
 
 /obj/item/weldingtool/tubefed/periodic_step()
-	if(!mounted_pack)
-		return PROCESS_KILL
-	if(loc == mounted_pack)
-		return PROCESS_KILL
 	if(!ishuman(mounted_pack.loc))
 		mounted_pack.return_nozzle()
 	else
@@ -683,6 +687,9 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 
 /obj/item/weldingtool/dummy/periodic_step()
 	return
+
+/obj/item/weldingtool/dummy/burner_active()
+	return FALSE
 
 /obj/item/weldingtool/dummy/get_fuel()
 	return get_max_fuel()

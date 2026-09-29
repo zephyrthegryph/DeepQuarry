@@ -30,11 +30,14 @@
 	EXPIRY_DECLARE(activation_time)
 	var/timer_duration = 0
 
-	var/timing = FALSE		// boolean, true/1 timer is on, false/0 means it's not timing
 	var/list/obj/machinery/targets = list() // ALLOW(instance_list, object_keyed_lists): d: the timer's linked doors and flashers, filled at init
 
 	maptext_height = 26
 	maptext_width = 32
+
+/// boolean, true/1 timer is on, false/0 means it's not timing
+OM_FIELD(/obj/machinery/door_timer, timing, FALSE, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/door_timer, MACHINE_PIPELINE, "timing")
 
 /obj/machinery/door_timer/Initialize(mapload)
 	..()
@@ -69,15 +72,11 @@
 /// Counts down (and redraws its display) while timing; otherwise it sleeps until timer_start(), or
 /// until power returns to a timing unit.
 /obj/machinery/door_timer/machine_step()
-	if(!timing)
-		return PROCESS_KILL
 	if(!operable())
 		return sleep_until_powered()
 	if(ELAPSED(src, activation_time, CLOCK_WORLD) >= timer_duration)
 		timer_end() // open doors, reset timer, clear status screen
 	update_icon()
-	if(!timing)
-		return PROCESS_KILL
 
 // has the door power situation changed, if so update icon.
 /obj/machinery/door_timer/power_change()
@@ -93,8 +92,7 @@
 		return 0
 
 	EXPIRY_STAMP(src, activation_time, CLOCK_WORLD)
-	timing = TRUE
-	MACHINE_WAKE(src)
+	set_timing(TRUE)
 
 	for(var/obj/machinery/door/window/brigdoor/door in targets)
 		if(door.density)
@@ -115,7 +113,7 @@
 	if(!operable())
 		return 0
 
-	timing = FALSE
+	set_timing(FALSE)
 	activation_time = null
 	set_timer(0)
 	update_icon()

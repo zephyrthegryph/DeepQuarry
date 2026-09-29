@@ -47,9 +47,6 @@
 	if (!id_tag)
 		assign_uid()
 		id_tag = num2text(uid)
-	// M2: the flow law is a Rust device edge (pipe port <-> turf), stepped
-	// from SSair every gas tick; this has no process() at all any more.
-	MACHINE_SLEEP(src)
 
 /obj/machinery/atmospherics/unary/vent_scrubber/proc/update_area()
 	initial_loc = get_area(loc)

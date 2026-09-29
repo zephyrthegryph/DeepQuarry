@@ -15,7 +15,6 @@
 	var/max_energy = 10000
 	var/regen_rate = 50				// 200 seconds to full
 	var/energy_delta = 0			// How much we're gaining (or perhaps losing) every process().
-	var/mob/living/wearer = null	// Reference to the mob wearing the core.
 	var/instability_modifier = 0.8	// Multiplier on how much instability is added.
 	var/energy_cost_modifier = 1.0	// Multiplier on how much spells will cost.
 	var/spell_power_modifier = 1.0	// Multiplier on how strong spells are.
@@ -33,6 +32,10 @@
 	var/max_summons = 10			// Maximum allowed summoned entities.  Some cores will have different caps.
 	var/universal = FALSE // Allows non-technomancers to use the core -
 
+/// Reference to the mob wearing the core. A field: it regenerates and keeps its wearer's upkeep while worn.
+OM_FIELD_TYPED(/obj/item/technomancer_core, mob/living, wearer, null, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
+
 // its summons are dismissed with it.
 /obj/item/technomancer_core/on_destroy(force)
 	dismiss_all_summons()
@@ -40,8 +43,7 @@
 
 // Add the spell buttons to the HUD.
 /obj/item/technomancer_core/equipped(mob/user)
-	wearer = user
-	om_task_periodic(src, PERIODIC_SLOW) // regenerates and keeps its wearer's upkeep while worn
+	set_wearer(user)
 	for(var/obj/spellbutton/spell in spells)
 		wearer.ability_master.add_technomancer_ability(spell, spell.ability_icon_state)
 	..()
@@ -50,7 +52,8 @@
 /obj/item/technomancer_core/dropped(mob/user, equipping, slot)
 	for(var/atom/movable/screen/ability/obj_based/technomancer/A in wearer.ability_master.ability_objects)
 		wearer.ability_master.remove_ability(A)
-	wearer = null
+	set_wearer(null)
+	canremove = TRUE
 	..()
 
 // 'pay_energy' is too vague of a name for a proc at the mob level.
@@ -74,10 +77,10 @@
 	energy = min(energy + amount, max_energy)
 	return 1
 
-/// Regenerates energy and charges upkeep every 2 s while worn (equipped() starts it); unworn, it sleeps.
+/// Regenerates energy and charges upkeep every 2 s while worn (declared on `wearer`); unworn, it sleeps.
 /obj/item/technomancer_core/periodic_step()
+	// ALLOW(sys_periodic_guard): a deleted wearer is auto-cleared by the ownership core without raising the field channel yet (ownership lead is fixing that); until then the body self-stops
 	if(!wearer)
-		canremove = TRUE
 		return PROCESS_KILL
 	var/old_energy = energy
 	regenerate()

@@ -8,7 +8,6 @@
 
 	var/screen = 0				// the screen number:
 	var/list/servers	// the servers located by the computer
-	var/editingcode_handle
 	var/lasteditor_handle
 	var/list/viewingcode
 	var/SelectedServer_handle
@@ -20,23 +19,15 @@
 
 	var/storedcode = ""			// code stored
 
-
-/obj/machinery/computer/telecomms/traffic/proc/update_ide()
-	if(ide_ticking)
-		return
-	ide_ticking = TRUE
-	update_ide_tick()
-
-/obj/machinery/computer/telecomms/traffic/var/tmp/ide_ticking = FALSE
+/// The mob typing in the IDE (a handle), or null.
+OM_FIELD(/obj/machinery/computer/telecomms/traffic, editingcode_handle, null, CHANGE_MACHINE_SETTINGS)
+/// Refreshes the IDE every half second while someone is typing in it.
+DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_ide_tick, "editingcode_handle")
 
 /// One half-second refresh of the IDE while someone is manning the keyboard.
 /obj/machinery/computer/telecomms/traffic/proc/update_ide_tick()
-	if(!editingcode())
-		update_ide_end()
-		return
-	if(!editingcode().client)
-		editingcode_handle = null
-		update_ide_end()
+	if(!editingcode() || !editingcode().client)
+		pass_editor()
 		return
 
 	// For the typer, the input is enabled. Buffer the typed text
@@ -49,8 +40,7 @@
 	if( (!(editingcode() in range(1, src)) && !issilicon(editingcode())) || (!editingcode().check_current_machine(src) && !issilicon(editingcode())))
 		if(editingcode())
 			winshow(editingcode(), "Telecomms IDE", 0) // hide the window!
-		editingcode_handle = null
-		update_ide_end()
+		pass_editor()
 		return
 
 	// For other people viewing the typer type code, the input is disabled and they can only view the code
@@ -69,7 +59,6 @@
 			else
 				LAZYREMOVE(viewingcode, M)
 				winshow(M, "Telecomms IDE", 0) // hide the window!
-	om_after(src, 5, PROC_REF(update_ide_tick))
 
 /// dx_winget() callback: buffers the typer's text, if they are still the one typing.
 /obj/machinery/computer/telecomms/traffic/proc/ide_code_read(value, mob/typer)
@@ -77,13 +66,13 @@
 		return
 	storedcode = "[value]"
 
-/obj/machinery/computer/telecomms/traffic/proc/update_ide_end()
-	ide_ticking = FALSE
-
+/// The typer let go of the keyboard: a viewer (if any) takes over, else nobody is editing.
+/obj/machinery/computer/telecomms/traffic/proc/pass_editor()
 	if(length(viewingcode) > 0)
-		editingcode_handle = om_handle(DEFAULTPICK(viewingcode, null))
+		set_editingcode_handle(om_handle(DEFAULTPICK(viewingcode, null)))
 		LAZYREMOVE(viewingcode, editingcode())
-		update_ide()
+	else
+		set_editingcode_handle(null)
 
 
 // structured TGUI Traffic Control (see
@@ -148,14 +137,13 @@
 
 			if(!editingcode())
 				lasteditor_handle = om_handle(user)
-				editingcode_handle = om_handle(user)
+				set_editingcode_handle(om_handle(user))
 				winshow(editingcode(), "Telecomms IDE", 1) // show the IDE
 				winset(editingcode(), "tcscode", "is-disabled=false")
 				winset(editingcode(), "tcscode", "text=\"\"")
 				var/showcode = replacetext(storedcode, "\\\"", "\\\\\"")
 				showcode = replacetext(storedcode, "\"", "\\\"")
 				winset(editingcode(), "tcscode", "text=\"[showcode]\"")
-				update_ide()
 
 			else
 				LAZYADD(viewingcode, user)

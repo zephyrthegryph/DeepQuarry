@@ -26,32 +26,38 @@
 
 DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/device)
 
-/obj/item/electronic_assembly/periodic_step(seconds_per_tick)
+/// Has power-relevant work (a battery plus a circuit that makes or draws idle power). Entered()/
+/// Exited() drop the cache and raise CHANGE_EXPLICIT; the value is recomputed when next read.
+OM_DERIVE_FIELD(/obj/item/electronic_assembly, has_power_work, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/electronic_assembly, PERIODIC_SLOW, "has_power_work")
+
+/obj/item/electronic_assembly/proc/has_power_work()
 	if(isnull(power_relevant))
 		recompute_power_relevant()
-	if(!power_relevant)
-		return PROCESS_KILL
+	return power_relevant
+
+/obj/item/electronic_assembly/periodic_step(seconds_per_tick)
 	handle_idle_power(seconds_per_tick)
 
 // Cache invalidation: any circuit entering/leaving contents can change whether
-// there's power-relevant work to do. Recomputed lazily on next process().
+// there's power-relevant work to do. Recomputed lazily when has_power_work() is next read.
 /obj/item/electronic_assembly/Entered(atom/movable/AM, atom/old_loc)
 	. = ..()
 	if(istype(AM, /obj/item/integrated_circuit) || istype(AM, /obj/item/cell))
 		power_relevant = null
-		om_task_periodic(src, PERIODIC_SLOW)
+		om_changed(src, CHANGE_EXPLICIT)
 
 /obj/item/electronic_assembly/Exited(atom/movable/AM, atom/new_loc)
 	. = ..()
 	if(istype(AM, /obj/item/integrated_circuit) || istype(AM, /obj/item/cell))
 		power_relevant = null
-		om_task_periodic(src, PERIODIC_SLOW)
+		om_changed(src, CHANGE_EXPLICIT)
 
 // (Re)computes whether handle_idle_power() has anything to do: a battery to draw
 // from plus at least one circuit that makes or draws idle power.
 /obj/item/electronic_assembly/proc/recompute_power_relevant()
 	power_relevant = FALSE
-	if(!battery)
+	if(!battery || battery.loc != src)
 		return
 	for(var/obj/item/integrated_circuit/IC in contents)
 		if(IC.power_draw_idle || istype(IC, /obj/item/integrated_circuit/passive/power))

@@ -758,17 +758,9 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 /obj/machinery/porta_turret/proc/set_processing_speed(fast)
 	if(fast == speed_process)
 		return
+	// High gear runs machine_step() on the fast lane (the /obj/machinery speed_process declaration);
+	// low gear hands it back to the machine pipeline, whose step stage hears the settings change.
 	set_speed_process(fast)
-
-	// high gear
-	if(speed_process)
-		MACHINE_SLEEP(src)
-		om_task_periodic(src, PERIODIC_FAST)
-		return
-
-	// low gear
-	om_task_periodic_stop(src)
-	MACHINE_WAKE(src)
 
 /obj/machinery/porta_turret/proc/assess_and_assign(mob/living/L, list/targets, list/secondarytargets)
 	switch(assess_living(L))

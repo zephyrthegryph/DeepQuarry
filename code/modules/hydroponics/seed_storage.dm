@@ -449,7 +449,7 @@ DECLARE_REF(/datum/seed_pile, "seeds", SPILL_LIST, null)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/seed_storage/screwdriver_act(mob/user, obj/item/tool)
-	panel_open = !panel_open
+	set_panel_open(!panel_open)
 	to_chat(user, span_filter_notice("You [panel_open ? "open" : "close"] the maintenance panel."))
 	playsound(src, tool.usesound, 50, TRUE)
 	cut_overlays()

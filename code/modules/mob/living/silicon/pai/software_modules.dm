@@ -288,11 +288,11 @@
 	switch(action)
 		if("jack")
 			if(P.cable && P.cable.machine())
-				P.hackdoor = P.cable.machine()
+				P.set_hackdoor(P.cable.machine())
 				P.hackloop()
 			return 1
 		if("cancel")
-			P.hackdoor = null
+			P.set_hackdoor(null)
 			return 1
 		if("cable")
 			var/turf/T = get_turf(P)
@@ -315,25 +315,28 @@
 		hack_aborted = 1
 		hackprogress = 0
 		cable.machine_handle = null
-		hackdoor = null
+		set_hackdoor(null)
 		return
-	hack_tick(D)
+	hack_tick()
 
-/// One second of brute-forcing the door.
-/mob/living/silicon/pai/proc/hack_tick(obj/machinery/door/D)
-	if(cable && cable.machine() == D && cable.machine() == hackdoor && get_dist(src, hackdoor) <= 1)
+/// DECLARE_REPEAT while hackdoor is set: one second of brute-forcing the door.
+/mob/living/silicon/pai/proc/hack_tick()
+	// The ownership core auto-clears a deleted door without raising the field channel yet; stop on our own until it does.
+	if(!hackdoor)
+		return REPEAT_STOP
+	if(cable && cable.machine() == hackdoor && get_dist(src, hackdoor) <= 1)
 		hackprogress = min(hackprogress+rand(1, 20), 1000)
 	else
 		hack_aborted = 1
 		hackprogress = 0
-		hackdoor = null
-		return
+		set_hackdoor(null)
+		return REPEAT_STOP
 	if(hackprogress >= 1000)
 		hackprogress = 0
-		D.open()
+		hackdoor.open()
 		cable.machine_handle = null
-		return
-	om_after(src, 1 SECOND, PROC_REF(hack_tick), D)			// Update every second
+		set_hackdoor(null)
+		return REPEAT_STOP
 
 /datum/pai_software/atmosphere_sensor
 	name = "Atmosphere Sensor"

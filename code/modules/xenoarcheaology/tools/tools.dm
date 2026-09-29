@@ -237,13 +237,19 @@ MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
 	icon_state = "pinoff"	//pinonfar, pinonmedium, pinonclose, pinondirect, pinonnull
 	item_state = "electronic"
 	var/frequency = PUB_FREQ
-	var/scan_ticks = 0
-	var/tmp/target_radio_handle
 
 /// Points at its target (or counts a reset) every 2 s while tracking; idle, it sleeps.
+OM_FIELD(/obj/item/beacon_locator, scan_ticks, 0, CHANGE_EXPLICIT)
+OM_FIELD_TYPED(/obj/item/beacon_locator, tmp, target_radio_handle, null, CHANGE_EXPLICIT)
+/// Scanning for a beacon or tracking one: derived from scan_ticks and target_radio_handle.
+OM_DERIVE_FIELD(/obj/item/beacon_locator, locating, CHANGE_EXPLICIT)
+/obj/item/beacon_locator/proc/locating()
+	return scan_ticks || target_radio_handle
+DECLARE_PERIODIC_WHILE(/obj/item/beacon_locator, PERIODIC_SLOW, "locating")
+
 /obj/item/beacon_locator/periodic_step()
 	if(!target_radio() && !scan_ticks)
-		return PROCESS_KILL
+		return PROCESS_KILL // the tracked beacon is gone
 	if(target_radio())
 		set_dir(get_dir(src,target_radio()))
 		switch(get_dist(src,target_radio()))
@@ -258,7 +264,7 @@ MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
 	else
 		if(scan_ticks)
 			icon_state = "pinonnull"
-			scan_ticks++
+			set_scan_ticks(scan_ticks + 1)
 			if(prob(scan_ticks * 10))
 				//scan radios in the world to try and find one
 				var/turf/T = get_turf(src)
@@ -268,11 +274,10 @@ MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
 						var/check_dist = get_dist(T,R)
 						if(check_dist < cur_dist)
 							cur_dist = check_dist
-							target_radio_handle = om_handle(R)
+							set_target_radio_handle(om_handle(R))
 
-				scan_ticks = 0
+				set_scan_ticks(0)
 				if(target_radio())
-					om_task_periodic(src, PERIODIC_SLOW)
 					T.visible_message("[icon2html(src,viewers(src))] [src] [pick("chirps","chirrups","cheeps")] happily.")
 				else
 					T.visible_message("[icon2html(src,viewers(src))] [src] [pick("chirps","chirrups","cheeps")] sadly.")
@@ -316,9 +321,8 @@ DECLARE_INTERACTIONS(/obj/item/beacon_locator, INTERACT_USE("Open", PROC_REF(int
 
 	switch(action)
 		if("reset_tracking")
-			scan_ticks = 1
-			target_radio_handle = null
-			om_task_periodic(src, PERIODIC_SLOW)
+			set_target_radio_handle(null)
+			set_scan_ticks(1)
 			return TRUE
 		if("setFrequency")
 			var/new_frequency = (text2num(params["freq"]))

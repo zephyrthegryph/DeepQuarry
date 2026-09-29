@@ -46,10 +46,13 @@ GLOBAL_LIST_INIT(event_collector_associations,list())
 
 	//internal stuff, don't touch this with subtypes.
 	var/calls_remaining
-	var/awaiting_next_recipe = FALSE //are we waiting for the timer to get negatives?
 	var/list/disabling_sources //what things are disabling us?
 	var/list/active_recipe //volatile, when given an item it removes it
 	var/current_step = 0 //current step for icon states
+
+/// Are we waiting for the timer to get negatives? periodic_step() works the recipe while set (DECLARE_PERIODIC_WHILE).
+OM_FIELD(/obj/structure/event_collector, awaiting_next_recipe, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/structure/event_collector, PERIODIC_SLOW, "awaiting_next_recipe")
 
 //list of items that can make up a recipe.
 TYPE_TABLE_DECLARE(/obj/structure/event_collector, event_collector_ingredients, list( \
@@ -124,16 +127,14 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 
 /// Works on its recipe every 2 s while one is running (start_recipe_process()); otherwise it sleeps.
 /obj/structure/event_collector/periodic_step()
-	if(!awaiting_next_recipe)
-		return PROCESS_KILL
 	var/blockers = get_blockers()
-	if(awaiting_next_recipe && blockers < 10)
+	if(blockers < 10)
 		if( recipe_process_sounds && prob(recipe_process_sound_chance) )
 			playsound(src,recipe_process_sounds,25,TRUE)
 
 		calls_remaining -= max(0, 10-blockers) //10's a multiplier in case we want to scale it based on how many blockers
 		if(calls_remaining <= 0)
-			awaiting_next_recipe = FALSE
+			set_awaiting_next_recipe(FALSE)
 			recipe_completed()
 		if(animate_on_recipe_process)
 			jiggle_animation(0.1)
@@ -248,9 +249,8 @@ DECLARE_INTERACTIONS(/obj/structure/event_collector, INTERACT_ITEM(null, PROC_RE
 		EXPIRY_SET(src, next_item_added, wait_between_items, CLOCK_WORLD)
 
 /obj/structure/event_collector/proc/start_recipe_process()
-	awaiting_next_recipe = TRUE
-	om_task_periodic(src, PERIODIC_SLOW)
 	calls_remaining = completion_time * 10
+	set_awaiting_next_recipe(TRUE)
 	message_admins("\[EVENT\] Event Collection object [src] has started processing its current recipe! ETA: [(calls_remaining/10) / 2] ish seconds.")
 
 /obj/structure/event_collector/proc/empty_items() //manual call only atm

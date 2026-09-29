@@ -42,14 +42,12 @@ DECLARE_REF(/obj/item/weldpack, "nozzle", OWNED, null)
 
 	var/obj/item/F = nozzle
 	H.put_in_hands(F)
-	nozzle_attached = 0
-	om_task_periodic(nozzle, PERIODIC_SLOW)
+	nozzle_attached = 0 // out of the pack: the nozzle's burner_active() declaration starts its work
 
 	return 1
 
 /obj/item/weldpack/proc/return_nozzle(mob/living/user)
-	om_task_periodic_stop(nozzle)
-	nozzle.forceMove(src)
+	nozzle.forceMove(src) // back in the pack: the declaration stops the nozzle's work
 	nozzle_attached = 1
 
 /// Old attackby.

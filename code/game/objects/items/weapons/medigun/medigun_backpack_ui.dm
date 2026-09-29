@@ -105,10 +105,9 @@
 		if("rem_mani")
 			if(!smanipulator || !maintenance)
 				return FALSE
-			om_task_periodic_stop(src)
 			smanipulator.forceMove(get_turf(loc))
 			to_chat(ui.user, span_notice("You remove the [smanipulator] from \the [src]."))
-			smanipulator = null
+			set_smanipulator(null)
 			smaniptier = 0
 			update_icon()
 			return TRUE
@@ -125,20 +124,18 @@
 		if("rem_cap")
 			if(!scapacitor || !maintenance)
 				return FALSE
-			om_task_periodic_stop(src)
 			scapacitor.forceMove(get_turf(loc))
 			to_chat(ui.user, span_notice("You remove the [scapacitor] from \the [src]."))
-			scapacitor = null
+			set_scapacitor(null)
 			update_icon()
 			return TRUE
 
 		if("rem_bin")
 			if(!sbin || !maintenance)
 				return FALSE
-			om_task_periodic_stop(src)
 			sbin.forceMove(get_turf(loc))
 			to_chat(ui.user, span_notice("You remove the [sbin] from \the [src]."))
-			sbin = null
+			set_sbin(null)
 			sbintier = 0
 			update_icon()
 			return TRUE

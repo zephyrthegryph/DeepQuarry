@@ -42,12 +42,14 @@
 	power_draw_per_use = 1
 	var/delay = 2 SECONDS
 	EXPIRY_DECLARE(next_fire)
-	var/is_running = FALSE
 	// Power consumption scales based on how fast it ticks.
 	// This, plus the fact it ticks more often will increase consumption non-linearly,
 	// and the circuit cooldown and will hopefully discourage stupidly fast ticking machines.
 	// Modified due to this simlpe circuit being able to drain a cell in seconds.
 	var/max_power_draw = 250
+
+OM_FIELD(/obj/item/integrated_circuit/time/ticker, is_running, FALSE, CHANGE_EXPLICIT)
+DECLARE_REPEAT(/obj/item/integrated_circuit/time/ticker, "delay", tick, "is_running")
 
 /obj/item/integrated_circuit/time/ticker/on_data_written()
 	var/delay_input = get_pin_data(IC_INPUT, 2)
@@ -58,18 +60,20 @@
 
 	var/do_tick = get_pin_data(IC_INPUT, 1)
 	if(do_tick && !is_running)
-		is_running = TRUE
-		tick()
+		set_is_running(TRUE)
+		tick() // the first pulse now; the declaration repeats it every delay
 	else if(!do_tick && is_running)
-		is_running = FALSE
+		set_is_running(FALSE)
 
 
+/// One tick (DECLARE_REPEAT every delay while is_running). Out of power, the ticker stops
+/// until it is next switched on.
 /obj/item/integrated_circuit/time/ticker/proc/tick()
-	if(is_running && check_power())
-		om_after(src, delay, PROC_REF(tick))
-		if(ELAPSED_SINCE(src, next_fire, CLOCK_WORLD) > 0)
-			EXPIRY_SET(src, next_fire, delay, CLOCK_WORLD)
-			activate_pin(1)
+	if(!check_power())
+		return REPEAT_STOP
+	if(ELAPSED_SINCE(src, next_fire, CLOCK_WORLD) > 0)
+		EXPIRY_SET(src, next_fire, delay, CLOCK_WORLD)
+		activate_pin(1)
 
 /obj/item/integrated_circuit/time/clock
 	name = "integrated clock"

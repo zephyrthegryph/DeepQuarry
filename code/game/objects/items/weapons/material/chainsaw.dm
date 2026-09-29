@@ -3,7 +3,6 @@
 	desc = "Vroom vroom."
 	icon_state = "chainsaw0"
 	item_state = "chainsaw0"
-	var/on = 0
 	var/max_fuel = 100
 	w_class = ITEMSIZE_LARGE
 	slot_flags = SLOT_BACK
@@ -11,6 +10,10 @@
 	slot_flags = SLOT_BACK
 	var/active_force = 55
 	var/inactive_force = 10
+
+OM_FIELD(/obj/item/chainsaw, on, FALSE, CHANGE_EXPLICIT)
+/// Burns fuel every 2 s while running.
+DECLARE_PERIODIC_WHILE(/obj/item/chainsaw, PERIODIC_SLOW, "on")
 
 /obj/item/chainsaw/Initialize(mapload)
 	var/datum/reagents/R = new/datum/reagents(max_fuel)
@@ -41,7 +44,7 @@
 	force = active_force
 	edge = TRUE
 	sharp = TRUE
-	on = 1
+	set_on(TRUE)
 	update_icon()
 
 /obj/item/chainsaw/proc/turnOn_timed_failed2(mob/user)
@@ -55,7 +58,7 @@
 	force = inactive_force
 	edge = FALSE
 	sharp = FALSE
-	on = 0
+	set_on(FALSE)
 	update_icon()
 
 DECLARE_INTERACTIONS(/obj/item/chainsaw, INTERACT_USE(null, PROC_REF(interaction_self)))
@@ -111,18 +114,14 @@ DECLARE_INTERACTIONS(/obj/item/chainsaw, INTERACT_USE(null, PROC_REF(interaction
 	var/mob/user = task.actor
 	to_chat(user, span_notice("Don't move while you're refilling the chainsaw."))
 
-/// Burns fuel every 2 s while running (turnOn() starts it); off, it sleeps.
+/// Burns fuel every 2 s while running (declared above); off, it sleeps.
 /obj/item/chainsaw/periodic_step()
-	if(!on)
-		return PROCESS_KILL
-
-	if(on)
-		if(get_fuel() > 0)
-			reagents.remove_reagent(REAGENT_ID_FUEL, 1)
-			play_sfx(src, SFX_WEAPONS_CHAINSAW_TURNOFF, volume = 15)
-		if(get_fuel() <= 0)
-			visible_message("\The [src] sputters to a stop!")
-			turnOff()
+	if(get_fuel() > 0)
+		reagents.remove_reagent(REAGENT_ID_FUEL, 1)
+		play_sfx(src, SFX_WEAPONS_CHAINSAW_TURNOFF, volume = 15)
+	if(get_fuel() <= 0)
+		visible_message("\The [src] sputters to a stop!")
+		turnOff()
 
 /obj/item/chainsaw/proc/get_fuel()
 	return reagents.get_reagent_amount(REAGENT_ID_FUEL)

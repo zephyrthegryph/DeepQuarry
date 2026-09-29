@@ -6,7 +6,6 @@
 /obj/structure/disposalholder
 	invisibility = INVISIBILITY_ABSTRACT
 	var/datum/gas_mixture/gas = null	// gas used to flush, will appear at exit point
-	var/active = FALSE	// true if the holder is moving, otherwise inactive
 	var/count = 2048	//*** can travel 2048 steps before going inactive (in case of loops)
 	var/destinationTag = "" // changes if contains a delivery container
 	var/hasmob = FALSE //If it contains a mob
@@ -27,6 +26,10 @@
 	exposure = SLOT_EXPOSURE_SEALED
 
 DECLARE_REF(/obj/structure/disposalholder, "gas", OWNED, null)
+/// TRUE while the holder is moving through pipes: move() runs every decisecond.
+OM_FIELD(/obj/structure/disposalholder, active, FALSE, CHANGE_EXPLICIT)
+DECLARE_REPEAT(/obj/structure/disposalholder, 1 DECISECONDS, move, "active")
+
 /obj/structure/disposalholder/proc/init(list/flush_list, datum/gas_mixture/flush_gas)
 	gas = flush_gas// transfer gas resv. into holder object -- let's be explicit about the data this proc consumes, please.
 
@@ -67,11 +70,8 @@ DECLARE_REF(/obj/structure/disposalholder, "gas", OWNED, null)
 			var/mob/living/silicon/robot/drone/drone = AM
 			src.destinationTag = drone.mail_destination
 
-// movement process, persists while holder is moving through pipes
+// movement process, persists while holder is moving through pipes (declared: while active)
 /obj/structure/disposalholder/proc/move()
-	if(!active)
-		return
-
 	/* // Clonk n' bonk // Non-damaging Disposals Edit Start
 	if(hasmob && prob(3))
 		for(var/mob/living/H in src)
@@ -82,16 +82,15 @@ DECLARE_REF(/obj/structure/disposalholder, "gas", OWNED, null)
 	var/obj/structure/disposalpipe/last = loc
 	var/obj/structure/disposalpipe/curr = last.transfer(src)
 	if(!active)
-		return // Handled by a machine connected to a trunk during transfer()
+		return REPEAT_STOP // Handled by a machine connected to a trunk during transfer()
 	if(!curr)
 		last.pipe_expel(src, get_turf(loc), dir)
-		return
+		return REPEAT_STOP
 
 	// Onto the next segment
 	if(!(count--))
-		active = FALSE
-		return
-	om_after(src, 1, PROC_REF(move))
+		set_active(FALSE)
+		return REPEAT_STOP
 
 // find the turf which should contain the next pipe
 /obj/structure/disposalholder/proc/nextloc()

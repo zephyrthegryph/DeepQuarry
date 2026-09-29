@@ -23,8 +23,6 @@
 	/// How far we can be heard
 	var/instrument_range = 15
 
-	/// Are we currently playing?
-	var/playing = FALSE
 
 	/// Repeats left
 	var/repeat = 0
@@ -108,7 +106,13 @@
 	/// Exponential sustain dropoff rate per decisecond
 	var/sustain_exponential_dropoff = 1.4
 
+/// Are we currently playing? periodic_step() plays the song while set (DECLARE_PERIODIC_WHILE).
+OM_FIELD(/datum/song, playing, FALSE, CHANGE_DATUM_A)
+DECLARE_PERIODIC_WHILE(/datum/song, PERIODIC_INSTRUMENTS, "playing")
+
 /datum/song/New(atom/parent, list/instrument_ids, new_range)
+	..()
+	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
 	join_registries() // REGISTRY_SONGS; the destroy transaction leaves it
 	lines = list()
 	tempo = sanitize_tempo(tempo, TRUE)
@@ -184,7 +188,7 @@ DECLARE_REF(/datum/song, "using_instrument_static", BACK_VIA, "songs_using")
 	if(!length(compiled_chords))
 		to_chat(user, span_warning("Song is empty."))
 		return
-	playing = TRUE
+	set_playing(TRUE)
 	//we can not afford to runtime, since we are going to be doing sound channel reservations and if we runtime it means we have a channel allocation leak.
 	//wrap the rest of the stuff to ensure stop_playing() is called.
 	do_hearcheck()
@@ -193,7 +197,6 @@ DECLARE_REF(/datum/song, "using_instrument_static", BACK_VIA, "songs_using")
 	delay_by = 0
 	current_chord = 1
 	music_player_handle = om_handle(user)
-	om_task_periodic(src, PERIODIC_INSTRUMENTS)
 	if(id)
 		sync_play()
 
@@ -232,10 +235,9 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 /datum/song/proc/stop_playing(finished = FALSE)
 	if(!playing)
 		return
-	playing = FALSE
+	set_playing(FALSE)
 	if(!debug_mode)
 		compiled_chords = null
-	om_task_periodic_stop(src)
 	OM_EMIT(parent(), /datum/om/event/instrument_end, finished)
 	terminate_all_sounds(TRUE)
 	hearing_mobs.len = 0
@@ -327,8 +329,6 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 	tempo = sanitize_tempo(600 / bpm)
 
 /datum/song/periodic_step(wait)
-	if(!playing)
-		return PROCESS_KILL
 	// it's expected this ticks at every world.tick_lag. if it lags, do not attempt to catch up.
 	process_song(world.tick_lag)
 	process_decay(world.tick_lag)

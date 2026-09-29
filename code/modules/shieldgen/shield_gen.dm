@@ -49,6 +49,9 @@
 DECLARE_REF(/obj/machinery/shield_gen, "shield_hum", OWNED, null)
 DECLARE_REF(/obj/machinery/shield_gen, "field", OWNED_LIST, null)
 
+/// Maintains its field while on (toggle() raises it and drops the whole field when switched off).
+DECLARE_PERIODIC_WHILE(/obj/machinery/shield_gen, MACHINE_PIPELINE, "active")
+
 /obj/machinery/shield_gen/emag_act(remaining_charges, mob/user)
 	if(prob(75))
 		set_locked(!src.locked)
@@ -155,10 +158,9 @@ DECLARE_REF(/obj/machinery/shield_gen, "field", OWNED_LIST, null)
 	return list("locked" = locked, "lockedData" = lockedData)
 
 /obj/machinery/shield_gen/machine_step()
-	if (!anchored && active)
+	if (!anchored)
 		toggle()
-	if(!active && !length(field))
-		return PROCESS_KILL
+		return
 
 	average_field_strength = max(average_field_strength, 0)
 
@@ -246,8 +248,6 @@ DECLARE_REF(/obj/machinery/shield_gen, "field", OWNED_LIST, null)
 /obj/machinery/shield_gen/proc/toggle()
 	set background = 1
 	set_active(!active)
-	if(active)
-		MACHINE_WAKE(src)
 	update_icon()
 	if(active)
 		var/list/covered_turfs = get_shielded_turfs()
@@ -352,7 +352,3 @@ DECLARE_REF(/obj/machinery/shield_gen, "field", OWNED_LIST, null)
 // === merged from shield_gen_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/shield_gen
 	icon = 'icons/obj/machines/shielding.dmi'
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/shield_gen/step_start_condition()
-	return active

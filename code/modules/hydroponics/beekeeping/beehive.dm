@@ -6,11 +6,20 @@
 	anchored = TRUE
 
 	var/closed = 0
-	var/bee_count = 0 // Percent
-	var/smoked = 0 // Timer
 	var/honeycombs = 0 // Percent
 	var/list/frames	// List of frames inside.
 	var/maxFrames = 5
+
+/// Percent.
+OM_FIELD(/obj/machinery/beehive, bee_count, 0, CHANGE_MACHINE_SETTINGS)
+/// Timer (machine steps).
+OM_FIELD(/obj/machinery/beehive, smoked, 0, CHANGE_MACHINE_SETTINGS)
+/// Bees inside or smoke still clearing: the hive has something to tick.
+OM_DERIVE_FIELD(/obj/machinery/beehive, hive_active, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/beehive, MACHINE_PIPELINE, "hive_active")
+
+/obj/machinery/beehive/proc/hive_active()
+	return bee_count || smoked
 
 /obj/machinery/beehive/Initialize(mapload)
 	. = ..()
@@ -60,8 +69,7 @@
 		to_chat(user, span_notice("You need to open \the [src] with a crowbar before smoking the bees."))
 		return TRUE
 	user.visible_message(span_notice("[user] smokes the bees in \the [src]."), span_notice("You smoke the bees in \the [src]."))
-	smoked = 30
-	MACHINE_WAKE(src)
+	set_smoked(30)
 	update_icon()
 	return TRUE
 
@@ -109,12 +117,11 @@
 		return TRUE
 	if(held.full)
 		user.visible_message(span_notice("[user] puts the queen and the bees from \the [held] into \the [src]."), span_notice("You put the queen and the bees from \the [held] into \the [src]."))
-		bee_count = 20
-		MACHINE_WAKE(src)
+		set_bee_count(20)
 		held.empty()
 	else
 		user.visible_message(span_notice("[user] puts bees and larvae from \the [src] into \the [held]."), span_notice("You put bees and larvae from \the [src] into \the [held]."))
-		bee_count /= 2
+		set_bee_count(bee_count / 2)
 		held.fill()
 	update_icon()
 	return TRUE
@@ -204,17 +211,13 @@
 		return TRUE
 
 /obj/machinery/beehive/machine_step()
-	if(!bee_count && !smoked)
-		return PROCESS_KILL
 	if(closed && !smoked && bee_count)
 		pollinate_flowers()
 		update_icon()
-	smoked = max(0, smoked - 1)
+	set_smoked(max(0, smoked - 1))
 	if(!smoked && bee_count)
-		bee_count = min(bee_count * 1.005, 100)
+		set_bee_count(min(bee_count * 1.005, 100))
 		update_icon()
-	if(!bee_count && !smoked)
-		return PROCESS_KILL
 
 /obj/machinery/beehive/proc/pollinate_flowers()
 	var/coef = bee_count / 100
@@ -449,7 +452,3 @@ DECLARE_APPEARANCE(/obj/item/bee_pack, "full", list("0" = list(APPEARANCE_OVERLA
 	honey += processing
 	processing = 0
 	update_icon()
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/beehive/step_start_condition()
-	return bee_count

@@ -122,6 +122,12 @@ EXTEND_INTERACTIONS(/obj/machinery/sleep_console, \
 	active_power_usage = 200 //builtin health analyzer, dialysis machine, injectors.
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/sleeper, "beaker", /obj/item/reagent_containers/glass/beaker/large)
+OM_DERIVE_FIELD(/obj/machinery/sleeper, sleeper_occupied, CHANGE_MACHINE_OCCUPANT)
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/sleeper, MACHINE_PIPELINE, list("operable", "sleeper_occupied"))
+
+/// Derived field: the sleeper holds someone. go_in/go_out raise CHANGE_MACHINE_OCCUPANT.
+/obj/machinery/sleeper/proc/sleeper_occupied()
+	return slot_item(OCCUPANT_SLOT_SLEEPER) ? TRUE : FALSE
 
 /obj/machinery/sleeper/Initialize(mapload)
 	. = ..()
@@ -357,10 +363,6 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 
 /obj/machinery/sleeper/machine_step()
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
-	if(!operable())
-		return PROCESS_KILL
-	if(!occupant)
-		return PROCESS_KILL
 	if(occupant)
 		if(auto_eject_dead && occupant.stat == DEAD)
 			play_sfx(loc, SFX_MACHINES_BUZZ_SIGH, 0.8)
@@ -522,7 +524,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 		return
 	occupant = M
 	set_use_power(USE_POWER_ACTIVE)
-	MACHINE_WAKE(src)
+	om_changed(src, CHANGE_MACHINE_OCCUPANT)
 	occupant.cozyloop.start() // Cozy Music
 	update_icon()
 
@@ -543,13 +545,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 	update_icon()
 	toggle_filter()
 	toggle_pump()
-	MACHINE_SLEEP(src)
-
-/obj/machinery/sleeper/power_change()
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
-	. = ..()
-	if(. && occupant)
-		MACHINE_WAKE(src)
+	om_changed(src, CHANGE_MACHINE_OCCUPANT)
 
 /obj/machinery/sleeper/proc/remove_beaker()
 	if(beaker)

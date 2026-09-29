@@ -8,34 +8,31 @@
 	projectile_type = /obj/item/projectile/beam/chain_lightning //why the hell not
 
 	var/bat_colour = "#ff33cc"
-	var/charge
 	var/max_charge = 10
 	var/ticks = 1
 	var/ticks_to_charge = 3 // Reduced from 15 ticks to 3 for a faster recharge, which comes out to around 3 seconds on a localhost. These things are VERY rare.
 
+OM_FIELD(/obj/item/ammo_casing/macrobattery, charge, null, CHANGE_EXPLICIT)
+/// Below full charge: derived from charge (raised by set_charge()).
+OM_DERIVE_FIELD(/obj/item/ammo_casing/macrobattery, charge_short, CHANGE_EXPLICIT)
+/obj/item/ammo_casing/macrobattery/proc/charge_short()
+	return charge < max_charge
+/// Recharges while below full; full, it parks until a shot is expended.
+DECLARE_PERIODIC_WHILE(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW, "charge_short")
+
 /obj/item/ammo_casing/macrobattery/Initialize(mapload, ...)
 	. = ..()
-	charge = max_charge
-
-/// The recharge loop is running behaviour, so it starts when the cell goes live.
-DECLARE_PERIODIC(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW)
-
-/obj/item/ammo_casing/macrobattery/on_dematerialize()
-	om_task_periodic_stop(src)
-	return ..()
+	set_charge(max_charge)
 
 /obj/item/ammo_casing/macrobattery/periodic_step()
 	ticks++
 	if(ticks%ticks_to_charge == 0)
 		recharge()
-		if(charge >= max_charge)
-			return PROCESS_KILL
 
 /obj/item/ammo_casing/macrobattery/expend()
 	if(charge)
-		charge --
 		ticks = 1 //so we have to start over on the charge time.
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_charge(charge - 1)
 		. = BB
 		//alright, the below seems jank. it IS jank, but for whatever reason I can't reuse BB. big bad
 		BB = null
@@ -53,11 +50,9 @@ DECLARE_PERIODIC(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW)
 
 /obj/item/ammo_casing/macrobattery/proc/recharge()
 	if(charge < max_charge)
-		charge ++
+		set_charge(charge + 1)
 		if(!BB)
 			BB = new projectile_type
-	if(charge >= max_charge)
-		om_task_periodic_stop(src)
 	if(istype(loc,/obj/item/gun/projectile/multi_cannon))
 		loc.update_icon()
 

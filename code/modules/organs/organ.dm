@@ -149,7 +149,7 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 	if(!is_robotic())
 		status |= ORGAN_DEAD
 	saturate_damage()
-	om_task_periodic_stop(src)
+	om_changed(src, CHANGE_EXPLICIT) // dead: organ_ticks_loose() no longer holds
 	handle_organ_mod_special(TRUE)
 	if(owner && vital)
 		owner.can_defib = FALSE
@@ -596,7 +596,7 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 			else
 				damage--
 			//Fix JUST enough damage so it doesn't immediately die again. For full repair, use denec removal surgery.
-			om_task_periodic(src, PERIODIC_SLOW) //When an organ dies, it stops processing. This restarts it.
+			om_changed(src, CHANGE_EXPLICIT) //When an organ dies, it stops processing. organ_ticks_loose() holds again.
 			container.reagents.remove_reagent(REAGENT_ID_PERIDAXON, 5)
 			to_chat(user, "You use the [container] to revive \the [src]")
 			return INTERACTION_HANDLED_PASS

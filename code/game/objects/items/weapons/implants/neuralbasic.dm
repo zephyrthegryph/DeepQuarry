@@ -6,6 +6,10 @@
 	var/target_state = null
 	var/robotic_brain = FALSE
 
+/// TRUE while it assists a brain and watches for it being ripped out; a meltdown ends it.
+OM_FIELD(/obj/item/implant/neural, monitoring_brain, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/implant/neural, PERIODIC_SLOW, "monitoring_brain")
+
 /obj/item/implant/neural/post_implant(mob/source)
 	if(ishuman(source))
 		var/mob/living/carbon/human/H = source
@@ -17,7 +21,7 @@
 		if(HAS_SYNTHETIC_BIOLOGY(H) && H.get_FBP_type() != FBP_CYBORG)		//If this on an FBP, it's just an extra inefficient attachment to whatever their brain is.
 			robotic_brain = TRUE
 	if(istype(my_brain(), /obj/item/organ/internal/brain) && my_brain().can_assist())
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_monitoring_brain(TRUE)
 
 // the brain's owner feels it ripped away.
 /obj/item/implant/neural/on_destroy(force)
@@ -89,7 +93,7 @@ Implant Specifics:<BR>"}
 
 /obj/item/implant/neural/meltdown()
 	..()
-	om_task_periodic_stop(src)
+	set_monitoring_brain(FALSE)
 	var/mob/living/carbon/human/H = null
 	if(my_brain() && my_brain().owner)
 		if(ishuman(my_brain().owner))

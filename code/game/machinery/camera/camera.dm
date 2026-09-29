@@ -261,7 +261,7 @@ DECLARE_REF(/obj/machinery/camera, "assembly", OWNED, null)
 
 /obj/machinery/camera/screwdriver_act(mob/user, obj/item/tool)
 	update_coverage()
-	panel_open = !panel_open
+	set_panel_open(!panel_open)
 	user.visible_message(span_warning("[user] screws the camera's panel [panel_open ? "open" : "closed"]!"), span_notice("You screw the camera's panel [panel_open ? "open" : "closed"]."))
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS

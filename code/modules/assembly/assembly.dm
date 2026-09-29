@@ -11,7 +11,6 @@
 	drop_sound = SFX_ITEMS_DROP_COMPONENT
 	pickup_sound =  SFX_ITEMS_PICKUP_COMPONENT
 
-	var/secured = 1
 	var/list/attached_overlays = null
 	var/tmp/holder_handle
 	var/cooldown = FALSE //To prevent spam
@@ -28,6 +27,9 @@
 
 	COOLDOWN_DECLARE(next_activate)
 	var/activation_cooldown = 3 SECONDS
+
+/// Secured (ready to act); unsecured it can be attached to other assemblies.
+OM_FIELD(/obj/item/assembly, secured, TRUE, CHANGE_EXPLICIT)
 
 /obj/item/assembly/proc/holder_movement()
 	return
@@ -53,7 +55,7 @@
 	return TRUE
 
 /obj/item/assembly/proc/toggle_secure()
-	secured = !secured
+	set_secured(!secured)
 	update_icon()
 	return secured
 

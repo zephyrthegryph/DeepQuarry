@@ -12,10 +12,12 @@ GLOBAL_DATUM_INIT(mob_service, /datum/world_service/mobs, new)
 	lane = /datum/om/behaviour/world/mobs
 
 	var/list/death_list = list()
-	/// om_after() timer for the next two-minute profile summary, or 0 before the first step.
-	var/tmp/profile_timer = 0
 	/// Pipeline counters at the last summary (parks, unparks, missed wakes), for the deltas.
 	var/list/last_counts = list(0, 0, 0)
+
+/// Set on the first service step: the two-minute profile summary then repeats (dump_profile).
+OM_FIELD(/datum/world_service/mobs, profiling, FALSE, CHANGE_DATUM_A)
+DECLARE_REPEAT(/datum/world_service/mobs, 2 MINUTES, dump_profile, "profiling")
 
 /datum/world_service/mobs/stat_line()
 	var/datum/om/behaviour/life = om_registry().behaviour(/datum/om/pipeline/life)
@@ -27,8 +29,11 @@ GLOBAL_DATUM_INIT(mob_service, /datum/world_service/mobs, new)
 		var/list/batch = death_list
 		death_list = list()
 		insert_deaths(batch)
-	if(!profile_timer)
-		profile_timer = om_after(src, 2 MINUTES, PROC_REF(dump_profile))
+	if(!profiling)
+		// This singleton is built at global-var init, before the object model exists, so its
+		// declarations start here on the first step rather than from New().
+		lifecycle_decls_init(src)
+		set_profiling(TRUE)
 	return TRUE
 
 /// The database insert sleeps, so the lane hands it off (the lane itself must not sleep).
@@ -44,7 +49,6 @@ GLOBAL_DATUM_INIT(mob_service, /datum/world_service/mobs, new)
 /// MOB_PROFILE lines (sampled cost per mob type and per stage, every Nth frame) and one
 /// MOB_PARK_SUMMARY line, every two minutes.
 /datum/world_service/mobs/proc/dump_profile()
-	profile_timer = om_after(src, 2 MINUTES, PROC_REF(dump_profile))
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	if(!sched)
 		return

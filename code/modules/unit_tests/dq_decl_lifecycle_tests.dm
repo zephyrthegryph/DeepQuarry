@@ -303,10 +303,10 @@ DECLARE_NO_REAGENTS(/obj/item/dq_decl_probe/dry)
 	TEST_ASSERT(istype(heater.cell, heater.cell_type) && heater.cell.loc == heater, "the cell comes from cell_type")
 	TEST_ASSERT_EQUAL(heater.icon_state, "sheater0", "icon_state follows state")
 	TEST_ASSERT_EQUAL(dq_decl_overlay_count(heater, "sheater-open"), 0, "hatch closed")
-	heater.panel_open = TRUE
+	heater.set_panel_open(TRUE)
 	heater.update_icon()
 	TEST_ASSERT_EQUAL(dq_decl_overlay_count(heater, "sheater-open"), 1, "the hatch overlay follows panel_open")
-	heater.panel_open = FALSE
+	heater.set_panel_open(FALSE)
 	heater.update_icon()
 	TEST_ASSERT_EQUAL(dq_decl_overlay_count(heater, "sheater-open"), 0, "and goes again")
 

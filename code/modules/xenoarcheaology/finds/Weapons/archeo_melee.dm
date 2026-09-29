@@ -27,7 +27,6 @@
 	sharp = TRUE
 	injury_kind = INJURY_CUT
 	embed_chance = 0
-	var/tmp/last_touched_handle	//The last human that touched us
 	var/stored_blood = 0 //How much energy we have!
 	COOLDOWN_DECLARE(special_cooldown) //When our powers may next be used. Can be admin-set to a high number to keep the mode from being changed.
 	var/static/list/abilities = list("Consecrate", "Summon")
@@ -35,6 +34,10 @@
 	var/consecrating = FALSE //If we are consecrating or not!
 	var/consecration_cost = 10 //Ten stored_blood per use!
 	var/empowered = FALSE //If our next atack is empowered (2x damage)
+
+//The last human that touched us (an OM handle): the blade works on them while it has one.
+OM_FIELD_TYPED(/obj/item/melee/artifact_blade, tmp, last_touched_handle, null, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/melee/artifact_blade, PERIODIC_SLOW, "last_touched_handle")
 
 /obj/item/melee/artifact_blade/examine(mob/user)
 	. = ..()
@@ -45,8 +48,7 @@
 	if(!last_touched() || !stored_blood) //Nobody has touched us yet or we have no energy...For now.
 		return
 	if(!last_touched() || last_touched().stat == DEAD) //If our user doesn't exist or is dead, stop processing until the next unlucky sod touches us.
-		om_task_periodic_stop(src)
-		last_touched_handle = null
+		set_last_touched_handle(null)
 		return
 	if(loc == last_touched() && (last_touched().life_tick % 30 == 0)) //We are currently being wielded by our owner. One proc every minute.
 		/// First and foremost, the sword passively takes some blood from you when you hold it.
@@ -149,8 +151,7 @@
 	// Yes. This means you can hand off the sword to someone else to make them the newfound owner of the cursed sword.
 	if((user != last_touched()) && !iscultist(user) && ishuman(user))
 		to_chat(user, span_cult("An overwhelming feeling of dread comes over you as you pick up the sword. You feel as though it has become attached to you."))
-		last_touched_handle = om_handle(user)
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_last_touched_handle(om_handle(user))
 
 DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF(interaction_self)))
 

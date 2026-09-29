@@ -39,13 +39,15 @@
 	/// The union of the declared fields' change channels (what the service watches on `of`).
 	var/mask = 0
 
-/// Every declaration, instantiated and resolved once.
+/// Every declaration, instantiated and resolved once (at global init; the registry's service build reads it).
+GLOBAL_LIST_INIT(sys_periodic_defs, build_sys_periodic_defs())
+
 /proc/sys_periodic_defs()
 	RETURN_TYPE(/list)
-	var/static/list/defs
-	if(defs)
-		return defs
-	defs = list()
+	return GLOB.sys_periodic_defs || (GLOB.sys_periodic_defs = build_sys_periodic_defs())
+
+/proc/build_sys_periodic_defs()
+	var/list/defs = list()
 	for(var/path in subtypesof(/datum/sys_periodic_def))
 		var/datum/sys_periodic_def/proto = path
 		if(!initial(proto.of))

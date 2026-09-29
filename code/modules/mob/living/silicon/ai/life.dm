@@ -23,7 +23,7 @@ OM_TIMER_SLOT(/mob/living/silicon/ai, power_restore_timer)
 		return ctx.abort()
 
 	if(self.stat != CONSCIOUS)
-		self.cameraFollow = null
+		self.set_cameraFollow(null)
 		self.reset_perspective()
 		self.disconnect_shell("Disconnecting from remote shell due to local system failure.")
 

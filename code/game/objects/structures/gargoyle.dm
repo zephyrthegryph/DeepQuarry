@@ -3,7 +3,6 @@
 	desc = "A very lifelike carving."
 	density = TRUE
 	anchored = TRUE
-	var/WR_gargoyle
 	var/initial_sleep
 	var/initial_blind
 	var/initial_is_shifted
@@ -26,6 +25,10 @@
 	var/can_revert = TRUE
 	var/was_rayed = FALSE
 
+/// The petrified mob (a handle); the statue watches it every second while it holds one.
+OM_FIELD(/obj/structure/gargoyle, WR_gargoyle, null, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
+
 /obj/structure/gargoyle/Initialize(mapload, mob/living/carbon/human/H, ident_ovr, mat_ovr, adj_ovr, tint_ovr, revert = TRUE, discard_clothes)
 	. = ..()
 	if(isspace(loc) || isopenspace(loc))
@@ -45,7 +48,7 @@
 		adjective = length(comp.adjective) > 0 ? comp.adjective : initial(adjective)
 		if(copytext_char(adjective, -1) != "s")
 			adjective += "s"
-	WR_gargoyle = om_handle(H)
+	set_WR_gargoyle(om_handle(H))
 
 	if(H.get_effective_size(TRUE) < 0.5) // "So small! I can step over it!"
 		set_density(FALSE)
@@ -128,8 +131,6 @@
 	H.canmove = 0
 
 	can_revert = revert
-
-	om_task_periodic(src, PERIODIC_SECOND)
 
 // the petrified gargoyle reverts, or crumbles.
 /obj/structure/gargoyle/on_destroy(force)

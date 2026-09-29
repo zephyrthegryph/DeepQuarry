@@ -68,7 +68,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/watch/survival, INTERACT_ALT("T
 /// Old click_alt: toggle the beacon. Falls through to the clothing alt-click (which ran first before).
 /obj/item/clothing/accessory/watch/survival/proc/survival_watch_beacon_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(Adjacent(user))
-		gps.tracking = !gps.tracking
+		gps.set_tracking(!gps.tracking)
 		to_chat(user,span_notice("You turn the micro beacon [gps.tracking ? "on" : "off"]."))
 	return FALSE
 

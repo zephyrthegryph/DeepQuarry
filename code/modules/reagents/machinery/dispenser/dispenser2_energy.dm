@@ -1,14 +1,13 @@
 
 /obj/machinery/chemical_dispenser
-	var/_recharge_reagents = 1
 	var/list/dispense_reagents
 	var/process_tick = 0
 
+OM_FIELD(/obj/machinery/chemical_dispenser, _recharge_reagents, TRUE, CHANGE_MACHINE_SETTINGS)
+/// Recharges its cartridges while it recharges at all and is operable; with nothing short it sleeps.
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/chemical_dispenser, MACHINE_PIPELINE, list("_recharge_reagents", "operable"))
+
 /obj/machinery/chemical_dispenser/machine_step()
-	if(!_recharge_reagents)
-		return PROCESS_KILL
-	if(!operable())
-		return PROCESS_KILL
 	if(--process_tick <= 0)
 		process_tick = 15
 		. = 0

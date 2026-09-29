@@ -22,14 +22,18 @@
 
 /datum/unit_test/dq_shuttle_active_set_is_event_driven/Run()
 	var/datum/shuttle/shuttle = new /datum/shuttle/unit_test_active_set
-	shuttle.flags |= SHUTTLE_FLAGS_PROCESS
+	shuttle.shuttle_flags_add(SHUTTLE_FLAGS_PROCESS)
 	SSshuttles.process_shuttles |= shuttle
 	shuttle.set_process_state(IDLE_STATE)
-	TEST_ASSERT(!(shuttle in SSshuttles.active_process_shuttles), "idle shuttle remained in the active processing set")
+	sys_periodic_evaluate(shuttle) // what the declaration's watch runs on the next tick
+	TEST_ASSERT(!shuttle.shuttle_working(), "idle shuttle declared as working")
+	TEST_ASSERT_NULL(shuttle.periodic_pipe, "idle shuttle remained on the slow lane")
 	shuttle.set_process_state(WAIT_LAUNCH)
-	TEST_ASSERT(shuttle in SSshuttles.active_process_shuttles, "launching shuttle did not enter the active processing set")
+	sys_periodic_evaluate(shuttle)
+	TEST_ASSERT_EQUAL(shuttle.periodic_pipe, PERIODIC_SLOW, "launching shuttle did not start its slow-lane work")
 	shuttle.set_process_state(IDLE_STATE)
-	TEST_ASSERT(!(shuttle in SSshuttles.active_process_shuttles), "settled shuttle did not leave the active processing set")
+	sys_periodic_evaluate(shuttle)
+	TEST_ASSERT_NULL(shuttle.periodic_pipe, "settled shuttle did not leave the slow lane")
 	qdel(shuttle)
 //
 // A web-shuttle destination whose map landmark doesn't exist (e.g. it lived on
@@ -212,7 +216,7 @@
 	TEST_ASSERT_NOTNULL(shuttle, "Southern Cross arrivals shuttle was not registered")
 	TEST_ASSERT(shuttle.always_process, "arrivals shuttle is not configured for subsystem-owned idle automation")
 	TEST_ASSERT(shuttle in SSshuttles.process_shuttles, "arrivals shuttle is absent from the shuttle processing set")
-	TEST_ASSERT(shuttle in SSshuttles.active_process_shuttles, "always-processing arrivals shuttle is absent from the active processing set")
+	TEST_ASSERT_EQUAL(shuttle.periodic_pipe, PERIODIC_SLOW, "always-processing arrivals shuttle is not on the slow lane")
 	// ALLOW(spatial): world search
 	var/obj/machinery/computer/shuttle_control/arrivals/console = locate() in world
 	TEST_ASSERT_NOTNULL(console, "Southern Cross arrivals control console was not mapped")

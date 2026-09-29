@@ -108,15 +108,14 @@
 	update_icon()
 	update_underlays()
 
+/// Steps while switched on and operable; hibernate_until_gas_changes() parks it between gas changes.
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/binary/dp_vent_pump, MACHINE_PIPELINE, list("use_power", "operable"))
+
 /obj/machinery/atmospherics/binary/dp_vent_pump/machine_step()
 	..()
 
 	last_power_draw = 0
 	last_flow_rate = 0
-
-	if(!operable() || !use_power)
-		hibernate_until_gas_changes()
-		return PROCESS_KILL
 
 	var/datum/gas_mixture/environment = loc.return_air()
 
@@ -170,8 +169,8 @@
 		var/id = air?.arena_id()
 		if(!isnull(id))
 			mixture_ids |= id
+	// Every caller is machine_step(), which returns PROCESS_KILL right after (or arm_wakes() at setup): that parks it.
 	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_COMPOSITION, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_for_state_change)))
-	MACHINE_SLEEP(src)
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/gas_wake_condition()
 	if(!use_power || (!operable()))

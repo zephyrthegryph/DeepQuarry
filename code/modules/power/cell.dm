@@ -22,7 +22,6 @@
 	var/rigged = 0		// true if rigged to explode
 	var/detonation_pending = FALSE
 	var/minor_fault = 0 //If not 100% reliable, it will build up faults.
-	var/self_recharge = FALSE // If true, the cell will recharge itself.
 	var/charge_amount = 25 // How much power to give, if self_recharge is true.  The number is in absolute cell charge, as it gets divided by CELLRATE later.
 	COOLDOWN_DECLARE(charge_cooldown) // A tracker for use in self-charging
 	var/connector_type = "standard" //What connector sprite to use when in a cell charger, null if no connectors
@@ -45,6 +44,19 @@
 	var/standard_overlays = TRUE
 	var/last_overlay_state = null // Used to optimize update_icon() calls.
 
+	/// gradual_charge(): the charge multiplier, whether it sparks, and the OM handle of the user
+	/// who must stay in reach (null: no reach check), for the steps still left.
+	var/tmp/gradual_multiplier = 0
+	var/tmp/gradual_sparks = FALSE
+	var/tmp/gradual_user_handle
+
+/// If true, the cell will recharge itself (periodic_step()).
+OM_FIELD(/obj/item/cell, self_recharge, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/cell, PERIODIC_SLOW, "self_recharge")
+/// gradual_charge(): one-second charge steps still to run.
+OM_FIELD_TYPED(/obj/item/cell, tmp, gradual_charge_left, 0, CHANGE_EXPLICIT)
+DECLARE_REPEAT(/obj/item/cell, 1 SECOND, gradual_charge_step, "gradual_charge_left")
+
 /obj/item/cell/Initialize(mapload)
 	. = ..()
 	// A cell's temperature and electrical phase are functional state even for
@@ -54,26 +66,22 @@
 	enable_material_service()
 	c_uid = cell_uid++
 	update_icon()
-	if(self_recharge)
-		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/cell/get_cell()
 	return src
 
+/// Self-recharge (declared on self_recharge). Full, it parks; use() wakes it after a discharge.
 /obj/item/cell/periodic_step()
-	if(self_recharge)
-		if(charge >= maxcharge)
-			return PROCESS_KILL
-		if(COOLDOWN_FINISHED(src, charge_cooldown))
-			give(charge_amount)
-			// TGMC Ammo HUD - Update the HUD every time we're called to recharge.
-			if(istype(loc, /obj/item/gun/energy)) // Are we in a gun currently?
-				var/obj/item/gun/energy/gun = loc
-				var/mob/living/user = gun.loc
-				if(istype(user))
-					user?.hud_used.update_ammo_hud(user, gun) // Update the HUD
-	else
+	if(charge >= maxcharge)
 		return PROCESS_KILL
+	if(COOLDOWN_FINISHED(src, charge_cooldown))
+		give(charge_amount)
+		// TGMC Ammo HUD - Update the HUD every time we're called to recharge.
+		if(istype(loc, /obj/item/gun/energy)) // Are we in a gun currently?
+			var/obj/item/gun/energy/gun = loc
+			var/mob/living/user = gun.loc
+			if(istype(user))
+				user?.hud_used.update_ammo_hud(user, gun) // Update the HUD
 
 /obj/item/cell/drain_power(drain_check, surge, power = 0)
 
@@ -275,6 +283,7 @@
 	update_superconducting_state(amount)
 	COOLDOWN_START(src, charge_cooldown, charge_delay)
 	if(used && self_recharge)
+		// ALLOW(sys_periodic_toggle): wake, not a toggle: the declared state (self_recharge) already holds; the self-recharge body parks itself once full (work of its own that ran out) and this restarts it after a discharge. `charge` has 200+ writers across the tree, so it is not a field.
 		om_task_periodic(src, PERIODIC_SLOW)
 	if(used && istype(loc, /obj/machinery/power/apc))
 		var/obj/machinery/power/apc/A = loc
@@ -307,26 +316,41 @@
 			loc.update_icon()
 	return amount_used
 
-/// Recharges the cell over time. 100 per second multiplied by the multiplier.
+/// Recharges the cell over time. 100 per second multiplied by the multiplier, `iterations` times
+/// (the first step now, the rest by gradual_charge_step() every second).
 /obj/item/cell/proc/gradual_charge(iterations, multiplier, sparks, mob/living/user)
-	var/charged_object = src
 	if(!multiplier || iterations <= 0)
 		return
-	if(user) //If we have a user, time to check to make sure they're adjacent/holding us!
+	gradual_multiplier = multiplier
+	gradual_sparks = sparks
+	gradual_user_handle = user ? om_handle(user) : null
+	set_gradual_charge_left(iterations)
+	gradual_charge_step()
+
+/// One gradual_charge() step; ends when the steps run out or the user wanders off.
+/obj/item/cell/proc/gradual_charge_step()
+	if(gradual_charge_left <= 0)
+		return REPEAT_STOP
+	var/charged_object = src
+	if(gradual_user_handle) //If we have a user, time to check to make sure they're adjacent/holding us!
+		var/mob/living/user = om_resolve(gradual_user_handle)
+		if(!user)
+			set_gradual_charge_left(0)
+			return REPEAT_STOP
 		if(istype(loc, /obj/machinery/power/apc)) //We're in an APC!
 			charged_object = loc
 		if(loc != user && !(user in orange(1,charged_object))) //If we have a user fed to us, they need to hold us or be in range of us.
 			if(loc.loc && loc.loc != user) //Are we inside of something the user is holding?
-				return
-	charge += 100 * multiplier
+				set_gradual_charge_left(0)
+				return REPEAT_STOP
+	charge += 100 * gradual_multiplier
 	if(charge > maxcharge)
 		charge = maxcharge
-	if(sparks)
+	if(gradual_sparks)
 		var/T = get_turf(src)
 		new /obj/effect/effect/sparks(T)
 	update_icon()
-	iterations--
-	om_after(src, 1 SECOND, PROC_REF(gradual_charge), iterations, multiplier, sparks, user)
+	set_gradual_charge_left(gradual_charge_left - 1)
 
 /obj/item/cell/examine(mob/user)
 	. = ..()

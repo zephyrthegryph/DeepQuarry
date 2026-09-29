@@ -4,7 +4,6 @@
 	name = "Modular Computer"
 	desc = "A modular computer. You shouldn't see this."
 
-	var/enabled = 0											// Whether the computer is turned on.
 	var/screen_on = 1										// Whether the computer is active/opened/it's screen is on.
 	var/device_theme = "ntos"								// Sets the theme for the main menu, hardware config, and file browser apps. Overridden by certain non-NT devices.
 	var/tmp/active_program_handle	// A currently active program running on the computer.
@@ -84,3 +83,7 @@ DECLARE_REF(/obj/item/modular_computer, "tesla_link", OWNED, null)
 /// LC-refs: the stored_pen this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/modular_computer/proc/stored_pen() as /obj/item/pen
 	return om_resolve(stored_pen_handle)
+
+/// Whether the computer is turned on. periodic_step() runs its programs while it is (DECLARE_PERIODIC_WHILE).
+OM_FIELD(/obj/item/modular_computer, enabled, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/modular_computer, PERIODIC_SLOW, "enabled")

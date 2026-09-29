@@ -66,7 +66,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/the_singularitygen/screwdriver_act(mob/user, obj/item/W)
-	panel_open = !panel_open
+	set_panel_open(!panel_open)
 	playsound(src, W.usesound, 50, 1)
 	visible_message(span_infoplain(span_bold("\The [user]") + " adjusts \the [src]'s mechanisms."))
 	if(panel_open)

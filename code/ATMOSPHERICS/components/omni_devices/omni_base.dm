@@ -71,6 +71,9 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 #define OMNI_WAKE_TRACE(M, what)
 #endif
 
+/// Steps while switched on and operable; hibernate_until_gas_changes() parks it between gas changes.
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/omni, MACHINE_PIPELINE, list("use_power", "operable"))
+
 /obj/machinery/atmospherics/omni/machine_step()
 	OMNI_WAKE_TRACE(src, "step")
 	last_power_draw = 0
@@ -99,8 +102,8 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 		var/id = P.air?.arena_id()
 		if(!isnull(id))
 			mixture_ids |= id
+	// Every caller is machine_step(), which returns PROCESS_KILL right after: that parks it.
 	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_for_state_change)))
-	MACHINE_SLEEP(src)
 	OMNI_WAKE_TRACE(src, "hibernate mixtures=[length(mixture_ids)]")
 
 /obj/machinery/atmospherics/omni/proc/clear_gas_dependencies()
@@ -114,8 +117,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 
 /obj/machinery/atmospherics/omni/proc/wake_for_state_change()
 	clear_gas_dependencies()
-	if(use_power && operable())
-		MACHINE_WAKE(src)
+	MACHINE_WAKE(src) // refused unless on and operable (the declaration above)
 	OMNI_WAKE_TRACE(src, "wake_for_state_change")
 
 /obj/machinery/atmospherics/omni/wrench_act(mob/user, obj/item/W)

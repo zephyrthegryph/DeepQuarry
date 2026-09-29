@@ -10,6 +10,8 @@
 	idle_power_usage = 2
 	active_power_usage = 4
 
+DECLARE_PERIODIC_WHILE(/obj/machinery/igniter, MACHINE_PIPELINE, "on")
+
 /obj/machinery/igniter/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/igniter_toggle,
@@ -27,15 +29,11 @@
 	use_power(50)
 	set_on(!(on))
 	icon_state = text("igniter[]", on)
-	if(on)
-		MACHINE_WAKE(src)
 	return TRUE
 
 /// Keeps its tile ignited every machine frame while on; off, it sleeps until toggled on, and
 /// unpowered until power returns.
 /obj/machinery/igniter/machine_step()
-	if(!on)
-		return PROCESS_KILL
 	if(has_stat(NOPOWER))
 		return sleep_until_powered()
 	var/turf/location = src.loc

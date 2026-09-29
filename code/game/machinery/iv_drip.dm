@@ -6,7 +6,9 @@
 	density = FALSE
 
 
-/obj/machinery/iv_drip/var/attached_handle
+OM_FIELD(/obj/machinery/iv_drip, attached_handle, null, CHANGE_MACHINE_OCCUPANT)
+/// Drips (or draws) while hooked up to a patient.
+DECLARE_PERIODIC_WHILE(/obj/machinery/iv_drip, MACHINE_PIPELINE, "attached_handle")
 /obj/machinery/iv_drip/mode = 1 // 1 is injecting, 0 is taking blood.
 /obj/machinery/iv_drip/var/obj/item/reagent_containers/beaker = null
 
@@ -43,15 +45,13 @@
 
 	if(attached())
 		visible_message("[attached()] is detached from \the [src]")
-		attached_handle = null
-		MACHINE_SLEEP(src)
+		set_attached_handle(null)
 		update_icon()
 		return
 
 	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
 		visible_message("[usr] attaches \the [src] to \the [over_object].")
-		attached_handle = om_handle(over_object)
-		MACHINE_WAKE(src)
+		set_attached_handle(om_handle(over_object))
 		update_icon()
 
 
@@ -93,14 +93,15 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 /obj/machinery/iv_drip/machine_step()
 	set background = 1
 	if(!attached())
-		return PROCESS_KILL
+		set_attached_handle(null) // the patient is gone
+		return
 
 	if(attached())
 
 		if(!(get_dist(src, attached()) <= 1 && isturf(attached().loc)))
 			visible_message("The needle is ripped out of [attached()], doesn't that hurt?")
 			attached().injure(INJURY_CUT, 3, pick(BP_R_ARM, BP_L_ARM), src)
-			attached_handle = null
+			set_attached_handle(null)
 			update_icon()
 			return PROCESS_KILL
 

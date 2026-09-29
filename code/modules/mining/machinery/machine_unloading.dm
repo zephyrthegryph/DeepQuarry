@@ -31,12 +31,8 @@
 		set_speed_process(forced)
 	else
 		set_speed_process(!speed_process) // switching gears
-	if(speed_process) // high gear
-		MACHINE_SLEEP(src)
-		om_task_periodic(src, PERIODIC_FAST)
-	else // low gear
-		om_task_periodic_stop(src)
-		MACHINE_WAKE(src)
+	// /obj/machinery's speed_process declaration runs the step on the fast lane in high gear; the
+	// machine pipeline's step stage idles meanwhile and picks its work back up in low gear.
 
 /// Empties ore boxes and moves items from its input plate while there are any; then it sleeps
 /// until something arrives (on_input_entered()).

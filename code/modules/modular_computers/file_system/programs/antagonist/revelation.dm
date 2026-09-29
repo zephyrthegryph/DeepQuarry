@@ -22,7 +22,8 @@
 		return
 
 	computer().visible_message(span_notice("\The [computer()]'s screen brightly flashes and loud electrical buzzing is heard."))
-	computer().enabled = 0
+	computer().set_enabled(FALSE)
+	computer().last_power_usage = 0
 	computer().update_icon()
 	fx_sparks(computer().loc, 10)
 

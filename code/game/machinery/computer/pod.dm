@@ -8,9 +8,11 @@
 	circuit = /obj/item/circuitboard/pod
 	var/id = 1.0
 	var/connected_handle
-	var/timing = FALSE
 	var/time = 30.0
 	var/title = "Mass Driver Controls"
+
+OM_FIELD(/obj/machinery/computer/pod, timing, FALSE, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/computer/pod, MACHINE_PIPELINE, list("timing", "operable"))
 
 /obj/machinery/computer/pod/Initialize(mapload)
 	..()
@@ -98,9 +100,7 @@
 						M.close()
 			return TRUE
 		if("start_stop")
-			timing = !timing
-			if(timing)
-				MACHINE_WAKE(src)
+			set_timing(!timing)
 			return TRUE
 		if("test_alarm")
 			alarm()
@@ -121,23 +121,12 @@
 			return TRUE
 
 /obj/machinery/computer/pod/machine_step()
-	if(!operable())
-		return PROCESS_KILL
-	if(!timing)
-		return PROCESS_KILL
 	if(time > 0)
 		time = round(time) - 1
 	else
 		alarm()
 		time = 0
-		timing = FALSE
-		return PROCESS_KILL
-
-/obj/machinery/computer/pod/power_change()
-	. = ..()
-	// machine_step() sleeps on NOPOWER; resume the countdown when power returns.
-	if(timing && operable())
-		MACHINE_WAKE(src)
+		set_timing(FALSE)
 
 /obj/machinery/computer/pod/old
 	icon_state = "oldcomp"

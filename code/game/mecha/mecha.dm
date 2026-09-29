@@ -82,8 +82,6 @@
 	var/float_direction = 0
 	// Process() iterator count.
 	var/process_ticks = 0
-	// These control what toggleable processes are executed within process().
-	var/current_processes = MECHA_PROC_INT_TEMP
 
 //mechaequipt2 stuffs
 	var/list/hull_equipment
@@ -392,16 +390,22 @@ DECLARE_REF(/obj/mecha, "minihud", PAIR, "owner_mech")
 
 	..()
 
+/// These control what toggleable processes are executed within periodic_step() (MECHA_PROC_*).
+OM_FLAG_FIELD(/obj/mecha, current_processes, MECHA_PROC_INT_TEMP, CHANGE_EXPLICIT)
+/// Derived field: the cabin simulation has something to advance -- a pilot, or inertial movement /
+/// internal damage. An empty parked mech with neither does not tick. Pilot entry/exit raise the
+/// relation channels (the pilot slot's om_link); moved_inside() also raises CHANGE_EXPLICIT.
+OM_DERIVE_FIELD(/obj/mecha, cabin_active, CHANGE_EXPLICIT | CHANGE_RELATION_ADDED | CHANGE_RELATION_REMOVED)
+DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
+
+/obj/mecha/proc/cabin_active()
+	return slot_item(MECHA_SLOT_PILOT) || (current_processes & (MECHA_PROC_MOVEMENT | MECHA_PROC_DAMAGE))
+
 // The main process loop to replace the ancient global iterators.
 // It's a bit hardcoded but I don't see anyone else adding stuff to
 // mechas, and it's easy enough to modify.
 /obj/mecha/periodic_step()
-	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	var/static/max_ticks = 16
-	// An empty parked mech has no player-visible cabin simulation to advance.
-	// Entry and every active-process transition wake it explicitly.
-	if(!occupant && !(current_processes & (MECHA_PROC_MOVEMENT | MECHA_PROC_DAMAGE)))
-		return PROCESS_KILL
 
 	if (current_processes & MECHA_PROC_MOVEMENT)
 		process_inertial_movement()
@@ -1634,7 +1638,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		H.stop_pulling()
 		if(!H.move_into(src, MECHA_SLOT_PILOT))
 			return
-		om_task_periodic(src, PERIODIC_SLOW)
+		om_changed(src, CHANGE_EXPLICIT) // the pilot feeds the derived `cabin_active`
 		src.add_fingerprint(H)
 		src.log_append_to_last("[H] moved in as pilot.")
 		update_icon()
@@ -1716,6 +1720,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	// and unlinks it, automatically, for both a human and an MMI/brain pilot.
 	var/moved = slot_remove(occupant, src.loc)
 	if(moved)//ejecting occupant
+		om_changed(src, CHANGE_EXPLICIT) // the pilot feeds the derived `cabin_active`
 		src.mecha_log_message("[mob_container] moved out.")
 		// TGUI: close the exosuit interface on eject.
 		SStgui.close_uis(src)
@@ -2611,11 +2616,10 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 //////// Mecha process() helpers ////////
 /////////////////////////////////////////
 /obj/mecha/proc/stop_process(process)
-	current_processes &= ~process
+	current_processes_remove(process)
 
 /obj/mecha/proc/start_process(process)
-	current_processes |= process
-	om_task_periodic(src, PERIODIC_SLOW)
+	current_processes_add(process)
 
 /////////////
 /obj/mecha/cloak()

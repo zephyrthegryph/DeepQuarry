@@ -39,7 +39,6 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	var/readapts = 1
 	var/max_readapts = 2
 	var/list/purchased_powers
-	var/mimicing = ""
 	var/cloaked = FALSE
 	var/is_reviving = FALSE
 	var/armor_deployed = FALSE //This is only used for changeling_generic_equip_all_slots() at the moment.
@@ -95,8 +94,14 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	// ALLOW(cooldown): per-ability cooldown table keyed by id (one var per ability would be dozens)
 	return (world.time < changeling_cooldowns[id])
 
+/// The voice we mimic, or "". Costs a chemical every 4 seconds while set (mimic_voice.dm, DECLARE_REPEAT).
+OM_FIELD(/datum/changeling, mimicing, "", CHANGE_DATUM_A)
+/// Digital camouflage we turned on. Costs a chemical every 4 seconds while set (digital_camo.dm, DECLARE_REPEAT).
+OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
+
 /datum/changeling/New(mob/living/new_owner)
 	..()
+	lifecycle_decls_init(src) // starts the chemical drain declarations (a non-atom has no materialize)
 	owner = new_owner
 	if(owner)
 		if(GLOB.possible_changeling_IDs.len)

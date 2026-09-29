@@ -44,9 +44,6 @@ Thus, the two variables affect pump operation are set in New():
 	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
 	if(frequency)
 		set_frequency(frequency)
-	// M2: the flow law is a Rust device edge, stepped from SSair every gas
-	// tick; this has no process() at all any more.
-	MACHINE_SLEEP(src)
 
 // M2 (simulation.md §5): the flow law lives on the Rust device edge
 // (device::DeviceParams::VolumePump). rust_bind_pipe_port fires once per

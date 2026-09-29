@@ -52,7 +52,7 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 	add_verb(src, /mob/living/proc/ventcrawl)
 
 /mob/living/simple_mob/animal/solargrub_larva/on_death(gibbed)
-	powermachine.draining = 0
+	powermachine.set_draining(0)
 	set_light(0)
 	return ..()
 
@@ -111,8 +111,7 @@ DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "machine_effect", OWN
 		return
 	ai_busy_begin()
 	forceMove(M)
-	powermachine.draining = 2
-	MACHINE_WAKE(powermachine)
+	powermachine.set_draining(2)
 	act_message(src, M, null, MSG_OTHERS(span_warning("%U% finds an opening and crawls inside %T%.")))
 	if(!(M.type in GLOB.grub_machine_overlays))
 		generate_machine_effect(M)
@@ -137,8 +136,7 @@ DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "machine_effect", OWN
 	if(machine_effect)
 		QDEL_NULL(machine_effect)
 	ai_brain?.lose_target()
-	powermachine.draining = 1
-	MACHINE_WAKE(powermachine)
+	powermachine.set_draining(1)
 	om_after(src, 3 SECONDS, PROC_REF(ai_brain_resume))
 /mob/living/simple_mob/animal/solargrub_larva/proc/do_ventcrawl(obj/machinery/atmospherics/unary/vent_pump/vent)
 	if(!vent)
@@ -192,8 +190,11 @@ DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "machine_effect", OWN
 	var/list/active_power_usages = list(15 KILOWATTS, 15 KILOWATTS, 15 KILOWATTS) // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
 	var/total_idle_power_usage = 3 KILOWATTS
 	var/list/idle_power_usages = list(1 KILOWATTS, 1 KILOWATTS, 1 KILOWATTS) // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
-	var/draining = 1
 	var/mob/living/simple_mob/animal/solargrub_larva/grub
+
+/// 0 stopped, 1 idle drain, 2 active drain.
+OM_FIELD(/obj/machinery/abstract_grub_machine, draining, 1, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/abstract_grub_machine, MACHINE_PIPELINE, "draining")
 
 /obj/machinery/abstract_grub_machine/Initialize(mapload)
 	. = ..()
@@ -205,8 +206,6 @@ DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "machine_effect", OWN
 
 /// Drains its area's power for its grub while draining; stopped, it sleeps until the grub moves.
 /obj/machinery/abstract_grub_machine/machine_step()
-	if(!draining)
-		return PROCESS_KILL
 	var/area/A = get_area(src)
 	if(!A)
 		return

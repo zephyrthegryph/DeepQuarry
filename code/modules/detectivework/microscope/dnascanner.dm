@@ -10,11 +10,13 @@
 	circuit = /obj/item/circuitboard/dna_analyzer
 
 	var/tmp/bloodsamp_handle
-	var/scanning = 0
 	var/scanner_progress = 0
 	var/scanner_rate = 5
 	EXPIRY_DECLARE(last_process_worldtime)
 	var/report_num = 0
+
+OM_FIELD(/obj/machinery/dnaforensics, scanning, FALSE, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/dnaforensics, MACHINE_PIPELINE, "scanning")
 
 /obj/machinery/dnaforensics/Initialize(mapload)
 	. = ..()
@@ -87,14 +89,13 @@
 	switch(action)
 		if("scanItem")
 			if(scanning)
-				scanning = FALSE
+				set_scanning(FALSE)
 				update_icon()
 			else
 				if(bloodsamp())
 					scanner_progress = 0
-					scanning = TRUE
+					set_scanning(TRUE)
 					EXPIRY_STAMP(src, last_process_worldtime, CLOCK_WORLD)
-					MACHINE_WAKE(src)
 					to_chat(ui.user, span_notice("Scan initiated."))
 					update_icon()
 				else
@@ -105,24 +106,21 @@
 			if(bloodsamp())
 				bloodsamp().forceMove(loc)
 				bloodsamp_handle = null
-				scanning = FALSE
+				set_scanning(FALSE)
 				update_icon()
 
 /// Scans while scanning (started from its UI); otherwise it sleeps.
 /obj/machinery/dnaforensics/machine_step()
-	if(!scanning)
-		return PROCESS_KILL
-	if(scanning)
-		if(!bloodsamp() || bloodsamp().loc != src)
-			bloodsamp_handle = null
-			scanning = 0
-		else if(scanner_progress >= 100)
-			complete_scan()
-			return
-		else
-			//calculate time difference
-			var/deltaT = (world.time - last_process_worldtime) * 0.1
-			scanner_progress = min(100, scanner_progress + scanner_rate * deltaT)
+	if(!bloodsamp() || bloodsamp().loc != src)
+		bloodsamp_handle = null
+		set_scanning(FALSE)
+	else if(scanner_progress >= 100)
+		complete_scan()
+		return
+	else
+		//calculate time difference
+		var/deltaT = (world.time - last_process_worldtime) * 0.1
+		scanner_progress = min(100, scanner_progress + scanner_rate * deltaT)
 	EXPIRY_STAMP(src, last_process_worldtime, CLOCK_WORLD)
 
 /obj/machinery/dnaforensics/proc/complete_scan()
@@ -146,7 +144,7 @@
 		P.info += span_bold("Scanned item:") + "<br>[bloodsamp().name]<br>[bloodsamp().desc]<br><br>" + data
 		P.forceMove(loc)
 		P.update_icon()
-		scanning = FALSE
+		set_scanning(FALSE)
 		update_icon()
 	return
 

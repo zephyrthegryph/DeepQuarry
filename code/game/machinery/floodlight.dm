@@ -14,6 +14,7 @@
 	var/brightness_on = 8		//can't remember what the maxed out value is
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/floodlight, "cell", /obj/item/cell)
+DECLARE_PERIODIC_WHILE(/obj/machinery/floodlight, MACHINE_PIPELINE, "on")
 
 /obj/machinery/floodlight/Initialize(mapload)
 	. = ..()
@@ -25,9 +26,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floodlight, "cell", /obj/item/cell)
 	icon_state = "flood[open ? "o" : ""][open && cell ? "b" : ""]0[on]"
 
 /obj/machinery/floodlight/machine_step()
-	if(!on)
-		return PROCESS_KILL
-
 	if(!cell || (cell.charge < (use * CELLRATE)))
 		turn_off(1)
 		return PROCESS_KILL
@@ -54,7 +52,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floodlight, "cell", /obj/item/cell)
 		return 0
 
 	set_on(1)
-	MACHINE_WAKE(src)
 	set_light_range(brightness_on)
 	set_light_power(brightness_on/2)
 	set_light_on(TRUE)

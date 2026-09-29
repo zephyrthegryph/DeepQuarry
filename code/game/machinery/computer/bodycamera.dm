@@ -12,12 +12,15 @@
 
 	var/obj/item/radio/bradio = null
 	var/obj/effect/overlay/vis/bpinboard
-	var/showing
-	var/the_camera
 
 	var/enabled = TRUE // on or off
 
 REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGISTRY_BODYCAMERA_SCREENS)
+
+/// What it shows (the wearer, or whatever holds them) and the bodycam feeding it; it follows them while both are set.
+OM_FIELD(/obj/machinery/computer/security/telescreen/bodycamera, showing, null, CHANGE_MACHINE_SETTINGS)
+OM_FIELD(/obj/machinery/computer/security/telescreen/bodycamera, the_camera, null, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/computer/security/telescreen/bodycamera, MACHINE_PIPELINE, list("showing", "the_camera"))
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/bodycamera, "bradio", /obj/item/radio)
 
@@ -74,9 +77,6 @@ DECLARE_REF(/obj/machinery/computer/security/telescreen/bodycamera, "bradio", OW
 
 /// Follows the camera while it shows one; otherwise it sleeps until it is shown one.
 /obj/machinery/computer/security/telescreen/bodycamera/machine_step()
-	if(!showing || !the_camera)
-		stop_showing()
-		return PROCESS_KILL
 	var/atom/them = om_resolve(showing)
 	var/obj/item/clothing/accessory/bodycam/bo_cam = om_resolve(the_camera)
 	var/turf/here = get_turf(them)
@@ -93,7 +93,7 @@ DECLARE_REF(/obj/machinery/computer/security/telescreen/bodycamera, "bradio", OW
 		return
 	if(!thing || !other_thing)
 		return
-	the_camera = om_handle(other_thing)
+	set_the_camera(om_handle(other_thing))
 	var/tries = 10
 	var/atom/recursive_loc = thing
 	while(--tries)
@@ -101,8 +101,7 @@ DECLARE_REF(/obj/machinery/computer/security/telescreen/bodycamera, "bradio", OW
 		if(!istype(recursive_loc, /atom/movable))
 			break
 	thing = recursive_loc // should get the topmost atom, which *should* be a mob, or a locker, or something that isnt just ~clothes~
-	showing = om_handle(thing)
-	MACHINE_WAKE(src)
+	set_showing(om_handle(thing))
 	if(bpinboard)
 		bpinboard.vis_contents = list(thing)
 
@@ -110,8 +109,8 @@ DECLARE_REF(/obj/machinery/computer/security/telescreen/bodycamera, "bradio", OW
 	// Reverse of the above
 	if(bpinboard)
 		bpinboard.vis_contents = null
-	showing = null
-	the_camera = null
+	set_showing(null)
+	set_the_camera(null)
 
 /obj/machinery/computer/security/telescreen/bodycamera/proc/maybe_stop_showing(thingref)
 	if(showing == thingref)

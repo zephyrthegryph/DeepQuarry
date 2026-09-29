@@ -4,22 +4,28 @@
 	icon = 'icons/obj/kitchen.dmi'
 	icon_state = "spike"
 
-	var/tmp/drying_handle
 
-DECLARE_PERIODIC(/obj/structure/tanning_rack, PERIODIC_SLOW) // SSObj fires ~every 2s , starting from wetness 30 takes ~1m
+/// The leather hung on the rack.
+OM_FIELD_TYPED(/obj/structure/tanning_rack, tmp, drying_handle, null, CHANGE_EXPLICIT)
+/// Holds wet leather: periodic_step() dries it (DECLARE_PERIODIC_WHILE). Adding wet leather raises
+/// CHANGE_EXPLICIT; the step raises it once the leather is dry.
+OM_DERIVE_FIELD(/obj/structure/tanning_rack, has_wet_leather, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/structure/tanning_rack, PERIODIC_SLOW, "has_wet_leather") // SSObj fires ~every 2s , starting from wetness 30 takes ~1m
+
+/obj/structure/tanning_rack/proc/has_wet_leather()
+	var/obj/item/stack/wetleather/W = drying()
+	return !QDELETED(W) && W.wetness
 
 /// Dries its leather while it holds wet leather; otherwise it sleeps until some is hung on it.
 /obj/structure/tanning_rack/periodic_step()
 	if(QDELETED(drying()))
-		drying_handle = null
-		return PROCESS_KILL
+		set_drying_handle(null)
+		return
+	drying().wetness = max(drying().wetness - 1, 0)
 	if(!drying().wetness)
-		return PROCESS_KILL
-	if(drying() && drying().wetness)
-		drying().wetness = max(drying().wetness - 1, 0)
-		if(!drying().wetness)
-			visible_message("The [drying()] is dry!")
-			update_icon()
+		om_changed(src, CHANGE_EXPLICIT) // dry: has_wet_leather() no longer holds
+		visible_message("The [drying()] is dry!")
+		update_icon()
 
 /obj/structure/tanning_rack/examine(mob/user)
 	. = ..()
@@ -39,12 +45,11 @@ DECLARE_PERIODIC(/obj/structure/tanning_rack, PERIODIC_SLOW) // SSObj fires ~eve
 	if(istype(A, /obj/item/stack/wetleather))
 		if(!drying()) // If not drying anything, start drying the thing
 			if(user.unEquip(A, target = src))
-				drying_handle = om_handle(A)
-				om_task_periodic(src, PERIODIC_SLOW)
+				set_drying_handle(om_handle(A))
 		else // Drying something, add if possible
 			var/obj/item/stack/wetleather/W = A
 			W.transfer_to(drying(), W.get_amount(), TRUE)
-			om_task_periodic(src, PERIODIC_SLOW)
+			om_changed(src, CHANGE_EXPLICIT) // more wet leather: has_wet_leather() may hold again
 		update_icon()
 		return TRUE
 	return FALSE
@@ -69,7 +74,7 @@ DECLARE_INTERACTIONS(/obj/structure/tanning_rack, \
 				S.forceMove(get_turf(src))
 		else
 			S.forceMove(get_turf(src))
-		drying_handle = null
+		set_drying_handle(null)
 		update_icon()
 	return TRUE
 

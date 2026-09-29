@@ -75,7 +75,12 @@ SUBSYSTEM_DEF(ticker)
 	/// world.time of last restart warning.
 	EXPIRY_DECLARE(last_restart_notify)
 
+/// Time left until a scheduled reboot; announce_countdown() counts it down while set (DECLARE_REPEAT).
+OM_FIELD_TYPED(/datum/controller/subsystem/ticker, tmp, reboot_countdown_left, 0, CHANGE_DATUM_A)
+DECLARE_REPEAT(/datum/controller/subsystem/ticker, "reboot_countdown_delay", announce_countdown, "reboot_countdown_left")
+
 /datum/controller/subsystem/ticker/Initialize()
+	lifecycle_decls_init(src) // starts the reboot countdown declaration (a non-atom has no materialize)
 	EXPIRY_SET(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10), CLOCK_WORLD)
 	return SS_INIT_SUCCESS
 
@@ -469,7 +474,7 @@ SUBSYSTEM_DEF(ticker)
 	if(!delay)
 		delay = CONFIG_GET(number/round_end_countdown) SECONDS
 		if(delay >= 60 SECONDS)
-			om_after_slot(src, "countdown_timer", 60 SECONDS, PROC_REF(announce_countdown), delay)
+			set_reboot_countdown_left(delay)
 
 	var/skip_delay = check_rights()
 	if(delay_end && !skip_delay)
@@ -482,17 +487,22 @@ SUBSYSTEM_DEF(ticker)
 	UNTIL(round_end_sound_sent || ELAPSED_SINCE(src, start_wait, CLOCK_WORLD) > (delay * 2)) //don't wait forever
 	om_after_slot(src, "reboot_timer", delay - (world.time - start_wait), PROC_REF(reboot_callback), reason, end_string)
 
-/datum/controller/subsystem/ticker/proc/announce_countdown(remaining_time)
-	remaining_time -= 60 SECONDS
-	if(remaining_time > 60 SECONDS)
-		to_chat(world, span_boldannounce("Rebooting World in [DisplayTimeText(remaining_time)]."))
-		om_after_slot(src, "countdown_timer", 60 SECONDS, PROC_REF(announce_countdown), remaining_time)
+/// The wait before the next countdown step: a minute, or what is left of the last one.
+/datum/controller/subsystem/ticker/proc/reboot_countdown_delay()
+	return min(60 SECONDS, reboot_countdown_left)
+
+/// One countdown step (DECLARE_REPEAT while reboot_countdown_left is set).
+/datum/controller/subsystem/ticker/proc/announce_countdown()
+	var/remaining_time = reboot_countdown_left - reboot_countdown_delay()
+	if(remaining_time > 0)
+		set_reboot_countdown_left(remaining_time)
+		if(remaining_time > 60 SECONDS)
+			to_chat(world, span_boldannounce("Rebooting World in [DisplayTimeText(remaining_time)]."))
 		return
-	if(remaining_time <= 60 SECONDS && remaining_time > 0)
-		om_after_slot(src, "countdown_timer", remaining_time, PROC_REF(announce_countdown), remaining_time - 1 SECOND)
-		return
+	set_reboot_countdown_left(0)
 	if(!delay_end)
 		to_chat(world, span_boldannounce("Rebooting World."))
+	return REPEAT_STOP
 
 /datum/controller/subsystem/ticker/proc/reboot_callback(reason, end_string)
 	if(end_string)
@@ -514,8 +524,7 @@ SUBSYSTEM_DEF(ticker)
 		return FALSE
 	to_chat(world, span_boldannounce("An admin has delayed the round end."))
 	om_cancel_timer_slot(src, "reboot_timer")
-	if(om_timer_slot_pending(src, "countdown_timer"))
-		om_cancel_timer_slot(src, "countdown_timer")
+	set_reboot_countdown_left(0)
 	return TRUE
 
 /**
@@ -526,8 +535,7 @@ SUBSYSTEM_DEF(ticker)
 /datum/controller/subsystem/ticker/proc/toggle_delay()
 	delay_end = !delay_end
 
-	if(om_timer_slot_pending(src, "countdown_timer"))
-		om_cancel_timer_slot(src, "countdown_timer")
+	set_reboot_countdown_left(0)
 	if(om_timer_slot_pending(src, "reboot_timer"))
 		om_cancel_timer_slot(src, "reboot_timer")
 	else
@@ -535,4 +543,4 @@ SUBSYSTEM_DEF(ticker)
 
 /datum/controller/subsystem/ticker/om_declared_timer_slots()
 	. = ..()
-	. += list("reboot_timer", "countdown_timer")
+	. += list("reboot_timer")

@@ -38,10 +38,6 @@
 	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP * 2.5)
 	if(frequency)
 		set_frequency(frequency)
-	// M2: the base /obj/machinery/Initialize() always schedules new machines
-	// onto SSmachines; this one has no process() at all (its flow law is a
-	// Rust device edge, stepped from SSair, not DM's process() scheduler).
-	MACHINE_SLEEP(src)
 
 // M2 (simulation.md §5): the flow law lives on the Rust device edge and runs
 // every gas tick regardless of DM's process() scheduling. rust_bind_pipe_port

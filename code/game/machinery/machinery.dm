@@ -114,7 +114,6 @@ OM_TIMER_SLOT(/obj/machinery, first_wake)
 	var/list/component_parts = null
 	latent_contents = TRUE
 	var/tmp/uid
-	var/panel_open = FALSE
 	var/global/gl_uid = 1
 	var/clicksound			// sound played on succesful interface. Just put it in the list of vars at the start.
 	var/clickvol = 40		// volume
@@ -176,17 +175,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	if(!mapload)
 		power_change()
 
-/// Lifecycle split (L2, atom_materialize.dm): a machine in fast mode joins the fast periodic
-/// pipeline when it becomes live, not in Initialize(), so a sandboxed machine starts nothing.
-/obj/machinery/on_materialize()
-	. = ..()
-	if(speed_process)
-		om_task_periodic(src, PERIODIC_FAST)
-
-/obj/machinery/on_dematerialize()
-	if(speed_process)
-		om_task_periodic_stop(src)
-	return ..()
+/// A machine in fast mode (speed_process) runs machine_step() on the fast periodic pipeline while
+/// it is live. A subtype's MACHINE_PIPELINE declaration replaces this one and its runtime moves the
+/// work between the machine pipeline and the fast lane on speed_process (code/datums/sys/periodic.dm).
+DECLARE_PERIODIC_WHILE(/obj/machinery, PERIODIC_FAST, "speed_process")
 
 // the base machine: board and parts deleted, occupants put out.
 /obj/machinery/on_destroy(force)
@@ -734,6 +726,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 		om_watch(src, watches[i], watches[i + 1], /datum/om/pipeline/machine)
 		if(istype(watches[i], /datum/mob_chunk))
 			GLOB.mob_chunk_watches++
+	// ALLOW(sys_periodic_toggle): this is the sleep-on-keys primitive itself (ends step work until a watched key fires); react_sleep_tokens is its bookkeeping, not a state the work runs while
 	MACHINE_SLEEP(src)
 	return TRUE
 
@@ -779,3 +772,6 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 DECLARE_REF(/obj/machinery, "circuit", OWNED, null)
 
 DECLARE_REF(/obj/machinery, "component_parts", OWNED_LIST, null)
+
+/// The maintenance panel is open.
+OM_FIELD(/obj/machinery, panel_open, FALSE, CHANGE_MACHINE_PANEL)

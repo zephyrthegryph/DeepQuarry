@@ -221,6 +221,14 @@
 	var/static/gid = 1
 	var/id = 0
 
+DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/powered/pump/huge, MACHINE_PIPELINE, "on")
+
+/// Switching it keeps the power draw in step (machine_step() no longer runs while off to do it).
+/obj/machinery/portable_atmospherics/powered/pump/huge/set_on(value)
+	. = ..()
+	if(.)
+		set_use_power(1 + on)
+
 /obj/machinery/portable_atmospherics/powered/pump/huge/Initialize(mapload)
 	. = ..(mapload, TRUE)
 
@@ -266,11 +274,10 @@
 		last_flow_rate = 0
 		last_power_draw = 0
 		update_icon()
+		return // set_on(0) ends the declared work
 	var/new_use_power = 1 + on
 	if(new_use_power != use_power)
 		set_use_power(new_use_power)
-	if(!on)
-		return PROCESS_KILL
 
 	var/power_draw = -1
 

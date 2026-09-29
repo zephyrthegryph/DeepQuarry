@@ -713,10 +713,12 @@ TYPE_TABLE(/obj/item/storage/box/khcrystal, hold_spec, list(HOLD_ONLY(list(/obj/
 	taurtype = /datum/sprite_accessory/tail/taur/feline/tempest
 	no_message = "These saddlebags seem to be fitted for someone else, and keep slipping off!"
 	actions_types = list(/datum/action/item_action/toggle_mlembulance)
-	var/ambulance = FALSE
 	var/datum/looping_sound/ambulance/soundloop
 	var/ambulance_state = FALSE
 	EXPIRY_DECLARE(ambulance_last_switch)
+
+OM_FIELD(/obj/item/storage/backpack/saddlebag/tempest, ambulance, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/storage/backpack/saddlebag/tempest, PERIODIC_SLOW, "ambulance")
 
 /obj/item/storage/backpack/saddlebag/tempest/Initialize(mapload)
 	soundloop = new(list(src), FALSE)
@@ -725,9 +727,8 @@ TYPE_TABLE(/obj/item/storage/box/khcrystal, hold_spec, list(HOLD_ONLY(list(/obj/
 DECLARE_REF(/obj/item/storage/backpack/saddlebag/tempest, "soundloop", OWNED, null)
 
 /obj/item/storage/backpack/saddlebag/tempest/ui_action_click(mob/user, actiontype)
-	ambulance = !(ambulance)
+	set_ambulance(!ambulance)
 	if(ambulance)
-		om_task_periodic(src, PERIODIC_SLOW)
 		item_state = "tempestsaddlebag-amb"
 		icon_state = "tempestbag-amb"
 		if (ismob(loc))
@@ -746,9 +747,6 @@ DECLARE_REF(/obj/item/storage/backpack/saddlebag/tempest, "soundloop", OWNED, nu
 		soundloop.stop()
 
 /obj/item/storage/backpack/saddlebag/tempest/periodic_step()
-	if(!ambulance)
-		om_task_periodic_stop(src)
-		return
 	if(ELAPSED(src, ambulance_last_switch, CLOCK_WORLD) > 1.5 SECONDS)
 		ambulance_state = !(ambulance_state)
 		var/newlight = "#FF0000"

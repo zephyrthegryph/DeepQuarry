@@ -58,6 +58,17 @@
 /datum/generated_station_planner
 	var/error_message
 
+/// The pending plan_async() job's state; plan_poll() polls it every tick while set (DECLARE_REPEAT).
+OM_FIELD_TYPED(/datum/generated_station_planner, tmp/list, poll_state, null, CHANGE_DATUM_A)
+DECLARE_REPEAT(/datum/generated_station_planner, "poll_delay", plan_poll, "poll_state")
+
+/datum/generated_station_planner/New()
+	..()
+	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
+
+/datum/generated_station_planner/proc/poll_delay()
+	return world.tick_lag
+
 /datum/generated_station_planner/proc/plan(seed, width = 160, height = 160)
 	error_message = null
 	seed = generated_station_plan_seed(seed)
@@ -89,15 +100,18 @@
 	if(!job_id)
 		return plan_async_end(state, plan_failed(null, request_json, seed, "Rust planner did not return a job handle"))
 	// The worker owns only immutable Rust data; the game keeps its ticks until the result is ready.
-	om_after(src, world.tick_lag, PROC_REF(plan_poll), state)
+	set_poll_state(state)
 
-/datum/generated_station_planner/proc/plan_poll(list/state)
+/// Polls the pending Rust job (DECLARE_REPEAT while poll_state is set); once it is done, reads it back.
+/datum/generated_station_planner/proc/plan_poll()
+	var/list/state = poll_state
 	var/status = vg_verdigris_job_poll(state["job"])
 	if(status == "PENDING")
-		om_after(src, world.tick_lag, PROC_REF(plan_poll), state)
 		return
+	set_poll_state(null)
 	if(plan_ready(state, status))
 		om_task_slices(src, PROC_REF(plan_fetch_slice), state)
+	return REPEAT_STOP
 
 /// The job finished: TRUE with the header read and the pages ready to fetch; FALSE when it failed
 /// (the failure is handed on).

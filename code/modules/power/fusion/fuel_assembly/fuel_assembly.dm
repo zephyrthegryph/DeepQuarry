@@ -9,11 +9,14 @@
 	var/list/rod_quantities = list() // ALLOW(instance_list): d: filled in New() with the rod's reagent amounts
 	var/fuel_type = MAT_COMPOSITE
 	var/fuel_colour
-	var/radioactivity = 0
 	var/const/initial_amount = 3000000
 	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
+
+/// Radioactive rods pulse radiation (periodic_step()) for as long as they are radioactive.
+OM_FIELD(/obj/item/fuel_assembly, radioactivity, 0, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/fuel_assembly, PERIODIC_SLOW, "radioactivity")
 
 /obj/item/fuel_assembly/periodic_step()
 	radiate()
@@ -48,9 +51,8 @@
 		var/mat_rad = dq_material_radioactivity(material)
 		var/mat_lum = dq_material_luminescence(material)
 		if(mat_rad)
-			radioactivity = mat_rad
+			set_radioactivity(mat_rad)
 			desc += " It is warm to the touch."
-			om_task_periodic(src, PERIODIC_SLOW)
 		if(mat_lum)
 			set_light(mat_lum, mat_lum, material.icon_colour)
 	else

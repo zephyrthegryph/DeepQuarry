@@ -10,18 +10,19 @@
 	var/tmp/auth_card_handle
 	locked = 1
 	var/power_use = 15
-	var/obj/effect/suspension_field/suspension_field
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high)
+/// The field it projects while active (activate() .. deactivate()).
+OM_FIELD_TYPED(/obj/machinery/suspension_gen, obj/effect/suspension_field, suspension_field, null, CHANGE_MACHINE_SETTINGS)
+/// Holds its field (draining its cell) while it has one.
+DECLARE_PERIODIC_WHILE(/obj/machinery/suspension_gen, MACHINE_PIPELINE, "suspension_field")
 
 /obj/machinery/suspension_gen/Initialize(mapload)
 	. = ..()
 	make_rotatable()
 
-/// Holds its field (draining its cell) while active; off, it sleeps until activate().
+/// Holds its field (draining its cell); runs while it has one (declared).
 /obj/machinery/suspension_gen/machine_step()
-	if(!suspension_field)
-		return PROCESS_KILL
 	if(suspension_field)
 		cell.charge -= power_use
 
@@ -192,8 +193,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 		if(!anom.stats)
 			anom.stats = new /datum/anomaly_stats(anom)
 
-	suspension_field = new(T)
-	MACHINE_WAKE(src)
+	set_suspension_field(new /obj/effect/suspension_field(T))
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] activates with a low hum."))
 	icon_state = "suspension_on"
 	play_sfx(loc, SFX_MACHINES_QUIET_BEEP)
@@ -232,7 +232,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] deactivates with a gentle shudder."))
 	qdel(suspension_field)
-	suspension_field = null
+	set_suspension_field(null)
 	icon_state = "suspension_wrenched"
 	play_sfx(loc, SFX_MACHINES_QUIET_BEEP)
 	update_icon()

@@ -16,20 +16,24 @@
 	icon_state = "energy_siphon"
 	cast_methods = CAST_RANGED
 	aspect = ASPECT_SHOCK
-	var/siphoning_handle // What the spell is currently draining.  Does nothing if null.
 	// ALLOW(instance_list): d: rebuilt in place every cast and passed to recursive_content_check() to fill
 	var/list/things_to_siphon = list() //Things which are actually drained as a result of the above not being null.
 	var/flow_rate = 1000 // Limits how much electricity can be drained per second.  Measured by default in god knows what.
+
+/// What the spell is currently draining (an OM handle). A field: it drains every 2 s while linked.
+OM_FIELD(/obj/item/spell/energy_siphon, siphoning_handle, null, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/spell/energy_siphon, PERIODIC_SLOW, "siphoning_handle")
 
 // the siphon stops draining its target.
 /obj/item/spell/energy_siphon/on_destroy(force)
 	stop_siphoning()
 	..()
 
-/// Drains every 2 s while linked (on_ranged_cast() starts it); unlinked, it sleeps.
+/// Drains every 2 s while linked (declared on siphoning_handle); unlinked, it sleeps.
 /obj/item/spell/energy_siphon/periodic_step()
-	if(!siphoning())
-		return PROCESS_KILL
+	if(!siphoning()) // the target was deleted: the handle no longer resolves
+		stop_siphoning()
+		return
 	if(!pay_energy(100))
 		to_chat(owner_ref(), span_warning("You can't afford to maintain the siphon link!"))
 		stop_siphoning()
@@ -51,8 +55,7 @@
 		if(!things_to_siphon.len)
 			to_chat(user, span_warning("You cannot steal energy from \a [AM]."))
 			return 0
-		siphoning_handle = om_handle(AM)
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_siphoning_handle(om_handle(AM))
 		update_icon()
 		add_attack_logs(user,AM,"Siphoned energy from [src]")
 	else
@@ -73,7 +76,7 @@
 			things_to_siphon.Remove(AM)
 
 /obj/item/spell/energy_siphon/proc/stop_siphoning()
-	siphoning_handle = null
+	set_siphoning_handle(null)
 	things_to_siphon.Cut()
 	update_icon()
 

@@ -4,8 +4,11 @@
 	desc = "This is a feeder. Put in a reagent container, then click and drag the feeder to someone!"
 	anchored = FALSE
 	density = FALSE
-	var/attached_handle
-	var/obj/item/reagent_containers/beaker = null
+
+OM_FIELD(/obj/machinery/feeder, attached_handle, null, CHANGE_MACHINE_OCCUPANT)
+OM_FIELD_TYPED(/obj/machinery/feeder, obj/item/reagent_containers, beaker, null, CHANGE_MACHINE_OCCUPANT)
+/// Feeds while a patient and a container are attached.
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/feeder, MACHINE_PIPELINE, list("attached_handle", "beaker"))
 
 /obj/machinery/feeder/update_icon()
 	if(attached())
@@ -41,15 +44,14 @@
 
 	if(attached())
 		visible_message("The feeding tube is pulled out of [attached()].")
-		attached_handle = null
+		set_attached_handle(null)
 		update_icon()
 		return
 
 	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
 		visible_message("[usr] inserts the feeding tube into \the [over_object].")
-		attached_handle = om_handle(over_object)
+		set_attached_handle(om_handle(over_object))
 		update_icon()
-		MACHINE_WAKE(src)
 
 
 /obj/machinery/feeder/declare_interactions(list/into)
@@ -75,8 +77,7 @@
 
 	user.drop_item()
 	W.forceMove(src)
-	beaker = W
-	MACHINE_WAKE(src)
+	set_beaker(W)
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	update_icon()
 	return TRUE
@@ -93,7 +94,7 @@
 
 /obj/machinery/feeder/screwdriver_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)
-	panel_open = !panel_open
+	set_panel_open(!panel_open)
 	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the maintenance hatch of [src]."))
 	update_icon()
 	om_task_timed(user, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
@@ -104,7 +105,7 @@
 	new /obj/item/stack/material/plastic(loc, 4)
 	if(beaker)
 		beaker.forceMove(get_turf(src))
-		beaker = null
+		set_beaker(null)
 	qdel(src)
 
 /// Feeds while a patient and a container are attached; otherwise it sleeps until one is.
@@ -112,14 +113,14 @@
 	if(attached())
 		if(!(get_dist(src, attached()) <= 1 && isturf(attached().loc)))
 			visible_message("The tube is pulled out of [attached()].")
-			attached_handle = null
+			set_attached_handle(null)
 			update_icon()
-			return PROCESS_KILL
-
-	if(!attached() || !beaker)
-		return PROCESS_KILL
+			return
+	else
+		set_attached_handle(null) // the patient is gone
+		return
 	// Give food
-	if(beaker.volume > 0)
+	if(beaker && beaker.volume > 0)
 		var/transfer_amount = 2
 		beaker.reagents.trans_to_mob(attached(), transfer_amount, CHEM_INGEST)
 		update_icon()
@@ -135,7 +136,7 @@
 	if(!beaker)
 		return FALSE
 	beaker.forceMove(get_turf(src))
-	beaker = null
+	set_beaker(null)
 	update_icon()
 	return TRUE
 

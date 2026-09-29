@@ -19,7 +19,6 @@
 
 	circuit = /obj/item/circuitboard/fusion_core
 
-	var/obj/effect/fusion_em_field/owned_field
 	var/field_strength = 1//0.01
 	var/target_field_strength = 1
 	var/id_tag
@@ -35,6 +34,10 @@
 REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 
 DECLARE_REAGENTS(/obj/machinery/power/fusion_core, 10000, null)
+
+/// Its running field (Startup()/Shutdown()); the core ticks it while it has one.
+OM_FIELD_TYPED(/obj/machinery/power/fusion_core, obj/effect/fusion_em_field, owned_field, null, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/power/fusion_core, MACHINE_PIPELINE, "owned_field")
 
 /obj/machinery/power/fusion_core/Initialize(mapload)
 	. = ..()
@@ -63,8 +66,11 @@ DECLARE_REF(/obj/machinery/power/fusion_core, "material_sample", SPILL, null)
 
 /// Runs its field while it has one; shut down, it sleeps until Startup().
 /obj/machinery/power/fusion_core/machine_step()
-	if((has_stat(BROKEN)) || !power_region || !owned_field)
-		Shutdown()
+	if((has_stat(BROKEN)) || !power_region)
+		Shutdown() // clears owned_field through its setter: the declaration stops the work
+		return
+	// ALLOW(sys_periodic_guard): owned_field is also a DECLARE_REF PAIR (core_field.dm) that the lifecycle nulls through vars[] when the field is destroyed, bypassing set_owned_field(), so the declaration can be stale for that one step; this parks it until the next raise re-evaluates.
+	if(!owned_field)
 		return PROCESS_KILL
 
 	OM_EMIT(src, /datum/om/event/hose_forcepump)
@@ -92,9 +98,8 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 /obj/machinery/power/fusion_core/proc/Startup()
 	if(owned_field)
 		return
-	owned_field = new(loc, src)
+	set_owned_field(new /obj/effect/fusion_em_field(loc, src))
 	owned_field.ChangeFieldStrength(field_strength)
-	MACHINE_WAKE(src)
 	icon_state = "core1"
 	set_use_power(USE_POWER_ACTIVE)
 	. = 1
@@ -107,7 +112,7 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 		else
 			owned_field.RadiateAll()
 		qdel(owned_field)
-		owned_field = null
+		set_owned_field(null)
 	set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/power/fusion_core/proc/AddParticles(name, quantity = 1)

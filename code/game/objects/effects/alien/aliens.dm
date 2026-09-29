@@ -256,10 +256,16 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 		target_strength = 4
 	tick()
 
+DECLARE_REPEAT(/obj/effect/alien/acid, "acid_tick_delay", tick, null)
+
+/// Deciseconds until the acid's next bite (read each time the repeat re-arms).
+/obj/effect/alien/acid/proc/acid_tick_delay()
+	return rand(15 SECONDS, 20 SECONDS)
+
 /obj/effect/alien/acid/proc/tick()
 	if(!target)
 		qdel(src)
-		return
+		return REPEAT_STOP
 
 	ticks += 1
 	if(ticks >= target_strength)
@@ -276,7 +282,7 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 		else if(isobj(target))
 			qdel(target)
 		qdel(src)
-		return
+		return REPEAT_STOP
 
 	switch(target_strength - ticks)
 		if(6)
@@ -287,7 +293,6 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 			visible_message(span_alium("[src.target] is struggling to withstand the acid!"))
 		if(0 to 1)
 			visible_message(span_alium("[src.target] begins to crumble under the acid!"))
-	om_after(src, rand(150, 200), PROC_REF(tick))
 
 //Xenomorph Effect egg removed, replaced with Structure Egg.
 

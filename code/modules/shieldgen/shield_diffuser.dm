@@ -11,8 +11,15 @@
 	density = FALSE
 	level = 1
 	maintenance_flags = MACHINE_MAINT_STANDARD
-	var/alarm = 0
-	var/enabled = 1
+
+/// Proximity alarm countdown in steps (meteor_alarm()); while it runs the diffuser is silenced.
+OM_FIELD(/obj/machinery/shield_diffuser, alarm, 0, CHANGE_MACHINE_SETTINGS)
+OM_FIELD(/obj/machinery/shield_diffuser, enabled, TRUE, CHANGE_MACHINE_SETTINGS)
+/// It has a step to take: an alarm to count down, or a diffuse pass while enabled.
+OM_DERIVE_FIELD(/obj/machinery/shield_diffuser, diffuser_has_work, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/shield_diffuser/proc/diffuser_has_work()
+	return enabled || alarm
+DECLARE_PERIODIC_WHILE(/obj/machinery/shield_diffuser, MACHINE_PIPELINE, "diffuser_has_work")
 
 /obj/machinery/shield_diffuser/Initialize(mapload)
 	. = ..()
@@ -32,14 +39,14 @@
 
 /obj/machinery/shield_diffuser/machine_step()
 	if(alarm)
-		alarm--
+		set_alarm(alarm - 1)
 		if(!alarm)
 			update_icon()
 		else
 			return
 
 	if(!enabled)
-		return PROCESS_KILL
+		return
 	for(var/direction in GLOB.cardinal)
 		var/turf/simulated/shielded_tile = get_step(get_turf(src), direction)
 		for(var/obj/effect/shield/S in turf_contents_of_type(shielded_tile, /obj/effect/shield))
@@ -75,11 +82,10 @@
 /obj/machinery/shield_diffuser/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(alarm)
 		to_chat(user, "You press an override button on \the [src], re-enabling it.")
-		alarm = 0
+		set_alarm(0)
 		update_icon()
 		return TRUE
-	enabled = !enabled
-	MACHINE_WAKE(src)
+	set_enabled(!enabled)
 	set_use_power(enabled ? USE_POWER_ACTIVE : USE_POWER_IDLE)
 	update_icon()
 	to_chat(user, "You turn \the [src] [enabled ? "on" : "off"].")
@@ -88,8 +94,7 @@
 /obj/machinery/shield_diffuser/proc/meteor_alarm(duration)
 	if(!duration)
 		return
-	alarm = round(max(alarm, duration))
-	MACHINE_WAKE(src)
+	set_alarm(round(max(alarm, duration)))
 	update_icon()
 
 /// Shield segments call this when they regenerate or appear, so stable
@@ -111,7 +116,3 @@
 	if(alarm)
 		. += "A red LED labeled \"Proximity Alarm\" is blinking on the control panel."
 
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/shield_diffuser/step_start_condition()
-	return enabled

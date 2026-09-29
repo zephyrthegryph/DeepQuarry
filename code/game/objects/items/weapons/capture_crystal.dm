@@ -229,7 +229,13 @@
 		icon_state = empty_icon
 	if(!cooldown_check())
 		icon_state = "[icon_state]-busy"
-		om_after(src, activate_cooldown, TYPE_PROC_REF(/atom, update_icon)) //If it's busy then we want to wait a bit to fix the sprite after the cooldown is done.
+
+OM_TIMER_SLOT(/obj/item/capture_crystal, cooldown_icon)
+
+/// Starts the activation cooldown; the busy sprite is fixed once, when it ends.
+/obj/item/capture_crystal/proc/start_activate_cooldown()
+	COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
+	om_after_slot(src, "cooldown_icon", activate_cooldown, TYPE_PROC_REF(/atom, update_icon))
 
 /obj/item/capture_crystal/proc/cooldown_check()
 	if(!COOLDOWN_FINISHED(src, activate_cooldown_until))
@@ -361,7 +367,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 			capture_chance = 0
 			to_chat(user, span_notice("There's no chance... It needs to be weaker."))
 
-	COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
+	start_activate_cooldown()
 	log_admin("[user] threw a capture crystal at [M] and got [capture_chance]% chance to catch.")
 	return capture_chance
 
@@ -469,7 +475,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		return
 	else if(isliving(target))						//So we don't have a mob, let's try to claim one! Is the target a mob?
 		var/mob/living/M = target
-		COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
+		start_activate_cooldown()
 		if(M.capture_caught)					//Can't capture things that were already caught.
 			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			to_chat(user, span_notice("\The [src] clicks unsatisfyingly... \The [M] is already under someone else's control."))
@@ -534,7 +540,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 			var/mob/living/simple_mob/M = bound_mob
 			M.ai_brain.go_sleep()	//AI doesn't need to think when it's in the crystal
 		bound_mob.forceMove(src)
-		COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
+		start_activate_cooldown()
 		act_message(bound_mob, src, MSG_SELF("%T% pulls you back into confinement in a flash of light!!!"), MSG_OTHERS("\The [user]'s [src] flashes, disappearing %U% in an instant!!!"))
 		animate_action(turfmemory)
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_IN)
@@ -554,7 +560,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		bound_mob.forceMove(user.drop_location())
 	else							//We got thrown! Let's go where we got thrown
 		bound_mob.forceMove(target.drop_location())
-	COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
+	start_activate_cooldown()
 	if(isanimal(bound_mob))
 		var/mob/living/simple_mob/M = bound_mob
 		M.ai_brain.go_wake()		//Okay it's time to do work, let's wake up!
@@ -1019,7 +1025,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		return
 	else if(isliving(target))						//So we don't have a mob, let's try to claim one! Is the target a mob?
 		var/mob/living/M = target
-		COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
+		start_activate_cooldown()
 		if(M.capture_caught)					//Can't capture things that were already caught.
 			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			to_chat(user, span_notice("\The [src] clicks unsatisfyingly... \The [M] is already under someone else's control."))

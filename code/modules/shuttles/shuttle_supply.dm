@@ -3,7 +3,7 @@
 	var/away_location = FERRY_LOCATION_OFFSITE	//the location to hide at while pretending to be in-transit
 	var/late_chance = 80
 	var/max_late_time = 300
-	flags = SHUTTLE_FLAGS_PROCESS|SHUTTLE_FLAGS_SUPPLY
+	shuttle_flags = SHUTTLE_FLAGS_PROCESS|SHUTTLE_FLAGS_SUPPLY
 	category = /datum/shuttle/autodock/ferry/supply
 
 /datum/shuttle/autodock/ferry/supply/short_jump(obj/effect/shuttle_landmark/destination)
@@ -105,5 +105,5 @@
 	landmark_offsite_tag = "supply_cc"
 	landmark_station_tag = "supply_station"
 	docking_controller_tag = "supply_shuttle"
-	flags = SHUTTLE_FLAGS_PROCESS|SHUTTLE_FLAGS_SUPPLY
+	shuttle_flags = SHUTTLE_FLAGS_PROCESS|SHUTTLE_FLAGS_SUPPLY
 	move_direction = WEST

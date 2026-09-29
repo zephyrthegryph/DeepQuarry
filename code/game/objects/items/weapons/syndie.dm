@@ -83,6 +83,9 @@ DECLARE_INTERACTIONS(/obj/item/syndie/c4explosive, INTERACT_ITEM(null, PROC_REF(
 /obj/item/flame/lighter/zippo/c4detonator
 	var/bomb_handle
 
+/// Opened as a detonator it is not a flame: it burns only while lit as a zippo.
+DECLARE_PERIODIC_WHILE_ALL(/obj/item/flame/lighter/zippo/c4detonator, PERIODIC_SLOW, list("lit", "!detonator_mode"))
+
 EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo/c4detonator, INTERACT_SELF(null, PROC_REF(c4detonator_self)))
 
 /// Old attack_self. FALSE (not in detonator mode) falls to the zippo's own self-use.
@@ -93,7 +96,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo/c4detonator, INTERACT_SELF(nul
 
 	if(!lit)
 		base_state = icon_state
-		lit = TRUE
+		set_lit(TRUE)
 		icon_state = "[base_state]1"
 		act_message(user, src, others = span_rose("Without even breaking stride, %U% flips open %T% in one smooth movement."))
 
@@ -116,13 +119,13 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo/c4detonator, INTERACT_SELF(nul
 				message_admins(span_danger("[key_name_admin(user)] has triggered [bomb_to_explode] with [src]."))
 
 		if("Close the lighter.")
-			lit = FALSE
+			set_lit(FALSE)
 			icon_state = "[base_state]"
 			act_message(user, src, others = span_rose("You hear a quiet click, as %U% shuts off %T% without even looking at what they're doing."))
 
 
 /obj/item/flame/lighter/zippo/c4detonator/screwdriver_act(mob/user, obj/item/tool)
-	detonator_mode = !detonator_mode
+	set_detonator_mode(!detonator_mode)
 	playsound(src, tool.usesound, 50, 1)
 	to_chat(user, span_notice("You unscrew the top panel of \the [src] revealing a button."))
 	return ITEM_INTERACT_SUCCESS

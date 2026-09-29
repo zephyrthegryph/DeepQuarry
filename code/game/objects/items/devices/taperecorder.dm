@@ -9,7 +9,6 @@ MATERIAL_MIX(/obj/item/taperecorder, list(MAT_STEEL = 60,MAT_GLASS = 30))
 
 
 	var/emagged = 0.0
-	var/recording = 0.0
 	var/playing = 0.0
 	var/playsleepseconds = 0.0
 	var/obj/item/rectape/mytape = /obj/item/rectape/random
@@ -29,6 +28,9 @@ MATERIAL_MIX(/obj/item/taperecorder, list(MAT_STEEL = 60,MAT_GLASS = 30))
 /obj/item/taperecorder/empty
 	mytape = null
 
+OM_FIELD(/obj/item/taperecorder, recording, 0, CHANGE_EXPLICIT)
+// The tape fills one second at a time while recording.
+DECLARE_REPEAT(/obj/item/taperecorder, 1 SECOND, record_tick, "recording")
 DECLARE_REF(/obj/item/taperecorder, "mytape", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/taperecorder, "mytape", null)
 DECLARE_REGISTRY(/obj/item/taperecorder, REGISTRY_LISTENING_OBJECTS)
@@ -115,7 +117,7 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 /obj/item/taperecorder/emag_act(remaining_charges, mob/user)
 	if(emagged == 0)
 		emagged = 1
-		recording = 0
+		set_recording(0)
 		to_chat(user, span_warning("PZZTTPFFFT"))
 		update_icon()
 		return 1
@@ -154,22 +156,19 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 		return
 	if(mytape.used_capacity < mytape.max_capacity)
 		to_chat(user, span_notice("Recording started."))
-		recording = 1
+		set_recording(1)
 		update_icon()
 
 		mytape.record_speech("Recording started.")
-
-		//count seconds until full, or recording is stopped
-		om_after(src, 1 SECOND, PROC_REF(record_tick))
 		return
 	else
 		to_chat(user, span_notice("The tape is full."))
 
 /// One second of recording: the tape fills up.
 /obj/item/taperecorder/proc/record_tick()
-	if(!mytape || !recording || mytape.used_capacity >= mytape.max_capacity)
+	if(!mytape || mytape.used_capacity >= mytape.max_capacity)
 		update_icon()
-		return
+		return REPEAT_STOP
 	mytape.used_capacity++
 	if(mytape.used_capacity >= mytape.max_capacity)
 		if(ismob(loc))
@@ -177,12 +176,11 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 			to_chat(M, span_notice("The tape is full."))
 		stop_recording()
 		update_icon()
-		return
-	om_after(src, 1 SECOND, PROC_REF(record_tick))
+		return REPEAT_STOP
 
 /obj/item/taperecorder/proc/stop_recording()
 	//Sanity checks skipped, should not be called unless actually recording
-	recording = 0
+	set_recording(0)
 	update_icon()
 	mytape.record_speech("Recording stopped.")
 	if(ismob(loc))

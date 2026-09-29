@@ -11,8 +11,10 @@
 
 	/// Variable containing transferred AI
 	var/occupier_handle
-	/// Variable dictating if we are in the process of restoring the occupier AI
-	var/restoring = FALSE
+
+/// Variable dictating if we are in the process of restoring the occupier AI
+OM_FIELD(/obj/machinery/computer/aifixer, restoring, FALSE, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/computer/aifixer, MACHINE_PIPELINE, "restoring")
 
 /obj/machinery/computer/aifixer/declare_interactions(list/into)
 	into += list(
@@ -107,7 +109,7 @@
 	if(..())
 		return TRUE
 	if(!occupier())
-		restoring = FALSE
+		set_restoring(FALSE)
 
 	if(action)
 		play_sfx(src, SFX_TERMINAL_TYPE)
@@ -117,8 +119,7 @@
 			if(occupier() && (occupier().vitality() < 1 || occupier().backup_capacitor() < 100))
 				to_chat(ui.user, span_notice("Reconstruction in progress. This will take several minutes."))
 				play_sfx(src, SFX_MACHINES_TERMINAL_PROMPT_CONFIRM)
-				restoring = TRUE
-				MACHINE_WAKE(src)
+				set_restoring(TRUE)
 				var/mob/observer/dead/ghost = occupier().get_ghost()
 				if(ghost)
 					ghost.notify_revive("Your core files are being restored!", source = src)
@@ -137,16 +138,15 @@
 	return occupier().vitality() < 1 || occupier().backup_capacitor() < 100
 
 /obj/machinery/computer/aifixer/machine_step()
-	if(!restoring || !occupier())
-		return PROCESS_KILL
+	if(!occupier())
+		set_restoring(FALSE)
+		return
 	if(!operable())
 		return
 	var/oldstat = occupier().stat
-	restoring = Fix()
+	set_restoring(Fix())
 	if(oldstat != occupier().stat)
 		update_icon()
-	if(!restoring)
-		return PROCESS_KILL
 
 /obj/machinery/computer/aifixer/update_icon()
 	. = ..()

@@ -7,7 +7,6 @@
 	anchored = TRUE
 
 	var/obj/item/tank/tank
-	var/breather_handle
 	var/obj/item/clothing/mask/breath/contained
 
 	var/spawn_type = /obj/item/tank/emergency/oxygen/engi
@@ -18,6 +17,11 @@
 	power_channel = ENVIRON
 	idle_power_usage = 10
 	active_power_usage = 120 // No idea what the realistic amount would be.
+
+/// Who wears the mask (a handle), or null.
+OM_FIELD(/obj/machinery/oxygen_pump, breather_handle, null, CHANGE_MACHINE_OCCUPANT)
+/// Keeps the mask and internals right while a mask is on someone.
+DECLARE_PERIODIC_WHILE(/obj/machinery/oxygen_pump, MACHINE_PIPELINE, "breather_handle")
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/oxygen_pump, "tank", "spawn_type")
 DECLARE_DEFAULT_CHILD(/obj/machinery/oxygen_pump, "contained", "mask_type")
@@ -84,7 +88,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		breather().cozyloop.stop() // Cozy Music
 		if(breather().internals)
 			breather().internals.icon_state = "internal0"
-		breather_handle = null
+		set_breather_handle(null)
 		set_use_power(USE_POWER_IDLE)
 	return TRUE
 
@@ -97,8 +101,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		C.equip_to_slot(contained, SLOT_ID_MASK)
 		if(tank)
 			tank.forceMove(C)
-		breather_handle = om_handle(C)
-		MACHINE_WAKE(src)
+		set_breather_handle(om_handle(C))
 		om_after(src, 1, PROC_REF(attach_mask_finish))
 
 /obj/machinery/oxygen_pump/proc/attach_mask_finish()
@@ -176,10 +179,11 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 	else
 		. += span_warning("It is missing a tank!")
 
-/// Runs while a mask is on someone; with nobody attached it sleeps until attach_mask().
+/// Runs while a mask is on someone (the declaration above).
 /obj/machinery/oxygen_pump/machine_step()
-	if(!breather())
-		return PROCESS_KILL
+	if(!breather()) // the breather was deleted
+		set_breather_handle(null)
+		return
 	if(breather())
 		if(!can_apply_to_target(breather()))
 			if(tank)
@@ -188,7 +192,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 			contained.forceMove(src)
 			breather().cozyloop.stop() // Cozy Music
 			src.visible_message(span_notice("\The [contained] rapidly retracts back into \the [src]!"))
-			breather_handle = null
+			set_breather_handle(null)
 			set_use_power(USE_POWER_IDLE)
 		else if(!breather().internal && tank)
 			breather().internal = tank
@@ -268,8 +272,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		C.equip_to_slot(contained, SLOT_ID_MASK)
 		if(tank)
 			tank.forceMove(C)
-		breather_handle = om_handle(C)
-		MACHINE_WAKE(src)
+		set_breather_handle(om_handle(C))
 		om_after(src, 1, PROC_REF(attach_mask_finish))
 
 /obj/machinery/oxygen_pump/anesthetic/attach_mask_finish()
@@ -319,8 +322,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		C.equip_to_slot(contained, SLOT_ID_MASK)
 		if(tank)
 			tank.forceMove(C)
-		breather_handle = om_handle(C)
-		MACHINE_WAKE(src)
+		set_breather_handle(om_handle(C))
 		om_after(src, 1, PROC_REF(attach_mask_finish))
 
 /obj/machinery/oxygen_pump/mobile/anesthetic/attach_mask_finish()
@@ -345,7 +347,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 			breather().remove_from_mob(contained)
 			contained.forceMove(src)
 			src.visible_message(span_notice("\The [contained] rapidly retracts back into \the [src]!"))
-			breather_handle = null
+			set_breather_handle(null)
 			set_use_power(USE_POWER_IDLE)
 		else if(!breather().internal && tank)
 			breather().internal = tank

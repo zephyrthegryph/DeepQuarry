@@ -140,7 +140,7 @@
 		to_chat(src, "You can't follow [target_name] with cameras because you are dead!")
 		return
 	if(!target_name)
-		src.cameraFollow = null
+		src.set_cameraFollow(null)
 
 	var/mob/target = (isnull(LAZYACCESS(track.humans, target_name)) ? LAZYACCESS(track.others, target_name) : LAZYACCESS(track.humans, target_name))
 	src.track = null
@@ -152,7 +152,7 @@
 
 	to_chat(src, "Follow camera mode [forced ? "terminated" : "ended"].")
 	cameraFollow.tracking_cancelled()
-	cameraFollow = null
+	set_cameraFollow(null)
 
 /mob/living/silicon/ai/proc/ai_actual_track(mob/living/target as mob)
 	if(!istype(target))	return FALSE
@@ -163,34 +163,41 @@
 
 	if(U.cameraFollow)
 		U.ai_cancel_tracking()
-	U.cameraFollow = target
+	U.track_delay = 1 SECOND
+	U.set_cameraFollow(target)
 	to_chat(U, "Now tracking [target.name] on camera.")
 	target.tracking_initiated()
 
-	ai_track_step(target)
+	ai_track_step() // the first look is immediate; the declared repeat follows from here
 
 	return TRUE
 
-/// Follow camera mode: keeps the eye on `target` every second (every ten while it is out of
-/// camera coverage) until tracking stops.
-/mob/living/silicon/ai/proc/ai_track_step(mob/living/target)
-	if(cameraFollow != target)
-		return
+/// Delay until the next follow-camera step: a second, or ten while the target is out of coverage.
+/mob/living/silicon/ai/var/track_delay = 1 SECOND
+
+DECLARE_REPEAT(/mob/living/silicon/ai, "track_delay", ai_track_step, "cameraFollow")
+
+/// Follow camera mode: keeps the eye on `cameraFollow` every second (every ten while it is out of
+/// camera coverage) while tracking.
+/mob/living/silicon/ai/proc/ai_track_step()
+	var/mob/living/target = cameraFollow
+	if(QDELETED(target))
+		return REPEAT_STOP
 	switch(target.tracking_status())
 		if(TRACKING_NO_COVERAGE)
 			to_chat(src, "Target is not near any active cameras.")
-			om_after(src, 10 SECONDS, PROC_REF(ai_track_step), target)
+			track_delay = 10 SECONDS
 			return
 		if(TRACKING_TERMINATE)
 			ai_cancel_tracking(1)
 			return
 
+	track_delay = 1 SECOND
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(!eyeobj)
 		view_core()
-		return
+		return REPEAT_STOP
 	eyeobj.setLoc(get_turf(target), 0)
-	om_after(src, 1 SECOND, PROC_REF(ai_track_step), target)
 
 // camera.dm declares the camera's other interactions.
 EXTEND_INTERACTIONS(/obj/machinery/camera, INTERACT_SILICON("Look through", PROC_REF(camera_silicon_look)))

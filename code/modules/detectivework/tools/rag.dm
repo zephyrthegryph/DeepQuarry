@@ -26,9 +26,11 @@
 	drop_sound = SFX_ITEMS_DROP_CLOTH
 	pickup_sound = SFX_ITEMS_PICKUP_CLOTH
 
-	var/on_fire = 0
 	var/burn_time = 20 //if the rag burns for too long it turns to ashes
 	special_handling = TRUE
+
+OM_FIELD(/obj/item/reagent_containers/glass/rag, rag_lit, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/reagent_containers/glass/rag, PERIODIC_SLOW, "rag_lit")
 
 /obj/item/reagent_containers/glass/rag/Initialize(mapload)
 	. = ..()
@@ -44,7 +46,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 
 /// Old attack_self.
 /obj/item/reagent_containers/glass/rag/proc/rag_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(on_fire)
+	if(rag_lit)
 		user.visible_message(span_warning("\The [user] stamps out [src]."), span_warning("You stamp out [src]."))
 		user.unEquip(src)
 		extinguish()
@@ -54,11 +56,11 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 
 /// Old attackby: its own lighting, then the glass handling (the old ..()), then the name update.
 /obj/item/reagent_containers/glass/rag/proc/rag_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!on_fire && istype(W, /obj/item/flame))
+	if(!rag_lit && istype(W, /obj/item/flame))
 		var/obj/item/flame/F = W
 		if(F.lit)
 			src.ignite()
-			if(on_fire)
+			if(rag_lit)
 				visible_message(span_warning("\The [user] lights [src] with [W]."))
 			else
 				to_chat(user, span_warning("You manage to singe [src], but fail to light it."))
@@ -70,7 +72,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 		return INTERACTION_HANDLED_PASS
 
 /obj/item/reagent_containers/glass/rag/proc/update_name()
-	if(on_fire)
+	if(rag_lit)
 		name = "burning [initial(name)]"
 	else if(reagents.total_volume)
 		name = "damp [initial(name)]"
@@ -78,7 +80,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 		name = "dry [initial(name)]"
 
 /obj/item/reagent_containers/glass/rag/update_icon()
-	if(on_fire)
+	if(rag_lit)
 		icon_state = "raglit"
 	else
 		icon_state = "rag"
@@ -129,7 +131,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 /obj/item/reagent_containers/glass/rag/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)
 	if(isliving(target)) //Leaving this as isliving.
 		var/mob/living/M = target
-		if(on_fire) //Check if rag is on fire, if so igniting them and stopping.
+		if(rag_lit) //Check if rag is on fire, if so igniting them and stopping.
 			user.visible_message(span_danger("\The [user] hits [target] with [src]!"),)
 			user.do_attack_animation(src)
 			M.ignite_mob()
@@ -175,7 +177,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 			update_name()
 		return
 
-	if(!on_fire && istype(A) && (src in user))
+	if(!rag_lit && istype(A) && (src in user))
 		if(A.is_open_container() && !(A in user))
 			remove_contents(user, A)
 		else if(!ismob(A)) //mobs are handled in attack() - this prevents us from wiping down people while smothering them.
@@ -206,7 +208,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 	return (fuel >= 2 && fuel >= reagents.total_volume*0.8)
 
 /obj/item/reagent_containers/glass/rag/proc/ignite()
-	if(on_fire)
+	if(rag_lit)
 		return
 	if(!can_ignite())
 		return
@@ -220,17 +222,15 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 		qdel(src)
 		return
 
-	om_task_periodic(src, PERIODIC_SLOW)
 	set_light(2, null, "#E38F46")
-	on_fire = 1
+	set_rag_lit(TRUE)
 	update_name()
 	update_icon()
 
 /obj/item/reagent_containers/glass/rag/extinguish()
 	. = ..()
-	om_task_periodic_stop(src)
 	set_light(0)
-	on_fire = 0
+	set_rag_lit(FALSE)
 
 	//rags sitting around with 1 second of burn time left is dumb.
 	//ensures players always have a few seconds of burn time left when they light their rag
@@ -255,7 +255,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 		location.hotspot_expose(700, 5)
 
 	if(burn_time <= 0)
-		om_task_periodic_stop(src)
 		new /obj/effect/decal/cleanable/ash(location)
 		qdel(src)
 		return

@@ -511,15 +511,26 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		D.real_name += pick("Apparition", "Aptrgangr", "Dis", "Draugr", "Dybbuk", "Eidolon", "Fetch", "Fylgja", "Ghast", "Ghost", "Gjenganger", "Haint", "Phantom", "Phantasm", "Poltergeist", "Revenant", "Shade", "Shadow", "Soul", "Spectre", "Spirit", "Spook", "Visitant", "Wraith")
 
 	log_and_message_admins("used a manifest rune.")
-	this_rune.manifest_tick(user, D)
+	this_rune.manifest_dummy_handle = om_handle(D)
+	this_rune.set_manifest_user_handle(om_handle(user))
+	this_rune.manifest_tick()
 	return
 
+/// The summoner of a manifested homunculus (an OM handle). A field: they bleed for it while set.
+OM_FIELD(/obj/effect/rune, manifest_user_handle, null, CHANGE_EXPLICIT)
+/// The manifested homunculus (an OM handle).
+/obj/effect/rune/var/manifest_dummy_handle
+DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user_handle")
+
 /// The summoner bleeds for the homunculus every 3 seconds while they hold the rune; it dies when they stop.
-/obj/effect/rune/proc/manifest_tick(mob/living/user, mob/living/carbon/human/dummy/D)
+/obj/effect/rune/proc/manifest_tick()
+	var/mob/living/user = om_resolve(manifest_user_handle)
+	var/mob/living/carbon/human/dummy/D = om_resolve(manifest_dummy_handle)
 	if(user && user.stat==CONSCIOUS && user.client && user.loc==loc)
 		user.injure(INJURY_BLUNT, 1)
-		om_after(src, 3 SECONDS, PROC_REF(manifest_tick), user, D)
 		return
+	manifest_dummy_handle = null
+	set_manifest_user_handle(null)
 	if(D)
 		D.visible_message(span_danger("[D] slowly dissipates into dust and bones."), \
 		span_danger("You feel pain, as bonds formed between your soul and this homunculus break."), \
