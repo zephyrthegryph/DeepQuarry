@@ -13,8 +13,8 @@ RULES = {
     "owned_twice": "drop the ownership() line: the capability (cap_slot) already owns this var through its owned() entries (ownership.md §1.2)",
 }
 
-# Capabilities whose owned() entries own a holder var: constructor -> the arg naming the var.
-OWNING_CAPS = ("cap_slot",)
+# Capability constructors whose owned() entries own the holder var named by their first argument.
+OWNING_CAPS = ("cap_slot", "cap_cell_holder")
 PROC_HEAD = re.compile(r"^(/[\w/]+)/(capabilities|ownership)\(\)")
 CAP_OWNS = re.compile(r"\b(%s)\(\s*nameof\((\w+)\)" % "|".join(OWNING_CAPS))
 TYPE_OWNS = re.compile(r"^\s*\.\s*\+=\s*owns\(\s*nameof\((\w+)\)")

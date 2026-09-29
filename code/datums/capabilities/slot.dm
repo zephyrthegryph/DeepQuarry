@@ -15,7 +15,8 @@
 // (data["caps"][ui_key]["item"] = {name, ref} or null). Insert and eject run through cap_dispatch(),
 // so an ask_*() inside a slot hook re-validates and the dispatcher records the action once. The item
 // moves with one ownership transfer: out of the hand, slot or container it is in, into the holder,
-// adopted with own_set() (own_take() on the way out). Holder hooks, compared with nameof(var):
+// adopted with own_set() (own_take() on the way out). The slot owns its var (owned():
+// owns(var, policy = OWN_CONTAINED)): the holder type declares nothing for it in ownership(). Holder hooks, compared with nameof(var):
 // slot_refusal(), slot_inserted(), slot_eject_refusal(), slot_ejecting(), slot_ejected(). From code:
 // slot_insert(nameof(var), item, user) and slot_eject(nameof(var), user).
 
@@ -126,6 +127,10 @@
 		return
 	var/text = msg_fill(message, user, holder, item)
 	to_chat(user, warning ? span_warning(text) : span_notice(text))
+
+/// The slot owns its var: the item sits in the holder's contents (its ledger slot decides at teardown).
+/datum/capability/slot/owned()
+	return list(owns(slot_var, policy = OWN_CONTAINED))
 
 /// The one-call transfer in: out of the hand, slot or container it is in, into holder, adopted.
 /datum/capability/slot/proc/adopt(atom/holder, obj/item/item, mob/user)

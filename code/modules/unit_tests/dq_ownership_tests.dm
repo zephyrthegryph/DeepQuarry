@@ -536,3 +536,20 @@ TRACKED(/datum/own_test_watch_target, power_level, CHANGE_EFFECTS)
 	TEST_ASSERT(!QDELETED(C), "OWN_KEEP: the value outlives its holder")
 	TEST_ASSERT(isnull(owner_of(C)), "OWN_KEEP: the value is released at teardown")
 	qdel(C)
+
+/// A slot capability owns its var: the type declares nothing in ownership().
+/obj/cap_fixture/own_slot_holder
+	var/obj/item/cell/cell
+
+/obj/cap_fixture/own_slot_holder/capabilities()
+	. = ..()
+	. += cap_slot(nameof(cell), /obj/item/cell)
+
+/datum/unit_test/ownership_capability_owned
+
+/datum/unit_test/ownership_capability_owned/Run()
+	var/obj/cap_fixture/own_slot_holder/H = allocate(/obj/cap_fixture/own_slot_holder)
+	var/list/entry = own_table_of(H).entries[nameof(H.cell)]
+	TEST_ASSERT_NOTNULL(entry, "the slot capability's owned() declares its var in the holder's table")
+	TEST_ASSERT_EQUAL(entry[OWNE_KIND], OWNK_OWN, "the slot var is owned")
+	TEST_ASSERT_EQUAL(entry[OWNE_ARG], OWN_CONTAINED, "the slot var is owned CONTAINED")

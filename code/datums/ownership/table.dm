@@ -230,6 +230,11 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 	var/datum/own_table/T = new
 	T.owner_type = D.type
 	var/datum/own_decls/decl = new
+	// Capabilities contribute first (a slot owns its var); the type's own lists come after.
+	if(isatom(D))
+		for(var/datum/capability/C as anything in caps_of(D))
+			for(var/datum/own_entry/E as anything in C.owned())
+				decl.add(E)
 	for(var/datum/own_entry/E as anything in type_list(D, TYPE_PROC_REF(/datum, ownership)))
 		decl.add(E)
 	for(var/datum/own_entry/E as anything in type_list(D, TYPE_PROC_REF(/datum, relations)))

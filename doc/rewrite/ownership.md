@@ -84,7 +84,12 @@ overrides (`code/datums/ownership/table.dm`), built once per type by `type_list(
 - **`ownership()` entries**: `owns(var, policy =, policy_proc =, if_var =, else_policy =,
   keep_after_destroy =, pool_reset =, forward =)`, `shares(var)`, `proto(var)`.
 - **`relations()` entries** (§4.1): `rel_one(var, ...)`, `rel_many(var, ...)`, `rel_key(var)`.
-- The runtime table (`own_table_of()`) is built from these two lists; nothing else declares.
+- **Capabilities contribute ownership**: `/datum/capability/proc/owned()` returns `owns()` entries
+  for the holder type, and the table takes the `owned()` entries of every capability in the type's
+  `capabilities()` first. `cap_slot(nameof(cell), ...)` (and `cap_cell_holder`) owns its var
+  `OWN_CONTAINED` this way, so the type writes no ownership line for it; the lint rule
+  `sys/dx_ownership_forms/owned_twice` flags a var owned both ways.
+- The runtime table (`own_table_of()`) is built from these lists; nothing else declares.
 - **Every var name is `nameof()`**: `nameof(var)` for the holder's own var (or `nameof(H.var)` in
   a proc), `nameof(/partner/type::var)` for another type's. The compiler rejects a misspelt name.
   The same holds for every accessor call (`own_set(src, nameof(beaker), B)`); string literals are
