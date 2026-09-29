@@ -552,6 +552,54 @@ fn transfer_hook(src: ByondValue, other: ByondValue, moles: ByondValue) -> Resul
     })
 }
 
+/// Args: (src, sink, target_kpa, max_moles, gases_mask). Moves gas from `src` into
+/// `sink` until the sink reaches `target_kpa` (an exact ideal-gas solve, with
+/// mixing temperature), never more than `max_moles` (`null` or <= 0: no cap)
+/// and only the gases in `gases_mask` (a `1 << gas_id` bitset, 0: all).
+/// Returns the moles moved. Replaces the DM `gas_pressure_calculate` solvers.
+#[auxmacros::bind("/proc/vg_transfer_to_pressure")]
+fn transfer_to_pressure(
+    src: ByondValue,
+    sink: ByondValue,
+    target_kpa: ByondValue,
+    max_moles: ByondValue,
+    gases_mask: ByondValue,
+) -> Result<ByondValue> {
+    let target = target_kpa.get_number()?;
+    let cap = if max_moles.is_null() {
+        f32::INFINITY
+    } else {
+        let m = max_moles.get_number()?;
+        if m > 0.0 { m } else { f32::INFINITY }
+    };
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+    let mask = gases_mask.get_number().unwrap_or(0.0) as u32;
+    with_mixes_mut(&src, &sink, |from, to| {
+        let needed = from.moles_to_pressure(to, target, mask, 0.0).min(cap);
+        Ok(ByondValue::from(from.transfer_masked_into(to, mask, needed)))
+    })
+}
+
+/// Args: (src, sink, target_kpa, gases_mask, sink_volume_mod). Read-only: the moles
+/// of `gases_mask` that would bring `sink` (its volume enlarged by
+/// `sink_volume_mod` litres, for a networked sink) to `target_kpa`.
+#[auxmacros::bind("/proc/vg_moles_to_pressure")]
+fn moles_to_pressure(
+    src: ByondValue,
+    sink: ByondValue,
+    target_kpa: ByondValue,
+    gases_mask: ByondValue,
+    sink_volume_mod: ByondValue,
+) -> Result<ByondValue> {
+    let target = target_kpa.get_number()?;
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+    let mask = gases_mask.get_number().unwrap_or(0.0) as u32;
+    let vol_mod = sink_volume_mod.get_number().unwrap_or(0.0);
+    let (a, b) = (MixRef::of(&src)?, MixRef::of(&sink)?);
+    let (from, to) = (mix::load_or_err(a)?, mix::load_or_err(b)?);
+    Ok(ByondValue::from(from.moles_to_pressure(&to, target, mask, vol_mod)))
+}
+
 /// Flat operation list: source handle, sink handle, requested moles. Returns
 /// one actual mole count per operation after shared-source clamping.
 #[auxmacros::bind("/proc/auxmos_batch_transfer")]

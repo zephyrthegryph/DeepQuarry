@@ -398,7 +398,7 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_dist
 	if(connected_port())
 		var/obj/machinery/atmospherics/portables_connector/our_port = connected_port()
 		if(our_port.network)
-			return our_port.network.gases[1]
+			return our_port.network.air
 	. = ..()
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery

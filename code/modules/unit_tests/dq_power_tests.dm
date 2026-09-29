@@ -209,9 +209,9 @@
 		if(!candidate.has_stat(BROKEN))
 			S = candidate
 			break
-	var/old_smes = S ? list(S.charge, S.input_attempt, S.output_attempt) : null
+	var/old_smes = S ? list(S.stored_charge(), S.input_attempt, S.output_attempt) : null
 	if(S)
-		S.charge = S.capacity
+		S.set_stored_charge(S.capacity)
 		S.input_attempt = FALSE
 		S.output_attempt = FALSE
 		S.power_sync()
@@ -227,7 +227,7 @@
 	if(S)
 		TEST_ASSERT_EQUAL(S.power_event_count, smes_events, "an idle SMES kept hearing power events")
 		TEST_ASSERT(!machine_stepping(S), "an idle SMES is polling")
-		S.charge = old_smes[1]
+		S.set_stored_charge(old_smes[1])
 		S.input_attempt = old_smes[2]
 		S.output_attempt = old_smes[3]
 		S.power_sync()

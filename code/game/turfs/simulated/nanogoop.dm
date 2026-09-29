@@ -304,7 +304,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 	var/mob/living/nutrienttarget = moblink
 	var/obj/machinery/power/smes/smes = linkedsmes
 	if(smes)
-		smes.charge += (amt * 20)
+		smes.adjust_stored_charge(amt * 20)
 		return
 	if(nutrienttarget)
 		if(ishuman(nutrienttarget))

@@ -2265,13 +2265,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/datum/pipe_network/net = new
 	var/datum/pipeline/line_a = new
 	atmos_air_set(line_a, "air", new /datum/gas_mixture(70))
-	line_a.volume = 70
 	rel_set(line_a, "network", net)
 	line_a.air.adjust_gas(/datum/gas/oxygen, 100)
 	line_a.air.set_temperature(T20C)
 	var/datum/pipeline/line_b = new
 	atmos_air_set(line_b, "air", new /datum/gas_mixture(70))
-	line_b.volume = 70
 	rel_set(line_b, "network", net)
 	line_b.air.set_temperature(T0C + 80)
 	var/initial_total = line_a.air.total_moles() + line_b.air.total_moles()
@@ -2282,7 +2280,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	TEST_ASSERT(line_a.air == net.air && line_b.air == net.air, \
 		"connected pipelines did not share the authoritative network mixture")
-	TEST_ASSERT_EQUAL(length(net.gases), 1, "pipenet compatibility gas list contains member mirrors")
+	TEST_ASSERT_EQUAL(net.volume(), net.air.return_volume(), "pipenet volume is not read through the authoritative mixture")
 	var/final_total = net.air.total_moles()
 	var/final_thermal = net.air.thermal_energy()
 	TEST_ASSERT(abs(final_total - initial_total) < 0.5, \
@@ -6213,7 +6211,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	rel_set(line, "network", donor)
 	donor.add_line_member(line)
 	own_set(donor, "air", new /datum/gas_mixture(line.air.return_volume()))
-	donor.volume = line.air.return_volume()
 
 	TEST_ASSERT(receiver.merge(donor), "pipenet merge rejected a valid donor")
 	TEST_ASSERT(line.network == receiver, "merged pipeline did not transfer to the receiving network")
@@ -6223,7 +6220,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(QDELETED(donor), "merged donor network remained alive")
 	TEST_ASSERT_NULL(donor.line_members, "merged donor retained its pipeline membership list")
 	TEST_ASSERT_NULL(donor.normal_members, "merged donor retained its machinery membership list")
-	TEST_ASSERT_NULL(donor.gases, "merged donor retained its gas list")
+	TEST_ASSERT_EQUAL(donor.volume(), 0, "merged donor retained volume")
 
 	qdel(receiver)
 	TEST_ASSERT_NULL(line.network, "destroyed receiving network remained referenced by its pipeline")
@@ -6279,12 +6276,23 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_reconcile_air_three_pipes_conserves_mass/Run()
 	var/datum/pipe_network/net = new
 	var/list/lines = list()
+	var/list/pipes = list()
+	var/turf/pipe_turf
+	for(var/turf/simulated/floor/cand in world)
+		if(cand.air && !cand.blocks_air)
+			pipe_turf = cand
+			break
+	TEST_ASSERT_NOTNULL(pipe_turf, "no floor for the three-pipeline test")
 	var/initial_total = 0
 	var/initial_thermal = 0
 	for(var/i = 1 to 3)
 		var/datum/pipeline/line = new
 		atmos_air_set(line, "air", new /datum/gas_mixture(70))
-		line.volume = 70
+		// A line's physical volume is its member pipes' (never a stored number): give it one.
+		var/obj/machinery/atmospherics/pipe/simple/member = new(pipe_turf)
+		member.volume = 70
+		rel_set(member, "parent", line)
+		pipes += member
 		rel_set(line, "network", net)
 		line.air.adjust_gas(i == 1 ? /datum/gas/oxygen : /datum/gas/nitrogen, i * 25)
 		line.air.set_temperature(T20C + i * 20)
@@ -6312,6 +6320,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(abs(split_thermal - initial_thermal) < initial_thermal * 0.05, "topology split lost energy")
 	for(var/datum/pipeline/line as anything in lines)
 		qdel(line)
+	for(var/obj/machinery/atmospherics/pipe/member as anything in pipes)
+		qdel(member)
 
 
 // =====================================================================

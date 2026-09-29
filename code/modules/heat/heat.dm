@@ -237,6 +237,7 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
  * rest (reading its surroundings, unwatched).
  */
 /datum/native_watch/heat
+	delivery_source = NATIVE_SRC_HEAT
 	var/atom/target
 	var/kind
 	var/level

@@ -135,7 +135,7 @@
 					network1.mark_dirty()
 		else //external -> internal
 			if (node2 && (environment.return_temperature() || air2.return_temperature()))
-				var/transfer_moles = calculate_transfer_moles(environment, air2, pressure_delta, (network2)? network2.volume : 0)
+				var/transfer_moles = calculate_transfer_moles(environment, air2, pressure_delta, (network2)? network2.volume() : 0)
 
 				//limit flow rate from turfs
 				transfer_moles = min(transfer_moles, environment.total_moles()*air2.return_volume()/environment.return_volume())	//group_multiplier gets divided out here

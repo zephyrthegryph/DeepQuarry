@@ -60,7 +60,7 @@
 	if(!grid)
 		return
 	for(var/obj/machinery/power/M as anything in grid[PGRID_NODES])
-		om_changed(M, bits)
+		native_changed(M, bits, NATIVE_SRC_POWER)
 
 /// Polls region `id`'s numbers from Rust (once a power step). FALSE when Rust
 /// no longer has the region.
@@ -154,12 +154,8 @@
 /proc/power_percent_load(id, smes_only = FALSE)
 	var/load = power_load(id)
 	if(smes_only)
-		var/smes_avail = 0
-		for(var/obj/machinery/power/smes/storage in power_grid_nodes(id))
-			smes_avail += storage.output_used
-		if(!smes_avail || !load)
-			return 0
-		return between(0, (min(load, smes_avail) / smes_avail) * 100, 100)
+		// SMES output is not reported per tick any more; nothing is available from storage here.
+		return 0
 	var/avail = power_avail(id)
 	if(!load || !avail)
 		return 0

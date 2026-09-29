@@ -1,12 +1,12 @@
 /// Defaults to maximum charge, no change to input or output levels by default
 /obj/machinery/power/smes/buildable/max_charge/apply_mapped_settings()
 	// Set charge
-	charge = capacity
+	set_stored_charge(capacity)
 
 /// Defaults to 100% input and output settings, starts with maximum charge by default
 /obj/machinery/power/smes/buildable/engine_default/apply_mapped_settings()
 	// Set charge
-	charge = capacity * 0.5 // Half charge is used by downstreams for coil upgrades early in shift, virgo wants fully charged from the start. // Start half charged.
+	set_stored_charge(capacity * 0.5) // Half charge is used by downstreams for coil upgrades early in shift, virgo wants fully charged from the start. // Start half charged.
 	// Set input and output to max
 	inputting(TRUE)
 	outputting(TRUE)
@@ -31,7 +31,7 @@
 /// Max charge, but with 100% input by default
 /obj/machinery/power/smes/buildable/max_charge_max_input/apply_mapped_settings()
 	// Set charge
-	charge = capacity
+	set_stored_charge(capacity)
 	// Set input to max
 	inputting(TRUE)
 	input_level = input_level_max
@@ -39,7 +39,7 @@
 /// Max charge, but with 100% output by default
 /obj/machinery/power/smes/buildable/max_charge_max_output/apply_mapped_settings()
 	// Set charge
-	charge = capacity
+	set_stored_charge(capacity)
 	// Set input to max
 	outputting(TRUE)
 	output_level = output_level_max
@@ -68,11 +68,11 @@
 ////////////////////////////////////////////////////////////////////////////////////
 /obj/machinery/power/smes/buildable/hybrid/max_charge/apply_mapped_settings()
 	// Set charge
-	charge = capacity
+	set_stored_charge(capacity)
 
 /obj/machinery/power/smes/buildable/hybrid/engine_default/apply_mapped_settings()
 	// Set charge
-	charge = capacity
+	set_stored_charge(capacity)
 	// Set input and output to max
 	inputting(TRUE)
 	outputting(TRUE)
@@ -96,11 +96,11 @@
 ////////////////////////////////////////////////////////////////////////////////////
 /obj/machinery/power/smes/buildable/outpost_substation/max_charge/apply_mapped_settings()
 	// Set charge
-	charge = capacity
+	set_stored_charge(capacity)
 
 /obj/machinery/power/smes/buildable/outpost_substation/max_charge_max_input/apply_mapped_settings()
 	// Set charge
-	charge = capacity
+	set_stored_charge(capacity)
 	// Set input to max
 	inputting(TRUE)
 	input_level = input_level_max
@@ -116,18 +116,18 @@
 ////////////////////////////////////////////////////////////////////////////////////
 /obj/machinery/power/smes/buildable/power_shuttle/max_charge/apply_mapped_settings()
 	// Set charge
-	charge = capacity
+	set_stored_charge(capacity)
 
 /obj/machinery/power/smes/buildable/power_shuttle/max_charge_max_input/apply_mapped_settings()
 	// Set charge
-	charge = capacity
+	set_stored_charge(capacity)
 	// Set input to max
 	inputting(TRUE)
 	input_level = input_level_max
 
 /obj/machinery/power/smes/buildable/power_shuttle/max_charge_max_input_base_output/apply_mapped_settings()
 	// Set charge
-	charge = capacity
+	set_stored_charge(capacity)
 	// Set input to max
 	inputting(TRUE)
 	input_level = input_level_max
@@ -137,11 +137,11 @@
 
 /obj/machinery/power/smes/buildable/point_of_interest/max_charge/apply_mapped_settings()
 	// Set charge
-	charge = capacity
+	set_stored_charge(capacity)
 
 /obj/machinery/power/smes/buildable/point_of_interest/max_charge_max_input/apply_mapped_settings()
 	// Set charge
-	charge = capacity
+	set_stored_charge(capacity)
 	// Set input to max
 	inputting(TRUE)
 	input_level = input_level_max

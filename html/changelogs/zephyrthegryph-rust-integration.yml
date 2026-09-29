@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Pipenet volume, SMES charge and the pipeline volume are read from Rust instead of mirrored in DM; SMES starting charge and mapped presets now actually reach the Rust SMES"
+  - code_imp: "Added vg_transfer_to_pressure / vg_moles_to_pressure (exact ideal-gas solve), Rate::Fraction for device flows, and bulk vg_component_bind_list / vg_pipe_device_set_list binds"
+  - code_imp: "Rust to DM change delivery goes through native_changed()/native_fired(); Rust bind errors raise a DM runtime naming the bind and every bind has an always-on call/error counter in verdigris_metrics()"
+  - refactor: "Removed the DM pressure quadratic solver and its dead pump_gas_to/release_gas_to callers"

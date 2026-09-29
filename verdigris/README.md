@@ -89,6 +89,12 @@ verdigris/                  <- workspace root (this dir)
 | `vg-core` `network` | R7 network framework: nodes/edges/regions in arenas, incremental merges and lockstep multi-source splits, conserving region payloads (`NetworkKind::split`/`merge`), batched commits, device edges between regions and cells, and `network::host` (frame task, `NetworkPort`, copy-on-write `NetworkView`, outbox events, region-channel mirror for watches). |
 | `vg-core` `field` | R6 field framework: a `FieldKind` cells domain plus a `Geometry<K>` domain (capacity, blocked mask, reservoir flag), explicit chunk-parallel exchange with antisymmetric fluxes, stiffness sub-steps, active-chunk sleep/wake, a reservoir ledger; `field::kernel` (conduction, diffusion, pressure flow) and `field::toy` (reference heat and two-component gas). |
 
+### FFI call counter and error surfacing
+
+- Every `#[auxmacros::bind]` counts its calls and errors (two relaxed atomic adds; `auxcallback::panic_guard::BindStats`, one `static` per bind, registered on first call). `verdigris_metrics()` reports `ffi.calls.<bind>`, `ffi.calls_total`, `ffi.errors.<bind>` and `ffi.errors_total`. `verdigris_metrics_list()` in DM adds `dm.deliveries.*` (the change adapter) and `dm.errors.<bind>`.
+- A bind error or caught panic reaches DM's `byondapi_stack_trace()`, which counts it per bind (`GLOB.vg_bind_errors`), logs the first occurrence of each distinct message and raises it as a real DM runtime (so a unit test that triggers one fails and names the bind). A test that provokes Rust errors on purpose sets `GLOB.vg_errors_expected`.
+- Rust to DM change delivery ends in `native_changed()` / `native_fired()` (`code/datums/om/native_adapter.dm`); do not add another path.
+
 ### R5 notes (for S1 and R6/R7)
 
 - **Wiring.** `SimBuilder::add_watches(domain)` adds a domain's watch state and a `watch:<name>` task that runs after every other task; `declare_condition` registers rule templates. `build()` now returns `BuildError`, and fails with `BuildError::Boot` listing every bad channel table and declared condition.

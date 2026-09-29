@@ -23,6 +23,8 @@
 	var/callback
 	/// SSvg entity handle: this watch's identity, and the subscriber Rust reports.
 	var/handle = 0
+	/// NATIVE_SRC_* this watch's deliveries are counted under (native_adapter.dm).
+	var/delivery_source = NATIVE_SRC_OTHER
 
 /datum/native_watch/New(datum/owner, callback)
 	..()
@@ -58,6 +60,7 @@
 	if(!owner)
 		qdel(src)
 		return
+	native_fired(delivery_source)
 	call(owner, callback)(arglist(list(src) + arguments))
 
 /// Finds the live watch behind `handle`, or null.

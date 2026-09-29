@@ -475,26 +475,11 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 //If set, sink_volume_mod adjusts the effective output volume used in the calculation. This is useful when the output gas_mixture is
 //part of a pipenetwork, and so it's volume isn't representative of the actual volume since the gas will be shared across the pipenetwork when it processes.
 /proc/calculate_transfer_moles(datum/gas_mixture/source, datum/gas_mixture/sink, pressure_delta, sink_volume_mod=0)
-	var/source_temperature = source.return_temperature()
-	if(source_temperature == 0 || source.total_moles() == 0) return 0 // XGM var → LINDA proc
-
-	// `* sink.group_multiplier` / `* source.group_multiplier`
-	// dropped: group_multiplier was an XGM-era zone scalar (always 1 under
-	// LINDA), so multiplying was a no-op.
-	var/output_volume = sink.return_volume() + sink_volume_mod
-	var/source_total_moles = source.total_moles()
-
-	var/air_temperature = source_temperature
-	var/sink_temperature = sink.return_temperature()
-	if(sink.total_moles() > 0 && sink_temperature > 0)
-		//estimate the final temperature of the sink after transfer
-		var/estimate_moles = pressure_delta*output_volume/(sink_temperature * R_IDEAL_GAS_EQUATION)
-		var/sink_heat_capacity = sink.heat_capacity()
-		var/transfer_heat_capacity = source.heat_capacity()*estimate_moles/source_total_moles
-		air_temperature = (sink_temperature*sink_heat_capacity  + source_temperature*transfer_heat_capacity) / (sink_heat_capacity + transfer_heat_capacity)
-
-	//get the number of moles that would have to be transfered to bring sink to the target pressure
-	return pressure_delta*output_volume/(air_temperature * R_IDEAL_GAS_EQUATION)
+	// One Rust solve (vg_moles_to_pressure): exact mixing temperature, no estimate. The sink's
+	// pressure is taken over its volume plus sink_volume_mod, the delta is applied on top.
+	var/sink_volume = sink.return_volume()
+	var/current_pressure = sink.return_pressure() * sink_volume / max(sink_volume + sink_volume_mod, 1)
+	return vg_moles_to_pressure(source, sink, current_pressure + pressure_delta, 0, sink_volume_mod)
 
 //Calculates the APPROXIMATE amount of moles that would need to be transferred to bring source and sink to the same pressure
 /proc/calculate_equalize_moles(datum/gas_mixture/source, datum/gas_mixture/sink)

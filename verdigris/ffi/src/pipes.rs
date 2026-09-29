@@ -378,6 +378,25 @@ fn pipe_device_set(id: ByondValue, port_a: ByondValue, port_b: ByondValue) -> Re
     Ok(ok.into())
 }
 
+/// [`pipe_device_set`] for every `device, port_a, port_b` triple in the flat
+/// list `triples`, in one call (round-start device registration). Returns how
+/// many succeeded; a bad row is skipped, not an error.
+#[auxmacros::bind("/proc/vg_pipe_device_set_list")]
+fn pipe_device_set_list(triples: ByondValue) -> Result<ByondValue> {
+    let values = triples.get_list_values()?;
+    if values.len() % 3 != 0 {
+        bail!("triples must be a flat device, port_a, port_b list");
+    }
+    let mut ok = 0u32;
+    for t in values.chunks_exact(3) {
+        if pipe_device_set(t[0], t[1], t[2]).is_ok_and(|v| v.is_true()) {
+            ok += 1;
+        }
+    }
+    #[allow(clippy::cast_precision_loss)]
+    Ok(ByondValue::from(ok as f32))
+}
+
 /// Registers (or replaces) a device edge between a port and a turf (a vent
 /// pump or scrubber): `turf_mixture_handle` is the turf's gas-mixture
 /// handle, not a port id. See [`pipe_device_set`]'s own docs on flows.
