@@ -4,11 +4,9 @@
 	var/tmp/atom/movable/holder
 	var/root_type = null
 	var/datum/lore/codex/home = null // Top-most page.
-	// ALLOW(instance_list): d: codex browser page stack, always non-empty while open
-	var/list/current_page = list() // Current page or category to display to the user. // converted to list to track multiple players.
 	var/list/indexed_pages // Assoc list with search terms pointing to a ref of the page.  It's created on New().
-	// ALLOW(instance_list): d: codex browser history, filled as pages are opened; one per codex item
-	var/list/history = list() // List of pages we previously visited. // now a 2D list
+	/// "[user]" -> /datum/codex_reader (owned): each reader's current page and history.
+	var/list/readers
 
 /datum/codex_tree/New(new_holder, new_root_type)
 	rel_set(src, "holder", new_holder)
@@ -16,27 +14,47 @@
 	generate_pages()
 	..()
 
+/// One reader's cursor into the tree: their current page and the pages they visited, as
+/// relation views (the pages belong to the tree's home).
+/datum/codex_reader
+	var/datum/lore/codex/page
+	/// Visited pages, oldest first (a relation list; a revisited page moves to the end).
+	var/list/history
+
+/datum/codex_reader/proc/visit(datum/lore/codex/new_page, record_history)
+	rel_set(src, "page", new_page)
+	if(record_history && new_page)
+		rel_remove(src, "history", new_page)
+		rel_add(src, "history", new_page)
+
+/// The reader state for `user`, made on first use.
+/datum/codex_tree/proc/reader_of(mob/user) as /datum/codex_reader
+	var/key = "[user]"
+	var/datum/codex_reader/R = LAZYACCESS(readers, key)
+	if(!R)
+		R = own_put(src, "readers", key, new /datum/codex_reader)
+	return R
+
+/// `user`'s current page, or null.
+/datum/codex_tree/proc/current_page_of(mob/user) as /datum/lore/codex
+	var/datum/codex_reader/R = LAZYACCESS(readers, "[user]")
+	return R?.page
+
 /datum/codex_tree/proc/generate_pages()
 	own_set(src, "home", new root_type(src)) // This will also generate the others.
 	indexed_pages = home.index_page() // changed from current_page to home.
 
 // Changes current_page to its parent, assuming one exists.
 /datum/codex_tree/proc/go_to_parent(mob/user)
-	var/datum/lore/codex/D = current_page["[user]"]
+	var/datum/lore/codex/D = current_page_of(user)
 	if(istype(D) && D.parent())
-		current_page["[user]"] = D.parent()
+		reader_of(user).visit(D.parent(), FALSE)
 
 // Changes current_page to a specific page or category.
 /datum/codex_tree/proc/go_to_page(datum/lore/codex/new_page, dont_record_history = FALSE, mob/user)
-	var/datum/lore/codex/D = current_page["[user]"]
+	var/datum/lore/codex/D = current_page_of(user)
 	if(new_page && istype(D)) // Make sure we're not going to a null page for whatever reason.
-		current_page["[user]"] = new_page // ALLOW(object_keyed_lists): per-reader cursor into pages the tree's home owns; they share the tree's lifetime
-		if(!dont_record_history)
-			var/list/H = history["[user]"]
-			if(!H)
-				H = list()
-			H.Add(new_page)
-			history["[user]"] = H
+		reader_of(user).visit(new_page, !dont_record_history)
 
 /datum/codex_tree/proc/quick_link(search_word, mob/user)
 	for(var/word in indexed_pages)
@@ -53,23 +71,25 @@
 
 // Returns to the last visited page, based on the history list.
 /datum/codex_tree/proc/go_back(mob/user)
-	var/list/H = history["[user]"]
-	var/datum/lore/codex/D = current_page["[user]"]
-	if(!LAZYLEN(H) || !istype(D))
+	var/datum/codex_reader/R = LAZYACCESS(readers, "[user]")
+	var/datum/lore/codex/D = R?.page
+	if(!LAZYLEN(R?.history) || !istype(D))
 		return
-	if((H.len) > 1)
-		if(H[H.len] == D)
-			H.len-- // This gets rid of the current page in the history.
-			history["[user]"] = H
-			if(H.len == 1)
-				go_to_page(H[H.len], TRUE, user)
+	var/list/H = R.history
+	if(length(H) > 1)
+		if(H[length(H)] == D)
+			rel_remove(R, "history", D) // This gets rid of the current page in the history.
+			if(length(R.history) == 1)
+				go_to_page(R.history[1], TRUE, user)
 				return
-		go_to_page(pop(history["[user]"]), TRUE, user) // Where as this will get us the previous page that we want to go to.
+		var/datum/lore/codex/previous = R.history[length(R.history)] // the previous page that we want to go to
+		rel_remove(R, "history", previous)
+		go_to_page(previous, TRUE, user)
 	else
-		go_to_page(H[H.len], TRUE, user)
+		go_to_page(H[length(H)], TRUE, user)
 
 /datum/codex_tree/proc/get_tree_position(mob/user)
-	var/datum/lore/codex/checked = current_page["[user]"]
+	var/datum/lore/codex/checked = current_page_of(user)
 	if(istype(checked))
 		var/output = ""
 		output = span_bold("[checked.name]")
@@ -95,16 +115,13 @@
 		generate_pages()
 	if(!user)
 		return
-	var/datum/lore/codex/D = current_page["[user]"]
-	if(!istype(D)) // Initialize current_page and history
-		current_page["[user]"] = home
-		D = current_page["[user]"]
+	var/datum/lore/codex/D = current_page_of(user)
+	if(!istype(D)) // Initialize the reader's page and history
+		reader_of(user).visit(home, TRUE)
+		D = current_page_of(user)
 		if(!istype(D))
 			log_runtime("Codex_tree failed to failed to load for [user].")
 			return
-		var/list/H_init = list()
-		H_init.Add(home)
-		history["[user]"] = H_init
 
 	user << browse_rsc('html/browser/codex.css', "codex.css")
 
@@ -126,12 +143,12 @@
 	if(istype(D, /datum/lore/codex/category))
 		dat += "<div class='button-group'>"
 		var/datum/lore/codex/category/C = D
-		for(var/datum/lore/codex/child in C.children)
+		for(var/datum/lore/codex/child in C.child_pages)
 			dat += "<a href='byond://?src=\ref[src];target=\ref[child]' class='button'>[child.name]</a>"
 		dat += "</div>"
 	dat += "<hr>"
-	var/list/H = history["[user]"]
-	if(LAZYLEN(H))
+	var/datum/codex_reader/R = LAZYACCESS(readers, "[user]")
+	if(LAZYLEN(R?.history))
 		dat += "<br><a href='byond://?src=\ref[src];go_back=1'>\[Go Back\]</a>"
 	if(D.parent())
 		dat += "<br><a href='byond://?src=\ref[src];go_to_parent=1'>\[Go Up\]</a>"
@@ -167,6 +184,6 @@
 	display(usr)
 
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The holder this refers to (a relation view: null once that is deleted).
 /datum/codex_tree/proc/holder() as /atom/movable
 	return holder

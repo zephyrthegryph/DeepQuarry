@@ -5,7 +5,7 @@
 	color = HOLO_ORIGINAL_COLOR //This is the blue from icons.dm that it was before.
 	desc = "A hologram representing an AI persona."
 
-/// Its bellies go back to the AI before phase 4 clears master (DECLARE_REF(..., BACK)).
+/// Its bellies go back to the AI before phase 4 clears master.
 /obj/effect/overlay/aiholo/lifecycle_prerelease()
 	for(var/obj/belly/B in contents_of(src))
 		B.forceMove(master)

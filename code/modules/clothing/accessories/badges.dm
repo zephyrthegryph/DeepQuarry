@@ -317,8 +317,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 /obj/item/clothing/accessory/dosimeter/proc/dosimeter_remove_film_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)
 		if(current_film)
-			user.put_in_hands(current_film)
-			current_film = null
+			user.put_in_hands(own_take(src, "current_film"))
 			to_chat(user, span_notice("You pulled out the film out of \the [src]."))
 			desc = "This seems like a dosimeter, but there is no film inside."
 			om_task_periodic_stop(src)
@@ -331,7 +330,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 	if(!current_film)
 		user.drop_item()
 		I.forceMove(src)
-		current_film = I
+		own_set(src, "current_film", I)
 		update_state(current_film.state)
 
 		to_chat(user, span_notice("You inserted the film into \the [src]."))
@@ -344,7 +343,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/clothing/accessory/dosimeter/proc/check_holder()
-	var/mob/living/carbon/human/H = om_resolve(wearer)
+	var/mob/living/carbon/human/H = wearer
 	if(H)
 		if(current_film && (H.radiation >= 25) && (current_film.state == 0))
 			update_state(1)

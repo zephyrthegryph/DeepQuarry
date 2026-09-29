@@ -2,8 +2,8 @@
 // (rules.md §4). One binding per object holds its world watches and,
 // per rule, whether the condition held at the last look.
 
-/// This object's rule binding. The binding holds its owner by OM handle, so it
-/// is no outside reference to its object (collapse).
+/// This object's rule binding (owned: deleted with the object). The binding's
+/// `owner` is its one-sided back view.
 /datum/var/tmp/datum/rule_binding/rule_binding
 
 
@@ -22,7 +22,7 @@
 		return
 	var/datum/rule_binding/binding = new(A, rules)
 	if(!binding.active_count())
-		qdel(binding)
+		own_clear(A, "rule_binding", OWN_DELETE)
 		return
 	return binding
 
@@ -42,9 +42,8 @@
 
 /// Drops `A`'s subscriptions. /atom/on_dematerialize() calls it.
 /proc/dq_rules_on_dematerialize(atom/A)
-	var/datum/rule_binding/binding = dq_rule_binding_of(A)
-	if(binding)
-		qdel(binding)
+	if(dq_rule_binding_of(A))
+		own_clear(A, "rule_binding", OWN_DELETE)
 
 /// Evaluate `thing`'s rules now instead of at the next dispatch. For code about
 /// to destroy the object (take_damage before atom_destruction), so every rule
@@ -121,10 +120,9 @@
 /// /datum/rule_type_table; per-rule flags are bits of three numbers, and every
 /// rule's watch tokens share one flat list.
 /datum/rule_binding
-	var/owner_ref
-	/// The owner, resolved for this call. Not held between calls.
+	/// The object whose rules these are: a one-sided back view (it owns us in rule_binding).
 	var/tmp/atom/owner
-	/// Shared per-type table (rules, key kinds).
+	/// Shared per-type table (rules, key kinds): a registered rule_type_table (implicitly shared).
 	var/datum/rule_type_table/table
 	/// Bit per rule: its condition held at the last look.
 	var/holding = 0
@@ -149,10 +147,9 @@
 
 /datum/rule_binding/New(atom/owner, list/rules)
 	..()
-	owner_ref = om_handle(owner)
 	rel_set(src, "owner", owner)
 	table = dq_rule_table_for(rules)
-	owner.rule_binding = src
+	own_set(owner, "rule_binding", src)
 	var/count = table.count
 	for(var/i in 1 to count)
 		if(subscribe(i, rules[i]))
@@ -161,7 +158,6 @@
 	for(var/i in 1 to count)
 		if((live & RULE_BIT(i)) && check(rules[i]))
 			holding |= RULE_BIT(i)
-	rel_clear(src, "owner")
 
 /// Phase 1 (unbind): drops its rules and frees its Rust reactor nodes.
 /datum/rule_binding/lifecycle_unbind()
@@ -173,9 +169,6 @@
 		dq_rx_node_free(nodes[property])
 	nodes = null
 	dq_rx_clear(src)
-	var/datum/owner_now = om_resolve(owner_ref)
-	if(owner_now?.rule_binding == src)
-		owner_now.rule_binding = null
 
 /// Shared rule list (tests and diagnostics).
 /datum/rule_binding/proc/rule_list()
@@ -265,11 +258,9 @@
 /datum/rule_binding/proc/check(datum/rule/rule)
 	return rule.predicate.check(null, owner, null) ? TRUE : FALSE
 
-/// Resolve the owner for this call; a binding whose owner is gone deletes itself.
+/// Whether the owner is still here; a binding whose owner is gone deletes itself.
 /datum/rule_binding/proc/resolve()
-	rel_set(src, "owner", om_resolve(owner_ref))
 	if(!owner || QDELETED(owner))
-		rel_clear(src, "owner")
 		qdel(src)
 		return FALSE
 	return TRUE
@@ -289,7 +280,6 @@
 	if(!resolve())
 		return
 	evaluate_rules()
-	rel_clear(src, "owner")
 
 /datum/rule_binding/proc/evaluate_rules()
 	var/list/rules = table.rules

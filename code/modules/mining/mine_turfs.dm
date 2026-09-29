@@ -464,7 +464,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 				next_rock -= 50
 				var/obj/item/ore/archeology_debris/O = new(src)
 				geologic_data.UpdateNearbyArtifactInfo(src)
-				own_set(O, "geologic_data", geologic_data)
+				own_set(O, "geologic_data", geologic_data.copy())
 
 		if (istype(W, /obj/item/pickaxe))
 			if(!istype(user.loc, /turf))
@@ -529,7 +529,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 		next_rock -= 50
 		var/obj/item/ore/archeology_debris/O = new(src)
 		geologic_data.UpdateNearbyArtifactInfo(src)
-		own_set(O, "geologic_data", geologic_data)
+		own_set(O, "geologic_data", geologic_data.copy())
 
 //THIS IS THE 'YOU HIT AN ARTIFACT AND ARE GOING TOO DEEP' PROC. This is NOT the 'you destroyed the turf' proc. For that, look at 'GetDrilled'
 /turf/simulated/mineral/proc/wreckfinds(destroy = FALSE)
@@ -594,7 +594,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 	var/obj/item/ore/O = new new_ore_path(src)
 	if(istype(O))
 		geologic_data.UpdateNearbyArtifactInfo(src)
-		own_set(O, "geologic_data", geologic_data)
+		own_set(O, "geologic_data", geologic_data.copy())
 	return O
 
 /turf/simulated/mineral/proc/excavate_turf()
@@ -602,7 +602,8 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 	if(artifact_find)
 		//boulder with an artifact inside
 		B = new(src)
-		B.artifact_find_static = artifact_find
+		// The boulder takes the find over from this turf (the turf is drilled away next).
+		own_transfer(src, "artifact_find", B, "artifact_find_static")
 
 	if(B)
 		GetDrilled(0)
@@ -665,7 +666,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 		X = new /obj/item/strangerock(src, F.find_type)
 		geologic_data.UpdateNearbyArtifactInfo(src)
 		var/obj/item/strangerock/SR = X
-		own_set(SR, "geologic_data", geologic_data)
+		own_set(SR, "geologic_data", geologic_data.copy())
 
 	//some find types delete the /obj/item/archaeological_find and replace it with something else, this handles when that happens
 	//yuck
@@ -749,6 +750,6 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 	temperature	= TCMB
 
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// Accessor for a shared definition.
 /turf/simulated/mineral/proc/mineral() as /datum/ore
 	return mineral_static

@@ -50,6 +50,6 @@ GLOBAL_VAR(managed_browser_id_ticker)
 	if(C?.mob)
 		dq_admin_report_html(C.mob, title, html, src)
 
-/// LC-refs: the client this browser is shown to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client this browser is shown to (a relation view).
 /datum/managed_browser/proc/my_client() as /client
 	return my_client

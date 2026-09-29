@@ -188,8 +188,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 		next_car = next_car.lead()
 
 	//latch with src as the follower
-	rel_set(src, "lead", T)
-	rel_set(T, "tow", src)
+	rel_set(src, "lead", T) // REL_PAIR: T's tow names us
 	set_dir(lead().dir)
 
 	if(user)
@@ -204,11 +203,11 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 		to_chat(user, span_red("[src] is not hitched to anything."))
 		return
 
-	lead().tow = null
-	lead().update_stats()
+	var/obj/vehicle/train/old_lead = lead()
+	rel_clear(src, "lead") // the pair: old_lead's tow clears too
+	old_lead.update_stats()
 
-	to_chat(user, span_blue("You unhitch [src] from [lead()]."))
-	rel_clear(src, "lead")
+	to_chat(user, span_blue("You unhitch [src] from [old_lead]."))
 
 	update_stats()
 
@@ -242,10 +241,9 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 	while(T.tow())
 		//check for cyclic train.
 		if (T.tow() == src)
-			lead().tow = null
-			lead().update_stats()
-
-			rel_clear(src, "lead")
+			var/obj/vehicle/train/old_lead = lead()
+			rel_clear(src, "lead") // the pair: old_lead's tow clears too
+			old_lead?.update_stats()
 			update_stats()
 			return
 		T = T.tow()
@@ -263,10 +261,13 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 /obj/vehicle/train/proc/update_car(train_length, active_engines)
 	return
 
-/// LC-refs: the tow this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the tow var.
 /obj/vehicle/train/proc/tow() as /obj/vehicle/train
 	return tow
 
-/// LC-refs: the lead this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the lead var.
 /obj/vehicle/train/proc/lead() as /obj/vehicle/train
 	return lead
+
+REL_PAIR(/obj/vehicle/train, lead, tow)
+REL_PAIR(/obj/vehicle/train, tow, lead)

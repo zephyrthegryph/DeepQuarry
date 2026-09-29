@@ -17,6 +17,6 @@
 	..()
 	implant().icon_state = icon_state
 
-/// LC-refs: the implant this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The implant this refers to (a relation view: null once that is deleted).
 /obj/item/electronic_assembly/implant/proc/implant() as /obj/item/implant/integrated_circuit
 	return implant

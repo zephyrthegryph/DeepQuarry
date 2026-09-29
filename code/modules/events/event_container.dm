@@ -194,6 +194,6 @@
 		new /datum/event_meta(EVENT_LEVEL_MAJOR, "Space Vines",			/datum/event/spacevine, 		20,	list(DEPARTMENT_ENGINEERING = 15), 1),
 	)
 
-/// LC-refs: the next_event this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the next_event var.
 /datum/event_container/proc/next_event() as /datum/event_meta
 	return next_event

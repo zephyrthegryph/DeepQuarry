@@ -55,6 +55,6 @@
 	speaker_output = I.data
 
 	var/obj/item/clothing/ears/circuitry/ep = assembly().loc
-	var/mob/wearer = om_resolve(ep.wearer)
+	var/mob/wearer = ep.wearer
 	if(wearer && ismob(wearer)) // Only allow the wearer to hear the earpiece exclusive speaker
 		to_chat(wearer, span_notice("[icon2html(ep, wearer.client)] [speaker_output]"))

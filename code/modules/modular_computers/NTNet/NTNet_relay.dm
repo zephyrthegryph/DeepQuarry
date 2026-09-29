@@ -12,7 +12,7 @@
 	var/tmp/datum/ntnet/NTNet_static	// This is mostly for backwards reference and to allow varedit modifications from ingame.
 	var/enabled = 1				// Set to 0 if the relay was turned off
 	var/dos_failure = 0			// Set to 1 if the relay failed due to (D)DoS attack
-	var/list/dos_sources	// Backwards reference for qdel() stuff
+	var/list/dos_sources	// DoS programs attacking us (a relation list)
 
 	// Denial of Service attack variables
 	var/dos_overload = 0		// Amount of DoS "packets" in this relay's buffer
@@ -110,8 +110,8 @@
 	assign_uid()
 	default_apply_parts()
 	if(GLOB.ntnet_global)
-		LAZYADD(GLOB.ntnet_global.relays, src)
-		NTNet_static = GLOB.ntnet_global
+		rel_add(GLOB.ntnet_global, "relays", src)
+		NTNet_static = GLOB.ntnet_global // a registered singleton: shared
 		GLOB.ntnet_global.add_log("New quantum relay activated. Current amount of linked relays: [length(NTNet().relays)]")
 	own_set(src, "soundloop", new /datum/looping_sound/tcomms(list(src), FALSE))
 	if(prob(60)) // 60% chance to change the midloop
@@ -126,10 +126,8 @@
 			soundloop.mid_length = 30
 	soundloop.start() // Have to do this here bc it starts on
 
-// Leaves NTNet's relay list; DoS programs aimed at it lose their target.
-REL_PAIR(/obj/machinery/ntnet_relay, NTNet_static, relays)
-REL_PAIR_LIST(/datum/ntnet, relays, NTNet_static)
-REL_PAIR_LIST(/obj/machinery/ntnet_relay, dos_sources, target_handle)
+// NTNet (a registered singleton) lists us in its relays relation list; attacking DoS programs
+// list themselves in our dos_sources relation list. Both leave on their own when either end dies.
 
 // NTNet logs the lost relay and DoS programs report it.
 /obj/machinery/ntnet_relay/on_destroy(force)
@@ -147,6 +145,6 @@ REL_PAIR_LIST(/obj/machinery/ntnet_relay, dos_sources, target_handle)
 	return TRUE // sets its power draw
 
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared (registered) definition/flyweight: never cleared.
 /obj/machinery/ntnet_relay/proc/NTNet() as /datum/ntnet
 	return NTNet_static

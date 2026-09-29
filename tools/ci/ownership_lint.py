@@ -23,6 +23,7 @@ contradicts itself or a declaration. It checks:
                   handles.
   handle          om_handle()/om_resolve() or a `*_handle` var outside the core: a content var
                   naming an entity is a relation.
+  unknown_var     an accessor naming a var (by string) that the receiver's type doesn't have.
   removed         the deleted forms: DECLARE_REF, OM_STATIC_TYPE, REFKIND_*, link_set/link_clear,
                   WEAK_LIST_*, weak_list_live, DuplicateObject.
 
@@ -59,8 +60,8 @@ MODIFIERS = {"tmp", "static", "global", "const", "final"}
 
 PROC_DEF = re.compile(r"^(/[\w/]+?)/(?:(?:proc|verb)/)?(\w+)\s*\((.*)$")
 TYPE_LINE = re.compile(r"^(/[\w/]+)\s*(?:\{.*)?$")
-MEMBER = re.compile(r"^\s+var/((?:[\w]+/)*)(\w+)\b")
-ABS_MEMBER = re.compile(r"^(/[\w/]+?)/var/((?:[\w]+/)*)(\w+)\b")
+MEMBER = re.compile(r"^\s+(?:var|VAR_PRIVATE|VAR_PROTECTED|VAR_FINAL)/((?:[\w]+/)*)(\w+)\b")
+ABS_MEMBER = re.compile(r"^(/[\w/]+?)/(?:var|VAR_PRIVATE|VAR_PROTECTED|VAR_FINAL)/((?:[\w]+/)*)(\w+)\b")
 TYPED_NAME = re.compile(r"(?:var/)?((?:/?\w+)(?:/\w+)+)/(\w+)\b")
 DECL = re.compile(r"^(OWN|OWN_POLICY|OWN_IF|SHARED|PROTO|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST|KEEP_AFTER_DESTROY|POOL_RESET)\(\s*(/[\w/]+)\s*,\s*(\w+)\s*(?:,\s*(.*?))?\)\s*$")
 REGISTRY = re.compile(r"^REGISTRY_TYPE\(\s*(/[\w/]+)\s*,")
@@ -93,12 +94,22 @@ def related(a, b):
     return a == b or a.startswith(b + "/") or b.startswith(a + "/")
 
 
+IMPLICIT_ROOTS = {"/obj": ("/atom/movable", "/atom", "/datum"), "/mob": ("/atom/movable", "/atom", "/datum"),
+                  "/turf": ("/atom", "/datum"), "/area": ("/atom", "/datum"), "/atom": ("/datum",)}
+
+
 def parents(path):
+    """The type and its ancestors, nearest first, including DM's implicit roots (/obj -> /atom/movable
+    -> /atom -> /datum)."""
+    root = None
     while path and path.count("/") >= 1:
         yield path
         if path.count("/") == 1:
-            return
+            root = path
+            break
         path = path.rsplit("/", 1)[0]
+    for implicit in IMPLICIT_ROOTS.get(root, ()):
+        yield implicit
 
 
 class Index:
@@ -133,6 +144,8 @@ class Index:
     def index_file(self, r, raw, code):
         current = None
         for no, line in enumerate(code, 1):
+            if line and line[0] in "\"'":
+                continue  # the tail of a multi-line string, not a new top-level line
             if line and not line[0].isspace():
                 stripped = raw[no - 1].strip()
                 m = DECL.match(stripped)
@@ -184,6 +197,8 @@ def proc_scopes(code):
     owner = proc = None
     local_types = {}
     for no, line in enumerate(code, 1):
+        if line and line[0] in "\"'":
+            continue  # the tail of a multi-line string
         if line and not line[0].isspace():
             m = PROC_DEF.match(line)
             if m and not line.startswith("#"):
@@ -224,6 +239,7 @@ def receiver_type(idx, chain, owner, local_types):
 
 
 RAW_SITES = []
+UNKNOWN_VARS = []
 
 
 def main(argv=None):
@@ -248,6 +264,13 @@ def main(argv=None):
                     rtype = got[1] if got else None
                 kind = "OWN" if func in OWN_FUNCS else "REL" if func in REL_FUNCS else "PROTO" if func in PROTO_FUNCS else "SHARED"
                 idx.usage[name][kind].add((rtype, r, no))
+                # The var named by the string must exist: on the receiver's type when it is known,
+                # else on some type (a string var name can't be checked by the compiler).
+                if rtype and under(rtype, ENTITY_ROOTS):
+                    if not idx.member(rtype, name) and not any(t.startswith(rtype + "/") for (t, _, _) in idx.name_decls.get(name, ())):
+                        UNKNOWN_VARS.append((r, no, "%s(%s, \"%s\"): %s has no var %s" % (func, recv, name, rtype, name)))
+                elif not idx.name_decls.get(name):
+                    UNKNOWN_VARS.append((r, no, "%s(%s, \"%s\"): no type declares a var %s" % (func, recv, name, name)))
             for m in TRANSFER_DEST.finditer(raw[no - 1]):
                 recv, name = m.group(1), m.group(2)
                 rtype = owner if recv == "src" else local_types.get(recv)
@@ -257,6 +280,9 @@ def main(argv=None):
 
     def report(check, r, no, msg):
         problems.append((check, r, no, msg))
+
+    for (r, no, msg) in UNKNOWN_VARS:
+        report("unknown_var", r, no, msg)
 
     decl_kind_of = {"OWN": "OWN", "OWN_POLICY": "OWN", "OWN_IF": "OWN", "SHARED": "SHARED", "PROTO": "PROTO",
                     "REL": "REL", "REL_LIST": "REL", "REL_PAIR": "REL", "REL_PAIR_LIST": "REL", "REL_SET": "REL",

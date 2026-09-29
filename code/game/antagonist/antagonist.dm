@@ -64,7 +64,7 @@
 	var/list/current_antagonists   // All marked antagonists for this type.
 	var/list/pending_antagonists   // Candidates that are awaiting finalized antag status.
 	var/list/starting_locations   // Spawn points.
-	var/list/global_objectives   // Universal objectives if any.
+	var/list/datum/objective/global_objectives   // Universal objectives if any (owned; members share them through mind.shared_objectives).
 	// ALLOW(instance_list): d: antagonist template state; filled every roundstart selection
 	var/list/candidates =          list()   // Potential candidates.
 	var/list/faction_members   // Semi-antags (in-round revs, borer thralls)
@@ -218,6 +218,6 @@
 		player.special_role = null
 	LAZYCLEARLIST(pending_antagonists)
 
-/// LC-refs: leader -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Leader (a relation view).
 /datum/antagonist/proc/leader() as /datum/mind
 	return leader

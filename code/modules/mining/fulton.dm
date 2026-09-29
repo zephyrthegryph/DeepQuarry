@@ -201,10 +201,10 @@ REGISTRY_MEMBERSHIP(/obj/structure/extraction_point, REGISTRY_EXTRACTION_BEACONS
 /obj/effect/extraction_holder/singularity_pull()
 	return
 
-/// LC-refs: the beacon this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the beacon var.
 /obj/item/extraction_pack/proc/beacon() as /obj/structure/extraction_point
 	return beacon
 
-/// LC-refs: the stored_obj this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the stored_obj var.
 /obj/effect/extraction_holder/proc/stored_obj() as /atom/movable
 	return stored_obj

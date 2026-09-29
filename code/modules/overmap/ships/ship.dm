@@ -328,6 +328,6 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 	for(var/mob/M as anything in listeners)
 		M.show_message(message, m_type)
 
-/// LC-refs: the vector this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the vector var.
 /obj/effect/overmap/visitable/ship/proc/vector_overlay() as /obj/effect/overlay/vis
 	return vector

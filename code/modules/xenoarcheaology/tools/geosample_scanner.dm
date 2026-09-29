@@ -333,6 +333,6 @@ DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 #undef COOLANT_USAGE
 #undef COOLANT_MAX
 
-/// LC-refs: the scanned_item this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the scanned_item var.
 /obj/machinery/radiocarbon_spectrometer/proc/scanned_item() as /obj/item
 	return scanned_item

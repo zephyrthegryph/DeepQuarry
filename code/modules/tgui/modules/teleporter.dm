@@ -86,14 +86,14 @@
 
 			return TRUE
 
-/// LC-refs: the locked this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The locked this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/teleport_control/proc/locked() as /obj/item
 	return locked
 
-/// LC-refs: the station this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The station this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/teleport_control/proc/station() as /obj/machinery/teleport/station
 	return station
 
-/// LC-refs: the hub this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The hub this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/teleport_control/proc/hub() as /obj/machinery/teleport/hub
 	return hub

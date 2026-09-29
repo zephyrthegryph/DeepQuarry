@@ -168,6 +168,6 @@
 	else
 		to_chat(user, span_warning("Error scanning [A]."))
 
-/// LC-refs: the notes this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The notes this refers to (a relation view: null once that is deleted).
 /datum/data/pda/utility/scanmode/notes/proc/notes() as /datum/data/pda/app/notekeeper
 	return notes

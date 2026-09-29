@@ -130,9 +130,7 @@
 	// This nonsense alphabetizes the list and converts back to array format before handing off to the parent.
 	// Array format is necessary for the codex code to work properly.
 	new_children_list = sortList(new_children_list)
-	var/list/sorted_children[LAZYLEN(new_children_list)]
-	for(var/x = 1, x <= LAZYLEN(sorted_children), x++)
+	for(var/x = 1, x <= LAZYLEN(new_children_list), x++)
 		var/key = new_children_list[x]
-		sorted_children[x] = new_children_list[key]
-	children = sorted_children
+		own_add(src, "child_pages", new_children_list[key])
 	src.index_page()

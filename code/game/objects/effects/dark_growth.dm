@@ -77,8 +77,7 @@
 	layer = ABOVE_TURF_LAYER
 
 /obj/effect/dark/proc/unlinked()
-	LAZYREMOVE(linked_node.children_effects, src)
-	rel_clear(src, "linked_node")
+	rel_clear(src, "linked_node") // the pair takes us out of the node's children_effects
 	om_after(src, rand(20, 70), PROC_REF(perform_unlink))
 
 /obj/effect/dark/proc/perform_unlink()
@@ -150,15 +149,13 @@ REL_PAIR_LIST(/obj/structure/prop/dark_node, children_effects, linked_node)
 			var/obj/effect/dark/floor/new_dark_tile = new /obj/effect/dark/floor(T2, null, linked_node)
 			if(QDELETED(new_dark_tile))
 				continue
-			LAZYADD(linked_node.children_effects, new_dark_tile)
+			// its Initialize linked it (the pair adds it to children_effects)
 
 /obj/structure/prop/dark_node/periodic_step()
 	//set background = 1
 
 	if(!(locate_within(get_turf(src), /obj/effect/dark)))
-		var/obj/effect/dark/floor/new_dark_tile = new /obj/effect/dark/floor(get_turf(src), null, src)
-		if(!QDELETED(new_dark_tile))
-			LAZYADD(children_effects, new_dark_tile)
+		new /obj/effect/dark/floor(get_turf(src), null, src) // its Initialize links it (the pair adds it to children_effects)
 
 	if(until_full_process-- <= 0)
 		for(var/obj/effect/dark/dark_tile in orange(node_range, src))
@@ -166,8 +163,7 @@ REL_PAIR_LIST(/obj/structure/prop/dark_node, children_effects, linked_node)
 				continue
 			if(dark_tile.linked_node)
 				continue
-			LAZYADD(children_effects, dark_tile)
-			rel_set(dark_tile, "linked_node", src)
+			rel_set(dark_tile, "linked_node", src) // the pair adds it to children_effects
 		until_full_process = 4
 
 	for(var/obj/effect/dark/dark_tile as anything in children_effects)

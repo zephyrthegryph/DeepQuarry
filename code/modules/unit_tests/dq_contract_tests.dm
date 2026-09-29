@@ -1201,6 +1201,10 @@
 	for(var/stage in 1 to 3)
 		emit_contract_event(CONTRACT_EVENT_MACHINE_RESULT, list("department" = DEPARTMENT_ENGINEERING, "machine_kind" = "supermatter", "machine_id" = "test-sm", "station_machine" = TRUE, "metrics" = list("eer" = 1000, "integrity" = 95)), "expanded-engineering-[stage]:[REF(engineering)]")
 		sleep(2)
+		// The stage timer is due now; under a busy MC the Behaviours subsystem may not have
+		// fired this tick yet, so run the scheduler's pass here instead of waiting on the MC.
+		var/datum/om/scheduler/sched = engineering.performance_requirement.om_rec?.sched || GLOB.om_live_sched || om_scheduler()
+		sched.run_pass(1e9)
 	TEST_ASSERT_EQUAL(engineering.state, CONTRACT_COMPLETED, "qualifying sustained supermatter telemetry did not complete Engineering's contract")
 	qdel(engineering)
 
@@ -1370,8 +1374,8 @@
 	GLOB.data_core.general += general_record
 	var/datum/data/record/security_record = new
 	security_record.fields["criminal"] = "Released"
-	security_console.active1_handle = om_handle(general_record)
-	security_console.active2_handle = om_handle(security_record)
+	rel_set(security_console, "active1", general_record)
+	rel_set(security_console, "active2", security_record)
 	var/area/original_area = get_area(test_turf)
 	var/area/security/brig/test_brig = new
 	ChangeArea(test_turf, test_brig)
@@ -1491,8 +1495,8 @@
 	general_record.fields["name"] = "Nobody Aboard"
 	var/datum/data/record/security_record = new
 	security_record.fields["criminal"] = "Released"
-	security_console.active1_handle = om_handle(general_record)
-	security_console.active2_handle = om_handle(security_record)
+	rel_set(security_console, "active1", general_record)
+	rel_set(security_console, "active2", security_record)
 	TEST_ASSERT(security_console.record_security_disposition("Incarcerated", "Released", null), "fake disposition did not publish its auditable rejected fact")
 	TEST_ASSERT_EQUAL(security.state, CONTRACT_ACTIVE, "a record with no physical prisoner completed the Security contract")
 	qdel(security_console)

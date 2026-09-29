@@ -77,7 +77,7 @@
 /obj/machinery/microwave/Initialize(mapload)
 	. = ..()
 
-	reagents = new/datum/reagents(100)
+	create_reagents(100)
 	rel_set(reagents, "my_atom", src)
 
 	default_apply_parts()

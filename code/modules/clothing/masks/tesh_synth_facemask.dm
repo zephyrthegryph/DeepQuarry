@@ -65,6 +65,6 @@
 	..()
 	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
-/// LC-refs: the maskmaster this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the maskmaster this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/mask/synthfacemask/proc/maskmaster() as /mob/living/carbon
 	return maskmaster

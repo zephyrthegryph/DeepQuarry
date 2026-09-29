@@ -216,7 +216,7 @@ EXTEND_INTERACTIONS(/obj/structure/ghost_pod/ghost_activated, INTERACT_OBSERVER(
 /mob/living/proc/load_bellies_answered(datum/om/prompt/confirm/ask)
 	copy_from_prefs_vr()
 	if(LAZYLEN(vore_organs))
-		own_set(src, "vore_selected", vore_organs[1])
+		rel_set(src, "vore_selected", vore_organs[1])
 
 /// Lets a freshly spawned character pick a new name.
 /mob/living/carbon/human/proc/offer_spawn_rename()

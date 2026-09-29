@@ -68,7 +68,7 @@ DECLARE_INTERACTIONS(/obj/item/analyzer/plant_analyzer, INTERACT_USE(null, TYPE_
 			print_report(ui.user)
 			return TRUE
 		if("close")
-			last_seed = null
+			proto_set(src, "last_seed", null)
 			last_reagents = null
 			return TRUE
 
@@ -110,9 +110,8 @@ DECLARE_INTERACTIONS(/obj/item/analyzer/plant_analyzer, INTERACT_USE(null, TYPE_
 		to_chat(user, span_danger("[src] can tell you nothing about \the [target]."))
 		return
 
-	last_seed = grown_seed.diverge()
-	if(!istype(last_seed))
-		last_seed = grown_seed // TRAIT_IMMUTABLE makes diverge() return null
+	// A private snapshot the analyzer owns: never the tray's (or a packet's) own seed datum.
+	proto_set(src, "last_seed", grown_seed.copy_line())
 
 	user.visible_message(span_notice("[user] runs the scanner over \the [target]."))
 
@@ -308,3 +307,5 @@ DECLARE_INTERACTIONS(/obj/item/analyzer/plant_analyzer, INTERACT_USE(null, TYPE_
 			data["trait_info"] += "It will consume [amount][GLOB.gas_data.name[gas]] from the environment."
 
 	return data
+
+PROTO(/obj/item/analyzer/plant_analyzer, last_seed)

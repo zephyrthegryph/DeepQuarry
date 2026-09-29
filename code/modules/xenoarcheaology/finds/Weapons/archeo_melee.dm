@@ -308,6 +308,6 @@ DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF
 #undef SHELL
 #undef ARTIFACT
 
-/// LC-refs: The last human that touched us -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The last human that touched us
 /obj/item/melee/artifact_blade/proc/last_touched() as /mob/living/carbon/human
 	return last_touched

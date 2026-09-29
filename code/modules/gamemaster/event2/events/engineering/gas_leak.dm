@@ -51,6 +51,6 @@
 	chosen_turf().assume_air(air_contents)
 	playsound(chosen_turf(), 'sound/effects/smoke.ogg', 75, 1)
 
-/// LC-refs: the chosen_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the chosen_turf var.
 /datum/event2/event/gas_leak/proc/chosen_turf() as /turf
 	return chosen_turf

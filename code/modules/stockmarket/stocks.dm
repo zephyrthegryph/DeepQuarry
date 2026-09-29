@@ -309,7 +309,7 @@
 	return  // body provided by modular override
 
 
-/// LC-refs: the stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the stock this refers to (a relation view: null once it is deleted).
 /datum/borrow/proc/stock() as /datum/stock
 	return stock
 

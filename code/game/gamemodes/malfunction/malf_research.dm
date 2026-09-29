@@ -6,7 +6,7 @@
 	var/list/available_abilities = null				// List of available abilities that may be researched.
 	var/list/unlocked_abilities = null				// List of already unlocked abilities.
 	var/mob/living/silicon/ai/owner			// AI which owns this research datum.
-	var/datum/malf_research_ability/focus_static	// Currently researched item
+	var/datum/malf_research_ability/focus_static	// Currently researched item (a relation view into available_abilities)
 
 /datum/malf_research/New()
 	setup_abilities()
@@ -37,7 +37,7 @@
 	if(get_focus().next)
 		available_abilities += get_focus().next
 	unlocked_abilities += get_focus()
-	focus_static = null
+	rel_clear(src, "focus_static")
 
 
 // Proc:		process()
@@ -63,11 +63,11 @@
 		if(get_focus().unlocked)
 			finish_research()
 
-/// LC-refs: owner -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Owner (a relation view).
 /datum/malf_research/proc/owner_ref() as /mob/living/silicon/ai
 	return owner
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/malf_research/proc/get_focus() as /datum/malf_research_ability
 	return focus_static
 

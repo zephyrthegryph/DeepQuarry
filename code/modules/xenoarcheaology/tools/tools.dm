@@ -107,7 +107,9 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 	item_state = "analyzer"
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_BELT
+	/// Owned: the depth scans this scanner recorded.
 	var/list/positive_locations
+	/// Relation view: the selected scan (one of positive_locations).
 	var/tmp/datum/depth_scan/current
 
 /datum/depth_scan
@@ -137,7 +139,7 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 				D.depth = "[F.excavation_required]"
 				D.material = get_responsive_reagent(F.find_type)
 
-			LAZYADD(positive_locations, D)
+			own_add(src, "positive_locations", D)
 
 			to_chat(user, span_notice("[icon2html(src, user.client)] [src] pings."))
 
@@ -153,7 +155,7 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 			//these values are arbitrary
 			D.depth = rand(150, 200)
 
-			LAZYADD(positive_locations, D)
+			own_add(src, "positive_locations", D)
 
 			to_chat(user, span_notice("[icon2html(src, user.client)] [src] pings [pick("madly","wildly","excitedly","crazily")]!"))
 
@@ -222,13 +224,11 @@ DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(intera
 			if(index)
 				if(index <= LAZYLEN(positive_locations))
 					var/datum/depth_scan/D = LAZYACCESS(positive_locations, index)
-					LAZYREMOVE(positive_locations, D)
-					qdel(D)
 					rel_clear(src, "current")
+					own_remove(src, "positive_locations", D) // deletes the scan
 			else
-				QDEL_LIST_NULL(positive_locations)
-				positive_locations = list()
-				qdel_handle(current); current = null
+				rel_clear(src, "current")
+				own_clear(src, "positive_locations", OWN_DELETE)
 			return TRUE
 
 MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
@@ -368,10 +368,10 @@ DECLARE_INTERACTIONS(/obj/item/xenoarch_multi_tool, \
 	anomaly_scanner.interact(user)
 
 
-/// LC-refs: the target_radio this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the target_radio var.
 /obj/item/beacon_locator/proc/target_radio() as /obj/item/radio
 	return target_radio
 
-/// LC-refs: the current this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the current var.
 /obj/item/depth_scanner/proc/current() as /datum/depth_scan
 	return current

@@ -24,7 +24,7 @@
 /obj/machinery/reagent_refinery/reactor/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	internal_tank = new /obj/machinery/portable_atmospherics/canister/empty()
+	own_set(src, "internal_tank", new /obj/machinery/portable_atmospherics/canister/empty())
 	update_gas_network()
 	COOLDOWN_START(src, next_mode_toggle, dis_time SECONDS)
 	// Update neighbours and self for state

@@ -187,10 +187,11 @@
 	if (!admin_client)
 		return
 
-	rel_clear(admin_client, "click_intercept")
+	if(admin_client.holder)
+		rel_clear(admin_client.holder, "click_intercept")
 
-	if (precise_mode != PRECISE_MODE_OFF)
-		rel_set(admin_client, "click_intercept", src)
+	if (precise_mode != PRECISE_MODE_OFF && admin_client.holder)
+		rel_set(admin_client.holder, "click_intercept", src)
 		winset(admin_client, "mapwindow.map", "right-click=true")
 	else
 		winset(admin_client, "mapwindow.map", "right-click=false")

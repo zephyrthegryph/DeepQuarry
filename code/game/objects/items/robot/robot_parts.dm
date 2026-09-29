@@ -214,8 +214,9 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 				for(var/datum/language/L in O.identity().languages)
 					O.add_language(L.name)
 			O.job = JOB_CYBORG
-			O.set_cell(chest.cell)
-			own_take(chest, "cell")
+			var/obj/item/cell/chest_cell = own_take(chest, "cell") // detach from the chest first: set_cell() adopts it
+			chest_cell?.forceMove(O) // the borg's cell is CONTAINED
+			O.set_cell(chest_cell)
 			W.forceMove(O)//Should fix cybros run time erroring when blown up. It got deleted before, along with the frame.
 
 			feedback_inc("cyborg_birth",1)

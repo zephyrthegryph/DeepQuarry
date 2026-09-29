@@ -28,7 +28,7 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 		return
 
 	//Feed the Lore Codex into the News Machine
-	for(var/datum/lore/codex/child in news_codex.children)
+	for(var/datum/lore/codex/child in news_codex.child_pages)
 		GLOB.news_network.SubmitArticle("[child.data]", "Oculum", "Vir News Network", null, 1, "", "[child.name]")
 
 	return 1
@@ -40,6 +40,6 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 			break
 
 
-/// LC-refs: the station_newspaper this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The station_newspaper this refers to (a relation view: null once that is deleted).
 /datum/lore/news/proc/station_newspaper() as /datum/feed_channel
 	return station_newspaper

@@ -9,12 +9,13 @@
 	category = UTILITY_SPELLS
 // Multiple technomancer support
 /datum/technomancer_marker
-	var/U
+	/// Who placed the mark: a relation view.
+	var/mob/caster
 	var/image/I
 	var/turf/T
 
 /datum/technomancer_marker/New(mob/user)
-	U = om_handle(user)
+	rel_set(src, "caster", user)
 	rel_set(src, "T", get_turf(user))
 	I = image('icons/goonstation/featherzone.dmi', T(), "spawn-wall")
 	I.plane = TURF_PLANE
@@ -25,12 +26,19 @@
 // the marker image comes off its caster's client.
 /datum/technomancer_marker/lifecycle_prerelease()
 	..()
-	var/mob/user = om_resolve(U)
-	user?.client?.images -= I
+	caster?.client?.images -= I
 	image_anchor(I, null)
 
 //This is global, to avoid looping through a list of all objects, or god forbid, looping through world.
-GLOBAL_LIST_INIT(mark_spells, list())
+/// Every placed mark (owned by the antag service); one per caster.
+/datum/world_service/antag/var/list/datum/technomancer_marker/mark_spells
+
+/// `user`'s placed mark, or null.
+/proc/technomancer_marker_of(mob/user)
+	for(var/datum/technomancer_marker/marker as anything in GLOB.antag_service.mark_spells)
+		if(marker.caster == user)
+			return marker
+	return null
 /obj/item/spell/mark
 	name = "mark"
 	icon_state = "mark"
@@ -44,15 +52,15 @@ GLOBAL_LIST_INIT(mark_spells, list())
 		return 0
 	if(pay_energy(1000))
 		// Multiple technomancer support
-		var/datum/technomancer_marker/marker = GLOB.mark_spells[om_handle(user)]
+		var/datum/technomancer_marker/marker = technomancer_marker_of(user)
 		//They have one in the list
 		if(istype(marker))
-			qdel(marker)
+			own_remove(GLOB.antag_service, "mark_spells", marker)
 			to_chat(user, span_notice("Your mark is moved from its old position to \the [get_turf(user)] under you."))
 		//They don't have one yet
 		else
 			to_chat(user, span_notice("You mark \the [get_turf(user)] under you."))
-		GLOB.mark_spells[om_handle(user)] = new /datum/technomancer_marker(user)
+		own_add(GLOB.antag_service, "mark_spells", new /datum/technomancer_marker(user))
 		adjust_instability(5)
 		return 1
 	else
@@ -80,7 +88,7 @@ GLOBAL_LIST_INIT(mark_spells, list())
 
 /obj/item/spell/recall/on_use_cast(mob/living/user)
 	if(pay_energy(3000))
-		var/datum/technomancer_marker/marker = GLOB.mark_spells[om_handle(user)] // Multiple technomancer support
+		var/datum/technomancer_marker/marker = technomancer_marker_of(user) // Multiple technomancer support
 		if(!istype(marker))
 			to_chat(user, span_danger("There's no Mark!"))
 			return 0
@@ -129,6 +137,6 @@ GLOBAL_LIST_INIT(mark_spells, list())
 	consume(src, user)
 
 
-/// LC-refs: T -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// T (a relation view).
 /datum/technomancer_marker/proc/T() as /turf
 	return T

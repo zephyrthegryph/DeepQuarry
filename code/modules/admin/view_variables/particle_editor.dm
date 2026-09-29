@@ -215,6 +215,6 @@
 			target().particles.datum_flags |= DF_VAR_EDITED
 			return TRUE
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The target this refers to (a relation view: null once that is deleted).
 /datum/particle_editor/proc/target() as /atom/movable
 	return target

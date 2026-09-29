@@ -116,7 +116,7 @@
 
 /datum/squeak/proc/on_equip(datum/source, datum/om/event/item_equipped/event)
 	EVENT_HANDLER
-	// An OM handle reads null once the holder is deleted, so no deletion hook is needed.
+	// The relation view clears once the holder is deleted, so no deletion hook is needed.
 	rel_set(src, "holder", event.equipper)
 
 /datum/squeak/proc/on_drop(datum/source, datum/om/event/item_dropped/event)
@@ -135,6 +135,6 @@
 		play_squeak()
 */
 
-/// LC-refs: the mob wearing the squeaky thing -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mob wearing the squeaky thing (a relation view).
 /datum/squeak/proc/holder() as /mob
 	return holder

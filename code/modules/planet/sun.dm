@@ -193,6 +193,6 @@
 	dir = newdir
 
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// Accessor for a shared definition.
 /datum/sun_holder/proc/our_planet() as /datum/planet
 	return our_planet_static

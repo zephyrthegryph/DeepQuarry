@@ -34,7 +34,7 @@
 
 /// Binds to `new_carrier`. FALSE when the carrier is incompatible.
 /datum/hose_connector/proc/attach(atom/movable/new_carrier, set_unique_name = null)
-	carrier = new_carrier
+	rel_set(src, "carrier", new_carrier)
 	own_set(src, "reagents", new /datum/reagents(60, src))
 	// Handle uniquely named connectors
 	if(set_unique_name)
@@ -134,10 +134,10 @@
 	if(carrier.Adjacent(user))
 		carrier.visible_message("[user] disconnects \the hose from \the [carrier].")
 		my_hose.disconnect(user)
-		QDEL_NULL(my_hose)
+		qdel(my_hose) // the hose is shared by both ends; its death clears both views
 
 /datum/hose_connector/proc/connect(datum/hose/H = null)
-	my_hose = H
+	rel_set(src, "my_hose", H)
 	if(my_hose)
 		om_task_periodic(src, PERIODIC_SLOW)
 
@@ -191,7 +191,7 @@
 	return null
 
 /datum/hose_connector/proc/remove_hose()
-	my_hose = null
+	rel_clear(src, "my_hose")
 	// Flush the connector immediately, then leave the object subsystem. There is
 	// no reason to wait up to one SSobj period merely to discover disconnection.
 	periodic_step()

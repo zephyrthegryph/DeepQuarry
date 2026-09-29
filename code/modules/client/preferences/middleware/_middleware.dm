@@ -47,6 +47,6 @@
 /datum/preference_middleware/proc/on_new_character(mob/user)
 	return
 
-/// LC-refs: the preferences this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The preferences this refers to (a relation view: null once that is deleted).
 /datum/preference_middleware/proc/preferences() as /datum/preferences
 	return preferences

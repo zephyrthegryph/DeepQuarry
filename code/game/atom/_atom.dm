@@ -142,7 +142,7 @@
 
 // Used to be for the PROXMOVE flag, but that was terrible, so instead it's just here as a stub for
 // all the atoms that still have the proc, but get events other ways.
-/atom/proc/HasProximity(turf/T, WF, old_loc)
+/atom/proc/HasProximity(turf/T, atom/movable/arrived, old_loc) // arrived: the atom itself (not a handle)
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
@@ -151,7 +151,7 @@
 	EVENT_HANDLER
 	HasProximity(source, event.arrived, event.old_loc)
 
-//Register listeners on turfs in a certain range. Entries call HasProximity(turf, arrived_handle, old_loc);
+//Register listeners on turfs in a certain range. Entries call HasProximity(turf, arrived, old_loc);
 // `callback` is kept for the callers' readability and must be HasProximity.
 /atom/proc/sense_proximity(range = 1, callback)
 	ASSERT(callback)
@@ -291,7 +291,6 @@
 /atom/proc/set_dir(new_dir)
 	SHOULD_CALL_PARENT(TRUE)
 	OM_EMIT(src, /datum/om/event/atom_dir_change, dir, new_dir)
-	var/oldDir = dir
 	dir = new_dir
 
 // Called to set the atom's density and used to add behavior to density changes.

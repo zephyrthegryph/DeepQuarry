@@ -525,6 +525,6 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit_printer, \
 	desc = "Install this into your integrated circuit printer to enhance it.  This one allows the printer to duplicate assemblies."
 	icon_state = "upgrade_disk_clone"
 
-/// LC-refs: The assembly being cloned. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The assembly being cloned. (a relation view: null once that is deleted).
 /obj/item/integrated_circuit_printer/proc/queued_assembly() as /obj/item/electronic_assembly
 	return queued_assembly

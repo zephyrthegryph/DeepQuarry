@@ -74,7 +74,7 @@
 /obj/machinery/containment_field/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
 		return
-	var/atom/movable/AM = om_resolve(WF)
+	var/atom/movable/AM = WF
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return
@@ -109,10 +109,10 @@
 	rel_set(src, "FG2", master2)
 	return 1
 
-/// LC-refs: the FG1 this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the FG1 this refers to: a relation view, null once that is deleted.
 /obj/machinery/containment_field/proc/FG1() as /obj/machinery/field_generator
 	return FG1
 
-/// LC-refs: the FG2 this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the FG2 this refers to: a relation view, null once that is deleted.
 /obj/machinery/containment_field/proc/FG2() as /obj/machinery/field_generator
 	return FG2

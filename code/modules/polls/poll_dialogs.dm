@@ -28,8 +28,7 @@
 /datum/privacy_poll_dialog/New(mob/new_player/owner)
 	rel_set(src, "owner", owner)
 
-REL_PAIR(/datum/privacy_poll_dialog, owner, privacy_poll_dialog)
-REL_PAIR(/mob/new_player, privacy_poll_dialog, owner)
+// The new player owns this dialog (privacy_poll_dialog); owner is a plain relation back.
 
 /datum/privacy_poll_dialog/tgui_state(mob/user)
 	return GLOB.tgui_always_state
@@ -125,8 +124,7 @@ REL_PAIR(/mob/new_player, privacy_poll_dialog, owner)
 	poll_meta = list()
 	refresh_poll_list()
 
-REL_PAIR(/datum/poll_browser_dialog, owner, poll_browser_dialog)
-REL_PAIR(/mob/new_player, poll_browser_dialog, owner)
+// The new player owns this dialog (poll_browser_dialog); owner is a plain relation back.
 
 /datum/poll_browser_dialog/tgui_state(mob/user)
 	return GLOB.tgui_always_state

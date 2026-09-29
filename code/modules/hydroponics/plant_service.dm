@@ -96,6 +96,19 @@ GLOBAL_DATUM_INIT(plant_service, /datum/world_service/plants, new)
 		plant_gene_datums[gene_mask] = G
 		gene_masked_list.Add(list(list("tag" = gene_tag, "mask" = gene_mask)))
 
+/// Files a registered copy of the private seed S as a new line (a numbered uid) and returns it.
+/// S stays with its holder, renamed to the line, so later harvests don't file it again.
+/datum/world_service/plants/proc/register_line(datum/seed/S)
+	if(!S || is_registered(S))
+		return S
+	var/datum/seed/line = S.copy_line()
+	line.uid = length(seeds) + 1
+	line.name = "[line.uid]"
+	seeds[line.name] = line
+	S.uid = line.uid
+	S.name = line.name
+	return line
+
 // Proc for creating a random seed type.
 /datum/world_service/plants/proc/create_random_seed(survive_on_station)
 	var/datum/seed/seed = new()

@@ -484,7 +484,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 	// Not on a mob...?
 	if(!ismob(loc))
 		if(wearer()?.wearing_rig == src)
-			wearer().wearing_rig = null
+			own_take(wearer(), "wearing_rig")
 		rel_clear(src, "wearer")
 		return PROCESS_KILL
 
@@ -663,7 +663,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 	if(istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 		M.visible_message(span_boldnotice("[M] struggles into \the [src]."), span_boldnotice("You struggle into \the [src]."))
 		rel_set(src, "wearer", M)
-		wearer().wearing_rig = src
+		own_set(wearer(), "wearing_rig", src)
 		update_icon()
 
 /obj/item/rig/proc/toggle_piece(piece, mob/living/carbon/human/H, deploy_mode, forced = FALSE)
@@ -774,7 +774,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 	// Piece retraction and seal-state reset are handled in Moved() (the universal hook
 	// that also catches forceMove); here we just drop the wearer back-references.
 	if(wearer() && wearer().wearing_rig == src)
-		wearer().wearing_rig = null
+		own_take(wearer(), "wearing_rig")
 	rel_clear(src, "wearer")
 
 //Todo
@@ -1030,11 +1030,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 
 OWN(/obj/item/rig, air_supply, OWN_CONTAINED)
 OWN(/obj/item/rig, cell, OWN_CONTAINED)
-OWN(/obj/item/rig, selected_module, OWN_CONTAINED)
-OWN(/obj/item/rig, visor, OWN_CONTAINED)
-OWN(/obj/item/rig, speech, OWN_CONTAINED)
+OWN(/obj/item/rig, installed_modules, OWN_CONTAINED)
 OWN(/obj/item/rig, rig_storage, OWN_CONTAINED)
 
-/// LC-refs: The person currently wearing the rig. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The person currently wearing the rig. (a relation view: null once it is deleted).
 /obj/item/rig/proc/wearer() as /mob/living/carbon/human
 	return wearer

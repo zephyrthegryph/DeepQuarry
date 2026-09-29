@@ -278,10 +278,10 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 	slot_flags = SLOT_HEAD
 
 
-/// LC-refs: Current track playing -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Current track playing (a relation view: null once it is deleted).
 /obj/item/walkpod/proc/current_track() as /datum/track
 	return current_track
 
-/// LC-refs: Person whomst is listening to us -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Person whomst is listening to us (a relation view: null once it is deleted).
 /obj/item/walkpod/proc/listener() as /mob/living
 	return listener

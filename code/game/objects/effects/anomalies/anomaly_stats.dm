@@ -10,8 +10,10 @@
 
 	var/datum/anomaly_modifiers/modifier
 
-	var/attached_anomaly
-	var/attached_harvester
+	/// Relation view: the anomaly that owns these stats.
+	var/obj/effect/anomaly/attached_anomaly
+	/// The harvester draining this anomaly (a relation view, written by /obj/machinery/anomaly_harvester).
+	var/obj/machinery/anomaly_harvester/attached_harvester
 
 	TIMESTAMP_VAR(next_activation)
 	// Total of points we'll get once the anomaly does a pulse
@@ -41,7 +43,7 @@
 /datum/anomaly_stats/proc/calculate_points()
 	var/total = 15
 
-	var/obj/effect/anomaly/anomaly = om_resolve(attached_anomaly)
+	var/obj/effect/anomaly/anomaly = attached_anomaly
 
 	if(!anomaly)
 		return
@@ -75,9 +77,9 @@
 	return
 
 /datum/anomaly_stats/proc/update_severity(lower, upper)
-	var/obj/effect/anomaly/anom = om_resolve(attached_anomaly)
+	var/obj/effect/anomaly/anom = attached_anomaly
 	if(!istype(anom))
-		attached_anomaly = null
+		rel_clear(src, "attached_anomaly")
 		return
 	var/sev_change = rand(lower, upper)
 	severity += sev_change
@@ -110,9 +112,9 @@
 	return
 
 /datum/anomaly_stats/proc/kill_anomaly(critical)
-	var/obj/effect/anomaly/anom = om_resolve(attached_anomaly)
+	var/obj/effect/anomaly/anom = attached_anomaly
 	if(!istype(anom))
-		attached_anomaly = null
+		rel_clear(src, "attached_anomaly")
 		return
 	if(critical)
 		anom.detonate()
@@ -123,7 +125,7 @@
 	return
 
 /datum/anomaly_stats/proc/update_state(unstable)
-	var/obj/effect/anomaly/anom = om_resolve(attached_anomaly)
+	var/obj/effect/anomaly/anom = attached_anomaly
 
 	if(!istype(anom))
 		return
@@ -158,9 +160,8 @@
 
 	if(modifier)
 		modifier.on_remove(attached_anomaly)
-		own_take(src, "modifier")
 
-	own_set(src, "modifier", new picked_mod)
+	own_set(src, "modifier", new picked_mod) // disposes of the old modifier
 	modifier.on_add(attached_anomaly)
 	calculate_points()
 	return
@@ -181,7 +182,7 @@
 			stability = ANOMALY_STABLE
 
 	if(attached_harvester)
-		var/obj/machinery/anomaly_harvester/harvester = om_resolve(attached_harvester)
+		var/obj/machinery/anomaly_harvester/harvester = attached_harvester
 		if(!istype(harvester))
 			return
 

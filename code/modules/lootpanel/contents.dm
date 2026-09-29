@@ -1,10 +1,9 @@
 /// Adds the item to searchables and to_image (if needed)
 /datum/lootpanel/proc/add_to_index(datum/search_object/index)
 	om_hook(index, /datum/om/event/qdeleting, src, PROC_REF(on_searchable_deleted))
-	if(isnull(index.icon))
-		own_add(src, "to_image", index)
-
 	own_add(src, "searchables", index)
+	if(isnull(index.icon))
+		rel_add(src, "to_image", index)
 
 
 /// Used to populate searchables and start generating if needed
@@ -44,11 +43,7 @@
 /// For: Resetting to empty. Ignores the searchable qdel event
 /datum/lootpanel/proc/reset_contents()
 	for(var/datum/search_object/index as anything in searchables)
-		own_take_member(src, "searchables", index)
-		own_take_member(src, "to_image", index)
-
-		if(QDELETED(index))
-			continue
-
-		om_unhook(index, /datum/om/event/qdeleting, src)
-		qdel(index)
+		if(!QDELETED(index))
+			om_unhook(index, /datum/om/event/qdeleting, src)
+	// the search objects are ours: deleting them also empties to_image (a relation list)
+	own_clear(src, "searchables", OWN_DELETE)

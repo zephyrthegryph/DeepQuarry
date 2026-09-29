@@ -325,16 +325,25 @@
 	return generation
 
 /// Waits for a render's iconforge jobs, then applies them unless the render went stale.
-/// Polls once a tick on om_after() timers (S10b: was a stoplag() loop). The global owner
-/// runs the polls and the preferences travel as an OM handle, so the job PNGs are still
-/// cleaned up when the preferences are deleted mid-render.
+/// Polls once a tick on om_after() timers (S10b: was a stoplag() loop). The character setup
+/// service owns each poll and the poll names the preferences through a relation view, so the
+/// job PNGs are still cleaned up when the preferences are deleted mid-render.
 /datum/preferences/proc/dq_poll_preview_jobs(generation, list/jobs, list/ready, scale_x, scale_y, had_client)
-	var/list/state = list(generation, jobs, ready, scale_x, scale_y, had_client, list(), world.time + DQ_PREVIEW_JOB_TIMEOUT)
-	dq_preview_poll_step(om_handle(src), state)
+	var/datum/dq_preview_poll/poll = new
+	poll.state = list(generation, jobs, ready, scale_x, scale_y, had_client, list(), world.time + DQ_PREVIEW_JOB_TIMEOUT)
+	rel_set(poll, "prefs", src)
+	own_add(GLOB.character_setup_service, "preview_polls", poll)
+	poll.poll_step()
 
-/// One poll of a render's iconforge jobs. `state`: generation, jobs, ready, scale_x, scale_y,
-/// had_client, outputs, deadline.
-/proc/dq_preview_poll_step(prefs_handle, list/state)
+/// One in-flight character preview render: owned by the character setup service.
+/datum/dq_preview_poll
+	/// The preferences the render is for (a relation view: null once they are deleted)
+	var/datum/preferences/prefs
+	/// generation, jobs, ready, scale_x, scale_y, had_client, outputs, deadline.
+	var/list/state
+
+/// One poll of a render's iconforge jobs.
+/datum/dq_preview_poll/proc/poll_step()
 	var/list/jobs = state[2]
 	var/list/outputs = state[7]
 	for(var/dir_key in jobs)
@@ -344,17 +353,18 @@
 		if(output != RUSTG_JOB_NO_RESULTS_YET)
 			outputs[dir_key] = output
 	if(length(outputs) < length(jobs) && world.time <= state[8])
-		om_after(null, world.tick_lag, GLOBAL_PROC_REF(dq_preview_poll_step), prefs_handle, state)
+		om_after(src, world.tick_lag, PROC_REF(poll_step))
 		return
-	var/datum/preferences/prefs = om_resolve(prefs_handle)
 	if(prefs)
 		prefs.dq_finish_preview_jobs(state)
+		own_remove(GLOB.character_setup_service, "preview_polls", src)
 		return
 	// The preferences are gone: only clean up the job output.
 	for(var/dir_key in outputs)
 		var/png_path = dq_preview_job_png(jobs[dir_key][2], outputs[dir_key])
 		if(png_path)
 			fdel(png_path)
+	own_remove(GLOB.character_setup_service, "preview_polls", src)
 
 /// Applies a render's finished iconforge jobs unless the render went stale.
 /datum/preferences/proc/dq_finish_preview_jobs(list/state)

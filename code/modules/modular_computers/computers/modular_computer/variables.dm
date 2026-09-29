@@ -36,7 +36,7 @@
 	var/max_hardware_size = 0								// Maximal hardware size. Currently, tablets have 1, laptops 2 and consoles 3. Limits what hardware types can be installed.
 	var/steel_sheet_cost = 5								// Amount of steel sheets refunded when disassembling an empty frame of this computer.
 	var/light_strength = 0									// Intensity of light this computer emits. Comparable to numbers light fixtures use.
-	var/list/idle_threads							// Idle programs on background. They still receive process calls but can't be interacted with.
+	var/list/idle_threads							// Idle programs on background (a relation list: the hard drive owns them). They still receive process calls but can't be interacted with.
 
 	// The chassis uses integrity. Below integrity_failure the computer ceases to
 	// operate; at zero it breaks apart.
@@ -65,14 +65,14 @@
 	var/interact_sound_volume = 40
 
 
-/// LC-refs: A currently active program running on the computer. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// A currently active program running on the computer. (a relation view: null once that is deleted).
 /obj/item/modular_computer/proc/active_program() as /datum/computer_file/program
 	return active_program
 
-/// LC-refs: AI slot, an intellicard housing that allows modifications of AIs. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// AI slot, an intellicard housing that allows modifications of AIs. (a relation view: null once that is deleted).
 /obj/item/modular_computer/proc/ai_slot()
 	return ai_slot
 
-/// LC-refs: the stored_pen this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The stored_pen this refers to (a relation view: null once that is deleted).
 /obj/item/modular_computer/proc/stored_pen() as /obj/item/pen
 	return stored_pen

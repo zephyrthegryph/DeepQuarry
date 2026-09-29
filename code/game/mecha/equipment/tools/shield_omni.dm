@@ -97,6 +97,6 @@
 
 #undef OMNI_SHIELD_DRAIN
 
-/// LC-refs: my mech -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// my mech
 /obj/item/shield_projector/rectangle/mecha/proc/my_mech() as /obj/mecha
 	return my_mech

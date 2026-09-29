@@ -76,7 +76,7 @@
 
 	to_chat(user, span_notice("You start placing the poster on the wall...")) //Looks like it's uncluttered enough. Place the poster.
 
-	var/obj/structure/sign/poster/P = new poster_type(user.loc, get_dir(user, W), src)
+	new poster_type(user.loc, get_dir(user, W), src)
 
 	om_task_timed(user, 17, target = src, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(user))
 	return TRUE

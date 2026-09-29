@@ -114,6 +114,6 @@
 /datum/disposal_system_connection/proc/disposal_owner() as /atom
 	return owner
 
-/// LC-refs: the trunk we are linked to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The trunk we are linked to (a relation view).
 /datum/disposal_system_connection/proc/connected_trunk() as /obj/structure/disposalpipe/trunk
 	return connected_trunk

@@ -818,6 +818,6 @@ GLOBAL_LIST_EMPTY(vending_products)
 /obj/machinery/vending/step_start_condition()
 	return active && !shut_up && length(slogan_list)
 
-/// LC-refs: What we're requesting payment for right now -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// What we're requesting payment for right now (a relation view: null once it is deleted).
 /obj/machinery/vending/proc/currently_vending() as /datum/stored_item/vending_product
 	return currently_vending

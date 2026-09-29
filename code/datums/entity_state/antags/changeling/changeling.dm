@@ -20,7 +20,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	var/allowduringlesserform = FALSE
 	var/genomecost = 500000 // Cost for the changeling to evolve this power.
 
-/// Changeling antag state. Owned by the changeling mob (/mob/living var changeling_state); the mind keeps an OM handle.
+/// Changeling antag state. Owned by the changeling mob (/mob/living var changeling_state); the mind keeps a relation view.
 /datum/changeling
 	var/mob/living/owner
 	var/list/datum/absorbed_dna/absorbed_dna = list() // ALLOW(instance_list): d: changeling state; starts with the changeling's own DNA
@@ -395,9 +395,8 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		LAZYADD(purchased_powers_history, "[Pname] ([Thepower.genomecost] points)")
 
 	if(Thepower.make_hud_button && Thepower.isVerb)
-		if(owner.ability_master)
-			own_clear(owner, "ability_master", OWN_DELETE)
-			own_set(owner, "ability_master", new /atom/movable/screen/movable/ability_master(owner))
+		// A fresh master (own_set deletes the old one); a mob without one gets its first.
+		own_set(owner, "ability_master", new /atom/movable/screen/movable/ability_master(owner))
 		owner.ability_master.add_ling_ability(
 			object_given = owner,
 			verb_given = Thepower.verbpath,
@@ -481,7 +480,7 @@ DECLARE_INTERACTIONS(/obj/item/changeling_debug, INTERACT_USE(null, PROC_REF(int
 			return TRUE
 	return TRUE
 
-/// LC-refs: the changeling this panel shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The changeling this panel shows (a relation view).
 /datum/changeling_panel/proc/comp() as /datum/changeling
 	return comp
 

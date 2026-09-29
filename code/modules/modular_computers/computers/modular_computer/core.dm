@@ -54,7 +54,7 @@
 			P.computer_emagged = computer_emagged
 			P.process_tick()
 		else
-			LAZYREMOVE(idle_threads, P)
+			rel_remove(src, "idle_threads", P)
 
 	handle_power() // Handles all computer power interaction
 	check_update_ui_need()
@@ -85,8 +85,7 @@ DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 	for(var/obj/item/computer_hardware/CH in src.get_all_components())
 		uninstall_component(null, CH)
 		qdel(CH)
-	if(paired_uavs)
-		paired_uavs.Cut()
+	rel_clear(src, "paired_uavs")
 	..()
 
 /obj/item/modular_computer/emag_act(remaining_charges, mob/user)
@@ -190,7 +189,7 @@ DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 	kill_program(1)
 	for(var/datum/computer_file/program/P in idle_threads)
 		P.kill_program(1)
-		LAZYREMOVE(idle_threads, P)
+		rel_remove(src, "idle_threads", P)
 	if(loud)
 		visible_message("\The [src] shuts down.")
 	enabled = 0
@@ -213,7 +212,7 @@ DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 	if(!active_program() || !processor_unit)
 		return
 
-	LAZYADD(idle_threads, active_program())
+	rel_add(src, "idle_threads", active_program())
 	active_program().program_state = PROGRAM_STATE_BACKGROUND // Should close any existing UIs
 	SStgui.close_uis(active_program().TM ? active_program().TM : active_program())
 	rel_clear(src, "active_program")
@@ -238,7 +237,7 @@ DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 	if(P in idle_threads)
 		P.program_state = PROGRAM_STATE_ACTIVE
 		rel_set(src, "active_program", P)
-		LAZYREMOVE(idle_threads, P)
+		rel_remove(src, "idle_threads", P)
 		update_icon()
 		return
 

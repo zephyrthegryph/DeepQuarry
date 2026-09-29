@@ -6,13 +6,13 @@
  * used to offer (examine, pull, point).
  */
 /datum/interaction_menu
+	/// The client using the menu: a one-sided back view (the client owns the menu).
 	var/client/owner
-	var/target_ref
+	/// What the menu lists interactions for: a relation view.
+	var/atom/target
 
 /datum/interaction_menu/New(client/owner)
 	rel_set(src, "owner", owner)
-
-// clears the client's back-reference (clients aren't datums).
 
 /client/var/tmp/datum/interaction_menu/interaction_menu
 
@@ -22,14 +22,13 @@
 		return FALSE
 	var/client/player = user.client
 	if(!player.interaction_menu)
-		player.interaction_menu = new(player)
-	player.interaction_menu.target_ref = om_handle(target)
+		own_set(player, "interaction_menu", new /datum/interaction_menu(player))
+	rel_set(player.interaction_menu, "target", target)
 	log_input("Input: [key_name(user)] opened the interaction menu on [target] ([target.type]).")
 	player.interaction_menu.tgui_interact(user)
 	return TRUE
 
 /datum/interaction_menu/proc/target()
-	var/atom/target = om_resolve(target_ref)
 	return QDELETED(target) ? null : target
 
 /datum/interaction_menu/tgui_state(mob/user)
@@ -147,9 +146,7 @@
 	if(target)
 		open_interaction_menu(mob, target)
 
-/// LC-refs: the client using the menu -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client using the menu.
 /datum/interaction_menu/proc/owner() as /client
 	return owner
 
-REL_PAIR(/client, interaction_menu, owner)
-REL_PAIR(/datum/interaction_menu, owner, interaction_menu)

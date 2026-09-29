@@ -694,8 +694,8 @@ DECLARE_INTERACTIONS(/obj/item/storage, \
 	var/atom/movable/screen/close/closer
 	/// One click catcher per shown item.
 	var/list/atom/movable/storage_slot/catchers
-	/// Items placed on screen (one per type with display_contents_with_number).
-	// ALLOW(object_keyed_lists): items of the open storage on screen; Destroy() unpins each
+	/// Relation list view: items placed on screen, in layout order (one per type with
+	/// display_contents_with_number). on_destroy() unpins each.
 	var/list/obj/item/shown
 
 GLOBAL_VAR_INIT(storage_hud_count, 0)
@@ -705,8 +705,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	rel_set(src, "storage", S)
 	own_set(src, "backdrop", list())
 	own_set(src, "catchers", list())
-	rel_set(src, "shown", list())
-	var/master = om_handle(S)
+	var/obj/item/storage/master = S
 	if(S.storage_slots)
 		own_add(src, "backdrop", new_backdrop(master, "block"))
 	else
@@ -714,7 +713,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		own_add(src, "backdrop", new_backdrop(master, "storage_continue"))
 		own_add(src, "backdrop", new_backdrop(master, "storage_end"))
 	own_set(src, "closer", new /atom/movable/screen/close())
-	closer.master_ref = master
+	rel_set(closer, "master_ref", master)
 	closer.icon_state = "storage_close"
 	closer.hud_layerise()
 	GLOB.storage_hud_count++
@@ -730,10 +729,10 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		I.latent_unpin(src)
 	..()
 
-/datum/storage_hud/proc/new_backdrop(master, state)
+/datum/storage_hud/proc/new_backdrop(obj/item/storage/master, state)
 	var/atom/movable/screen/storage/B = new()
 	B.name = "storage"
-	B.master_ref = master
+	rel_set(B, "master_ref", master)
 	B.icon_state = state
 	return B
 
@@ -768,7 +767,9 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		I.latent_unpin(src)
 	for(var/obj/item/I as anything in items - shown)
 		I.latent_pin(src)
-	rel_set(src, "shown", items)
+	rel_clear(src, "shown")
+	for(var/obj/item/I as anything in items)
+		rel_add(src, "shown", I)
 	if(storage.storage_slots)
 		boxes_layout(counts)
 	else
@@ -885,13 +886,14 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	plane = PLANE_PLAYER_HUD_ITEMS
 	layer = 0.1
 	alpha = 200
-	var/held_item
+	/// Relation view: the stored item this catcher stands for.
+	var/obj/item/held_item
 
 /atom/movable/storage_slot/Initialize(mapload, obj/item/held_item)
 	. = ..()
 	ASSERT(held_item)
 	name += held_item.name
-	src.held_item = om_handle(held_item)
+	rel_set(src, "held_item", held_item)
 
 /// Has to be this way. The fact that the overlays will be constantly mutated by other storage means we can't wait.
 /atom/movable/storage_slot/add_overlay(list/somethings)
@@ -899,7 +901,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	overlays = somethings
 
 /atom/movable/storage_slot/Click()
-	var/obj/item/I = om_resolve(held_item)
+	var/obj/item/I = held_item
 	if(I)
 		usr.ClickOn(I)
 	return 1

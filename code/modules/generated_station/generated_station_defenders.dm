@@ -5,7 +5,8 @@
 	var/department_id
 	var/squad_id
 	var/tmp/turf/home
-	var/last_contact
+	/// Relation view: the last hostile that hurt this defender.
+	var/atom/last_contact
 
 /datum/generated_station_defender_agent/New(mob/living/simple_mob/new_defender, datum/generated_station_defense_runtime/new_runtime, new_department_id, new_squad_id, turf/new_home)
 	..()
@@ -32,7 +33,7 @@
 	EVENT_HANDLER
 	var/atom/attacker = event.attacker
 	if(attacker)
-		last_contact = om_handle(attacker)
+		rel_set(src, "last_contact", attacker)
 		runtime()?.report_contact(src, attacker)
 	if(defender() && defender().vitality() <= GENERATED_STATION_DEFENDER_RETREAT_HEALTH)
 		runtime()?.retreat_agent(src)
@@ -44,7 +45,7 @@
 /datum/generated_station_defender_agent/proc/apply_order(datum/generated_station_order/order, datum/generated_station_knowledge_report/report)
 	if(!is_active())
 		return
-	var/atom/target = om_resolve(report?.target_ref)
+	var/atom/target = report?.target
 	switch(order.kind)
 		if(GENERATED_STATION_ORDER_INTERCEPT)
 			if(isliving(target))
@@ -104,7 +105,7 @@
 		if(QDELETED(relay))
 			continue
 		if(relay.station_id == site().station_spec?.id)
-			relay.defense_runtime_ref = om_handle(src)
+			rel_set(relay, "defense_runtime", src)
 	spawn_department("security-1", 2)
 	spawn_department("medical-1", 1)
 	spawn_department("engineering-1", 1)
@@ -161,7 +162,7 @@
 	var/datum/generated_station_knowledge_report/report = director().submit_report(department_id, REF(contact), "hostile-contact", "[source_kind] detected a hostile.", confidence, GENERATED_STATION_CONTACT_LIFETIME)
 	if(!report)
 		return null
-	report.target_ref = om_handle(contact)
+	rel_set(report, "target", contact)
 	director().set_alert(GENERATED_STATION_ALERT_RED, department_id)
 	if(issue_response)
 		var/coordinated = director().ai_can_coordinate()
@@ -226,7 +227,7 @@
 	var/datum/generated_station_knowledge_report/report = director().submit_report(department_id, "patrol-[world.time]", "patrol", "Finite patrol route.", 100, GENERATED_STATION_PATROL_DURATION)
 	if(!report)
 		return FALSE
-	report.target_ref = om_handle(destination || department_turfs[department_id])
+	rel_set(report, "target", destination || department_turfs[department_id])
 	var/datum/generated_station_order/order = director().issue_order(squad_id, report.id, GENERATED_STATION_ORDER_PATROL, FALSE)
 	if(!order)
 		return FALSE
@@ -280,10 +281,10 @@
 	var/turf/medical = department_turfs["medical-1"] || agent.home()
 	agent.defender().ai_brain?.give_destination(medical)
 	agent.defender().ai_brain?.go_wake()
-	om_after_replace(src, 5 SECONDS, PROC_REF(heal_and_redeploy), om_handle(agent))
+	om_after_replace(src, 5 SECONDS, PROC_REF(heal_and_redeploy), agent)
 
-/datum/generated_station_defense_runtime/proc/heal_and_redeploy(agent_ref)
-	var/datum/generated_station_defender_agent/agent = om_resolve(agent_ref)
+/// om_after() holds `agent` as a handle: the call is dropped if the agent is gone.
+/datum/generated_station_defense_runtime/proc/heal_and_redeploy(datum/generated_station_defender_agent/agent)
 	if(!agent?.is_active())
 		return
 	var/obj/item/stack/medical/medicine
@@ -299,7 +300,7 @@
 	agent.defender().mend(TREAT_BURN_CARE, 30)
 	agent.defender().mend(TREAT_PLATING_REPAIR, 30)
 	agent.defender().mend(TREAT_WIRING_REPAIR, 30)
-	var/atom/contact = om_resolve(agent.last_contact)
+	var/atom/contact = agent.last_contact
 	if(isliving(contact))
 		var/mob/living/living_contact = contact
 		agent.defender().ai_brain?.give_target(living_contact, TRUE)
@@ -319,11 +320,10 @@
 		if(agent.squad_id == squad_id && agent.is_active())
 			agent.defender().ai_brain?.give_destination(get_turf(target))
 			agent.defender().ai_brain?.go_wake()
-	om_after(src, 5 SECONDS, PROC_REF(complete_physical_repair), om_handle(target), amount, squad_id)
+	om_after(src, 5 SECONDS, PROC_REF(complete_physical_repair), target, amount, squad_id)
 	return TRUE
 
-/datum/generated_station_defense_runtime/proc/complete_physical_repair(target_ref, amount, squad_id)
-	var/atom/target = om_resolve(target_ref)
+/datum/generated_station_defense_runtime/proc/complete_physical_repair(atom/target, amount, squad_id)
 	if(!target || QDELETED(target) || target.get_integrity() >= target.max_integrity)
 		return
 	var/obj/item/stack/material/materials
@@ -348,12 +348,11 @@
 		if(agent.squad_id == squad_id && agent.is_active())
 			agent.defender().ai_brain?.give_destination(get_turf(crate))
 			agent.defender().ai_brain?.go_wake()
-	om_after(src, 5 SECONDS, PROC_REF(complete_logistics_delivery), om_handle(crate), om_handle(destination), squad_id)
+	om_after(src, 5 SECONDS, PROC_REF(complete_logistics_delivery), crate, destination, squad_id)
 	return TRUE
 
-/datum/generated_station_defense_runtime/proc/complete_logistics_delivery(crate_ref, destination_ref, squad_id)
-	var/obj/structure/closet/crate/crate = om_resolve(crate_ref)
-	var/turf/destination = om_resolve(destination_ref)
+/// om_after() drops the call when the crate is gone (the squad then sleeps on its own order timer).
+/datum/generated_station_defense_runtime/proc/complete_logistics_delivery(obj/structure/closet/crate/crate, turf/destination, squad_id)
 	if(crate && destination && !QDELETED(crate) && !is_blocked_turf(destination))
 		crate.forceMove(destination)
 	sleep_squad(squad_id)
@@ -369,23 +368,23 @@
 	return TRUE
 
 
-/// LC-refs: the defender this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the defender var.
 /datum/generated_station_defender_agent/proc/defender() as /mob/living/simple_mob
 	return defender
 
-/// LC-refs: the runtime this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the runtime var.
 /datum/generated_station_defender_agent/proc/runtime() as /datum/generated_station_defense_runtime
 	return runtime
 
-/// LC-refs: the home this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the home var.
 /datum/generated_station_defender_agent/proc/home() as /turf
 	return home
 
-/// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the site var.
 /datum/generated_station_defense_runtime/proc/site() as /datum/expedition_site
 	return site
 
-/// LC-refs: the director this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the director var.
 /datum/generated_station_defense_runtime/proc/director() as /datum/generated_station_director
 	return director
 

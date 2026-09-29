@@ -38,7 +38,7 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 /// An admin putting together a supply drop: the custom loot list is picked one type at a time
 /// per category (cancel ends a category), then the drop is confirmed and lands on the admin.
 /datum/supply_drop_order
-	/// The ordering admin's mob, as an om_handle() (read with admin()).
+	/// Relation view: the ordering admin's mob (read with admin()).
 	var/tmp/mob/admin
 	/// The categories offered in order: question = root type. Shared by every order.
 	var/static/list/categories = list(
@@ -60,7 +60,7 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 	rel_set(src, "admin", admin)
 	open_orders += src
 
-/// LC-refs: the ordering admin -- an OM handle, so it reads null once that mob is deleted.
+/// The ordering admin (null once that mob is deleted).
 /datum/supply_drop_order/proc/admin() as /mob
 	return admin
 

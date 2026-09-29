@@ -13,6 +13,6 @@
 /datum/antag_holder/proc/is_antag()
 	return is_antag
 
-/// LC-refs: the mob's changeling state -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mob's changeling state (a relation view).
 /datum/antag_holder/proc/changeling() as /datum/changeling
 	return changeling

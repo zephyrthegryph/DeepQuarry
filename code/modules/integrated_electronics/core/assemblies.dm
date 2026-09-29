@@ -162,10 +162,10 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 				to_chat(ui.user, span_warning("There's no power cell to remove from \the [src]."))
 				return FALSE
 			var/turf/T = get_turf(src)
-			battery.forceMove(T)
+			var/obj/item/cell/device/removed = own_take(src, "battery")
+			removed.forceMove(T)
 			playsound(T, 'sound/items/Crowbar.ogg', 50, 1)
-			to_chat(ui.user, span_notice("You pull \the [battery] out of \the [src]'s power supplier."))
-			own_take(src, "battery")
+			to_chat(ui.user, span_notice("You pull \the [removed] out of \the [src]'s power supplier."))
 			return TRUE
 
 		// Circuit actions
@@ -417,7 +417,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 		var/obj/item/cell/device/cell = I
 		user.drop_item(cell)
 		cell.forceMove(src)
-		battery = cell
+		own_set(src, "battery", cell)
 		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 		to_chat(user, span_notice("You slot \the [cell] inside \the [src]'s power supplier."))
 		tgui_interact(user)
@@ -550,10 +550,10 @@ DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
 
 OWN(/obj/item/electronic_assembly, battery, OWN_CONTAINED)
 
-/// LC-refs: ID card for door access -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// ID card for door access (a relation view: null once that is deleted).
 /obj/item/electronic_assembly/proc/access_card() as /obj/item/card/id
 	return access_card
 
-/// LC-refs: The ID that locked this assembly -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The ID that locked this assembly (a relation view: null once that is deleted).
 /obj/item/electronic_assembly/proc/locked_by() as /obj/item/card/id
 	return locked_by

@@ -361,6 +361,6 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 	to_chat(user, span_warning("[src] suddenly feels very warm!"))
 	empulse(src, 1, 1, 1, 1)
 
-/// LC-refs: Used in used book recoils to store an identity for mindswaps -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Used in used book recoils to store an identity for mindswaps (a relation view: null once it is deleted).
 /obj/item/spellbook/oneuse/mindswap/proc/stored_swap() as /mob
 	return stored_swap

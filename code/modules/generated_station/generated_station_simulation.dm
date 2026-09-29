@@ -19,10 +19,15 @@
 			return FALSE
 	return TRUE
 
-GLOBAL_LIST_EMPTY(generated_station_runtimes)
-
+/// The runtime simulation of generated station `station_id` (REGISTRY_GENERATED_STATION_RUNTIMES, keyed by id).
 /proc/generated_station_runtime(station_id)
-	return GLOB.generated_station_runtimes[station_id]
+	var/list/filed = REGISTRY_KEYED(REGISTRY_GENERATED_STATION_RUNTIMES, station_id)
+	return length(filed) ? filed[length(filed)] : null
+
+REGISTRY_MEMBERSHIP(/datum/generated_station_simulation, REGISTRY_GENERATED_STATION_RUNTIMES)
+
+/datum/generated_station_simulation/registry_key(registry_id)
+	return registry_id == REGISTRY_GENERATED_STATION_RUNTIMES ? spec()?.id : null
 
 /// Authoritative dependency simulation for one generated station.
 /datum/generated_station_simulation
@@ -42,15 +47,9 @@ GLOBAL_LIST_EMPTY(generated_station_runtimes)
 	for(var/datum/generated_station_department_instance/department in spec()?.departments)
 		departments[department.id] = new /datum/generated_station_department_runtime(department)
 	configure_default_resources()
-	if(spec()?.id)
-		GLOB.generated_station_runtimes[spec().id] = src
-
-
-/// Phase 2: leaves the station runtime index.
-/datum/generated_station_simulation/lifecycle_dematerialize()
-	. = ..()
-	if(spec()?.id && GLOB.generated_station_runtimes[spec().id] == src)
-		GLOB.generated_station_runtimes -= spec().id
+	// Joins the runtime registry (filed by station id) now that the spec is set; the destroy
+	// transaction leaves it in phase 2.
+	join_registries()
 
 /datum/generated_station_simulation/proc/configure_default_resources()
 	for(var/id in departments)
@@ -165,11 +164,11 @@ GLOBAL_LIST_EMPTY(generated_station_runtimes)
 	recompute()
 	return (capabilities[capability_id] || 0) >= amount
 
-/// LC-refs: the department this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the department var.
 /datum/generated_station_department_runtime/proc/department() as /datum/generated_station_department_instance
 	return department
 
-/// LC-refs: the spec this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the spec var.
 /datum/generated_station_simulation/proc/spec() as /datum/generated_station_spec
 	return spec
 

@@ -163,10 +163,10 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_RE
 	item_state = "rapidsyringegun"
 	max_darts = 5
 
-/// LC-refs: the syringe this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the syringe this refers to (a relation view: null once it is deleted).
 /obj/item/syringe_cartridge/proc/syringe() as /obj/item/reagent_containers/syringe
 	return syringe
 
-/// LC-refs: the next this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the next this refers to (a relation view: null once it is deleted).
 /obj/item/gun/launcher/syringe/proc/next() as /obj/item/syringe_cartridge
 	return next

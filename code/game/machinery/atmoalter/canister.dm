@@ -507,7 +507,7 @@ update_flag
 	var/turf/simulated/location = src.loc
 	if (istype(src.loc))
 		location.assume_air(air_contents)
-		own_set(src, "air_contents", new /datum/gas_mixture)
+		atmos_air_set(src, "air_contents", new /datum/gas_mixture)
 
 /obj/machinery/portable_atmospherics/canister/nitrogen/Initialize(mapload)
 	. = ..()

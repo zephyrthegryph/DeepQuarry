@@ -196,7 +196,7 @@ DECLARE_GAS(/obj/item/tank, "air_contents", "volume", T20C, null)
 	var/obj/item/assembly_holder/assy = src.proxyassembly.assembly
 	if(assy.a_left && assy.a_right)
 		assy.dropInto(user.loc)
-		own_take(assy, "master")
+		rel_clear(assy, "master")
 		rel_clear(src.proxyassembly, "assembly")
 	else
 		if(!src.proxyassembly.assembly.a_left)
@@ -603,7 +603,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 
 	var/obj/item/assembly_holder/H = new(src)
 	rel_set(src.proxyassembly, "assembly", H)
-	own_set(H, "master", src.proxyassembly)
+	rel_set(H, "master", src.proxyassembly)
 
 	H.update_icon()
 
@@ -656,7 +656,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 	M.put_in_hands(src)		//Equips the bomb if possible, or puts it on the floor.
 
 	rel_set(src.proxyassembly, "assembly", S) //Tell the bomb about its assembly part
-	own_set(S, "master", src.proxyassembly) //Tell the assembly about its new owner
+	rel_set(S, "master", src.proxyassembly) //Tell the assembly about its new owner
 	S.forceMove(src)			//Move the assembly
 
 	src.update_icon()
@@ -677,7 +677,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 
 	other.dropInto(get_turf(src))
 	qdel(ign)
-	own_take(assy, "master")
+	rel_clear(assy, "master")
 	rel_clear(src.proxyassembly, "assembly")
 	qdel(assy)
 	src.update_icon()
@@ -696,7 +696,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 /obj/item/tankassemblyproxy/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
 		return
-	var/atom/movable/AM = om_resolve(WF)
+	var/atom/movable/AM = WF
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return
@@ -710,5 +710,5 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 
 #undef TANK_IDEAL_PRESSURE
 
-REL_PAIR(/obj/item/tankassemblyproxy, tank, proxyassembly)
-OWN(/obj/item/tankassemblyproxy, assembly, OWN_CONTAINED)
+// The tank owns its proxy (implicit OWN); the proxy names the tank back (one-sided REL). The
+// assembly holder sits in the tank's contents, so the proxy only names it (REL view).

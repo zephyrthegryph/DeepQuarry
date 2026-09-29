@@ -154,10 +154,10 @@
 //       See top of file!        //
 // // // // // // // // // // // //
 
-/// LC-refs: Location that the prey is released if they struggle and get dropped off. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Location that the prey is released if they struggle and get dropped off. (a relation view: null once it is deleted).
 /datum/belly/proc/transferlocation() as /datum/belly
 	return transferlocation
 
-/// LC-refs: The mob whose belly this is. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mob whose belly this is. (a relation view: null once it is deleted).
 /datum/belly/proc/owner() as /mob/living
 	return owner

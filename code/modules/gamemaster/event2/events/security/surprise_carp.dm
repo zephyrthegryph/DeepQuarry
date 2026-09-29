@@ -70,6 +70,6 @@
 
 	return block(lower_left, upper_right)
 
-/// LC-refs: the victim this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the victim var.
 /datum/event2/event/surprise_carp/proc/victim() as /mob/living
 	return victim

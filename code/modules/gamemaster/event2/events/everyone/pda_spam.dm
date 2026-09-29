@@ -141,10 +141,10 @@
 	if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)))
 		return pick(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS))
 
-/// LC-refs: the MS this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the MS var.
 /datum/event2/event/pda_spam/proc/MS() as /obj/machinery/message_server
 	return MS
 
-/// LC-refs: the node this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the node var.
 /datum/event2/event/pda_spam/proc/node() as /obj/machinery/exonet_node
 	return node

@@ -275,6 +275,6 @@ DECLARE_INTERACTIONS(/obj/item/telecube, INTERACT_ALT(null, PROC_REF(interaction
 	mirror_colors = TRUE
 
 
-/// LC-refs: the mate this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the mate this refers to (a relation view: null once it is deleted).
 /obj/item/telecube/proc/mate() as /obj/item/telecube
 	return mate

@@ -8,8 +8,8 @@
 				return
 			var/datum/reagents/R = target_belly.reagents
 			if(!R)
-				R = new /datum/reagents(amount)
-				target_belly.reagents = R
+				target_belly.create_reagents(amount)
+				R = target_belly.reagents
 			return trans_to_holder(R, amount, multiplier, copy)
 		if(type == CHEM_INGEST && iscarbon(target))
 			var/mob/living/carbon/C = target

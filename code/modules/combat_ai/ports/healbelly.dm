@@ -169,7 +169,7 @@
 	if(istype(SM, /mob/living/simple_mob/vore/bigdragon))
 		var/mob/living/simple_mob/vore/bigdragon/BG = SM
 		if(BG.gut2)
-			own_set(BG, "vore_selected", BG.gut2)
+			rel_set(BG, "vore_selected", BG.gut2)
 
 // ---------------------------------------------------------------------------
 // Leopardmander — the canonical Sivian healbelly drake. Docile, nom_mob,

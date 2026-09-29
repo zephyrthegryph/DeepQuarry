@@ -102,6 +102,6 @@ Implant Specifics:<BR>"}
 		rel_clear(src, "my_brain")
 	return
 
-/// LC-refs: my brain -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: my brain (reads null once it is gone).
 /obj/item/implant/neural/proc/my_brain() as /obj/item/organ/internal/brain
 	return my_brain

@@ -252,14 +252,14 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 	return ITEM_INTERACT_SUCCESS
 
 
-/// LC-refs: the inserted_battery this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the inserted_battery var.
 /obj/item/anodevice/proc/inserted_battery() as /obj/item/anobattery
 	return inserted_battery
 
-/// LC-refs: the archived_loc this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the archived_loc var.
 /obj/item/anodevice/proc/archived_loc() as /turf
 	return archived_loc
 
-/// LC-refs: the last_user_touched this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the last_user_touched var.
 /obj/item/anodevice/proc/last_user_touched() as /mob
 	return last_user_touched

@@ -24,7 +24,7 @@
 	valid_accessory_slots = null
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
-	var/obj/machinery/camera/camera // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/obj/machinery/camera/camera
 	var/list/camera_networks
 
 	actions_types = list(/datum/action/item_action/toggle_helmet_light)
@@ -91,7 +91,8 @@
 	siemens_coefficient = 0.9
 	preserve_item = 1
 	valid_accessory_slots = (ACCESSORY_SLOT_OVER | ACCESSORY_SLOT_ARMBAND | ACCESSORY_SLOT_DECOR)
-	var/list/supporting_limbs //If not-null, automatically splints breaks. Checked when removing the suit.
+	var/supports_limbs = FALSE //If TRUE, automatically splints breaks. Checked when removing the suit.
+	var/list/supporting_limbs //The limbs it is splinting now (a relation list: a deleted limb leaves it).
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 // start - use the specially refitted sprites by KBraid. Done this way to avoid breaking subtypes.
@@ -124,25 +125,26 @@
 /obj/item/clothing/suit/space/proc/check_limb_support(mob/living/carbon/human/user)
 
 	// If this isn't set, then we don't need to care.
-	if(!istype(user) || isnull(supporting_limbs))
+	if(!istype(user) || !supports_limbs)
 		return
 
 	if(user.get_equipped_item(SLOT_ID_SUIT) == src)
 		for(var/obj/item/organ/external/E in user.bad_external_organs)
 			if(E.is_broken() && E.apply_splint(src))
 				to_chat(user, "You feel [src] constrict about your [E.name], supporting it.")
-				supporting_limbs |= E // ALLOW(object_keyed_lists): wearer's limbs being splinted; non-null is the feature flag, cut on removal
+				rel_add(src, "supporting_limbs", E)
 	else
 		// Otherwise, remove the splints.
 		for(var/obj/item/organ/external/E in supporting_limbs)
 			if(E.splinted == src && E.remove_splint(src))
 				to_chat(user, "\The [src] stops supporting your [E.name].")
-		supporting_limbs.Cut()
+		rel_clear(src, "supporting_limbs")
 
 /obj/item/clothing/suit/space/proc/handle_fracture(mob/living/carbon/human/user, obj/item/organ/external/E)
-	if(!istype(user) || isnull(supporting_limbs))
+	if(!istype(user) || !supports_limbs)
 		return
 	if(E.is_broken() && E.apply_splint(src))
 		to_chat(user, "You feel [src] constrict about your [E.name], supporting it.")
-		supporting_limbs |= E // ALLOW(object_keyed_lists): wearer's limbs being splinted; non-null is the feature flag, cut on removal
+		rel_add(src, "supporting_limbs", E)
 
+REL_LIST(/obj/item/clothing/suit/space, supporting_limbs)

@@ -62,12 +62,12 @@
 
 /obj/machinery/mecha_part_fabricator_tg/Initialize(mapload)
 	own_set(src, "print_sound", new /datum/looping_sound/lathe_print(list(src), FALSE))
-	rmat = new /datum/remote_materials( \
+	own_set(src, "rmat", new /datum/remote_materials( \
 		src, \
 		mapload, \
 		mat_container_events = list( \
 			(/datum/om/event/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/mecha_part_fabricator_tg, on_material_insert) \
-		))
+		)))
 	cached_designs = list()
 	illegal_local_designs = list()
 	. = ..()
@@ -574,11 +574,11 @@
 /obj/machinery/mecha_part_fabricator_tg/step_start_condition()
 	return process_queue
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /obj/machinery/mecha_part_fabricator_tg/proc/stored_research() as /datum/techweb
 	return stored_research_static
 
-/// LC-refs: the being_built this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the being_built this refers to (a relation view: null once it is deleted).
 /obj/machinery/mecha_part_fabricator_tg/proc/being_built() as /datum/design_techweb
 	return being_built
 

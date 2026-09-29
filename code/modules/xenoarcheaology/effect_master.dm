@@ -481,7 +481,7 @@
 /datum/artifact_master/proc/bumper_gloves(mob/M)
 	return M.get_equipped_item(SLOT_ID_GLOVES)
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the holder var.
 /datum/artifact_master/proc/holder() as /atom
 	return holder
 

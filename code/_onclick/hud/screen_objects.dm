@@ -12,8 +12,8 @@
 	appearance_flags = TILE_BOUND|PIXEL_SCALE|NO_CLIENT_COLOR
 	layer = LAYER_HUD_BASE
 	plane = PLANE_PLAYER_HUD
-	/// A reference to the object in the slot. Grabs or items, generally, but any datum will do.
-	var/master_ref = null
+	/// The object in the slot (a relation view, written with rel_set). Grabs or items, generally, but any datum will do.
+	var/datum/master_ref = null
 	/// A reference to the owner HUD, if any.
 	//VAR_PRIVATE/datum/hud/hud = null //This SHOULD be converted to private eventually, but we're not there yet.
 	var/datum/hud/hud	// A reference to the owner HUD, if any.
@@ -55,7 +55,7 @@
 	name = "close"
 
 /atom/movable/screen/close/Click()
-	var/obj/master = om_resolve(master_ref)
+	var/obj/master = master_ref
 	if(master)
 		if(istype(master, /obj/item/storage))
 			var/obj/item/storage/S = master
@@ -84,7 +84,7 @@
 	name = "grab"
 
 /atom/movable/screen/grab/Click()
-	var/obj/master = om_resolve(master_ref)
+	var/obj/master = master_ref
 	var/obj/item/grab/G = master
 	G.s_click(src)
 	return 1
@@ -102,7 +102,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 		return 1
 	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
 		return 1
-	var/obj/master = om_resolve(master_ref)
+	var/obj/master = master_ref
 	if(master)
 		var/obj/item/I = usr.get_active_hand()
 		if(I)
@@ -312,7 +312,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 				var/mob/living/carbon/C = usr
 				if(!C.stat && !C.has_status(EFFECT_STUNNED) && !C.has_status(EFFECT_PARALYZED) && !C.restrained())
 					if(C.internal)
-						own_take(C, "internal")
+						own_take(C, "internal") // OWN_CONTAINED: the tank stays in the inventory
 						to_chat(C, span_notice("No longer running on internals."))
 						if(C.internals)
 							C.internals.icon_state = "internal0"
@@ -951,7 +951,8 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 	screen_loc = ui_ammo_hud1
 	var/warned = FALSE
 	var/static/list/ammo_screen_loc_list = list(ui_ammo_hud1, ui_ammo_hud2, ui_ammo_hud3 ,ui_ammo_hud4)
-	var/our_gun
+	/// The gun this hud reports (a relation view)
+	var/obj/item/gun/our_gun
 
 /atom/movable/screen/ammo/Click()
 	var/mob/user = usr
@@ -961,7 +962,7 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 		return TRUE
 	if(istype(user.loc,/obj/mecha)) // stops inventory actions in a mech
 		return TRUE
-	var/obj/item/gun/gun = om_resolve(our_gun)
+	var/obj/item/gun/gun = our_gun
 	if(!gun)
 		return TRUE
 	gun.switch_firemodes(user)
@@ -1072,33 +1073,31 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 	qdel(F)
 	overlays += empty
 
-/// LC-refs: the hud this screen object belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The hud this screen object belongs to (a relation view: null once that is deleted).
 /atom/movable/screen/proc/owner_hud() as /datum/hud
 	return hud
 
-/// LC-refs: the item this button acts for -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The item this button acts for (a relation view: null once that is deleted).
 /atom/movable/screen/item_action/proc/owner() as /obj/item
 	return owner
 
-/// LC-refs: the screen object this button belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The screen object this button belongs to (a relation view: null once that is deleted).
 /atom/movable/screen/component_button/proc/parent() as /atom/movable/screen
 	return parent
 
-/// LC-refs: the preferences this preview shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The preferences this preview shows (a relation view: null once that is deleted).
 /atom/movable/screen/setup_preview/proc/pref() as /datum/preferences
 	return pref
 
-/// LC-refs: the mapping unit this holder shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mapping unit this holder shows (a relation view: null once that is deleted).
 /atom/movable/screen/movable/mapper_holder/proc/owner() as /obj/item/mapping_unit
 	return owner
 
-/// LC-refs: the extras overlay the mapping unit handed us -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The extras overlay the mapping unit handed us (a relation view: null once that is deleted).
 /atom/movable/screen/movable/mapper_holder/proc/extras_holder() as /atom/movable/screen/mapper/extras_holder
 	return extras_holder
 
-/// LC-refs: the mapper holder this element belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mapper holder this element belongs to (a relation view: null once that is deleted).
 /atom/movable/screen/mapper/proc/parent() as /atom/movable/screen/movable/mapper_holder
 	return parent
 
-REL_PAIR(/atom/movable/screen/movable/mapper_holder, owner, hud_item)
-REL_PAIR(/obj/item/mapping_unit, hud_item, owner)

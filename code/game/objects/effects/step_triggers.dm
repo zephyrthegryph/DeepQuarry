@@ -1,5 +1,3 @@
-GLOBAL_LIST_EMPTY(mapped_autostrips)
-GLOBAL_LIST_EMPTY(mapped_autostrips_mob)
 /* Simple object type, calls a proc when "stepped" on by something */
 
 /obj/effect/step_trigger
@@ -249,21 +247,22 @@ But for now, for what it's been used for, it works.
 /obj/effect/step_trigger/autostrip
 	name = "Autostrip trigger. Set the targetid to match the effect/autostriptarget"
 	var/targetid = "Default"
+	/// Keyed relation view: the autostriptarget with our targetid (linked when either materializes).
 	var/obj/effect/autostriptarget/target
+	/// Keyed relation view: the mob autostriptarget with our targetid.
 	var/obj/effect/autostriptarget/mob/Mtarget
 	var/remove_implants = 0	//Havn't bothered to implement this yet
 	var/remove_mutations = 0
 
-/obj/effect/step_trigger/autostrip/Initialize(mapload)
-	. = ..()
-	initMappedLink()
+REL_KEYED(/obj/effect/step_trigger/autostrip, target, targetid, /obj/effect/autostriptarget)
+REL_KEYED(/obj/effect/step_trigger/autostrip, Mtarget, targetid, /obj/effect/autostriptarget/mob)
+KEYED_TARGET(/obj/effect/autostriptarget, targetid)
 
 /obj/effect/step_trigger/autostrip/Trigger(mob/living/carbon/human/H as mob)
 	if(!istype(H))
 		return
 	if(!target_ref())
-		if(!initMappedLink())
-			return
+		return
 	if(Mtarget())
 		H.forceMove(Mtarget().loc)
 	var/obj/locker = new /obj/structure/closet/secure_closet/mind(target_ref().loc, H.mind)
@@ -296,13 +295,6 @@ But for now, for what it's been used for, it works.
 	H.equip_to_slot_or_del(new /obj/item/radio/headset(H),SLOT_ID_EAR_L)
 	H.equip_to_slot_or_del(new /obj/item/clothing/under/permit(H), SLOT_ID_HAND_L)
 
-/obj/effect/step_trigger/autostrip/proc/initMappedLink()
-	. = FALSE
-	rel_set(src, "target", GLOB.mapped_autostrips[targetid])
-	rel_set(src, "Mtarget", GLOB.mapped_autostrips_mob[targetid])
-	if(target_ref())
-		. = TRUE
-
 /obj/effect/autostriptarget
 	name = "Autostrip target. Link me via targetid to an autostrip trigger."
 	icon = 'icons/mob/screen1.dmi'
@@ -313,18 +305,8 @@ But for now, for what it's been used for, it works.
 	anchored = 1
 	invisibility = INVISIBILITY_BADMIN
 
-/obj/effect/autostriptarget/Initialize(mapload)
-	. = ..()
-	if(targetid)
-		GLOB.mapped_autostrips[targetid] = src
-
 /obj/effect/autostriptarget/mob
 	name = "Autostrip target to send mobs to."
-
-/obj/effect/autostriptarget/mob/Initialize(mapload)
-	. = ..()
-	if(targetid)
-		GLOB.mapped_autostrips_mob[targetid] = src
 
 /obj/effect/step_trigger/teleporter/deathfall/Initialize(mapload)
 	. = ..()
@@ -379,18 +361,18 @@ But for now, for what it's been used for, it works.
 		return FALSE
 	return ..()
 
-/// LC-refs: the landmark -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: the landmark (reads null once it is gone).
 /obj/effect/step_trigger/teleporter/landmark/proc/the_landmark() as /obj/effect/landmark
 	return the_landmark
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// The planet (a registered singleton: shared, never cleared).
 /obj/effect/step_trigger/teleporter/planetary_fall/proc/planet() as /datum/planet
 	return planet_static
 
-/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The keyed relation view `target` (null once it is gone).
 /obj/effect/step_trigger/autostrip/proc/target_ref() as /obj/effect/autostriptarget
 	return target
 
-/// LC-refs: Mtarget -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The keyed relation view `Mtarget` (null once it is gone).
 /obj/effect/step_trigger/autostrip/proc/Mtarget() as /obj/effect/autostriptarget/mob
 	return Mtarget

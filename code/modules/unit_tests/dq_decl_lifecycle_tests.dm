@@ -153,8 +153,8 @@ DECLARE_NO_REAGENTS(/obj/item/dq_decl_probe/dry)
 	var/datum/dq_decl_owned_child/helper = probe.helper
 	var/obj/item/dq_decl_part/spare = probe.spares[1]
 	qdel(probe)
-	TEST_ASSERT(QDELETED(helper), "an OWNED declared child dies with its owner (phase 4)")
-	TEST_ASSERT(QDELETED(spare), "so does each OWNED_LIST member")
+	TEST_ASSERT(QDELETED(helper), "an owned declared child dies with its owner (phase 4)")
+	TEST_ASSERT(QDELETED(spare), "so does each owned list member")
 
 
 /datum/unit_test/dq_decl_gas
@@ -262,7 +262,7 @@ DECLARE_NO_REAGENTS(/obj/item/dq_decl_probe/dry)
 	var/before = length(contents_of(T, /obj/item/dq_decl_part/better))
 	qdel(probe)
 	TEST_ASSERT_EQUAL(loose.loc, T, "drop_contents moved the leftover to the turf")
-	// Two declared debris (the HELD mapped_part, also a /better, may be dropped too).
+	// Two declared debris (the contained mapped_part, also a /better, may be dropped too).
 	TEST_ASSERT(length(contents_of(T, /obj/item/dq_decl_part/better)) - before >= 2, "the declared debris list spawned")
 	for(var/obj/item/dq_decl_part/P in contents_of(T))
 		qdel(P)

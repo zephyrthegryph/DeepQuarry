@@ -62,11 +62,11 @@
 	if(!manual_chamber) // Manual Chambering
 		//get the next casing
 		if(loaded.len)
-			own_set(src, "chambered", loaded[1]) //load next casing.
+			rel_set(src, "chambered", loaded[1]) //load next casing.
 			if(handle_casings != HOLD_CASINGS)
 				loaded -= chambered
 		else if(ammo_magazine && ammo_magazine.stored_ammo.len)
-			own_set(src, "chambered", ammo_magazine.stored_ammo[ammo_magazine.stored_ammo.len])
+			rel_set(src, "chambered", ammo_magazine.stored_ammo[ammo_magazine.stored_ammo.len])
 			if(handle_casings != HOLD_CASINGS)
 				ammo_magazine.stored_ammo -= chambered
 	if(manual_chamber && auto_loading_type && CHECK_BITFIELD(auto_loading_type,OPEN_BOLT) && bolt_open)
@@ -113,7 +113,7 @@
 				loaded += chambered
 
 	if(handle_casings != HOLD_CASINGS)
-		own_take(src, "chambered")
+		rel_clear(src, "chambered")
 
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
@@ -483,7 +483,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 		to_chamber = ammo_magazine.stored_ammo[ammo_magazine.stored_ammo.len]
 		if(handle_casings != HOLD_CASINGS)
 			ammo_magazine.stored_ammo -= to_chamber
-	own_set(src, "chambered", to_chamber)
+	rel_set(src, "chambered", to_chamber)
 	if(to_chamber)
 		return TRUE
 	else
@@ -698,7 +698,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	if(chambered)
 		return
 	user.visible_message(span_notice(message),span_notice("You slide \the [C] into the [src]'s chamber."))
-	own_set(src, "chambered", C)
+	rel_set(src, "chambered", C)
 	user.hud_used.update_ammo_hud(user, src)
 	user.remove_from_mob(C)
 	C.forceMove(src)
@@ -730,5 +730,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 #undef BOLT_CASING_CHAMBERED
 
 OWN(/obj/item/gun/projectile, ammo_magazine, OWN_CONTAINED)
-OWN(/obj/item/gun/projectile, chambered, OWN_CONTAINED)
+// chambered names a casing in the gun (loaded) or its magazine (stored_ammo): a relation view.
+REL(/obj/item/gun/projectile, chambered)
 

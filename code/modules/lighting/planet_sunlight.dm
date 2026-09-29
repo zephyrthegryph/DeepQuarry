@@ -131,10 +131,10 @@
 	color = sun().our_color
 
 
-/// LC-refs: the sun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The sun (a relation view).
 /datum/simple_sun/planetary/proc/sun() as /datum/sun_holder
 	return sun
 
-/// LC-refs: the sun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The sun (a relation view).
 /datum/planet_sunlight_handler/proc/sun() as /datum/simple_sun
 	return sun

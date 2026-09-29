@@ -10,7 +10,7 @@
 
 	screen_loc = ui_spell_master
 
-	/// OM handle of the mob whose spells these are; read with spell_holder().
+	/// The mob whose spells these are (a relation view; the mob owns us in spell_masters).
 	var/mob/spell_holder
 
 /// A spell button -> the spell master it is listed on. The master reads its buttons with
@@ -20,10 +20,10 @@
 	name = "spell button"
 	source_single = TRUE
 
-// the master leaves its holder's spell_masters list (a handle, so the mob side can't be declared).
+// the mob owns us in its spell_masters list; we leave it in phase 2.
 // (Screen objects leave every client's screen in phase 5.)
 
-/// LC-refs: the mob whose spells these are -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mob whose spells these are (a relation view: null once that is deleted).
 /atom/movable/screen/movable/spell_master/proc/spell_holder() as /mob
 	return spell_holder
 
@@ -116,9 +116,7 @@
 		toggle_open(2) //forces the icons to refresh on screen
 
 /atom/movable/screen/movable/spell_master/proc/remove_spell(datum/spell/spell)
-	qdel(spell.connected_button)
-
-	own_take(spell, "connected_button")
+	own_clear(spell, "connected_button", OWN_DELETE)
 
 	if(length(spell_buttons()))
 		toggle_open(showing + 1)
@@ -172,7 +170,7 @@
 	var/icon/last_charged_icon
 
 
-/// LC-refs: the spell this button casts -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The spell this button casts (a relation view: null once that is deleted).
 /atom/movable/screen/spell/proc/spell() as /datum/spell
 	return spell
 

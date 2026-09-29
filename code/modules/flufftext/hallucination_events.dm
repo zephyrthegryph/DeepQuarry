@@ -48,7 +48,7 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	//Strange items
 	//to_chat(our_human, "Traitor Items")
-	if(halitem.len)
+	if(halitem)
 		return
 
 	var/list/slots_free = list(ui_lhand,ui_rhand)
@@ -96,22 +96,19 @@
 			CI.icon = 'icons/obj/grenade.dmi'
 			CI.icon_state = "flashbang1"
 			CI.name = "Flashbang"
-	halitem[om_handle(CI)] = om_handle(our_human.client)
+	own_set(src, "halitem", CI)
+	rel_set(src, "halitem_client", our_human.client)
 	our_human.client.screen += CI
 	om_after(src, rand(10,25) SECONDS, PROC_REF(remove_hallucination_item))
 
 /datum/hallucinations/proc/remove_hallucination_item()
-	// I can't manage this with /image/client_only due to screenloc, so key-value OM handle pair it is! Called on both timer and destroying this component.
+	// I can't manage this with /image/client_only due to screenloc, so an owned item plus its client it is! Called on both timer and destroying this component.
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	var/first = halitem[1]
-	var/obj/itm = om_resolve(first)
-	var/CW = halitem[first]
-	var/client/C = om_resolve(CW)
-	if(C)
-		C.screen -= itm
-	qdel(itm)
-	halitem.Cut()
+	if(halitem_client && halitem)
+		halitem_client.screen -= halitem
+	rel_clear(src, "halitem_client")
+	own_clear(src, "halitem", OWN_DELETE)
 
 /datum/hallucinations/proc/event_strange_sound()
 	PROTECTED_PROC(TRUE)

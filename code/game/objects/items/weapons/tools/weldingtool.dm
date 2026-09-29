@@ -46,7 +46,7 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 /obj/item/weldingtool/Initialize(mapload)
 	. = ..()
 	var/datum/reagents/R = new/datum/reagents(max_fuel)
-	reagents = R
+	own_set(src, "reagents", R)
 	rel_set(R, "my_atom", src)
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
 	update_icon()
@@ -479,8 +479,7 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 	else
 		return INITIALIZE_HINT_QDEL
 
-REL_PAIR(/obj/item/weldingtool/tubefed, mounted_pack, nozzle)
-REL_PAIR(/obj/item/weldpack, nozzle, mounted_pack)
+// The weldpack owns its nozzle (implicit OWN); the nozzle names its pack (one-sided REL).
 
 /obj/item/weldingtool/tubefed/periodic_step()
 	if(!mounted_pack)
@@ -698,6 +697,6 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 OWN(/obj/item/weldingtool/electric, power_supply, OWN_CONTAINED)
 DECLARE_DEFAULT_CHILD(/obj/item/weldingtool/electric, "power_supply", "cell_type")
 
-/// LC-refs: equip mount -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: equip mount (reads null once it is gone).
 /obj/item/weldingtool/electric/mounted/exosuit/proc/equip_mount() as /obj/item/mecha_parts/mecha_equipment
 	return equip_mount

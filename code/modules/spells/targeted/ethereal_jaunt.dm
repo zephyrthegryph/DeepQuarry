@@ -114,6 +114,6 @@ OWN(/obj/effect/dummy/spell_jaunt, contents, OWN_SPILL)
 /obj/effect/dummy/spell_jaunt/proc/allow_move()
 	canmove = 1
 
-/// LC-refs: the last_valid_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the last_valid_turf this refers to (a relation view: null once it is deleted).
 /obj/effect/dummy/spell_jaunt/proc/last_valid_turf() as /turf
 	return last_valid_turf

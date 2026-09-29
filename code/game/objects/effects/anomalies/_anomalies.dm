@@ -26,13 +26,13 @@
 /obj/effect/anomaly/Initialize(mapload, new_lifespan, drops_core = TRUE)
 	. = ..()
 
-	rel_set(src, "impact_area", get_area(src))
+	impact_area = get_area(src)
 
 	if(!impact_area())
 		return INITIALIZE_HINT_QDEL
 
 	if(!drops_core)
-		own_take(src, "anomaly_core")
+		own_clear(src, "anomaly_core", OWN_DELETE) // still the type path here, or a core made early
 
 	if(anomaly_core)
 		own_set(src, "anomaly_core", new anomaly_core(src))
@@ -103,7 +103,7 @@ DECLARE_PERIODIC(/obj/effect/anomaly, PERIODIC_SLOW)
 	new /obj/effect/effect/smoke(loc)
 	if(!isnull(anomaly_core))
 		anomaly_core.forceMove(get_turf(src))
-		own_take(src, "anomaly_core")
+		own_clear(src, "anomaly_core", OWN_DELETE) // still the type path here, or a core made early
 	qdel(src)
 
 /obj/effect/anomaly/proc/stabilize(anchor = FALSE, has_core = TRUE, add_stats = FALSE)
@@ -115,7 +115,7 @@ DECLARE_PERIODIC(/obj/effect/anomaly, PERIODIC_SLOW)
 		move_chance = 0
 	if(!stats && add_stats)
 		own_set(src, "stats", new /datum/anomaly_stats)
-		stats.attached_anomaly = om_handle(src)
+		rel_set(stats, "attached_anomaly", src)
 		stats.calculate_points()
 		density = TRUE
 	return
@@ -138,7 +138,7 @@ EXTEND_INTERACTIONS(/obj/effect/anomaly, \
 	return FALSE
 
 /obj/effect/anomaly/proc/attackby_timed_done(mob/user, obj/item/anomaly_scanner/scanner)
-	scanner.buffered_anomaly = om_handle(src)
+	rel_set(scanner, "buffered_anomaly", src)
 	scanner.tgui_interact(user)
 	return TRUE
 
@@ -186,6 +186,6 @@ EXTEND_INTERACTIONS(/obj/effect/anomaly, \
 		if(DUST_ANOMALY)
 			new /obj/effect/anomaly/dust(local_turf, null, drops_core)
 
-/// LC-refs: impact area -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The impact area (an area: a plain var).
 /obj/effect/anomaly/proc/impact_area() as /area
 	return impact_area

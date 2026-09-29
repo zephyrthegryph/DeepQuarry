@@ -222,7 +222,7 @@ DECLARE_START_TIMER(/obj/item/uplink, "offer_time", PROC_REF(next_offer)) //It s
 
 /obj/item/radio/uplink/Initialize(mapload)
 	. = ..()
-	hidden_uplink_handle = om_handle(new /obj/item/uplink/hidden(src))
+	own_set(src, "hidden_uplink", new /obj/item/uplink/hidden(src))
 
 /obj/item/radio/uplink/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	. = ..()
@@ -236,7 +236,7 @@ DECLARE_START_TIMER(/obj/item/uplink, "offer_time", PROC_REF(next_offer)) //It s
 
 /obj/item/multitool/uplink/Initialize(mapload)
 	. = ..()
-	hidden_uplink_handle = om_handle(new /obj/item/uplink/hidden(src))
+	own_set(src, "hidden_uplink", new /obj/item/uplink/hidden(src))
 
 /obj/item/multitool/uplink/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	. = ..()
@@ -250,8 +250,8 @@ DECLARE_START_TIMER(/obj/item/uplink, "offer_time", PROC_REF(next_offer)) //It s
 
 /obj/item/radio/headset/uplink/Initialize(mapload)
 	. = ..()
-	hidden_uplink_handle = om_handle(new /obj/item/uplink/hidden(src))
+	own_set(src, "hidden_uplink", new /obj/item/uplink/hidden(src))
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition (registered: never owned or cleared).
 /obj/item/uplink/proc/discount_item() as /datum/uplink_item
 	return discount_item_static

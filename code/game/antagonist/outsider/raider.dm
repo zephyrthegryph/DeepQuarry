@@ -124,7 +124,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 
 	var/i = 1
 	var/max_objectives = pick(2,2,2,2,3,3,3,4)
-	global_objectives = list()
+	own_clear(src, "global_objectives", OWN_DELETE)
 	while(i<= max_objectives)
 		var/list/goals = list("kidnap","loot","salvage")
 		var/goal = pick(goals)
@@ -138,11 +138,11 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		else
 			O = new /datum/objective/heist/salvage()
 		O.choose_target()
-		LAZYOR(global_objectives, O)
+		own_add(src, "global_objectives", O)
 
 		i++
 
-	LAZYOR(global_objectives, new /datum/objective/heist/preserve_crew)
+	own_add(src, "global_objectives", new /datum/objective/heist/preserve_crew)
 	return 1
 
 /datum/antagonist/raider/check_victory()
@@ -251,15 +251,15 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		var/obj/item/secondary = new /obj/item/gun/projectile/pirate(T)
 		if(!HAS_TAG(primary, TAG_HOLSTERABLE))
 			holster = new new_holster(T)
-			own_set(holster, "holstered", secondary)
 			secondary.forceMove(holster)
+			own_set(holster, "holstered", secondary)
 		else
 			player.equip_to_slot_or_del(secondary, SLOT_ID_BELT)
 
 	if(HAS_TAG(primary, TAG_HOLSTERABLE))
 		holster = new new_holster(T)
-		own_set(holster, "holstered", primary)
 		primary.forceMove(holster)
+		own_set(holster, "holstered", primary)
 	else if(!player.get_equipped_item(SLOT_ID_BELT) && HAS_TAG(primary, TAG_WEAR_BELT))
 		player.equip_to_slot_or_del(primary, SLOT_ID_BELT)
 	else if(!player.get_equipped_item(SLOT_ID_BACK) && HAS_TAG(primary, TAG_WEAR_BACK))

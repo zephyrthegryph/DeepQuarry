@@ -97,8 +97,7 @@
 
 /datum/node/expression/value/variable/New(ident)
 	.=..()
-	own_set(src, "id", ident)
-	if(istext(id))id=new(id)
+	own_set(src, "id", istext(ident) ? new /datum/node/identifier(ident) : ident)
 
 /datum/node/expression/value/variable/ToString()
 	return src.id.ToString()
@@ -119,6 +118,6 @@
 
 
 
-/// LC-refs: the value this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The value (a relation view).
 /datum/node/expression/value/reference/proc/value() as /datum
 	return value

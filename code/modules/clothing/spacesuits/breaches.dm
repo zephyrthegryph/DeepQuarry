@@ -212,6 +212,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space, INTERACT_ITEM(null, PROC_REF(
 		for(var/datum/breach/B in breaches)
 			. += span_red(span_bold("It has \a [B.descriptor]."))
 
-/// LC-refs: Suit containing the list of breaches holding this instance. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Suit containing the list of breaches holding this instance. (a relation view: null once it is deleted).
 /datum/breach/proc/holder() as /obj/item/clothing/suit/space
 	return holder

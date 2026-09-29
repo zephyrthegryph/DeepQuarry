@@ -16,8 +16,8 @@
 			T = T.loc
 		part1.forceMove(T)
 		part2.forceMove(T)
-		own_take(part1, "master")
-		own_take(part2, "master")
+		rel_clear(part1, "master")
+		rel_clear(part2, "master")
 		own_take(src, "part1")
 		own_take(src, "part2")
 		qdel(src)

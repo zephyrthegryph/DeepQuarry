@@ -57,7 +57,7 @@
 				"state" = get_ticket_state(T.state),
 				"level" = T.level,
 				"handler" = T.handler,
-				"ishandled" = !!om_resolve(T.handler_ref),
+				"ishandled" = !!T.handler_client(),
 				"opened_at" = (world.time - T.opened_at),
 				"closed_at" = (world.time - T.closed_at),
 				"opened_at_date" = gameTimestamp(wtime = T.opened_at),
@@ -72,7 +72,7 @@
 				"state" = get_ticket_state(T.state),
 				"level" = T.level,
 				"handler" = T.handler,
-				"ishandled" = !!om_resolve(T.handler_ref),
+				"ishandled" = !!T.handler_client(),
 				"opened_at" = (world.time - T.opened_at),
 				"closed_at" = (world.time - T.closed_at),
 				"opened_at_date" = gameTimestamp(wtime = T.opened_at),
@@ -87,7 +87,7 @@
 				"state" = get_ticket_state(T.state),
 				"level" = T.level,
 				"handler" = T.handler,
-				"ishandled" = !!om_resolve(T.handler_ref),
+				"ishandled" = !!T.handler_client(),
 				"opened_at" = (world.time - T.opened_at),
 				"closed_at" = (world.time - T.closed_at),
 				"opened_at_date" = gameTimestamp(wtime = T.opened_at),
@@ -176,7 +176,7 @@
 			. = TRUE
 		if("pick_ticket")
 			var/datum/ticket/T = ID2Ticket(params["ticket_id"])
-			rel_set(ui.user.client, "selected_ticket", T)
+			ui.user.client.selected_ticket_id = T?.id
 			. = TRUE
 		if("retitle_ticket")
 			ui.user.client.selected_ticket().Retitle()
@@ -186,7 +186,7 @@
 			. = TRUE
 		if("undock_ticket")
 			ui.user.client.selected_ticket().tgui_interact(ui.user)
-			rel_clear(ui.user.client, "selected_ticket")
+			ui.user.client.selected_ticket_id = null
 			. = TRUE
 		if("send_msg")
 			if(!params["msg"])

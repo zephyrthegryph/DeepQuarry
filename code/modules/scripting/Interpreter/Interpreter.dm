@@ -390,7 +390,7 @@ S     - The scope the variable resides in. If it is null, a scope with the varia
 /datum/n_Interpreter/proc/curFunction() as /datum/node/statement/FunctionDefinition
 	return curFunction_ref
 
-/// LC-refs: associated container for interpeter -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Associated container for interpeter (a relation view).
 /datum/n_Interpreter/proc/container() as /datum
 	return container
 

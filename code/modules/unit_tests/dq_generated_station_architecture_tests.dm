@@ -284,7 +284,7 @@
 	materialized.z_level = world.maxz
 	var/area/generated_station/transit/transit = new
 	transit.station_id = materialized.station_id
-	rel_set(materialized, "transit_area", transit)
+	materialized.transit_area = transit
 	var/turf/T = locate(world.maxx, world.maxy, world.maxz)
 	T.ChangeTurf(/turf/simulated/floor/plating, tell_universe = FALSE)
 	ChangeArea(T, transit)
@@ -312,8 +312,8 @@
 	materialized.z_level = world.maxz
 	materialized.origin_x = 1
 	materialized.origin_y = 1
-	rel_set(materialized, "transit_area", new /area/generated_station/transit)
-	own_set(materialized, "tile_plan", new(1, 1))
+	materialized.transit_area = new /area/generated_station/transit
+	own_set(materialized, "tile_plan", new /datum/generated_station_tile_plan(1, 1))
 	var/turf/actual = locate(1, 1, world.maxz)
 	var/expected_kind = istype(actual, /turf/simulated/floor) ? GENERATED_STATION_TILE_HULL : GENERATED_STATION_TILE_FLOOR
 	materialized.tile_plan.claim(1, 1, "falsified-owner", "falsified-zone", expected_kind, /turf/simulated/floor/tiled)
@@ -335,8 +335,8 @@
 	materialized.z_level = world.maxz
 	materialized.origin_x = 1
 	materialized.origin_y = 1
-	rel_set(materialized, "transit_area", new /area/generated_station/transit)
-	own_set(materialized, "tile_plan", new(1, 1))
+	materialized.transit_area = new /area/generated_station/transit
+	own_set(materialized, "tile_plan", new /datum/generated_station_tile_plan(1, 1))
 	var/turf/actual = locate(1, 1, world.maxz)
 	var/expected_kind = GENERATED_STATION_TILE_EXTERIOR
 	if(istype(actual, /turf/simulated/floor))

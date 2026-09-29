@@ -87,6 +87,6 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 			return TRUE
 	return FALSE
 
-/// LC-refs: the parent this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The table this game sits on (a relation view: null once it is deleted).
 /datum/board_game/proc/parent() as /atom
 	return parent

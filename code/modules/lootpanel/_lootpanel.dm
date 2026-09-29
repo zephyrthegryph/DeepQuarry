@@ -6,9 +6,9 @@
 /datum/lootpanel
 	/// The owner of the panel
 	var/tmp/client/owner
-	/// The list of all search objects indexed.
+	/// The list of all search objects indexed (owned).
 	var/list/datum/search_object/searchables = list() // ALLOW(instance_list): d: loot panel state
-	/// The list of search_objects needing processed
+	/// The search_objects needing processed (a relation list: searchables owns them)
 	var/list/datum/search_object/to_image
 	/// We've been notified about client version
 	var/notified = FALSE
@@ -70,11 +70,11 @@
 
 	return FALSE
 
-/// LC-refs: the source_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The source_turf this refers to (a relation view: null once that is deleted).
 /datum/lootpanel/proc/source_turf() as /turf
 	return source_turf
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The owner this refers to (a relation view: null once that is deleted).
 /datum/lootpanel/proc/owner() as /client
 	return owner
 

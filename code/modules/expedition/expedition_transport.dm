@@ -29,8 +29,6 @@
 	in_space = FALSE
 	var/tmp/datum/expedition_site/site
 
-// its site forgets its sector.
-
 /obj/effect/shuttle_landmark/automatic/clearing/expedition
 	name = "Expedition Landing Zone"
 	radius = 18
@@ -47,15 +45,11 @@
 		for(var/mob/living/L in contents_of(A))
 			site().participants |= L
 
-// its site forgets its landing waypoint.
-
 /obj/machinery/computer/shuttle_control/explore
 	/// Site currently assigned to this craft.
 	var/tmp/datum/expedition_site/active_expedition
 	var/next_expedition_plot = 0
 
-
-// its expedition forgets its origin console.
 
 /obj/machinery/computer/shuttle_control/explore/proc/expedition_data()
 	if(!active_expedition() || QDELETED(active_expedition()))
@@ -78,21 +72,21 @@
 		rel_set(src, "active_expedition", site)
 		next_expedition_plot = world.time + EXP_LAUNCH_COOLDOWN
 
-/// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The site this landing zone belongs to (a relation view).
 /obj/effect/shuttle_landmark/automatic/clearing/expedition/proc/site() as /datum/expedition_site
 	return site
 
-/// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The site this sector belongs to (a relation view).
 /obj/effect/overmap/visitable/sector/expedition/proc/site() as /datum/expedition_site
 	return site
 
-/// LC-refs: the active_expedition this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The site assigned to this craft (pairs with the site's origin_console).
 /obj/machinery/computer/shuttle_control/explore/proc/active_expedition() as /datum/expedition_site
 	return active_expedition
 
-REL_PAIR(/datum/expedition_site, landing_waypoint, site)
+// The site owns its landing waypoint and overmap sector (implicit OWN); their site vars are plain
+// one-sided views. The console and the site name each other (a true two-sided pair).
+REL(/obj/effect/overmap/visitable/sector/expedition, site)
+REL(/obj/effect/shuttle_landmark/automatic/clearing/expedition, site)
 REL_PAIR(/datum/expedition_site, origin_console, active_expedition)
-REL_PAIR(/datum/expedition_site, overmap_sector, site)
-REL_PAIR(/obj/effect/overmap/visitable/sector/expedition, site, overmap_sector)
-REL_PAIR(/obj/effect/shuttle_landmark/automatic/clearing/expedition, site, landing_waypoint)
 REL_PAIR(/obj/machinery/computer/shuttle_control/explore, active_expedition, origin_console)

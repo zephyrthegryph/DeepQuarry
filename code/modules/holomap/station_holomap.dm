@@ -256,6 +256,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 	var/color //used by path rune markers
 
 
-/// LC-refs: the watching_mob this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The watching_mob this refers to (a relation view: null once that is deleted).
 /obj/machinery/station_map/proc/watching_mob() as /mob
 	return watching_mob

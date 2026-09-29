@@ -336,10 +336,10 @@
 			return FALSE
 		return TRUE
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared (registered) definition/flyweight: never cleared.
 /datum/tgui_input_colormatrix/proc/state() as /datum/tgui_state
 	return state_static
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The target this refers to (a relation view: null once that is deleted).
 /datum/tgui_input_colormatrix/proc/target() as /atom/movable
 	return target

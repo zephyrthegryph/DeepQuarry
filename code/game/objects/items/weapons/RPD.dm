@@ -335,6 +335,6 @@ DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(inter
 #undef DESTROY_MODE
 #undef PAINT_MODE
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition (registered: never owned or cleared).
 /obj/item/pipe_dispenser/proc/recipe() as /datum/pipe_recipe
 	return recipe_static

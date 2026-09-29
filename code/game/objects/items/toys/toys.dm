@@ -37,7 +37,7 @@
 /obj/item/toy/balloon/Initialize(mapload)
 	. = ..()
 	var/datum/reagents/R = new/datum/reagents(10)
-	reagents = R
+	own_set(src, "reagents", R)
 	rel_set(R, "my_atom", src)
 
 /obj/item/toy/balloon/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -830,7 +830,6 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 	var/last_message = 0
 	var/pokephrase = "Uww!"
 	var/opened = FALSE	// has this been slit open? this will allow you to store an object in a plushie.
-	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/obj/item/stored_item	// Note: Stored items can't be bigger than the plushie itself.
 	var/adjusted_name // Our modified name. Used so people don't do funny business with us!
 
@@ -2209,7 +2208,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/nuke, \
 	icon_state = "gibber"
 	attack_verb = list("grinded", "gibbed")
 	COOLDOWN_DECLARE(cooldown)
-	var/obj/stored_minature = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/obj/stored_minature = null
 
 
 DECLARE_INTERACTIONS(/obj/item/toy/minigibber, \

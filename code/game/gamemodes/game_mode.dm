@@ -521,7 +521,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 			continue //Happy connected client
 		for(var/mob/observer/dead/D in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS))
 			if(D.mind)
-				var/mob/living/original = om_resolve(D.mind.original_character)
+				var/mob/living/original = D.mind.original_character
 				if((original && original == L) || D.mind.current == L)
 					if(L.stat == DEAD)
 						if(L.suiciding)	//Suicider
@@ -564,7 +564,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 
 	var/obj_count = 1
 	to_chat(player.current, span_notice("Your current objectives:"))
-	for(var/datum/objective/objective in player.objectives)
+	for(var/datum/objective/objective in player.all_objectives())
 		to_chat(player.current, span_bold("Objective #[obj_count]") + ": [objective.explanation_text]")
 		obj_count++
 

@@ -319,14 +319,14 @@
 			src.visible_message(span_bold("[name]") + " states, \"Battery dump completed.\"")
 			icon_state = "incubator"
 
-/// LC-refs: the inserted_battery this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the inserted_battery var.
 /obj/machinery/artifact_harvester/proc/inserted_battery() as /obj/item/anobattery
 	return inserted_battery
 
-/// LC-refs: the cur_artifact this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the cur_artifact var.
 /obj/machinery/artifact_harvester/proc/cur_artifact() as /obj
 	return cur_artifact
 
-/// LC-refs: the owned_scanner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the owned_scanner var.
 /obj/machinery/artifact_harvester/proc/owned_scanner() as /obj/machinery/artifact_scanpad
 	return owned_scanner

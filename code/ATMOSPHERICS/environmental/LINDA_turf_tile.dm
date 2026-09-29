@@ -63,11 +63,13 @@
 			// cached immutable mixture instead of a mixture (and Rust arena slot)
 			// each. The arena drops writes to it; Destroy() must never qdel it.
 			// Type-table fact: one lookup by the gas string, not a "[string]-[type]" key built per turf.
+			// The cache holds it for the round; no turf owns it (lifecycle_unbind() only lets go).
 			var/static/list/immutable_air = list()
-			own_set(src, "air", immutable_air[initial_gas_mix])
-			if(!air)
-				own_set(src, "air", SSair.parse_gas_string(initial_gas_mix, /datum/gas_mixture/immutable/space))
-				immutable_air[initial_gas_mix] = air
+			var/datum/gas_mixture/shared_air = immutable_air[initial_gas_mix]
+			if(!shared_air)
+				shared_air = SSair.parse_gas_string(initial_gas_mix, /datum/gas_mixture/immutable/space)
+				immutable_air[initial_gas_mix] = shared_air
+			air = shared_air // ALLOW(ownership): the round-long immutable vacuum shared by every space/transit turf, held by the static cache; never owned or deleted by a turf
 		else
 			own_set(src, "air", create_gas_mixture())
 		if(planetary_atmos)

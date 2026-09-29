@@ -22,7 +22,7 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 //Grabs the appropriate seed datum from the global list.
 /obj/item/seeds/proc/update_seed()
 	if(!seed() && seed_type && !isnull(GLOB.plant_service.seeds) && GLOB.plant_service.seeds[seed_type])
-		seed_static = GLOB.plant_service.seeds[seed_type]
+		proto_set(src, "seed_static", GLOB.plant_service.seeds[seed_type])
 	update_appearance()
 
 //Updates strings and icon appropriately based on seed datum.
@@ -78,7 +78,7 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 	seed_type = null
 
 /obj/item/seeds/random/Initialize(mapload)
-	seed_static = GLOB.plant_service.create_random_seed()
+	proto_set(src, "seed_static", GLOB.plant_service.create_random_seed())
 	seed_type = seed().name
 	. = ..()
 
@@ -380,6 +380,8 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 /obj/item/seeds/lustflower
 	seed_type = PLANT_GARDENIA
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// The seed (PROTO): a registered line, or this holder's own private copy.
 /obj/item/seeds/proc/seed() as /datum/seed
 	return seed_static
+
+PROTO(/obj/item/seeds, seed_static)

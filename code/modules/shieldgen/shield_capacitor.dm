@@ -54,6 +54,9 @@
 		to_chat(user, span_red("Access denied."))
 	return TRUE
 
+// The generator this capacitor feeds (two-sided with its capacitors list).
+REL_PAIR(/obj/machinery/shield_capacitor, owned_gen, capacitors)
+
 /obj/machinery/shield_capacitor/wrench_act(mob/user, obj/item/W)
 	anchored = !anchored
 	playsound(src, W.usesound, 75, 1)
@@ -64,10 +67,7 @@
 		for(var/obj/machinery/shield_gen/gen in range(1, src))
 			if(get_dir(src, gen) == src.dir)
 				rel_set(src, "owned_gen", gen)
-				LAZYOR(owned_gen().capacitors, src)
 	else
-		if(owned_gen() && (src in owned_gen().capacitors))
-			LAZYREMOVE(owned_gen().capacitors, src)
 		rel_clear(src, "owned_gen")
 	return ITEM_INTERACT_SUCCESS
 
@@ -191,6 +191,6 @@
 /obj/machinery/shield_capacitor/step_start_condition()
 	return anchored && stored_charge < max_charge
 
-/// LC-refs: the owned_gen this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The generator this capacitor feeds (a relation view).
 /obj/machinery/shield_capacitor/proc/owned_gen() as /obj/machinery/shield_gen
 	return owned_gen

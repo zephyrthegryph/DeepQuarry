@@ -76,6 +76,6 @@
 		var/datum/nobody_wants_to_learn_matrix_math/matrix_tester = new(in_atom)
 		matrix_tester.tgui_interact(mob)
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The target this refers to (a relation view: null once that is deleted).
 /datum/nobody_wants_to_learn_matrix_math/proc/target() as /atom
 	return target

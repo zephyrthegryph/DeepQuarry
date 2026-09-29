@@ -5,7 +5,7 @@ somewhere on that shuttle. Subtypes of these can be then used to perform ship ov
 */
 /obj/machinery/computer/ship
 	var/tmp/obj/effect/overmap/visitable/ship/linked
-	var/list/viewers // OM handles of mobs in direct-view mode.
+	var/list/viewers // Mobs in direct-view mode (relation list, filled by /datum/remote_view/viewer_managed)
 	var/extra_view = 0 // how much the view is increased by when the mob is in overmap mode.
 	/// Whether AI/silicon mobs are permitted to interact with this console. Subtypes may override to FALSE.
 	var/ai_control = TRUE
@@ -132,7 +132,7 @@ somewhere on that shuttle. Subtypes of these can be then used to perform ship ov
 	user.set_viewsize() // reset to default
 
 /obj/machinery/computer/ship/proc/viewing_overmap(mob/user)
-	return (om_handle(user) in viewers)
+	return (user in viewers)
 
 /obj/machinery/computer/ship/tgui_close(mob/user)
 	. = ..()
@@ -152,6 +152,6 @@ Ships can now be hijacked!
 		to_chat(user, "You short out the console's ID checking system. It's now available to everyone!")
 		return 1
 
-/// LC-refs: the linked this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the linked var.
 /obj/machinery/computer/ship/proc/linked() as /obj/effect/overmap/visitable/ship
 	return linked

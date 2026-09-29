@@ -31,13 +31,13 @@
 
 			var/obj/effect/bmode/buildholder/H = new/obj/effect/bmode/buildholder()
 			var/obj/effect/bmode/builddir/A = new/obj/effect/bmode/builddir(H)
-			A.master_handle = om_handle(H)
+			rel_set(A, "master", H)
 			var/obj/effect/bmode/buildhelp/B = new/obj/effect/bmode/buildhelp(H)
-			B.master_handle = om_handle(H)
+			rel_set(B, "master", H)
 			var/obj/effect/bmode/buildmode/C = new/obj/effect/bmode/buildmode(H)
-			C.master_handle = om_handle(H)
+			rel_set(C, "master", H)
 			var/obj/effect/bmode/buildquit/D = new/obj/effect/bmode/buildquit(H)
-			D.master_handle = om_handle(H)
+			rel_set(D, "master", H)
 
 			own_set(H, "builddir", A)
 			own_set(H, "buildhelp", B)
@@ -47,7 +47,7 @@
 			M.client.screen += B
 			M.client.screen += C
 			M.client.screen += D
-			rel_set(H, "cl", M.client)
+			H.cl_ckey = M.client.ckey // clients are not datums: held by ckey
 
 /obj/effect/bmode//Cleaning up the tree a bit
 	density = TRUE
@@ -56,9 +56,10 @@
 	plane = PLANE_PLAYER_HUD
 	dir = NORTH
 	icon = 'icons/misc/buildmode.dmi'
-	var/tmp/master_handle
+	/// The build holder this button belongs to (a relation view; the holder owns us)
+	var/tmp/obj/effect/bmode/buildholder/master
 
-// Comes off its builder's screen: its holder's client, two handles away.
+// Comes off its builder's screen: its holder's client.
 
 /obj/effect/bmode/builddir
 	icon_state = "build"
@@ -193,12 +194,14 @@
 /obj/effect/bmode/buildholder
 	density = FALSE
 	anchored = TRUE
-	var/tmp/client/cl
+	/// The builder's ckey (a client is not a datum, so it is held by key); read with cl().
+	var/tmp/cl_ckey
 	var/obj/effect/bmode/builddir/builddir = null
 	var/obj/effect/bmode/buildhelp/buildhelp = null
 	var/obj/effect/bmode/buildmode/buildmode = null
 	var/obj/effect/bmode/buildquit/buildquit = null
 	var/tmp/atom/movable/throw_atom
+	/// Mobs selected for AI orders (a relation list)
 	var/list/selected_mobs
 	var/copied_faction = null
 	var/warned = 0
@@ -208,9 +211,9 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 
 // AI mobs it selected are deselected.
 /obj/effect/bmode/buildholder/on_destroy(force)
-	for(var/mob/living/unit in selected_mobs)
+	for(var/mob/living/unit in selected_mobs?.Copy())
 		deselect_AI_mob(cl(), unit)
-	LAZYCLEARLIST(selected_mobs)
+	rel_clear(src, "selected_mobs")
 	..()
 
 /// The first base-turf deletion asks once; the answer does that deletion.
@@ -233,11 +236,11 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	T.flags |= ADMIN_SPAWNED
 
 /obj/effect/bmode/buildholder/proc/select_AI_mob(client/C, mob/living/unit)
-	LAZYADD(selected_mobs, unit)
+	rel_add(src, "selected_mobs", unit)
 	C.images += unit.selected_image
 
 /obj/effect/bmode/buildholder/proc/deselect_AI_mob(client/C, mob/living/unit)
-	LAZYREMOVE(selected_mobs, unit)
+	rel_remove(src, "selected_mobs", unit)
 	C.images -= unit.selected_image
 
 /obj/effect/bmode/buildmode
@@ -999,22 +1002,22 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 #undef LAST_BUILDMODE
 #undef BUILDMODE_DROP
 
-/// LC-refs: the cl this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The builder's client, or null while they are disconnected.
 /obj/effect/bmode/buildholder/proc/cl() as /client
-	return cl
+	return GLOB.directory[cl_ckey]
 
-/// LC-refs: the throw_atom this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The throw_atom this refers to (a relation view: null once that is deleted).
 /obj/effect/bmode/buildholder/proc/throw_atom() as /atom/movable
 	return throw_atom
 
-/// LC-refs: the coordA this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The coordA this refers to (a relation view: null once that is deleted).
 /obj/effect/bmode/buildmode/proc/coordA() as /turf
 	return coordA
 
-/// LC-refs: the coordB this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The coordB this refers to (a relation view: null once that is deleted).
 /obj/effect/bmode/buildmode/proc/coordB() as /turf
 	return coordB
 
-/// LC-refs: the master this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The master this refers to (a relation view: null once that is deleted).
 /obj/effect/bmode/proc/master() as /obj/effect/bmode/buildholder
-	return om_resolve(master_handle)
+	return master

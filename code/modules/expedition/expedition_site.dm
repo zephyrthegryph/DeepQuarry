@@ -36,8 +36,8 @@
 	/// The craft's control console, used as the physical payout point.
 	var/tmp/obj/machinery/computer/shuttle_control/explore/origin_console
 	var/tmp/turf/payout_turf
-	/// Overmap destination and landing waypoint owned by this site.
-	var/tmp/obj/effect/overmap/visitable/sector/expedition/overmap_sector
+	/// Overmap destination and landing waypoint owned by this site (implicit OWN).
+	var/obj/effect/overmap/visitable/sector/expedition/overmap_sector
 	var/obj/effect/shuttle_landmark/automatic/clearing/expedition/landing_waypoint
 	/// Stable destination registry key used before and after physical generation.
 	var/flight_destination_id
@@ -60,13 +60,6 @@
 	last_occupied = world.time
 	participants = list()
 
-
-/// A deleted descriptor leaves the service list that owned it.
-/datum/expedition_site/lifecycle_unbind()
-	. = ..()
-	var/datum/world_service/expedition/service = GLOB.expedition_service
-	if(service)
-		LAZYREMOVE(service.descriptors, src)
 
 // A random walkable floor on this site (prefers the cached list, falls back to
 // a fresh scan if the cache is stale/empty). Biome-agnostic.
@@ -93,27 +86,27 @@
 	var/datum/flight_destination/destination = GLOB.flight_service?.destinations[flight_destination_id]
 	return LAZYLEN(destination?.active_plans)
 
-/// LC-refs: the landing this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The landing (a relation view: null once it is gone).
 /datum/expedition_site/proc/landing() as /turf
 	return landing
 
-/// LC-refs: the assigned_flight_vessel this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The assigned_flight_vessel (a relation view: null once it is gone).
 /datum/expedition_site/proc/assigned_flight_vessel() as /datum/flight_vessel
 	return assigned_flight_vessel
 
-/// LC-refs: the payout_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The payout_turf (a relation view: null once it is gone).
 /datum/expedition_site/proc/payout_turf() as /turf
 	return payout_turf
 
-/// LC-refs: the origin_console this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The origin_console (a relation view: null once it is gone).
 /datum/expedition_site/proc/origin_console() as /obj/machinery/computer/shuttle_control/explore
 	return origin_console
 
-/// LC-refs: the overmap_sector this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The site's overmap sector (owned).
 /datum/expedition_site/proc/overmap_sector() as /obj/effect/overmap/visitable/sector/expedition
 	return overmap_sector
 
-/// LC-refs: the assigned_shuttle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The assigned_shuttle (a relation view: null once it is gone).
 /datum/expedition_site/proc/assigned_shuttle() as /datum/shuttle/autodock/overmap
 	return assigned_shuttle
 

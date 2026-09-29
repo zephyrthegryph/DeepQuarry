@@ -146,8 +146,7 @@
 	var/path = pick_n_take(GLOB.unique_gamma_loot)
 	if(!path) //Tapped out, reallocate?
 		for(var/P in GLOB.allocated_gamma_loot)
-			var/WF = GLOB.allocated_gamma_loot[P]
-			var/obj/item/I = om_resolve(WF)
+			var/obj/item/I = allocated_gamma_item(P)
 			if(QDELETED(I) || istype(I.loc,/obj/machinery/computer/cryopod))
 				restore_gamma_loot(P)
 				path = P
@@ -155,7 +154,8 @@
 
 	if(path)
 		var/obj/item/I = new path(source)
-		GLOB.allocated_gamma_loot[path] = om_handle(I)
+		GLOB.allocated_gamma_loot |= path
+		rel_add(GLOB.poi_service, "allocated_gamma_items", I)
 		return I
 
 	return produce_rare_item(source)
@@ -163,4 +163,18 @@
 /// Restores a removed gamma loot item back to the loot table
 /proc/restore_gamma_loot(w_type)
 	GLOB.allocated_gamma_loot -= w_type
+	var/obj/item/I = allocated_gamma_item(w_type)
+	if(I)
+		rel_remove(GLOB.poi_service, "allocated_gamma_items", I)
 	GLOB.unique_gamma_loot += w_type
+
+/// The live item spawned for gamma loot path `w_type`, or null (it was deleted, or never spawned).
+/proc/allocated_gamma_item(w_type)
+	for(var/obj/item/I as anything in GLOB.poi_service.allocated_gamma_items)
+		if(I.type == w_type)
+			return I
+	return null
+
+/// The items spawned for allocated gamma loot (a relation list: a deleted item leaves it).
+/datum/world_service/pois/var/list/obj/item/allocated_gamma_items
+REL_LIST(/datum/world_service/pois, allocated_gamma_items)

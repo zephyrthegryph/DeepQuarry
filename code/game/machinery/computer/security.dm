@@ -16,8 +16,8 @@
 	var/authenticated = null
 	var/rank = null
 	var/screen = null
-	var/active1_handle
-	var/active2_handle
+	var/datum/data/record/active1
+	var/datum/data/record/active2
 	var/list/temp = null
 	var/printing = null
 	// The below are used to make modal generation more convenient
@@ -200,9 +200,9 @@
 		return TRUE
 
 	if(!GLOB.data_core.general.Find(active1()))
-		active1_handle = null
+		rel_clear(src, "active1")
 	if(!GLOB.data_core.security.Find(active2()))
-		active2_handle = null
+		rel_clear(src, "active2")
 
 	. = TRUE
 	if(tgui_act_modal(action, params, ui.user))
@@ -237,8 +237,8 @@
 				var/mob/living/silicon/robot/R = ui.user
 				rank = "[R.modtype] [R.braintype]"
 			if(authenticated)
-				active1_handle = null
-				active2_handle = null
+				rel_clear(src, "active1")
+				rel_clear(src, "active2")
 				screen = SEC_DATA_R_LIST
 		else
 			. = FALSE
@@ -257,12 +257,12 @@
 					own_take(src, "scan")
 				authenticated = null
 				screen = null
-				active1_handle = null
-				active2_handle = null
+				rel_clear(src, "active1")
+				rel_clear(src, "active2")
 			if("screen")
 				screen = clamp(text2num(params["screen"]) || 0, SEC_DATA_R_LIST, SEC_DATA_RECORD)
-				active1_handle = null
-				active2_handle = null
+				rel_clear(src, "active1")
+				rel_clear(src, "active2")
 			if("del_all")
 				for(var/datum/data/record/R in GLOB.data_core.security)
 					qdel(R)
@@ -298,8 +298,8 @@
 						security_record = M
 						break
 
-				active1_handle = om_handle(general_record)
-				active2_handle = om_handle(security_record)
+				rel_set(src, "active1", general_record)
+				rel_set(src, "active2", security_record)
 				screen = SEC_DATA_RECORD
 			if("new")
 				if(istype(active1(), /datum/data/record) && !istype(active2(), /datum/data/record))
@@ -316,7 +316,7 @@
 					R.fields["notes"]		= "No notes."
 					R.fields["notes"]		= "No notes."
 					GLOB.data_core.security += R
-					active2_handle = om_handle(R)
+					rel_set(src, "active2", R)
 					screen = SEC_DATA_RECORD
 					set_temp("Security record created.", "success")
 			if("del_c")
@@ -329,22 +329,22 @@
 				if(comments[index])
 					comments.Cut(index, index + 1)
 			if("search")
-				active1_handle = null
-				active2_handle = null
+				rel_clear(src, "active1")
+				rel_clear(src, "active2")
 				var/t1 = lowertext(params["t1"] || "")
 				if(!length(t1))
 					return
 
 				for(var/datum/data/record/R in GLOB.data_core.general)
 					if(t1 == lowertext(R.fields["name"]) || t1 == lowertext(R.fields["id"]) || t1 == lowertext(R.fields["fingerprint"]))
-						active1_handle = om_handle(R)
+						rel_set(src, "active1", R)
 						break
 				if(!active1())
 					set_temp("Security record not found. You must enter the person's exact name, ID, or fingerprint.", "danger")
 					return
 				for(var/datum/data/record/E in GLOB.data_core.security)
 					if(E.fields["name"] == active1().fields["name"] && E.fields["id"] == active1().fields["id"])
-						active2_handle = om_handle(E)
+						rel_set(src, "active2", E)
 						break
 				screen = SEC_DATA_RECORD
 			if("print_p")
@@ -462,8 +462,9 @@
 		event_tags += "custody_resolution"
 	else if(new_status == "None" && old_status == "Incarcerated" && custody["verified"])
 		event_tags += "record_cleared"
-	LAZYINITLIST(active2().disposition_history)
-	active2().disposition_history.Add(list(list(
+	var/datum/data/record/disposition_record = active2()
+	LAZYINITLIST(disposition_record.disposition_history)
+	disposition_record.disposition_history.Add(list(list(
 		"occurred_at" = world.time,
 		"actor_account" = contract_account_for_mob(user)?.account_number,
 		"actor_name" = user?.real_name,
@@ -595,10 +596,10 @@
 
 OWN(/obj/machinery/computer/secure_data, scan, OWN_CONTAINED)
 
-/// LC-refs: active1 -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The selected record (a relation view).
 /obj/machinery/computer/secure_data/proc/active1() as /datum/data/record
-	return om_resolve(active1_handle)
+	return active1
 
-/// LC-refs: active2 -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The selected record (a relation view).
 /obj/machinery/computer/secure_data/proc/active2() as /datum/data/record
-	return om_resolve(active2_handle)
+	return active2

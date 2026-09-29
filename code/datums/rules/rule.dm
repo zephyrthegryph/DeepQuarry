@@ -421,19 +421,19 @@ GLOBAL_VAR_INIT(dq_rule_recording, FALSE)
 /proc/dq_rule_fire_count(datum/thing, datum/rule/rule)
 	return GLOB.dq_rule_fire_log["[REF(thing)]|[rule.type]"] || 0
 
-/// LC-refs: the domain provider for channel-backed triggers -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The domain provider for channel-backed triggers (a relation view).
 /datum/rule_trigger/proc/provider() as /datum/property_provider/domain
 	return provider
 
-/// LC-refs: the second domain provider -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The second domain provider (a relation view).
 /datum/rule_trigger/proc/provider_b() as /datum/property_provider/domain
 	return provider_b
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/rule_compiler/proc/rule() as /datum/rule
 	return rule_static
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/rule_compiler/proc/registry() as /datum/property_registry
 	return registry_static
 

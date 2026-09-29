@@ -1,13 +1,22 @@
 
-///assoc list of ckey -> /datum/persistent_client
-GLOBAL_LIST_EMPTY_TYPED(persistent_clients_by_ckey, /datum/persistent_client)
-/// A flat list of all persistent clients, for her looping pleasure.
+/// The persistent client of `ckey`, or null. REGISTRY_PERSISTENT_CLIENTS is keyed by ckey.
+/proc/persistent_client_for(ckey)
+	var/list/filed = REGISTRY_KEYED(REGISTRY_PERSISTENT_CLIENTS, ckey)
+	return length(filed) ? filed[1] : null
+
+/// Every persistent client as ckey -> datum (a new list, for pickers and UIs).
+/proc/persistent_clients_by_ckey()
+	. = list()
+	for(var/datum/persistent_client/P as anything in REGISTRY_MEMBERS(REGISTRY_PERSISTENT_CLIENTS))
+		.[P.ckey] = P
 
 /// Tracks information about a client between log in and log outs
 /datum/persistent_client
-	/// The true client
+	/// The ckey this record is filed under (the registry key).
+	var/ckey
+	/// The true client (not a datum: a plain var; BYOND nulls it when the client is deleted)
 	var/tmp/client/client
-	/// The mob this persistent client is currently bound to.
+	/// The mob this persistent client is currently bound to (paired with mob.persistent_client).
 	var/tmp/mob/mob
 
 	/// Major version of BYOND this client was last using.
@@ -40,8 +49,11 @@ GLOBAL_LIST_EMPTY_TYPED(persistent_clients_by_ckey, /datum/persistent_client)
 REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 
 /datum/persistent_client/New(ckey)
-	GLOB.persistent_clients_by_ckey[ckey] = src
+	src.ckey = ckey
 	join_registries()
+
+/datum/persistent_client/registry_key(registry_id)
+	return registry_id == REGISTRY_PERSISTENT_CLIENTS ? ckey : null
 
 // Persistent clients refuse deletion.
 /datum/persistent_client/lifecycle_keep(force)
@@ -55,7 +67,7 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 
 	if(client())
 		client().persistent_client = null
-	rel_set(src, "client", new_client)
+	client = new_client
 	if(client())
 		client().persistent_client = src
 		byond_build = client().byond_build
@@ -66,11 +78,9 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 	if(mob() == new_mob)
 		return
 
-	mob()?.persistent_client = null
-	new_mob?.persistent_client?.set_mob(null)
-
+	// A pair: setting our side sets new_mob.persistent_client, and unlinks our old mob and
+	// new_mob's old persistent client.
 	rel_set(src, "mob", new_mob)
-	new_mob?.persistent_client = src
 
 /// Writes all of the `played_names` into an HTML-escaped string.
 /datum/persistent_client/proc/get_played_names()
@@ -91,7 +101,7 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 	if(!ckey)
 		return
 
-	var/datum/persistent_client/writable = GLOB.persistent_clients_by_ckey[ckey]
+	var/datum/persistent_client/writable = persistent_client_for(ckey)
 	if(isnull(writable))
 		return
 
@@ -105,12 +115,15 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 
 		LAZYADD(writable.played_names, list("[encoded_name]" = mob_tag))
 
-/// LC-refs: the mob this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mob this persistent client is bound to (a relation view).
 /datum/persistent_client/proc/mob() as /mob
 	return mob
 
-/// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The connected client, or null.
 /datum/persistent_client/proc/client() as /client
 	return client
 
 /// LC-refs: the actions granted to this player on each login are theirs.
+
+REL_PAIR(/datum/persistent_client, mob, persistent_client)
+REL_PAIR(/mob, persistent_client, mob)

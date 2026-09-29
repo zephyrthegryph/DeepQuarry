@@ -180,10 +180,10 @@ DECLARE_INTERACTIONS(/obj/item/clipboard, \
 					ph.show(usr)
 			return TRUE
 
-/// LC-refs: The stored pen. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The stored pen. (a relation view: null once that is deleted).
 /obj/item/clipboard/proc/haspen() as /obj/item/pen
 	return haspen
 
-/// LC-refs: The topmost piece of paper. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The topmost piece of paper. (a relation view: null once that is deleted).
 /obj/item/clipboard/proc/toppaper() as /obj/item
 	return toppaper

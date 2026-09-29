@@ -136,8 +136,6 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 	own_add(src, "stat_modules", new/atom/movable/stat_rig_module/select(src))
 	own_add(src, "stat_modules", new/atom/movable/stat_rig_module/charge(src))
 
-REL_PAIR(/obj/item/rig_module, holder, installed_modules)
-REL_PAIR_LIST(/obj/item/rig, installed_modules, holder)
 
 // Called when the module is installed into a suit.
 /obj/item/rig_module/proc/installed(obj/item/rig/new_holder)
@@ -241,7 +239,7 @@ REL_PAIR_LIST(/obj/item/rig, installed_modules, holder)
 	if(CanUse())
 		switch(module_mode)
 			if("select")
-				module.holder.selected_module = module
+				rel_set(module.holder, "selected_module", module)
 			if("engage")
 				module.engage()
 			if("activate")
@@ -339,5 +337,3 @@ REL_PAIR_LIST(/obj/item/rig, installed_modules, holder)
 		suit_overlay = suit_overlay_inactive
 	holder?.update_icon()
 
-REL_PAIR(/atom/movable/stat_rig_module, module, stat_modules)
-REL_PAIR_LIST(/obj/item/rig_module, stat_modules, module)

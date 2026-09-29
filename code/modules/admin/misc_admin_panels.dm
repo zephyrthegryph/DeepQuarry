@@ -615,30 +615,30 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	tgui_interact(user)
 	return TRUE
 
-/// LC-refs: the source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The source this refers to (a relation view: null once that is deleted).
 /datum/mind_memory_panel/proc/source() as /datum/mind
 	return source
 
-/// LC-refs: the recipient this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The recipient this refers to (a relation view: null once that is deleted).
 /datum/mind_memory_panel/proc/recipient() as /mob
 	return recipient
 
-/// LC-refs: the our_comp this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The our_comp this refers to (a relation view: null once that is deleted).
 /datum/dq_delete_book_panel/proc/our_comp() as /obj/machinery/librarycomp
 	return our_comp
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The holder this refers to (a relation view: null once that is deleted).
 /datum/tag_menu_panel/proc/holder() as /datum/admins
 	return holder
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The holder this refers to (a relation view: null once that is deleted).
 /datum/unban_panel/proc/holder() as /datum/admins
 	return holder
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The holder this refers to (a relation view: null once that is deleted).
 /datum/jobban_panel/proc/holder() as /datum/admins
 	return holder
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The target this refers to (a relation view: null once that is deleted).
 /datum/jobban_panel/proc/target() as /mob
 	return target

@@ -319,7 +319,8 @@ MATERIAL_MIX(/obj/item/ammo_casing/a12g/stunshell, list(MAT_STEEL = 360, MAT_GLA
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
 		return
-	if(prob(100/severity)) BB = null
+	if(prob(100/severity))
+		own_clear(src, "BB", OWN_DELETE)
 	update_icon()
 
 MATERIAL_MIX(/obj/item/ammo_casing/a12g/flash, list(MAT_STEEL = 90, MAT_GLASS = 90))

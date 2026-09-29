@@ -823,7 +823,9 @@
 			host().soulgem.take_control_owner()
 			return TRUE
 		if("soulcatcher_select")
-			host().soulgem.selected_soul = om_handle(locate(params["selected_soul"]))
+			var/mob/picked_soul = locate(params["selected_soul"]) in host().soulgem.brainmobs
+			if(picked_soul)
+				rel_set(host().soulgem, "selected_soul", picked_soul)
 			return TRUE
 		//Soulcatcher settings
 		if("soulcatcher_toggle")
@@ -1489,6 +1491,6 @@
 #undef GENERAL_TAB
 
 
-/// LC-refs: Note, we do this in case we ever want to allow people to view others vore panels -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Note, we do this in case we ever want to allow people to view others vore panels (a relation view: null once it is deleted).
 /datum/vore_look/proc/host() as /mob
 	return host

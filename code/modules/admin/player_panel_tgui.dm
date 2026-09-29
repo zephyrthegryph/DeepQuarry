@@ -12,8 +12,7 @@
 	..()
 	rel_set(src, "owner_admin", owner_admin)
 
-REL_PAIR(/datum/player_panel, owner_admin, tgui_player_panel)
-REL_PAIR(/datum/admins, tgui_player_panel, owner_admin)
+// The admin holder owns this panel (tgui_player_panel); owner_admin is a plain relation back.
 
 /datum/player_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_HOLDER)
@@ -123,5 +122,5 @@ REL_PAIR(/datum/admins, tgui_player_panel, owner_admin)
 	if(!check_rights_for(user, R_HOLDER))
 		return
 	if(!tgui_player_panel)
-		rel_set(src, "tgui_player_panel", new /datum/player_panel(src))
+		own_set(src, "tgui_player_panel", new /datum/player_panel(src))
 	tgui_player_panel.tgui_interact(user.mob)

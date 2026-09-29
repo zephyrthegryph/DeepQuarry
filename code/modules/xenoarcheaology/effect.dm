@@ -235,6 +235,6 @@
 	susceptibility = CLAMP01(susceptibility - protected) //Clamp the susceptibility to be between 0 and 1. No negative numbers allowed.
 	return susceptibility
 
-/// LC-refs: This code is handled in effect_master.dm -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// This code is handled in effect_master.dm
 /datum/artifact_effect/proc/master() as /datum/artifact_master
 	return master

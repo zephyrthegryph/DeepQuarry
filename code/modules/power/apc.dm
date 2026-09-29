@@ -188,8 +188,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		offset_apc()
 
 	if(building)
-		rel_set(src, "area", get_area(src))
-		area().apc = src
+		area = get_area(src)
+		rel_set(area(), "apc", src)
 		opened    = 1
 		operating = 0
 		name = "[area().name] APC"
@@ -220,7 +220,7 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 	om_changed(src, CHANGE_MACHINE_MODE)
 	apply_area_power()
 	if(area())
-		area().apc = null
+		rel_clear(area(), "apc")
 		area().power_light  = 0
 		area().power_equip  = 0
 		area().power_environ = 0
@@ -339,12 +339,12 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 	var/area/A = loc.loc
 
 	if(isarea(A) && !areastring)
-		rel_set(src, "area", A)
+		area = A
 		name = "\improper [area().name] APC"
 	else
-		rel_set(src, "area", get_area_name(areastring))
+		area = get_area_name(areastring)
 		name = "\improper [area().name] APC"
-	area().apc = src
+	rel_set(area(), "apc", src)
 
 	if(istype(area(), /area/submap))
 		alarms_hidden = TRUE
@@ -1135,8 +1135,7 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 /obj/machinery/power/apc/proc/ai_hack(mob/living/silicon/ai/A = null)
 	if(!A || !A.hacked_apcs || hacker || aidisabled || A.stat == DEAD)
 		return 0
-	rel_set(src, "hacker", A)
-	rel_add(A, "hacked_apcs", src)
+	rel_set(src, "hacker", A) // two-sided: lists us in A.hacked_apcs
 	locked = 1
 	update_icon()
 	return 1
@@ -1167,9 +1166,7 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 	GLOB.power_alarm.clearAlarm(loc, src)
 
 	// Clear malf AI ownership.
-	if(hacker && hacker.hacked_apcs && (src in hacker.hacked_apcs))
-		rel_remove(hacker, "hacked_apcs", src)
-	rel_clear(src, "hacker")
+	rel_clear(src, "hacker") // two-sided: leaves the AI's hacked_apcs
 	emagged = initial(emagged)
 
 	// Force icon renderer to recompute from scratch.
@@ -1240,9 +1237,9 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 	var/area/NA = get_area(src)
 	if(NA != area())
 		if(area().apc == src)
-			area().apc = null
-		NA.apc = src
-		rel_set(src, "area", NA)
+			rel_clear(area(), "apc")
+		rel_set(NA, "apc", src)
+		area = NA
 		name = "[area().name] APC"
 	update()
 
@@ -1260,6 +1257,6 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 /obj/machinery/power/apc/proc/channel_load_total()
 	return channel_load(0) + channel_load(1) + channel_load(2)
 
-/// LC-refs: the area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The area this APC powers (a plain area var).
 /obj/machinery/power/apc/proc/area() as /area
 	return area

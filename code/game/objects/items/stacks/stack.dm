@@ -15,7 +15,8 @@
 	randpixel = 7
 	center_of_mass_x = 0
 	center_of_mass_y = 0
-	var/tmp/list/datum/stack_recipe/recipes
+	/// A shared recipe table of /datum/stack_recipe (GLOB or the registered material holds it; never owned or cleared by the stack).
+	var/tmp/list/recipes
 	var/singular_name
 	var/amount = 1
 	var/max_amount //also see stack recipes initialisation, param "max_res_amount" must be equal to this max_amount
@@ -23,7 +24,8 @@
 	var/build_type = null //used when directly applied to a turf
 	var/uses_charge = 0
 	var/list/charge_costs = null
-	var/list/datum/matter_synth/synths = null // ALLOW(state_ref, object_keyed_lists): baseline when CI was wired (2026-09-26); convert or give a real reason
+	/// The robot module's matter synths this stack draws on (relation list; the module owns them).
+	var/list/datum/matter_synth/synths = null
 	var/no_variants = TRUE // Determines whether the item should update it's sprites based on amount.
 
 	var/pass_color = FALSE // Will the item pass its own color var to the created item? Dyed cloth, wood, etc.
@@ -563,3 +565,6 @@ DECLARE_INTERACTIONS(/obj/item/stack, \
 			merge(AM)
 	return ..()
 
+
+SHARED(/obj/item/stack, recipes)
+REL_LIST(/obj/item/stack, synths)

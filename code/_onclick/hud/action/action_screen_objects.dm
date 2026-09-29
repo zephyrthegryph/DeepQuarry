@@ -16,9 +16,9 @@
 	var/location = SCRN_OBJ_DEFAULT
 	/// A unique bitflag, combined with the name of our linked action this lets us persistently remember any user changes to our position
 	var/id
-	/// An OM handle of the last thing we hovered over
+	/// The last thing we hovered over (a relation view)
 	/// God I hate how dragging works
-	var/last_hovored_ref
+	var/atom/last_hovored
 
 // a button leaves its hud's layout and its action's viewers.
 /atom/movable/screen/movable/action_button/on_destroy(force)
@@ -28,16 +28,13 @@
 		hud.hide_action(src)
 		viewer?.client?.screen -= src
 		viewer?.update_action_buttons()
-	var/datum/action/action = linked_action()
-	if(action && our_hud)
-		action.viewers -= our_hud
 	..()
 
 /atom/movable/screen/movable/action_button/proc/can_use(mob/user)
 
 	var/datum/action/action = linked_action()
 	if(action)
-		if(user.hud_used && action.viewers[om_handle(user.hud_used)])
+		if(action.button_for(user.hud_used))
 			return TRUE
 		return FALSE
 
@@ -67,12 +64,12 @@
 	. = ..()
 	if(!can_use(usr))
 		return
-	if((om_handle(over_object) == last_hovored_ref))
+	if(over_object == last_hovored)
 		return
 
 	var/atom/old_object
-	if(last_hovored_ref)
-		old_object = om_resolve(last_hovored_ref)
+	if(last_hovored)
+		old_object = last_hovored
 	else // If there is no current ref, we assume it was us. We also treat this as our "first go" location.
 		old_object = src
 		var/datum/hud/our_hud = usr.hud_used
@@ -81,7 +78,10 @@
 	if(old_object)
 		old_object.MouseExited(over_location, over_control, params)
 
-	last_hovored_ref = om_handle(over_object)
+	if(over_object)
+		rel_set(src, "last_hovored", over_object)
+	else
+		rel_clear(src, "last_hovored")
 	over_object?.MouseEntered(over_location, over_control, params)
 
 /atom/movable/screen/movable/action_button/MouseEntered(location, control, params)
@@ -94,7 +94,7 @@
 	return ..()
 
 /atom/movable/screen/movable/action_button/MouseDrop(over_object)
-	last_hovored_ref = null
+	rel_clear(src, "last_hovored")
 	if(!can_use(usr))
 		return
 	var/datum/hud/our_hud = usr.hud_used
@@ -189,7 +189,7 @@
 		return
 
 	for(var/datum/action/action as anything in actions)
-		var/atom/movable/screen/movable/action_button/button = action.viewers[om_handle(hud_used)]
+		var/atom/movable/screen/movable/action_button/button = action.button_for(hud_used)
 		action.build_all_button_icons()
 		if(reload_screen)
 			client.screen += button
@@ -324,9 +324,8 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 
 	if(GLOB.input_router.click_is(params, GLOB.input_router.alternate_table(), INPUT_ACTION_ALTERNATE))
 		for(var/datum/action/action as anything in usr.actions) // Reset action positions to default
-			for(var/hud_handle in action.viewers)
-				var/datum/hud/hud = om_resolve(hud_handle)
-				var/atom/movable/screen/movable/action_button/button = action.viewers[hud_handle]
+			for(var/atom/movable/screen/movable/action_button/button as anything in action.viewers)
+				var/datum/hud/hud = button.our_hud
 				hud?.position_action(button, SCRN_OBJ_DEFAULT)
 		to_chat(usr, span_notice("Action button positions have been reset."))
 		return TRUE
@@ -435,8 +434,6 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 /atom/movable/screen/action_landing/on_destroy(force)
 	var/datum/action_group/group = owner()
 	if(group && !QDELETED(group))
-		if(group.landing == src)
-			own_take(group, "landing")
 		group.refresh_actions()
 	..()
 
@@ -456,25 +453,24 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	var/datum/hud/our_hud = owner()?.owner()
 	our_hud.position_action(button, owner().location)
 
-/// LC-refs: the action this button triggers -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The action this button triggers (a relation view: null once that is deleted).
 /atom/movable/screen/movable/action_button/proc/linked_action() as /datum/action
 	return linked_action
 
-/// LC-refs: the hud this is shown on -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The hud this is shown on (a relation view: null once that is deleted).
 /atom/movable/screen/movable/action_button/proc/our_hud() as /datum/hud
 	return our_hud
 
-/// LC-refs: the hud this is shown on -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The hud this is shown on (a relation view: null once that is deleted).
 /atom/movable/screen/button_palette/proc/our_hud() as /datum/hud
 	return our_hud
 
-/// LC-refs: the hud this is shown on -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The hud this is shown on (a relation view: null once that is deleted).
 /atom/movable/screen/palette_scroll/proc/our_hud() as /datum/hud
 	return our_hud
 
-/// LC-refs: the action group this landing belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The action group this landing belongs to (a relation view: null once that is deleted).
 /atom/movable/screen/action_landing/proc/owner() as /datum/action_group
 	return owner
 
-REL_PAIR(/atom/movable/screen/button_palette, our_hud, toggle_palette)
-REL_PAIR(/datum/hud, toggle_palette, our_hud)
+

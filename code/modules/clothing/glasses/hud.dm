@@ -67,6 +67,8 @@
 	var/mode = "civ"
 	icon_state = "glasses"
 	var/datum/tgui_module/tgarscreen
+	/// The AR screen while an EMP has it offline (owned; reconnect_tgar() moves it back).
+	var/datum/tgui_module/offline_tgarscreen
 	var/tgarscreen_path
 	var/flash_prot = 0 //0 for none, 1 for flash weapon protection, 2 for welder protection
 	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_AUGMENTED)
@@ -93,8 +95,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/glasses/omnihud, "tgarscreen", "tgarscr
 
 
 /// om_after() target: the AR screen comes back after an EMP.
-/obj/item/clothing/glasses/omnihud/proc/reconnect_tgar(datum/tgui_module/screen)
-	tgarscreen = screen
+/obj/item/clothing/glasses/omnihud/proc/reconnect_tgar()
+	if(offline_tgarscreen && !tgarscreen)
+		own_transfer(src, "offline_tgarscreen", src, "tgarscreen")
 
 /obj/item/clothing/glasses/omnihud/emp_act(severity, recursive)
 	. = ..()
@@ -102,10 +105,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/glasses/omnihud, "tgarscreen", "tgarscr
 		return
 	if(tgarscreen)
 		SStgui.close_uis(src)
-	var/disconnect_tgar = tgarscreen
-	tgarscreen = null
-	if(disconnect_tgar)
-		om_after(src, 20 SECONDS, PROC_REF(reconnect_tgar), disconnect_tgar)
+	if(tgarscreen && !offline_tgarscreen)
+		own_transfer(src, "tgarscreen", src, "offline_tgarscreen")
+		om_after(src, 20 SECONDS, PROC_REF(reconnect_tgar))
 
 	//extra fun for non-sci variants; a small chance flip the state to the dumb 3d glasses when EMP'd
 	if(icon_state == "glasses" || icon_state == "sun")

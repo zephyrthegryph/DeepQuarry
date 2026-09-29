@@ -713,6 +713,6 @@ EXTEND_INTERACTIONS(/obj/item/borg/upgrade/modkit/tracer/adjustable, INTERACT_US
 #undef KA_ENVIRO_TYPE_HOT
 #undef KA_ENVIRO_TYPE_OFFSITE
 
-/// LC-refs: the kinetic_gun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the kinetic_gun this refers to (a relation view: null once it is deleted).
 /obj/item/projectile/kinetic/proc/kinetic_gun() as /obj/item/gun/energy/kinetic_accelerator
 	return kinetic_gun

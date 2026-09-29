@@ -15,19 +15,18 @@
 
 /datum/mini_hud/rig/New(datum/hud/other, obj/item/rig/owner)
 	rel_set(src, "owner_rig", owner)
-	own_set(src, "power", new /atom/movable/screen/rig/power ())
-	own_set(src, "health", new /atom/movable/screen/rig/health ())
-	own_set(src, "air", new /atom/movable/screen/rig/air ())
-	own_set(src, "airtoggle", new /atom/movable/screen/rig/airtoggle ())
-
-	screenobjs = list(power, health, air, airtoggle)
-	screenobjs += new /atom/movable/screen/rig/deco1
-	screenobjs += new /atom/movable/screen/rig/deco2
-	screenobjs += new /atom/movable/screen/rig/deco1_f
-	screenobjs += new /atom/movable/screen/rig/deco2_f
+	// screenobjs owns every element; power/health/air/airtoggle are views into it.
+	rel_set(src, "power", own_add(src, "screenobjs", new /atom/movable/screen/rig/power ()))
+	rel_set(src, "health", own_add(src, "screenobjs", new /atom/movable/screen/rig/health ()))
+	rel_set(src, "air", own_add(src, "screenobjs", new /atom/movable/screen/rig/air ()))
+	rel_set(src, "airtoggle", own_add(src, "screenobjs", new /atom/movable/screen/rig/airtoggle ()))
+	own_add(src, "screenobjs", new /atom/movable/screen/rig/deco1)
+	own_add(src, "screenobjs", new /atom/movable/screen/rig/deco2)
+	own_add(src, "screenobjs", new /atom/movable/screen/rig/deco1_f)
+	own_add(src, "screenobjs", new /atom/movable/screen/rig/deco2_f)
 
 	for(var/atom/movable/screen/S as anything in screenobjs)
-		S.master_ref = om_handle(owner_rig())
+		rel_set(S, "master_ref", owner_rig())
 	..()
 
 /datum/mini_hud/rig/periodic_step()
@@ -58,22 +57,21 @@
 
 /datum/mini_hud/mech/New(datum/hud/other, obj/mecha/owner)
 	rel_set(src, "owner_mech", owner)
-	own_set(src, "power", new /atom/movable/screen/mech/power ())
-	own_set(src, "health", new /atom/movable/screen/mech/health ())
-	own_set(src, "air", new /atom/movable/screen/mech/air ())
-	own_set(src, "airtoggle", new /atom/movable/screen/mech/airtoggle ())
-
-	screenobjs = list(power, health, air, airtoggle)
-	screenobjs += new /atom/movable/screen/mech/deco1
-	screenobjs += new /atom/movable/screen/mech/deco2
-	screenobjs += new /atom/movable/screen/mech/deco1_f
-	screenobjs += new /atom/movable/screen/mech/deco2_f
+	// screenobjs owns every element; power/health/air/airtoggle are views into it.
+	rel_set(src, "power", own_add(src, "screenobjs", new /atom/movable/screen/mech/power ()))
+	rel_set(src, "health", own_add(src, "screenobjs", new /atom/movable/screen/mech/health ()))
+	rel_set(src, "air", own_add(src, "screenobjs", new /atom/movable/screen/mech/air ()))
+	rel_set(src, "airtoggle", own_add(src, "screenobjs", new /atom/movable/screen/mech/airtoggle ()))
+	own_add(src, "screenobjs", new /atom/movable/screen/mech/deco1)
+	own_add(src, "screenobjs", new /atom/movable/screen/mech/deco2)
+	own_add(src, "screenobjs", new /atom/movable/screen/mech/deco1_f)
+	own_add(src, "screenobjs", new /atom/movable/screen/mech/deco2_f)
 
 	for(var/atom/movable/screen/S as anything in screenobjs)
-		S.master_ref = om_handle(owner_mech())
+		rel_set(S, "master_ref", owner_mech())
 	..()
 
-// the mech points at its minihud; the minihud going clears that var.
+// the mech owns us as its minihud; owner_mech is a plain relation back.
 
 /datum/mini_hud/mech/periodic_step()
 	if(!owner_mech())
@@ -141,7 +139,7 @@
 	var/mob/living/carbon/human/user = usr
 	if(!istype(user) || user.stat || user.incapacitated())
 		return
-	var/obj/item/rig/owner_rig = om_resolve(master_ref)
+	var/obj/item/rig/owner_rig = master_ref
 	if(!owner_rig || user != owner_rig.wearer())
 		return
 	user.toggle_internals()
@@ -193,19 +191,17 @@
 	var/mob/living/carbon/human/user = usr
 	if(!istype(user) || user.stat || user.incapacitated())
 		return
-	var/obj/mecha/owner_mech = om_resolve(master_ref)
+	var/obj/mecha/owner_mech = master_ref
 	if(user != owner_mech?.slot_item(MECHA_SLOT_PILOT))
 		return
 	owner_mech.toggle_internal_tank()
 
 
-/// LC-refs: the rig this hud shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The rig this hud shows (a relation view: null once that is deleted).
 /datum/mini_hud/rig/proc/owner_rig() as /obj/item/rig
 	return owner_rig
 
-/// LC-refs: the mech this hud shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mech this hud shows (a relation view: null once that is deleted).
 /datum/mini_hud/mech/proc/owner_mech() as /obj/mecha
 	return owner_mech
 
-REL_PAIR(/datum/mini_hud/mech, owner_mech, minihud)
-REL_PAIR(/obj/mecha, minihud, owner_mech)

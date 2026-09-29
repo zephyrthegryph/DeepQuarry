@@ -101,20 +101,23 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		policy = own_policy(holder, var_name, entry)
 	switch(policy)
 		if(OWN_CONTAINED)
-			var/atom/movable/AM = value
-			if(!ismovable(AM) || AM.loc != holder)
-				OWN_REPORT("[holder.type].[var_name] is CONTAINED but [value.type] is not in its contents (loc [ismovable(AM) ? AM.loc?.type : "n/a"])")
+			// A contained thing belongs to the holder's ledger slot: in the holder's teardown the
+			// slot has already resolved it (phase 3), and one that left the contents is no longer
+			// the holder's. Either way it is only let go here.
 			return
 		if(OWN_SPILL)
 			var/atom/movable/AM = value
 			var/atom/movable/H = holder
-			if(ismovable(AM) && ismovable(H) && AM.loc == H)
-				var/atom/drop = H.drop_location()
-				if(drop && !QDELETED(drop))
-					AM.forceMove(drop)
-					AM.update_icon()
-					return
-	qdel(value)
+			if(ismovable(AM))
+				if(ismovable(H) && AM.loc == H)
+					var/atom/drop = H.drop_location()
+					if(drop && !QDELETED(drop))
+						AM.forceMove(drop)
+						AM.update_icon()
+						return
+				else if(AM.loc != H)
+					return // it already left the holder: not the holder's to drop or delete
+	qdel(value) // ALLOW(lifecycle): the ownership framework disposes of owned values by policy
 
 /// Owned-child release hook: `child` is leaving holder.var_name (disposed, taken or moved out),
 /// still intact. For consequences outside the child: a media source's listeners, a tooltip's
@@ -139,7 +142,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 			var/atom/movable/AM = value
 			if(!ismovable(AM) || AM.loc != holder)
 				OWN_REPORT("[holder.type].[var_name] is CONTAINED: put [value.type] in its contents before own_set()")
-	holder.vars[var_name] = value // ALLOW(ownership): the accessor
+	holder.vars[var_name] = value // ALLOW(api, ownership): the accessor
 	if(entry && isdatum(old))
 		own_dispose(holder, var_name, old, entry)
 	return value
@@ -150,7 +153,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	var/datum/value = holder.vars[var_name]
 	if(isnull(value))
 		return null
-	holder.vars[var_name] = null // ALLOW(ownership): the accessor
+	holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
 	holder.on_owned_release(var_name, value)
 	own_unstamp(value)
 	return value
@@ -165,7 +168,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	var/list/L = holder.vars[var_name]
 	if(!islist(L))
 		L = list()
-		holder.vars[var_name] = L // ALLOW(ownership): the accessor
+		holder.vars[var_name] = L // ALLOW(api, ownership): the accessor
 	L |= value
 	return value
 
@@ -177,7 +180,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		return FALSE
 	L -= value
 	if(!length(L))
-		holder.vars[var_name] = null // ALLOW(ownership): the accessor
+		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
 	if(entry)
 		own_dispose(holder, var_name, value, entry)
 	return TRUE
@@ -190,7 +193,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		if(isnull(value))
 			return null
 		L = list()
-		holder.vars[var_name] = L // ALLOW(ownership): the accessor
+		holder.vars[var_name] = L // ALLOW(api, ownership): the accessor
 	var/old = L[key]
 	if(old == value)
 		return value
@@ -217,7 +220,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		value = L[value_or_key]
 		L -= value_or_key
 	if(!length(L))
-		holder.vars[var_name] = null // ALLOW(ownership): the accessor
+		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
 	if(value)
 		holder.on_owned_release(var_name, value)
 	own_unstamp(value)
@@ -239,7 +242,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		adopted = own_set(dest, dest_var, value)
 	if(!adopted)
 		OWN_REPORT("own_transfer of [value.type] from [from.type].[from_var] to [dest.type].[dest_var] refused; destroying it")
-		qdel(value)
+		qdel(value) // ALLOW(lifecycle): the ownership framework disposes of owned values by policy
 	return adopted
 
 /// Moves `value` into dest.dest_var from wherever it is owned now (own_transfer() from its current
@@ -270,7 +273,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	if(islist(value) && var_name == "contents")
 		OWN_REPORT("own_take_all on [holder.type].contents: move things out through the ledger")
 		return list()
-	holder.vars[var_name] = null // ALLOW(ownership): the accessor
+	holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
 	for(var/datum/child as anything in .)
 		holder.on_owned_release(var_name, child)
 		own_unstamp(child)
@@ -282,7 +285,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	if(isnull(value))
 		return
 	if(!islist(value))
-		holder.vars[var_name] = null // ALLOW(ownership): the accessor
+		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
 		if(entry)
 			own_dispose(holder, var_name, value, entry, policy)
 		return
@@ -290,7 +293,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	var/list/copy = L.Copy()
 	if(var_name != "contents") // built in: its members leave by moving, never by a cut
 		L.Cut()
-		holder.vars[var_name] = null // ALLOW(ownership): the accessor
+		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
 	if(!entry)
 		return
 	for(var/key in copy)
@@ -331,7 +334,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		return
 	var/value = H.vars[var_name]
 	if(value == D)
-		H.vars[var_name] = null // ALLOW(ownership): lifecycle release
+		H.vars[var_name] = null // ALLOW(api, ownership): lifecycle release
 		return
 	if(islist(value))
 		var/list/L = value
@@ -339,6 +342,23 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		for(var/key in L.Copy())
 			if(!isnum(key) && L[key] == D)
 				L -= key
+
+/// A contained or spilled owned movable left its owner's contents (the ledger's note_exit()): the
+/// contents slot was its ownership, so the owner's var lets it go (no dispose: it is intact and
+/// somewhere else now). A DELETE-policy movable child keeps its owner wherever it goes.
+/proc/own_contents_exit(atom/holder, atom/movable/thing)
+	if(thing.own_holder_ref != ref(holder) || QDELETED(thing))
+		return
+	var/var_name = thing.own_slot
+	var/list/entry = own_table_of(holder).entries[var_name]
+	if(!entry)
+		return
+	var/policy = own_policy(holder, var_name, entry)
+	if(policy != OWN_CONTAINED && policy != OWN_SPILL)
+		return
+	holder.on_owned_release(var_name, thing)
+	own_release_member(holder, var_name, thing)
+	own_unstamp(thing)
 
 /// Phase 3, for a movable: SPILL-policy owned movables still inside go to the drop location.
 /proc/own_spill_phase(atom/movable/AM)
@@ -357,7 +377,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 			own_unstamp(thing)
 			var/atom/drop = AM.drop_location()
 			if(!drop || QDELETED(drop))
-				qdel(thing)
+				qdel(thing) // ALLOW(lifecycle): the ownership framework disposes of owned values by policy
 			else
 				thing.forceMove(drop)
 				thing.update_icon()
@@ -366,7 +386,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 /proc/own_release_member(datum/holder, var_name, datum/value)
 	var/current = holder.vars[var_name]
 	if(current == value)
-		holder.vars[var_name] = null // ALLOW(ownership): lifecycle release
+		holder.vars[var_name] = null // ALLOW(api, ownership): lifecycle release
 	else if(islist(current))
 		var/list/L = current
 		L -= value

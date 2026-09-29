@@ -409,9 +409,8 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 			return TRUE
 
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The holder this refers to (a relation view: null once that is deleted).
 /datum/permissions_panel/proc/holder() as /datum/admins
 	return holder
 
-REL_PAIR(/datum/admins, dq_permissions_panel, holder)
-REL_PAIR(/datum/permissions_panel, holder, dq_permissions_panel)
+// The admin holder owns this panel (dq_permissions_panel); holder is a plain relation back.

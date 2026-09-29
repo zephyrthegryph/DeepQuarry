@@ -30,7 +30,7 @@
 /obj/item/integrated_circuit/output/video_camera/Initialize(mapload)
 	. = ..()
 	camera_network_id = "ic_cam_[sequential_id(/obj/item/integrated_circuit/output/video_camera)]"
-	camera = new(src, camera_network_id, see_dark)
+	own_set(src, "camera", new /obj/machinery/camera/intcircuit(src, camera_network_id, see_dark))
 	update_camera_name()
 
 
@@ -72,10 +72,10 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_
 	if(istype(W, /obj/item/integrated_circuit/input/video_camera_input))
 		var/obj/item/integrated_circuit/input/video_camera_input/input = W
 		if(src in input.paired_cameras)
-			LAZYREMOVE(input.paired_cameras, src)
+			rel_remove(input, "paired_cameras", src)
 			to_chat(user, span_notice("You unpair \the [input] from \the [src]."))
 		else
-			LAZYADD(input.paired_cameras, src)
+			rel_add(input, "paired_cameras", src)
 			to_chat(user, span_notice("You pair \the [input] with \the [src]. The input circuit will now receive this camera's feed."))
 		return INTERACTION_HANDLED_PASS
 	return FALSE
@@ -241,6 +241,6 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/input/video_camera_input, INTE
 		rel_clear(src, "last_camera_turf")
 	. = ..()
 
-/// LC-refs: the owner_circuit this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The owner_circuit this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/camera/intcircuit/proc/owner_circuit() as /obj/item/integrated_circuit/input/video_camera_input
 	return owner_circuit

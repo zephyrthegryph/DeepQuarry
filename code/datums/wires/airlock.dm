@@ -66,7 +66,7 @@
 			if(isnull(new_id))
 				return
 			if(new_id)
-				A.id_tag = new_id
+				keyed_set_id(A, "id_tag", new_id) // re-links the keyed relations matching on it
 				return TRUE
 
 		if("set_frequency")

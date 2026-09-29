@@ -62,7 +62,7 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 // Description: Links the catalog to hopefully the technomancer, so that only they can access it.
 /obj/item/technomancer_catalog/proc/bind_to_owner(mob/living/carbon/human/new_owner)
 	if(!owner && (GLOB.technomancers.is_antagonist(new_owner.mind) || universal)) // Universal catalogs
-		owner = new_owner
+		rel_set(src, "owner", new_owner)
 
 // Proc: New()
 // Parameters: 0

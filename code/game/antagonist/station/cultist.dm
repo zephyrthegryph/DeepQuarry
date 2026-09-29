@@ -47,16 +47,16 @@ GLOBAL_DATUM(cult, /datum/antagonist/cultist)
 	if(!..())
 		return
 
-	global_objectives = list()
+	own_clear(src, "global_objectives", OWN_DELETE)
 	if(prob(50))
-		LAZYOR(global_objectives, new /datum/objective/cult/survive)
+		own_add(src, "global_objectives", new /datum/objective/cult/survive)
 	else
-		LAZYOR(global_objectives, new /datum/objective/cult/eldergod)
+		own_add(src, "global_objectives", new /datum/objective/cult/eldergod)
 
 	var/datum/objective/cult/sacrifice/sacrifice = new()
 	sacrifice.find_target()
 	rel_set(src, "sacrifice_target", sacrifice.target)
-	LAZYOR(global_objectives, sacrifice)
+	own_add(src, "global_objectives", sacrifice)
 
 /datum/antagonist/cultist/equip(mob/living/carbon/human/player)
 
@@ -127,6 +127,6 @@ GLOBAL_DATUM(cult, /datum/antagonist/cultist)
 			return 0
 	return 1
 
-/// LC-refs: sacrifice target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Sacrifice target (a relation view).
 /datum/antagonist/cultist/proc/sacrifice_target() as /datum/mind
 	return sacrifice_target

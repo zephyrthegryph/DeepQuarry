@@ -18,7 +18,7 @@
 // writes skip all of this, which is why tools/ci/containment_lint.py forbids
 // them outside its allowlist.
 
-// ALLOW(scheduler, declared_refs): the containment engine's own per-atom ledger; made and torn down by ledger.dm / the destroy transaction
+// ALLOW(scheduler): the containment engine's own per-atom ledger; made and torn down by ledger.dm / the destroy transaction
 /atom/var/tmp/datum/ledger/ledger
 
 /// The ledger for `holder`, made on first use, synced. Null if it has no slots.
@@ -315,6 +315,10 @@
 	om_slot_left(holder, thing, def)
 	if(thing.has_slot_hooks)
 		thing.on_unslotted(holder, id, flags)
+	// The slot was its ownership (doc/rewrite/ownership.md sec 1.1): a CONTAINED / SPILL owned var
+	// naming it lets it go.
+	if(thing.own_holder_ref && !QDELETED(holder))
+		own_contents_exit(holder, thing)
 
 /// Moves a thing already inside between two of the holder's slots.
 /datum/ledger/proc/reslot(atom/movable/thing, new_id, flags = 0)

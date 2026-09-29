@@ -231,8 +231,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 	return loaded
 
 /obj/item/gun/magnetic/proc/use_ammo()
-	qdel(loaded)
-	own_take(src, "loaded")
+	own_clear(src, "loaded", OWN_DELETE)
 
 /obj/item/gun/magnetic/consume_next_projectile()
 

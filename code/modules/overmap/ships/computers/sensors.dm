@@ -102,7 +102,6 @@
 				if(get_dist(ui.user, src) > 1 || ui.user.blinded || !linked())
 					. = FALSE
 				else if(!viewing_overmap(ui.user) && linked())
-					if(!viewers) viewers = list() // List must exist for pass by reference to work
 					start_coordinated_remoteview(src, ui.user, linked(), viewers)
 				else
 					ui.user.reset_perspective()
@@ -280,6 +279,6 @@
 /obj/machinery/computer/ship/sensors/step_start_condition()
 	return TRUE // its sensor light
 
-/// LC-refs: the sensors this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the sensors var.
 /obj/machinery/computer/ship/sensors/proc/sensors() as /obj/machinery/shipsensors
 	return sensors

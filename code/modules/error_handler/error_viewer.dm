@@ -176,11 +176,11 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 	return is_skip_count ? name : ..()
 
 
-/// LC-refs: the usr_loc this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The usr_loc this refers to (a relation view: null once that is deleted).
 /datum/error_viewer/error_entry/proc/usr_loc() as /turf
 	return usr_loc
 
-/// LC-refs: the error_source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The error_source this refers to (a relation view: null once that is deleted).
 /datum/error_viewer/error_entry/proc/error_source() as /datum/error_viewer/error_source
 	return error_source
 

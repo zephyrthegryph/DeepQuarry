@@ -78,6 +78,6 @@
 
 	post_change_callbacks += list(om_callable(null, GLOBAL_PROC_REF(qdel), src))
 
-/// LC-refs: the item this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The item this refers to (a relation view: null once that is deleted).
 /datum/search_object/proc/item() as /atom
 	return item

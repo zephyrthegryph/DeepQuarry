@@ -101,7 +101,7 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 
 /// Registers an edge with this graph and gives it an id and a name.
 /datum/construction_graph/proc/add_edge(datum/interaction/construction/edge)
-	edge.graph = src
+	rel_set(edge, "graph", src) // the graph owns its edges (edges_by_id); graph is the back view
 	if(length(edge_requires))
 		edge.requires = (edge.requires || list()) + edge_requires
 	if(!edge.id)
@@ -286,7 +286,7 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 	var/list/spec = full_spec()
 	if(!length(spec))
 		return null
-	compiled = dq_predicate_for("construction:[id]", spec, "construction edge [id]")
+	rel_set(src, "compiled", dq_predicate_for("construction:[id]", spec, "construction edge [id]")) // a shared cached predicate
 	return compiled
 
 /datum/interaction/construction/why_not(mob/actor, atom/target, obj/item/held)
@@ -307,7 +307,7 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 /datum/interaction/construction/proc/alt_predicate()
 	if(compiled_alt || !length(requires))
 		return compiled_alt
-	compiled_alt = dq_predicate_for("construction-alt:[id]", requires, "construction edge [id] (alt item)")
+	rel_set(src, "compiled_alt", dq_predicate_for("construction-alt:[id]", requires, "construction edge [id] (alt item)")) // a shared cached predicate
 	return compiled_alt
 
 /// Whether `held` is one of the items standing in for the tool.

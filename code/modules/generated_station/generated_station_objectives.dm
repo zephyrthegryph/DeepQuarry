@@ -12,7 +12,7 @@
 	..()
 	for(var/obj/machinery/generated_station_department_control/control in S.station_controls)
 		if(control.department_id in department_ids)
-			tracked += control
+			rel_add(src, "tracked", control)
 	target = length(department_ids)
 
 /datum/expedition_objective/generated_department/proc/required_siblings_complete()
@@ -134,7 +134,7 @@
 	..()
 	var/turf/T = generated_department_turf("command-1")
 	if(T)
-		tracked += new /obj/item/generated_station_command_asset(T)
+		rel_add(src, "tracked", new /obj/item/generated_station_command_asset(T))
 
 /datum/expedition_objective/generated_asset/check()
 	progress = count_returned(/obj/item/generated_station_command_asset)
@@ -151,7 +151,7 @@
 	if(T)
 		var/obj/machinery/generated_station_upload_terminal/terminal = new(T)
 		terminal.station_id = S.station_spec.id
-		tracked += terminal
+		rel_add(src, "tracked", terminal)
 
 /datum/expedition_objective/generated_malware/check()
 	for(var/obj/machinery/generated_station_upload_terminal/terminal in tracked)
@@ -167,7 +167,7 @@
 	..()
 	var/turf/T = generated_department_turf("security-1")
 	if(T)
-		tracked += new /obj/structure/expedition_survivor_pod(T)
+		rel_add(src, "tracked", new /obj/structure/expedition_survivor_pod(T))
 
 /datum/expedition_objective/generated_rescue_prisoner/check()
 	progress = count_returned(/obj/structure/expedition_survivor_pod)
@@ -182,7 +182,7 @@
 	..()
 	var/turf/T = generated_department_turf("command-1")
 	if(T)
-		tracked += new /mob/living/carbon/human/generated_station_command_officer(T)
+		rel_add(src, "tracked", new /mob/living/carbon/human/generated_station_command_officer(T))
 
 /datum/expedition_objective/generated_capture_officer/check()
 	var/datum/shuttle/autodock/overmap/shuttle = site()?.assigned_shuttle()

@@ -82,7 +82,7 @@
 	[user && user.client ? "[user.client.key]" : "*no key*"] ([user ? "[user]" : "*null*"]) at [x],[y],[z].  They have joined as [new_voice.name]."
 	message_admins(msg)
 	log_game(msg)
-	new_voice.mind = candidate.mind			//Transfer the mind, if any.
+	rel_set(new_voice, "mind", candidate.mind) //Transfer the mind, if any.
 	new_voice.ckey = candidate.ckey			//Finally, bring the client over.
 	LAZYADD(voice_mobs, new_voice)
 	om_task_periodic(src, PERIODIC_SLOW) // the connection watchdog
@@ -375,7 +375,7 @@
 		return
 	to_chat(user, span_notice("[icon2html(src, user.client)] Please wait..."))
 
-	video_source = comm.camera
+	rel_set(src, "video_source", comm.camera)
 	comm.visible_message(span_danger("[icon2html(src,viewers(src))] New video connection from [comm]."))
 	update_active_camera_screen()
 	om_hook(video_source, /datum/om/event/movable_attempted_move, src, PROC_REF(update_active_camera_screen))
@@ -388,7 +388,7 @@
 /obj/item/communicator/proc/end_video(reason)
 	om_unhook(video_source, /datum/om/event/movable_attempted_move, src)
 	show_static()
-	video_source = null
+	rel_clear(src, "video_source")
 
 	if(reason)
 		visible_message(reason)

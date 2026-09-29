@@ -11,15 +11,15 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen/map_view_tg)
 	plane = MAP_VIEW_PLANE
 	del_on_map_removal = FALSE
 
-	// OM handles of all our viewers
+	// The ckeys of all our viewers (clients are not datums, so they are held by key)
 	var/list/viewing_clients
 	var/list/popup_plane_masters
 
 
-// hides itself from every client still viewing it (client refs are handles).
+// hides itself from every client still viewing it (held by ckey).
 /atom/movable/screen/map_view_tg/on_destroy(force)
-	for(var/client_ref in viewing_clients)
-		hide_from_client(om_resolve(client_ref))
+	for(var/viewer_ckey in viewing_clients)
+		hide_from_client(GLOB.directory[viewer_ckey])
 	..()
 
 /atom/movable/screen/map_view_tg/proc/generate_view(map_key)
@@ -65,7 +65,7 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen/map_view_tg)
 	for(var/plane in popup_plane_masters)
 		show_to.register_map_obj(plane)
 
-	LAZYOR(viewing_clients, om_handle(show_to))
+	LAZYOR(viewing_clients, show_to.ckey)
 
 /atom/movable/screen/map_view_tg/proc/hide_from(mob/hide_from)
 	hide_from_client(hide_from?.client)
@@ -74,3 +74,4 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen/map_view_tg)
 	if(!hide_from)
 		return
 	hide_from.clear_map(assigned_map)
+	LAZYREMOVE(viewing_clients, hide_from.ckey)

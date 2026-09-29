@@ -39,13 +39,17 @@
 	var/selection_dirty = TRUE
 
 	// --- Behavior aggregation ---
-	var/list/effective_behaviors = null  // typepath => om_handle(source atom) or null
+	var/list/effective_behaviors = null  // typepath => ref text of its source atom (see behavior_source()) or null
+	/// The source atoms effective_behaviors names (a relation list: a deleted source leaves it).
+	var/list/behavior_sources = null
 
 	// --- Per-behavior state ---
 	var/list/behavior_state = null       // typepath => list("cooldown" = world.time, "charges" = N)
 
 	// --- Personal relationships. Lazylist. ---
-	var/list/personal = null             // OM handle => list("disp", "expires")
+	var/list/personal = null             // ref text of the mob => list("disp", "expires"); valid only while the mob is in personal_mobs
+	/// The mobs personal names (a relation list: a deleted mob leaves it, and its entry goes stale).
+	var/list/personal_mobs = null
 
 	// --- Behavior trigger subscriptions ---
 	var/list/subscribed_signals = null   // DQAI_TRIGGER_* => list(behavior_typepath, ...)
@@ -54,7 +58,7 @@
 	var/last_attack_at = 0           // world.time of the most recent successful attack tick
 	var/last_juke_at = 0             // last world.time evasive_juke fired
 	var/tmp/turf/home_turf	// for guard / return_home behaviors
-	var/leader_ref = null  // for follow_leader / cooperative AI
+	var/mob/leader = null  // for follow_leader / cooperative AI (a relation view)
 	/// world.time when primary_threat first left view(). Used to mirror legacy
 	/// ai_holder lose_target_timeout: the mob keeps pursuing for
 	/// DQ_LOSE_THREAT_TIMEOUT deciseconds before dropping the target.
@@ -87,10 +91,11 @@
 	return ..()
 
 
-// effective_behaviors maps behaviour type -> om_handle() of its source atom (or null): the brain owns no source.
+// effective_behaviors maps behaviour type -> the ref text of its source atom (or null): the brain owns no source.
+// The atom itself is in behavior_sources, so a deleted source reads null through behavior_source().
 
 /// A running behaviour is stopped (it ends ai_busy on holder) and the loops and chunk sleep are
-/// cancelled while holder is still set; phase 4 then clears holder and holder.ai_brain (DECLARE_REF(..., BACK)).
+/// cancelled while holder is still set; phase 4 then clears holder and holder.ai_brain.
 /datum/ai_brain/lifecycle_prerelease()
 	cancel_chunk_sleep()
 	if(active_behavior_type)
@@ -104,10 +109,30 @@
 	return holder
 
 /datum/ai_brain/proc/get_leader()
-	return om_resolve(leader_ref)
+	return leader
 
-/datum/ai_brain/proc/set_leader(mob/leader)
-	leader_ref = leader ? om_handle(leader) : null
+/datum/ai_brain/proc/set_leader(mob/new_leader)
+	rel_set(src, "leader", new_leader)
+
+/// The atom granting behaviour `btype`, or null (innate, or the source was deleted).
+/datum/ai_brain/proc/behavior_source(btype)
+	var/key = effective_behaviors?[btype]
+	if(!key)
+		return null
+	var/atom/A = locate(key)
+	return (A in behavior_sources) ? A : null
+
+/// The personal-disposition entry for `other`, or null. Stale entries (a deleted mob) are dropped.
+/datum/ai_brain/proc/personal_entry(mob/other)
+	if(!personal || !other)
+		return null
+	var/key = ref(other)
+	var/list/entry = personal[key]
+	if(entry && !(other in personal_mobs))
+		personal -= key
+		UNSETEMPTY(personal)
+		return null
+	return entry
 
 // ---------------------------------------------------------------------------
 // Loop scheduling (scheduling.dm).
@@ -215,6 +240,7 @@
 		return
 	var/list/old = effective_behaviors
 	effective_behaviors = list()
+	rel_clear(src, "behavior_sources")
 
 	// Innate behaviors via the mob's getter — falls back to the default factory
 	// for simple_mobs that haven't been hand-tuned yet.
@@ -230,14 +256,16 @@
 		var/list/granted = I.get_dq_granted_behaviors()
 		if(granted)
 			for(var/btype as anything in granted)
-				effective_behaviors[btype] = om_handle(I)
+				rel_add(src, "behavior_sources", I)
+				effective_behaviors[btype] = ref(I)
 
 	// Modifier-granted (statuses, buffs).
 	for(var/effect_type in holder.body_effects())
 		var/list/granted = body_effect_def(effect_type).get_dq_granted_behaviors()
 		if(granted)
 			for(var/btype as anything in granted)
-				effective_behaviors[btype] = om_handle(holder)
+				rel_add(src, "behavior_sources", holder)
+				effective_behaviors[btype] = ref(holder)
 
 	// Inject behaviors implied by legacy-compat flags so callers can flip
 	// brain.returns_home = TRUE on a mob even after spawn and have it work.
@@ -293,7 +321,7 @@
 	var/any_pending = FALSE
 
 	for(var/btype as anything in effective_behaviors)
-		var/source = om_resolve(effective_behaviors[btype])
+		var/source = behavior_source(btype)
 		var/datum/ai_behavior/B = dq_get_behavior(btype)
 		if(B.requires_held_source && !source)
 			continue
@@ -439,10 +467,9 @@
 /datum/ai_brain/proc/should_retaliate_against(mob/attacker)
 	if(!attacker || !holder || attacker == holder)
 		return FALSE
-	if(personal)
-		var/list/entry = personal[om_handle(attacker)]
-		if(entry && entry["disp"] <= DQ_DISPOSITION_HOSTILE)
-			return TRUE
+	var/list/grudge = personal_entry(attacker)
+	if(grudge && grudge["disp"] <= DQ_DISPOSITION_HOSTILE)
+		return TRUE
 	if(holder.faction && attacker.faction == holder.faction)
 		dqai_log("[holder] brain: ignoring hit from faction-mate [attacker]")
 		return FALSE
@@ -458,15 +485,14 @@
 /datum/ai_brain/proc/disposition_to(mob/other)
 	if(!other || other == holder)
 		return DQ_DISPOSITION_ALLY
-	if(personal)
-		var/ref = om_handle(other)
-		var/list/entry = personal[ref]
-		if(entry)
-			if(entry["expires"] && entry["expires"] < world.time)
-				personal -= ref
-				UNSETEMPTY(personal)
-			else
-				return entry["disp"]
+	var/list/entry = personal_entry(other)
+	if(entry)
+		if(entry["expires"] && entry["expires"] < world.time)
+			personal -= ref(other)
+			UNSETEMPTY(personal)
+			rel_remove(src, "personal_mobs", other)
+		else
+			return entry["disp"]
 	var/datum/faction_data/data = dq_faction_data_for(holder.faction)
 	var/result
 	if(other.client)
@@ -488,7 +514,8 @@
 	if(!other)
 		return
 	LAZYINITLIST(personal)
-	personal[om_handle(other)] = list(
+	rel_add(src, "personal_mobs", other)
+	personal[ref(other)] = list(
 		"disp" = disposition,
 		"expires" = duration ? world.time + duration : 0,
 		"reason" = reason,
@@ -505,8 +532,12 @@
 	var/list/expired
 	for(var/ref in personal)
 		var/list/entry = personal[ref]
-		if(entry && entry["expires"] && entry["expires"] < now)
+		var/mob/M = locate(ref)
+		if(!(M in personal_mobs)) // the mob was deleted: its entry is stale
 			LAZYADD(expired, ref)
+		else if(entry && entry["expires"] && entry["expires"] < now)
+			LAZYADD(expired, ref)
+			rel_remove(src, "personal_mobs", M)
 	if(expired)
 		personal -= expired
 	UNSETEMPTY(personal)
@@ -603,14 +634,17 @@
 	if(istype(T, /datum/om/task/hold))
 		om_task_cancel(T, "done")
 
-/// LC-refs: the active_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the active_target this refers to (a relation view: null once it is deleted).
 /datum/ai_brain/proc/active_target() as /atom
 	return active_target
 
-/// LC-refs: null for innate, else the item/modifier granting it -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// null for innate, else the item/modifier granting it (a relation view: null once it is deleted).
 /datum/ai_brain/proc/active_source() as /atom
 	return active_source
 
-/// LC-refs: for guard / return_home behaviors -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// for guard / return_home behaviors (a relation view: null once it is deleted).
 /datum/ai_brain/proc/home_turf() as /turf
 	return home_turf
+
+REL_LIST(/datum/ai_brain, behavior_sources)
+REL_LIST(/datum/ai_brain, personal_mobs)

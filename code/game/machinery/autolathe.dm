@@ -43,20 +43,18 @@
 
 /obj/machinery/autolathe/Initialize(mapload)
 	own_set(src, "print_sound", new /datum/looping_sound/lathe_print(list(src), FALSE, TRUE))
-	materials = new /datum/material_container( \
+	own_set(src, "materials", new /datum/material_container( \
 		src, \
 		subtypesof(/datum/material), \
 		0, \
 		MATCONTAINER_EXAMINE, \
 		container_events = list((/datum/om/event/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/autolathe, AfterMaterialInsert)) \
-	)
+	))
 	. = ..()
 
 	set_wires(new /datum/wires/autolathe(src))
 
-	if(!GLOB.autounlock_techwebs[/datum/techweb/autounlocking/autolathe])
-		GLOB.autounlock_techwebs[/datum/techweb/autounlocking/autolathe] = new /datum/techweb/autounlocking/autolathe
-	stored_research_static = GLOB.autounlock_techwebs[/datum/techweb/autounlocking/autolathe]
+	stored_research_static = GLOB.research_service.autounlock_techweb(/datum/techweb/autounlocking/autolathe)
 
 	default_apply_parts()
 	RefreshParts()

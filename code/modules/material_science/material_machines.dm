@@ -639,10 +639,10 @@ ADMIN_VERB(debug_apply_material_treatment, R_DEBUG, "Apply Material Treatment", 
 		operator.put_in_hands(replacement)
 		to_chat(operator, span_notice("Applied [lowertext(selection)] to [replacement]."))
 
-/// LC-refs: the output_stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the output_stock this refers to (a relation view: null once it is deleted).
 /obj/machinery/material_furnace/proc/output_stock() as /obj/item/stack/material/processed_alloy
 	return output_stock
 
-/// LC-refs: the stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the stock this refers to (a relation view: null once it is deleted).
 /obj/structure/material_anvil/proc/stock() as /obj/item/stack/material/processed_alloy
 	return stock

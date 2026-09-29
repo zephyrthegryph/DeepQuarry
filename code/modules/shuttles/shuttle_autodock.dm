@@ -3,7 +3,8 @@
 // Note: Since all known shuttles extend this type, this really could just be built into /datum/shuttle
 // Why isn't it you ask? Eh, baystation did it this way and its convenient to keep the files smaller I guess.
 /datum/shuttle/autodock
-	var/in_use = null	// Tells the controller whether this shuttle needs processing, also attempts to prevent double-use
+	/// Relation view: who holds the launch lock (the user or console that launched it). Tells the controller whether this shuttle needs processing, also attempts to prevent double-use
+	var/tmp/datum/in_use
 	TIMESTAMP_VAR(last_dock_attempt_time)
 
 	var/docking_controller_tag = null // ID of the controller on the shuttle (If multiple, this is the default one)
@@ -43,8 +44,8 @@
 	if(landmark_transition_tag)
 		rel_set(src, "landmark_transition", SSshuttles.get_landmark(landmark_transition_tag))
 
-// Its docking controllers are released: shuttle_docking_controller is DECLARE_REF(..., HELD) and its
-// qdeleting hook goes with the OM teardown; the active controller is a handle.
+// Its docking controllers are relation views (cleared by the framework); the qdeleting hook goes
+// with the OM teardown.
 
 /datum/shuttle/autodock/proc/set_docking_codes(code)
 	docking_codes = code
@@ -75,7 +76,7 @@
 	if(shuttle_docking_controller)
 		om_hook(shuttle_docking_controller, /datum/om/event/qdeleting, src, PROC_REF(docking_controller_deleted))
 
-/// The active controller is an OM handle: it reads null once the controller is deleted, so it
+/// The active controller is a relation view: it reads null once the controller is deleted, so it
 /// needs no qdeleting hook.
 /datum/shuttle/autodock/proc/set_active_docking_controller(datum/embedded_program/docking/controller)
 	rel_set(src, "active_docking_controller", controller)
@@ -155,7 +156,7 @@
 	dock()
 
 	rel_clear(src, "next_location")
-	in_use = null	//release lock
+	rel_clear(src, "in_use")	//release lock
 
 /datum/shuttle/autodock/proc/get_travel_time()
 	return move_time
@@ -163,7 +164,7 @@
 /datum/shuttle/autodock/proc/process_launch()
 	if(!next_location() || !next_location().is_valid(src) || current_location().cannot_depart(src))
 		set_process_state(IDLE_STATE)
-		in_use = null
+		rel_clear(src, "in_use")
 		return
 	if (get_travel_time() && landmark_transition())
 		. = long_jump(next_location(), landmark_transition(), get_travel_time())
@@ -190,7 +191,7 @@
 /datum/shuttle/autodock/proc/launch(user)
 	if (!can_launch()) return
 
-	in_use = user	//obtain an exclusive lock on the shuttle
+	rel_set(src, "in_use", user)	//obtain an exclusive lock on the shuttle
 
 	set_process_state(WAIT_LAUNCH)
 	undock()
@@ -199,7 +200,7 @@
 /datum/shuttle/autodock/proc/force_launch(user)
 	if (!can_force()) return
 
-	in_use = user	//obtain an exclusive lock on the shuttle
+	rel_set(src, "in_use", user)	//obtain an exclusive lock on the shuttle
 
 	set_process_state(FORCE_LAUNCH)
 
@@ -209,7 +210,7 @@
 
 	moving_status = SHUTTLE_IDLE
 	set_process_state(WAIT_FINISH)
-	in_use = null
+	rel_clear(src, "in_use")
 
 	//whatever we were doing with docking: stop it, then redock
 	force_undock()
@@ -235,15 +236,15 @@
 /obj/effect/shuttle_landmark/transit
 	flags = SLANDMARK_FLAG_ZERO_G|SLANDMARK_FLAG_AUTOSET
 
-/// LC-refs: This is only used internally. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// This is only used internally.
 /datum/shuttle/autodock/proc/next_location() as /obj/effect/shuttle_landmark
 	return next_location
 
-/// LC-refs: Controller we are docked with (or trying to) -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Controller we are docked with (or trying to)
 /datum/shuttle/autodock/proc/active_docking_controller() as /datum/embedded_program/docking
 	return active_docking_controller
 
-/// LC-refs: the landmark resolved from the _tag var -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the landmark resolved from the _tag var
 /datum/shuttle/autodock/proc/landmark_transition() as /obj/effect/shuttle_landmark
 	return landmark_transition
 

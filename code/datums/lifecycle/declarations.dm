@@ -225,7 +225,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 			default = D.vars[default]
 		if(islist(current) || (isnull(current) && islist(default)))
 			var/list/spec = islist(current) ? current : default
-			D.vars[var_name] = null // ALLOW(ownership): declared-child plumbing replaces the spec with owned children
+			D.vars[var_name] = null // ALLOW(api, ownership): declared-child plumbing replaces the spec with owned children
 			for(var/datum/child as anything in lifecycle_decl_child_list(D, spec))
 				lifecycle_decl_adopt_child(D, var_name, child, TRUE)
 			continue
@@ -233,7 +233,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 			continue
 		var/path = ispath(current) ? current : default
 		if(ispath(path))
-			D.vars[var_name] = null // ALLOW(ownership): the type path placeholder is replaced by the owned child
+			D.vars[var_name] = null // ALLOW(api, ownership): the type path placeholder is replaced by the owned child
 			lifecycle_decl_adopt_child(D, var_name, new path(D), FALSE)
 
 /// A list of children from `spec`: paths become new instances (a `path = count` entry makes

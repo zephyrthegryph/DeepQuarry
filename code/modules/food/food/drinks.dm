@@ -41,7 +41,6 @@
 	return
 
 // micros inside drop out.
-OWN(/obj/item/reagent_containers/food/drinks, food_inserted_micros, OWN_SPILL)
 
 /// Old attackby. FALSE falls to the food handling, as the old ..() did.
 /obj/item/reagent_containers/food/drinks/proc/drinks_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -55,8 +54,6 @@ OWN(/obj/item/reagent_containers/food/drinks, food_inserted_micros, OWN_SPILL)
 
 		var/obj/item/holder/holder = W
 
-		if(!food_inserted_micros)
-			rel_set(src, "food_inserted_micros", list())
 
 		var/mob/living/living_mob = holder.held_mob
 
@@ -64,7 +61,7 @@ OWN(/obj/item/reagent_containers/food/drinks, food_inserted_micros, OWN_SPILL)
 		rel_clear(holder, "held_mob")
 		consume(holder, user)
 
-		rel_add(src, "food_inserted_micros", living_mob)
+		own_add(src, "food_inserted_micros", living_mob)
 
 		to_chat(user, span_warning("You drop [living_mob] into \the [src]."))
 		to_chat(living_mob, span_warning("[user] drops you into \the [src]."))
@@ -81,12 +78,10 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 /// Old MouseDrop_T.
 /obj/item/reagent_containers/food/drinks/proc/interaction_drag(mob/user, mob/living/M, datum/interaction/interaction)
 	if(!user.stat && istype(M) && (M == user) && Adjacent(M) && (M.get_effective_size(TRUE) <= 0.50) && food_can_insert_micro)
-		if(!food_inserted_micros)
-			rel_set(src, "food_inserted_micros", list())
 
 		M.forceMove(src)
 
-		rel_add(src, "food_inserted_micros", M)
+		own_add(src, "food_inserted_micros", M)
 
 		to_chat(user, span_warning("You climb into \the [src]."))
 		return INTERACTION_HANDLED_PASS
@@ -126,7 +121,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 
 			if(do_nom)
 				eater.vore_selected.nom_atom(micro)
-				rel_remove(src, "food_inserted_micros", micro)
+				own_take_member(src, "food_inserted_micros", micro)
 
 	if(!reagents.total_volume && changed)
 		eater.visible_message(span_notice("[eater] finishes drinking from \the [src]."),span_notice("You finish drinking from \the [src]."))

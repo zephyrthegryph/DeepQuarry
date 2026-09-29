@@ -354,14 +354,14 @@ GLOBAL_LIST_EMPTY(radial_menus)
 
 #undef NEXT_PAGE_ID
 
-/// LC-refs: the radial menu this element belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The radial menu this element belongs to (a relation view: null once that is deleted).
 /atom/movable/screen/radial/proc/parent() as /datum/radial_menu
 	return parent
 
-/// LC-refs: the client the menu is shown to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client the menu is shown to (a relation view: null once that is deleted).
 /datum/radial_menu/proc/current_user() as /client
 	return current_user
 
-/// LC-refs: the atom the menu is anchored to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom the menu is anchored to (a relation view: null once that is deleted).
 /datum/radial_menu/proc/anchor() as /atom
 	return anchor

@@ -122,7 +122,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 /obj/item/uav/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/modular_computer) && state == UAV_PAIRING)
 		var/obj/item/modular_computer/MC = I
-		LAZYDISTINCTADD(MC.paired_uavs, om_handle(src))
+		rel_add(MC, "paired_uavs", src)
 		playsound(src, 'sound/machines/buttonbeep.ogg', 50, 1)
 		visible_message(span_notice("[user] pairs [I] to [nickname]"))
 		toggle_pairing()

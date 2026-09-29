@@ -44,6 +44,6 @@ MATERIAL_MIX(/obj/item/debugger, list(MAT_STEEL = 50,MAT_GLASS = 20))
 			to_chat(user, span_notice("The device's software appears to be fine."))
 		return 1
 
-/// LC-refs: buffer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: buffer (reads null once it is gone).
 /obj/item/debugger/proc/buffer() as /obj/machinery/telecomms
 	return buffer

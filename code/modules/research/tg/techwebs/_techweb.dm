@@ -53,11 +53,9 @@
 	/// Completing these experiments will have a refund.
 	var/list/skipped_experiment_types
 
-	///All RD consoles connected to this individual techweb.
-	/// The list side of a backlist: DECLARE_REF(/obj/machinery/computer/rdconsole_tg, "stored_research", BACKLIST, "consoles_accessing").
+	///All RD consoles connected to this individual techweb (a relation list: a deleted console leaves it).
 	var/list/consoles_accessing
-	///All research servers connected to this individual techweb.
-	/// The list side of a backlist: DECLARE_REF(/obj/machinery/rnd/server, "stored_research", BACKLIST, "techweb_servers").
+	///All research servers connected to this individual techweb (a relation list: a deleted server leaves it).
 	var/list/techweb_servers
 
 	///Boolean on whether the techweb should generate research points overtime.
@@ -85,14 +83,13 @@
 	var/list/research_queue_nodes
 
 /datum/techweb/New()
-	GLOB.research_service.techwebs += src
 	for(var/i in GLOB.research_service.techweb_nodes_starting)
 		var/datum/techweb_node/DN = GLOB.research_service.techweb_node_by_id(i)
 		research_node(DN, TRUE, FALSE, FALSE)
 	hidden_nodes = GLOB.research_service.techweb_nodes_hidden.Copy()
 	return ..()
 
-/// Phase 2: leaves GLOB.research_service's techwebs.
+/// Phase 2: a registered web leaves GLOB.research_service's techwebs (scratch webs were never in it).
 /datum/techweb/lifecycle_dematerialize()
 	. = ..()
 	GLOB.research_service.techwebs -= src
@@ -581,4 +578,5 @@
 // 		if(experiment.type != paper_to_add.experiment_path)
 // 			continue
 
-
+REL_LIST(/datum/techweb, consoles_accessing)
+REL_LIST(/datum/techweb, techweb_servers)

@@ -23,7 +23,7 @@ Nothing else in the console has ID requirements.
 	icon_keyboard = "rd_key"
 	circuit = /obj/item/circuitboard/rdconsole
 	req_access = list(ACCESS_RESEARCH) // Locking and unlocking the console requires research access
-	/// Reference to global science techweb
+	/// Reference to global science techweb (a registered, shared web)
 	var/datum/techweb/stored_research
 	/// The stored technology disk, if present
 	var/obj/item/disk/tech_disk/t_disk
@@ -43,10 +43,8 @@ Nothing else in the console has ID requirements.
 	if(!stored_research)
 		CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research, src)
 	if(stored_research)
-		LAZYADD(stored_research.consoles_accessing, src)
+		rel_add(stored_research, "consoles_accessing", src)
 
-REL_PAIR(/obj/machinery/computer/rdconsole_tg, stored_research, consoles_accessing)
-REL_PAIR_LIST(/datum/techweb, consoles_accessing, stored_research)
 OWN(/obj/machinery/computer/rdconsole_tg, t_disk, OWN_SPILL)
 OWN(/obj/machinery/computer/rdconsole_tg, d_disk, OWN_SPILL)
 

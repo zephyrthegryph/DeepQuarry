@@ -450,6 +450,6 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 	for(var/mob/M in affected_mobs)
 		M.show_message(span_notice("The chilling wind suddenly stops..."), 1)
 
-/// LC-refs: client of whoever is using this datum -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Client of whoever is using this datum (a relation view: null once that is deleted).
 /datum/secrets_menu/proc/holder() as /client
 	return holder

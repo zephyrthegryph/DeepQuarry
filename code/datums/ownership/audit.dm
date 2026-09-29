@@ -91,7 +91,7 @@ GLOBAL_LIST_EMPTY(om_rec_audit_index)
 		// `probe` here stands in for the audit loop's own variable.
 		overhead = refcount(probe) - internal - 1
 		om_teardown_rest(probe)
-		qdel(probe)
+		qdel(probe) // ALLOW(lifecycle): the audit disposes of its own probe
 	return overhead
 
 /datum/own_audit_probe
@@ -102,12 +102,9 @@ GLOBAL_LIST_EMPTY(om_rec_audit_index)
 	log_world("OWN AUDIT: [length(lines)] finding\s")
 	om_after(om_global_owner(), OWN_AUDIT_INTERVAL, GLOBAL_PROC_REF(own_audit_periodic))
 
-/client/proc/cmd_ownership_audit()
-	set name = "Ownership Audit"
-	set category = "Debug.Investigate"
-	if(!check_rights(R_DEBUG))
-		return
+ADMIN_VERB(ownership_audit, R_DEBUG, "Ownership Audit", "Runs the ownership orphan audit now (the full index is kept in test builds only).", ADMIN_CATEGORY_DEBUG_MISC)
 	var/list/lines = own_audit(quiet = TRUE)
-	to_chat(usr, span_notice("Ownership audit: [length(lines)] finding\s[length(lines) ? "" : " (the index is only kept in test builds)"]."))
+	to_chat(user, span_notice("Ownership audit: [length(lines)] finding\s[length(lines) ? "" : " (the index is only kept in test builds)"]."))
 	for(var/line in lines)
-		to_chat(usr, line)
+		to_chat(user, line)
+	log_admin("[key_name(user)] ran the ownership audit: [length(lines)] finding\s.")

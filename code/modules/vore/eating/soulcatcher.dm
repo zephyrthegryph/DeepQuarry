@@ -17,20 +17,20 @@
 	var/delete_message = "Delete Message"
 
 // The soulgem's saved state is its saved vars (see code/datums/state/schema.dm);
-// the linked belly (an OM handle) is saved as the belly's name.
+// the linked belly (a relation view) is saved as the belly's name.
 /obj/soulgem/state_codecs()
 	return ..() + list("linked_belly" = /datum/state_codec/soulgem_belly)
 
-// v2: the linked belly var became linked_belly (LC-refs); saves before
-// that (v1, and pre-L1 legacy blobs) carry it as "linked_belly".
+// v2 saved the linked belly as "linked_belly_handle" (LC-refs); v3 is back to "linked_belly"
+// (a relation view). v1 and pre-L1 legacy blobs already carry it as "linked_belly".
 /obj/soulgem
-	state_version = 2
+	state_version = 3
 
-/obj/soulgem/state_migrate(list/vars, from_version)
+/obj/soulgem/state_migrate(list/saved, from_version)
 	..()
-	if(from_version < 2 && ("linked_belly" in vars))
-		vars["linked_belly"] = vars["linked_belly"]
-		vars -= "linked_belly"
+	if(from_version == 2 && ("linked_belly_handle" in saved))
+		saved["linked_belly"] = saved["linked_belly_handle"]
+		saved -= "linked_belly_handle"
 
 /obj/soulgem/Initialize(mapload)
 	. = ..()
@@ -41,7 +41,7 @@
 /datum/state_codec/soulgem_belly
 
 /datum/state_codec/soulgem_belly/encode(datum/owner, var_name, value, datum/state_context/ctx)
-	var/obj/belly/belly = om_resolve(value)
+	var/obj/belly/belly = value
 	return istype(belly) ? belly.name : null
 
 /datum/state_codec/soulgem_belly/decode(datum/owner, var_name, encoded, datum/state_context/ctx)
@@ -61,10 +61,13 @@
 // Allows to transfer the soulgem to the given mob
 /obj/soulgem/proc/transfer_self(mob/target)
 	own_clear(target, "soulgem", OWN_DELETE)
-	owner().soulgem = null
+	var/mob/living/old_owner = owner()
 	forceMove(target)
 	rel_set(src, "owner", target)
-	rel_set(target, "soulgem", src)
+	if(old_owner && old_owner.soulgem == src)
+		own_transfer(old_owner, "soulgem", target, "soulgem")
+	else
+		own_set(target, "soulgem", src)
 
 // Cleaning up our refs before deletion
 
@@ -135,7 +138,7 @@
 	//Create a new brain mob
 	var/mob/living/carbon/brain/caught_soul/vore/brainmob = new(src)
 	rel_set(brainmob, "gem", src)
-	own_set(brainmob, "container", src)
+	rel_set(brainmob, "container", src)
 	brainmob.status_set(EFFECT_MUTED, 0)
 	brainmob.ext_deaf = !flag_check(NIF_SC_ALLOW_EARS)
 	brainmob.ext_blind = !flag_check(NIF_SC_ALLOW_EYES)
@@ -491,7 +494,7 @@
 		rel_clear(src, "own_mind")
 	brainmobs -= M
 	rel_set(M, "gem", gem)
-	own_set(M, "container", gem)
+	rel_set(M, "container", gem)
 	gem.brainmobs += M
 	if(M == selected_soul())
 		update_selected_soul()
@@ -552,18 +555,18 @@
 	qdel(M)
 	return TRUE
 
-/// LC-refs: the own_mind this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the own_mind this refers to (a relation view: null once it is deleted).
 /obj/soulgem/proc/own_mind() as /datum
 	return own_mind
 
-/// LC-refs: the linked_belly this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the linked_belly this refers to (a relation view: null once it is deleted).
 /obj/soulgem/proc/linked_belly() as /obj/belly
 	return linked_belly
 
-/// LC-refs: the selected_soul this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the selected_soul this refers to (a relation view: null once it is deleted).
 /obj/soulgem/proc/selected_soul() as /mob
 	return selected_soul
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the owner this refers to (a relation view: null once it is deleted).
 /obj/soulgem/proc/owner() as /mob/living
 	return owner

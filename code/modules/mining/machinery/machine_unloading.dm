@@ -112,10 +112,10 @@
 					return
 	return
 
-/// LC-refs: the input this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the input var.
 /obj/machinery/mineral/unloading_machine/proc/input_marker() as /obj/machinery/mineral
 	return input
 
-/// LC-refs: the output this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the output var.
 /obj/machinery/mineral/unloading_machine/proc/output_marker() as /obj/machinery/mineral
 	return output

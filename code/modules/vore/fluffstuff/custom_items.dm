@@ -119,7 +119,7 @@
 			var/obj/item/gun/projectile/NN = N
 			var/obj/item/gun/projectile/OO = O
 			NN.magazine_type = OO.magazine_type
-			own_set(NN, "ammo_magazine", OO.ammo_magazine)
+			own_transfer(OO, "ammo_magazine", NN, "ammo_magazine")
 		if(istype(N,/obj/item/gun/energy/))
 			var/obj/item/gun/energy/NE = N
 			var/obj/item/gun/energy/OE = O
@@ -573,7 +573,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 		to_chat(user, span_notice("The [name] doesn't do anything."))
 		return
 
-	owner = user	//We're paired to this guy
+	rel_set(src, "owner", user)	//We are paired to this guy
 	owner_c = user.client	//This is his client
 	update_state(1)
 	to_chat(user, span_notice("The [name] glows pleasantly blue."))

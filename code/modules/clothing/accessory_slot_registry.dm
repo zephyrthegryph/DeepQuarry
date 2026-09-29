@@ -206,6 +206,6 @@ GLOBAL_DATUM_INIT(accessory_slot_registry, /datum/accessory_slot_registry, new)
 	register_slot(ACCESSORY_SLOT_RING,     "Ring")
 	register_slot(ACCESSORY_SLOT_WRIST,    "Wrist")
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the target this refers to (a relation view: null once it is deleted).
 /datum/accessory_stat_modifier/proc/target() as /obj/item/clothing
 	return target

@@ -1,6 +1,7 @@
 /datum/tgui_module/ship
 	var/tmp/obj/effect/overmap/visitable/ship/linked
-	var/list/viewers
+	var/list/viewers // Mobs in coordinated remote view (relation list, filled by /datum/remote_view/viewer_managed)
+	var/list/watchers //Who is viewing through us (a relation list, kept by look()/unlook())
 	var/extra_view = 0
 	var/map_view_used = FALSE
 
@@ -61,17 +62,19 @@
 		return 1
 
 /datum/tgui_module/ship/look(mob/user)
+	rel_add(src, "watchers", user)
 	user.set_viewsize(world.view + extra_view)
 	if(!map_view_used)
 		map_view_used = TRUE
 
 /datum/tgui_module/ship/unlook(mob/user)
+	rel_remove(src, "watchers", user)
 	user.set_viewsize() // reset to default
 	if(map_view_used)
 		map_view_used = FALSE
 
 /datum/tgui_module/ship/proc/viewing_overmap(mob/user)
-	return (om_handle(user) in viewers)
+	return (user in watchers)
 
 // Navigation
 /datum/tgui_module/ship/nav
@@ -134,7 +137,6 @@
 		if(!get_dist(ui.user, src) > 1 || ui.user.blinded || !linked())
 			return FALSE
 		else if(!viewing_overmap(ui.user))
-			if(!viewers) viewers = list() // List must exist for pass by reference to work
 			start_coordinated_remoteview(src, ui.user, linked(), viewers, /datum/remote_view_config/overmap_ship_control)
 		else
 			ui.user.reset_perspective()
@@ -424,7 +426,6 @@
 			if(ui.user.blinded || !linked())
 				return FALSE
 			else  if(!viewing_overmap(ui.user))
-				if(!viewers) viewers = list()
 				start_coordinated_remoteview(src, ui.user, linked(), viewers, /datum/remote_view_config/overmap_ship_control)
 			else
 				ui.user.reset_perspective()
@@ -523,10 +524,10 @@
 		host_mob.reset_perspective()
 		return
 
-/// LC-refs: the linked this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The linked this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/ship/proc/linked() as /obj/effect/overmap/visitable/ship
 	return linked
 
-/// LC-refs: the sensors this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The sensors this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/ship/fullmonty/proc/sensors() as /obj/machinery/shipsensors
 	return sensors

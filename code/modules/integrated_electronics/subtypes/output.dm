@@ -435,7 +435,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/output/text_to_speech/advance
 
 	if(istype(AM) && assembly())
 		if(AM in view(get_turf(src))) // It must be able to 'see' the object it will copy.
-			hologram = new(src)
+			own_set(src, "hologram", new /obj/effect/overlay/holographic(src))
 			var/icon/holo_icon = getHologramIcon(getFlatIcon(AM), no_color = TRUE)
 		//	holo_icon.GrayScale() // So it looks better colored.
 			if(holo_color) // The color pin should ensure that it is a valid hex.
@@ -450,7 +450,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/output/text_to_speech/advance
 	return FALSE
 
 /obj/item/integrated_circuit/output/holographic_projector/proc/destroy_hologram()
-	QDEL_NULL(hologram)
+	own_clear(src, "hologram", OWN_DELETE)
 
 
 	power_draw_idle = 0

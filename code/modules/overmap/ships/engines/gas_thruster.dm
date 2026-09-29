@@ -279,6 +279,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /d
 	update_icon()
 	update_underlays()
 
-/// LC-refs: the nozzle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the nozzle var.
 /datum/ship_engine/gas_thruster/proc/nozzle() as /obj/machinery/atmospherics/unary/engine
 	return nozzle

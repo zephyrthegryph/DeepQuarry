@@ -18,7 +18,7 @@
 	///Which directions does this turf block the vision of, taking into account both the turf's opacity and the movable opacity_sources.
 	var/directional_opacity = NONE
 	///Lazylist of movable atoms providing opacity sources.
-	// ALLOW(scheduler, declared_refs, object_keyed_lists): lighting hot path; strong many-to-many list kept in step by both sides (each opaque movable adds and removes itself on move and destroy). A handle per entry would cost a resolve per lighting update.
+	/// A relation list view (REL_LIST below): each opaque movable adds and removes itself on move, and a deleted one leaves it.
 	var/list/atom/movable/opacity_sources
 
 // Causes any affecting light sources to be queued for a visibility update, for example a door got opened.
@@ -86,7 +86,7 @@
 
 ///Proc to add movable sources of opacity on the turf and let it handle lighting code.
 /turf/proc/add_opacity_source(atom/movable/new_source)
-	LAZYADD(opacity_sources, new_source)
+	rel_add(src, "opacity_sources", new_source)
 	if(opacity)
 		return
 	recalculate_directional_opacity()
@@ -94,7 +94,7 @@
 
 ///Proc to remove movable sources of opacity on the turf and let it handle lighting code.
 /turf/proc/remove_opacity_source(atom/movable/old_source)
-	LAZYREMOVE(opacity_sources, old_source)
+	rel_remove(src, "opacity_sources", old_source)
 	if(opacity) //Still opaque, no need to worry on updating.
 		return
 	recalculate_directional_opacity()
@@ -155,3 +155,6 @@
 // Held: corners are shared by four turfs and freed by the lighting subsystem; turfs are never destroyed.
 
 
+
+/// A relation list view: an opaque movable deleted on the turf leaves it with its teardown.
+REL_LIST(/turf, opacity_sources)

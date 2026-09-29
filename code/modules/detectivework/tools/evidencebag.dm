@@ -98,6 +98,6 @@ DECLARE_INTERACTIONS(/obj/item/evidencebag, INTERACT_USE(null, PROC_REF(interact
 	if(stored_item())
 		user.examinate(stored_item())
 
-/// LC-refs: the stored_item this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the stored_item this refers to (a relation view: null once it is deleted).
 /obj/item/evidencebag/proc/stored_item() as /obj/item
 	return stored_item

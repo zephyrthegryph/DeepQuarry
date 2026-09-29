@@ -170,7 +170,7 @@ DECLARE_INTERACTIONS(/obj/item/mapping_unit, \
 
 /obj/item/mapping_unit/proc/first_run(mob/user)
 	own_set(src, "hud_datum", new /datum/mini_hud/mapper(user.hud_used, src))
-	own_set(src, "hud_item", hud_datum.screenobjs[1])
+	rel_set(src, "hud_item", hud_datum.screenobjs[1])
 
 /obj/item/mapping_unit/proc/show_device(mob/user)
 	if(!hud_datum)
@@ -198,10 +198,8 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 
 /obj/item/mapping_unit/proc/last_run()
 	stop_updates()
-	if(!QDELETED(hud_datum))
-		qdel(hud_datum)
-	own_take(src, "hud_datum")
-	own_take(src, "hud_item")
+	rel_clear(src, "hud_item")
+	own_clear(src, "hud_datum", OWN_DELETE) // its holder screen object goes with it
 
 /obj/item/mapping_unit/periodic_step()
 	if(!updating || (uses_power && !cell))

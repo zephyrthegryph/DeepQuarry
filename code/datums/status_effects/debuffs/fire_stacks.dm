@@ -45,7 +45,7 @@
 		qdel(src)
 		return
 
-	owner = new_owner
+	rel_set(src, "owner", new_owner)
 	set_stacks(new_stacks)
 
 	for(var/enemy_type in enemy_types)

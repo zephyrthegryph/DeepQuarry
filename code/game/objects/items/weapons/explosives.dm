@@ -155,6 +155,6 @@ EXTEND_INTERACTIONS(/obj/item/plastique/seismic, INTERACT_ITEM(null, PROC_REF(se
 	else
 		return ..()
 
-/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: target (reads null once it is gone).
 /obj/item/plastique/proc/target_ref() as /atom
 	return target

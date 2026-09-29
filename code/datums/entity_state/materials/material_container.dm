@@ -49,7 +49,7 @@
 	if(!isatom(new_owner))
 		log_world("material_container: created without an atom owner ([new_owner])")
 		return
-	owner = new_owner
+	rel_set(src, "owner", new_owner) // one-sided back view: the atom owns its container
 
 	materials = list()
 	max_amount = max(0, max_amt)

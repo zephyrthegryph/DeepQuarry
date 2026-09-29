@@ -216,6 +216,6 @@
 	if(!QDELETED(src))
 		qdel(src)
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The owner this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/law_manager/proc/owner() as /mob/living/silicon
 	return owner

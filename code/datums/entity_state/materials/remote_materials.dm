@@ -41,7 +41,7 @@ handles linking back and forth.
 	if (!isatom(new_owner))
 		log_world("remote_materials: created without an atom owner ([new_owner])")
 		return
-	owner = new_owner
+	rel_set(src, "owner", new_owner)
 
 	src.allow_standalone = allow_standalone
 	src.mat_container_flags = mat_container_flags
@@ -72,8 +72,8 @@ handles linking back and forth.
 	if (connect_to_silo)
 		rel_set(src, "silo", GLOB.ore_silo_default)
 		if (silo())
-			LAZYADD(silo().ore_connected_machines, src)
-			rel_set(src, "mat_container", silo().materials)
+			rel_add(silo, "ore_connected_machines", src)
+			rel_set(src, "mat_container", silo.materials)
 
 	if(!mat_container() && allow_standalone)
 		_MakeLocal()
@@ -90,16 +90,14 @@ handles linking back and forth.
 
 	rel_clear(src, "silo")
 
-	if(local_container)
-		own_clear(src, "local_container", OWN_DELETE)
-	local_container = new /datum/material_container( \
+	own_set(src, "local_container", new /datum/material_container( \
 		owner, \
 		subtypesof(/datum/material), \
 		local_size, \
 		mat_container_flags, \
 		container_events = mat_container_events, \
 		allowed_items = /obj/item/stack \
-	)
+	))
 	rel_set(src, "mat_container", local_container)
 
 /// Adds/Removes this connection from the silo
@@ -107,10 +105,11 @@ handles linking back and forth.
 	if(isnull(silo()))
 		return
 
-	if(!LAZYACCESS(silo().holds, src))
-		LAZYSET(silo().holds, src, TRUE)
+	// silo.holds is a relation list view of the connections on hold.
+	if(!(src in silo.holds))
+		rel_add(silo, "holds", src)
 	else
-		LAZYREMOVE(silo().holds, src)
+		rel_remove(silo, "holds", src)
 
 /**
  * Sets the storage size for local materials when not linked with silo
@@ -128,7 +127,7 @@ handles linking back and forth.
 	if(isnull(silo()))
 		return
 
-	LAZYREMOVE(silo().ore_connected_machines, src)
+	rel_remove(silo, "ore_connected_machines", src)
 	rel_clear(src, "silo")
 	rel_clear(src, "mat_container")
 
@@ -150,8 +149,8 @@ handles linking back and forth.
 		var/obj/machinery/ore_silo/new_silo = M.buffer()
 		var/datum/material_container/new_container = new_silo.materials
 		if (silo())
-			LAZYREMOVE(silo().ore_connected_machines, src)
-			LAZYREMOVE(silo().holds, src)
+			rel_remove(silo, "ore_connected_machines", src)
+			rel_remove(silo, "holds", src)
 		else if (mat_container())
 			//transfer all mats to silo. whatever cannot be transfered is dumped out as sheets
 			if(mat_container().total_amount())
@@ -162,10 +161,11 @@ handles linking back and forth.
 					new_container.materials[mat] += mat_amount
 					mat_container().materials[mat] = 0
 			if(mat_container() == local_container)
-				own_take(src, "local_container")
-			qdel(mat_container())
+				own_clear(src, "local_container", OWN_DELETE) // mat_container's view clears with it
+			else
+				qdel(mat_container())
 		rel_set(src, "silo", new_silo)
-		LAZYADD(silo().ore_connected_machines, src)
+		rel_add(new_silo, "ore_connected_machines", src)
 		rel_set(src, "mat_container", new_container)
 		to_chat(user, span_notice("You connect [owner] to [silo()] from the multitool's buffer."))
 		return TRUE
@@ -218,7 +218,7 @@ handles linking back and forth.
 
 /// returns TRUE if this connection put on hold by the silo
 /datum/remote_materials/proc/on_hold()
-	return check_z_level() ? LAZYACCESS(silo().holds, src) : FALSE
+	return check_z_level() ? (src in silo().holds) : FALSE
 
 /**
  * Check if this connection can use any materials from the silo()
@@ -304,10 +304,10 @@ handles linking back and forth.
 
 	return mat_container().insert_item(weapon, multiplier, owner)
 
-/// LC-refs: the silo we are connected to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The silo we are connected to (a relation view).
 /datum/remote_materials/proc/silo() as /obj/machinery/ore_silo
 	return silo
 
-/// LC-refs: the material container in use (the silo's or our local one) -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The material container in use (the silo's or our local one) (a relation view).
 /datum/remote_materials/proc/mat_container() as /datum/material_container
 	return mat_container

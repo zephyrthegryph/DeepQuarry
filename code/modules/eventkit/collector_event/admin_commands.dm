@@ -44,8 +44,8 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_event_collector, R_ADMIN, "Configure Collecto
 			target.calls_remaining = 0
 
 		if("Force Clear Blockers")
-			if(islist(REGISTRY_MEMBERS(REGISTRY_EVENT_COLLECTOR_BLOCKERS)[target.blocker_channel]))
-				for(var/obj/structure/event_collector_blocker/tofix in REGISTRY_MEMBERS(REGISTRY_EVENT_COLLECTOR_BLOCKERS)[target.blocker_channel])
+			for(var/obj/structure/event_collector_blocker/tofix as anything in REGISTRY_MEMBERS(REGISTRY_EVENT_COLLECTOR_BLOCKERS))
+				if(tofix.blocker_channel == target.blocker_channel)
 					tofix.fix()
 
 		if("Empty Stored Items")

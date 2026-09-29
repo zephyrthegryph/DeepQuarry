@@ -113,11 +113,11 @@
 	return GLOB.tgui_self_state
 
 
-/// LC-refs: the atmos_control this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atmos_control this refers to (a relation view: null once that is deleted).
 /datum/tgui_state/air_alarm_remote/proc/atmos_control() as /datum/tgui_module/atmos_control
 	return atmos_control
 
-/// LC-refs: the air_alarm this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The air_alarm this refers to (a relation view: null once that is deleted).
 /datum/tgui_state/air_alarm_remote/proc/air_alarm() as /obj/machinery/alarm
 	return air_alarm
 

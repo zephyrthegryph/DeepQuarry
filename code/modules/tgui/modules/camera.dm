@@ -313,10 +313,10 @@
 
 #undef DEFAULT_MAP_SIZE
 
-/// LC-refs: the active_camera this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The active_camera this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/camera/proc/active_camera() as /obj/machinery/camera
 	return active_camera
 
-/// LC-refs: the last_camera_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The last_camera_turf this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/camera/proc/last_camera_turf() as /turf
 	return last_camera_turf

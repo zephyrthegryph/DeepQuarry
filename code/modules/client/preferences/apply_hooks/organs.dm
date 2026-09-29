@@ -13,7 +13,8 @@
 	if(!ishuman(target))
 		return
 
-	target.synthetic = preferences.read_preference(/datum/preference/choiced/species) == "Protean" ? GLOB.all_robolimbs["protean"] : null
+	// the robolimb is a global definition: a relation view, not owned
+	rel_set(target, "synthetic", preferences.read_preference(/datum/preference/choiced/species) == "Protean" ? GLOB.all_robolimbs["protean"] : null)
 
 	var/list/pref_organ_data = preferences.read_preference(/datum/preference/organ_data)
 	var/list/pref_rlimb_data = preferences.read_preference(/datum/preference/rlimb_data)

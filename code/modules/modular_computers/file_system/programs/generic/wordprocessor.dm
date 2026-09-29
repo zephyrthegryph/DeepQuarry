@@ -43,12 +43,16 @@
 	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
 	if(!HDD)
 		return
-	HDD.remove_file(F)
+	if(!HDD.remove_file(F))
+		qdel(backup)
+		return 0
 	F.stored_data = loaded_data
 	F.calculate_size()
 	if(!HDD.store_file(F))
 		HDD.store_file(backup)
+		qdel(F) // detached by remove_file() and not stored again
 		return 0
+	qdel(backup)
 	is_edited = 0
 	return TRUE
 

@@ -942,14 +942,14 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 	layer = BELOW_MOB_LAYER
 	density = FALSE
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// Accessor for a shared definition.
 /obj/item/survivalcapsule/proc/template() as /datum/map_template/shelter
 	return template_static
 
-/// LC-refs: the door this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the door var.
 /obj/machinery/button/remote/airlock/survival_pod/proc/door() as /obj/machinery/door/airlock/voidcraft/survival_pod
 	return door
 
-/// LC-refs: the target_light this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the target_light var.
 /obj/machinery/light_switch/survival_pod/proc/target_light() as /obj/machinery/light
 	return target_light

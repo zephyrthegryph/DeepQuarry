@@ -116,6 +116,6 @@ DECLARE_INTERACTIONS(/obj/item/computer_hardware, INTERACT_ITEM(null, PROC_REF(i
 	if(damage_flag == FIRE || damage_flag == ACID)
 		return ..()
 
-/// LC-refs: the holder2 this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The holder2 this refers to (a relation view: null once that is deleted).
 /obj/item/computer_hardware/proc/holder2() as /obj/item/modular_computer
 	return holder2

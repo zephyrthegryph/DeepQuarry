@@ -22,7 +22,7 @@
 	var/authenticated = null
 	var/rank = null
 	var/screen = null
-	var/active1_handle
+	var/datum/data/record/active1
 	var/a_id = null
 	var/list/temp = null
 	var/printing = null
@@ -460,7 +460,7 @@
 	add_fingerprint(ui.user)
 
 	if(!GLOB.data_core.general.Find(active1()))
-		active1_handle = null
+		rel_clear(src, "active1")
 
 	. = TRUE
 	if(tgui_act_modal(action, params))
@@ -495,7 +495,7 @@
 				var/mob/living/silicon/robot/R = ui.user
 				rank = "[R.modtype] [R.braintype]"
 			if(authenticated)
-				active1_handle = null
+				rel_clear(src, "active1")
 				screen = GENERAL_RECORD_LIST
 		else
 			. = FALSE
@@ -514,14 +514,14 @@
 					own_take(src, "scan")
 				authenticated = null
 				screen = null
-				active1_handle = null
+				rel_clear(src, "active1")
 			if("screen")
 				var/requested_screen = text2num(params["screen"])
 				if(requested_screen in list(GENERAL_RECORD_FINANCES, GENERAL_RECORD_CONTRACTS))
 					screen = requested_screen
 				else
 					screen = clamp(requested_screen || 0, GENERAL_RECORD_LIST, GENERAL_RECORD_MAINT)
-				active1_handle = null
+				rel_clear(src, "active1")
 			if("contract_accept")
 				var/datum/contract/contract = SScontracts.contracts_by_id[params["id"]]
 				return accept_management_contract(contract, ui.user)
@@ -621,7 +621,7 @@
 							qdel(R)
 					set_temp("Employment record deleted.")
 					var/datum/data/record/deleted_record = active1()
-					active1_handle = null
+					rel_clear(src, "active1")
 					QDEL_NULL(deleted_record)
 			if("d_rec")
 				var/datum/data/record/general_record = locate(params["d_rec"] || "")
@@ -629,12 +629,12 @@
 					set_temp("Record not found.", "danger")
 					return
 
-				active1_handle = om_handle(general_record)
+				rel_set(src, "active1", general_record)
 				screen = GENERAL_RECORD_DATA
 			if("new")
 				if(GLOB.PDA_Manifest)
 					GLOB.PDA_Manifest.Cut()
-				active1_handle = om_handle(GLOB.data_core.CreateGeneralRecord())
+				rel_set(src, "active1", GLOB.data_core.CreateGeneralRecord())
 				screen = GENERAL_RECORD_DATA
 				set_temp("Employment record created.", "success")
 			if("del_c")
@@ -806,6 +806,6 @@
 
 OWN(/obj/machinery/computer/skills, scan, OWN_CONTAINED)
 
-/// LC-refs: active1 -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The selected record (a relation view).
 /obj/machinery/computer/skills/proc/active1() as /datum/data/record
-	return om_resolve(active1_handle)
+	return active1

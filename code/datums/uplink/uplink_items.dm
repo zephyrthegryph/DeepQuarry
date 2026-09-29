@@ -9,8 +9,9 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 /datum/uplink/New(type)
 	items_assoc = list()
 	items = init_subtypes(/datum/uplink_item)
-	own_set(src, "categories", init_subtypes(/datum/uplink_category))
-	own_set(src, "categories", dd_sortedObjectList(categories))
+	// The uplink owns its categories (a sorted list); items are registered uplink_items (shared).
+	for(var/datum/uplink_category/category as anything in dd_sortedObjectList(init_subtypes(/datum/uplink_category)))
+		own_add(src, "categories", category)
 
 	for(var/datum/uplink_item/item in items)
 		if(!item.name)

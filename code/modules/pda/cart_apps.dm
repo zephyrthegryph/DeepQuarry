@@ -305,14 +305,14 @@
 	JaniData["carts"] = CartData.len ? CartData : null
 	data["janitor"] = JaniData
 
-/// LC-refs: the general_records this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The general_records this refers to (a relation view: null once that is deleted).
 /datum/data/pda/app/crew_records/proc/general_records() as /datum/data/record
 	return general_records
 
-/// LC-refs: the medical_records this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The medical_records this refers to (a relation view: null once that is deleted).
 /datum/data/pda/app/crew_records/medical/proc/medical_records() as /datum/data/record
 	return medical_records
 
-/// LC-refs: the security_records this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The security_records this refers to (a relation view: null once that is deleted).
 /datum/data/pda/app/crew_records/security/proc/security_records() as /datum/data/record
 	return security_records

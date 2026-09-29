@@ -1255,7 +1255,7 @@
 
 
 		var/obj/item/paper/admin/P = new /obj/item/paper/admin( null ) //hopefully the null loc won't cause trouble for us
-		faxreply = P
+		own_set(src, "faxreply", P) // a replaced reply is deleted
 
 		rel_set(P, "admindatum", src)
 		P.origin = replyorigin
@@ -1490,7 +1490,7 @@
 					WANTED.body = src.admincaster_feed_message.body                   //Wanted desc
 					WANTED.backup_author = src.admincaster_signature                  //Submitted by
 					WANTED.is_admin_message = 1
-					GLOB.news_network.wanted_issue_owned = WANTED
+					own_set(GLOB.news_network, "wanted_issue_owned", WANTED)
 					for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 						NEWSCASTER.newsAlert()
 						NEWSCASTER.update_icon()
@@ -1508,7 +1508,7 @@
 		if(isnull(choice))
 			return
 		if(choice=="Confirm")
-			GLOB.news_network.wanted_issue_owned = null
+			own_clear(GLOB.news_network, "wanted_issue_owned", OWN_DELETE)
 			for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 				NEWSCASTER.update_icon()
 			src.admincaster_screen=17
@@ -1561,9 +1561,9 @@
 		if (src.admincaster_screen == 0)
 			if(src.admincaster_feed_channel())
 				rel_clear(src, "admincaster_feed_channel")
-				src.admincaster_scratch_channel = new /datum/feed_channel
+				own_set(src, "admincaster_scratch_channel", new /datum/feed_channel)
 			if(src.admincaster_feed_message)
-				src.admincaster_feed_message = new /datum/feed_message
+				own_set(src, "admincaster_feed_message", new /datum/feed_message)
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_show_channel"])

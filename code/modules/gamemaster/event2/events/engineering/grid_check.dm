@@ -41,6 +41,6 @@
 	// After that, the engine checks if a grid checker exists on the same powernet, and if so, it triggers a blackout.
 	// If not, lots of stuff breaks.  See code/modules/power/generator.dm for that piece of code.
 
-/// LC-refs: The turbine that will send a power spike. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The turbine that will send a power spike.
 /datum/event2/event/grid_check/proc/engine() as /obj/machinery/power/generator
 	return engine

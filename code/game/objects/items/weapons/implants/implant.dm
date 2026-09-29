@@ -385,7 +385,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 /obj/item/implant/chem/Initialize(mapload)
 	. = ..()
 	var/datum/reagents/R = new/datum/reagents(50)
-	reagents = R
+	own_set(src, "reagents", R)
 	rel_set(R, "my_atom", src)
 
 /obj/item/implant/chem/trigger(emote, source as mob)
@@ -872,12 +872,12 @@ EXTEND_INTERACTIONS(/obj/item/implanter/compliance, INTERACT_USE("Set laws", PRO
 	explosion(get_turf(imp_in()), -1, -1, 1, 3)
 	qdel(src)
 
-/// LC-refs: imp in -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: imp in (reads null once it is gone).
 /obj/item/implant/proc/imp_in() as /mob
 	return imp_in
 
-/// LC-refs: scanned -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: scanned (reads null once it is gone).
 /obj/item/implant/compressed/proc/scanned() as /obj/item
 	return scanned
 
-OWN(/obj/item/implant, part, OWN_CONTAINED)
+// part is the organ the implant sits in: a view kept by the organ's implant slot (containment), not owned.

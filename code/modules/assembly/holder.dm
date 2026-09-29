@@ -78,7 +78,7 @@
 /obj/item/assembly_holder/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
 		return
-	var/atom/movable/AM = om_resolve(WF)
+	var/atom/movable/AM = WF
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return
@@ -160,12 +160,15 @@
 		var/turf/T = get_turf(src)
 		if(!T)
 			return TRUE
-		if(a_left)
-			rel_clear(a_left, "holder")
-			a_left.forceMove(T)
-		if(a_right)
-			rel_clear(a_right, "holder")
-			a_right.forceMove(T)
+		// Taken out of the holder before it is consumed (CONTAINED: they must leave its slots first).
+		var/obj/item/assembly/left = own_take(src, "a_left")
+		var/obj/item/assembly/right = own_take(src, "a_right")
+		if(left)
+			rel_clear(left, "holder")
+			left.forceMove(T)
+		if(right)
+			rel_clear(right, "holder")
+			right.forceMove(T)
 		consume(src, user)
 	return TRUE
 
@@ -251,6 +254,6 @@
 OWN(/obj/item/assembly_holder, a_left, OWN_CONTAINED)
 OWN(/obj/item/assembly_holder, a_right, OWN_CONTAINED)
 
-/// LC-refs: the special_assembly this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the special_assembly this refers to (a relation view: null once it is deleted).
 /obj/item/assembly_holder/proc/special_assembly() as /obj
 	return special_assembly

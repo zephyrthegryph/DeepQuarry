@@ -151,6 +151,6 @@
 	if(sample())
 		icon_state += "slide"
 
-/// LC-refs: the sample this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the sample this refers to (a relation view: null once it is deleted).
 /obj/machinery/microscope/proc/sample() as /obj/item
 	return sample

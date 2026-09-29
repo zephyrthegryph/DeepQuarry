@@ -465,6 +465,6 @@
 	else if(src == GLOB.supply_service?.shuttle)
 		om_changed(GLOB.supply_service, CHANGE_SHUTTLE_SCHEDULE)
 
-/// LC-refs: Set current_location_tag, not this: New() resolves the tag into the landmark. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Set current_location_tag, not this: New() resolves the tag into the landmark.
 /datum/shuttle/proc/current_location() as /obj/effect/shuttle_landmark
 	return current_location

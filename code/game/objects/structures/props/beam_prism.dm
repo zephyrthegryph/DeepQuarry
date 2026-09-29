@@ -295,11 +295,7 @@ REL_PAIR_LIST(/obj/structure/prop/prismcontrol, my_turrets, remote_dial)
 /obj/structure/prop/prismcontrol/LateInitialize()
 	for(var/obj/structure/prop/prism/P in orange(src, world.view)) //Don't search a huge area.
 		if(P.dialID == dialID && !P.remote_dial && P.external_control_lock)
-			rel_add(src, "my_turrets", P)
-			rel_set(P, "remote_dial", src)
-
-// its turrets forget the dial.
-REL_PAIR_LIST(/obj/structure/prop/prismcontrol, my_turrets, remote_dial)
+			rel_add(src, "my_turrets", P) // the pair sets P.remote_dial
 
 /// The second half of a two-stage turn.
 /obj/structure/prop/prism/proc/rotate_second_stage(rotate_degrees)

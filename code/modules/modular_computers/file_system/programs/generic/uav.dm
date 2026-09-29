@@ -1,5 +1,7 @@
 /obj/item/modular_computer
-	var/list/paired_uavs //OM handles of the paired UAVs
+	var/list/paired_uavs //The paired UAVs (a relation list)
+
+REL_LIST(/obj/item/modular_computer, paired_uavs)
 
 /datum/computer_file/program/uav
 	filename = "rigger"

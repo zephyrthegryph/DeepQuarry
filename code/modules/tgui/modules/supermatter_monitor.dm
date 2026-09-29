@@ -104,6 +104,6 @@
 /datum/tgui_module/supermatter_monitor/ntos
 	ntos = TRUE
 
-/// LC-refs: Currently selected supermatter crystal. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Currently selected supermatter crystal. (a relation view: null once that is deleted).
 /datum/tgui_module/supermatter_monitor/proc/active() as /obj/machinery/power/supermatter
 	return active

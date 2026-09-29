@@ -32,6 +32,6 @@
 	chosen_door().aiControlDisabled = 1
 	chosen_door().update_icon()
 
-/// LC-refs: the chosen_door this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the chosen_door var.
 /datum/event/electrified_door/proc/chosen_door() as /obj/machinery/door/airlock
 	return chosen_door

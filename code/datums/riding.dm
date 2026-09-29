@@ -247,7 +247,7 @@
 		else
 			return null // This will runtime, but we want that since this is out of bounds.
 
-/// LC-refs: the atom being ridden -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom being ridden (a relation view).
 /datum/riding/proc/ridden() as /atom/movable
 	return ridden
 

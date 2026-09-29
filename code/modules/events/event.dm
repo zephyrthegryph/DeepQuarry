@@ -68,10 +68,12 @@
 	var/startedAt			= 0 //When this event started.
 	var/endedAt				= 0 //When this event ended.
 	var/processing_active 	= TRUE
-	var/tmp/event_meta_handle
+	/// Relation view: the event_meta this event was started from.
+	var/tmp/datum/event_meta/event_meta
 	var/list/affecting_z	= null // List of z-levels to affect, null lets the event choose (usally station_levels)
 	var/has_skybox_image	= FALSE // True if the skybox service should query this event for an image to put in the skybox.
-	var/tmp/victim_handle	// Ship this event is acting upon (If this is event is due to overmap travel).nt etc.
+	/// Relation view: the ship this event is acting upon, if due to overmap travel.
+	var/tmp/obj/effect/overmap/visitable/ship/victim	// Ship this event is acting upon (If this is event is due to overmap travel).nt etc.
 
 /datum/event/nothing
 
@@ -175,7 +177,7 @@ REGISTRY_MEMBERSHIP(/datum/event, REGISTRY_ACTIVE_EVENTS)
 		registry_join(REGISTRY_ACTIVE_EVENTS, src)
 		om_task_periodic(src, PERIODIC_SLOW)
 
-		event_meta_handle = om_handle(EM)
+		rel_set(src, "event_meta", EM)
 		severity = event_meta().severity
 		if(severity < EVENT_LEVEL_MUNDANE) severity = EVENT_LEVEL_MUNDANE
 		if(severity > EVENT_LEVEL_MAJOR) severity = EVENT_LEVEL_MAJOR
@@ -193,11 +195,11 @@ REGISTRY_MEMBERSHIP(/datum/event, REGISTRY_ACTIVE_EVENTS)
 		return victim().name
 	return station_name()
 
-/// LC-refs: the event_meta this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The event_meta this event was started from (a relation view).
 /datum/event/proc/event_meta() as /datum/event_meta
-	return om_resolve(event_meta_handle)
+	return event_meta
 
-/// LC-refs: Ship this event is acting upon (If this is event is due to overmap travel).nt etc. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The ship this event acts upon (a relation view: null once it is destroyed).
 /datum/event/proc/victim() as /obj/effect/overmap/visitable/ship
-	return om_resolve(victim_handle)
+	return victim
 

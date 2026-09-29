@@ -32,7 +32,7 @@
 			clone = ctx.materialize_datum(nested)
 		if(ctx.errors)
 			log_world("entity_clone: [D.type] refused: [jointext(ctx.errors, "; ")]")
-		qdel(ctx)
+		qdel(ctx) // ALLOW(lifecycle): entity_clone disposes of its scratch serializer context
 	if(clone && new_owner && slot)
 		if(islist(new_owner.vars[slot]))
 			own_add(new_owner, slot, clone)

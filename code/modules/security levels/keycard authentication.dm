@@ -34,9 +34,10 @@
 /obj/machinery/keycard_auth/proc/screwdriver_act_tool_done(mob/user)
 	to_chat(user, "You remove the faceplate from the [src]")
 	var/obj/structure/frame/A = new /obj/structure/frame(loc)
-	own_set(A, "circuit", circuit)
-	A.frame_type = circuit.board_type
-	own_take(src, "circuit")
+	var/obj/item/circuitboard/board = circuit
+	own_set(A, "frame_type", frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
+	board.forceMove(A)
+	own_move(board, A, "circuit") // the board goes from this machine to the frame
 	A.need_circuit = FALSE
 	A.pixel_x = pixel_x
 	A.pixel_y = pixel_y
@@ -48,7 +49,7 @@
 			C.forceMove(A)
 			continue
 		C.forceMove(loc)
-	A.forensic_data = forensic_data //carry crime data over.
+	own_transfer(src, "forensic_data", A, "forensic_data") //carry crime data over.
 	A.state = FRAME_WIRED
 	A.update_icon()
 	qdel(src)
@@ -85,7 +86,7 @@
 				//This is not the device that made the initial request. It is the device confirming the request.
 				if(event_source())
 					event_source().confirmed = 1
-					event_source().event_confirmed_by = om_handle(user)
+					rel_set(event_source(), "event_confirmed_by", user)
 			else if(screen == 2)
 				rel_set(src, "event_triggered_by", user)
 				broadcast_request(user) //This is the device making the initial event request. It needs to broadcast to other devices
@@ -232,14 +233,14 @@ GLOBAL_VAR_INIT(maint_all_access, FALSE)
 		return 1
 	return ..(M)
 
-/// LC-refs: the event_triggered_by this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The event_triggered_by (a relation view).
 /obj/machinery/keycard_auth/proc/event_triggered_by() as /mob
 	return event_triggered_by
 
-/// LC-refs: the event_confirmed_by this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The event_confirmed_by (a relation view).
 /obj/machinery/keycard_auth/proc/event_confirmed_by() as /mob
 	return event_confirmed_by
 
-/// LC-refs: the event_source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The event_source (a relation view).
 /obj/machinery/keycard_auth/proc/event_source() as /obj/machinery/keycard_auth
 	return event_source

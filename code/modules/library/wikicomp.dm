@@ -54,7 +54,7 @@
 
 /obj/machinery/librarywikicomp/tgui_close(mob/user)
 	. = ..()
-	P = null
+	rel_clear(src, "P")
 	sub_category= null
 	searchmode = null
 
@@ -157,7 +157,7 @@
 	switch(action)
 		if("closesearch")
 			if(!crash)
-				P = null
+				rel_clear(src, "P")
 				searchmode = null
 				sub_category = null
 				doc_title = "Click a search entry!"
@@ -169,7 +169,7 @@
 				var/new_mode = params["data"]
 				if(searchmode == new_mode)
 					return FALSE
-				P = null
+				rel_clear(src, "P")
 				doc_title = null
 				doc_body = null
 				searchmode = new_mode
@@ -199,7 +199,7 @@
 				var/new_subcat = params["data"]
 				if(sub_category == new_subcat)
 					return FALSE
-				P = null
+				rel_clear(src, "P")
 				doc_title = null
 				doc_body = null
 				sub_category = new_subcat
@@ -233,7 +233,7 @@
 				if(new_page == P)
 					return FALSE
 
-				P = new_page
+				rel_set(src, "P", new_page)
 
 				if(P)
 					doc_title = P.title

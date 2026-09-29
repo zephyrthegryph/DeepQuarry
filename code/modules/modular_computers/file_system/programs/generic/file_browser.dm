@@ -80,15 +80,21 @@
 
 			if(F)
 				var/datum/computer_file/data/backup = F.clone()
-				F.holder().remove_file(F)
+				if(!F.holder().remove_file(F))
+					qdel(backup)
+					return TRUE
 				F.stored_data = newtext
 				F.calculate_size()
 				// We can't store the updated file, it's probably too large. Print an error and restore backed up version.
 				// This is mostly intended to prevent people from losing texts they spent lot of time working on due to running out of space.
 				// They will be able to copy-paste the text from error screen and store it in notepad or something.
-				if(!F.holder().store_file(F))
+				var/obj/item/computer_hardware/hard_drive/drive = F.holder()
+				if(!drive.store_file(F))
 					error = "I/O error: Unable to overwrite file. Hard drive is probably full. You may want to backup your changes before closing this window:<br><br>[html_decode(F.stored_data)]<br><br>"
-					F.holder().store_file(backup)
+					drive.store_file(backup)
+					qdel(F) // detached by remove_file() and not stored again
+				else
+					qdel(backup)
 				return TRUE
 		if("PRG_printfile")
 			if(!HDD)
@@ -111,7 +117,8 @@
 			var/datum/computer_file/file = computer().find_file_by_uid(params["uid"])
 			if(!file || file.undeletable)
 				return
-			file.holder().remove_file(file)
+			if(file.holder().remove_file(file))
+				qdel(file)
 			return TRUE
 		if("PRG_rename")
 			if(!HDD)

@@ -241,12 +241,12 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		to_chat(src, span_red("If the title screen is black, resources are still downloading. Please be patient until the title screen appears."))
 
 	GLOB.clients += src // ALLOW(registry): /client is not a datum: no qdel, no registry hooks
-	GLOB.directory[ckey] = src
+	GLOB.directory[ckey] = src // ALLOW(registry): GLOB.directory maps ckey -> client; clients are not datums
 
-	if(GLOB.persistent_clients_by_ckey[ckey])
-		rel_set(src, "persistent_client", GLOB.persistent_clients_by_ckey[ckey])
+	if(persistent_client_for(ckey))
+		persistent_client = persistent_client_for(ckey) // ALLOW(ownership): /client is not a datum; it holds these directly
 	else
-		rel_set(src, "persistent_client", new /datum/persistent_client(ckey))
+		persistent_client = new /datum/persistent_client(ckey) // ALLOW(ownership): /client is not a datum; it holds these directly
 	persistent_client.set_client(src)
 
 	if (CONFIG_GET(flag/chatlog_database_backend))
@@ -254,25 +254,25 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	winset(src, null, list("browser-options" = "find,refresh"))
 	// Instantiate stat panel
-	own_set(src, "stat_panel", new /datum/tgui_window(src, "statbrowser"))
+	stat_panel = new /datum/tgui_window(src, "statbrowser") // ALLOW(ownership): /client is not a datum; it holds these directly
 	stat_panel.subscribe(src, PROC_REF(on_stat_panel_message))
 
 	// Instantiate tgui panel
-	own_set(src, "tgui_say", new /datum/tgui_say(src, "tgui_say"))
-	own_set(src, "tgui_shocker", new /datum/tgui_shock(src, "tgui_shock"))
+	tgui_say = new /datum/tgui_say(src, "tgui_say") // ALLOW(ownership): /client is not a datum; it holds these directly
+	tgui_shocker = new /datum/tgui_shock(src, "tgui_shock") // ALLOW(ownership): /client is not a datum; it holds these directly
 	initialize_commandbar_spy()
-	own_set(src, "tgui_panel", new /datum/tgui_panel(src, "browseroutput"))
+	tgui_panel = new /datum/tgui_panel(src, "browseroutput") // ALLOW(ownership): /client is not a datum; it holds these directly
 
 	GLOB.tickets.ClientLogin(src)
 
 	//preferences datum - also holds some persistant data for the client (because we may as well keep these datums to a minimum)
-	rel_set(src, "prefs", GLOB.preferences_datums[ckey])
+	prefs = GLOB.preferences_datums[ckey] // ALLOW(ownership): /client is not a datum; it holds these directly
 	if(prefs)
 		rel_set(prefs, "client", src)
 		prefs.load_savefile() // just to make sure we have the latest data
 		prefs.apply_all_client_preferences()
 	else
-		rel_set(src, "prefs", new /datum/preferences(src))
+		prefs = new /datum/preferences(src) // ALLOW(ownership): /client is not a datum; it holds these directly
 		GLOB.preferences_datums[ckey] = prefs
 	prefs.last_ip = address				//these are gonna be used for banning
 	prefs.last_id = computer_id			//these are gonna be used for banning
@@ -280,7 +280,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	var/full_version = "[byond_version].[byond_build ? byond_build : "xxx"]"
 	log_access("Login: [key_name(src)] from [address ? address : "localhost"]-[computer_id] || BYOND v[full_version]")
 
-	own_set(src, "prefs_vr", new/datum/vore_preferences(src))
+	prefs_vr = new/datum/vore_preferences(src) // ALLOW(ownership): /client is not a datum; it holds these directly
 
 	. = ..()	//calls mob.Login()
 
@@ -333,7 +333,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	tgui_say.initialize()
 	tgui_shocker.initialize()
 
-	own_set(src, "loot_panel", new /datum/lootpanel(src))
+	loot_panel = new /datum/lootpanel(src) // ALLOW(ownership): /client is not a datum; it holds these directly
 
 	connection_time = world.time
 	connection_realtime = world.realtime
@@ -353,7 +353,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	send_resources()
 
 	if(!void)
-		own_set(src, "void", new /atom/movable/screen/click_catcher())
+		void = new /atom/movable/screen/click_catcher() // ALLOW(ownership): /client is not a datum; it holds these directly
 	screen += void
 
 	attempt_auto_fit_viewport()
@@ -379,6 +379,8 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 // ALLOW(lifecycle): a client logs out of the directory, admins and tickets.
 /client/Destroy()
+	// A client is not a datum: it is the one owner of its panels, windows and screens by design,
+	// so they are plain vars, deleted here by hand.
 	GLOB.directory -= ckey
 	GLOB.clients -= src
 	persistent_client?.set_client(null)
@@ -389,14 +391,19 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		rel_clear(holder, "owner")
 		GLOB.admins -= src
 	if(skybox)
-		own_clear(src, "skybox", OWN_DELETE)
+		qdel(skybox)
+		skybox = null // ALLOW(ownership): /client is not a datum; it holds these directly
 	if(fakeConversations)
-		own_clear(src, "fakeConversations", OWN_DELETE)
-	own_clear(src, "loot_panel", OWN_DELETE)
+		qdel(fakeConversations)
+		fakeConversations = null // ALLOW(ownership): /client is not a datum; it holds these directly
+	qdel(loot_panel)
+	loot_panel = null // ALLOW(ownership): /client is not a datum; it holds these directly
 	// Client-scoped persistent UIs: their /datum/tgui entries would otherwise
 	// linger in SStgui.all_uis for every reconnect.
-	own_clear(src, "tooltips", OWN_DELETE)
-	own_clear(src, "media", OWN_DELETE)
+	qdel(tooltips)
+	tooltips = null // ALLOW(ownership): /client is not a datum; it holds these directly
+	qdel(media)
+	media = null // ALLOW(ownership): /client is not a datum; it holds these directly
 	..()
 	return QDEL_HINT_HARDDEL_NOW
 
@@ -940,7 +947,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 /client/proc/set_eye(new_eye)
 	if(new_eye == eye)
 		return
-	var/atom/old_eye = eye
 	eye = new_eye
 
 /mob/proc/is_remote_viewing()

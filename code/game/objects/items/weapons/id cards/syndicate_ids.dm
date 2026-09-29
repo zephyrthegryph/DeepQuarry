@@ -5,7 +5,7 @@
 	var/electronic_warfare = 1
 	var/mob/registered_user
 
-	var/datum/tgui_module/agentcard/agentcard_module // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/datum/tgui_module/agentcard/agentcard_module
 
 // agentcard_module is rebuilt fresh by Initialize() every time (like reset_icon());
 // registered_user is a mob ref (and a live observer registration) (C5).
@@ -116,6 +116,6 @@ EXTEND_INTERACTIONS(/obj/item/card/id/syndicate, INTERACT_USE("Edit or show", PR
 	icon_state = "syndicate-id"
 	access = list(ACCESS_SYNDICATE, ACCESS_EXTERNAL_AIRLOCKS)
 
-/// LC-refs: registered user -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: registered user (reads null once it is gone).
 /obj/item/card/id/syndicate/proc/registered_user() as /mob
 	return registered_user

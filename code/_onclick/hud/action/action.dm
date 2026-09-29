@@ -20,8 +20,9 @@
 	var/check_flags = NONE
 	/// Whether the button becomes transparent when it can't be used or just reddened
 	var/transparent_when_unavailable = TRUE
-	/// The OM handle of every hud viewing our action button -> the unique button movable (owned) they view.
-	var/list/viewers = list() // ALLOW(instance_list): d: per-action viewer set; every shown action has viewers
+	/// Our buttons (owned), one per viewing hud; each button's `our_hud` names the hud it is shown on.
+	/// Read through button_for(hud).
+	var/list/viewers
 	/// If TRUE, this action button will be shown to observers / other mobs who view from this action's owner's eyes.
 	/// Used in [/mob/proc/show_other_mob_action_buttons]
 	/// (Not really, this behavior is unimplemented)
@@ -72,7 +73,14 @@
 	if(QDELETED(source) || QDELETED(target))
 		source.Remove(target)
 
-/// The action's buttons (owned) are the values of `viewers`, keyed by hud handle.
+/// The button (owned, in `viewers`) shown on `hud`, or null.
+/datum/action/proc/button_for(datum/hud/hud)
+	if(!hud)
+		return null
+	for(var/atom/movable/screen/movable/action_button/button as anything in viewers)
+		if(button.our_hud == hud)
+			return button
+	return null
 
 /// Grants the action to the passed mob, making it the owner
 /datum/action/proc/Grant(mob/grant_to)
@@ -94,16 +102,15 @@
 /datum/action/proc/Remove(mob/remove_from)
 	SHOULD_CALL_PARENT(TRUE)
 
-	for(var/hud_handle in viewers)
-		var/datum/hud/hud = om_resolve(hud_handle)
+	for(var/atom/movable/screen/movable/action_button/button as anything in viewers?.Copy())
+		var/datum/hud/hud = button.our_hud
 		var/mob/viewer = hud?.mymob()
 		if(!viewer)
 			continue
 		HideFrom(viewer)
 	if(remove_from)
 		LAZYREMOVE(remove_from.actions, src) // We aren't always properly inserted into the viewers list, gotta make sure that action's cleared
-	QDEL_LIST_ASSOC_VAL(viewers) // whatever HideFrom() couldn't reach
-	viewers = list()
+	own_clear(src, "viewers", OWN_DELETE) // whatever HideFrom() couldn't reach
 
 	// While the owner relation is being torn down (either end deleted) the edge is already gone.
 	var/mob/owner = action_owner() || remove_from
@@ -139,8 +146,8 @@
 
 /// Builds / updates all buttons we have shared or given out
 /datum/action/proc/build_all_button_icons(update_flags = ALL, force)
-	for(var/hud_handle in viewers)
-		build_button_icon(viewers[hud_handle], update_flags, force)
+	for(var/atom/movable/screen/movable/action_button/button as anything in viewers)
+		build_button_icon(button, update_flags, force)
 
 /**
  * Builds the icon of the button.
@@ -262,7 +269,7 @@
 /// Puts our action in their actions list and shows them the button.
 /datum/action/proc/GiveAction(mob/viewer)
 	var/datum/hud/our_hud = viewer.hud_used
-	if(our_hud && viewers[om_handle(our_hud)]) // Already have a copy of us? go away
+	if(our_hud && button_for(our_hud)) // Already have a copy of us? go away
 		return
 
 	LAZYOR(viewer.actions, src) // Move this in
@@ -271,15 +278,14 @@
 /// Adds our action button to the screen of the passed viewer.
 /datum/action/proc/ShowTo(mob/viewer)
 	var/datum/hud/our_hud = viewer.hud_used
-	if(!our_hud || viewers[om_handle(our_hud)]) // There's no point in this if you have no hud in the first place
+	if(!our_hud || button_for(our_hud)) // There's no point in this if you have no hud in the first place
 		return
 
 	var/atom/movable/screen/movable/action_button/button = create_button()
 	SetId(button, viewer)
 
-	var/hud_handle = om_handle(our_hud)
-	rel_set(button, "our_hud", hud_handle)
-	viewers[hud_handle] = button
+	rel_set(button, "our_hud", our_hud)
+	own_add(src, "viewers", button)
 	if(viewer.client)
 		viewer.client.screen += button
 
@@ -289,10 +295,10 @@
 /// Removes our action from the passed viewer.
 /datum/action/proc/HideFrom(mob/viewer)
 	var/datum/hud/our_hud = viewer.hud_used
-	var/atom/movable/screen/movable/action_button/button = our_hud && viewers[om_handle(our_hud)]
+	var/atom/movable/screen/movable/action_button/button = button_for(our_hud)
 	LAZYREMOVE(viewer.actions, src)
 	if(button)
-		qdel(button)
+		own_remove(src, "viewers", button)
 
 /// Creates an action button movable for the passed mob, and returns it.
 /datum/action/proc/create_button()
@@ -307,7 +313,7 @@
 	for(var/datum/action/action in owner.actions)
 		if(action == src) // This could be us, which is dumb
 			continue
-		var/atom/movable/screen/movable/action_button/button = owner.hud_used && action.viewers[om_handle(owner.hud_used)]
+		var/atom/movable/screen/movable/action_button/button = action.button_for(owner.hud_used)
 		if(action.name == name && button?.id)
 			bitfield |= button.id
 

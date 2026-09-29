@@ -36,7 +36,7 @@ why aren't these accessories?
 		return
 
 	rel_set(src, "linked", to_link)
-	linked().linked = om_handle(src)
+	// REL_PAIR(linked, linked): the partner now names us back.
 
 /obj/item/remote_scene_tool/proc/register_to_mob(mob)
 	if(worn_mob() == mob)
@@ -206,11 +206,11 @@ EXTEND_INTERACTIONS(/obj/item/remote_scene_tool, INTERACT_VERB("Summon Counterpa
 	link_to(newrst)
 	newrst.link_to(src)
 
-/// LC-refs: the linked this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the linked var.
 /obj/item/remote_scene_tool/proc/linked() as /obj/item/remote_scene_tool
 	return linked
 
-/// LC-refs: the worn_mob this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the worn_mob var.
 /obj/item/remote_scene_tool/proc/worn_mob() as /mob
 	return worn_mob
 

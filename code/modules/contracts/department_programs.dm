@@ -413,10 +413,10 @@
 	projects.second_filter.require_number("value", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 100)
 
 
-/// LC-refs: the thermal_requirement this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the thermal_requirement this refers to (a relation view: null once it is deleted).
 /datum/contract/social/alternative_fuel_trial/proc/thermal_requirement() as /datum/contract_requirement/sustained_event
 	return thermal_requirement
 
-/// LC-refs: the cycle_requirement this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the cycle_requirement this refers to (a relation view: null once it is deleted).
 /datum/contract/social/balanced_operations/proc/cycle_requirement() as /datum/contract_requirement/event_count
 	return cycle_requirement

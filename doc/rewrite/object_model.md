@@ -56,7 +56,7 @@ start from nothing.
 | Piece | Where | Becomes |
 |---|---|---|
 | Containment ledger, slots, latent state | `code/datums/containment/` (C1–C11) | the ownership layer (§4) |
-| Destroy transaction, links, verbs | `rewrite/ledger-joint`: `code/datums/lifecycle/transaction.dm`, `links.dm`, `verbs.dm` (LC1–LC3) | the destroy pipeline (§14); `DECLARE_REF` links become relation kinds |
+| Destroy transaction, links, verbs | `rewrite/ledger-joint`: `code/datums/lifecycle/transaction.dm`, `links.dm`, `verbs.dm` (LC1–LC3) | the destroy pipeline (§14); declared references became the ownership model ([ownership.md](ownership.md)) |
 | Grants | `rewrite/grants`: `code/datums/grants/` | one relation kind with apply/unapply hooks (§5.6) |
 | Abilities (P5) | `code/datums/abilities/ability.dm` | behaviours granted through grants |
 | Compact interactions (I7) | `code/datums/interactions/` | archetype interaction tables (§6) |
@@ -106,11 +106,25 @@ services and locations.
   slots: `SPILL` where it makes sense, `DELETE`, `TRANSFER(resolver)`,
   `TO_LATENT` and `KEEP_WITH`.
 
+**As built** ([ownership.md](ownership.md)): every object var is own / shared / proto /
+relation. An owned entity carries its owner stamp (`owner_of()`); owned vars are written only
+through `own_set` / `own_take` / `own_add` / `own_transfer` / `own_move` / `own_clear`, with
+policies `OWN_DELETE`, `OWN_SPILL` and `OWN_CONTAINED` (contents left to the ledger slot).
+Registered singletons (`REGISTRY_TYPE`) are shared and immortal; `PROTO` vars are copy-on-write.
+The orphan audit and phase 8 report anything that escapes the tree.
+
 ## 5. Relations
 
 Every non-owning reference to an entity is a **relation**: a typed edge
 between two ends, owned by the framework. Direct assignment to a relation
 variable is forbidden (dm-health: framework-write-only, §18).
+
+**As built** ([ownership.md](ownership.md) §4): light edges are relation *views*, plain vars the
+framework maintains (`rel_set` / `rel_add`, `REL_PAIR`, `REL_PAIR_LIST`, `REL_SET`, `REL_KEYED`),
+with a weak reverse index on the target; rich edges are the `/datum/om/relation` kinds below, with
+`shape`, `holds_while`, `source_view` / `target_view`, `undo_list`, `derived_view`,
+`on_member_leave` / `om_leave()` and `clone_follows`. Handles are core-internal; `CALLBACK` is
+replaced by `om_callable()` / `om_run()`.
 
 ### 5.1 Relation kinds are DEF types
 
@@ -925,7 +939,7 @@ differential tests (old against new on the same inputs), not by inspection.
 
 | Track | Scope | Depends on |
 |---|---|---|
-| **A: Kinds, ownership, relations** | `object_kind`; the ledger generalised to datum slots; relation kinds (light and rich edges, shapes, `holds_while`, hooks, lifetime policies); `link`/`unlink`/`linked`; derived spatial relations; `DECLARE_REF` from LC2 re-expressed as relation kinds; grants re-expressed as a relation kind; destroy-pipeline changes (§14) | LC1–LC3 (built) |
+| **A: Kinds, ownership, relations** | `object_kind`; the ledger generalised to datum slots; relation kinds (light and rich edges, shapes, `holds_while`, hooks, lifetime policies); `link`/`unlink`/`linked`; derived spatial relations; `DECLARE_REF` from LC2 replaced by own / shared / proto / relations ([ownership.md](ownership.md), built); grants re-expressed as a relation kind; destroy-pipeline changes (§14) | LC1–LC3 (built) |
 | **B: Scheduler** | wakes; owned timers; Poisson timers; the watch evaluator (DM side; Rust side from `rust_architecture.md`); rate fields and contributions; periodic behaviours with staggering; tasks and prompts with stamps; the test clock; the missed-wake audit; MC integration on the Rust reactor | A (edges) |
 | **C: Archetypes and behaviours** | `declare()` builder; archetype build and validation; bundles; behaviour singletons, config, interfaces, state machines; requirement types and the `/datum/check` library with dependency capture and messages; typed events with static dispatch, phases, delivery modes and bubbling | A; B for triggers |
 | **D: Startup quick wins** | build-time assets; lazy wiki; batched post-load init passes; bench before and after | none; can start now |

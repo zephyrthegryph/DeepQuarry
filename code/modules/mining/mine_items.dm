@@ -406,6 +406,6 @@ DECLARE_INTERACTIONS(/obj/structure/trailblazer, INTERACT_HAND_UNGATED(null, PRO
 	icon_state = "yellowtrail_light_on"
 	set_light(2, 2, "#ffea00")
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// Accessor for a shared definition.
 /obj/item/shovel/wood/proc/material() as /datum/material
 	return material_static

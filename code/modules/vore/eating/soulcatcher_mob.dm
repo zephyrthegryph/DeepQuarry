@@ -15,7 +15,7 @@
 		gem().notify_holder("Mind unloaded: [name]")
 		gem().brainmobs -= src
 		rel_clear(src, "gem")
-	own_take(src, "container")
+	rel_clear(src, "container")
 	..()
 
 // Handling the automatic transcore backups in a set interval
@@ -268,6 +268,6 @@
 		return
 	gem().return_to_body(mind)
 
-/// LC-refs: the gem this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the gem this refers to (a relation view: null once it is deleted).
 /mob/living/carbon/brain/caught_soul/vore/proc/gem() as /obj/soulgem
 	return gem

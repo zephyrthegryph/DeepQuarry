@@ -1132,7 +1132,7 @@ ADMIN_VERB(spawn_character_mob, R_SPAWN, "Spawn Character As Mob", "Spawn a spec
 	if(organs)
 		new_mob.copy_from_prefs_vr()
 		if(LAZYLEN(new_mob.vore_organs))
-			own_set(new_mob, "vore_selected", new_mob.vore_organs[1])
+			rel_set(new_mob, "vore_selected", new_mob.vore_organs[1])
 			if(isanimal(new_mob))
 				var/mob/living/simple_mob/new_simple_mob = new_mob
 				if(!new_simple_mob.voremob_loaded || !new_simple_mob.vore_active)
