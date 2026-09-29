@@ -103,7 +103,7 @@ DECLARE_REF(/obj/machinery/embedded_controller, "program", OWNED, null)
 	set_frequency(frequency) // Set it before parent instantiates program
 	. = ..()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/embedded_controller/radio/appearance_overlays()
 	. = list()
 	if(on && program)

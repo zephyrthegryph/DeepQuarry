@@ -44,7 +44,7 @@
 	if(load_method == MAGAZINE)
 		return ammo_magazine ? "" : "-e"
 	return bolt_open ? "-e" : ""
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/serdy, "[initial(icon_state)][appearance_suffix]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/serdy, "{initial(icon_state)}{appearance_suffix}")
 
 /obj/item/gun/projectile/automatic/serdy/asval
 	name = "AS-VAL"
@@ -1131,7 +1131,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 /// Declared icon_state suffix: rounded magazine count, or nothing when empty.
 /obj/item/gun/projectile/automatic/c20r/proc/appearance_mag_state()
 	return ammo_magazine ? "-[round(ammo_magazine.stored_ammo.len, 4)]" : ""
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/c20r, "c20r[appearance_mag_state]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/c20r, "c20r{appearance_mag_state}")
 
 /obj/item/gun/projectile/automatic/c20r/Initialize(mapload)
 	. = ..()
@@ -1147,7 +1147,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/c20r, "c20r[appearance_ma
 	icon_expected_height = 32
 	icon_expected_width = 64
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sts35, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sts35, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/projectile/automatic/sts35/appearance_overlays()
 	. = list()
 	. += ..()
@@ -1168,7 +1168,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sts35, PROC_REF(appea
 	icon_expected_width = 64
 
 /* //Dont need it
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/wt550, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/wt550, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/projectile/automatic/wt550/appearance_overlays()
 	. = list()
 	. += ..()
@@ -1188,7 +1188,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/wt550, PROC_REF(appea
 	icon_expected_height = 32
 	icon_expected_width = 64
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/projectile/automatic/z8/appearance_overlays()
 	. = list()
 	. += ..()
@@ -1217,7 +1217,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, PROC_REF(appearan
 	icon_expected_height = 32
 	icon_expected_width = 64
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/mini_uzi, "[initial(icon_state)][ammo_magazine?:-empty]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/mini_uzi, "{initial(icon_state)}{ammo_magazine?:-empty}")
 
 /obj/item/gun/projectile/automatic/mini_uzi/Initialize(mapload)
 	. = ..()
@@ -1263,7 +1263,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/mini_uzi, "[initial(icon_
 	.=..()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/colt, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/colt, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/projectile/colt/appearance_overlays()
 	. = list()
 	if(ammo_magazine)

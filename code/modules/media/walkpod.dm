@@ -36,7 +36,7 @@
 /obj/item/walkpod/proc/appearance_base()
 	return deployed_headpods ? "zuman" : initial(icon_state)
 
-APPEARANCE_TEMPLATE(/obj/item/walkpod, "[appearance_base][listener?_on:]")
+APPEARANCE_TEMPLATE(/obj/item/walkpod, "{appearance_base}{listener?_on:}")
 
 // Listener handling
 /obj/item/walkpod/proc/check_listener()

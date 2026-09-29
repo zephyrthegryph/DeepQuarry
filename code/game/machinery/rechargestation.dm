@@ -288,7 +288,7 @@
 		if(99 to 110)
 			return "statn_c100"
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/recharge_station/appearance_overlays()
 	. = list()
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
@@ -378,7 +378,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station, PROC_REF(appearance_ove
 	desc = "This is a pod which used to contain a drone... Or maybe it still does?"
 	icon = 'icons/obj/structures.dmi'
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station/ghost_pod_recharger, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station/ghost_pod_recharger, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/recharge_station/ghost_pod_recharger/appearance_overlays()
 	. = list()
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)

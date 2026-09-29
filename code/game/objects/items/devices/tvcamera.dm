@@ -104,7 +104,7 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 		show_tvs(loc)
 		update_feed()
 
-DECLARE_APPEARANCE_PROC(/obj/item/tvcamera, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/tvcamera, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/tvcamera/appearance_overlays()
 	. = list()
 	. += ..()
@@ -225,7 +225,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PRO
 	if(bcamera.status)
 		OM_EMIT(bcamera, /datum/om/event/movable_attempted_move, null, null) // Forward the movement event
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/accessory/bodycam, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/accessory/bodycam, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/clothing/accessory/bodycam/appearance_overlays()
 	. = list()
 	. += ..()

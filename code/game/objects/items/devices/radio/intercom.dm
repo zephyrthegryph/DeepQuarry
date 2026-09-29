@@ -185,7 +185,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/intercom, \
 
 	return canhear_range
 
-DECLARE_APPEARANCE_PROC(/obj/item/radio/intercom, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/radio/intercom, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/radio/intercom/appearance_overlays()
 	. = list()
 	var/area/A = get_area(src)

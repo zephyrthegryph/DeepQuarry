@@ -588,7 +588,7 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 		return 0
 	return cell.give(joules * CELLRATE, FALSE) / CELLRATE
 
-DECLARE_APPEARANCE_PROC(/obj/item/rig, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/rig/appearance_overlays()
 	. = list()
 

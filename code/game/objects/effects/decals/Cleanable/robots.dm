@@ -8,7 +8,7 @@
 	generic_filth = FALSE
 	persistent = FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs/robot, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs/robot, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/effect/decal/cleanable/blood/gibs/robot/appearance_overlays()
 	. = list()
 	color = "#FFFFFF"

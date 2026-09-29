@@ -101,7 +101,7 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 	toolspeed = 0.1
 
 // Alien multitool only has those icon states
-DECLARE_APPEARANCE_PROC(/obj/item/multitool/alien, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/multitool/alien, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/multitool/alien/appearance_overlays()
 	. = list()
 	if(accepting_refs)

@@ -127,7 +127,7 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/smokable, "chem_volume", null)
 	if(location)
 		location.hotspot_expose(700, 5)
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/smokable, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/smokable, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/clothing/mask/smokable/appearance_overlays()
 	. = list()
 	if(lit)

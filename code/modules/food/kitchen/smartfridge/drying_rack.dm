@@ -36,7 +36,7 @@
 /obj/machinery/smartfridge/drying_rack/has_pending_work()
 	return ..() || stored_count()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge/drying_rack, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge/drying_rack, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/smartfridge/drying_rack/appearance_overlays()
 	. = list()
 	var/not_working = !operable()

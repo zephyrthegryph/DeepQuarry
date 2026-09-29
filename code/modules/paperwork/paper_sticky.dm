@@ -15,7 +15,7 @@
 	var/written_by
 	var/paper_type = /obj/item/paper/sticky
 
-APPEARANCE_TEMPLATE(/obj/item/sticky_pad, "[appearance_fill][written_text?_writing:]")
+APPEARANCE_TEMPLATE(/obj/item/sticky_pad, "{appearance_fill}{written_text?_writing:}")
 
 /// The pad state for how many papers are left.
 /obj/item/sticky_pad/proc/appearance_fill()
@@ -124,7 +124,7 @@ DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
 	..()
 	reset_persistence_tracking()
 
-DECLARE_APPEARANCE_PROC(/obj/item/paper/sticky, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/paper/sticky, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/paper/sticky/appearance_overlays()
 	. = list()
 	if(icon_state != "scrap")

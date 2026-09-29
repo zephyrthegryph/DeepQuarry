@@ -214,7 +214,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/energy, INTERACT_HAND(null, PROC_REF(interact
 		else
 			. += "Does not have a power cell."
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/energy/appearance_overlays()
 	. = list()
 	if(power_supply == null)

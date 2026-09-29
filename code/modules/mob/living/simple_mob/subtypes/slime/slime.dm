@@ -122,7 +122,7 @@ TYPE_TABLE(/mob/living/simple_mob/slime, ventcrawl_get_item_whitelist, list( \
 	set_glow_toggle(initial(glow_toggle))
 	refresh_glow()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/slime/appearance_overlays()
 	. = list()
 	. += ..()

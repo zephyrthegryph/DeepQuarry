@@ -10,7 +10,7 @@
 	. = ..()
 	update_integrity(21) // Doesn't start at full health.
 
-DECLARE_APPEARANCE_PROC(/obj/structure/blob/normal, PROC_REF(appearance_overlays), list("get_integrity"))
+DECLARE_APPEARANCE_PROC(/obj/structure/blob/normal, TYPE_PROC_REF(/atom, appearance_overlays), list("get_integrity"))
 /obj/structure/blob/normal/appearance_overlays()
 	. = list()
 	. += ..()

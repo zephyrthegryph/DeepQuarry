@@ -67,7 +67,7 @@
 		return
 	..()
 
-APPEARANCE_TEMPLATE(/obj/vehicle/train, "[initial(icon_state)][open?_open:]")
+APPEARANCE_TEMPLATE(/obj/vehicle/train, "{initial(icon_state)}{open?_open:}")
 
 //-------------------------------------------
 // Vehicle procs

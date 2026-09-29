@@ -28,7 +28,7 @@ DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 	if (prob(60))
 		src.pixel_y = rand(0, 4)
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/material/kitchen/utensil/appearance_overlays()
 	. = list()
 	. += ..()

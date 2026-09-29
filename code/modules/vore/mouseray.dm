@@ -58,7 +58,7 @@
 	if(tf_admin_pref_override)
 		G.tf_admin_pref_override = tf_admin_pref_override
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/mouseray, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/mouseray, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/energy/mouseray/appearance_overlays()
 	. = list()
 	if(charge_meter)

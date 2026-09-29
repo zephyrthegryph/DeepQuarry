@@ -185,7 +185,7 @@
 /obj/machinery/food_replicator/proc/appearance_nopower()
 	return has_stat(NOPOWER | EMPED) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/food_replicator, "[initial(icon_state)]")
+APPEARANCE_TEMPLATE(/obj/machinery/food_replicator, "{initial(icon_state)}")
 DECLARE_APPEARANCE(/obj/machinery/food_replicator, "appearance_broken", list("1" = list(APPEARANCE_ICON_STATE = "destroyed")))
 DECLARE_APPEARANCE(/obj/machinery/food_replicator, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("panel_open"))))
 DECLARE_APPEARANCE(/obj/machinery/food_replicator, "appearance_nopower", list("1" = list(APPEARANCE_OVERLAYS = list("poweroff"))))

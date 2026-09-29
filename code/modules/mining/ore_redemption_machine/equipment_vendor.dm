@@ -166,7 +166,7 @@ DECLARE_REF(/obj/machinery/mineral/equipment_vendor, "inserted_id", SPILL, null)
 		inserted_id.forceMove(get_turf(src))
 		inserted_id = null
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/mineral/equipment_vendor, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/mineral/equipment_vendor, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/mineral/equipment_vendor/appearance_overlays()
 	. = list()
 	if(panel_open)

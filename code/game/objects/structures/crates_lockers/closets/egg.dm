@@ -19,7 +19,7 @@
 		return icon_opened
 	return sealed ? icon_locked : icon_closed
 
-APPEARANCE_TEMPLATE(/obj/structure/closet/secure_closet/egg, "[appearance_egg_state]")
+APPEARANCE_TEMPLATE(/obj/structure/closet/secure_closet/egg, "{appearance_egg_state}")
 // Replaces the inherited "opened" -> "open" layer: the egg's open state is icon_opened.
 DECLARE_APPEARANCE(/obj/structure/closet/secure_closet/egg, "opened", list())
 

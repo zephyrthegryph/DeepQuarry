@@ -77,7 +77,7 @@
 	if(get_dist(user, src) == 0)
 		. += "It has a tiny camera inside. Needs to be both configured and brought in contact with monitor device to be fully functional."
 
-DECLARE_APPEARANCE_PROC(/obj/item/camerabug, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/camerabug, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/camerabug/appearance_overlays()
 	. = list()
 	. += ..()

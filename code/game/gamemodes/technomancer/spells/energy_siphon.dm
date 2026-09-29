@@ -150,7 +150,7 @@
 		to_chat(user, span_warning("\The [siphoning] cannot be drained any further."))
 		stop_siphoning()
 
-APPEARANCE_TEMPLATE(/obj/item/spell/energy_siphon, "energy_siphon[siphoning?_drain:]")
+APPEARANCE_TEMPLATE(/obj/item/spell/energy_siphon, "energy_siphon{siphoning?_drain:}")
 
 /obj/item/spell/energy_siphon/proc/create_lightning(mob/user, atom/source)
 	if(user && source && user != source)

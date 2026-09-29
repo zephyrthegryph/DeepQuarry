@@ -15,7 +15,7 @@
 	charge_cost = 800
 	fire_delay = 50
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/netgun, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/netgun, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/energy/netgun/appearance_overlays()
 	. = list()
 	if(power_supply == null)
@@ -71,7 +71,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/netgun, PROC_REF(appearance_overlay
 		list(mode_name="capture", projectile_type=/obj/item/projectile/beam/energy_net, fire_sound = SFX_WEAPONS_ELUGER, charge_cost=1200, fire_delay=50)
 	)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/hunter, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/hunter, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/energy/hunter/appearance_overlays()
 	. = list()
 

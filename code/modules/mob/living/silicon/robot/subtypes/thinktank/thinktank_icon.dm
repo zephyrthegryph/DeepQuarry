@@ -1,4 +1,4 @@
-DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot/platform, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot/platform, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/silicon/robot/platform/appearance_overlays()
 	. = list()
 

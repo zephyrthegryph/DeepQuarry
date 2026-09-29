@@ -348,7 +348,7 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 		return "playing"
 	return "idle"
 
-APPEARANCE_TEMPLATE(/obj/item/taperecorder, "taperecorder_[appearance_tape_state]")
+APPEARANCE_TEMPLATE(/obj/item/taperecorder, "taperecorder_{appearance_tape_state}")
 
 MATERIAL_MIX(/obj/item/rectape, list(MAT_STEEL=20, MAT_GLASS=5))
 /obj/item/rectape

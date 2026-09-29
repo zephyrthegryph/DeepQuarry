@@ -554,7 +554,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		flush = 0
 
 // update the icon & overlays to reflect mode & status
-DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/disposal/appearance_overlays()
 	. = list()
 	if(has_stat(BROKEN))
@@ -783,7 +783,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, PROC_REF(appearance_overlays), 
 
 	density = FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/disposal/wall, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/disposal/wall, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/disposal/wall/appearance_overlays()
 	. = list()
 	. += ..()

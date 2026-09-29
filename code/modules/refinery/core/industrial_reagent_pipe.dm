@@ -27,7 +27,7 @@
 
 	refinery_transfer()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/pipe, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/pipe, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/reagent_refinery/pipe/appearance_overlays()
 	. = list()
 	if(anchored)

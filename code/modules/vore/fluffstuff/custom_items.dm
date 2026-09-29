@@ -991,7 +991,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/baton/fluff/stunstaff, "bcell", /obj/item/
 		return 1
 	return 0
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/baton/fluff/stunstaff, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/melee/baton/fluff/stunstaff, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/melee/baton/fluff/stunstaff/appearance_overlays()
 	. = list()
 	icon_state = "[base_icon][wielded][status]"
@@ -1307,7 +1307,7 @@ TYPE_TABLE(/obj/item/rig/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask, null, list(REAGENT_ID_TEA = 40, REAGENT_ID_MILK = 20))
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask/appearance_overlays()
 	. = list()
 	. += ..()
@@ -1342,7 +1342,7 @@ TYPE_TABLE(/obj/item/storage/fancy/fluff/charlotte, hold_spec, list(HOLD_ONLY(li
 		closed_state = "[initial(icon_state)]"
 	. = ..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/fluff/charlotte, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/fluff/charlotte, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/fancy/fluff/charlotte/appearance_overlays()
 	. = list()
 	if(open)

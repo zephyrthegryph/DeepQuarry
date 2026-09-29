@@ -134,7 +134,7 @@
 	bigshadow.appearance_flags = RESET_COLOR|RESET_TRANSFORM
 	add_overlay(bigshadow) // ALLOW(decl): per-instance image
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/fennec/huge, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/fennec/huge, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/vore/fennec/huge/appearance_overlays()
 	. = list()
 	. += ..()

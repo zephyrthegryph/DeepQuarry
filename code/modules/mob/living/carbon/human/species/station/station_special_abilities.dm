@@ -1032,7 +1032,7 @@
 	firemodes = list(
 		list(mode_name="vore", projectile_type=/obj/item/projectile/beam/appendage, modifystate=null, fire_sound=SFX_VORE_SUNESOUND_PRED_SCHLORP, charge_cost = 0),)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/energy/gun/tongue/appearance_overlays() //No updating the icon.
 	. = list()
 	icon_state = "synthtongue"

@@ -69,7 +69,7 @@ OM_SET = re.compile(r"\bom_set\(\s*([\w.]+)\s*,\s*\"(\w+)\"")
 # the lifecycle init; a procedural one still draws itself here).
 LIFECYCLE = {"Initialize", "New", "LateInitialize", "Destroy", "on_materialize", "on_dematerialize"}
 DECL = re.compile(r"^\s*(APPEARANCE_WATCH|APPEARANCE_TEMPLATE|APPEARANCE_LEVEL|APPEARANCE_EMISSIVE|DECLARE_APPEARANCE|APPEARANCE_NONE)\(\s*(/[\w/]+)\s*(?:,(.*))?$")
-TOKEN = re.compile(r"\[\s*(\w+)\s*(?:\?[^\]]*)?\]")
+TOKEN = re.compile(r"\{\s*(\w+)\s*(?:\?[^}]*)?\}")
 
 
 def split_args(text):

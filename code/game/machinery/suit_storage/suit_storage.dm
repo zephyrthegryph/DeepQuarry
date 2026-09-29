@@ -49,7 +49,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 /obj/machinery/suit_storage_unit/proc/appearance_human()
 	return src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage[appearance_helmet][appearance_suit][appearance_human][isopen][islocked][isUV][ispowered][isbroken][issuperUV]")
+APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_helmet}{appearance_suit}{appearance_human}{isopen}{islocked}{isUV}{ispowered}{isbroken}{issuperUV}")
 
 /obj/machinery/suit_storage_unit/power_change()
 	. = ..()

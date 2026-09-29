@@ -200,7 +200,7 @@
 			return 0
 	return 1
 
-APPEARANCE_TEMPLATE(/obj/machinery/shipsensors, "[use_power?sensors:sensors_off]")
+APPEARANCE_TEMPLATE(/obj/machinery/shipsensors, "{use_power?sensors:sensors_off}")
 
 /obj/machinery/shipsensors/examine(mob/user)
 	. = ..()

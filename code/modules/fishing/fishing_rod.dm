@@ -84,7 +84,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_rod, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_rod, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/material/fishing_rod/appearance_overlays()
 	. = list()
 	. += ..()

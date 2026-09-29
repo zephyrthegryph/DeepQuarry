@@ -67,7 +67,7 @@
 		return 1
 	return 0
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/material/twohanded/appearance_overlays()
 	. = list()
 	icon_state = "[base_icon][wielded]"
@@ -295,7 +295,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, PROC_REF(appearance_overla
 			play_sfx(src.loc, SFX_SPARKS)
 			return
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded/sledgehammer/mjollnir, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded/sledgehammer/mjollnir, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/material/twohanded/sledgehammer/mjollnir/appearance_overlays()  //Currently only here to fuck with the on-mob icons.
 	. = list()
 	icon_state = "mjollnir[wielded]"

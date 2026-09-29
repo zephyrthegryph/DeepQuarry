@@ -185,7 +185,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 /obj/item/melee/energy/get_cell()
 	return bcell
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/energy, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/melee/energy, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/melee/energy/appearance_overlays()
 	. = list()
 	. += ..()
@@ -566,7 +566,7 @@ EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_R
 	colorable = FALSE
 	lcolor = "#FFFFFF"
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/energy/sword/altevian, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/melee/energy/sword/altevian, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/melee/energy/sword/altevian/appearance_overlays()
 	. = list()
 	. += ..()

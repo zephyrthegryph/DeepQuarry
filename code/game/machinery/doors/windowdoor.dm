@@ -26,7 +26,7 @@
 		icon_state = "[icon_state]"
 		base_state = icon_state
 
-APPEARANCE_TEMPLATE(/obj/machinery/door/window, "[base_state][density?:open]")
+APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
 
 /obj/machinery/door/window/proc/shatter(display_message = 1)
 	new /obj/item/material/shard(src.loc)

@@ -50,7 +50,7 @@
 //Hat simulator stolen from slime code.
 DECLARE_REF(/mob/living/simple_mob/animal/passive/armadillo, "hat", SPILL, null)
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/armadillo, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/armadillo, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/animal/passive/armadillo/appearance_overlays()
 	. = list()
 	. += ..()

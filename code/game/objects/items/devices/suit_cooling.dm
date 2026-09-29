@@ -165,7 +165,7 @@ DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_APPEARANCE_PROC(/obj/item/suit_cooling_unit, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/suit_cooling_unit, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/suit_cooling_unit/appearance_overlays()
 	. = list()
 	if(cover_open)

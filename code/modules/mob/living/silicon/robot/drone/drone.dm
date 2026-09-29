@@ -164,7 +164,7 @@ TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( 
 	real_name = "[initial(name)] ([serial_number])"
 	name = real_name
 
-DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot/drone, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot/drone, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/silicon/robot/drone/appearance_overlays()
 	. = list()
 	if(islist(shell_accessories))

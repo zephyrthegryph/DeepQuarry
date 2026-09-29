@@ -39,7 +39,7 @@
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=4,    burst_accuracy=list(0,-10,-10), dispersion=list(0.0, 0.3, 0.6))
 	)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/advanced_smg, "advanced_smg[ammo_magazine?:-e]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/advanced_smg, "advanced_smg{ammo_magazine?:-e}")
 
 /obj/item/gun/projectile/automatic/advanced_smg/loaded
 	magazine_type = /obj/item/ammo_magazine/m9mmAdvanced
@@ -79,7 +79,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/advanced_smg, "advanced_s
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15,-30), dispersion=list(0.0, 0.6, 0.6))
 		)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sts35, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sts35, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/projectile/automatic/sts35/appearance_overlays()
 	. = list()
 	. += ..()
@@ -111,7 +111,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sts35, PROC_REF(appea
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15,-30), dispersion=list(0.0, 0.6, 0.6))
 		)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/pdw, "pdw[ammo_magazine?:-e]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/pdw, "pdw{ammo_magazine?:-e}")
 
 /*
  * Machine Pistol (WT550)
@@ -137,7 +137,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/pdw, "pdw[ammo_magazine?:
 /// Declared icon_state suffix: rounded magazine count, or nothing when empty.
 /obj/item/gun/projectile/automatic/wt550/proc/appearance_mag_state()
 	return ammo_magazine ? "-[round(ammo_magazine.stored_ammo.len, 4)]" : ""
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/wt550, "wt550[appearance_mag_state]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/wt550, "wt550{appearance_mag_state}")
 
 /*
  * Battle Rifle (Z8)
@@ -204,7 +204,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/wt550, "wt550[appearance_
 	else
 		..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/projectile/automatic/z8/appearance_overlays()
 	. = list()
 	. += ..()
@@ -290,7 +290,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, PROC_REF(appearan
 		return TRUE
 	return ..() //once open, behave like normal
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/projectile/automatic/l6_saw/appearance_overlays()
 	. = list()
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m762))
@@ -341,7 +341,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, PROC_REF(appe
 		list(mode_name="3-round bursts", burst=3, move_delay=6, burst_accuracy = list(0,-15,-15,-30,-30), dispersion = list(0.0, 0.6, 0.6))
 		)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/as24, "ashot[ammo_magazine?:-empty]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/as24, "ashot{ammo_magazine?:-empty}")
 
 /*
  * Uzi
@@ -422,7 +422,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/as24, "ashot[ammo_magazin
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=4,    burst_accuracy=list(0,-15,-15), dispersion=list(0.0, 0.6, 1.0))
 		)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/tommygun, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/tommygun, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/projectile/automatic/tommygun/appearance_overlays()
 	. = list()
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m45tommy))
@@ -459,7 +459,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/tommygun, PROC_REF(ap
 		list(mode_name="2-round bursts", burst=2, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15), dispersion=list(0.0, 0.6))
 		)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/bullpup, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/bullpup, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/projectile/automatic/bullpup/appearance_overlays()
 	. = list()
 	. += ..()
@@ -493,7 +493,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/bullpup, PROC_REF(app
 		list(mode_name="3-round bursts", burst=3, burst_delay=1, fire_delay=4, move_delay=4, burst_accuracy=list(0,-15,-30), dispersion=list(0.0, 0.6, 0.6))
 		)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/combatsmg, "combatsmg[ammo_magazine?:-empty]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/combatsmg, "combatsmg{ammo_magazine?:-empty}")
 
 //
 ///
@@ -544,7 +544,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/combatsmg, "combatsmg[amm
 /// Declared icon_state suffix: rounded magazine count, or "empty".
 /obj/item/gun/projectile/automatic/p90/proc/appearance_mag_state()
 	return ammo_magazine ? round(ammo_magazine.stored_ammo.len, 6) : "empty"
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/p90, "p90smgnew-[appearance_mag_state]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/p90, "p90smgnew-{appearance_mag_state}")
 
 // C-20R
 
@@ -614,7 +614,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/p90, "p90smgnew-[appearan
 		list(mode_name="2-round bursts", burst=2, fire_delay=null, move_delay=6,    burst_accuracy=list(60,35), dispersion=list(0.0, 0.6))
 		)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/fal, "[initial(icon_state)][ammo_magazine?:-empty]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/fal, "{initial(icon_state)}{ammo_magazine?:-empty}")
 
 /obj/item/gun/projectile/automatic/wt550/lethal
 	magazine_type = /obj/item/ammo_magazine/m9mmt
@@ -654,7 +654,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/fal, "[initial(icon_state
 	allowed_magazines = list(/obj/item/ammo_magazine/mtg)
 	load_method = MAGAZINE
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/stg, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/stg, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/projectile/automatic/stg/appearance_overlays()
 	. = list()
 	. += ..()
@@ -691,7 +691,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/stg, PROC_REF(appeara
 	ratio = round(ratio, 0.25) * 100
 	add_overlay("smg_[ratio]")
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sol, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sol, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/projectile/automatic/sol/appearance_overlays()
 	. = list()
 	icon_state = (ammo_magazine)? "SMG-IS" : "SMG-IS-empty"
@@ -817,7 +817,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sol, PROC_REF(appeara
 		return TRUE
 	return ..() //once open, behave like normal
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/mg42, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/mg42, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/projectile/automatic/mg42/appearance_overlays()
 	. = list()
 	icon_state = "mg42[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"][cover_open && ammo_magazine && ammo_magazine.stored_ammo.len == 0 ? "0" : ""]"

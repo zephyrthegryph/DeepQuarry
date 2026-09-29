@@ -44,7 +44,7 @@
 		0, 0, 0,
 	)
 
-APPEARANCE_TEMPLATE(/obj/machinery/gear_painter, "colormate[inserted?_active:]")
+APPEARANCE_TEMPLATE(/obj/machinery/gear_painter, "colormate{inserted?_active:}")
 DECLARE_APPEARANCE(/obj/machinery/gear_painter, "operable", list("0" = list(APPEARANCE_ICON_STATE = "colormate_off")))
 DECLARE_APPEARANCE(/obj/machinery/gear_painter, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "colormate_open")))
 

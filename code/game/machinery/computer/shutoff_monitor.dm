@@ -27,7 +27,7 @@ DECLARE_REF(/obj/machinery/computer/shutoff_monitor, "monitor", OWNED, null)
 	monitor.tgui_interact(user)
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/shutoff_monitor, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/shutoff_monitor, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/computer/shutoff_monitor/appearance_overlays()
 	. = list()
 	. += ..()

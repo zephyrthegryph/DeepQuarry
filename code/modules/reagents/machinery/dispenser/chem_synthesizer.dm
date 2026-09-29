@@ -125,7 +125,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 	if(panel_open)
 		. += "It has [cartridges.len] cartridges installed, and has space for [SYNTHESIZER_MAX_CARTRIDGES - cartridges.len] more."
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/chemical_synthesizer/appearance_overlays()
 	. = list()
 	underlays.Cut()

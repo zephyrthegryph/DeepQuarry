@@ -9,7 +9,7 @@
 	var/list/possible_overlays
 	var/list/added_overlays
 
-DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/customizable, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/customizable, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/toy/plushie/customizable/appearance_overlays()
 	. = list()
 	var/mutable_appearance/B = mutable_appearance(icon, icon_state)

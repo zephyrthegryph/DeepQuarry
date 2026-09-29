@@ -45,7 +45,7 @@ MATERIAL_MIX(/obj/item/assembly/infra, list(MAT_STEEL = 1000, MAT_GLASS = 500))
 		QDEL_LIST_NULL(i_beams)
 	return on
 
-DECLARE_APPEARANCE_PROC(/obj/item/assembly/infra, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/assembly/infra, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/assembly/infra/appearance_overlays()
 	. = list()
 	LAZYCLEARLIST(attached_overlays)
@@ -54,7 +54,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/infra, PROC_REF(appearance_overlays),
 		LAZYADD(attached_overlays, "infrared_on")
 
 	if(holder())
-		holder().update_icon(2)
+		holder().update_icon()
 
 /obj/item/assembly/infra/periodic_step()
 	if(!on && i_beams)

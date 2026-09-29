@@ -226,7 +226,7 @@
 	. = ..()
 	updateTurrets()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/turretid, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/turretid, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/turretid/appearance_overlays()
 	. = list()
 	. += ..()

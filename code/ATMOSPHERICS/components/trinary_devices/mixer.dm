@@ -32,7 +32,7 @@
 	)
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/mixer, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/mixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/trinary/mixer/appearance_overlays()
 	. = list()
 	if(tee)

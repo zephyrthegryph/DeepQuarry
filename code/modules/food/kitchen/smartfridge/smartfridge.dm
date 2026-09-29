@@ -112,7 +112,7 @@ DECLARE_REF(/obj/machinery/smartfridge, "item_records", OWNED_LIST, null)
 	for(var/datum/stored_item/I as anything in item_records)
 		. += I.get_amount()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/smartfridge/appearance_overlays()
 	. = list()
 	if(panel_open)

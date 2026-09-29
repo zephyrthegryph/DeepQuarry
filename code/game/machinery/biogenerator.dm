@@ -217,7 +217,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/biogenerator, "beaker", /obj/item/reagent_c
 		return "empty"
 	return processing ? "work" : "stand"
 
-APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-[appearance_state]")
+APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
 
 /obj/machinery/biogenerator/declare_interactions(list/into)
 	into += list(

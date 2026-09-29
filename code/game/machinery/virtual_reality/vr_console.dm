@@ -71,7 +71,7 @@
 		visible_message(span_warning("\The [src] sounds an alarm, swinging its hatch open."))
 		occupant.exit_vr(FALSE)
 
-APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "[base_state][appearance_occupied]")
+APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied}")
 
 /// 1 while the pod holds an occupant, else 0.
 /obj/machinery/vr_sleeper/proc/appearance_occupied()

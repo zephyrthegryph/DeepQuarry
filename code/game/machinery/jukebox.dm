@@ -153,7 +153,7 @@
 /obj/machinery/media/jukebox/proc/appearance_panel()
 	return (appearance_live() && panel_open) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/media/jukebox, "[state_base][appearance_suffix]")
+APPEARANCE_TEMPLATE(/obj/machinery/media/jukebox, "{state_base}{appearance_suffix}")
 DECLARE_APPEARANCE(/obj/machinery/media/jukebox, "appearance_running", list(
 	"running" = list(APPEARANCE_OVERLAYS = list("jukebox-running")),
 	"emagged" = list(APPEARANCE_OVERLAYS = list("jukebox-emagged"))
@@ -370,7 +370,7 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 	return
 /// Draws itself entirely: drop the parent's keyed declarations.
 APPEARANCE_NONE(/obj/machinery/media/jukebox/ghost)
-DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/media/jukebox/ghost/appearance_overlays()
 	. = list()
 	if(playing)

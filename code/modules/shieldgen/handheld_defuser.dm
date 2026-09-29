@@ -31,7 +31,7 @@ DECLARE_REF(/obj/item/shield_diffuser, "cell", OWNED, null)
 			if(istype(S) && cell.checked_use(10 KILOWATTS * CELLRATE))
 				qdel(S)
 
-APPEARANCE_TEMPLATE(/obj/item/shield_diffuser, "hdiffuser_[enabled?on:off]")
+APPEARANCE_TEMPLATE(/obj/item/shield_diffuser, "hdiffuser_{enabled?on:off}")
 
 DECLARE_INTERACTIONS(/obj/item/shield_diffuser, INTERACT_USE(null, PROC_REF(interaction_self)))
 

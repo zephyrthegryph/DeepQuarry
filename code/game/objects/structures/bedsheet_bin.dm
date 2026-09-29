@@ -247,7 +247,7 @@ TYPE_TABLE(/obj/item/bedsheet/ian, bedsheet_dream_messages, list("a dog", "a cor
 		return "half"
 	return "full"
 
-APPEARANCE_TEMPLATE(/obj/structure/bedsheetbin, "linenbin-[appearance_fill]")
+APPEARANCE_TEMPLATE(/obj/structure/bedsheetbin, "linenbin-{appearance_fill}")
 
 
 /obj/structure/bedsheetbin/declare_interactions(list/into)

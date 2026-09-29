@@ -59,7 +59,7 @@
 /datum/say_list/turkey
 	speak = list("Gobble!", "Gobble gobble!", "Gobble gobble gobble!", "Give me something to be thankful for~", "Could use something to gobble~", "Why don't you make a pilgrimage over here and give me something good to eat?", "I want a treat... I could bite you too if you like~", "What's your favorite time of year?", "Autumn is the best time of year~", "You just gonna let a girl go hungry?")
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/turkeygirl, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/turkeygirl, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/vore/turkeygirl/appearance_overlays()
 	. = list()
 	. += ..()

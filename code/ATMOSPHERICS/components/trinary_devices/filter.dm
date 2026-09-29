@@ -67,7 +67,7 @@
 	if(frequency)
 		set_frequency(frequency)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/trinary/atmos_filter/appearance_overlays()
 	. = list()
 	if(mirrored)

@@ -95,7 +95,7 @@ EXTEND_INTERACTIONS(/obj/item/remote_scene_tool/voodoo_doll, INTERACT_VERB("Disa
 
 	return input
 
-DECLARE_APPEARANCE_PROC(/obj/item/remote_scene_tool/voodoo_doll, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/remote_scene_tool/voodoo_doll, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/remote_scene_tool/voodoo_doll/appearance_overlays()
 	. = list()
 	. += ..()

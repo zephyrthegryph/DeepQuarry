@@ -43,7 +43,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 /obj/structure/bed/chair/post_buckle_mob()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/bed/chair/appearance_overlays()
 	. = list()
 	. += ..()
@@ -91,7 +91,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair, PROC_REF(appearance_overlays),
 	icon_state = "comfychair"
 	base_icon = "comfychair"
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/comfy, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/comfy, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/bed/chair/comfy/appearance_overlays()
 	. = list()
 	. += ..()
@@ -281,7 +281,7 @@ APPEARANCE_NONE(/obj/structure/bed/chair/wood)
 	var/corner_piece = FALSE
 	resistance_flags = FLAMMABLE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/sofa, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/sofa, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/bed/chair/sofa/appearance_overlays()
 	. = list()
 	if(applies_material_colour && sofa_material)
@@ -314,7 +314,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/sofa, PROC_REF(appearance_overl
 	base_icon = "sofacorner"
 	corner_piece = TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/sofa/corner, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/sofa/corner, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/bed/chair/sofa/corner/appearance_overlays()
 	. = list()
 	. += ..()
@@ -642,7 +642,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/sofa/corner, PROC_REF(appearanc
 	applies_material_colour = 0
 
 // Baystation12 chairs with their larger update_icons proc
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/bed/chair/bay/appearance_overlays()
 	. = list()
 	// Strings.
@@ -799,7 +799,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay, PROC_REF(appearance_overla
 	icon_state = "capchair_preview"
 	base_icon = "capchair"
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay/comfy/captain, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay/comfy/captain, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/bed/chair/bay/comfy/captain/appearance_overlays()
 	. = list()
 	. += ..()
@@ -831,7 +831,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay/comfy/captain, PROC_REF(app
 		base_icon = "shuttle_chair"
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay/shuttle, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay/shuttle, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/bed/chair/bay/shuttle/appearance_overlays()
 	. = list()
 	. += ..()

@@ -98,7 +98,7 @@ GLOBAL_VAR(world_time_day)
 			desc = "Dry, seemingly dead grass! It's too cold for the grass..."
 
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/floor/outdoors/grass/seasonal, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/turf/simulated/floor/outdoors/grass/seasonal, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /turf/simulated/floor/outdoors/grass/seasonal/appearance_overlays()
 	. = list()
 	. += ..()

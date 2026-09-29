@@ -74,7 +74,7 @@
 	update_icon() // this probably won't cause issues, but Aurora used SSIcons and queue_icon_update() instead
 
 APPEARANCE_NONE(/obj/machinery/appliance/cooker)
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/appliance/cooker/appearance_overlays()
 	. = list()
 	var/image/light

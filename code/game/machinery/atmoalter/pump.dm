@@ -31,7 +31,7 @@
 
 	make_climbable()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/pump, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/portable_atmospherics/powered/pump/appearance_overlays()
 	. = list()
 
@@ -248,7 +248,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/pump, PROC_
 	to_chat(user, span_notice("You can't directly interact with this machine. Use the pump control console."))
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/pump/huge, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/pump/huge, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/portable_atmospherics/powered/pump/huge/appearance_overlays()
 	. = list()
 

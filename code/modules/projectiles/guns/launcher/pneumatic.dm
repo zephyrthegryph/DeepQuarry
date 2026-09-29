@@ -146,7 +146,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, \
 		qdel(removed)
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/launcher/pneumatic, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/launcher/pneumatic, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/launcher/pneumatic/appearance_overlays()
 	. = list()
 	if(tank())
@@ -171,7 +171,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/launcher/pneumatic, PROC_REF(appearance_ov
 
 	var/buildstate = 0
 
-APPEARANCE_TEMPLATE(/obj/item/cannonframe, "pneumatic[buildstate]")
+APPEARANCE_TEMPLATE(/obj/item/cannonframe, "pneumatic{buildstate}")
 
 /obj/item/cannonframe/examine(mob/user)
 	. = ..()

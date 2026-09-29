@@ -562,7 +562,7 @@ DECLARE_REF(/obj/machinery/autolathe, "materials", OWNED, null)
 /obj/machinery/autolathe/proc/appearance_working()
 	return (!has_stat(NOPOWER) && om_busy(src)) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/autolathe, "[initial(icon_state)][appearance_working?_work:]")
+APPEARANCE_TEMPLATE(/obj/machinery/autolathe, "{initial(icon_state)}{appearance_working?_work:}")
 DECLARE_APPEARANCE(/obj/machinery/autolathe, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("autolathe_panel"))))
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.

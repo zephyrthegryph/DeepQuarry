@@ -29,7 +29,7 @@
 
 	req_one_access = list(ACCESS_HEADS)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/cryopod, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/cryopod, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/computer/cryopod/appearance_overlays()
 	. = list()
 	. += ..()

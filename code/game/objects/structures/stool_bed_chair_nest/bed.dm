@@ -47,7 +47,7 @@
 	return material
 
 // Reuse the cache/code from stools, todo maybe unify.
-DECLARE_APPEARANCE_PROC(/obj/structure/bed, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/bed, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/bed/appearance_overlays()
 	. = list()
 	// Prep icon.

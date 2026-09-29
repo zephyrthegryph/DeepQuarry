@@ -179,7 +179,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 		make_ore()
 	if(prob(20))
 		overlay_detail = "asteroid[rand(0,9)]"
-	update_icon(!mapload)
+	update_icon()
 	if(density && mineral())
 		. = INITIALIZE_HINT_LATELOAD
 	if(random_icon)
@@ -190,7 +190,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 	if(density && mineral())
 		MineralSpread()
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/mineral, PROC_REF(appearance_overlays), list(CHANGE_NEIGHBOURS))
+DECLARE_APPEARANCE_PROC(/turf/simulated/mineral, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
 /turf/simulated/mineral/appearance_overlays()
 	. = list()
 
@@ -643,7 +643,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 		new /obj/structure/closet/crate/secure/loot(src)
 
 	make_floor()
-	update_icon(1)
+	update_icon()
 
 /turf/simulated/mineral/proc/excavate_find(is_clean = 0, datum/find/F)
 	//with skill and luck, players can cleanly extract finds

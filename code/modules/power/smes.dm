@@ -667,7 +667,7 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes, "appearance_smes_charge", list("1"
 	return ITEM_INTERACT_BLOCKING
 
 APPEARANCE_NONE(/obj/machinery/power/smes/buildable/hybrid)
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/buildable/hybrid, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/buildable/hybrid, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/power/smes/buildable/hybrid/appearance_overlays()
 	. = list()
 	if(has_stat(BROKEN))	return

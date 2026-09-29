@@ -79,7 +79,7 @@
 	update_rust_device()
 	return ..()
 
-APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/passive_gate, "[appearance_flow?on:off]")
+APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/passive_gate, "{appearance_flow?on:off}")
 
 /obj/machinery/atmospherics/binary/passive_gate/proc/appearance_flow()
 	return unlocked && flowing

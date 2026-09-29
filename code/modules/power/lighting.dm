@@ -338,7 +338,7 @@ DECLARE_REF(/obj/machinery/light, "cell", OWNED, null)
 	. = ..()
 	stop_flicker_watch()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/light, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/light, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/light/appearance_overlays()
 	. = list()
 
@@ -359,7 +359,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light, PROC_REF(appearance_overlays), lis
 			icon_state = "[base_state]-broken"
 	return .
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/light/flamp/appearance_overlays()
 	. = list()
 	if(lamp_shade)
@@ -1298,7 +1298,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, PROC_REF(appearance_overlays
 	MATERIAL_BULK(MAT_GLASS, 100)
 
 // update the icon state and description of the light
-DECLARE_APPEARANCE_PROC(/obj/item/light, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/light, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/light/appearance_overlays()
 	. = list()
 	switch(status)

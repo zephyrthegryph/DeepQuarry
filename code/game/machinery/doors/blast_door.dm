@@ -60,7 +60,7 @@
 // Proc: update_icon()
 // Parameters: None
 // Description: Updates icon of this object. Uses icon state variables.
-APPEARANCE_TEMPLATE(/obj/machinery/door/blast, "[density?@icon_state_closed:@icon_state_open]")
+APPEARANCE_TEMPLATE(/obj/machinery/door/blast, "{density?@icon_state_closed:@icon_state_open}")
 
 // Proc: emag_act()
 // Description: Emag action to allow blast doors to double their yeet distance and speed.

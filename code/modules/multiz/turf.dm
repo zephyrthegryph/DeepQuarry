@@ -92,7 +92,7 @@ GLOBAL_DATUM_INIT(openspace_backdrop_one_for_all, /atom/movable/openspace_backdr
 			depth += 1
 		. += "It is about [depth] levels deep."
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/open, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/turf/simulated/open, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /turf/simulated/open/appearance_overlays()
 	. = list()
 	. += update_icon_edge()

@@ -53,7 +53,7 @@ TYPE_TABLE(/obj/item/oldtwohanded, equip_spec, dq_spec_join(..(), list(REQ_ON(PR
 			O.unwield()
 	return	unwield()
 
-DECLARE_APPEARANCE_PROC(/obj/item/oldtwohanded, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/oldtwohanded, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/oldtwohanded/appearance_overlays()
 	. = list()
 	icon_state = "[base_icon][wielded]"

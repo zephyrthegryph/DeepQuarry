@@ -125,7 +125,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/hypospray/vial, \
 	else
 		return FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/reagent_containers/hypospray/vial, "[initial(icon_state)][loaded_vial?:_empty]")
+APPEARANCE_TEMPLATE(/obj/item/reagent_containers/hypospray/vial, "{initial(icon_state)}{loaded_vial?:_empty}")
 
 /obj/item/reagent_containers/hypospray/vial/proc/load_vial_done(mob/user, obj/item/reagent_containers/glass/beaker/vial/W)
 	if(loaded_vial || !(W in user))
@@ -190,7 +190,7 @@ APPEARANCE_TEMPLATE(/obj/item/reagent_containers/hypospray/vial, "[initial(icon_
 /obj/item/reagent_containers/hypospray/autoinjector/proc/appearance_filled()
 	return reagents?.total_volume > 0 ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/reagent_containers/hypospray/autoinjector, "[initial(icon_state)][appearance_filled?1:0]")
+APPEARANCE_TEMPLATE(/obj/item/reagent_containers/hypospray/autoinjector, "{initial(icon_state)}{appearance_filled?1:0}")
 
 /obj/item/reagent_containers/hypospray/autoinjector/examine(mob/user)
 	. = ..()

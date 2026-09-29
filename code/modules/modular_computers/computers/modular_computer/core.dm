@@ -98,7 +98,7 @@ DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 		to_chat(user, "You emag \the [src]. It's screen briefly shows a \"OVERRIDE ACCEPTED: New software downloads available.\" message.")
 		return 1
 
-DECLARE_APPEARANCE_PROC(/obj/item/modular_computer, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/modular_computer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/modular_computer/appearance_overlays()
 	. = list()
 	icon_state = icon_state_unpowered

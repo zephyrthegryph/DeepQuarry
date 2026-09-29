@@ -29,7 +29,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/passive/opossum, get_ai_behaviors, list
 				COOLDOWN_START(src, play_dead_until, rand(1 MINUTE, 2 MINUTES))
 		update_icon()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/opossum, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/opossum, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/animal/passive/opossum/appearance_overlays()
 	. = list()
 	// Override to read the local is_angry flag instead of the deleted ai_holder.

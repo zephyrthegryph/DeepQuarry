@@ -89,7 +89,7 @@
 		return wires_intact ? "open_wires" : "open_wirescut"
 	return isactive ? "on" : "off"
 
-APPEARANCE_TEMPLATE(/obj/machinery/atmospheric_field_generator, "arfg_[appearance_state]")
+APPEARANCE_TEMPLATE(/obj/machinery/atmospheric_field_generator, "arfg_{appearance_state}")
 
 /obj/machinery/atmospheric_field_generator/power_change()
 	. = ..()
@@ -190,7 +190,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospheric_field_generator, "arfg_[appearanc
 	light_on = TRUE
 	rad_insulation = RAD_LIGHT_INSULATION
 
-DECLARE_APPEARANCE_PROC(/obj/structure/atmospheric_retention_field, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/atmospheric_retention_field, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/atmospheric_retention_field/appearance_overlays()
 	. = list()
 	var/list/dirs = list()

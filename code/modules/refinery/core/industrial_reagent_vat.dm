@@ -31,7 +31,7 @@
 
 	refinery_transfer()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/vat, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/vat, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/reagent_refinery/vat/appearance_overlays()
 	. = list()
 	// GOOBY!

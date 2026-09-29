@@ -219,7 +219,7 @@
 // if NOPOWER, display blank
 // if BROKEN, display blue screen of death icon AI uses
 // if timing=true, run update display function
-DECLARE_APPEARANCE_PROC(/obj/machinery/door_timer, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/door_timer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/door_timer/appearance_overlays()
 	. = list()
 	if(has_stat(NOPOWER))

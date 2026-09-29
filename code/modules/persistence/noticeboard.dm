@@ -57,7 +57,7 @@ DECLARE_REF(/obj/structure/noticeboard, "notices", OWNED_LIST, null)
 /obj/structure/noticeboard/proc/appearance_count()
 	return LAZYLEN(notices)
 
-APPEARANCE_TEMPLATE(/obj/structure/noticeboard, "[base_icon_state][appearance_count]")
+APPEARANCE_TEMPLATE(/obj/structure/noticeboard, "{base_icon_state}{appearance_count}")
 
 /// Old attackby.
 /obj/structure/noticeboard/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)

@@ -224,7 +224,7 @@
 				L.adjust_fire_stacks(get_fuel_amount() / 4)
 				L.ignite_mob()
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/bonfire/appearance_overlays()
 	. = list()
 	if(burning)
@@ -436,7 +436,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, PROC_REF(appearance_overlays), l
 			var/obj/O = A
 			O.fire_act(1000, 500)
 
-DECLARE_APPEARANCE_PROC(/obj/structure/fireplace, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/fireplace, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/fireplace/appearance_overlays()
 	. = list()
 	if(burning)
@@ -504,7 +504,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/fireplace, PROC_REF(appearance_overlays),
 	density = TRUE
 	anchored = FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/fireplace/barrel, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/fireplace/barrel, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/fireplace/barrel/appearance_overlays()
 	. = list()
 	if(burning)

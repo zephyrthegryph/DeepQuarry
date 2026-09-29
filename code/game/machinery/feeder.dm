@@ -7,7 +7,7 @@
 	var/attached_handle
 	var/obj/item/reagent_containers/beaker = null
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/feeder/appearance_overlays()
 	. = list()
 	if(attached())

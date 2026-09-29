@@ -464,7 +464,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/alarm, alarm_TLV, air_alarm_TLV_base())
 
 	return 0
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/alarm, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/alarm, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/alarm/appearance_overlays()
 	. = list()
 	// start actual update!

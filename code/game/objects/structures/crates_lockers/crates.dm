@@ -145,7 +145,7 @@
 		return "emagged"
 	return locked ? "locked" : "unlocked"
 
-APPEARANCE_TEMPLATE(/obj/structure/closet/crate/secure, "closed_[appearance_lock_state][sealed?_welded:]")
+APPEARANCE_TEMPLATE(/obj/structure/closet/crate/secure, "closed_{appearance_lock_state}{sealed?_welded:}")
 
 /obj/structure/closet/crate/secure/proc/togglelock(mob/user as mob)
 	if(src.opened)

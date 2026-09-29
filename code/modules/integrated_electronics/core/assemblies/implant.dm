@@ -13,7 +13,7 @@
 /obj/item/electronic_assembly/implant/tgui_host()
 	return implant().tgui_host()
 
-DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/implant, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/implant, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/electronic_assembly/implant/appearance_overlays()
 	. = list()
 	. += ..()

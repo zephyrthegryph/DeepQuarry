@@ -359,7 +359,7 @@ DECLARE_REF(/obj/machinery/shieldgen, "deployed_shields", OWNED_LIST, null)
 /obj/machinery/shieldgen/proc/appearance_projecting()
 	return active && !has_stat(NOPOWER)
 
-APPEARANCE_TEMPLATE(/obj/machinery/shieldgen, "shield[appearance_projecting?on:off][malfunction?br:]")
+APPEARANCE_TEMPLATE(/obj/machinery/shieldgen, "shield{appearance_projecting?on:off}{malfunction?br:}")
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/shieldgen/step_start_condition()

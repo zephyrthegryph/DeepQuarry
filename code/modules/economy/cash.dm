@@ -71,7 +71,7 @@
 		consume(src, user)
 	return INTERACTION_HANDLED_PASS
 
-DECLARE_APPEARANCE_PROC(/obj/item/spacecash, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/spacecash, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/spacecash/appearance_overlays()
 	. = list()
 	name = "[worth] [initial_name]\s"

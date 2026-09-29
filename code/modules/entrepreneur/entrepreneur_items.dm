@@ -414,7 +414,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/emf, INTERACT_USE(null, PROC_REF(int
 		return 60
 	return 80
 
-APPEARANCE_TEMPLATE(/obj/item/entrepreneur/emf, "emf-[appearance_level]")
+APPEARANCE_TEMPLATE(/obj/item/entrepreneur/emf, "emf-{appearance_level}")
 
 /obj/item/entrepreneur/spirit_board
 	name = "spirit board"

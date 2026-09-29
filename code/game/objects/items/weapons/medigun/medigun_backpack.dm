@@ -225,7 +225,7 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 /obj/item/medigun_backpack/get_cell()
 	return bcell
 
-DECLARE_APPEARANCE_PROC(/obj/item/medigun_backpack, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/medigun_backpack, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/medigun_backpack/appearance_overlays()
 	. = list()
 	. += ..()

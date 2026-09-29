@@ -48,7 +48,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 
 	build_icons()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/omni, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/omni, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/omni/appearance_overlays()
 	. = list()
 	if(has_stat(NOPOWER))

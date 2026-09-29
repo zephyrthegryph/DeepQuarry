@@ -41,7 +41,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/emitter/gyrotron, REGISTRY_GYROTRONS)
 	E.damage = mega_energy * 50
 	return E
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/emitter/gyrotron, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/emitter/gyrotron, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/power/emitter/gyrotron/appearance_overlays()
 	. = list()
 	if (active && power_region && avail(active_power_usage))

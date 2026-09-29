@@ -62,7 +62,7 @@ DECLARE_REF(/obj/item/flamethrower, "ptank", OWNED, null)
 		location.hotspot_expose(700, 2)
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/flamethrower/appearance_overlays()
 	. = list()
 	if(igniter)

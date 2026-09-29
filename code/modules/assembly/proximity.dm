@@ -75,7 +75,7 @@ MATERIAL_MIX(/obj/item/assembly/prox_sensor, list(MAT_STEEL = 800, MAT_GLASS = 2
 	scanning = !scanning
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/assembly/prox_sensor, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/assembly/prox_sensor, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/assembly/prox_sensor/appearance_overlays()
 	. = list()
 	LAZYCLEARLIST(attached_overlays)

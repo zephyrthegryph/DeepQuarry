@@ -391,7 +391,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 /obj/machinery/sleeper/proc/appearance_occupied()
 	return src?.slot_item(OCCUPANT_SLOT_SLEEPER) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/sleeper, "sleeper_[appearance_occupied]")
+APPEARANCE_TEMPLATE(/obj/machinery/sleeper, "sleeper_{appearance_occupied}")
 
 /// Old attackby. It never called ..(), so every item stops here.
 /obj/machinery/sleeper/proc/sleeper_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)

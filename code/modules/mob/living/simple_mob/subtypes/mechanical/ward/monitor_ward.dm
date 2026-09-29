@@ -71,7 +71,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/ward/monitor/crew, INTERAC
 /datum/om/stage/life/special/mechanical/ward/monitor/perform(mob/living/simple_mob/mechanical/ward/monitor/self, datum/om/frame/life/ctx)
 	self.detect_mobs()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/mechanical/ward/monitor, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/mechanical/ward/monitor, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/mechanical/ward/monitor/appearance_overlays()
 	. = list()
 	if(seen_mobs.len)

@@ -154,7 +154,7 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 				M.forceMove(src)
 				to_chat(user, span_notice("You stuff \the [M] into \the [src]!"))
 	return INTERACTION_HANDLED_PASS
-DECLARE_APPEARANCE_PROC(/obj/item/glass_jar, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/glass_jar, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/glass_jar/appearance_overlays() // Also updates name and desc
 	. = list()
 	underlays.Cut()

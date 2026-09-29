@@ -26,7 +26,7 @@
 		return "_open"
 	return ""
 
-APPEARANCE_TEMPLATE(/obj/structure/panic_button, "[initial(icon_state)][appearance_panic_suffix]")
+APPEARANCE_TEMPLATE(/obj/structure/panic_button, "{initial(icon_state)}{appearance_panic_suffix}")
 
 DECLARE_INTERACTIONS(/obj/structure/panic_button, INTERACT_HAND_AS(I_HURT, "Smash the glass", PROC_REF(interaction_hand)), INTERACT_HAND(null, PROC_REF(interaction_hand)))
 

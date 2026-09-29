@@ -170,7 +170,7 @@
 
 /// Wreck state when destroyed; otherwise the colour state plus holding/port/pressure-band overlays
 /// (desired_update_flag(): 1 holding, 2 connected, 4/8/16/32 the pressure band).
-DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/canister, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/canister, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/portable_atmospherics/canister/appearance_overlays()
 	. = list()
 	if(destroyed)

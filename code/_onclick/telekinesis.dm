@@ -134,7 +134,7 @@ DECLARE_INTERACTIONS(/obj/item/tk_grab, INTERACT_USE(null, PROC_REF(interaction_
 	O.expire(5)
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/item/tk_grab, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/tk_grab, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/tk_grab/appearance_overlays()
 	. = list()
 	if(focus() && focus().icon && focus().icon_state)

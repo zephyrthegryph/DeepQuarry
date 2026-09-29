@@ -72,7 +72,7 @@
 	name = "deeper waters"
 	desc = "The watery depths seem to go even deeper here."
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water/underwater/open, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water/underwater/open, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /turf/simulated/floor/water/underwater/open/appearance_overlays()
 	. = list()
 	. += ..()
@@ -119,7 +119,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water/underwater/open, PROC_REF(ap
 	. = ..()
 	make_z_transparent(FALSE)
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water/underwater/indoors/open, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water/underwater/indoors/open, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /turf/simulated/floor/water/underwater/indoors/open/appearance_overlays()
 	. = list()
 	. += ..()

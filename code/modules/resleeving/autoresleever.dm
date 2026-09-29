@@ -16,7 +16,7 @@
 
 REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEEVERS)
 
-APPEARANCE_TEMPLATE(/obj/machinery/transhuman/autoresleever, "autoresleever[appearance_faulty?-o:]")
+APPEARANCE_TEMPLATE(/obj/machinery/transhuman/autoresleever, "autoresleever{appearance_faulty?-o:}")
 
 /obj/machinery/transhuman/autoresleever/proc/appearance_faulty()
 	return has_stat(BROKEN | MAINT | EMPED)

@@ -330,7 +330,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/blade, \
 	update_icon()
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/melee/robotic/blade/appearance_overlays()
 	. = list()
 	if(active)
@@ -448,7 +448,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, PROC_REF(appearance_overl
 	var/lightcolor = "#FF6A00"
 	borg_flags = COUNTS_AS_ROBOTIC_MELEE
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/baton, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/baton, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/melee/robotic/baton/appearance_overlays()
 	. = list()
 	if(status)

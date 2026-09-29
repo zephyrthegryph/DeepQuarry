@@ -158,7 +158,7 @@
 	else
 		set_light(0)
 
-DECLARE_APPEARANCE_PROC(/obj/item/kinetic_crusher, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/kinetic_crusher, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/kinetic_crusher/appearance_overlays()
 	. = list()
 	. += ..()

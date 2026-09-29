@@ -9,14 +9,28 @@
 	var/charge = null
 	var/label = "a"
 
-APPEARANCE_TEMPLATE(/obj/machinery/dq_appearance_probe, "probe[on][operable][label?@label:][initial(icon_state)]")
+APPEARANCE_TEMPLATE(/obj/machinery/dq_appearance_probe, "probe{on}{operable}{label?@label:}{initial(icon_state)}")
 APPEARANCE_LEVEL(/obj/machinery/dq_appearance_probe, "charge", 4, "lvl%p")
 APPEARANCE_EMISSIVE(/obj/machinery/dq_appearance_probe, "active", list("1" = "glow"))
 DECLARE_APPEARANCE(/obj/machinery/dq_appearance_probe, "locked", list("1" = list(APPEARANCE_ICON_STATE = "probe-locked")))
 
+/// Inherits the template; [initial(icon_state)] must read this subtype's icon_state.
+/obj/machinery/dq_appearance_probe/other
+	icon_state = "other"
+
 /// Drops the parent's declarations.
 /obj/machinery/dq_appearance_probe/bare
 APPEARANCE_NONE(/obj/machinery/dq_appearance_probe/bare)
+
+/// A provider: overlays computed from state, owned by the runtime.
+/obj/structure/dq_appearance_provider
+	var/count = 0
+
+DECLARE_APPEARANCE_PROC(/obj/structure/dq_appearance_provider, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
+/obj/structure/dq_appearance_provider/appearance_overlays()
+	. = list()
+	for(var/i in 1 to count)
+		. += "dot[i]"
 
 /// A procedural drawer: counts its redraws.
 /obj/structure/dq_appearance_procedural
@@ -133,3 +147,33 @@ APPEARANCE_NONE(/obj/machinery/dq_appearance_probe/bare)
 	S.set_anchored(!S.anchored)
 	appearance_flush()
 	TEST_ASSERT_EQUAL(S.redraws, 0, "an unwatched type is not redrawn by a field change")
+
+/// [initial(icon_state)] resolves per concrete subtype, not per declaring type.
+/datum/unit_test/dq_sys_appearance_initial_per_subtype
+
+/datum/unit_test/dq_sys_appearance_initial_per_subtype/Run()
+	var/obj/machinery/dq_appearance_probe/other/O = allocate(/obj/machinery/dq_appearance_probe/other)
+	O.set_stat(0)
+	O.set_on(FALSE)
+	O.label = null
+	O.update_icon()
+	TEST_ASSERT_EQUAL(O.icon_state, "probe01other", "the subtype's initial icon_state fills the inherited template")
+
+/// A provider's overlays are swapped by the runtime; a declared channel re-runs it.
+/datum/unit_test/dq_sys_appearance_provider
+
+/datum/unit_test/dq_sys_appearance_provider/Run()
+	appearance_flush()
+	var/obj/structure/dq_appearance_provider/P = allocate(/obj/structure/dq_appearance_provider)
+	P.count = 2
+	P.update_icon()
+	TEST_ASSERT_EQUAL(dq_sys_appearance_overlays(P, "dot1") + dq_sys_appearance_overlays(P, "dot2"), 2, "the provider's overlays are drawn")
+	P.count = 1
+	P.update_icon()
+	TEST_ASSERT_EQUAL(dq_sys_appearance_overlays(P, "dot2"), 0, "overlays the provider no longer returns are cut")
+	TEST_ASSERT_EQUAL(dq_sys_appearance_overlays(P, "dot1"), 1, "a kept overlay is drawn once, not stacked")
+	P.count = 3
+	om_changed(P, CHANGE_NEIGHBOURS)
+	TEST_ASSERT(P.appearance_queued, "a declared channel queues the provider")
+	appearance_flush()
+	TEST_ASSERT_EQUAL(dq_sys_appearance_overlays(P, "dot3"), 1, "the queued refresh re-ran the provider")

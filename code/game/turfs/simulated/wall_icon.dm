@@ -81,7 +81,7 @@ DECLARE_SHARED_CACHE_EX(wall_material_facts, GLOBAL_PROC_REF(build_wall_material
 	update_material()
 	check_radioactive()
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/wall, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/turf/simulated/wall, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /turf/simulated/wall/appearance_overlays()
 	. = list()
 	if(!material)

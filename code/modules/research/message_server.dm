@@ -204,7 +204,7 @@ DECLARE_REF(/obj/machinery/message_server, "soundloop", OWNED, null)
 		return "off"
 	return "on"
 
-APPEARANCE_TEMPLATE(/obj/machinery/message_server, "server-[appearance_server_state]")
+APPEARANCE_TEMPLATE(/obj/machinery/message_server, "server-{appearance_server_state}")
 
 /datum/feedback_variable
 	var/variable

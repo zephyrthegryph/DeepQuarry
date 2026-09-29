@@ -67,7 +67,7 @@
 	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 800)
 	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 800)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/binary/dp_vent_pump, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/binary/dp_vent_pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/binary/dp_vent_pump/appearance_overlays()
 	. = list()
 

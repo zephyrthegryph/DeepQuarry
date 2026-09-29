@@ -90,7 +90,7 @@ DECLARE_INTERACTIONS(/obj/item/aicard, INTERACT_USE(null, PROC_REF(interaction_s
 
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/item/aicard, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/aicard/appearance_overlays()
 	. = list()
 	if(carded_ai())

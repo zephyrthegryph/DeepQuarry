@@ -54,7 +54,7 @@
 /obj/machinery/transportpod/proc/appearance_occupied()
 	return src?.slot_item(OCCUPANT_SLOT_TRANSPORTPOD) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/transportpod, "borg_pod_[appearance_occupied?closed:opened]")
+APPEARANCE_TEMPLATE(/obj/machinery/transportpod, "borg_pod_{appearance_occupied?closed:opened}")
 
 /obj/machinery/transportpod/Bumped(mob/living/O)
 	go_in(O)

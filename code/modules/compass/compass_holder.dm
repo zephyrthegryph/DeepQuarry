@@ -69,7 +69,7 @@ DECLARE_REF(/obj/compass_holder, "compass_waypoints", OWNED_VALUES, null)
 	else
 		. = 0
 
-DECLARE_APPEARANCE_PROC(/obj/compass_holder, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/compass_holder, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/compass_holder/appearance_overlays()
 	. = list()
 	var/set_overlays = (compass_static_labels | compass_waypoint_markers)

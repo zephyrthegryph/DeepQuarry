@@ -23,7 +23,7 @@
 
 	. = ..()
 
-DECLARE_APPEARANCE_PROC(/turf/snow, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/turf/snow, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /turf/snow/appearance_overlays()
 	. = list()
 	for(var/d in crossed_dirs)

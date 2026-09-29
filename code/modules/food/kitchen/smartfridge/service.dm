@@ -31,7 +31,7 @@
 	circuit = /obj/item/circuitboard/smartfridge/drinks/showcase
 
 //Showcase needs a special icon update
-DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge/drinks/showcase, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge/drinks/showcase, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/smartfridge/drinks/showcase/appearance_overlays()
 	. = list()
 	if(panel_open)

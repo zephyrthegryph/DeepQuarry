@@ -370,7 +370,7 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 	open_door(user)
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/maint_recycler, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/maint_recycler, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/maint_recycler/appearance_overlays()
 	. = list()
 	if(inserted_item != null)

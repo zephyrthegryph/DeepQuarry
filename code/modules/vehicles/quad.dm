@@ -89,7 +89,7 @@ DECLARE_REF(/obj/vehicle/train/engine/quadbike, "soundloop", OWNED, null)
 
 EXTEND_INTERACTIONS(/obj/vehicle/train/engine/quadbike, INTERACT_ITEM("Paint", PROC_REF(interaction_vehicle_paint)))
 
-DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine/quadbike, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine/quadbike, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/vehicle/train/engine/quadbike/appearance_overlays()
 	. = list()
 	. += ..()
@@ -260,7 +260,7 @@ DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine/quadbike, PROC_REF(appearance_
 			to_chat(D, span_danger("You hit [M]!"))
 			add_attack_logs(D,M,"Ran over with [src.name]")
 
-DECLARE_APPEARANCE_PROC(/obj/vehicle/train/trolley/trailer, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/vehicle/train/trolley/trailer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/vehicle/train/trolley/trailer/appearance_overlays()
 	. = list()
 	. += ..()

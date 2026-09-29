@@ -205,7 +205,7 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 	position_y = ((loc.y - 1) * WORLD_ICON_SIZE) + MODULUS(position_y, WORLD_ICON_SIZE)
 	update_screen()
 
-DECLARE_APPEARANCE_PROC(/obj/effect/overmap/visitable/ship, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/effect/overmap/visitable/ship, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/effect/overmap/visitable/ship/appearance_overlays()
 	. = list()
 	if(!is_still())

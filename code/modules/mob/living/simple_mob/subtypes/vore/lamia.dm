@@ -55,7 +55,7 @@
 
 	can_be_drop_prey = FALSE
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/lamia, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/lamia, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/vore/lamia/appearance_overlays()
 	. = list()
 	. += ..()

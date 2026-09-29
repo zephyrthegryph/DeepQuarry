@@ -34,7 +34,7 @@
 			add_fingerprint(usr)
 			return
 
-DECLARE_APPEARANCE_PROC(/obj/item/clipboard, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/clipboard, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/clipboard/appearance_overlays()
 	. = list()
 	if(toppaper())

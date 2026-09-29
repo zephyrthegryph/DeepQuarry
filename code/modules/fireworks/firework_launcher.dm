@@ -27,7 +27,7 @@
 
 	. = ..()
 
-APPEARANCE_TEMPLATE(/obj/machinery/firework_launcher, "launcher[loaded_star?1:0][anchored?1:0][panel_open?_open:]")
+APPEARANCE_TEMPLATE(/obj/machinery/firework_launcher, "launcher{loaded_star?1:0}{anchored?1:0}{panel_open?_open:}")
 
 /obj/machinery/firework_launcher/declare_interactions(list/into)
 	into += list(

@@ -65,7 +65,7 @@
 /obj/structure/girder/get_material()
 	return girder_material
 
-DECLARE_APPEARANCE_PROC(/obj/structure/girder, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/girder, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/girder/appearance_overlays()
 	. = list()
 	if(anchored)
@@ -337,7 +337,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/girder, PROC_REF(appearance_overlays), li
 	girder_material = "cult"
 	applies_material_colour = 0
 
-DECLARE_APPEARANCE_PROC(/obj/structure/girder/cult, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/girder/cult, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/girder/cult/appearance_overlays()
 	. = list()
 	if(anchored)

@@ -173,7 +173,7 @@ DECLARE_INTERACTIONS(/obj/structure/ladder, \
 /obj/structure/ladder/proc/appearance_down()
 	return !!(allowed_directions & DOWN)
 
-APPEARANCE_TEMPLATE(/obj/structure/ladder, "ladder[appearance_up][appearance_down]")
+APPEARANCE_TEMPLATE(/obj/structure/ladder, "ladder{appearance_up}{appearance_down}")
 
 /obj/structure/ladder/up
 	allowed_directions = UP

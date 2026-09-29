@@ -330,7 +330,7 @@
 	desc = "It's the hood part of a hoodie. What kind of hoodie would it be without one? A poser, obviously."
 	icon_state = "choodie"
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/head/hood/toggleable/colorable, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/head/hood/toggleable/colorable, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/clothing/head/hood/toggleable/colorable/appearance_overlays()
 	. = list()
 	. += ..()

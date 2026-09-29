@@ -30,7 +30,7 @@ DECLARE_REF(/obj/machinery/computer/rcon, "rcon", OWNED, null)
 /obj/machinery/computer/rcon/tgui_interact(mob/user, datum/tgui/ui)
 	rcon.tgui_interact(user, ui)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/rcon, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/rcon, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/computer/rcon/appearance_overlays()
 	. = list()
 	. += ..()

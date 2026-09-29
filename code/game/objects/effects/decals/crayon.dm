@@ -27,7 +27,7 @@
 
 	. = ..(mapload, new_age) // mapload, age
 
-DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/crayon, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/crayon, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/effect/decal/cleanable/crayon/appearance_overlays()
 	. = list()
 	var/icon/mainOverlay = new/icon('icons/effects/crayondecal.dmi',"[art_type]",2.1)

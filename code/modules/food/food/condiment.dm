@@ -422,7 +422,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/carton/flour, null,
 	. = ..()
 	randpixel_xy()
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/condiment/carton, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/condiment/carton, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/reagent_containers/food/condiment/carton/appearance_overlays()
 	. = list()
 

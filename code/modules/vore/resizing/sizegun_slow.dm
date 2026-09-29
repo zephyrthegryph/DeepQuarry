@@ -18,7 +18,7 @@
 	var/current_target
 	var/trading = 0
 
-APPEARANCE_TEMPLATE(/obj/item/slow_sizegun, "[base_icon_state]-[sizeshift_mode][busy?-active:]")
+APPEARANCE_TEMPLATE(/obj/item/slow_sizegun, "{base_icon_state}-{sizeshift_mode}{busy?-active:}")
 
 /obj/item/slow_sizegun/proc/should_stop(mob/living/target, mob/living/user, active_hand)
 	if(!target || !user || !active_hand || !istype(target) || !istype(user) || !busy)

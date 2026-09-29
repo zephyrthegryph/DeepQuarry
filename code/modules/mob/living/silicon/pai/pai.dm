@@ -575,7 +575,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 // Update icons
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/silicon/pai/appearance_overlays()
 	. = list()
 	. += ..()

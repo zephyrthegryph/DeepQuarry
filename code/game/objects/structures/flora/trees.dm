@@ -359,7 +359,7 @@
 	. = ..()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/structure/flora/tree/sif, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/flora/tree/sif, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/flora/tree/sif/appearance_overlays()
 	. = list()
 	var/bulbs = (5 - light_shift)

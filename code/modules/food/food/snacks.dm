@@ -3914,7 +3914,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpiz
 	var/list/boxes = list() // If the boxes are stacked, they come here
 	var/boxtag = ""
 
-DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/pizzabox/appearance_overlays()
 	. = list()
 
@@ -7475,7 +7475,7 @@ TYPE_TABLE(/obj/item/storage/box/wings, hold_spec, list(HOLD_ONLY(list(/obj/item
 	update_icon()
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wings, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wings, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/box/wings/appearance_overlays()
 	. = list()
 	var/i = 0

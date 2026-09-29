@@ -102,7 +102,7 @@
 	chambered = null
 	return ..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/cell_loaded, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/cell_loaded, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/projectile/cell_loaded/appearance_overlays()
 	. = list()
 	update_charge()
@@ -175,7 +175,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 		if(istype(M))
 			M?.hud_used?.update_ammo_hud(M, cell_load)
 
-DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/cell_mag, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/cell_mag, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/ammo_magazine/cell_mag/appearance_overlays()
 	. = list()
 	if(!stored_ammo.len)
@@ -227,7 +227,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/cell_mag, PROC_REF(appearance_ov
 	pixel_y = rand(-10, 10)
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/ammo_casing/microbattery, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/ammo_casing/microbattery, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/ammo_casing/microbattery/appearance_overlays()
 	. = list()
 

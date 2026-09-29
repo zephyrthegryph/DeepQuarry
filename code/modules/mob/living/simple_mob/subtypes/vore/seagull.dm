@@ -49,7 +49,7 @@
 	emote_hear = list("screams!","chirps.")
 	emote_see = list("pecks at the ground","looks around hungrily")
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/seagull, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/seagull, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/vore/seagull/appearance_overlays()
 	. = list()
 	. += ..()

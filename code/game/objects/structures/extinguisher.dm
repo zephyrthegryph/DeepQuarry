@@ -125,7 +125,7 @@
 		return "advanced"
 	return "standard"
 
-APPEARANCE_TEMPLATE(/obj/structure/extinguisher_cabinet, "[initial(icon_state)][opened?:_closed]_[appearance_suffix]")
+APPEARANCE_TEMPLATE(/obj/structure/extinguisher_cabinet, "{initial(icon_state)}{opened?:_closed}_{appearance_suffix}")
 
 /obj/structure/extinguisher_cabinet/old
 	name = "extinguisher cabinet"

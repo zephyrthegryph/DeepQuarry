@@ -14,7 +14,7 @@
 /obj/structure/table/rack/update_desc()
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/structure/table/rack, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/table/rack, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/table/rack/appearance_overlays()
 	. = list()
 	if(material()) // for rack colors based on materials

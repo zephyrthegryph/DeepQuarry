@@ -53,7 +53,7 @@ DECLARE_PERIODIC(/obj/item/ammo_magazine/smart, PERIODIC_SLOW)
 	else
 		. += span_warning("\The [src] does not appear to have a power source installed.")
 
-DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/smart, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/smart, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/ammo_magazine/smart/appearance_overlays()
 	. = list()
 	if(attached_cell())

@@ -122,7 +122,7 @@
 		GLOB.plant_service.product_descs["[seed().uid]"] = desc
 	desc += ". Delicious! Probably."
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/grown, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/grown, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/reagent_containers/food/snacks/grown/appearance_overlays()
 	. = list()
 	if(!seed() || !GLOB.plant_service?.plant_icon_cache)

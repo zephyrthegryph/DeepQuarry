@@ -56,7 +56,7 @@
 	flags = OPENCONTAINER
 	var/amount_per_transfer_from_this = 5
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/bath, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/bed/bath, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/bed/bath/appearance_overlays()
 	. = list()
 	if(reagents.total_volume < 1)
@@ -120,7 +120,7 @@ DECLARE_REAGENTS(/obj/structure/bed/bath, 300, null)
 	icon_state = "yeoldovenopen"
 	tgui_id = "CookingOvenOld"
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/oven/yeoldoven, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/oven/yeoldoven, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/appliance/cooker/oven/yeoldoven/appearance_overlays()
 	. = list()
 	if(!open)
@@ -219,7 +219,7 @@ APPEARANCE_NONE(/obj/structure/toilet/wooden)
 	visible_action = "starts cooking"
 	audible_action = "fire roar"
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/microwave/cookingpot, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/microwave/cookingpot, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/microwave/cookingpot/appearance_overlays()
 	. = list()
 	if(broken)
@@ -257,7 +257,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/microwave/cookingpot, PROC_REF(appearance
 	icon = 'icons/obj/gun.dmi'
 	icon_state = "harpoonwand-2"
 
-DECLARE_APPEARANCE_PROC(/obj/item/bluespace_harpoon/wand, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/bluespace_harpoon/wand, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/bluespace_harpoon/wand/appearance_overlays()
 	. = list()
 	if(transforming)

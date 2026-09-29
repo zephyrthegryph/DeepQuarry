@@ -24,7 +24,7 @@
 	if(corptag && Adjacent(user))
 		. += span_notice("[src] has a [corptag] attached to it.")
 
-DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag/robobag, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag/robobag, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/closet/body_bag/cryobag/robobag/appearance_overlays()
 	. = list()
 	. += ..()

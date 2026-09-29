@@ -11,7 +11,7 @@
 	. = ..()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack/arcadeticket, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/stack/arcadeticket, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/stack/arcadeticket/appearance_overlays()
 	. = list()
 	var/amount = get_amount()

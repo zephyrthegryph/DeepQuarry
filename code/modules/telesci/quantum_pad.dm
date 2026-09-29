@@ -101,7 +101,7 @@
 	to_chat(user, span_notice("You link [src] to the one in [tool]'s buffer."))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/quantumpad, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/quantumpad, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/power/quantumpad/appearance_overlays()
 	. = list()
 	. += ..()

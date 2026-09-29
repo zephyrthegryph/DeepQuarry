@@ -213,7 +213,7 @@
 	if(ctx.fact("alive"))
 		self.shadekin.handle_comp()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/shadekin, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/shadekin, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/shadekin/appearance_overlays()
 	. = list()
 	. += ..()

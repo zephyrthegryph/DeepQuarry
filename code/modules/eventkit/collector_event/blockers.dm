@@ -62,7 +62,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector_blocker, REGISTRY_EVENT_COLLE
 	if(GLOB.event_collector_associations[blocker_channel])
 		GLOB.event_collector_associations[blocker_channel] -= src
 
-APPEARANCE_TEMPLATE(/obj/structure/event_collector_blocker, "[base_icon]_[block_amount?off:on]")
+APPEARANCE_TEMPLATE(/obj/structure/event_collector_blocker, "{base_icon}_{block_amount?off:on}")
 
 /obj/structure/event_collector_blocker/proc/induce_failure(intensity = -1) //progress to remove from the machine
 	if(intensity == -1)

@@ -55,7 +55,7 @@
 		else
 			to_chat(user, span_notice("A no server error appears on the screen."))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/message_monitor, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/message_monitor, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/computer/message_monitor/appearance_overlays()
 	. = list()
 	if(emag || hacking)

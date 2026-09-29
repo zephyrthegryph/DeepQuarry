@@ -11,7 +11,7 @@
 /obj/structure/blob/shield/core
 	point_return = 0
 
-DECLARE_APPEARANCE_PROC(/obj/structure/blob/shield, PROC_REF(appearance_overlays), list("get_integrity"))
+DECLARE_APPEARANCE_PROC(/obj/structure/blob/shield, TYPE_PROC_REF(/atom, appearance_overlays), list("get_integrity"))
 /obj/structure/blob/shield/appearance_overlays()
 	. = list()
 	. += ..()

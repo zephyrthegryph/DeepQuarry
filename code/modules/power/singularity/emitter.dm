@@ -364,7 +364,7 @@
 	make_rotatable()
 	emp_protection_flags |= EMP_PROTECT_SELF
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/emitter, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/emitter, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/power/emitter/appearance_overlays()
 	. = list()
 	icon_state = "emitter[state]"
@@ -388,7 +388,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/emitter, PROC_REF(appearance_overla
 	desc = "An old fashioned heavy duty industrial laser."
 	icon_state = "emitter"
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/emitter/antique, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/emitter/antique, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/power/emitter/antique/appearance_overlays()
 	. = list()
 	if(powered && power_region && avail(active_power_usage) && active)

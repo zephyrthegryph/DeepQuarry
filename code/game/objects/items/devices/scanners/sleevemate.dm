@@ -383,7 +383,7 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 /obj/item/sleevemate/proc/appearance_has_mind()
 	return stored_mind() ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/sleevemate, "[initial(icon_state)][appearance_has_mind?_on:]")
+APPEARANCE_TEMPLATE(/obj/item/sleevemate, "{initial(icon_state)}{appearance_has_mind?_on:}")
 
 /// Pulling a mind out. Re-checked on the answer: the scanner is still in hand and empty, the victim still next to the user.
 /datum/om/prompt/confirm/sleevemate_mindsteal

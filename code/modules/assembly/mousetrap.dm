@@ -12,7 +12,7 @@
 	if(armed)
 		. += "It looks like it's armed."
 
-DECLARE_APPEARANCE_PROC(/obj/item/assembly/mousetrap, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/assembly/mousetrap, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/assembly/mousetrap/appearance_overlays()
 	. = list()
 	if(armed)

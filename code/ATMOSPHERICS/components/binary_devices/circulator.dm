@@ -78,7 +78,7 @@
 	recent_moles_transferred = 0
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/binary/circulator, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/binary/circulator, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/binary/circulator/appearance_overlays()
 	. = list()
 	icon_state = anchored ? "circ-assembled" : "circ-unassembled"

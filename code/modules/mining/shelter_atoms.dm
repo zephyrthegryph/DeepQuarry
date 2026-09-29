@@ -744,7 +744,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 /obj/structure/window/reinforced/survival_pod/is_fulltile()
 	return FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/window/reinforced/survival_pod, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/window/reinforced/survival_pod, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/window/reinforced/survival_pod/appearance_overlays()
 	. = list()
 	icon_state = basestate
@@ -775,7 +775,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/window/reinforced/survival_pod, PROC_REF(
 	can_plate = FALSE
 	can_flip_verb = FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/table/survival_pod, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/table/survival_pod, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/table/survival_pod/appearance_overlays()
 	. = list()
 	icon_state = "table"
@@ -796,7 +796,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/table/survival_pod, PROC_REF(appearance_o
 	stasis_level = /datum/body_effect/stasis/complete //Just one setting
 
 APPEARANCE_NONE(/obj/machinery/sleeper/survival_pod)
-DECLARE_APPEARANCE_PROC(/obj/machinery/sleeper/survival_pod, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/sleeper/survival_pod, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/sleeper/survival_pod/appearance_overlays()
 	. = list()
 	if(src?.slot_item(OCCUPANT_SLOT_SLEEPER))

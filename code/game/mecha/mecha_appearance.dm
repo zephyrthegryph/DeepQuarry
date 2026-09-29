@@ -21,7 +21,7 @@
 	animate(src, transform = M, time = 10)
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/mecha, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/mecha, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/mecha/appearance_overlays()
 	. = list()
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)

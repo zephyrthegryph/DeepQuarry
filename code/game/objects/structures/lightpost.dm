@@ -16,7 +16,7 @@
 	update_icon()
 	return ..()
 
-DECLARE_APPEARANCE_PROC(/obj/structure/lightpost, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/lightpost, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/lightpost/appearance_overlays()
 	. = list()
 

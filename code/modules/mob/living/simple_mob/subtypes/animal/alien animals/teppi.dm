@@ -656,7 +656,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 	if(vitality() <= 0.75)
 		. += span_notice("They look beat up.")
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/vore/alienanimals/teppi/appearance_overlays()
 	. = list()
 	. += ..()

@@ -21,7 +21,7 @@
 	. = ..()
 	make_climbable()
 
-APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/heat_exchanger, "[node?intact:exposed]")
+APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/heat_exchanger, "{node?intact:exposed}")
 
 /obj/machinery/atmospherics/unary/heat_exchanger/atmos_init()
 	if(!partner)

@@ -344,7 +344,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 
 DECLARE_REF(/obj/machinery/gear_dispenser/suit_fancy, "door", OWNED, null)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/gear_dispenser/suit_fancy, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/gear_dispenser/suit_fancy, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/gear_dispenser/suit_fancy/appearance_overlays()
 	. = list()
 

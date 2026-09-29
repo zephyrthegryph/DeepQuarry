@@ -327,7 +327,7 @@ DECLARE_REF(/obj/structure/janitorialcart, "mybucket", OWNED, null)
 	update_icon()
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/janitorialcart, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/janitorialcart, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/janitorialcart/appearance_overlays()
 	. = list()
 

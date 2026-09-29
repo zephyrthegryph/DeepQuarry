@@ -85,7 +85,7 @@
 /obj/machinery/artifact/proc/appearance_active()
 	return LAZYLEN(artifact_master?.get_active_effects()) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/artifact, "ano[icon_num][appearance_active]")
+APPEARANCE_TEMPLATE(/obj/machinery/artifact, "ano{icon_num}{appearance_active}")
 
 /obj/machinery/artifact
 	icon = 'icons/obj/xenoarchaeology.dmi'

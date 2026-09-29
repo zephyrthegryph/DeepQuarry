@@ -124,7 +124,7 @@ DECLARE_INTERACTIONS(/obj/structure/particle_accelerator, INTERACT_INSERT(/obj/i
 		log_game("PACCEL([x],[y],[z]) Was moved while active and turned off.")
 		investigate_log("was moved whilst active; it " + span_red("powered down") + ".","singulo")
 
-APPEARANCE_TEMPLATE(/obj/structure/particle_accelerator, "[reference][appearance_suffix]")
+APPEARANCE_TEMPLATE(/obj/structure/particle_accelerator, "{reference}{appearance_suffix}")
 
 /// The icon_state suffix for the construction state (and strength once wired and powered).
 /obj/structure/particle_accelerator/proc/appearance_suffix()

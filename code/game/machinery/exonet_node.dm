@@ -47,7 +47,7 @@
 
 DECLARE_REF(/obj/machinery/exonet_node, "soundloop", OWNED, null)
 
-APPEARANCE_TEMPLATE(/obj/machinery/exonet_node, "[initial(icon_state)][on?:_off]")
+APPEARANCE_TEMPLATE(/obj/machinery/exonet_node, "{initial(icon_state)}{on?:_off}")
 
 // Proc: update_power()
 // Parameters: None

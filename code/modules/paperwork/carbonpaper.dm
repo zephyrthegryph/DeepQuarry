@@ -6,7 +6,7 @@
 	var/iscopy = 0
 
 
-DECLARE_APPEARANCE_PROC(/obj/item/paper/carbon, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/paper/carbon, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/paper/carbon/appearance_overlays()
 	. = list()
 	if(iscopy)

@@ -102,7 +102,7 @@
 	if(node2)
 		node2.update_underlays()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/pipe/simple/appearance_overlays()
 	. = list()
 	alpha = 255

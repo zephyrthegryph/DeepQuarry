@@ -56,7 +56,7 @@ DECLARE_INTERACTIONS(/obj/item/cane/concealed, \
 		return FALSE
 	return INTERACTION_HANDLED_PASS
 
-DECLARE_APPEARANCE_PROC(/obj/item/cane/concealed, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/cane/concealed, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/cane/concealed/appearance_overlays()
 	. = list()
 	if(concealed_blade)

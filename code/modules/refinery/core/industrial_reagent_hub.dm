@@ -34,7 +34,7 @@
 			// dump reagents to next refinery machine
 			transfer_tank( tanker.reagents, target, dir)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/hub, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/hub, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/reagent_refinery/hub/appearance_overlays()
 	. = list()
 	var/turf/T = get_step(get_turf(src),dir)

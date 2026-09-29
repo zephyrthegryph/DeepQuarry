@@ -177,7 +177,7 @@
 	belly_color = rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue))
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/fish/icebass, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/fish/icebass, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/animal/passive/fish/icebass/appearance_overlays()
 	. = list()
 	. += ..()
@@ -244,7 +244,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/fish/icebass, PROC
 	head_color = rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue))
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/fish/rockfish, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/fish/rockfish, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/animal/passive/fish/rockfish/appearance_overlays()
 	. = list()
 	. += ..()

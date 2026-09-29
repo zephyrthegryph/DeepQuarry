@@ -82,7 +82,7 @@ DECLARE_INTERACTIONS(/obj/item/holowarrant, \
 /obj/item/holowarrant/proc/appearance_active()
 	return active() ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/holowarrant, "[appearance_active?holowarrant_filled:holowarrant]")
+APPEARANCE_TEMPLATE(/obj/item/holowarrant, "{appearance_active?holowarrant_filled:holowarrant}")
 
 // show_content moved to code/modules/holowarrant_panel.dm (structured TGUI).
 

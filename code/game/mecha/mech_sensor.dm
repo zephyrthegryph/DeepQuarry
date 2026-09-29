@@ -56,7 +56,7 @@
 /obj/machinery/mech_sensor/proc/enabled()
 	return on && !has_stat(NOPOWER)
 
-APPEARANCE_TEMPLATE(/obj/machinery/mech_sensor, "airlock_sensor_[enabled?standby:off]")
+APPEARANCE_TEMPLATE(/obj/machinery/mech_sensor, "airlock_sensor_{enabled?standby:off}")
 
 /obj/machinery/mech_sensor/Initialize(mapload)
 	. = ..()

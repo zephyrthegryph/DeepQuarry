@@ -52,7 +52,7 @@
 
 TYPE_TABLE(/obj/item/storage/bag/trash, hold_spec, list(HOLD_NOT(list(/obj/item/disk/nuclear)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/bag/trash, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/bag/trash, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/bag/trash/appearance_overlays()
 	. = list()
 	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
@@ -357,7 +357,7 @@ TYPE_TABLE(/obj/item/storage/bag/detective, hold_spec, list(HOLD_ONLY(list(/obj/
 
 TYPE_TABLE(/obj/item/storage/bag/santabag, hold_spec, list(HOLD_NOT(list(/obj/item/disk/nuclear)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/bag/santabag, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/bag/santabag, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/bag/santabag/appearance_overlays()
 	. = list()
 	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) < 10)

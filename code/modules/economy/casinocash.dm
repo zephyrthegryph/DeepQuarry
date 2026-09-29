@@ -93,7 +93,7 @@
 		consume(src, user)
 	return INTERACTION_HANDLED_PASS
 
-DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/spacecasinocash/appearance_overlays()
 	. = list()
 	name = "[worth] casino credit\s"
@@ -284,7 +284,7 @@ DECLARE_INTERACTIONS(/obj/item/casino_platinum_chip, INTERACT_USE(null, PROC_REF
 		consume(src, user)
 	return INTERACTION_HANDLED_PASS
 
-DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash_fake, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash_fake, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/spacecasinocash_fake/appearance_overlays()
 	. = list()
 	name = "[worth] replica casino chip\s"

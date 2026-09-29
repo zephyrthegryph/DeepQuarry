@@ -80,7 +80,7 @@
 	if(!track_magazine)
 		return ""
 	return "-[min(length(ammo_magazine.stored_ammo), default_magazine_casing_count)]"
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/dartgun, "[base_state][appearance_suffix]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/dartgun, "{base_state}{appearance_suffix}")
 
 /obj/item/gun/projectile/dartgun/consume_next_projectile()
 	. = ..()

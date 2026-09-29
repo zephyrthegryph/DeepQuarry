@@ -47,7 +47,7 @@
 // any direct caller still finds the proc.
 /mob/living/simple_mob/slime/xenobio/proc/inherit_information(mob/living/simple_mob/slime/xenobio/predecessor)
 	return
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime/xenobio, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime/xenobio, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/slime/xenobio/appearance_overlays()
 	. = list()
 	icon_living = "[icon_state_override ? "[icon_state_override] slime" : "slime"] [is_adult ? "adult" : "baby"][victim ? " eating" : ""]"

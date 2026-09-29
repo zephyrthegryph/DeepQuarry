@@ -4,7 +4,7 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 	GLOB.no_ceiling_image = image(icon = 'icons/turf/open_space.dmi', icon_state = "no_ceiling")
 	GLOB.no_ceiling_image.plane = PLANE_MESONS
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/floor, PROC_REF(appearance_overlays), list(CHANGE_NEIGHBOURS))
+DECLARE_APPEARANCE_PROC(/turf/simulated/floor, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
 /turf/simulated/floor/appearance_overlays()
 	. = list()
 

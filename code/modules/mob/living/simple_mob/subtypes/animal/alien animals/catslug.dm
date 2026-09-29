@@ -205,7 +205,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 	else
 		return FALSE
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/vore/alienanimals/catslug/appearance_overlays()
 	. = list()
 	. += ..()

@@ -47,7 +47,7 @@ DECLARE_REF(/obj/machinery/power/smes/batteryrack, "internal_cells", OWNED_LIST,
 	return TRUE // we don't necessarily need terminals
 
 APPEARANCE_NONE(/obj/machinery/power/smes/batteryrack)
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/batteryrack, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/batteryrack, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/power/smes/batteryrack/appearance_overlays()
 	. = list()
 	icon_update = 0

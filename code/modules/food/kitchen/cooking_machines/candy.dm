@@ -24,7 +24,7 @@
 
 DECLARE_REF(/obj/machinery/appliance/mixer/candy, "candymaker_loop", OWNED, null)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer/candy, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer/candy, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/appliance/mixer/candy/appearance_overlays()
 	. = list()
 	. += ..()

@@ -28,7 +28,7 @@ TYPE_TABLE(/obj/item/storage/mre, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 	. = ..()
 	. += meal_desc
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/mre, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/mre, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/mre/appearance_overlays()
 	. = list()
 	if(opened)
@@ -235,7 +235,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/mre, INTERACT_USE("Open", PROC_REF(interac
 
 TYPE_TABLE(/obj/item/storage/mrebag, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/mrebag, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/mrebag, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/mrebag/appearance_overlays()
 	. = list()
 	if(opened)
@@ -347,7 +347,7 @@ TYPE_TABLE(/obj/item/storage/box/tgmc_mre, hold_spec, list(HOLD_MAX_SIZE(0)))
 			new /obj/item/trash/tgmc_mre(T)
 		qdel(src)
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/box/tgmc_mre, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/box/tgmc_mre, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/box/tgmc_mre/appearance_overlays()
 	. = list()
 	if(!isopened)

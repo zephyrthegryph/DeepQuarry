@@ -428,7 +428,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_APPEARANCE_PROC(/obj/item/gripper, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gripper, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gripper/appearance_overlays()
 	. = list()
 	var/obj/item/wrapped = get_wrapped_item()

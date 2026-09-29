@@ -21,7 +21,7 @@
 	lit = !lit
 	set_use_power(lit ? USE_POWER_ACTIVE : USE_POWER_IDLE)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/holosign, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/holosign, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/holosign/appearance_overlays()
 	. = list()
 	if(!lit)

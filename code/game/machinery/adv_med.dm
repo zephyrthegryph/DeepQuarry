@@ -393,7 +393,7 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 
 	return incoming
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/bodyscanner, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/bodyscanner, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/bodyscanner/appearance_overlays()
 	. = list()
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
@@ -472,7 +472,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/bodyscanner, PROC_REF(appearance_overlays
 	h_ratio = value
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/body_scanconsole, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/body_scanconsole, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/body_scanconsole/appearance_overlays()
 	. = list()
 	if(!operable())

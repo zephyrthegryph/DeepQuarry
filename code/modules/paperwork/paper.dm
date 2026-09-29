@@ -108,7 +108,7 @@ APPEARANCE_NONE(/obj/item/paper/card)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "alienpaper"
 
-DECLARE_APPEARANCE_PROC(/obj/item/paper/alien, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/paper/alien, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/paper/alien/appearance_overlays()
 	. = list()
 	if(info)
@@ -156,7 +156,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper/alien, PROC_REF(appearance_overlays), li
 	update_space(info)
 	updateinfolinks()
 
-DECLARE_APPEARANCE_PROC(/obj/item/paper, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/paper, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/paper/appearance_overlays()
 	. = list()
 	if(icon_state == "paper_talisman")

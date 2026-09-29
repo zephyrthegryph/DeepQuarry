@@ -116,7 +116,7 @@
 	ui_error = null // Success!
 	update_icon()
 
-APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/algae_farm, "algae-[appearance_mode]")
+APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/algae_farm, "algae-{appearance_mode}")
 
 /obj/machinery/atmospherics/binary/algae_farm/proc/appearance_mode()
 	if(!operable() || !anchored || use_power < USE_POWER_ACTIVE)

@@ -204,7 +204,7 @@ DECLARE_INTERACTIONS(/obj/item/weldingtool, \
 /obj/item/weldingtool/proc/isOn()
 	return welding
 
-DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/weldingtool/appearance_overlays()
 	. = list()
 	. += ..()

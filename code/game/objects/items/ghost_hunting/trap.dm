@@ -68,7 +68,7 @@ DECLARE_REF(/obj/item/ghost_trap, "ghost_reporter", OWNED, null)
 	to_chat(user, span_info("There appears to be nothing in the trap!"))
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/ghost_trap/appearance_overlays()
 	. = list()
 	. += ..()

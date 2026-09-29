@@ -151,7 +151,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag, INTERACT_ITEM(null, PROC_REF
 
 /// Draws itself entirely: drop the parent's keyed declarations.
 APPEARANCE_NONE(/obj/structure/closet/body_bag)
-DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/closet/body_bag/appearance_overlays()
 	. = list()
 	if(opened)
@@ -215,7 +215,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag, \
 	if(used)
 		replace_with(src, /obj/item/usedcryobag)
 
-DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/closet/body_bag/cryobag/appearance_overlays()
 	. = list()
 	. += ..()

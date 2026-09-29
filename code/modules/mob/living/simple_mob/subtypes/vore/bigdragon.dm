@@ -326,7 +326,7 @@ OM_TIMER_SLOT(/mob/living/simple_mob/vore/bigdragon, chargetimer)
 ///		Icon generation stuff
 ///
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/vore/bigdragon/appearance_overlays()
 	. = list()
 	. += ..()

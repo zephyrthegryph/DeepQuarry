@@ -299,7 +299,7 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 		return "grey_target_prism_"
 	return "turret_cover_"
 
-APPEARANCE_TEMPLATE(/obj/machinery/porta_turret, "[appearance_prefix][turret_type]")
+APPEARANCE_TEMPLATE(/obj/machinery/porta_turret, "{appearance_prefix}{turret_type}")
 
 /obj/machinery/porta_turret/proc/setup()
 	var/obj/item/gun/energy/E = installation	//All energy-based weapons are applicable

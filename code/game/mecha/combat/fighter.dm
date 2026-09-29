@@ -302,7 +302,7 @@ TOPIC_ACTION(/obj/mecha/combat/fighter, "toggle_landing_gear", PROC_REF(topic_to
 	ME = new /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay(src)
 	ME.attach(src)
 
-DECLARE_APPEARANCE_PROC(/obj/mecha/combat/fighter/gunpod, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/mecha/combat/fighter/gunpod, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/mecha/combat/fighter/gunpod/appearance_overlays()
 	. = list()
 	. += ..()

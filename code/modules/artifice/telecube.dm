@@ -73,7 +73,7 @@
 
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/telecube, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/telecube/appearance_overlays()
 	. = list()
 	. += ..()

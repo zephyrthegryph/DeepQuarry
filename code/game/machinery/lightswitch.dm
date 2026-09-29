@@ -33,7 +33,7 @@
 	set_on(area().lightswitch)
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/light_switch, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/light_switch, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/light_switch/appearance_overlays()
 	. = list()
 	if(has_stat(NOPOWER))

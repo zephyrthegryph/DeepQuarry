@@ -81,7 +81,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	load_method = MAGAZINE
 	move_delay = 0 // Pistols have move_delay of 0
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/sec, "secguncomp[ammo_magazine?:-e]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/sec, "secguncomp{ammo_magazine?:-e}")
 
 /obj/item/gun/projectile/sec/flash
 	magazine_type = /obj/item/ammo_magazine/m45/flash
@@ -92,7 +92,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/sec, "secguncomp[ammo_magazine?:-e]
 	desc = "The MT Mk58 is a cheap, ubiquitous sidearm, produced by MarsTech. This one has a sweet wooden grip. Uses .45 rounds."
 	icon_state = "secgundark"
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/sec/wood, "secgundark[ammo_magazine?:-e]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/sec/wood, "secgundark{ammo_magazine?:-e}")
 
 /*
  * Silenced Pistol
@@ -115,7 +115,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/sec/wood, "secgundark[ammo_magazine
 /obj/item/gun/projectile/silenced/empty
 	magazine_type = null
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/silenced, "silenced_pistol[ammo_magazine?:-e]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/silenced, "silenced_pistol{ammo_magazine?:-e}")
 
 /*
  * Deagle
@@ -135,7 +135,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/silenced, "silenced_pistol[ammo_mag
 	magazine_type = /obj/item/ammo_magazine/m44
 	allowed_magazines = list(/obj/item/ammo_magazine/m44)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/deagle, "[initial(icon_state)][ammo_magazine?:-e]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/deagle, "{initial(icon_state)}{ammo_magazine?:-e}")
 
 /obj/item/gun/projectile/deagle/gold
 	desc = "A gold plated gun folded over a million times by superior Tajaran gunsmiths. Uses .44 rounds."
@@ -165,7 +165,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/deagle, "[initial(icon_state)][ammo
 	auto_eject_sound = SFX_WEAPONS_SMG_EMPTY_ALARM
 	move_delay = 0 // Pistols have move_delay of 0
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/gyropistol, "gyropistol[ammo_magazine?loaded:]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/gyropistol, "gyropistol{ammo_magazine?loaded:}")
 
 /*
  * Silencer
@@ -226,7 +226,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/gyropistol, "gyropistol[ammo_magazi
 		return INTERACTION_HANDLED_PASS
 	return ..()
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/pistol, "pistol[silenced?-s:][ammo_magazine?:-e]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/pistol, "pistol{silenced?-s:}{ammo_magazine?:-e}")
 
 /*
  * Pistol
@@ -270,7 +270,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/pistol, "pistol[silenced?-s:][ammo_
 		return INTERACTION_HANDLED_PASS
 	return ..()
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/aps, "aps[silenced?-s:][ammo_magazine?:-e]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/aps, "aps{silenced?-s:}{ammo_magazine?:-e}")
 
 /*
  * Zip Gun (yar har)
@@ -326,7 +326,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/aps, "aps[silenced?-s:][ammo_magazi
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mm/luger)
 	projectile_type = /obj/item/projectile/bullet/pistol
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/luger, "[initial(icon_state)][ammo_magazine?:-e]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/luger, "{initial(icon_state)}{ammo_magazine?:-e}")
 
 /obj/item/gun/projectile/luger/brown
 	name = "\improper Jindal T15b \"Mäuse\""
@@ -348,7 +348,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/luger, "[initial(icon_state)][ammo_
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mm) // Can accept illegal large capacity magazines, or compact magazines.
 	move_delay = 0 // Pistols have move_delay of 0
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/p92x, "[initial(icon_state)][ammo_magazine?:-e]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/p92x, "{initial(icon_state)}{ammo_magazine?:-e}")
 
 /obj/item/gun/projectile/p92x/rubber
 	magazine_type = /obj/item/ammo_magazine/m9mm/rubber
@@ -383,7 +383,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/p92x, "[initial(icon_state)][ammo_m
 /// TRUE when a magazine with rounds in it is loaded.
 /obj/item/gun/projectile/giskard/proc/appearance_loaded()
 	return !!(ammo_magazine && ammo_magazine.stored_ammo.len)
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/giskard, "giskardcivil[appearance_loaded?:_empty]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/giskard, "giskardcivil{appearance_loaded?:_empty}")
 
 /obj/item/gun/projectile/giskard/olivaw
 	name = "\improper \"Olivaw\" holdout burst-pistol"
@@ -396,7 +396,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/giskard, "giskardcivil[appearance_l
 		list(mode_name="2-round bursts", burst=2, fire_delay=0.2, move_delay=4,    burst_accuracy=list(0,-15),       dispersion=list(1.2, 1.8)),
 		)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/giskard/olivaw, "olivawcivil[appearance_loaded?:-e]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/giskard/olivaw, "olivawcivil{appearance_loaded?:-e}")
 
 /*
  * Makarov
@@ -413,7 +413,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/giskard/olivaw, "olivawcivil[appear
 	load_method = MAGAZINE
 	w_class = ITEMSIZE_SMALL
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/makarov, "Makarov[ammo_magazine?:-e]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/makarov, "Makarov{ammo_magazine?:-e}")
 
 /*
  * N99 (Fallout)
@@ -432,12 +432,12 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/makarov, "Makarov[ammo_magazine?:-e
 	load_method = MAGAZINE
 	w_class = ITEMSIZE_NORMAL
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/n99, "n99[ammo_magazine?:-e]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/n99, "n99{ammo_magazine?:-e}")
 
 /obj/item/gun/projectile/n80
 	icon_state = "n80"
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/n80, "n80[ammo_magazine?:-e]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/n80, "n80{ammo_magazine?:-e}")
 
 /*
  * Écureuil 10mm Pistol (Skyrat Port)
@@ -455,19 +455,19 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/n80, "n80[ammo_magazine?:-e]")
 	load_method = MAGAZINE
 	w_class = ITEMSIZE_NORMAL
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ecureuil, "ecureuil[ammo_magazine?:-e]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ecureuil, "ecureuil{ammo_magazine?:-e}")
 
 /obj/item/gun/projectile/ecureuil/tac
 	name = "\improper Tactical \"Écureuil\" 10mm pistol"
 	icon_state = "tac_ecureuil"
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ecureuil/tac, "tac_ecureuil[ammo_magazine?:-e]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ecureuil/tac, "tac_ecureuil{ammo_magazine?:-e}")
 
 /obj/item/gun/projectile/ecureuil/tac2
 	name = "\improper Tactical \"Écureuil\" 10mm pistol"
 	icon_state = "tac_ecureuil"
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ecureuil/tac2, "tac2_ecureuil[ammo_magazine?:-e]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ecureuil/tac2, "tac2_ecureuil{ammo_magazine?:-e}")
 
 /*
  * Lamia (Eris Port)
@@ -510,7 +510,7 @@ DECLARE_APPEARANCE(/obj/item/gun/projectile/lamia, "appearance_fill", list("0" =
 	list(mode_name="short bursts",	burst=5, move_delay=6, burst_accuracy = list(0,-1,-1,-2,-2), dispersion = list(0.6, 1.0, 1.0, 1.0, 1.2))
 	)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/glock, "[initial(icon_state)][ammo_magazine?:-empty]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/glock, "{initial(icon_state)}{ammo_magazine?:-empty}")
 
 
 /*******PPK*******/
@@ -526,7 +526,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/glock, "[initial(icon_sta
 	magazine_type = /obj/item/ammo_magazine/m9mm
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mm)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ppk, "[initial(icon_state)][ammo_magazine?:-empty]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ppk, "{initial(icon_state)}{ammo_magazine?:-empty}")
 
 
 /*******M2024*******/
@@ -542,7 +542,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ppk, "[initial(icon_state)][ammo_ma
 	magazine_type = /obj/item/ammo_magazine/m2024
 	allowed_magazines = list(/obj/item/ammo_magazine/m2024,/obj/item/ammo_magazine/m45)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/m2024, "[initial(icon_state)][ammo_magazine?:-empty]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/m2024, "{initial(icon_state)}{ammo_magazine?:-empty}")
 
 /*******M1911 Custom fluff*******/
 /obj/item/gun/projectile/fluff/m1911

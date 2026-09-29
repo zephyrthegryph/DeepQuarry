@@ -183,7 +183,7 @@ DECLARE_REF(/obj/machinery/telecomms, "soundloop", OWNED, null)
 /obj/machinery/telecomms/proc/appearance_state()
 	return on ? initial(icon_state) : "[initial(icon_state)]_off"
 
-APPEARANCE_TEMPLATE(/obj/machinery/telecomms, "[appearance_state]")
+APPEARANCE_TEMPLATE(/obj/machinery/telecomms, "{appearance_state}")
 
 /obj/machinery/telecomms/proc/update_power()
 	var/was_on = on

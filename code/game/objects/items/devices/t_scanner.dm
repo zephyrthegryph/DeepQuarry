@@ -20,7 +20,7 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-APPEARANCE_TEMPLATE(/obj/item/t_scanner, "t-ray[on]")
+APPEARANCE_TEMPLATE(/obj/item/t_scanner, "t-ray{on}")
 
 DECLARE_INTERACTIONS(/obj/item/t_scanner, INTERACT_USE(null, PROC_REF(interaction_self)))
 

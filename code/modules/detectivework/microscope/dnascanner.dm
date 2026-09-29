@@ -153,7 +153,7 @@
 /obj/machinery/dnaforensics
 	silicon_use = SILICON_USE_UI
 
-APPEARANCE_TEMPLATE(/obj/machinery/dnaforensics, "dna[appearance_mode]")
+APPEARANCE_TEMPLATE(/obj/machinery/dnaforensics, "dna{appearance_mode}")
 
 /obj/machinery/dnaforensics/proc/appearance_mode()
 	if(!has_stat(NOPOWER) && scanning)

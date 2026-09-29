@@ -51,7 +51,7 @@ MATERIAL_MIX(/obj/item/assembly/timer, list(MAT_STEEL = 500, MAT_GLASS = 50))
 		timer_end()
 		time = 10
 
-DECLARE_APPEARANCE_PROC(/obj/item/assembly/timer, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/assembly/timer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/assembly/timer/appearance_overlays()
 	. = list()
 	attached_overlays = list()

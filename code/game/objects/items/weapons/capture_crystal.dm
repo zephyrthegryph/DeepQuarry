@@ -217,7 +217,7 @@
 	M.ghostjoin = TRUE
 	to_chat(U, span_notice("\The [bound_mob] is now eligable to be joined by ghosts. It will need to be out of the crystal to be able to be joined."))
 
-DECLARE_APPEARANCE_PROC(/obj/item/capture_crystal, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/capture_crystal, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/capture_crystal/appearance_overlays()
 	. = list()
 	. += ..()

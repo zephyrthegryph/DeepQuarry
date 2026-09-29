@@ -148,7 +148,7 @@
 	if(!restoring)
 		return PROCESS_KILL
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/aifixer, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/aifixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/computer/aifixer/appearance_overlays()
 	. = list()
 	. += ..()

@@ -133,7 +133,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 	if(bolt)
 		return "_loaded"
 	return ""
-APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow/bow, "[initial(icon_state)][appearance_draw_suffix]")
+APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow/bow, "{initial(icon_state)}{appearance_draw_suffix}")
 
 
 

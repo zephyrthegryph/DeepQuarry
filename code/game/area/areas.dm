@@ -236,7 +236,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		firedoors_update()
 	return
 
-DECLARE_APPEARANCE_PROC(/area, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/area, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /area/appearance_overlays()
 	. = list()
 	if ((fire || eject || party) && (!requires_power||power_environ) && !istype(src, /area/space))//If it doesn't require power, can still activate this proc.

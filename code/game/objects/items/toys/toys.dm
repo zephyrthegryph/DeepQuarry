@@ -82,7 +82,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/balloon, INTERACT_ITEM(null, PROC_REF(interac
 		expire(5)
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/item/toy/balloon, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/toy/balloon, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/toy/balloon/appearance_overlays()
 	. = list()
 	if(src.reagents.total_volume >= 1)
@@ -187,7 +187,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/sword, \
 	add_fingerprint(user)
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/item/toy/sword, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/toy/sword, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/toy/sword/appearance_overlays()
 	. = list()
 	. += ..()
@@ -1730,7 +1730,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/borgplushie/drake, INTERACT_ALT(null, 
 	update_icon()
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/borgplushie/drake, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/borgplushie/drake, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/toy/plushie/borgplushie/drake/appearance_overlays()
 	. = list()
 	if (lights_glowing)
@@ -2633,7 +2633,7 @@ TYPE_TABLE(/obj/item/storage/box/timecap, hold_spec, list(HOLD_ONLY(list(/obj/it
 	var/on = FALSE
 	var/activation_sound = SFX_MACHINES_CLICK
 
-APPEARANCE_TEMPLATE(/obj/item/toy/desk, "[initial(icon_state)][on?-on:]")
+APPEARANCE_TEMPLATE(/obj/item/toy/desk, "{initial(icon_state)}{on?-on:}")
 
 /obj/item/toy/desk/proc/activate(mob/user as mob)
 	on = !on

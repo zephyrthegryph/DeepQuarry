@@ -153,7 +153,7 @@ DECLARE_REF(/obj/machinery/washing_machine, "washing", SPILL_LIST, null)
 /obj/machinery/washing_machine/container_resist(mob/living/escapee)
 	user_climb_out(escapee)
 
-APPEARANCE_TEMPLATE(/obj/machinery/washing_machine, "wm_[state]")
+APPEARANCE_TEMPLATE(/obj/machinery/washing_machine, "wm_{state}")
 DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("panel"))))
 
 /datum/interaction/machine_item/washing_machine_use_item

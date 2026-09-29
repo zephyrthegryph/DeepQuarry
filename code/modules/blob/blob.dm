@@ -36,7 +36,7 @@
 /obj/effect/blob/proc/appearance_state()
 	return get_integrity() > max_integrity / 2 ? "blob" : "blob_damaged"
 
-APPEARANCE_TEMPLATE(/obj/effect/blob, "[appearance_state]")
+APPEARANCE_TEMPLATE(/obj/effect/blob, "{appearance_state}")
 
 /obj/effect/blob/on_update_integrity(old_value, new_value)
 	. = ..()

@@ -83,7 +83,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/handful, \
 	// Everything else (loose casing -> handful, etc.) is handled by the parent.
 	return FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/handful, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/handful, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/ammo_magazine/handful/appearance_overlays()
 	. = list()
 	. += ..()

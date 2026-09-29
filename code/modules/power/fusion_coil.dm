@@ -26,7 +26,7 @@ MATERIAL_MIX(/obj/item/fusion_coil, list(MAT_STEEL = 6000, MAT_COPPER = 4000, MA
 
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/fusion_coil, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/fusion_coil, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/fusion_coil/appearance_overlays()
 	. = list()
 	icon_state = "fc_spent"

@@ -31,7 +31,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 	update_icon()
 
 // update the icon_state
-APPEARANCE_TEMPLATE(/obj/machinery/navbeacon, "navbeacon[open][invisibility?-f:]")
+APPEARANCE_TEMPLATE(/obj/machinery/navbeacon, "navbeacon{open}{invisibility?-f:}")
 
 /obj/machinery/navbeacon/declare_interactions(list/into)
 	into += list(

@@ -123,7 +123,7 @@
 			ai_brain.wander = TRUE
 		update_icon()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/overmap/spacewhale, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/overmap/spacewhale, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/vore/overmap/spacewhale/appearance_overlays()
 	. = list()
 	. += ..()

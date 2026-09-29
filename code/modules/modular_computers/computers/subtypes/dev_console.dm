@@ -18,7 +18,7 @@
 	max_integrity = 300
 	integrity_failure = 0.5 // Stops working below 150 integrity.
 
-DECLARE_APPEARANCE_PROC(/obj/item/modular_computer/console, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/modular_computer/console, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/modular_computer/console/appearance_overlays()
 	. = list()
 	. += ..()

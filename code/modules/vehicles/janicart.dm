@@ -110,7 +110,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
 /obj/vehicle/train/engine/janicart/latch(obj/vehicle/train/T, mob/user)
 	return // nothing latchs to this!
 
-DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine/janicart, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine/janicart, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/vehicle/train/engine/janicart/appearance_overlays()
 	. = list()
 	. += ..()

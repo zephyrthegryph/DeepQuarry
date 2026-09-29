@@ -31,7 +31,7 @@
 	var/datum/effect/effect/system/confetti_spread
 	var/confetti_strength = 8
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/slot_machine, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/slot_machine, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/slot_machine/appearance_overlays()
 	. = list()
 	if(!ispowered || isbroken)
@@ -177,7 +177,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/slot_machine, PROC_REF(appearance_overlay
 	var/datum/effect/effect/system/confetti_spread
 	var/confetti_strength = 8
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/station_slot_machine, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/station_slot_machine, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/station_slot_machine/appearance_overlays()
 	. = list()
 	if(!ispowered || isbroken)

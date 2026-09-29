@@ -486,7 +486,7 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 		return "g"
 	return "0"
 
-APPEARANCE_TEMPLATE(/obj/machinery/clonepod, "pod_[appearance_state]")
+APPEARANCE_TEMPLATE(/obj/machinery/clonepod, "pod_{appearance_state}")
 
 /obj/machinery/clonepod/full/Initialize(mapload)
 	. = ..()

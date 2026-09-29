@@ -247,7 +247,7 @@ EXTEND_INTERACTIONS(/turf/simulated/wall/skipjack, INTERACT_ITEM("Nothing", TYPE
 	. = ..()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/shuttle/wall/voidcraft, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/turf/simulated/shuttle/wall/voidcraft, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /turf/simulated/shuttle/wall/voidcraft/appearance_overlays()
 	. = list()
 	if(stripe_color)
@@ -360,7 +360,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/shuttle/wall/voidcraft, PROC_REF(appeara
 /turf/simulated/wall/bay/can_join_with_low_wall(obj/structure/low_wall/WF)
 	return istype(WF, /obj/structure/low_wall/bay)
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/wall/bay, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/turf/simulated/wall/bay, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /turf/simulated/wall/bay/appearance_overlays()
 	. = list()
 	. += ..()
@@ -409,7 +409,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/wall/bay, PROC_REF(appearance_overlays),
 	var/diagonal_blending = FALSE
 
 // *INHALE
-DECLARE_APPEARANCE_PROC(/turf/simulated/wall/tgmc, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/turf/simulated/wall/tgmc, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /turf/simulated/wall/tgmc/appearance_overlays()
 	. = list()
 	if(!damage_overlays[1]) //list hasn't been populated
@@ -516,7 +516,7 @@ EXTEND_INTERACTIONS(/turf/simulated/flesh, INTERACT_ITEM("Nothing", TYPE_PROC_RE
 
 /turf/simulated/flesh/Initialize(mapload)
 	. = ..()
-	update_icon(1)
+	update_icon()
 
 DECLARE_SHARED_CACHE(flesh_side_overlays, GLOBAL_PROC_REF(build_flesh_side_overlay), SC_NEVER)
 
@@ -524,7 +524,7 @@ DECLARE_SHARED_CACHE(flesh_side_overlays, GLOBAL_PROC_REF(build_flesh_side_overl
 /proc/build_flesh_side_overlay(place_dir)
 	return image('icons/turf/stomach_vr.dmi', "flesh_side", dir = place_dir)
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/flesh, PROC_REF(appearance_overlays), list(CHANGE_NEIGHBOURS))
+DECLARE_APPEARANCE_PROC(/turf/simulated/flesh, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
 /turf/simulated/flesh/appearance_overlays()
 	. = list()
 

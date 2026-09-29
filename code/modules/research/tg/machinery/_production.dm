@@ -51,7 +51,7 @@ DECLARE_REF(/obj/machinery/rnd/production, "available_designs", DEF, null)
 DECLARE_REF(/obj/machinery/rnd/production, "print_sound", OWNED, null)
 DECLARE_REF(/obj/machinery/rnd/production, "materials", OWNED, null)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/production, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/production, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/rnd/production/appearance_overlays()
 	. = list()
 

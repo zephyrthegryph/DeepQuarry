@@ -375,7 +375,7 @@
 		verbs |= /atom/movable/proc/turn_around
 
 //merges adjacent full-tile windows into one (blatant ripoff from game/smoothwall.dm)
-DECLARE_APPEARANCE_PROC(/obj/structure/window, PROC_REF(appearance_overlays), list("get_integrity"))
+DECLARE_APPEARANCE_PROC(/obj/structure/window, TYPE_PROC_REF(/atom, appearance_overlays), list("get_integrity"))
 /obj/structure/window/appearance_overlays()
 	. = list()
 	//A little cludge here, since I don't know how it will work with slim windows. Most likely VERY wrong.
@@ -608,7 +608,7 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 	if(active && !powered(power_channel))
 		toggle_tint()
 
-APPEARANCE_TEMPLATE(/obj/machinery/button/windowtint, "light[active]")
+APPEARANCE_TEMPLATE(/obj/machinery/button/windowtint, "light{active}")
 
 /obj/machinery/button/windowtint/multitool_act(mob/user, obj/item/tool)
 	var/obj/item/multitool/multitool = tool

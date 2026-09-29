@@ -46,7 +46,7 @@
 
 	return data
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/atmos_alert, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/atmos_alert, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/computer/atmos_alert/appearance_overlays()
 	. = list()
 	if(operable())

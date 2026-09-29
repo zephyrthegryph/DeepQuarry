@@ -46,7 +46,7 @@ DECLARE_REF(/obj/item/assembly_holder, "a_right", BACK_VIA, "holder_handle")
 /obj/item/assembly_holder/proc/detached()
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/assembly_holder/appearance_overlays()
 	. = list()
 	if(a_left)

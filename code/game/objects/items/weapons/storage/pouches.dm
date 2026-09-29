@@ -214,7 +214,7 @@ TYPE_TABLE(/obj/item/storage/pouch/flares, hold_spec, list(HOLD_ONLY(list(/obj/i
 /obj/item/storage/pouch/flares/full_glow
 	starts_with = list(/obj/item/flashlight/glowstick = 14) // Full box of glowsticks.
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/pouch/flares, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/pouch/flares, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/pouch/flares/appearance_overlays()
 	. = list()
 	if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
@@ -234,7 +234,7 @@ TYPE_TABLE(/obj/item/storage/pouch/holster, hold_spec, list(HOLD_ONLY(list(/obj/
 /obj/item/storage/pouch/holster/full_taser
 	starts_with = list(/obj/item/gun/energy/taser)
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/pouch/holster, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/pouch/holster, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/pouch/holster/appearance_overlays()
 	. = list()
 	if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
@@ -252,7 +252,7 @@ TYPE_TABLE(/obj/item/storage/pouch/baton, hold_spec, list(HOLD_ONLY(list(/obj/it
 /obj/item/storage/pouch/baton/full
 	starts_with = list(/obj/item/melee/baton)
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/pouch/baton, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/pouch/baton, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/pouch/baton/appearance_overlays()
 	. = list()
 	if(length(slot_contents(CONTAINER_SLOT_STORAGE)))

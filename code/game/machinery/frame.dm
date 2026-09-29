@@ -314,7 +314,7 @@ GLOBAL_LIST(construction_frame_floor)
 		D = "Requires [english_list(component_list)]."
 	desc = D
 
-DECLARE_APPEARANCE_PROC(/obj/structure/frame, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/frame/appearance_overlays()
 	. = list()
 	. += ..()

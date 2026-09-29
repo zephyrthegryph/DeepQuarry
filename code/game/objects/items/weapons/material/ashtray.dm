@@ -27,7 +27,7 @@ DECLARE_SHARED_CACHE(ashtray_overlays, GLOBAL_PROC_REF(build_ashtray_overlay), S
 	randpixel_xy()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/ashtray, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/material/ashtray, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/material/ashtray/appearance_overlays()
 	. = list()
 	color = null

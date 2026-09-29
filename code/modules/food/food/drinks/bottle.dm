@@ -149,7 +149,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 	if(rag) return
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/bottle, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/bottle, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/reagent_containers/food/drinks/bottle/appearance_overlays()
 	. = list()
 	underlays.Cut()

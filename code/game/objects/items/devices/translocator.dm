@@ -49,7 +49,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/perfect_tele, "power_source", "cell_type")
 // its beacons forget it.
 DECLARE_REF(/obj/item/perfect_tele, "beacons", LIST_BACK, "tele_hand_handle")
 
-DECLARE_APPEARANCE_PROC(/obj/item/perfect_tele, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/perfect_tele, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/perfect_tele/appearance_overlays()
 	. = list()
 	if(!power_source)
@@ -529,7 +529,7 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	recharging = 0
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/perfect_tele/frontier, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/perfect_tele/frontier, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/perfect_tele/frontier/appearance_overlays()
 	. = list()
 	if(recharging)

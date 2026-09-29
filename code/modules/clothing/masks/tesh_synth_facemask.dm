@@ -34,7 +34,7 @@ TYPE_TABLE(/obj/item/clothing/mask/synthfacemask, equip_spec, dq_spec_join(..(),
 	var/obj/item/organ/external/E = H.organs_by_name[BP_HEAD]
 	return istype(E) && (E.is_robotic())
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/synthfacemask, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/synthfacemask, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/clothing/mask/synthfacemask/appearance_overlays()
 	. = list()
 	var/mob/living/carbon/human/H = loc

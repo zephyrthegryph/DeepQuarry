@@ -83,7 +83,7 @@
 		airlock_program.set_tag(ask.tag_name, new_tag)
 		SStgui.update_uis(src)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio/airlock, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio/airlock, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/embedded_controller/radio/airlock/appearance_overlays()
 	. = list()
 	if(panel_open)
@@ -144,7 +144,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio/airlock, PROC_R
 	deconstructable = TRUE
 	circuit = /obj/item/circuitboard/airlock_cycling
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio/airlock/access_controller, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio/airlock/access_controller, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/embedded_controller/radio/airlock/access_controller/appearance_overlays()
 	. = list()
 	if(on && program)

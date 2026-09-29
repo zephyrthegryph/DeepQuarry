@@ -177,7 +177,7 @@ EXTEND_INTERACTIONS(/obj/item/mail/blank, \
 /obj/item/mail/blank/proc/attack_self_timed_failed()
 	sealed = FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/item/mail, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/mail, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/mail/appearance_overlays()
 	. = list()
 	. += ..()

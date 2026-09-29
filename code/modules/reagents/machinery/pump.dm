@@ -50,7 +50,7 @@ DECLARE_REF(/obj/machinery/pump, "cell", OWNED, null)
 
 	cell = locate_within(src, /obj/item/cell)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/pump, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/pump/appearance_overlays()
 	. = list()
 	. += ..()

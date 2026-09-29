@@ -18,7 +18,7 @@
 	. = ..()
 	reagents.maximum_volume = size*8 + 10 // the holder is declared on reagent_containers
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/variable, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/variable, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/reagent_containers/food/snacks/variable/appearance_overlays()
 	. = list()
 	if (reagents && reagents.total_volume)

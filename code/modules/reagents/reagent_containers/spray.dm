@@ -224,7 +224,7 @@ DECLARE_REF(/obj/item/reagent_containers/spray/chemsprayer/hosed, "hose_overlay"
 	for(var/datum/hose_connector/HC as anything in get_hose_connectors())
 		HC.update_hose_beam()
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/spray/chemsprayer/hosed, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/spray/chemsprayer/hosed, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/reagent_containers/spray/chemsprayer/hosed/appearance_overlays()
 	. = list()
 	. += ..()

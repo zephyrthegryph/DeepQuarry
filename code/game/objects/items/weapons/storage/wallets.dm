@@ -68,7 +68,7 @@ TYPE_TABLE(/obj/item/storage/wallet, hold_spec, list(HOLD_ONLY(list( \
 			name = "[original_name] ([front_id()])"
 			update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/wallet, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/wallet, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/wallet/appearance_overlays()
 	. = list()
 	if(front_id())

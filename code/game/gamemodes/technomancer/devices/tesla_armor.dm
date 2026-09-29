@@ -61,7 +61,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/tesla, INTERACT_USE("Toggle", 
 	user.update_inv_wear_suit()
 	user.update_mob_action_buttons()
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit/armor/tesla, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit/armor/tesla, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/clothing/suit/armor/tesla/appearance_overlays()
 	. = list()
 	if(active && ready)

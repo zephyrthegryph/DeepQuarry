@@ -31,7 +31,7 @@ DECLARE_REAGENTS(/obj/machinery/pump_relay, 200, null)
 	if(prob(2))
 		visible_message(span_infoplain("\The [src] gurgles as it pumps fluid."))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/pump_relay, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/pump_relay, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/pump_relay/appearance_overlays()
 	. = list()
 	. += ..()

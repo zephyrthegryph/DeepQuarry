@@ -37,7 +37,7 @@ DECLARE_INTERACTIONS(/obj/item/nifrepairer, INTERACT_ITEM("Load", PROC_REF(inter
 /obj/item/nifrepairer/proc/appearance_filled()
 	return supply?.total_volume ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/nifrepairer, "[initial(icon_state)][appearance_filled?2:]")
+APPEARANCE_TEMPLATE(/obj/item/nifrepairer, "{initial(icon_state)}{appearance_filled?2:}")
 
 /obj/item/nifrepairer/afterattack(atom/target, mob/user, proximity)
 	if(!target.is_open_container() || !target.reagents)

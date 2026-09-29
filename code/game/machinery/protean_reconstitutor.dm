@@ -92,7 +92,7 @@
 /obj/machinery/protean_reconstitutor/proc/appearance_tank_full()
 	return (appearance_live() && nanomass_reserve >= nanomass_required) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/protean_reconstitutor, "[state_base][appearance_suffix]")
+APPEARANCE_TEMPLATE(/obj/machinery/protean_reconstitutor, "{state_base}{appearance_suffix}")
 DECLARE_APPEARANCE(/obj/machinery/protean_reconstitutor, "appearance_brain", list("1" = list(APPEARANCE_OVERLAYS = list("recon-brain"))))
 DECLARE_APPEARANCE(/obj/machinery/protean_reconstitutor, "appearance_orchestrator", list("1" = list(APPEARANCE_OVERLAYS = list("recon-orchestrator"))))
 DECLARE_APPEARANCE(/obj/machinery/protean_reconstitutor, "appearance_refactory", list("1" = list(APPEARANCE_OVERLAYS = list("recon-refactory"))))

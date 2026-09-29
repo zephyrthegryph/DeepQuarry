@@ -11,7 +11,7 @@
 	random_icon_states = list("xgib1", "xgib2", "xgib3", "xgib4", "xgib5", "xgib6")
 	basecolor = "#05EE05"
 
-DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs/xeno, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs/xeno, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/effect/decal/cleanable/blood/gibs/xeno/appearance_overlays()
 	. = list()
 	color = "#FFFFFF"

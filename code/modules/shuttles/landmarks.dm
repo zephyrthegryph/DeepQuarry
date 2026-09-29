@@ -188,7 +188,7 @@ DECLARE_INTERACTIONS(/obj/item/spaceflare, INTERACT_USE(null, PROC_REF(interacti
 	T.hotspot_expose(1500, 5)
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/spaceflare, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/spaceflare, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/spaceflare/appearance_overlays()
 	. = list()
 	. += ..()

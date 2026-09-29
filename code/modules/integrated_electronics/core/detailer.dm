@@ -29,7 +29,7 @@
 	update_icon()
 	return ..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/integrated_electronics/detailer, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/integrated_electronics/detailer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/integrated_electronics/detailer/appearance_overlays()
 	. = list()
 	var/mutable_appearance/detail_overlay = mutable_appearance('icons/obj/integrated_electronics/electronic_tools.dmi', "detailer-color")

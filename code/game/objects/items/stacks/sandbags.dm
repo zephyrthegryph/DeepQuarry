@@ -43,7 +43,7 @@
 		return INITIALIZE_HINT_QDEL
 	color = M.icon_colour
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack/sandbags, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/stack/sandbags, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/stack/sandbags/appearance_overlays()
 	. = list()
 	var/amount = get_amount()

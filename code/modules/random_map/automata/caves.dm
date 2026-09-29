@@ -89,6 +89,6 @@
 	. = ..()
 
 	for(var/turf/simulated/mineral/T as anything in turfs_changed)
-		T.update_icon(1, turfs_changed)
+		T.update_icon()
 
 	LAZYCLEARLIST(turfs_changed)

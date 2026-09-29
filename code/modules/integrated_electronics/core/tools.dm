@@ -16,7 +16,7 @@
 	var/datum/integrated_io/selected_io = null
 	var/mode = WIRE
 
-APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-[mode]")
+APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
 
 /obj/item/integrated_electronics/wirer/proc/wire(datum/integrated_io/io, mob/user)
 	if(!io.holder().assembly())
@@ -187,7 +187,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 	var/tmp/selected_io_handle
 	var/mode = 0
 
-DECLARE_APPEARANCE_PROC(/obj/item/multitool, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/multitool, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/multitool/appearance_overlays()
 	. = list()
 	if(selected_io())

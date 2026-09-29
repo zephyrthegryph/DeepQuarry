@@ -248,7 +248,7 @@
 
 /// Draws itself entirely: drop the parent's keyed declarations.
 APPEARANCE_NONE(/obj/structure/closet/crate/mimic/closet)
-DECLARE_APPEARANCE_PROC(/obj/structure/closet/crate/mimic/closet, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/closet/crate/mimic/closet, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/closet/crate/mimic/closet/appearance_overlays()
 	. = list()
 	if(opened)

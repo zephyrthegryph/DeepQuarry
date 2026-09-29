@@ -198,7 +198,7 @@
 	. = ..()
 	air_contents.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 500) //meant to match air injector
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_pump, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/unary/vent_pump/appearance_overlays()
 	. = list()
 

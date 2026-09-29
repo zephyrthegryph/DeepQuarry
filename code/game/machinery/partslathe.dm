@@ -66,7 +66,7 @@
 		eject_materials(f, -1)
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/partslathe, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/partslathe, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/partslathe/appearance_overlays()
 	. = list()
 	if(panel_open)

@@ -58,7 +58,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 /obj/item/cataloguer/proc/appearance_busy()
 	return om_busy(src) ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/cataloguer, "[initial(icon_state)][appearance_busy?_active:]")
+APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy?_active:}")
 
 /obj/item/cataloguer/afterattack(atom/target, mob/user, proximity_flag)
 	// Things that invalidate the scan immediately.
@@ -307,7 +307,7 @@ DECLARE_INTERACTIONS(/obj/item/cataloguer, \
 	scan_range = 3
 	toolspeed = 1
 
-APPEARANCE_TEMPLATE(/obj/item/cataloguer/compact, "[initial(icon_state)][appearance_busy?_s:]")
+APPEARANCE_TEMPLATE(/obj/item/cataloguer/compact, "{initial(icon_state)}{appearance_busy?_s:}")
 
 /obj/item/cataloguer/compact/ui_action_click(mob/user, actiontype)
 	compact_toggle_effect(user)

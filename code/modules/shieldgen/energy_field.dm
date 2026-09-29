@@ -141,7 +141,7 @@ EXTEND_INTERACTIONS(/obj/effect/energy_field, \
 	SHOULD_CALL_PARENT(FALSE)
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/effect/energy_field, PROC_REF(appearance_overlays), list(CHANGE_NEIGHBOURS))
+DECLARE_APPEARANCE_PROC(/obj/effect/energy_field, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
 /obj/effect/energy_field/appearance_overlays()
 	. = list()
 	var/list/adjacent_shields_dir = list()

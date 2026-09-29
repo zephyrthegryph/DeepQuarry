@@ -5,8 +5,8 @@
 // by itself when a declared field it reads changes. Together with DECLARE_APPEARANCE
 // (code/__defines/lifecycle_decl.dm: layers keyed on one var) these are the one way to draw state:
 //
-//   APPEARANCE_TEMPLATE(/obj/machinery/recharger, "recharger[on][operable]")
-//   APPEARANCE_LEVEL(/obj/item/cell, "percent", 4, "[initial(icon_state)]_%p")
+//   APPEARANCE_TEMPLATE(/obj/machinery/recharger, "recharger{on}{operable}")
+//   APPEARANCE_LEVEL(/obj/item/cell, "percent", 4, "{initial(icon_state)}_%p")
 //   APPEARANCE_EMISSIVE(/obj/machinery/recharger, "on", list("1" = "recharger-glow"))
 //   APPEARANCE_SLOT(/obj/machinery/recharger, SLOT_CHARGING, "recharger-cell")
 //   APPEARANCE_WATCH(/obj/machinery, list("stat", "on"))
@@ -15,11 +15,12 @@
 // the type or a proc taking no arguments (a derived field such as operable(), or a small reader such
 // as percent()). Either way it is read from the instance when the appearance is refreshed.
 //
-// Template tokens (inside [ ] in a template or a level format):
-//   [name]            the value of name, as text ("[TRUE]" is "1", null is "")
-//   [name?A:B]        A when name is truthy, else B; A and B are literal text, or @var for the
-//                     value of another var ([charging?@icon_state_charging:@icon_state_idle])
-//   [initial(name)]   the type's initial value of var name (a constant of the type)
+// Template tokens (inside { } in a template or a level format; braces, because DM would read
+// [ ] inside a string literal as an embedded expression at the declaration):
+//   {name}            the value of name, as text (TRUE is "1", null is "")
+//   {name?A:B}        A when name is truthy, else B; A and B are literal text, or @var for the
+//                     value of another var ({charging?@icon_state_charging:@icon_state_idle})
+//   {initial(name)}   the concrete type's initial value of var name (resolved per subtype)
 //
 // Refresh is automatic. Every name that is a declared OM field (OM_FIELD, OM_FLAG_FIELD, a
 // registered setter, a derived field) adds its channel to the type's appearance watch mask, slots
@@ -33,7 +34,7 @@
 // an icon_state wins over the template), then level, emissive and slot overlays. The declaration
 // owns only the overlays it adds and swaps them on a state change.
 
-/// icon_state from a template over fields (see the token syntax above). One per type; a subtype's
+/// icon_state from a template over fields (see the { } token syntax above). One per type; a subtype's
 /// template replaces its parent's.
 #define APPEARANCE_TEMPLATE(PATH, TEMPLATE) _LIFECYCLE_DECL(PATH, set_appearance_template(TEMPLATE))
 /// An overlay for a numeric level: VALUE (a var or proc name) is a percentage (0..100), quantized to
@@ -48,7 +49,7 @@
 /// The declared fields a procedural update_icon() reads (a list of names): their channels join the
 /// watch mask, so a change re-runs update_icon() without a manual call.
 #define APPEARANCE_WATCH(PATH, FIELDS) _LIFECYCLE_DECL(PATH, add_appearance_watch(FIELDS))
-/// A declared appearance provider: PROC (PROC_REF(appearance_overlays)) computes the overlays from
+/// A declared appearance provider: PROC (TYPE_PROC_REF(/atom, appearance_overlays)) computes the overlays from
 /// state and returns them (a list of icon_state strings, images or mutable appearances, a single one,
 /// or null). It may also set icon_state/color/name, which are presentation. The runtime owns its
 /// overlays: it cuts what the provider returned last time and adds the new result, so a provider never

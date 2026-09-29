@@ -112,7 +112,7 @@
 	several TSCs have been trying to get a hold of the blueprints for half a decade."
 	var/unique_reskin
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/stunrevolver/detective, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/stunrevolver/detective, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/energy/stunrevolver/detective/appearance_overlays()
 	. = list()
 	if(power_supply == null)

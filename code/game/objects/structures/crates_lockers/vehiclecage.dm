@@ -70,7 +70,7 @@
 	user.visible_message(span_notice("[user] begins cutting \the [src]'s bolts."))
 	return tool_disassemble(user, W, 7 SECONDS, TOOL_WIRECUTTER)
 
-DECLARE_APPEARANCE_PROC(/obj/structure/vehiclecage, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/vehiclecage, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/vehiclecage/appearance_overlays()
 	. = list()
 	. += ..()

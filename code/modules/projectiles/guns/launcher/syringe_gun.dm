@@ -11,7 +11,7 @@ MATERIAL_MIX(/obj/item/syringe_cartridge, list(MAT_STEEL = 125, MAT_GLASS = 375)
 	w_class = ITEMSIZE_TINY
 	var/tmp/syringe_handle
 
-DECLARE_APPEARANCE_PROC(/obj/item/syringe_cartridge, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/syringe_cartridge, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/syringe_cartridge/appearance_overlays()
 	. = list()
 	underlays.Cut()

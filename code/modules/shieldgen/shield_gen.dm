@@ -283,7 +283,7 @@ DECLARE_REF(/obj/machinery/shield_gen, "field", OWNED_LIST, null)
 				continue
 			new /obj/effect/energy_field(O, src)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/shield_gen, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/shield_gen, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/shield_gen/appearance_overlays()
 	. = list()
 	if(has_stat(BROKEN))

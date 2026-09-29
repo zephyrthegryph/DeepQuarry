@@ -47,7 +47,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent
 			for(var/datum/reagent/R in beaker.reagents.reagent_list)
 				. += span_notice("- [R.volume] units of [R.name].")
 
-APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer[beaker?1:0]")
+APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 
 /obj/machinery/reagentgrinder/declare_interactions(list/into)
 	into += list(

@@ -198,7 +198,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 		return
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/vehicle/bike, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/vehicle/bike, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/vehicle/bike/appearance_overlays()
 	. = list()
 

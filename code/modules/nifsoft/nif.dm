@@ -300,7 +300,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 			return "0"
 	return "2"
 
-APPEARANCE_TEMPLATE(/obj/item/nif, "nif_[appearance_nif_state]")
+APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 
 //The (dramatic) install process
 /obj/item/nif/proc/handle_install()

@@ -26,7 +26,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/timeclock, "announce", /obj/item/r
 
 DECLARE_REF(/obj/machinery/computer/timeclock, "card", SPILL, null)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/timeclock, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/timeclock, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/computer/timeclock/appearance_overlays()
 	. = list()
 	if(!operable())

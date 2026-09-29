@@ -13,7 +13,7 @@
 	ov_alert3.plane = PLANE_LIGHTING_ABOVE
 
 //Refreshes the icon and sets the luminosity
-DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/hydroponics, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/hydroponics, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/portable_atmospherics/hydroponics/appearance_overlays()
 	. = list()
 	// Update name.

@@ -28,7 +28,7 @@
 		reagents.add_reagent(REAGENT_ID_FUEL, 1)
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/weldingtool/lasercannon, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/weldingtool/lasercannon, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/weldingtool/lasercannon/appearance_overlays()
 	. = list()
 	// Lights

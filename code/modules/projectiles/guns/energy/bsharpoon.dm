@@ -227,7 +227,7 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
 	dropnoms_active = !dropnoms_active
 	to_chat(user,span_info("You switch \the [src]'s spatial rearrangement [dropnoms_active ? "on" : "off"]. (Telenoms [dropnoms_active ? "enabled" : "disabled"])"))
 
-DECLARE_APPEARANCE_PROC(/obj/item/bluespace_harpoon, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/bluespace_harpoon, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/bluespace_harpoon/appearance_overlays()
 	. = list()
 	if(transforming)

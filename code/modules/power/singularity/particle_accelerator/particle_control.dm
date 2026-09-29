@@ -67,7 +67,7 @@
 		set_active(0)
 		connected_parts = list()
 
-APPEARANCE_TEMPLATE(/obj/machinery/particle_accelerator/control_box, "[appearance_state]")
+APPEARANCE_TEMPLATE(/obj/machinery/particle_accelerator/control_box, "{appearance_state}")
 
 /// The icon_state for the control box: running strength, powered (assembled or not), or construction stage.
 /obj/machinery/particle_accelerator/control_box/proc/appearance_state()

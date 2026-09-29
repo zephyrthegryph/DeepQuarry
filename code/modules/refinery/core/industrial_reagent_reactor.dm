@@ -64,7 +64,7 @@ DECLARE_REF(/obj/machinery/reagent_refinery/reactor, "internal_tank", OWNED, nul
 		if(target)
 			transfer_tank( reagents, target, dir)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/reactor, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/reactor, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/reagent_refinery/reactor/appearance_overlays()
 	. = list()
 	// Get main dir pipe

@@ -96,7 +96,7 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 	unwrap()
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bigDelivery, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/bigDelivery, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/bigDelivery/appearance_overlays()
 	. = list()
 	if(nameset || examtext)
@@ -244,7 +244,7 @@ DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
 	attack_self(user)
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/item/smallDelivery, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/smallDelivery, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/smallDelivery/appearance_overlays()
 	. = list()
 	if((nameset || examtext) && icon_state != "deliverycrate1")

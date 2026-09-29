@@ -164,7 +164,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/cooking_container, \
 			if (weights[I])
 				holder.trans_to_obj(I, weights[I] / total)
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/cooking_container, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/cooking_container, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/reagent_containers/cooking_container/appearance_overlays()
 	. = list()
 

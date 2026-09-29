@@ -68,7 +68,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/flash, "power_supply", "cell_type")
 /obj/item/flash/proc/screwdriver_act_tool_failed(mob/user, obj/item/tool)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " fails to repair %T%."))
 
-DECLARE_APPEARANCE_PROC(/obj/item/flash, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/flash, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/flash/appearance_overlays()
 	. = list()
 	var/obj/item/cell/battery = power_supply

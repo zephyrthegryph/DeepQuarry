@@ -102,7 +102,7 @@
 /obj/item/reagent_containers/chem_canister/on_reagent_change(changetype)
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/chem_canister, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/chem_canister, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/reagent_containers/chem_canister/appearance_overlays()
 	. = list()
 	. += ..()

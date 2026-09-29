@@ -46,7 +46,7 @@
 /obj/item/reagent_containers/blood/on_reagent_change()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/blood, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/blood, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/reagent_containers/blood/appearance_overlays()
 	. = list()
 	var/percent = round((reagents.total_volume / volume) * 100)

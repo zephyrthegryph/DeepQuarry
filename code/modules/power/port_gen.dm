@@ -47,7 +47,7 @@
 		if(!handleInactive())
 			return PROCESS_KILL
 
-APPEARANCE_TEMPLATE(/obj/machinery/power/port_gen, "[initial(icon_state)][active?on:]")
+APPEARANCE_TEMPLATE(/obj/machinery/power/port_gen, "{initial(icon_state)}{active?on:}")
 
 /obj/machinery/power/powered()
 	return 1 //doesn't require an external power source
@@ -504,7 +504,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/port_gen, "[initial(icon_state)][active
 //Port Start, RS PR #484
 
 APPEARANCE_NONE(/obj/machinery/power/port_gen/pacman/super/potato)
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/port_gen/pacman/super/potato, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/port_gen/pacman/super/potato, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/power/port_gen/pacman/super/potato/appearance_overlays()
 	. = list()
 	set_light(0)
@@ -658,7 +658,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/port_gen/pacman/super/potato, PROC_
 	)
 	..()
 
-APPEARANCE_TEMPLATE(/obj/machinery/power/rtg, "[initial(icon_state)][panel_open?-open:]")
+APPEARANCE_TEMPLATE(/obj/machinery/power/rtg, "{initial(icon_state)}{panel_open?-open:}")
 
 /obj/machinery/power/rtg/advanced
 	desc = "An advanced RTG capable of moderating isotope decay, increasing power output but reducing lifetime. It uses plasma-fueled radiation collectors to increase output even further."
@@ -789,7 +789,7 @@ APPEARANCE_NONE(/obj/machinery/power/rtg/fake_gen)
 	play_sfx(src, SFX_EFFECTS_METAL_CLOSE)
 	return TRUE
 
-APPEARANCE_TEMPLATE(/obj/machinery/power/rtg/abductor, "[icon_base][appearance_core_suffix]")
+APPEARANCE_TEMPLATE(/obj/machinery/power/rtg/abductor, "{icon_base}{appearance_core_suffix}")
 
 /// Sprite suffix: no cell, open panel, or closed.
 /obj/machinery/power/rtg/abductor/proc/appearance_core_suffix()
@@ -928,7 +928,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/power/rtg/abductor/hybrid/built, "cell", /o
 	return FALSE
 
 APPEARANCE_NONE(/obj/machinery/power/rtg/reg)
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/rtg/reg, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/rtg/reg, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/power/rtg/reg/appearance_overlays()
 	. = list()
 	pixel_x = -32

@@ -46,7 +46,7 @@
 
 DECLARE_REF(/obj/machinery/pda_multicaster, "soundloop", OWNED, null)
 
-APPEARANCE_TEMPLATE(/obj/machinery/pda_multicaster, "[initial(icon_state)][on?:_off]")
+APPEARANCE_TEMPLATE(/obj/machinery/pda_multicaster, "{initial(icon_state)}{on?:_off}")
 
 /obj/machinery/pda_multicaster/declare_interactions(list/into)
 	into += list(

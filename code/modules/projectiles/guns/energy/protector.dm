@@ -71,7 +71,7 @@
 	return TRUE
 
 //Update icons from /tg/, so fancy! Use this more!
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/protector, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/protector, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/energy/gun/protector/appearance_overlays()
 	. = list()
 	var/ratio = 0

@@ -135,7 +135,7 @@
 		else
 			new /obj/item/research_sample/common(src)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/anomaly_harvester, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/anomaly_harvester, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/anomaly_harvester/appearance_overlays()
 	. = list()
 	if(!operable() || !anchored)

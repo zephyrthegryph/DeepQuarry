@@ -401,7 +401,7 @@ About the new airlock wires panel:
 		return FALSE
 
 APPEARANCE_NONE(/obj/machinery/door/airlock)
-DECLARE_APPEARANCE_PROC(/obj/machinery/door/airlock, PROC_REF(appearance_overlays), list("get_integrity"))
+DECLARE_APPEARANCE_PROC(/obj/machinery/door/airlock, TYPE_PROC_REF(/atom, appearance_overlays), list("get_integrity"))
 /obj/machinery/door/airlock/appearance_overlays()
 	. = list()
 	if(density)

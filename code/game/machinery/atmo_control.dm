@@ -37,7 +37,7 @@
 
 	var/radio_connection_handle
 
-APPEARANCE_TEMPLATE(/obj/machinery/air_sensor, "gsensor[on]")
+APPEARANCE_TEMPLATE(/obj/machinery/air_sensor, "gsensor{on}")
 
 /// What the sensor reports from `air_sample`, at the resolution it broadcasts.
 /obj/machinery/air_sensor/proc/sensor_readings(datum/gas_mixture/air_sample)

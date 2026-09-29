@@ -151,7 +151,7 @@
 		return "emagged"
 	return locked ? "locked" : "unlocked"
 
-APPEARANCE_TEMPLATE(/obj/structure/closet/secure_closet, "closed_[appearance_lock_state][sealed?_welded:]")
+APPEARANCE_TEMPLATE(/obj/structure/closet/secure_closet, "closed_{appearance_lock_state}{sealed?_welded:}")
 
 /obj/structure/closet/secure_closet/req_breakout()
 	if(!opened && locked) return 1

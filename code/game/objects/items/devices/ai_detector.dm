@@ -74,7 +74,7 @@
 	// If we reach this point, AI or sec isn't near us.
 	return PROXIMITY_NONE
 
-DECLARE_APPEARANCE_PROC(/obj/item/multitool/ai_detector, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/multitool/ai_detector, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/multitool/ai_detector/appearance_overlays()
 	. = list()
 	icon_state = "[initial(icon_state)][detect_state]"

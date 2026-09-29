@@ -130,7 +130,7 @@ DECLARE_REF(/obj/machinery/appliance/mixer, "mixer_loop", OWNED, null)
 	update_icon()
 
 APPEARANCE_NONE(/obj/machinery/appliance/mixer)
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/appliance/mixer/appearance_overlays()
 	. = list()
 	if (!has_stat(MACHINE_STAT_ANY))

@@ -345,7 +345,7 @@ DECLARE_REF(/obj/machinery/mining/drill, "cell", OWNED, null)
 		return "mining_drill_braced"
 	return "mining_drill"
 
-APPEARANCE_TEMPLATE(/obj/machinery/mining/drill, "[appearance_state]")
+APPEARANCE_TEMPLATE(/obj/machinery/mining/drill, "{appearance_state}")
 
 /obj/machinery/mining/drill/RefreshParts()
 	..()

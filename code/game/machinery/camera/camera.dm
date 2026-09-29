@@ -413,7 +413,7 @@ DECLARE_REF(/obj/machinery/camera, "assembly", OWNED, null)
 		status = newstatus
 		update_coverage()
 
-APPEARANCE_TEMPLATE(/obj/machinery/camera, "[initial(icon_state)][appearance_suffix]")
+APPEARANCE_TEMPLATE(/obj/machinery/camera, "{initial(icon_state)}{appearance_suffix}")
 
 /// "1" when off or broken, "emp" while EMP-ed, else nothing.
 /obj/machinery/camera/proc/appearance_suffix()

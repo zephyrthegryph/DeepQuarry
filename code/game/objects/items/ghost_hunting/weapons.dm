@@ -25,7 +25,7 @@
 /obj/item/ghost_catcher/proc/appearance_busy()
 	return om_busy(src) ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "[initial(icon_state)][appearance_busy?_active:]")
+APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_busy?_active:}")
 
 /obj/item/ghost_catcher/update_held_icon()
 	var/mob/living/M = loc

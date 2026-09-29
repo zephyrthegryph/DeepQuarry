@@ -379,7 +379,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 	else
 		set_anchored(TRUE)
 
-DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/vehicle/train/engine/appearance_overlays()
 	. = list()
 	. += ..()
@@ -506,7 +506,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/trolley_tank, \
 	. = ..()
 	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u."
 
-DECLARE_APPEARANCE_PROC(/obj/vehicle/train/trolley_tank, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/vehicle/train/trolley_tank, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/vehicle/train/trolley_tank/appearance_overlays()
 	. = list()
 	. += ..()

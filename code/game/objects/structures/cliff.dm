@@ -125,7 +125,7 @@ two tiles on initialization, and which way a cliff is facing may change during m
 	..()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/structure/cliff, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/cliff, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/cliff/appearance_overlays()
 	. = list()
 	icon_state = "cliff-[dir][icon_variant][bottom ? "-bottom" : ""][corner ? "-corner" : ""][ramp ? "-ramp" : ""]"

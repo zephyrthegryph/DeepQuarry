@@ -126,7 +126,7 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 		COOLDOWN_START(src, toggle, 5 SECONDS)
 		toggle_valve()
 
-DECLARE_APPEARANCE_PROC(/obj/item/transfer_valve, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/transfer_valve, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/transfer_valve/appearance_overlays()
 	. = list()
 	underlays = null

@@ -14,7 +14,7 @@
 	update_icon()
 
 APPEARANCE_NONE(/obj/structure/closet/secure_closet/guncabinet)
-DECLARE_APPEARANCE_PROC(/obj/structure/closet/secure_closet/guncabinet, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/closet/secure_closet/guncabinet, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/closet/secure_closet/guncabinet/appearance_overlays()
 	. = list()
 	if(opened)

@@ -35,7 +35,7 @@
 	. = ..()
 	. += "It has [spikes] spike\s remaining."
 
-APPEARANCE_TEMPLATE(/obj/item/gun/launcher/spikethrower, "spikethrower[spikes]")
+APPEARANCE_TEMPLATE(/obj/item/gun/launcher/spikethrower, "spikethrower{spikes}")
 
 /obj/item/gun/launcher/spikethrower/update_release_force()
 	return

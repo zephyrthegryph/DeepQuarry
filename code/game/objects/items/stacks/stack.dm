@@ -54,7 +54,7 @@
 	for(var/M in .)
 		.[M] *= amount
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/stack, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/stack/appearance_overlays()
 	. = list()
 	if(no_variants)

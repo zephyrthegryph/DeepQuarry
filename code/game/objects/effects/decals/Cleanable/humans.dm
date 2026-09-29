@@ -53,7 +53,7 @@
 					else
 						qdel(B)
 
-DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/effect/decal/cleanable/blood/appearance_overlays()
 	if(basecolor == "rainbow") basecolor = get_random_colour(1)
 	. = list()
@@ -201,7 +201,7 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/blood, \
 	random_icon_states = list("gib1", "gib2", "gib3", "gib5", "gib6")
 	var/fleshcolor = "#FFFFFF"
 
-DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/effect/decal/cleanable/blood/gibs/appearance_overlays()
 	. = list()
 

@@ -211,7 +211,7 @@ OM_TIMER_SLOT(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
 	overheat = FALSE
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/kinetic_accelerator, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/kinetic_accelerator, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/energy/kinetic_accelerator/appearance_overlays()
 	. = list()
 	if(overheat || !power_supply || (power_supply.charge == 0))

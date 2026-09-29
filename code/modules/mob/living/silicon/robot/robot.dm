@@ -1286,7 +1286,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 // update_icon() composes the sprite from providers: base, accents, status,
 // belly, panel and hat.
 
-DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/silicon/robot/appearance_overlays()
 	. = list()
 	if(!sprite_datum)

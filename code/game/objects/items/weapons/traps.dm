@@ -145,7 +145,7 @@ DECLARE_INTERACTIONS(/obj/item/beartrap, \
 			log_and_message_admins("has sprung a [name] at \the [get_area(loc)], last touched by [forensic_data?.get_lastprint()]", L)
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/beartrap, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/beartrap, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/beartrap/appearance_overlays()
 	. = list()
 	. += ..()
@@ -289,7 +289,7 @@ EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 
 	return ITEM_INTERACT_SUCCESS
 
-APPEARANCE_TEMPLATE(/obj/item/material/barbedwire, "[initial(icon_state)][anchored?-out:]")
+APPEARANCE_TEMPLATE(/obj/item/material/barbedwire, "{initial(icon_state)}{anchored?-out:}")
 
 /obj/item/material/barbedwire/Crossed(atom/movable/AM as mob|obj)
 	if(AM.is_incorporeal())

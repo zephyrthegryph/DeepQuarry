@@ -36,7 +36,7 @@
 	// soundloop = new(list(src), FALSE) // Removing soundloop for now.
 	// soundloop.start() // Removing soundloop for now.
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /turf/simulated/floor/water/appearance_overlays()
 	. = list()
 	. += ..()

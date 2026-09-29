@@ -15,7 +15,7 @@
 /obj/structure/gootrap/proc/can_use(mob/user)
 	return (user.IsAdvancedToolUser() && !issilicon(user) && !user.stat && !user.restrained())
 
-DECLARE_APPEARANCE_PROC(/obj/structure/gootrap, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/gootrap, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/gootrap/appearance_overlays()
 	. = list()
 	. += ..()

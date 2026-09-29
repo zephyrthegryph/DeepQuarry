@@ -40,7 +40,7 @@
 	max_universal_equip = 1
 	max_special_equip = 1
 
-DECLARE_APPEARANCE_PROC(/obj/mecha/working/hoverpod/shuttlecraft, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/mecha/working/hoverpod/shuttlecraft, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/mecha/working/hoverpod/shuttlecraft/appearance_overlays()
 	. = list()
 	. += ..()

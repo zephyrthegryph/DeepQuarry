@@ -42,7 +42,7 @@
 	var/spinup_delay      = 20
 	var/spinup_counter    = 0
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/power/shield_generator/appearance_overlays()
 	. = list()
 	if(running)

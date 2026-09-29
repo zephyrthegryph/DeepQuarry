@@ -120,7 +120,7 @@ DECLARE_REF(/obj/machinery/reagent_refinery/grinder, "holdingitems", SPILL_LIST,
 
 	refinery_transfer()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/grinder, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/grinder, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/reagent_refinery/grinder/appearance_overlays()
 	. = list()
 	var/image/pipe = image(icon, icon_state = "grinder_cons", dir = dir)

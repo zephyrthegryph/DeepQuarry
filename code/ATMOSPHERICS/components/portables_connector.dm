@@ -58,7 +58,7 @@
 /obj/machinery/atmospherics/portables_connector/init_dir()
 	initialize_directions = dir
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/portables_connector, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/portables_connector, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/portables_connector/appearance_overlays()
 	. = list()
 	icon_state = "connector"

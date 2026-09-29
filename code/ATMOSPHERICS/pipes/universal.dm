@@ -10,7 +10,7 @@
 	construction_type = /obj/item/pipe/binary
 	pipe_state = "universal"
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple/visible/universal, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple/visible/universal, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/pipe/simple/visible/universal/appearance_overlays()
 	. = list()
 	alpha = 255
@@ -46,7 +46,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple/visible/universa
 	construction_type = /obj/item/pipe/binary
 	pipe_state = "universal"
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple/hidden/universal, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple/hidden/universal, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/pipe/simple/hidden/universal/appearance_overlays()	// Doesn't leak. It's a special pipe.
 	. = list()
 	alpha = 255

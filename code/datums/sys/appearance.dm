@@ -98,15 +98,15 @@
 	var/pos = 1
 	var/len = length(template)
 	while(pos <= len)
-		var/open = findtext(template, "\[", pos)
+		var/open = findtext(template, "{", pos)
 		if(!open)
 			parts += copytext(template, pos)
 			break
 		if(open > pos)
 			parts += copytext(template, pos, open)
-		var/close = findtext(template, "]", open + 1)
+		var/close = findtext(template, "}", open + 1)
 		if(!close)
-			stack_trace("[what]([owner_type], \"[template]\"): unclosed \[; dropped")
+			stack_trace("[what]([owner_type], \"[template]\"): unclosed {; dropped")
 			return null
 		var/token = trimtext(copytext(template, open + 1, close))
 		pos = close + 1
@@ -122,7 +122,7 @@
 			var/name = trimtext(copytext(token, 1, question))
 			var/colon = findtext(token, ":", question + 1)
 			if(!colon)
-				stack_trace("[what]([owner_type], \"[template]\"): \[[token]\] needs name?A:B; dropped")
+				stack_trace("[what]([owner_type], \"[template]\"): {[token]} needs {name?A:B}; dropped")
 				return null
 			var/list/branches = list(copytext(token, question + 1, colon), copytext(token, colon + 1))
 			for(var/i in 1 to 2)

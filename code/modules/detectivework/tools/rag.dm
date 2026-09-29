@@ -77,7 +77,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 	else
 		name = "dry [initial(name)]"
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/rag, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/rag, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/reagent_containers/glass/rag/appearance_overlays()
 	. = list()
 	if(on_fire)

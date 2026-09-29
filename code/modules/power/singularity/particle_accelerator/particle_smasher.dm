@@ -147,7 +147,7 @@ DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/particle_smasher/appearance_overlays()
 	. = list()
 	if(!material_layer)

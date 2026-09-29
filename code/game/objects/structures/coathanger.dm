@@ -66,7 +66,7 @@
 	else
 		return 1
 
-DECLARE_APPEARANCE_PROC(/obj/structure/coatrack, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/coatrack, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/coatrack/appearance_overlays()
 	. = list()
 	if (istype(coat(), /obj/item/clothing/suit/storage/toggle/labcoat))

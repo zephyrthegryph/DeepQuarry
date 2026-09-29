@@ -45,7 +45,7 @@
 	update_icon()
 
 // update the icon_state
-APPEARANCE_TEMPLATE(/obj/machinery/magnetic_module, "floor_magnet[on?:0][invisibility?-f:]")
+APPEARANCE_TEMPLATE(/obj/machinery/magnetic_module, "floor_magnet{on?:0}{invisibility?-f:}")
 
 /obj/machinery/magnetic_module/receive_signal(datum/signal/signal)
 	var/command = signal.data["command"]

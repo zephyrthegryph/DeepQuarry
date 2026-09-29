@@ -31,7 +31,7 @@
 	recipes = GLOB.rods_recipes
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack/rods, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/stack/rods, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/stack/rods/appearance_overlays()
 	. = list()
 	var/amount = get_amount()

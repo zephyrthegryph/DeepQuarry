@@ -221,7 +221,7 @@
 	if(bolt)
 		return "-nocked"
 	return ""
-APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow, "crossbow[appearance_draw_suffix]")
+APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow, "crossbow{appearance_draw_suffix}")
 
 
 // Crossbow construction.
@@ -233,7 +233,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow, "crossbow[appearance_draw_s
 
 	var/buildstate = 0
 
-APPEARANCE_TEMPLATE(/obj/item/crossbowframe, "crossbowframe[buildstate]")
+APPEARANCE_TEMPLATE(/obj/item/crossbowframe, "crossbowframe{buildstate}")
 
 /obj/item/crossbowframe/examine(mob/user)
 	. = ..()

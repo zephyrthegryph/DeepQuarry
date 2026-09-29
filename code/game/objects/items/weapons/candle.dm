@@ -18,7 +18,7 @@
 		return 2
 	return 3
 
-APPEARANCE_TEMPLATE(/obj/item/flame/candle, "[icon_type][appearance_wax_stage][lit?_lit:]")
+APPEARANCE_TEMPLATE(/obj/item/flame/candle, "{icon_type}{appearance_wax_stage}{lit?_lit:}")
 
 
 /// Old attackby.
@@ -115,7 +115,7 @@ DECLARE_INTERACTIONS(/obj/item/flame/candle, \
 		return "_melted"
 	return lit ? "_lit" : ""
 
-APPEARANCE_TEMPLATE(/obj/item/flame/candle/candelabra, "candelabra[appearance_candelabra_suffix]")
+APPEARANCE_TEMPLATE(/obj/item/flame/candle/candelabra, "candelabra{appearance_candelabra_suffix}")
 
 /obj/item/flame/candle/everburn
 	wax = 99999

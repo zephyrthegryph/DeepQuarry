@@ -49,7 +49,7 @@
 			L.update_connections()
 			L.update_icon() //so siding get updated properly
 
-DECLARE_APPEARANCE_PROC(/obj/structure/catwalk, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/catwalk, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/catwalk/appearance_overlays()
 	. = list()
 	update_connections()

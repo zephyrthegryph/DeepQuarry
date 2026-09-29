@@ -294,7 +294,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/synthprinter, \
 
 	return
 
-APPEARANCE_TEMPLATE(/obj/machinery/transhuman/synthprinter, "pod_[appearance_mode]")
+APPEARANCE_TEMPLATE(/obj/machinery/transhuman/synthprinter, "pod_{appearance_mode}")
 
 /obj/machinery/transhuman/synthprinter/proc/appearance_mode()
 	if(busy && !has_stat(NOPOWER))

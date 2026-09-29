@@ -83,12 +83,12 @@ DECLARE_REF(/atom/movable/screen/movable/ability_master, "my_mob_handle", BACK_H
 			user.client.screen += src
 	var/i = 1
 	for(var/atom/movable/screen/ability/ability in ability_objects)
-		ability.update_icon(forced)
+		ability.update_icon()
 		ability.index = i
 		ability.maptext = "[ability.index]" // Slot number
 		i++
 
-DECLARE_APPEARANCE_PROC(/atom/movable/screen/movable/ability_master, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/atom/movable/screen/movable/ability_master, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /atom/movable/screen/movable/ability_master/appearance_overlays()
 	. = list()
 	if(length(ability_objects))
@@ -106,7 +106,7 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/movable/ability_master, PROC_REF(ap
 
 	new_button.name = name_given
 	new_button.ability_icon_state = name_given
-	new_button.update_icon(1)
+	new_button.update_icon()
 	LAZYADD(ability_objects, new_button)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
@@ -173,7 +173,7 @@ DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/abili
 			master.update_icon()
 	..()
 
-DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /atom/movable/screen/ability/appearance_overlays()
 	. = list()
 

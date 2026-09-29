@@ -269,7 +269,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 /obj/item/electronic_assembly/proc/can_move()
 	return FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/electronic_assembly/appearance_overlays()
 	. = list()
 	if(opened)

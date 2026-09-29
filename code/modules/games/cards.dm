@@ -494,7 +494,7 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 	/// The direction of whoever laid it on a table (the fan follows it), or null.
 	var/tmp/direction
 
-DECLARE_APPEARANCE_PROC(/obj/item/hand, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/hand, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/hand/appearance_overlays()
 	. = list()
 

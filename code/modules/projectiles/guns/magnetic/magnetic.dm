@@ -99,7 +99,7 @@ DECLARE_REF(/obj/item/gun/magnetic, "capacitor", OWNED, null)
 	if(needs_update)
 		update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/magnetic/appearance_overlays()
 	. = list()
 	if(state & ICON_CELL)

@@ -408,7 +408,7 @@ DECLARE_REF(/obj/item/communicator, "id", SPILL, null)	// a slotted ID card drop
 		return "-called"
 	return ""
 
-APPEARANCE_TEMPLATE(/obj/item/communicator, "[initial(icon_state)][appearance_comm_suffix]")
+APPEARANCE_TEMPLATE(/obj/item/communicator, "{initial(icon_state)}{appearance_comm_suffix}")
 
 // A camera preset for spawning in the communicator
 /obj/machinery/camera/communicator

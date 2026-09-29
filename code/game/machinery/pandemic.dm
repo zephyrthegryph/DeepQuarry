@@ -29,7 +29,7 @@
 	. = ..()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/pandemic, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/pandemic, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/computer/pandemic/appearance_overlays()
 	. = list()
 	if(has_stat(BROKEN))

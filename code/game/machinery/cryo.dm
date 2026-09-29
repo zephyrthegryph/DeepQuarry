@@ -217,7 +217,7 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 	put_mob(target)
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/cryo_cell, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/cryo_cell, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/unary/cryo_cell/appearance_overlays()
 	. = list()
 	fluid.color = null

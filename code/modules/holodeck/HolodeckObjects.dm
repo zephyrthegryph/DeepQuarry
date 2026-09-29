@@ -64,7 +64,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/holofloor, INTERACT_ITEM("Nothing", TY
 	name = "\proper space"
 	icon_state = "white"
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/floor/holofloor/space, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/turf/simulated/floor/holofloor/space, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /turf/simulated/floor/holofloor/space/appearance_overlays()
 	. = list()
 	. += ..()
@@ -382,7 +382,7 @@ DECLARE_INTERACTIONS(/obj/item/holo/esword, \
 		update_icon()
 	return FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/item/holo/esword, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/holo/esword, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/holo/esword/appearance_overlays()
 	. = list()
 	. += ..()

@@ -157,7 +157,7 @@ DECLARE_INTERACTIONS(/obj/structure/fuel_port, \
 	update_icon()
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/fuel_port, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/fuel_port, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/fuel_port/appearance_overlays()
 	. = list()
 	if(opened)

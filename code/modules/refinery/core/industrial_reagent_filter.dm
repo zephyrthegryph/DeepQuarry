@@ -54,7 +54,7 @@
 		if(target && reagents.total_volume > 0)
 			transfer_tank( reagents, target, dir)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/filter, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/filter, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/reagent_refinery/filter/appearance_overlays()
 	. = list()
 	icon_state = "filter_[filter_side == 1 ? "r" : "l"]"

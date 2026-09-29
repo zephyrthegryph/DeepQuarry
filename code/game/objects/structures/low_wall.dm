@@ -219,7 +219,7 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 // Bay's version
 /// Draws itself entirely: drop the parent's keyed declarations.
 APPEARANCE_NONE(/obj/structure/low_wall/bay)
-DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/bay, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/bay, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/low_wall/bay/appearance_overlays()
 	. = list()
 
@@ -246,7 +246,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/bay, PROC_REF(appearance_overlay
 // Eris's version
 /// Draws itself entirely: drop the parent's keyed declarations.
 APPEARANCE_NONE(/obj/structure/low_wall/eris)
-DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/eris, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/eris, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/low_wall/eris/appearance_overlays()
 	. = list()
 
@@ -358,7 +358,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/eris, PROC_REF(appearance_overla
 DESTROY_EFFECTS(/obj/structure/grille/bay, new /datum/destroy_effects_data(neighbor_type = /obj/structure/grille))
 
 APPEARANCE_NONE(/obj/structure/grille/bay)
-DECLARE_APPEARANCE_PROC(/obj/structure/grille/bay, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/grille/bay, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/grille/bay/appearance_overlays()
 	. = list()
 	var/on_frame = locate_on(loc, /obj/structure/low_wall/bay)
@@ -412,7 +412,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/grille/bay, PROC_REF(appearance_overlays)
 	icon_state = ""
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/structure/window/bay, PROC_REF(appearance_overlays), list("get_integrity"))
+DECLARE_APPEARANCE_PROC(/obj/structure/window/bay, TYPE_PROC_REF(/atom, appearance_overlays), list("get_integrity"))
 /obj/structure/window/bay/appearance_overlays()
 	. = list()
 	if(!anchored)
@@ -502,7 +502,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/window/bay, PROC_REF(appearance_overlays)
 	icon_state = ""
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/structure/window/eris, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/window/eris, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/window/eris/appearance_overlays()
 	. = list()
 	if(!anchored)

@@ -32,7 +32,7 @@
 		return 0
 	return 1
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/ntnet_relay, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/ntnet_relay, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/ntnet_relay/appearance_overlays()
 	. = list()
 	if(operable())

@@ -49,7 +49,7 @@ TYPE_TABLE(/obj/item/storage/box/donut, hold_spec, list(HOLD_ONLY(list(/obj/item
 	. = ..()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/box/donut, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/box/donut, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/box/donut/appearance_overlays()
 	. = list()
 	var/x_offset = 0
@@ -80,7 +80,7 @@ TYPE_TABLE(/obj/item/storage/box/wormcan, hold_spec, list(HOLD_ONLY(list( \
 	. = ..()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wormcan, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wormcan, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/box/wormcan/appearance_overlays()
 	. = list()
 	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
@@ -93,7 +93,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wormcan, PROC_REF(appearance_overl
 	max_storage_space = ITEMSIZE_COST_TINY * 6
 	starts_with = list(/obj/item/reagent_containers/food/snacks/wormsickly = 6)
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wormcan/sickly, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wormcan/sickly, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/box/wormcan/sickly/appearance_overlays()
 	. = list()
 	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
@@ -106,7 +106,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wormcan/sickly, PROC_REF(appearanc
 	max_storage_space = ITEMSIZE_COST_TINY * 6
 	starts_with = list(/obj/item/reagent_containers/food/snacks/wormdeluxe = 6)
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wormcan/deluxe, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wormcan/deluxe, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/box/wormcan/deluxe/appearance_overlays()
 	. = list()
 	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)

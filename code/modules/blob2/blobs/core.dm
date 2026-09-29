@@ -121,7 +121,7 @@ DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
 	if(overmind)
 		qdel(overmind)
 
-DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/blob/core/appearance_overlays()
 	. = list()
 	color = null

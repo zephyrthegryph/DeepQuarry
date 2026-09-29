@@ -1014,7 +1014,7 @@ TYPE_TABLE(/obj/item/storage/trinketbox, hold_spec, list(HOLD_ONLY(list( \
 		/obj/item/clothing/accessory/medal \
 		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/trinketbox, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/trinketbox, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/trinketbox/appearance_overlays()
 	. = list()
 	if(open)

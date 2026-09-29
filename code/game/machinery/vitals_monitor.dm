@@ -89,7 +89,7 @@
 		MACHINE_WAKE(src)
 		visible_message(span_notice("\The [src] is now showing data for [victim()]."))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/vitals_monitor, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/vitals_monitor, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/vitals_monitor/appearance_overlays()
 	. = list()
 	if(has_stat(NOPOWER))

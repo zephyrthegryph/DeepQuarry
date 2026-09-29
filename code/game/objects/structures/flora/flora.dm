@@ -671,7 +671,7 @@
 		return variantnum
 	return ""
 
-APPEARANCE_TEMPLATE(/obj/structure/flora/sif/frostbelle, "[initial(icon_state)][appearance_variant]")
+APPEARANCE_TEMPLATE(/obj/structure/flora/sif/frostbelle, "{initial(icon_state)}{appearance_variant}")
 
 /obj/structure/flora/sif/frostbelle/get_harvestable_desc()
 	return span_notice("\The [src] seems to be budding.")

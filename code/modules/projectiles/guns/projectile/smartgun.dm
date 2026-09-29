@@ -88,7 +88,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/projectile/smartgun, INTERACT_ALT(null, PROC_
 	cycling = FALSE
 	closed = !closed
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/smartgun, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/smartgun, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/projectile/smartgun/appearance_overlays()
 	. = list()
 	. += ..()

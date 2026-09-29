@@ -69,7 +69,7 @@
 	. = ..()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/robot_parts/robot_suit, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/robot_parts/robot_suit, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/robot_parts/robot_suit/appearance_overlays()
 	. = list()
 	if(src.l_arm)

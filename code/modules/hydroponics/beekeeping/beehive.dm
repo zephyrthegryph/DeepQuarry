@@ -16,7 +16,7 @@
 	. = ..()
 	make_climbable()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/beehive/appearance_overlays()
 	. = list()
 	icon_state = "beehive"
@@ -261,7 +261,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, PROC_REF(appearance_overlays), l
 		return "[initial(icon_state)]_moving"
 	return initial(icon_state)
 
-APPEARANCE_TEMPLATE(/obj/machinery/honey_extractor, "[appearance_state]")
+APPEARANCE_TEMPLATE(/obj/machinery/honey_extractor, "{appearance_state}")
 DECLARE_APPEARANCE(/obj/machinery/honey_extractor, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("centrifuge_panel"))))
 
 /obj/machinery/honey_extractor/declare_interactions(list/into)

@@ -138,7 +138,7 @@
 // Proc: update_icon()
 // Parameters: 0
 // Description: Applys an overlay if it is a passive spell.
-DECLARE_APPEARANCE_PROC(/obj/item/spell, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/spell, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/spell/appearance_overlays()
 	. = list()
 	if(toggled)

@@ -199,7 +199,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 			return "_packed"
 	return ""
 
-APPEARANCE_TEMPLATE(/obj/item/uav, "[initial(icon_state)][appearance_uav_suffix]")
+APPEARANCE_TEMPLATE(/obj/item/uav, "{initial(icon_state)}{appearance_uav_suffix}")
 // "2" is UAV_PAIRING.
 DECLARE_APPEARANCE(/obj/item/uav, "state", list( \
 	"2" = list(APPEARANCE_OVERLAYS = list("uav_pairing")) \

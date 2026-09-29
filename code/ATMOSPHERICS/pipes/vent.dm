@@ -32,7 +32,7 @@
 /obj/machinery/atmospherics/pipe/vent/pipeline_expansion()
 	return list(node1)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/vent, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/vent, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/pipe/vent/appearance_overlays()
 	. = list()
 	if(node1)

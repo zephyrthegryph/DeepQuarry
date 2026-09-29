@@ -28,7 +28,7 @@
 		return "-bubble"
 	return "-full" //Has both but is not turned on
 
-APPEARANCE_TEMPLATE(/obj/machinery/alembic, "alembic[appearance_stage]")
+APPEARANCE_TEMPLATE(/obj/machinery/alembic, "alembic{appearance_stage}")
 
 /obj/machinery/alembic/declare_interactions(list/into)
 	into += list(

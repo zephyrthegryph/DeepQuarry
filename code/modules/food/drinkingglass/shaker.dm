@@ -17,7 +17,7 @@
 	lid_color = pick("black", "red", "blue")
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask/appearance_overlays()
 	. = list()
 	. += ..()

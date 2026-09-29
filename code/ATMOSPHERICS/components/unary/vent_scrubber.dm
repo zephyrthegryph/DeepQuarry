@@ -112,7 +112,7 @@
 	. = ..()
 	update_rust_device()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_scrubber, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_scrubber, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/unary/vent_scrubber/appearance_overlays()
 	. = list()
 

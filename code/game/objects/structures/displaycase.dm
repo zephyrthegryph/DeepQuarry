@@ -24,7 +24,7 @@
 		play_sfx(src, SFX_SHATTER)
 		update_icon()
 
-APPEARANCE_TEMPLATE(/obj/structure/displaycase, "glassbox[destroyed?b:][occupied]")
+APPEARANCE_TEMPLATE(/obj/structure/displaycase, "glassbox{destroyed?b:}{occupied}")
 
 
 /obj/structure/displaycase/declare_interactions(list/into)

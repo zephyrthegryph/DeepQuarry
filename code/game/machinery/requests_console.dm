@@ -88,7 +88,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 			GLOB.req_console_information -= department
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/requests_console/appearance_overlays()
 	. = list()
 

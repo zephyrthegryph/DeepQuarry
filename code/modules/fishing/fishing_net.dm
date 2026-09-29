@@ -89,7 +89,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net, \
 				L.attackby(W, user)
 	return FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_net, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_net, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/material/fishing_net/appearance_overlays() // Also updates name and desc
 	. = list()
 	underlays.Cut()
@@ -214,7 +214,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net/butterfly_net, INTERACT_USE("
 	else
 		to_chat(M, span_warning("You fail to escape \the [src]."))
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_net/butterfly_net, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_net/butterfly_net, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/material/fishing_net/butterfly_net/appearance_overlays() // Also updates name and desc
 	. = list()
 	underlays.Cut()

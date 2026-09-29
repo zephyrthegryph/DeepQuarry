@@ -36,7 +36,7 @@ GLOBAL_DATUM_INIT(new_pipe_networks, /datum, new)
 	var/tmp/datum/pipe_network/network1_token
 	var/tmp/datum/pipe_network/network2_token
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve/shutoff, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve/shutoff, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/valve/shutoff/appearance_overlays()
 	. = list()
 	icon_state = "vclamp[open]"
@@ -72,7 +72,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/atmospherics/valve/shutoff, REGISTRY_SHUTOFF_
 
 /obj/machinery/atmospherics/valve/shutoff/proc/interaction_toggle_auto(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	update_icon(1)
+	animate_toggle()
 	close_on_leaks = !close_on_leaks
 	if(close_on_leaks)
 		check_leaks()

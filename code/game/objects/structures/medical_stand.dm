@@ -26,7 +26,7 @@
 	. = ..()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/structure/medical_stand, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/medical_stand, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/medical_stand/appearance_overlays()
 	. = list()
 

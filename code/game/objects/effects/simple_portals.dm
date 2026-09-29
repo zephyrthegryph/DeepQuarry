@@ -119,7 +119,7 @@ EXTEND_INTERACTIONS(/obj/effect/simple_portal, INTERACT_OBSERVER("Enter", PROC_R
 			break
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/effect/simple_portal/linked, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/effect/simple_portal/linked, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/effect/simple_portal/linked/appearance_overlays()
 	. = list()
 	if(linked_portal() && !QDELETED(linked_portal()))

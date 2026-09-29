@@ -36,7 +36,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/defib_kit, "bcell", null)
 /obj/item/defib_kit/proc/get_paddles()
 	return tethered_handheld()
 
-DECLARE_APPEARANCE_PROC(/obj/item/defib_kit, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/defib_kit, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/defib_kit/appearance_overlays()
 	. = list()
 
@@ -199,7 +199,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	update_icon()
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/shockpaddles/appearance_overlays()
 	. = list()
 	icon_state = "defibpaddles[wielded]"

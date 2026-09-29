@@ -188,7 +188,7 @@ DECLARE_INTERACTIONS(/obj/item/shield/energy, \
 	add_fingerprint(user)
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/item/shield/energy, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/shield/energy, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/shield/energy/appearance_overlays()
 	. = list()
 	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
@@ -351,11 +351,11 @@ EXTEND_INTERACTIONS(/obj/item/shield/riot/explorer, \
 	else if(!on && light_applied)
 		set_light(0)
 		light_applied = 0
-	update_icon(user)
+	update_icon()
 	user.update_mob_action_buttons()
 	play_sfx(src, SFX_WEAPONS_EMPTY, 0.3, extrarange = -3)
 
-APPEARANCE_TEMPLATE(/obj/item/shield/riot/explorer, "explorer_shield[on?_lighted:]")
+APPEARANCE_TEMPLATE(/obj/item/shield/riot/explorer, "explorer_shield{on?_lighted:}")
 
 /obj/item/shield/riot/explorer/purple
 	name = "purple explorer shield" //CHOMP explo keep
@@ -373,7 +373,7 @@ APPEARANCE_TEMPLATE(/obj/item/shield/riot/explorer, "explorer_shield[on?_lighted
 		return FALSE
 	return INTERACTION_HANDLED_PASS
 
-APPEARANCE_TEMPLATE(/obj/item/shield/riot/explorer/purple, "explorer_shield_P[on?_lighted:]")
+APPEARANCE_TEMPLATE(/obj/item/shield/riot/explorer/purple, "explorer_shield_P{on?_lighted:}")
 
 /obj/item/shield/primitive
 	name = "primitive shield"

@@ -249,4 +249,4 @@
 /obj/item/mindbinder/proc/appearance_bound()
 	return ((possessed_voice && possessed_voice.len > 0) || self_bind) ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/mindbinder, "[initial(icon_state)][appearance_bound?_on:]")
+APPEARANCE_TEMPLATE(/obj/item/mindbinder, "{initial(icon_state)}{appearance_bound?_on:}")

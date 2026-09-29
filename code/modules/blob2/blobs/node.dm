@@ -16,7 +16,7 @@ DECLARE_PERIODIC(/obj/structure/blob/node, PERIODIC_SLOW)
 	. = ..()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/structure/blob/node, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/blob/node, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/blob/node/appearance_overlays()
 	. = list()
 	color = null

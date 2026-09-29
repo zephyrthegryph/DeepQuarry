@@ -49,7 +49,7 @@
 		if(2)
 			. += span_notice("It has been bolted down securely and welded down into place.")
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/field_generator, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/field_generator, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/field_generator/appearance_overlays()
 	. = list()
 	if(!active)

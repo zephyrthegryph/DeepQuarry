@@ -41,7 +41,7 @@ EXTEND_INTERACTIONS(/obj/item/modular_computer/laptop, INTERACT_ALT(null, PROC_R
 	update_icon()
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/item/modular_computer/laptop, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/modular_computer/laptop, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/modular_computer/laptop/appearance_overlays()
 	. = list()
 	if(anchored)

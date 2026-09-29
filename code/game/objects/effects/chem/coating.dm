@@ -29,7 +29,7 @@ DECLARE_REAGENTS(/obj/effect/decal/cleanable/chemcoating, 100, null)
 /obj/effect/decal/cleanable/chemcoating/Crossed(AM as mob|obj)
 	Bumped(AM)
 
-DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/chemcoating, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/chemcoating, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/effect/decal/cleanable/chemcoating/appearance_overlays()
 	. = list()
 	. += ..()

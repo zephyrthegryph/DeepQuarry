@@ -168,7 +168,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	node_handle = om_handle(get_exonet_node())
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/newscaster/appearance_overlays()
 	. = list()
 	if(!ispowered || (has_stat(BROKEN)))

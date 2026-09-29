@@ -537,7 +537,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	if(myid)
 		return myid
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/appearance_overlays()
 	. = list()
 	. += ..()

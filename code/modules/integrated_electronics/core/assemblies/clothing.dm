@@ -15,7 +15,7 @@
 /obj/item/electronic_assembly/clothing/tgui_host()
 	return clothing().tgui_host()
 
-DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/clothing, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/clothing, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/electronic_assembly/clothing/appearance_overlays()
 	. = list()
 	. += ..()

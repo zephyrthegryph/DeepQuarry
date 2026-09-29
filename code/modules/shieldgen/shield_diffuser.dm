@@ -53,7 +53,7 @@
 /obj/machinery/shield_diffuser/proc/appearance_diffusing()
 	return operable() && enabled
 
-APPEARANCE_TEMPLATE(/obj/machinery/shield_diffuser, "fdiffuser_[appearance_diffusing?on:off]")
+APPEARANCE_TEMPLATE(/obj/machinery/shield_diffuser, "fdiffuser_{appearance_diffusing?on:off}")
 DECLARE_APPEARANCE(/obj/machinery/shield_diffuser, "appearance_alarmed", list("1" = list(APPEARANCE_ICON_STATE = "fdiffuser_emergency")))
 
 /// Appearance reader: alarm raised (as 1/0).

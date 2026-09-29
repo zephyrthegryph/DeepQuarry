@@ -178,7 +178,7 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/sortjunction, INTERACT_ITEM(nul
 
 	return P
 
-DECLARE_APPEARANCE_PROC(/obj/structure/disposalpipe/sortjunction, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/disposalpipe/sortjunction, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/disposalpipe/sortjunction/appearance_overlays()
 	. = list()
 	. += ..()

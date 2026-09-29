@@ -65,7 +65,7 @@
 	if(size_set_to < RESIZE_MINIMUM || size_set_to > RESIZE_MAXIMUM)
 		to_chat(usr, span_notice("Note: Resizing limited to 25-200% automatically while outside dormatory areas.")) //hint that we clamp it in resize
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/energy/sizegun/appearance_overlays()
 	. = list()
 	var/grow_mode = "shrink"

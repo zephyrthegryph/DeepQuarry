@@ -536,7 +536,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/aviator, INTERA
 		user.update_inv_glasses()
 		user.update_mob_action_buttons()
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/glasses/sunglasses/sechud/aviator, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/glasses/sunglasses/sechud/aviator, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/clothing/glasses/sunglasses/sechud/aviator/appearance_overlays()
 	. = list()
 	if(on)

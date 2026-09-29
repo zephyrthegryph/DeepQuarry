@@ -71,7 +71,7 @@
 	Whilst not entirely blind, it appears to have difficulty discerning differences between shapes and movement, but once it hears something that it interprets as prey, it attempts to swallow the creature whole and alive, lashing its head forward on the massively long neck."
 	value = CATALOGUER_REWARD_HARD
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/sonadile, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/sonadile, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/vore/sonadile/appearance_overlays()
 	. = list()
 	. += ..()

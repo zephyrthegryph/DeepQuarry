@@ -208,7 +208,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/beaker, INTERACT_HAND_DEF
 	interaction_pick_up(user, held, interaction)
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/beaker, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/beaker, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/reagent_containers/glass/beaker/appearance_overlays()
 	. = list()
 

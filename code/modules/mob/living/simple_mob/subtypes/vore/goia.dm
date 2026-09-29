@@ -256,7 +256,7 @@
 	goia_overlays["zorgoia_belly"] = bodycolor
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/zorgoia, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/zorgoia, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/vore/zorgoia/appearance_overlays()
 	. = list()
 	. += ..()

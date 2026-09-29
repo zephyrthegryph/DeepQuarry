@@ -197,7 +197,7 @@
 	unregister_gas_dependencies()
 	MACHINE_WAKE(src)
 
-APPEARANCE_TEMPLATE(/obj/machinery/airlock_sensor, "airlock_sensor_[on?@appearance_mode:off]")
+APPEARANCE_TEMPLATE(/obj/machinery/airlock_sensor, "airlock_sensor_{on?@appearance_mode:off}")
 DECLARE_APPEARANCE(/obj/machinery/airlock_sensor, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "airlock_sensor_open")))
 
 /obj/machinery/airlock_sensor/proc/appearance_mode()
@@ -321,7 +321,7 @@ DECLARE_APPEARANCE(/obj/machinery/airlock_sensor, "panel_open", list("1" = list(
 
 	on = 1
 
-APPEARANCE_TEMPLATE(/obj/machinery/access_button, "access_button_[on?standby:off]")
+APPEARANCE_TEMPLATE(/obj/machinery/access_button, "access_button_{on?standby:off}")
 DECLARE_APPEARANCE(/obj/machinery/access_button, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "access_button_open")))
 
 /obj/machinery/access_button/examine(mob/user, infix, suffix)

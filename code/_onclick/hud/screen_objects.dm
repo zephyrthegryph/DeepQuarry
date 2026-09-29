@@ -224,7 +224,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 		if(user)
 			om_changed(user, CHANGE_MOB_TARGETING)
 
-DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /atom/movable/screen/zone_sel/appearance_overlays()
 	. = list()
 	selecting_appearance = mutable_appearance('icons/mob/zone_sel.dmi', "[selecting]")
@@ -696,7 +696,7 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, PROC_REF(appearance_overl
 /atom/movable/screen/inventory/hand
 	var/image/handcuff_overlay
 
-DECLARE_APPEARANCE_PROC(/atom/movable/screen/inventory/hand, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/atom/movable/screen/inventory/hand, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /atom/movable/screen/inventory/hand/appearance_overlays()
 	. = list()
 	. += ..()

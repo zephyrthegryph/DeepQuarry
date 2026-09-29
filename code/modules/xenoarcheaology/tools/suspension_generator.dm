@@ -242,7 +242,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 	deactivate()
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/suspension_gen, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/suspension_gen, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/suspension_gen/appearance_overlays()
 	. = list()
 	if(panel_open)

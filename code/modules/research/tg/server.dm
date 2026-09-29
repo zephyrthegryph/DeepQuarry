@@ -30,7 +30,7 @@
 
 DECLARE_REF(/obj/machinery/rnd/server, "stored_research", BACKLIST, "techweb_servers")
 
-APPEARANCE_TEMPLATE(/obj/machinery/rnd/server, "[base_icon_state]-[appearance_suffix]")
+APPEARANCE_TEMPLATE(/obj/machinery/rnd/server, "{base_icon_state}-{appearance_suffix}")
 
 /// "off" without power; otherwise "on" while working ("halt" covers EMP-ed, disabled or broken).
 /obj/machinery/rnd/server/proc/appearance_suffix()

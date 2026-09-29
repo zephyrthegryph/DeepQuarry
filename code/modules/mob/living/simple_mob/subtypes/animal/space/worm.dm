@@ -96,7 +96,7 @@
 	..()
 	self.update_body_faction()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/animal/space/space_worm/head/appearance_overlays()
 	. = list()
 	. += ..()
@@ -220,7 +220,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, PRO
 		currentlyEating = null
 		. = ..(obstacle)
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/animal/space/space_worm/appearance_overlays()
 	. = list()
 	if(previous) //midsection

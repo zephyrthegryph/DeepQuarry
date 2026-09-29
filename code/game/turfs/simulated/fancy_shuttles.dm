@@ -113,7 +113,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle)
 		underlays += under_EM
 
 // Trust me, this is WAY faster than the normal wall overlays shenanigans, don't worry about performance
-DECLARE_APPEARANCE_PROC(/turf/simulated/wall/fancy_shuttle, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/turf/simulated/wall/fancy_shuttle, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /turf/simulated/wall/fancy_shuttle/appearance_overlays()
 	. = list()
 	if(!damage_overlays[1])
@@ -183,7 +183,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/wall/fancy_shuttle, PROC_REF(appearance_
 	var/fancy_shuttle_tag
 
 // Trust me, this is WAY faster than the normal wall overlays shenanigans, don't worry about performance
-DECLARE_APPEARANCE_PROC(/obj/structure/window/fancy_shuttle, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/window/fancy_shuttle, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/window/fancy_shuttle/appearance_overlays()
 	. = list()
 	if(fancy_shuttle_tag) // after a shuttle jump it won't be set anymore, but the shuttle jump proc will set our icon and state

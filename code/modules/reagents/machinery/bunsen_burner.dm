@@ -176,7 +176,7 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/di
 	visible_message(span_notice("\The [src] clicks."))
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/bunsen_burner, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/bunsen_burner, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/bunsen_burner/appearance_overlays()
 	. = list()
 	icon_state = "bunsen0"

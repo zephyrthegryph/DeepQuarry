@@ -62,7 +62,7 @@
 	if(epitaph && get_dist(src, user) < 2)
 		. += epitaph
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/gravemarker, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/material/gravemarker, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/material/gravemarker/appearance_overlays()
 	. = list()
 	if(icon_changes)

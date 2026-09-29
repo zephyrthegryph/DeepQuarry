@@ -581,7 +581,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 ///		Icon generation stuff
 ///
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/animal/synx/appearance_overlays()
 	. = list()
 	update_fullness()

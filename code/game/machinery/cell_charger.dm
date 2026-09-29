@@ -19,7 +19,7 @@
 	default_apply_parts()
 	add_overlay("ccharger1")
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/cell_charger, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/cell_charger, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/cell_charger/appearance_overlays()
 	. = list()
 	if(!anchored)

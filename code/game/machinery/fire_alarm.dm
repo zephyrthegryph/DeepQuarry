@@ -79,7 +79,7 @@ DECLARE_REF(/obj/machinery/firealarm, "causality", OWNED, null)
 	pixel_x = (dir & 3) ? 0 : (dir == 4 ? 26 : -26)
 	pixel_y = (dir & 3) ? (dir == 1 ? -26 : 26) : 0
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/firealarm/appearance_overlays()
 	. = list()
 

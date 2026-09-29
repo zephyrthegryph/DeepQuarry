@@ -32,7 +32,7 @@
 		use_power_oneoff(active_power_usage)
 		reagents.clear_reagents()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/waste_processor, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/waste_processor, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/reagent_refinery/waste_processor/appearance_overlays()
 	. = list()
 	if(anchored)

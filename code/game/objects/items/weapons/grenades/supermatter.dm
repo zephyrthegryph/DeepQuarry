@@ -13,7 +13,7 @@
 	update_icon()
 	play_sfx(src, SFX_WEAPONS_WAVE, volume = 100)
 
-DECLARE_APPEARANCE_PROC(/obj/item/grenade/supermatter, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/grenade/supermatter, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/grenade/supermatter/appearance_overlays()
 	. = list()
 	if(implode_at)

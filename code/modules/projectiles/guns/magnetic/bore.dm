@@ -32,7 +32,7 @@ DECLARE_REF(/obj/item/gun/magnetic/matfed, "manipulator", OWNED, null)
 	else
 		. += span_notice("The \"manipulator missing\" indicator is lit. [src] consumes [mat_cost] units of [ammo_material] per shot.")
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/magnetic/matfed/appearance_overlays()
 	. = list()
 	var/list/overlays_to_add = list()

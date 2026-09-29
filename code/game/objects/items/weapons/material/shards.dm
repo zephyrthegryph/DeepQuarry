@@ -38,7 +38,7 @@
 	else
 		qdel(src)
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/shard, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/material/shard, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/material/shard/appearance_overlays()
 	. = list()
 	if(material)

@@ -142,7 +142,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/organ/internal/heart/machine/anomalock/prebuilt,
 	. = ..()
 	update_icon()
 
-APPEARANCE_TEMPLATE(/obj/item/organ/internal/heart/machine/anomalock, "[initial(icon_state)][core?-core:]")
+APPEARANCE_TEMPLATE(/obj/item/organ/internal/heart/machine/anomalock, "{initial(icon_state)}{core?-core:}")
 
 /datum/body_effect/voltaic_overdrive
 	stacks = MODIFIER_STACK_FORBID

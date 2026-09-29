@@ -29,13 +29,14 @@
 	icon_state = "map_tvalve1"
 	state = 1
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/tvalve, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/tvalve, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/tvalve/appearance_overlays()
 	. = list()
-	if(animation)
-		flick("tvalve[mirrored ? "m" : ""][src.state][!src.state]",src)
-	else
-		icon_state = "tvalve[mirrored ? "m" : ""][state]"
+	icon_state = "tvalve[mirrored ? "m" : ""][state]"
+
+/// The wheel-turning animation, played when the toggle starts (the state follows a second later).
+/obj/machinery/atmospherics/tvalve/proc/animate_toggle()
+	flick("tvalve[mirrored ? "m" : ""][src.state][!src.state]", src)
 
 /obj/machinery/atmospherics/tvalve/update_underlays()
 	..()
@@ -93,7 +94,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/tvalve, PROC_REF(appearance_
 
 /obj/machinery/atmospherics/tvalve/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	update_icon(1)
+	animate_toggle()
 	om_after(src, 1 SECOND, PROC_REF(finish_toggle))
 	return TRUE
 
@@ -182,7 +183,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/tvalve, PROC_REF(appearance_
 	icon_state = "map_tvalve1"
 	state = 1
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/tvalve/digital, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/tvalve/digital, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/tvalve/digital/appearance_overlays()
 	. = list()
 	. += ..()

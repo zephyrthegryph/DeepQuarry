@@ -122,7 +122,7 @@ Thus, the two variables affect pump operation are set in New():
 	icon_state = "map_on-aux"
 	use_power = USE_POWER_IDLE
 
-APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/volume_pump, "[appearance_running?on:off]")
+APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/volume_pump, "{appearance_running?on:off}")
 DECLARE_APPEARANCE(/obj/machinery/atmospherics/binary/volume_pump, "appearance_overclocked", list("1" = list(APPEARANCE_OVERLAYS = list(mutable_appearance('icons/atmos/volume_pump_overclock.dmi', "vpumpoverclock")))))
 
 /obj/machinery/atmospherics/binary/volume_pump/proc/appearance_running()

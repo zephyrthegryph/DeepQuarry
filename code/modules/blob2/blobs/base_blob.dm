@@ -30,7 +30,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 
 DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX_EFFECTS_SPLAT))
 
-DECLARE_APPEARANCE_PROC(/obj/structure/blob, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/blob, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/blob/appearance_overlays() //Updates color based on overmind color if we have an overmind.
 	. = list()
 	if(overmind)

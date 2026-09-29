@@ -45,7 +45,7 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 	var/tape_dir = 0
 	var/icon_base = "tape"
 
-DECLARE_APPEARANCE_PROC(/obj/item/tape, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/tape, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/tape/appearance_overlays()
 	. = list()
 	//Possible directional bitflags: 0 (AIRLOCK), 1 (NORTH), 2 (SOUTH), 4 (EAST), 8 (WEST), 3 (VERTICAL), 12 (HORIZONTAL)
@@ -115,7 +115,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/tape, PROC_REF(appearance_overlays), list())
 	req_one_access = list(ACCESS_ENGINE,ACCESS_ATMOSPHERICS)
 	color = COLOR_DEEP_SKY_BLUE
 
-DECLARE_APPEARANCE_PROC(/obj/item/taperoll, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/taperoll, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/taperoll/appearance_overlays()
 	. = list()
 	var/image/overlay = image(icon = src.icon)

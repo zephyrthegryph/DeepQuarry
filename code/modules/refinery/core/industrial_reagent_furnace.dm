@@ -115,7 +115,7 @@ DECLARE_REF(/obj/machinery/reagent_refinery/furnace, "beaker", OWNED, null)
 	if(target && reagents.total_volume > 0)
 		transfer_tank( reagents, target, dir)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/furnace, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/furnace, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/reagent_refinery/furnace/appearance_overlays()
 	. = list()
 	icon_state = "furnace_[filter_side == 1 ? "r" : "l"]"

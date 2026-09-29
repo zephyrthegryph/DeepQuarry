@@ -91,7 +91,7 @@
 #define OVERLAY_PARTIAL	1
 #define OVERLAY_EMPTY	0
 
-APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "[initial(icon_state)]_%p")
+APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_state)}_%p")
 
 /// Charge percentage for the charge overlay; null (no overlay) for cells without standard overlays.
 /obj/item/cell/proc/appearance_charge_level()

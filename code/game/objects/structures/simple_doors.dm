@@ -158,7 +158,7 @@
 /obj/structure/simple_door/proc/appearance_base()
 	return material.door_icon_base
 
-APPEARANCE_TEMPLATE(/obj/structure/simple_door, "[appearance_base][state?open:]")
+APPEARANCE_TEMPLATE(/obj/structure/simple_door, "{appearance_base}{state?open:}")
 
 /// Old attackby: lock/unlock with the matching key, dig/hit the door, or fall back to toggling.
 /datum/interaction/entry_item/simple_door_item

@@ -98,7 +98,7 @@ DECLARE_INTERACTIONS(/obj/structure/bookcase, \
 /obj/structure/bookcase/proc/appearance_books()
 	return contents_count(src) < 5 ? contents.len : 5
 
-APPEARANCE_TEMPLATE(/obj/structure/bookcase, "book-[appearance_books]")
+APPEARANCE_TEMPLATE(/obj/structure/bookcase, "book-{appearance_books}")
 
 /*
 Book Cart
@@ -123,7 +123,7 @@ EXTEND_INTERACTIONS(/obj/structure/bookcase/bookcart, INTERACT_ITEM(null, PROC_R
 		return INTERACTION_HANDLED_PASS
 	return INTERACTION_HANDLED_PASS
 
-APPEARANCE_TEMPLATE(/obj/structure/bookcase/bookcart, "bookcart-[appearance_books]")
+APPEARANCE_TEMPLATE(/obj/structure/bookcase/bookcart, "bookcart-{appearance_books}")
 
 /*
 Book Cart End

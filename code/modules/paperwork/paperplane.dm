@@ -30,7 +30,7 @@
 
 DECLARE_REF(/obj/item/paperplane, "internalPaper", OWNED, null)
 
-DECLARE_APPEARANCE_PROC(/obj/item/paperplane, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/paperplane, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/paperplane/appearance_overlays()
 	. = list()
 	var/list/stamped = internalPaper.stamped

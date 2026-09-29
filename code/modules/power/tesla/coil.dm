@@ -58,7 +58,7 @@
 	input_power_multiplier = get_part_rating(/obj/item/stock_parts/capacitor)
 	zap_cooldown -= (input_power_multiplier - get_part_count(/obj/item/stock_parts/capacitor))
 
-APPEARANCE_TEMPLATE(/obj/machinery/power/tesla_coil, "[icontype][panel_open?_open:][anchored]")
+APPEARANCE_TEMPLATE(/obj/machinery/power/tesla_coil, "{icontype}{panel_open?_open:}{anchored}")
 
 /obj/machinery/power/tesla_coil/declare_interactions(list/into)
 	into += list(
@@ -348,7 +348,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/tesla_coil, "[icontype][panel_open?_ope
 	else
 		. += span_warning("It is not secured!")
 
-APPEARANCE_TEMPLATE(/obj/machinery/power/grounding_rod, "grounding_rod[panel_open?_open:][anchored]")
+APPEARANCE_TEMPLATE(/obj/machinery/power/grounding_rod, "grounding_rod{panel_open?_open:}{anchored}")
 
 /obj/machinery/power/grounding_rod/declare_interactions(list/into)
 	into += list(

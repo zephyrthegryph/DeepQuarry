@@ -21,7 +21,7 @@
 
 DECLARE_REF(/obj/machinery/appliance/mixer/cereal, "cerealmaker_loop", OWNED, null)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer/cereal, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer/cereal, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/appliance/mixer/cereal/appearance_overlays()
 	. = list()
 	. += ..()

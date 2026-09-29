@@ -105,7 +105,7 @@ DECLARE_REF(/obj/machinery/appliance/cooker/fryer, "oil", OWNED, null)
 
 	cooking_power *= oil_efficiency
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/fryer, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/fryer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/appliance/cooker/fryer/appearance_overlays() // We add our own version of the proc to use the special fryer double-lights.
 	. = list()
 	if(!has_stat(MACHINE_STAT_ANY))

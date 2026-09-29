@@ -146,7 +146,7 @@
 	else
 		return ..()
 
-APPEARANCE_TEMPLATE(/obj/machinery/microscope, "microscope[sample?slide:]")
+APPEARANCE_TEMPLATE(/obj/machinery/microscope, "microscope{sample?slide:}")
 
 /// LC-refs: the sample this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/microscope/proc/sample() as /obj/item

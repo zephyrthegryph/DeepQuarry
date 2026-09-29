@@ -386,7 +386,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 // ─────────────────────────────────────────────────────────────────────────────
 
 // update_icon() — called by interactions; delegates to the renderer.
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/apc, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/apc, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/power/apc/appearance_overlays()
 	. = list()
 	if(icon_renderer)

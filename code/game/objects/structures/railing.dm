@@ -34,7 +34,7 @@
 	make_climbable(/datum/om/behaviour/climbable/unanchored_can_break, 3.4 SECONDS, TRUE) // It's a RAILING!
 	make_rotatable()
 	if(src.anchored)
-		update_icon(0)
+		update_icon()
 
 DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor_type = /obj/structure/railing, neighbor_reconnect = FALSE))
 
@@ -67,35 +67,35 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 		if ((R.dir == Lturn) && R.anchored)
 			check |= 32
 			if (UpdateNeighbors)
-				R.update_icon(0)
+				R.update_icon()
 		if ((R.dir == Rturn) && R.anchored)
 			check |= 2
 			if (UpdateNeighbors)
-				R.update_icon(0)
+				R.update_icon()
 
 	for (var/obj/structure/railing/R in get_step(src, Lturn))
 		if ((R.dir == src.dir) && R.anchored)
 			check |= 16
 			if (UpdateNeighbors)
-				R.update_icon(0)
+				R.update_icon()
 	for (var/obj/structure/railing/R in get_step(src, Rturn))
 		if ((R.dir == src.dir) && R.anchored)
 			check |= 1
 			if (UpdateNeighbors)
-				R.update_icon(0)
+				R.update_icon()
 
 	for (var/obj/structure/railing/R in get_step(src, (Lturn + src.dir)))
 		if ((R.dir == Rturn) && R.anchored)
 			check |= 64
 			if (UpdateNeighbors)
-				R.update_icon(0)
+				R.update_icon()
 	for (var/obj/structure/railing/R in get_step(src, (Rturn + src.dir)))
 		if ((R.dir == Lturn) && R.anchored)
 			check |= 4
 			if (UpdateNeighbors)
-				R.update_icon(0)
+				R.update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/structure/railing, PROC_REF(appearance_overlays), list(CHANGE_NEIGHBOURS))
+DECLARE_APPEARANCE_PROC(/obj/structure/railing, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
 /obj/structure/railing/appearance_overlays()
 	. = list()
 	NeighborsCheck(FALSE)

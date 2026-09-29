@@ -61,7 +61,7 @@ DECLARE_REF(/obj/machinery/appliance/cooker/oven, "oven_loop", OWNED, null)
 			try_toggle_door(ui.user)
 			return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/oven, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/oven, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/appliance/cooker/oven/appearance_overlays()
 	. = list()
 	if(!open)

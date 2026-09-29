@@ -219,7 +219,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/ushanka, INTERACT_USE("Toggle ear fl
 	siemens_coefficient = 1.5
 	item_icons = null
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/head/kitty, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/head/kitty, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/clothing/head/kitty/appearance_overlays()
 	. = list()
 	var/mob/living/carbon/human/user = loc

@@ -126,7 +126,7 @@ TYPE_TABLE(/obj/item/storage/pill_bottle, hold_spec, list(HOLD_ONLY(list(/obj/it
 	base_desc = desc
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/pill_bottle, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/pill_bottle, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/pill_bottle/appearance_overlays()
 	. = list()
 	if(wrapper_color)

@@ -19,7 +19,7 @@
 TYPE_TABLE(/obj/item/storage/sample_container, hold_spec, list(HOLD_ONLY(list(/obj/item/research_sample)), HOLD_MAX_SIZE(ITEMSIZE_TINY)))
 
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/sample_container, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/sample_container, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/sample_container/appearance_overlays()
 	. = list()
 	. += ..()

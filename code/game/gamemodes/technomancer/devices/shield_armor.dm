@@ -75,7 +75,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/shield, INTERACT_USE("Toggle",
 	user.update_inv_wear_suit()
 	user.update_mob_action_buttons()
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit/armor/shield, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit/armor/shield, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/clothing/suit/armor/shield/appearance_overlays()
 	. = list()
 	icon_state = "shield_armor_[active]"

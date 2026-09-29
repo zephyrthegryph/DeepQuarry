@@ -21,7 +21,7 @@
 /obj/machinery/ai_slipper/proc/appearance_on()
 	return (!has_stat(NOPOWER) && !has_stat(BROKEN) && !disabled) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/ai_slipper, "liquid_dispenser[appearance_on?_on:]")
+APPEARANCE_TEMPLATE(/obj/machinery/ai_slipper, "liquid_dispenser{appearance_on?_on:}")
 
 /obj/machinery/ai_slipper/proc/setState(enabled, uses)
 	disabled = !enabled

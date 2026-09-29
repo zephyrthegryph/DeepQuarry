@@ -35,7 +35,7 @@
 /obj/machinery/computer/blob_act()
 	ex_act(2)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/computer/appearance_overlays()
 	. = list()
 

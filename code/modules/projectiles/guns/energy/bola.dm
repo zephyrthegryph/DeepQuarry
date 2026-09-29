@@ -9,7 +9,7 @@
 	charge_cost = 400 //Low energy cost.
 	fire_delay = 10 //Rapid fire!
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/bolagun, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/bolagun, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/energy/bolagun/appearance_overlays()
 	. = list()
 	if(power_supply == null)

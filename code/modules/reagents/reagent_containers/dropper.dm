@@ -102,7 +102,7 @@
 /obj/item/reagent_containers/dropper/proc/appearance_filled()
 	return reagents?.total_volume ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/reagent_containers/dropper, "dropper[appearance_filled?1:0]")
+APPEARANCE_TEMPLATE(/obj/item/reagent_containers/dropper, "dropper{appearance_filled?1:0}")
 
 /obj/item/reagent_containers/dropper/industrial
 	name = "Industrial Dropper"

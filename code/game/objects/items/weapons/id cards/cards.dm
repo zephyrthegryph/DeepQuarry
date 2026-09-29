@@ -35,7 +35,7 @@
 
 /// The sprite stack as layers: the first state is the base, the rest overlays on it (was a
 /// blended /icon per card; the layers draw the same without generating an icon).
-DECLARE_APPEARANCE_PROC(/obj/item/card, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/card, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/card/appearance_overlays()
 	. = list()
 	icon = base_icon
@@ -188,7 +188,7 @@ DECLARE_INTERACTIONS(/obj/item/card/emag, INTERACT_ITEM(null, PROC_REF(interacti
 
 /// The sprite stack as layers: the first state is the base, the rest overlays on it (was a
 /// blended /icon per card; the layers draw the same without generating an icon).
-DECLARE_APPEARANCE_PROC(/obj/item/card_fluff, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/card_fluff, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/card_fluff/appearance_overlays()
 	. = list()
 	icon = base_icon

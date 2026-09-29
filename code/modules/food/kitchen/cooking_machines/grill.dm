@@ -34,7 +34,7 @@
 
 DECLARE_REF(/obj/machinery/appliance/cooker/grill, "grill_loop", OWNED, null)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/grill, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/grill, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/appliance/cooker/grill/appearance_overlays() // TODO: Cooking icon
 	. = list()
 	if(!has_stat(MACHINE_STAT_ANY))

@@ -65,7 +65,7 @@
 /obj/machinery/bomb_tester/proc/appearance_tank2()
 	return tank2 ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/bomb_tester, "[icon_name][appearance_suffix]")
+APPEARANCE_TEMPLATE(/obj/machinery/bomb_tester, "{icon_name}{appearance_suffix}")
 DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank1", list("1" = list(APPEARANCE_OVERLAYS = list("generic-tank1"))))
 DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = list(APPEARANCE_OVERLAYS = list("generic-tank2"))))
 

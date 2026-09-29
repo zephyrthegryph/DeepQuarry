@@ -123,7 +123,7 @@
 	if(past_state != wg_state)
 		update_icon()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/raptor, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/raptor, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/vore/raptor/appearance_overlays()
 	. = list()
 	if(wg_state == 1)

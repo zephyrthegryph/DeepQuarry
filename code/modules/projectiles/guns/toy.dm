@@ -85,7 +85,7 @@
 	recoil = 0
 	fire_sound = SFX_ITEMS_SYRINGEPROJ
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/pistol/toy, "[initial(icon_state)][ammo_magazine?:-e]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/pistol/toy, "{initial(icon_state)}{ammo_magazine?:-e}")
 
 /*
  * N99 Pistol
@@ -199,7 +199,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/pistol/toy, "[initial(icon_state)][
 /obj/item/gun/projectile/automatic/toy/riot
 	magazine_type = /obj/item/ammo_magazine/mfoam_dart/smg/riot
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/toy, "[initial(icon_state)][ammo_magazine?:-e]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/toy, "{initial(icon_state)}{ammo_magazine?:-e}")
 /*
  * Cyborg
  */

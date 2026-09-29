@@ -124,7 +124,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_casing, INTERACT_ITEM(null, PROC_REF(interac
 		BB.name = "[initial(BB.name)] (\"[label_text]\")"
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_APPEARANCE_PROC(/obj/item/ammo_casing, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/ammo_casing, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/ammo_casing/appearance_overlays()
 	. = list()
 	if(!BB)
@@ -303,7 +303,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 	if(latent_rounds && loc && !isturf(loc) && !loc.latent_contents)
 		make_rounds_real()
 
-DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/ammo_magazine/appearance_overlays()
 	. = list()
 	if(multiple_sprites)

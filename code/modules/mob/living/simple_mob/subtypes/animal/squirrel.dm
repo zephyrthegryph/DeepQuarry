@@ -171,7 +171,7 @@
 				return
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/squirrel, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/squirrel, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/vore/squirrel/appearance_overlays()
 	. = list()
 	. += ..()

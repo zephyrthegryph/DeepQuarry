@@ -221,7 +221,7 @@
 	else
 		..()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/morph, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/morph, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/vore/morph/appearance_overlays()
 	. = list()
 	if(morphed)

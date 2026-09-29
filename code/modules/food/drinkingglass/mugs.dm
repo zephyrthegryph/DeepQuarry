@@ -46,7 +46,7 @@
 	volume = 30
 	var/fillsource = "coffeecup"
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/coffeemug, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/coffeemug, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/reagent_containers/food/drinks/glass2/coffeemug/appearance_overlays()
 	. = list()
 
@@ -223,7 +223,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/coffeemu
 	fillsource = "coffeecup_tall"
 	volume = 60
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/appearance_overlays()
 	. = list()
 

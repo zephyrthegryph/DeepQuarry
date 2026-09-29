@@ -82,7 +82,7 @@
 		qdel(mane_overlay)
 		mane_overlay = null
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/retaliate/lion, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/retaliate/lion, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/vore/retaliate/lion/appearance_overlays()
 	. = list()
 	. += ..()

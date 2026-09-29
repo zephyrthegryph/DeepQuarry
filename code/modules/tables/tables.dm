@@ -380,7 +380,7 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 		I.alpha = talpha
 	return I
 
-DECLARE_APPEARANCE_PROC(/obj/structure/table, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/table, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/table/appearance_overlays()
 	. = list()
 	if(flipped != 1)

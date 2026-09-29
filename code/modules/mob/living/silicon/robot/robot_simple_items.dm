@@ -160,7 +160,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	welding = FALSE
 	no_passive_burn = TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/item/weldingtool/electric/mounted/cyborg, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/weldingtool/electric/mounted/cyborg, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/weldingtool/electric/mounted/cyborg/appearance_overlays()
 	. = list()
 	. += ..()
@@ -194,7 +194,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool/electric/mounted/cyborg, PROC_REF(
 	icon_state = "toolkit_engiborg_multitool"
 	toolspeed = 0.5
 
-DECLARE_APPEARANCE_PROC(/obj/item/multitool/cyborg, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/multitool/cyborg, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/multitool/cyborg/appearance_overlays()
 	. = list()
 	icon_state = "toolkit_engiborg_multitool"

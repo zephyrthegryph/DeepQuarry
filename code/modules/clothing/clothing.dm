@@ -47,7 +47,7 @@
 		verbs |= /obj/item/clothing/proc/change_color
 	// start
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/clothing, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/clothing/appearance_overlays()
 	. = list()
 	if(forensic_data?.has_blooddna())
@@ -469,7 +469,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 	if(light_system == STATIC_LIGHT)
 		update_light()
 
-	update_icon(user)
+	update_icon()
 	user.update_mob_action_buttons()
 
 /// Old attack_ai: a silicon wears the hat; otherwise the default.
@@ -507,7 +507,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 		to_chat(user, span_notice("You crawl under \the [src]."))
 	return 1
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/head, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/head, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/clothing/head/appearance_overlays()
 	. = list()
 	var/mob/living/carbon/human/H
@@ -531,7 +531,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/head, PROC_REF(appearance_overlays), 
 	else if(helmet_light)
 		helmet_light = null
 
-	user?.update_inv_head() //Will redraw the helmet with the light on the mob
+	H?.update_inv_head() //Will redraw the helmet with the light on the mob
 
 /obj/item/clothing/head/update_clothing_icon()
 	if (ismob(src.loc))
@@ -696,7 +696,7 @@ DECLARE_REF(/obj/item/clothing/shoes, "holding", OWNED, null)
 	shoes_under_pants = !shoes_under_pants
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/clothing/shoes/appearance_overlays()
 	. = list()
 	. += ..()
@@ -939,7 +939,7 @@ TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKE
 
 DECLARE_REF(/obj/item/clothing/suit, "hood", OWNED, null)
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/clothing/suit/appearance_overlays()
 	. = list()
 	. += ..()

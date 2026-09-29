@@ -184,7 +184,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective45, \
 /// TRUE while any rounds are loaded.
 /obj/item/gun/projectile/revolver/deckard/proc/appearance_loaded()
 	return length(loaded) > 0
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/revolver/deckard, "deckard-[appearance_loaded?loaded:empty]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/revolver/deckard, "deckard-{appearance_loaded?loaded:empty}")
 
 /obj/item/gun/projectile/revolver/deckard/load_ammo(obj/item/A, mob/user)
 	if(istype(A, /obj/item/ammo_magazine))
@@ -337,7 +337,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap
 	else
 		add_overlay("inspector_on")
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/revolver/consul, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/revolver/consul, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/projectile/revolver/consul/appearance_overlays()
 	. = list()
 	update_charge()

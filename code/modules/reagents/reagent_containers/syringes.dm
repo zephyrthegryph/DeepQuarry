@@ -485,7 +485,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/steroid, null, list(REAGEN
 //Allow for capped syringe mode
 
 //Allow for capped syringes
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/syringe, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/syringe, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/reagent_containers/syringe/appearance_overlays()
 	. = list()
 

@@ -28,7 +28,7 @@
 	var/open_state
 	var/closed_state
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/fancy/appearance_overlays()
 	. = list()
 	var/total_contents = length(slot_contents(CONTAINER_SLOT_STORAGE))
@@ -73,7 +73,7 @@ TYPE_TABLE(/obj/item/storage/fancy/egg_box, hold_spec, list(HOLD_ONLY(list( \
 		closed_state = "[initial(icon_state)]"
 	. = ..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/egg_box, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/egg_box, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/fancy/egg_box/appearance_overlays()
 	. = list()
 	if(open)
@@ -171,7 +171,7 @@ TYPE_TABLE(/obj/item/storage/fancy/crayons, hold_spec, list(HOLD_ONLY(list( \
 		C.name = "[C.colourName] [initial(C.name)]"
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/crayons, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/crayons, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/fancy/crayons/appearance_overlays()
 	. = list()
 	var/mutable_appearance/ma = new(src)
@@ -216,7 +216,7 @@ TYPE_TABLE(/obj/item/storage/fancy/markers, hold_spec, list(HOLD_ONLY(list( \
 		M.name = "[M.colourName] [initial(M.name)]"
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/markers, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/markers, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/fancy/markers/appearance_overlays()
 	. = list()
 	var/mutable_appearance/ma = new(src)
@@ -286,7 +286,7 @@ TYPE_TABLE(/obj/item/storage/fancy/cigarettes, hold_spec, list(HOLD_ONLY(list(/o
 			C.brand = brand
 			C.desc += " This one is \a [brand]."
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/cigarettes, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/cigarettes, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/fancy/cigarettes/appearance_overlays()
 	. = list()
 	if(open)
@@ -433,7 +433,7 @@ TYPE_TABLE(/obj/item/storage/fancy/cigar, hold_spec, list(HOLD_ONLY(list(/obj/it
 	reagents.trans_to_obj(C, (reagents.total_volume/length(slot_contents(CONTAINER_SLOT_STORAGE))))
 	return ..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/cigar, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/cigar, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/fancy/cigar/appearance_overlays()
 	. = list()
 	if(open)
@@ -531,7 +531,7 @@ TYPE_TABLE(/obj/item/storage/lockbox/vials, hold_spec, list(HOLD_ONLY(list(/obj/
 	. = ..()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/lockbox/vials, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/lockbox/vials, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/lockbox/vials/appearance_overlays()
 	. = list()
 	var/total_contents = length(slot_contents(CONTAINER_SLOT_STORAGE))
@@ -579,7 +579,7 @@ TYPE_TABLE(/obj/item/storage/fancy/heartbox, hold_spec, list(HOLD_ONLY(list( \
 	. = ..()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/heartbox, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/heartbox, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/fancy/heartbox/appearance_overlays()
 	. = list()
 	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)

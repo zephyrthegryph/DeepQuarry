@@ -112,7 +112,7 @@ DECLARE_INTERACTIONS(/obj/item/radio_jammer, \
 		return TRUE
 	return FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/item/radio_jammer, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/radio_jammer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/radio_jammer/appearance_overlays()
 	. = list()
 	if(on)

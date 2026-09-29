@@ -63,7 +63,7 @@
 DECLARE_REF(/obj/item/spell/illusion, "illusion", OWNED, null)
 
 // Makes a tiny overlay of the thing the player has copied, so they can easily tell what they currently have.
-DECLARE_APPEARANCE_PROC(/obj/item/spell/illusion, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/spell/illusion, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/spell/illusion/appearance_overlays()
 	. = list()
 	if(copied())

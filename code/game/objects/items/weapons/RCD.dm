@@ -347,8 +347,8 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 /obj/item/rcd/proc/appearance_matter_empty()
 	return !round((stored_matter / max_stored_matter) * 10, 1)
 
-APPEARANCE_TEMPLATE(/obj/item/rcd, "[initial(icon_state)][appearance_matter_empty?_empty:]")
-APPEARANCE_LEVEL(/obj/item/rcd, "appearance_matter_percent", 10, "[initial(icon_state)]_charge%d")
+APPEARANCE_TEMPLATE(/obj/item/rcd, "{initial(icon_state)}{appearance_matter_empty?_empty:}")
+APPEARANCE_LEVEL(/obj/item/rcd, "appearance_matter_percent", 10, "{initial(icon_state)}_charge%d")
 
 /obj/item/rcd/proc/perform_effect(atom/A, time_taken)
 	LAZYSET(effects, A, new /obj/effect/constructing_effect(get_turf(A), time_taken, TYPE_TABLE_GET(src, rcd_modes)[mode_index]))

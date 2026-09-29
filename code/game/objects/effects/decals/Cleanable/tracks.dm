@@ -114,7 +114,7 @@
 	if(updated)
 		update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/tracks, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/tracks, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/effect/decal/cleanable/blood/tracks/appearance_overlays()
 	. = list()
 	color = "#FFFFFF"

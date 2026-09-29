@@ -42,7 +42,7 @@
 			to_chat(M, span_warning("You are too large to use \the [src]."))
 			. = FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/wheelchair, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/wheelchair, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/bed/chair/wheelchair/appearance_overlays()
 	. = list()
 	var/image/O = image(icon = icon, icon_state = "[icon_state]_overlay", layer = ABOVE_MOB_LAYER)

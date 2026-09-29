@@ -35,7 +35,7 @@
 		if(on)
 			om_changed(src, CHANGE_MACHINE_SETTINGS)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/portable_atmospherics/powered/scrubber/appearance_overlays()
 	. = list()
 
@@ -203,7 +203,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, P
 	to_chat(user, span_notice("You can't directly interact with this machine. Use the scrubber control console."))
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber/huge, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber/huge, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/appearance_overlays()
 	. = list()
 

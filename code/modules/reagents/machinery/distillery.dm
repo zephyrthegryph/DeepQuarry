@@ -366,7 +366,7 @@ DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "ov
 		if(isnull(heat_body))
 			return PROCESS_KILL
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/reagent_distillery, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/reagent_distillery, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/appearance_overlays()
 	. = list()
 	. += ..()

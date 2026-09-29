@@ -44,7 +44,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 	. = ..()
 	. += examine_addon
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/holoposter, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/holoposter, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/holoposter/appearance_overlays()
 	. = list()
 	if(has_stat(NOPOWER))

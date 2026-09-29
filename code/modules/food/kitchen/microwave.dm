@@ -106,7 +106,7 @@ DECLARE_REF(/obj/machinery/microwave, "soundloop", OWNED, null)
 		return "bloody"
 	return "clean"
 
-APPEARANCE_TEMPLATE(/obj/machinery/microwave, "mw[operating?1:]")
+APPEARANCE_TEMPLATE(/obj/machinery/microwave, "mw{operating?1:}")
 DECLARE_APPEARANCE(/obj/machinery/microwave, "appearance_mw_condition", list(
 	"b" = list(APPEARANCE_ICON_STATE = "mwb"),
 	"bloody" = list(APPEARANCE_ICON_STATE = "mwbloody0"),

@@ -49,7 +49,7 @@
 	update_icon()
 	got_input = FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/reagent_refinery/mixer/appearance_overlays()
 	. = list()
 	// GOOBY!

@@ -28,7 +28,7 @@
 	. = ..()
 	connect_to_network()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/grid_checker, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/grid_checker, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/power/grid_checker/appearance_overlays()
 	. = list()
 	if(power_failing)

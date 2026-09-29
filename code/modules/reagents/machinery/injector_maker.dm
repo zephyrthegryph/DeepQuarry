@@ -34,7 +34,7 @@
 	. = ..()
 	default_apply_parts()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/injector_maker/appearance_overlays()
 	. = list()
 	if(!beaker && !count_plastic && !count_small_injector && !count_large_injector) //Empty

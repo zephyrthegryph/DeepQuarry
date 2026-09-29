@@ -45,7 +45,7 @@
 /obj/machinery/medical_kiosk/proc/appearance_awake()
 	return (operable() && active_user()) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/medical_kiosk, "kiosk[appearance_awake?:_off]")
+APPEARANCE_TEMPLATE(/obj/machinery/medical_kiosk, "kiosk{appearance_awake?:_off}")
 DECLARE_APPEARANCE(/obj/machinery/medical_kiosk, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "kiosk_open")))
 
 EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \

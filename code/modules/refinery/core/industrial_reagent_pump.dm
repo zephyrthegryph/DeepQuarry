@@ -41,7 +41,7 @@
 		return amount_per_transfer_from_this
 	return 0
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/pump, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/reagent_refinery/pump/appearance_overlays()
 	. = list()
 	if(reagents && reagents.total_volume >= 5)

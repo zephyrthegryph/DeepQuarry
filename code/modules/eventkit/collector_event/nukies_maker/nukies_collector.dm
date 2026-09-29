@@ -19,7 +19,7 @@ TYPE_TABLE(/obj/structure/event_collector/nukies, event_collector_ingredients, l
 	/obj/item/collector_item/nukies_sludge \
 ))
 
-DECLARE_APPEARANCE_PROC(/obj/structure/event_collector/nukies, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/event_collector/nukies, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/event_collector/nukies/appearance_overlays()
 	. = list()
 	. += ..()

@@ -160,7 +160,7 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 	update_active_power_usage((light_range + light_power) * 10)
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/floor_light, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/floor_light, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/floor_light/appearance_overlays()
 	. = list()
 	if(use_power && !broken())

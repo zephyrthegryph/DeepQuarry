@@ -39,7 +39,7 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 	SSpersistence.forget_value(src, /datum/persistent/filth)
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/effect/decal/cleanable/appearance_overlays()
 	. = list()
 	// Overrides should not inheret from this, and instead replace it entirely to match this in some form.

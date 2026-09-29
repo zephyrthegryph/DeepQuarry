@@ -150,7 +150,7 @@ DECLARE_INTERACTIONS(/obj/item/lightreplacer, \
 		selected_color = ask.picked_color
 		to_chat(ask.answerer, "The light color has been changed.")
 
-APPEARANCE_TEMPLATE(/obj/item/lightreplacer, "lightreplacer[emagged]")
+APPEARANCE_TEMPLATE(/obj/item/lightreplacer, "lightreplacer{emagged}")
 
 /obj/item/lightreplacer/proc/Use(mob/user)
 

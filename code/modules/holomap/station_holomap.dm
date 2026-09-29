@@ -183,7 +183,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 	else
 		set_light(light_range_on, light_power_on)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/station_map, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/station_map, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/station_map/appearance_overlays()
 	. = list()
 	if(!holomap_datum)

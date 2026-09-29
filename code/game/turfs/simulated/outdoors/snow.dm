@@ -19,7 +19,7 @@
 		update_icon()
 	. = ..()
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/floor/outdoors/snow, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/turf/simulated/floor/outdoors/snow, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /turf/simulated/floor/outdoors/snow/appearance_overlays()
 	. = list()
 	. += ..()

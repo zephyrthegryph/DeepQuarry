@@ -3,7 +3,7 @@
 	anim_length_before_finalize = 3
 	icon = 'icons/obj/doors/angled/tgmc/generic.dmi'
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/door/airlock/angled_tgmc, PROC_REF(appearance_overlays), list("get_integrity"))
+DECLARE_APPEARANCE_PROC(/obj/machinery/door/airlock/angled_tgmc, TYPE_PROC_REF(/atom, appearance_overlays), list("get_integrity"))
 /obj/machinery/door/airlock/angled_tgmc/appearance_overlays()
 	. = list()
 	if(density)

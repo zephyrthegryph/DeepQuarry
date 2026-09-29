@@ -34,7 +34,7 @@
 /obj/item/stool/padded/Initialize(mapload, new_material)
 	. = ..(mapload, MAT_STEEL, MAT_CARPET)
 
-DECLARE_APPEARANCE_PROC(/obj/item/stool, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/stool, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/stool/appearance_overlays()
 	. = list()
 	// Prep icon.

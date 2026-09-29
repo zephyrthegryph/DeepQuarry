@@ -40,7 +40,7 @@ TYPE_TABLE(/obj/item/storage/belt, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL
 			standing.add_overlay(add_icon)
 	return standing
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/storage, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/appearance_overlays()
 	. = list()
 	if (ismob(src.loc))

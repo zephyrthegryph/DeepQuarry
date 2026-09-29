@@ -147,7 +147,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 /obj/machinery/pointdefense/proc/appearance_live()
 	return (active && id_tag && operable()) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "[initial(icon_state)][appearance_live?:_off]")
+APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearance_live?:_off}")
 
 /obj/machinery/pointdefense/power_change()
 	. = ..()

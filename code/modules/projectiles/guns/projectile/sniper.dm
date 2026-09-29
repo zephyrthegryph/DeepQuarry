@@ -23,7 +23,7 @@
 	bolt_open = 0
 	special_weapon_handling = TRUE
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/heavysniper, "heavysniper[bolt_open?-open:]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/heavysniper, "heavysniper{bolt_open?-open:}")
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
 /obj/item/gun/projectile/heavysniper/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
@@ -92,7 +92,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper, INTERACT_VERB("Use Sco
 	magazine_type = /obj/item/ammo_magazine/m762svd
 	allowed_magazines = list(/obj/item/ammo_magazine/m762svd)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/SVD, "SVD[ammo_magazine?:-empty]")
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/SVD, "SVD{ammo_magazine?:-empty}")
 
 /obj/item/gun/projectile/SVD/ui_action_click(mob/user, actiontype)
 	svd_verb_scope(user)

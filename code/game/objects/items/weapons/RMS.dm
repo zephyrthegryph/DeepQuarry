@@ -65,7 +65,7 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	update_icon()
 
 
-DECLARE_APPEARANCE_PROC(/obj/item/rms, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/rms, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/rms/appearance_overlays()
 	. = list()
 	charge_stage = round((stored_charge/max_charge)*4)

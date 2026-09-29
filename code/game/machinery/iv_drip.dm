@@ -10,7 +10,7 @@
 /obj/machinery/iv_drip/mode = 1 // 1 is injecting, 0 is taking blood.
 /obj/machinery/iv_drip/var/obj/item/reagent_containers/beaker = null
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/iv_drip, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/iv_drip, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/iv_drip/appearance_overlays()
 	. = list()
 	if(attached())

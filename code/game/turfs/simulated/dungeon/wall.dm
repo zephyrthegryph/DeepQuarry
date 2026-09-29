@@ -1,7 +1,7 @@
 // Special wall type for Point of Interests.
 
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/wall, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/turf/simulated/wall, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /turf/simulated/wall/appearance_overlays()
 	. = list()
 	if(!material)
@@ -26,7 +26,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/wall, PROC_REF(appearance_overlays), lis
 
 /turf/simulated/wall/solidrock/Initialize(mapload)
 	. = ..(mapload, MAT_ALIEN_BEDROCK)
-	update_icon(1)
+	update_icon()
 
 /turf/simulated/wall/solidrock/update_material()
 	name = "solid rock"
@@ -49,7 +49,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/wall, PROC_REF(appearance_overlays), lis
 
 	return GLOB.mining_overlay_cache["[cache_id]_[direction]"]
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/wall/solidrock, PROC_REF(appearance_overlays), list(CHANGE_NEIGHBOURS))
+DECLARE_APPEARANCE_PROC(/turf/simulated/wall/solidrock, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
 /turf/simulated/wall/solidrock/appearance_overlays()
 	. = list()
 	if(density)
@@ -81,7 +81,7 @@ EXTEND_INTERACTIONS(/turf/simulated/wall/solidrock, INTERACT_ITEM("Nothing", TYP
 /turf/simulated/wall/solidrock/mossyrockpoi/Initialize(mapload)
 	. = ..(mapload, "mossyrock")
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/wall/solidrock/mossyrockpoi, PROC_REF(appearance_overlays), list(CHANGE_NEIGHBOURS))
+DECLARE_APPEARANCE_PROC(/turf/simulated/wall/solidrock/mossyrockpoi, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
 /turf/simulated/wall/solidrock/mossyrockpoi/appearance_overlays()
 	. = list()
 	if(density)

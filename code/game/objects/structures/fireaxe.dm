@@ -205,7 +205,7 @@
 /obj/structure/fireaxecabinet/proc/appearance_hasaxe()
 	return fireaxe ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/structure/fireaxecabinet, "fireaxe[appearance_hasaxe][open][hitstaken][smashed]")
+APPEARANCE_TEMPLATE(/obj/structure/fireaxecabinet, "fireaxe{appearance_hasaxe}{open}{hitstaken}{smashed}")
 
 /obj/structure/fireaxecabinet/empty
 	starts_with_axe = FALSE

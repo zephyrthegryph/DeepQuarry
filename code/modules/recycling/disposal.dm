@@ -66,7 +66,7 @@
 // if invisible, append "f" to icon_state to show faded version
 // this will be revealed if a T-scanner is used
 // if visible, use regular icon_state
-APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "[base_icon_state]")
+APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 
 // expel the held objects into a turf
 // called when there is a break in the pipe

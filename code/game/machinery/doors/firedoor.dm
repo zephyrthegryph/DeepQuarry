@@ -538,7 +538,7 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 	return
 
 APPEARANCE_NONE(/obj/machinery/door/firedoor)
-DECLARE_APPEARANCE_PROC(/obj/machinery/door/firedoor, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/door/firedoor, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/door/firedoor/appearance_overlays()
 	. = list()
 	if(density)

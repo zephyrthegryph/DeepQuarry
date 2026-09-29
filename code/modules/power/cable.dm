@@ -275,7 +275,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 /obj/structure/cable/hides_under_flooring()
 	return 1
 
-DECLARE_APPEARANCE_PROC(/obj/structure/cable, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/cable, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/cable/appearance_overlays()
 	. = list()
 	// We rely on the icon state for the wire Initialize(), prevent any updates to the icon before init passed
@@ -524,7 +524,7 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 /obj/item/stack/cable_coil/proc/robo_repair_used(mob/living/user, use_amt)
 	use(use_amt)
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack/cable_coil, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/stack/cable_coil, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/stack/cable_coil/appearance_overlays()
 	. = list()
 	if (!color)
@@ -895,7 +895,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil, \
 			embed_chance = force/(w_class*3)
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack/cable_coil/alien, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/stack/cable_coil/alien, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/stack/cable_coil/alien/appearance_overlays()
 	. = list()
 	icon_state = initial(icon_state)

@@ -211,7 +211,7 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 	return
 
 
-DECLARE_APPEARANCE_PROC(/obj/item/paper_bundle, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/paper_bundle, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/paper_bundle/appearance_overlays()
 	. = list()
 	var/obj/item/paper/P = pages[1]

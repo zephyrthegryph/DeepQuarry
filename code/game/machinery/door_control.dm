@@ -88,7 +88,7 @@
 /obj/machinery/button/remote/proc/appearance_powered()
 	return has_stat(NOPOWER) ? 0 : 1
 
-APPEARANCE_TEMPLATE(/obj/machinery/button/remote, "doorctrl[appearance_powered?0:-p]")
+APPEARANCE_TEMPLATE(/obj/machinery/button/remote, "doorctrl{appearance_powered?0:-p}")
 
 /*
 	Airlock remote control
@@ -258,7 +258,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/remote/blast_door/bear, "stuffedbear")
 /obj/machinery/button/remote/driver/proc/appearance_active()
 	return (active && !has_stat(NOPOWER)) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/button/remote/driver, "launcher[appearance_active?act:btt]")
+APPEARANCE_TEMPLATE(/obj/machinery/button/remote/driver, "launcher{appearance_active?act:btt}")
 
 /*
 	Shieldgen remote control

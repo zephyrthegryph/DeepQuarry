@@ -334,7 +334,7 @@ DECLARE_REF(/obj/machinery/computer/ship/navigation, "nav_tgui", OWNED, null)
 	circuit = /obj/item/circuitboard/nav/tele
 	density = FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/computer/ship/navigation/telescreen/appearance_overlays()
 	. = list()
 	if(has_stat(NOPOWER) || has_stat(BROKEN))

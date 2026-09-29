@@ -26,7 +26,7 @@ DECLARE_PERIODIC(/obj/structure/tanning_rack, PERIODIC_SLOW) // SSObj fires ~eve
 	if(drying() && !QDELETED(drying()))
 		. += "\The [drying()] is [drying().get_dryness_text()]."
 
-DECLARE_APPEARANCE_PROC(/obj/structure/tanning_rack, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/tanning_rack, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/tanning_rack/appearance_overlays()
 	. = list()
 	if(drying())

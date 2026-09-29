@@ -137,7 +137,7 @@ DESTROY_EFFECTS(/obj/structure/barricade/sandbag, new /datum/destroy_effects_dat
 	qdel(src)
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/structure/barricade/sandbag, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/structure/barricade/sandbag, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/barricade/sandbag/appearance_overlays()
 	. = list()
 	if(!material)

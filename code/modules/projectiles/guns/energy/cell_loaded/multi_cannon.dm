@@ -22,7 +22,7 @@
 	recoil = FALSE
 	fire_sound = SFX_WEAPONS_ENERGY_LASER_STRONG // New firesound, overwrites the sfx from the macrobatteries.
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/multi_cannon, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/multi_cannon, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/projectile/multi_cannon/appearance_overlays()
 	. = list()
 	. += ..()

@@ -97,7 +97,7 @@ DECLARE_REF(/obj/machinery/power/generator, "soundloop", OWNED, null)
 	clear_gas_dependencies()
 	MACHINE_WAKE(src)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/generator, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/generator, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/power/generator/appearance_overlays()
 	. = list()
 	icon_state = anchored ? "teg-assembled" : "teg-unassembled"

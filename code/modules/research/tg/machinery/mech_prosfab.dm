@@ -15,7 +15,7 @@
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/AfterMaterialInsert()
 	return // no call parent
 
-APPEARANCE_TEMPLATE(/obj/machinery/mecha_part_fabricator_tg/prosthetics, "prosfab[appearance_active_suffix]")
+APPEARANCE_TEMPLATE(/obj/machinery/mecha_part_fabricator_tg/prosthetics, "prosfab{appearance_active_suffix}")
 DECLARE_APPEARANCE(/obj/machinery/mecha_part_fabricator_tg/prosthetics, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "prosfab-o")))
 
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/appearance_active_suffix()

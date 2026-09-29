@@ -60,7 +60,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/personal_shield_generator, "bcell", null)
 /obj/item/personal_shield_generator/loaded //starts with a cell
 	bcell = /obj/item/cell/device/shield_generator/backpack
 
-APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator, "shieldpack_basic[shield_active?_on:]")
+APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator, "shieldpack_basic{shield_active?_on:}")
 
 /obj/item/personal_shield_generator/examine(mob/user)
 	. = ..()
@@ -424,7 +424,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 /obj/item/personal_shield_generator/belt/loaded
 	bcell = /obj/item/cell/device/shield_generator
 
-APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt, "shieldpack_basic[shield_active?_on:]")
+APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt, "shieldpack_basic{shield_active?_on:}")
 
 /obj/item/personal_shield_generator/belt/bruteburn //Example of a modified generator.
 	modifier_type = /datum/body_effect/shield_projection/bruteburn
@@ -448,7 +448,7 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt, "shieldpack_basic[
 /obj/item/personal_shield_generator/belt/mining/upgraded/loaded
 	bcell = /obj/item/cell/device/shield_generator
 
-APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt/mining, "shieldpack_mining[shield_active?_on:]")
+APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt/mining, "shieldpack_mining{shield_active?_on:}")
 
 /obj/item/borg/upgrade/shield_upgrade
 	name = "mining PSG upgrade disk."
@@ -482,7 +482,7 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt/mining, "shieldpack
 /obj/item/personal_shield_generator/belt/security/loaded
 	bcell = /obj/item/cell/device/shield_generator
 
-APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt/security, "shieldpack_security[shield_active?_on:]")
+APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt/security, "shieldpack_security{shield_active?_on:}")
 
 //PvE focused belt
 /obj/item/personal_shield_generator/belt/melee
@@ -548,7 +548,7 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt/security, "shieldpa
 /obj/item/personal_shield_generator/security/strong/loaded
 	bcell = /obj/item/cell/device/shield_generator/backpack
 
-APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/security, "shieldpack_security[shield_active?_on:]")
+APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/security, "shieldpack_security{shield_active?_on:}")
 
 //Power cells.
 /obj/item/cell/device/shield_generator //The base power cell the shield gen comes with.

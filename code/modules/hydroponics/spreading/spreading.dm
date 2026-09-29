@@ -127,7 +127,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 		var/turf/T = get_turf(src)
 		T.ex_act(prob(80) ? 3 : 2)
 
-DECLARE_APPEARANCE_PROC(/obj/effect/plant, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/effect/plant, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/effect/plant/appearance_overlays()
 	. = list()
 	//TODO: should really be caching this.

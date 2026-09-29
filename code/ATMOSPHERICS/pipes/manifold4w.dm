@@ -72,7 +72,7 @@
 	if(node4)
 		node4.update_underlays()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/manifold4w, PROC_REF(appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/manifold4w, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/pipe/manifold4w/appearance_overlays()
 	. = list()
 	alpha = 255
