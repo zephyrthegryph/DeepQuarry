@@ -124,13 +124,11 @@ DECLARE_REF(/obj/item/robot_module, "synths", OWNED_LIST, null)
 /// Module items are pulsed once by content recursion: stowed ones inside the
 /// module, equipped ones inside the robot. Only the matter synths (datums)
 /// need pulsing here.
-/obj/item/robot_module/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
-	if(synths)
-		for(var/datum/matter_synth/S in synths)
-			S.emp_act(severity, recursive)
+DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
+
+/obj/item/robot_module/proc/emp_synths(datum/damage_packet/packet)
+	for(var/datum/matter_synth/S in synths)
+		S.emp_act(packet.severity)
 
 /obj/item/robot_module/proc/respawn_consumable(mob/living/silicon/robot/R, rate)
 	SHOULD_CALL_PARENT(TRUE)

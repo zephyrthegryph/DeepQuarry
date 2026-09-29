@@ -185,12 +185,13 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 	name = "radio-enabled man-machine interface"
 	desc = "The Warrior's bland acronym, MMI, obscures the true horror of this monstrosity. This one comes with a built-in radio. Wait, don't they all?"
 
-/obj/item/mmi/emp_act(severity, recursive)
-	. = ..()
+DAMAGE_REACTION(/obj/item/mmi, DAMAGE_EMP, PROC_REF(emp_interference))
+
+/obj/item/mmi/proc/emp_interference(datum/damage_packet/packet)
 	var/mob/living/carbon/brain/occupant = get_occupant()
-	if (. & EMP_PROTECT_SELF || !occupant)
+	if(!occupant)
 		return
-	switch(severity)
+	switch(packet.severity)
 		if(EMP_HEAVY)
 			occupant.emp_damage += rand(20,30)
 		if(EMP_MEDIUM)

@@ -90,9 +90,12 @@
 		target_turf.hotspot_expose(1500+T0C, 400)
 	qdel(src)
 
-/mob/living/simple_mob/slime/feral/dark_purple/ex_act(severity)
+DAMAGE_REACTION(/mob/living/simple_mob/slime/feral/dark_purple, DAMAGE_EXPLOSION, PROC_REF(blast_ignite))
+
+/mob/living/simple_mob/slime/feral/dark_purple/proc/blast_ignite(datum/damage_packet/packet)
 	log_and_message_admins("[src] ignited due to a chain reaction with an explosion.")
 	ignite()
+	return DAMAGE_REACTION_BLOCK
 
 /mob/living/simple_mob/slime/feral/dark_purple/bullet_act(obj/item/projectile/P, def_zone)
 	if(P.obj_damage_type() && P.obj_damage_type() == BURN && P.damage) // Most bullets won't trigger the explosion, as a mercy towards Security.
@@ -119,21 +122,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/feral/dark_purple, INTERACT_ITE
 	coretype = /obj/item/slime_extract/silver
 	shiny = TRUE
 
-/mob/living/simple_mob/slime/feral/silver/bullet_act(obj/item/projectile/P, def_zone)
-	if(istype(P,/obj/item/projectile/beam) || istype(P, /obj/item/projectile/energy))
-		act_message(src, P, null, MSG_OTHERS(span_danger("%U% reflects %T%!")))
-
-		// Find a turf near or on the original location to bounce to
-		var/new_x = P.starting.x + pick(0, 0, 0, -1, 1, -2, 2)
-		var/new_y = P.starting.y + pick(0, 0, 0, -1, 1, -2, 2)
-		var/turf/curloc = get_turf(src)
-
-		// redirect the projectile
-		P.redirect(new_x, new_y, curloc, src)
-		P.reflected = TRUE
-		return PROJECTILE_CONTINUE // complete projectile permutation
-	else
-		..()
+REFLECTS(/mob/living/simple_mob/slime/feral/silver, list(/obj/item/projectile/beam, /obj/item/projectile/energy), 100)
 
 /mob/living/simple_mob/slime/feral/bluespace
 	desc = "Trapping this slime in a cell is generally futile, as it can teleport at will."

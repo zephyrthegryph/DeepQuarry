@@ -440,12 +440,11 @@
 	special_attack_max_range = 15
 	special_attack_cooldown = 7 SECONDS
 
-/mob/living/simple_mob/vore/candy/ouroboros/bullet_act(obj/item/projectile/Proj)
+DAMAGE_REACTION(/mob/living/simple_mob/vore/candy/ouroboros, DAMAGE_PROJECTILE, PROC_REF(shed_critter))
+
+/mob/living/simple_mob/vore/candy/ouroboros/proc/shed_critter(datum/damage_packet/packet)
 	if(prob(50))
 		new /obj/random/mob/candycritter (src.loc)
-		..()
-	else
-		..()
 
 /mob/living/simple_mob/vore/candy/ouroboros/do_special_attack(atom/A, stance)
 	switch(stance)

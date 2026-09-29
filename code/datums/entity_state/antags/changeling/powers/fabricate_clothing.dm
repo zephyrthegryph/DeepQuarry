@@ -31,10 +31,6 @@
 	canremove = FALSE //Since this is essentially flesh impersonating clothes, tearing someone's skin off as if it were clothing isn't possible.
 	has_sensor = FALSE // Reveals ling, and doesn't make sense anyway!
 
-/obj/item/clothing/under/chameleon/changeling/emp_act(severity, recursive) //As these are purely organic, EMP does nothing to them.
-	. = ..()
-	return
-
 EXTEND_INTERACTIONS(/obj/item/clothing/under/chameleon/changeling, \
 	INTERACT_VERB("Shred Jumpsuit", PROC_REF(changeling_under_shred_verb), REQ_IN_INVENTORY), \
 )

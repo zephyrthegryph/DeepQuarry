@@ -67,11 +67,6 @@
 			return DAMAGE_REACTION_BLOCK
 	return 0
 
-/// TRUE when this atom's type declares any damage reaction.
-/atom/proc/has_damage_reactions()
-	var/datum/lifecycle_decls/decls = lifecycle_decls_of(src)
-	return !!decls?.damage_reactions
-
 /// For an entry that lands nothing through a packet (a zero-damage round, a pulse on a type
 /// that takes no ionic damage, a mob family's own explosion ladder): delivers an empty packet so
 /// the type's reactions to `entry` fire. Returns TRUE if a reaction blocked the hit.
@@ -80,9 +75,20 @@
 	if(!decls?.damage_reactions)
 		return FALSE
 	var/datum/damage_packet/packet = damage_packet(source, attacker, null, null, DAMAGE_PACKET_SILENT, 0, 0, null, entry, severity)
-	receive_damage(packet)
-	. = !!(packet.flags & DAMAGE_PACKET_BLOCKED)
+	. = react_to_packet(packet)
 	packet.release()
+
+/// Runs the reactions (both phases) to a packet that carries nothing, without the sink.
+/// Returns TRUE if a reaction blocked the hit.
+/atom/proc/react_to_packet(datum/damage_packet/packet)
+	var/datum/lifecycle_decls/decls = lifecycle_decls_of(src)
+	if(!decls?.damage_reactions)
+		return FALSE
+	if(run_damage_reactions(decls, packet, DAMAGE_REACTION_PHASE_BEFORE))
+		return TRUE
+	if(decls.damage_reactions_after && !QDELETED(src))
+		run_damage_reactions(decls, packet, DAMAGE_REACTION_PHASE_AFTER)
+	return FALSE
 
 // ---- REFLECTS ----
 
@@ -145,7 +151,7 @@
 // ---- shared reaction procs ----
 
 /// A hit through the trigger lands nothing (the entry's own effects before the packet, such as
-/// a projectile's on_hit(), still ran). `DAMAGE_REACTION(/obj/effect/decal/x, DAMAGE_PROJECTILE, PROC_REF(damage_reaction_block))`
+/// a projectile's on_hit(), still ran). `DAMAGE_REACTION(/obj/effect/decal/x, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage_reaction_block))`
 /atom/proc/damage_reaction_block(datum/damage_packet/packet)
 	return DAMAGE_REACTION_BLOCK
 

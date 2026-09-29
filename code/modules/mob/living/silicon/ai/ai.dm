@@ -499,11 +499,12 @@ DECLARE_REF(/mob/living/silicon/ai, "selected_sprite", STATIC, null)
 /mob/living/silicon/ai/restrained()
 	return 0
 
-/mob/living/silicon/ai/emp_act(severity, recursive)
+DAMAGE_REACTION(/mob/living/silicon/ai, DAMAGE_EMP, PROC_REF(emp_shell_disconnect))
+
+/mob/living/silicon/ai/proc/emp_shell_disconnect(datum/damage_packet/packet)
 	disconnect_shell("Disconnected from remote shell due to ionic interfe%*@$^___")
 	if (prob(30))
 		view_core()
-	..()
 
 TOPIC_ACTION(/mob/living/silicon/ai, "switchcamera", PROC_REF(topic_switchcamera), TOPIC_REF("switchcamera", /obj/machinery/camera, PROC_REF(topic_cameras)))
 TOPIC_ACTION(/mob/living/silicon/ai, "showalerts", PROC_REF(topic_showalerts))
@@ -982,11 +983,13 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 	else
 		to_chat(src, span_warning("You deny the request."))
 
-/mob/living/silicon/ai/ex_act(severity)
-	if(severity == 1.0)
+DAMAGE_REACTION(/mob/living/silicon/ai, DAMAGE_EXPLOSION, PROC_REF(core_blast))
+
+/// A direct blast destroys the core outright; weaker ones go through the silicon ladder.
+/mob/living/silicon/ai/proc/core_blast(datum/damage_packet/packet)
+	if(packet.severity == 1)
 		qdel(src)
-		return
-	..()
+		return DAMAGE_REACTION_BLOCK
 
 /mob/living/silicon/ai/update_icon()
 	if(!selected_sprite) selected_sprite = GLOB.default_ai_icon

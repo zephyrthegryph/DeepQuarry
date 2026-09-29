@@ -50,14 +50,16 @@
 		icon_state = initial(icon_state)
 
 /// EMP adapter: an ionic packet from the shared ladder. Only types with an
-/// emp_integrity_factor lose integrity to it; types that declare damage reactions get the
-/// packet too, so their DAMAGE_EMP reactions fire.
+/// emp_integrity_factor lose integrity to it; for the rest only the declared DAMAGE_EMP
+/// reactions run.
 /obj/emp_act(severity, recursive)
 	. = ..()
 	if(. & EMP_PROTECT_SELF)
 		return
-	if(emp_integrity_factor || has_damage_reactions())
+	if(emp_integrity_factor)
 		receive_emp(severity)
+	else
+		react_to_entry(DAMAGE_ENTRY_EMP, severity)
 
 /// Returns a custom fire overlay, if any
 /obj/proc/custom_fire_overlay()

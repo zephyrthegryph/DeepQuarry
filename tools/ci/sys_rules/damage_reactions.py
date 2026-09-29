@@ -11,7 +11,10 @@ flagged unless it is *procedural*, i.e. at least one of:
       appears in the body outside a parent call's argument list; or
   P2  it returns a hit-flow value to the entry's caller: `return X` with X anything other than
       nothing, `.`, a parent call, `0`, `FALSE` or `null` (PROJECTILE_CONTINUE, a computed
-      result, a blocked amount ...).
+      result, a blocked amount ...); or
+  P3  it changes the hit it passes on: it writes one of its parameters (`severity++`,
+      `severity = clamp(...)`), or hands the parent anything other than its own parameters
+      unchanged (`..(user, damage / 2)`).
 
 Every other shape is flagged, whatever its layout:
   - a pure pass-through (only the parent call, in any form: `..()`, `. = ..()`, `return ..()`,
@@ -118,9 +121,28 @@ def is_reflect_boilerplate(body, name):
     return True
 
 
+PARENT_ARGS = re.compile(r"\.\.\(([^()]*(?:\([^()]*\)[^()]*)*)\)")
+
+
+def changes_hit(raw_lines, params):
+    """P3: a parameter is written, or the parent gets something other than the parameters."""
+    for line in raw_lines:
+        for name in params:
+            if re.search(r"(?<![\w.])%s\s*(?:=(?!=)|\+\+|--|[-+*/]=)" % re.escape(name), line):
+                return True
+        for m in PARENT_ARGS.finditer(line):
+            for arg in (a.strip() for a in m.group(1).split(",")):
+                if arg and arg not in params and not re.match(r"^\w+\s*=\s*\w+$", arg):
+                    return True
+    return False
+
+
 def procedural(body, params):
     reads = [p for p in params if p not in FREE_PARAMS]
-    lines = [strip_parent_args(code_of(line)) for line in body]
+    raw = [code_of(line) for line in body]
+    if changes_hit(raw, params):
+        return True
+    lines = [strip_parent_args(line) for line in raw]
     for line in lines:
         m = RETURN.search(line)
         if not m:

@@ -126,18 +126,16 @@
 	laugh()
 	..()
 
-/mob/living/simple_mob/vore/demon/bullet_act()
+DAMAGE_REACTION(/mob/living/simple_mob/vore/demon, DAMAGE_PROJECTILE, PROC_REF(laugh_at_hit))
+DAMAGE_REACTION(/mob/living/simple_mob/vore/demon, DAMAGE_THROWN, PROC_REF(laugh_at_hit))
+
+/mob/living/simple_mob/vore/demon/proc/laugh_at_hit(datum/damage_packet/packet)
 	laugh()
-	..()
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/demon, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(demon_interaction_laugh)), \
 	INTERACT_ITEM(null, PROC_REF(demon_interaction_laugh)), \
 )
-
-/mob/living/simple_mob/vore/demon/hitby()
-	laugh()
-	..()
 
 /// Old attack_hand / attackby: laugh, then the touch or hit carries on as normal (FALSE).
 /mob/living/simple_mob/vore/demon/proc/demon_interaction_laugh(mob/user, obj/item/held, datum/interaction/interaction)

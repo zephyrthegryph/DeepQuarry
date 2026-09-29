@@ -294,15 +294,13 @@ GLOBAL_LIST_INIT(emp_ladder, list(100, 70, 40, 10))
 	packet.release()
 
 /// Deliver `amount` of an item's (or blob's) declared kinds in `packet`, then release it.
-/// A packet from an entry that lands nothing still reaches receive_damage() when the type
-/// declares reactions, so they fire.
+/// A packet from an entry that lands nothing still runs the type's declared reactions.
 /atom/proc/receive_split(datum/damage_packet/packet, injury_kind, alist/injury_kinds, amount)
 	if(amount > 0 && packet.add_split(injury_kind, injury_kinds, amount))
 		. = receive_damage(packet)
 	else
-		if(packet.entry && has_damage_reactions())
-			receive_damage(packet)
-		if(amount > 0 && !(packet.flags & DAMAGE_PACKET_BLOCKED))
+		var/blocked = packet.entry && react_to_packet(packet)
+		if(amount > 0 && !blocked)
 			. = receive_internal_injury(packet, injury_kind, injury_kinds, amount)
 	packet.release()
 

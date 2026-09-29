@@ -110,9 +110,7 @@
 	..() // For the poison.
 
 // Force uncloaking if attacked.
-/mob/living/simple_mob/animal/giant_spider/lurker/bullet_act(obj/item/projectile/P)
-	. = ..()
-	break_cloak()
+DAMAGE_REACTION_AFTER(/mob/living/simple_mob/animal/giant_spider/lurker, DAMAGE_PROJECTILE, PROC_REF(break_cloak))
 
 /mob/living/simple_mob/animal/giant_spider/lurker/hit_with_weapon(obj/item/O, mob/living/user, effective_force, hit_zone)
 	. = ..()

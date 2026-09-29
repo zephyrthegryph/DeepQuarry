@@ -7,9 +7,7 @@
 	anchored = TRUE
 	density = FALSE
 
-/obj/effect/weaversilk/ex_act(severity)
-	qdel(src)
-	return
+DAMAGE_REACTION(/obj/effect/weaversilk, DAMAGE_EXPLOSION, TYPE_PROC_REF(/atom, damage_reaction_qdel))
 
 EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 	INTERACT_ITEM(null, PROC_REF(interaction_hit_weaversilk)), \

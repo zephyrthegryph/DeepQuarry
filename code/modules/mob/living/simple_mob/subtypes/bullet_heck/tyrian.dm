@@ -214,10 +214,11 @@
 	endurance = 1200
 	special_attack_cooldown = 3 SECONDS
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime/bullet_act(obj/item/projectile/P)
+DAMAGE_REACTION(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime, DAMAGE_PROJECTILE, PROC_REF(spawn_antlings))
+
+/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime/proc/spawn_antlings(datum/damage_packet/packet)
 	for(var/i =1 to 4)
 		new /obj/effect/spider/spiderling/antling/created(src.loc)
-	..()
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime, INTERACT_ITEM(null, PROC_REF(tyrian_slime_interaction_item)))
 
@@ -301,25 +302,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/ex
 	B.absorbchance = 0
 	B.escapechance = 15
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss/bullet_act(obj/item/projectile/P)
-	if(prob(parry_chance))
-		act_message(src, null, \
-			MSG_SELF(span_userdanger("The [P.name] gets reflected by %U%'s armor!")), \
-			MSG_OTHERS(span_danger("The [P.name] gets reflected by %U%'s armor!")))
-
-		// Find a turf near or on the original location to bounce to
-		if(P.starting)
-			var/new_x = P.starting.x + pick(0, 0, -1, 1, -2, 2, -2, 2, -2, 2, -3, 3, -3, 3)
-			var/new_y = P.starting.y + pick(0, 0, -1, 1, -2, 2, -2, 2, -2, 2, -3, 3, -3, 3)
-			var/turf/curloc = get_turf(src)
-
-			// redirect the projectile
-			P.redirect(new_x, new_y, curloc, src)
-			P.reflected = 1
-
-			return -1 // complete projectile permutation
-
-	return (..(P))
+REFLECTS(/mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss, list(/obj/item/projectile), "parry_chance")
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss/do_special_attack(atom/A, stance)
 	om_after(src, 0.5 SECONDS, PROC_REF(bomb_chaos), A, 4)

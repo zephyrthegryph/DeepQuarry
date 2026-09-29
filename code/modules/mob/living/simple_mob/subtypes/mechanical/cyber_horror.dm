@@ -268,9 +268,7 @@
 	uncloak()
 	..()
 
-/mob/living/simple_mob/mechanical/cyber_horror/tajaran/bullet_act(obj/item/projectile/P)
-	. = ..()
-	break_cloak()
+DAMAGE_REACTION_AFTER(/mob/living/simple_mob/mechanical/cyber_horror/tajaran, DAMAGE_PROJECTILE, PROC_REF(break_cloak))
 
 /mob/living/simple_mob/mechanical/cyber_horror/tajaran/hit_with_weapon(obj/item/O, mob/living/user, effective_force, hit_zone)
 	. = ..()

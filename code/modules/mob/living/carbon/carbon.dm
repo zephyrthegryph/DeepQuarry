@@ -104,10 +104,12 @@ DECLARE_REF(/mob/living/carbon, "cozyloop", OWNED, null)
 //the species' emp_sensitivity var needs to be greater than 0 for this to proc, and it defaults to 0 - shouldn't stack with prosthetics/fbps in most cases
 //higher sensitivity values incur additional effects, starting with confusion/blinding/knockdown and ending with increasing amounts of damage
 //the degree of damage and duration of effects can be tweaked up or down based on the species emp_dmg_mod and emp_stun_mod vars (default 1) on top of tuning the random ranges
-/mob/living/carbon/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || !species)
+DAMAGE_REACTION(/mob/living/carbon, DAMAGE_EMP, PROC_REF(species_emp_effects))
+
+/mob/living/carbon/proc/species_emp_effects(datum/damage_packet/packet)
+	if(!species)
 		return
+	var/severity = packet.severity
 	//pregen our stunning stuff, had to do this seperately or else byond complained. remember that severity falls off with distance based on the source, so we don't need to do any extra distance calcs here.
 	var/agony_str = ((rand(4,6)*15)-(15*severity))*species.emp_stun_mod //big ouchies at high severity, causes 0-75 halloss/agony; shotgun beanbags and revolver rubbers do 60
 	var/deafen_dur = (rand(9,16)-severity)*species.emp_stun_mod //5-15 deafen, on par with a flashbang

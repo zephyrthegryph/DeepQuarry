@@ -407,6 +407,7 @@ DECLARE_REF(/mob/living/simple_mob/vore/overmap/stardog, "control_node", PAIR, "
 	icon_state = "fur0"
 	edge_blending_priority = 4
 	initial_flooring = /datum/decl/flooring/fur
+	resistance_flags = BOMB_PROOF // it's a living hide: blasts don't tear it up
 	var/tree_chance = 25
 	var/tree_color = null
 	var/tree_type = /obj/structure/flora/tree/fur
@@ -423,9 +424,6 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 	turf_hand(user, held, interaction)
 	fur_verb_pet(user)
 	return TRUE
-
-/turf/simulated/floor/outdoors/fur/ex_act(severity)
-	return
 
 /turf/simulated/floor/outdoors/fur/Entered(atom/movable/AM, atom/oldloc)
 	. = ..()
