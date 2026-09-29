@@ -1030,6 +1030,14 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	tool_volume = 0
 	requires = list(REQ_REACH_ADJACENT)
 	effect = /mob/living/silicon/robot/proc/interaction_weld_repair
+	also_requires = list(
+		REQ_BECAUSE(REQ_NOT_SELF, "you lack the reach to be able to repair yourself"),
+		REQ_TARGET_STATE(/mob/living/silicon/robot/proc/has_dents),
+	)
+
+/// Requirement: TRUE when there is plating damage to weld.
+/mob/living/silicon/robot/proc/has_dents(mob/user, atom/target, obj/item/held)
+	return injury_load(INJURY_CATEGORY_PHYSICAL) ? TRUE : "nothing to fix here"
 
 /datum/interaction/robot_weld_repair/help
 	id = "robot_weld_repair_help"
@@ -1048,12 +1056,6 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 
 /// Welder: fix the chassis's dents (not your own).
 /mob/living/silicon/robot/proc/interaction_weld_repair(mob/user, obj/item/tool, datum/interaction/interaction)
-	if(src == user)
-		to_chat(user, span_warning("You lack the reach to be able to repair yourself."))
-		return TRUE
-	if(!injury_load(INJURY_CATEGORY_PHYSICAL))
-		to_chat(user, span_filter_notice("Nothing to fix here!"))
-		return TRUE
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder?.remove_fuel(0))
 		to_chat(user, span_filter_warning("Need more welding fuel!"))

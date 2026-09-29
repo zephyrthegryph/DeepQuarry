@@ -32,7 +32,7 @@
 #define REQ_FIELD_MODE_TRUE "true"
 #define REQ_FIELD_MODE_EQ "eq"
 
-/// The target's field `name` is truthy. `reason` optional.
+/// The target's field `name` is truthy (an empty list counts as false). `reason` optional.
 #define REQ_FIELD(name, reason...) list(PRED_OP_FIELD, name, REQ_FIELD_MODE_TRUE, null, reason)
 /// The target's field `name` is falsy (null, 0 or ""). `reason` optional.
 #define REQ_FIELD_NOT(name, reason...) REQ_NOT(list(PRED_OP_FIELD, name, REQ_FIELD_MODE_TRUE, null, reason))

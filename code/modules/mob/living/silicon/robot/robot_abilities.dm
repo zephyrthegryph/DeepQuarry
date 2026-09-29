@@ -28,14 +28,12 @@
 	name = "Pick name"
 	category = ABILITY_CAT_UTILITY
 	effect = /mob/living/silicon/robot/proc/dq_do_pick_name
+	also_requires = list(REQ_FIELD_NOT("custom_name", "you can't pick another custom name; ask for a name change"))
 
 /datum/interaction/ability/self/robot_pick_name/applies_to(atom/target)
 	return isrobot(target)
 
 /mob/living/silicon/robot/proc/dq_do_pick_name(mob/actor, obj/item/held, datum/interaction/ability/interaction)
-	if(custom_name)
-		to_chat(src, "You can't pick another custom name. [isshell(src) ? "" : "Go ask for a name change."]")
-		return FALSE
 	// A cancel answers "": the default name.
 	om_ask(src, /datum/om/prompt/text, PROC_REF(robot_name_entered), title = "Name change", message = "You are a robot. Enter a name, or leave blank for the default name.", max_length = MAX_NAME_LEN, encode = FALSE, cancel_answer = "")
 	return TRUE

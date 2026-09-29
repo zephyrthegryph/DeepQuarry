@@ -415,7 +415,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 	INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)), \
 	INTERACT_HAND_UNGATED("Pet", PROC_REF(fur_pet)), \
 	INTERACT_VERB("Pet Fur", PROC_REF(fur_verb_pet)), \
-	INTERACT_VERB("Emote Beyond", PROC_REF(fur_verb_emote_beyond)), \
+	INTERACT_VERB("Emote Beyond", PROC_REF(fur_verb_emote_beyond), REQ_PROC(/proc/dq_actor_not_ic_muted, "you cannot speak in IC (muted)")), \
 )
 
 /// Old attack_hand: the turf's own touch, then petting.
@@ -475,14 +475,15 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 		if(m.affinity >= 10 && prob(5))
 			act_message(m, null, null, MSG_OTHERS("%U%'s tail wags happily!"))
 
+/// Requirement: the actor isn't muted from IC speech.
+/proc/dq_actor_not_ic_muted(mob/actor, atom/target, obj/item/held)
+	return !(actor?.client?.prefs?.muted & MUTE_IC)
+
 /// Old Emote Beyond verb: Emote to those beyond the fur!
 /turf/simulated/floor/outdoors/fur/proc/fur_verb_emote_beyond(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!isliving(user))
 		return
 	var/mob/living/L = user
-	if(L.client?.prefs?.muted & MUTE_IC)
-		to_chat(L, span_warning("You cannot speak in IC (muted)."))
-		return
 	om_ask(L, /datum/om/prompt/text, PROC_REF(emote_beyond_answered), title = "Emote Beyond", message = "Type a message to emote.", encode = FALSE)
 
 /turf/simulated/floor/outdoors/fur/proc/emote_beyond_answered(datum/om/prompt/text/ask)
@@ -948,6 +949,7 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	category = INTERACTION_CAT_CONFIGURE
 	requires = list(REQ_PROC(/proc/dq_emote_beyond_in_view, "too far away"), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
 	effect = /obj/machinery/computer/ship/navigation/proc/interaction_emote_beyond
+	also_requires = list(REQ_PROC(/proc/dq_actor_not_ic_muted, "you cannot speak in IC (muted)"))
 
 /// The old verb's `set src in oview(7)`.
 /proc/dq_emote_beyond_in_view(mob/actor, atom/target, obj/item/held)
@@ -957,9 +959,6 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	if(!isliving(user))
 		return TRUE
 	var/mob/living/L = user
-	if(L.client?.prefs?.muted & MUTE_IC)
-		to_chat(L, span_warning("You cannot speak in IC (muted)."))
-		return
 	om_ask(L, /datum/om/prompt/text, PROC_REF(emote_beyond_entered), title = "Emote Beyond", message = "Type a message to emote.", encode = FALSE)
 	return TRUE
 

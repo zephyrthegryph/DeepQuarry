@@ -205,7 +205,7 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 		icon_state = "medibot[on]"
 
 EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
-	INTERACT_ITEM(null, PROC_REF(medbot_interaction_item)), \
+	INTERACT_INSERT(/obj/item/reagent_containers/glass, PROC_REF(medbot_interaction_item), "Insert beaker", REQ_FIELD_NOT("locked", "the panel is locked"), REQ_FIELD_NOT("reagent_glass")), \
 	INTERACT_HAND_UNGATED_AS(I_HELP, "Right or open controls", PROC_REF(medbot_interaction_hand)), \
 	INTERACT_HAND_UNGATED_AS(I_DISARM, "Tip over", PROC_REF(medbot_interaction_hand)), \
 	INTERACT_HAND_UNGATED_AS(I_GRAB, "Open controls", PROC_REF(medbot_interaction_hand)), \
@@ -271,14 +271,6 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 
 /// Old attackby: load a beaker; anything else falls to the bot's item handling.
 /mob/living/bot/medbot/proc/medbot_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	if(!istype(O, /obj/item/reagent_containers/glass))
-		return FALSE
-	if(locked)
-		to_chat(user, span_notice("You cannot insert a beaker because the panel is locked."))
-		return TRUE
-	if(!isnull(reagent_glass))
-		to_chat(user, span_notice("There is already a beaker loaded."))
-		return TRUE
 
 	user.drop_item()
 	O.forceMove(src)

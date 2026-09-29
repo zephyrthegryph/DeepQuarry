@@ -82,6 +82,13 @@
 			return call(thing, field)()
 	return null
 
+/// A field's truth: an empty list counts as false ("has no X"), like null, 0 and "".
+/proc/dq_req_truthy(value)
+	if(islist(value))
+		var/list/L = value
+		return length(L) ? TRUE : FALSE
+	return value ? TRUE : FALSE
+
 /// "panel_open" -> "panel open".
 /proc/dq_req_field_words(field)
 	return replacetext(field, "_", " ")
@@ -100,7 +107,7 @@
 	var/current = dq_req_field_value(target, field)
 	if(mode == REQ_FIELD_MODE_EQ)
 		return current == value
-	return current ? TRUE : FALSE
+	return dq_req_truthy(current)
 
 /datum/pred_node/field/generate_reason(mob/actor, atom/target, obj/item/held)
 	var/words = dq_req_field_words(field)
@@ -113,7 +120,7 @@
 			var/atom/thing = current
 			return "it already has \a [thing]"
 		return "it's [words]"
-	if(isnull(current))
+	if(isnull(current) || islist(current))
 		return "it has no [words]"
 	return "it isn't [words]"
 
