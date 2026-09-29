@@ -61,6 +61,9 @@
 		return
 	var/site_name = site().name
 	if(z_level >= 1 && z_level <= world.maxz)
+		// Nothing may keep naming a turf of a pooled z: drop the views made during the wipe too.
+		var/dropped = om_drop_z(z_level)
+		log_world("Expedition: om_drop_z(z[z_level]) cleared [dropped] relation view(s) before pooling.")
 		controller().free_z |= z_level
 	controller().teardown_z -= "[z_level]"
 	log_world("Expedition: released [site_name], z[z_level] recycled after [yield_count] budget yields (reason: [reason]).")
@@ -512,6 +515,8 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 /// wipe_z() as lane work: a turf at a time within the scheduler's budget, then `on_done`.
 /datum/world_service/expedition/proc/wipe_z_async(z, list/on_done)
 	evacuate_mobs_from_z(z)
+	// The z is about to be reused: views naming its turfs are cleared first.
+	om_drop_z(z)
 	om_task_slices(src, PROC_REF(wipe_z_slice), list(block(locate(1, 1, z), locate(world.maxx, world.maxy, z)), 1), on_done)
 
 /datum/world_service/expedition/proc/wipe_z_slice(list/cursor)
@@ -703,8 +708,8 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		rel_clear(site.assigned_flight_vessel(), "active_expedition")
 	own_clear(site, "landing_waypoint", OWN_DELETE)
 	own_clear(site, "overmap_sector", OWN_DELETE)
-	// Every relation view naming a turf on this z (payout turfs, landing turfs, floors held as
-	// views, rich edges) is cleared before the z is wiped and pooled for reuse.
+	// Every relation view naming a turf on this z (payout turfs, landing turfs, rich edges) is
+	// cleared now, and again when the wiped z goes back into free_z (finish()).
 	var/dropped = om_drop_z(z)
 	log_world("Expedition: om_drop_z(z[z]) cleared [dropped] relation view(s) before teardown.")
 	teardown_z["[z]"] = TRUE
@@ -748,6 +753,8 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 // first by evacuate_mobs_from_z(), and anything still left is skipped (defensive).
 /datum/world_service/expedition/proc/wipe_z(z)
 	evacuate_mobs_from_z(z)
+	// The z is about to be reused: views naming its turfs are cleared first.
+	om_drop_z(z)
 	var/area/space/space_area = generated_station_space_area()
 	var/list/turfs = block(locate(1, 1, z), locate(world.maxx, world.maxy, z))
 	for(var/i = 1, i <= length(turfs), i += WIPE_Z_CHUNK)
