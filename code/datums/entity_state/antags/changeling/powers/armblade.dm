@@ -151,6 +151,6 @@
 	defend_chance = 60
 	projectile_parry_chance = 25
 
-/// LC-refs: the changeling who grew this -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The changeling who grew this (a relation view).
 /obj/item/melee/changeling/proc/creator() as /mob/living
 	return creator

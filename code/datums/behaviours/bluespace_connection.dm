@@ -1,7 +1,7 @@
 /// Bluespace connection. Makes lockers into
 /// portals: close one with something inside and it comes out of a connected exit. A shared
-/// OM behaviour on the closet_closed and hitby events; the exits live on the closet as
-/// om_handle()s, or, on the permanent network, are GLOB.bslockers.
+/// OM behaviour on the closet_closed and hitby events; the exits live on the closet as a
+/// relation list view, or, on the permanent network, are GLOB.bslockers.
 /// Connect with C.connect_bluespace(exits) or C.join_bluespace_network().
 /datum/om/behaviour/bluespace_connection
 	handles = list(/datum/om/event/closet_closed, /datum/om/event/hitby)
@@ -12,17 +12,16 @@
 #define BLUESPACE_THROW_RANGE_Y 5
 
 /obj/structure/closet
-	/// om_handle()s of the exits this closet's bluespace connection leads to (lazy).
-	var/list/bluespace_exit_handles
+	/// The exits this closet's bluespace connection leads to: a relation list view (lazy).
+	var/list/atom/bluespace_exit_points
 	/// TRUE: the exits are the permanent network (GLOB.bslockers), never severed.
 	var/bluespace_permanent = FALSE
 
 /// Connects this closet to `exits` (closets or other atoms).
 /obj/structure/closet/proc/connect_bluespace(list/exits)
 	for(var/atom/exit_point as anything in exits)
-		var/h = om_handle(exit_point)
-		if(h)
-			LAZYOR(bluespace_exit_handles, h)
+		if(!QDELETED(exit_point))
+			rel_add(src, "bluespace_exit_points", exit_point)
 	om_attach(src, /datum/om/behaviour/bluespace_connection)
 
 /// Joins the permanent network of bluespace lockers (GLOB.bslockers).
@@ -33,11 +32,7 @@
 /obj/structure/closet/proc/bluespace_exits()
 	if(bluespace_permanent)
 		return GLOB.bslockers.Copy()
-	. = list()
-	for(var/h in bluespace_exit_handles)
-		var/atom/exit_point = om_resolve(h)
-		if(exit_point)
-			. += exit_point
+	return bluespace_exit_points ? bluespace_exit_points.Copy() : list()
 
 /datum/om/behaviour/bluespace_connection/on_closet_closed(obj/structure/closet/assigned_closet, datum/om/event/closet_closed/event)
 	if(isemptylist(assigned_closet.contents))
@@ -99,11 +94,9 @@
 	if(bluespace_permanent)
 		return TRUE
 	if(removed_exit)
-		var/h = om_handle(removed_exit)
-		if(h)
-			LAZYREMOVE(bluespace_exit_handles, h)
+		rel_remove(src, "bluespace_exit_points", removed_exit)
 	if(!length(bluespace_exits())) // No exit points left, bluespace connection severed.
-		bluespace_exit_handles = null
+		rel_clear(src, "bluespace_exit_points")
 		om_detach(src, /datum/om/behaviour/bluespace_connection)
 	return TRUE
 
@@ -129,3 +122,5 @@
 
 /datum/om/behaviour/proc/on_closet_closed(datum/E, datum/om/event/closet_closed/event)
 	return
+
+REL_LIST(/obj/structure/closet, bluespace_exit_points)

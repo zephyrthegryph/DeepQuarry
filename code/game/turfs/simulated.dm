@@ -152,7 +152,8 @@
 		for(var/obj/effect/decal/cleanable/blood/B in contents)
 			var/fresh = B.init_forensic_data().add_blooddna(M.dna,M)
 			if(fresh && M.has_contagions())
-				B.viruses = contagion_copies(M.get_spreadable_contagions())
+				own_clear(B, "viruses", OWN_DELETE) // the decal owns its contagion copies
+				B.add_contagions(contagion_copies(M.get_spreadable_contagions()), copy = FALSE)
 			return TRUE //we bloodied the floor
 		blood_splatter(src,M.get_blood(M.vessel),1)
 		return TRUE //we bloodied the floor

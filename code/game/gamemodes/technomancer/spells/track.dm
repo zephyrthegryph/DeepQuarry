@@ -74,6 +74,6 @@ REGISTRY_MEMBERSHIP(/obj, REGISTRY_TECHNOMANCER_BELONGINGS)
 
 	om_after(src, 5, PROC_REF(track))
 
-/// LC-refs: tracked -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Tracked (a relation view).
 /obj/item/spell/track/proc/tracked() as /atom/movable
 	return tracked

@@ -10,7 +10,7 @@
 // Packets are pooled (code/datums/lifecycle/pool.dm): acquire one with
 // damage_packet(), never new() one, and release() it as soon as
 // receive_damage() returns. Nothing may keep a reference to a packet past its
-// release; release() resets every DECLARE_REF(..., TRANSIENT) field below from the declaration.
+// release; release() resets every POOL_RESET field below from the declaration.
 
 /datum/damage_packet
 	/// Amount per kind, indexed by DAMAGE_* (flat list of DAMAGE_KIND_COUNT
@@ -56,9 +56,9 @@ POOL_RESET(/datum/damage_packet, armor_flag)
 	var/list/amounts = packet.amounts
 	for(var/i in 1 to DAMAGE_KIND_COUNT)
 		amounts[i] = 0
-	packet.source = source
-	packet.attacker = attacker
-	packet.weapon = weapon
+	packet.source = source // ALLOW(ownership): pooled transient packet, lives for one hit; POOL_RESET clears it on release
+	packet.attacker = attacker // ALLOW(ownership): pooled transient packet, lives for one hit; POOL_RESET clears it on release
+	packet.weapon = weapon // ALLOW(ownership): pooled transient packet, lives for one hit; POOL_RESET clears it on release
 	packet.zone = zone
 	packet.flags = flags
 	packet.penetration = penetration
@@ -334,7 +334,7 @@ POOL_RESET(/datum/damage_packet, armor_flag)
 		packet.release()
 		return
 	var/obj/item/I = AM
-	packet.weapon = I
+	packet.weapon = I // ALLOW(ownership): pooled transient packet, lives for one hit; POOL_RESET clears it on release
 	packet.penetration = I.armor_penetration
 	if(I.edge)
 		packet.flags |= DAMAGE_PACKET_EDGE

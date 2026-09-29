@@ -149,6 +149,6 @@
 /datum/using_machine_shim/proc/host_mob() as /mob
 	return owner
 
-/// LC-refs: the machine being used -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The machine being used (a relation view).
 /datum/using_machine_shim/proc/linked_machine() as /obj/machinery
 	return linked_machine

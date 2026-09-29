@@ -90,14 +90,14 @@
 
 #undef COGBAR_ANIMATION_TIME
 
-/// LC-refs: the busy mob -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The busy mob (a relation view).
 /datum/cogbar/proc/user() as /mob
 	return user
 
-/// LC-refs: the busy mob's client -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The busy mob's client (a relation view).
 /datum/cogbar/proc/user_client() as /client
 	return user_client
 
-/// LC-refs: the cog vis overlay (GLOB.vis_overlays_service owns it) -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The cog vis overlay (GLOB.vis_overlays_service owns it) (a relation view).
 /datum/cogbar/proc/cog() as /obj/effect/overlay/vis
 	return cog

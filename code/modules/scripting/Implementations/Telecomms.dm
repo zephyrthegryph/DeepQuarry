@@ -329,10 +329,10 @@
 		S.relay_information(newsign, /obj/machinery/telecomms/broadcaster) // send this simple message to broadcasters
 
 
-/// LC-refs: the Compiler this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The Compiler (a relation view).
 /datum/n_Interpreter/TCS_Interpreter/proc/Compiler() as /datum/TCS_Compiler
 	return Compiler
 
-/// LC-refs: the server that is running the code -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The server that is running the code (a relation view).
 /datum/TCS_Compiler/proc/Holder() as /obj/machinery/telecomms/server
 	return Holder

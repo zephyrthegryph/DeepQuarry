@@ -9,7 +9,8 @@
 	if(CONFIG_GET(flag/objectives_disabled))
 		return 0
 	if(create_global_objectives() || length(global_objectives))
-		if(length(global_objectives)) player.objectives |= global_objectives
+		for(var/datum/objective/O as anything in global_objectives)
+			rel_add(player, "shared_objectives", O)
 	return 1
 
 /datum/antagonist/proc/get_special_objective_text()

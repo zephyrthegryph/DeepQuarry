@@ -134,10 +134,10 @@
 	if(carrier.Adjacent(user))
 		carrier.visible_message("[user] disconnects \the hose from \the [carrier].")
 		my_hose.disconnect(user)
-		QDEL_NULL(my_hose)
+		qdel(my_hose) // the hose is shared by both ends; its death clears both views
 
 /datum/hose_connector/proc/connect(datum/hose/H = null)
-	my_hose = H
+	rel_set(src, "my_hose", H)
 	if(my_hose)
 		om_task_periodic(src, PERIODIC_SLOW)
 

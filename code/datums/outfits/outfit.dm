@@ -61,7 +61,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 
 	if(is_hidden_category())
 		return
-	GLOB.outfits_decls_by_type[type] = src
+	GLOB.outfits_decls_by_type[type] = src // ALLOW(registry): a type -> instance index of registered decl singletons (/datum/decl is a registry type: shared, immortal)
 	dd_insertObjectList(GLOB.outfits_decls, src)
 
 /datum/decl/hierarchy/outfit/proc/pre_equip(mob/living/carbon/human/H)

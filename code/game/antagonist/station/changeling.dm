@@ -29,10 +29,7 @@
 		var/mob/living/ling_mob = comp.owner
 		ling_mob.remove_changeling_powers()
 		remove_verb(ling_mob, /mob/proc/EvolutionMenu)
-		own_take(ling_mob, "changeling_state")
-		if(ling_mob.mind)
-			rel_clear(ling_mob.mind.antag_holder, "changeling")
-		qdel(comp)
+		own_clear(ling_mob, "changeling_state", OWN_DELETE) // the mind's antag_holder view clears with it
 
 /datum/antagonist/changeling/create_objectives(datum/mind/changeling)
 	if(!..())

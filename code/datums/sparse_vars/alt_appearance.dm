@@ -1,28 +1,24 @@
 // Per-atom alternate-appearance storage: lazy tmp lists on /atom. An unset var
 // costs an instance nothing (BYOND stores only vars that differ from the type
-// default). Global helpers are the one read/write API.
+// default). Global helpers are the read API; writes go through the ownership accessors.
 //
 // An atom holding either list refuses serialization (see /atom/state_refusal()
 // in code/datums/state/base_codecs.dm): the entries are live HUD references.
 
 /atom
-	/// Alternate appearances this atom owns, keyed by appearance key. Null when none.
+	/// Alternate appearances this atom owns, keyed by appearance key (owned values). Null when none.
 	var/tmp/list/alt_appearances_owned
-	/// Alternate appearances this atom (a mob) is currently viewing. Null when none.
-	var/tmp/list/alt_appearances_viewing
+	/// Alternate appearances this atom (a mob) is currently viewing: the relation list partnered with
+	/// /datum/alternate_appearance/var/viewers. Null when none.
+	var/tmp/list/datum/alternate_appearance/alt_appearances_viewing
 
-/proc/dq_get_alt_appearances(atom/a, create = FALSE)
-	if(!a.alt_appearances_owned && create)
-		a.alt_appearances_owned = list()
+/proc/dq_get_alt_appearances(atom/a)
 	return a.alt_appearances_owned
 
-/proc/dq_clear_alt_appearances_component(atom/a)
-	a.alt_appearances_owned = null
-
-/proc/dq_get_viewing_alt_appearances(atom/a, create = FALSE)
-	if(!a.alt_appearances_viewing && create)
-		a.alt_appearances_viewing = list()
+/proc/dq_get_viewing_alt_appearances(atom/a)
 	return a.alt_appearances_viewing
 
-/proc/dq_clear_viewing_alt_appearances_component(atom/a)
-	a.alt_appearances_viewing = null
+// Viewing is two-sided: showing an appearance to a mob lists each in the other, and either end
+// dying drops it from the other's list (the client image comes off in hide()).
+REL_PAIR_LIST(/atom, alt_appearances_viewing, viewers)
+REL_PAIR_LIST(/datum/alternate_appearance, viewers, alt_appearances_viewing)

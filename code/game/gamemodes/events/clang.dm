@@ -134,6 +134,6 @@
 	walk(src, 0)
 	walk_towards(src, despawn_loc(), 1)
 
-/// LC-refs: despawn loc -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Despawn loc (a relation view).
 /obj/effect/immovablerod/proc/despawn_loc() as /turf
 	return despawn_loc

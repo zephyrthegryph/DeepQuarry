@@ -135,6 +135,6 @@ REGISTRY_MEMBERSHIP(/datum/exonet_protocol, REGISTRY_EXONET_CONNECTIONS)
 /atom/proc/receive_exonet_message(atom/origin_atom, origin_address, message, text)
 	return
 
-/// LC-refs: the atom this protocol speaks for -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom this protocol speaks for (a relation view).
 /datum/exonet_protocol/proc/holder() as /atom/movable
 	return holder

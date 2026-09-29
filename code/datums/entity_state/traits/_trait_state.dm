@@ -18,9 +18,8 @@
 	/// returns the existing one. Defaults to the state's own exact type.
 	var/unique_type
 
+/// The mob holding this state: a one-sided relation view (the mob owns us in trait_states).
 /datum/trait_state/var/mob/living/owner
-REL_PAIR(/datum/trait_state, owner, trait_states)
-REL_PAIR_LIST(/mob/living, trait_states, owner)
 
 /datum/trait_state/New(mob/living/owner)
 	..()
@@ -52,7 +51,7 @@ REL_PAIR_LIST(/mob/living, trait_states, owner)
 /datum/trait_state/lifecycle_prerelease()
 	..()
 	if(owner)
-		detach() // phase 4 then drops us from owner.trait_states (DECLARE_REF(..., BACKLIST))
+		detach() // phase 2 then drops us from owner.trait_states (our owner's OWN list)
 
 // --- Mob API ------------------------------------------------------------------------------------
 
@@ -82,7 +81,6 @@ REL_PAIR_LIST(/mob/living, trait_states, owner)
 	var/list/setup_args = args.Copy(2)
 	if(!S.setup(arglist(setup_args)))
 		log_game("TRAIT_STATE: [state_type] refused [key_name(src)] ([type]); not attached.")
-		rel_clear(S, "owner")
 		qdel(S)
 		return null
 	own_add(src, "trait_states", S)
@@ -94,5 +92,5 @@ REL_PAIR_LIST(/mob/living, trait_states, owner)
 	var/datum/trait_state/S = get_trait_state(state_type)
 	if(!S)
 		return FALSE
-	qdel(S)
+	own_remove(src, "trait_states", S)
 	return TRUE

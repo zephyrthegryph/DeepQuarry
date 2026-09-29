@@ -76,7 +76,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 		return
 	generate_image(text, target, owner, extra_classes, lifespan)
 
-/// Phase 1: a message leaves its client's images and seen list (keyed by the loc's handle), and
+/// Phase 1: a message leaves its client's images and seen list (keyed by the loc), and
 /// GLOB.runechat_service's queue, while its image and callback (owned, dropped in phase 4) still exist.
 /datum/chatmessage/lifecycle_unbind()
 	var/client/owner = owned_by()
@@ -285,8 +285,9 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 		message.plane = PLANE_PLAYER_HUD_ABOVE
 
 	// View the message
-	LAZYADDASSOCLIST(owned_by().seen_messages, message_loc, src)
-	owned_by().images |= message
+	var/client/viewer = owned_by
+	LAZYADDASSOCLIST(viewer.seen_messages, message_loc, src)
+	viewer.images |= message
 
 	// Fade in
 	animate(message, alpha = 255, time = CHAT_MESSAGE_SPAWN_TIME)
@@ -489,10 +490,10 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 #undef CHAT_RUNE_EMOTE
 #undef CHAT_RUNE_RADIO
 
-/// LC-refs: the atom the message floats over -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom the message floats over (a relation view: null once it is deleted).
 /datum/chatmessage/proc/message_loc() as /atom
 	return message_loc
 
-/// LC-refs: the client who heard the message -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client who heard the message (a relation view).
 /datum/chatmessage/proc/owned_by() as /client
 	return owned_by

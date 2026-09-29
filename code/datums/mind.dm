@@ -23,7 +23,7 @@
 	var/key
 	var/name				//replaces mob/var/original_name
 	var/mob/living/current
-	var/original_character //replaces /mob/living/original
+	var/mob/living/original_character //replaces /mob/living/original (a relation view)
 	var/active = 0
 
 	var/memory
@@ -36,7 +36,10 @@
 	var/role_alt_title
 
 
+	/// Objectives this mind owns (created for it; deleted with it).
 	var/list/datum/objective/objectives = list() // ALLOW(instance_list): d: mind objectives; many call sites index it
+	/// An antagonist's global objectives this mind shares (owned by the antagonist; a relation view).
+	var/list/datum/objective/shared_objectives
 	var/list/special_verbs // verb paths
 
 	var/has_been_rev = 0//Tracks if this mind has been a rev or not
@@ -186,7 +189,7 @@
 		if (href_list["obj_edit"])
 			objective = locate(href_list["obj_edit"])
 			if (!objective) return
-			objective_pos = objectives.Find(objective)
+			objective_pos = objectives?.Find(objective)
 
 			//Text strings are easy to manipulate. Revised for simplicity.
 			var/temp_obj_type = "[objective.type]"//Convert path into a text string.
@@ -200,7 +203,7 @@
 	else if (href_list["obj_delete"])
 		var/datum/objective/objective = locate(href_list["obj_delete"])
 		if(!istype(objective))	return
-		own_take_member(src, "objectives", objective)
+		own_remove(src, "objectives", objective)
 
 	else if(href_list["obj_completed"])
 		var/datum/objective/objective = locate(href_list["obj_completed"])
@@ -269,7 +272,7 @@
 	else if (href_list["obj_announce"])
 		var/obj_count = 1
 		to_chat(current, span_blue("Your current objectives:"))
-		for(var/datum/objective/objective in objectives)
+		for(var/datum/objective/objective in all_objectives())
 			to_chat(current, span_bold("Objective #[obj_count]") + ": [objective.explanation_text]")
 			obj_count++
 	edit_memory(usr)
@@ -374,7 +377,6 @@
 
 /datum/mind/proc/objective_edit_apply(mob/user, datum/om/flow/mind_objective_edit/edit)
 	var/datum/objective/objective = edit.objective
-	var/objective_pos = edit.pos
 	var/new_obj_type = edit.obj_type
 	var/datum/objective/new_objective = null
 
@@ -458,11 +460,10 @@
 
 	if (!new_objective) return
 
+	// An edit replaces the old objective (deleted) with the new one at the end of the list.
 	if (objective)
-		own_take_member(src, "objectives", objective)
-		objectives.Insert(objective_pos, new_objective)
-	else
-		own_add(src, "objectives", new_objective)
+		own_remove(src, "objectives", objective)
+	own_add(src, "objectives", new_objective)
 
 /datum/mind/proc/telecrystals_set(datum/om/prompt/number/ask)
 	tcrystals = ask.number
@@ -513,7 +514,8 @@
 	role_alt_title =  null
 	//changeling =    null //TODO: Figure out where this is all used and move it from mind to mob.
 	rel_clear(src, "initial_account")
-	own_set(src, "objectives", list())
+	own_clear(src, "objectives", OWN_DELETE)
+	rel_clear(src, "shared_objectives")
 	special_verbs =   list()
 	has_been_rev =    0
 	rev_cooldown =    0
@@ -554,7 +556,7 @@
 		mind.key = key
 	else
 		rel_set(src, "mind", new /datum/mind(key))
-		mind.original_character = om_handle(src)
+		rel_set(mind, "original_character", src)
 		if(SSticker)
 			SSticker.minds += mind
 		else
@@ -650,9 +652,21 @@
 	var/directory_sexualitytag
 
 
-/// LC-refs: the character's bank account -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The character's bank account (a relation view).
 /datum/mind/proc/initial_account() as /datum/money_account
 	return initial_account
 
+/// Adopts `O` as one of this mind's objectives and points its owner view back here.
+/datum/mind/proc/add_objective(datum/objective/O)
+	rel_set(O, "owner", src)
+	return own_add(src, "objectives", O)
 
+/// Every objective this mind pursues: its own, then the antagonist-wide ones it shares.
+/datum/mind/proc/all_objectives()
+	. = list()
+	if(objectives)
+		. += objectives
+	if(shared_objectives)
+		. += shared_objectives
 
+REL_LIST(/datum/mind, shared_objectives)

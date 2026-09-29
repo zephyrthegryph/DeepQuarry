@@ -116,10 +116,10 @@
 	if(source != host())
 		scanner.NewProximity(arrived)
 
-/// LC-refs: the atom this monitor follows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom this monitor follows (a relation view).
 /datum/proximity_monitor/proc/host() as /atom
 	return host
 
-/// LC-refs: the atom told about proximity -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom told about proximity (a relation view).
 /datum/proximity_monitor/proc/hasprox_receiver() as /atom
 	return hasprox_receiver

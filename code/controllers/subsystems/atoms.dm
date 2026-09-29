@@ -30,7 +30,8 @@ SUBSYSTEM_DEF(atoms)
 	var/list/deferred_machine_binds
 
 	/// Atoms that will be deleted once the subsystem is initialized
-	var/list/queued_deletions = list()
+	/// Atoms to delete once init finishes: a relation list view (a member deleted early leaves it).
+	var/list/atom/queued_deletions
 
 	var/init_start_time
 
@@ -54,6 +55,9 @@ SUBSYSTEM_DEF(atoms)
 	// Services that set up on the initialized map declare boot_after = SSatoms (pai, xenoarch,
 	// events, night shift, antagonists, radio, crew transfer); the MC boots them next.
 	validate_property_registry()
+	// Map load and the initial materialize batch are done: validate the ownership table of every
+	// mapped and registered type now, not on first use (doc/rewrite/ownership.md sec 8).
+	own_validate_boot()
 
 	return SS_INIT_SUCCESS
 
@@ -117,13 +121,10 @@ SUBSYSTEM_DEF(atoms)
 	if(created)
 		atoms_to_return += created
 
-	for (var/queued_deletion in queued_deletions)
-		var/atom/resolved = om_resolve(queued_deletion)
-		if(resolved)
-			qdel(resolved)
-
 	testing("[length(queued_deletions)] atoms were queued for deletion.")
-	queued_deletions.Cut()
+	for (var/atom/queued as anything in queued_deletions?.Copy())
+		qdel(queued)
+	rel_clear(src, "queued_deletions")
 
 	#ifdef PROFILE_MAPLOAD_INIT_ATOM
 	rustg_file_write(json_encode(mapload_init_times), "[GLOB.log_directory]/init_times.json")
@@ -250,9 +251,11 @@ SUBSYSTEM_DEF(atoms)
 		// Atoms SS has already completed, just kill it now.
 		qdel(target)
 	else
-		queued_deletions += om_handle(target)
+		rel_add(src, "queued_deletions", target)
 
 /datum/controller/subsystem/atoms/Shutdown()
 	var/initlog = InitLog()
 	if(initlog)
 		text2file(initlog, "[GLOB.log_directory]-initialize.log")
+
+REL_LIST(/datum/controller/subsystem/atoms, queued_deletions)

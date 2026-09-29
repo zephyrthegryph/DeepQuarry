@@ -480,7 +480,7 @@ MATERIAL_MIX(/obj/item/stock_parts/motor, list(MAT_STEEL = 60, MAT_GLASS = 10))
 		/obj/item/stock_parts/micro_laser
 	)
 
-/// LC-refs: the machine this cable is jacked into -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The machine this cable is jacked into (a relation view).
 /obj/item/pai_cable/proc/machine() as /obj/machinery
 	return machine
 

@@ -402,15 +402,15 @@ GLOBAL_LIST_EMPTY(interaction_entry_click_params)
 		return TRUE
 	return FALSE
 
-/// LC-refs: the mob acting -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mob acting (a relation view).
 /datum/interaction_resolution/proc/actor() as /mob
 	return actor
 
-/// LC-refs: the atom acted on -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom acted on (a relation view).
 /datum/interaction_resolution/proc/target() as /atom
 	return target
 
-/// LC-refs: the item in hand -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The item in hand (a relation view).
 /datum/interaction_resolution/proc/held() as /obj/item
 	return held
 

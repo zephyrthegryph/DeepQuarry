@@ -115,7 +115,7 @@
 	if(isliving(loc))
 		rel_set(src, "owner", loc)
 	if(owner_ref() && !coreless)
-		own_set(src, "core", owner_ref().get_technomancer_core())
+		rel_set(src, "core", owner_ref().get_technomancer_core())
 		if(!core)
 			to_chat(owner_ref(), span_warning("You need a Core to do that."))
 			return INITIALIZE_HINT_QDEL
@@ -154,7 +154,7 @@
 	if(!owner_ref())
 		return 0
 	if(!core)
-		own_set(src, "core", locate_within(owner_ref(), /obj/item/technomancer_core))
+		rel_set(src, "core", locate_within(owner_ref(), /obj/item/technomancer_core))
 		if(!core)
 			to_chat(owner_ref(), span_danger("You need to be wearing a core on your back!"))
 			return 0
@@ -293,8 +293,8 @@ DECLARE_INTERACTIONS(/obj/item/spell, \
 	// If we miss or hit an obstacle, we still want to delete the spell.
 	expire(2 SECONDS)
 
-/// LC-refs: owner -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Owner (a relation view).
 /obj/item/spell/proc/owner_ref() as /mob/living
 	return owner
 
-OWN(/obj/item/spell, core, OWN_CONTAINED)
+// core is the technomancer core its caster wears: a one-sided relation view (implicit REL).

@@ -83,26 +83,17 @@
 /// A rule's heat node: an atom's temperature, watched through native heat
 /// watches that follow its body (code/modules/heat/heat.dm).
 /datum/dq_rx_node
-	/// OM handle of the atom.
-	var/atom_ref
+	/// The atom whose temperature this is: a one-sided back view (the atom owns us in rx_node).
+	var/atom/node_atom
 	/// The node's watches (/datum/native_watch/heat).
 	var/list/watches
 
 /datum/dq_rx_node/New(atom/A)
 	..()
-	atom_ref = om_handle(A)
-
-
-/// Phase 1 (unbind): the node leaves its atom.
-/datum/dq_rx_node/lifecycle_unbind()
-	. = ..()
-	var/atom/A = atom_of()
-	if(A?.rx_node == src)
-		A.rx_node = null
+	rel_set(src, "node_atom", A)
 
 /datum/dq_rx_node/proc/atom_of()
-	var/atom/A = om_resolve(atom_ref)
-	return (A && !QDELETED(A)) ? A : null
+	return QDELETED(node_atom) ? null : node_atom
 
 /// The atom's heat node, if a rule made one.
 /atom/var/tmp/datum/dq_rx_node/rx_node

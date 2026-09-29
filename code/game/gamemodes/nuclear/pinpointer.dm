@@ -342,23 +342,23 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/shuttle, INTERACT_USE("Toggle", PROC_R
 /obj/item/pinpointer/shuttle/heist
 	shuttle_comp_id = "Skipjack"
 
-/// LC-refs: the disk -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The disk (a relation view).
 /obj/item/pinpointer/proc/the_disk() as /obj/item/disk/nuclear
 	return the_disk
 
-/// LC-refs: location -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Location (a relation view).
 /obj/item/pinpointer/advpinpointer/proc/get_location() as /turf
 	return location
 
-/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Target (a relation view).
 /obj/item/pinpointer/advpinpointer/proc/target_ref() as /obj
 	return target
 
-/// LC-refs: home -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Home (a relation view).
 /obj/item/pinpointer/nukeop/proc/home() as /obj/machinery/computer/shuttle_control/multi/syndicate
 	return home
 
-/// LC-refs: our shuttle -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Our shuttle (a relation view).
 /obj/item/pinpointer/shuttle/proc/our_shuttle() as /obj/machinery/computer/shuttle_control
 	return our_shuttle
 

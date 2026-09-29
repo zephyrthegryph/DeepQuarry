@@ -129,6 +129,6 @@
 	EVENT_HANDLER
 	update_hooks(moved_thing, event.old_loc)
 
-/// LC-refs: the atom being tracked -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom being tracked (a relation view).
 /datum/connect_range/proc/tracked() as /atom
 	return tracked

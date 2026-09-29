@@ -39,21 +39,22 @@
 */
 
 /datum/callback
-	/// What to call: GLOBAL_PROC, or the OM handle of the datum (a turf's or client's handle
-	/// works too). Read with target_object(); a deleted target reads null and nothing is called.
+	/// What to call: GLOBAL_PROC, or the datum (a relation view, so a deleted target reads null
+	/// and nothing is called). Read with target_object().
 	var/datum/object = GLOBAL_PROC
 	var/delegate
 	var/list/arguments
-	var/user
+	/// The mob whose usr the call runs as: a relation view.
+	var/mob/user
 
 /datum/callback/New(thingtocall, proctocall, ...)
-	if (thingtocall)
-		rel_set(src, "object", thingtocall == GLOBAL_PROC ? GLOBAL_PROC : om_handle(thingtocall))
+	if (thingtocall && thingtocall != GLOBAL_PROC) // object starts as GLOBAL_PROC
+		rel_set(src, "object", thingtocall)
 	delegate = proctocall
 	if (length(args) > 2)
 		arguments = args.Copy(3)
 	if(usr)
-		user = om_handle(usr)
+		rel_set(src, "user", usr)
 
 /world/proc/ImmediateInvokeAsync(thingtocall, proctocall, ...)
 	set waitfor = FALSE // ALLOW(scheduler): INVOKE_ASYNC primitive (goes with the last INVOKE_ASYNC caller)
@@ -70,11 +71,9 @@
 
 /datum/callback/proc/Invoke(...)
 	if(!usr)
-		var/W = user
-		if(W)
-			var/mob/M = om_resolve(W)
-			if(M)
-				return world.PushUsr(M, src)
+		var/mob/M = user
+		if(M)
+			return world.PushUsr(M, src)
 
 	var/object = target_object()
 	if (!object)
@@ -95,11 +94,9 @@
 	set waitfor = FALSE // ALLOW(scheduler): InvokeAsync primitive (goes with the last async caller)
 
 	if(!usr)
-		var/W = user
-		if(W)
-			var/mob/M = om_resolve(W)
-			if(M)
-				return world.PushUsr(M, src)
+		var/mob/M = user
+		if(M)
+			return world.PushUsr(M, src)
 
 	var/object = target_object()
 	if (!object)
