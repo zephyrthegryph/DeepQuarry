@@ -166,13 +166,13 @@ DECLARE_DEFAULT_CHILD(/obj/mecha/combat/fighter, "ion_trail", /datum/effect/effe
 		forceMove(destination)
 
 //Modified phazon code
-/obj/mecha/combat/fighter/Topic(href, href_list)
-	..()
-	if (href_list["toggle_landing_gear"])
-		landing_gear_raised = !landing_gear_raised
-		send_byjax(src?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","landing_gear_command","[landing_gear_raised?"Lower":"Raise"] landing gear")
-		src.occupant_message(span_notice("Landing gear [landing_gear_raised? "raised" : "lowered"]."))
-		return
+TOPIC_ACTION(/obj/mecha/combat/fighter, "toggle_landing_gear", PROC_REF(topic_toggle_landing_gear))
+
+/obj/mecha/combat/fighter/proc/topic_toggle_landing_gear(mob/user, list/args)
+	landing_gear_raised = !landing_gear_raised
+	send_byjax(src?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","landing_gear_command","[landing_gear_raised?"Lower":"Raise"] landing gear")
+	src.occupant_message(span_notice("Landing gear [landing_gear_raised? "raised" : "lowered"]."))
+	return
 
 /obj/mecha/combat/fighter/get_commands()
 	var/output = {"<div class='wr'>

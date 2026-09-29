@@ -119,12 +119,10 @@
 	..()
 	return
 
-/obj/mecha/combat/Topic(href,href_list)
-	..()
-	var/datum/topic_input/top_filter = new (href,href_list)
-	if(top_filter.get("close"))
-		am = null
-		return
+TOPIC_ACTION(/obj/mecha/combat, "close", PROC_REF(topic_close))
+
+/obj/mecha/combat/topic_close(mob/user, list/args)
+	am = null
 
 /obj/mecha/combat/proc/reset_melee()
 	melee_can_hit = 1

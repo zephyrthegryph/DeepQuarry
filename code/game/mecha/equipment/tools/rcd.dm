@@ -19,10 +19,11 @@ DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/tool/rcd, "my_rcd", OWNED, nul
 
 	my_rcd.use_rcd(target, chassis?.slot_item(MECHA_SLOT_PILOT))
 
-/obj/item/mecha_parts/mecha_equipment/tool/rcd/Topic(href,href_list)
-	..()
-	if(href_list["mode"])
-		my_rcd.mode_index = text2num(href_list["mode"])
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/rcd, "mode", PROC_REF(topic_mode), TOPIC_NUM("mode"))
+
+/obj/item/mecha_parts/mecha_equipment/tool/rcd/proc/topic_mode(mob/user, list/args)
+	if(isnum(args["mode"]))
+		my_rcd.mode_index = args["mode"]
 		occupant_message("RCD reconfigured to '[LAZYACCESS(my_rcd.modes, my_rcd.mode_index)]'.")
 /*
 /obj/item/mecha_parts/mecha_equipment/tool/rcd/get_equip_info()
