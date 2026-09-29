@@ -749,7 +749,9 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 			rustg_file_write(json_encode(generate()), cached)
 		SSassets.transport.register_asset("[name].json", fcopy_rsc(cached))
 		return
-	var/filename = "data/[name].json"
+	// Scratch file under SPRITESHEET_DIR, not data/: worlds sharing a worktree (a
+	// sharded dm-test run) each write, load and delete their own copy.
+	var/filename = "[SPRITESHEET_DIR][name].json"
 	fdel(filename)
 	rustg_file_write(json_encode(generate()), filename)
 	SSassets.transport.register_asset("[name].json", fcopy_rsc(filename))
