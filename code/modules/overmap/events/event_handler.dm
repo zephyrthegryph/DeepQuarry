@@ -2,7 +2,6 @@ GLOBAL_DATUM_INIT(overmap_event_handler, /datum/decl/overmap_event_handler, new)
 
 /datum/decl/overmap_event_handler
 	var/list/hazard_by_turf
-	var/list/ship_events = list() // ALLOW(instance_list): d: singleton; nested per-ship lists edited in place
 
 // Populates overmap with random events!  Should be called once at startup at some point.
 /datum/decl/overmap_event_handler/proc/create_events(z_level, overmap_size, number_of_events)
@@ -64,11 +63,8 @@ GLOBAL_DATUM_INIT(overmap_event_handler, /datum/decl/overmap_event_handler, new)
 			return T
 
 /datum/decl/overmap_event_handler/proc/start_hazard(obj/effect/overmap/visitable/ship/ship, obj/effect/overmap/event/hazard)//make these accept both hazards or events
-	var/ship_key = om_handle(ship)
-	if(!ship_key)
+	if(QDELETED(ship))
 		return
-	if(!(ship_key in ship_events))
-		ship_events += ship_key
 
 	for(var/event_type in hazard.events)
 		if(is_event_active(ship, event_type, hazard.difficulty))//event's already active, don't bother
@@ -79,20 +75,16 @@ GLOBAL_DATUM_INIT(overmap_event_handler, /datum/decl/overmap_event_handler, new)
 		E.endWhen = INFINITY
 		// TODO - Leshana - Note: event.setup() is called before these are set!
 		E.affecting_z = ship.map_z.Copy()
-		E.victim_handle = om_handle(ship)
-		LAZYADD(ship_events[ship_key], E)
+		rel_set(E, "victim", ship)
 
 /datum/decl/overmap_event_handler/proc/stop_hazard(obj/effect/overmap/visitable/ship/ship, obj/effect/overmap/event/hazard)
 	for(var/event_type in hazard.events)
 		var/datum/event/E = is_event_active(ship, event_type, hazard.difficulty)
 		if(E)
 			E.kill()
-			LAZYREMOVE(ship_events[om_handle_of(ship)], E)
 
 /datum/decl/overmap_event_handler/proc/is_event_active(ship, event_type, severity)
-	var/ship_key = om_handle_of(ship)
-	if(!ship_key || !ship_events[ship_key])	return
-	for(var/datum/event/E in ship_events[ship_key])
+	for(var/datum/event/E as anything in ship_events_of(ship))
 		if(E.type == event_type && E.severity == severity)
 			return E
 
@@ -133,12 +125,10 @@ GLOBAL_DATUM_INIT(overmap_event_handler, /datum/decl/overmap_event_handler, new)
 		LAZYSET(hazard_by_turf, T, active_hazards)
 
 	for(var/obj/effect/overmap/visitable/ship/ship in turf_contents_of_type(T, /obj/effect/overmap/visitable/ship))
-		var/ship_key = om_handle_of(ship)
-		for(var/datum/event/E in ship_events[ship_key])
+		for(var/datum/event/E as anything in ship_events_of(ship))
 			if(is_event_in_turf(E, T))
 				continue
 			E.kill()
-			LAZYREMOVE(ship_events[ship_key], E)
 
 		for(var/obj/effect/overmap/event/E in active_hazards)
 			start_hazard(ship, E)
@@ -161,4 +151,12 @@ GLOBAL_DATUM_INIT(overmap_event_handler, /datum/decl/overmap_event_handler, new)
 					if(A.difficulty == E.difficulty)
 						return TRUE
 
-// ship_events is keyed by the ship's om_handle(): ships are live entities the handler doesn't own.
+/// The running hazard events acting on `ship`: each names its ship through the event's victim
+/// relation view, so a destroyed ship has none and nothing here keys by the ship.
+/datum/decl/overmap_event_handler/proc/ship_events_of(obj/effect/overmap/visitable/ship/ship)
+	. = list()
+	if(!ship)
+		return
+	for(var/datum/event/E as anything in REGISTRY_MEMBERS(REGISTRY_ACTIVE_EVENTS))
+		if(E.victim == ship && E.isRunning)
+			. += E

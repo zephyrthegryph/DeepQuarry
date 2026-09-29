@@ -15,7 +15,8 @@
 	var/max_blob_points = 200
 	var/last_attack = 0
 	var/datum/blob_type/blob_type = null
-	var/list/blob_mobs = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	/// Relation list (REL_LIST): spores and other blob mobs this overmind spawned.
+	var/list/blob_mobs
 	var/list/resource_blobs = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/placed = 0
 	var/base_point_rate = 2 //for blob core placement
@@ -167,6 +168,9 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 /mob/observer/blob/proc/blob_core() as /obj/structure/blob/core
 	return blob_core
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// The shared (registered) language this overmind speaks.
 /mob/observer/blob/proc/default_language() as /datum/language
 	return default_language_static
+
+// blob_type is owned (implicit OWN, own_set in Initialize); blob_mobs names spawned mobs.
+REL_LIST(/mob/observer/blob, blob_mobs)

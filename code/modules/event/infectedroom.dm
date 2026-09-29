@@ -1,6 +1,5 @@
 /datum/event/disease_outbreak/floor
 	var/tmp/area/target_area
-	var/area/target_turfs = list()
 	var/infected_tiles
 
 	var/static/list/excluded = list(
@@ -26,9 +25,12 @@
 	GLOB.command_announcement.Announce("Confirmed outbreak of level 7 biohazard aboard \the [location_name()]. All personnel must contain the outbreak.", "Infectious Contaminant in [target_area().name]", new_sound = 'sound/AI/outbreak7.ogg')
 
 /datum/event/disease_outbreak/floor/start()
-	GLOB.current_pending_diseases += chosen_disease
+	// chosen_disease is the event's owned prototype: every victim (and the pending list) gets a
+	// private Copy(), never an alias of it.
+	GLOB.current_pending_diseases += chosen_disease.Copy()
 	var/list/area/affected_area = get_station_areas(excluded)
 	var/decal
+	var/list/turf/simulated/floor/target_turfs = list()
 
 	for(var/i in 1 to 10)
 		var/area/A = pick(affected_area)
@@ -68,15 +70,15 @@
 			C = new(pick_n_take(target_turfs))
 			C.basecolor = get_random_colour(rand(0, 1))
 			C.update_icon()
-			LAZYOR(C.viruses, chosen_disease)
+			own_add(C, "viruses", chosen_disease.Copy())
 		else if(decal == 2)
 			var/obj/effect/decal/cleanable/vomit/V
 			V = new(pick_n_take(target_turfs))
-			LAZYOR(V.viruses, chosen_disease)
+			own_add(V, "viruses", chosen_disease.Copy())
 		else
 			var/mob/living/simple_mob/vore/aggressive/macrophage/M
 			M = new(pick_n_take(target_turfs))
-			M.infections |= chosen_disease
+			own_add(M, "infections", chosen_disease.Copy())
 
 /// LC-refs: the target_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event/disease_outbreak/floor/proc/target_area() as /area

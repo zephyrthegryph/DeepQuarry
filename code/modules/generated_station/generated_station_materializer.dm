@@ -358,8 +358,7 @@
 /datum/generated_station_materializer/proc/abort_materialization(stage, details)
 	last_failure_details = details || last_failure_details || stage
 	log_world("Generated station [spec()?.id] materialization failed during [stage].")
-	qdel(result)
-	own_take(src, "result")
+	own_clear(src, "result", OWN_DELETE)
 	own_clear(src, "tile_plan", OWN_DELETE)
 	own_take(src, "active_job")
 	return GENERATED_STATION_PHASE_FAILED

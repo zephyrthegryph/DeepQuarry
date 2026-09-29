@@ -86,7 +86,7 @@
 		chassis.equipment -= src
 		listclearnulls(chassis.equipment)
 		if(chassis.selected == src)
-			own_take(chassis, "selected")
+			rel_clear(chassis, "selected")
 		src.update_chassis_page()
 		chassis.occupant_message(span_red("The [src] is destroyed!"))
 		chassis.log_append_to_last("[src] is destroyed.",1)
@@ -208,7 +208,7 @@
 
 	M.mecha_log_message("[src] initialized.")
 	if(!M.selected)
-		own_set(M, "selected", src)
+		rel_set(M, "selected", src)
 	src.update_chassis_page()
 	return
 
@@ -242,7 +242,7 @@
 				LAZYREMOVE(chassis.micro_weapon_equipment, src)
 			// ition end: MICROMECHS
 	if(chassis.selected == src)
-		own_take(chassis, "selected")
+		rel_clear(chassis, "selected")
 	update_chassis_page()
 	chassis.mecha_log_message("[src] removed from equipment.")
 	rel_clear(src, "chassis")

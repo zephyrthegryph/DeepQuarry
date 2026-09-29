@@ -25,7 +25,7 @@
 		if(istype(S))
 			rel_set(S, "overmind", O)
 			S.faction = faction
-			O.blob_mobs.Add(S)
+			rel_add(O, "blob_mobs", S)
 		else
 			S.faction = faction
 		S.update_icons()
@@ -37,7 +37,8 @@
 		if(istype(S))
 			rel_set(S, "overmind", B.overmind)
 			S.faction = faction
-			B.overmind.blob_mobs.Add(S)
+			if(B.overmind)
+				rel_add(B.overmind, "blob_mobs", S)
 		else
 			S.faction = faction
 		S.update_icons()
@@ -46,7 +47,7 @@
 	for(var/I = 1 to rand(3,4))
 		var/mob/living/simple_mob/blob/spore/S = new spore_type(get_turf(B))
 		S.faction = user.faction
-		S.blob_type = src
+		rel_set(S, "blob_type", src)
 		S.update_icons()
 		S.ai_brain.forget_everything()
 		S.apply_body_effect(/datum/body_effect/doomed, 2 MINUTES)

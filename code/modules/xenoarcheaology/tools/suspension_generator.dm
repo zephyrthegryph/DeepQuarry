@@ -231,8 +231,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 			anom.move_chance = initial(anom.move_chance)
 
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] deactivates with a gentle shudder."))
-	qdel(suspension_field)
-	own_take(src, "suspension_field")
+	own_clear(src, "suspension_field", OWN_DELETE)
 	icon_state = "suspension_wrenched"
 	playsound(loc, 'sound/machines/quiet_beep.ogg', 40)
 	update_icon()

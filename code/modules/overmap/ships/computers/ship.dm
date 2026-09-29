@@ -132,7 +132,7 @@ somewhere on that shuttle. Subtypes of these can be then used to perform ship ov
 	user.set_viewsize() // reset to default
 
 /obj/machinery/computer/ship/proc/viewing_overmap(mob/user)
-	return (om_handle(user) in viewers)
+	return (om_handle(user) in viewers) // ALLOW(ownership): viewers is filled by /datum/remote_view/viewer_managed (remote_view.dm, out of scope) with handles
 
 /obj/machinery/computer/ship/tgui_close(mob/user)
 	. = ..()

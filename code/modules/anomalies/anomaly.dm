@@ -105,7 +105,7 @@ DECLARE_INTERACTIONS(/obj/item/anomaly_scanner, INTERACT_USE(null, PROC_REF(inte
 
 /obj/item/anomaly_scanner/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	var/obj/effect/anomaly/anom = om_resolve(buffered_anomaly)
+	var/obj/effect/anomaly/anom = om_resolve(buffered_anomaly) // ALLOW(ownership): _anomalies.dm (out of scope) writes buffered_anomaly as a handle
 
 	if(!istype(anom))
 		return data

@@ -14,7 +14,7 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/detach()
 	if(chassis?.active_jetpack == src)
-		own_take(chassis, "active_jetpack")
+		rel_clear(chassis, "active_jetpack")
 	..()
 	return
 
@@ -33,7 +33,7 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/proc/turn_on()
 	set_ready_state(FALSE)
-	own_set(chassis, "active_jetpack", src)
+	rel_set(chassis, "active_jetpack", src)
 	ion_trail.start()
 	occupant_message("Activated")
 	src.mecha_log_message("Activated")
@@ -41,7 +41,7 @@
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/proc/turn_off()
 	set_ready_state(TRUE)
 	if(chassis.active_jetpack == src)
-		own_take(chassis, "active_jetpack")
+		rel_clear(chassis, "active_jetpack")
 	ion_trail.stop()
 	occupant_message("Deactivated")
 	src.mecha_log_message("Deactivated")
