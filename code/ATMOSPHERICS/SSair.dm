@@ -25,6 +25,11 @@ SUBSYSTEM_DEF(air)
 	var/cost_highpressure = 0
 	var/cost_superconductivity = 0
 	var/cost_pipenets = 0
+	/// Pipenet-stage breakdown (ms, MC average): topology commit and the Rust device-edge step.
+	var/cost_pipe_commit = 0
+	var/cost_pipe_devices = 0
+	/// Device-edge results the last fire's step returned (devices that moved gas or drew power).
+	var/pipe_devices_reported_last = 0
 	var/cost_rebuilds = 0
 	/// Main-thread cost of the gas tick and its events, in milliseconds.
 	var/cost_gas_events = 0
@@ -297,8 +302,12 @@ SUBSYSTEM_DEF(air)
 
 /datum/controller/subsystem/air/proc/process_pipenets(resumed = FALSE)
 	if (!resumed)
+		var/stage_timer = TICK_USAGE_REAL
 		rust_commit_pending_pipenets()
+		cost_pipe_commit = MC_AVERAGE(cost_pipe_commit, TICK_DELTA_TO_MS(TICK_USAGE_REAL - stage_timer))
+		stage_timer = TICK_USAGE_REAL
 		rust_step_pipe_devices()
+		cost_pipe_devices = MC_AVERAGE(cost_pipe_devices, TICK_DELTA_TO_MS(TICK_USAGE_REAL - stage_timer))
 		src.currentrun = networks.Copy()
 	//cache for sanic speed (lists are references anyways)
 	var/list/currentrun = src.currentrun

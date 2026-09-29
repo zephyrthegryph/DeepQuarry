@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Fixed atmospherics costing ~130 ms every tick on Southern Cross (pipe device step was quadratic), which starved the server and the status panel."
+  - bugfix: "Bots no longer stall the scheduler when their AI waits on pathfinding."

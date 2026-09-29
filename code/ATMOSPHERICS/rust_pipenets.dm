@@ -432,6 +432,7 @@
 		return
 	var/dt = wait / 10
 	var/list/result = vg_pipe_step_devices(dt)
+	pipe_devices_reported_last = length(result) / 4
 	var/cursor = 1
 	while(cursor <= length(result))
 		var/id = result[cursor++]

@@ -26,6 +26,8 @@
 	var/list/patrol_path = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/list/target_path = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/turf/obstacle = null
+	/// TRUE while a detached handleAI() tick is still running (see start_ai()).
+	var/ai_running = FALSE
 
 	var/wait_if_pulled = 0 // Only applies to moving to the target
 	var/will_patrol = 0 // If set to 1, will patrol, duh
@@ -74,8 +76,8 @@
 	self.status_set(EFFECT_STUNNED, 0)
 	self.status_set(EFFECT_PARALYZED, 0)
 
-	if(self.on && !self.client && !om_busy(self) && !self.paicard)
-		om_after(self, 0, TYPE_PROC_REF(/mob/living/bot, handleAI)) // deferred off the Life stage (was spawn)
+	if(self.on && !self.client && !om_busy(self) && !self.paicard && !self.ai_running)
+		om_after(self, 0, TYPE_PROC_REF(/mob/living/bot, start_ai)) // deferred off the Life stage (was spawn)
 
 /datum/om/stage/life/type_post/bot
 	of = /mob/living/bot
@@ -191,9 +193,30 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 		return
 	om_after(src, delay, PROC_REF(bot_step), count, delay, step_proc)
 
+/// OM callback: a step can path (calcTargetPath/startPatrol sleep on the pathfinder), so it runs detached.
 /mob/living/bot/proc/bot_step(count, delay, step_proc)
+	INVOKE_ASYNC(src, PROC_REF(run_bot_step), count, delay, step_proc)
+
+/mob/living/bot/proc/run_bot_step(count, delay, step_proc)
 	call(src, step_proc)()
 	bot_steps(count - 1, delay, step_proc)
+
+/// OM callback for one AI tick. handleAI() can legitimately sleep (pathfinding waits on the
+/// pathfinder mutex and CHECK_TICKs through its search), and scheduler callbacks must not
+/// sleep, so the tick runs detached. `ai_running` keeps a slow tick from overlapping the next.
+/mob/living/bot/proc/start_ai()
+	if(ai_running)
+		return
+	ai_running = TRUE
+	INVOKE_ASYNC(src, PROC_REF(run_ai))
+
+/mob/living/bot/proc/run_ai()
+	try
+		handleAI()
+	catch(var/exception/e)
+		ai_running = FALSE
+		throw e
+	ai_running = FALSE
 
 /mob/living/bot/proc/handleAI()
 	if(ignore_list.len)
