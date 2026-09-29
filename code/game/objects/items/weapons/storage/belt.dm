@@ -20,10 +20,6 @@
 TYPE_TABLE(/obj/item/storage/belt, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/belt/proc/toggle_layer_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
-	if(show_above_suit == -1)
-		to_chat(user, span_notice("\The [src] cannot be worn above your suit!"))
-		return
 	show_above_suit = !show_above_suit
 	update_icon()
 
@@ -818,5 +814,5 @@ TYPE_TABLE(/obj/item/storage/belt/hydro, hold_spec, list(HOLD_ONLY(list( \
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/storage/belt, \
-	INTERACT_VERB("Switch Belt Layer", PROC_REF(toggle_layer_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Switch Belt Layer", PROC_REF(toggle_layer_effect), REQ_IN_INVENTORY, REQ_BECAUSE(REQ_NOT(REQ_FIELD_EQ("show_above_suit", -1)), "it cannot be worn above your suit")), \
 )

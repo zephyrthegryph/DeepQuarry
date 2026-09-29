@@ -66,11 +66,13 @@
 		if(O.trace_chemicals[V] > 0 && !LAZYFIND(chemtraces, V))
 			LAZYADD(chemtraces, V)
 
-/obj/item/autopsy_scanner/proc/print_data_effect(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.stat || !(ishuman(user)))
-		to_chat(user, "No.")
-		return
+/// Requirement: only a conscious human can print the data.
+/obj/item/autopsy_scanner/proc/can_print_data(mob/user, atom/target, obj/item/held)
+	if(user.stat || !ishuman(user))
+		return "no"
+	return TRUE
 
+/obj/item/autopsy_scanner/proc/print_data_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	var/scan_data = ""
 
 	if(timeofdeath)
@@ -187,5 +189,5 @@ DECLARE_REF(/obj/item/autopsy_scanner, "chemtraces", OWNED_LIST, null)
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/autopsy_scanner, \
-	INTERACT_VERB("Print Data", PROC_REF(print_data_effect)), \
+	INTERACT_VERB("Print Data", PROC_REF(print_data_effect), REQ_TARGET_STATE(/obj/item/autopsy_scanner/proc/can_print_data)), \
 )

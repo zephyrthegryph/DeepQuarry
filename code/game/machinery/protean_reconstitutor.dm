@@ -104,7 +104,7 @@
 
 EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 	INTERACT_ITEM(null, PROC_REF(reconstitutor_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(reconstitutor_interaction_hand)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(reconstitutor_interaction_hand), REQ_BECAUSE(REQ_FIELD_NOT("processing_revive"), "reconstitution cycle currently in progress, please wait")), \
 )
 
 /// Old attackby; a slotted part still went on to ..(), so it falls through.
@@ -208,11 +208,6 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 		to_chat(user,span_warning("Essential components missing, or insufficient materials available!"))
 		playsound(src, buzzsound, 100, 1, -1)
 		update_icon()
-		return TRUE
-	if(processing_revive)
-		//we're currently processing a patient, chill out!
-		src.visible_message(span_notice("\The [src] chirps, \"Reconstitution cycle currently in progress, please wait!\""))
-		playsound(src, buzzsound, 100, 1, -1)
 		return TRUE
 	if(!protean_brain.get_occupant()?.client)
 		src.visible_message(span_warning("\The [src] chirps, \"Warning, no positronic neural network activity detected! Recommend removing inactive core.\""))

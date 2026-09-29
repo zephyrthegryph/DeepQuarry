@@ -41,15 +41,18 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_GHOST_PODS)
 /mob/living/simple_mob/animal/giant_spider/carrier //or the ones who fart babies when they die
 	ic_revivable = FALSE
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_REF(simple_mob_observer_join)))
+EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_REF(simple_mob_observer_join), REQ_TARGET_STATE(/mob/living/simple_mob/proc/can_ghost_join)))
+
+/// Requirement: TRUE, or why this ghost can't inhabit us.
+/mob/living/simple_mob/proc/can_ghost_join(mob/observer/dead/user, atom/target, obj/item/held)
+	if(ghostjoin && jobban_isbanned(user, JOB_GHOSTROLES))
+		return "you cannot inhabit this creature because you are banned from playing ghost roles"
+	return TRUE
 
 /// A ghost has clicked us (old attack_ghost). FALSE falls to the ghost's default (examine).
 /mob/living/simple_mob/proc/simple_mob_observer_join(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	if(!ghostjoin)
 		return FALSE
-	if(jobban_isbanned(user, JOB_GHOSTROLES))
-		to_chat(user, span_warning("You cannot inhabit this creature because you are banned from playing ghost roles."))
-		return TRUE
 	if(!evaluate_ghost_join(user))
 		return FALSE
 

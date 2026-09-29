@@ -31,13 +31,15 @@ effective or pretty fucking useless.
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-DECLARE_INTERACTIONS(/obj/item/batterer, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/batterer, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/batterer/proc/can_batter)))
+
+/// Requirement: it has a limited number of uses.
+/obj/item/batterer/proc/can_batter(mob/user, atom/target, obj/item/held)
+	if(times_used >= max_uses)
+		return "the mind batterer has been burnt out"
+	return TRUE
 
 /obj/item/batterer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(times_used >= max_uses)
-		to_chat(user, span_warning("The mind batterer has been burnt out!"))
-		return
-
 	var/list/affected = list()
 	for(var/mob/living/carbon/human/M in orange(10, user))
 		affected += M

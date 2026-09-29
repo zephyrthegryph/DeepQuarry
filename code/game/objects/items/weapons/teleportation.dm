@@ -135,14 +135,17 @@ DECLARE_INTERACTIONS(/obj/item/locator, INTERACT_USE(null, PROC_REF(interaction_
 	MATERIAL_BULK(MAT_STEEL, 10000)
 	preserve_item = 1
 
-DECLARE_INTERACTIONS(/obj/item/hand_tele, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/hand_tele, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/hand_tele/proc/can_open_portal)))
+
+/// Requirement: it won't work off-station or on a teleport-blocked turf.
+/obj/item/hand_tele/proc/can_open_portal(mob/user, atom/target, obj/item/held)
+	var/turf/current_location = get_turf(user)//What turf is the user on?
+	if(!current_location || (current_location.z in using_map.admin_levels) || current_location.block_tele)
+		return "it's malfunctioning"
+	return TRUE
 
 /// Old attack_self.
 /obj/item/hand_tele/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/turf/current_location = get_turf(user)//What turf is the user on?
-	if(!current_location || (current_location.z in using_map.admin_levels) || current_location.block_tele)//If turf was not found or they're on z level 2 or >7 which does not currently exist.
-		to_chat(user, span_notice("\The [src] is malfunctioning."))
-		return TRUE
 	var/list/L = list(  )
 	for(var/obj/machinery/teleport/hub/R in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		var/obj/machinery/computer/teleporter/com

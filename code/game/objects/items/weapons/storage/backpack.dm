@@ -181,11 +181,16 @@ EXTEND_INTERACTIONS(/obj/item/storage/backpack/holding, \
 		icon_state = "[icon_state]_tilted" // ALLOW(decl): random pick
 		tilted = 1
 
+/// Requirement: only some duffelbags tilt.
+/obj/item/storage/backpack/dufflebag/proc/can_adjust_tilt(mob/user, atom/target, obj/item/held)
+	if(!user.canmove || user.stat || user.restrained())
+		return TRUE // the effect declines silently
+	if(!can_tilt)
+		return "it can't be adjusted like that"
+	return TRUE
+
 /obj/item/storage/backpack/dufflebag/proc/dufflebag_tilt_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!user.canmove || user.stat || user.restrained())
-		return
-	if(!can_tilt)
-		to_chat(user, "[src] can't be adjusted like that.")
 		return
 	if(tilted)
 		icon_state = "[initial(icon_state)]"
@@ -495,6 +500,13 @@ TYPE_TABLE(/obj/item/storage/backpack/purse, hold_spec, list(HOLD_MAX_SIZE(ITEMS
 /obj/item/storage/backpack/parachute/handleParachute()
 	dq_set_parachute(src, FALSE)	//If you dq_get_parachute(src) in, the dq_get_parachute(src) has probably been used.
 
+/// Requirement: the parachute can't be worked on while worn.
+/obj/item/storage/backpack/parachute/proc/can_pack(mob/user, atom/target, obj/item/held)
+	var/mob/living/carbon/human/H = user
+	if(istype(H) && isliving(loc) && !H.stat && H.get_equipped_item(SLOT_ID_BACK) == src)
+		return "how do you expect to work on it while it's on your back"
+	return TRUE
+
 /obj/item/storage/backpack/parachute/proc/pack_parachute_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 
@@ -506,9 +518,6 @@ TYPE_TABLE(/obj/item/storage/backpack/purse, hold_spec, list(HOLD_MAX_SIZE(ITEMS
 	if(!istype(H))
 		return
 	if(H.stat)
-		return
-	if(H.get_equipped_item(SLOT_ID_BACK) == src)
-		to_chat(H, span_warning("How do you expect to work on \the [src] while it's on your back?"))
 		return
 
 	if(!dq_get_parachute(src))	//This packs the dq_get_parachute(src)
@@ -733,10 +742,10 @@ EXTEND_INTERACTIONS(/obj/item/storage/backpack/holding/duffle, \
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/storage/backpack/dufflebag, \
-	INTERACT_VERB("Adjust Duffelbag Angle", PROC_REF(dufflebag_tilt_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Adjust Duffelbag Angle", PROC_REF(dufflebag_tilt_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/storage/backpack/dufflebag/proc/can_adjust_tilt)), \
 )
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/storage/backpack/parachute, \
-	INTERACT_VERB("Pack/Unpack Parachute", PROC_REF(pack_parachute_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Pack/Unpack Parachute", PROC_REF(pack_parachute_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/storage/backpack/parachute/proc/can_pack)), \
 )

@@ -13,14 +13,16 @@
 	throw_speed = 4
 	throw_range = 20
 
-DECLARE_INTERACTIONS(/obj/item/teleportation_scroll, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/teleportation_scroll, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/teleportation_scroll/proc/can_read)))
+
+/// Requirement: only a wizard can make sense of the markings.
+/obj/item/teleportation_scroll/proc/can_read(mob/user, atom/target, obj/item/held)
+	if(user.mind && !GLOB.wizards.is_antagonist(user.mind))
+		return "you stare at the scroll but cannot make sense of the markings"
+	return TRUE
 
 /// Old attack_self.
 /obj/item/teleportation_scroll/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if((user.mind && !GLOB.wizards.is_antagonist(user.mind)))
-		to_chat(user, span_warning("You stare at the scroll but cannot make sense of the markings!"))
-		return TRUE
-
 	// single-action panel; tgui_alert with the existing
 	// uses count is the right primitive.
 	user.set_machine(src)

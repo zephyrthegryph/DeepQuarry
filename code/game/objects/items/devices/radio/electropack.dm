@@ -18,14 +18,18 @@ MATERIAL_MIX(/obj/item/radio/electropack, list(MAT_STEEL = 10000,MAT_GLASS = 250
 
 // Extends the radio's own Use (the radio UI; interaction_self declines for packs/beacons).
 EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_HAND(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/item/radio/electropack/proc/can_take_off)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 )
 
-/obj/item/radio/electropack/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// Requirement: the wearer can't take it off their own back.
+/obj/item/radio/electropack/proc/can_take_off(mob/living/user, atom/target, obj/item/held)
 	if(src == user.get_equipped_item(SLOT_ID_BACK))
-		to_chat(user, span_notice("You need help taking this off!"))
-		return TRUE
+		return "you need help taking this off"
+	return TRUE
+
+/// Blocks self-removal through can_take_off(); otherwise falls through to the ordinary hand.
+/obj/item/radio/electropack/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	return FALSE
 
 /obj/item/radio/electropack/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

@@ -48,35 +48,56 @@ DECLARE_REF(/obj/machinery/bodyscanner, "console", PAIR, "scanner")
 		set_light(0)
 
 EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
-	INTERACT_ITEM(null, PROC_REF(bodyscanner_interaction_item)), \
-	INTERACT_DRAG("Put inside", PROC_REF(bodyscanner_interaction_drag)), \
+	INTERACT_INSERT(/obj/item/grab, PROC_REF(bodyscanner_interaction_item), "Put inside", REQ_TARGET_STATE(/obj/machinery/bodyscanner/proc/can_insert_grabbed)), \
+	INTERACT_DRAG("Put inside", PROC_REF(bodyscanner_interaction_drag), REQ_TARGET_STATE(/obj/machinery/bodyscanner/proc/can_drag_inside)), \
 	INTERACT_VERB("Eject Body Scanner", PROC_REF(bodyscanner_eject)), \
 )
 
+/// Requirement for putting a grabbed mob in: TRUE, or why not.
+/obj/machinery/bodyscanner/proc/can_insert_grabbed(mob/user, atom/target, obj/item/grab/G)
+	if(!istype(G))
+		return TRUE
+	if(panel_open)
+		return "close the maintenance panel first"
+	var/mob/M = G.grab_target()
+	if(!ismob(M))
+		return TRUE // the effect declines silently
+	if(!ishuman(M))
+		return "it's not designed for that organism"
+	if(slot_item(OCCUPANT_SLOT_BODY_SCANNER))
+		return "it's already occupied"
+	if(M.has_buckled_mobs())
+		return "[M] has other entities attached to it, remove them first"
+	if(M.abiotic())
+		return "the subject cannot have abiotic items on"
+	return TRUE
+
+/// Requirement for dragging a mob in: TRUE, or why not. Cases the effect declines silently pass.
+/obj/machinery/bodyscanner/proc/can_drag_inside(mob/user, atom/target, mob/living/carbon/human/O)
+	if(!istype(O) || user.incapacitated() || O.anchored || get_dist(user, src) > 1 || get_dist(user, O) > 1)
+		return TRUE
+	if(!ishuman(user) && !isrobot(user))
+		return TRUE
+	if(panel_open)
+		return "close the maintenance panel first"
+	if(slot_item(OCCUPANT_SLOT_BODY_SCANNER))
+		return "it's already occupied"
+	if(O.buckled_to())
+		return TRUE
+	if(O.abiotic())
+		return "the subject cannot have abiotic items on"
+	if(O.has_buckled_mobs())
+		return "[O] has other entities attached to it, remove them first"
+	return TRUE
+
 /// Old attackby.
 /obj/machinery/bodyscanner/proc/bodyscanner_interaction_item(mob/user, obj/item/G, datum/interaction/interaction)
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
 	if(!istype(G, /obj/item/grab))
 		return FALSE
 	var/obj/item/grab/H = G
 	var/mob/M = H?.grab_target()
-	if(panel_open)
-		to_chat(user, span_notice("Close the maintenance panel first."))
-		return TRUE
 	if(!ismob(M))
 		return FALSE
-	if(!ishuman(M))
-		to_chat(user, span_warning("\The [src] is not designed for that organism!"))
-		return TRUE
-	if(occupant)
-		to_chat(user, span_notice("\The [src] is already occupied!"))
-		return TRUE
-	if(M.has_buckled_mobs())
-		to_chat(user, span_warning("\The [M] has other entities attached to it. Remove them first."))
-		return TRUE
-	if(M.abiotic())
-		to_chat(user, span_notice("Subject cannot have abiotic items on."))
-		return TRUE
 	if(!M.move_into(src, OCCUPANT_SLOT_BODY_SCANNER))
 		return TRUE
 	update_icon()
@@ -107,21 +128,10 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 		return FALSE //doesn't use adjacent() to allow for non-GLOB.cardinal (fuck my life)
 	if(!ishuman(user) && !isrobot(user))
 		return FALSE //not a borg or human
-	if(panel_open)
-		to_chat(user, span_notice("Close the maintenance panel first."))
-		return FALSE //panel open
 	if(occupant)
-		to_chat(user, span_notice("\The [src] is already occupied."))
-		return FALSE //occupied
-
+		return FALSE //occupied (can_drag_inside refuses this)
 	if(O?.buckled_to())
 		return FALSE
-	if(O.abiotic())
-		to_chat(user, span_notice("Subject cannot have abiotic items on."))
-		return FALSE
-	if(O.has_buckled_mobs())
-		to_chat(user, span_warning("\The [O] has other entities attached to it. Remove them first."))
-		return TRUE
 
 	if(O == user)
 		visible_message("[user] climbs into \the [src].")
@@ -314,7 +324,7 @@ DECLARE_REF(/obj/machinery/body_scanconsole, "scanner", PAIR, "console")
 
 EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 	INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_as_touch)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(body_scanconsole_interaction_hand)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(body_scanconsole_interaction_hand), REQ_TARGET_STATE(/obj/machinery/body_scanconsole/proc/can_use_scanner)), \
 	INTERACT_OBSERVER("View", PROC_REF(body_scanconsole_observer)), \
 )
 
@@ -343,6 +353,12 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 	body_scanconsole_interaction_hand(user)
 	return TRUE
 
+/// Requirement: the linked scanner's panel must be closed.
+/obj/machinery/body_scanconsole/proc/can_use_scanner(mob/user, atom/target, obj/item/held)
+	if(operable() && scanner?.panel_open)
+		return "close the scanner's maintenance panel first"
+	return TRUE
+
 /// Old attack_hand (it never reached the machinery gate).
 /obj/machinery/body_scanconsole/proc/body_scanconsole_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!operable())
@@ -353,10 +369,6 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 		if(!scanner)
 			to_chat(user, span_notice("Scanner not found!"))
 			return TRUE
-
-	if(scanner.panel_open)
-		to_chat(user, span_notice("Close the maintenance panel first."))
-		return TRUE
 
 	if(scanner)
 		scanner.tgui_interact(user)

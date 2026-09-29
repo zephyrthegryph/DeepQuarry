@@ -40,7 +40,12 @@
 	id = "remote_toggle"
 	name = "Toggle"
 	category = INTERACTION_CAT_TOGGLE
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/button/remote/proc/can_press))
 	effect = /obj/machinery/button/remote/proc/interaction_toggle
+
+/// Requirement: TRUE, or why pressing the button does nothing (a spent single-use button).
+/obj/machinery/button/remote/proc/can_press(mob/user, atom/target, obj/item/held)
+	return TRUE
 
 /// The old attackby: `return attack_hand(user)` for any item.
 /datum/interaction/machine_item/remote_toggle_item
@@ -48,6 +53,7 @@
 	name = "Toggle"
 	category = INTERACTION_CAT_TOGGLE
 	held_type = /obj/item
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/button/remote/proc/can_press))
 	effect = /obj/machinery/button/remote/proc/interaction_toggle
 
 /**
@@ -254,6 +260,7 @@
 	name = "Swipe ID"
 	category = INTERACTION_CAT_TOGGLE
 	held_type = list(/obj/item/card/id, /obj/item/pda)
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/button/remote/proc/can_press))
 	effect = /obj/machinery/button/remote/proc/interaction_toggle
 
 /obj/machinery/button/remote/driver/multitool_act(mob/user, obj/item/tool)
@@ -311,10 +318,9 @@
 	name = "single use button"
 	var/has_been_pressed = FALSE
 
-/obj/machinery/button/remote/blast_door/single_use/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/button/remote/blast_door/single_use/can_press(mob/user, atom/target, obj/item/held)
 	if(has_been_pressed)
-		to_chat(user,span_notice("Nothing happens."))
-		return TRUE
+		return "nothing happens"
 	return ..()
 
 /obj/machinery/button/remote/blast_door/single_use/trigger()

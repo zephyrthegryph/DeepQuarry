@@ -240,7 +240,16 @@
 /datum/interaction/entry_alt/toilet_alt
 	id = "toilet_alt"
 	name = "Flush"
+	also_requires = list(REQ_TARGET_STATE(/obj/structure/toilet/proc/can_flush))
 	effect = /obj/structure/toilet/proc/interaction_alt
+
+/// Requirement: the lid has to be open to flush.
+/obj/structure/toilet/proc/can_flush(mob/user, atom/target, obj/item/held)
+	if(!isliving(user) || user.loc == src || user.stat)
+		return TRUE // the effect declines silently
+	if(!open)
+		return "you need to open the lid before flushing it"
+	return TRUE
 
 /// Combat mode: pulling the lever mid-flush makes the flush bigger.
 /datum/interaction/entry_alt/toilet_alt/harm
@@ -252,9 +261,6 @@
 	if(!isliving(user) || user.loc == src)
 		return TRUE
 	if(user.stat) //replace with user.canUseTopic() in the future
-		return TRUE
-	if(!open)
-		to_chat(user, span_notice("You need to open the lid before flushing \the [src]."))
 		return TRUE
 	if(refilling)
 		to_chat(user, span_notice("The toilet is still refilling its tank."))
@@ -1025,6 +1031,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 /datum/interaction/entry_drag/sink_empty
 	id = "sink_empty"
 	name = "Empty into sink"
+	also_requires = list(REQ_TARGET_STATE(/obj/structure/sink/proc/can_empty))
 	effect = /obj/structure/sink/proc/interaction_drag
 
 /obj/structure/sink/proc/interaction_drag(mob/user, obj/item/thing, datum/interaction/interaction)
@@ -1032,9 +1039,6 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 		return FALSE
 	if(!user.Adjacent(src))
 		return FALSE
-	if(!thing.reagents || thing.reagents.total_volume == 0)
-		to_chat(user, span_warning("\The [thing] is empty."))
-		return INTERACTION_HANDLED_PASS
 	// Clear the vessel.
 	visible_message(span_infoplain(span_bold("\The [user]") + " tips the contents of \the [thing] into \the [src]."))
 	thing.reagents.clear_reagents()
@@ -1053,26 +1057,39 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 /datum/interaction/entry_hand/sink_wash
 	id = "sink_wash"
 	name = "Wash hands"
+	also_requires = list(REQ_TARGET_STATE(/obj/structure/sink/proc/can_wash))
 	effect = /obj/structure/sink/proc/interaction_wash
 
-/obj/structure/sink/proc/interaction_wash(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement for washing: TRUE, or why the user can't.
+/obj/structure/sink/proc/can_wash(mob/user, atom/target, obj/item/held)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]
-		if (H.hand)
-			temp = H.organs_by_name[BP_L_HAND]
+		var/obj/item/organ/external/temp = H.organs_by_name[H.hand ? BP_L_HAND : BP_R_HAND]
 		if(temp && !temp.is_usable())
-			to_chat(user, span_notice("You try to move your [temp.name], but cannot!"))
-			return TRUE
+			return "you try to move your [temp.name], but cannot"
+	if(isrobot(user) || isAI(user) || !Adjacent(user))
+		return TRUE // the effect declines silently
+	return can_use_sink(user, target, held)
 
+/// Requirement: a wash claims the sink.
+/obj/structure/sink/proc/can_use_sink(mob/user, atom/target, obj/item/held)
+	if(om_busy(src))
+		return "someone's already washing here"
+	return TRUE
+
+/// Requirement for emptying a container into the sink.
+/obj/structure/sink/proc/can_empty(mob/user, atom/target, obj/item/thing)
+	if(!istype(thing) || !thing.is_open_container() || !user.Adjacent(src))
+		return TRUE // the effect declines silently
+	if(!thing.reagents || thing.reagents.total_volume == 0)
+		return "[thing] is empty"
+	return TRUE
+
+/obj/structure/sink/proc/interaction_wash(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isrobot(user) || isAI(user))
 		return TRUE
 
 	if(!Adjacent(user))
-		return TRUE
-
-	if(om_busy(src)) // a wash claims the sink
-		to_chat(user, span_warning("Someone's already washing here."))
 		return TRUE
 
 	to_chat(user, span_notice("You start washing your hands."))
@@ -1111,13 +1128,10 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 /datum/interaction/entry_item/sink_item
 	id = "sink_item"
 	name = "Use"
+	also_requires = list(REQ_TARGET_STATE(/obj/structure/sink/proc/can_use_sink))
 	effect = /obj/structure/sink/proc/interaction_item
 
 /obj/structure/sink/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	if(om_busy(src)) // a wash claims the sink
-		to_chat(user, span_warning("Someone's already washing here."))
-		return TRUE
-
 	var/obj/item/reagent_containers/RG = O
 	if (istype(RG) && RG.is_open_container())
 		RG.reagents.add_reagent(REAGENT_ID_WATER, min(RG.volume - RG.reagents.total_volume, RG.amount_per_transfer_from_this))

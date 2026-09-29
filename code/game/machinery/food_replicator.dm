@@ -149,13 +149,10 @@
 	id = "food_replicator_insert_container"
 	name = "Insert container"
 	held_type = /obj/item/reagent_containers/glass
+	also_requires = list(REQ_BECAUSE(REQ_FIELD_NOT("container"), "there is already a reagent container inserted"))
 	effect = /obj/machinery/food_replicator/proc/interaction_insert_container
 
 /obj/machinery/food_replicator/proc/interaction_insert_container(mob/user, obj/item/reagent_containers/glass/O, datum/interaction/interaction)
-	if(!isnull(container))
-		to_chat(user, span_warning("There is already a reagent container inserted!"))
-		return TRUE
-
 	user.drop_item()
 	O.forceMove(src)
 	container = O

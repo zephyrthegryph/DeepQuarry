@@ -197,20 +197,22 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop, "empty_b
 	return "[..()] <br /><a href='byond://?src=\ref[src];empty_box=1'>Empty ore compartment</a>"
 
 EXTEND_INTERACTIONS(/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop, \
-	INTERACT_VERB("Empty Ore compartment", PROC_REF(orescoop_empty_box)), \
+	INTERACT_VERB("Empty Ore compartment", PROC_REF(orescoop_empty_box), REQ_TARGET_STATE(/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/proc/can_empty_box)), \
 )
 
 /// Old verb "Empty Ore compartment": so you can still get the ore out if someone detaches it from the mech.
-/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/proc/orescoop_empty_box(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement: TRUE, or why the user can't empty the ore box.
+/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/proc/can_empty_box(mob/user, atom/target, obj/item/held)
 	if(!ishuman(user)) //Only living, intelligent creatures with hands can empty ore boxes.
-		to_chat(user, span_warning("You are physically incapable of emptying the ore box."))
-		return
-
-	if( user.stat || user.restrained() )
-		return
-
+		return "you are physically incapable of emptying the ore box"
+	if(user.stat || user.restrained())
+		return TRUE // the effect declines silently
 	if(!Adjacent(user)) //You can only empty the box if you can physically reach it
-		to_chat(user, "You cannot reach the ore box.")
+		return "you cannot reach the ore box"
+	return TRUE
+
+/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/proc/orescoop_empty_box(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.stat || user.restrained())
 		return
 
 	add_fingerprint(user)

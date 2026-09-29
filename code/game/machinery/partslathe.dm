@@ -90,18 +90,23 @@
 	id = "partslathe_attackby"
 	name = "Use item"
 	held_type = /obj/item
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/partslathe/proc/can_load_item))
 	effect = /obj/machinery/partslathe/proc/interaction_attackby
 
-/obj/machinery/partslathe/proc/interaction_attackby(mob/user, obj/item/O, datum/interaction/interaction)
+/// Requirement: TRUE, or why an item can't be used on the lathe right now.
+/obj/machinery/partslathe/proc/can_load_item(mob/user, atom/target, obj/item/O)
 	if(busy)
-		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
-		return TRUE
+		return "it's busy, wait for the previous operation to complete"
+	if(istype(O, /obj/item/storage/part_replacer) || !operable())
+		return TRUE // part replacement, or swallowed silently
+	if(panel_open)
+		return "you can't load it while it's opened"
+	return TRUE
+
+/obj/machinery/partslathe/proc/interaction_attackby(mob/user, obj/item/O, datum/interaction/interaction)
 	if(default_part_replacement(user, O))
 		return TRUE
-	if(!operable())
-		return TRUE
-	if(panel_open)
-		to_chat(user, span_notice("You can't load \the [src] while it's opened."))
+	if(!operable() || panel_open)
 		return TRUE
 	if(istype(O, /obj/item/circuitboard))
 		if(copy_board)

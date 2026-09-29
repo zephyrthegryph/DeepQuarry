@@ -43,16 +43,18 @@
 	return
 
 DECLARE_INTERACTIONS(/obj/structure/event/santa_sack, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_HAND(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/structure/event/santa_sack/proc/can_give_present)), \
 	INTERACT_VERB("Bind/unbind sack", PROC_REF(santa_sack_setanchor)), \
 )
 
+/// Requirement: only Santa hands out presents.
+/obj/structure/event/santa_sack/proc/can_give_present(mob/user, atom/target, obj/item/held)
+	if(user.ckey != santa_ckey)
+		return "only Santa can give presents (be nice or you might end up in Santa's sack)"
+	return TRUE
+
 /// Old attack_hand.
 /obj/structure/event/santa_sack/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(usr.ckey != santa_ckey)
-		to_chat(usr, span_warning("Only Santa can give presents! (Be nice or you might end up in Santa's sack!)"))
-		return TRUE
-
 	var/list/receivers = list()
 	for(var/mob/living/R in oview(user.loc,1))
 		receivers += R

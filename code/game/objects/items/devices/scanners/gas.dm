@@ -26,15 +26,20 @@ MATERIAL_MIX(/obj/item/analyzer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 
 	return atmosanalyzer_scan(src, air, user)
 
-DECLARE_INTERACTIONS(/obj/item/analyzer, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/analyzer, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/analyzer/proc/can_analyze)))
+
+/// Requirement: only a dexterous user can work the analyzer.
+/obj/item/analyzer/proc/can_analyze(mob/user, atom/target, obj/item/held)
+	if(special_handling || user.stat)
+		return TRUE // the effect declines silently
+	if(!user.IsAdvancedToolUser())
+		return "you don't have the dexterity to do this"
+	return TRUE
 
 /obj/item/analyzer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	if (user.stat)
-		return
-	if (!user.IsAdvancedToolUser())
-		to_chat(user, span_warning("You don't have the dexterity to do this!"))
 		return
 
 	analyze_gases_by(src, src, user)
