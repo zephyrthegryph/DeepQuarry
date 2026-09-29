@@ -2,22 +2,23 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 
 /datum/uplink
 	var/list/items_assoc
-	var/list/datum/uplink_item/items
+	var/list/items // owned (untyped: the lint reads a registry-typed list as SHARED)
 	var/list/datum/uplink_category/categories
 
 
 /datum/uplink/New(type)
 	items_assoc = list()
-	items = init_subtypes(/datum/uplink_item)
-	// The uplink owns its categories (a sorted list); items are registered uplink_items (shared).
+	// The uplink owns its categories (a sorted list) and its items (built at boot); items_assoc and
+	// each category's items are plain indexes into uplink.items.
 	for(var/datum/uplink_category/category as anything in dd_sortedObjectList(init_subtypes(/datum/uplink_category)))
 		own_add(src, "categories", category)
 
-	for(var/datum/uplink_item/item in items)
+	for(var/datum/uplink_item/item as anything in init_subtypes(/datum/uplink_item))
 		if(!item.name)
-			items -= item
+			qdel(item) // an abstract uplink item: nothing adopts it
 			continue
 
+		own_add(src, "items", item)
 		items_assoc[item.type] = item
 
 		for(var/datum/uplink_category/category in categories)
@@ -207,3 +208,5 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 	return bought_items
 
 
+/// items_assoc maps type -> the registered uplink_item singleton (registry_uplink_item reads it).
+SHARED(/datum/uplink, items_assoc)

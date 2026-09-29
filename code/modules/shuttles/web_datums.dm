@@ -224,7 +224,8 @@
 
 // Autopilot stuff.
 /datum/shuttle_web_master/proc/build_autopaths()
-	autopaths = init_subtypes(autopath_class, autopaths)
+	for(var/datum/shuttle_autopath/built as anything in init_subtypes(autopath_class))
+		own_add(src, "autopaths", built)
 	for(var/datum/shuttle_autopath/P in autopaths)
 		rel_set(P, "master", src)
 	// Drop autopaths that reference destinations pruned in build_destinations()
@@ -237,8 +238,7 @@
 				break
 		if(!valid)
 			log_mapping("Web shuttle autopath [P.type] pruned: references a destination with no landmark on this map.")
-			LAZYREMOVE(autopaths, P)
-			qdel(P)
+			own_remove(src, "autopaths", P)
 
 /datum/shuttle_web_master/proc/choose_path()
 	if(!length(autopaths) || !current_destination())

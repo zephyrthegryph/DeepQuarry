@@ -350,7 +350,7 @@
 	if(!T)
 		return
 	T.ChangeTurf(/turf/simulated/floor/tiled, tell_universe = FALSE)
-	var/area/generated_station/department_area = result.department_areas[node.id]
+	var/area/generated_station/department_area = result.department_areas?[node.id]
 	if(department_area)
 		ChangeArea(T, department_area)
 	result.floor_count++

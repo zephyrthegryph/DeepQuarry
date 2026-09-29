@@ -47,7 +47,8 @@
 		cam_screen.del_on_map_removal = FALSE
 		cam_screen.screen_loc = "[map_name]:1,1"
 
-		cam_plane_masters = get_tgui_plane_masters()
+		for(var/atom/movable/screen/plane_master as anything in get_tgui_plane_masters())
+			own_add(src, "cam_plane_masters", plane_master)
 
 		for(var/atom/movable/screen/instance as anything in cam_plane_masters)
 			instance.assigned_map = map_name

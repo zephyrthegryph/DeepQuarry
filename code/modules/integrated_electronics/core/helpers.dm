@@ -1,6 +1,8 @@
-/obj/item/integrated_circuit/proc/setup_io(list/io_list, io_type, list/io_default_list)
-	var/list/io_list_copy = io_list.Copy()
-	io_list.Cut()
+/// Rebuilds the pin list var `io_var` (a spec list of names/types) into owned pin datums.
+/obj/item/integrated_circuit/proc/setup_io(io_var, io_type, list/io_default_list)
+	var/list/io_list = vars[io_var]
+	var/list/io_list_copy = io_list ? io_list.Copy() : list()
+	io_list?.Cut()
 	var/i = 1
 
 	for(var/io_entry in io_list_copy)
@@ -14,9 +16,9 @@
 			io_type_override = io_list_copy[io_entry]
 
 		if(io_type_override)
-			io_list.Add(new io_type_override(src, io_entry, default_data))
+			own_add(src, io_var, new io_type_override(src, io_entry, default_data))
 		else
-			io_list.Add(new io_type(src, io_entry, default_data))
+			own_add(src, io_var, new io_type(src, io_entry, default_data))
 		i++
 
 /// Prefix of an IC ref. Pin text is sanitized (html-encoded), so no string a

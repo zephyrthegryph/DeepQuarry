@@ -40,7 +40,8 @@
 
 /datum/generated_room_feature/New()
 	..()
-	constraints = build_constraints()
+	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
+		own_add(src, "constraints", built_constraint)
 	utility_requirements = build_utility_requirements()
 	variant_options = build_variant_options()
 
@@ -274,7 +275,8 @@
 /datum/generated_room_feature_group/New()
 	..()
 	feature_types = build_feature_types()
-	constraints = build_constraints()
+	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
+		own_add(src, "constraints", built_constraint)
 
 
 /datum/generated_room_feature_group/proc/build_feature_types()
@@ -465,8 +467,10 @@
 
 /datum/generated_room_fragment/New()
 	..()
-	sockets = build_sockets()
-	constraints = build_constraints()
+	for(var/datum/generated_room_fragment_socket/built_socket in build_sockets())
+		own_add(src, "sockets", built_socket)
+	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
+		own_add(src, "constraints", built_constraint)
 	occupied_offsets = build_occupied_offsets()
 
 
@@ -823,7 +827,8 @@
 	required_groups = build_required_groups()
 	optional_groups = build_optional_groups()
 	fragment_options = build_fragment_options()
-	constraints = build_constraints()
+	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
+		own_add(src, "constraints", built_constraint)
 	variant_options = build_variant_options()
 	own_set(src, "room_style", build_room_style())
 

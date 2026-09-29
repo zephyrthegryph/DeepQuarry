@@ -3,20 +3,22 @@
 **********************/
 /datum/category_collection
 	var/category_group_type                          // Type of categories to initialize
-	var/list/datum/category_group/categories         // List of initialized categories
+	var/list/categories                              // List of initialized categories (owned; untyped: the lint reads a registry-typed list as SHARED)
 	var/list/datum/category_group/categories_by_name // Associative list of initialized categories, keyed by name
 
 /datum/category_collection/New()
 	..()
-	categories = new()
-	categories_by_name = new()
+	// categories owns each group (built at boot, before the DEF freeze); categories_by_name is a plain index.
+	categories_by_name = list()
+	var/list/built = list()
 	for(var/category_type in typesof(category_group_type))
 		var/datum/category_group/category = category_type
 		if(initial(category.name))
 			category = new category(src)
-			categories += category
+			built += category
 			categories_by_name[category.name] = category
-	categories = dd_sortedObjectList(categories)
+	for(var/datum/category_group/sorted as anything in dd_sortedObjectList(built))
+		own_add(src, "categories", sorted)
 
 
 /******************
@@ -25,26 +27,28 @@
 /datum/category_group
 	var/name = ""
 	var/category_item_type                      // Type of items to initialize
-	var/list/datum/category_item/items          // List of initialized items
+	var/list/items                              // List of initialized items (owned; untyped: the lint reads a registry-typed list as SHARED)
 	var/list/datum/category_item/items_by_name  // Associative list of initialized items, by name
 	var/datum/category_collection/collection_static	// The collection this group belongs to
 
 /datum/category_group/New(datum/category_collection/cc)
 	..()
 	collection_static = cc
-	items = new()
-	items_by_name = new()
+	// items owns each item (built at boot, before the DEF freeze); items_by_name is a plain index.
+	items_by_name = list()
+	var/list/built = list()
 
 	for(var/item_type in typesof(category_item_type))
 		var/datum/category_item/item = item_type
 		if(initial(item.name))
 			item = new item(src)
-			items += item
+			built += item
 			items_by_name[item.name] = item
 
 	// For whatever reason dd_insertObjectList(items, item) doesn't insert in the correct order
 	// If you change this, confirm that character setup doesn't become completely unordered.
-	items = dd_sortedObjectList(items)
+	for(var/datum/category_item/sorted as anything in dd_sortedObjectList(built))
+		own_add(src, "items", sorted)
 
 
 /datum/category_group/dd_SortValue()

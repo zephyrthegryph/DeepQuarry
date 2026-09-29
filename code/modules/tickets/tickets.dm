@@ -38,25 +38,30 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 
 
 //private
+/// Adopts `new_ticket` (unowned, or owned by another of our lists) into the list for its
+/// state, kept sorted by id.
 /datum/tickets/proc/ListInsert(datum/ticket/new_ticket)
-	var/list/ticket_list
+	var/list_var
 	switch(new_ticket.state)
 		if(AHELP_ACTIVE)
-			ticket_list = active_tickets
+			list_var = "active_tickets"
 		if(AHELP_CLOSED)
-			ticket_list = closed_tickets
+			list_var = "closed_tickets"
 		if(AHELP_RESOLVED)
-			ticket_list = resolved_tickets
+			list_var = "resolved_tickets"
 		else
 			CRASH("Invalid ticket state: [new_ticket.state]")
-	var/num_closed = ticket_list.len
-	if(num_closed)
-		for(var/I in 1 to num_closed)
-			var/datum/ticket/T = ticket_list[I]
-			if(T.id > new_ticket.id)
-				ticket_list.Insert(I, new_ticket)
-				return
-	ticket_list += new_ticket
+	if(!own_move(new_ticket, src, list_var))
+		return
+	// own_move() appended it; slide it back to its sorted position.
+	var/list/ticket_list = vars[list_var]
+	var/num_tickets = length(ticket_list)
+	for(var/I in 1 to num_tickets - 1)
+		var/datum/ticket/T = ticket_list[I]
+		if(T.id > new_ticket.id)
+			ticket_list.Insert(I, new_ticket)
+			ticket_list.Cut(num_tickets + 1)
+			return
 
 /datum/tickets/proc/BrowseTickets(state)
 	tgui_interact(usr)
@@ -75,7 +80,7 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 		if(AHELP_RESOLVED)
 			l2b = resolved_tickets
 			title = "Resolved Tickets"
-	if(!l2b)
+	if(!title)
 		return
 	var/list/dat = list("<html><head><title>[title]</title></head>")
 	dat += "<A href='byond://?_src_=holder;[HrefToken()];ahelp_tickets=[state]'>Refresh</A><br><br>"
@@ -303,16 +308,14 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	else
 		ahelp_discord_message("[level == 0 ? "MENTORHELP" : "ADMINHELP"]: FROM: [initiator_ckey]/[initiator_key_name] - MSG: \n ```[raw_msg]``` \n Heard by [activeMins] NON-AFK staff members.")
 
-	GLOB.tickets.active_tickets += src
+	GLOB.tickets.ListInsert(src) // state is AHELP_ACTIVE
 
 	C.mob.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
 
-// leaves the active, closed and resolved ticket lists.
+// Leaving GLOB.tickets' owned active/closed/resolved lists is automatic (phase 2).
 /datum/ticket/lifecycle_dematerialize()
 	..()
 	RemoveActive()
-	GLOB.tickets.closed_tickets -= src
-	GLOB.tickets.resolved_tickets -= src
 
 /datum/ticket/proc/AddInteraction(formatted_message)
 	var/curinteraction = "[gameTimestamp()]: [formatted_message]"
@@ -402,15 +405,13 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 		return
 
 	own_set(src, "statclick", new /obj/effect/statclick/ticket(null, src))
-	GLOB.tickets.active_tickets += src
-	GLOB.tickets.closed_tickets -= src
-	GLOB.tickets.resolved_tickets -= src
 	switch(state)
 		if(AHELP_CLOSED)
 			feedback_dec("ticket_close")
 		if(AHELP_RESOLVED)
 			feedback_dec("ticket_resolve")
 	state = AHELP_ACTIVE
+	GLOB.tickets.ListInsert(src) // moves it out of the closed/resolved list
 	closed_at = null
 	if(initiator())
 		initiator().current_ticket_id = id
@@ -432,7 +433,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 		return
 	closed_at = world.time
 	own_clear(src, "statclick", OWN_DELETE)
-	GLOB.tickets.active_tickets -= src
+	own_take_member(GLOB.tickets, "active_tickets", src) // Close()/Resolve() re-adopt it via ListInsert()
 	if(initiator() && initiator().current_ticket() == src)
 		initiator().current_ticket_id = null
 

@@ -50,7 +50,7 @@
 	var/stop_ooc = TRUE
 
 /datum/cinematic/New(watcher, datum/callback/special_callback)
-	screen = new(src)
+	own_set(src, "screen", new /atom/movable/screen/cinematic(src))
 	if(watcher == world)
 		is_global = TRUE
 

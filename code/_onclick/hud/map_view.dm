@@ -30,7 +30,9 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen/map_view_tg)
 	assigned_map = map_key
 	set_position(1, 1)
 
-	popup_plane_masters = get_tgui_plane_masters()
+	own_clear(src, "popup_plane_masters", OWN_DELETE)
+	for(var/atom/movable/screen/fresh as anything in get_tgui_plane_masters())
+		own_add(src, "popup_plane_masters", fresh)
 
 	for(var/atom/movable/screen/instance as anything in popup_plane_masters)
 		instance.assigned_map = assigned_map

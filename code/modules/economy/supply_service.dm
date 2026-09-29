@@ -1041,3 +1041,6 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 /// The round's supply shuttle (a relation view: the shuttle datum sets it when it registers, and it
 /// clears by itself when that shuttle is deleted).
 REL(/datum/world_service/supply, shuttle)
+
+/// supply_pack maps name -> the registered supply_pack singleton (registry_supply_pack reads it).
+SHARED(/datum/world_service/supply, supply_pack)

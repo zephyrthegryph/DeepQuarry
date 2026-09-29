@@ -356,7 +356,8 @@
 	spec.size_class = metadata["size_class"]
 	spec.layout_archetype = metadata["layout_archetype"]
 	spec.layout_aesthetic_score = metadata["aesthetic_score"]
-	spec.department_definitions = generated_station_department_catalog()
+	for(var/datum/generated_station_department_definition/catalog_definition in generated_station_department_catalog())
+		own_add(spec, "department_definitions", catalog_definition)
 	var/list/definitions = list()
 	for(var/datum/generated_station_department_definition/definition in spec.department_definitions)
 		definitions[definition.id] = definition

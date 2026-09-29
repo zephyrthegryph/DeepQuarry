@@ -62,12 +62,12 @@
 		if(istype(planned_floor, /turf/simulated/floor))
 			pressurized_turfs[planned_floor] = TRUE
 	for(var/node_id in station_materialization.department_areas)
-		var/area/generated_station/A = station_materialization.department_areas[node_id]
+		var/area/generated_station/A = station_materialization.department_areas?[node_id]
 		for(var/turf/T in area_contents_of_type(A, /turf))
 			if(istype(T, /turf/simulated/floor))
 				pressurized_turfs[T] = TRUE
 	for(var/module_id in station_materialization.module_areas)
-		var/area/generated_station/room_area = station_materialization.module_areas[module_id]
+		var/area/generated_station/room_area = station_materialization.module_areas?[module_id]
 		for(var/turf/T in area_contents_of_type(room_area, /turf))
 			if(istype(T, /turf/simulated/floor))
 				pressurized_turfs[T] = TRUE
@@ -90,7 +90,7 @@
 				break
 		if(!department)
 			continue
-		var/area/generated_station/A = station_materialization.department_areas[node.id]
+		var/area/generated_station/A = station_materialization.department_areas?[node.id]
 		var/turf/placement
 		var/turf/camera_placement
 		for(var/turf/T in area_contents_of_type(A, /turf))

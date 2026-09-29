@@ -301,7 +301,6 @@
 /datum/generated_station_spec/New()
 	..()
 	own_take_all(src, "departments")
-	department_definitions = list()
 	own_take_all(src, "layout_nodes")
 	own_take_all(src, "layout_edges")
 	circulation_tiles = list()

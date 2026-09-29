@@ -53,7 +53,7 @@
 		qdel(src)
 		return
 	rel_set(src, "holder", new_holder)
-	rel_set(new_holder, "artifact_master", src)
+	own_set(new_holder, "artifact_master", src) // the anomalous atom owns its artifact state
 
 	own_take_all(src, "my_effects")
 
@@ -127,22 +127,11 @@
 		return
 
 	if(to_remove_effect)
-		var/datum/artifact_effect/AE = to_remove_effect
-		own_take_member(src, "my_effects", to_remove_effect)
-		qdel(AE)
+		own_remove(src, "my_effects", to_remove_effect)
 
-// its effects go with it.
+// its effects (owned by my_effects) go with it; leaving the holder's artifact_master is automatic.
 /datum/artifact_master/on_destroy(force)
 	do_unregister()
-	var/atom/H = holder()
-	if(H?.artifact_master == src)
-		H.artifact_master = null
-	rel_clear(src, "holder")
-	for(var/datum/artifact_effect/AE in my_effects)
-		rel_clear(AE, "master")
-		own_take_member(src, "my_effects", AE)
-		qdel(AE)
-
 	..()
 
 /datum/artifact_master/proc/do_setup()

@@ -146,7 +146,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 		return
 
 	name = "<b>\[[time_stamp()]]</b> Runtime in <b>[error_where(e)]</b>: <b>[html_encode(e.name)]</b>"
-	exc = e
+	own_set(src, "exc", e)
 	if (istype(desclines))
 		for (var/line in desclines)
 			// There's probably a better way to do this than non-breaking spaces...

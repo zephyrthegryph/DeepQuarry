@@ -38,7 +38,6 @@
 	difficulty = _difficulty
 	reward_points = 80 + difficulty * 70
 	reward_cash = 150 + difficulty * 200
-	objectives = list()
 
 
 // Override per mission: return the list of objectives.
@@ -57,7 +56,9 @@
 
 /datum/expedition_mission/proc/populate(datum/expedition_site/S)
 	rel_set(src, "site", S)
-	objectives = build_objectives()
+	own_clear(src, "objectives", OWN_DELETE)
+	for(var/datum/expedition_objective/built as anything in build_objectives())
+		own_add(src, "objectives", built)
 	for(var/datum/expedition_objective/O in objectives)
 		O.populate(S)
 	if(time_limit)

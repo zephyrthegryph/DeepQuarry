@@ -37,7 +37,6 @@
 /datum/generated_room_solution/New()
 	..()
 	own_take_all(src, "placements")
-	fragments = list()
 	circulation = list()
 	door_circulation = list()
 	occupied = list()
@@ -176,8 +175,6 @@
 
 /datum/generated_station_materialization/New()
 	..()
-	department_areas = list()
-	module_areas = list()
 	own_take_all(src, "owned_furnishing_atoms")
 	own_take_all(src, "doors")
 	own_take_all(src, "infrastructure")
@@ -335,7 +332,7 @@
 			department_area.station_id = spec().id
 			department_area.department_id = department.id
 			department_area.name = "[spec().name] [department.definition().name]"
-			result.department_areas[node.id] = department_area
+			own_put(result, "department_areas", node.id, department_area)
 		generation_checkpoint("Allocating station areas", 25)
 	return TRUE
 
@@ -540,7 +537,7 @@
 					ChangeArea(T, maintenance_area())
 					result.corridor_count++
 				else
-					var/area/generated_station/owner_area = result.module_areas[intent.zone_id] || result.department_areas[intent.owner_id]
+					var/area/generated_station/owner_area = result.module_areas?[intent.zone_id] || result.department_areas?[intent.owner_id]
 					if(!owner_area)
 						// ChangeArea() crashes on a null area. A floor whose planned
 						// owner never received an area still needs a pressurised,
@@ -752,7 +749,7 @@
 	// after an individual room was solved. Remove only non-functional decor,
 	// newest first, until every room again has one component connected to a door.
 	for(var/module_id in result.module_areas)
-		var/area/generated_station/A = result.module_areas[module_id]
+		var/area/generated_station/A = result.module_areas?[module_id]
 		while(!generated_station_room_area_is_accessible(A))
 			var/atom/movable/removable
 			var/list/live_furnishings = LAZYCOPY(result.furnishings)
@@ -912,7 +909,7 @@
 		var/datum/generated_station_room_allocation/allocation = room_allocation_for_module(module)
 		var/base_name = allocation?.area_name || "[spec().name] [department_name] [role_name]"
 		A.name = designation_number > 1 ? "[base_name] [designation_number]" : base_name
-		result.module_areas[module.id] = A
+		own_put(result, "module_areas", module.id, A)
 	return TRUE
 
 /datum/generated_station_materializer/proc/room_allocation_for_module(datum/generated_station_module/module)
@@ -1105,7 +1102,7 @@
 /// Installs baseline fire detection and emergency supplies independently of room decoration.
 /datum/generated_station_materializer/proc/place_emergency_equipment()
 	for(var/module_id in result.module_areas)
-		var/area/generated_station/A = result.module_areas[module_id]
+		var/area/generated_station/A = result.module_areas?[module_id]
 		var/turf/alarm_turf
 		for(var/datum/generated_station_tile_intent/intent in result.tile_plan.utility_floors(null, module_id))
 			if(intent.zone_id == module_id && (GENERATED_STATION_UTILITY_FIRE_ALARM in intent.utility_intents))
@@ -1270,7 +1267,7 @@
 
 /datum/generated_station_materializer/proc/carve_departments()
 	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
-		var/area/generated_station/department_area = result.department_areas[node.id]
+		var/area/generated_station/department_area = result.department_areas?[node.id]
 		for(var/x in node.x to node.x + node.width - 1)
 			for(var/y in node.y to node.y + node.height - 1)
 				var/turf/T = world_turf(x, y)
@@ -1366,7 +1363,7 @@
 	var/list/point = run[CEILING(length(run) / 2, 1)]
 	var/turf/T = world_turf(point[1], point[2])
 	T.ChangeTurf(/turf/simulated/floor/tiled, tell_universe = FALSE)
-	ChangeArea(T, result.department_areas[node.id])
+	ChangeArea(T, result.department_areas?[node.id])
 	var/obj/machinery/door/airlock/airlock = new(T)
 	airlock.set_dir(outward in list(EAST, WEST) ? EAST : NORTH)
 	configure_department_airlock(airlock, department)
@@ -1457,7 +1454,7 @@
 				break
 		if(!hull_turf)
 			continue
-		var/area/generated_station/A = result.department_areas[node.id]
+		var/area/generated_station/A = result.department_areas?[node.id]
 		if(!A)
 			continue
 		var/turf/chamber = get_step(hull_turf, outward)
@@ -1543,7 +1540,7 @@
 			T = candidate
 			break
 	if(!T)
-		var/area/generated_station/docking/docking_area = result.department_areas[docking.id]
+		var/area/generated_station/docking/docking_area = result.department_areas?[docking.id]
 		for(var/turf/simulated/floor/candidate in area_contents_of_type(docking_area, /turf/simulated/floor))
 			if(!candidate.density && !(locate_on(candidate, /obj/machinery/door)))
 				T = candidate
@@ -1559,10 +1556,10 @@
 	if(SSair)
 		SSair.update_dynamic_multiz_atmos_level(result.z_level)
 	for(var/node_id in result.department_areas)
-		var/area/generated_station/A = result.department_areas[node_id]
+		var/area/generated_station/A = result.department_areas?[node_id]
 		A.power_change()
 	for(var/module_id in result.module_areas)
-		var/area/generated_station/room_area = result.module_areas[module_id]
+		var/area/generated_station/room_area = result.module_areas?[module_id]
 		room_area.power_change()
 	transit_area()?.power_change()
 	maintenance_area()?.power_change()

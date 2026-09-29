@@ -457,12 +457,12 @@
 	var/engineering_owner
 
 	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
-		var/area/generated_station/department_area = materialization().department_areas[node.id]
+		var/area/generated_station/department_area = materialization().department_areas?[node.id]
 		if(department_area?.department_id == "engineering-1")
 			engineering_area = department_area
 			engineering_owner = node.id
 	for(var/datum/generated_station_module/module in materialization().modules)
-		var/area/generated_station/A = materialization().module_areas[module.id]
+		var/area/generated_station/A = materialization().module_areas?[module.id]
 		var/turf/apc_turf = planned_fixture_turf(module.department_node_id, GENERATED_STATION_UTILITY_APC, module.id)
 		if(!apc_turf)
 			return fail_global_build("no APC floor in [A]")
@@ -569,7 +569,7 @@
 /// Proves that every department floor lies near a powered, intact, active fixture.
 /datum/generated_station_utility_builder/proc/validate_operational_light_coverage(max_distance = 7)
 	for(var/module_id in materialization().module_areas)
-		var/area/generated_station/department_area = materialization().module_areas[module_id]
+		var/area/generated_station/department_area = materialization().module_areas?[module_id]
 		var/list/working_lights = list()
 		for(var/obj/machinery/light/light in area_contents_of_type(department_area, /obj/machinery/light))
 			if(light.status == LIGHT_OK && light.on && light.powered(LIGHT))
@@ -661,7 +661,7 @@
 /// Publishes power and lighting only after the power and atmosphere graphs exist.
 /datum/generated_station_utility_builder/proc/publish_utility_state()
 	for(var/node_id in materialization().department_areas)
-		var/area/generated_station/A = materialization().department_areas[node_id]
+		var/area/generated_station/A = materialization().department_areas?[node_id]
 		A.power_change()
 	materialization().transit_area()?.power_change()
 

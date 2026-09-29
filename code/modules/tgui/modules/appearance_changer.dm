@@ -65,7 +65,8 @@
 	cam_screen.del_on_map_removal = FALSE
 	cam_screen.screen_loc = "[map_name]:3:-32,3:-48"
 
-	cam_plane_masters = get_tgui_plane_masters()
+	for(var/atom/movable/screen/plane_master as anything in get_tgui_plane_masters())
+		own_add(src, "cam_plane_masters", plane_master)
 
 	for(var/atom/movable/screen/instance as anything in cam_plane_masters)
 		instance.assigned_map = map_name
@@ -76,7 +77,6 @@
 	local_skybox.assigned_map = map_name
 	local_skybox.del_on_map_removal = FALSE
 	local_skybox.screen_loc = "[map_name]:CENTER,CENTER"
-	cam_plane_masters += local_skybox
 
 	rel_set(src, "owner", H)
 	own_set(src, "cam_background", new /atom/movable/screen/background)
@@ -598,6 +598,7 @@
 		user.client.register_map_obj(cam_screen)
 		for(var/plane in cam_plane_masters)
 			user.client.register_map_obj(plane)
+		user.client.register_map_obj(local_skybox) // owned via local_skybox, not the plane list
 		user.client.register_map_obj(cam_background)
 		// Open UI
 		ui = new(user, src, tgui_id, name)

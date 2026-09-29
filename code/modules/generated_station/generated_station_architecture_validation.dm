@@ -93,7 +93,7 @@
 
 	var/direct_room_count = 0
 	for(var/datum/generated_station_module/module in modules)
-		var/area/generated_station/module_area = department_areas[module.department_node_id]
+		var/area/generated_station/module_area = department_areas?[module.department_node_id]
 		if(!module_area)
 			continue
 		var/direct_frontage = FALSE
@@ -353,7 +353,7 @@
 						validation.add(GENERATED_STATION_ISSUE_ERROR, "room-boundary-open", "Room boundary opens directly into [boundary.zone_id] without a wall or declared door.", module.id)
 
 	for(var/node_id in department_areas)
-		var/area/generated_station/department_area = department_areas[node_id]
+		var/area/generated_station/department_area = department_areas?[node_id]
 		for(var/turf/T in area_contents_of_type(department_area, /turf))
 			station_turfs |= T
 	// Authored rooms intentionally receive independent areas so each room can
@@ -361,7 +361,7 @@
 	// the station's walkable graph and must participate in every whole-station
 	// structural/connectivity measurement.
 	for(var/module_id in module_areas)
-		var/area/generated_station/module_area = module_areas[module_id]
+		var/area/generated_station/module_area = module_areas?[module_id]
 		for(var/turf/T in area_contents_of_type(module_area, /turf))
 			station_turfs |= T
 	for(var/turf/T in transit_area())
@@ -390,7 +390,7 @@
 					break
 
 	for(var/node_id in department_areas)
-		var/area/generated_station/node_department = department_areas[node_id]
+		var/area/generated_station/node_department = department_areas?[node_id]
 		var/frontage = department_frontage[node_department.department_id] || 0
 		if(frontage < GENERATED_STATION_MIN_DEPARTMENT_FRONTAGE)
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "department-without-frontage", "Department has no airlock frontage on primary circulation.", node_department.department_id)

@@ -12,8 +12,7 @@
 	var/list/bank					//Anything accepted by "money" or "item" mode will be marked down here
 	var/coinbalance = 0					//only for use with coin mode - when you put a curious coin in, it adds the coins value to this number
 	var/list/start_products	//Type paths entered here will spawn inside the trader and add themselves to the products list.
-	// ALLOW(instance_list): d: the trader's live stock
-	var/list/products = list()			//Anything in this list will be listed for sale
+	var/list/products			//Anything in this list will be listed for sale
 	var/list/prices			//Enter a type path with an associated number, and if the trader tries to sell something of that type, it will expect the number as the cost for that product
 	var/list/multiple			//Enter a type path with an associated number, and the trader will have however many of that type to sell as the number you entered
 	var/trading = FALSE					//'Busy' - Only one person can trade at a time.
@@ -34,12 +33,12 @@
 			var/t = pickweight(start_products || list())
 			var/i = new t(src)
 			LAZYREMOVE(start_products, t)
-			products += i
+			own_add(src, "products", i)
 			pick_inventory_quantity --
 	else
 		for(var/item in start_products)
 			var/obj/p = new item(src)
-			products += p
+			own_add(src, "products", p)
 			LAZYREMOVE(start_products, item)
 	if(move_trader)
 		move_trader()
@@ -51,7 +50,7 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 	if(trading)
 		to_chat(user, span_notice("\The [src] is busy with someone else at the moment..."))
 		return TRUE
-	if(!products.len)
+	if(!length(products))
 		to_chat(user, span_notice("\The [src] hasn't got anything to sell."))
 		return TRUE
 	trading = TRUE
@@ -149,7 +148,7 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 					qdel(d)
 	input.forceMove(get_turf(user))
 	user.put_in_hands(input)
-	trader.products -= input
+	own_take_member(trader, "products", input) // no-op once it left our contents
 	trader.deduct_value(p)
 	rel_clear(src, "product")
 	stage = "change"
@@ -421,3 +420,6 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 		)
 
 // The stock the trader spawned into itself at Initialize().
+
+/// Stock items sit in the trader's contents; one leaving (sold) drops out of the list.
+OWN(/obj/trader, products, OWN_CONTAINED)

@@ -1,7 +1,8 @@
 /datum/tgui_module/atmos_control
 	name = "Atmospherics Control"
 	tgui_id = "AtmosControl"
-	var/obj/access = new()
+	/// A private access-check object (owned: built in New).
+	var/obj/access
 	var/emagged = 0
 	var/ui_ref
 	/// Alarms this console is limited to (weak: the machines own themselves); empty means every alarm.
@@ -9,6 +10,7 @@
 
 /datum/tgui_module/atmos_control/New(atmos_computer, req_access, req_one_access, monitored_alarm_ids)
 	..()
+	own_set(src, "access", new /obj())
 	access.req_access = req_access
 	access.req_one_access = req_one_access
 

@@ -670,7 +670,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	var/list/subsystems_to_check
 
 	//setup the stack overflow detector
-	stack_end_detector = new()
+	own_set(src, "stack_end_detector", new /datum/stack_end_detector())
 	var/datum/stack_canary/canary = stack_end_detector.prime_canary()
 	canary.use_variable()
 	//the actual loop.

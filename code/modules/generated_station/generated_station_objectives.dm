@@ -57,7 +57,7 @@
 		if(department.id != department_id)
 			continue
 		var/list/candidate_areas = list()
-		var/area/generated_station/department_area = site().station_materialization.department_areas[department.layout_node_id]
+		var/area/generated_station/department_area = site().station_materialization.department_areas?[department.layout_node_id]
 		if(department_area)
 			candidate_areas += department_area
 		// Planned rooms own their own areas; the department shell may hold only
@@ -65,7 +65,7 @@
 		for(var/datum/generated_station_module/module in site().station_materialization.modules)
 			if(module.department_node_id != department.layout_node_id)
 				continue
-			var/area/generated_station/room_area = site().station_materialization.module_areas[module.id]
+			var/area/generated_station/room_area = site().station_materialization.module_areas?[module.id]
 			if(room_area)
 				candidate_areas += room_area
 		for(var/area/generated_station/A as anything in candidate_areas)
