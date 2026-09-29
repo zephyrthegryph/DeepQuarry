@@ -67,7 +67,10 @@
 			C.on_holder_destroy(A)
 			cap_leave_systems(A, C)
 			LAZYREMOVE(A.cap_extras, C)
+			var/datum/data = A.cap_data?[C.key]
 			LAZYREMOVE(A.cap_data, C.key)
+			if(isdatum(data))
+				qdel(data)
 			changed(A, CHANGE_CAPABILITY)
 			return TRUE
 	return FALSE
@@ -159,5 +162,3 @@ GLOBAL_LIST_EMPTY(cap_systems)
 		var/datum/cap_system/S = cap_system(path)
 		S.leave(A)
 
-/// id -> capability interaction entry (interaction_by_id() finds them for the Menu).
-GLOBAL_LIST_EMPTY(cap_entries_by_id)

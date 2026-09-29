@@ -95,7 +95,8 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 	var/list/entries = cap_interactions(F)
 	TEST_ASSERT_EQUAL(length(entries), 1, "one entry")
 	var/datum/interaction/capability/E = entries[1]
-	TEST_ASSERT(interaction_by_id(E.id) == E, "interaction_by_id() finds the capability entry")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, get_turf(F))
+	TEST_ASSERT(run_chosen_interaction(H, F, E.id), "the Menu runs the capability entry by its id on this target")
 	TEST_ASSERT(E.applies_to(F), "offered while pokeable")
 	F.can_poke = FALSE
 	TEST_ASSERT(!E.applies_to(F), "not offered once applies says no")

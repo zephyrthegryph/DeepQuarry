@@ -12,11 +12,12 @@
 	if(var_name == NAMEOF(src, vars))
 		return FALSE
 	datum_flags |= DF_VAR_EDITED
-	// A var with a setter (TRACKED or a hand-written set_<var>) is edited through it, so everything that
-	// reacts to the change reacts to an admin's edit too (dx_conventions.md §1).
-	var/setter = "set_[var_name]"
-	if(hascall(src, setter))
-		call(src, setter)(var_value)
+	// A var with a registered setter is edited through it, so everything that reacts to the change
+	// reacts to an admin's edit too (dx_conventions.md §1).
+	// Only a registered setter (TRACKED or SETTER): a proc merely named set_<x> may be a verb or take
+	// other arguments.
+	if(hascall(src, "__setter_[var_name]"))
+		call(src, "set_[var_name]")(var_value)
 		return TRUE
 	vars[var_name] = var_value // ALLOW(api): VV: admins edit any var by name
 	changed(src)
