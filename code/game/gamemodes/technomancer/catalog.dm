@@ -108,7 +108,7 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 // byond:// hrefs. All actions dispatched via tgui_act.
 DECLARE_INTERACTIONS(/obj/item/technomancer_catalog, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/item/technomancer_catalog/proc/can_refund)), \
 )
 
 /// Old attack_self.
@@ -237,12 +237,15 @@ DECLARE_INTERACTIONS(/obj/item/technomancer_catalog, \
 							break
 			return TRUE
 
-/// Old attackby.
-/obj/item/technomancer_catalog/proc/interaction_item(mob/user, atom/movable/AM, datum/interaction/interaction)
+/// Requirement: refunds only happen at the base.
+/obj/item/technomancer_catalog/proc/can_refund(mob/user, atom/target, obj/item/held)
 	var/turf/T = get_turf(user)
 	if(T && (T.z in using_map.player_levels))
-		to_chat(user, span_danger("You can only refund at your base, it's too late now!"))
-		return INTERACTION_HANDLED_PASS
+		return "you can only refund at your base, it's too late now"
+	return TRUE
+
+/// Old attackby.
+/obj/item/technomancer_catalog/proc/interaction_item(mob/user, atom/movable/AM, datum/interaction/interaction)
 	for(var/datum/technomancer/equipment/E in equipment_instances + assistance_instances)
 		if(AM.type == E.obj_path) // We got a match.
 			if(budget + E.cost > max_budget)

@@ -63,13 +63,16 @@ DECLARE_REF(/obj/item/paicard, "screen_layer", OWNED, null)
 		pai.death(0)
 	..()
 
+/// Requirement: a wrecked (empty) card can't be activated.
+/obj/item/paicard/proc/can_inhabit(mob/user, atom/target, obj/item/held)
+	if(!pai && is_damage_critical())
+		return "that card is too damaged to activate"
+	return TRUE
+
 /// Old attack_ghost: a ghost loads itself into an empty card. An occupied card falls to the ghost's default.
 /obj/item/paicard/proc/paicard_observer_inhabit(mob/user, obj/item/held, datum/interaction/interaction)
 	if(pai) //Have a person in them already?
 		return FALSE
-	if(is_damage_critical())
-		to_chat(user, span_warning("That card is too damaged to activate!"))
-		return TRUE
 	var/time_till_respawn = user.time_till_respawn()
 	if(time_till_respawn == -1) // Special case, never allowed to respawn
 		to_chat(user, span_warning("Respawning is not allowed!"))
@@ -637,7 +640,7 @@ DECLARE_REF(/obj/item/paicard, "screen_layer", OWNED, null)
 DECLARE_INTERACTIONS(/obj/item/paicard, \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_OBSERVER("Inhabit", PROC_REF(paicard_observer_inhabit)), \
+	INTERACT_OBSERVER("Inhabit", PROC_REF(paicard_observer_inhabit), REQ_TARGET_STATE(/obj/item/paicard/proc/can_inhabit)), \
 )
 
 /// `held` is unused by paicard's own dispatch (always null through the resolver) - repurposed

@@ -406,13 +406,19 @@ GLOBAL_VAR(bomb_set)
 /datum/interaction/machine_verb/nuclearbomb_make_deployable
 	id = "nuclearbomb_make_deployable"
 	name = "Make Deployable"
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/nuclearbomb/proc/can_make_deployable))
 	effect = /obj/machinery/nuclearbomb/proc/interaction_make_deployable
+
+/// Requirement: only something with hands can adjust the panels.
+/obj/machinery/nuclearbomb/proc/can_make_deployable(mob/user, atom/target, obj/item/held)
+	if(!user.canmove || user.stat || user.restrained())
+		return TRUE // the effect declines silently
+	if(!ishuman(user))
+		return "you don't have the dexterity to do this"
+	return TRUE
 
 /obj/machinery/nuclearbomb/proc/interaction_make_deployable(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!user.canmove || user.stat || user.restrained())
-		return TRUE
-	if(!ishuman(user))
-		to_chat(user, span_warning("You don't have the dexterity to do this!"))
 		return TRUE
 	if(deployable)
 		to_chat(user, span_warning("You close several panels to make [src] undeployable."))

@@ -146,16 +146,16 @@ DECLARE_REF(/obj/machinery/smartfridge, "item_records", OWNED_LIST, null)
 				add_overlay("[icon_base]-[icon_contents]3")
 
 EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
-	INTERACT_ITEM(null, PROC_REF(smartfridge_interaction_item)), \
+	INTERACT_ITEM(null, PROC_REF(smartfridge_interaction_item), REQ_BECAUSE(REQ_TARGET_STATE(/obj/machinery/smartfridge/proc/is_powered_for_stocking), "it is unpowered and useless")), \
 	INTERACT_HAND_UNGATED(null, PROC_REF(smartfridge_interaction_hand)), \
 )
 
+/// Requirement: the fridge has power.
+/obj/machinery/smartfridge/proc/is_powered_for_stocking(mob/user, atom/target, obj/item/held)
+	return !has_stat(NOPOWER)
+
 /// Old attackby.
 /obj/machinery/smartfridge/proc/smartfridge_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	if(has_stat(NOPOWER))
-		to_chat(user, span_notice("\The [src] is unpowered and useless."))
-		return INTERACTION_HANDLED_PASS
-
 	if(accept_check(O))
 		user.remove_from_mob(O)
 		stock(O)

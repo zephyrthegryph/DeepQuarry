@@ -79,15 +79,18 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 /datum/interaction/machine_hand/ungated/station_map_watch
 	id = "station_map_watch"
 	name = "Watch"
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/station_map/proc/can_watch))
 	effect = /obj/machinery/station_map/proc/interaction_watch
 
-/obj/machinery/station_map/proc/interaction_watch(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement: TRUE, or why the user can't watch the holomap.
+/obj/machinery/station_map/proc/can_watch(mob/user, atom/target, obj/item/held)
 	if(watching_mob() && (watching_mob() != user))
-		to_chat(user, span_warning("Someone else is currently watching the holomap."))
-		return TRUE
+		return "someone else is currently watching the holomap"
 	if(user.loc != loc)
-		to_chat(user, span_warning("You need to stand in front of \the [src]."))
-		return TRUE
+		return "you need to stand in front of \the [src]"
+	return TRUE
+
+/obj/machinery/station_map/proc/interaction_watch(mob/user, obj/item/held, datum/interaction/interaction)
 	if(watching_mob())
 		return TRUE
 	startWatching(user)

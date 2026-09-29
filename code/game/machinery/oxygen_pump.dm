@@ -56,10 +56,18 @@ DECLARE_REF(/obj/machinery/oxygen_pump, "contained", OWNED, null)
 	src.add_fingerprint(user)
 
 EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(oxygen_pump_interaction_hand)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(oxygen_pump_interaction_hand), REQ_TARGET_STATE(/obj/machinery/oxygen_pump/proc/can_use_pump)), \
 	INTERACT_ITEM(null, PROC_REF(oxygen_pump_interaction_item)), \
 	INTERACT_VERB("Show Tank Settings", PROC_REF(oxygen_pump_settings)), \
 )
+
+/// Requirement: the mask needs a tank behind it (removing the tank in maintenance is always fine).
+/obj/machinery/oxygen_pump/proc/can_use_pump(mob/user, atom/target, obj/item/held)
+	if(user.is_incorporeal() || has_stat(MAINT))
+		return TRUE
+	if(!tank)
+		return "there is no tank in it"
+	return TRUE
 
 /// Old attack_hand (it never reached the machinery gate).
 /obj/machinery/oxygen_pump/proc/oxygen_pump_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
@@ -73,8 +81,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		tank.add_fingerprint(user)
 		tank = null
 		return TRUE
-	if (!tank)
-		to_chat(user, span_warning("There is no tank in \the [src]!"))
+	if(!tank)
 		return TRUE
 	if(breather())
 		if(tank)

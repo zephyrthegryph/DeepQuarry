@@ -12,22 +12,10 @@
 
 /// Old verb "Toggle Visor".
 /obj/item/rig/proc/rig_toggle_vision_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(user, span_warning("The hardsuit is not being worn."))
-		return
-
 	if(!check_power_cost(user))
 		return
 
-	if(canremove)
-		to_chat(user, span_warning("The suit is not active."))
-		return
-
 	if(!check_suit_access(user))
-		return
-
-	if(!visor)
-		to_chat(user, span_warning("The hardsuit does not have a configurable visor."))
 		return
 
 	if(!visor.active)
@@ -37,10 +25,6 @@
 
 /// Old verb "Toggle Helmet" (offered while the suit has that piece).
 /obj/item/rig/proc/rig_toggle_helmet_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(user, span_warning("The hardsuit is not being worn."))
-		return
-
 	if(!check_suit_access(user))
 		return
 
@@ -55,10 +39,6 @@
 
 /// Old verb "Toggle Gauntlets" (offered while the suit has that piece).
 /obj/item/rig/proc/rig_toggle_gauntlets_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(user, span_warning("The hardsuit is not being worn."))
-		return
-
 	if(!check_suit_access(user))
 		return
 
@@ -66,10 +46,6 @@
 
 /// Old verb "Toggle Boots" (offered while the suit has that piece).
 /obj/item/rig/proc/rig_toggle_boots_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(user, span_warning("The hardsuit is not being worn."))
-		return
-
 	if(!check_suit_access(user))
 		return
 
@@ -77,10 +53,6 @@
 
 /// Old verb "Deploy Hardsuit".
 /obj/item/rig/proc/rig_deploy_suit_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(user, span_warning("The hardsuit is not being worn."))
-		return
-
 	if(!check_suit_access(user))
 		return
 
@@ -91,10 +63,6 @@
 
 /// Old verb "Toggle Hardsuit".
 /obj/item/rig/proc/rig_toggle_seals_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(user, span_warning("The hardsuit is not being worn."))
-		return
-
 	if(!check_suit_access(user))
 		return
 
@@ -106,14 +74,6 @@
 		return
 
 	if(!check_power_cost(user, 0, 0, 0, 0))
-		return
-
-	if(canremove)
-		to_chat(user, span_warning("The suit is not active."))
-		return
-
-	if(!visor)
-		to_chat(user, span_warning("The hardsuit does not have a configurable visor."))
 		return
 
 	if(!visor.active)
@@ -130,18 +90,6 @@
 	if(malfunction_check(user))
 		return
 
-	if(canremove)
-		to_chat(user, span_warning("The suit is not active."))
-		return
-
-	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(user, span_warning("The hardsuit is not being worn."))
-		return
-
-	if(!speech)
-		to_chat(user, span_warning("The hardsuit does not have a speech synthesiser."))
-		return
-
 	speech.engage()
 
 /// Old verb "Select Module".
@@ -150,14 +98,6 @@
 		return
 
 	if(!check_power_cost(user, 0, 0, 0, 0))
-		return
-
-	if(canremove)
-		to_chat(user, span_warning("The suit is not active."))
-		return
-
-	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(user, span_warning("The hardsuit is not being worn."))
 		return
 
 	var/list/selectable = list()
@@ -185,14 +125,6 @@
 	if(!check_power_cost(user, 0, 0, 0, 0))
 		return
 
-	if(canremove)
-		to_chat(user, span_warning("The suit is not active."))
-		return
-
-	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(user, span_warning("The hardsuit is not being worn."))
-		return
-
 	var/list/selectable = list()
 	for(var/obj/item/rig_module/module in installed_modules)
 		if(module.toggleable)
@@ -215,14 +147,6 @@
 /// Old verb "Engage Module".
 /obj/item/rig/proc/rig_engage_module_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(malfunction_check(user))
-		return
-
-	if(canremove)
-		to_chat(user, span_warning("The suit is not active."))
-		return
-
-	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(user, span_warning("The hardsuit is not being worn."))
 		return
 
 	if(!check_power_cost(user, 0, 0, 0, 0))
@@ -255,3 +179,16 @@
 
 /obj/item/rig/proc/pred_has_boots(mob/actor, atom/target, obj/item/held)
 	return !!boots
+
+/// Requirement: the hardsuit is worn on a human's back or belt.
+/obj/item/rig/proc/pred_rig_worn(mob/actor, atom/target, obj/item/held)
+	var/mob/living/carbon/human/H = wearer()
+	if(!istype(H) || (H.get_equipped_item(SLOT_ID_BACK) != src && H.get_equipped_item(SLOT_ID_BELT) != src))
+		return "the hardsuit is not being worn"
+	return TRUE
+
+/// Requirement: the suit is sealed and active.
+/obj/item/rig/proc/pred_rig_active(mob/actor, atom/target, obj/item/held)
+	if(canremove)
+		return "the suit is not active"
+	return TRUE

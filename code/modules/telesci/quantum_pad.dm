@@ -133,12 +133,9 @@
 	id = "quantumpad_use"
 	name = "Use"
 	effect = /obj/machinery/power/quantumpad/proc/interaction_use
+	also_requires = list(REQ_BECAUSE(REQ_PANEL(FALSE), "the panel must be closed before operating this machine"))
 
 /obj/machinery/power/quantumpad/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(panel_open)
-		to_chat(user, span_warning("The panel must be closed before operating this machine!"))
-		return TRUE
-
 	if(istype(get_area(src), /area/shuttle))
 		to_chat(user, span_warning("This is too unstable a platform for \the [src] to operate on!"))
 		// ition Start

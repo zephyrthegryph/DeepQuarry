@@ -300,19 +300,22 @@
 /datum/interaction/entry_item/pottedplant_item
 	id = "pottedplant_item"
 	name = "Hide item"
+	also_requires = list(REQ_TARGET_STATE(/obj/structure/flora/pottedplant/proc/can_hide_item))
 	effect = /obj/structure/flora/pottedplant/proc/interaction_hide_item
+
+/// Requirement: one tiny item fits in the pot.
+/obj/structure/flora/pottedplant/proc/can_hide_item(mob/user, atom/target, obj/item/I)
+	if(issilicon(user) || !istype(I))
+		return TRUE // the effect declines silently
+	if(stored_item)
+		return "[I] won't fit in, there already appears to be something in here"
+	if(I.w_class > ITEMSIZE_TINY)
+		return "[I] is too big to fit inside it"
+	return TRUE
 
 /obj/structure/flora/pottedplant/proc/interaction_hide_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(issilicon(user))
 		return TRUE // Don't try to put modules in here, you're a borg. TODO: Inventory refactor to not be ass.
-
-	if(stored_item)
-		to_chat(user, span_notice("[I] won't fit in. There already appears to be something in here..."))
-		return TRUE
-
-	if(I.w_class > ITEMSIZE_TINY)
-		to_chat(user, span_notice("[I] is too big to fit inside [src]."))
-		return TRUE
 
 	om_task_start(/datum/om/task/timed/pottedplant_attackby, user, src, I = I)
 	return TRUE

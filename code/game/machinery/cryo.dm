@@ -91,7 +91,7 @@ DECLARE_REF(/obj/machinery/atmospherics/unary/cryo_cell, "beaker", SPILL, null)
 		go_out()
 
 EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(cryo_cell_interaction_hand)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(cryo_cell_interaction_hand), REQ_BECAUSE(REQ_PANEL(FALSE), "close the maintenance panel first")), \
 	INTERACT_ITEM(null, PROC_REF(cryo_cell_interaction_item)), \
 	INTERACT_DRAG("Put inside", PROC_REF(cryo_cell_interaction_drag)), \
 	INTERACT_VERB("Eject occupant", PROC_REF(cryo_cell_move_eject)), \
@@ -102,10 +102,6 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 /obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
 	if(user == occupant)
-		return TRUE
-
-	if(panel_open)
-		to_chat(user, span_boldnotice("Close the maintenance panel first."))
 		return TRUE
 
 	tgui_interact(user)

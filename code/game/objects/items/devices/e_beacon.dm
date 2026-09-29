@@ -38,7 +38,7 @@
 
 DECLARE_INTERACTIONS(/obj/item/emergency_beacon, \
 	INTERACT_USE("Activate", PROC_REF(interaction_self)), \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_HAND(null, PROC_REF(interaction_hand), REQ_BECAUSE(REQ_FIELD_NOT("beacon_active"), "it's already active and cannot be moved")), \
 	INTERACT_ITEM("Disassemble", PROC_REF(interaction_item)), \
 )
 
@@ -75,11 +75,8 @@ DECLARE_INTERACTIONS(/obj/item/emergency_beacon, \
 	for(var/zlevel in levels_for_distress)
 		GLOB.priority_announcement.Announce(message, new_title = "Automated Personal Distress Signal", new_sound = ANNOUNCER_MSG_DISTRESS_SIGNAL, zlevel = zlevel)
 
-/// Old attack_hand: block pickup while the beacon is active.
+/// Old attack_hand: block pickup while the beacon is active (the requirement refuses it); otherwise fall through to pickup.
 /obj/item/emergency_beacon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(beacon_active)
-		to_chat(user,span_warning("The beacon is already active and cannot be moved!"))
-		return TRUE
 	return FALSE
 
 /// Old attackby: wrench it apart once active.

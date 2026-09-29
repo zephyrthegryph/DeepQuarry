@@ -172,18 +172,18 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 			//following's for debug, comment out if ur happy with it
 		//. += "There are uhhhh this many things blocking: [blocker_count]."
 
-DECLARE_INTERACTIONS(/obj/structure/event_collector, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+DECLARE_INTERACTIONS(/obj/structure/event_collector, INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/structure/event_collector/proc/can_take_item)))
+
+/// Requirement: TRUE, or why the collector won't take an item now.
+/obj/structure/event_collector/proc/can_take_item(mob/user, atom/target, obj/item/held)
+	if(blocker_insertion_impedement_threshold > 0 && (get_blockers() > blocker_insertion_impedement_threshold))
+		return "it's fucked, fix it first"
+	if(!COOLDOWN_FINISHED(src, next_item_added))
+		return "it's not ready to take another item yet"
+	return TRUE
 
 /// Old attackby.
 /obj/structure/event_collector/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	if(blocker_insertion_impedement_threshold > 0 && ( get_blockers() > blocker_insertion_impedement_threshold) )
-		to_chat(usr,"It's fucked! Fix it first!")
-		return INTERACTION_HANDLED_PASS
-
-	if(!COOLDOWN_FINISHED(src, next_item_added))
-		to_chat(user,span_warning("It's not ready to take another item yet!"))
-		return INTERACTION_HANDLED_PASS
-
 	if(active_recipe.len > 0) //do we have something active at all
 		var/stored_index = -1 //shortcut
 		if(need_recipe_in_order) //can we put this in?

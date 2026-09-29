@@ -582,15 +582,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/pipe, \
 	return INTERACTION_HANDLED_PASS
 
 DECLARE_INTERACTIONS(/obj/item/reagent_containers/rollingpaper, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_USE(null, PROC_REF(interaction_self), REQ_BECAUSE(REQ_FIELD("reagents"), "there is nothing in it, add something to it first")), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 )
 
 /// Old attack_self.
 /obj/item/reagent_containers/rollingpaper/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(!reagents)                                                                                        //don't roll an empty joint
-		to_chat(user, span_warning("There is nothing in [src]. Add something to it first."))
-		return TRUE
 	var/obj/item/clothing/mask/smokable/cigarette/J = new crafted_type()
 	to_chat(user,span_notice("You roll the [src] into a blunt!"))
 	J.add_fingerprint(user)

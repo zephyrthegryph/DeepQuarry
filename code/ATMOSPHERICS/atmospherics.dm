@@ -166,6 +166,7 @@ Pipelines + Other Objects -> Pipe network
 	name = "Fit engineered material"
 	held_type = /obj/item/stack/material
 	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/proc/offer_fit_material, null))
+	also_requires = list(REQ_FIELD_NOT("engineered_material_id", "it already has an engineered material shell"))
 	effect = /obj/machinery/atmospherics/proc/interaction_fit_material
 
 /// The pipe painter recolors this on afterattack; the attackby branch itself does nothing but must not fall through to ..().
@@ -181,9 +182,6 @@ Pipelines + Other Objects -> Pipe network
 	return supports_engineered_material()
 
 /obj/machinery/atmospherics/proc/interaction_fit_material(mob/user, obj/item/stack/material/stock, datum/interaction/interaction)
-	if(engineered_material_id)
-		to_chat(user, span_warning("[src] already has an engineered material shell."))
-		return TRUE
 	if(stock.get_amount() < 1 || !stock.material)
 		return TRUE
 	var/datum/material/material = stock.material

@@ -324,14 +324,10 @@ DECLARE_INTERACTIONS(/obj/item/roller, \
 	icon_state = "rollerbed"
 	var/obj/item/roller/held
 
-DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(interaction_self), REQ_BECAUSE(REQ_FIELD("held"), "the rack is empty")))
 
 /// Old attack_self.
 /obj/item/roller_holder/proc/interaction_self(mob/user, obj/item/self_item, datum/interaction/interaction)
-	if(!held)
-		to_chat(user, span_notice("The rack is empty."))
-		return TRUE
-
 	to_chat(user, span_notice("You deploy the roller bed."))
 	var/obj/structure/bed/roller/R = new held.bedtype(user.loc)
 	R.add_fingerprint(user)

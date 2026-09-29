@@ -444,13 +444,17 @@ DECLARE_REF(/obj/machinery/autolathe, "materials", OWNED, null)
 /datum/interaction/machine_alt/autolathe_reset_drop
 	id = "autolathe_reset_drop"
 	name = "Reset drop direction"
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/autolathe/proc/can_reset_drop))
 	effect = /obj/machinery/autolathe/proc/interaction_reset_drop
+
+/// Requirement: the drop direction can't be reset mid-print.
+/obj/machinery/autolathe/proc/can_reset_drop(mob/user, atom/target, obj/item/held)
+	if(drop_direction && om_busy(src))
+		return "busy printing"
+	return TRUE
 
 /obj/machinery/autolathe/proc/interaction_reset_drop(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!drop_direction)
-		return TRUE
-	if(om_busy(src))
-		balloon_alert(user, "busy printing!")
 		return TRUE
 	balloon_alert(user, "drop direction reset")
 	drop_direction = 0
@@ -465,24 +469,29 @@ DECLARE_REF(/obj/machinery/autolathe, "materials", OWNED, null)
 	id = "autolathe_attackby"
 	name = "Use"
 	held_type = /obj/item
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/autolathe/proc/can_load_item))
 	effect = /obj/machinery/autolathe/proc/interaction_attackby
+
+/// Requirement: TRUE, or why an item can't be used on the autolathe right now.
+/obj/machinery/autolathe/proc/can_load_item(mob/user, atom/target, obj/item/O)
+	if(is_robot_module(O))
+		return TRUE // swallowed silently by the effect
+	if(om_busy(src))
+		return "it's busy, wait for the previous operation to complete"
+	if(istype(O, /obj/item/storage/part_replacer) || has_stat(MACHINE_STAT_ANY))
+		return TRUE // part replacement, or swallowed silently
+	if(panel_open)
+		return "close the panel first"
+	return TRUE
 
 /obj/machinery/autolathe/proc/interaction_attackby(mob/user, obj/item/O, datum/interaction/interaction)
 	if(is_robot_module(O))
 		return TRUE
 
-	if(om_busy(src))
-		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
-		return TRUE
-
 	if(default_part_replacement(user, O))
 		return TRUE
 
-	if(has_stat(MACHINE_STAT_ANY))
-		return TRUE
-
-	if(panel_open)
-		to_chat(user, "close the panel first!")
+	if(has_stat(MACHINE_STAT_ANY) || panel_open)
 		return TRUE
 
 	if(!istype(O, /obj/item/disk/design_disk) && !istype(O, /obj/item/disk/tech_disk))

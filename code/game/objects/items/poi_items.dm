@@ -195,12 +195,15 @@ DECLARE_PERIODIC(/obj/item/poi/brokenoldreactor, PERIODIC_SLOW)
 	var/new_canalyzer = "[drone_name] [examine_canalyzer]"	//Only way I could think to dynamically insert drone name here
 	examine_canalyzer = new_canalyzer
 
+/// Requirement: a fried circuit is past working on.
+/obj/item/poi/broken_drone_circuit/proc/can_work_on(mob/living/user, atom/target, obj/item/held)
+	if(istype(user) && fried)
+		return "it's covered in black marks, you feel there's nothing more you can do"
+	return TRUE
+
 /// Old attackby.
 /obj/item/poi/broken_drone_circuit/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
 	if(!istype(user))
-		return INTERACTION_HANDLED_PASS
-	if(fried)
-		to_chat(user, span_warning("[src] is covered in black marks. You feel there's nothing more you can do..."))
 		return INTERACTION_HANDLED_PASS
 
 	var/turf/message_turf = get_turf(user)	//We use this to ensure everyone can see it!
@@ -263,7 +266,7 @@ DECLARE_PERIODIC(/obj/item/poi/brokenoldreactor, PERIODIC_SLOW)
 
 DECLARE_INTERACTIONS(/obj/item/poi/broken_drone_circuit, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/item/poi/broken_drone_circuit/proc/can_work_on)), \
 )
 
 /// Old attack_self.

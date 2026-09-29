@@ -99,20 +99,20 @@ DECLARE_START_TIMER(/obj/structure/ghost_pod/automatic, "delay_to_self_open", PR
 /obj/structure/ghost_pod/ghost_activated
 
 // Subtypes with their own ghost use override ghost_pod_observer_use() (it never fell through).
-EXTEND_INTERACTIONS(/obj/structure/ghost_pod/ghost_activated, INTERACT_OBSERVER("Inhabit", PROC_REF(ghost_pod_observer_use)))
+EXTEND_INTERACTIONS(/obj/structure/ghost_pod/ghost_activated, INTERACT_OBSERVER("Inhabit", PROC_REF(ghost_pod_observer_use), REQ_TARGET_STATE(/obj/structure/ghost_pod/ghost_activated/proc/can_inhabit)))
+
+/// Requirement: TRUE, or why this ghost can't take the pod. Subtypes with their own ghost use override it.
+/obj/structure/ghost_pod/ghost_activated/proc/can_inhabit(mob/observer/dead/user, atom/target, obj/item/held)
+	if(jobban_isbanned(user, JOB_GHOSTROLES))
+		return "you cannot inhabit this creature because you are banned from playing ghost roles"
+	if(used)
+		return "another spirit appears to have gotten to it before you, sorry"
+	return TRUE
 
 /// Old attack_ghost: a ghost inhabits the pod.
 /obj/structure/ghost_pod/ghost_activated/proc/ghost_pod_observer_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
-	if(jobban_isbanned(user, JOB_GHOSTROLES))
-		to_chat(user, span_warning("You cannot inhabit this creature because you are banned from playing ghost roles."))
-		return TRUE
-
 	//No OOC notes
 	if (not_has_ooc_text(user))
-		return TRUE
-
-	if(used)
-		to_chat(user, span_warning("Another spirit appears to have gotten to \the [src] before you.  Sorry."))
 		return TRUE
 
 	om_ask(user, /datum/om/prompt/confirm/ghost_pod_activate, PROC_REF(activation_confirmed))

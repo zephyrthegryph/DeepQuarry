@@ -122,13 +122,17 @@ DECLARE_REF(/obj/item/mapping_unit, "cell", OWNED, null)
 	if(loc != user) // Not just a juggle
 		hide_device()
 
+/// Requirement: a humanoid user (an unconscious one is ignored silently by the effect).
+/obj/item/mapping_unit/proc/can_use_mapper(mob/user, atom/target, obj/item/held)
+	if(user.stat != CONSCIOUS)
+		return TRUE
+	if(!ishuman(user))
+		return "only humanoids can use this device"
+	return TRUE
+
 /// Old attack_self.
 /obj/item/mapping_unit/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat != CONSCIOUS)
-		return TRUE
-
-	if(!ishuman(user))
-		to_chat(user, span_warning("Only humanoids can use this device."))
 		return TRUE
 
 	var/mob/living/carbon/human/H = user
@@ -146,7 +150,7 @@ DECLARE_REF(/obj/item/mapping_unit, "cell", OWNED, null)
 
 DECLARE_INTERACTIONS(/obj/item/mapping_unit, \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/mapping_unit/proc/can_use_mapper)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 )
 

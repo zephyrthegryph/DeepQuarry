@@ -86,13 +86,15 @@ DECLARE_DEFAULT_CHILD(/obj/item/radio/headset, "keyslot2", "ks2type")
 	return GLOB.tgui_inventory_state
 
 // Extends the radio's own Use (the radio UI; interaction_self declines for packs/beacons).
-EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptionkey, PROC_REF(interaction_item), "Insert key"))
+EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptionkey, PROC_REF(interaction_item), "Insert key", REQ_TARGET_STATE(/obj/item/radio/headset/proc/can_insert_key)))
+
+/// Requirement: a free key slot.
+/obj/item/radio/headset/proc/can_insert_key(mob/user, atom/target, obj/item/held)
+	if(keyslot1 && keyslot2)
+		return "the headset can't hold another key"
+	return TRUE
 
 /obj/item/radio/headset/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(keyslot1 && keyslot2)
-		to_chat(user, span_notice("The headset can't hold another key!"))
-		return TRUE
-
 	if(!keyslot1)
 		user.drop_item()
 		W.forceMove(src)

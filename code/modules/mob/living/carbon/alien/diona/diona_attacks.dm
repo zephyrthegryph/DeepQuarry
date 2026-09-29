@@ -11,15 +11,10 @@
 	else
 		return ..()
 
-EXTEND_INTERACTIONS(/mob/living/carbon/alien/diona, INTERACT_ITEM_AS(I_HELP, "Put on hat", PROC_REF(diona_interaction_hat)))
+EXTEND_INTERACTIONS(/mob/living/carbon/alien/diona, INTERACT_INSERT_AS(I_HELP, /obj/item/clothing/head, PROC_REF(diona_interaction_hat), "Put on hat", REQ_FIELD_NOT("hat")))
 
 /// Old attackby, in help: a hat goes on the nymph. Anything else reaches the attack.
 /mob/living/carbon/alien/diona/proc/diona_interaction_hat(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!istype(held, /obj/item/clothing/head))
-		return FALSE
-	if(hat)
-		to_chat(user, span_warning("\The [src] is already wearing \the [hat]."))
-		return TRUE
 	user.unEquip(held)
 	wear_hat(held)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " puts %I% on %T%."), item = held)

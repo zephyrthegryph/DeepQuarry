@@ -155,9 +155,9 @@
 
 EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 	INTERACT_ITEM(null, PROC_REF(dna_scanner_interaction_item)), \
-	INTERACT_DRAG("Put inside", PROC_REF(dna_scanner_interaction_drag)), \
+	INTERACT_DRAG("Put inside", PROC_REF(dna_scanner_interaction_drag), REQ_TARGET_STATE(/obj/machinery/dna_scannernew/proc/can_drag_inside)), \
 	INTERACT_VERB("Eject DNA Scanner", PROC_REF(dna_scannernew_eject_effect)), \
-	INTERACT_VERB("Enter DNA Scanner", PROC_REF(dna_scannernew_move_inside_effect)), \
+	INTERACT_VERB("Enter DNA Scanner", PROC_REF(dna_scannernew_move_inside_effect), REQ_TARGET_STATE(/obj/machinery/dna_scannernew/proc/can_move_inside)), \
 )
 
 /// Old MouseDrop_T: allows borgs to clone people without external assistance.
@@ -169,28 +169,32 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 	// Traitgenes Do not allow buckled or ridden mobs
 	if(target.buckled_to())
 		return FALSE
-	if(target.has_buckled_mobs())
-		to_chat(user, span_warning("\The [target] has other entities attached to it. Remove them first."))
-		return TRUE
 	put_in(target)
 	return TRUE
 
-/obj/machinery/dna_scannernew/proc/dna_scannernew_move_inside_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement for the drag-in: TRUE, or why the dragged mob can't go in.
+/obj/machinery/dna_scannernew/proc/can_drag_inside(mob/user, atom/target, atom/movable/dropped)
+	var/mob/M = dropped
+	if(!ishuman(M) || get_occupant() || M.buckled_to())
+		return TRUE // the effect declines these silently
+	if(M.has_buckled_mobs())
+		return "[M] has other entities attached to it, remove them first"
+	return TRUE
 
-	if(user.stat != 0)
-		return
+/// Requirement for climbing in: TRUE, or why the user can't.
+/obj/machinery/dna_scannernew/proc/can_move_inside(mob/user, atom/target, obj/item/held)
+	if(user.stat != CONSCIOUS)
+		return TRUE // the effect declines silently
 	if(!ishuman(user) && !issmall(user)) //Make sure they're a mob that has dna
-		to_chat(user, span_notice("Try as you might, you can not climb up into the scanner."))
-		return
-	var/mob/living/carbon/WC = get_occupant()
-	if(WC)
-		to_chat(user, span_warning("The scanner is already occupied!"))
-		return
+		return "try as you might, you can not climb up into the scanner"
+	if(get_occupant())
+		return "the scanner is already occupied"
 	if(user.abiotic())
-		to_chat(user, span_warning("The subject cannot have abiotic items on."))
-		return
-	if(WC)
-		to_chat(user, span_warning("There is already something inside."))
+		return "the subject cannot have abiotic items on"
+	return TRUE
+
+/obj/machinery/dna_scannernew/proc/dna_scannernew_move_inside_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.stat != CONSCIOUS)
 		return
 	user.stop_pulling()
 	if(!user.move_into(src, OCCUPANT_SLOT_DNA_SCANNER, user))

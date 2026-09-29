@@ -83,12 +83,43 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-	INTERACT_VERB("Draw", PROC_REF(deck_verb_draw)), \
-	INTERACT_VERB("Deal", PROC_REF(deck_verb_deal)), \
-	INTERACT_VERB("Deal Multiple Cards", PROC_REF(deck_verb_deal_multi)), \
-	INTERACT_VERB("Search for Cards", PROC_REF(deck_verb_search)), \
+	INTERACT_VERB("Draw", PROC_REF(deck_verb_draw), REQ_TARGET_STATE(/obj/item/deck/proc/can_draw)), \
+	INTERACT_VERB("Deal", PROC_REF(deck_verb_deal), REQ_TARGET_STATE(/obj/item/deck/proc/can_deal)), \
+	INTERACT_VERB("Deal Multiple Cards", PROC_REF(deck_verb_deal_multi), REQ_TARGET_STATE(/obj/item/deck/proc/can_deal)), \
+	INTERACT_VERB("Search for Cards", PROC_REF(deck_verb_search), REQ_TARGET_STATE(/obj/item/deck/proc/can_draw)), \
 	INTERACT_VERB("Shuffle", PROC_REF(deck_verb_shuffle)), \
 )
+
+/// Requirement: TRUE, or why no card can be drawn into the user's hand. The effect's silent guards
+/// (stat, reach, non-carbon) pass here. Also checked by the direct callers (attack_hand).
+/obj/item/deck/proc/can_draw(mob/living/carbon/user, atom/target, obj/item/held)
+	if(user.stat || !Adjacent(user))
+		return TRUE
+	if(user.hands_are_full()) // Safety check lest the card disappear into oblivion
+		return "your hands are full"
+	if(!iscarbon(user))
+		return TRUE
+	if(!length(cards))
+		return "there are no cards in the deck"
+	var/obj/item/hand/H = user.get_type_in_hands(/obj/item/hand)
+	if(H && !(H.parentdeck == src))
+		return "you can't mix cards from different decks"
+	return TRUE
+
+/// Requirement: TRUE, or why no card can be dealt. Also checked by the direct callers (ctrl-clicks).
+/obj/item/deck/proc/can_deal(mob/user, atom/target, obj/item/held)
+	if(user.stat || !Adjacent(user))
+		return TRUE
+	if(!length(cards))
+		return "there are no cards in the deck"
+	return TRUE
+
+/// Direct (non-interaction) callers: tell the user why `why` refuses, and return TRUE if it did.
+/obj/item/proc/card_refused(mob/user, why)
+	if(why == TRUE)
+		return FALSE
+	to_chat(user, span_notice("[capitalize(why)]."))
+	return TRUE
 
 /// Old attack_hand.
 /obj/item/deck/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
@@ -96,6 +127,8 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	if(ishuman(H) && (istype(src.loc, /obj/item/storage) || src == H.get_equipped_item(SLOT_ID_POCKET_R) || src == H.get_equipped_item(SLOT_ID_POCKET_L) || src.loc == user)) // so objects can be removed from storage containers or pockets. also added a catch-all, so if it's in the mob you'll pick it up. Human only, however!
 		return FALSE
 	else // but if they're not, or are in your hands, you can still draw cards.
+		if(card_refused(user, can_draw(user, src, null)))
+			return TRUE
 		deck_verb_draw(user)
 	return TRUE
 
@@ -103,20 +136,17 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 /obj/item/deck/proc/deck_verb_draw(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || !Adjacent(user)) return
 
-	if(user.hands_are_full()) // Safety check lest the card disappear into oblivion
-		to_chat(user,span_notice("Your hands are full!"))
+	if(user.hands_are_full()) // Safety check lest the card disappear into oblivion (the requirement told them)
 		return
 
 	if(!iscarbon(user))
 		return
 
-	if(!cards.len)
-		to_chat(user,span_notice("There are no cards in the deck."))
+	if(!length(cards)) // re-checked: the requirement told them, and reruns after a prompt re-enter here
 		return
 
 	var/obj/item/hand/H = user.get_type_in_hands(/obj/item/hand)
 	if(H && !(H.parentdeck == src))
-		to_chat(user,span_warning("You can't mix cards from different decks!"))
 		return
 
 	if(!H)
@@ -137,8 +167,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 /obj/item/deck/proc/deck_verb_deal(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || !Adjacent(user)) return
 
-	if(!cards.len)
-		to_chat(user,span_notice("There are no cards in the deck."))
+	if(!length(cards)) // re-checked: the requirement told them, and reruns after a prompt re-enter here
 		return
 
 	var/list/players = list()
@@ -157,8 +186,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 /obj/item/deck/proc/deck_verb_deal_multi(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || !Adjacent(user)) return
 
-	if(!cards.len)
-		to_chat(user,span_notice("There are no cards in the deck."))
+	if(!length(cards)) // re-checked: the requirement told them, and reruns after a prompt re-enter here
 		return
 
 	var/list/players = list()
@@ -182,20 +210,17 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 /obj/item/deck/proc/deck_verb_search(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || !Adjacent(user)) return
 
-	if(user.hands_are_full()) // Safety check lest the card disappear into oblivion
-		to_chat(user,span_notice("Your hands are full!"))
+	if(user.hands_are_full()) // Safety check lest the card disappear into oblivion (the requirement told them)
 		return
 
 	if(!iscarbon(user))
 		return
 
-	if(!cards.len)
-		to_chat(user, span_notice("There are no cards in the deck."))
+	if(!length(cards)) // re-checked: the requirement told them, and reruns after a prompt re-enter here
 		return
 
 	var/obj/item/hand/H = user.get_type_in_hands(/obj/item/hand)
 	if(H && !(H.parentdeck == src))
-		to_chat(user, span_warning("You can't mix cards from different decks!"))
 		return
 
 
@@ -250,9 +275,13 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	act_message(user, src, others = span_notice("%U% searches for specific cards in %T%, and draws [cards_to_draw.len]."))
 
 /obj/item/deck/item_ctrl_click(mob/user)
+	if(card_refused(user, can_deal(user, src, null)))
+		return
 	deck_verb_deal(user)
 
 /obj/item/deck/click_ctrl_shift(mob/user)
+	if(card_refused(user, can_deal(user, src, null)))
+		return
 	deck_verb_deal_multi(user)
 
 /obj/item/deck/proc/deal_at(mob/user, mob/target, dcard) // Take in the no. of card to be dealt
@@ -441,8 +470,16 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
 	INTERACT_VERB("Discard", PROC_REF(hand_verb_discard), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Remove card", PROC_REF(hand_verb_remove_card)), \
+	INTERACT_VERB("Remove card", PROC_REF(hand_verb_remove_card), REQ_TARGET_STATE(/obj/item/hand/proc/can_remove_card)), \
 )
+
+/// Requirement: a free hand for the removed card (the effect's silent stat/reach guard passes here).
+/obj/item/hand/proc/can_remove_card(mob/living/carbon/user, atom/target, obj/item/held)
+	if(user.stat || !Adjacent(user))
+		return TRUE
+	if(user.hands_are_full()) // Safety check lest the card disappear into oblivion
+		return "your hands are full"
+	return TRUE
 
 /// Old attack_self.
 /obj/item/hand/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -462,8 +499,7 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 /obj/item/hand/proc/hand_verb_remove_card(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || !Adjacent(user)) return
 
-	if(user.hands_are_full()) // Safety check lest the card disappear into oblivion
-		to_chat(user,span_danger("Your hands are full!"))
+	if(user.hands_are_full()) // Safety check lest the card disappear into oblivion (the requirement told them)
 		return
 
 	var/pickablecards = list()
@@ -565,6 +601,8 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 
 /// Old click_alt.
 /obj/item/hand/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+	if(card_refused(user, can_remove_card(user, src, null)))
+		return TRUE
 	hand_verb_remove_card(user)
 	return TRUE
 

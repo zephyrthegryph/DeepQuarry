@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The interaction Menu and examine now say why an interaction is unavailable (locked, panel open, already loaded, no power, and so on) for hundreds of machines and items, instead of only telling you after you try."
+  - refactor: "Interaction guards are declared as requirements (REQ_FIELD, REQ_ACCESS, REQ_ANCHORED, REQ_PANEL, ...) rather than written inside each effect."

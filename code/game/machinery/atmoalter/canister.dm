@@ -275,18 +275,20 @@ update_flag
 	id = "canister_liner"
 	name = "Install pressure liner"
 	held_type = /obj/item/stack/material
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/portable_atmospherics/canister/proc/can_install_liner))
 	effect = /obj/machinery/portable_atmospherics/canister/proc/interaction_liner
 
-/obj/machinery/portable_atmospherics/canister/proc/interaction_liner(mob/user, obj/item/stack/material/stock, datum/interaction/interaction)
+/// Requirement: TRUE, or why a pressure liner can't be installed.
+/obj/machinery/portable_atmospherics/canister/proc/can_install_liner(mob/user, atom/target, obj/item/stack/material/stock)
 	if(pressure_liner_material_id)
-		to_chat(user, span_warning("[src] already has an engineered pressure liner."))
-		return TRUE
+		return "it already has an engineered pressure liner"
 	if(destroyed || air_contents.return_pressure() > ONE_ATMOSPHERE * 0.1)
-		to_chat(user, span_warning("Drain and restore [src] before installing a pressure liner."))
-		return TRUE
+		return "drain and restore it before installing a pressure liner"
 	if(stock.get_amount() < 2)
-		to_chat(user, span_warning("A pressure liner requires two sheets."))
-		return TRUE
+		return "a pressure liner requires two sheets"
+	return TRUE
+
+/obj/machinery/portable_atmospherics/canister/proc/interaction_liner(mob/user, obj/item/stack/material/stock, datum/interaction/interaction)
 	var/datum/material/liner = stock.material
 	pressure_liner_material_id = liner.name
 	stock.use(2)

@@ -263,10 +263,6 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 
 /obj/structure/medical_stand/proc/medical_stand_toggle_mode_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(!isliving(user))
-		to_chat(user, span_warning("You can't do that."))
-		return
-
 	if(user.incapacitated())
 		return
 
@@ -489,6 +485,6 @@ DECLARE_REF(/obj/structure/medical_stand, "beaker", OWNED, null)
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/structure/medical_stand, \
-	INTERACT_VERB("Toggle IV Mode", PROC_REF(medical_stand_toggle_mode_effect)), \
+	INTERACT_VERB("Toggle IV Mode", PROC_REF(medical_stand_toggle_mode_effect), REQ_BECAUSE(REQ_TYPE(PRED_ACTOR, list(/mob/living)), "you can't do that")), \
 	INTERACT_VERB("Set IV transfer amount", PROC_REF(set_APTFT_effect)), \
 )

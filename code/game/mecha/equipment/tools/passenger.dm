@@ -128,6 +128,22 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/passenger, "toggle_lock"
 /obj/mecha/proc/pred_mecha_has_passenger_bay(mob/actor, atom/target, obj/item/held)
 	return !!(locate(/obj/item/mecha_parts/mecha_equipment/tool/passenger) in slot_contents())
 
+/// Requirement for climbing into a passenger compartment: TRUE, or why the user can't.
+/obj/mecha/proc/can_enter_passenger(mob/user, atom/target, obj/item/held)
+	if(user.stat || !ishuman(user) || !user.Adjacent(src))
+		return TRUE // the effect declines these silently
+	if(!isturf(user.loc))
+		return "you can't reach the passenger compartment from here"
+	if(iscarbon(user))
+		var/mob/living/carbon/C = user
+		if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
+			return "kinda hard to climb in while handcuffed, don't you think"
+	if(isliving(user))
+		var/mob/living/L = user
+		if(L.has_buckled_mobs())
+			return "you have other entities attached to yourself, remove them first"
+	return TRUE
+
 /// Old verb "Enter Passenger Compartment" (added to the chassis while a compartment was attached).
 /obj/mecha/proc/move_inside_passenger(mob/user, obj/item/held, datum/interaction/interaction)
 
@@ -137,22 +153,6 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/passenger, "toggle_lock"
 
 	if (!user.Adjacent(src))
 		return
-
-	if (!isturf(user.loc))
-		to_chat(user, span_danger("You can't reach the passenger compartment from here."))
-		return
-
-	if(iscarbon(user))
-		var/mob/living/carbon/C = user
-		if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
-			to_chat(user, span_danger("Kinda hard to climb in while handcuffed don't you think?"))
-			return
-
-	if(isliving(user))
-		var/mob/living/L = user
-		if(L.has_buckled_mobs())
-			to_chat(L, span_warning("You have other entities attached to yourself. Remove them first."))
-			return
 
 	//search for a valid passenger compartment
 	var/feedback = 0 //for nicer user feedback

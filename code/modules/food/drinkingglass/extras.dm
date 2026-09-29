@@ -29,18 +29,22 @@
 	return INTERACTION_HANDLED_PASS
 
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/glass2, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_HAND(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/item/reagent_containers/food/drinks/glass2/proc/can_remove_extra)), \
 	INTERACT_ITEM(null, PROC_REF(glass2_item)), \
 )
+
+/// Requirement: something on the glass to remove (only asked while the glass is in the other hand; otherwise the effect falls through).
+/obj/item/reagent_containers/food/drinks/glass2/proc/can_remove_extra(mob/user, atom/target, obj/item/held)
+	if(src != user.get_inactive_hand())
+		return TRUE
+	if(!length(extras))
+		return "there's nothing on the glass to remove"
+	return TRUE
 
 /// Old attack_hand.
 /obj/item/reagent_containers/food/drinks/glass2/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(src != user.get_inactive_hand())
 		return FALSE
-
-	if(!length(extras))
-		to_chat(user, span_warning("There's nothing on the glass to remove!"))
-		return TRUE
 
 	var/choice = rerun_ask(user, "k37", PROC_REF(interaction_hand), args, /datum/om/prompt/choice, message = "What would you like to remove from the glass?", title = "Removal Choice", choices = extras)
 	if(isnull(choice))

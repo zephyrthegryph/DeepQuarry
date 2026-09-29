@@ -34,22 +34,23 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 /**
  * Old attack_hand: access/hacked and prison_break checks ran BEFORE the `..()` gate call, so
  * they used to fire even when the console itself was unpowered/broken. The machinery hand gate
- * now always runs first (see machine_hand); kept whole body in the effect rather than split into
- * requires, so behaviour is otherwise identical. Approximation: those two messages can no longer
- * fire while the console is inoperable/unreachable (the gate's own message wins instead).
+ * now always runs first (see machine_hand) and those checks are can_open_console(), after it.
  */
 /datum/interaction/machine_hand/prison_shuttle_open_ui
 	id = "prison_shuttle_open_ui"
 	name = "Use"
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/prison_shuttle/proc/can_open_console))
 	effect = /obj/machinery/computer/prison_shuttle/proc/interaction_open_ui_impl
 
-/obj/machinery/computer/prison_shuttle/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!src.allowed(user) && (!hacked))
-		to_chat(user, span_warning("Access Denied."))
-		return TRUE
+/// Requirement: TRUE, or why the console can't be used.
+/obj/machinery/computer/prison_shuttle/proc/can_open_console(mob/user, atom/target, obj/item/held)
+	if(!allowed(user) && !hacked)
+		return "access denied"
 	if(prison_break)
-		to_chat(user, span_warning("Unable to locate shuttle."))
-		return TRUE
+		return "unable to locate shuttle"
+	return TRUE
+
+/obj/machinery/computer/prison_shuttle/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	user.set_machine(src)
 	post_signal("prison")
 	tgui_interact(user)

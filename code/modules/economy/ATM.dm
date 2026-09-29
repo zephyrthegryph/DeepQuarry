@@ -446,13 +446,14 @@ log transactions
 /datum/interaction/machine_hand/ungated/atm_use
 	id = "atm_use"
 	name = "Use"
-	requires = list()
+	requires = list(REQ_BECAUSE(REQ_TARGET_STATE(/obj/machinery/atm/proc/not_silicon_user), "a firewall prevents you from interfacing with this device"))
 	effect = /obj/machinery/atm/proc/interaction_atm_use
 
+/// Requirement: silicons are firewalled out.
+/obj/machinery/atm/proc/not_silicon_user(mob/user, atom/target, obj/item/held)
+	return !istype(user, /mob/living/silicon)
+
 /obj/machinery/atm/proc/interaction_atm_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(istype(user, /mob/living/silicon))
-		to_chat (user, span_warning("A firewall prevents you from interfacing with this device!"))
-		return TRUE
 	if(get_dist(src,user) <= 1)
 		tgui_interact(user)
 	return TRUE

@@ -85,14 +85,25 @@
 	name = "Add injector"
 	held_type = /obj/item/reagent_containers/hypospray/autoinjector/empty
 	effect = /obj/machinery/injector_maker/proc/interaction_add_small_injector
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/injector_maker/proc/can_take_small_injector))
+
+/// Requirement: TRUE, or why this small injector can't be stored.
+/obj/machinery/injector_maker/proc/can_take_small_injector(mob/user, atom/target, obj/item/held)
+	if(count_small_injector >= capacity_small_injector)
+		return "storage is full; it can only hold [capacity_small_injector]"
+	if(held?.reagents?.total_volume > 0)
+		return "you cannot put a filled injector into the machine"
+	return TRUE
+
+/// Requirement: TRUE, or why this large injector can't be stored.
+/obj/machinery/injector_maker/proc/can_take_large_injector(mob/user, atom/target, obj/item/held)
+	if(count_large_injector >= capacity_large_injector)
+		return "storage is full; it can only hold [capacity_large_injector]"
+	if(held?.reagents?.total_volume > 0)
+		return "you cannot put a filled injector into the machine"
+	return TRUE
 
 /obj/machinery/injector_maker/proc/interaction_add_small_injector(mob/user, obj/item/reagent_containers/hypospray/autoinjector/empty/E, datum/interaction/interaction)
-	if(count_small_injector >= capacity_small_injector)
-		to_chat(user, span_warning("Storage is full! It can only hold [capacity_small_injector]"))
-		return TRUE
-	if(E.reagents.total_volume > 0)
-		to_chat(user, span_warning("You cannot put a filled injector into the machine!"))
-		return TRUE
 	count_small_injector = count_small_injector + 1
 	consume(E, user)
 	update_icon()
@@ -103,14 +114,9 @@
 	name = "Add injector"
 	held_type = /obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty
 	effect = /obj/machinery/injector_maker/proc/interaction_add_large_injector
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/injector_maker/proc/can_take_large_injector))
 
 /obj/machinery/injector_maker/proc/interaction_add_large_injector(mob/user, obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty/E, datum/interaction/interaction)
-	if(count_large_injector >= capacity_large_injector)
-		to_chat(user, span_warning("Storage is full! It can only hold [capacity_large_injector]"))
-		return TRUE
-	if(E.reagents.total_volume > 0)
-		to_chat(user, span_warning("You cannot put a filled injector into the machine!"))
-		return TRUE
 	count_large_injector = count_large_injector + 1
 	consume(E, user)
 	update_icon()

@@ -34,15 +34,85 @@ DECLARE_DEFAULT_CHILD(/obj/item/taperecorder, "mytape", null)
 DECLARE_REGISTRY(/obj/item/taperecorder, REGISTRY_LISTENING_OBJECTS)
 
 DECLARE_INTERACTIONS(/obj/item/taperecorder, \
-	INTERACT_INSERT(/obj/item/rectape, PROC_REF(interaction_item), "Insert tape"), \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_INSERT(/obj/item/rectape, PROC_REF(interaction_item), "Insert tape", REQ_BECAUSE(REQ_FIELD_NOT("mytape"), "there's already a tape inside")), \
+	INTERACT_HAND(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/item/taperecorder/proc/can_hand_eject)), \
+	INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/taperecorder/proc/can_use_self)), \
 )
 
-/obj/item/taperecorder/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(mytape)
-		to_chat(user, span_notice("There's already a tape inside."))
+// Requirements (side-effect free; TRUE, or why not). An incapacitated user passes: the effects decline silently.
+
+/// Taking the tape out from the other hand.
+/obj/item/taperecorder/proc/can_hand_eject(mob/user, atom/target, obj/item/held)
+	if(user.get_inactive_hand() != src || !mytape)
+		return TRUE // not an eject: falls through to the ordinary hand
+	return can_eject(user, target, held)
+
+/// Self-use stops playback/recording, or starts recording.
+/obj/item/taperecorder/proc/can_use_self(mob/user, atom/target, obj/item/held)
+	if(recording || playing)
 		return TRUE
+	return can_record(user, target, held)
+
+/obj/item/taperecorder/proc/can_eject(mob/user, atom/target, obj/item/held)
+	if(user.incapacitated())
+		return TRUE
+	if(!mytape)
+		return "there's no tape in it"
+	if(emagged)
+		return "the tape seems to be stuck inside"
+	return TRUE
+
+/obj/item/taperecorder/proc/can_record(mob/user, atom/target, obj/item/held)
+	if(user.incapacitated())
+		return TRUE
+	if(!mytape)
+		return "there's no tape"
+	if(mytape.ruined || emagged)
+		return "the tape recorder makes a scratchy noise"
+	if(recording)
+		return "you're already recording"
+	if(playing)
+		return "you can't record when playing"
+	return TRUE
+
+/obj/item/taperecorder/proc/can_wipe(mob/user, atom/target, obj/item/held)
+	if(user.incapacitated())
+		return TRUE
+	if(!mytape)
+		return "there's no tape"
+	if(emagged || mytape.ruined)
+		return "the tape recorder makes a scratchy noise"
+	if(recording || playing)
+		return "you can't wipe the tape while playing or recording"
+	return TRUE
+
+/obj/item/taperecorder/proc/can_playback(mob/user, atom/target, obj/item/held)
+	if(user.incapacitated())
+		return TRUE
+	if(!mytape)
+		return "there's no tape"
+	if(mytape.ruined)
+		return "the tape recorder makes a scratchy noise"
+	if(recording)
+		return "you can't playback when recording"
+	if(playing)
+		return "you're already playing"
+	return TRUE
+
+/obj/item/taperecorder/proc/can_print(mob/user, atom/target, obj/item/held)
+	if(user.incapacitated())
+		return TRUE
+	if(!mytape)
+		return "there's no tape"
+	if(mytape.ruined || emagged)
+		return "the tape recorder makes a scratchy noise"
+	if(!COOLDOWN_FINISHED(src, canprint))
+		return "the recorder can't print that fast"
+	if(recording || playing)
+		return "you can't print the transcript while playing or recording"
+	return TRUE
+
+/obj/item/taperecorder/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(!user.unEquip(I))
 		return TRUE
 	I.forceMove(src)
@@ -62,15 +132,10 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 		return TRUE
 	return FALSE
 
+/// Callers check can_eject() first (the verb's requirement, or can_hand_eject() on the hand).
 /obj/item/taperecorder/proc/taperecorder_eject_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(user.incapacitated())
-		return
-	if(!mytape)
-		to_chat(user, span_notice("There's no tape in \the [src]."))
-		return
-	if(emagged)
-		to_chat(user, span_notice("The tape seems to be stuck inside."))
+	if(user.incapacitated() || !mytape)
 		return
 
 	if(playing || recording)
@@ -133,24 +198,10 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 	consume(src)
 	return
 
+/// Callers check can_record() first (the verb's requirement, or can_use_self() on self-use).
 /obj/item/taperecorder/proc/taperecorder_record_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(user.incapacitated())
-		return
-	if(!mytape)
-		to_chat(user, span_notice("There's no tape!"))
-		return
-	if(mytape.ruined)
-		to_chat(user, span_warning("The tape recorder makes a scratchy noise."))
-		return
-	if(recording)
-		to_chat(user, span_notice("You're already recording!"))
-		return
-	if(playing)
-		to_chat(user, span_notice("You can't record when playing!"))
-		return
-	if(emagged)
-		to_chat(user, span_warning("The tape recorder makes a scratchy noise."))
+	if(user.incapacitated() || !mytape || recording || playing)
 		return
 	if(mytape.used_capacity < mytape.max_capacity)
 		to_chat(user, span_notice("Recording started."))
@@ -211,37 +262,14 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 
 	if(user.incapacitated())
 		return
-	if(emagged)
-		to_chat(user, span_warning("The tape recorder makes a scratchy noise."))
-		return
-	if(mytape.ruined)
-		to_chat(user, span_warning("The tape recorder makes a scratchy noise."))
-		return
-	if(recording || playing)
-		to_chat(user, span_notice("You can't wipe the tape while playing or recording!"))
-		return
-	else
-		if(mytape.storedinfo)	LAZYCLEARLIST(mytape.storedinfo)
-		if(mytape.timestamp)	mytape.timestamp.Cut()
-		mytape.used_capacity = 0
-		to_chat(user, span_notice("You wipe the tape."))
-		return
+	if(mytape.storedinfo)	LAZYCLEARLIST(mytape.storedinfo)
+	if(mytape.timestamp)	mytape.timestamp.Cut()
+	mytape.used_capacity = 0
+	to_chat(user, span_notice("You wipe the tape."))
 
 /obj/item/taperecorder/proc/playback_memory_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	if(user.incapacitated())
-		return
-	if(!mytape)
-		to_chat(user, span_notice("There's no tape!"))
-		return
-	if(mytape.ruined)
-		to_chat(user, span_warning("The tape recorder makes a scratchy noise."))
-		return
-	if(recording)
-		to_chat(user, span_notice("You can't playback when recording!"))
-		return
-	if(playing)
-		to_chat(user, span_notice("You're already playing!"))
 		return
 	playing = 1
 	update_icon()
@@ -303,21 +331,6 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 /obj/item/taperecorder/proc/print_transcript_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	if(user.incapacitated())
-		return
-	if(!mytape)
-		to_chat(user, span_notice("There's no tape!"))
-		return
-	if(mytape.ruined)
-		to_chat(user, span_warning("The tape recorder makes a scratchy noise."))
-		return
-	if(emagged)
-		to_chat(user, span_warning("The tape recorder makes a scratchy noise."))
-		return
-	if(!COOLDOWN_FINISHED(src, canprint))
-		to_chat(user, span_notice("The recorder can't print that fast!"))
-		return
-	if(recording || playing)
-		to_chat(user, span_notice("You can't print the transcript while playing or recording!"))
 		return
 
 	to_chat(user, span_notice("Transcript printed."))
@@ -433,10 +446,10 @@ DECLARE_INTERACTIONS(/obj/item/rectape, \
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/taperecorder, \
-	INTERACT_VERB("Eject Tape", PROC_REF(taperecorder_eject_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Start Recording", PROC_REF(taperecorder_record_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Eject Tape", PROC_REF(taperecorder_eject_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/taperecorder/proc/can_eject)), \
+	INTERACT_VERB("Start Recording", PROC_REF(taperecorder_record_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/taperecorder/proc/can_record)), \
 	INTERACT_VERB("Stop", PROC_REF(taperecorder_stop_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Wipe Tape", PROC_REF(wipe_tape_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Playback Tape", PROC_REF(playback_memory_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Print Transcript", PROC_REF(print_transcript_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Wipe Tape", PROC_REF(wipe_tape_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/taperecorder/proc/can_wipe)), \
+	INTERACT_VERB("Playback Tape", PROC_REF(playback_memory_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/taperecorder/proc/can_playback)), \
+	INTERACT_VERB("Print Transcript", PROC_REF(print_transcript_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/taperecorder/proc/can_print)), \
 )

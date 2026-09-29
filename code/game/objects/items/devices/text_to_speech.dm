@@ -7,15 +7,17 @@
 	var/named
 
 DECLARE_INTERACTIONS(/obj/item/text_to_speech, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/text_to_speech/proc/can_activate)), \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
 )
 
-/obj/item/text_to_speech/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement: the user has to be able to work the device.
+/obj/item/text_to_speech/proc/can_activate(mob/user, atom/target, obj/item/held)
 	if(user.incapacitated(INCAPACITATION_DISABLED))
-		to_chat(user, "You cannot activate the device in your state.")
-		return
+		return "you cannot activate the device in your state"
+	return TRUE
 
+/obj/item/text_to_speech/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!named)
 		to_chat(user, "You input your name into the device.")
 		name = "[initial(name)] ([user.real_name])"

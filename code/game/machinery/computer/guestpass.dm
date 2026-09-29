@@ -45,7 +45,7 @@
 	return
 
 // Replaces the card's own flash: the old override ran both and flashed the pass twice.
-EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE_AS(I_HELP, "Show", PROC_REF(interaction_guest_pass_show)), INTERACT_USE_AS(I_DISARM, "Show", PROC_REF(interaction_guest_pass_show)), INTERACT_USE_AS(I_GRAB, "Show", PROC_REF(interaction_guest_pass_show)), INTERACT_USE_AS(I_HURT, "Deactivate", PROC_REF(interaction_guest_pass_deactivate)))
+EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE_AS(I_HELP, "Show", PROC_REF(interaction_guest_pass_show)), INTERACT_USE_AS(I_DISARM, "Show", PROC_REF(interaction_guest_pass_show)), INTERACT_USE_AS(I_GRAB, "Show", PROC_REF(interaction_guest_pass_show)), INTERACT_USE_AS(I_HURT, "Deactivate", PROC_REF(interaction_guest_pass_deactivate), REQ_BECAUSE(REQ_NOT(REQ_FIELD_EQ("icon_state", "guest-invalid")), "this guest pass is already deactivated")))
 
 /// Old attack_self outside combat mode: flash the pass.
 /obj/item/card/id/guest/proc/interaction_guest_pass_show(mob/living/user, obj/item/held, datum/interaction/interaction)
@@ -56,10 +56,6 @@ EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE_AS(I_HELP, "Show", PRO
 
 /// Old attack_self in combat mode: deactivate the pass.
 /obj/item/card/id/guest/proc/interaction_guest_pass_deactivate(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(icon_state == "guest-invalid")
-		to_chat(user, span_warning("This guest pass is already deactivated!"))
-		return
-
 	om_ask(user, /datum/om/prompt/confirm, PROC_REF(deactivation_confirmed), title = "Confirm Deactivation", message = "Do you really want to deactivate this guest pass? (you can't reactivate it)", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
 /obj/item/card/id/guest/proc/deactivation_confirmed(datum/om/prompt/confirm/ask)
@@ -142,12 +138,16 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 	id = "guestpass_insert_id"
 	name = "Insert ID"
 	held_type = /obj/item/card/id
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/guestpass/proc/can_insert_id))
 	effect = /obj/machinery/computer/guestpass/proc/interaction_insert_id
 
+/// Requirement: checking for power here so crowbar and screwdriver and stuff still work.
+/obj/machinery/computer/guestpass/proc/can_insert_id(mob/user, atom/target, obj/item/held)
+	if(has_stat(NOPOWER))
+		return "the terminal refuses your ID as it is unpowered"
+	return TRUE
+
 /obj/machinery/computer/guestpass/proc/interaction_insert_id(mob/user, obj/item/held, datum/interaction/interaction)
-	if(has_stat(NOPOWER)) //checking for power in here so crowbar and screwdriver and stuff still works.
-		to_chat(user, span_warning("The terminal refuses your I.D as it is unpowered!"))
-		return TRUE
 	if(!giver && user.unEquip(held))
 		held.forceMove(src)
 		giver = held

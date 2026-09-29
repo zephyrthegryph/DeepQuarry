@@ -184,6 +184,48 @@ INTERACT_USE("Toggle", PROC_REF(toggle), REQ_FIELD("operable"), REQ_FIELD_NOT("l
 - Lint `sys_inline_refusal` (an `if(...) { to_chat(user, span_warning(...)); return }` block at
   the head of an interaction effect proc).
 
+**As built (rewrite/sys-requirements).**
+
+- Defines `code/__defines/sys_requirements.dm`, runtime `code/datums/sys/requirements.dm` (the
+  predicate compiler hands the new opcodes to `compile_requirement()`). Every clause reads the
+  interaction's target, allocates nothing on success and builds its reason only on failure.
+  - `REQ_FIELD(name[, reason])` / `REQ_FIELD_NOT` / `REQ_FIELD_EQ(name, value[, reason])` read a
+    var of the target, or a derived field (a no-argument proc of that name, e.g. `operable`).
+    How a field is read is cached per type and name; a type with neither logs a stack trace once.
+    An empty list counts as false. Generated reasons: `it isn't <field>`, `it has no <field>`
+    (null or empty list), `it's <field>`, `it already has <thing>` (an atom in the way),
+    `its <field> must be <v>`; underscores read as spaces.
+  - `REQ_ACCESS` (`/obj/proc/allowed()`, "access denied"), `REQ_NOT_EMAGGED`, `REQ_ANCHORED`
+    (`REQ_NOT(REQ_ANCHORED)`: "unanchor it first"), `REQ_PANEL(TRUE/FALSE)` ("open/close the
+    maintenance panel first"). All compose with `REQ_NOT` / `REQ_ANY` / `REQ_BECAUSE`.
+  - Anything that isn't a plain field is `REQ_TARGET_STATE(/type/proc/can_x)`: a side-effect-free
+    proc on the target returning TRUE or the reason text (it also runs when the Menu is built).
+- `/datum/interaction/var/also_requires`: clauses a full-form subtype adds after the inherited
+  `requires`, so a lifted guard doesn't restate the parent's reach clauses.
+- There never was a `REFUSE_IF` macro in the tree; the legacy form was the hand-written guard.
+  All ~400 guards at the head of effect procs were migrated (code/game, code/modules,
+  code/ATMOSPHERICS) with no ALLOW left. Patterns used: a field clause; a `can_x` proc (returning
+  TRUE where an old silent guard had to run first, so it refuses only where the old code did);
+  an `INTERACT_ITEM` with an `istype(held)` check became `INTERACT_INSERT(type, ...)` so its
+  requirement doesn't refuse other items; a multi-reply effect (scanner readouts) was split into
+  one interaction per reply; a guard already covered by the declaration was deleted; an effect
+  that other code also calls keeps (or its callers gained) the same check.
+- Behaviour: a failed requirement tells the actor "<Interaction>: <reason>." and stops the input,
+  like the old message-and-return. Old guards that returned `INTERACTION_HANDLED_PASS` (afterattack
+  still followed) or FALSE (fell through) now stop the input when refused. A `rerun_ask()` re-entry
+  calls the effect directly and doesn't re-check requirements; effects re-check where the state
+  can change during the prompt.
+- Lint `tools/ci/sys_rules/requirements.py` (`inline_refusal`, baseline empty, 0): any
+  `REFUSE_IF(`; and, at the head of an effect proc (PROC_REF in DECLARE/EXTEND_INTERACTIONS or a
+  full-form `effect =`, on the declaring type, an ancestor or a subtype), an `if` with no `else`
+  whose body only messages (to_chat, balloon_alert, visible_message, audible_message,
+  show_message, optionally a sound) and returns, in block, one-line or `return to_chat(...)` form.
+  The head is the local `var/` lines and guards before the first statement that does work; a
+  working branch, or a local that asks the player (`rerun_ask`, `tgui_*`, `input`), ends it. A
+  condition that performs the action (drop, use, transfer, Move, do_after, ...) or is random
+  (`prob`, clumsy fumble) is effect-time feedback, not a refusal.
+- Test: `code/modules/unit_tests/dq_sys_requirements_tests.dm`.
+
 ## 7. Per-type constant tables
 
 ```dm

@@ -1324,13 +1324,10 @@ TYPE_TABLE(/obj/item/reagent_containers/food/snacks/donkpocket/dankpocket, donkp
 
 TYPE_TABLE(/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket, donkpocket_heated_reagents, list(REAGENT_ID_DOCTORSDELIGHT = 5, REAGENT_ID_HYPERZINE = 0.75, REAGENT_ID_SYNAPTIZINE = 0.25))
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket, INTERACT_SELF("Crush package", PROC_REF(sinpocket_self)))
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket, INTERACT_SELF("Crush package", PROC_REF(sinpocket_self), REQ_FIELD_NOT("has_been_heated", "the heating chemicals have already been spent")))
 
 /// Old attack_self.
 /obj/item/reagent_containers/food/snacks/donkpocket/sinpocket/proc/sinpocket_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(has_been_heated)
-		to_chat(user, span_notice("The heating chemicals have already been spent."))
-		return TRUE
 	has_been_heated = TRUE
 	act_message(user, src, MSG_SELF("You crush %T% package and feel a comfortable heat build up. Now just to wait for it to be ready."), \
 		MSG_OTHERS(span_notice("%U% crushes %T% package.")))

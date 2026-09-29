@@ -26,15 +26,12 @@
 // and curr_page driving the view. Photo embedding (browse_rsc) is not
 // yet wired through TGUI assets, so message photos are omitted.
 DECLARE_INTERACTIONS(/obj/item/newspaper, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_USE(null, PROC_REF(interaction_self), REQ_BECAUSE(REQ_TYPE(PRED_ACTOR, list(/mob/living/carbon/human)), "the paper is full of unintelligible symbols")), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 )
 
 /// Old attack_self.
 /obj/item/newspaper/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!ishuman(user))
-		to_chat(user, span_infoplain("The paper is full of intelligible symbols!"))
-		return TRUE
 	tgui_interact(user)
 	return TRUE
 

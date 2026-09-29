@@ -71,7 +71,7 @@ DECLARE_PERIODIC(/obj/item/ammo_magazine/smart, PERIODIC_SLOW)
 EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 	INTERACT_ITEM(null, PROC_REF(smart_interaction_item)), \
 	INTERACT_HAND_UNGATED(null, PROC_REF(smart_interaction_hand)), \
-	INTERACT_VERB("Clear Ammo Data", PROC_REF(smartmag_verb_clear_data), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Clear Ammo Data", PROC_REF(smartmag_verb_clear_data), REQ_IN_INVENTORY, REQ_FIELD_NOT("stored_ammo", "you can't reset it unless it's empty")), \
 )
 
 /// Old attackby. FALSE goes on to the magazine's, as its ..() did.
@@ -222,9 +222,6 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 	if(H.stat)
 		return
 
-	if(LAZYLEN(stored_ammo))
-		to_chat(H, span_warning("You can't reset \the [src] unless it's empty!"))
-		return
 
 	to_chat(H, span_notice("You clear \the [src]'s data buffers."))
 

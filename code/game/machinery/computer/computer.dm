@@ -97,14 +97,17 @@
 	id = "computer_gripper"
 	name = "Use with gripper"
 	held_type = /obj/item/gripper
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/proc/can_use_gripper))
 	effect = /obj/machinery/computer/proc/interaction_gripper
 
+/// Requirement: the gripper has to be holding something.
+/obj/machinery/computer/proc/can_use_gripper(mob/user, atom/target, obj/item/gripper/B)
+	if(istype(B) && !B.get_wrapped_item())
+		return "[B] is not holding anything"
+	return TRUE
+
 /obj/machinery/computer/proc/interaction_gripper(mob/user, obj/item/gripper/B, datum/interaction/interaction)
-	var/obj/item/wrapped = B.get_wrapped_item()
-	if(!wrapped)
-		to_chat(user, "\The [B] is not holding anything.")
-		return TRUE
-	var/B_held = wrapped
+	var/B_held = B.get_wrapped_item()
 	to_chat(user, "You use \the [B] to use \the [B_held] with \the [src].")
 	playsound(src, clicksound, 100, 1, 0)
 	return TRUE

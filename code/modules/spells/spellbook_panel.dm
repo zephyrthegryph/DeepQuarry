@@ -78,16 +78,23 @@ GLOBAL_TABLE(spellbook_catalog, GLOBAL_PROC_REF(build_spellbook_catalog))
 			return TRUE
 
 // spellbook now opens via TGUI panel rather than admin_log_show.
-DECLARE_INTERACTIONS(/obj/item/spellbook, INTERACT_SELF("Read", PROC_REF(interaction_read_spellbook)))
+DECLARE_INTERACTIONS(/obj/item/spellbook, INTERACT_SELF("Read", PROC_REF(interaction_read_spellbook), REQ_TARGET_STATE(/obj/item/spellbook/proc/can_read_markings)))
+
+/// Requirement: only wizards (or the mindless) make sense of the markings; special books handle this themselves.
+/obj/item/spellbook/proc/can_read_markings(mob/user, atom/target, obj/item/held)
+	if(special_handling)
+		return TRUE
+	return dq_actor_is_wizard_or_mindless(user) ? TRUE : "you stare at the book but cannot make sense of the markings"
+
+/// Requirement: the actor is a wizard, or has no mind to judge (the old `user.mind && !is_antagonist` gate).
+/proc/dq_actor_is_wizard_or_mindless(mob/actor, atom/target, obj/item/held)
+	return !actor?.mind || GLOB.wizards.is_antagonist(actor.mind) ? TRUE : FALSE
 
 /// Old attack_self: the spellbook panel opens via TGUI. Specially handled books leave it to their own self-use.
 /obj/item/spellbook/proc/interaction_read_spellbook(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	if(!user)
-		return TRUE
-	if((user.mind && !GLOB.wizards.is_antagonist(user.mind)))
-		to_chat(user, span_warning("You stare at the book but cannot make sense of the markings!"))
 		return TRUE
 	dq_open_spellbook(user)
 	return TRUE

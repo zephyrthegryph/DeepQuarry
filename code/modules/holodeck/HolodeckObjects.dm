@@ -497,13 +497,16 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 /datum/interaction/machine_hand/ungated/readybutton_press
 	id = "readybutton_press"
 	name = "Press"
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/readybutton/proc/can_press))
 	effect = /obj/machinery/readybutton/proc/interaction_press
 
-/obj/machinery/readybutton/proc/interaction_press(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement: the button is powered (and the presser conscious).
+/obj/machinery/readybutton/proc/can_press(mob/user, atom/target, obj/item/held)
 	if(user.stat || !operable())
-		to_chat(user, "This device is not powered.")
-		return TRUE
+		return "this device is not powered"
+	return TRUE
 
+/obj/machinery/readybutton/proc/interaction_press(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!user.IsAdvancedToolUser())
 		return TRUE
 

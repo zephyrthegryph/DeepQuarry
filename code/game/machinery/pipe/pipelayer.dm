@@ -63,7 +63,14 @@ DECLARE_REF(/obj/machinery/pipelayer, "W", OWNED, null)
 	id = "pipelayer_toggle"
 	name = "Toggle"
 	category = INTERACTION_CAT_TOGGLE
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/pipelayer/proc/can_toggle))
 	effect = /obj/machinery/pipelayer/proc/interaction_toggle
+
+/// Requirement: it can't be switched on without metal (an open panel ejects metal instead).
+/obj/machinery/pipelayer/proc/can_toggle(mob/user, atom/target, obj/item/held)
+	if(!panel_open && !metal && !on)
+		return "it doesn't work without metal"
+	return TRUE
 
 /obj/machinery/pipelayer/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(panel_open)
@@ -71,9 +78,6 @@ DECLARE_REF(/obj/machinery/pipelayer, "W", OWNED, null)
 			to_chat(user, "\The [src] is empty.")
 			return TRUE
 		om_ask(user, /datum/om/prompt/confirm, PROC_REF(eject_answered), message = "Do you want to eject all the metal in \the [src]?", title = "Eject?", requires = PROMPT_ADJACENT)
-		return TRUE
-	if(!metal && !on)
-		to_chat(user, span_warning("\The [src] doesn't work without metal."))
 		return TRUE
 	set_on(!on)
 	old_turf_handle = om_handle(get_turf(src))

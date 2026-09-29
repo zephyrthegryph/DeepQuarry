@@ -56,18 +56,15 @@
 
 
 EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
-	INTERACT_ITEM(null, PROC_REF(iv_drip_interaction_item)), \
+	INTERACT_INSERT(/obj/item/reagent_containers, PROC_REF(iv_drip_interaction_item), "Attach container", REQ_BECAUSE(REQ_FIELD_NOT("beaker"), "there is already a reagent container loaded")), \
 	INTERACT_HAND_UNGATED("Remove container", PROC_REF(iv_drip_interaction_hand)), \
-	INTERACT_VERB("Toggle Mode", PROC_REF(iv_drip_toggle_mode)), \
+	INTERACT_VERB("Toggle Mode", PROC_REF(iv_drip_toggle_mode), REQ_BECAUSE(REQ_TYPE(PRED_ACTOR, list(/mob/living)), "you can't do that")), \
 )
 
 /// Old attackby.
 /obj/machinery/iv_drip/proc/iv_drip_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!istype(W, /obj/item/reagent_containers))
 		return FALSE
-	if(!isnull(beaker))
-		to_chat(user, "There is already a reagent container loaded!")
-		return TRUE
 
 	user.drop_item()
 	W.forceMove(src)
@@ -171,10 +168,6 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 
 /// Old verb "Toggle Mode".
 /obj/machinery/iv_drip/proc/iv_drip_toggle_mode(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!isliving(user))
-		to_chat(user, span_warning("You can't do that."))
-		return
-
 	if(user.stat)
 		return
 

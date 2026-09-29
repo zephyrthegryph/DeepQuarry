@@ -16,26 +16,22 @@
 	w_class = ITEMSIZE_NORMAL
 	var/icon_state_closed = "laptop-closed"
 
-EXTEND_INTERACTIONS(/obj/item/modular_computer/laptop, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+EXTEND_INTERACTIONS(/obj/item/modular_computer/laptop, INTERACT_ALT(null, PROC_REF(interaction_alt), REQ_TARGET_STATE(/obj/item/modular_computer/laptop/proc/can_fold)))
+
+/// Requirement: laptops open only on a stable surface (a table, unless already open), so open laptops aren't carried in hand
+/// and tablets keep their mobility advantage.
+/obj/item/modular_computer/laptop/proc/can_fold(mob/user, atom/target, obj/item/held)
+	if(!istype(loc, /turf))
+		return "it has to be on a stable surface first"
+	if(anchored || (locate(/obj/structure/table) in contents_of(loc)))
+		return TRUE
+	return "you will need a better supporting surface before opening it"
 
 /// Old click_alt.
 /obj/item/modular_computer/laptop/proc/interaction_alt(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
 	// We need to be close to it to open it
 	if((!in_range(src, user)) || user.stat || user.restrained())
 		return TRUE
-	// Prevents carrying of open laptops inhand.
-	// While they work inhand, i feel it'd make tablets lose some of their high-mobility advantage they have over laptops now.
-	if(!istype(loc, /turf/))
-		to_chat(user, "\The [src] has to be on a stable surface first!")
-		return TRUE
-	// ition Begin
-	var/supported = FALSE
-	for(var/obj/structure/table/S in contents_of(loc))
-		supported = TRUE
-	if(!supported && !anchored)
-		to_chat(user, "You will need a better supporting surface before opening \the [src]!")
-		return TRUE
-	// ition End
 	set_anchored(!anchored)
 	screen_on = anchored
 	update_icon()

@@ -84,7 +84,7 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-	INTERACT_VERB("Take HeadPods", PROC_REF(walkpod_verb_take_headpods), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Take HeadPods", PROC_REF(walkpod_verb_take_headpods), REQ_IN_INVENTORY, REQ_FIELD_NOT("deployed_headpods", "the HeadPods are already deployed")), \
 )
 
 /// Old attack_self.
@@ -236,9 +236,6 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 /obj/item/walkpod/proc/walkpod_verb_take_headpods(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/L = user
 	if(!istype(L))
-		return
-	if(deployed_headpods)
-		to_chat(L, span_warning("The HeadPods are already deployed!"))
 		return
 	deployed_headpods = new ()
 	L.put_in_any_hand_if_possible(deployed_headpods)

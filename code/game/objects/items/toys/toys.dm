@@ -165,7 +165,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/balloon, INTERACT_ITEM(null, PROC_REF(interac
 DECLARE_INTERACTIONS(/obj/item/toy/sword, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt), REQ_TARGET_STATE(/obj/item/toy/sword/proc/can_recolor)), \
 )
 
 /// Old attack_self.
@@ -197,12 +197,17 @@ DECLARE_INTERACTIONS(/obj/item/toy/sword, \
 		H.update_inv_l_hand()
 		H.update_inv_r_hand()
 
+/// Requirement for recolouring the blade.
+/obj/item/toy/sword/proc/can_recolor(mob/living/user, atom/target, obj/item/held)
+	if(!in_range(src, user))
+		return TRUE // the effect declines silently
+	if(user.incapacitated() || !istype(user))
+		return "you can't do that right now"
+	return TRUE
+
 /// Old click_alt.
 /obj/item/toy/sword/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!in_range(src, user))	//Basic checks to prevent abuse
-		return TRUE
-	if(user.incapacitated() || !istype(user))
-		to_chat(user, span_warning("You can't do that right now!"))
 		return TRUE
 
 	om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_blade_color), message = "Are you sure you want to recolor your blade?", title = "Confirm Recolor", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
@@ -2795,14 +2800,19 @@ DECLARE_INTERACTIONS(/obj/item/toy/partypopper, INTERACT_USE(null, PROC_REF(inte
 	EXPIRY_DECLARE(next_use)
 	var/registered_mob //On request, only one person is able to use it at a time.
 
-DECLARE_INTERACTIONS(/obj/item/toy/acorn_branch, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/toy/acorn_branch, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/toy/acorn_branch/proc/can_pull_acorn)))
+
+/// Requirement: acorns come out on a cooldown.
+/obj/item/toy/acorn_branch/proc/can_pull_acorn(mob/user, atom/target, obj/item/held)
+	if(user.stat || !ishuman(user))
+		return TRUE // the effect declines silently
+	if(!COOLDOWN_FINISHED(src, next_use))
+		return "you need to wait a bit longer before you can pull out another acorn"
+	return TRUE
 
 /// Old attack_self.
 /obj/item/toy/acorn_branch/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || !ishuman(user))
-		return TRUE
-	if(!COOLDOWN_FINISHED(src, next_use))
-		to_chat(user, span_notice("You need to wait a bit longer before you can pull out another acorn!"))
 		return TRUE
 	var/mob/living/carbon/human/H = user
 	if(registered_mob)
@@ -2889,14 +2899,14 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/dragon, INTERACT_USE("Squeeze", PROC_R
 		slot_back_str = 'icons/mob/toy_worn.dmi',
 		slot_head_str = 'icons/mob/toy_worn.dmi')
 
-/obj/item/toy/plushie/teshari/strix/rename_plushie_effect(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/M = user
-	if(!M.mind)
-		return 0
+/obj/item/toy/plushie/teshari/strix/can_rename(mob/user, atom/target, obj/item/held)
+	if(user.mind && !user.stat && in_range(user, src))
+		return "you cannot rename Strix Hades, you hug him anyway"
+	return TRUE
 
-	if(src && !M.stat && in_range(M,src))
-		to_chat(M, "You cannot rename Strix Hades! You hug him anyway.")
-		return 1
+/// Strix can't be renamed: can_rename() refuses when the rename would have gone through.
+/obj/item/toy/plushie/teshari/strix/rename_plushie_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	return 0
 
 /obj/item/toy/plushie/teshari/eili
 	name = "Eili"
@@ -2912,14 +2922,14 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/dragon, INTERACT_USE("Squeeze", PROC_R
 		slot_back_str = 'icons/vore/custom_onmob_yw.dmi',
 		slot_head_str = 'icons/vore/custom_onmob_yw.dmi')
 
-/obj/item/toy/plushie/teshari/eili/rename_plushie_effect(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/M = user
-	if(!M.mind)
-		return 0
+/obj/item/toy/plushie/teshari/eili/can_rename(mob/user, atom/target, obj/item/held)
+	if(user.mind && !user.stat && in_range(user, src))
+		return "you cannot rename Eili, you hug her anyway"
+	return TRUE
 
-	if(src && !M.stat && in_range(M,src))
-		to_chat(M, "You cannot rename Eili! You hug her anyway.")
-		return 1
+/// Eili can't be renamed: can_rename() refuses when the rename would have gone through.
+/obj/item/toy/plushie/teshari/eili/rename_plushie_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	return 0
 
 /obj/item/toy/plushie/teshari/_yw
 	name = "lifelike teshari plush"
@@ -2989,5 +2999,9 @@ DECLARE_REF(/obj/item/toy/plushie, "stored_item", HELD, null)
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/toy/plushie, \
-	INTERACT_VERB("Name Plushie", PROC_REF(rename_plushie_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Name Plushie", PROC_REF(rename_plushie_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/toy/plushie/proc/can_rename)), \
 )
+
+/// Requirement for renaming: TRUE, or why this plushie can't be renamed (unique plushies override it).
+/obj/item/toy/plushie/proc/can_rename(mob/user, atom/target, obj/item/held)
+	return TRUE

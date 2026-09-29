@@ -150,11 +150,9 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 	held_type = /obj/item/stack/material/processed_alloy
 	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/power/fusion_core/proc/fusion_field_off, "the fusion field must be shut down before opening the material cradle"))
 	effect = /obj/machinery/power/fusion_core/proc/interaction_material_insert
+	also_requires = list(REQ_FIELD_NOT("material_sample", "the material cradle is already occupied"))
 
 /obj/machinery/power/fusion_core/proc/interaction_material_insert(mob/user, obj/item/stack/material/processed_alloy/stock, datum/interaction/interaction)
-	if(material_sample)
-		to_chat(user, span_warning("The material cradle is already occupied."))
-		return TRUE
 	user.drop_from_inventory(stock)
 	stock.forceMove(src)
 	material_sample = stock

@@ -44,12 +44,17 @@
 	id = "firework_launcher_load_star"
 	name = "Insert firework star"
 	held_type = /obj/item/firework_star
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/firework_launcher/proc/can_load_star))
 	effect = /obj/machinery/firework_launcher/proc/interaction_load_star
 
+/// Requirement: the launcher is empty.
+/obj/machinery/firework_launcher/proc/can_load_star(mob/user, atom/target, obj/item/held)
+	var/obj/item/star = loaded_star()
+	if(star)
+		return "\The [src] already has \a [star] inside, unload it first"
+	return TRUE
+
 /obj/machinery/firework_launcher/proc/interaction_load_star(mob/user, obj/item/firework_star/O, datum/interaction/interaction)
-	if(loaded_star())
-		to_chat(user, span_notice("\The [src] already has \a [loaded_star()] inside, unload it first!"))
-		return TRUE
 	if(user.unEquip(O, 0, src))
 		loaded_star_handle = om_handle(O)
 		to_chat(user, span_notice("You insert the firework star into \the [src]."))
@@ -90,34 +95,30 @@
 /datum/interaction/machine_hand/ungated/firework_launcher_launch
 	id = "firework_launcher_launch"
 	name = "Launch"
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/firework_launcher/proc/can_launch))
 	effect = /obj/machinery/firework_launcher/proc/interaction_launch
 
-/obj/machinery/firework_launcher/proc/interaction_launch(mob/user, obj/item/held, datum/interaction/interaction)				// Maybe this proc could be better as entirely its own proc, called from attack_hand, but also I don't really see the point
+/// Requirement: TRUE, or why the loaded firework can't be launched.
+/obj/machinery/firework_launcher/proc/can_launch(mob/user, atom/target, obj/item/held)
 	if(panel_open)
-		to_chat(user, span_warning("Close the panel first!"))
-		return TRUE
-
+		return "close the panel first"
 	if(!loaded_star())
-		to_chat(user, span_notice("There is no firework star loaded in \the [src]."))
-		return TRUE
-
+		return "there is no firework star loaded in \the [src]"
 	if(ELAPSED_SINCE(src, last_launch, CLOCK_WORLD) <= launch_cooldown)
-		to_chat(user, span_notice("\The [src] is still re-priming for launch."))
-		return TRUE
-
+		return "\The [src] is still re-priming for launch"
 	if(!anchored)
-		to_chat(user, span_warning("\The [src] must be firmly secured to the ground before firework can be launched!"))
-		return TRUE
-
+		return "\The [src] must be firmly secured to the ground before firework can be launched"
 	var/datum/planet/P = get_planet()
-	if(!P || !(P.weather_holder))				// There are potential cases of being outside but not on planet. And checking whether planet has weather at all is more sanity thing than anything.
-		to_chat(user, span_warning("\The [src] beeps as its safeties seem to prevent launch in the current location."))
-		return TRUE
-
+	if(!P || !(P.weather_holder)) // There are potential cases of being outside but not on planet. And checking whether planet has weather at all is more sanity thing than anything.
+		return "\The [src] beeps as its safeties seem to prevent launch in the current location"
 	var/datum/weather_holder/WH = P.weather_holder
-	if(WH.firework_override && istype(loaded_star(), /obj/item/firework_star/weather))			// Enable weather-based events to not be ruined
-		to_chat(user, span_warning("\The [src] beeps as it seems some interference is preventing launch of this type of firework."))
-		return TRUE
+	if(WH.firework_override && istype(loaded_star(), /obj/item/firework_star/weather)) // Enable weather-based events to not be ruined
+		return "\The [src] beeps as it seems some interference is preventing launch of this type of firework"
+	return TRUE
+
+/obj/machinery/firework_launcher/proc/interaction_launch(mob/user, obj/item/held, datum/interaction/interaction)				// Maybe this proc could be better as entirely its own proc, called from attack_hand, but also I don't really see the point
+	var/datum/planet/P = get_planet()
+	var/datum/weather_holder/WH = P.weather_holder
 
 	to_chat(user, span_notice("You launch the firework!"))
 	play_sfx(get_turf(src), SFX_WEAPONS_RPG)

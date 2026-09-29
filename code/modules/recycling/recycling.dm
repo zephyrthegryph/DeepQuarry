@@ -43,13 +43,10 @@
 	category = INTERACTION_CAT_INSERT
 	held_type = /obj/item
 	effect = /obj/machinery/recycling/proc/interaction_feed
+	also_requires = list(REQ_FIELD_NOT("working", "it's busy; wait until it's idle"))
 
 /obj/machinery/recycling/proc/interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
 	if(!isliving(user) || !Adjacent(user))
-		return TRUE
-
-	if(working)
-		to_chat(user, span_warning("\The [src] is busy! Wait until it's idle."))
 		return TRUE
 
 	if(default_part_replacement(user, O))

@@ -108,17 +108,17 @@ DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/maintpred/redgate, REG
 	spawn_active = TRUE
 	var/redgate_restricted = FALSE
 
+/// Requirement for the lurker spawners: not banned, and whitelisted for the loaded species.
+/obj/structure/ghost_pod/ghost_activated/maint_lurker/can_inhabit(mob/observer/dead/user, atom/target, obj/item/held)
+	if(jobban_isbanned(user, JOB_GHOSTROLES))
+		return "you cannot use this spawnpoint because you are banned from playing ghost roles"
+	//No whitelist
+	if(user.client && !is_alien_whitelisted(user.client, GLOB.all_species[user.client.prefs.read_preference(/datum/preference/choiced/species)]))
+		return "you cannot use this spawnpoint to spawn as a species you are not whitelisted for"
+	return TRUE
+
 // Overrides the standard ghost pod observer use for custom messages.
 /obj/structure/ghost_pod/ghost_activated/maint_lurker/ghost_pod_observer_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
-	if(jobban_isbanned(user, JOB_GHOSTROLES))
-		to_chat(user, span_warning("You cannot use this spawnpoint because you are banned from playing ghost roles."))
-		return TRUE
-
-	//No whitelist
-	if(!is_alien_whitelisted(user.client, GLOB.all_species[user.client.prefs.read_preference(/datum/preference/choiced/species)]))
-		to_chat(user, span_warning("You cannot use this spawnpoint to spawn as a species you are not whitelisted for!"))
-		return TRUE
-
 	//No OOC notes/FT
 	if(not_has_ooc_text(user))
 		//to_chat(user, span_warning("You must have proper out-of-character notes and flavor text configured for your current character slot to use this spawnpoint."))
@@ -199,15 +199,6 @@ DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/maint_lurker, REGISTRY
 	redgate_restricted = TRUE
 
 /obj/structure/ghost_pod/ghost_activated/maint_lurker/redgate/ghost_pod_observer_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
-	if(jobban_isbanned(user, JOB_GHOSTROLES))
-		to_chat(user, span_warning("You cannot use this spawnpoint because you are banned from playing ghost roles."))
-		return TRUE
-
-	//No whitelist
-	if(!is_alien_whitelisted(user.client, GLOB.all_species[user.client.prefs.read_preference(/datum/preference/choiced/species)]))
-		to_chat(user, span_warning("You cannot use this spawnpoint to spawn as a species you are not whitelisted for!"))
-		return TRUE
-
 	//No OOC notes/FT
 	if(not_has_ooc_text(user))
 		//to_chat(user, span_warning("You must have proper out-of-character notes and flavor text configured for your current character slot to use this spawnpoint."))

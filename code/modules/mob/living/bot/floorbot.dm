@@ -323,13 +323,16 @@ EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open contro
 
 /* Assembly */
 
-EXTEND_INTERACTIONS(/obj/item/storage/toolbox/mechanical, INTERACT_INSERT(/obj/item/stack/tile/floor, PROC_REF(interaction_floorbot_tiles), "Add tiles"))
+EXTEND_INTERACTIONS(/obj/item/storage/toolbox/mechanical, INTERACT_INSERT(/obj/item/stack/tile/floor, PROC_REF(interaction_floorbot_tiles), "Add tiles", REQ_TARGET_STATE(/obj/item/storage/toolbox/mechanical/proc/can_take_floorbot_tiles)))
+
+/// Requirement: the toolbox must be empty to become a floorbot kit.
+/obj/item/storage/toolbox/mechanical/proc/can_take_floorbot_tiles(mob/user, atom/target, obj/item/held)
+	if(contents_count(src) >= 1 || has_latent()) // ALLOW(latent): latent entries checked
+		return "they won't fit in as there is already stuff inside"
+	return TRUE
 
 /// Old attackby: ten floor tiles in an empty toolbox start a floorbot.
 /obj/item/storage/toolbox/mechanical/proc/interaction_floorbot_tiles(mob/living/user, obj/item/stack/tile/floor/T, datum/interaction/interaction)
-	if(contents_count(src) >= 1 || has_latent()) // ALLOW(latent): latent entries checked
-		to_chat(user, span_notice("They wont fit in as there is already stuff inside."))
-		return INTERACTION_HANDLED_PASS
 	if(user.s_active)
 		user.s_active.close(user)
 	if(T.use(10))

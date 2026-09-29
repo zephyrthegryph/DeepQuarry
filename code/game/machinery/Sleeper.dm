@@ -44,7 +44,7 @@ DECLARE_REF(/obj/machinery/sleep_console, "sleeper", PAIR, "console")
 
 
 EXTEND_INTERACTIONS(/obj/machinery/sleep_console, \
-	INTERACT_HAND(null, PROC_REF(sleep_console_interaction_hand)), \
+	INTERACT_HAND(null, PROC_REF(sleep_console_interaction_hand), REQ_BECAUSE(REQ_PANEL(FALSE), "close the maintenance panel first")), \
 	INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_as_touch)), \
 )
 
@@ -55,10 +55,6 @@ EXTEND_INTERACTIONS(/obj/machinery/sleep_console, \
 		if(!sleeper)
 			to_chat(user, span_notice("Sleeper not found!"))
 			return TRUE
-
-	if(panel_open)
-		to_chat(user, span_notice("Close the maintenance panel first."))
-		return TRUE
 
 	if(sleeper)
 		tgui_interact(user)

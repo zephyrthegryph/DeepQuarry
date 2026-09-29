@@ -31,13 +31,15 @@
 /obj/structure/closet/walllocker/emerglocker/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	return TRUE
 
+/obj/structure/closet/walllocker/emerglocker/can_use_by_hand(mob/user, atom/target, obj/item/held)
+	if(!isAI(user) && !amount)
+		return "it's empty"
+	return ..()
+
 /// Overrides closet's interaction_hand(): dispense emergency supplies instead of toggling.
 /obj/structure/closet/walllocker/emerglocker/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if (isAI(user))	//Added by Strumpetplaya - AI shouldn't be able to
 		return TRUE								//activate emergency lockers.  This fixes that.  (Does this make sense, the AI can't call attack_hand, can it? --Mloc)
-	if(!amount)
-		to_chat(user, "<spawn class='notice'>It's empty..")
-		return TRUE
 	if(amount)
 		to_chat(user, "<spawn class='notice'>You take out some items from \the [src].")
 		for(var/path in spawnitems)

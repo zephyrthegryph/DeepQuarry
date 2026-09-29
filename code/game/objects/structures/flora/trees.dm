@@ -205,15 +205,19 @@
 /datum/interaction/entry_hand/xmas_presents_hand
 	id = "xmas_presents_hand"
 	name = "Take a present"
+	also_requires = list(REQ_TARGET_STATE(/obj/structure/flora/tree/pine/xmas/presents/proc/can_take_present))
 	effect = /obj/structure/flora/tree/pine/xmas/presents/proc/interaction_hand
+
+/// Requirement: one present per player.
+/obj/structure/flora/tree/pine/xmas/presents/proc/can_take_present(mob/living/user, atom/target, obj/item/held)
+	if(user.ckey && LAZYACCESS(ckeys_that_took, user.ckey))
+		return "there are no presents with your name on"
+	return TRUE
 
 /obj/structure/flora/tree/pine/xmas/presents/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!user.ckey)
 		return TRUE
 
-	if(LAZYACCESS(ckeys_that_took, user.ckey))
-		to_chat(user, span_warning("There are no presents with your name on."))
-		return TRUE
 	to_chat(user, span_notice("After a bit of rummaging, you locate a gift with your name on it!"))
 	LAZYSET(ckeys_that_took, user.ckey, TRUE)
 	var/obj/item/G = new gift_type(src)

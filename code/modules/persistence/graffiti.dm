@@ -41,18 +41,20 @@
 	. += "\n It reads \"[message]\"."
 
 EXTEND_INTERACTIONS(/obj/effect/decal/writing, \
-	INTERACT_ITEM("Engrave", PROC_REF(interaction_engrave_graffiti)), \
+	INTERACT_ITEM("Engrave", PROC_REF(interaction_engrave_graffiti), REQ_TARGET_STATE(/obj/effect/decal/writing/proc/can_engrave)), \
 )
+
+/// Requirement: persistent graffiti is refused to the jobbanned; other items fall through in the effect.
+/obj/effect/decal/writing/proc/can_engrave(mob/user, atom/target, obj/item/held)
+	if(held?.sharp && jobban_isbanned(user, JOB_GRAFFITI))
+		return "you are banned from leaving persistent information across rounds"
+	return TRUE
 
 /// Old attackby: a sharp item carves more into the graffiti.
 /obj/effect/decal/writing/proc/interaction_engrave_graffiti(mob/user, obj/item/held, datum/interaction/interaction)
 	var/obj/item/thing = held
 	if(!thing.sharp)
 		return FALSE
-
-	if(jobban_isbanned(user, JOB_GRAFFITI))
-		to_chat(user, span_warning("You are banned from leaving persistent information across rounds."))
-		return INTERACTION_HANDLED_PASS
 
 	var/_message = rerun_ask(user, "k49", PROC_REF(interaction_engrave_graffiti), args, /datum/om/prompt/text, message = "Enter an additional message to engrave.", title = "Graffiti", max_length = MAX_MESSAGE_LEN)
 	if(isnull(_message))

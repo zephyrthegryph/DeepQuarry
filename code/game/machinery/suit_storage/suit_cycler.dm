@@ -146,7 +146,61 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	id = "suit_cycler_insert_grab"
 	name = "Put in cycler"
 	held_type = /obj/item/grab
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/suit_cycler/proc/can_insert_grabbed))
 	effect = /obj/machinery/suit_cycler/proc/interaction_insert_grab
+
+/// Requirement for putting a grabbed mob in: TRUE, or why not.
+/obj/machinery/suit_cycler/proc/can_insert_grabbed(mob/user, atom/target, obj/item/grab/G)
+	var/mob/grabbed = G?.grab_target()
+	if(!ismob(grabbed))
+		return TRUE // the effect declines silently
+	if(locked)
+		return "the suit cycler is locked"
+	if(contents_count(src) > 0 || has_latent()) // ALLOW(latent): latent entries checked
+		return "there is no room inside the cycler for [grabbed.name]"
+	return TRUE
+
+/// Requirement shared by the helmet and suit slots: TRUE, or why `item` can't be fitted.
+/obj/machinery/suit_cycler/proc/can_fit_part(obj/item/clothing/item, occupied, part_name, no_cycle)
+	if(locked)
+		return "the suit cycler is locked"
+	if(occupied)
+		return "the cycler already contains a [part_name]"
+	if(no_cycle)
+		return "that item is not compatible with the cycler's protocols"
+	if(item.icon_override == CUSTOM_ITEM_MOB)
+		return "you cannot refit a customised voidsuit"
+	return TRUE
+
+/// Requirement for fitting a helmet.
+/obj/machinery/suit_cycler/proc/can_insert_helmet(mob/user, atom/target, obj/item/clothing/head/helmet/space/void/IH)
+	if(!istype(IH))
+		return TRUE
+	. = can_fit_part(IH, helmet, "helmet", IH.no_cycle)
+	if(. != TRUE)
+		return
+	//Make it so autolok suits can't be refitted in a cycler
+	if(istype(IH, /obj/item/clothing/head/helmet/space/void/autolok))
+		return "you cannot refit an autolok helmet (you shouldn't even be able to remove it in the first place, inform an admin)"
+	//Ditto the Mk7
+	if(istype(IH, /obj/item/clothing/head/helmet/space/void/responseteam))
+		return "the Mark VII Emergency Response Helmet is not compatible with the refitting system (inform an admin)"
+	return TRUE
+
+/// Requirement for fitting a voidsuit.
+/obj/machinery/suit_cycler/proc/can_insert_suit(mob/user, atom/target, obj/item/clothing/suit/space/void/IS)
+	if(!istype(IS))
+		return TRUE
+	. = can_fit_part(IS, suit, "voidsuit", IS.no_cycle)
+	if(. != TRUE)
+		return
+	//Make it so autolok suits can't be refitted in a cycler
+	if(istype(IS, /obj/item/clothing/suit/space/void/autolok))
+		return "you cannot refit an autolok suit"
+	//Ditto the Mk7
+	if(istype(IS, /obj/item/clothing/suit/space/void/responseteam))
+		return "the Mark VII Emergency Response Suit is not compatible with the refitting system"
+	return TRUE
 
 /obj/machinery/suit_cycler/proc/interaction_insert_grab(mob/user, obj/item/grab/G, datum/interaction/interaction)
 	if(electrified != 0)
@@ -155,14 +209,6 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 	var/mob/grabbed = G?.grab_target()
 	if(!(ismob(grabbed)))
-		return TRUE
-
-	if(locked)
-		to_chat(user, span_danger("The suit cycler is locked."))
-		return TRUE
-
-	if(contents_count(src) > 0 || has_latent()) // ALLOW(latent): latent entries checked
-		to_chat(user, span_danger("There is no room inside the cycler for [grabbed.name]."))
 		return TRUE
 
 	act_message(user, null, others = span_notice("%U% starts putting [grabbed.name] into the suit cycler."))
@@ -187,38 +233,13 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	name = "Fit helmet"
 	held_type = /obj/item/clothing/head/helmet/space/void
 	offered_when = list(REQ_NOT(REQ_TYPE(PRED_HELD, list(/obj/item/clothing/head/helmet/space/rig))))
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/suit_cycler/proc/can_insert_helmet))
 	effect = /obj/machinery/suit_cycler/proc/interaction_insert_helmet
 
 /obj/machinery/suit_cycler/proc/interaction_insert_helmet(mob/user, obj/item/clothing/head/helmet/space/void/IH, datum/interaction/interaction)
 	if(electrified != 0)
 		if(shock(user, 100))
 			return TRUE
-
-	if(locked)
-		to_chat(user, span_danger("The suit cycler is locked."))
-		return TRUE
-
-	if(helmet)
-		to_chat(user, span_danger("The cycler already contains a helmet."))
-		return TRUE
-
-	if(IH.no_cycle)
-		to_chat(user, span_danger("That item is not compatible with the cycler's protocols."))
-		return TRUE
-
-	if(IH.icon_override == CUSTOM_ITEM_MOB)
-		to_chat(user, "You cannot refit a customised voidsuit.")
-		return TRUE
-
-	//Make it so autolok suits can't be refitted in a cycler
-	if(istype(IH,/obj/item/clothing/head/helmet/space/void/autolok))
-		to_chat(user, "You cannot refit an autolok helmet. In fact you shouldn't even be able to remove it in the first place. Inform an admin!")
-		return TRUE
-
-	//Ditto the Mk7
-	if(istype(IH,/obj/item/clothing/head/helmet/space/void/responseteam))
-		to_chat(user, "The cycler indicates that the Mark VII Emergency Response Helmet is not compatible with the refitting system. How did you manage to detach it anyway? Inform an admin!")
-		return TRUE
 
 	to_chat(user, "You fit \the [IH] into the suit cycler.")
 	user.drop_item()
@@ -233,40 +254,13 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	id = "suit_cycler_insert_suit"
 	name = "Fit voidsuit"
 	held_type = /obj/item/clothing/suit/space/void
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/suit_cycler/proc/can_insert_suit))
 	effect = /obj/machinery/suit_cycler/proc/interaction_insert_suit
 
 /obj/machinery/suit_cycler/proc/interaction_insert_suit(mob/user, obj/item/clothing/suit/space/void/IS, datum/interaction/interaction)
 	if(electrified != 0)
 		if(shock(user, 100))
 			return TRUE
-
-	if(locked)
-		to_chat(user, span_danger("The suit cycler is locked."))
-		return TRUE
-
-	if(suit)
-		to_chat(user, span_danger("The cycler already contains a voidsuit."))
-		return TRUE
-
-	if(IS.no_cycle)
-		to_chat(user, span_danger("That item is not compatible with the cycler's protocols."))
-		return TRUE
-
-	if(IS.icon_override == CUSTOM_ITEM_MOB)
-		to_chat(user, "You cannot refit a customised voidsuit.")
-		return TRUE
-
-	// BEGINS
-	//Make it so autolok suits can't be refitted in a cycler
-	if(istype(IS,/obj/item/clothing/suit/space/void/autolok))
-		to_chat(user, "You cannot refit an autolok suit.")
-		return TRUE
-
-	//Ditto the Mk7
-	if(istype(IS,/obj/item/clothing/suit/space/void/responseteam))
-		to_chat(user, "The cycler indicates that the Mark VII Emergency Response Suit is not compatible with the refitting system.")
-		return TRUE
-	// S
 
 	to_chat(user, "You fit \the [IS] into the suit cycler.")
 	user.drop_item()

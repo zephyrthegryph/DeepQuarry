@@ -64,22 +64,25 @@
 /datum/interaction/entry_hand/weightlifter_hand
 	id = "weightlifter_hand"
 	name = "Lift"
+	also_requires = list(REQ_TARGET_STATE(/obj/structure/fitness/weightlifter/proc/can_lift))
 	effect = /obj/structure/fitness/weightlifter/proc/interaction_hand
+
+/// Requirement: TRUE, or why the user can't lift right now.
+/obj/structure/fitness/weightlifter/proc/can_lift(mob/living/carbon/human/user, atom/target, obj/item/held)
+	if(!istype(user))
+		return TRUE // the effect declines silently
+	if(user.loc != loc)
+		return "you must be on the weight machine to use it"
+	if(user.nutrition < 70) // Set minimum nutrition to be the same as in fitness_machines_vr.dm
+		return "you need more energy to lift weights, go eat something"
+	if(user.weight < 70) // Add weight loss to old fitness equipment
+		return "you're too skinny to risk losing any more weight"
+	if(om_busy(src))
+		return "the weight machine is already in use by somebody else"
+	return TRUE
 
 /obj/structure/fitness/weightlifter/proc/interaction_hand(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user))
-		return TRUE
-	if(user.loc != src.loc)
-		to_chat(user, span_warning("You must be on the weight machine to use it."))
-		return TRUE
-	if(user.nutrition < 70) // Set minimum nutrition to be the same as in fitness_machines_vr.dm
-		to_chat(user, span_warning("You need more energy to lift weights. Go eat something."))
-		return TRUE
-	if(user.weight < 70) // Add weight loss to old fitness equipment
-		to_chat(user, span_notice("You're too skinny to risk losing any more weight!"))
-		return TRUE
-	if(om_busy(src))
-		to_chat(user, span_warning("The weight machine is already in use by somebody else."))
 		return TRUE
 	else
 		play_sfx(src, SFX_EFFECTS_WEIGHTLIFTER)

@@ -179,10 +179,6 @@ TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( 
 	return
 
 /mob/living/silicon/robot/drone/proc/dq_do_pick_shell(mob/actor, obj/item/held, datum/interaction/ability/interaction)
-	if(!can_pick_shell)
-		to_chat(src, span_warning("You already selected a shell or this drone type isn't customizable."))
-		return FALSE
-
 	var/list/choices = shell_types.Copy()
 
 	if(can_blitz)
@@ -253,15 +249,10 @@ TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( 
 /mob/living/silicon/robot/drone/pick_module()
 	return
 
-EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_ITEM_AS(I_HELP, "Put on hat", PROC_REF(drone_interaction_hat)))
+EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_INSERT_AS(I_HELP, /obj/item/clothing/head, PROC_REF(drone_interaction_hat), "Put on hat", REQ_FIELD_NOT("hat")))
 
 /// Old attackby, in help: a hat goes on the drone, before the cyborg item handling.
 /mob/living/silicon/robot/drone/proc/drone_interaction_hat(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!istype(held, /obj/item/clothing/head))
-		return FALSE
-	if(hat)
-		to_chat(user, span_warning("\The [src] is already wearing \the [hat]."))
-		return TRUE
 	user.unEquip(held)
 	place_on_head(held)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " puts %I% on %T%."), item = held)

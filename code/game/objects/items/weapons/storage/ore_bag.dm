@@ -59,14 +59,16 @@
 	max_storage_space = 500
 	item_flags = INDESTRUCTIBLE | ABSTRACT
 
-DECLARE_INTERACTIONS(/obj/item/ore_bag, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+DECLARE_INTERACTIONS(/obj/item/ore_bag, INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/item/ore_bag/proc/can_take_more)))
+
+/// Requirement: a full bag takes nothing more.
+/obj/item/ore_bag/proc/can_take_more(mob/user, atom/target, obj/item/held)
+	if(current_capacity >= max_storage_space)
+		return "it's too full to possibly fit anything else inside of it"
+	return TRUE
 
 /// Old attackby.
 /obj/item/ore_bag/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(current_capacity >= max_storage_space)
-		to_chat(user, span_notice("\the [src] is too full to possibly fit anything else inside of it."))
-		return INTERACTION_HANDLED_PASS
-
 	if (istype(W, /obj/item/ore) && !istype(W, /obj/item/ore/slag) && !istype(W, /obj/item/ore/archeology_debris))
 		var/obj/item/ore/ore = W
 		stored_ore[ore.material]++

@@ -294,14 +294,18 @@ EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow/exercise, INTERACT_ITEM(null, TYPE
 	icon = 'icons/obj/entrepreneur.dmi'
 	icon_state = "dumbbell"
 
-DECLARE_INTERACTIONS(/obj/item/entrepreneur/dumbbell, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/entrepreneur/dumbbell, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/entrepreneur/dumbbell/proc/can_exercise)))
+
+/// Requirement: the user isn't too hungry to exercise.
+/obj/item/entrepreneur/dumbbell/proc/can_exercise(mob/user, atom/target, obj/item/held)
+	var/mob/living/M = user
+	if(istype(M) && M.nutrition <= 100)
+		return "you are too hungry to exercise right now"
+	return TRUE
 
 /// Old attack_self.
 /obj/item/entrepreneur/dumbbell/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/M = user
-	if(M.nutrition <= 100)
-		to_chat(user, span_notice("You are too hungry to exercise right now."))
-		return TRUE
 	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(exercise_done), list(M))
 	return TRUE
 
@@ -431,17 +435,30 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/emf, INTERACT_USE(null, PROC_REF(int
 	var/accurate = FALSE
 
 DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/item/entrepreneur/spirit_board/proc/can_slide)), \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-	INTERACT_OBSERVER("Guide", PROC_REF(spirit_board_ghost_guide)), \
+	INTERACT_OBSERVER("Guide", PROC_REF(spirit_board_ghost_guide), REQ_TARGET_STATE(/obj/item/entrepreneur/spirit_board/proc/can_ghost_guide)), \
 )
+
+/// Requirement: a drink container to slide across the board (a non-living user is ignored silently by the effect).
+/obj/item/entrepreneur/spirit_board/proc/can_slide(mob/user, atom/target, obj/item/held)
+	if(!isliving(user))
+		return TRUE
+	if(!istype(held, /obj/item/reagent_containers/food/drinks))
+		return "you need some sort of glass, bottle or cup to contact the spirit world"
+	return TRUE
+
+/// Requirement: the guiding ghost isn't ghost-role banned (a board with ghosts disabled ignores them silently).
+/obj/item/entrepreneur/spirit_board/proc/can_ghost_guide(mob/user, atom/target, obj/item/held)
+	if(!ghost_enabled)
+		return TRUE
+	if(jobban_isbanned(user, JOB_GHOSTROLES))
+		return "you cannot interact with this board because you are banned from playing ghost roles"
+	return TRUE
 
 /// Old attackby.
 /obj/item/entrepreneur/spirit_board/proc/interaction_item(mob/living/user, obj/item/reagent_containers/food/drinks/W, datum/interaction/interaction)
 	if(!istype(user))
-		return INTERACTION_HANDLED_PASS
-	if(!istype(W))
-		to_chat(user, span_notice("You need some sort of glass, bottle or cup to contact the spirit world."))
 		return INTERACTION_HANDLED_PASS
 	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(spirit_slide_done), list(W, user))
 	return INTERACTION_HANDLED_PASS
@@ -468,9 +485,6 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 /// Old attack_ghost: choose the board's next result. Never fell through to the default.
 /obj/item/entrepreneur/spirit_board/proc/spirit_board_ghost_guide(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	if(!ghost_enabled)
-		return TRUE
-	if(jobban_isbanned(user, JOB_GHOSTROLES))
-		to_chat(user, span_warning("You cannot interact with this board because you are banned from playing ghost roles."))
 		return TRUE
 	var/_answer_k459 = rerun_ask(user, "k459", PROC_REF(spirit_board_ghost_guide), args, /datum/om/prompt/choice, message = "What should it land on next?", title = "Next result", choices = possible_results)
 	if(isnull(_answer_k459))

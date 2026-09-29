@@ -28,17 +28,13 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/zaddat, fit_spec, list(REQ_FITS_BO
 TYPE_TABLE(/obj/item/clothing/suit/space/void/zaddat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS))))
 
 EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/zaddat, \
-	INTERACT_VERB("Customize Shroud", PROC_REF(zaddat_custom_suit_verb), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Customize Shroud", PROC_REF(zaddat_custom_suit_verb), REQ_IN_INVENTORY, REQ_FIELD_NOT("has_been_customized", "this shroud has already been customized")), \
 )
 
 /// Old verb "Customize Shroud".
 /obj/item/clothing/suit/space/void/zaddat/proc/zaddat_custom_suit_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/M = user
 	var/suit_style = null
-
-	if(has_been_customized)
-		to_chat(M, "This Shroud has already been customized!")
-		return FALSE
 
 	var/_answer_a1 = rerun_ask(M, "a1", PROC_REF(zaddat_custom_suit_verb), list(user), /datum/om/prompt/choice, message = "Which suit style would you like?", title = "Suit Style", choices = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft"))
 	if(isnull(_answer_a1))
@@ -169,10 +165,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/zaddat, \
 	var/mob/M = user
 	var/suit_style = null
 
-	if(has_been_customized)
-		to_chat(M, "This Shroud has already been customized!")
-		return FALSE
-
 	var/_answer_a2 = rerun_ask(M, "a2", PROC_REF(zaddat_custom_suit_verb), list(user), /datum/om/prompt/choice, message = "Which suit style would you like?", title = "Select Style", choices = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft"))
 	if(isnull(_answer_a2))
 		return
@@ -243,10 +235,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/zaddat, \
 /obj/item/clothing/suit/space/void/zaddat/engineer/zaddat_custom_suit_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/M = user
 	var/suit_style = null
-
-	if(has_been_customized)
-		to_chat(M, "This Shroud has already been customized!")
-		return FALSE
 
 	var/_answer_a3 = rerun_ask(M, "a3", PROC_REF(zaddat_custom_suit_verb), list(user), /datum/om/prompt/choice, message = "Which suit style would you like?", title = "Select Style", choices = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft"))
 	if(isnull(_answer_a3))

@@ -57,19 +57,31 @@ DECLARE_DEFAULT_CHILD(/obj/structure/casino_table/roulette_table, "ball", /obj/i
 		. += "It doesn't have a ball."
 
 EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
-	INTERACT_HAND_UNGATED("Spin", PROC_REF(interaction_hand)), \
+	INTERACT_HAND_UNGATED("Spin", PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/structure/casino_table/roulette_table/proc/can_spin)), \
 	INTERACT_INSERT(/obj/item/roulette_ball, PROC_REF(interaction_insert_ball), null), \
-	INTERACT_VERB("Remove Roulette Ball", PROC_REF(roulette_table_remove_ball_effect)), \
+	INTERACT_VERB("Remove Roulette Ball", PROC_REF(roulette_table_remove_ball_effect), REQ_TARGET_STATE(/obj/structure/casino_table/roulette_table/proc/can_remove_ball)), \
 )
+
+/// Requirement: TRUE, or why the wheel can't be spun.
+/obj/structure/casino_table/roulette_table/proc/can_spin(mob/user, atom/target, obj/item/held)
+	if(om_busy(src))
+		return "you cannot spin now, the roulette is already spinning"
+	if(!ball)
+		return "this roulette wheel has no ball"
+	return TRUE
+
+/// Requirement: TRUE, or why the ball can't be removed (the effect's silent guards pass here).
+/obj/structure/casino_table/roulette_table/proc/can_remove_ball(mob/user, atom/target, obj/item/held)
+	if(!user || !isturf(user.loc) || user.stat || user.restrained())
+		return TRUE
+	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || isobserver(user))
+		return TRUE
+	if(om_busy(src))
+		return "you cannot remove \the [ball] while [src] is spinning"
+	return TRUE
 
 /// Old attack_hand.
 /obj/structure/casino_table/roulette_table/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(om_busy(src))
-		to_chat(user,span_notice("You cannot spin now! The roulette is already spinning."))
-		return TRUE
-	if(!ball)
-		to_chat(user,span_notice("This roulette wheel has no ball!"))
-		return TRUE
 	act_message(user, null, others = span_notice("%U% spins the roulette and throws [ball.get_ball_desc()] into it."))
 	play_sfx(src.loc, SFX_MACHINES_ROULETTE)
 	om_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
@@ -112,10 +124,6 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 	if(user.stat || user.restrained())
 		return
 	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user)))
-		return
-
-	if(om_busy(src))
-		to_chat(user, span_warning("You cannot remove \the [ball] while [src] is spinning!"))
 		return
 
 	if(ball)
@@ -237,9 +245,6 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 
 /// Old attackby.
 /obj/item/roulette_ball/hollow/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(trapped)
-		to_chat(user, span_notice("This ball already has something trapped in it!"))
-		return INTERACTION_HANDLED_PASS
 	if(istype(W, /obj/item/holder))
 		var/obj/item/holder/H = W
 		if(!H.held_mob)
@@ -264,7 +269,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 
 DECLARE_INTERACTIONS(/obj/item/roulette_ball/hollow, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_FIELD_NOT("trapped", "this ball already has something trapped in it")), \
 )
 
 /// Old attack_self.
@@ -407,13 +412,14 @@ DECLARE_REF(/obj/item/roulette_ball/hollow, "trapped", SPILL, null)
 /datum/interaction/machine_hand/ungated/wheel_of_fortune_use
 	id = "wheel_of_fortune_use"
 	name = "Use"
+	also_requires = list(REQ_BECAUSE(REQ_TARGET_STATE(/obj/machinery/wheel_of_fortune/proc/not_spinning), "the wheel of fortune is already spinning"))
 	effect = /obj/machinery/wheel_of_fortune/proc/interaction_use
 
-/obj/machinery/wheel_of_fortune/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if (om_busy(src))
-		to_chat(user,span_notice("The wheel of fortune is already spinning!"))
-		return TRUE
+/// Requirement: the wheel isn't mid-spin.
+/obj/machinery/wheel_of_fortune/proc/not_spinning(mob/user, atom/target, obj/item/held)
+	return !om_busy(src)
 
+/obj/machinery/wheel_of_fortune/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.incapacitated())
 		return TRUE
 	if(ishuman(user) || isrobot(user))
@@ -438,7 +444,14 @@ DECLARE_REF(/obj/item/roulette_ball/hollow, "trapped", SPILL, null)
 	name = "Management controls"
 	held_type = list(/obj/item/card/id, /obj/item/pda)
 	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/wheel_of_fortune/proc/not_busy_and_actor_able, null))
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/wheel_of_fortune/proc/can_manage))
 	effect = /obj/machinery/wheel_of_fortune/proc/interaction_id
+
+/// Requirement: the swiped card carries management access.
+/obj/machinery/wheel_of_fortune/proc/can_manage(mob/user, atom/target, obj/item/held)
+	if(!check_access(held))
+		return "access denied"
+	return TRUE
 
 /obj/machinery/wheel_of_fortune/proc/not_busy_and_actor_able(mob/actor, atom/target, obj/item/held)
 	if (om_busy(src))
@@ -448,10 +461,6 @@ DECLARE_REF(/obj/item/roulette_ball/hollow, "trapped", SPILL, null)
 	return TRUE
 
 /obj/machinery/wheel_of_fortune/proc/interaction_id(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!check_access(W))
-		to_chat(user, span_warning("Access Denied."))
-		return TRUE
-
 	to_chat(user, span_warning("Proper access, allowed staff controls."))
 	if(ishuman(user) || isrobot(user))
 		var/_answer_k445 = rerun_ask(user, "k445", PROC_REF(interaction_id), args, /datum/om/prompt/choice, message = "Choose what to do (Management)", title = "Wheel Of Fortune (Management)", choices = list("Spin the Lottery Wheel!", "Toggle Lottery Sales", "Toggle Public Spins", "Reset Lottery", "Cancel"))
@@ -496,17 +505,19 @@ DECLARE_REF(/obj/item/roulette_ball/hollow, "trapped", SPILL, null)
 	name = "Buy lottery ticket"
 	held_type = /obj/item/spacecasinocash
 	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/wheel_of_fortune/proc/not_busy_and_actor_able, null))
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/wheel_of_fortune/proc/can_buy_ticket))
 	effect = /obj/machinery/wheel_of_fortune/proc/interaction_cash
 
-/obj/machinery/wheel_of_fortune/proc/interaction_cash(mob/user, obj/item/spacecasinocash/C, datum/interaction/interaction)
+/// Requirement: TRUE, or why no ticket can be bought.
+/obj/machinery/wheel_of_fortune/proc/can_buy_ticket(mob/user, atom/target, obj/item/held)
 	if(lottery_sale == "disabled")
-		to_chat(user, span_warning("Lottery sales are currently disabled."))
-		return TRUE
+		return "lottery sales are currently disabled"
+	if(user.client && (user.client.ckey in lottery_tickets_ckeys))
+		return "the scanner beeps in an upset manner, you already have a ticket"
+	return TRUE
 
+/obj/machinery/wheel_of_fortune/proc/interaction_cash(mob/user, obj/item/spacecasinocash/C, datum/interaction/interaction)
 	if(!user.client)
-		return TRUE
-	if(user.client.ckey in lottery_tickets_ckeys)
-		to_chat(user, span_warning("The scanner beeps in an upset manner, you already have a ticket!"))
 		return TRUE
 
 	insert_chip(C, user)
@@ -609,13 +620,19 @@ DECLARE_REF(/obj/item/roulette_ball/hollow, "trapped", SPILL, null)
 /datum/interaction/machine_hand/ungated/casinosentientprize_use
 	id = "casinosentientprize_use"
 	name = "Use"
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/casinosentientprize_handler/proc/can_use_spasm))
 	effect = /obj/machinery/casinosentientprize_handler/proc/interaction_use
 
-/obj/machinery/casinosentientprize_handler/proc/interaction_use(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// Requirement: TRUE, or why the SPASM can't be used (an incapacitated user is refused silently by the effect).
+/obj/machinery/casinosentientprize_handler/proc/can_use_spasm(mob/user, atom/target, obj/item/held)
 	if(user.incapacitated())
 		return TRUE
 	if(casinosentientprize_sale == "disabled")
-		to_chat(user,span_notice("The SPASM is disabled."))
+		return "the SPASM is disabled"
+	return TRUE
+
+/obj/machinery/casinosentientprize_handler/proc/interaction_use(mob/living/user, obj/item/held, datum/interaction/interaction)
+	if(user.incapacitated())
 		return TRUE
 
 	if(ishuman(user) || isrobot(user))
@@ -699,18 +716,21 @@ DECLARE_REF(/obj/item/roulette_ball/hollow, "trapped", SPILL, null)
 	name = "Buy prize"
 	held_type = /obj/item/spacecasinocash
 	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_ACTOR, /obj/machinery/casinosentientprize_handler/proc/actor_not_incapacitated, null))
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/casinosentientprize_handler/proc/can_buy_prize))
 	effect = /obj/machinery/casinosentientprize_handler/proc/interaction_cash
+
+/// Requirement: TRUE, or why no prize can be bought.
+/obj/machinery/casinosentientprize_handler/proc/can_buy_prize(mob/user, atom/target, obj/item/held)
+	if(casinosentientprize_sale == "disabled")
+		return "sentient prize sales are currently disabled"
+	if(!selected_collar)
+		return "select a prize first"
+	return TRUE
 
 /obj/machinery/casinosentientprize_handler/proc/actor_not_incapacitated(mob/actor, atom/target, obj/item/held)
 	return !actor.incapacitated()
 
 /obj/machinery/casinosentientprize_handler/proc/interaction_cash(mob/user, obj/item/W, datum/interaction/interaction)
-	if(casinosentientprize_sale == "disabled")
-		to_chat(user, span_warning("Sentient Prize sales are currently disabled."))
-		return TRUE
-	if(!selected_collar)
-		to_chat(user, span_warning("Select a prize first."))
-		return TRUE
 	if(!selected_collar.ownername)
 		if(!user.client)
 			return TRUE
@@ -728,12 +748,16 @@ DECLARE_REF(/obj/item/roulette_ball/hollow, "trapped", SPILL, null)
 	name = "Release prize"
 	held_type = /obj/item/clothing/accessory/collar/casinosentientprize
 	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_ACTOR, /obj/machinery/casinosentientprize_handler/proc/actor_not_incapacitated, null))
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/casinosentientprize_handler/proc/can_release_collar))
 	effect = /obj/machinery/casinosentientprize_handler/proc/interaction_collar
 
+/// Requirement: the collar belongs to the user (as prize or owner).
+/obj/machinery/casinosentientprize_handler/proc/can_release_collar(mob/user, atom/target, obj/item/clothing/accessory/collar/casinosentientprize/held)
+	if(user.name != held.sentientprizename && user.name != held.ownername)
+		return "this sentient prize collar isn't yours, please give it to the one it tagged for, belongs to, or a casino staff member"
+	return TRUE
+
 /obj/machinery/casinosentientprize_handler/proc/interaction_collar(mob/user, obj/item/clothing/accessory/collar/casinosentientprize/C, datum/interaction/interaction)
-	if(user.name != C.sentientprizename && user.name != C.ownername)
-		to_chat(user, span_warning("This Sentient Prize collar isn't yours, please give it to the one it tagged for, belongs to, or a casino staff member!"))
-		return TRUE
 	if(user.name == C.sentientprizename)
 		if(!C.ownername)
 			to_chat(user,span_notice("If collar isn't disabled and entry removed, please select your entry and insert chips. Or contact staff if you need assistance."))
@@ -761,13 +785,16 @@ DECLARE_REF(/obj/item/roulette_ball/hollow, "trapped", SPILL, null)
 	name = "Management controls"
 	held_type = list(/obj/item/card/id, /obj/item/pda)
 	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_ACTOR, /obj/machinery/casinosentientprize_handler/proc/actor_not_incapacitated, null))
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/casinosentientprize_handler/proc/can_manage))
 	effect = /obj/machinery/casinosentientprize_handler/proc/interaction_id
 
-/obj/machinery/casinosentientprize_handler/proc/interaction_id(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!check_access(W))
-		to_chat(user, span_warning("Access Denied."))
-		return TRUE
+/// Requirement: the swiped card carries management access.
+/obj/machinery/casinosentientprize_handler/proc/can_manage(mob/user, atom/target, obj/item/held)
+	if(!check_access(held))
+		return "access denied"
+	return TRUE
 
+/obj/machinery/casinosentientprize_handler/proc/interaction_id(mob/user, obj/item/W, datum/interaction/interaction)
 	to_chat(user, span_warning("Proper access, allowed staff controls."))
 	if(ishuman(user) || isrobot(user))
 		var/_answer_k743 = rerun_ask(user, "k743", PROC_REF(interaction_id), args, /datum/om/prompt/choice, message = "Choose what to do (Management)", title = "SPASM (Management)", choices = list("Toggle Sentient Prize Sales", "Wipe Selected Prize Entry", "Change Prize Value", "Cancel"))

@@ -224,18 +224,17 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 	name = "Set catalyst"
 	held_type = /obj/item/reagent_containers/glass
 	effect = /obj/machinery/chemical_synthesizer/proc/interaction_add_catalyst
+	also_requires = list(
+		REQ_FIELD_NOT("catalyst"),
+		REQ_BECAUSE(REQ_FIELD("operable"), "the clamp will not secure the catalyst while the machine is down"),
+		REQ_TARGET_STATE(/obj/machinery/chemical_synthesizer/proc/can_extract_from),
+	)
+
+/// Requirement: the held container must be open for reagents to be drawn from it.
+/obj/machinery/chemical_synthesizer/proc/can_extract_from(mob/user, atom/target, obj/item/held)
+	return held?.is_open_container() ? TRUE : "you don't see how it could extract reagents from [held]"
 
 /obj/machinery/chemical_synthesizer/proc/interaction_add_catalyst(mob/user, obj/item/reagent_containers/RC, datum/interaction/interaction)
-	if(catalyst)
-		to_chat(user, span_warning("There is already \a [catalyst] in \the [src] catalyst slot!"))
-		return TRUE
-	if(!operable())
-		to_chat(user, span_warning("The clamp will not secure the catalyst while the machine is down!"))
-		return TRUE
-
-	if(!RC.is_open_container())
-		to_chat(user, span_warning("You don't see how \the [src] could extract reagents from \the [RC]."))
-		return TRUE
 
 	catalyst =  RC
 	user.drop_from_inventory(RC)

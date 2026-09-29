@@ -41,17 +41,19 @@
 	id = "shieldwallgen_toggle"
 	name = "Toggle"
 	effect = /obj/machinery/shieldwallgen/proc/interaction_toggle
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/shieldwallgen/proc/can_toggle))
+
+/// Requirement: TRUE, or why the generator can't be switched.
+/obj/machinery/shieldwallgen/proc/can_toggle(mob/user, atom/target, obj/item/held)
+	if(state != 1)
+		return "the shield generator needs to be firmly secured to the floor first"
+	if(locked && !issilicon(user))
+		return "the controls are locked"
+	if(power != 1)
+		return "the shield generator needs to be powered by wire underneath"
+	return TRUE
 
 /obj/machinery/shieldwallgen/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	if(state != 1)
-		to_chat(user, span_red("The shield generator needs to be firmly secured to the floor first."))
-		return TRUE
-	if(src.locked && !istype(user, /mob/living/silicon))
-		to_chat(user, span_red("The controls are locked!"))
-		return TRUE
-	if(power != 1)
-		to_chat(user, span_red("The shield generator needs to be powered by wire underneath."))
-		return TRUE
 
 	if(src.active >= 1)
 		set_active(0)

@@ -81,14 +81,10 @@ DECLARE_REF(/obj/item/robotic_multibelt, "selected_item", DROP, null)
 DECLARE_REF(/obj/item/robotic_multibelt, "integrated_tools_by_name", DROP, null)
 DECLARE_REF(/obj/item/robotic_multibelt, "integrated_tool_images", DROP, null)
 
-DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(interaction_self), REQ_FIELD("cyborg_integrated_tools", "your multibelt is empty")))
 
 /// Old attack_self.
 /obj/item/robotic_multibelt/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!cyborg_integrated_tools || !LAZYLEN(cyborg_integrated_tools))
-		to_chat(user, "Your multibelt is empty!")
-		return TRUE
-
 	var/list/options = list()
 
 	for(var/Iname in integrated_tools_by_name)

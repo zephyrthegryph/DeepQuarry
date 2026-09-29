@@ -88,26 +88,29 @@ DECLARE_DEFAULT_CHILD(/obj/item/flashlight, "cell", "cell_type") // unpowered su
 			. += "It appears to have a high amount of power remaining."
 
 DECLARE_INTERACTIONS(/obj/item/flashlight, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/flashlight/proc/can_switch)), \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 )
+
+/// Requirement: TRUE, or why the light can't be switched (cases the effect declines silently pass).
+/obj/item/flashlight/proc/can_switch(mob/user, atom/target, obj/item/held)
+	if((single_use && on) || special_handling)
+		return TRUE
+	if(flickering)
+		return "the light is currently malfunctioning and you're unable to adjust it" //To prevent some lighting anomalities.
+	if(power_use)
+		if(!isturf(user.loc))
+			return "you cannot turn the light on while in this [user.loc]" //To prevent some lighting anomalities.
+		if(!cell || cell.charge == 0)
+			return "you flick the switch on it, but nothing happens"
+	return TRUE
 
 /obj/item/flashlight/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(single_use && on)
 		return FALSE
 	if(special_handling)
 		return FALSE
-	if(flickering)
-		to_chat(user, "The light is currently malfunctioning and you're unable to adjust it!") //To prevent some lighting anomalities.
-		return FALSE
-	if(power_use)
-		if(!isturf(user.loc))
-			to_chat(user, "You cannot turn the light on while in this [user.loc].") //To prevent some lighting anomalities.
-			return FALSE
-		if(!cell || cell.charge == 0)
-			to_chat(user, "You flick the switch on [src], but nothing happens.")
-			return FALSE
 	on = !on
 	if(on && power_use)
 		om_task_periodic(src, PERIODIC_SLOW)

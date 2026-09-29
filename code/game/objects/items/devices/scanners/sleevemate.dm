@@ -89,13 +89,15 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 		to_chat(user,span_warning("Not a compatible subject to work with!"))
 		return ITEM_INTERACT_FAILURE
 
-DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/sleevemate/proc/can_manage_mind)))
+
+/// Requirement: there has to be a stored mind to manage.
+/obj/item/sleevemate/proc/can_manage_mind(mob/living/user, atom/target, obj/item/held)
+	if(!stored_mind())
+		return "no stored mind in it"
+	return TRUE
 
 /obj/item/sleevemate/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(!stored_mind())
-		to_chat(user,span_warning("No stored mind in \the [src]."))
-		return
-
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(stored_mind_action), title = "Stored: [stored_mind().name]", message = "What would you like to do?", choices = list("Delete","Backup","Cancel"), buttons = TRUE, ask_flags = ASK_HELD | ASK_CAPABLE)
 
 /obj/item/sleevemate/proc/stored_mind_action(datum/om/prompt/choice/ask)

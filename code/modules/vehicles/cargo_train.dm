@@ -77,8 +77,8 @@ DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine, "key", "key_type")
 EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 	INTERACT_ITEM("Insert key", PROC_REF(interaction_engine_key)), \
 	INTERACT_ALT("Remove key", PROC_REF(interaction_engine_remove_key)), \
-	INTERACT_VERB("Start engine", PROC_REF(engine_start_engine), REQ_REACH(0), REQ_ON(PRED_TARGET, /obj/vehicle/train/engine/proc/pred_engine_stopped, null)), \
-	INTERACT_VERB("Stop engine", PROC_REF(engine_stop_engine), REQ_REACH(0), REQ_ON(PRED_TARGET, /obj/vehicle/train/engine/proc/pred_engine_running, null)), \
+	INTERACT_VERB("Start engine", PROC_REF(engine_start_engine), REQ_REACH(0), REQ_ON(PRED_TARGET, /obj/vehicle/train/engine/proc/pred_engine_stopped, "the engine is already running")), \
+	INTERACT_VERB("Stop engine", PROC_REF(engine_stop_engine), REQ_REACH(0), REQ_ON(PRED_TARGET, /obj/vehicle/train/engine/proc/pred_engine_running, "the engine is already stopped")), \
 	INTERACT_VERB("Remove key", PROC_REF(engine_remove_key), REQ_REACH(0), REQ_ON(PRED_TARGET, /obj/vehicle/train/engine/proc/pred_engine_has_key, null)), \
 )
 
@@ -223,10 +223,6 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 	if(!ishuman(user))
 		return
 
-	if(on)
-		to_chat(user, "The engine is already running.")
-		return
-
 	turn_on()
 	if (on)
 		to_chat(user, "You start [src]'s engine.")
@@ -241,10 +237,6 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 /// Old verb "Stop engine".
 /obj/vehicle/train/engine/proc/engine_stop_engine(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!ishuman(user))
-		return
-
-	if(!on)
-		to_chat(user, "The engine is already stopped.")
 		return
 
 	turn_off()

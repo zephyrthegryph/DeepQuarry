@@ -79,18 +79,28 @@
 	return
 
 EXTEND_INTERACTIONS(/obj/machinery/gibber, \
-	INTERACT_HAND_UNGATED("Start gibbing", PROC_REF(gibber_interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(gibber_interaction_item)), \
+	INTERACT_HAND_UNGATED("Start gibbing", PROC_REF(gibber_interaction_hand), REQ_TARGET_STATE(/obj/machinery/gibber/proc/can_start_gibbing)), \
+	INTERACT_ITEM(null, PROC_REF(gibber_interaction_item), REQ_TARGET_STATE(/obj/machinery/gibber/proc/can_feed_grab)), \
 	INTERACT_DRAG("Put inside", PROC_REF(gibber_interaction_drag)), \
 	INTERACT_VERB("Empty Gibber", PROC_REF(gibber_verb_eject)), \
 )
 
+/// Requirement: the gibber isn't already running (an inoperable one is ignored silently by the effect).
+/obj/machinery/gibber/proc/can_start_gibbing(mob/user, atom/target, obj/item/held)
+	if(operable() && operating)
+		return "the gibber is locked and running, wait for it to finish"
+	return TRUE
+
+/// Requirement: a strong enough grip (only asked of grabs; other items fall through).
+/obj/machinery/gibber/proc/can_feed_grab(mob/user, atom/target, obj/item/held)
+	var/obj/item/grab/G = held
+	if(istype(G) && G.state < 2)
+		return "you need a better grip to do that"
+	return TRUE
+
 /// Old attack_hand.
 /obj/machinery/gibber/proc/gibber_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!operable())
-		return TRUE
-	if(operating)
-		to_chat(user, span_danger("The gibber is locked and running, wait for it to finish."))
 		return TRUE
 	src.startgibbing(user)
 	return TRUE
@@ -112,10 +122,6 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 	var/obj/item/grab/G = W
 	if(!istype(G))
 		return FALSE
-
-	if(G.state < 2)
-		to_chat(user, span_danger("You need a better grip to do that!"))
-		return INTERACTION_HANDLED_PASS
 
 	move_into_gibber(user,G?.grab_target())
 	// Grab() process should clean up the grab item, no need to del it.

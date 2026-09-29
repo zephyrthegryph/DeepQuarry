@@ -373,7 +373,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/synthprinter, \
 EXTEND_INTERACTIONS(/obj/machinery/transhuman/resleever, \
 	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_open_ui)), \
 	INTERACT_ITEM(null, PROC_REF(resleever_interaction_item)), \
-	INTERACT_DRAG("Put inside", PROC_REF(resleever_interaction_drag)), \
+	INTERACT_DRAG("Put inside", PROC_REF(resleever_interaction_drag), REQ_PANEL(FALSE), REQ_TARGET_STATE(/obj/machinery/transhuman/resleever/proc/can_take_dragged)), \
 	INTERACT_VERB("EJECT Occupant", PROC_REF(resleever_verb_eject)), \
 	INTERACT_VERB("Move INSIDE", PROC_REF(resleever_verb_move_inside)), \
 )
@@ -424,6 +424,14 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/resleever, \
 
 	return FALSE
 
+/// Requirement: a mob carrying others can't be put inside. Anything that isn't a mob is turned away silently by the effect.
+/obj/machinery/transhuman/resleever/proc/can_take_dragged(mob/user, atom/target, atom/movable/held)
+	if(ismob(held))
+		var/mob/M = held
+		if(M.has_buckled_mobs())
+			return "[M] has other entities attached to it; remove them first"
+	return TRUE
+
 /// Old MouseDrop_T.
 /obj/machinery/transhuman/resleever/proc/resleever_interaction_drag(mob/user, mob/living/carbon/O, datum/interaction/interaction)
 	if(!istype(O))
@@ -436,15 +444,9 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/resleever, \
 		return 0 //doesn't use adjacent() to allow for non-GLOB.cardinal (fuck my life)
 	if(!ishuman(user) && !isrobot(user))
 		return 0 //not a borg or human
-	if(panel_open)
-		to_chat(user, span_notice("Close the maintenance panel first."))
-		return 0 //panel open
 
 	if(O?.buckled_to())
 		return 0
-	if(O.has_buckled_mobs())
-		to_chat(user, span_warning("\The [O] has other entities attached to it. Remove them first."))
-		return TRUE
 
 	if(put_mob(O))
 		if(O == user)

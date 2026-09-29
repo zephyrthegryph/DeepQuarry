@@ -606,6 +606,18 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 
 // attack with item - insert light (if right type), otherwise try to break the light
 
+/// Requirement: the fitting is empty and takes this kind of light.
+/obj/machinery/light/proc/can_take_bulb(mob/user, atom/target, obj/item/held)
+	if(status != LIGHT_EMPTY)
+		return "there is a [get_fitting_name()] already inserted"
+	if(!istype(held, light_type))
+		return "this type of light requires a [get_fitting_name()]"
+	return TRUE
+
+/// Requirement: there is a light in the fitting.
+/obj/machinery/light/proc/has_light_in_fitting(mob/user, atom/target, obj/item/held)
+	return status == LIGHT_EMPTY ? "there is no [get_fitting_name()] in this light" : TRUE
+
 /obj/machinery/light/proc/insert_bulb(obj/item/light/L)
 	update_from_bulb(L)
 	latent_bulb = FALSE
@@ -677,15 +689,9 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	name = "Insert bulb"
 	held_type = /obj/item/light
 	effect = /obj/machinery/light/proc/interaction_insert_bulb
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/light/proc/can_take_bulb))
 
 /obj/machinery/light/proc/interaction_insert_bulb(mob/user, obj/item/light/W, datum/interaction/interaction)
-	if(status != LIGHT_EMPTY)
-		to_chat(user, "There is a [get_fitting_name()] already inserted.")
-		return TRUE
-	if(!istype(W, light_type))
-		to_chat(user, "This type of light requires a [get_fitting_name()].")
-		return TRUE
-
 	to_chat(user, "You insert [W].")
 	user.drop_item()
 	insert_bulb(W)
@@ -944,15 +950,12 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	category = INTERACTION_CAT_TOGGLE
 	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/light/flamp/proc/has_shade, null))
 	effect = /obj/machinery/light/flamp/proc/interaction_toggle
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/light/proc/has_light_in_fitting))
 
 /obj/machinery/light/flamp/proc/has_shade(mob/actor, atom/target, obj/item/held)
 	return lamp_shade
 
 /obj/machinery/light/flamp/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	if(status == LIGHT_EMPTY)
-		to_chat(user, "There is no [get_fitting_name()] in this light.")
-		return TRUE
-
 	if(on)
 		set_on(0)
 		update()

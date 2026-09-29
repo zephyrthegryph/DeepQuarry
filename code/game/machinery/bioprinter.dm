@@ -83,7 +83,7 @@
 
 EXTEND_INTERACTIONS(/obj/machinery/organ_printer, \
 	INTERACT_ITEM(null, PROC_REF(organ_printer_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(organ_printer_interaction_hand)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(organ_printer_interaction_hand), REQ_TARGET_STATE(/obj/machinery/organ_printer/proc/can_open_menu)), \
 	INTERACT_VERB("Eject Beaker", PROC_REF(organ_printer_eject_beaker)), \
 )
 
@@ -138,18 +138,20 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer, \
 
 	. = ..()
 
+/// Requirement: TRUE, or why the printer's menu can't be opened.
+/obj/machinery/organ_printer/proc/can_open_menu(mob/user, atom/target, obj/item/held)
+	if(!operable())
+		return TRUE // the effect ignores it silently
+	if(panel_open)
+		return "close the panel first"
+	if(printing)
+		return "it's busy"
+	return TRUE
+
 /// Old attack_hand (it never reached the machinery gate).
 /obj/machinery/organ_printer/proc/organ_printer_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 
 	if(!operable())
-		return TRUE
-
-	if(panel_open)
-		to_chat(user, span_warning("Close the panel first!"))
-		return TRUE
-
-	if(printing)
-		to_chat(user, span_notice("\The [src] is busy!"))
 		return TRUE
 
 	if(container)

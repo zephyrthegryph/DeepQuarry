@@ -77,21 +77,20 @@ TYPE_TABLE(/obj/item/storage/bag/plasticbag/halloween, hold_spec, list(HOLD_ONLY
 	var/list/treated
 
 DECLARE_INTERACTIONS(/obj/structure/candybowl, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/structure/candybowl/proc/can_search)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 )
 
+/// Requirement: TRUE, or why the bowl can't be searched.
+/obj/structure/candybowl/proc/can_search(mob/user, atom/target, obj/item/held)
+	if(!has_candy)
+		return "there is no candy, someone took too many"
+	if(om_busy(src))
+		return "someone is already looking through \the [src]"
+	return TRUE
+
 /// Old attack_hand.
 /obj/structure/candybowl/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-
-
-	if(!has_candy)
-		to_chat(user, span_warning("There is no candy! Someone took too many..."))
-		return TRUE
-
-	if(om_busy(src))
-		to_chat(user, span_warning("Someone is already looking through \the [src]!"))
-		return TRUE
 
 	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(search_done), list(user), claims = TRUE)
 	return TRUE

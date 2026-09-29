@@ -91,15 +91,16 @@
 	held_type = list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food/drinks/glass2, /obj/item/reagent_containers/food/drinks/shaker)
 	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/reagent_refinery/proc/has_reagents_holder, null))
 	effect = /obj/machinery/reagent_refinery/proc/interaction_drain
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/reagent_refinery/proc/has_reagents_to_drain))
+
+/// Requirement: something to drain.
+/obj/machinery/reagent_refinery/proc/has_reagents_to_drain(mob/user, atom/target, obj/item/held)
+	return reagents?.total_volume > 0 ? TRUE : "it's empty; there is nothing to drain"
 
 /obj/machinery/reagent_refinery/proc/has_reagents_holder(mob/actor, atom/target, obj/item/held)
 	return !!reagents
 
 /obj/machinery/reagent_refinery/proc/interaction_drain(mob/user, obj/item/held, datum/interaction/interaction)
-	// Transfer FROM internal beaker to this.
-	if(reagents.total_volume <= 0)
-		to_chat(user, "\The [src] is empty. There is nothing to drain into \the [held].")
-		return TRUE
 	// Fill up the whole volume if we can, DUMP IT OUT
 	var/obj/item/reagent_containers/C = held
 	reagents.trans_to_obj(C, reagents.total_volume)

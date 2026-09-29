@@ -299,7 +299,7 @@
 	stance = I_HELP
 	tool = TOOL_WELDER
 	tool_volume = 0
-	requires = list(REQ_REACH_ADJACENT)
+	requires = list(REQ_REACH_ADJACENT, REQ_TARGET_STATE(/obj/machinery/door/window/proc/can_repair))
 	effect = /obj/machinery/door/window/proc/interaction_repair
 
 /obj/machinery/door/window/declare_interactions(list/into)
@@ -308,10 +308,13 @@
 	)
 	..()
 
-/obj/machinery/door/window/proc/interaction_repair(mob/user, obj/item/tool, datum/interaction/interaction)
+/// Requirement: only a damaged door needs repair.
+/obj/machinery/door/window/proc/can_repair(mob/user, atom/target, obj/item/tool)
 	if(get_integrity() >= max_integrity)
-		to_chat(user, span_warning("[src] is already in good condition!"))
-		return TRUE
+		return "it's already in good condition"
+	return TRUE
+
+/obj/machinery/door/window/proc/interaction_repair(mob/user, obj/item/tool, datum/interaction/interaction)
 	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 1, start_self = "You begin repairing [src]...", receiver = src, on_done = PROC_REF(welder_act_tool_done_windoor), done_args = list(user))
 	return TRUE
 

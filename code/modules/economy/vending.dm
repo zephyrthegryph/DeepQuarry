@@ -238,21 +238,15 @@ DECLARE_REF(/obj/machinery/vending, "product_records", OWNED_LIST, null)
 	name = "Refill"
 	category = INTERACTION_CAT_MAINTAIN
 	held_type = /obj/item/refill_cartridge
+	also_requires = list(
+		REQ_FIELD("operable", "you cannot refill it while it is not functioning"),
+		REQ_BECAUSE(REQ_ANCHORED, "you cannot refill it while it is not secured"),
+		REQ_BECAUSE(REQ_PANEL(FALSE), "you cannot refill it while its panel is open"),
+		REQ_FIELD("refillable", "it does not have a refill port"),
+	)
 	effect = /obj/machinery/vending/proc/interaction_refill
 
 /obj/machinery/vending/proc/interaction_refill(mob/user, obj/item/refill_cartridge/RC, datum/interaction/interaction)
-	if(!operable())
-		to_chat(user, span_notice("You cannot refill [src] while it is not functioning."))
-		return TRUE
-	if(!anchored)
-		to_chat(user, span_notice("You cannot refill [src] while it is not secured."))
-		return TRUE
-	if(panel_open)
-		to_chat(user, span_notice("You cannot refill [src] while it's panel is open."))
-		return TRUE
-	if(!refillable)
-		to_chat(user, span_notice("\the [src] does not have a refill port."))
-		return TRUE
 	if(RC.can_refill(src))
 		to_chat(user, span_notice("You refill [src] using [RC]."))
 		consume(RC, user)

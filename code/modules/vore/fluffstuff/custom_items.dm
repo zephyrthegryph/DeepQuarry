@@ -1252,13 +1252,16 @@ TYPE_TABLE(/obj/item/clothing/glasses/welding/tiemgogs, equip_spec, dq_spec_join
 
 TYPE_TABLE(/obj/item/rig/nikki, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE))))
 
-EXTEND_INTERACTIONS(/obj/item/rig/nikki, INTERACT_ITEM(null, PROC_REF(nikki_rig_module_item)))
+EXTEND_INTERACTIONS(/obj/item/rig/nikki, INTERACT_INSERT(/obj/item/rig_module, PROC_REF(nikki_rig_module_item), "Install module", REQ_TARGET_STATE(/obj/item/rig/nikki/proc/accepts_module)))
 
-/// Old attackby: this thing accepts ONLY mounted sizeguns. That's IT. Nothing else!
+/// Requirement: with the panel open, only mounted size guns go in.
+/obj/item/rig/nikki/proc/accepts_module(mob/user, atom/target, obj/item/held)
+	if(open && !istype(held, /obj/item/rig_module/mounted/sizegun))
+		return "it only accepts mounted size gun modules"
+	return TRUE
+
+/// Old attackby: this thing accepts ONLY mounted sizeguns (the requirement). Accepted modules fall through to the rig's own install.
 /obj/item/rig/nikki/proc/nikki_rig_module_item(mob/living/user, obj/item/W, datum/interaction/interaction)
-	if(open && istype(W,/obj/item/rig_module) && !istype(W,/obj/item/rig_module/mounted/sizegun))
-		to_chat(user, span_danger("\The [src] only accepts mounted size gun modules."))
-		return TRUE
 	return FALSE
 
 TYPE_TABLE(/obj/item/rig/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/rig/nikki/proc/owner_fit, "the necklace never quite gets past your head"))))

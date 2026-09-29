@@ -72,11 +72,9 @@
 	name = "Swipe"
 	held_type = /obj/item
 	effect = /obj/machinery/keycard_auth/proc/interaction_swipe
+	also_requires = list(REQ_BECAUSE(REQ_FIELD("operable"), "this device is not powered"))
 
 /obj/machinery/keycard_auth/proc/interaction_swipe(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!operable())
-		to_chat(user, "This device is not powered.")
-		return TRUE
 
 	if(istype(W,/obj/item/card/id))
 		var/obj/item/card/id/ID = W
@@ -102,16 +100,19 @@
 	id = "keycard_auth_open_ui"
 	name = "Use"
 	effect = /obj/machinery/keycard_auth/proc/interaction_open_ui_impl
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/keycard_auth/proc/can_open_panel))
+
+/// Requirement: TRUE, or why the panel can't be opened. Non-dexterous users fall through in the effect.
+/obj/machinery/keycard_auth/proc/can_open_panel(mob/user, atom/target, obj/item/held)
+	if(user.stat || !operable())
+		return "this device is not powered"
+	if(user.IsAdvancedToolUser() && om_busy(src))
+		return "this device is busy"
+	return TRUE
 
 /obj/machinery/keycard_auth/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.stat || !operable())
-		to_chat(user, "This device is not powered.")
-		return TRUE
 	if(!user.IsAdvancedToolUser())
 		return FALSE
-	if(om_busy(src))
-		to_chat(user, "This device is busy.")
-		return TRUE
 	tgui_interact(user)
 	return TRUE
 

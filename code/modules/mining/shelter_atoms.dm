@@ -402,14 +402,10 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	if(length(temp_info))
 		. += temp_info
 
-DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(survivalcapsule_self)))
+DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(survivalcapsule_self), REQ_BECAUSE(REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_not_vr, null), "it doesn't work in VR")))
 
 /// Old attack_self: deploy the shelter. Virtual: the superpose capsules override it with ..() last.
 /obj/item/survivalcapsule/proc/survivalcapsule_self(mob/user, obj/item/held, datum/interaction/interaction)
-	//Can't grab when capsule is New() because templates aren't loaded then
-	if(istype(get_area(user), /area/vr))
-		to_chat(user, span_danger("\The [src] does not appear to work in VR! This is useless to you!"))
-		return
 	get_template()
 	if(!used)
 		if(unique_id && (unique_id in GLOB.unique_deployable))

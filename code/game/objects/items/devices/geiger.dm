@@ -70,7 +70,7 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 
 DECLARE_INTERACTIONS(/obj/item/geiger, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ALT("Reset", PROC_REF(interaction_alt)), \
+	INTERACT_ALT("Reset", PROC_REF(interaction_alt), REQ_BECAUSE(REQ_FIELD("scanning"), "it must be on to reset its radiation level")), \
 )
 
 /obj/item/geiger/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -145,9 +145,6 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 	to_chat(user, span_notice("[icon2html(src, user)] [isliving(target) ? "Subject" : "Target"] is free of radioactive contamination."))
 
 /obj/item/geiger/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(!scanning)
-		to_chat(user, span_warning("[src] must be on to reset its radiation level!"))
-		return TRUE
 	to_chat(user, span_notice("You flush [src]'s radiation counts, resetting it to normal."))
 	last_perceived_radiation_danger = null
 	update_icon()

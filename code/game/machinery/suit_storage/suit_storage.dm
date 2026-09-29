@@ -369,21 +369,23 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 /datum/interaction/machine_verb/suit_storage_move_inside
 	id = "suit_storage_move_inside"
 	name = "Hide in Suit Storage Unit"
-	requires = list(REQ_INTERACTION_REACH)
+	requires = list(REQ_INTERACTION_REACH, REQ_TARGET_STATE(/obj/machinery/suit_storage_unit/proc/can_move_inside))
 	effect = /obj/machinery/suit_storage_unit/proc/interaction_move_inside
 
-/obj/machinery/suit_storage_unit/proc/interaction_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/living/carbon/human/OCCUPANT = src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE)
-	if(user.stat != 0)
-		return TRUE
+/// Requirement for hiding inside: TRUE, or why not.
+/obj/machinery/suit_storage_unit/proc/can_move_inside(mob/user, atom/target, obj/item/held)
+	if(user.stat != CONSCIOUS)
+		return TRUE // the effect declines silently
 	if(!isopen)
-		to_chat(user, span_warning("The unit's doors are shut."))
-		return TRUE
+		return "the unit's doors are shut"
 	if(!ispowered || isbroken)
-		to_chat(user, span_warning("The unit is not operational."))
-		return TRUE
-	if((OCCUPANT) || (HELMET) || (SUIT))
-		to_chat(user, span_warning("It's too cluttered inside for you to fit in!"))
+		return "the unit is not operational"
+	if(slot_item(OCCUPANT_SLOT_SUIT_STORAGE) || HELMET || SUIT)
+		return "it's too cluttered inside for you to fit in"
+	return TRUE
+
+/obj/machinery/suit_storage_unit/proc/interaction_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.stat != CONSCIOUS)
 		return TRUE
 	act_message(user, null, others = span_info("%U% starts squeezing into the suit storage unit!"))
 	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(interaction_move_inside_timed_done), done_args = list(user))
