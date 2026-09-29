@@ -16,12 +16,11 @@ MATERIAL_MIX(/obj/item/airlock_electronics, list(MAT_STEEL = 50,MAT_GLASS = 50))
 	var/locked = 1
 	var/emagged = 0
 
-DECLARE_EMAG(/obj/item/airlock_electronics, PROC_REF(on_emag), null)
+DECLARE_EMAG(/obj/item/airlock_electronics, PROC_REF(on_emag), null, null)
 /obj/item/airlock_electronics/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if(!emagged)
-		emagged = 1
-		to_chat(user, span_notice("You remove the access restrictions on [src]!"))
-		return 1
+	emagged = 1
+	to_chat(user, span_notice("You remove the access restrictions on [src]!"))
+	return 1
 
 // TGUI migration. attack_self opens AirlockElectronics.tsx;
 // the Topic dispatch moves to tgui_act.

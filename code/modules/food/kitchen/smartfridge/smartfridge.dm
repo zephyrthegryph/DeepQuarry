@@ -223,13 +223,12 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 /obj/machinery/smartfridge/multitool_act(mob/user, obj/item/tool)
 	return wirecutter_act(user, tool)
 
-DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null)
+DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
 /obj/machinery/smartfridge/secure/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if(!emagged)
-		set_emagged(1)
-		set_locked(-1)
-		to_chat(user, span_filter_notice("You short out the product lock on [src]."))
-		return TRUE
+	set_emagged(1)
+	set_locked(-1)
+	to_chat(user, span_filter_notice("You short out the product lock on [src]."))
+	return TRUE
 
 /obj/machinery/smartfridge/proc/find_record(obj/item/O)
 	for(var/datum/stored_item/I as anything in item_records)

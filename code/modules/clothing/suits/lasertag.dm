@@ -30,12 +30,11 @@
 
 TYPE_TABLE(/obj/item/clothing/suit/lasertag, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/gun/energy/lasertag))))
 
-DECLARE_EMAG(/obj/item/clothing/suit/lasertag, PROC_REF(on_emag), null)
+DECLARE_EMAG(/obj/item/clothing/suit/lasertag, PROC_REF(on_emag), null, null)
 /obj/item/clothing/suit/lasertag/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if(!emagged)
-		emagged = TRUE
-		to_chat(user, span_warning("You disable the safeties on the lasertag vest."))
-		return TRUE
+	emagged = TRUE
+	to_chat(user, span_warning("You disable the safeties on the lasertag vest."))
+	return TRUE
 
 
 /obj/item/clothing/suit/lasertag/examine(mob/user)

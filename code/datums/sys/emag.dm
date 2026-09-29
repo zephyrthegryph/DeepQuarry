@@ -15,6 +15,8 @@ TYPE_TABLE_DECLARE(/atom, emag_decl, null)
 		return EMAG_DECLINED
 	var/gated = decl[EMAG_DECL_GATED]
 	if(gated && dq_req_field_value(target, "emagged"))
+		if(user && decl[EMAG_DECL_ALREADY])
+			to_chat(user, span_warning(decl[EMAG_DECL_ALREADY]))
 		return EMAG_DECLINED
 	var/used = call(target, decl[EMAG_DECL_PROC])(remaining_charges, user, emag_source)
 	if(used == EMAG_DECLINED)
@@ -74,6 +76,14 @@ TYPE_TABLE_DECLARE(/atom, emag_decl, null)
 /datum/interaction/emag/gated
 	id = "emag_gated"
 	also_requires = list(REQ_NOT_EMAGGED)
+
+/// The type's own "already" text (DECLARE_EMAG's ALREADY) in place of the generic refusal.
+/datum/interaction/emag/gated/tell_blocked(mob/actor, atom/target, reason)
+	var/list/decl = EMAG_DECL(target)
+	if(decl?[EMAG_DECL_ALREADY] && dq_req_field_value(target, "emagged"))
+		to_chat(actor, span_warning(decl[EMAG_DECL_ALREADY]))
+		return
+	return ..()
 
 /datum/interaction/emag/gated/applies_to(atom/target)
 	var/list/decl = EMAG_DECL(target)

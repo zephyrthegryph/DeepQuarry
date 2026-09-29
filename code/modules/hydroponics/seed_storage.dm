@@ -467,20 +467,19 @@ DECLARE_REF(/datum/seed_pile, "seeds", SPILL_LIST, null)
 /obj/machinery/seed_storage/multitool_act(mob/user, obj/item/tool)
 	return wirecutter_act(user, tool)
 
-DECLARE_EMAG(/obj/machinery/seed_storage, PROC_REF(on_emag), null)
+DECLARE_EMAG(/obj/machinery/seed_storage, PROC_REF(on_emag), null, null)
 /obj/machinery/seed_storage/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if(!src.emagged)
-		set_emagged(1)
-		if(lockdown)
-			to_chat(user, span_notice("\The [src]'s control panel thunks, as its cover retracts."))
-			lockdown = 0
-		if(LAZYLEN(req_access) || LAZYLEN(req_one_access))
-			req_access = list()
-			req_one_access = list()
-			to_chat(user, span_warning("\The [src]'s access mechanism shorts out."))
-			fx_sparks(src, 3, FALSE)
-			visible_message(span_warning("\The [src]'s panel sparks!"))
-		return 1
+	set_emagged(1)
+	if(lockdown)
+		to_chat(user, span_notice("\The [src]'s control panel thunks, as its cover retracts."))
+		lockdown = 0
+	if(LAZYLEN(req_access) || LAZYLEN(req_one_access))
+		req_access = list()
+		req_one_access = list()
+		to_chat(user, span_warning("\The [src]'s access mechanism shorts out."))
+		fx_sparks(src, 3, FALSE)
+		visible_message(span_warning("\The [src]'s panel sparks!"))
+	return 1
 
 /obj/machinery/seed_storage/proc/add(obj/item/seeds/O as obj, contraband = 0)
 	if (istype(O.loc, /mob))

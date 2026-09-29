@@ -109,15 +109,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge, INTERACT_SELF("Display",
 	icon_state = "holobadge-cord"
 	slot_flags = SLOT_MASK | SLOT_TIE | SLOT_BELT
 
-DECLARE_EMAG(/obj/item/clothing/accessory/badge/holo, PROC_REF(on_emag), null)
+DECLARE_EMAG(/obj/item/clothing/accessory/badge/holo, PROC_REF(on_emag), null, "The badge is already cracked.")
 /obj/item/clothing/accessory/badge/holo/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if (emagged)
-		to_chat(user, span_danger("\The [src] is already cracked."))
-		return
-	else
-		emagged = 1
-		to_chat(user, span_danger("You crack the holobadge security checks."))
-		return 1
+	emagged = 1
+	to_chat(user, span_danger("You crack the holobadge security checks."))
+	return 1
 
 EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo, INTERACT_ITEM(null, PROC_REF(holobadge_imprint_item)))
 

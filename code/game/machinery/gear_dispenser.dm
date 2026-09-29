@@ -309,14 +309,12 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	flick("[icon_state]-dispense",src)
 	dispenser_flags |= GD_BUSY
 
-DECLARE_EMAG(/obj/machinery/gear_dispenser, PROC_REF(on_emag), null)
+DECLARE_EMAG(/obj/machinery/gear_dispenser, PROC_REF(on_emag), null, null)
 /obj/machinery/gear_dispenser/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	. = EMAG_DECLINED
-	if(!emagged)
-		set_emagged(TRUE)
-		act_message(user, src, others = span_warning("%U% slides a weird looking ID into %T%!"), \
-			blind = span_warning("You temporarily short the safety mechanisms."))
-		return 1
+	set_emagged(TRUE)
+	act_message(user, src, others = span_warning("%U% slides a weird looking ID into %T%!"), \
+		blind = span_warning("You temporarily short the safety mechanisms."))
+	return 1
 
 // Just a different sprite
 /obj/machinery/gear_dispenser/suit

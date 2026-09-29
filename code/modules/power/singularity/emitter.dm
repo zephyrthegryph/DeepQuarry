@@ -298,13 +298,12 @@
 	balloon_alert_visible("changed to [chosen_particle]")
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_EMAG(/obj/machinery/power/emitter, PROC_REF(on_emag), null)
+DECLARE_EMAG(/obj/machinery/power/emitter, PROC_REF(on_emag), null, null)
 /obj/machinery/power/emitter/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if(!emagged)
-		set_locked(0)
-		set_emagged(1)
-		act_message(user, src, MSG_SELF(span_warning("You short out the lock.")), MSG_OTHERS("[user.name] emags %T%."))
-		return 1
+	set_locked(0)
+	set_emagged(1)
+	act_message(user, src, MSG_SELF(span_warning("You short out the lock.")), MSG_OTHERS("[user.name] emags %T%."))
+	return 1
 
 /obj/machinery/power/emitter/atom_destruction(damage_flag)
 	if(power_region && avail(active_power_usage))

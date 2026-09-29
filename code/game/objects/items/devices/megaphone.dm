@@ -60,13 +60,12 @@ DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interactio
 	COOLDOWN_START(src, spamcheck, 20)
 	do_broadcast(user, message)
 
-DECLARE_EMAG(/obj/item/megaphone, PROC_REF(on_emag), null)
+DECLARE_EMAG(/obj/item/megaphone, PROC_REF(on_emag), null, null)
 /obj/item/megaphone/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if(!emagged)
-		to_chat(user, span_warning("You overload [src]'s voice synthesizer."))
-		emagged = TRUE
-		insults = rand(1, 3)//to prevent caps spam.
-		return TRUE
+	to_chat(user, span_warning("You overload [src]'s voice synthesizer."))
+	emagged = TRUE
+	insults = rand(1, 3)//to prevent caps spam.
+	return TRUE
 
 /obj/item/megaphone/super
 	name = "gigaphone"

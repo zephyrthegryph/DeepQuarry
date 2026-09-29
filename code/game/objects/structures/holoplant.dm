@@ -89,11 +89,8 @@
 	var/plant_icon = icon(icon, state)
 	return getHologramIcon(plant_icon, 0)
 
-DECLARE_EMAG(/obj/machinery/holoplant, PROC_REF(on_emag), null)
+DECLARE_EMAG(/obj/machinery/holoplant, PROC_REF(on_emag), null, null)
 /obj/machinery/holoplant/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if(emagged)
-		return
-
 	set_emagged(TRUE)
 	if(plant)
 		deactivate()

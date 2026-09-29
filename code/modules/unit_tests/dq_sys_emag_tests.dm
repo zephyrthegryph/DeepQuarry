@@ -7,7 +7,7 @@
 	var/hits = 0
 	var/refuse = FALSE
 
-DECLARE_EMAG(/obj/dq_emag_probe, PROC_REF(on_emag), "You short the probe.")
+DECLARE_EMAG(/obj/dq_emag_probe, PROC_REF(on_emag), "You short the probe.", "The probe is already shorted.")
 /obj/dq_emag_probe/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(refuse)
 		return EMAG_DECLINED
@@ -36,6 +36,7 @@ DECLARE_EMAG_REPEATABLE(/obj/dq_emag_probe/toggle, PROC_REF(on_emag), null)
 	TEST_ASSERT(probe.emagged, "the emagged field is set")
 	TEST_ASSERT_EQUAL(card.uses, start - 1, "one use paid")
 	TEST_ASSERT_EQUAL(emag.attempt(H, probe, card), INTERACTION_TRY_BLOCKED, "an emagged target refuses")
+	TEST_ASSERT_EQUAL(EMAG_DECL(probe)[EMAG_DECL_ALREADY], "The probe is already shorted.", "the per-type refusal text is declared")
 	TEST_ASSERT_EQUAL(probe.hits, 1, "the refused emag did nothing")
 	TEST_ASSERT_EQUAL(card.uses, start - 1, "the refused emag paid nothing")
 	TEST_ASSERT_EQUAL(emag_target(probe, 1, H), EMAG_DECLINED, "emag_target honours the gate")

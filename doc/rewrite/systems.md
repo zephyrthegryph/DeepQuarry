@@ -465,8 +465,9 @@ DECLARE_EMAG(/obj/machinery/vending, PROC_REF(on_emagged), "You short out the pr
 
 - Defines `code/__defines/sys_emag.dm`, runtime `code/datums/sys/emag.dm`. The declaration is a
   per-type table (`TYPE_TABLE` `emag_decl`, inherited, overridable per subtype):
-  `DECLARE_EMAG(T, PROC_REF(on_emag), msg)` (gated on `REQ_NOT_EMAGGED`; after a successful effect
-  the `emagged` field is set, through `set_emagged()` on machinery) and
+  `DECLARE_EMAG(T, PROC_REF(on_emag), msg, already)` (gated on `REQ_NOT_EMAGGED`; after a successful
+  effect the `emagged` field is set, through `set_emagged()` on machinery; `already`, when not
+  null, replaces the generic refusal on an emagged target) and
   `DECLARE_EMAG_REPEATABLE(T, PROC_REF(on_emag), msg)` (no gate, no field write: toggles, locks
   also broken by other means, multi-stage subversion such as cyborgs and bots). `msg` (usually
   null: the effects already speak) is shown after a successful effect.
@@ -486,6 +487,10 @@ DECLARE_EMAG(/obj/machinery/vending, PROC_REF(on_emagged), "You short out the pr
   show in the Menu, examine and screentips. The card's `resolve_attackby()` (and the borg card's
   `afterattack()`) attempts the target's emag interaction before the target's own attackby, as
   the card did before; `spend()` pays the uses and logs, `spent()` breaks the card.
+- A gated effect never sees an emagged target, so the old per-type "already emagged" guards at
+  the head of the 34 gated effects were deleted (block unwrapped); the three whose message said
+  something specific moved it to `already` (suit cycler, security camera circuit, holobadge). The
+  secure case's `short_lock()` keeps its guard: a blade reaches it without the gate.
 - Migrated: all 104 `emag_act` overrides (78 roots declared, 26 subtype overrides of the root's
   `on_emag`; 34 roots gated, 44 repeatable) and 13 call sites, by converter script plus hand fixes (roots that
   called `..()` into the deleted base, overrides whose first parameter was really the user, the

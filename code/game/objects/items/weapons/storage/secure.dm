@@ -165,7 +165,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/secure, \
 	locked = 0
 	to_chat(user, (feedback ? feedback : "You short out the lock of \the [src]."))
 
-DECLARE_EMAG(/obj/item/storage/secure, PROC_REF(on_emag), null)
+DECLARE_EMAG(/obj/item/storage/secure, PROC_REF(on_emag), null, null)
 /obj/item/storage/secure/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	return short_lock(user)
 

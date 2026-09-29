@@ -609,19 +609,18 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 		visible_message(span_infoplain(span_bold("\The [L]") + " bonks \the [src]'s casing!"))
 	return ..()
 
-DECLARE_EMAG(/obj/machinery/porta_turret, PROC_REF(on_emag), null)
+DECLARE_EMAG(/obj/machinery/porta_turret, PROC_REF(on_emag), null, null)
 /obj/machinery/porta_turret/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if(!emagged)
-		//Emagging the turret makes it go bonkers and stun everyone. It also makes
-		//the turret shoot much, much faster.
-		to_chat(user, span_warning("You short out [src]'s threat assessment circuits."))
-		visible_message(span_info("[src] hums oddly..."))
-		set_emagged(TRUE)
-		controllock = TRUE
-		enabled = FALSE //turns off the turret temporarily
-		// 6 seconds for the traitor to gtfo of the area before the turret decides to ruin his shit.
-		om_after(src, 6 SECONDS, PROC_REF(emag_reenable)) // Turns it back on. The cover popUp() popDown() are automatically called in process(), no need to define it here
-		return 1
+	//Emagging the turret makes it go bonkers and stun everyone. It also makes
+	//the turret shoot much, much faster.
+	to_chat(user, span_warning("You short out [src]'s threat assessment circuits."))
+	visible_message(span_info("[src] hums oddly..."))
+	set_emagged(TRUE)
+	controllock = TRUE
+	enabled = FALSE //turns off the turret temporarily
+	// 6 seconds for the traitor to gtfo of the area before the turret decides to ruin his shit.
+	om_after(src, 6 SECONDS, PROC_REF(emag_reenable)) // Turns it back on. The cover popUp() popDown() are automatically called in process(), no need to define it here
+	return 1
 
 // While the cover is closed the turret is heavily armored: incoming damage is
 // cut to an eighth, and anything that small is shrugged off entirely.

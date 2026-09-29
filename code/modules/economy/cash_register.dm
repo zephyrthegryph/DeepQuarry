@@ -612,16 +612,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	set_anchored(!anchored)
 	return
 
-DECLARE_EMAG(/obj/machinery/cash_register, PROC_REF(on_emag), null)
+DECLARE_EMAG(/obj/machinery/cash_register, PROC_REF(on_emag), null, null)
 /obj/machinery/cash_register/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if(!emagged)
-		act_message(user, src, others = span_danger("%T%'s cash box springs open as %U% swipes the card through the scanner!"))
-		play_sfx(src, SFX_SPARKS)
-		req_access = list()
-		set_emagged(1)
-		set_locked(0)
-		cash_locked = 0
-		open_cash_box(user)
+	act_message(user, src, others = span_danger("%T%'s cash box springs open as %U% swipes the card through the scanner!"))
+	play_sfx(src, SFX_SPARKS)
+	req_access = list()
+	set_emagged(1)
+	set_locked(0)
+	cash_locked = 0
+	open_cash_box(user)
 
 //--Premades--//
 

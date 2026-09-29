@@ -39,10 +39,8 @@
 			balloon_alert(user, "techweb connected")
 	return TRUE
 
-DECLARE_EMAG(/obj/machinery/computer/rdservercontrol, PROC_REF(on_emag), null)
+DECLARE_EMAG(/obj/machinery/computer/rdservercontrol, PROC_REF(on_emag), null, null)
 /obj/machinery/computer/rdservercontrol/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if(emagged)
-		return FALSE
 	set_emagged(TRUE)
 	play_sfx(src, SFX_SPARKS, 1.5)
 	balloon_alert(user, "console emagged")

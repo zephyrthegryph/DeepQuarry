@@ -380,12 +380,11 @@
 /obj/item/rcd/advanced
 	can_remove_rwalls = 1
 
-DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null)
+DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 /obj/item/rcd/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if(!emagged)
-		emagged = 1
-		to_chat(user, span_warning("You short out the safeties on \the [src]'s construction limiter"))
-		return TRUE
+	emagged = 1
+	to_chat(user, span_warning("You short out the safeties on \the [src]'s construction limiter"))
+	return TRUE
 
 DECLARE_INTERACTIONS(/obj/item/rcd, \
 	INTERACT_ITEM("Load", PROC_REF(rcd_item)), \

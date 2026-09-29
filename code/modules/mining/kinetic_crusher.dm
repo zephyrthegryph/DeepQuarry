@@ -62,7 +62,7 @@
 	. = ..()
 	conflict_id = CONFLICT_ELEMENT_CRUSHER
 
-DECLARE_EMAG(/obj/item/kinetic_crusher, PROC_REF(on_emag), null)
+DECLARE_EMAG(/obj/item/kinetic_crusher, PROC_REF(on_emag), null, null)
 /obj/item/kinetic_crusher/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	emagged = TRUE
 	desc = desc + " The destabilizer module occasionally sparks and glows a menacing red."
