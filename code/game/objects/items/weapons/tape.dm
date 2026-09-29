@@ -123,8 +123,7 @@
 	return stuck.examine(user)
 
 /obj/item/ducttape/proc/attach(obj/item/W)
-	W.forceMove(src)
-	own_move(W, src, "stuck") // CONTAINED: moved in first
+	own_move(W, src, nameof(src.stuck)) // CONTAINED: the move takes it in
 	icon_state = W.icon_state + "_taped"
 	name = W.name + " (taped)"
 	overlays = W.overlays

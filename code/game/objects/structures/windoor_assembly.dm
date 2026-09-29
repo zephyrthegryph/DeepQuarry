@@ -136,11 +136,9 @@ APPEARANCE_TEMPLATE(/obj/structure/windoor_assembly, "{facing}_{secure}windoor_a
 	var/mob/user = task.actor
 	if(!src) return
 
-	user.drop_item()
-	W.forceMove(src)
 	to_chat(user,span_notice("You've installed the airlock electronics!"))
 	step = 2
-	own_set(src, "electronics", W)
+	own_set(src, nameof(src.electronics), W, user = user)
 
 /obj/structure/windoor_assembly/proc/attackby_timed_failed2(datum/om/task/timed/windoor_assembly_attackby/task)
 	var/obj/item/W = task.W

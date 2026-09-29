@@ -1,7 +1,19 @@
 # doc_snippets baseline (tools/ci/doc_snippets.py): doc_unknown_name is a ratchet (target 0);
 # doc_legacy_block lists the complete blocks that predate the lint and aren't compiled (first line).
-doc_unknown_name	doc/rewrite/dx_conventions.md	become_camera(networks, ask_text(user, "Camera name?", default = default_camera_name()))
-doc_unknown_name	doc/rewrite/dx_conventions.md	become_camera(networks, ask_text(user, "Camera name?", default = default_camera_name()))
+doc_unknown_name	doc/rewrite/migration_guide.md	set_name(name)
+doc_unknown_name	doc/rewrite/migration_guide.md	if(do_after(user, 6, target = src))
+doc_unknown_name	doc/rewrite/migration_guide.md	. += cap_use_self("Shout", PROC_REF(shout), needs = PROC_REF(can_broadcast))
+doc_unknown_name	doc/rewrite/migration_guide.md	look.gauge("can-o", level = pressure_band(), levels = 4) // can-o0..can-o3
+doc_unknown_name	doc/rewrite/migration_guide.md	look.state(is_powered(src) ? "doorctrl0" : "doorctrl-p")
+doc_unknown_name	doc/rewrite/migration_guide.md	var/why_not = shuttle_api_why_cant_call()
+doc_unknown_name	doc/rewrite/migration_guide.md	shuttle_api_call_evac(caller = user)
+doc_unknown_name	doc/rewrite/migration_guide.md	. += rel_one(nameof(throwing), back = nameof(/datum/thrownthing::subject), other_deleted = DELETE_ME, on_unlink = PROC_REF(throw_ended))
+doc_unknown_name	doc/rewrite/migration_guide.md	... rel_link(src, "throwing", TT)
+doc_unknown_name	doc/rewrite/migration_guide.md	... rel_link(src, "throwing", TT)
+doc_unknown_name	doc/rewrite/migration_guide.md	release_or_move_site(site, new_name = descriptor_name) // emits site_moved
+doc_unknown_name	doc/rewrite/migration_guide.md	set_recharging(TRUE)
+doc_unknown_name	doc/rewrite/migration_guide.md	set_recharging(FALSE)
+doc_unknown_name	doc/rewrite/migration_guide.md	. += cap_use_at("Point", PROC_REF(laser_act), range = world.view) // [planned] items wave; until then keep afterattack
 doc_unknown_name	doc/rewrite/object_model.md	A.include(/bundle/cell_powered)
 doc_unknown_name	doc/rewrite/object_model.md	A.include(/bundle/switchable)
 doc_unknown_name	doc/rewrite/object_model.md	A.ui(/ui/space_heater)
@@ -61,6 +73,31 @@ doc_legacy_block	doc/rewrite/interactions.md	/obj/item/assembly/signaler/declare
 doc_legacy_block	doc/rewrite/interactions.md	DECLARE_INTERACTIONS(/obj/item/binoculars, \
 doc_legacy_block	doc/rewrite/interactions.md	INTERACT_USE(name, effect, requires...) // old attack_self
 doc_legacy_block	doc/rewrite/lifecycle.md	POOL_DECLARE(/datum/damage_packet)
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE (the APC today): a field, a check in every handler, a draw branch, a UI key
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: apc.dm:436-463 (15 lines of state checks around "open the cover")
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: apc.dm:700-715
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: atmo_control.dm:714-745
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: canister.dm:173-190
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: door_control.dm:36-48 (an interaction datum per action)
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: door_control.dm:98 (a string template language)
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: expedition_controller.dm:249 (expedition writes flight's private index)
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: geiger.dm:131 (a replace-timer used as "reset if nothing for N")
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: health.dm:154-157
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:16, 81, 206
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:209, 214-215 (set a state, then a timer to put it back)
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:230
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:51-61
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:63-69
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: megaphone.dm:48-58
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: round_status_panel.dm:28, :98-107
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: throw_of in three storages (thrownthing.dm:10-19, :73; atoms_movable.dm:572)
+doc_legacy_block	doc/rewrite/migration_guide.md	/obj/item/laser_pointer
+doc_legacy_block	doc/rewrite/migration_guide.md	/obj/machinery/thing
+doc_legacy_block	doc/rewrite/migration_guide.md	/obj/machinery/thing/capabilities()
+doc_legacy_block	doc/rewrite/migration_guide.md	/obj/machinery/thing/draw(datum/look/look)
+doc_legacy_block	doc/rewrite/migration_guide.md	/obj/machinery/thing/proc/rename(mob/user)
+doc_legacy_block	doc/rewrite/migration_guide.md	/obj/machinery/thing/tgui_data(mob/user)
+doc_legacy_block	doc/rewrite/migration_guide.md	cap_hand(name, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE,
 doc_legacy_block	doc/rewrite/object_model.md	/behaviour/powered_by_slot
 doc_legacy_block	doc/rewrite/object_model.md	/bundle/cell_powered/apply(archetype/A, slot = "cell")
 doc_legacy_block	doc/rewrite/object_model.md	/datum/proc/declare(archetype/A)
@@ -95,6 +132,7 @@ doc_legacy_block	doc/rewrite/om_in_10_minutes.md	/proc/build_edge_overlays(key) 
 doc_legacy_block	doc/rewrite/om_in_10_minutes.md	DECLARE_INTERACTIONS(/obj/item/binoculars, \
 doc_legacy_block	doc/rewrite/ownership.md	OWN(/obj/machinery/sleeper, beaker, OWN_SPILL) // drops to the floor with the holder
 doc_legacy_block	doc/rewrite/ownership.md	REL_PAIR(/obj/machinery/sleeper, console, sleeper) // two-sided, single on this end
+doc_legacy_block	doc/rewrite/ownership.md	own_set(src, nameof(src.beaker), W, user = user)
 doc_legacy_block	doc/rewrite/rules.md	/datum/ability/shadekin_phase_shift
 doc_legacy_block	doc/rewrite/rust_bindings.md	// Which component this type holds (type-level, no per-instance memory).
 doc_legacy_block	doc/rewrite/rust_bindings.md	/obj/machinery/atmospherics/binary/pump/high_power

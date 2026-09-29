@@ -246,6 +246,14 @@ def procs_in(rel, raw_lines, clean=None):
         while head.endswith("\\") and last + 1 < n and head[:1] == "/":
             last += 1
             head = head[:-1] + " " + clean[last].strip()
+        # A parameter list spread over several lines (`/proc/to_chat(` ... `)`): join until balanced.
+        if head[:1] == "/" and "(" in head and head.count("(") > head.count(")"):
+            joined, k = head, last
+            while joined.count("(") > joined.count(")") and k + 1 < n and k - last < 40:
+                k += 1
+                joined += " " + clean[k].strip()
+            if joined.count("(") == joined.count(")"):
+                head, last = joined, k
         m = PROC_HEAD.match(head)
         if not m or "/var/" in m.group(1) + "/":
             i += 1

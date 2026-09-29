@@ -118,9 +118,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/baton, TYPE_PROC_REF(/atom, appearance_o
 	if(istype(W, /obj/item/cell))
 		if(istype(W, /obj/item/cell/device))
 			if(!bcell)
-				user.drop_item()
-				W.forceMove(src)
-				own_set(src, "bcell", W)
+				if(!own_set(src, nameof(src.bcell), W, user = user))
+					return INTERACTION_HANDLED_PASS
 				to_chat(user, span_notice("You install a cell in [src]."))
 				update_icon()
 			else
@@ -248,9 +247,8 @@ EXTEND_INTERACTIONS(/obj/item/melee/baton/cattleprod, INTERACT_ITEM(null, PROC_R
 	if(istype(W, /obj/item/cell))
 		if(!istype(W, /obj/item/cell/device))
 			if(!bcell)
-				user.drop_item()
-				W.forceMove(src)
-				own_set(src, "bcell", W)
+				if(!own_set(src, nameof(src.bcell), W, user = user))
+					return INTERACTION_HANDLED_PASS
 				to_chat(user, span_notice("You install a cell in [src]."))
 				update_icon()
 			else

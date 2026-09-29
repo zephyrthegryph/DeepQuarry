@@ -217,3 +217,11 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 	log_world("OWNERSHIP: validated the tables of [length(seen)] types at boot")
 	return length(seen)
 
+
+/// Review 2 M8: an accessor write marks the holder changed (refresh.dm). Writes made while the
+/// globals are still being built (a global datum's New()) come before the refresh queue exists and
+/// before anything is drawn, so they mark nothing.
+/proc/own_mark_changed(datum/holder)
+	if(!islist(GLOB?.refresh_queue))
+		return
+	changed(holder)

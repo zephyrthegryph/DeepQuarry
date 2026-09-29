@@ -1,101 +1,110 @@
-"""sys_lint module: moving an item by hand next to the ownership call that adopts it (design review §7).
+"""sys_lint module: hand-rolled transfers the one-call own_set / own_add / own_put replaces.
 
-own_set()/own_add()/own_put() move the item into the holder as part of adopting it (and, with
-dx-transfer, take it out of the user's hand, slot or container). Dropping it from the hand and
-forceMove()-ing it in by hand around that call duplicates the transfer, and the two drift apart
-(a missed unEquip, a stale hand overlay, an item left in two places):
+doc/rewrite/ownership.md §1.3a, code/datums/ownership/transfer.dm. Giving an owned var a movable
+that is somewhere else is one call:
 
-    own_set(src, nameof(cell), held)                 // not user.drop_item(); held.forceMove(src); own_set(...)
+    own_set(src, nameof(src.beaker), W, user = user)
 
-Rule:
-  dx_manual_transfer   a line with drop_item( / drop_from_inventory( / unEquip( / remove_from_mob( /
-                       forceMove(src) / `loc = src` within NEAR lines of an own_set / own_add /
-                       own_put call in the same proc.
+It checks that the item can leave its hand, equip slot, storage or holder and enter this one,
+releases it (HUD, dropped(), storage bookkeeping), moves it in and adopts it. The old sequence took
+it out by hand (`drop_item()` / `drop_from_inventory()` / `unEquip()` / `remove_from_mob()` /
+`remove_from_storage()`), moved it (`forceMove(src)`), then adopted it, with no check that the drop
+worked. Target: 0 (the baseline is empty).
 
-Static limits: "near" is a line window inside one proc body, not data flow, so an unrelated drop
-in the window counts (ALLOW it with `// ALLOW(sys_dx_manual_transfer): <reason>`). The baseline
-(tools/ci/sys_baseline/dx_manual_transfer.txt) holds the legacy sites; target 0.
+    manual_transfer    an own_* call within a few lines of a take-out call in the same proc
+    manual_move_adopt  `X.forceMove(H)` right before `own_*(H, "var", X)` (own_set moves it itself;
+                       `into = TRUE` for a loose thing off a turf)
 """
-import os
 import re
-import sys
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import _dx_dm as dm  # noqa: E402
 
 RULES = {
-    "dx_manual_transfer": "let own_set()/own_add()/own_put() move the item (and take it from the hand); drop the manual drop/forceMove (design review §7)",
+    "manual_transfer": "own_set/own_add/own_put(holder, nameof(holder.var), item, user = user): one call takes it out of the hand, slot or storage (ownership.md §1.3a)",
+    "manual_move_adopt": "own_set/own_add/own_put(holder, nameof(holder.var), item, into = TRUE) moves it in itself (ownership.md §1.3a)",
 }
 
-NEAR = 6
-ADOPT = re.compile(r"(?<![\w./:])own_(?:set|add|put)\s*\(")
-MANUAL = re.compile(r"(?<![\w/])(?:drop_item|drop_from_inventory|unEquip|remove_from_mob)\s*\("
-                    r"|(?<![\w/])forceMove\(\s*src\s*\)"
-                    r"|(?<![\w/])loc\s*=(?!=)\s*src\b(?!\s*\.)")
+TAKE_OUT = re.compile(r"\b(drop_item|drop_from_inventory|unEquip|remove_from_mob|drop_l_hand|drop_r_hand|drop_active_hand|remove_from_storage)\s*\(")
+# The var-name argument is nameof(...) (dx_string_names) or, in legacy code, a string.
+OWN = re.compile(r"\bown_(?:set|add|put)\s*\(\s*([\w.]+)\s*,\s*(?:nameof\([^()]*\)|[^,()]+)\s*,\s*(?:[^,()]+,\s*)?([\w.]+)\s*[,)]")
+MOVE = re.compile(r"([\w.]+)\s*\??\.\s*forceMove\s*\(\s*([\w.]+)\s*\)|([\w.]+)\.loc\s*=\s*([\w.]+)\s*$")
+
+BEFORE = 5  # lines looked at before an own_* call
+AFTER = 2   # and after it (the take-out written second)
+
+EXEMPT_PREFIXES = (
+    "code/datums/ownership/",
+    "code/datums/containment/",
+)
 
 
-def scan_procs(procs_list):
-    found = []
-    for proc in procs_list:
-        adopt_lines = [n for n, text in proc.lines() if ADOPT.search(text)]
-        if not adopt_lines:
-            continue
-        for number, text in proc.lines():
-            if MANUAL.search(text) and any(abs(number - a) <= NEAR for a in adopt_lines):
-                found.append((proc.rel, number))
-    return found
+def _holder(name):
+    return "src" if name in ("src", "") else name
 
 
 def scan(files):
     out = {rule: [] for rule in RULES}
-    tree = dm.tree(files)
-    relevant = {rel for rel, _l in files if ADOPT.search(tree.raw_text(rel))}
-    out["dx_manual_transfer"] = scan_procs([p for p in tree.procs if p.rel in relevant])
+    for rel, lines in files:
+        if rel.startswith(EXEMPT_PREFIXES):
+            continue
+        code = [line.split("//", 1)[0] for line in lines]
+        for i, text in enumerate(code):
+            match = OWN.search(text)
+            if not match:
+                continue
+            holder, value = _holder(match.group(1)), match.group(2)
+            took = False
+            moved = False
+            for j in range(i - 1, max(-1, i - BEFORE - 1), -1):
+                if code[j].startswith("/"):
+                    break  # the proc header: another proc above
+                if TAKE_OUT.search(code[j]):
+                    took = True
+                for move in MOVE.finditer(code[j]):
+                    what = move.group(1) or move.group(3)
+                    where = _holder(move.group(2) or move.group(4))
+                    if what == value and where == holder:
+                        moved = True
+            for j in range(i + 1, min(len(code), i + AFTER + 1)):
+                if code[j].startswith("/"):
+                    break
+                if TAKE_OUT.search(code[j]):
+                    took = True
+            if took:
+                out["manual_transfer"].append((rel, i + 1))
+            elif moved:
+                out["manual_move_adopt"].append((rel, i + 1))
     return out
 
 
-FIXTURE = """
-/obj/machinery/charger/proc/insert_cell(mob/user, obj/item/cell/C)
+SELFTEST_FIXTURE = """/obj/machinery/charger/proc/insert_cell(mob/user, obj/item/cell/C)
 	if(!user.drop_item())
 		return
+	own_set(src, nameof(src.cell), C)
+/obj/machinery/charger/proc/move_then_adopt(obj/item/cell/C)
 	C.forceMove(src)
-	own_set(src, nameof(cell), C)
-	to_chat(user, "You insert [C].")
-
-/obj/machinery/charger/proc/good_insert(mob/user, obj/item/cell/C)
-	own_set(src, nameof(cell), C)
-	to_chat(user, "You insert [C].")
-
-/obj/machinery/charger/proc/far_away(mob/user, obj/item/cell/C)
-	own_set(src, nameof(cell), C)
-	sleep(1)
-	sleep(1)
-	sleep(1)
-	sleep(1)
-	sleep(1)
-	sleep(1)
-	sleep(1)
-	user.drop_item()
-
-/obj/machinery/charger/proc/no_adopt(mob/user, obj/item/I)
+	own_set(src, nameof(src.cell), C)
+/obj/machinery/charger/proc/one_call(mob/user, obj/item/cell/C)
+	own_set(src, nameof(src.cell), C, user = user)
+/obj/machinery/charger/proc/take_after(mob/user, obj/item/I)
+	own_add(src, nameof(src.parts), I)
 	user.unEquip(I)
-	I.loc = src
-
-/obj/machinery/charger/proc/loc_write(mob/user, obj/item/I)
-	user.remove_from_mob(I)
-	I.loc = src
-	own_add(src, nameof(parts), I)
-	if(I.loc == src)
-		return
+/obj/machinery/charger/proc/other_thing(obj/item/cell/C, obj/item/D)
+	D.forceMove(src)
+	own_set(src, nameof(src.cell), C)
 """
 
 
 def selftest():
-    lines = FIXTURE.split("\n")
-    got = sorted(n for _r, n in scan_procs(dm.procs([("x.dm", lines)])))
+    lines = SELFTEST_FIXTURE.split("\n")
+    got = scan([("code/x.dm", lines)])
 
-    def at(snippet, nth=0):
-        return [k + 1 for k, line in enumerate(lines) if snippet in line][nth]
-    assert got == sorted([at("if(!user.drop_item())"), at("C.forceMove(src)"),
-                          at("user.remove_from_mob(I)"), at("I.loc = src", 1)]), got
+    def at(snippet):
+        return [k + 1 for k, line in enumerate(lines) if snippet in line][0]
+    # A take-out before (or just after) an own_* call is a manual transfer; a forceMove of the same
+    # item into the same holder right before it is a manual move. The one-call form and a move of a
+    # different item are fine.
+    assert sorted(n for _r, n in got["manual_transfer"]) == sorted([
+        at("own_set(src, nameof(src.cell), C)"), at("own_add(src, nameof(src.parts), I)")]), got
+    assert [n for _r, n in got["manual_move_adopt"]] == [
+        [k + 1 for k, line in enumerate(lines) if "own_set(src, nameof(src.cell), C)" in line][1]], got
+    assert not scan([("code/datums/ownership/x.dm", lines)])["manual_transfer"], "the framework is exempt"
     return "dx_manual_transfer"

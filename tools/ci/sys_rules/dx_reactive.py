@@ -41,8 +41,12 @@ Static approximations (documented limits):
     capability's own object: the dispatcher marks it), and reads through a local alias of either
     (`var/obj/machinery/M = holder` / `= src`). In `a.b.c`, b is own only when a is own; a bare
     `cell.charge` reads `charge` on another object.
-  - Context roots are not state: user, look, entry, data, ui, state, world, global, GLOB (only its
-    member after the global var), and subsystem/define roots (SSx, ALL_CAPS of 3+ chars).
+  - Context roots are not state: user, held, look, entry, data, ui, state, world, global, GLOB (only
+    its member after the global var), subsystem/define roots (SSx, ALL_CAPS of 3+ chars), and locals
+    holding a capability flyweight (typed /datum/capability/..., or `= cap_of(...)`: per-type config).
+    Locals holding the holder's capability state (`= cap_data(...)` / `= cap_data?[...]`) are own.
+  - Reads through `reagents` are fresh: the reagent holder marks its atom on every change (review 2
+    M8). A watched relation var works the same way.
   - Chains after a call or an index (`get_area(src).power`, `L[1].x`) are not seen; `len`, `type`
     and `parent_type` are never state.
   - The core has no relation watch option yet, so until one ships no relation counts as watched.
@@ -66,8 +70,14 @@ RULES = {
 
 REACTIVE_ANY = {"should_run", "hidden_verbs", "tgui_data"}
 REACTIVE_CAP = {"draw", "gate", "ui_data", "examine", "hidden_verbs"}
-CONTEXT_ROOTS = {"src", "user", "look", "entry", "data", "ui", "state", "world", "global", "usr",
-                 "GLOB", "config"}
+CONTEXT_ROOTS = {"src", "user", "held", "look", "entry", "data", "ui", "state", "world", "global",
+                 "usr", "GLOB", "config"}
+# Relation vars whose target marks its owner changed on every write (review 2 M8: the reagent
+# holder calls changed(my_atom)), so a read through them stays fresh.
+MARKING_RELATIONS = frozenset({"reagents"})
+# `var/datum/capability/x/C = ...` / `var/T/C = cap_of(...)` (capability config) and
+# `var/T/D = cap_data(...)` / `= cap_data?[...]` (the holder's own capability state).
+CAP_LOCAL = re.compile(r"\bvar/(datum/capability[\w/]*/)?(?:[\w/]+/)?(\w+)\s*=\s*(?:((?:\w+\s*\??\.\s*)?cap_data\s*(?:\(|\??\[))|(cap_of\s*\())?")
 NEVER_STATE = {"len", "type", "parent_type"}
 # Subsystems (SSair) and defines (ALL_CAPS, 3+ chars); single-letter locals (M, C, H) are objects.
 GLOBAL_ROOT = re.compile(r"^(?:SS[a-z]\w*|[A-Z][A-Z0-9_]{2,})$")
@@ -92,8 +102,9 @@ def is_reactive(proc, needs_names):
     return proc.name in REACTIVE_ANY or proc.name in needs_names
 
 
-def foreign_reads(text, own_roots):
-    """[var name] read on another object in one sanitized line."""
+def foreign_reads(text, own_roots, context=frozenset(), relations=frozenset()):
+    """[var name] read on another object in one sanitized line. A var read through a relation that
+    marks its reader (`reagents.total_volume`, a watched `area.power`) is not foreign."""
     out = []
     for m in CHAIN.finditer(text):
         root = m.group(1)
@@ -105,13 +116,15 @@ def foreign_reads(text, own_roots):
             continue
         if root == "GLOB" or root in own_roots:
             first_foreign = 1  # a global var, or an own var: only what is read THROUGH it is foreign
-        elif GLOBAL_ROOT.match(root) or root in CONTEXT_ROOTS:
-            continue  # subsystems/defines and context parameters are not observed state
+        elif GLOBAL_ROOT.match(root) or root in CONTEXT_ROOTS or root in context:
+            continue  # subsystems/defines, context parameters and capability config are not state
         else:
             first_foreign = 0
-        for name in segs[first_foreign:]:
-            if name not in NEVER_STATE:
+        prev = root
+        for k, name in enumerate(segs):
+            if k >= first_foreign and name not in NEVER_STATE and prev not in relations:
                 out.append(name)
+            prev = name
     return out
 
 
@@ -307,15 +320,25 @@ def reactive_writes(proc):
 
 
 def own_roots_of(proc):
-    """src, the holder (a capability proc's first parameter) and local aliases of either."""
+    """(own roots, context roots) of a proc. Own: src, the holder (a capability proc's first
+    parameter), local aliases of either, and locals holding the holder's capability state
+    (`= cap_data(...)` / `= cap_data?[...]`). Context: locals holding a capability flyweight (typed
+    /datum/capability/..., or `= cap_of(...)`), whose vars are per-type configuration."""
     roots = {"src"}
+    context = set()
     if proc.path.startswith("/datum/capability") and proc.params:
         roots.add(proc.params[0])
     for _n, text in proc.lines():
         m = ALIAS.search(text.rstrip())
         if m and m.group(2) in roots:
             roots.add(m.group(1))
-    return roots
+        d = CAP_LOCAL.search(text)
+        if d:
+            if d.group(3):
+                roots.add(d.group(2))
+            elif d.group(1) or d.group(4):
+                context.add(d.group(2))
+    return roots, context
 
 
 def analyse(files):
@@ -340,20 +363,10 @@ def analyse(files):
     out = {rule: [] for rule in RULES}
     for proc in procs_list:
         if is_reactive(proc, needs_names):
-            own_roots = own_roots_of(proc)
+            own_roots, context = own_roots_of(proc)
+            relations = watched | MARKING_RELATIONS
             for number, text in proc.lines():
-                bad = []
-                for name in foreign_reads(text, own_roots):
-                    if name in tracked:
-                        continue
-                    bad.append(name)
-                # a read through a watched relation var (`area.x` where area is watched) is fine
-                if bad and watched:
-                    for m in CHAIN.finditer(text):
-                        if m.group(1) in watched:
-                            for name in SEGMENT.findall(m.group(2))[:1]:
-                                if name in bad:
-                                    bad.remove(name)
+                bad = [name for name in foreign_reads(text, own_roots, context, relations) if name not in tracked]
                 if bad:
                     out["dx_untracked_read"].append((proc.rel, number))
             for number in reactive_writes(proc):
@@ -405,9 +418,20 @@ SETTER(/obj/item/cell, sealed)
 /obj/cap_fixture/meter/proc/has_cell(mob/user)
 	return cell.rigged
 
+/obj/cap_fixture/meter/proc/can_pour(mob/user, obj/item/held)
+	var/datum/capability/meter/C = cap_of(src, /datum/capability/meter)
+	var/datum/meter_data/D = cap_data?[C.key]
+	var/datum/meter_data/E = src.cap_data?[C.key]
+	if(E.pours)
+		return FALSE
+	if(held.force || C.max_pours <= D.pours)
+		return FALSE
+	return reagents?.total_volume > 0
+
 /obj/cap_fixture/meter/capabilities()
 	. = ..()
 	. += cap_slot(nameof(cell), /obj/item/cell, needs = PROC_REF(has_cell))
+	. += cap_hand("Pour", PROC_REF(pour), needs = PROC_REF(can_pour))
 	. += cap_gauge(level = level)
 	. += cap_lock(access = src.req_access)
 	. += cap_panel(name = "panel")

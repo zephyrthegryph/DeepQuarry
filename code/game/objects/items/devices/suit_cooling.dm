@@ -151,9 +151,8 @@ DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \
 		if(cell)
 			to_chat(user, "There is a [cell] already installed here.")
 		else
-			user.drop_item()
-			W.forceMove(src)
-			own_set(src, "cell", W)
+			if(!own_set(src, nameof(src.cell), W, user = user))
+				return TRUE
 			to_chat(user, "You insert the [cell].")
 	update_icon()
 	return TRUE

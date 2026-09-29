@@ -210,19 +210,15 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 		to_chat(user, span_notice("You put \the [O] into \the [src]'s processing compartment!"))
 		if(consent)
 			if(user in range(1,src))
-				user.drop_item() //mobs need to be properly handled, can't just move the holder into the thing
 				m.dir = SOUTH //the disposal bins do that and it simply doesn't work.
-				m.forceMove(src)
-				own_set(src, "inserted_item", m)
+				own_set(src, nameof(src.inserted_item), m, user = user)
 			else
 				return TRUE //too far away, dumbass.
 		else
 			deny_act(O,user)
 	else
 		to_chat(user, span_notice("You put \the [O] into \the [src]'s processing compartment!"))
-		user.drop_item()
-		O.forceMove(src)
-		own_set(src, "inserted_item", O)
+		own_set(src, nameof(src.inserted_item), O, user = user)
 
 	update_icon()
 	return FALSE
@@ -236,8 +232,7 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 		if(get_item_whitelist(source) == RECYCLER_ALLOWED)
 			if(inserted_item == null)
 				visible_message("\The [source] lands in \the [src].",runemessage = "swish")
-				source.forceMove(src)
-				own_set(src, "inserted_item", source)
+				own_set(src, nameof(src.inserted_item), source, into = TRUE)
 				update_icon()
 				play_sfx(src, SFX_RECYCLER_A_WONDERFUL_THROW)
 				set_screen_state("screen_happy",10)

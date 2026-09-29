@@ -95,17 +95,11 @@ DECLARE_APPEARANCE(/obj/machinery/light_construct, "stage", list("1" = list(APPE
 	if(!cell_connectors)
 		to_chat(user, span_warning("This [name] can't support a power cell!"))
 		return TRUE
-	if(!user.unEquip(W))
-		to_chat(user, span_warning("[W] is stuck to your hand!"))
-		return TRUE
 	if(cell())
 		to_chat(user, span_warning("There is a power cell already installed!"))
-	else if(user.drop_from_inventory(W))
+	else if(own_set(src, nameof(src.cell), W, user = user))
 		act_message(user, src, MSG_SELF(span_notice("You add [W] to %T%.")), MSG_OTHERS(span_notice("%U% hooks up [W] to %T%.")))
 		play_sfx(src, SFX_MACHINES_CLICK)
-		W.forceMove(src)
-		own_set(src, "cell", W)
-		add_fingerprint(user)
 	return TRUE
 
 /datum/interaction/machine_item/light_construct_add_wires
@@ -594,11 +588,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 /obj/machinery/light/proc/has_light_in_fitting(mob/user, atom/target, obj/item/held)
 	return status == LIGHT_EMPTY ? "there is no [get_fitting_name()] in this light" : TRUE
 
-/obj/machinery/light/proc/insert_bulb(obj/item/light/L)
+/// Puts bulb `L` in the socket, from wherever it is (`user`'s hand: told why when it can't let go).
+/obj/machinery/light/proc/insert_bulb(obj/item/light/L, mob/user)
+	if(!own_set(src, nameof(src.installed_light), L, user = user, into = TRUE))
+		return FALSE
+	. = TRUE
 	update_from_bulb(L)
 	latent_bulb = FALSE
-	L.forceMove(src) //Move it into the socket!
-	own_set(src, "installed_light", L) // CONTAINED: in our contents first
 
 	set_on(powered() && !turned_off()) // Do not instantly turn on lights if the area lightswitch is off
 	update()
@@ -668,9 +664,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 	also_requires = list(REQ_TARGET_STATE(/obj/machinery/light/proc/can_take_bulb))
 
 /obj/machinery/light/proc/interaction_insert_bulb(mob/user, obj/item/light/W, datum/interaction/interaction)
+	if(!insert_bulb(W, user))
+		return TRUE
 	to_chat(user, "You insert [W].")
-	user.drop_item()
-	insert_bulb(W)
 	update() //Like other places, this is done later down the line but this is essential to updating the overlay when nightmode is involved. Again, I have no idea WHY.
 	add_fingerprint(user)
 	return TRUE

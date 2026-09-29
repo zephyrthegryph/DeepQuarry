@@ -1,299 +1,145 @@
-# DeepQuarry conventions: ordinary DM, generic components, enforced by CI
+# DeepQuarry conventions: ordinary DM, capabilities, enforced by CI
 
-This is the one style for every system. It is the design the user approved (the DX wave, Phase 1),
-and it replaces the per-system macro dialects the DX audit catalogued. §10 maps each audit issue
-to its fix.
+This page states the rules. `doc/rewrite/migration_guide.md` is the working reference: the API as
+built, tagged [built] / [in progress] / [planned], and every old form with its replacement. When the two
+disagree, the code wins; fix the page in the same commit.
 
-**The rule of thumb:** write it the way DM already works.
-- Configuration is a **type var**. It is free per instance, inherited, and editable in maps and VV.
-- Behaviour is an **override of a well-known proc**, and inheritance is `..()`.
-- A table is a **proc that returns a list**, built once per type.
-- Features are **capabilities**: generic components that a type lists in `capabilities()`.
-- Macros exist only where DM has no construct: `TRACKED` generates a setter, and `nameof()`
-  names a var so the compiler checks it.
+## The rule of thumb
 
----
+Write it the way DM already works:
+- **Configuration is a type var.** It is free per instance, inherited and map-editable.
+- **Behaviour is an override of a well-known proc.** Inheritance is `..()`.
+- **A table is a proc that returns a list,** built once per type (`type_list()`).
+- **Features are capabilities** that a type lists in `capabilities()`.
+- **Macros exist only where DM has no construct:** `TRACKED` / `SETTER` generate or register setters,
+  and `nameof()` gives the compiler-checked var name.
 
-## 1. State
+## Names
 
-- **Plain vars by default.** After any dispatched call, the framework marks the object changed
-  automatically. The dispatched calls are:
-  - capability entries and interactions;
-  - `ui_<action>` procs;
-  - timers and periodic steps;
-  - prompt answers;
-  - construction steps and ownership transfers;
-  - reagents, damage, power and verbs.
-- **`TRACKED(type, var, channel)`**, written next to a normally declared var, generates
-  `set_<var>(value)`. The setter compares, writes, calls `changed(src, channel)`, and returns TRUE
-  if the value changed. A hand-written `proc/set_<var>()` is also accepted as the setter, for
-  setters with side effects.
-  - `tools/ci/tracked_lint.py` rejects every write to a TRACKED var outside its setter.
-  - Reads are free.
-- **`changed(src[, channel])`** is for the rare write outside a dispatched call.
-- **The sweep.** A background sweep re-checks objects that have a look, `should_run()`,
-  `hidden_verbs()` or an open UI, on a per-tick budget.
-  - In production, a missed mark corrects itself within seconds.
-  - In test builds, it fails the run: `REFRESH DRIFT: <type> draw() changed with no changed() mark`.
-- **Removed:** `OM_FIELD`, `OM_FLAG_FIELD*`, `OM_DERIVE_FIELD`, field references, and every
-  `inputs = list(...)`.
+| Kind | Form | Examples |
+|---|---|---|
+| Capability constructors | `cap_<noun>(...)` | `cap_panel`, `cap_lock`, `cap_slot`, `cap_hand`, `cap_tool` |
+| Bundles | plain nouns | `machine_basics`, `wall_machine`, `maintenance_hatch`, `console`, `atmos_device`, `cell_bay`, `power_channels`, `door`, `powered_by` |
+| Client UI actions | `act_<action>(mob/user, named args...)` | `act_set_pressure(mob/user, pressure)` |
+| Framework UI hooks (never client-reachable) | `ui_<hook>()` | `ui_allowed`, `ui_logged` |
+| Look | `draw(datum/look/look)` | DM reserves `appearance` |
+| Form fields | `choice_field`, `text_field`, `number_field` | DM reserves `text()` |
+| Capability lifecycle | `on_holder_init`, `on_holder_destroy` | `/datum/on_destroy` exists |
 
-```dm fragment
-/obj/machinery/atmospherics/binary/pump
-	var/target_pressure = ONE_ATMOSPHERE
-TRACKED(/obj/machinery/atmospherics/binary/pump, target_pressure, CHANGE_MACHINE_SETTINGS)
-```
+`tools/ci` lints that no type proc shadows a constructor or bundle name.
 
-## 2. Capabilities
+## State
 
-```dm fragment
-/obj/machinery/power/apc/capabilities()
-	. = ..()
-	. += cap_cover(open_tool = TOOL_CROWBAR, locked_by = LOCK)
-	. += cap_slot(nameof(cell), /obj/item/cell, behind = COVER)
-	. += cap_emag(say = "You short out the APC's access lock.", effect = PROC_REF(emag_unlock))
-```
+- **Plain vars.** Every dispatched call marks its target changed: entries, UI actions, timers, periodic
+  steps, prompt answers, ownership transfers, reagents, damage and power.
+- **`TRACKED(type, var, channel)`** generates `set_<var>()`, and **`SETTER(type, var)`** registers a
+  hand-written one. Only those setters may write the var (`tracked_lint.py`), and admin VV edits go
+  through them.
+- **`changed(E, channel)`** is for the rare write outside a dispatched call.
+- **Capability booleans** are bits in `cap_state`, allocated only in `code/__defines/cap_bits.dm`
+  (`cap_bits_lint.py`). Write them with `cap_set()`; read them with `cap_has()` or the accessors, which
+  never return null.
+- **Richer state** goes in `cap_data(A, capability)`.
+- **H1: map-varied settings stay instance vars** (`req_access`). Constructor arguments are type defaults.
 
-- **Built once and shared.** `/atom/proc/capabilities()` returns a list. It is built once per type
-  (`caps_of(A)`), and the capability datums in it are shared by every instance of the type.
-- **Order.** List order is the order of the menu, of examine lines, and of look layers.
-- **Removing an entry.** `. = without(., /datum/capability/anchor)` drops an inherited entry.
-- **A capability is a complete feature.** It provides its interactions, its state, examine lines,
-  look layers, UI data, the gating of other entries, refusal messages, logging and verbs.
-- **State lives on the holder.**
-  - A boolean is a bit in `cap_state` (`CAP_COVER_OPEN`, `CAP_PANEL_OPEN`, `CAP_LOCKED`,
-    `CAP_BROKEN`, `CAP_EMAGGED`, …), written through `cap_set(A, bits, on)`.
-  - Anything richer is a lazily created datum, `cap_data(A, capability)`.
-  - The accessors are written once each: `cover_is_open(A)`, `panel_is_open(A)`, `is_locked(A)`,
-    `is_emagged(A)`, `is_broken(A)`.
-- **The standard library:**
-  - `cover`, `panel`, `wires(type)`, `lock(access)`, `breakable` (with welder repair), `powered`,
-    `emag(say, effect)`;
-  - `slot(nameof(var), type)`, `anchor`, `deconstruct(board)` with the standard frame ladder,
-    `construction(stages...)`;
-  - `rotate`, `buckle` and `label`/`rename`.
-- **Bespoke entries are small capabilities too:**
-  - `hand(name, PROC_REF(x))`;
-  - `tool(name, TOOL_X, PROC_REF(x), delay =)`;
-  - `use_on(name, type, PROC_REF(x))`;
-  - `insert(name, type, PROC_REF(x))`.
-- **Presets are plain procs** that return capability lists: `machine_basics(board)`,
-  `wall_machine(...)`, `floor_machine(...)` and `computer(board)`.
-- **Gating** is a set of named arguments on any entry:
-  - `behind = COVER|PANEL`;
-  - `locked_by = LOCK`;
-  - `needs = PROC_REF(x)` with `else_say = "..."`. `x` is a proc on the holder,
-    `(mob/user, obj/item/held)`, that returns TRUE, FALSE (and `else_say` is shown) or a reason.
-  - Every entry refuses while the holder is broken or unpowered, unless it is marked
-    `works_broken` / `works_unpowered`.
-- **Logging.** Each entry takes `log = LOG_GAME|LOG_ADMIN`. The dispatcher fingerprints and logs,
-  so no handler calls `add_fingerprint()`, `log_game()`, `log_admin()` or `message_admins()`.
-- **Handlers** are `(mob/user, obj/item/held, …form answers by name)`. They never re-check what
-  their gating guaranteed.
-- **Moving off base types.** `emagged`, `panel_open`, `locked`, `wiresexposed`, `welded`,
-  `bolted`, the `wires` var, `circuit` (it moves to `deconstruct`) and access state (it moves to
-  `lock`) leave the base types. A one-time converter rewrites map varedits.
-- **Removed:**
-  - every `*_act` tool proc, and attackby/attack_hand logic;
-  - `emag_act`/`DECLARE_EMAG`;
-  - `INTERACT_*`, `DECLARE_INTERACTIONS`, datum-per-interaction subtypes and
-    `dq_interaction_from_spec`;
-  - `REQ_*`, replaced by `needs`.
+## Capabilities
 
-### 2.1 The capability datum interface (`code/datums/capabilities/_capability.dm`)
+- **`capabilities()`** returns a list. It is built once per type and interned: identical constructor
+  calls share one datum, one set of entries and one set of compiled predicates.
+- **Order.** List order is the order of the menu, of examine lines and of the look.
+  `layer_order` / `examine_order` override it.
+- **Editing the list.** `without(., key)` drops an entry and `replace(., key, new)` swaps one in place.
+  A later entry with the same key replaces the earlier one in its position.
+- **Gating arguments.** Every constructor takes:
+  - `behind`: bits that must be SET;
+  - `blocked_by`: bits that must be CLEAR;
+  - `locked_by`;
+  - `needs` + `else_say`;
+  - `works_broken` / `works_unpowered`;
+  - `log`;
+  - `layer` (the standard state name to draw; `CAP_NO_LAYER` draws nothing).
+- **Holder hooks.** `before_entry()` may have side effects (a shock). `caps_suspended()` makes input fall
+  through.
+- **Handlers:**
+  - `cap_hand`: `(mob/user, ...form args)`;
+  - `cap_tool` / `cap_use_on` / `cap_insert`: `(mob/user, obj/item/held, ...form args)`.
 
-| Proc | Returns / does |
-|---|---|
-| `interactions(holder)` | `/datum/interaction/capability` entries, built once per type |
-| `examine(holder, user)` | examine lines |
-| `draw(holder, look)` | look layers, drawn before the holder's own `draw()` body |
-| `ui_data(holder, user, data)` | adds keys to `tgui_data()` |
-| `gate(holder, user, entry)` | null, or a refusal for another entry |
-| `hidden_verbs(holder)`, `verbs()` | verbs to hide now; the verbs it adds |
-| `on_holder_init(holder, mapload)`, `on_holder_destroy(holder)` | per-instance state |
+  Return TRUE on success, or `refuse(user, text)`. Only successes are logged and fingerprinted.
+- **Capabilities can own UI actions:** `/datum/capability/<x>/proc/act_<action>(mob/user, atom/holder, ...)`.
+  Their UI data arrives under `data["caps"][key]`.
+- **Runtime-attached capabilities:** `add_capability()` / `remove_capability()`.
+- **System membership:** `joins` / `systems()`.
 
-Configuration is vars on the capability datum, set by its constructor with named args. The shared
-gating vars are `key`, `behind`, `locked_by`, `needs`, `else_say`, `works_broken`,
-`works_unpowered` and `log`.
+## Derived procs
 
-## 3. The look
+- **The procs:** `draw(look)`, `should_run()`, `hidden_verbs()`, `tgui_data()` and
+  `on_state_changed(bits)` are plain overrides. The refresh engine re-runs them at the end of the frame
+  after a change.
+- **Only children the owner draws propagate.** An owned child's change marks its owner only when one of
+  the owner's capabilities draws it (`draws_var`).
+- **Drift.** The sweep reports `REFRESH DRIFT` and fails test builds.
+- **Verbs.** `type_verbs()` is a per-type list; `hidden_verbs()` hides by state. Both are applied
+  through the verb store, the only writer of verbs lists.
+- **Periodic work:** `periodic_cadence = CADENCE_*` or `periodic_interval = N`, with `should_run()` and
+  `periodic_step(delta)`.
 
-```dm fragment
-/obj/machinery/power/apc/draw(datum/look/look)
-	..()   // capabilities draw first: cover_open, panel_open, wires, broken, dark
-	look.state("apc[cover_is_open(src)]")
-	look.gauge("apc_charge", level = cell?.percent() / 100, levels = 4)
-	look.glow("apc_lock", when = is_locked(src))
-```
+## Time
 
-- **`draw()` is the override.** `draw(datum/look/look)` is a plain override that calls `..()`.
-  DM reserves the name `appearance`, so it can't be used.
-- **The builder calls** are `look.state(name)`, `look.overlay(name, when =)`,
-  `look.gauge(name, level =, levels =)` and `look.glow(name, when =)`.
-- **The builder is cheap.** It is reused, not allocated per draw. It produces a change key, so an
-  identical result costs a string compare and churns no overlays. A type that draws nothing
-  keeps its mapped icon_state.
-- **Standard layer names:** `cover_open`, `panel_open`, `wires`, `locked`, `sparks`, `broken`,
-  `dark`. A one-time tool renames cryptic DMI states through the dmi.toml pipeline.
-- **Removed:** templates and `{x?a:b}` strings, `APPEARANCE_*`/`DECLARE_APPEARANCE*`,
-  `update_icon()` calls and `update_icon()` overrides.
+- `COOLDOWN_*` for "not more than once per N".
+- `timed_set(src, nameof(var), value, for_time =)` for a value that reverts. The revert happens only if
+  the value is unchanged. Never store an end time next to it.
+- `after(src, N, PROC_REF(x))` for a delayed action.
+- A periodic cadence for repeating work.
 
-## 4. Periodic work and verbs
+## Prompts and UI
 
-- `periodic_cadence` (a type var), `should_run()` and `periodic_step(dt)` are the whole periodic
-  API. `should_run()` is re-evaluated on change, and there is one body name for every cadence.
-- Verbs are native DM verbs. `hidden_verbs()` (call `..()`) is re-evaluated on change, and a
-  capability's verbs come from the capability.
+- **Prompts.** Use `ask_text` / `ask_number` / `ask_list` / `ask_yes_no` / `ask_color` / `ask_mob`. They
+  re-validate the action context and allow one open prompt per user per action. Forms are
+  `form = list(...)` on an entry.
+- **UI actions.** Client actions are `act_<action>` procs. Names and keys are normalised by
+  `ui_action_key()` (hyphen and camelCase become snake_case). Reserved argument names are written last.
+- **Validation.** Validate every parameter first with `ui_number` / `ui_text` / `ui_choice` / `ui_ref` /
+  `ui_bool`. `ui_actions_lint.py` checks that TSX and DM agree.
 
-## 5. UI
+## Style
 
-```dm fragment
-/obj/machinery/atmospherics/binary/pump/tgui_data(mob/user)
-	. = ..()
-	.["pressure"] = target_pressure
+- One proc-reference form: `PROC_REF`, `TYPE_PROC_REF`, `GLOBAL_PROC_REF`.
+- `nameof()` for var names.
+- Time defines.
+- No positional nulls and no backslash continuations.
+- No string mini-languages. The `%U%` / `%T%` message tokens are the one exception.
 
-/obj/machinery/atmospherics/binary/pump/proc/act_set_pressure(mob/user, pressure)
-	pressure = ui_number(pressure, 0, MAX_PUMP_PRESSURE)
-	if(isnull(pressure))
-		return refuse(user, "That isn't a pressure.")
-	set_target_pressure(pressure)
-```
+## Lints
 
-- **`tgui_data()` is a plain override** that calls `..()`, so capabilities add their data. It is
-  pushed automatically on change.
-- **An action is a proc named `act_<action>(mob/user, named args...)`.** Only `act_*` procs are
-  client actions; `ui_*` procs are framework hooks and are never reachable from a client. The
-  action name and every key go through `ui_action_key()` (lowercase; hyphens and camelCase become
-  snake_case; anything but `[A-Za-z0-9_-]` is rejected), so `act('bolt-toggle', {targetState})`
-  reaches `act_bolt_toggle(mob/user, target_state)`. The client's params become named arguments,
-  then the reserved names (`user`, `src`, `usr`, `ui`, `state`) are written last, so a payload can
-  never set them. An argument name the proc doesn't declare is a runtime, which the dispatcher
-  catches, logs and refuses.
-- **Validation.** DM doesn't enforce the argument types, so the body validates them with
-  `ui_number(x, min, max)`, `ui_text(x, max_length)`, `ui_choice(x, list)`,
-  `ui_ref(x, list, type)` and `ui_bool(x)`, and refuses with `refuse(user, text)`. The first use of
-  every parameter must be one of those validators (or `!!x`, `switch(x)`, `islist(x)`, or a
-  compare against a constant); handing it straight to a helper proc counts only when the helper
-  validates its own parameter first.
-- **Every parameter is client-facing.** Each parameter except `user` must be sent by some TSX
-  `act()`. An internal flag (`force`, `silent`) goes on a separate internal proc, since a client
-  could set any parameter by naming it.
-- **Gating and logging.** `ui_allowed(mob/user, action)` is the type-wide gate. `ui_logged()` is
-  a per-type list mapping actions to log levels.
-- **CI** (`ui_actions_lint.py`, which reads `ui_action_key()`'s rules out of `ui_actions.dm`)
-  checks that every TSX `act()` of a migrated interface names an existing `act_` proc with
-  matching argument names after normalisation, that every parameter is sent by some `act()` (C1),
-  and that each is validated before use (C2).
-- **Removed:** `DECLARE_UI`, `UI_ACT*`, `UI_DATA*`, `UI_ARG_*` and the generated tables.
+All run in `check_ratchets.sh`, each with `--selftest` fixtures. Legacy sites are baselined
+shrink-only; new code is held to 0. `// ALLOW(<lint>): <reason>` keeps a justified site.
 
-## 6. Prompts
-
-```dm fragment
-/obj/item/camera_assembly/proc/set_up_camera(mob/user)
-	var/networks = ask_text(user, "Which networks?", default = "SS13")
-	if(!networks)
-		return   // cancelled, or no longer valid (the player was told why)
-	become_camera(networks, ask_text(user, "Camera name?", default = default_camera_name()))
-```
-
-- **The linear prompts** are `ask_text`, `ask_number(min, max)`, `ask_list`, `ask_yes_no`,
-  `ask_color` and `ask_mob`.
-  - Each one captures the calling action's context: the user, the target, the held item, and the
-    entry's requirements or the window's state.
-  - It re-validates that context when the answer arrives. If the context no longer holds, it
-    returns null and tells the player why.
-  - Prompting handlers are run async by the dispatcher.
-- **Forms:** `form = list(choice_field("pack", PROC_REF(packs)), text_field("reason", max_length =
-  256), number_field("qty", 1, 50))` on an entry. The answers arrive as named handler arguments,
-  and the body validates them. DM reserves `text()`, hence the `_field` names.
-- **Removed:** `act_ask`, `topic_ask`, `rerun_ask` and friends, the `kNNN` keys, and `om_ask`
-  prompt flows.
-
-## 7. Time
-
-- **Timed values.** `timed_set(src, nameof(var), value, for_time =, clock = CLOCK_OWN|CLOCK_WORLD)`
-  writes through the setter. It writes the previous value back the same way when time runs out,
-  so there is no lapse hook. `time_left(src, nameof(var))` and `timed_cancel()` complete it.
-- **Cooldowns** are `COOLDOWN_START(src, var, 3 SECONDS)` / `COOLDOWN_FINISHED`.
-- **Removed:** `EXPIRY_*` and `EXPIRY_ON_LAPSE`.
-
-## 8. Ownership, logging and style
-
-- **Ownership.** `own_set(src, nameof(var), I)` takes I from its hand, slot or container, moves
-  it in, and adopts it. There is no `drop_item(); forceMove(src)` before it.
-- **Relations.** Write one side of a `REL_PAIR` only.
-- **Style rules:**
-  - one proc-reference form (`PROC_REF`, `TYPE_PROC_REF`, `GLOBAL_PROC_REF`);
-  - time defines everywhere;
-  - no positional nulls;
-  - no string mini-languages. `%U%`/`%T%` message tokens are the one exception.
-- **Teardown hooks** (`DESTROY_STEP`/`CAPTURE`/`AFTER`) become plain overrides where possible.
-
-## 9. Lints
-
-Every old form is banned once its migration lands, each with a baseline of 0.
-- **`tracked_lint.py`:** writes outside a TRACKED setter.
-- **`dx_old_forms`:** the removed macros listed above.
-- **`dx_manual_refresh`:** `update_icon()`, `SStgui.update_uis(src)` or `om_changed()` in
-  gameplay code.
-- **`dx_manual_fingerprint_log`:** `add_fingerprint`/`log_game`/`log_admin`/`message_admins` in an
-  `act_*` proc or a capability entry handler (the dispatcher records successes); ratcheted.
-- **`dx_manual_transfer`:** `drop_item()`/`unEquip()`/`remove_from_mob()` or `forceMove(src)`/
-  `loc = src` within a few lines of `own_set`/`own_add`/`own_put`; ratcheted.
-- **`dx_raw_delay`:** a numeric literal other than 0, not scaled by a time define, in the delay of
-  `after`/`om_after*`/`addtimer`/`do_after`/`COOLDOWN_START`, `timed_set(for_time =)` or a
-  constructor's `delay =`; ratcheted.
-- **`dx_string_names`:** a string literal where a var name goes (the var-name argument of every
-  global `own_*`/`rel_*` accessor, `om_set`, `timed_set`, `time_left`, `timed_cancel`); ratcheted.
-- **`dx_constructor_shadow`:** a type proc or verb named like a global `cap_*` constructor or
-  preset, which a bare call inside `capabilities()` would reach first (review 2, H7).
-- **`dx_raw_overlays`:** `add_overlay`/`cut_overlay(s)`/`overlays +=`/`overlays -=` outside the
-  look builder and the legacy appearance runtime; ratcheted.
-- **`dx_untracked_read`:** a reactive proc (`draw`, `should_run`, `hidden_verbs`, `tgui_data`,
-  a capability's `draw`/`gate`/`ui_data`/`examine`/`hidden_verbs`, a `needs =` proc) reads another
-  object's var that isn't TRACKED (or registered with `SETTER`) or reached through a watched
-  relation. Static: matched by var name; `tools/ci/sys_rules/dx_reactive.py` lists the limits.
-- **`dx_caps_instance_read`:** `capabilities()` reads an instance var.
-- **`dx_timed_write`:** a var handed to `timed_set()` written other than through it or its setter.
-- **`ui_actions_lint`:** a TSX `act()` that doesn't match an `act_` proc (after `ui_action_key()`);
-  an `act_` parameter no `act()` sends (`ui_unsent_param`); an `act_` parameter used before a
-  validator (`ui_unvalidated_param`).
-- **`cap_bits_lint`:** a `CAP_*` bit allocated outside `cap_bits.dm`, a shared or out-of-range bit,
-  or a raw `cap_state` write outside `cap_set()`.
-- **`dx_reactive_write`:** a reactive proc (the same set) writes state: a src var, a member of
-  anything, a writer call (`changed`, `cap_set`, `timed_set`, `own_*`, `set_<x>()`, `qdel`, ...)
-  or a list mutation on something not local. Locals, the `data` list, `.` and `look.*` are fine.
-- **Purity (DreamChecker):** `should_run()` and the capability `gate`/`ui_data`/`hidden_verbs`
-  hooks carry `SHOULD_BE_PURE(TRUE)`. DreamChecker's purity is transitive over every write, so the
-  `draw` hooks (every `look.*` call writes the builder), `examine` (memoized tables),
-  `/atom/draw()`/`/atom/hidden_verbs()` (`caps_of()` memoizes) and `tgui_data()` (legacy overrides)
-  can't carry it; `dx_reactive_write` covers them.
-- **`allow_tags`:** an unregistered `ALLOW()` tag.
-- **`doc_snippets`:** a complete ```` ```dm ```` block in `doc/rewrite` that doesn't compile
-  (`python tools/ci/doc_snippets.py --write`, then build with `-DDOC_SNIPPETS`), and a call in any
-  complete or ```` ```dm fragment ```` block to a name that doesn't exist (ratcheted).
-  ```` ```dm before ```` blocks are skipped.
-
-## 10. Audit issues and their fixes
-
-| Issue | Fix |
-|---|---|
-| H1 string var names | TRACKED setters, `nameof()`, the TRACKED lint |
-| H2 refresh gaps | derived procs re-run on change, plus the sweep and drift failure |
-| H3 re-run prompts | linear `ask_*()` with re-validation |
-| H4 proc-ref and handler sprawl | overrides and capabilities; `PROC_REF` only; `(mob/user, …)` |
-| H5 docs drift | the snippet CI |
-| H6 interaction sprawl | capabilities and the bespoke entries |
-| M1 mini-languages | plain DM in procs |
-| M2 positional nulls | type vars and named args |
-| M3 storage schemes | overrides, type vars and `type_list()` |
-| M4 hand init | `/datum/New()` starts non-atom declarations |
-| M5 requirement vocabulary | `needs` / `else_say` |
-| M6 ALLOW zoo | the tag registry |
-| M7 codegen leftovers | lint |
-| M8 mirrored state | capability state bits and derived procs; mirrors deleted |
-| M9 manual fingerprints and logs | the dispatchers |
-| L1 raw deciseconds | lint |
-| L2 backslashes | list-returning procs |
-| L3 cadence body names | `periodic_step(dt)` only |
-| L4 `args` shadowing | named handler arguments |
+- **`ui_actions_lint.py`** reads `ui_action_key()`'s rules out of `ui_actions.dm`. For a migrated
+  interface, every TSX `act()` must reach an `act_` proc (the host's, or a capability's it declares)
+  with declared keys. C1 `ui_unsent_param`: every `act_` parameter is sent by some `act()`. C2
+  `ui_unvalidated_param`: each parameter's first use is a `ui_*` validator, `!!x`, `switch(x)`,
+  `islist(x)` or a compare with a constant.
+- **`tracked_lint.py`**: writes to a `TRACKED` / `SETTER` var outside its setter.
+- **`cap_bits_lint.py`**: `CAP_*` bits outside `cap_bits.dm`, shared or out of range, and raw
+  `cap_state` writes.
+- **`sys_lint.py`** rules:
+  - `dx_untracked_read` (H4): a derived proc (`draw`, `should_run`, `hidden_verbs`, `tgui_data`, a
+    capability's `draw`/`gate`/`ui_data`/`examine`, a `needs =` proc) reads another object's var that
+    isn't `TRACKED`/`SETTER` or behind a watched relation.
+  - `dx_reactive_write` (H5): a derived proc writes anything but locals, the `data` list, `.` and
+    `look.*`. `SHOULD_BE_PURE` sits on `should_run`/`gate`/`ui_data`/`hidden_verbs`; DreamChecker's
+    transitive purity can't take `draw` (the builder writes itself) or `examine` (memoized tables).
+  - `dx_caps_instance_read` (M3): `capabilities()` reads an instance var.
+  - `dx_timed_write` (M5): a `timed_set()` var written other than through it or its setter.
+  - `dx_string_names`: a string literal as the var name of an `own_*`/`rel_*`/`om_set`/`timed_*`
+    accessor.
+  - `dx_raw_overlays`: `add_overlay`/`cut_overlay(s)`/`overlays +=`/`-=` outside the look builder.
+  - `dx_raw_delay`: a numeric literal (not 0) not scaled by a time define in a delay argument.
+  - `dx_manual_fingerprint_log`: `add_fingerprint`/`log_*`/`message_admins` in an `act_` proc or a
+    capability entry handler.
+  - `dx_constructor_shadow` (H7): a type proc named like a global `cap_*` constructor or bundle.
+  - `dx_manual_transfer`: a hand-rolled take-out or move next to `own_set`/`own_add`/`own_put`.
+  - `dx_old_forms`: the removed macros.
+- **`doc_snippets.py`**: a call in a doc/rewrite `dm` block to a name that doesn't exist. Complete
+  (untagged) blocks compile under `-DDOC_SNIPPETS` (`doc_snippets.py --write`, then build with
+  `-DDOC_SNIPPETS`); `fragment` blocks are name-checked only, `before` blocks are skipped.
