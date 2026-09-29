@@ -1,5 +1,5 @@
-// Object pools and the DECLARE_REF(..., DEF) / DECLARE_REF(..., TRANSIENT) / DECLARE_REF() declarations
-// (doc/rewrite/lifecycle.md §4 and §4.1, code/datums/lifecycle/pool.dm).
+// Object pools and their POOL_RESET declarations (doc/rewrite/ownership.md,
+// code/datums/lifecycle/pool.dm).
 
 /// A pooled type used only by these tests.
 /datum/pool_test_item
@@ -28,13 +28,13 @@ POOL_RESET(/datum/pool_test_item, count)
 	TEST_ASSERT(istype(item), "pool_take() should hand out the pooled type")
 	TEST_ASSERT_EQUAL(item.pool_state, POOL_STATE_TAKEN, "a taken object is marked taken")
 	var/datum/other = new /datum
-	item.held = other
+	rel_set(item, "held", other)
 	item.count = 9
 	item.keep = "changed"
 	item.release()
 	TEST_ASSERT_EQUAL(item.pool_state, POOL_STATE_FREE, "a released object waits in its pool")
-	TEST_ASSERT_NULL(item.held, "release() clears a DECLARE_REF(..., TRANSIENT) reference")
-	TEST_ASSERT_EQUAL(item.count, 3, "release() resets a DECLARE_REF(..., TRANSIENT) scalar to its initial value")
+	TEST_ASSERT_NULL(item.held, "release() clears a POOL_RESET reference")
+	TEST_ASSERT_EQUAL(item.count, 3, "release() resets a POOL_RESET scalar to its initial value")
 	TEST_ASSERT_EQUAL(item.keep, "changed", "release() leaves undeclared fields alone")
 	var/datum/pool_test_item/again = pool_take(/datum/pool_test_item)
 	TEST_ASSERT(again == item, "a released object is reused")
@@ -118,9 +118,9 @@ POOL_RESET(/datum/pool_test_item, count)
 /datum/unit_test/dq_pool/damage_packet/Run()
 	var/was_poison = pool_set_poison(FALSE)
 	var/datum/damage_packet/probe = new
-	var/list/transient = dq_lifecycle_link_table(probe)[REFKIND_TRANSIENT]
+	var/list/transient = own_table_of(probe).pool_reset_vars
 	for(var/name in list("source", "attacker", "weapon"))
-		TEST_ASSERT(name in transient, "damage packet [name] is DECLARE_REF(..., TRANSIENT)")
+		TEST_ASSERT(name in transient, "damage packet [name] is POOL_RESET")
 	var/datum/other = new /datum
 	var/datum/damage_packet/packet = damage_packet(other, other, other, BP_TORSO, DAMAGE_PACKET_SILENT, 7, NORTH)
 	packet.add(DAMAGE_BLUNT, 4)
@@ -139,15 +139,3 @@ POOL_RESET(/datum/pool_test_item, count)
 	qdel(other)
 	qdel(probe, TRUE)
 	pool_set_poison(was_poison)
-
-/// DECLARE_REF(..., DEF) and DECLARE_REF() declarations are visible at runtime.
-/datum/unit_test/dq_pool/ref_declarations
-
-/datum/unit_test/dq_pool/ref_declarations/Run()
-	var/datum/uplink_item/item = new
-	TEST_ASSERT("category" in dq_lifecycle_link_table(item)[REFKIND_DEF], "uplink_item category is DECLARE_REF(..., DEF)")
-	qdel(item)
-	var/datum/absorbed_dna/absorbed = new
-	TEST_ASSERT("dna" in absorbed.vars, "DECLARE_REF() declares the var")
-	TEST_ASSERT("dna" in dq_lifecycle_link_table(absorbed)[REFKIND_OWNED], "DECLARE_REF() declares the var's kind")
-	qdel(absorbed)

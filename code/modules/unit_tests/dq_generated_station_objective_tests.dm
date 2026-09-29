@@ -5,7 +5,7 @@
 	var/datum/generated_station_spec/spec = planner.plan(5150)
 	var/datum/expedition_site/site = new(world.maxz, EXP_DIFF_MED)
 	own_set(site, "station_spec", spec)
-	own_set(site, "station_simulation", new(spec))
+	own_set(site, "station_simulation", new /datum/generated_station_simulation(spec))
 	site.station_controls = list()
 	for(var/datum/generated_station_department_instance/department in spec.departments)
 		var/obj/machinery/generated_station_department_control/control = new(null)
@@ -55,7 +55,7 @@
 	var/datum/generated_station_spec/spec = planner.plan(6160)
 	var/datum/expedition_site/site = new(world.maxz, EXP_DIFF_MED)
 	own_set(site, "station_spec", spec)
-	own_set(site, "station_simulation", new(spec))
+	own_set(site, "station_simulation", new /datum/generated_station_simulation(spec))
 	var/obj/machinery/generated_station_department_control/control = new(null)
 	control.station_id = spec.id
 	control.department_id = "engineering-1"

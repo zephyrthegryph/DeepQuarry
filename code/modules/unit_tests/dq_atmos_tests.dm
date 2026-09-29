@@ -2264,18 +2264,14 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_pipenet_reconcile_air_equalizes/Run()
 	var/datum/pipe_network/net = new
 	var/datum/pipeline/line_a = new
-	own_set(line_a, "air", new(70))
+	own_set(line_a, "air", new /datum/gas_mixture(70))
 	line_a.volume = 70
-	rel_set(line_a, "members", list())
-	rel_set(line_a, "edges", list())
 	rel_set(line_a, "network", net)
 	line_a.air.adjust_gas(/datum/gas/oxygen, 100)
 	line_a.air.set_temperature(T20C)
 	var/datum/pipeline/line_b = new
-	own_set(line_b, "air", new(70))
+	own_set(line_b, "air", new /datum/gas_mixture(70))
 	line_b.volume = 70
-	rel_set(line_b, "members", list())
-	rel_set(line_b, "edges", list())
 	rel_set(line_b, "network", net)
 	line_b.air.set_temperature(T0C + 80)
 	var/initial_total = line_a.air.total_moles() + line_b.air.total_moles()
@@ -3471,7 +3467,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	// Manually-built pipeline (sidesteps HE pipe two-node auto-connection).
 	var/datum/pipeline/P = new
-	own_set(P, "air", new(70))
+	own_set(P, "air", new /datum/gas_mixture(70))
 	P.air.adjust_gas(/datum/gas/nitrogen, 50)
 	P.air.set_temperature(T0C + 500) // hot
 
@@ -4552,7 +4548,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(R.machine_step(), PROCESS_KILL, "recharger holding a full cell remained scheduled")
 	qdel(R)
 
-/// A recharger's DECLARE_REF(..., SPILL) of "charging" drops the item on destroy and the spill
+/// A recharger's OWN_SPILL "charging" drops the item on destroy and the spill
 /// hook refreshes its icon, as the recharger's old Destroy() did.
 /obj/item/cell/dq_spill_probe
 	var/refreshed = FALSE
@@ -4705,7 +4701,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/fusion_fuel_injector/injector = new(T)
 	TEST_ASSERT_EQUAL(injector.machine_step(), PROCESS_KILL, "inactive fusion fuel injector remained scheduled")
 	MACHINE_SLEEP(injector)
-	own_set(injector, "cur_assembly", new(injector))
+	own_set(injector, "cur_assembly", new /obj/item/fuel_assembly(injector))
 	injector.BeginInjecting()
 	TEST_ASSERT(machine_stepping(injector), "starting a fusion fuel injector did not wake it")
 	var/obj/machinery/atmospherics/binary/algae_farm/algae_farm = new(T)
@@ -5039,7 +5035,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 /datum/unit_test/dq_pipenet_gas_reacts_in_pipeline/Run()
 	var/datum/pipeline/P = new
-	own_set(P, "air", new(CELL_VOLUME))
+	own_set(P, "air", new /datum/gas_mixture(CELL_VOLUME))
 	P.air.adjust_gas(/datum/gas/plasma, 50)
 	P.air.adjust_gas(/datum/gas/oxygen, 200)
 	P.air.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE + 300)
@@ -6214,13 +6210,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/pipe_network/receiver = new
 	var/datum/pipe_network/donor = new
 	var/datum/pipeline/line = new
-	own_set(line, "air", new(70))
-	rel_set(line, "members", list())
-	rel_set(line, "edges", list())
+	own_set(line, "air", new /datum/gas_mixture(70))
 	rel_set(line, "network", donor)
 	donor.add_line_member(line)
-	own_set(donor, "air", line.air)
-	rel_set(donor, "gases", list(line.air))
+	own_set(donor, "air", new /datum/gas_mixture(line.air.return_volume()))
 	donor.volume = line.air.return_volume()
 
 	TEST_ASSERT(receiver.merge(donor), "pipenet merge rejected a valid donor")
@@ -6291,10 +6284,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/initial_thermal = 0
 	for(var/i = 1 to 3)
 		var/datum/pipeline/line = new
-		own_set(line, "air", new(70))
+		own_set(line, "air", new /datum/gas_mixture(70))
 		line.volume = 70
-		rel_set(line, "members", list())
-		rel_set(line, "edges", list())
 		rel_set(line, "network", net)
 		line.air.adjust_gas(i == 1 ? /datum/gas/oxygen : /datum/gas/nitrogen, i * 25)
 		line.air.set_temperature(T20C + i * 20)
