@@ -31,3 +31,18 @@
 #define COW_READ(I, N) ((I).N || TYPE_TABLE_GET(I, N))
 /// Instance var N of I, copied from the type table on first use. Writable.
 #define COW_LIST(I, N) ((I).N || ((I).N = TYPE_TABLE_COPY(I, N)))
+
+// Global (not per-type) tables built lazily on first read, for tables a GLOBAL_LIST_INIT cannot
+// build at global init (they need subsystems, registries or other globals first):
+//
+//   GLOBAL_TABLE(rules, GLOBAL_PROC_REF(build_rules))   // the builder takes no arguments
+//   var/list/rules = GLOBAL_TABLE_GET(rules)             // shared, read-only
+//
+// A constant literal table is a plain GLOBAL_LIST_INIT instead.
+
+/// Declares lazily built global table N (a shared cache with one entry).
+#define GLOBAL_TABLE(N, BUILDER) DECLARE_SHARED_CACHE(gt_##N, BUILDER, SC_NEVER)
+/// Global table N, built on first read. Read-only.
+#define GLOBAL_TABLE_GET(N) CACHED(gt_##N, #N)
+/// Drops global table N so the next read rebuilds it.
+#define GLOBAL_TABLE_RESET(N) INVALIDATE_SHARED_CACHE(gt_##N)
