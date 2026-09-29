@@ -267,72 +267,63 @@
 	max_instances = 2
 	tiles_per_instance = 28
 
-/datum/generated_room_feature_group/records_office/build_feature_types()
-	return list(/datum/generated_room_feature/filing_cabinet, /datum/generated_room_feature/work_table, /datum/generated_room_feature/work_chair)
+TYPE_TABLE(/datum/generated_room_feature_group/records_office, build_group_feature_types, list(/datum/generated_room_feature/filing_cabinet, /datum/generated_room_feature/work_table, /datum/generated_room_feature/work_chair))
 
 /datum/generated_room_feature_group/command_monitoring
 	id = "command-monitoring"
 	max_instances = 2
 	tiles_per_instance = 28
 
-/datum/generated_room_feature_group/command_monitoring/build_feature_types()
-	return list(/datum/generated_room_feature/crew_monitor, /datum/generated_room_feature/communications_console, /datum/generated_room_feature/operator_chair)
+TYPE_TABLE(/datum/generated_room_feature_group/command_monitoring, build_group_feature_types, list(/datum/generated_room_feature/crew_monitor, /datum/generated_room_feature/communications_console, /datum/generated_room_feature/operator_chair))
 
 /datum/generated_room_feature_group/robotics_workcell
 	id = "robotics-workcell"
 	max_instances = 2
 	tiles_per_instance = 30
 
-/datum/generated_room_feature_group/robotics_workcell/build_feature_types()
-	return list(/datum/generated_room_feature/robotics_console, /datum/generated_room_feature/autolathe, /datum/generated_room_feature/recharger)
+TYPE_TABLE(/datum/generated_room_feature_group/robotics_workcell, build_group_feature_types, list(/datum/generated_room_feature/robotics_console, /datum/generated_room_feature/autolathe, /datum/generated_room_feature/recharger))
 
 /datum/generated_room_feature_group/interrogation_suite
 	id = "interrogation-suite"
 	max_instances = 2
 	tiles_per_instance = 24
 
-/datum/generated_room_feature_group/interrogation_suite/build_feature_types()
-	return list(/datum/generated_room_feature/reinforced_table, /datum/generated_room_feature/operator_chair, /datum/generated_room_feature/security_records)
+TYPE_TABLE(/datum/generated_room_feature_group/interrogation_suite, build_group_feature_types, list(/datum/generated_room_feature/reinforced_table, /datum/generated_room_feature/operator_chair, /datum/generated_room_feature/security_records))
 
 /datum/generated_room_feature_group/pharmacy_line
 	id = "pharmacy-line"
 	max_instances = 1
 	tiles_per_instance = 24
 
-/datum/generated_room_feature_group/pharmacy_line/build_feature_types()
-	return list(/datum/generated_room_feature/chemical_dispenser, /datum/generated_room_feature/chem_master, /datum/generated_room_feature/reagent_grinder, /datum/generated_room_feature/sink, /datum/generated_room_feature/medical_storage)
+TYPE_TABLE(/datum/generated_room_feature_group/pharmacy_line, build_group_feature_types, list(/datum/generated_room_feature/chemical_dispenser, /datum/generated_room_feature/chem_master, /datum/generated_room_feature/reagent_grinder, /datum/generated_room_feature/sink, /datum/generated_room_feature/medical_storage))
 
 /datum/generated_room_feature_group/clinical_bay
 	id = "clinical-bay"
 	max_instances = 1
 	tiles_per_instance = 24
 
-/datum/generated_room_feature_group/clinical_bay/build_feature_types()
-	return list(/datum/generated_room_feature/patient_bed, /datum/generated_room_feature/iv_drip, /datum/generated_room_feature/sink, /datum/generated_room_feature/medical_vendor)
+TYPE_TABLE(/datum/generated_room_feature_group/clinical_bay, build_group_feature_types, list(/datum/generated_room_feature/patient_bed, /datum/generated_room_feature/iv_drip, /datum/generated_room_feature/sink, /datum/generated_room_feature/medical_vendor))
 
 /datum/generated_room_feature_group/atmos_service_bay
 	id = "atmos-service-bay"
 	max_instances = 2
 	tiles_per_instance = 30
 
-/datum/generated_room_feature_group/atmos_service_bay/build_feature_types()
-	return list(/datum/generated_room_feature/atmos_control, /datum/generated_room_feature/air_sensor, /datum/generated_room_feature/air_canister, /datum/generated_room_feature/oxygen_canister)
+TYPE_TABLE(/datum/generated_room_feature_group/atmos_service_bay, build_group_feature_types, list(/datum/generated_room_feature/atmos_control, /datum/generated_room_feature/air_sensor, /datum/generated_room_feature/air_canister, /datum/generated_room_feature/oxygen_canister))
 
 /datum/generated_room_feature_group/fabrication_bay
 	id = "fabrication-bay"
 	max_instances = 2
 	tiles_per_instance = 28
 
-/datum/generated_room_feature_group/fabrication_bay/build_feature_types()
-	return list(/datum/generated_room_feature/autolathe, /datum/generated_room_feature/work_table, /datum/generated_room_feature/power_monitor, /datum/generated_room_feature/tool_vendor, /datum/generated_room_feature/electrical_locker)
+TYPE_TABLE(/datum/generated_room_feature_group/fabrication_bay, build_group_feature_types, list(/datum/generated_room_feature/autolathe, /datum/generated_room_feature/work_table, /datum/generated_room_feature/power_monitor, /datum/generated_room_feature/tool_vendor, /datum/generated_room_feature/electrical_locker))
 
 /datum/generated_room_feature_group/freight_line
 	id = "freight-line"
 	max_instances = 3
 	tiles_per_instance = 22
 
-/datum/generated_room_feature_group/freight_line/build_feature_types()
-	return list(/datum/generated_room_feature/disposal_unit, /datum/generated_room_feature/cargo_crate, /datum/generated_room_feature/cargo_locker)
+TYPE_TABLE(/datum/generated_room_feature_group/freight_line, build_group_feature_types, list(/datum/generated_room_feature/disposal_unit, /datum/generated_room_feature/cargo_crate, /datum/generated_room_feature/cargo_locker))
 
 /// Adds the authored activity program for roles which do not use a dedicated
 /// room-definition subtype. Every program has a role-defining machine or
@@ -413,45 +404,63 @@
 			definition.required_groups |= list(/datum/generated_room_feature_group/freight_line)
 			definition.required_features |= list(/datum/generated_room_feature/oxygen_canister, /datum/generated_room_feature/internals_crate)
 
+GLOBAL_LIST_INIT(generated_room_compact_signatures, list(
+	"command" = list(/obj/machinery/computer/crew, /obj/structure/filingcabinet),
+	"ai" = list(/obj/machinery/computer/aiupload, /obj/structure/filingcabinet),
+	"security" = list(/obj/machinery/recharger, /obj/structure/closet/secure_closet/security),
+	"medical" = list(/obj/machinery/sleeper, /obj/structure/closet/secure_closet/medical1),
+	"engineering" = list(/obj/machinery/autolathe, /obj/structure/closet/secure_closet/engineering_electrical),
+	"logistics" = list(/obj/machinery/computer/supplycomp, /obj/structure/closet/crate),
+	"docking" = list(/obj/machinery/computer/communications, /obj/structure/closet/secure_closet/security),
+))
+GLOBAL_LIST_INIT(generated_room_role_signatures, list(
+	"command/records" = list(/obj/structure/filingcabinet, /obj/machinery/computer/card),
+	"ai/robotics" = list(/obj/machinery/computer/robotics, /obj/machinery/autolathe),
+	"ai/server-closet" = list(/obj/machinery/computer/robotics, /obj/machinery/autolathe),
+	"ai/satellite" = list(/obj/machinery/computer/aiupload, /obj/machinery/computer/crew),
+	"ai/monitoring" = list(/obj/machinery/computer/aiupload, /obj/machinery/computer/crew),
+	"security/armory" = list(/obj/machinery/autolathe/armory, /obj/structure/closet/secure_closet/security),
+	"security/evidence" = list(/obj/machinery/computer/secure_data, /obj/structure/filingcabinet),
+	"security/interrogation" = list(/obj/structure/table/reinforced, /obj/machinery/computer/secure_data),
+	"security/checkpoint" = list(/obj/structure/table/reinforced, /obj/machinery/computer/secure_data),
+	"medical/pharmacy" = list(/obj/machinery/chem_master, /obj/machinery/reagentgrinder),
+	"medical/exam" = list(/obj/structure/sink, /obj/machinery/vending/medical),
+	"medical/recovery" = list(/obj/machinery/sleeper, /obj/machinery/iv_drip),
+	"engineering/workshop" = list(/obj/machinery/autolathe, /obj/structure/closet/secure_closet/engineering_electrical),
+	"engineering/equipment" = list(/obj/machinery/autolathe, /obj/structure/closet/secure_closet/engineering_electrical),
+	"engineering/tool-room" = list(/obj/machinery/autolathe, /obj/structure/closet/secure_closet/engineering_electrical),
+	"engineering/maintenance" = list(/obj/machinery/autolathe, /obj/machinery/air_sensor),
+	"logistics/warehouse" = list(/obj/machinery/disposal, /obj/structure/closet/crate),
+	"logistics/sorting" = list(/obj/machinery/disposal, /obj/structure/closet/crate),
+	"logistics/inventory" = list(/obj/machinery/disposal, /obj/structure/closet/crate),
+	"logistics/dispatch" = list(/obj/machinery/computer/supplycomp, /obj/machinery/computer/communications),
+	"docking/customs" = list(/obj/machinery/computer/card, /obj/machinery/computer/secure_data),
+	"docking/security" = list(/obj/machinery/computer/security, /obj/machinery/computer/secure_data),
+))
+
 /// A stable set of atom types whose presence makes a role recognizable in a
 /// materialized room. Tests and runtime diagnostics consume the same contract.
+/// Shared list; never write into it.
 /proc/generated_room_required_signature(department_id, role, compact = FALSE)
-	if(compact)
-		switch(department_id)
-			if("command") return list(/obj/machinery/computer/crew, /obj/structure/filingcabinet)
-			if("ai") return list(/obj/machinery/computer/aiupload, /obj/structure/filingcabinet)
-			if("security") return list(/obj/machinery/recharger, /obj/structure/closet/secure_closet/security)
-			if("medical") return list(/obj/machinery/sleeper, /obj/structure/closet/secure_closet/medical1)
-			if("engineering") return list(/obj/machinery/autolathe, /obj/structure/closet/secure_closet/engineering_electrical)
-			if("logistics") return list(/obj/machinery/computer/supplycomp, /obj/structure/closet/crate)
-			if("docking") return list(/obj/machinery/computer/communications, /obj/structure/closet/secure_closet/security)
-	switch("[department_id]/[role]")
-		if("command/records") return list(/obj/structure/filingcabinet, /obj/machinery/computer/card)
-		if("ai/robotics", "ai/server-closet") return list(/obj/machinery/computer/robotics, /obj/machinery/autolathe)
-		if("ai/satellite", "ai/monitoring") return list(/obj/machinery/computer/aiupload, /obj/machinery/computer/crew)
-		if("security/armory") return list(/obj/machinery/autolathe/armory, /obj/structure/closet/secure_closet/security)
-		if("security/evidence") return list(/obj/machinery/computer/secure_data, /obj/structure/filingcabinet)
-		if("security/interrogation", "security/checkpoint") return list(/obj/structure/table/reinforced, /obj/machinery/computer/secure_data)
-		if("medical/pharmacy") return list(/obj/machinery/chem_master, /obj/machinery/reagentgrinder)
-		if("medical/exam") return list(/obj/structure/sink, /obj/machinery/vending/medical)
-		if("medical/recovery") return list(/obj/machinery/sleeper, /obj/machinery/iv_drip)
-		if("engineering/workshop", "engineering/equipment", "engineering/tool-room") return list(/obj/machinery/autolathe, /obj/structure/closet/secure_closet/engineering_electrical)
-		if("engineering/maintenance") return list(/obj/machinery/autolathe, /obj/machinery/air_sensor)
-		if("logistics/warehouse", "logistics/sorting", "logistics/inventory") return list(/obj/machinery/disposal, /obj/structure/closet/crate)
-		if("logistics/dispatch") return list(/obj/machinery/computer/supplycomp, /obj/machinery/computer/communications)
-		if("docking/customs") return list(/obj/machinery/computer/card, /obj/machinery/computer/secure_data)
-		if("docking/security") return list(/obj/machinery/computer/security, /obj/machinery/computer/secure_data)
-	return list()
+	if(compact && GLOB.generated_room_compact_signatures[department_id])
+		return GLOB.generated_room_compact_signatures[department_id]
+	return GLOB.generated_room_role_signatures["[department_id]/[role]"] || GLOB.generated_room_empty_list
+
+GLOBAL_LIST_INIT(generated_room_compact_authored_feature_table, list(
+	"command" = list(/datum/generated_room_feature/compact_command_machine, /datum/generated_room_feature/compact_filing_cabinet),
+	"ai" = list(/datum/generated_room_feature/compact_ai_machine, /datum/generated_room_feature/compact_filing_cabinet),
+	"security" = list(/datum/generated_room_feature/compact_security_machine, /datum/generated_room_feature/compact_security_locker),
+	"medical" = list(/datum/generated_room_feature/compact_medical_machine, /datum/generated_room_feature/compact_medical_locker),
+	"engineering" = list(/datum/generated_room_feature/compact_engineering_machine, /datum/generated_room_feature/compact_engineering_locker),
+	"logistics" = list(/datum/generated_room_feature/compact_logistics_machine, /datum/generated_room_feature/compact_cargo_crate),
+	"docking" = list(/datum/generated_room_feature/compact_docking_machine, /datum/generated_room_feature/compact_security_locker),
+))
 
 /// Minimal two-fixture compositions for pockets too small to host a complete
 /// activity cluster. These are authored reductions, not generic substitutes.
+/// Shared list; never write into it.
 /proc/generated_room_compact_authored_features(department_id, role)
-	switch(department_id)
-		if("command") return list(/datum/generated_room_feature/compact_command_machine, /datum/generated_room_feature/compact_filing_cabinet)
-		if("ai") return list(/datum/generated_room_feature/compact_ai_machine, /datum/generated_room_feature/compact_filing_cabinet)
-		if("security") return list(/datum/generated_room_feature/compact_security_machine, /datum/generated_room_feature/compact_security_locker)
-		if("medical") return list(/datum/generated_room_feature/compact_medical_machine, /datum/generated_room_feature/compact_medical_locker)
-		if("engineering") return list(/datum/generated_room_feature/compact_engineering_machine, /datum/generated_room_feature/compact_engineering_locker)
-		if("logistics") return list(/datum/generated_room_feature/compact_logistics_machine, /datum/generated_room_feature/compact_cargo_crate)
-		if("docking") return list(/datum/generated_room_feature/compact_docking_machine, /datum/generated_room_feature/compact_security_locker)
-	return list()
+	return GLOB.generated_room_compact_authored_feature_table[department_id] || GLOB.generated_room_empty_list
+
+/// Shared empty result for the lookups above; never write into it.
+GLOBAL_LIST_INIT(generated_room_empty_list, list())
