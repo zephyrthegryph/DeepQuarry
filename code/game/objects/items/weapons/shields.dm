@@ -155,7 +155,7 @@ DECLARE_INTERACTIONS(/obj/item/shield/riot, INTERACT_ITEM(null, PROC_REF(interac
 
 DECLARE_INTERACTIONS(/obj/item/shield/energy, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt), REQ_TARGET_STATE(/obj/item/shield/energy/proc/can_recolor)), \
 )
 
 /// Old attack_self.
@@ -208,12 +208,17 @@ DECLARE_INTERACTIONS(/obj/item/shield/energy, \
 		H.update_inv_l_hand()
 		H.update_inv_r_hand()
 
+/// Requirement for recolouring the shield.
+/obj/item/shield/energy/proc/can_recolor(mob/living/user, atom/target, obj/item/held)
+	if(!in_range(src, user))
+		return TRUE // the effect declines silently
+	if(user.incapacitated() || !istype(user))
+		return "you can't do that right now"
+	return TRUE
+
 /// Old click_alt.
 /obj/item/shield/energy/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!in_range(src, user))	//Basic checks to prevent abuse
-		return TRUE
-	if(user.incapacitated() || !istype(user))
-		to_chat(user, span_warning("You can't do that right now!"))
 		return TRUE
 	om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_shield_color), message = "Are you sure you want to recolor your shield?", title = "Confirm Recolor", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	return TRUE

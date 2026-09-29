@@ -236,15 +236,19 @@
 	name = "Extinguish the internal fire"
 	held_type = /obj/item/extinguisher
 	treats = MECHA_INT_FIRE
+	also_requires = list(REQ_TARGET_STATE(/obj/mecha/proc/can_extinguish_internal_fire))
 	effect = /obj/mecha/proc/extinguish_internal_fire
 
 /// Foam used per extinguishing.
 #define MECHA_EXTINGUISH_FOAM 10
 
-/obj/mecha/proc/extinguish_internal_fire(mob/actor, obj/item/extinguisher/held, datum/interaction/interaction)
+/// Requirement: the extinguisher needs enough foam left.
+/obj/mecha/proc/can_extinguish_internal_fire(mob/actor, atom/target, obj/item/extinguisher/held)
 	if(!istype(held) || !held.reagents || held.reagents.total_volume < MECHA_EXTINGUISH_FOAM)
-		to_chat(actor, span_warning("\The [held] is empty."))
-		return TRUE
+		return "[held] is empty"
+	return TRUE
+
+/obj/mecha/proc/extinguish_internal_fire(mob/actor, obj/item/extinguisher/held, datum/interaction/interaction)
 	held.reagents.remove_any(MECHA_EXTINGUISH_FOAM)
 	play_sfx(src, SFX_EFFECTS_EXTINGUISH, volume = 50, extrarange = 0)
 	to_chat(actor, span_notice("You flood \the [src]'s internals with foam."))

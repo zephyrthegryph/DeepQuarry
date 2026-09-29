@@ -780,16 +780,15 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 	var/created_area = 0
 	var/area_cooldown = 0
 
-/obj/item/paper/proc/create_area_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
+/// Requirement: one area per paper, and not too often.
+/obj/item/paper/proc/can_create_area(mob/user, atom/target, obj/item/held)
 	if(created_area)
-		to_chat(user, span_warning("This paper has already been used to create an area."))
-		return
-
+		return "this paper has already been used to create an area"
 	if(user.stat || !COOLDOWN_FINISHED(src, area_cooldown))
-		to_chat(user, span_warning("You recently used this paper to try to create an area. Wait one minute before using it again."))
-		return
+		return "you recently used this paper to try to create an area, wait one minute before using it again"
+	return TRUE
 
+/obj/item/paper/proc/create_area_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	COOLDOWN_START(src, area_cooldown, 600) //Anti spam.
 
 	create_new_area(user)
@@ -949,5 +948,5 @@ EXTEND_INTERACTIONS(/obj/item/areaeditor, \
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/paper, \
-	INTERACT_VERB("Create Area", PROC_REF(create_area_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Create Area", PROC_REF(create_area_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/paper/proc/can_create_area)), \
 )

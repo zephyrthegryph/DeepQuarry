@@ -15,11 +15,6 @@
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/hailer/proc/set_message_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
-	if(!isnull(insults))
-		to_chat(user, "The hailer is fried. The tiny input screen just shows a waving ASCII penis.")
-		return
-
 	om_ask(user, /datum/om/prompt/text, PROC_REF(message_entered), message = "Please enter new message (leave blank to reset).", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
 /obj/item/hailer/proc/message_entered(datum/om/prompt/text/ask)
@@ -62,5 +57,5 @@ DECLARE_INTERACTIONS(/obj/item/hailer, INTERACT_USE(null, PROC_REF(interaction_s
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/hailer, \
-	INTERACT_VERB("Set Hailer Message", PROC_REF(set_message_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Set Hailer Message", PROC_REF(set_message_effect), REQ_IN_INVENTORY, REQ_BECAUSE(REQ_FIELD_EQ("insults", null), "the hailer is fried, the tiny input screen just shows a waving ASCII penis")), \
 )

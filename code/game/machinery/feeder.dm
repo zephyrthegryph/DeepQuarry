@@ -66,13 +66,10 @@
 	name = "Insert container"
 	category = INTERACTION_CAT_INSERT
 	held_type = /obj/item/reagent_containers
+	also_requires = list(REQ_BECAUSE(REQ_FIELD_NOT("beaker"), "there is already a reagent container inserted"))
 	effect = /obj/machinery/feeder/proc/interaction_insert_beaker
 
 /obj/machinery/feeder/proc/interaction_insert_beaker(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!isnull(beaker))
-		to_chat(user, span_warning("There is already a reagent container inserted!"))
-		return TRUE
-
 	user.drop_item()
 	W.forceMove(src)
 	beaker = W

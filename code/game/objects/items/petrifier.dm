@@ -17,13 +17,16 @@
 	. = ..()
 	linked_handle = om_handle(to_link)
 
-DECLARE_INTERACTIONS(/obj/item/petrifier, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/petrifier, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/petrifier/proc/can_fire)))
+
+/// Requirement: TRUE, or why the device does nothing.
+/obj/item/petrifier/proc/can_fire(mob/user, atom/target, obj/item/held)
+	if(!isturf(user.loc) && get_ultimate_mob(user) != target_ref())
+		return "the device beeps but does nothing"
+	return TRUE
 
 /// Old attack_self.
 /obj/item/petrifier/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if (!isturf(user.loc) && get_ultimate_mob(user) != target_ref())
-		to_chat(user, span_warning("The device beeps but does nothing."))
-		return TRUE
 	if (linked()?.petrify(user, src))
 		visible_message(span_notice("A ray of purple light streams out of \the [src], aimed directly at [target_ref()]. Everywhere the light touches on them quickly [adjective] into [material]."))
 		to_chat(user, span_warning("The device fizzles and crumbles into dust."))

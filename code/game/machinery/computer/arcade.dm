@@ -65,13 +65,16 @@
 	name = "Redeem tickets"
 	category = INTERACTION_CAT_INSERT
 	held_type = /obj/item/stack/arcadeticket
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/arcade/proc/can_redeem_tickets))
 	effect = /obj/machinery/computer/arcade/proc/interaction_redeem_tickets
 
+/// Requirement: a prize costs two tickets.
+/obj/machinery/computer/arcade/proc/can_redeem_tickets(mob/user, atom/target, obj/item/stack/arcadeticket/T)
+	if(istype(T) && T.get_amount() < 2)
+		return "you need 2 tickets to claim a prize"
+	return TRUE
+
 /obj/machinery/computer/arcade/proc/interaction_redeem_tickets(mob/user, obj/item/stack/arcadeticket/T, datum/interaction/interaction)
-	var/amount = T.get_amount()
-	if(amount < 2)
-		to_chat(user, span_warning("You need 2 tickets to claim a prize!"))
-		return TRUE
 	prizevend(user)
 	T.pay_tickets()
 	T.update_icon()

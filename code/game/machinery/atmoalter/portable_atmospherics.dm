@@ -212,16 +212,13 @@ DECLARE_REF(/obj/machinery/portable_atmospherics, "holding", OWNED, null)
 	category = INTERACTION_CAT_INSERT
 	held_type = /obj/item/cell
 	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/portable_atmospherics/powered/proc/wants_cell, null))
+	also_requires = list(REQ_BECAUSE(REQ_FIELD_NOT("cell"), "there is already a power cell installed"))
 	effect = /obj/machinery/portable_atmospherics/powered/proc/interaction_insert_cell
 
 /obj/machinery/portable_atmospherics/powered/proc/wants_cell(mob/actor, atom/target, obj/item/held)
 	return use_cell
 
 /obj/machinery/portable_atmospherics/powered/proc/interaction_insert_cell(mob/user, obj/item/I, datum/interaction/interaction)
-	if(cell)
-		to_chat(user, "There is already a power cell installed.")
-		return TRUE
-
 	var/obj/item/cell/C = I
 
 	user.drop_item()

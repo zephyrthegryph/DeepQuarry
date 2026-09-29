@@ -427,7 +427,12 @@ DECLARE_REF(/obj/structure/closet, "door_obj", OWNED, null)
 /datum/interaction/entry_hand/closet_hand
 	id = "closet_hand"
 	name = "Use"
+	also_requires = list(REQ_TARGET_STATE(/obj/structure/closet/proc/can_use_by_hand))
 	effect = /obj/structure/closet/proc/interaction_hand
+
+/// Requirement for the hand: TRUE, or why not (subtypes whose hand does something else refuse here).
+/obj/structure/closet/proc/can_use_by_hand(mob/user, atom/target, obj/item/held)
+	return TRUE
 
 /obj/structure/closet/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)

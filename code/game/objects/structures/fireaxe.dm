@@ -116,13 +116,10 @@
 /datum/interaction/entry_hand/fireaxecabinet_hand
 	id = "fireaxecabinet_hand"
 	name = "Use"
+	also_requires = list(REQ_BECAUSE(REQ_FIELD_NOT("locked"), "the cabinet won't budge"))
 	effect = /obj/structure/fireaxecabinet/proc/interaction_hand
 
 /obj/structure/fireaxecabinet/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-
-	if(locked)
-		to_chat(user, span_warning("The cabinet won't budge!"))
-		return TRUE
 
 	if(open)
 		if(fireaxe)

@@ -1024,7 +1024,7 @@ About the new airlock wires panel:
 	category = INTERACTION_CAT_OPEN
 	tool = TOOL_CROWBAR
 	tool_volume = 0
-	requires = list(REQ_REACH_ADJACENT)
+	requires = list(REQ_REACH_ADJACENT, REQ_TARGET_STATE(/obj/machinery/door/airlock/proc/can_force))
 	effect = /obj/machinery/door/airlock/proc/interaction_pry
 
 /datum/interaction/airlock_pry/display_name(mob/actor, atom/target)
@@ -1046,16 +1046,19 @@ About the new airlock wires panel:
 	name = "Force open or closed"
 	stance = I_GRAB
 
+/// Requirement for prying: removing the electronics is always possible; forcing needs no power and no bolts.
+/obj/machinery/door/airlock/proc/can_force(mob/user, atom/target, obj/item/tool)
+	if(can_remove_electronics())
+		return TRUE
+	if(arePowerSystemsOn())
+		return "the airlock's motors resist your efforts to force it"
+	if(locked)
+		return "the airlock's bolts prevent it from being forced"
+	return TRUE
+
 /obj/machinery/door/airlock/proc/interaction_pry(mob/user, obj/item/tool, datum/interaction/interaction)
 	if(can_remove_electronics())
 		use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 75, start_self = "You start to remove electronics from the airlock assembly.", start_others = "[user] removes the electronics from the airlock assembly.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
-		return TRUE
-
-	if(arePowerSystemsOn())
-		to_chat(user, span_notice("The airlock's motors resist your efforts to force it."))
-		return TRUE
-	if(locked)
-		to_chat(user, span_notice("The airlock's bolts prevent it from being forced."))
 		return TRUE
 
 	// Force doors open/closed

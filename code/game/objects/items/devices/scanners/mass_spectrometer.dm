@@ -30,13 +30,18 @@ MATERIAL_MIX(/obj/item/mass_spectrometer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	else
 		icon_state = initial(icon_state)
 
-DECLARE_INTERACTIONS(/obj/item/mass_spectrometer, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/mass_spectrometer, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/mass_spectrometer/proc/can_analyze)))
+
+/// Requirement: only a dexterous user can work the spectrometer.
+/obj/item/mass_spectrometer/proc/can_analyze(mob/user, atom/target, obj/item/held)
+	if(user.stat)
+		return TRUE // the effect declines silently
+	if(!user.IsAdvancedToolUser())
+		return "you don't have the dexterity to do this"
+	return TRUE
 
 /obj/item/mass_spectrometer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if (user.stat)
-		return
-	if (!user.IsAdvancedToolUser())
-		to_chat(user, span_warning("You don't have the dexterity to do this!"))
 		return
 	if(reagents.total_volume)
 		var/list/blood_traces = list()

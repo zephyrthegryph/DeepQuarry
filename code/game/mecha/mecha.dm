@@ -1005,7 +1005,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	INTERACT_DRAG("Enter exosuit", PROC_REF(interaction_mecha_drag)), \
 	INTERACT_ALT("Toggle strafing", PROC_REF(interaction_mecha_alt)), \
 	INTERACT_VERB("Enter Exosuit", PROC_REF(mecha_verb_enter), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_outside, null)), \
-	INTERACT_VERB("Enter Passenger Compartment", PROC_REF(move_inside_passenger), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_outside, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_has_passenger_bay, null)), \
+	INTERACT_VERB("Enter Passenger Compartment", PROC_REF(move_inside_passenger), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_outside, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_has_passenger_bay, null), REQ_TARGET_STATE(/obj/mecha/proc/can_enter_passenger)), \
 	INTERACT_VERB("Eject", PROC_REF(mecha_verb_eject), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
 	INTERACT_VERB("View Stats", PROC_REF(view_stats), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
 	INTERACT_VERB("Toggle Lights", PROC_REF(mecha_verb_toggle_lights), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \

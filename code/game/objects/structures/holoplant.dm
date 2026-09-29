@@ -26,15 +26,11 @@
 	id = "holoplant_toggle"
 	name = "Toggle"
 	category = INTERACTION_CAT_TOGGLE
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null))
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_BECAUSE(REQ_ANCHORED, "it must be anchored before activation"))
 	effect = /obj/machinery/holoplant/proc/interaction_toggle
 
 /obj/machinery/holoplant/proc/interaction_toggle(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user) || interference)
-		return TRUE
-
-	if(!anchored)
-		to_chat(user,span_warning("\The [src] must be anchored before activation!"))
 		return TRUE
 
 	if(!plant)

@@ -48,14 +48,22 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 /obj/item/stack/marker_beacon/update_icon()
 	icon_state = "[icon_base][lowertext(picked_color)]"
 
+/// Requirement for placing: open floor with no beacon on it already.
+/obj/item/stack/marker_beacon/proc/can_place(mob/user, atom/target, obj/item/held)
+	if(!isturf(user.loc))
+		return "you need more space to place a [singular_name] here"
+	if(locate_within(user.loc, /obj/structure/marker_beacon))
+		return "there is already a [singular_name] here"
+	return TRUE
+
+/// Requirement for picking a colour (shared by the stack and the placed beacon).
+/proc/dq_marker_beacon_can_recolor(mob/living/user, atom/target, obj/item/held)
+	if(user.incapacitated() || !istype(user))
+		return "you can't do that right now"
+	return TRUE
+
 /// Old attack_self: place a beacon.
 /obj/item/stack/marker_beacon/proc/marker_beacon_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!isturf(user.loc))
-		to_chat(user, span_warning("You need more space to place a [singular_name] here."))
-		return
-	if(locate_within(user.loc, /obj/structure/marker_beacon))
-		to_chat(user, span_warning("There is already a [singular_name] here."))
-		return
 	if(use(1))
 		to_chat(user, span_notice("You activate and anchor [amount ? "a":"the"] [singular_name] in place."))
 		play_sfx(src, SFX_MACHINES_CLICK)
@@ -63,15 +71,12 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 		transfer_fingerprints_to(M)
 
 EXTEND_INTERACTIONS(/obj/item/stack/marker_beacon, \
-	INTERACT_USE("Place", PROC_REF(marker_beacon_self)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+	INTERACT_USE("Place", PROC_REF(marker_beacon_self), REQ_TARGET_STATE(/obj/item/stack/marker_beacon/proc/can_place)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt), REQ_PROC(/proc/dq_marker_beacon_can_recolor, "you can't do that right now")), \
 )
 
 /// Old click_alt.
 /obj/item/stack/marker_beacon/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(user.incapacitated() || !istype(user))
-		to_chat(user, span_warning("You can't do that right now!"))
-		return TRUE
 	if(!in_range(src, user))
 		return TRUE
 
@@ -121,7 +126,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/marker_beacon, \
 DECLARE_INTERACTIONS(/obj/structure/marker_beacon, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt), REQ_TARGET_STATE(/obj/structure/marker_beacon/proc/can_recolor)), \
 )
 
 /// Old attack_hand.
@@ -160,12 +165,15 @@ DECLARE_INTERACTIONS(/obj/structure/marker_beacon, \
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	qdel(src)
 
+/// Requirement for picking a colour (a permanent beacon ignores it silently).
+/obj/structure/marker_beacon/proc/can_recolor(mob/living/user, atom/target, obj/item/held)
+	if(perma)
+		return TRUE
+	return dq_marker_beacon_can_recolor(user, target, held)
+
 /// Old click_alt.
 /obj/structure/marker_beacon/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(perma)
-		return TRUE
-	if(user.incapacitated() || !istype(user))
-		to_chat(user, span_warning("You can't do that right now!"))
 		return TRUE
 	if(!in_range(src, user))
 		return TRUE

@@ -23,23 +23,22 @@
 TYPE_TABLE(/obj/item/storage/laundry_basket, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_LARGE)))
 
 
-EXTEND_INTERACTIONS(/obj/item/storage/laundry_basket, INTERACT_HAND_UNGATED("Pick up", PROC_REF(interaction_two_hands)))
+EXTEND_INTERACTIONS(/obj/item/storage/laundry_basket, INTERACT_HAND_UNGATED("Pick up", PROC_REF(interaction_two_hands), REQ_TARGET_STATE(/obj/item/storage/laundry_basket/proc/can_lift)))
+
+/// Requirement: lifting the basket takes both hands.
+/obj/item/storage/laundry_basket/proc/can_lift(mob/living/user, atom/target, obj/item/held)
+	if(ishuman(user))
+		var/mob/living/carbon/human/H = user
+		var/obj/item/organ/external/temp = H.get_organ(user.hand ? BP_L_HAND : BP_R_HAND)
+		if(!temp)
+			return "you need two hands to pick this up"
+	if(user.get_inactive_hand())
+		return "you need your other hand to be empty"
+	return TRUE
 
 /// Old attack_hand: lifting the basket takes both hands; with both free the storage's touch goes on.
 /obj/item/storage/laundry_basket/proc/interaction_two_hands(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		var/obj/item/organ/external/temp = H.get_organ(BP_R_HAND)
-		if (user.hand)
-			temp = H.get_organ(BP_L_HAND)
-		if(!temp)
-			to_chat(user, span_warning("You need two hands to pick this up!"))
-			return TRUE
-
-	if(user.get_inactive_hand())
-		to_chat(user, span_warning("You need your other hand to be empty"))
-		return TRUE
-	return FALSE
+	return FALSE // can_lift() refuses a one-handed lift; otherwise the storage's touch goes on
 
 /obj/item/storage/laundry_basket/pickup(mob/user)
 	var/obj/item/storage/laundry_basket/offhand/O = new(user)

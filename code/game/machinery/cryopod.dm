@@ -579,14 +579,28 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	id = "cryopod_insert_grab"
 	name = "Put grabbed victim in"
 	held_type = /obj/item/grab
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/cryopod/proc/can_take_occupant))
 	effect = /obj/machinery/cryopod/proc/interaction_insert_grab
 
-/obj/machinery/cryopod/proc/interaction_insert_grab(mob/user, obj/item/grab/grab, datum/interaction/interaction)
-	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
-	if(occupant)
-		to_chat(user, span_notice("\The [src] is in use."))
-		return TRUE
+/// Requirement: the pod must be empty.
+/obj/machinery/cryopod/proc/can_take_occupant(mob/user, atom/target, obj/item/held)
+	if(slot_item(OCCUPANT_SLOT_CRYOPOD))
+		return "it's in use"
+	return TRUE
 
+/// Requirement for climbing in: TRUE, or why the user can't.
+/obj/machinery/cryopod/proc/can_enter(mob/user, atom/target, obj/item/held)
+	if(!check_occupant_allowed(user))
+		return TRUE // the effect declines silently
+	if(slot_item(OCCUPANT_SLOT_CRYOPOD))
+		return "it's in use"
+	if(isliving(user))
+		var/mob/living/L = user
+		if(L.has_buckled_mobs())
+			return "you have other entities attached to yourself, remove them first"
+	return TRUE
+
+/obj/machinery/cryopod/proc/interaction_insert_grab(mob/user, obj/item/grab/grab, datum/interaction/interaction)
 	if(!ismob(grab?.grab_target()))
 		return TRUE
 	go_in(grab?.grab_target(), user)
@@ -620,28 +634,17 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	name = initial(name)
 	return TRUE
 
-/// Old object verb. `check_occupant_allowed` also ran in the verb's guard clause, so it's kept
-/// inline in the effect rather than moved to `requires` (it has no side effects, but this keeps
-/// the exact old ordering with the `occupant`/`has_buckled_mobs` checks that follow it).
+/// Old object verb. A disallowed occupant type is still declined silently in the effect;
+/// the occupied/buckled refusals are can_enter().
 /datum/interaction/machine_verb/cryopod_enter
 	id = "cryopod_enter"
 	name = "Enter Pod"
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/cryopod/proc/can_enter))
 	effect = /obj/machinery/cryopod/proc/interaction_enter
 
 /obj/machinery/cryopod/proc/interaction_enter(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(!check_occupant_allowed(user))
 		return TRUE
-
-	if(occupant)
-		to_chat(user, span_boldnotice("\The [src] is in use."))
-		return TRUE
-
-	if(isliving(user))
-		var/mob/living/L = user
-		if(L.has_buckled_mobs())
-			to_chat(L, span_warning("You have other entities attached to yourself. Remove them first."))
-			return TRUE
 
 	visible_message("[user] [on_enter_visible_message] [src].", 3)
 

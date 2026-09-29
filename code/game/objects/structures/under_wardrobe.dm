@@ -18,12 +18,16 @@
 /datum/interaction/entry_hand/undies_wardrobe_open_ui
 	id = "undies_wardrobe_open_ui"
 	name = "Use"
+	also_requires = list(REQ_TARGET_STATE(/obj/structure/undies_wardrobe/proc/can_browse))
 	effect = /obj/structure/undies_wardrobe/proc/wardrobe_open_ui
 
-/obj/structure/undies_wardrobe/proc/wardrobe_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement: only someone who wears underwear finds anything in here.
+/obj/structure/undies_wardrobe/proc/can_browse(mob/user, atom/target, obj/item/held)
 	if(!human_who_can_use_underwear(user))
-		to_chat(user, span_warning("Sadly there's nothing in here for you to wear."))
-		return TRUE
+		return "sadly there's nothing in here for you to wear"
+	return TRUE
+
+/obj/structure/undies_wardrobe/proc/wardrobe_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	interact(user)
 	return TRUE
 

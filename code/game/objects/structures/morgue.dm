@@ -250,12 +250,10 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 /datum/interaction/entry_hand/crematorium_hand
 	id = "crematorium_hand"
 	name = "Use"
+	also_requires = list(REQ_BECAUSE(REQ_FIELD_NOT("cremating"), "it's locked"))
 	effect = /obj/structure/morgue/crematorium/proc/interaction_crema_hand
 
 /obj/structure/morgue/crematorium/proc/interaction_crema_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if (cremating)
-		to_chat(user, span_warning("It's locked."))
-		return TRUE
 	if ((src.connected) && (src.locked == 0))
 		for(var/atom/movable/A as mob|obj in src.connected.loc)
 			if (!( A.anchored ))

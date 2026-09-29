@@ -42,12 +42,26 @@
 	id = "aiupload_install"
 	name = "Install module"
 	held_type = /obj/item
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/aiupload/proc/can_connect))
 	effect = /obj/machinery/computer/aiupload/proc/interaction_install
 
-/obj/machinery/computer/aiupload/proc/interaction_install(mob/user, obj/item/O, datum/interaction/interaction)
+/// Requirement: the console only reaches the station's contact levels.
+/obj/machinery/computer/aiupload/proc/can_connect(mob/user, atom/target, obj/item/held)
 	if(using_map && !(user.z in using_map.contact_levels))
-		to_chat(user, span_danger("Unable to establish a connection:") + " You're too far away from the station!")
-		return TRUE
+		return "unable to establish a connection, you're too far away from the station"
+	return TRUE
+
+/// Requirement: TRUE, or why no AI can be selected.
+/obj/machinery/computer/aiupload/proc/can_select_ai(mob/user, atom/target, obj/item/held)
+	if(has_stat(NOPOWER))
+		return "the upload computer has no power"
+	if(has_stat(BROKEN))
+		return "the upload computer is broken"
+	if(!length(active_ais()))
+		return "no active AIs detected"
+	return TRUE
+
+/obj/machinery/computer/aiupload/proc/interaction_install(mob/user, obj/item/O, datum/interaction/interaction)
 	if(istype(O, /obj/item/aiModule))
 		var/obj/item/aiModule/M = O
 		M.install(src, user)
@@ -58,18 +72,12 @@
 /datum/interaction/machine_hand/ungated/aiupload_select_ai
 	id = "aiupload_select_ai"
 	name = "Select AI"
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/aiupload/proc/can_select_ai))
 	effect = /obj/machinery/computer/aiupload/proc/interaction_select_ai
 
 /obj/machinery/computer/aiupload/proc/interaction_select_ai(mob/user, obj/item/held, datum/interaction/interaction)
-	if(src.has_stat(NOPOWER))
-		to_chat(user, "The upload computer has no power!")
-		return TRUE
-	if(src.has_stat(BROKEN))
-		to_chat(user, "The upload computer is broken!")
-		return TRUE
-
-	if(!length(active_ais()))
-		to_chat(user, "No active AIs detected.")
+	// Also the selection prompt's callback: re-check quietly (can_select_ai() told the user up front).
+	if(has_stat(NOPOWER) || has_stat(BROKEN) || !length(active_ais()))
 		return TRUE
 	var/mob/living/silicon/ai/picked = select_active_ai(user, src, PROC_REF(interaction_select_ai), args)
 	if(picked)
@@ -109,18 +117,22 @@
 /datum/interaction/machine_hand/ungated/borgupload_select_borg
 	id = "borgupload_select_borg"
 	name = "Select cyborg"
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/borgupload/proc/can_select_borg))
 	effect = /obj/machinery/computer/borgupload/proc/interaction_select_borg
 
-/obj/machinery/computer/borgupload/proc/interaction_select_borg(mob/user, obj/item/held, datum/interaction/interaction)
-	if(src.has_stat(NOPOWER))
-		to_chat(user, "The upload computer has no power!")
-		return TRUE
-	if(src.has_stat(BROKEN))
-		to_chat(user, "The upload computer is broken!")
-		return TRUE
-
+/// Requirement: TRUE, or why no cyborg can be selected.
+/obj/machinery/computer/borgupload/proc/can_select_borg(mob/user, atom/target, obj/item/held)
+	if(has_stat(NOPOWER))
+		return "the upload computer has no power"
+	if(has_stat(BROKEN))
+		return "the upload computer is broken"
 	if(!length(free_borg_choices()))
-		to_chat(user, "No free cyborgs detected.")
+		return "no free cyborgs detected"
+	return TRUE
+
+/obj/machinery/computer/borgupload/proc/interaction_select_borg(mob/user, obj/item/held, datum/interaction/interaction)
+	// Also the selection prompt's callback: re-check quietly (can_select_borg() told the user up front).
+	if(has_stat(NOPOWER) || has_stat(BROKEN) || !length(free_borg_choices()))
 		return TRUE
 	var/mob/living/silicon/robot/picked = freeborg(user, src, PROC_REF(interaction_select_borg), args)
 	if(picked)
