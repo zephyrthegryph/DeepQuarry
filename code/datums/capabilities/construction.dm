@@ -45,11 +45,10 @@
 /// The construction capability: one per type's capabilities() list, shared by its instances.
 /datum/capability/construction
 	data_type = /datum/ladder_progress
-	/// What cap_construction() was given: stage() and ladder_options() values (owned: the stages own
-	/// their costs and branches, the options their `anywhere` branches).
+	/// What cap_construction() was given: stage() and ladder_options() values. These are plain
+	/// declaration values holding no entity (costs are read into LCOST_* specs when declared), so the
+	/// type_list rebuilds and capability interning can drop copies of them without teardown.
 	var/list/declaration
-	/// cap_construction() arguments that were not datums, as text (validate() reports them).
-	var/list/declaration_errors
 	/// The ladder, built on first use.
 	var/tmp/datum/construction_ladder/ladder
 
@@ -65,11 +64,7 @@
  */
 /proc/cap_construction(...)
 	var/datum/capability/construction/made = new
-	for(var/value in args)
-		if(isdatum(value))
-			own_add(made, nameof(made.declaration), value)
-		else
-			LAZYADD(made.declaration_errors, "[value]")
+	made.declaration = args.Copy()
 	made.works_broken = TRUE
 	made.works_unpowered = TRUE
 	for(var/datum/ladder_settings/options in made.declaration)
@@ -78,7 +73,8 @@
 			works_unpowered = options.works_unpowered, log = options.log)
 	return made
 
-/// The ladder of this capability, built from its declaration by the first holder asking.
+/// The ladder of this capability, built from its declaration by the first holder asking. The ladder
+/// and its steps are the capability's only owned entities: built once, on the kept (interned) capability.
 /datum/capability/construction/proc/ladder_for(atom/holder)
 	if(!ladder)
 		own_set(src, nameof(src.ladder), new /datum/construction_ladder(src, holder.type))
@@ -167,13 +163,37 @@
 	for(var/need in (islist(needs) ? needs : list(needs)))
 		. += list(list(need, else_say))
 
+/**
+ * A cost entry read into plain values (LCOST_*): cap_tool(), cap_insert(), cap_use_on() or cap_hand()
+ * with no handler. `uses` makes a cap_use_on() item used up (stack units, or the part itself). Null
+ * for no cost; a spec with a null kind when `entry` is not a cost entry (validate() reports it).
+ */
+/proc/ladder_cost_spec(datum/capability/entry/entry, uses = 0)
+	if(isnull(entry))
+		return null
+	var/list/spec = new /list(LCOST_LEN)
+	var/datum/interaction/capability/E = istype(entry) ? entry.entry : null
+	if(!E)
+		return spec
+	spec[LCOST_KIND] = ladder_entry_kind(E, uses)
+	spec[LCOST_TOOL] = E.tool
+	spec[LCOST_ITEM] = E.held_type
+	spec[LCOST_USES] = uses
+	spec[LCOST_DELAY] = E.duration
+	spec[LCOST_FUEL] = E.tool_amount
+	spec[LCOST_VOLUME] = E.tool_volume
+	spec[LCOST_NAME] = length(E.name) ? E.name : null
+	spec[LCOST_NEEDS] = ladder_need(E.needs, E.else_say)
+	spec[LCOST_HANDLER] = !!E.handler
+	return spec
+
 /// A branch: a step to `destination` (a stage name or LADDER_DONE; with `next`, the list of stages
 /// `next` may pick). `become` (with `amount`, for a stack) replaces the holder; `on_enter` runs after
 /// the stages' hooks.
 /datum/ladder_branch
 	var/to_stage
-	var/datum/capability/entry/cost
-	var/uses = 0
+	/// ladder_cost_spec() of the step's cost.
+	var/list/cost
 	var/say
 	var/list/needs
 	var/when
@@ -189,8 +209,7 @@
 /proc/branch(destination, datum/capability/entry/cost, uses = 0, say, needs, else_say, when, on_enter, become, amount, next, priority, quiet = FALSE, sfx, done_sfx)
 	var/datum/ladder_branch/made = new
 	made.to_stage = destination
-	own_set(made, nameof(made.cost), cost)
-	made.uses = uses
+	made.cost = ladder_cost_spec(cost, uses)
 	made.say = say
 	made.needs = ladder_need(needs, else_say)
 	made.when = when
@@ -207,10 +226,9 @@
 /// One stage of the ladder. See doc/rewrite/systems.md section 21.
 /datum/ladder_stage
 	var/name
-	var/datum/capability/entry/build
-	var/datum/capability/entry/undo
-	/// With a cap_use_on() build: stack units (or the part) the build uses up.
-	var/uses = 0
+	/// ladder_cost_spec() of the build (from the stage before) and of the undo (back to it).
+	var/list/build
+	var/list/undo
 	var/list/needs
 	var/list/undo_needs
 	var/when
@@ -223,7 +241,7 @@
 	var/anchored
 	var/on_enter
 	var/on_leave
-	/// Branches leaving this stage (owned).
+	/// Branches leaving this stage.
 	var/list/also
 	var/refund = TRUE
 	var/priority
@@ -232,12 +250,13 @@
 	var/sfx
 	var/done_sfx
 
+/// A stage. `build` / `undo`: cost entries (see the file header); `uses`: what a cap_use_on() build
+/// uses up; `sfx` / `done_sfx`: sound sets of the build step; `icon`: the state drawn on this stage.
 /proc/stage(name, datum/capability/entry/build, datum/capability/entry/undo, uses = 0, needs, else_say, undo_needs, undo_else_say, when, undo_when, say, undo_say, desc, icon, anchored, on_enter, on_leave, list/also, refund = TRUE, priority, quiet = FALSE, sfx, done_sfx)
 	var/datum/ladder_stage/made = new
 	made.name = name
-	own_set(made, nameof(made.build), build)
-	own_set(made, nameof(made.undo), undo)
-	made.uses = uses
+	made.build = ladder_cost_spec(build, uses)
+	made.undo = ladder_cost_spec(undo)
 	made.needs = ladder_need(needs, else_say)
 	made.undo_needs = ladder_need(undo_needs, undo_else_say)
 	made.when = when
@@ -249,8 +268,7 @@
 	made.anchored = anchored
 	made.on_enter = on_enter
 	made.on_leave = on_leave
-	for(var/datum/ladder_branch/extra as anything in also)
-		own_add(made, nameof(made.also), extra)
+	made.also = also
 	made.refund = refund
 	made.priority = priority
 	made.quiet = quiet
@@ -263,7 +281,7 @@
 	var/state_var
 	var/state
 	var/set_proc
-	/// Branches leaving every stage (owned).
+	/// Branches leaving every stage.
 	var/list/anywhere
 	var/on_step
 	var/on_start
@@ -296,8 +314,7 @@
 	made.state_var = state_var
 	made.state = state
 	made.set_proc = store
-	for(var/datum/ladder_branch/extra as anything in anywhere)
-		own_add(made, nameof(made.anywhere), extra)
+	made.anywhere = anywhere
 	made.on_step = on_step
 	made.on_start = on_start
 	made.stance = stance
@@ -366,8 +383,6 @@
 	edges_by_state = list()
 	wildcard_edges = list()
 	edge_ids = list()
-	for(var/bad in owner.declaration_errors)
-		LAZYADD(row_errors, "[id]: [bad] is not a stage or ladder_options()")
 	var/list/datum/ladder_stage/ladder = list()
 	var/list/anywhere = list()
 	for(var/i in 1 to length(owner.declaration))
@@ -395,13 +410,13 @@
 		var/datum/ladder_stage/before = (i > 1) ? ladder[i - 1] : null
 		if(before && stage.build)
 			add_edge(new /datum/interaction/capability/construction_step(owner = src, from = before.name, destination = stage.name,
-				cost = stage.build, uses = stage.uses, say = stage.say, step_needs = stage.needs, when = stage.when,
+				cost = stage.build, say = stage.say, step_needs = stage.needs, when = stage.when,
 				step_priority = stage.priority, quiet = stage.quiet, sfx = stage.sfx, done_sfx = stage.done_sfx))
 		if(before && stage.undo)
 			add_edge(new /datum/interaction/capability/construction_step(owner = src, from = stage.name, destination = before.name,
 				cost = stage.undo, say = stage.undo_say, step_needs = stage.undo_needs, when = stage.undo_when,
 				step_priority = stage.priority, quiet = stage.quiet, forward = FALSE,
-				refund_cost = stage.refund ? stage.build : null, refund_uses = stage.uses))
+				refund = stage.refund ? stage.build : null))
 		for(var/datum/ladder_branch/extra as anything in stage.also)
 			add_edge(branch_edge(stage.name, extra))
 	for(var/datum/ladder_branch/extra as anything in anywhere)
@@ -444,7 +459,7 @@
 /datum/construction_ladder/proc/branch_edge(from, datum/ladder_branch/extra)
 	var/list/reaches = extra.next ? (islist(extra.to_stage) ? extra.to_stage : list(extra.to_stage)) : null
 	return new /datum/interaction/capability/construction_step(owner = src, from = from,
-		destination = extra.next ? null : extra.to_stage, cost = extra.cost, uses = extra.uses, say = extra.say,
+		destination = extra.next ? null : extra.to_stage, cost = extra.cost, say = extra.say,
 		step_needs = extra.needs, when = extra.when, on_enter = extra.on_enter, become = extra.become,
 		next = extra.next, reaches = reaches, step_priority = extra.priority, quiet = extra.quiet,
 		sfx = extra.sfx, done_sfx = extra.done_sfx)
@@ -642,7 +657,7 @@
 	/// No generated messages (the hook says it).
 	var/quiet = FALSE
 
-/datum/interaction/capability/construction_step/New(datum/construction_ladder/owner, from, destination, datum/capability/entry/cost, uses = 0, say, list/step_needs, when, on_enter, list/become, next, list/reaches, step_priority, quiet = FALSE, forward = TRUE, sfx, done_sfx, datum/capability/entry/refund_cost, refund_uses = 0)
+/datum/interaction/capability/construction_step/New(datum/construction_ladder/owner, from, destination, list/cost, say, list/step_needs, when, on_enter, list/become, next, list/reaches, step_priority, quiet = FALSE, forward = TRUE, sfx, done_sfx, list/refund)
 	rel_set(src, nameof(src.graph), owner)
 	from_state = from
 	to_state = destination
@@ -665,56 +680,50 @@
 	if(owner.category)
 		category = owner.category
 	src.step_needs = step_needs
-	if(!read_cost(cost, uses))
+	if(!read_cost(cost))
 		LAZYADD(owner.row_errors, "[owner.id]: the step from [from] to [destination] has no cost (a cap_tool/cap_insert/cap_use_on/cap_hand entry)")
-	else if(cost.entry.handler)
+	else if(cost[LCOST_HANDLER])
 		LAZYADD(owner.row_errors, "[owner.id]: the cost of the step from [from] to [destination] has a handler; a ladder step's cost takes none")
-	if(refund_cost)
-		read_refund(refund_cost, refund_uses)
+	if(refund)
+		read_refund(refund)
 	phrase = say || generated_phrase()
 	name = capitalize(next_text())
 	..()
 
-/// Copies what a cost entry takes onto the step. FALSE when `cost` is not an entry.
-/datum/interaction/capability/construction_step/proc/read_cost(datum/capability/entry/cost, uses)
-	var/datum/interaction/capability/E = istype(cost) ? cost.entry : null
-	if(!E)
+/// Copies what a cost spec (ladder_cost_spec()) takes onto the step. FALSE when it is no cost.
+/datum/interaction/capability/construction_step/proc/read_cost(list/cost)
+	var/kind = cost?[LCOST_KIND]
+	if(!kind)
 		return FALSE
-	var/kind = ladder_entry_kind(E, uses)
 	switch(kind)
 		if(LADDER_COST_TOOL)
-			tool = E.tool
-			tool_amount = E.tool_amount
-			tool_volume = E.tool_volume
+			tool = cost[LCOST_TOOL]
+			tool_amount = cost[LCOST_FUEL]
+			tool_volume = cost[LCOST_VOLUME]
 		if(LADDER_COST_HAND)
 			by_hand = TRUE
 			offered_when = list(REQ_EMPTY_HANDED)
 		else
-			item_type = E.held_type
+			item_type = cost[LCOST_ITEM]
 			item_use = ladder_item_use(kind, item_type)
 			if(item_use == LADDER_ITEM_USE)
-				item_amount = uses
+				item_amount = cost[LCOST_USES]
 			// An item step is meant only with that kind of item in hand, as a tool step is with the tool.
 			held_type = item_type
-	duration = E.duration
-	if(length(E.name))
-		item_name = E.name
-	if(E.needs)
-		var/list/more = ladder_need(E.needs, E.else_say)
+	duration = cost[LCOST_DELAY]
+	item_name = cost[LCOST_NAME]
+	var/list/more = cost[LCOST_NEEDS]
+	if(length(more))
 		step_needs = length(step_needs) ? step_needs + more : more
 	return TRUE
 
-/// Reads what undoing gives back from the build it undoes.
-/datum/interaction/capability/construction_step/proc/read_refund(datum/capability/entry/cost, uses)
-	var/datum/interaction/capability/E = istype(cost) ? cost.entry : null
-	if(!E?.held_type)
-		return
-	var/kind = ladder_entry_kind(E, uses)
-	refund_use = ladder_item_use(kind, E.held_type)
+/// Reads what undoing gives back from the build (a cost spec) it undoes.
+/datum/interaction/capability/construction_step/proc/read_refund(list/build)
+	refund_use = ladder_item_use(build[LCOST_KIND], build[LCOST_ITEM])
 	if(refund_use == LADDER_ITEM_KEEP)
 		return
-	refund_type = E.held_type
-	refund_amount = uses
+	refund_type = build[LCOST_ITEM]
+	refund_amount = build[LCOST_USES]
 
 /// LADDER_COST_* for a cost entry: its kind, and a checked item that `uses` makes used up.
 /proc/ladder_entry_kind(datum/interaction/capability/E, uses)

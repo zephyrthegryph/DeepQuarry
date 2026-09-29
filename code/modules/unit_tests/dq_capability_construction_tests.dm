@@ -129,7 +129,8 @@
 	var/obj/cap_fixture/ladder_probe/probe = allocate(/obj/cap_fixture/ladder_probe, T)
 	var/datum/construction_ladder/ladder = ladder_of(probe)
 
-	var/datum/interaction/capability/construction_step/wire = ladder.edges_leaving("start")[1]
+	var/list/leaving_start = ladder.edges_leaving("start")
+	var/datum/interaction/capability/construction_step/wire = leaving_start[1]
 	TEST_ASSERT_EQUAL(wire.to_state, "wired", "the first step leaving start is the build")
 	TEST_ASSERT_EQUAL(wire.item_use, LADDER_ITEM_USE, "cap_use_on() on a stack with uses is used up")
 	TEST_ASSERT_EQUAL(wire.item_amount, 3, "uses is the stack amount")
