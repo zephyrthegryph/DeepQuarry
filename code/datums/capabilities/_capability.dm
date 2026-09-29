@@ -46,9 +46,16 @@
 /datum/capability/proc/draw(atom/holder, datum/look/look)
 	return
 
-/// Adds keys to the holder's tgui_data().
+/// Adds keys to this capability's own UI list: the holder's tgui_data() carries it as
+/// data["caps"][ui_key()] (caps_ui_data()).
 /datum/capability/proc/ui_data(atom/holder, mob/user, list/data)
 	return
+
+/// This capability's key under data["caps"]: its layer name, else its key.
+/datum/capability/proc/ui_key()
+	if(layer_name && layer_name != CAP_NO_LAYER)
+		return layer_name
+	return "[key]"
 
 /// Gates ANOTHER entry: null lets it through, text refuses with that reason. The cover gates
 /// every entry whose `behind` includes COVER while it is closed; the lock does the same for
