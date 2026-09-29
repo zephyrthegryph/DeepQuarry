@@ -19,7 +19,7 @@
 
 /// Not incapacitated (stunned, restrained, unconscious...).
 /proc/chk_capable(mob/user, atom/holder, obj/item/held)
-	if(!ismob(user) || user.incapacitated())
+	if(!ismob(user) || user.stat != CONSCIOUS || user.incapacitated())
 		return "you can't do that right now"
 	return TRUE
 

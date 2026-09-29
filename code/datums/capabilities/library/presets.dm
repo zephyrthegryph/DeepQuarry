@@ -30,7 +30,8 @@
  * which faces it away from its wall and offsets it onto the wall.
  */
 /proc/wall_machine(board, offset = 26, repair_tool = TOOL_WELDER)
-	. = machine_basics(board = board, anchored_by = null, repair_tool = repair_tool)
+	// without(), not anchored_by = null: DM passes an explicit null argument as the default.
+	. = without(machine_basics(board = board, repair_tool = repair_tool), /datum/capability/anchor)
 	. += cap_wall_mount(offset = offset)
 
 /**

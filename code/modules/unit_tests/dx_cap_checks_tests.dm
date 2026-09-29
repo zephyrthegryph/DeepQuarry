@@ -79,8 +79,12 @@
 	var/datum/dispatch_context/ctx = new(H, F, null, E)
 	TEST_ASSERT(ask_still_valid(ctx), "valid while every need holds")
 	H.forceMove(run_loc_floor_top_right)
-	TEST_ASSERT(!ask_still_valid(ctx), "the entry's needs re-run and refuse after moving away")
-	TEST_ASSERT_EQUAL(ctx.invalid_reason(), "you are too far away", "with the check's text")
+	TEST_ASSERT(!ask_still_valid(ctx), "the entry re-checks and refuses after moving away")
+	// Every capability entry requires interaction reach, which refuses before the entry's own needs.
+	TEST_ASSERT_EQUAL(ctx.invalid_reason(), "too far away", "with the reach check's text")
+	H.forceMove(T)
+	H.set_stat(UNCONSCIOUS)
+	TEST_ASSERT(!ask_still_valid(ctx), "the entry's needs re-run on the answer")
 
 /datum/unit_test/dx_chk_ask_explicit_needs/Run()
 	var/turf/T = run_loc_floor_bottom_left

@@ -166,9 +166,12 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 	var/before = length(GLOB.refresh_self_marks)
 	var/obj/cap_fixture/dx_review_selfmark/F = allocate(/obj/cap_fixture/dx_review_selfmark)
 	changed(F)
-	refresh_flush()
+	// One drain, not refresh_flush(): the fixture re-marks itself forever, which flush reports as a
+	// runaway after its pass cap. One pass is enough for the detector, and the re-mark waits (deferred).
+	refresh_drain(null)
 	GLOB.refresh_self_mark_expected = FALSE
 	TEST_ASSERT(length(GLOB.refresh_self_marks) > before, "the self-mark detector reported it")
+	TEST_ASSERT(F.refresh_queued, "the self re-mark waits for the next drain instead of spinning")
 	F.refresh_queued = FALSE
 	GLOB.refresh_queue -= F
 
