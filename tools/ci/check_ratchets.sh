@@ -38,14 +38,18 @@ for lint in \
 	organ_slots_lint.py \
 	cache_lint.py \
 	stance_examine_lint.py \
-	ui_actions_lint.py \
-	sys_lint.py; do
+	ui_actions_lint.py \n	sys_lint.py \n	tracked_lint.py; do
 	echo "::group::$lint"
 	if ! "$PY" "tools/ci/$lint"; then
 		failed+=("$lint")
 	fi
 	echo "::endgroup::"
 done
+echo "::group::tracked_lint.py --selftest"
+if ! "$PY" tools/ci/tracked_lint.py --selftest; then
+	failed+=("tracked_lint.py --selftest")
+fi
+echo "::endgroup::"
 if [ ${#failed[@]} -gt 0 ]; then
 	echo "Ratchet lints failed: ${failed[*]}"
 	exit 1

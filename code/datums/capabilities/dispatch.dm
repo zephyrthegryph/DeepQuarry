@@ -95,6 +95,8 @@ GLOBAL_LIST_EMPTY(dispatch_failures)
 GLOBAL_VAR_INIT(dispatch_failure_expected, FALSE)
 /// Test builds: "[action]|[fingerprinted]|[logged]" per dispatch_record() (the dispatch tests read it).
 GLOBAL_LIST_EMPTY(dispatch_records)
+/// The last dispatch_record() call (user, target, action, log). Only unit tests write and read it.
+GLOBAL_LIST_EMPTY(dispatch_last_record)
 
 /// Tells user why an action was refused; a ui_<action> or entry handler returns its result.
 /proc/refuse(mob/user, text)
@@ -107,6 +109,9 @@ GLOBAL_LIST_EMPTY(dispatch_records)
  * null. details: an assoc list rendered "k=v" after the line.
  */
 /proc/dispatch_record(mob/user, datum/target, action, log, list/details)
+#ifdef UNIT_TESTS
+	GLOB.dispatch_last_record = list("user" = user, "target" = target, "action" = action, "log" = log)
+#endif
 	if(isatom(target) && isliving(user))
 		var/atom/A = target
 		A.add_fingerprint(user)
