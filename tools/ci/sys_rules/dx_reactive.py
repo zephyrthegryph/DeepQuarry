@@ -1,4 +1,4 @@
-"""sys_lint module: the reactive-proc rules of the DX framework (design review H4, M3, M5).
+"""sys_lint module: the reactive-proc rules of the DX framework (design review H4, H5, M3, M5).
 
 Rules:
 
@@ -13,6 +13,17 @@ Rules:
       `SETTER(type, var)` somewhere (its setter calls changed()), or its root is a relation var
       declared with a watch (a REL* declaration or rel() call naming the var with WATCH / watch =).
       A proc merely named set_<var> doesn't count: only a registered setter is known to mark.
+  dx_reactive_write (H5)
+      A reactive proc (the same set) writes state: an assignment, compound assignment or ++/-- whose
+      target is a var of src (`x = `, `src.x = `), a member of anything (`a.b = `, `a.b += `), or an
+      index of something that isn't a local or a parameter; a list-mutating member call (Add, Cut,
+      Remove, Insert, Swap, Splice, RemoveAll) on something that isn't; or a call to a state writer
+      (changed, cap_set, timed_set/timed_cancel, own_*/rel_* writers, om_set, qdel, forceMove,
+      set_light, set_<x>() on anything but the look builder, update_icon, add_fingerprint,
+      to_chat, playsound). Allowed: locals and parameters (`data[k] = v` in ui_data), the return
+      value (`. = ..()`, `.[k] = v`, `. += x`) and the look builder (`look.*`). DreamChecker's
+      SHOULD_BE_PURE sits on should_run/gate/ui_data/hidden_verbs; draw and examine can't carry it
+      (the builder writes itself, examine reads memoized tables), so this rule covers all of them.
   dx_caps_instance_read (M3)
       capabilities() reads an instance var (`src.x`, or a bare name that is a var of the type, its
       path ancestors or a DM builtin). capabilities() is built ONCE per type, so the first
@@ -48,6 +59,7 @@ import _dx_dm as dm  # noqa: E402
 
 RULES = {
     "dx_untracked_read": "declare the var TRACKED(type, var, channel) (or give it a set_<var>()), or read it through a watched relation (design review H4)",
+    "dx_reactive_write": "reactive procs (draw, should_run, hidden_verbs, tgui_data, a capability's draw/gate/ui_data/examine, needs procs) write nothing: move the write to the handler or setter that changes the state (design review H5)",
     "dx_caps_instance_read": "capabilities() is per type: read the instance var inside the capability at run time instead (design review M3, H1)",
     "dx_timed_write": "write this var only through timed_set() or its set_<var>() proc (design review M5)",
 }
@@ -74,7 +86,7 @@ HIDE_ARGS = re.compile(r"\b(?:nameof|PROC_REF|TYPE_PROC_REF|GLOBAL_PROC_REF|TYPE
 
 def is_reactive(proc, needs_names):
     if proc.path.startswith("/datum/capability"):
-        return proc.name in REACTIVE_CAP
+        return proc.name in REACTIVE_CAP or proc.name in needs_names
     if proc.name == "draw":
         return any("look" in p for p in proc.params)
     return proc.name in REACTIVE_ANY or proc.name in needs_names
@@ -199,6 +211,101 @@ def timed_writes(proc, timed):
     return out
 
 
+
+WRITER_CALL = re.compile(r"(?<![\w./:])(?:changed|cap_set|timed_set|timed_cancel|own_set|own_add|own_put|own_take|own_take_all|own_take_member|own_remove|own_clear|own_transfer|own_move|rel_set|rel_add|rel_remove|rel_clear|om_set|qdel|forceMove|set_light|update_icon|add_fingerprint|to_chat|playsound|set_\w+)\s*\(")
+MEMBER_WRITER = re.compile(r"(?<![\w.])([A-Za-z_]\w*|\.)((?:\s*\??\.\s*[A-Za-z_]\w*)*?)\s*\??\.\s*(set_\w+|forceMove|qdel|set_light|update_icon|add_fingerprint|Add|Cut|Remove|RemoveAll|Insert|Swap|Splice)\s*\(")
+WRITE_OP = re.compile(r"(?<![=!<>+\-*/|&^%])(?:=(?!=)|\+=|-=|\*=|/=|\|=|&=|\^=|<<=|>>=)")
+INCDEC = re.compile(r"(\+\+|--)\s*([A-Za-z_.][\w.?\[\]]*)|([A-Za-z_.][\w.?\[\]\"]*?)\s*(\+\+|--)")
+LOCAL_DECL = re.compile(r"\bvar/(?:[\w/]+/)?(\w+)")
+
+
+def top_level_ops(text):
+    """Offsets of assignment operators outside parentheses/brackets (so named arguments and for()
+    headers don't count)."""
+    out = []
+    depth = 0
+    k = 0
+    while k < len(text):
+        c = text[k]
+        if c in "([":
+            depth += 1
+        elif c in ")]":
+            depth -= 1
+        elif depth == 0:
+            m = WRITE_OP.match(text, k)
+            if m and (k == 0 or text[k - 1] not in "=!<>+-*/|&^%"):
+                out.append(k)
+                k = m.end()
+                continue
+        k += 1
+    return out
+
+
+def write_target_bad(target, locals_):
+    """True when an assignment target is state (not a local, parameter, `.` or the look builder)."""
+    target = target.strip()
+    if not target or target.startswith("var/") or re.search(r"\bvar/", target):
+        return False
+    m = re.match(r"^(\.|[A-Za-z_]\w*)", target)
+    if not m:
+        return False
+    root = m.group(1)
+    rest = target[m.end():].strip()
+    if root == "." or root == "look":
+        return False
+    if not rest:
+        return root not in locals_  # a bare var: a src var unless it is a local or parameter
+    if rest.startswith("["):
+        return root not in locals_ and root != "src"  # an index of a local/param list is fine
+    return True  # a member write: another object's (or src's) state
+
+
+def reactive_writes(proc):
+    """Line numbers where a reactive proc writes state."""
+    declared = set()
+    for _n, text in proc.lines():
+        for m in LOCAL_DECL.finditer(text):
+            declared.add(m.group(1))
+    locals_ = declared | set(proc.params)
+    # Member calls may mutate a local (a list built here), the output list and the builder only:
+    # holder.set_x() or user.Add() mutate the holder / the user.
+    mutable = declared | {".", "look", "data"}
+    out = []
+    for number, text in proc.lines():
+        code = text
+        bad = False
+        for m in WRITER_CALL.finditer(code):
+            bad = True
+            break
+        if not bad:
+            for m in MEMBER_WRITER.finditer(code):
+                root, through = m.group(1), m.group(2).strip()
+                # `L.Add(x)` on a local list and `look.set_icon()` are fine; `holder.verbs.Remove()`
+                # or `cell.set_charge()` mutate another object.
+                if through or root not in mutable:
+                    bad = True
+                    break
+        if not bad:
+            stripped = code.strip()
+            if not stripped.startswith(("var/", "for(", "for (")):
+                for k in top_level_ops(code):
+                    # the target is the text since the statement start (after `if(...)` etc.)
+                    lhs = code[:k]
+                    lhs = re.split(r"[;{]|\bin\b|^\s*(?:if|while|else if)\s*\(.*\)\s*", lhs)[-1]
+                    if write_target_bad(lhs, locals_):
+                        bad = True
+                        break
+        if not bad:
+            for m in INCDEC.finditer(code):
+                target = m.group(2) or m.group(3)
+                if target and write_target_bad(target, locals_):
+                    bad = True
+                    break
+        if bad:
+            out.append(number)
+    return out
+
+
 def own_roots_of(proc):
     """src, the holder (a capability proc's first parameter) and local aliases of either."""
     roots = {"src"}
@@ -249,6 +356,8 @@ def analyse(files):
                                     bad.remove(name)
                 if bad:
                     out["dx_untracked_read"].append((proc.rel, number))
+            for number in reactive_writes(proc):
+                out["dx_reactive_write"].append((proc.rel, number))
         if proc.name == "capabilities" and proc.path != "/atom":
             for number, _name in caps_reads(proc, table):
                 out["dx_caps_instance_read"].append((proc.rel, number))
@@ -317,6 +426,29 @@ SETTER(/obj/item/cell, sealed)
 	if(user.stat || entry.behind)
 		return "no"
 
+/datum/capability/meter/ui_data(atom/holder, mob/user, list/data)
+	var/list/rows = list()
+	rows += "x"
+	data["rows"] = rows
+	for(var/i = 1, i <= 3, i++)
+		rows[i] = i
+	holder.last_ui = world.time
+	last_holder = holder
+	changed(holder)
+	holder.verbs.Remove(/obj/proc/x)
+	look_like(value = 1)
+	rows.Cut(1, 2)
+	holder.set_dir(NORTH)
+
+/obj/cap_fixture/meter/tgui_data(mob/user)
+	. = ..()
+	.["level"] = level
+	. += list("x" = 1)
+	level++
+	src.cell.set_charge(5)
+	if(level == 2)
+		return
+
 /obj/cap_fixture/meter/proc/zap()
 	timed_set(src, nameof(emp_disabled), TRUE, for_time = 10 SECONDS)
 	emp_disabled = FALSE
@@ -347,6 +479,12 @@ def selftest():
     assert by["dx_untracked_read"] == sorted([at('when = cell.rigged'), at("when = cell.label_text"),
                                               at("return cell?.maxcharge"), at("return cell.rigged"),
                                               at("when = C.rigged")]), by
+    # H5: ui_data writes holder.last_ui, its own var last_holder, calls changed() and mutates
+    # holder.verbs; tgui_data's level++ and cell.set_charge(). Locals, the data param, `.`, loop
+    # counters, named arguments and compares are fine.
+    assert by["dx_reactive_write"] == sorted([at("holder.last_ui = world.time"), at("last_holder = holder"),
+                                              at("changed(holder)"), at("holder.verbs.Remove"), at("holder.set_dir(NORTH)"),
+                                              at("\tlevel++"), at("src.cell.set_charge(5)")]), by
     # M3: `level = level` reads level; src.req_access reads; nameof(cell)/PROC_REF(has_cell), the
     # named keys and the local `extra` do not.
     assert by["dx_caps_instance_read"] == sorted([at(". += cap_gauge(level = level)"), at("cap_lock(access = src.req_access)")]), by

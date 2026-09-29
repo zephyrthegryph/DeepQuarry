@@ -10,9 +10,13 @@ replacement, the length limit and the reserved list) out of ui_actions.dm, so th
 it fails if it can no longer find them.
 
 Hosts are the types that set `tgui_id = "Interface"` (and their subtypes that define act_ procs),
-with the TSX of tgui/packages/tgui/interfaces/Interface(.tsx | /**/*.tsx). A host is migrated when
-an act_ proc sits on its lineage below /atom; hosts still on DECLARE_UI rows (and interfaces that
-share one) are skipped until they migrate.
+with the TSX of tgui/packages/tgui/interfaces/Interface(.tsx | /**/*.tsx). A host answers an action
+with its own act_ proc, else with an act_ proc of a capability it declares (the dispatcher runs
+`/datum/capability/<x>/proc/act_<action>(mob/user, atom/holder, ...)` on the flyweight, `holder`
+being reserved); the capabilities come from its lineage's capabilities() bodies, with every cap_*
+constructor and preset followed to the `new /datum/capability/...` it builds (without()/replace()
+and runtime add_capability() are not followed). A host is migrated when it answers any action below
+/atom; hosts still on DECLARE_UI rows (and interfaces that share one) are skipped until they migrate.
 
 Hard failures, for each interface whose hosts are migrated:
   - an act('x', ...) whose name the dispatcher rejects, or that no host answers with act_x;
@@ -23,8 +27,9 @@ Ratchets on a fingerprint baseline (tools/ci/ui_actions_baseline.txt), target 0,
 proc of a UI host:
   C1 ui_unsent_param       every parameter except `user` is sent by some TSX act('<action>', {..})
                            of an interface that reaches the proc (the nearest tgui_id at or above
-                           its type, every tgui_id below it; any interface for /datum and /atom
-                           procs). A parameter no client sends is an internal flag a client could
+                           its type, every tgui_id below it; the interfaces of every host declaring
+                           the capability, for a capability's proc; any interface for /datum and
+                           /atom procs). A parameter no client sends is an internal flag a client could
                            still set by naming it: move it to an internal proc. An act() whose
                            params aren't an object literal (a variable, a spread) sends anything.
   C2 ui_unvalidated_param  the first use of each parameter validates it. Accepted first uses:
@@ -277,14 +282,21 @@ def tsx_acts(interface):
 
 # ---- DM ----------------------------------------------------------------------------------------
 
+CAP_ROOT = "/datum/capability"
+NEW_CAP = re.compile(r"\bnew\s+(/datum/capability[\w/]*)|\bvar/(/datum/capability[\w/]*)/\w+\s*=\s*new\b")
+CTOR_CALL = re.compile(r"(?<![\w./:])(cap_\w+)\s*\(")
+
+
 class Hosts:
-    """UI hosts, their act_ procs and the legacy DECLARE_UI types."""
+    """UI hosts, their act_ procs (their own, and those of the capabilities they declare) and the
+    legacy DECLARE_UI types."""
 
     def __init__(self, tree):
         self.tree = tree
         self.ids = {}       # type -> interface
         self.legacy = set()
-        self.acts = {}      # type -> {action key: Proc}
+        self.acts = {}      # host type -> {action key: Proc}
+        self.cap_acts = {}  # capability type -> {action key: Proc}
         for rel, raw_lines in tree.files:
             clean = tree.clean[rel]
             current = None
@@ -306,9 +318,47 @@ class Hosts:
                     t = TGUI_ID_IN_BLOCK.match(raw_lines[number])
                     if t:
                         self.ids[current] = t.group(1)
+        ctor_bodies, caps_bodies = {}, {}
         for proc in tree.procs:
             if proc.name.startswith("act_") and not proc.is_global():
-                self.acts.setdefault(proc.path, {})[proc.name[4:]] = proc
+                table = self.cap_acts if dm.is_subtype(proc.path, CAP_ROOT) else self.acts
+                table.setdefault(proc.path, {})[proc.name[4:]] = proc
+            elif proc.is_global() and proc.name.startswith("cap_"):
+                ctor_bodies[proc.name] = "\n".join(proc.body)
+            elif proc.name == "capabilities" and not proc.is_global():
+                caps_bodies.setdefault(proc.path, []).append("\n".join(proc.body))
+        self._ctor_bodies = ctor_bodies
+        self._ctor_caps = {}
+        # host type -> capability types its own capabilities() body adds (constructors resolved).
+        self.type_caps = {path: set().union(*(self.caps_in(b) for b in bodies)) for path, bodies in caps_bodies.items()}
+
+    def ctor_caps(self, name, seen=None):
+        """The capability types a global cap_* constructor (or preset) builds."""
+        if name in self._ctor_caps:
+            return self._ctor_caps[name]
+        seen = set(seen or ())
+        if name in seen or name not in self._ctor_bodies:
+            return set()
+        seen.add(name)
+        got = self.caps_in(self._ctor_bodies[name], seen)
+        self._ctor_caps[name] = got
+        return got
+
+    def caps_in(self, body, seen=None):
+        out = set()
+        for m in NEW_CAP.finditer(body):
+            out.add(m.group(1) or m.group(2))
+        for m in CTOR_CALL.finditer(body):
+            out |= self.ctor_caps(m.group(1), seen)
+        return out
+
+    def caps_of(self, path):
+        """Capability types a host type declares (its lineage's capabilities() bodies; over-approximate:
+        without()/replace() are not followed, and runtime add_capability() is not seen)."""
+        out = set()
+        for anc in dm.lineage(path):
+            out |= self.type_caps.get(anc, set())
+        return out
 
     def interface_of(self, path):
         for anc in dm.lineage(path):
@@ -319,21 +369,34 @@ class Hosts:
     def is_legacy(self, path):
         return any(anc in self.legacy for anc in dm.lineage(path))
 
-    def actions_of(self, path):
-        """{action: Proc} answered by path (nearest definition wins)."""
+    def cap_actions(self, cap_type):
         out = {}
+        for anc in reversed(dm.lineage(cap_type)):
+            out.update(self.cap_acts.get(anc, {}))
+        return out
+
+    def actions_of(self, path):
+        """{action: Proc} answered by path: its own act_ procs (nearest definition wins), else one of
+        its capabilities' act_ procs (the dispatcher's order)."""
+        out = {}
+        for cap in sorted(self.caps_of(path)):
+            for action, proc in self.cap_actions(cap).items():
+                out.setdefault(action, proc)
         for anc in reversed(dm.lineage(path)):
             out.update(self.acts.get(anc, {}))
         return out
 
     def is_migrated(self, path):
-        return any(anc not in BUILTIN_HOSTS and self.acts.get(anc) for anc in dm.lineage(path))
+        if any(anc not in BUILTIN_HOSTS and self.acts.get(anc) for anc in dm.lineage(path)):
+            return True
+        return any(self.cap_actions(cap) for cap in self.caps_of(path))
 
     def by_interface(self):
-        """{interface: [host types]}: the tgui_id types plus subtypes defining act_ procs."""
+        """{interface: [host types]}: the tgui_id types plus subtypes defining act_ procs or declaring
+        capabilities."""
         out = {}
-        for path in set(self.ids) | set(self.acts):
-            if path in BUILTIN_HOSTS:
+        for path in set(self.ids) | set(self.acts) | set(self.type_caps):
+            if path in BUILTIN_HOSTS or dm.is_subtype(path, CAP_ROOT):
                 continue
             interface = self.interface_of(path)
             if interface:
@@ -341,9 +404,16 @@ class Hosts:
         return out
 
     def served_interfaces(self, path):
-        """Interfaces whose windows reach an act_ proc on path; None means every interface."""
+        """Interfaces whose windows reach an act_ proc on path; None means every interface. For a
+        capability's act_ proc: the interfaces of every host that declares that capability."""
         if path in BUILTIN_HOSTS:
             return None
+        if dm.is_subtype(path, CAP_ROOT):
+            out = set()
+            for host, caps in self.type_caps.items():
+                if any(dm.is_subtype(c, path) for c in caps):
+                    out |= self.served_interfaces(host)
+            return out
         out = set()
         top = self.interface_of(path)
         if top:
@@ -388,7 +458,8 @@ def check(hosts, norm, acts_for=tsx_acts):
 
 
 def ui_procs(hosts):
-    """The act_ procs that a client can reach: on a UI host's lineage or below it, not legacy."""
+    """The act_ procs that a client can reach: on a UI host's lineage or below it (not legacy), and
+    every capability's act_ procs (any holder with a window reaches them)."""
     out = []
     for path, actions in hosts.acts.items():
         if hosts.is_legacy(path):
@@ -396,6 +467,8 @@ def ui_procs(hosts):
         served = hosts.served_interfaces(path)
         if served is not None and not served:
             continue
+        out.extend(actions.values())
+    for actions in hosts.cap_acts.values():
         out.extend(actions.values())
     return out
 
@@ -406,6 +479,8 @@ def unsent_params(procs_list, hosts, norm, acts_for=tsx_acts):
     for proc in procs_list:
         action = proc.name[4:]
         served = hosts.served_interfaces(proc.path)
+        if served is not None and not served:
+            continue  # a capability no host declares yet: no act() to compare with (C2 still runs)
         sent, anything = set(), False
         for interface in ([None] if served is None else sorted(served)):
             for _rel, _line, raw_action, raw_keys in acts_for(interface):
@@ -524,7 +599,7 @@ DISPATCHER_FIXTURE = r'''
 	return out
 GLOBAL_DATUM_INIT(ui_action_raw_regex, /regex, regex(@"^[A-Za-z0-9_-]+$"))
 GLOBAL_DATUM_INIT(ui_action_camel_regex, /regex, regex(@"([a-z0-9])([A-Z])", "g"))
-GLOBAL_LIST_INIT(ui_reserved_arg_names, list("user", "src", "usr", "ui", "state"))
+GLOBAL_LIST_INIT(ui_reserved_arg_names, list("user", "src", "usr", "ui", "state", "holder"))
 '''
 
 DM_FIXTURE = """/datum/proc/act_modal_close(mob/user, id)
@@ -567,6 +642,20 @@ DM_FIXTURE = """/datum/proc/act_modal_close(mob/user, id)
 DECLARE_UI(/obj/old, UI_TITLE("Old"))
 /obj/old/proc/act_whatever(mob/user, anything)
 	return anything
+/datum/capability/breakers
+/proc/cap_breakers()
+	return new /datum/capability/breakers
+/proc/cap_thing_preset()
+	. = list(cap_breakers())
+/obj/thing/capabilities()
+	. = ..()
+	. += cap_thing_preset()
+/datum/capability/breakers/proc/act_breaker(mob/user, atom/holder, channel, force)
+	channel = ui_number(channel, 1, 3)
+	if(!channel)
+		return
+/datum/capability/unused/proc/act_unused(mob/user, atom/holder, level)
+	world << level
 """
 
 
@@ -575,7 +664,7 @@ def selftest():
     assert norm.key("bolt-toggle") == "bolt_toggle" and norm.key("boltToggle") == "bolt_toggle", norm.key("boltToggle")
     assert norm.key("setScreen") == "set_screen" and norm.key("targetState") == "target_state"
     assert norm.key("bad key") is None and norm.key("x" * 65) is None and norm.key("") is None
-    assert norm.reserved == {"user", "src", "usr", "ui", "state"}
+    assert norm.reserved == {"user", "src", "usr", "ui", "state", "holder"}
     try:
         normaliser_from("nothing here")
         raise AssertionError("a dispatcher without the regexes must fail")
@@ -600,6 +689,7 @@ def selftest():
       act('go', { user: 'x' });
       act('go', { 'bad key': 1 });
       act('bad name!');
+      act('breaker', { channel: 2 });
     """
     calls = list(tsx_calls(tsx))
     assert calls[0][1:] == ("go", ["speed"]), calls[0]
@@ -620,6 +710,8 @@ def selftest():
         return acts.get(interface, [])
     problems = check(hosts, norm, acts_for)
     assert len(problems) == 5, problems
+    # act('breaker') is answered by the capability the host declares through a preset.
+    assert "breaker" in hosts.actions_of("/obj/thing") and hosts.caps_of("/obj/thing") == {"/datum/capability/breakers"}
     assert "act('bogus') has no act_bogus" in problems[0], problems
     assert "passes bogus" in problems[1] and "reserved" in problems[2] and "'bad key' is rejected" in problems[3], problems
     assert "rejects this action name" in problems[4], problems
@@ -630,7 +722,9 @@ def selftest():
         return [k + 1 for k, line in enumerate(lines) if snippet in line][0]
     # C1: `force` on act_go is sent by no act(); act_modal_close's params arrive as a variable.
     # act_whatever is skipped (DECLARE_UI). targetState reaches act_bolt_toggle's target_state.
-    assert sites["ui_unsent_param"] == [("x.dm", at("act_go("))], sites
+    # act_breaker's `force` too (a capability's action, reached through /obj/thing's window); holder
+    # is reserved. act_unused belongs to a capability no host declares: C2 only.
+    assert sorted(sites["ui_unsent_param"]) == sorted([("x.dm", at("act_go(")), ("x.dm", at("act_breaker("))]), sites
     # C2: act_raw's amount (after the skipped !amount), name (raw to to_chat), when (the helper
     # doesn't validate) and extra (a member call is not followed); kind compares to a define.
     # act_go/act_pick/act_sub/act_bolt_toggle are clean (ui_number after the assignment target, a
@@ -638,7 +732,7 @@ def selftest():
     # name, islist(items), a validator as the first use).
     got = sorted(n for _r, n in sites["ui_unvalidated_param"])
     assert got == sorted([at("var/x = amount + 1"), at("to_chat(user, name)"), at("helper(when)"),
-                          at("src.helper(extra)")]), got
+                          at("src.helper(extra)"), at("world << level")]), got
     print("ui_actions_lint selftest ok")
     return 0
 

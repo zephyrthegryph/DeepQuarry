@@ -39,14 +39,16 @@
 
 /// Examine lines for user, in list order.
 /datum/capability/proc/examine(atom/holder, mob/user)
-	SHOULD_BE_PURE(TRUE)
+	// Not SHOULD_BE_PURE: DreamChecker's purity is transitive over every write, and examine lines
+	// read memoized tables (caps_of(), ladders). dx_reactive's dx_reactive_write rule covers it.
 	return null
 
 /// Adds this capability's layers to look (look.state/overlay/gauge/glow). Called before the
 /// holder's own draw() body runs past ..() (DM reserves the name appearance).
 /datum/capability/proc/draw(atom/holder, datum/look/look)
 	SHOULD_NOT_SLEEP(TRUE)
-	SHOULD_BE_PURE(TRUE)
+	// Not SHOULD_BE_PURE: every look.* builder call writes the builder, which DreamChecker counts as
+	// impure. dx_reactive's dx_reactive_write rule checks that draw() writes nothing else.
 	return
 
 /// Action -> LOG_GAME / LOG_ADMIN for this capability's own act_<action> procs. A capability owns
