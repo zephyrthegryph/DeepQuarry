@@ -204,20 +204,22 @@ GLOBAL_LIST_INIT(global_huds, list(
 	var/ui_alpha
 
 	// TGMC Ammo HUD Port
-	/// Gun OM handle -> its ammo hud (owned).
-	var/list/atom/movable/screen/ammo_hud_list
+	/// Our ammo huds (owned), in screen order; each names its gun (our_gun). See ammo_hud_for().
+	var/list/atom/movable/screen/ammo/ammo_hud_list
 
 	var/list/minihuds
 
 /datum/hud/New(mob/owner)
 	rel_set(src, "mymob", owner)
+	// The mob owns its hud (hud_used); a replaced hud is deleted.
+	if(owner)
+		own_set(owner, "hud_used", src)
 	instantiate()
 	..()
 
 // The hud's own elements, deleted with it (their screens are released in phase 5). The ammo huds
-// are keyed by the gun's OM handle.
-
-// the mob's hud_used points at us (our side is a handle); a hud going clears it.
+// are owned in a list; each names its gun through a relation view (our_gun).
+// The mob owns us as its hud_used; mymob is a plain relation back.
 
 /datum/hud/proc/hidden_inventory_update()
 	if(!mymob()) return
@@ -374,7 +376,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 /datum/hud/proc/apply_minihud(datum/mini_hud/MH)
 	if(MH in minihuds)
 		return
-	LAZYADD(minihuds, MH)
+	rel_add(src, "minihuds", MH)
 	if(mymob().client)
 		mymob().client.screen -= miniobjs
 	miniobjs += MH.get_screen_objs()
@@ -384,7 +386,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 /datum/hud/proc/remove_minihud(datum/mini_hud/MH)
 	if(!(MH in minihuds))
 		return
-	LAZYREMOVE(minihuds, MH)
+	rel_remove(src, "minihuds", MH)
 	if(mymob().client)
 		mymob().client.screen -= miniobjs
 	miniobjs -= MH.get_screen_objs()
@@ -549,38 +551,43 @@ GLOBAL_LIST_INIT(global_huds, list(
 	if(length(ammo_hud_list) >= MAX_AMMO_HUD_POSSIBLE)
 		return
 	var/atom/movable/screen/ammo/ammo_hud = new
-	own_put(src, "ammo_hud_list", om_handle(G), ammo_hud)
+	own_add(src, "ammo_hud_list", ammo_hud)
 	ammo_hud.screen_loc = ammo_hud.ammo_screen_loc_list[length(ammo_hud_list)]
-	ammo_hud.our_gun = om_handle(G)
+	rel_set(ammo_hud, "our_gun", G)
 	ammo_hud.add_hud(user, G)
 	ammo_hud.update_hud(user, G)
 
 ///Remove the ammo hud related to the gun G from the user
 /datum/hud/proc/remove_ammo_hud(mob/living/user, obj/item/gun/G)
-	var/gun_handle = om_handle_of(G) // the gun may be on its way out
-	var/atom/movable/screen/ammo/ammo_hud = gun_handle && LAZYACCESS(ammo_hud_list, gun_handle)
+	var/atom/movable/screen/ammo/ammo_hud = ammo_hud_for(G)
 	if(isnull(ammo_hud))
 		return
-	ammo_hud.our_gun = null
+	rel_clear(ammo_hud, "our_gun")
 	ammo_hud.remove_hud(user, G)
-	qdel(ammo_hud)
-	own_take_member(src, "ammo_hud_list", gun_handle)
+	own_remove(src, "ammo_hud_list", ammo_hud)
 	var/i = 1
-	for(var/key in ammo_hud_list)
-		ammo_hud = LAZYACCESS(ammo_hud_list, key)
+	for(var/atom/movable/screen/ammo/other as anything in ammo_hud_list)
+		ammo_hud = other
 		ammo_hud.screen_loc = ammo_hud.ammo_screen_loc_list[i]
 		i++
 
 ///Update the ammo hud related to the gun G
 /datum/hud/proc/update_ammo_hud(mob/living/user, obj/item/gun/G)
-	var/atom/movable/screen/ammo/ammo_hud = LAZYACCESS(ammo_hud_list, om_handle(G))
+	var/atom/movable/screen/ammo/ammo_hud = ammo_hud_for(G)
 	ammo_hud?.update_hud(user, G)
+
+/// Our ammo hud for gun G, or null.
+/datum/hud/proc/ammo_hud_for(obj/item/gun/G)
+	if(!G)
+		return null
+	for(var/atom/movable/screen/ammo/ammo_hud as anything in ammo_hud_list)
+		if(ammo_hud.our_gun == G)
+			return ammo_hud
+	return null
 
 #undef MAX_AMMO_HUD_POSSIBLE
 
-/// LC-refs: the mob this hud belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mob this hud belongs to (a relation view; the mob owns us as hud_used).
 /datum/hud/proc/mymob() as /mob
 	return mymob
 
-REL_PAIR(/datum/hud, mymob, hud_used)
-REL_PAIR(/mob, hud_used, mymob)

@@ -34,8 +34,8 @@
 	own_set(src, "palette_actions", new /datum/action_group/palette(src))
 	floating_actions = list()
 	for(var/datum/action/action as anything in mymob().actions)
-		var/atom/movable/screen/movable/action_button/button = action.viewers[om_handle(src)]
+		var/atom/movable/screen/movable/action_button/button = action.button_for(src)
 		if(!button)
 			action.ShowTo(mymob())
-			button = action.viewers[om_handle(src)]
+			button = action.button_for(src)
 		position_action(button, button.location)

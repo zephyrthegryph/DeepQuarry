@@ -22,7 +22,7 @@
 		message_admins("ERROR: ability_master's New() was not given an owner argument.  This is a bug.")
 
 
-// the mob's ability_master var points back at us; a master deleted on its own clears it.
+// the mob owns us as its ability_master; my_mob is a plain relation back.
 
 /atom/movable/screen/movable/ability_master/MouseDrop()
 	if(showing)
@@ -110,8 +110,7 @@
 /atom/movable/screen/movable/ability_master/proc/remove_ability(atom/movable/screen/ability/ability)
 	if(!ability)
 		return
-	own_take_member(src, "ability_objects", ability)
-	qdel(ability)
+	own_remove(src, "ability_objects", ability)
 
 	if(length(ability_objects))
 		toggle_open(showing + 1)
@@ -163,9 +162,8 @@ DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/abili
 // an ability leaves its master's list (the master owns the list; the ability can go first).
 /atom/movable/screen/ability/on_destroy(force)
 	var/atom/movable/screen/movable/ability_master/master = master_of()
-	if(master)
-		own_take_member(master, "ability_objects", src)
-		if(!length(master.ability_objects))
+	if(master) // we leave its list in phase 2
+		if(!length(master.ability_objects - src))
 			master.update_icon()
 	..()
 
@@ -316,5 +314,3 @@ DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/abili
 /atom/movable/screen/ability/proc/master_of() as /atom/movable/screen/movable/ability_master
 	return ability_master
 
-REL_PAIR(/atom/movable/screen/movable/ability_master, my_mob, ability_master)
-REL_PAIR(/mob, ability_master, my_mob)

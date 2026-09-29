@@ -1,5 +1,6 @@
 /datum/mini_hud
 	var/datum/hud/main_hud
+	/// Our screen elements (owned)
 	var/list/screenobjs
 	var/needs_processing = FALSE
 
@@ -32,7 +33,7 @@
 
 // Return a list of screen objects we use
 /datum/mini_hud/proc/get_screen_objs(mob/M)
-	return screenobjs.Copy()
+	return screenobjs ? screenobjs.Copy() : list()
 
 /// LC-refs: the hud this mini hud is applied to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/mini_hud/proc/main_hud() as /datum/hud
