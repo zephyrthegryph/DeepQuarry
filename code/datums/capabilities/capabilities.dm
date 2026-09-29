@@ -97,37 +97,53 @@
 
 // ---- lifecycle hooks ----
 
+#define TYPE_DERIVES_CAPS (1<<0)
+#define TYPE_DERIVES_LOOK (1<<1)
+#define TYPE_DERIVES_VERBS (1<<2)
+
 /// Runs every capability's on_init, then queues the first refresh when the type has anything derived
-/// (capabilities, a draw() that sets something, periodic work). Called from /atom/Initialize() and
-/// table_initialize() after the declarations.
+/// (capabilities, a draw() that sets something, hidden verbs, periodic work). Called from
+/// /atom/Initialize() and table_initialize() after the declarations. Runs for every atom: the
+/// per-type answer is cached, so an atom with nothing derived costs one list lookup.
 /atom/proc/caps_init(mapload)
-	var/list/caps = caps_of(src)
-	for(var/datum/capability/C as anything in caps)
-		C.on_holder_init(src, mapload)
-		cap_join_systems(src, C)
-	if(length(caps) || periodic_cadence || type_derives(src))
+	var/flags = type_derive_flags(src)
+	if(flags & TYPE_DERIVES_CAPS)
+		for(var/datum/capability/C as anything in caps_of(src))
+			C.on_holder_init(src, mapload)
+			cap_join_systems(src, C)
+	if(flags || periodic_cadence)
 		changed(src)
 
-/// Whether A's type has anything derived to apply at init: its first instance's draw() and
-/// hidden_verbs() are tried once and the answer remembered for the type.
-/proc/type_derives(atom/A)
-	var/known = GLOB.type_draws_cache[A.type]
+/// TYPE_DERIVES_* for A's type: it has capabilities, its draw() sets something, its hidden_verbs()
+/// hides something. Worked out on the type's first instance and remembered.
+/proc/type_derive_flags(atom/A)
+	var/known = GLOB.type_derives_cache[A.type]
 	if(!isnull(known))
 		return known
+	. = 0
+	if(length(caps_of(A)))
+		. |= TYPE_DERIVES_CAPS
 	var/datum/look/L = GLOB.look_builder
 	L.reset()
 	A.draw(L)
-	var/derives = L.touched || length(A.hidden_verbs()) > 0
-	GLOB.type_draws_cache[A.type] = derives
-	return derives
+	if(L.touched)
+		. |= TYPE_DERIVES_LOOK
+	if(length(A.hidden_verbs()))
+		. |= TYPE_DERIVES_VERBS
+	GLOB.type_derives_cache[A.type] = .
 
-GLOBAL_LIST_EMPTY(type_draws_cache)
+/// Whether A's type derives anything the refresh engine keeps up (a look or hidden verbs).
+/proc/type_derives(atom/A)
+	return !!(type_derive_flags(A) & (TYPE_DERIVES_LOOK | TYPE_DERIVES_VERBS))
+
+GLOBAL_LIST_EMPTY(type_derives_cache)
 
 /// Runs every capability's on_destroy and drops the data. Called from /atom/Destroy().
 /atom/proc/caps_destroy()
-	var/list/caps = caps_all(src)
-	if(!length(caps))
+	var/flags = GLOB.type_derives_cache[type]
+	if(!isnull(flags) && !(flags & TYPE_DERIVES_CAPS) && !cap_data && !cap_extras)
 		return
+	var/list/caps = caps_all(src)
 	for(var/datum/capability/C as anything in caps)
 		C.on_holder_destroy(src)
 		cap_leave_systems(src, C)
@@ -137,6 +153,10 @@ GLOBAL_LIST_EMPTY(type_draws_cache)
 		if(isdatum(D))
 			qdel(D)
 	cap_data = null
+
+#undef TYPE_DERIVES_CAPS
+#undef TYPE_DERIVES_LOOK
+#undef TYPE_DERIVES_VERBS
 
 /// Examine lines from every capability, in list order (appended by /atom/examine()).
 /atom/proc/caps_examine(mob/user)
