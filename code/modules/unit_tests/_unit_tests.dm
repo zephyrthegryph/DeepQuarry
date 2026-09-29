@@ -101,6 +101,7 @@
 #include "dx_cap_cover_tests.dm"
 #include "dx_cap_emag_tests.dm"
 #include "dx_cap_lock_tests.dm"
+#include "dx_cap_presets_tests.dm"
 #include "dx_cap_panel_tests.dm"
 #include "dx_cap_powered_tests.dm"
 #include "dx_cap_wires_tests.dm"

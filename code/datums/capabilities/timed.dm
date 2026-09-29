@@ -35,7 +35,7 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 	D.vars[var_name] = value // ALLOW(api): the timed-state writer for a var with no setter
 	changed(D)
 
-/proc/timed_set(datum/D, var_name, value, for_time, clock = CLOCK_OWN, keep_longer = FALSE, revert_to)
+/proc/timed_set(datum/D, var_name, value, for_time, clock = CLOCK_WORLD, keep_longer = FALSE, revert_to)
 	if(!D || QDELING(D) || !(var_name in D.vars))
 		CRASH("timed_set: [D?.type] has no var [var_name]")
 	var/list/pending = D.timed_until?[var_name]
@@ -75,6 +75,18 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 	if(D.vars[var_name] != pending[TIMED_SET_VALUE])
 		return
 	timed_write(D, var_name, pending[TIMED_PRIOR])
+
+/**
+ * A delayed action (the third time form, next to timed_set() and COOLDOWN_*): calls proc_ref on E after
+ * delay, as a dispatched call (E is marked changed afterwards). Owned by E: E's teardown cancels it.
+ * Returns the OM timer id (never store it in a var; use timed_set() for state that must revert).
+ *	after(src, vend_delay, PROC_REF(finish_vend), product, user)
+ */
+/proc/after(datum/E, delay, proc_ref, ...)
+	var/list/call_args = list(E, delay, proc_ref)
+	if(length(args) > 3)
+		call_args += args.Copy(4)
+	return om_after(arglist(call_args))
 
 /// Deciseconds until var_name reverts (0 when nothing is pending), on the clock it was set on.
 /proc/time_left(datum/D, var_name)

@@ -46,6 +46,12 @@
 /datum/capability/proc/draw(atom/holder, datum/look/look)
 	return
 
+/// Action -> LOG_GAME / LOG_ADMIN for this capability's own act_<action> procs. A capability owns
+/// UI actions by defining `/datum/capability/<x>/proc/act_<action>(mob/user, atom/holder, ...args)`:
+/// the dispatcher finds it on the holder's capabilities when the holder has no act_<action> itself.
+/datum/capability/ui_logged()
+	return null
+
 /// Adds keys to the holder's tgui_data().
 /datum/capability/proc/ui_data(atom/holder, mob/user, list/data)
 	return

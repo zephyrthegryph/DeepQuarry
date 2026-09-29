@@ -113,7 +113,7 @@
 /// The converted airlock lists its capabilities.
 /datum/unit_test/dx_airlock_capabilities/Run()
 	var/obj/machinery/door/airlock/A = allocate(/obj/machinery/door/airlock, run_loc_floor_bottom_left)
-	for(var/path in list(/datum/capability/panel, /datum/capability/wires, /datum/capability/lock/door, /datum/capability/breakable, /datum/capability/emag, /datum/capability/bolts, /datum/capability/electrify, /datum/capability/weld_shut, /datum/capability/pry, /datum/capability/emergency_access, /datum/capability/ai_control, /datum/capability/frozen_shut))
+	for(var/path in list(/datum/capability/panel, /datum/capability/wires, /datum/capability/lock/door, /datum/capability/breakable, /datum/capability/emag, /datum/capability/bolts, /datum/capability/electrify, /datum/capability/weld_shut, /datum/capability/pry, /datum/capability/emergency_access, /datum/capability/ai_control, /datum/capability/frozen_shut, /datum/capability/crush, /datum/capability/door_timing))
 		TEST_ASSERT_NOTNULL(cap_of(A, path), "the airlock has [path]")
 
 /// Bolting through the airlock's own mechanism, welding, and prying refused while bolted.
@@ -168,6 +168,7 @@
 	var/obj/machinery/door/airlock/dx_test/A = allocate(/obj/machinery/door/airlock/dx_test, T)
 	var/datum/tgui/ui = ui_test_window(A)
 	ui.user = H
+	TEST_ASSERT(!hascall(A, "act_bolt_toggle"), "the airlock writes no action of its own: cap_ai_control() owns them")
 	TEST_ASSERT(A.tgui_act("bolt-toggle", list(), ui), "bolt-toggle ran")
 	TEST_ASSERT(is_bolted(A), "the bolts dropped")
 	var/was_lights = A.lights
@@ -199,3 +200,55 @@
 	refresh_flush()
 	TEST_ASSERT(!(look_image('icons/turf/overlays.dmi', "snowairlock") in A.look_overlays), "the frost is gone")
 	TEST_ASSERT(cap_test_has_layer(A, "welded"), "the welded layer is drawn")
+
+/// door(): the bundle lists the parts, in order, with the variations its named args pick; the wires
+/// sit behind the panel.
+/datum/unit_test/dx_cap_doors_bundle/Run()
+	var/list/plain = door()
+	var/list/plain_types = list()
+	for(var/datum/capability/C as anything in plain)
+		plain_types += C.type
+	for(var/path in list(/datum/capability/panel, /datum/capability/lock/door, /datum/capability/breakable, /datum/capability/emag, /datum/capability/bolts, /datum/capability/weld_shut, /datum/capability/pry, /datum/capability/emergency_access, /datum/capability/crush, /datum/capability/door_timing))
+		TEST_ASSERT(path in plain_types, "a plain door has [path]")
+	for(var/path in list(/datum/capability/wires, /datum/capability/electrify, /datum/capability/ai_control))
+		TEST_ASSERT(!(path in plain_types), "a plain door has no [path]")
+	TEST_ASSERT_EQUAL(plain_types[1], /datum/capability/panel, "the panel comes first")
+
+	var/list/full = door(wires = /datum/wires/airlock, electrify = TRUE, ai_control = TRUE, crush_damage = 7)
+	var/datum/capability/wires/W
+	var/datum/capability/crush/K
+	var/found_electrify = FALSE
+	var/found_ai = FALSE
+	for(var/datum/capability/C as anything in full)
+		if(istype(C, /datum/capability/wires))
+			W = C
+		else if(istype(C, /datum/capability/crush))
+			K = C
+		else if(istype(C, /datum/capability/electrify))
+			found_electrify = TRUE
+		else if(istype(C, /datum/capability/ai_control))
+			found_ai = TRUE
+	TEST_ASSERT_NOTNULL(W, "wires = adds the wiring")
+	TEST_ASSERT(W.behind & PANEL, "behind the panel")
+	TEST_ASSERT(found_electrify, "electrify = TRUE adds cap_electrify()")
+	TEST_ASSERT(found_ai, "ai_control = TRUE adds cap_ai_control()")
+	TEST_ASSERT_EQUAL(K.damage, 7, "crush_damage = reaches cap_crush()")
+
+/// cap_crush() crushes what stands in the door; cap_door_timing() picks the autoclose wait.
+/datum/unit_test/dx_cap_doors_crush_and_timing/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/door/airlock/A = allocate(/obj/machinery/door/airlock, T)
+	TEST_ASSERT(!door_crush(A), "nothing to crush in an empty doorway")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	TEST_ASSERT(door_crush(A), "a human in the doorway is crushed")
+	TEST_ASSERT(H.status_units(EFFECT_STUNNED) > 0, "and stunned")
+	TEST_ASSERT_EQUAL(A.door_safeties_on(), TRUE, "the safeties start on")
+	var/list/data = list()
+	A.caps_ui_data(H, data)
+	TEST_ASSERT_EQUAL(data["safe"], TRUE, "the window sees the safeties")
+
+	A.normalspeed = FALSE
+	TEST_ASSERT_EQUAL(A.next_close_wait(), 0.5 SECONDS, "at high speed the door closes fast")
+	A.normalspeed = TRUE
+	var/wait = A.next_close_wait()
+	TEST_ASSERT(wait == 15 SECONDS || wait == 1.5 SECONDS, "at normal speed it waits the normal or thermal time ([wait])")

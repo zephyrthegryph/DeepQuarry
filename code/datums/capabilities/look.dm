@@ -20,12 +20,15 @@
 	var/list/vis
 	/// A one-shot flick state: played when the look is applied, not part of the key's steady state.
 	var/flick_state
+	/// list(range, power, color) from look.light(), or null for no light from the look.
+	var/list/light_spec
 	/// Anything was set: a type that draws nothing keeps its mapped appearance.
 	var/touched = FALSE
 
 GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 
 /datum/look/proc/reset()
+	light_spec = null
 	icon_state = null
 	icon = null
 	color = null
@@ -136,6 +139,14 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 		return
 	LAZYADD(vis, thing)
 
+/// The atom's light while this look holds (the APC's screen glow, a lit airlock). A look that stops
+/// setting it turns the light off: draw() never calls set_light() itself (that would be a side effect).
+/datum/look/proc/light(range, power = 1, color)
+	touched = TRUE
+	if(!range || !power)
+		return
+	light_spec = list(range, power, color)
+
 /// A one-shot animation state, played when this look is applied.
 /datum/look/proc/play_flick(name)
 	flick_state = name
@@ -143,7 +154,7 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 
 /// The change key: equal keys draw equally (the flick is part of it, so a new flick re-applies).
 /datum/look/proc/change_key()
-	var/list/parts = list(icon_state, "[icon]", color, alpha, transform ? jointext(list(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f), ",") : null, dir, plane, layer, flick_state)
+	var/list/parts = list(icon_state, "[icon]", color, alpha, transform ? jointext(list(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f), ",") : null, dir, plane, layer, flick_state, light_spec ? jointext(light_spec, ",") : null)
 	var/list/overlay_keys = list()
 	for(var/entry in overlays)
 		overlay_keys += look_part_key(entry)
@@ -176,6 +187,7 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 #define LOOK_SET_DIR (1<<5)
 #define LOOK_SET_PLANE (1<<6)
 #define LOOK_SET_LAYER (1<<7)
+#define LOOK_SET_LIGHT (1<<8)
 
 /atom
 	/// LOOK_SET_* for the base properties the last applied look set (taken back when a look stops
@@ -232,6 +244,14 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 		now |= LOOK_SET_LAYER
 	else if(was & LOOK_SET_LAYER)
 		A.layer = initial(A.layer)
+	if(light_spec)
+		if(light_spec[3])
+			A.set_light(light_spec[1], light_spec[2], light_spec[3])
+		else
+			A.set_light(light_spec[1], light_spec[2])
+		now |= LOOK_SET_LIGHT
+	else if(was & LOOK_SET_LIGHT)
+		A.set_light(0)
 	A.look_set_bits = now
 	if(A.look_overlays)
 		A.cut_overlay(A.look_overlays) // ALLOW(sys_dx_raw_overlays): the look builder owns its overlays
@@ -272,3 +292,4 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 #undef LOOK_SET_DIR
 #undef LOOK_SET_PLANE
 #undef LOOK_SET_LAYER
+#undef LOOK_SET_LIGHT

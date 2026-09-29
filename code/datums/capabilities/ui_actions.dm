@@ -30,8 +30,19 @@
 	if(!key)
 		return null
 	var/proc_name = "act_[key]"
+	// The host's own act_<key>, else the first of its capabilities that owns one (power_channels()
+	// owns act_channel / act_breaker / act_nightshift, so the APC writes none of them). A capability's
+	// action proc runs on the shared flyweight with the holder passed as `holder`.
+	var/datum/capability/owner_cap
 	if(!hascall(host, proc_name))
-		return null
+		if(!isatom(host))
+			return null
+		for(var/datum/capability/C as anything in caps_all(host))
+			if(hascall(C, proc_name))
+				owner_cap = C
+				break
+		if(!owner_cap)
+			return null
 	// A legacy UI_ACT row for this action still wins until its host is migrated.
 	var/datum/ui_decl/decl = ui_decl_of(host)
 	if(decl?.acts[action])
@@ -48,8 +59,14 @@
 		named[arg] = params[raw]
 	named["user"] = user
 	var/datum/dispatch_context/ctx = new(user, host, null, null, ui)
-	var/list/logged = type_list(host, TYPE_PROC_REF(/datum, ui_logged))
-	var/result = dispatch_call(ctx, host, proc_name, named, key, logged[key])
+	var/log_level
+	if(owner_cap)
+		named["holder"] = host
+		log_level = owner_cap.ui_logged()?[key]
+	else
+		var/list/logged = type_list(host, TYPE_PROC_REF(/datum, ui_logged))
+		log_level = logged[key]
+	var/result = dispatch_call(ctx, host, proc_name, named, key, log_level, owner_cap)
 	return list(TRUE, dispatch_succeeded(result))
 
 /// The one normalisation of client action names and argument keys: "bolt-toggle" and "boltToggle"
@@ -66,7 +83,7 @@ GLOBAL_DATUM_INIT(ui_action_raw_regex, /regex, regex(@"^[A-Za-z0-9_-]+$"))
 /// camelCase boundaries (a lowercase letter or digit followed by an uppercase letter).
 GLOBAL_DATUM_INIT(ui_action_camel_regex, /regex, regex(@"([a-z0-9])([A-Z])", "g"))
 /// Argument names a client may never supply (the dispatcher sets or forbids them).
-GLOBAL_LIST_INIT(ui_reserved_arg_names, list("user", "src", "usr", "ui", "state"))
+GLOBAL_LIST_INIT(ui_reserved_arg_names, list("user", "src", "usr", "ui", "state", "holder"))
 
 // ---- validators: null when the value is not acceptable ----
 

@@ -135,7 +135,7 @@ DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command
 	. = ..()
 	if(!surpress_send) send_status()
 
-/obj/machinery/door/airlock/close(forced= FALSE, ignore_safties = FALSE, crush_damage = DOOR_CRUSH_DAMAGE)
+/obj/machinery/door/airlock/close(forced= FALSE, ignore_safties = FALSE, crush_damage)
 	. = ..()
 	if(!forced) send_status()
 

@@ -1,14 +1,13 @@
-// Door capabilities (doc/rewrite/dx_conventions.md §2; design review §5, "door behaviours").
+// Door capabilities (doc/rewrite/dx_conventions.md §2; design review §5, "door behaviours"), and
+// door(), the bundle that puts a powered door's parts together:
 //
 //	/obj/machinery/door/airlock/capabilities()
 //		. = ..()
-//		. += cap_bolts()
-//		. += cap_electrify()
-//		. += cap_weld_shut(applies = PROC_REF(can_weld_now))
-//		. += cap_pry()
-//		. += cap_emergency_access()
-//		. += cap_ai_control()
+//		. += door(wires = /datum/wires/airlock, electrify = TRUE, ai_control = TRUE)
+//		. += cap_frozen_shut()
 //
+// The parts: cap_bolts(), cap_electrify(), cap_weld_shut(), cap_pry(), cap_emergency_access(),
+// cap_door_access(), cap_crush(), cap_door_timing(), cap_ai_control().
 // These own the door's state bits (CAP_BOLTED, CAP_WELDED, CAP_EMERGENCY_ACCESS), its tool entries, the
 // gating and the layers. The door's mechanism stays on the door: a capability moves it through the
 // holder hooks below (set_bolted(), is_electrified(), electric_shock(), cap_pry_force()), which a door
@@ -292,16 +291,194 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 	return
 
 // ============================================================================
+// cap_crush(): a closing door crushes what stands in it (atom/movable/airlock_crush()) and takes the
+// same damage itself. `damage` is the type default; a caller of close() may pass its own. The
+// safeties that stop a door closing on someone are the holder's (door_safeties_on()). UI: safe.
+
+/datum/capability/crush
+	var/damage = DOOR_CRUSH_DAMAGE
+
+/// A door that crushes what it closes on, for `damage` (the type default).
+/proc/cap_crush(damage = DOOR_CRUSH_DAMAGE, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+	var/datum/capability/crush/C = new
+	C.damage = damage
+	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	return C
+
+/// Crushes everything in holder's tiles for `amount` (null: this capability's damage). TRUE when
+/// anything was crushed; the holder takes the damage once per crushed thing.
+/datum/capability/crush/proc/crush(atom/movable/holder, amount)
+	var/dealt = isnull(amount) ? damage : amount
+	. = FALSE
+	for(var/turf/T in holder.locs)
+		for(var/atom/movable/AM in T)
+			if(AM.airlock_crush(dealt))
+				holder.take_damage(dealt, BRUTE, MELEE)
+				. = TRUE
+
+/datum/capability/crush/ui_data(atom/holder, mob/user, list/data)
+	data["safe"] = holder.door_safeties_on()
+
+/// Whether the holder's safeties stop it closing on someone (cap_crush()).
+/atom/proc/door_safeties_on()
+	return TRUE
+
+/// Crushes what stands in A's tiles through its cap_crush() (nothing without one). amount: null for
+/// the capability's type default.
+/proc/door_crush(atom/movable/A, amount)
+	var/datum/capability/crush/C = cap_of(A, /datum/capability/crush)
+	return C ? C.crush(A, amount) : FALSE
+
+// ============================================================================
+// cap_door_timing(): how long a door stays open before it closes itself. The door's own vars say
+// whether it autocloses (`autoclose`) and at which speed (`normalspeed`, the timing wire); the
+// opening animation delays are its type vars (anim_length_before_density / _finalize). The waits
+// here are type defaults: `close_wait` normally, `thermal_wait` when the air on either side differs
+// by 5 K or more (keep the heat in), `fast_wait` at high speed. UI: speed.
+
+/datum/capability/door_timing
+	var/close_wait = 15 SECONDS
+	var/thermal_wait = 1.5 SECONDS
+	var/fast_wait = 0.5 SECONDS
+
+/// Door timing: the autoclose waits (type defaults; see above).
+/proc/cap_door_timing(close_wait = 15 SECONDS, thermal_wait = 1.5 SECONDS, fast_wait = 0.5 SECONDS)
+	var/datum/capability/door_timing/C = new
+	C.close_wait = close_wait
+	C.thermal_wait = thermal_wait
+	C.fast_wait = fast_wait
+	return C
+
+/// How long holder waits open before closing itself.
+/datum/capability/door_timing/proc/wait_for(obj/machinery/door/holder)
+	if(!holder.normalspeed)
+		return fast_wait
+	var/lowest_temp = T20C
+	var/highest_temp = T0C
+	for(var/D in GLOB.cardinal)
+		var/turf/target = get_step(holder.loc, D)
+		if(!target || target.density)
+			continue
+		var/datum/gas_mixture/airmix = target.return_air()
+		if(!airmix)
+			continue
+		var/airmix_temp = airmix.return_temperature()
+		lowest_temp = min(lowest_temp, airmix_temp)
+		highest_temp = max(highest_temp, airmix_temp)
+	return abs(highest_temp - lowest_temp) >= 5 ? thermal_wait : close_wait
+
+/datum/capability/door_timing/ui_data(atom/holder, mob/user, list/data)
+	var/obj/machinery/door/D = holder
+	if(istype(D))
+		data["speed"] = D.normalspeed
+
+// ============================================================================
+// door(): the BUNDLE of a powered door (bundles are plain nouns; the parts stay cap_<noun>). It
+// encodes how the parts relate: the wires sit behind the maintenance panel; the door's access is its
+// own req_access (H1); bolts and welding both refuse a pry; a closing door crushes; the autoclose
+// timing reads the door's vars. A type adds door(...) and then only what is its own:
+//
+//	/obj/machinery/door/airlock/capabilities()
+//		. = ..()
+//		. += door(wires = /datum/wires/airlock, electrify = TRUE, ai_control = TRUE)
+//		. += cap_frozen_shut()
+//
+// Named args pick the variations; `without()` / `replace()` edit the result like any list.
+/proc/door(wires, electrify = FALSE, ai_control = FALSE, panel_tool = TOOL_SCREWDRIVER, repair_tool = null, emag_effect, emag_mode = EMAG_REPEATABLE, emag_log = LOG_GAME, bolts_layer = null, emergency_layer = null, weld_applies, weld_help_applies, pry_strong_tier = 0, crush_damage = DOOR_CRUSH_DAMAGE, close_wait = 15 SECONDS)
+	. = list(cap_panel(tool = panel_tool))
+	if(wires)
+		. += cap_wires(wires, behind = PANEL)
+	. += cap_door_access()
+	. += cap_breakable(repair_tool = repair_tool)
+	. += cap_power()
+	. += cap_emag(effect = emag_effect, mode = emag_mode, log = emag_log)
+	. += cap_bolts(layer = bolts_layer)
+	if(electrify)
+		. += cap_electrify()
+	. += cap_weld_shut(applies = weld_applies, help_applies = weld_help_applies)
+	. += cap_pry(strong_tier = pry_strong_tier)
+	. += cap_emergency_access(layer = emergency_layer)
+	. += cap_crush(damage = crush_damage)
+	. += cap_door_timing(close_wait = close_wait)
+	if(ai_control)
+		. += cap_ai_control()
+
+// ============================================================================
 // cap_ai_control(): the airlock's remote control panel (the AiAirlock window, opened by the AI and by
-// cyborgs with the door's access). The window's actions are act_<action> procs on the airlock
-// (airlock.dm); this adds the panel's data: power, the ID scanner, bolt lights, safeties, timing,
-// the door's position and the wire states. The other door capabilities add bolted, welded,
-// electrified and emergency.
+// cyborgs with the door's access). It owns the window's actions (act_<action> below, run on this
+// shared capability with the airlock as `holder`; the airlock's ui_allowed() gates them all) and adds
+// the panel's data: power, the ID scanner, bolt lights, the door's position and the wire states. The
+// other door capabilities add bolted, welded, electrified, emergency, safe and speed.
 
 /datum/capability/ai_control
 
 /proc/cap_ai_control()
 	return new /datum/capability/ai_control
+
+/datum/capability/ai_control/ui_logged()
+	return list(
+		"shock_temp" = LOG_GAME,
+		"shock_perm" = LOG_GAME,
+		"bolt_toggle" = LOG_GAME,
+		"emergency_toggle" = LOG_GAME,
+	)
+
+/datum/capability/ai_control/proc/act_disrupt_main(mob/user, obj/machinery/door/airlock/holder)
+	if(holder.main_power_lost_until)
+		return refuse(user, "Main power is already offline.")
+	holder.loseMainPower()
+	return TRUE
+
+/datum/capability/ai_control/proc/act_disrupt_backup(mob/user, obj/machinery/door/airlock/holder)
+	if(holder.backup_power_lost_until)
+		return refuse(user, "Backup power is already offline.")
+	holder.loseBackupPower()
+	return TRUE
+
+/datum/capability/ai_control/proc/act_shock_restore(mob/user, obj/machinery/door/airlock/holder)
+	holder.electrify(0, TRUE, user)
+	return TRUE
+
+/datum/capability/ai_control/proc/act_shock_temp(mob/user, obj/machinery/door/airlock/holder)
+	holder.electrify(30, TRUE, user)
+	return TRUE
+
+/datum/capability/ai_control/proc/act_shock_perm(mob/user, obj/machinery/door/airlock/holder)
+	holder.electrify(-1, TRUE, user)
+	return TRUE
+
+/datum/capability/ai_control/proc/act_idscan_toggle(mob/user, obj/machinery/door/airlock/holder)
+	holder.set_idscan(holder.aiDisabledIdScanner, TRUE, user)
+	return TRUE
+
+/datum/capability/ai_control/proc/act_emergency_toggle(mob/user, obj/machinery/door/airlock/holder)
+	set_emergency_access(holder, !emergency_access_on(holder))
+	to_chat(user, span_notice("Emergency access is now [emergency_access_on(holder) ? "engaged" : "disengaged"]."))
+	return TRUE
+
+/datum/capability/ai_control/proc/act_bolt_toggle(mob/user, obj/machinery/door/airlock/holder)
+	holder.toggle_bolt(user)
+	return TRUE
+
+/datum/capability/ai_control/proc/act_light_toggle(mob/user, obj/machinery/door/airlock/holder)
+	if(holder.wire_cut(WIRE_BOLT_LIGHT))
+		return refuse(user, "The bolt lights wire is cut - The door bolt lights are permanently disabled.")
+	holder.lights = !holder.lights
+	return TRUE
+
+/datum/capability/ai_control/proc/act_safe_toggle(mob/user, obj/machinery/door/airlock/holder)
+	holder.set_safeties(!holder.safe, TRUE, user)
+	return TRUE
+
+/datum/capability/ai_control/proc/act_speed_toggle(mob/user, obj/machinery/door/airlock/holder)
+	if(holder.wire_cut(WIRE_SPEED))
+		return refuse(user, "The timing wire is cut - Cannot alter timing.")
+	holder.normalspeed = !holder.normalspeed
+	return TRUE
+
+/datum/capability/ai_control/proc/act_open_close(mob/user, obj/machinery/door/airlock/holder)
+	holder.user_toggle_open(user)
+	return TRUE
 
 /datum/capability/ai_control/ui_data(atom/holder, mob/user, list/data)
 	var/obj/machinery/door/airlock/A = holder
@@ -315,8 +492,6 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 	data["power"] = power
 	data["id_scanner"] = !A.aiDisabledIdScanner
 	data["lights"] = A.lights
-	data["safe"] = A.safe
-	data["speed"] = A.normalspeed
 	data["opened"] = !A.density
 	var/list/wire = list()
 	wire["main_1"] = !A.wire_cut(WIRE_MAIN_POWER1)

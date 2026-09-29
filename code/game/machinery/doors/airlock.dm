@@ -437,18 +437,9 @@ APPEARANCE_NONE(/obj/machinery/door/airlock)
 
 /obj/machinery/door/airlock/capabilities()
 	. = ..()
-	. += cap_panel(tool = TOOL_SCREWDRIVER)
-	. += cap_wires(/datum/wires/airlock)
-	. += cap_door_access()
-	. += cap_breakable(repair_tool = null) // the door's own welder repair (door.dm) mends it
-	. += cap_power()
-	. += cap_emag(effect = PROC_REF(emag_effect), mode = EMAG_REPEATABLE, log = LOG_GAME)
-	. += cap_bolts(layer = null) // draw() shows door_locked while the bolt lights are on
-	. += cap_electrify()
-	. += cap_weld_shut(applies = PROC_REF(can_weld_now), help_applies = PROC_REF(can_weld_without_repair))
-	. += cap_pry()
-	. += cap_emergency_access(layer = null)
-	. += cap_ai_control()
+	// draw() shows door_locked while the bolt lights are on, so the bolts and emergency access draw no
+	// layer of their own; the door's own welder repair (door.dm) mends it.
+	. += door(wires = /datum/wires/airlock, electrify = TRUE, ai_control = TRUE, emag_effect = PROC_REF(emag_effect), weld_applies = PROC_REF(can_weld_now), weld_help_applies = PROC_REF(can_weld_without_repair))
 	. += cap_frozen_shut()
 	. += cap_hand("Use", PROC_REF(touch_airlock), needs = PROC_REF(can_touch_by_hand))
 	. += cap_use_on("Use", /obj/item, PROC_REF(use_item_on_airlock), works_broken = TRUE, works_unpowered = TRUE)
@@ -863,70 +854,8 @@ TYPE_TABLE(/obj/machinery/door/airlock, emag_decl, null)
 /obj/machinery/door/airlock/ui_allowed(mob/user, action)
 	return user_allowed(user)
 
-/obj/machinery/door/airlock/ui_logged()
-	return list(
-		"shock_temp" = LOG_GAME,
-		"shock_perm" = LOG_GAME,
-		"bolt_toggle" = LOG_GAME,
-		"emergency_toggle" = LOG_GAME,
-	)
-
-/obj/machinery/door/airlock/proc/act_disrupt_main(mob/user)
-	if(main_power_lost_until)
-		return refuse(user, "Main power is already offline.")
-	loseMainPower()
-	return TRUE
-
-/obj/machinery/door/airlock/proc/act_disrupt_backup(mob/user)
-	if(backup_power_lost_until)
-		return refuse(user, "Backup power is already offline.")
-	loseBackupPower()
-	return TRUE
-
-/obj/machinery/door/airlock/proc/act_shock_restore(mob/user)
-	electrify(0, TRUE, user)
-	return TRUE
-
-/obj/machinery/door/airlock/proc/act_shock_temp(mob/user)
-	electrify(30, TRUE, user)
-	return TRUE
-
-/obj/machinery/door/airlock/proc/act_shock_perm(mob/user)
-	electrify(-1, TRUE, user)
-	return TRUE
-
-/obj/machinery/door/airlock/proc/act_idscan_toggle(mob/user)
-	set_idscan(aiDisabledIdScanner, TRUE, user)
-	return TRUE
-
-/obj/machinery/door/airlock/proc/act_emergency_toggle(mob/user)
-	set_emergency_access(src, !emergency_access_on(src))
-	to_chat(user, span_notice("Emergency access is now [emergency_access_on(src) ? "engaged" : "disengaged"]."))
-	return TRUE
-
-/obj/machinery/door/airlock/proc/act_bolt_toggle(mob/user)
-	toggle_bolt(user)
-	return TRUE
-
-/obj/machinery/door/airlock/proc/act_light_toggle(mob/user)
-	if(wire_cut(WIRE_BOLT_LIGHT))
-		return refuse(user, "The bolt lights wire is cut - The door bolt lights are permanently disabled.")
-	lights = !lights
-	return TRUE
-
-/obj/machinery/door/airlock/proc/act_safe_toggle(mob/user)
-	set_safeties(!safe, TRUE, user)
-	return TRUE
-
-/obj/machinery/door/airlock/proc/act_speed_toggle(mob/user)
-	if(wire_cut(WIRE_SPEED))
-		return refuse(user, "The timing wire is cut - Cannot alter timing.")
-	normalspeed = !normalspeed
-	return TRUE
-
-/obj/machinery/door/airlock/proc/act_open_close(mob/user)
-	user_toggle_open(user)
-	return TRUE
+/obj/machinery/door/airlock/door_safeties_on()
+	return !!safe
 
 /obj/machinery/door/airlock/proc/user_allowed(mob/user)
 	var/mob/living/silicon/robot/R = user
@@ -1120,7 +1049,7 @@ TYPE_TABLE(/obj/machinery/door/airlock, emag_decl, null)
 	injure(INJURY_BLUNT, crush_damage)
 	return FALSE
 
-/obj/machinery/door/airlock/close(forced= FALSE, ignore_safties = FALSE, crush_damage = DOOR_CRUSH_DAMAGE)
+/obj/machinery/door/airlock/close(forced= FALSE, ignore_safties = FALSE, crush_damage)
 	if(!can_close(forced))
 		return FALSE
 	clear_autoclose_blockers()
@@ -1141,10 +1070,7 @@ TYPE_TABLE(/obj/machinery/door/airlock, emag_decl, null)
 					sleep_until_autoclose_blocker_moves(AM)
 					return
 
-	for(var/turf/turf in locs)
-		for(var/atom/movable/AM in turf)
-			if(AM.airlock_crush(crush_damage))
-				take_damage(crush_damage, BRUTE, MELEE)
+	door_crush(src, crush_damage) // cap_crush()
 
 	use_power(360)	//360 W seems much more appropriate for an actuator moving an industrial door capable of crushing people
 	has_beeped = 0

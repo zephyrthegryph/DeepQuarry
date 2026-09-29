@@ -527,25 +527,11 @@ APPEARANCE_TEMPLATE(/obj/machinery/door, "door{density}")
 		autoclose_in(next_close_wait())
 	return TRUE
 
+/// How long the door waits open before closing itself: its cap_door_timing(), or the stock timing.
 /obj/machinery/door/proc/next_close_wait()
-	var/lowest_temp = T20C
-	var/highest_temp = T0C
-	for(var/D in GLOB.cardinal)
-		var/turf/target = get_step(loc, D)
-		if(target && !target.density)
-			var/datum/gas_mixture/airmix = target.return_air()
-			if(!airmix)
-				continue
-			var/airmix_temp = airmix.return_temperature()
-			if(airmix_temp < lowest_temp)
-				lowest_temp = airmix_temp
-			if(airmix_temp > highest_temp)
-				highest_temp = airmix_temp
-	// Fast close to keep in the heat
-	var/open_speed = 150
-	if(abs(highest_temp - lowest_temp) >= 5)
-		open_speed = 15
-	return (normalspeed ? open_speed : 5)
+	var/static/datum/capability/door_timing/stock = new
+	var/datum/capability/door_timing/T = cap_of(src, /datum/capability/door_timing) || stock
+	return T.wait_for(src)
 
 /obj/machinery/door/proc/close(forced = 0, ignore_safties = FALSE, crush_damage = DOOR_CRUSH_DAMAGE)
 	if(!can_close(forced))

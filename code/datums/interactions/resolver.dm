@@ -258,11 +258,20 @@
 
 /// Runs one interaction by id, as chosen in the Menu. Returns TRUE if it ran.
 /proc/run_chosen_interaction(mob/actor, atom/target, id)
-	var/datum/interaction/interaction = INTERACTION_BY_ID(id)
-	if(!interaction || !actor || !target)
+	if(!actor || !target)
 		return FALSE
 	var/obj/item/held = actor.get_active_hand()
 	var/datum/interaction_resolution/resolution = interactions_for(actor, target, held)
+	// Ids are unique within one target, not globally (capability entries of different types share
+	// ids): resolve the choice among this target's own interactions first.
+	var/datum/interaction/interaction
+	for(var/datum/interaction/candidate as anything in resolution.available + resolution.blocked)
+		if(candidate.id == id)
+			interaction = candidate
+			break
+	interaction ||= INTERACTION_BY_ID(id)
+	if(!interaction)
+		return FALSE
 	if(!(interaction in resolution.available))
 		var/reason = resolution.blocked[interaction]
 		if(reason)
