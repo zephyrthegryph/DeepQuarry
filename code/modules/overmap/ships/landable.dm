@@ -222,3 +222,9 @@ REL_LIST(/obj/effect/shuttle_landmark/ship, visitors)
 			var/datum/flight_destination/orbit = GLOB.flight_service?.destinations[vessel?.orbit_parent_id]
 			return "In orbit of [orbit?.name || "an unregistered body"]."
 
+
+/// Owned-child release: the ship's open-space landmark leaves our waypoint lists with it.
+/obj/effect/overmap/visitable/ship/landable/on_owned_release(var_name, datum/child)
+	if(var_name == "landmark")
+		remove_landmark(child, shuttle)
+	return ..()

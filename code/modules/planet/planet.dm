@@ -85,3 +85,7 @@
 	return 220 - (sun_position * 80) // this base version doesn't know how long a planet's day is, so just goes back and forth facing south-eastish based on midnight to noon intensity
 
 // Turfs are never deleted.
+
+// The planet's turfs are relation lists: a released z-level (om_drop_z) clears them.
+REL_LIST(/datum/planet, planet_floors)
+REL_LIST(/datum/planet, planet_walls)

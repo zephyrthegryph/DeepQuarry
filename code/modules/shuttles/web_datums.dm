@@ -20,8 +20,6 @@
 	travel_time = _time
 	one_way = _oneway
 
-// Leaves both endpoints' route lists.
-
 /datum/shuttle_route/proc/get_other_side(datum/shuttle_destination/PoV)
 	if(PoV == start())
 		return end()
@@ -134,8 +132,8 @@
 
 	// Now we can connect them.
 	var/datum/shuttle_route/new_route = new(src, other_place, interim_tag, travel_time)
-	LAZYADD(routes, new_route)
-	LAZYADD(other_place.routes, new_route)
+	rel_add(src, "routes", new_route)
+	rel_add(other_place, "routes", new_route)
 
 // Depending on certain circumstances, the shuttles can fail.
 // What happens depends on where the shuttle is.  If it's in space, it just can't move until its fixed.
@@ -362,7 +360,8 @@
 /datum/shuttle_destination/proc/my_landmark() as /obj/effect/shuttle_landmark
 	return my_landmark
 
-REL_PAIR(/datum/shuttle_route, end, routes)
-REL_PAIR(/datum/shuttle_route, start, routes)
-REL_PAIR_LIST(/datum/shuttle_destination, routes, end)
-REL_PAIR_LIST(/datum/shuttle_destination, routes, start)
+// A route names both endpoints (one-sided views); each endpoint lists the route (a list view).
+// Not pairs: one routes list would need two partner vars (start and end).
+REL(/datum/shuttle_route, start)
+REL(/datum/shuttle_route, end)
+REL_LIST(/datum/shuttle_destination, routes)

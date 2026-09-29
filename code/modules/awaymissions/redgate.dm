@@ -21,9 +21,10 @@
 
 // its paired gate closes.
 /obj/structure/redgate/on_destroy(force)
-	if(target())
-		target().target = null
-		target().toggle_portal()
+	var/obj/structure/redgate/other = target()
+	if(other)
+		rel_clear(src, "target") // the pair: other's target clears too
+		other.toggle_portal()
 	..()
 
 /obj/structure/redgate/proc/teleport(mob/M as mob)
@@ -159,14 +160,12 @@ DECLARE_INTERACTIONS(/obj/structure/redgate, \
 			else if(g == src)
 				continue
 			else if(g.z in using_map.station_levels)
-				rel_set(src, "target", g)
-				//legacy .target reference removed (no equivalent on /datum/ai_brain).
+				rel_set(src, "target", g) // REL_PAIR: g's target names us back
 				toggle_portal()
 				target().toggle_portal()
 				break
 			else if(g != src)
-				rel_set(src, "target", g)
-				//legacy .target reference removed (no equivalent on /datum/ai_brain).
+				rel_set(src, "target", g) // REL_PAIR: g's target names us back
 				toggle_portal()
 				target().toggle_portal()
 				break
@@ -560,3 +559,5 @@ DECLARE_INTERACTIONS(/obj/structure/hyperball_goal, INTERACT_ITEM(null, PROC_REF
 /// Accessor for the target var.
 /obj/structure/redgate/proc/target() as /obj/structure/redgate
 	return target
+
+REL_PAIR(/obj/structure/redgate, target, target)
