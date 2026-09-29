@@ -82,3 +82,39 @@ MSG_DEF(unit_test/pry, "You pry %T% open with %I%.", "%U% pries %T% open.")
 
 	// And the whole act_message path takes literal text without a runtime.
 	act_message(H, box, MSG_SELF(MSG_LITERAL(typed)), MSG_OTHERS(MSG_LITERAL(use_3p)), runemessage = MSG_LITERAL(typed))
+
+/// A pen-renamed item named "%T%": the name paths strip the %, and even a raw one is never
+/// re-read as a token because msg_fill() is a single pass.
+/datum/unit_test/dq_sys_messages_renamed_item
+
+/datum/unit_test/dq_sys_messages_renamed_item/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	H.real_name = "Alice Test"
+	H.name = "Alice Test"
+	var/obj/structure/closet/box = allocate(/obj/structure/closet, test_floor())
+	var/obj/item/tool/crowbar/bar = allocate(/obj/item/tool/crowbar, test_floor())
+
+	// The rename prompt a pen, a labeler or a tag opens (a name-length text prompt).
+	var/datum/om/prompt/text/ask = new
+	ask.max_length = MAX_NAME_LEN
+	ask.take_answer("Knife %T%")
+	TEST_ASSERT_EQUAL(ask.text, "Knife T", "a name-length prompt strips %")
+	var/datum/om/prompt/text/named = new
+	named.name_text = TRUE
+	named.take_answer("Tag %U%")
+	TEST_ASSERT_EQUAL(named.text, "Tag U", "a prompt marked name_text strips %")
+	var/datum/om/prompt/text/long = new
+	long.take_answer("100% sure")
+	TEST_ASSERT_EQUAL(long.text, "100% sure", "free (non-name) text keeps its %")
+	TEST_ASSERT(!findtext(sanitizeName("Bob %T% Smith", allow_numbers = TRUE) || "", "%"), "sanitizeName drops %")
+	TEST_ASSERT_EQUAL(strip_name_tokens("A %I% b"), "A I b", "strip_name_tokens")
+
+	// A name set from the renamed answer: nothing left to read as a token, at a call site either.
+	bar.name = ask.text
+	TEST_ASSERT_EQUAL(msg_fill("%U% inserts [bar.name] into %T%.", H, box), "Alice Test inserts Knife T into the [box.name].", "interpolated renamed name")
+
+	// A raw % in a name (set by code, bypassing the prompts) is still never re-scanned.
+	bar.name = "knife %T%"
+	TEST_ASSERT_EQUAL(msg_fill("%U% waves %I% at %T%.", H, box, bar), "Alice Test waves the knife %T% at the [box.name].", "single pass: a filled name is not re-read")
+	TEST_ASSERT_EQUAL(msg_fill("%I% glints.", H, box, bar), "The knife %T% glints.", "single pass with a leading token")
+	TEST_ASSERT_EQUAL(msg_fill("50%off%T%", H, box, bar), "50%offthe [box.name]", "a non-token %x% does not swallow a real token")

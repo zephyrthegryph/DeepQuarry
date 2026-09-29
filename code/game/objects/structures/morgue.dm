@@ -123,6 +123,7 @@ DECLARE_REF(/obj/structure/morgue, "connected", OWNED, null)
 
 /// Relabelling a morgue or crematorium with a pen (the subject, held throughout); still in range of it.
 /datum/om/prompt/text/morgue_label
+	name_text = TRUE
 	message = "What would you like the label to be?"
 	ask_flags = ASK_HELD | ASK_CAPABLE
 	var/obj/structure/morgue/morgue

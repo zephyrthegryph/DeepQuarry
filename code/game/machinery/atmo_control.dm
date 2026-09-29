@@ -313,6 +313,7 @@
 
 /// Naming the sensor/meter being added.
 /datum/om/prompt/text/air_control_sensor_name
+	name_text = TRUE
 	title = "Name"
 	message = "Enter a name for the Sensor/Meter."
 	var/obj/machinery/device

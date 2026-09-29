@@ -213,6 +213,9 @@
 	var/max_length = MAX_MESSAGE_LEN
 	var/multiline = FALSE
 	var/encode = TRUE
+	/// The answer names something (an atom, a label, a tag): its % is stripped (strip_name_tokens()).
+	/// Null means "a name if max_length is a name's length".
+	var/name_text
 	/// The answer.
 	var/text
 
@@ -223,6 +226,8 @@
 	return text
 
 /datum/om/prompt/text/take_answer(answer)
+	if(name_text || (isnull(name_text) && max_length && max_length <= MAX_NAME_LEN))
+		answer = strip_name_tokens(answer)
 	text = answer
 	return TRUE
 

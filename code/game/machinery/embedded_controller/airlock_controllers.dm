@@ -73,6 +73,7 @@
 			return TRUE
 
 /datum/om/prompt/text/airlock_tag
+	name_text = TRUE
 	requires = PROMPT_USABLE
 	var/tag_name
 

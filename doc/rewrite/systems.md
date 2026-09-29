@@ -346,8 +346,13 @@ As built (rewrite/sys-messages):
   Tokens render `	he`, so proper names are unchanged and objects gain "the".
 - Player text is literal: wrap it in `MSG_LITERAL()` (emotes, ghost emotes, narrate, package
   labels). It swaps `%` for a private-use mark that `msg_fill()` restores after filling, so a typed
-  `%U%` shows as typed. Token names (`msg_name()`) are marked the same way, so a character named
-  `%T%` stays literal. Only pass MSG_LITERAL text to act_message (the fill is what unmarks it).
+  `%U%` shows as typed. Only pass MSG_LITERAL text to act_message (the fill is what
+  unmarks it).
+- `msg_fill()` is a single left-to-right pass (`msg_token()` per `%NAME%`): substituted names and
+  pronouns are never re-scanned. Names never hold a raw %: `strip_name_tokens()` runs in
+  `sanitizeName()` (character names, `sanitize_name()`), in name-length text prompts
+  (`/datum/om/prompt/text` with `max_length <= MAX_NAME_LEN` or `name_text = TRUE`; the pen,
+  labeler, tag and rename prompts) and in name-length `tgui_input_text()`.
 
 ## 16. Sound and effect sets
 

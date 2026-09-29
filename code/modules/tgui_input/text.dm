@@ -15,6 +15,12 @@
  * * encode - Toggling this determines if input is filtered via html_encode. Setting this to FALSE gives raw input.
  * * timeout - The timeout of the textbox, after which the modal will close and qdel itself. Set to zero for no timeout.
  */
+/// A name-length answer is a name: strip its % (strip_name_tokens()).
+/proc/tgui_text_name_filter(text, max_length)
+	if(max_length && max_length <= MAX_NAME_LEN)
+		return strip_name_tokens(text)
+	return text
+
 /proc/tgui_input_text(mob/user, message = "", title = "Text Input", default, max_length = MAX_TGUI_INPUT, multiline = FALSE, encode = TRUE, timeout = 0, prevent_enter = FALSE, ui_state = GLOB.tgui_always_state) // 130k limit due to chunking limit... if we need longer that needs fixing
 	if (!user)
 		user = usr
@@ -34,12 +40,12 @@
 			if(multiline)
 				return stripped_multiline_input(user, message, title, default, PREVENT_CHARACTER_TRIM_LOSS(max_length))
 			else
-				return stripped_input(user, message, title, default, PREVENT_CHARACTER_TRIM_LOSS(max_length))
+				return tgui_text_name_filter(stripped_input(user, message, title, default, PREVENT_CHARACTER_TRIM_LOSS(max_length)), max_length)
 		else
 			if(multiline)
 				return input(user, message, title, default) as message|null // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
 			else
-				return input(user, message, title, default) as text|null // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
+				return tgui_text_name_filter(input(user, message, title, default) as text|null, max_length) // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
 
 	var/datum/tgui_input_text/text_input = new(user, message, title, default, max_length, multiline, encode, timeout, ui_state)
 	text_input.tgui_interact(user)
@@ -159,6 +165,8 @@
 /datum/tgui_input_text/proc/set_entry(entry)
 	if(!isnull(entry))
 		var/converted_entry = encode ? html_encode(entry) : entry
+		if(max_length && max_length <= MAX_NAME_LEN)
+			converted_entry = strip_name_tokens(converted_entry)
 		src.entry = trim(converted_entry, PREVENT_CHARACTER_TRIM_LOSS(max_length))
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
