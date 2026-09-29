@@ -287,7 +287,13 @@ ELAPSED(src, started_at, CLOCK_WORLD)               // clock-aware elapsed
   (became `EXPIRY_DECLARE`). A world.time compare is owned by exactly one lint: a rate limit by
   `tools/ci/cooldown_lint.py`, a recorded time by `sys_world_time_expiry`
   (`tools/ci/sys_rules/expiry.py`, which also counts `world.time - x <cmp>` elapsed compares).
-- Lint `sys_world_time_expiry`: 0.
+- `EXPIRY_ON_LAPSE(PATH, var, clock, PROC_REF(x))`: a declared hook in the lifecycle table that
+  runs when the expiry lapses. It is armed as one `om_after` on the holder by every
+  `EXPIRY_SET`/`EXPIRY_EXTEND` and again at materialize, so it fires however the holder was made;
+  a holder that materializes with the expiry not running lapses at once. Hooks must be
+  idempotent. The guest pass turns red through this, with no poll.
+- Lints `sys_world_time_expiry`, `sys_world_time_write` (raw writes, including member writes
+  through `EXPIRY_AT`) and `sys_expiry_undeclared` (a macro-used var that isn't `EXPIRY_DECLARE`d): all 0.
 
 ## 18. FOR_REAL_CONTENTS
 

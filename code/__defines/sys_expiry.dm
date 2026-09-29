@@ -32,10 +32,15 @@
 #define EXPIRY_TMP_DECLARE(name) var/tmp/##name = 0
 #define STATIC_EXPIRY_DECLARE(name) var/static/##name = 0
 
-#define EXPIRY_SET(D, name, delay, clock) (D.name = EXPIRY_AT(D, clock, delay))
+#define EXPIRY_SET(D, name, delay, clock) (D.name = expiry_written(D, #name, EXPIRY_AT(D, clock, delay)))
 /// Extends to at least `delay` from now (never shortens a longer expiry).
-#define EXPIRY_EXTEND(D, name, delay, clock) (D.name = max(D.name, EXPIRY_AT(D, clock, delay)))
+#define EXPIRY_EXTEND(D, name, delay, clock) (D.name = expiry_written(D, #name, max(D.name, EXPIRY_AT(D, clock, delay))))
 #define EXPIRY_CLEAR(D, name) (D.name = 0)
+
+/// Declares that PROC runs on the holder when `name` lapses on `clock`, however the holder was
+/// created: armed by every EXPIRY_SET/EXPIRY_EXTEND and at materialize (code/datums/sys/expiry.dm).
+/// The hook must be idempotent. `EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(pass_lapsed))`
+#define EXPIRY_ON_LAPSE(PATH, name, clock, PROC) _LIFECYCLE_DECL(PATH, add_expiry_hook(#name, clock, PROC))
 #define EXPIRY_ACTIVE(D, name, clock) (D.name > EXPIRY_NOW(D, clock))
 #define EXPIRY_EXPIRED(D, name, clock) (D.name <= EXPIRY_NOW(D, clock))
 #define EXPIRY_LEFT(D, name, clock) max(0, D.name - EXPIRY_NOW(D, clock))

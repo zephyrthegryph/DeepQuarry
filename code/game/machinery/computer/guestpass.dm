@@ -76,14 +76,11 @@ EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE_AS(I_HELP, "Show", PRO
 	. = ..()
 	update_icon()
 
-/// Sets the pass to expire `duration` from now and schedules the moment it turns red (one
-/// om_after on the pass, cancelled with it; no polling).
-/obj/item/card/id/guest/proc/set_expiry(duration)
-	EXPIRY_SET(src, expiration_time, duration, CLOCK_WORLD)
-	om_after(src, EXPIRY_LEFT(src, expiration_time, CLOCK_WORLD), PROC_REF(expire_timer))
+/// The pass turns red when its expiry lapses, however it was made (terminal, admin spawn, map).
+EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(pass_lapsed))
 
-/obj/item/card/id/guest/proc/expire_timer()
-	if(expired || EXPIRY_ACTIVE(src, expiration_time, CLOCK_WORLD))
+/obj/item/card/id/guest/proc/pass_lapsed()
+	if(expired)
 		return
 	visible_message(span_warning("\The [src] flashes a few times before turning red."))
 	icon_state = "guest-invalid"
@@ -274,7 +271,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE_AS(I_HELP, "Show", PRO
 				var/obj/item/card/id/guest/pass = new(src.loc)
 				pass.temp_access = LAZYCOPY(accesses)
 				pass.registered_name = giv_name
-				pass.set_expiry(duration * 1 MINUTES)
+				EXPIRY_SET(pass, expiration_time, duration MINUTES, CLOCK_WORLD)
 				pass.reason = reason
 				pass.name = "guest pass #[number]"
 			else
