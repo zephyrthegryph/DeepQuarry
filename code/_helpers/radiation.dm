@@ -43,7 +43,7 @@
 	pulse_information.strength = strength
 	// Targets (living mobs and the collector, geiger and radiovoltaic registries)
 	// are collected and traced in one Rust call when the pulse first processes.
-	GLOB.radiation_service.processing += pulse_information
+	own_add(GLOB.radiation_service, "processing", pulse_information)
 
 	return TRUE
 
