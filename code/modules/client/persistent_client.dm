@@ -1,10 +1,19 @@
 
-///assoc list of ckey -> /datum/persistent_client
-GLOBAL_LIST_EMPTY_TYPED(persistent_clients_by_ckey, /datum/persistent_client)
-/// A flat list of all persistent clients, for her looping pleasure.
+/// The persistent client of `ckey`, or null. REGISTRY_PERSISTENT_CLIENTS is keyed by ckey.
+/proc/persistent_client_for(ckey)
+	var/list/filed = REGISTRY_KEYED(REGISTRY_PERSISTENT_CLIENTS, ckey)
+	return length(filed) ? filed[1] : null
+
+/// Every persistent client as ckey -> datum (a new list, for pickers and UIs).
+/proc/persistent_clients_by_ckey()
+	. = list()
+	for(var/datum/persistent_client/P as anything in REGISTRY_MEMBERS(REGISTRY_PERSISTENT_CLIENTS))
+		.[P.ckey] = P
 
 /// Tracks information about a client between log in and log outs
 /datum/persistent_client
+	/// The ckey this record is filed under (the registry key).
+	var/ckey
 	/// The true client (not a datum: a plain var; BYOND nulls it when the client is deleted)
 	var/tmp/client/client
 	/// The mob this persistent client is currently bound to (paired with mob.persistent_client).
@@ -40,8 +49,11 @@ GLOBAL_LIST_EMPTY_TYPED(persistent_clients_by_ckey, /datum/persistent_client)
 REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 
 /datum/persistent_client/New(ckey)
-	GLOB.persistent_clients_by_ckey[ckey] = src
+	src.ckey = ckey
 	join_registries()
+
+/datum/persistent_client/registry_key(registry_id)
+	return registry_id == REGISTRY_PERSISTENT_CLIENTS ? ckey : null
 
 // Persistent clients refuse deletion.
 /datum/persistent_client/lifecycle_keep(force)
@@ -89,7 +101,7 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 	if(!ckey)
 		return
 
-	var/datum/persistent_client/writable = GLOB.persistent_clients_by_ckey[ckey]
+	var/datum/persistent_client/writable = persistent_client_for(ckey)
 	if(isnull(writable))
 		return
 

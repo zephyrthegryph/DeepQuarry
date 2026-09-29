@@ -241,10 +241,10 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		to_chat(src, span_red("If the title screen is black, resources are still downloading. Please be patient until the title screen appears."))
 
 	GLOB.clients += src // ALLOW(registry): /client is not a datum: no qdel, no registry hooks
-	GLOB.directory[ckey] = src
+	GLOB.directory[ckey] = src // ALLOW(registry): GLOB.directory maps ckey -> client; clients are not datums
 
-	if(GLOB.persistent_clients_by_ckey[ckey])
-		persistent_client = GLOB.persistent_clients_by_ckey[ckey] // ALLOW(ownership): /client is not a datum; it holds these directly
+	if(persistent_client_for(ckey))
+		persistent_client = persistent_client_for(ckey) // ALLOW(ownership): /client is not a datum; it holds these directly
 	else
 		persistent_client = new /datum/persistent_client(ckey) // ALLOW(ownership): /client is not a datum; it holds these directly
 	persistent_client.set_client(src)

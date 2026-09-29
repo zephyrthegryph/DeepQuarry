@@ -71,7 +71,7 @@ GLOBAL_PROTECT(href_token)
 	admincaster_signature = "[using_map.company_name] Officer #[rand(0,9)][rand(0,9)][rand(0,9)]"
 	href_token = GenerateToken()
 	if(protected)
-		GLOB.protected_admins[target] = src
+		GLOB.protected_admins[target] = src // ALLOW(registry): the admin holder tables are keyed by ckey and outlive the client (deadmin, protected admins); clients are not datums, so the ckey is the identity
 	activate()
 
 // Refuses deletion from advanced proc calls (permission elevation).
@@ -86,7 +86,7 @@ GLOBAL_PROTECT(href_token)
 		alert_to_permissions_elevation_attempt(usr)
 		return
 	GLOB.deadmins -= target
-	GLOB.admin_datums[target] = src
+	GLOB.admin_datums[target] = src // ALLOW(registry): the admin holder tables are keyed by ckey and outlive the client (deadmin, protected admins); clients are not datums, so the ckey is the identity
 	deadmined = FALSE
 	if (GLOB.directory[target])
 		associate(GLOB.directory[target]) //find the client for a ckey if they are connected and associate them with us
@@ -95,7 +95,7 @@ GLOBAL_PROTECT(href_token)
 	if(IsAdminAdvancedProcCall())
 		alert_to_permissions_elevation_attempt(usr)
 		return
-	GLOB.deadmins[target] = src
+	GLOB.deadmins[target] = src // ALLOW(registry): the admin holder tables are keyed by ckey and outlive the client (deadmin, protected admins); clients are not datums, so the ckey is the identity
 	GLOB.admin_datums -= target
 	deadmined = TRUE
 

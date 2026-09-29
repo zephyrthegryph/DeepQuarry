@@ -186,7 +186,7 @@
 
 
 // prefs, persistent_client and the admin holder outlive the connection (GLOB.preferences_datums,
-// GLOB.persistent_clients_by_ckey, GLOB.admin_datums).
+// REGISTRY_PERSISTENT_CLIENTS, GLOB.admin_datums).
 
 /// The client-level click intercept (held on the admin holder, a datum, as a relation view).
 /client/proc/click_intercept() as /datum
