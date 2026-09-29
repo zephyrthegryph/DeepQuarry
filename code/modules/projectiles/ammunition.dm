@@ -8,8 +8,8 @@
 	throwforce = 1
 	w_class = ITEMSIZE_TINY
 	preserve_item = 1
-	drop_sound = 'sound/items/drop/ring.ogg'
-	pickup_sound = 'sound/items/pickup/ring.ogg'
+	drop_sound = SFX_ITEMS_DROP_RING
+	pickup_sound = SFX_ITEMS_PICKUP_RING
 
 	var/leaves_residue = 1
 	var/caliber = ""					//Which kind of guns it can be loaded into
@@ -360,8 +360,8 @@ GLOBAL_LIST_EMPTY(magazine_icondata_states)
 	throw_range = 12
 	preserve_item = 1
 	caliber = ".357"
-	drop_sound = 'sound/items/drop/matchbox.ogg'
-	pickup_sound = 'sound/items/pickup/matchbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_MATCHBOX
+	pickup_sound = SFX_ITEMS_PICKUP_MATCHBOX
 
 EXTEND_INTERACTIONS(/obj/item/ammo_magazine/ammo_box, INTERACT_ALT(null, PROC_REF(interaction_alt)))
 

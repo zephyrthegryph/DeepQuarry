@@ -9,8 +9,8 @@
 	var/obj/item/nozzle = null //Attached welder, or other spray device.
 	var/nozzle_type = /obj/item/weldingtool/tubefed
 	var/nozzle_attached = 0
-	drop_sound = 'sound/items/drop/backpack.ogg'
-	pickup_sound = 'sound/items/pickup/backpack.ogg'
+	drop_sound = SFX_ITEMS_DROP_BACKPACK
+	pickup_sound = SFX_ITEMS_PICKUP_BACKPACK
 
 /obj/item/weldpack/Initialize(mapload)
 	. = ..()

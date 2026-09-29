@@ -22,7 +22,7 @@
 	attack_armor_pen = 5	//It's a horror from beyond, I ain't gotta explain 5 AP
 
 	attacktext = list("gripped")
-	attack_sound = 'sound/hallucinations/growl1.ogg'
+	attack_sound = SFX_HALLUCINATIONS_GROWL1
 
 	organ_names = /datum/decl/mob_organ_names/faithless
 

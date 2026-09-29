@@ -48,8 +48,8 @@
 	preserve_item = 1
 	attack_verb = list("struck", "hit", "bashed")
 	zoomdevicename = "scope"
-	drop_sound = 'sound/items/drop/gun.ogg'
-	pickup_sound = 'sound/items/pickup/gun.ogg'
+	drop_sound = SFX_ITEMS_DROP_GUN
+	pickup_sound = SFX_ITEMS_PICKUP_GUN
 
 	var/automatic = 0	//If set, holding LMB sustains fire: the trigger is re-pulled
 						//at fire_delay cadence until released. Each pull respects the

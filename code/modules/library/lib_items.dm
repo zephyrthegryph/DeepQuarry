@@ -194,8 +194,8 @@ Book Cart End
 	var/occult_tier = 0 //If the book is an occult book or not and how strong it is. Used for attack_self
 	///Var for attack_self chain
 	var/special_handling = FALSE
-	drop_sound = 'sound/items/drop/book.ogg'
-	pickup_sound = 'sound/items/pickup/book.ogg'
+	drop_sound = SFX_ITEMS_DROP_BOOK
+	pickup_sound = SFX_ITEMS_PICKUP_BOOK
 	resistance_flags = FLAMMABLE
 
 /// Old attack_self: read the book. Occult and specially handled books leave it to their own self-use.

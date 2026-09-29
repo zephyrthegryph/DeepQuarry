@@ -43,7 +43,7 @@
 	desc = "Straight out of NT's testing laboratories, this small gun is used to subdue non-humanoid xeno life forms. \
 	While marketed towards handling slimes, it may be useful for other creatures."
 	icon_state = "taserblue"
-	fire_sound = 'sound/weapons/taser2.ogg'
+	fire_sound = SFX_WEAPONS_TASER2
 	charge_cost = 120 // Twice as many shots.
 	projectile_type = /obj/item/projectile/beam/stun/xeno
 	accuracy = 30 // Make it a bit easier to hit the slimes.

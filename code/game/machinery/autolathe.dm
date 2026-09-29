@@ -7,7 +7,7 @@
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 10
 	active_power_usage = 2000
-	clicksound = "keyboard"
+	clicksound = SFX_KEYBOARD
 	clickvol = 30
 	maintenance_flags = MACHINE_MAINT_STANDARD
 

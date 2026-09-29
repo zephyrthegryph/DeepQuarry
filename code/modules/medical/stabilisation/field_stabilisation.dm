@@ -20,7 +20,7 @@
 	no_variants = TRUE
 	amount = 5
 	max_amount = 5
-	apply_sounds = list('sound/effects/rip1.ogg', 'sound/effects/rip2.ogg')
+	apply_sounds = SFX_EFFECTS_RIP_MIX
 	/// TREAT_* -> amount delivered to the limb per use.
 	var/list/treatments
 	/// Organ tags this goes on; null = any limb.
@@ -64,8 +64,8 @@
 		balloon_alert(user, "\the [src] does nothing for the [affecting.name].")
 		return
 	user.balloon_alert_visible("[user] applies \the [src] to [H == user ? "their" : "[H]'s"] [affecting.name].", "applied \the [src] to the [affecting.name].")
-	if(length(apply_sounds))
-		playsound(src, pick(apply_sounds), 25)
+	if(apply_sounds)
+		playsound(src, apply_sounds, 25)
 	use(1)
 
 /// Deliver every treatment to `limb`. Returns the total amount treated.
@@ -103,7 +103,7 @@
 	max_amount = 2
 	apply_time = 2 SECONDS
 	allowed_zones = list(BP_TORSO)
-	apply_sounds = list('sound/effects/tape.ogg')
+	apply_sounds = SFX_EFFECTS_TAPE
 	treatments = list(TREAT_OCCLUSIVE_SEAL = 2)
 
 // --- Splints ----------------------------------------------------------------------------

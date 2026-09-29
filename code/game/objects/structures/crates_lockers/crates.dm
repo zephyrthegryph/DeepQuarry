@@ -13,8 +13,8 @@
 	/// Refs of the exact cargo present when the ledger was sealed.
 	var/list/shipping_ledger_snapshot
 
-	open_sound = 'sound/effects/crate_open.ogg'
-	close_sound = 'sound/effects/crate_close.ogg'
+	open_sound = SFX_EFFECTS_CRATE_OPEN
+	close_sound = SFX_EFFECTS_CRATE_CLOSE
 
 /obj/structure/closet/crate/Initialize(mapload)
 	. = ..()
@@ -736,8 +736,8 @@
 	desc = "A cart with a large fabric bin on it used for transporting large amounts of clothes."
 	icon = 'icons/obj/closets/laundry.dmi'
 	closet_appearance = null
-	open_sound = 'sound/effects/rustle1.ogg'
-	close_sound = 'sound/effects/rustle2.ogg'
+	open_sound = SFX_EFFECTS_RUSTLE1
+	close_sound = SFX_EFFECTS_RUSTLE2
 	icon_state = ""
 
 //Wooden Crate
@@ -746,8 +746,8 @@
 	desc = "A crate made from wood and lined with straw. Cheapest form of storage."
 	icon = 'icons/obj/closets/wooden.dmi'
 	closet_appearance = null
-	open_sound = 'sound/effects/wooden_closet_open.ogg'
-	close_sound = 'sound/effects/wooden_closet_close.ogg'
+	open_sound = SFX_EFFECTS_WOODEN_CLOSET_OPEN
+	close_sound = SFX_EFFECTS_WOODEN_CLOSET_CLOSE
 	icon_state = ""
 
 //Chest
@@ -756,8 +756,8 @@
 	desc = "A fancy chest made from wood and lined with red velvet."
 	icon = 'icons/obj/closets/chest.dmi'
 	closet_appearance = null
-	open_sound = 'sound/effects/wooden_closet_open.ogg'
-	close_sound = 'sound/effects/wooden_closet_close.ogg'
+	open_sound = SFX_EFFECTS_WOODEN_CLOSET_OPEN
+	close_sound = SFX_EFFECTS_WOODEN_CLOSET_CLOSE
 	icon_state = ""
 
 //Mining Cart
@@ -766,8 +766,8 @@
 	desc = "A mining car. This one doesn't work on rails, but has to be dragged."
 	icon = 'icons/obj/closets/miningcar.dmi'
 	closet_appearance = null
-	open_sound = 'sound/effects/wooden_closet_open.ogg'
-	close_sound = 'sound/effects/wooden_closet_close.ogg'
+	open_sound = SFX_EFFECTS_WOODEN_CLOSET_OPEN
+	close_sound = SFX_EFFECTS_WOODEN_CLOSET_CLOSE
 	icon_state = ""
 
 

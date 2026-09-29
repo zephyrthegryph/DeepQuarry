@@ -401,8 +401,8 @@ DECLARE_INTERACTIONS(/obj/item/holo/esword, \
 	desc = "Here's your chance, do your dance at the Space Jam."
 	w_class = ITEMSIZE_LARGE //Stops people from hiding it in their bags/pockets
 	unacidable = TRUE
-	drop_sound = 'sound/items/drop/basketball.ogg'
-	pickup_sound = 'sound/items/pickup/basketball.ogg'
+	drop_sound = SFX_ITEMS_DROP_BASKETBALL
+	pickup_sound = SFX_ITEMS_PICKUP_BASKETBALL
 
 /obj/structure/holohoop
 	name = "basketball hoop"

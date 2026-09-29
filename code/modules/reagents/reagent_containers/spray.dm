@@ -146,8 +146,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/pepper, INTERACT_SELF("To
 	amount_per_transfer_from_this = 1
 	max_transfer_amount = null
 	volume = 10
-	drop_sound = 'sound/items/drop/herb.ogg'
-	pickup_sound = 'sound/items/pickup/herb.ogg'
+	drop_sound = SFX_ITEMS_DROP_HERB
+	pickup_sound = SFX_ITEMS_PICKUP_HERB
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/spray/waterflower, null, list(REAGENT_ID_WATER = 10))
 

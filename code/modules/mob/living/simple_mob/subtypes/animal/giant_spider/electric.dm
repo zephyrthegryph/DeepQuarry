@@ -30,7 +30,7 @@
 	taser_kill = 0 //It -is- the taser.
 
 	base_attack_cooldown = 10
-	projectilesound = 'sound/weapons/taser2.ogg'
+	projectilesound = SFX_WEAPONS_TASER2
 	projectiletype = /obj/item/projectile/beam/stun/electric_spider
 
 	melee_damage_lower = 10

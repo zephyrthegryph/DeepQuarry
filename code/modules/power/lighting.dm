@@ -1250,8 +1250,8 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	///Replaces brightness_color during nightshifts.
 	var/nightshift_color = LIGHT_COLOR_NIGHTSHIFT
 
-	drop_sound = 'sound/items/drop/glass.ogg'
-	pickup_sound = 'sound/items/pickup/glass.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLASS
+	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 
 	var/init_brightness_range = 8
 	var/init_brightness_power = 1

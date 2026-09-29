@@ -12,7 +12,7 @@
 	icon_state = "micromech_laser"
 	energy_drain = 50
 	projectile = /obj/item/projectile/beam
-	fire_sound = 'sound/weapons/Laser.ogg'
+	fire_sound = SFX_WEAPONS_LASER
 	equip_type = EQUIP_MICRO_WEAPON
 	required_type = list(/obj/mecha/micro/sec)
 
@@ -25,7 +25,7 @@
 	icon_state = "micromech_lasercannon"
 	energy_drain = 120
 	projectile = /obj/item/projectile/beam/heavylaser
-	fire_sound = 'sound/weapons/lasercannonfire.ogg'
+	fire_sound = SFX_WEAPONS_LASERCANNONFIRE
 	equip_type = EQUIP_MICRO_WEAPON
 	required_type = list(/obj/mecha/micro/sec)
 
@@ -38,7 +38,7 @@
 	energy_drain = 40
 	equip_cooldown = 10
 	projectile = /obj/item/projectile/beam/stun
-	fire_sound = 'sound/weapons/taser.ogg'
+	fire_sound = SFX_WEAPONS_TASER
 	equip_type = EQUIP_MICRO_WEAPON
 	required_type = list(/obj/mecha/micro/sec)
 
@@ -51,7 +51,7 @@
 	equip_cooldown = 15
 	var/mode = 0 //0 - buckshot, 1 - beanbag, 2 - slug.
 	projectile = /obj/item/projectile/scatter/shotgun
-	fire_sound = 'sound/weapons/gunshot_shotgun.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_SHOTGUN
 	fire_volume = 80
 	projectiles = 6
 	projectiles_per_shot = 1

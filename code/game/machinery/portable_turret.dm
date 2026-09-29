@@ -342,7 +342,7 @@
 		if(/obj/item/gun/energy/gun/burst)
 			lethal_icon_color = "red"
 			lethal_projectile = /obj/item/projectile/beam/burstlaser
-			lethal_shot_sound = 'sound/weapons/Laser.ogg'
+			lethal_shot_sound = SFX_WEAPONS_LASER
 			shot_delay = 1 SECOND
 
 		if(/obj/item/gun/energy/locked/phasegun/unlocked)
@@ -354,19 +354,19 @@
 		if(/obj/item/gun/energy/gun)
 			lethal_icon_color = "red"
 			lethal_projectile = /obj/item/projectile/beam	//If it has, going to kill mode
-			lethal_shot_sound = 'sound/weapons/Laser.ogg'
+			lethal_shot_sound = SFX_WEAPONS_LASER
 
 		if(/obj/item/gun/energy/gun/nuclear)
 			lethal_icon_color = "red"
 			lethal_projectile = /obj/item/projectile/beam	//If it has, going to kill mode
-			lethal_shot_sound = 'sound/weapons/Laser.ogg'
+			lethal_shot_sound = SFX_WEAPONS_LASER
 
 		if(/obj/item/gun/energy/xray)
 			lethal_icon_color = "green"
 			lethal_projectile = /obj/item/projectile/beam/xray
 			projectile = /obj/item/projectile/beam/stun // Otherwise we fire xrays on both modes.
-			lethal_shot_sound = 'sound/weapons/eLuger.ogg'
-			shot_sound = 'sound/weapons/taser.ogg'
+			lethal_shot_sound = SFX_WEAPONS_ELUGER
+			shot_sound = SFX_WEAPONS_TASER
 
 /obj/machinery/porta_turret/proc/isLocked(mob/user)
 	if(locked && !issilicon(user))

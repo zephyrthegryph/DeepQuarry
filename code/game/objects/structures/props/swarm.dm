@@ -6,8 +6,8 @@
 	light_color = "#00B2B2"
 
 	shatter_message = "The energetic field shatters!"
-	impact_sound = 'sound/effects/Glasshit.ogg'
-	shatter_sound = 'sound/effects/phasein.ogg'
+	impact_sound = SFX_EFFECTS_GLASSHIT
+	shatter_sound = SFX_EFFECTS_PHASEIN
 
 	var/list/active_beams
 

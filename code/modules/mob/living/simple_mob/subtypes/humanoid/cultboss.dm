@@ -202,9 +202,9 @@
 	defend_chance = 25
 	projectile_parry_chance = 25
 	armor_penetration = 25
-	hitsound = 'sound/weapons/bladeslice.ogg'
-	drop_sound = 'sound/items/drop/sword.ogg'
-	pickup_sound = 'sound/items/pickup/sword.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
+	drop_sound = SFX_ITEMS_DROP_SWORD
+	pickup_sound = SFX_ITEMS_PICKUP_SWORD
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	edge = TRUE
 	sharp = TRUE

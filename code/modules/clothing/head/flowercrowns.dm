@@ -43,29 +43,29 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/woodcirclet, INTERACT_INSERT(/obj/it
 	desc = "A flower crown weaved with sunflowers."
 	icon_state = "sunflower_crown"
 	body_parts_covered = 0
-	drop_sound = 'sound/items/drop/herb.ogg'
-	pickup_sound = 'sound/items/pickup/herb.ogg'
+	drop_sound = SFX_ITEMS_DROP_HERB
+	pickup_sound = SFX_ITEMS_PICKUP_HERB
 
 /obj/item/clothing/head/lavender_crown
 	name = "lavender crown"
 	desc = "A flower crown weaved with lavender."
 	icon_state = "lavender_crown"
 	body_parts_covered = 0
-	drop_sound = 'sound/items/drop/herb.ogg'
-	pickup_sound = 'sound/items/pickup/herb.ogg'
+	drop_sound = SFX_ITEMS_DROP_HERB
+	pickup_sound = SFX_ITEMS_PICKUP_HERB
 
 /obj/item/clothing/head/poppy_crown
 	name = "poppy crown"
 	desc = "A flower crown weaved with poppies."
 	icon_state = "poppy_crown"
 	body_parts_covered = 0
-	drop_sound = 'sound/items/drop/herb.ogg'
-	pickup_sound = 'sound/items/pickup/herb.ogg'
+	drop_sound = SFX_ITEMS_DROP_HERB
+	pickup_sound = SFX_ITEMS_PICKUP_HERB
 
 /obj/item/clothing/head/rose_crown
 	name = "rose crown"
 	desc = "A flower crown weaved with roses."
 	icon_state = "poppy_crown"
 	body_parts_covered = 0
-	drop_sound = 'sound/items/drop/herb.ogg'
-	pickup_sound = 'sound/items/pickup/herb.ogg'
+	drop_sound = SFX_ITEMS_DROP_HERB
+	pickup_sound = SFX_ITEMS_PICKUP_HERB

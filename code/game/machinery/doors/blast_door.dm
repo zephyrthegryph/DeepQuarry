@@ -25,8 +25,8 @@
 	var/icon_state_opening = null
 	var/icon_state_closed = null
 	var/icon_state_closing = null
-	var/open_sound = 'sound/machines/door/blastdooropen.ogg'
-	var/close_sound = 'sound/machines/door/blastdoorclose.ogg'
+	var/open_sound = SFX_MACHINES_DOOR_BLASTDOOROPEN
+	var/close_sound = SFX_MACHINES_DOOR_BLASTDOORCLOSE
 	var/damage = BLAST_DOOR_CRUSH_DAMAGE
 	var/multiplier = 1 // The multiplier for how powerful our YEET is.
 	var/istransparent = 0

@@ -22,7 +22,7 @@ How they spawn stuff is decided by behaviour vars, which are explained below
 	var/list/newVars //vars of the summoned objects will be replaced with those where they meet
 	//should have format of list("emagged" = 1,"name" = "Wizard's Justicebot"), for example
 
-	cast_sound = 'sound/items/Welder.ogg'
+	cast_sound = SFX_ITEMS_WELDER
 
 /datum/spell/aoe_turf/conjure/cast(list/targets, mob/user)
 	playsound(user, cast_sound, 50, 1)

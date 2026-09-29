@@ -6,7 +6,7 @@
 	energy_drain = 30
 	range = MECH_MELEE
 	equip_type = EQUIP_UTILITY
-	ready_sound = 'sound/effects/spray.ogg'
+	ready_sound = SFX_EFFECTS_SPRAY
 	required_type = list(/obj/mecha/working/ripley)
 
 	tooltype = /obj/item/inflatable_dispenser/robot

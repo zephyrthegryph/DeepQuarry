@@ -18,7 +18,7 @@
 	friendly = list("pinches")
 	organ_names = /datum/decl/mob_organ_names/wraith
 	movement_cooldown = -1
-	attack_sound = 'sound/weapons/rapidslice.ogg'
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	construct_spells = list(/datum/spell/targeted/ethereal_jaunt/shift,
 							/datum/spell/targeted/ambush_mode
 							)

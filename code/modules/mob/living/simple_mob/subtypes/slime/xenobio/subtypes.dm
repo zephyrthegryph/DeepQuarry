@@ -124,7 +124,7 @@
 	shock_resist = 1
 
 	projectiletype = /obj/item/projectile/beam/lightning/slime
-	projectilesound = 'sound/effects/lightningbolt.ogg'
+	projectilesound = SFX_EFFECTS_LIGHTNINGBOLT
 	glow_toggle = TRUE
 	player_msg = "You have a <b>ranged electric attack</b>. You also <b>shock enemies you attack</b>, and your electric stun attack charges passively.<br>\
 	You are also immune to shocking attacks."
@@ -155,7 +155,7 @@
 
 /obj/item/projectile/beam/lightning/slime
 	power = 10
-	fire_sound = 'sound/effects/lightningbolt.ogg'
+	fire_sound = SFX_EFFECTS_LIGHTNINGBOLT
 
 
 /mob/living/simple_mob/slime/xenobio/dark_purple/get_mechanics_info(list/additional_information)

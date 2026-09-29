@@ -136,7 +136,7 @@ I think I covered everything.
 
 	//recycling spider lunge with some modifications
 	var/charge_warmup = 2 SECOND
-	var/charge_sound = 'sound/weapons/spiderlunge.ogg'
+	var/charge_sound = SFX_WEAPONS_SPIDERLUNGE
 
 	//Modular icons. Lists are referred to when picking styles.
 

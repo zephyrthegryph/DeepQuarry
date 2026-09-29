@@ -4,7 +4,7 @@
 	icon = 'icons/obj/wizard.dmi'
 	icon_state = "staffoffire"
 	item_state = "staff"
-	fire_sound = 'sound/weapons/emitter.ogg'
+	fire_sound = SFX_WEAPONS_EMITTER
 	w_class = ITEMSIZE_HUGE
 	checks_antimagic = FALSE
 	max_charges = 10

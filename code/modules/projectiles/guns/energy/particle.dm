@@ -12,7 +12,7 @@
 	miners and salvage crews, as their lack of usefulness as a firearm in habitable areas means most authorities do not \
 	classify them as dangerous weapons (at least, not dangerous to whoever they're pointed at) - instead, in most \
 	jurisdictions including NT space, APP guns are officially classed as mining equipment rather than firearms."
-	fire_sound = 'sound/weapons/blaster.ogg'
+	fire_sound = SFX_WEAPONS_BLASTER
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
 	projectile_type = /obj/item/projectile/bullet/particle
@@ -43,7 +43,7 @@
 	desc = "A giant beast of an antimatter gun, packed with an internal reactor to allow for extreme longevity on remote mining expeditions."
 	icon_state = "heavyparticle"
 	item_state = "heavyparticle"
-	fire_sound = 'sound/weapons/lasercannonfire.ogg'
+	fire_sound = SFX_WEAPONS_LASERCANNONFIRE
 	slot_flags = SLOT_BACK
 	projectile_type = /obj/item/projectile/bullet/particle/heavy
 	battery_lock = 1

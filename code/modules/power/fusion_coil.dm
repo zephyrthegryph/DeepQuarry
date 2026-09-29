@@ -7,8 +7,8 @@ MATERIAL_MIX(/obj/item/fusion_coil, list(MAT_STEEL = 6000, MAT_COPPER = 4000, MA
 	light_color = "#30B5E6"
 	var/light_color_danger = "#D04E4C"
 	item_state = "egg6"
-	drop_sound = 'sound/items/drop/metalboots.ogg'
-	pickup_sound = 'sound/items/pickup/gascan.ogg'
+	drop_sound = SFX_ITEMS_DROP_METALBOOTS
+	pickup_sound = SFX_ITEMS_PICKUP_GASCAN
 
 	//these things are big and heavy, they're awkward to transport, and you can't throw them very far
 	w_class = ITEMSIZE_LARGE

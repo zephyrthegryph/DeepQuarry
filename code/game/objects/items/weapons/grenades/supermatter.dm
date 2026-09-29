@@ -2,7 +2,7 @@
 	name = "supermatter grenade"
 	icon_state = "banana"
 	item_state = "emergency_engi"
-	arm_sound = 'sound/effects/3.wav'
+	arm_sound = SFX_EFFECTS_3
 	var/implode_at
 
 /obj/item/grenade/supermatter/detonate()

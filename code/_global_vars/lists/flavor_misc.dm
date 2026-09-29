@@ -22,16 +22,3 @@ GLOBAL_LIST_INIT(scarySounds, list(
 	'sound/voice/succlet_shriek.ogg'
 ))
 
-GLOBAL_LIST_INIT(scawwysownds, list(
-	'sound/voice/scawwysownds/a_scawey_sownd.ogg',
-	'sound/voice/scawwysownds/is_that_you.ogg',
-	'sound/voice/scawwysownds/lookit_this_darkness_wow.ogg',
-	'sound/voice/scawwysownds/maint_preds.ogg',
-	'sound/voice/scawwysownds/spooky_sounds.ogg',
-	'sound/voice/scawwysownds/sus.ogg',
-	'sound/voice/scawwysownds/this_is_scaewy.ogg',
-	'sound/voice/scawwysownds/what_is_that_behind_you.ogg',
-	'sound/voice/scawwysownds/what_you_doin_over_dere.ogg',
-	'sound/voice/scawwysownds/whats_up_with_all_the_trash.ogg',
-	'sound/voice/scawwysownds/youre_afraid_of_the_dark_arent_you.ogg'
-))

@@ -3,8 +3,8 @@
 	desc = "A silent, unassuming crystal in what appears to be some kind of steel housing."
 	icon = 'icons/obj/capture_crystal_vr.dmi'
 	icon_state = "inactive"
-	drop_sound = 'sound/items/drop/ring.ogg'
-	pickup_sound = 'sound/items/pickup/ring.ogg'
+	drop_sound = SFX_ITEMS_DROP_RING
+	pickup_sound = SFX_ITEMS_PICKUP_RING
 	throwforce = 0
 	force = 0
 	actions_types = list(/datum/action/item_action/command)

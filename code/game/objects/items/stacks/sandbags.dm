@@ -9,8 +9,8 @@
 	throwforce = 20.0
 	throw_speed = 5
 	throw_range = 3
-	drop_sound = 'sound/items/drop/clothing.ogg'
-	pickup_sound = 'sound/items/pickup/clothing.ogg'
+	drop_sound = SFX_ITEMS_DROP_CLOTHING
+	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
 	MATERIAL_BULK(MAT_CLOTH, SHEET_MATERIAL_AMOUNT * 2)
 	max_amount = 30
 	attack_verb = list("hit", "bludgeoned", "pillowed")

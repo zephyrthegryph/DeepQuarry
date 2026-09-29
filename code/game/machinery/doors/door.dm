@@ -24,7 +24,7 @@
 	max_integrity = 300
 	integrity_failure = 0.25
 	var/min_force = 10 //minimum amount of force needed to damage the door with a melee weapon
-	var/hitsound = 'sound/weapons/smash.ogg' //sound door makes when hit with a weapon
+	var/hitsound = SFX_WEAPONS_SMASH //sound door makes when hit with a weapon
 	var/block_air_zones = 1 //If set, air zones cannot merge across the door even when it is opened.
 	var/close_door_at = 0 //When to automatically close the door, if possible
 	/// The om_after() timer for next_door_deadline(), and the deadline it was set for.

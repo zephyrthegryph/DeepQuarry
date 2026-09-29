@@ -10,8 +10,8 @@
 	var/audio = 0		//If you need to hear to get the message
 	var/listening = 0
 	var/datum/language/langset_static
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/universal_translator/proc/language_chosen(datum/om/prompt/choice/ask)
 	if(listening)

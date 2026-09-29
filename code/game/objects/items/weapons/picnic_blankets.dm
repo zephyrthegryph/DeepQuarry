@@ -10,9 +10,9 @@
 	w_class = ITEMSIZE_NORMAL
 	attack_verb = list("flicked", "whipped", "swooshed")
 	force = 0.5
-	hitsound = 'sound/weapons/towelwhip.ogg'
-	drop_sound = 'sound/items/drop/cloth.ogg'
-	pickup_sound = 'sound/items/pickup/cloth.ogg'
+	hitsound = SFX_WEAPONS_TOWELWHIP
+	drop_sound = SFX_ITEMS_DROP_CLOTH
+	pickup_sound = SFX_ITEMS_PICKUP_CLOTH
 
 /obj/item/picnic_blankets_carried/proc/picnic_blankets_carried_fold_out_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	var/obj/structure/picnic_blanket_deployed/P = new /obj/structure/picnic_blanket_deployed(user.loc)

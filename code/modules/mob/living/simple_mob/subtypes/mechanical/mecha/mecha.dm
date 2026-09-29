@@ -9,8 +9,8 @@
 
 	faction = FACTION_SYNDICATE
 	movement_cooldown = 1.5
-	movement_sound = "mechstep" // This gets fed into playsound(), which can also take strings as a 'group' of sound files.
-	turn_sound = 'sound/mecha/mechturn.ogg'
+	movement_sound = SFX_MECHSTEP // This gets fed into playsound(), which can also take strings as a 'group' of sound files.
+	turn_sound = SFX_MECHA_MECHTURN
 	endurance = 300
 	mob_size = MOB_LARGE
 	damage_threshold = 5 //Anything that's 5 or less damage will not do damage.

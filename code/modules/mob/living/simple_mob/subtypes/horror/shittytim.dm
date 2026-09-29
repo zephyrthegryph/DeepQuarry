@@ -1,5 +1,5 @@
 /mob/living/simple_mob/horror/BigTim
-	reaction_sound = 'sound/h_sounds/holla.ogg'
+	reaction_sound = SFX_H_SOUNDS_HOLLA
 	name = "Shitty Tim"
 	desc = "A tall figure wearing ripped clothes. Its eyes are placed on the bulb of skin that's folded over the front of its face. He has a gold clock hanging on a gold chain around his neck, and he has a gold and diamond bracelet on his wrist."
 
@@ -12,7 +12,7 @@
 	vis_height = 64
 	icon_gib = "generic_gib"
 
-	attack_sound = 'sound/h_sounds/youknowwhoitis.ogg'
+	attack_sound = SFX_H_SOUNDS_YOUKNOWWHOITIS
 
 	endurance = 250
 

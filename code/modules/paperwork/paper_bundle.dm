@@ -12,8 +12,8 @@
 	layer = MOB_LAYER
 	pressure_resistance = 1
 	attack_verb = list("bapped")
-	drop_sound = 'sound/items/drop/paper.ogg'
-	pickup_sound = 'sound/items/pickup/paper.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPER
+	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	var/page = 1    // current page
 	// ALLOW(instance_list): d: a bundle holds pages
 	var/list/pages = list()  // Ordered list of pages as they are to be displayed. Can be different order than src.contents.

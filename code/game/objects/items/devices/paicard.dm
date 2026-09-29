@@ -15,8 +15,8 @@
 	var/current_emotion = 1
 	COOLDOWN_DECLARE(notify_cooldown)
 	var/screen_msg
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	// Parts and upgrades
 	var/panel_open = FALSE
@@ -817,8 +817,8 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 	desc = "It's broken scrap from a pAI card!"
 	icon = 'icons/obj/paicard.dmi'
 	icon_state = "broken"
-	pickup_sound = 'sound/items/pickup/card.ogg'
-	drop_sound = 'sound/items/drop/card.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_CARD
+	drop_sound = SFX_ITEMS_DROP_CARD
 
 /obj/item/paiparts/Initialize(mapload)
 	. = ..()

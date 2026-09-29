@@ -4,17 +4,17 @@
 	icon = 'icons/obj/closets/bases/cabinet.dmi'
 	closet_appearance = /datum/decl/closet_appearance/cabinet
 
-	open_sound = 'sound/effects/wooden_closet_open.ogg'
-	close_sound = 'sound/effects/wooden_closet_close.ogg'
-	vore_sound = 'sound/effects/woodhit.ogg'
+	open_sound = SFX_EFFECTS_WOODEN_CLOSET_OPEN
+	close_sound = SFX_EFFECTS_WOODEN_CLOSET_CLOSE
+	vore_sound = SFX_EFFECTS_WOODHIT
 
 /obj/structure/closet/acloset
 	name = "strange closet"
 	desc = "It looks alien!"
 	closet_appearance = /datum/decl/closet_appearance/alien
 
-	open_sound = 'sound/machines/click.ogg'
-	close_sound = 'sound/machines/click.ogg'
+	open_sound = SFX_MACHINES_CLICK
+	close_sound = SFX_MACHINES_CLICK
 
 /obj/structure/closet/gimmick
 	name = "administrative supply closet"
@@ -90,9 +90,9 @@
 	icon = 'icons/obj/closets/tent.dmi'
 	closet_appearance = null
 	anchored = 1
-	open_sound = 'sound/effects/rustle3.ogg'
-	close_sound = 'sound/effects/rustle4.ogg'
-	vore_sound = 'sound/effects/rustle1.ogg'
+	open_sound = SFX_EFFECTS_RUSTLE3
+	close_sound = SFX_EFFECTS_RUSTLE4
+	vore_sound = SFX_EFFECTS_RUSTLE1
 
 /obj/structure/closet/tent/B
 	icon = 'icons/obj/closets/tentB.dmi'

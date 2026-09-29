@@ -63,7 +63,7 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	melee_damage_lower = 10
 	melee_damage_upper = 15
 	base_attack_cooldown = 10 // One attack a second.
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 	attacktext = list("glomped")
 	speak_emote = list("chirps")
 	friendly = list("pokes")

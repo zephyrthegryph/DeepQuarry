@@ -5,7 +5,7 @@
 	desc = "Automagically fabricates chemicals from electricity."
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "dispenser"
-	clicksound = "switch"
+	clicksound = SFX_SWITCH
 
 	var/list/spawn_cartridges = null // Set to a list of types to spawn one of each on New()
 

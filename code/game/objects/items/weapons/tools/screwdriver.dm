@@ -14,10 +14,10 @@
 	throwforce = 5
 	throw_speed = 3
 	throw_range = 5
-	hitsound = 'sound/weapons/bladeslice.ogg'
-	usesound = 'sound/items/Screwdriver.ogg'
-	drop_sound = 'sound/items/drop/screwdriver.ogg'
-	pickup_sound = 'sound/items/pickup/screwdriver.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
+	usesound = SFX_ITEMS_SCREWDRIVER
+	drop_sound = SFX_ITEMS_DROP_SCREWDRIVER
+	pickup_sound = SFX_ITEMS_PICKUP_SCREWDRIVER
 	material_total = 75
 	attack_verb = list("stabbed")
 	sharp  = TRUE
@@ -84,7 +84,7 @@
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "screwdriver_a"
 	item_state = "screwdriver_black"
-	usesound = 'sound/items/pshoom.ogg'
+	usesound = SFX_ITEMS_PSHOOM
 	toolspeed = 0.1
 	random_color = FALSE
 
@@ -94,7 +94,7 @@
 	icon_state = "hybscrewdriver"
 	item_state = "screwdriver_black"
 	w_class = ITEMSIZE_NORMAL
-	usesound = 'sound/effects/uncloak.ogg'
+	usesound = SFX_EFFECTS_UNCLOAK
 	toolspeed = 0.4
 	random_color = FALSE
 	reach = 2
@@ -104,6 +104,6 @@
 	desc = "You shouldn't see this."
 	force = 8
 	attack_verb = list("drilled", "screwed", "jabbed", "whacked")
-	hitsound = 'sound/items/drill_hit.ogg'
-	usesound = 'sound/items/drill_use.ogg'
+	hitsound = SFX_ITEMS_DRILL_HIT
+	usesound = SFX_ITEMS_DRILL_USE_2
 	toolspeed = 0.25

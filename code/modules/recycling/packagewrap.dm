@@ -5,7 +5,7 @@
 	icon_state = "deliveryPaper"
 	w_class = ITEMSIZE_NORMAL
 	var/amount = 25.0
-	drop_sound = 'sound/items/drop/wrapper.ogg'
+	drop_sound = SFX_ITEMS_DROP_WRAPPER
 
 /obj/item/packageWrap/afterattack(obj/target, mob/user, proximity)
 	if(!proximity) return

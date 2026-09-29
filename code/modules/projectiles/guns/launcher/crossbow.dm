@@ -6,8 +6,8 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "bolt"
 	item_state = "bolt"
-	drop_sound = 'sound/items/drop/sword.ogg'
-	pickup_sound = 'sound/items/pickup/sword.ogg'
+	drop_sound = SFX_ITEMS_DROP_SWORD
+	pickup_sound = SFX_ITEMS_PICKUP_SWORD
 	throwforce = 8
 	w_class = ITEMSIZE_NORMAL
 	sharp = TRUE
@@ -28,8 +28,8 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "metal-rod"
 	item_state = "bolt"
-	drop_sound = 'sound/items/drop/sword.ogg'
-	pickup_sound = 'sound/items/pickup/sword.ogg'
+	drop_sound = SFX_ITEMS_DROP_SWORD
+	pickup_sound = SFX_ITEMS_PICKUP_SWORD
 
 /obj/item/arrow/quill
 	name = "alien quill"
@@ -57,7 +57,7 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "crossbow"
 	item_state = "crossbow-solid"
-	fire_sound = 'sound/weapons/punchmiss.ogg' // TODO: Decent THWOK noise.
+	fire_sound = SFX_WEAPONS_PUNCHMISS // TODO: Decent THWOK noise.
 	fire_sound_text = "a solid thunk"
 	fire_delay = 25
 	slot_flags = SLOT_BACK

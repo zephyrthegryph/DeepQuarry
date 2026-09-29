@@ -16,7 +16,7 @@
 	icon_override = 'icons/vore/custom_guns_vr.dmi'
 	item_state = "gun"
 
-	fire_sound = 'sound/weapons/taser.ogg'
+	fire_sound = SFX_WEAPONS_TASER
 	projectile_type = /obj/item/projectile/beam/stun/med // default proj uses weak stun but firemode switches to med, fixing
 
 	modifystate = "stun"

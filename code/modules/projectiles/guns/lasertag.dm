@@ -100,8 +100,8 @@
 	w_class = ITEMSIZE_SMALL
 	attackspeed = 1.2 SECONDS
 	attack_verb = list("patted", "tapped")
-	drop_sound = 'sound/items/drop/knife.ogg'
-	pickup_sound = 'sound/items/pickup/knife.ogg'
+	drop_sound = SFX_ITEMS_DROP_KNIFE
+	pickup_sound = SFX_ITEMS_PICKUP_KNIFE
 	///The vest we have to wear to use the knife.
 	var/required_vest = /obj/item/clothing/suit/lasertag/omni
 	///If we need a vest on ourselves to use it or not.

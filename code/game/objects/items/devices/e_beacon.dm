@@ -6,8 +6,8 @@
 	var/beacon_active = FALSE
 	var/list/levels_for_distress
 	var/obj/item/gps/gps = null
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/emergency_beacon/Initialize(mapload)
 	for(var/i in 1 to length(levels_for_distress))

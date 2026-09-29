@@ -1,5 +1,5 @@
 /mob/living/simple_mob/horror/Master
-	reaction_sound = 'sound/h_sounds/holla.ogg'
+	reaction_sound = SFX_H_SOUNDS_HOLLA
 	name = "Dr. Helix"
 	desc = "A massive pile of grotesque flesh and bulging tumor like growths. Every inch of its skin is undulating in every direction possible, bringing a literal definition to 'Skin Crawling.' Stuck in the middle of this monstrosity is a large AI core with a bloodied, emaciated man sewn into its circuitry."
 
@@ -13,7 +13,7 @@
 	icon_gib = "generic_gib"
 	anchored = TRUE
 
-	attack_sound = 'sound/h_sounds/shitty_tim.ogg'
+	attack_sound = SFX_H_SOUNDS_SHITTY_TIM
 
 	endurance = 400
 

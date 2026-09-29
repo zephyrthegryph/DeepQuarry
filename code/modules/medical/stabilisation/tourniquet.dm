@@ -29,8 +29,8 @@
 	icon = 'icons/obj/stacks.dmi'
 	icon_state = "tape-splint"
 	w_class = ITEMSIZE_SMALL
-	drop_sound = 'sound/items/drop/hat.ogg'
-	pickup_sound = 'sound/items/pickup/hat.ogg'
+	drop_sound = SFX_ITEMS_DROP_HAT
+	pickup_sound = SFX_ITEMS_PICKUP_HAT
 	/// world.time it was cinched on, or null while loose.
 	var/applied_at
 	/// Limbs a tourniquet can go on.

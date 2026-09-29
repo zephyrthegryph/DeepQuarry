@@ -2,8 +2,8 @@
 	name = "organ"
 	icon = 'icons/obj/surgery.dmi'
 	germ_level = 0
-	drop_sound = 'sound/items/drop/flesh.ogg'
-	pickup_sound = 'sound/items/pickup/flesh.ogg'
+	drop_sound = SFX_ITEMS_DROP_FLESH
+	pickup_sound = SFX_ITEMS_PICKUP_FLESH
 
 	// Strings.
 	var/organ_tag = "organ"				// Unique identifier.

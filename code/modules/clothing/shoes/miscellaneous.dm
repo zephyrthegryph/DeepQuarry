@@ -6,8 +6,8 @@
 	item_flags = NOSLIP
 	siemens_coefficient = 0.8
 	step_volume_mod = 0.5
-	drop_sound = 'sound/items/drop/rubber.ogg'
-	pickup_sound = 'sound/items/pickup/rubber.ogg'
+	drop_sound = SFX_ITEMS_DROP_RUBBER
+	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 /obj/item/clothing/shoes/syndigaloshes/fit_constraint()
@@ -26,8 +26,8 @@
 	siemens_coefficient = 0 //They're thick rubber boots! Of course they won't conduct electricity!
 	item_flags = NOSLIP
 	slowdown = SHOES_SLOWDOWN+0.5
-	drop_sound = 'sound/items/drop/rubber.ogg'
-	pickup_sound = 'sound/items/pickup/rubber.ogg'
+	drop_sound = SFX_ITEMS_DROP_RUBBER
+	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
 	resistance_flags = ACID_PROOF
 
 /obj/item/clothing/shoes/galoshes/fit_constraint()
@@ -154,8 +154,8 @@
 	icon_state = "slippers"
 	force = 0
 	w_class = ITEMSIZE_SMALL
-	drop_sound = 'sound/items/drop/clothing.ogg'
-	pickup_sound = 'sound/items/pickup/clothing.ogg'
+	drop_sound = SFX_ITEMS_DROP_CLOTHING
+	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
 
 /obj/item/clothing/shoes/slippers/fit_constraint()
 	return null
@@ -217,8 +217,8 @@
 	blocks_footsteps = FALSE
 	force = 0
 	w_class = ITEMSIZE_SMALL
-	drop_sound = 'sound/items/drop/clothing.ogg'
-	pickup_sound = 'sound/items/pickup/clothing.ogg'
+	drop_sound = SFX_ITEMS_DROP_CLOTHING
+	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
 
 /obj/item/clothing/shoes/footwraps/fit_constraint()
 	return null
@@ -396,7 +396,7 @@
 	can_hold_knife = 1
 	force = 2
 	// ALLOW(instance_list): c: read-only per-subtype constant table (3 subtype overrides); a getter would share it, not worth it on a rare type
-	var/list/squeak_sound = list("mechstep"=1)	//Squeak sound list. Necessary so our subtypes can have different sounds loaded into their component
+	var/list/squeak_sound = list(SFX_MECHSTEP=1)	//Squeak sound list. Necessary so our subtypes can have different sounds loaded into their component
 
 /obj/item/clothing/shoes/mech_shoes/fit_constraint()
 	return null
@@ -408,7 +408,7 @@
 /obj/item/clothing/shoes/mech_shoes/light
 	name = "light mech shoes"
 	desc = "Thud thud, but quieter."
-	squeak_sound = list("powerloaderstep"=1)
+	squeak_sound = list(SFX_POWERLOADERSTEP=1)
 
 /obj/item/clothing/shoes/mech_shoes/heavy
 	name = "heavy mech shoes"
@@ -428,7 +428,7 @@
 	icon_state = "jackboots"
 
 /obj/item/clothing/shoes/clown_shoes
-	var/static/list/squeak_sound = list("clownstep"=1)
+	var/static/list/squeak_sound = list(SFX_CLOWNSTEP=1)
 
 /obj/item/clothing/shoes/clown_shoes/Initialize(mapload)
 	.=..()
@@ -443,8 +443,8 @@
 	siemens_coefficient = 0
 	item_flags = NOSLIP
 	slowdown = SHOES_SLOWDOWN+0.5
-	drop_sound = 'sound/items/drop/rubber.ogg'
-	pickup_sound = 'sound/items/pickup/rubber.ogg'
+	drop_sound = SFX_ITEMS_DROP_RUBBER
+	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
 
 /obj/item/clothing/shoes/dry_galoshes/fit_constraint()
 	return null

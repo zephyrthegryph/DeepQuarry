@@ -9,10 +9,10 @@
 
 	endurance = 3 LASERS_TO_KILL
 	water_resist = 0.5
-	movement_sound = 'sound/effects/servostep.ogg'
+	movement_sound = SFX_EFFECTS_SERVOSTEP
 
 	attacktext = list("clawed")
-	projectilesound = 'sound/weapons/gunshot_old.ogg'
+	projectilesound = SFX_WEAPONS_GUNSHOT_OLD
 
 	organ_names = /datum/decl/mob_organ_names/hivebot
 

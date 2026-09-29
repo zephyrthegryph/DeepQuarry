@@ -22,7 +22,7 @@
 			"output destination" = 9
 			)
 	var/vac_owner = null
-	var/sucksound = 'sound/machines/kitchen/candymaker/candymaker-mid1.ogg'
+	var/sucksound = SFX_MACHINES_KITCHEN_CANDYMAKER_CANDYMAKER_MID1
 	var/suckverb = "vacuum"
 	var/suckanim = TRUE
 	var/pull_range = 1
@@ -380,7 +380,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 /obj/item/vac_attachment/scoop
 	name = "\improper Scoop Hopper"
 	desc = "Useful for scooping clutter off the floors. Even things and stuff depending on settings. Can be connected to a trash bag or vore belly. On-mob sprites can be toggled via verb in Objects tab."
-	sucksound = 'sound/machines/hatchclose.ogg'
+	sucksound = SFX_MACHINES_HATCHCLOSE
 	suckverb = "scoop"
 	suckanim = FALSE
 	vac_settings = list(

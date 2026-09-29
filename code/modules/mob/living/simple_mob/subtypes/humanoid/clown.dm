@@ -20,7 +20,7 @@
 	melee_damage_lower = 10
 	melee_damage_upper = 10
 	attacktext = list("attacked")
-	attack_sound = 'sound/items/bikehorn.ogg'
+	attack_sound = SFX_ITEMS_BIKEHORN
 
 	organ_names = /datum/decl/mob_organ_names/clown
 

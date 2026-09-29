@@ -6,7 +6,7 @@
 	var/dam_force = 20
 	var/cargo_holder_handle
 	required_type = list(/obj/mecha/working)
-	ready_sound = 'sound/mecha/gasdisconnected.ogg'
+	ready_sound = SFX_MECHA_GASDISCONNECTED
 
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/attach(obj/mecha/M as obj)
 	..()

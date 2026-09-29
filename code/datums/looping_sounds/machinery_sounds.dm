@@ -1,5 +1,5 @@
 /datum/looping_sound/showering
-	start_sound = 'sound/machines/shower/shower_start.ogg'
+	start_sound = SFX_MACHINES_SHOWER_SHOWER_START
 	start_length = 2
 	mid_sounds = list('sound/machines/shower/shower_mid1.ogg'=1,'sound/machines/shower/shower_mid2.ogg'=1,'sound/machines/shower/shower_mid3.ogg'=1)
 	mid_length = 10
@@ -18,7 +18,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /datum/looping_sound/generator
-	start_sound = 'sound/machines/generator/generator_start.ogg'
+	start_sound = SFX_MACHINES_GENERATOR_GENERATOR_START
 	start_length = 4
 	mid_sounds = list('sound/machines/generator/generator_mid1.ogg'=1, 'sound/machines/generator/generator_mid2.ogg'=1, 'sound/machines/generator/generator_mid3.ogg'=1)
 	mid_length = 4
@@ -28,7 +28,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /datum/looping_sound/deep_fryer
-	start_sound = 'sound/machines/kitchen/fryer/deep_fryer_immerse.ogg' //my immersions
+	start_sound = SFX_MACHINES_KITCHEN_FRYER_DEEP_FRYER_IMMERSE //my immersions
 	start_length = 10
 	mid_sounds = list('sound/machines/kitchen/fryer/deep_fryer_1.ogg' = 1, 'sound/machines/kitchen/fryer/deep_fryer_2.ogg' = 1)
 	mid_length = 2
@@ -38,7 +38,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /datum/looping_sound/microwave
-	start_sound = 'sound/machines/kitchen/microwave/microwave-start.ogg'
+	start_sound = SFX_MACHINES_KITCHEN_MICROWAVE_MICROWAVE_START
 	start_length = 10
 	mid_sounds = list('sound/machines/kitchen/microwave/microwave-mid1.ogg'=10, 'sound/machines/kitchen/microwave/microwave-mid2.ogg'=1)
 	mid_length = 10
@@ -48,7 +48,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /datum/looping_sound/oven
-	start_sound = 'sound/machines/kitchen/oven/oven-start.ogg'
+	start_sound = SFX_MACHINES_KITCHEN_OVEN_OVEN_START
 	start_length = 10
 	mid_sounds = list('sound/machines/kitchen/oven/oven-mid1.ogg'=10)
 	mid_length = 40
@@ -58,7 +58,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /datum/looping_sound/grill
-	start_sound = 'sound/machines/kitchen/grill/grill-start.ogg'
+	start_sound = SFX_MACHINES_KITCHEN_GRILL_GRILL_START
 	start_length = 10
 	mid_sounds = list('sound/machines/kitchen/grill/grill-mid1.ogg'=10)
 	mid_length = 40
@@ -68,7 +68,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /datum/looping_sound/mixer
-	start_sound = 'sound/machines/kitchen/mixer/mixer-start.ogg'
+	start_sound = SFX_MACHINES_KITCHEN_MIXER_MIXER_START
 	start_length = 10
 	mid_sounds = list('sound/machines/kitchen/mixer/mixer-mid1.ogg'=10)
 	mid_length = 10
@@ -78,7 +78,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /datum/looping_sound/cerealmaker
-	start_sound = 'sound/machines/kitchen/cerealmaker/cerealmaker-start.ogg'
+	start_sound = SFX_MACHINES_KITCHEN_CEREALMAKER_CEREALMAKER_START
 	start_length = 10
 	mid_sounds = list('sound/machines/kitchen/cerealmaker/cerealmaker-mid1.ogg'=10)
 	mid_length = 60
@@ -88,7 +88,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /datum/looping_sound/candymaker
-	start_sound = 'sound/machines/kitchen/candymaker/candymaker-start.ogg'
+	start_sound = SFX_MACHINES_KITCHEN_CANDYMAKER_CANDYMAKER_START
 	start_length = 10
 	mid_sounds = list('sound/machines/kitchen/candymaker/candymaker-mid1.ogg'=10)
 	mid_length = 40
@@ -97,7 +97,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /datum/looping_sound/air_pump
-	start_sound = 'sound/machines/air_pump/airpumpstart.ogg'
+	start_sound = SFX_MACHINES_AIR_PUMP_AIRPUMPSTART
 	start_length = 10
 	mid_sounds = list('sound/machines/air_pump/airpumpidle.ogg' = 1)
 	mid_length = 70
@@ -108,7 +108,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /datum/looping_sound/vehicle_engine
-	start_sound = 'sound/machines/vehicle/engine_start.ogg'
+	start_sound = SFX_MACHINES_VEHICLE_ENGINE_START
 	start_length = 2
 	mid_sounds = list('sound/machines/vehicle/engine_mid.ogg'=1)
 	mid_length = 6
@@ -128,7 +128,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /datum/looping_sound/tcomms
-	start_sound = 'sound/machines/tcomms/tcomms_pulse.ogg'
+	start_sound = SFX_MACHINES_TCOMMS_TCOMMS_PULSE
 	mid_sounds = list('sound/machines/tcomms/tcomms_01.ogg' = 1)
 	mid_length = 20
 	end_sound = 'sound/machines/tcomms/tcomms_pulse.ogg'
@@ -140,7 +140,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /datum/looping_sound/shield_generator
-	start_sound = 'sound/machines/shield_hum/shield_generator_whir.ogg'
+	start_sound = SFX_MACHINES_SHIELD_HUM_SHIELD_GENERATOR_WHIR
 	mid_sounds = list('sound/machines/shield_hum/shield_generator_hum2.ogg', 'sound/machines/shield_hum/shield_generator_hum3.ogg')
 	mid_length = 60
 	end_sound = 'sound/machines/shield_hum/shield_generator_whir.ogg'

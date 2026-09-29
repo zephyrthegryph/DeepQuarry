@@ -10,7 +10,7 @@
 	icon_state = "netgun"
 	item_state = "gun" // Placeholder
 
-	fire_sound = 'sound/weapons/eLuger.ogg'
+	fire_sound = SFX_WEAPONS_ELUGER
 	projectile_type = /obj/item/projectile/beam/energy_net
 	charge_cost = 800
 	fire_delay = 50
@@ -62,11 +62,11 @@
 	fire_delay = 10
 
 
-	fire_sound = 'sound/weapons/taser.ogg'
+	fire_sound = SFX_WEAPONS_TASER
 
 	firemodes = list(
-		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun/blue, fire_sound='sound/weapons/taser.ogg', charge_cost=320, fire_delay=10),
-		list(mode_name="capture", projectile_type=/obj/item/projectile/beam/energy_net, fire_sound = 'sound/weapons/eLuger.ogg', charge_cost=1200, fire_delay=50)
+		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun/blue, fire_sound=SFX_WEAPONS_TASER, charge_cost=320, fire_delay=10),
+		list(mode_name="capture", projectile_type=/obj/item/projectile/beam/energy_net, fire_sound = SFX_WEAPONS_ELUGER, charge_cost=1200, fire_delay=50)
 	)
 
 /obj/item/gun/energy/hunter/update_icon()

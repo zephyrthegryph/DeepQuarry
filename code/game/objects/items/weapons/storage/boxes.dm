@@ -30,9 +30,9 @@
 	var/foldable = /obj/item/stack/material/cardboard	// BubbleWrap - if set, can be folded (when empty) into a sheet of cardboard
 	var/trash = null  // if set, can be crushed into a trash item when empty
 	max_storage_space = INVENTORY_BOX_SPACE
-	use_sound = 'sound/items/storage/box.ogg'
-	drop_sound = 'sound/items/drop/cardboardbox.ogg'
-	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
+	use_sound = SFX_ITEMS_STORAGE_BOX
+	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
+	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 	resistance_flags = FLAMMABLE
 
 // BubbleWrap - A box can be folded up to make card
@@ -190,56 +190,56 @@ EXTEND_INTERACTIONS(/obj/item/storage/box, \
 	desc = span_bold("WARNING: These devices are extremely dangerous and can cause blindness or deafness in repeated use.")
 	icon_state = "flashbang"
 	starts_with = list(/obj/item/grenade/flashbang = 7)
-	drop_sound = 'sound/items/drop/ammobox.ogg'
-	pickup_sound = 'sound/items/pickup/ammobox.ogg'
+	drop_sound = SFX_ITEMS_DROP_AMMOBOX
+	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
 
 /obj/item/storage/box/emps
 	name = "box of emp grenades"
 	desc = "A box containing 5 military grade EMP grenades.<br> WARNING: Do not use near unshielded electronics or biomechanical augmentations, death or permanent paralysis may occur."
 	icon_state = "emp"
 	starts_with = list(/obj/item/grenade/empgrenade = 7)
-	drop_sound = 'sound/items/drop/ammobox.ogg'
-	pickup_sound = 'sound/items/pickup/ammobox.ogg'
+	drop_sound = SFX_ITEMS_DROP_AMMOBOX
+	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
 
 /obj/item/storage/box/empslite
 	name = "box of low yield emp grenades"
 	desc = "A box containing 5 low yield EMP grenades.<br> WARNING: Do not use near unshielded electronics or biomechanical augmentations, death or permanent paralysis may occur."
 	icon_state = "emp"
 	starts_with = list(/obj/item/grenade/empgrenade/low_yield = 7)
-	drop_sound = 'sound/items/drop/ammobox.ogg'
-	pickup_sound = 'sound/items/pickup/ammobox.ogg'
+	drop_sound = SFX_ITEMS_DROP_AMMOBOX
+	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
 
 /obj/item/storage/box/smokes
 	name = "box of smoke bombs"
 	desc = "A box containing 7 smoke bombs."
 	icon_state = "flashbang"
 	starts_with = list(/obj/item/grenade/smokebomb = 7)
-	drop_sound = 'sound/items/drop/ammobox.ogg'
-	pickup_sound = 'sound/items/pickup/ammobox.ogg'
+	drop_sound = SFX_ITEMS_DROP_AMMOBOX
+	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
 
 /obj/item/storage/box/anti_photons
 	name = "box of anti-photon grenades"
 	desc = "A box containing 7 experimental photon disruption grenades."
 	icon_state = "flashbang"
 	starts_with = list(/obj/item/grenade/anti_photon = 7)
-	drop_sound = 'sound/items/drop/ammobox.ogg'
-	pickup_sound = 'sound/items/pickup/ammobox.ogg'
+	drop_sound = SFX_ITEMS_DROP_AMMOBOX
+	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
 
 /obj/item/storage/box/frags
 	name = "box of fragmentation grenades (WARNING)"
 	desc = "A box containing 7 military grade fragmentation grenades.<br> WARNING: These devices are extremely dangerous and can cause limb loss or death in repeated use."
 	icon_state = "frag"
 	starts_with = list(/obj/item/grenade/explosive = 7)
-	drop_sound = 'sound/items/drop/ammobox.ogg'
-	pickup_sound = 'sound/items/pickup/ammobox.ogg'
+	drop_sound = SFX_ITEMS_DROP_AMMOBOX
+	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
 
 /obj/item/storage/box/frags_half_box
 	name = "box of fragmentation grenades (WARNING)"
 	desc = "A box containing 4 military grade fragmentation grenades.<br> WARNING: These devices are extremely dangerous and can cause limb loss or death in repeated use."
 	icon_state = "frag"
 	starts_with = list(/obj/item/grenade/explosive = 4)
-	drop_sound = 'sound/items/drop/ammobox.ogg'
-	pickup_sound = 'sound/items/pickup/ammobox.ogg'
+	drop_sound = SFX_ITEMS_DROP_AMMOBOX
+	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
 
 /obj/item/storage/box/metalfoam
 	name = "box of metal foam grenades."
@@ -449,8 +449,8 @@ EXTEND_INTERACTIONS(/obj/item/storage/box, \
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_BELT
 	starts_with = list(/obj/item/flame/match = 10)
-	drop_sound = 'sound/items/drop/matchbox.ogg'
-	pickup_sound =  'sound/items/pickup/matchbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_MATCHBOX
+	pickup_sound =  SFX_ITEMS_PICKUP_MATCHBOX
 
 /obj/item/storage/box/matches/hold_constraint()
 	var/list/holds = list(/obj/item/flame/match)
@@ -665,8 +665,8 @@ EXTEND_INTERACTIONS(/obj/item/storage/box/matches, INTERACT_ITEM("Strike", PROC_
 	icon_state = "secbox"
 	starts_with = list(/obj/item/ammo_magazine/sam48 = 3)
 	max_storage_space = ITEMSIZE_COST_NORMAL * 3
-	drop_sound = 'sound/items/drop/ammobox.ogg'
-	pickup_sound = 'sound/items/pickup/ammobox.ogg'
+	drop_sound = SFX_ITEMS_DROP_AMMOBOX
+	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
 
 /obj/item/storage/box/weapon_cells
 	name = "box of weapon cells"

@@ -12,15 +12,15 @@
 	var/active = 0
 	var/det_time = 50
 	var/loadable = TRUE
-	var/arm_sound = 'sound/weapons/armbomb.ogg'
+	var/arm_sound = SFX_WEAPONS_ARMBOMB
 	var/hud_state = "grenade_he" // TGMC Ammo HUD Port
 	var/hud_state_empty = "grenade_empty" // TGMC Ammo HUD Port
 
 	///Var for special attack_self handling
 	var/special_handling = FALSE
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/grenade/proc/clown_check(mob/living/user)
 	if(CLUMSY_HARM_CHANCE(user))

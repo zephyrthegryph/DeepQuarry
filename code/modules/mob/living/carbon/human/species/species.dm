@@ -156,8 +156,8 @@
 	var/poison_type = GAS_PHORON								// Poisonous air.
 	var/exhale_type = GAS_CO2								// Exhaled gas type.
 	var/water_breather = FALSE
-	var/suit_inhale_sound = 'sound/effects/mob_effects/suit_breathe_in.ogg'
-	var/suit_exhale_sound = 'sound/effects/mob_effects/suit_breathe_out.ogg'
+	var/suit_inhale_sound = SFX_EFFECTS_MOB_EFFECTS_SUIT_BREATHE_IN
+	var/suit_exhale_sound = SFX_EFFECTS_MOB_EFFECTS_SUIT_BREATHE_OUT
 	var/bad_swimmer = FALSE
 
 	var/body_temperature = BODYTEMP_NORMAL							// Species will try to stabilize at this temperature. (also affects temperature processing)

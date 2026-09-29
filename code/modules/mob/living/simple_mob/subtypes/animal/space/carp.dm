@@ -51,7 +51,7 @@
 	melee_damage_upper = 7
 	base_attack_cooldown = 10 // One attack a second.
 	attack_injury_kind = INJURY_PIERCE
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 	attacktext = list("bitten")
 
 	organ_names = /datum/decl/mob_organ_names/fish

@@ -755,7 +755,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 /mob/living/carbon/human/proc/play_xylophone()
 	if(COOLDOWN_FINISHED(src, xylophone))
 		visible_message(span_filter_notice("[span_red("\The [src] begins playing [p_their()] ribcage like a xylophone. It's quite spooky.")]"),span_notice("You begin to play a spooky refrain on your ribcage."),span_filter_notice("[span_red("You hear a spooky xylophone melody.")]"))
-		var/song = pick('sound/effects/xylophone1.ogg','sound/effects/xylophone2.ogg','sound/effects/xylophone3.ogg')
+		var/song = SFX_EFFECTS_XYLOPHONE_MIX
 		playsound(src, song, 50, 1, -1)
 		COOLDOWN_START(src, xylophone, 2 MINUTES)
 	return

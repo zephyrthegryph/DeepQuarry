@@ -57,7 +57,7 @@
 	special_attack_cooldown = 10 SECONDS
 
 	leap_warmup = 0.5 SECOND // How long the leap telegraphing is.
-	leap_sound = 'sound/weapons/spiderlunge.ogg'
+	leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
 ///otie pounce code!///
@@ -174,7 +174,7 @@
 	harm_intent_damage = 5
 	melee_damage_lower = 25
 	melee_damage_upper = 30
-	attack_sound = 'sound/weapons/blade1.ogg'
+	attack_sound = SFX_WEAPONS_BLADE1
 	armor_spec = "melee=60;bullet=50;laser=40;energy=35;bomb=70;bio=100;rad=100" // Values read by injury_armor()
 
 /mob/living/simple_mob/vore/blackhole/grotesque
@@ -196,7 +196,7 @@
 	melee_damage_lower = 10
 	melee_damage_upper = 15
 	say_list_type = /datum/say_list/merc/blackhole/grotesque
-	attack_sound = 'sound/weapons/slice.ogg'
+	attack_sound = SFX_WEAPONS_SLICE
 
 /mob/living/simple_mob/vore/blackhole/grotesque/on_death(gibbed)
 	..()
@@ -214,7 +214,7 @@
 	icon_rest = "trooper_pistol"
 
 	projectiletype = /obj/item/projectile/bullet/pistol/bh1
-	projectilesound = 'sound/weapons/serdy/9mmpistol.ogg'
+	projectilesound = SFX_WEAPONS_SERDY_9MMPISTOL
 	projectile_dispersion = 3
 	projectile_accuracy = -15
 	base_attack_cooldown = 8 DECISECONDS
@@ -231,7 +231,7 @@
 	icon_rest = "trooper_smg"
 
 	projectiletype = /obj/item/projectile/bullet/pistol/bh2
-	projectilesound = 'sound/weapons/serdy/vityaz.ogg'
+	projectilesound = SFX_WEAPONS_SERDY_VITYAZ
 	projectile_dispersion = 3
 	projectile_accuracy = -15
 	base_attack_cooldown = 2
@@ -248,7 +248,7 @@
 	icon_rest = "trooper_rifle"
 
 	projectiletype = /obj/item/projectile/bullet/rifle/a545/bh1
-	projectilesound = 'sound/weapons/serdy/sks.ogg'
+	projectilesound = SFX_WEAPONS_SERDY_SKS
 	projectile_dispersion = 3
 	projectile_accuracy = -15
 	base_attack_cooldown = 8
@@ -265,7 +265,7 @@
 	icon_rest = "trooper_lmg"
 
 	projectiletype = /obj/item/projectile/bullet/pistol/bh3
-	projectilesound = 'sound/weapons/serdy/ak74.ogg'
+	projectilesound = SFX_WEAPONS_SERDY_AK74
 	projectile_dispersion = 12
 	projectile_accuracy = -25
 	base_attack_cooldown = 0.1
@@ -327,7 +327,7 @@
 	melee_damage_lower = 25
 	melee_damage_upper = 30
 	attacktext = list("stabbed","slashed","impaled")
-	attack_sound = 'sound/weapons/blade1.ogg'
+	attack_sound = SFX_WEAPONS_BLADE1
 	armor_spec = "melee=60;bullet=50;laser=40;energy=35;bomb=70;bio=100;rad=100" // Values read by injury_armor()
 
 /mob/living/simple_mob/vore/blackhole/taur/ranged
@@ -341,7 +341,7 @@
 	icon_rest = "heavytrooper_lmg"
 
 	projectiletype = /obj/item/projectile/bullet/pistol/bh3
-	projectilesound = 'sound/weapons/serdy/ak74.ogg'
+	projectilesound = SFX_WEAPONS_SERDY_AK74
 	projectile_dispersion = 12
 	projectile_accuracy = -25
 	base_attack_cooldown = 0.1
@@ -356,7 +356,7 @@
 	icon_rest = "heavytrooper_hmg"
 
 	projectiletype = /obj/item/projectile/bullet/rifle/a545/bh2
-	projectilesound = 'sound/weapons/serdy/strela.ogg'
+	projectilesound = SFX_WEAPONS_SERDY_STRELA
 	projectile_dispersion = 12
 	projectile_accuracy = -25
 	base_attack_cooldown = 0.5
@@ -370,7 +370,7 @@
 	icon_state = "heavytrooper_sniper"
 	icon_rest = "heavytrooper_sniper"
 	projectiletype = /obj/item/projectile/bullet/rifle/a145/highvel // Really scary bullet.
-	projectilesound = 'sound/weapons/serdy/molniyab.ogg'
+	projectilesound = SFX_WEAPONS_SERDY_MOLNIYAB
 	faction = FACTION_BLACKHOLE
 	movement_cooldown = 0
 	harm_intent_damage = 5
@@ -473,7 +473,7 @@
 	pixel_x = -16
 	pixel_y = 0
 
-	movement_sound = 'sound/effects/carrev.ogg'
+	movement_sound = SFX_EFFECTS_CARREV
 
 	min_oxy = 0
 	max_oxy = 0
@@ -490,7 +490,7 @@
 	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
 
 	projectiletype = /obj/item/projectile/bullet/pistol/bh3
-	projectilesound = 'sound/weapons/serdy/ak74.ogg'
+	projectilesound = SFX_WEAPONS_SERDY_AK74
 	projectile_dispersion = 25
 	projectile_accuracy = -40
 	base_attack_cooldown = 4
@@ -547,7 +547,7 @@
 	melee_damage_upper = 90
 
 	projectiletype = /obj/item/projectile/beam/shock/bh1
-	projectilesound = 'sound/effects/lightningbolt.ogg'
+	projectilesound = SFX_EFFECTS_LIGHTNINGBOLT
 	projectile_dispersion = 12
 	projectile_accuracy = -25
 	base_attack_cooldown = 12
@@ -857,35 +857,35 @@ DECLARE_REF(/mob/living/simple_mob/vore/blackhole_obelisk, "loopy", OWNED, null)
 	name = "7mm bullet"
 	icon = 'icons/blackhole/blackhole32x32.dmi'
 	icon_state = "bullet"
-	fire_sound = 'sound/weapons/serdy/9mmpistol.ogg'
+	fire_sound = SFX_WEAPONS_SERDY_9MMPISTOL
 	speed = 0.8
 
 /obj/item/projectile/bullet/pistol/bh2
 	name = "10mm bullet"
 	icon = 'icons/blackhole/blackhole32x32.dmi'
 	icon_state = "bullet"
-	fire_sound = 'sound/weapons/serdy/vityaz.ogg'
+	fire_sound = SFX_WEAPONS_SERDY_VITYAZ
 	speed = 0.8
 
 /obj/item/projectile/bullet/pistol/bh3
 	name = "9mm bullet"
 	icon = 'icons/blackhole/blackhole32x32.dmi'
 	icon_state = "bullet"
-	fire_sound = 'sound/weapons/serdy/ak74.ogg'
+	fire_sound = SFX_WEAPONS_SERDY_AK74
 	speed = 0.8
 
 /obj/item/projectile/bullet/rifle/a545/bh1
 	name = "6mm rifle bullet"
 	icon = 'icons/blackhole/blackhole32x32.dmi'
 	icon_state = "bullet"
-	fire_sound = 'sound/weapons/serdy/sks.ogg'
+	fire_sound = SFX_WEAPONS_SERDY_SKS
 	speed = 0.8
 
 /obj/item/projectile/bullet/rifle/a545/bh2
 	name = "15mm MG bullet"
 	icon = 'icons/blackhole/blackhole32x32.dmi'
 	icon_state = "bullet"
-	fire_sound = 'sound/weapons/serdy/strela.ogg'
+	fire_sound = SFX_WEAPONS_SERDY_STRELA
 	speed = 0.8
 
 /obj/item/projectile/beam/shock/bh1
@@ -899,15 +899,15 @@ DECLARE_REF(/mob/living/simple_mob/vore/blackhole_obelisk, "loopy", OWNED, null)
 	damage = 20
 	agony = 1
 	eyeblur = 1
-	fire_sound = 'sound/effects/lightningbolt.ogg'
-	hitsound = 'sound/effects/lightningshock.ogg'
+	fire_sound = SFX_EFFECTS_LIGHTNINGBOLT
+	hitsound = SFX_EFFECTS_LIGHTNINGSHOCK
 	hud_state = "taser"
 
 /obj/item/projectile/explosive_rocket/blackhole
 	name = "80mm rocket propelled grenade"
 	icon = 'icons/blackhole/blackhole32x32.dmi'
 	icon_state = "rocket"
-	fire_sound = 'sound/weapons/rpg.ogg'
+	fire_sound = SFX_WEAPONS_RPG
 	damage = 40
 	speed = 0.6
 	armor_penetration = 90

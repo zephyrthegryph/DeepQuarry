@@ -464,7 +464,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/chameleon, \
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_NONE
 
-	fire_sound = 'sound/weapons/gunshot1.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT1
 	projectile_type = /obj/item/projectile/chameleon
 	charge_meter = 0
 	charge_cost = 48 //uses next to no power, since it's just holograms

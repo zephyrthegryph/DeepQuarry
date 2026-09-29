@@ -16,7 +16,7 @@
 	ammo_type = /obj/item/ammo_casing/a357
 	projectile_type = /obj/item/projectile/bullet/pistol/strong
 	var/chamber_offset = 0 //how many empty chambers in the cylinder until you hit a round
-	fire_sound = 'sound/weapons/gunshot4.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT4
 
 EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver, INTERACT_VERB("Spin cylinder", PROC_REF(revolver_verb_spin_cylinder), REQ_IN_INVENTORY))
 
@@ -371,7 +371,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap
 	icon_state = "ukr"
 	item_state = "ukr"
 	icon = 'icons/obj/guns/altmarksman/altmarksman.dmi'
-	fire_sound = 'sound/weapons/marksmanalt.ogg'
+	fire_sound = SFX_WEAPONS_MARKSMANALT
 	item_icons = list(
 		slot_l_hand_str = 'icons/obj/guns/altmarksman/lefthand_guns.dmi',
 		slot_r_hand_str = 'icons/obj/guns/altmarksman/righthand_guns.dmi',

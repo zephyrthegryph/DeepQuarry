@@ -22,7 +22,7 @@
 	var/cooldown		= 15 SECONDS	//minimum time between retriggers, so people can't spam trigger the scanner to be obnoxious
 	var/auto_cancel		= TRUE	//automatically cancel alarm states after a delay? same duration as the cooldown for sanity
 	var/trigger_message	=	"The contraband scanner has been tripped!"
-	var/trigger_sound	=	'sound/machines/airalarm.ogg'	//sound that plays when we're set off
+	var/trigger_sound	=	SFX_MACHINES_AIRALARM	//sound that plays when we're set off
 
 	var/static/list/contraband = list(/obj/item/melee,/obj/item/gun,/obj/item/material)
 

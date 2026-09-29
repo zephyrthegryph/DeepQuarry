@@ -111,7 +111,7 @@
 
 /datum/interaction/construction/wall/cut_plain/alt_sound(obj/item/held)
 	if(istype(held, /obj/item/melee/energy/blade))
-		return "sparks"
+		return SFX_SPARKS
 	if(istype(held, /obj/item/pickaxe))
 		var/obj/item/pickaxe/pick = held
 		return pick.drill_sound

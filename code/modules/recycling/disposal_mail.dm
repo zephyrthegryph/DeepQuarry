@@ -150,8 +150,8 @@ DESTROY_EFFECTS(/obj/structure/bigDelivery, new /datum/destroy_effects_data(drop
 	name = "small parcel"
 	icon = 'icons/obj/storage_vr.dmi'
 	icon_state = "deliverycrate3"
-	drop_sound = 'sound/items/drop/cardboardbox.ogg'
-	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
+	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 	var/obj/item/wrapped = null
 	var/sortTag = null
 	var/examtext = null

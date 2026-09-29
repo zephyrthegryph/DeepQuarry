@@ -13,8 +13,8 @@
 	var/malfunction = 0
 	var/initialize_loc = BP_TORSO
 	var/known_implant = FALSE
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /// The implant site slot is keyed by implant type (organ_external.dm): at
 /// most one implant of a given kind per organ.

@@ -52,8 +52,8 @@
 	var/bulb_shards = 0
 	// when we get this many shards, we get a free bulb.
 	var/shards_required = 4
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	///For attack_self chain
 	var/special_handling = FALSE

@@ -15,7 +15,7 @@
 	draws_body = FALSE
 	factors = alist(BF_INCOMING_PHYSICAL = 0.75, BF_INCOMING_THERMAL = 2)
 	enter_message = "squishes into their true form!"
-	enter_sound = 'sound/effects/slime_squish.ogg'
+	enter_sound = SFX_EFFECTS_SLIME_SQUISH
 	/// Spread out into an adult-sized puddle.
 	var/is_wide = FALSE
 	/// Gemstone shine overlay.

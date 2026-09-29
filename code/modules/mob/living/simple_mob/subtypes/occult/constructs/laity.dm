@@ -18,5 +18,5 @@
 	melee_damage_upper = 8
 	attack_armor_pen = 50 // Does so little damage already, that this can be justified.
 	attacktext = list("rammed")
-	attack_sound = 'sound/weapons/rapidslice.ogg'
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	movement_cooldown = 0

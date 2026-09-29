@@ -3,8 +3,8 @@
 	desc = "a red pillar candle. Its specially-formulated fuel-oxidizer wax mixture allows continued combustion in airless environments."
 	icon = 'icons/obj/candle.dmi'
 	icon_state = "candle1"
-	drop_sound = 'sound/items/drop/gloves.ogg'
-	pickup_sound = 'sound/items/pickup/gloves.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLOVES
+	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 	w_class = ITEMSIZE_TINY
 	light_color = "#E09D37"
 	var/wax = 7200 // FOUR HOUR burn time, taking into account process only calling once every two seconds or so.

@@ -27,7 +27,7 @@
 //	environment_smash = 2	// Whatever this gets renamed to, Juggernauts need to break things
 
 
-	attack_sound = 'sound/weapons/heavysmash.ogg'
+	attack_sound = SFX_WEAPONS_HEAVYSMASH
 	status_flags = 0
 	resistance = 10
 	construct_spells = list(/datum/spell/aoe_turf/conjure/forcewall/lesser,
@@ -90,7 +90,7 @@
 	melee_damage_upper = 50
 	attacktext = list("brutally crushed")
 	friendly = list("pokes") //Anything nice the Behemoth would do would still Kill the Human. Leave it at poke.
-	attack_sound = 'sound/weapons/heavysmash.ogg'
+	attack_sound = SFX_WEAPONS_HEAVYSMASH
 	resistance = 10
 	icon_scale_x = 2
 	icon_scale_y = 2

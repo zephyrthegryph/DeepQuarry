@@ -15,8 +15,8 @@
 	var/obj/machinery/camera/bug/camera
 	var/camtype = /obj/machinery/camera/bug
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 
 /obj/item/camerabug/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -44,8 +44,8 @@
 	throw_range = 15
 	throw_speed = 3
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/brokenbug/spy
 	name = "broken bug"
@@ -153,8 +153,8 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 	/// om_handle()s of the paired bugs' cameras (each camera is owned by its bug); read with paired_cameras().
 	var/list/camera_handles
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /*
 /obj/item/bug_monitor/Initialize(mapload)

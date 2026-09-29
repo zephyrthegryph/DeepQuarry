@@ -122,8 +122,8 @@
 	desc = "A bleached bone. It's very non-descript and its hard to tell what species or part of the body it came from."
 	icon = 'icons/obj/bones_vr.dmi'
 	icon_state = "generic-1"
-	drop_sound = 'sound/items/drop/wooden.ogg'   //sounds kinda like a bone
-	pickup_sound = 'sound/items/pickup/woodweapon.ogg'
+	drop_sound = SFX_ITEMS_DROP_WOODEN   //sounds kinda like a bone
+	pickup_sound = SFX_ITEMS_PICKUP_WOODWEAPON
 	force = 0
 	throwforce = 0
 	item_state = "bone"
@@ -135,8 +135,8 @@
 	name = "ruined component"
 	desc = "A ruined component. It seems to have come from some sort of robotic entity, but there's no telling what kind."
 	icon_state = "synth-1"
-	drop_sound = 'sound/items/drop/device.ogg'   //not organic bones, so they get different sounds
-	pickup_sound = 'sound/items/pickup/device.ogg'
+	drop_sound = SFX_ITEMS_DROP_DEVICE   //not organic bones, so they get different sounds
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 
 /obj/item/digestion_remains/Initialize(mapload, mob/living/pred, mob/living/prey)
 	. = ..()

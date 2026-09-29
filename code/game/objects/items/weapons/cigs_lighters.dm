@@ -31,8 +31,8 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS
 	attack_verb = list("burnt", "singed")
-	drop_sound = 'sound/items/drop/food.ogg'
-	pickup_sound = 'sound/items/pickup/food.ogg'
+	drop_sound = SFX_ITEMS_DROP_FOOD
+	pickup_sound = SFX_ITEMS_PICKUP_FOOD
 
 /obj/item/flame/match/periodic_step()
 	if(isliving(loc))
@@ -96,7 +96,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	var/ignitermes = "USER lights NAME with FLAME"
 	var/brand
 	blood_sprite_state = null //Can't bloody these
-	drop_sound = 'sound/items/cigs_lighters/cig_snuff.ogg'
+	drop_sound = SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF
 
 DECLARE_REAGENTS(/obj/item/clothing/mask/smokable, "chem_volume", null)
 
@@ -618,8 +618,8 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/rollingpaper, \
 	attack_verb = list("burnt", "singed")
 	var/base_state
 	/// Sounds
-	var/activation_sound = 'sound/items/lighter_on.ogg'
-	var/deactivation_sound = 'sound/items/lighter_off.ogg'
+	var/activation_sound = SFX_ITEMS_LIGHTER_ON
+	var/deactivation_sound = SFX_ITEMS_LIGHTER_OFF
 	/// Color of the flame and how big the flame is (pulled from Welder code)
 	var/flame_color = "#FF9933"
 	var/flame_intensity = 2
@@ -714,8 +714,8 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter, INTERACT_SELF(null, PROC_REF(lighte
 	description_fluff = "Still going after all these years."
 	icon_state = "zippo"
 	item_state = "zippo"
-	activation_sound = 'sound/items/zippo_on.ogg'
-	deactivation_sound = 'sound/items/zippo_off.ogg'
+	activation_sound = SFX_ITEMS_ZIPPO_ON
+	deactivation_sound = SFX_ITEMS_ZIPPO_OFF
 	special_variant = TRUE
 
 /obj/item/flame/lighter/zippo/Initialize(mapload)
@@ -819,8 +819,8 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo, INTERACT_SELF(null, PROC_REF(
 	description_fluff = "A zippo style lighter with a tiny supermatter sliver held by a hardlight shield. When lighting a cigar, make sure to hover the tip near the sliver, not against it!"
 	icon_state = "SMzippo"
 	item_state = "SMzippo"
-	activation_sound = 'sound/items/zippo_on_alt.ogg'
-	deactivation_sound = 'sound/items/zippo_off.ogg'
+	activation_sound = SFX_ITEMS_ZIPPO_ON_ALT
+	deactivation_sound = SFX_ITEMS_ZIPPO_OFF
 	special_variant = TRUE
 	///Special supermatter var used for attack_self chain logic.
 	var/special_supermatter = FALSE
@@ -831,8 +831,8 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo, INTERACT_SELF(null, PROC_REF(
 	description_fluff = "A red zippo style lighter with a tiny supermatter sliver held by a phoron field."
 	icon_state = "SyndiSMzippo"
 	item_state = "SyndiSMzippo"
-	activation_sound = 'sound/items/zippo_on_alt.ogg'
-	deactivation_sound = 'sound/items/zippo_off.ogg'
+	activation_sound = SFX_ITEMS_ZIPPO_ON_ALT
+	deactivation_sound = SFX_ITEMS_ZIPPO_OFF
 	special_supermatter = TRUE
 
 /obj/item/flame/lighter/supermatter/expsmzippo
@@ -841,8 +841,8 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo, INTERACT_SELF(null, PROC_REF(
 	description_fluff = "A unique take originating from the zippo design, a shard of supermatter placed within lead-lined walls. Cautious, VERY DANGEROUS do NOT touch!"
 	icon_state = "ExpSMzippo"
 	item_state = "ExpSMzippo"
-	activation_sound = 'sound/items/button-open.ogg'
-	deactivation_sound = 'sound/items/button-close.ogg'
+	activation_sound = SFX_ITEMS_BUTTON_OPEN
+	deactivation_sound = SFX_ITEMS_BUTTON_CLOSE
 	special_supermatter = TRUE
 
 // safe smzippo

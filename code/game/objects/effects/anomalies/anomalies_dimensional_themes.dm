@@ -11,7 +11,7 @@
 	/// Typepath of custom material to use for objects.
 	var/datum/material/material
 	/// Sound to play when transforming a tile
-	var/sound = 'sound/effects/blind.ogg'
+	var/sound = SFX_EFFECTS_BLIND
 	/// Weighted list of turfs to replace the floor with.
 	var/list/replace_floors = list(/turf/simulated/floor/tiled = 1) // ALLOW(instance_list): d: edited in place per instance (1 writers)
 	/// Typepath of turf to replace walls with.
@@ -190,7 +190,7 @@
 		/obj/machinery/door/airlock = list(/obj/machinery/door/airlock/uranium = 1),
 	)
 	replace_walls = /turf/simulated/wall/uranium
-	sound = 'sound/items/Welder.ogg'
+	sound = SFX_ITEMS_WELDER
 
 /datum/dimension_theme/wood
 	name = "Wood"

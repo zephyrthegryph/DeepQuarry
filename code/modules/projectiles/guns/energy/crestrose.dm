@@ -9,12 +9,12 @@
 
 	w_class = ITEMSIZE_NORMAL
 	slot_flags = null
-	fire_sound = 'sound/weapons/gunshot_light.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_LIGHT
 	load_method = MAGAZINE
 	force = 3
 	recoil = 2
 	auto_eject = 1
-	auto_eject_sound = 'sound/weapons/smg_empty_alarm.ogg'
+	auto_eject_sound = SFX_WEAPONS_SMG_EMPTY_ALARM
 	hitsound = null
 	caliber = "s762"
 	magazine_type = /obj/item/ammo_magazine/m762

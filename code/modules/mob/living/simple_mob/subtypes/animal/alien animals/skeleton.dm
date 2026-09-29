@@ -26,7 +26,7 @@
 	faction = FACTION_SPACE_SKELETON
 	endurance = 100
 	movement_cooldown = 1
-	movement_sound = 'sound/effects/skeleton_walk.ogg' //VERY IMPORTANT
+	movement_sound = SFX_EFFECTS_SKELETON_WALK //VERY IMPORTANT
 
 	see_in_dark = 10
 

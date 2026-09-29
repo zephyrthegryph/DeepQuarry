@@ -1,5 +1,5 @@
 /mob/living/simple_mob/horror/Willy
-	reaction_sound = 'sound/h_sounds/holla.ogg'
+	reaction_sound = SFX_H_SOUNDS_HOLLA
 	name = "???"
 	desc = "It looks like a giant mascot costume made of flesh and fabric. The two bulging eyes aren't comforting to look at either. At least it smells like a burger and fries."
 
@@ -11,7 +11,7 @@
 	icon = 'icons/mob/horror_show/GHPS.dmi'
 	icon_gib = "generic_gib"
 
-	attack_sound = 'sound/h_sounds/negative.ogg'
+	attack_sound = SFX_H_SOUNDS_NEGATIVE
 
 	endurance = 175
 

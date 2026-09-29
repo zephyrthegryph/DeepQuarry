@@ -28,8 +28,8 @@ effective or pretty fucking useless.
 	var/times_used = 0 //Number of times it's been used.
 	var/max_uses = 2
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 DECLARE_INTERACTIONS(/obj/item/batterer, INTERACT_USE(null, PROC_REF(interaction_self)))
 

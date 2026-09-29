@@ -97,7 +97,7 @@
 
 /obj/item/projectile/bullet/shotgun/scatterprojectile
 	name = "pellet"
-	fire_sound = 'sound/weapons/gunshot_shotgun.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_SHOTGUN
 	damage = 12
 	armor_penetration = 0
 

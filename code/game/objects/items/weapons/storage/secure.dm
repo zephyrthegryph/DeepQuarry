@@ -24,7 +24,7 @@
 	var/open = 0
 	w_class = ITEMSIZE_NORMAL
 	max_storage_space = ITEMSIZE_SMALL * 7
-	use_sound = 'sound/items/storage/briefcase.ogg'
+	use_sound = SFX_ITEMS_STORAGE_BRIEFCASE
 	special_handling = TRUE
 
 /obj/item/storage/secure/hold_constraint()

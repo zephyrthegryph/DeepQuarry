@@ -18,8 +18,8 @@ MATERIAL_MIX(/obj/item/taperecorder, list(MAT_STEEL = 60,MAT_GLASS = 30))
 	throwforce = 2
 	throw_speed = 4
 	throw_range = 20
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/taperecorder/Initialize(mapload)
 	. = ..()

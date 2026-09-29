@@ -8,7 +8,7 @@
 	unacidable = TRUE
 	anchored = TRUE
 	var/destination_handle
-	var/teleport_sound = 'sound/effects/portal_effect.ogg'
+	var/teleport_sound = SFX_EFFECTS_PORTAL_EFFECT
 
 REGISTRY_MEMBERSHIP(/obj/effect/simple_portal, REGISTRY_SIMPLE_PORTALS)
 

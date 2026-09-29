@@ -96,7 +96,7 @@
 	var/reload_max = 1									// How many shots the mob gets before it has to reload, will not be used if needs_reload is FALSE
 	var/reload_count = 0								// A counter to keep track of how many shots the mob has fired so far. Reloads when it hits reload_max.
 	var/reload_time = 4 SECONDS							// How long it takes for a mob to reload. This is to buy a player a bit of time to run or fight.
-	var/reload_sound = 'sound/weapons/flipblade.ogg'	// What sound gets played when the mob successfully reloads. Defaults to the same sound as reloading guns. Can be null.
+	var/reload_sound = SFX_WEAPONS_FLIPBLADE	// What sound gets played when the mob successfully reloads. Defaults to the same sound as reloading guns. Can be null.
 
 	//Mob melee settings
 	var/melee_damage_lower = 2		// Lower bound of randomized melee damage

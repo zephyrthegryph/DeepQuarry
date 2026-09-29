@@ -17,10 +17,10 @@
 	var/min_bonus_damage = 3
 	var/max_bonus_damage = 5
 	COOLDOWN_DECLARE(shield_bash)
-	drop_sound = 'sound/items/trayhit1.ogg'
+	drop_sound = SFX_ITEMS_TRAYHIT1
 
 /obj/item/tray/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	var/tray_sound = pick('sound/items/trayhit1.ogg', 'sound/items/trayhit2.ogg')
+	var/tray_sound = SFX_ITEMS_TRAYHIT_MIX
 	user.setClickCooldown(user.get_attack_speed(src))
 	// Drop all the things. All of them.
 	cut_overlays()

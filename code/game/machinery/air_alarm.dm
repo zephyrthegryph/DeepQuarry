@@ -69,7 +69,7 @@
 	active_power_usage = 1000 //For heating/cooling rooms. 1000 joules equates to about 1 degree every 2 seconds for a single tile of air.
 	power_channel = ENVIRON
 	req_one_access = list(ACCESS_ATMOSPHERICS, ACCESS_ENGINE_EQUIP)
-	clicksound = "button"
+	clicksound = SFX_BUTTON
 	clickvol = 30
 	blocks_emissive = NONE
 	light_power = 0.25

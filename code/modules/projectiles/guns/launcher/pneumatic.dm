@@ -12,7 +12,7 @@
 	w_class = ITEMSIZE_HUGE
 	fire_sound_text = "a loud whoosh of moving air"
 	fire_delay = 50
-	fire_sound = 'sound/weapons/grenade_launcher.ogg' // Formerly tablehit1.ogg but I like this better -Ace
+	fire_sound = SFX_WEAPONS_GRENADE_LAUNCHER // Formerly tablehit1.ogg but I like this better -Ace
 
 	var/fire_pressure									// Used in fire checks/pressure checks.
 	var/hopper_size = ITEMSIZE_NORMAL					// Hopper intake size.

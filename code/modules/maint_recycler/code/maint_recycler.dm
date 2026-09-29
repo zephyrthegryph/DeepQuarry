@@ -21,7 +21,7 @@
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 300
 	active_power_usage = 300
-	clicksound = 'code/modules/maint_recycler/sfx/typing.ogg'
+	clicksound = SFX_RECYCLER_TYPING
 
 	light_color = "#0f8f0f"
 
@@ -107,11 +107,7 @@
 		'code/modules/maint_recycler/sfx/voice/thankyou/the-ecosystem-thanks-you.ogg'
 	)
 
-	var/static/list/angry_sounds = list(
-		'code/modules/maint_recycler/sfx/voice/mad/denied.ogg',
-		'code/modules/maint_recycler/sfx/voice/mad/die die die die.ogg',
-		'code/modules/maint_recycler/sfx/voice/mad/this will not stand.ogg'
-	)
+	var/static/angry_sounds = SFX_RECYCLER_DENIED_MIX
 
 	///voice audio files filted via audacity:
 	/// * Rectifier distort @ 39
@@ -284,7 +280,7 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 		if(!isRepeat) GLOB.global_announcer.autosay("PROPERTY DESTRUCTION ALERT: Crewmember [user] has been recorded attempting to destroy high priority station equipment in [get_area(src)]. Please ensure the integrity of \the [O].", "[src]", "Security")
 		audible_message("[src] states, \"CRIMINAL INTENT DETECTED.\" ", "\The [src]'s screen briefly flashes to an angry red graphic!" , runemessage = ">:(")
 
-	playsound(src,pick(angry_sounds),80)
+	playsound(src,angry_sounds,80)
 	set_screen_state("screen_mad",30)
 
 	om_after(src, 0.3 SECONDS, PROC_REF(shoot_at), user)

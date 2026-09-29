@@ -6,8 +6,8 @@
 	var/label = null
 	var/labels_left = 30
 	var/mode = 0	//off or on.
-	drop_sound = 'sound/items/drop/device.ogg'
-	pickup_sound = 'sound/items/pickup/device.ogg'
+	drop_sound = SFX_ITEMS_DROP_DEVICE
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 
 /obj/item/hand_labeler/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	return NONE

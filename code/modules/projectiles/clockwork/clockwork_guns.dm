@@ -51,13 +51,13 @@
 	user?.hud_used?.update_ammo_hud(user, src) // Update one last time once we're finished!
 
 /obj/item/projectile/bullet/rifle/clockwork
-	fire_sound = 'sound/weapons/clockwork/cwc_rifle_fire.ogg'
+	fire_sound = SFX_WEAPONS_CLOCKWORK_CWC_RIFLE_FIRE
 	damage = 20 //Old 10
 	hud_state = "rifle_heavy"
 
 /obj/item/projectile/beam/shock/clockwork
 	name = "shock beam"
-	fire_sound = 'sound/weapons/clockwork/voltbeam_fire.ogg'
+	fire_sound = SFX_WEAPONS_CLOCKWORK_VOLTBEAM_FIRE
 	icon_state = "lightning"
 
 	muzzle_type = /obj/effect/projectile/muzzle/voltbeam
@@ -67,8 +67,8 @@
 	damage = 40 //Old 20
 	agony = 15
 	eyeblur = 2
-	hitsound = 'sound/effects/lightningshock.ogg'
-	hitsound_wall = 'sound/weapons/clockwork/voltbeamsearwall.ogg'
+	hitsound = SFX_EFFECTS_LIGHTNINGSHOCK
+	hitsound_wall = SFX_WEAPONS_CLOCKWORK_VOLTBEAMSEARWALL
 	hud_state = "taser"
 
 /obj/effect/projectile/muzzle/voltbeam

@@ -23,7 +23,7 @@
 	meat_amount = 20
 
 	projectiletype = /obj/item/projectile/energy/spidertoxin
-	projectilesound = 'sound/weapons/pierce.ogg'
+	projectilesound = SFX_WEAPONS_PIERCE
 
 	var/static/list/possible_brood_types = list(
 		/mob/living/simple_mob/animal/giant_spider/frost/broodling,

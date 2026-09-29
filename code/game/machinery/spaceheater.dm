@@ -35,7 +35,7 @@
 	var/regulator_carnot_fraction = 0.4
 	/// Upper bound on the pump's COP.
 	var/regulator_max_cop = 25
-	clicksound = "switch"
+	clicksound = SFX_SWITCH
 	interact_offline = TRUE
 	bubble_icon = "engineering"
 	circuit = /obj/item/circuitboard/space_heater

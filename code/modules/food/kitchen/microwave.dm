@@ -21,7 +21,7 @@
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 5
 	active_power_usage = 2000
-	clicksound = "button"
+	clicksound = SFX_BUTTON
 	clickvol = 30
 	flags = MICROWAVE_FLAGS
 	circuit = /obj/item/circuitboard/microwave

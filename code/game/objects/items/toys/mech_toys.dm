@@ -15,7 +15,7 @@
 /obj/item/toy/mecha
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "ripleytoy"
-	drop_sound = 'sound/mecha/mechstep.ogg'
+	drop_sound = SFX_MECHA_MECHSTEP
 	reach = 2 // So you can battle across the table!
 
 	// Mech Battle Vars

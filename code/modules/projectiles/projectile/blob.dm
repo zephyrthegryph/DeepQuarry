@@ -5,7 +5,7 @@
 	armor_penetration = 40
 	injury_kind = INJURY_BLUNT
 	pass_flags = PASSTABLE | PASSBLOB
-	fire_sound = 'sound/effects/slime_squish.ogg'
+	fire_sound = SFX_EFFECTS_SLIME_SQUISH
 	var/splatter = FALSE			// Will this make a cloud of reagents?
 	var/splatter_volume = 5			// The volume of its chemical container, for said cloud of reagents.
 	var/list/my_chems = list(REAGENT_ID_MOLD) // ALLOW(instance_list): c: read-only per-subtype constant table (6 subtype overrides); a getter would share it, not worth it on a rare type
@@ -69,4 +69,4 @@
 	injury_kind = INJURY_CORROSIVE
 	armor_penetration = 20
 	penetrating = 3
-	fire_sound = 'sound/effects/slime_squish.ogg'
+	fire_sound = SFX_EFFECTS_SLIME_SQUISH

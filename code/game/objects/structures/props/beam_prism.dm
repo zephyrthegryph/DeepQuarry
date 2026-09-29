@@ -16,7 +16,7 @@
 	var/external_control_lock = 0	// Does the prism only rotate from the controls of an external switch?
 	var/degrees_from_north = 0	// How far is it rotated clockwise?
 	var/compass_directions = list("North" = 0, "South" = 180, "East" = 90, "West" = 270, "Northwest" = 315, "Northeast" = 45, "Southeast" = 135, "Southwest" = 225)
-	var/interaction_sound = 'sound/mecha/mechmove04.ogg'
+	var/interaction_sound = SFX_MECHA_MECHMOVE04
 
 	var/redirect_type = /obj/item/projectile/beam
 

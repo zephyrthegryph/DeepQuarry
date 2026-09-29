@@ -21,8 +21,8 @@
 	edge = TRUE
 	attack_verb = list("chopped", "torn", "cut")
 	applies_material_colour = 0
-	drop_sound = 'sound/items/drop/axe.ogg'
-	pickup_sound = 'sound/items/pickup/axe.ogg'
+	drop_sound = SFX_ITEMS_DROP_AXE
+	pickup_sound = SFX_ITEMS_PICKUP_AXE
 /* We have one already
 /obj/item/material/knife/machete/hatchet/stone
 	name = "sharp rock"
@@ -234,7 +234,7 @@ DECLARE_INTERACTIONS(/obj/item/material/whip, INTERACT_USE(null, PROC_REF(intera
 	item_state = "cleaving_saw"
 	active = 0
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	hitsound = 'sound/weapons/bladeslice.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
 	w_class = ITEMSIZE_LARGE
 	edge = 1
 	sharp = 1

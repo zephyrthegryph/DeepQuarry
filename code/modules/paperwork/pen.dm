@@ -29,8 +29,8 @@
 	MATERIAL_BULK(MAT_STEEL, 10)
 	var/colour = "black"	//what colour the ink is!
 	pressure_resistance = 2
-	drop_sound = 'sound/items/drop/accessory.ogg'
-	pickup_sound = 'sound/items/pickup/accessory.ogg'
+	drop_sound = SFX_ITEMS_DROP_ACCESSORY
+	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 	var/can_click = TRUE
 
 	///Var for attack_self chain
@@ -359,8 +359,8 @@ EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
 	var/uses = 30 //0 for unlimited uses
 	var/instant = 0
 	var/colourName = "red" //for updateIcon purposes
-	drop_sound = 'sound/items/drop/gloves.ogg'
-	pickup_sound = 'sound/items/pickup/gloves.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLOVES
+	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 	can_click = FALSE
 	special_handling = TRUE
 

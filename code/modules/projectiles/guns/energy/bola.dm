@@ -4,7 +4,7 @@
 	icon_state = "netgun"
 	item_state = "gun" // Placeholder
 
-	fire_sound = 'sound/weapons/eLuger.ogg'
+	fire_sound = SFX_WEAPONS_ELUGER
 	projectile_type = /obj/item/projectile/bola/energy
 	charge_cost = 400 //Low energy cost.
 	fire_delay = 10 //Rapid fire!

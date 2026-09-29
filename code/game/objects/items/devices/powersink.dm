@@ -23,8 +23,8 @@
 	var/PN = 0			// The power region we drain
 	var/attached_handle		// the attached cable
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/powersink/screwdriver_act(mob/user, obj/item/tool)
 	if(mode == 0)

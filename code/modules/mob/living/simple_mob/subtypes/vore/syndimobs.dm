@@ -46,7 +46,7 @@
 	special_attack_cooldown = 5 SECONDS
 
 	var/leap_warmup = 0.5 SECOND // How long the leap telegraphing is.
-	var/leap_sound = 'sound/weapons/spiderlunge.ogg'
+	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
 	player_msg = "You are very fast, and " + span_bold("can perform a leaping attack") + " by clicking on someone from a short distance away.<br>\
 	If the leap succeeds, the target will be knocked down briefly and you will be on top of them.<br>\
@@ -205,7 +205,7 @@
 	loot_list = list(/obj/item/gun/projectile/automatic/z8 = 1)
 
 	projectiletype = /obj/item/projectile/bullet/rifle/a545
-	projectilesound = 'sound/weapons/serdy/type901.ogg'
+	projectilesound = SFX_WEAPONS_SERDY_TYPE901
 	projectile_dispersion = 3
 	projectile_accuracy = -15
 	base_attack_cooldown = 8
@@ -254,7 +254,7 @@
 	icon_rest = "synditaur_lmg"
 	loot_list = list(/obj/item/gun/projectile/automatic/l6_saw = 1)
 	projectiletype = /obj/item/projectile/bullet/pistol
-	projectilesound = 'sound/weapons/ballistics/a545.ogg'
+	projectilesound = SFX_WEAPONS_BALLISTICS_A545
 	projectile_dispersion = 12
 	projectile_accuracy = -25
 	random_skin = 0
@@ -271,7 +271,7 @@
 	icon_rest = "synditaur_smg"
 	loot_list = list(/obj/item/gun/projectile/automatic/p90 = 15)
 	projectiletype = /obj/item/projectile/bullet/a57
-	projectilesound = 'sound/weapons/ballistics/a545.ogg'
+	projectilesound = SFX_WEAPONS_BALLISTICS_A545
 	projectile_dispersion = 1
 	projectile_accuracy = -10
 	random_skin = 0
@@ -288,7 +288,7 @@
 	icon_rest = "synditaur_awp"
 	loot_list = list(/obj/item/gun/projectile/automatic/serdy/awp = 1)
 	projectiletype = /obj/item/projectile/bullet/rifle/a338
-	projectilesound = 'sound/weapons/ballistics/a762x54.ogg'
+	projectilesound = SFX_WEAPONS_BALLISTICS_A762X54
 	projectile_dispersion = 0
 	projectile_accuracy = 50
 	random_skin = 0

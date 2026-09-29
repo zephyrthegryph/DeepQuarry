@@ -13,7 +13,7 @@
 	special_attack_cooldown = 5 SECONDS
 	movement_cooldown = 0.5
 	color = "#ccff4a"
-	projectilesound = 'sound/weapons/wave.ogg'
+	projectilesound = SFX_WEAPONS_WAVE
 	var/grenade_type = /obj/item/grenade/shooter/energy/tesla
 	var/grenade_timer = 10
 	var/grenade_type2 = /obj/item/grenade/shooter/rubber

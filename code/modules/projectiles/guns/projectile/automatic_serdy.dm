@@ -440,8 +440,8 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hunter, INTERACT_VE
 	w_class = ITEMSIZE_HUGE
 	one_handed_penalty = 70
 	bolt_name = "bolt"
-	sound_eject = 'sound/weapons/ballistics/boltactionopen.ogg'
-	sound_chamber = 'sound/weapons/ballistics/boltactionclose.ogg'
+	sound_eject = SFX_WEAPONS_BALLISTICS_BOLTACTIONOPEN
+	sound_chamber = SFX_WEAPONS_BALLISTICS_BOLTACTIONCLOSE
 	fire_sound = "sound/weapons/serdy/sks.ogg"
 
 /obj/item/gun/projectile/automatic/serdy/mosin/scoped
@@ -515,8 +515,8 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/mosin/scoped, INTER
 	w_class = ITEMSIZE_HUGE
 	one_handed_penalty = 90
 	bolt_name = "bolt"
-	sound_eject = 'sound/weapons/ballistics/boltactionopen.ogg'
-	sound_chamber = 'sound/weapons/ballistics/boltactionclose.ogg'
+	sound_eject = SFX_WEAPONS_BALLISTICS_BOLTACTIONOPEN
+	sound_chamber = SFX_WEAPONS_BALLISTICS_BOLTACTIONCLOSE
 	fire_sound = "sound/weapons/serdy/sks.ogg"
 
 /obj/item/gun/projectile/automatic/serdy/awp/ui_action_click(mob/user, actiontype)
@@ -550,8 +550,8 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/awp, INTERACT_VERB(
 	w_class = ITEMSIZE_HUGE
 	one_handed_penalty = 120
 	bolt_name = "bolt"
-	sound_eject = 'sound/weapons/ballistics/boltactionopen.ogg'
-	sound_chamber = 'sound/weapons/ballistics/boltactionclose.ogg'
+	sound_eject = SFX_WEAPONS_BALLISTICS_BOLTACTIONOPEN
+	sound_chamber = SFX_WEAPONS_BALLISTICS_BOLTACTIONCLOSE
 	fire_sound = "sound/weapons/serdy/sks.ogg"
 
 
@@ -908,7 +908,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 	load_method = MAGAZINE
 	auto_loading_type = OPEN_BOLT
 	one_handed_penalty = 90
-	fire_sound = 'sound/weapons/serdy/strela.ogg'
+	fire_sound = SFX_WEAPONS_SERDY_STRELA
 
 //commented this out because it seems to be breaking the Kord -- Ocelot
 /*
@@ -1114,9 +1114,9 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 //automatic.dm
 /obj/item/gun/projectile/automatic
 	bolt_name="charging handle"
-	sound_ejectchamber = 'sound/weapons/ballistics/rifle_ejectchamber.ogg'
-	sound_eject = 'sound/weapons/ballistics/rifle_eject.ogg'
-	sound_chamber = 'sound/weapons/ballistics/rifle_chamber.ogg'
+	sound_ejectchamber = SFX_WEAPONS_BALLISTICS_RIFLE_EJECTCHAMBER
+	sound_eject = SFX_WEAPONS_BALLISTICS_RIFLE_EJECT
+	sound_chamber = SFX_WEAPONS_BALLISTICS_RIFLE_CHAMBER
 
 /obj/item/gun/projectile/automatic/c20r
 	icon = 'icons/obj/64x32guns_ch.dmi'
@@ -1370,9 +1370,9 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 	bolt_name="charging handle"
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY | CHAMBER_ON_RELOAD
 	bolt_release = null
-	sound_ejectchamber = 'sound/weapons/ballistics/rifle_ejectchamber.ogg'
-	sound_eject = 'sound/weapons/ballistics/rifle_eject.ogg'
-	sound_chamber = 'sound/weapons/ballistics/rifle_chamber.ogg'
+	sound_ejectchamber = SFX_WEAPONS_BALLISTICS_RIFLE_EJECTCHAMBER
+	sound_eject = SFX_WEAPONS_BALLISTICS_RIFLE_EJECT
+	sound_chamber = SFX_WEAPONS_BALLISTICS_RIFLE_CHAMBER
 	only_open_load = TRUE
 
 /obj/item/gun/projectile/revolvingrifle
@@ -1557,6 +1557,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 /obj/item/gun/projectile/SVD
 	bolt_name = "charging handle"
 	desc = "The PCA S19 Jalgarr, also known by its translated name the 'Dragon', is mass produced with an Optical Sniper Sight so simple that even a Tajaran can use it. Too bad for you that the inscriptions are written in Siik. Uses 7.62mm rounds."
-	sound_ejectchamber = 'sound/weapons/ballistics/rifle_ejectchamber.ogg'
-	sound_eject = 'sound/weapons/ballistics/rifle_eject.ogg'
-	sound_chamber = 'sound/weapons/ballistics/rifle_chamber.ogg'
+	sound_ejectchamber = SFX_WEAPONS_BALLISTICS_RIFLE_EJECTCHAMBER
+	sound_eject = SFX_WEAPONS_BALLISTICS_RIFLE_EJECT
+	sound_chamber = SFX_WEAPONS_BALLISTICS_RIFLE_CHAMBER

@@ -204,7 +204,7 @@
 
 /datum/looping_sound/proc/play(soundfile)
 	var/list/atoms_cache = output_list()
-	var/sound/S = sound(soundfile)
+	var/sound/S = sound(get_sfx(soundfile))
 	if(direct)
 		S.channel = sound_service().random_available_channel()
 		S.volume = volume

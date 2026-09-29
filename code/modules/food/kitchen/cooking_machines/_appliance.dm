@@ -25,7 +25,7 @@
 	var/can_cook_mobs				// Whether or not this machine accepts grabbed mobs.
 	var/mob_injury_kind = INJURY_BLUNT	// What a mob stuffed inside suffers: burns for cooking appliances, bruising for cereal/candy
 	var/food_color					// Colour of resulting food item.
-	var/cooked_sound = 'sound/machines/ding.ogg'				// Sound played when cooking completes.
+	var/cooked_sound = SFX_MACHINES_DING				// Sound played when cooking completes.
 	var/can_burn_food = FALSE		// Can the object burn food that is left inside?
 	var/burn_chance = 10			// How likely is the food to burn?
 	var/list/cooking_objs	// List of things being cooked

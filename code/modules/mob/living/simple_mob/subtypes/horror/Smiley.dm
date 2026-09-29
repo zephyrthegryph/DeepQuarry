@@ -1,5 +1,5 @@
 /mob/living/simple_mob/horror/Smiley
-	reaction_sound = 'sound/h_sounds/holla.ogg'
+	reaction_sound = SFX_H_SOUNDS_HOLLA
 	name = "???"
 	desc = "A giant hand, with a large, smiling head on top."
 
@@ -11,7 +11,7 @@
 	icon = 'icons/mob/horror_show/GHPS.dmi'
 	icon_gib = "generic_gib"
 
-	attack_sound = 'sound/h_sounds/holla.ogg'
+	attack_sound = SFX_H_SOUNDS_HOLLA
 
 	endurance = 175
 

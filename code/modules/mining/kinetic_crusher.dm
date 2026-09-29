@@ -21,7 +21,7 @@
 	throwforce = 5
 	throw_speed = 4
 	armor_penetration = 10
-	hitsound = 'sound/weapons/bladeslice.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
 	attack_verb = list("smashed", "crushed", "cleaved", "chopped", "pulped")
 	sharp = FALSE //crushing damage
 	edge = FALSE
@@ -209,7 +209,7 @@
 	// did someone say single target damage
 	name = "\improper proto-kinetic gear"
 	desc = "A pair of scaled-down proto-kinetic crusher destabilizer modules shoved into gauntlets and greaves, used by those who wish to spit in the eyes of God."
-	hitsound = 'sound/weapons/resonator_blast.ogg'
+	hitsound = SFX_WEAPONS_RESONATOR_BLAST
 	embed_chance = 0
 	icon_state = "crusher-hands"
 	item_state = "c-gauntlets"

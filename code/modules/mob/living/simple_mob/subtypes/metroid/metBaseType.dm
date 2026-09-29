@@ -39,7 +39,7 @@
 	melee_damage_lower = 10
 	melee_damage_upper = 15
 	base_attack_cooldown = 10 // One attack a second.
-	attack_sound = 'sound/metroid/metroidattack.ogg'
+	attack_sound = SFX_METROID_METROIDATTACK
 	attacktext = list("suckulated")
 	speak_emote = list("chirps")
 	friendly = list("pokes")

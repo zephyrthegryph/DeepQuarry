@@ -25,7 +25,7 @@
 	active_power_usage = 200
 	buckle_lying = FALSE
 	buckle_dir = SOUTH
-	clicksound = 'sound/machines/buttonbeep.ogg'
+	clicksound = SFX_MACHINES_BUTTONBEEP
 	clickvol = 30
 
 	var/temperature_archived

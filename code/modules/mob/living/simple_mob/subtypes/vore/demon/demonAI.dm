@@ -1,5 +1,5 @@
 /mob/living/simple_mob/vore/demonAI
-	reaction_sound = 'sound/misc/demonlaugh.ogg'
+	reaction_sound = SFX_MISC_DEMONLAUGH
 	name = "Rift Walker"
 	desc = "A large bipedal creature, its body has a mixture of dark fur and scales. Marks on the creature's body pulse slowly with red light."
 
@@ -22,7 +22,7 @@
 	see_in_dark = 10
 	has_hands = TRUE
 	seedarkness = FALSE
-	attack_sound = 'sound/misc/demonattack.ogg'
+	attack_sound = SFX_MISC_DEMONATTACK
 	has_langs = list(LANGUAGE_GALCOM,LANGUAGE_SHADEKIN,LANGUAGE_CULT)
 
 	melee_damage_lower = 10

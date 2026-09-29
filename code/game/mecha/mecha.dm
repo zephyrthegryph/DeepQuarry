@@ -44,7 +44,7 @@
 
 	var/stomp_sound = 'sound/mecha/mechstep.ogg'
 	var/stomp_sound_2 = 'sound/mecha/mechstep.ogg' // Used for 1-2 step patterns instead of random choice.
-	var/swivel_sound = 'sound/mecha/mechturn.ogg'
+	var/swivel_sound = SFX_MECHA_MECHTURN
 	var/reps = 0 // Used for 1-2 step patterns.
 
 	//inner atmos

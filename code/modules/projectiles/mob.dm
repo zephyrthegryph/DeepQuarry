@@ -4,7 +4,7 @@
 /obj/item/projectile/energy/mob/heavylaser
 	name = "heavy laser"
 	icon_state = "impact_beam_heavy"
-	fire_sound = 'sound/weapons/lasercannonfire.ogg'
+	fire_sound = SFX_WEAPONS_LASERCANNONFIRE
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	damage = 60 //Old 25
 	armor_penetration = 30
@@ -15,7 +15,7 @@
 /obj/item/projectile/energy/mob/midlaser
 	name = "laser"
 	icon_state = "impact_laser"
-	fire_sound = 'sound/weapons/Laser.ogg'
+	fire_sound = SFX_WEAPONS_LASER
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	damage = 40 //old 20
 	armor_penetration = 10
@@ -23,7 +23,7 @@
 /obj/item/projectile/energy/mob/smalllaser
 	name = "laser"
 	icon_state = "impact_laser"
-	fire_sound = 'sound/weapons/Laser.ogg'
+	fire_sound = SFX_WEAPONS_LASER
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	damage = 30 //Old 10
 	armor_penetration = 0
@@ -32,19 +32,19 @@
 /obj/item/projectile/energy/mob/drone
 	name = "laser"
 	icon_state = "impact_laser"
-	fire_sound = 'sound/weapons/Laser.ogg'
+	fire_sound = SFX_WEAPONS_LASER
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	damage = 20 //Old 10
 
 /obj/item/projectile/energy/mob/electric_spider
 	name = "stun beam"
 	icon_state = "impact_stun"
-	fire_sound = 'sound/weapons/taser.ogg'
+	fire_sound = SFX_WEAPONS_TASER
 	nodamage = 1
 	taser_effect = 1
 	injury_kind = INJURY_PAIN
 	light_color = "#FFFFFF"
-	hitsound = 'sound/weapons/zapbang.ogg'
+	hitsound = SFX_WEAPONS_ZAPBANG
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	combustion = FALSE
 	agony = 20
@@ -53,7 +53,7 @@
 	name = "precursor beam"
 	icon = 'icons/obj/projectiles_ch.dmi'
 	icon_state = "impact_prec"
-	fire_sound = 'sound/weapons/MediumLaser.ogg'
+	fire_sound = SFX_WEAPONS_MEDIUMLASER
 	light_color = "#FF0099"
 
 	hud_state = "plasma_rifle"
@@ -120,4 +120,4 @@
 	emp_on_hit = TRUE
 	light_color = "#00CCFF"
 	icon_state = "impact_blue"
-	fire_sound = 'sound/weapons/Laser.ogg'
+	fire_sound = SFX_WEAPONS_LASER

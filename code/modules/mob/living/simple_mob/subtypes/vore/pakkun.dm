@@ -45,7 +45,7 @@
 
 	base_attack_cooldown = 5 SECONDS
 	projectiletype = /obj/item/projectile/beam/appendage
-	projectilesound = 'sound/effects/slime_squish.ogg'
+	projectilesound = SFX_EFFECTS_SLIME_SQUISH
 
 	vore_default_mode = DM_SELECT
 

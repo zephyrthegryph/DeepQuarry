@@ -16,7 +16,7 @@
 	icon_override = 'icons/vore/custom_guns_vr.dmi'
 	item_state = "gun"
 
-	fire_sound = 'sound/effects/basscannon.ogg'
+	fire_sound = SFX_EFFECTS_BASSCANNON
 	projectile_type = /obj/item/projectile/pummel
 
 	charge_cost = 600

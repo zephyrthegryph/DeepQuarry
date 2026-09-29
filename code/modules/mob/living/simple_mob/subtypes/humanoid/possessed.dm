@@ -32,7 +32,7 @@
 	melee_damage_lower = 10
 	melee_damage_upper = 25
 	attacktext = list("punched", "kicked", "smacked")
-	attack_sound = "punch"
+	attack_sound = SFX_PUNCH
 	armor_spec = "melee=30;bullet=10;laser=20;energy=25;bomb=20;bio=100;rad=100" //This should be the same as the base RIG.
 
 	has_hands = 1
@@ -40,7 +40,7 @@
 
 	grab_resist = 100
 
-	movement_sound = 'sound/effects/footstep/floor1.ogg'
+	movement_sound = SFX_EFFECTS_FOOTSTEP_FLOOR1
 
 	//Simple mob merc so it stops, says something, then charges.
 	say_list_type = /datum/say_list/possessed //Set to Null on silenced.

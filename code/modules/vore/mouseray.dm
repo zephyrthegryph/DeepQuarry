@@ -5,7 +5,7 @@
 	icon_state = "mouseray"
 	item_state = "mouseray"
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns_vr.dmi', slot_r_hand_str = 'icons/mob/items/righthand_guns_vr.dmi')
-	fire_sound = 'sound/weapons/wave.ogg'
+	fire_sound = SFX_WEAPONS_WAVE
 	charge_cost = 240
 	projectile_type = /obj/item/projectile/beam/mouselaser
 	battery_lock = 1

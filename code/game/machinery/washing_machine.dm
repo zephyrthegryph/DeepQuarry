@@ -16,7 +16,7 @@
 	icon_state = "wm_1"
 	density = TRUE
 	anchored = TRUE
-	clicksound = "button"
+	clicksound = SFX_BUTTON
 	clickvol = 40
 
 	circuit = /obj/item/circuitboard/washing

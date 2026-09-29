@@ -11,7 +11,7 @@
 	//the reaction goes to completion. This is to prevent reactions from going on forever with tiny reagent amounts.
 
 	mix_message = "The solution churns."
-	reaction_sound = 'sound/effects/slosh.ogg'
+	reaction_sound = SFX_EFFECTS_SLOSH
 
 
 	var/list/temp_range = list(T0C, T20C) // ALLOW(instance_list): c: read-only per-subtype constant table (54 subtype overrides); a getter would share it, not worth it on a rare type

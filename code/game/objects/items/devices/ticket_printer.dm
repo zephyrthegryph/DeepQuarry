@@ -6,8 +6,8 @@
 	slot_flags = SLOT_BELT | SLOT_HOLSTER
 	var/print_cooldown = 1 MINUTE
 	COOLDOWN_DECLARE(print_cooldown_until)
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 	w_class = ITEMSIZE_SMALL //because something so small, trivial, and used for silly RP should not be practically gigantic.
 
 DECLARE_INTERACTIONS(/obj/item/ticket_printer, INTERACT_USE(null, PROC_REF(interaction_self)))

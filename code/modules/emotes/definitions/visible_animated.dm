@@ -22,7 +22,7 @@
 	key = "flip"
 	emote_message_1p = "You do a flip!"
 	emote_message_3p = "does a flip!"
-	emote_sound = 'sound/effects/bodyfall4.ogg'
+	emote_sound = SFX_EFFECTS_BODYFALL4
 
 /datum/decl/emote/visible/flip/do_extra(mob/user)
 	. = ..()

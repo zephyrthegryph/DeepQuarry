@@ -33,7 +33,7 @@
 
 	base_attack_cooldown = 2.5 SECONDS
 	projectiletype = /obj/item/projectile/energy/excavate
-	projectilesound = 'sound/weapons/pulse3.ogg'
+	projectilesound = SFX_WEAPONS_PULSE3
 
 	response_help = "pokes"
 	response_disarm = "gently pushes aside"

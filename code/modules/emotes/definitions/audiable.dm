@@ -1,5 +1,5 @@
 /datum/decl/emote/audible/wheeze
-	emote_sound = 'sound/voice/wheeze.ogg'
+	emote_sound = SFX_VOICE_WHEEZE
 
 /datum/decl/emote/audible/prbt2
 	key = "prbt2"
@@ -7,7 +7,7 @@
 	emote_message_3p = "prbts."
 	emote_message_1p_target = "You prbt at TARGET."
 	emote_message_3p_target = "prbts at TARGET."
-	emote_sound = 'sound/voice/prbt2.ogg'
+	emote_sound = SFX_VOICE_PRBT2
 
 /datum/decl/emote/audible/gasp/get_emote_sound(atom/user)
 	..()
@@ -33,7 +33,7 @@
 	emote_message_3p = "mgeows."
 	emote_message_1p_target = "You mgeow at TARGET."
 	emote_message_3p_target = "mgeow at TARGET."
-	emote_sound = 'sound/voice/mgeow.ogg'
+	emote_sound = SFX_VOICE_MGEOW
 
 /datum/decl/emote/audible/xenogrowl
 	key = "xenogrowl"
@@ -41,7 +41,7 @@
 	emote_message_3p = "growls unnervingly."
 	emote_message_1p_target = "You growl unnervingly at TARGET."
 	emote_message_3p_target = "growls unnervingly at TARGET."
-	emote_sound = 'sound/voice/emotes/xenogrowl.ogg'
+	emote_sound = SFX_VOICE_EMOTES_XENOGROWL
 
 /datum/decl/emote/audible/xenohiss
 	key = "xenohiss"
@@ -49,7 +49,7 @@
 	emote_message_3p = "hisses unnervingly."
 	emote_message_1p_target = "You hiss unnervingly at TARGET."
 	emote_message_3p_target = "hisses unnervingly at TARGET."
-	emote_sound = 'sound/voice/emotes/xenohiss.ogg'
+	emote_sound = SFX_VOICE_EMOTES_XENOHISS
 
 /datum/decl/emote/audible/xenopurr
 	key = "xenopurr"
@@ -57,7 +57,7 @@
 	emote_message_3p = "purrs unnervingly."
 	emote_message_1p_target = "You purr unnervingly at TARGET."
 	emote_message_3p_target = "purrs unnervingly at TARGET."
-	emote_sound = 'sound/voice/emotes/xenopurr.ogg'
+	emote_sound = SFX_VOICE_EMOTES_XENOPURR
 
 /datum/decl/emote/audible/gwah
 	key = "gwah"
@@ -65,7 +65,7 @@
 	emote_message_3p = "gwahs."
 	emote_message_1p_target = "You gwah at TARGET."
 	emote_message_3p_target = "gwahs at TARGET."
-	emote_sound = 'sound/voice/emotes/gwah.ogg'
+	emote_sound = SFX_VOICE_EMOTES_GWAH
 
 /datum/decl/emote/audible/wawa
 	key = "wawa"
@@ -73,7 +73,7 @@
 	emote_message_3p = "wawas."
 	emote_message_1p_target = "You wawa at TARGET."
 	emote_message_3p_target = "wawas at TARGET."
-	emote_sound = 'sound/voice/emotes/wawa.ogg'
+	emote_sound = SFX_VOICE_EMOTES_WAWA
 
 /datum/decl/emote/audible/scientist //placeholder, do not use in anything
 	key = "hlscientist"
@@ -85,13 +85,7 @@
 	emote_message_3p = "screams."
 	emote_message_1p_target = "You scream at TARGET."
 	emote_message_3p_target = "screams at TARGET."
-	emote_sound = list (
-		'sound/voice/scream/scientist/scream01.ogg',
-		'sound/voice/scream/scientist/scream02.ogg',
-		'sound/voice/scream/scientist/scream06.ogg',
-		'sound/voice/scream/scientist/scream08.ogg',
-		'sound/voice/scream/scientist/scream25.ogg',
-	)
+	emote_sound = SFX_VOICE_SCREAM_SCIENTIST_SCREAM_MIX
 
 /datum/decl/emote/audible/scientist/pain
 	key = "hlpain"
@@ -99,11 +93,7 @@
 	emote_message_3p = "shouts in pain."
 	emote_message_1p_target = "You shout in pain at TARGET."
 	emote_message_3p_target = "shouts in pain at TARGET."
-	emote_sound = list (
-		'sound/voice/pain/scientist/sci_pain1.ogg',
-		'sound/voice/pain/scientist/sci_pain4.ogg',
-		'sound/voice/pain/scientist/sci_pain5.ogg',
-	)
+	emote_sound = SFX_VOICE_PAIN_SCIENTIST_SCI_PAIN_MIX
 
 /datum/decl/emote/audible/scientist/get_emote_sound(atom/user)
 	. = ..()
@@ -115,11 +105,7 @@
 	emote_message_3p = "yips!"
 	emote_message_1p_target = "You yip at TARGET!"
 	emote_message_3p_target = "yips at TARGET!"
-	emote_sound = list (
-		'sound/voice/emotes/yip1.ogg',
-		'sound/voice/emotes/yip2.ogg',
-		'sound/voice/emotes/yip3.ogg',
-	)
+	emote_sound = SFX_VOICE_EMOTES_YIP_MIX
 
 /datum/decl/emote/audible/squeal // Sound sourced from: https://github.com/Baystation12/Baystation12/blob/bd2f0bd5e38cf2bb0888e3ae879708bed20243b4/sound/voice/LizardSqueal.ogg, licensed Creative Commons 3.0 BY-SA.
 	key = "squeal"
@@ -127,7 +113,7 @@
 	emote_message_3p = "squeals."
 	emote_message_1p_target = "You squeal at TARGET."
 	emote_message_3p_target = "squeals at TARGET."
-	emote_sound = 'sound/voice/emotes/squealemote.ogg'
+	emote_sound = SFX_VOICE_EMOTES_SQUEALEMOTE
 
 /datum/decl/emote/audible/tailthump // Sound sourced from https://freesound.org/s/389665/ Licensed Creative Commons 0
 	key = "tailthump"
@@ -135,4 +121,4 @@
 	emote_message_3p = "thumps their tail."
 	emote_message_1p_target = "You thump your tail at TARGET."
 	emote_message_3p_target = "thumps their tail at TARGET."
-	emote_sound = 'sound/voice/emotes/tailthumpemote.ogg'
+	emote_sound = SFX_VOICE_EMOTES_TAILTHUMPEMOTE

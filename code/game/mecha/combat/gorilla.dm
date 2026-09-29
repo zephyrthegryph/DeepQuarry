@@ -122,7 +122,7 @@
 	icon_state = "mecha_uac2"
 	equip_cooldown = 60 // 6 seconds
 	projectile = /obj/item/projectile/bullet/cannon
-	fire_sound = 'sound/weapons/gunshot_cannon.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_CANNON
 	projectiles = 1
 	projectile_energy_cost = 1000
 	salvageable = 0 // We don't want players ripping this off a dead mech. Could potentially be a prize for beating it if Devs bless me and someone offers a nerf idea.

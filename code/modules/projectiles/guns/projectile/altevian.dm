@@ -33,7 +33,7 @@
 	MATERIAL_BULK(MAT_STEEL, 30)
 
 /obj/item/projectile/bullet/sam48
-	fire_sound = 'sound/weapons/gunshot4.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT4
 	icon_state = "sam48"
 	damage = 49
 	hud_state = "pistol_special"

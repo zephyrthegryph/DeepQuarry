@@ -2,8 +2,8 @@
 	volume = 40 //just over one and a half cups
 	amount_per_transfer_from_this = 5
 	flags = NONE //starts closed
-	drop_sound = 'sound/items/drop/soda.ogg'
-	pickup_sound = 'sound/items/pickup/soda.ogg'
+	drop_sound = SFX_ITEMS_DROP_SODA
+	pickup_sound = SFX_ITEMS_PICKUP_SODA
 	cant_chance = 1 //arbitrarily high for april fools; if it's not reverted in its entirety I suggest rolling it down to 2% or something
 	var/shaken = 0 // How many times this can has been shaken.
 	is_can = TRUE
@@ -74,8 +74,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/decaf_cola, null,
 	icon_state = "waterbottle"
 	center_of_mass_x = 16
 	center_of_mass_y = 8
-	drop_sound = 'sound/items/drop/disk.ogg'
-	pickup_sound = 'sound/items/pickup/disk.ogg'
+	drop_sound = SFX_ITEMS_DROP_DISK
+	pickup_sound = SFX_ITEMS_PICKUP_DISK
 	cant_chance = 0
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/waterbottle, null, list(REAGENT_ID_WATER = 30))
@@ -644,6 +644,6 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_one, null, 
 	icon = 'icons/obj/food_ch.dmi'
 	icon_state = "wataur"
 	volume = 150
-	drop_sound = 'sound/items/drop/food.ogg'
+	drop_sound = SFX_ITEMS_DROP_FOOD
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/waterbottle/wataur, null, list(REAGENT_ID_WATER = 120))

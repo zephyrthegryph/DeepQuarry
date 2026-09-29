@@ -7,7 +7,7 @@
 	endurance = 200
 
 	is_ranged = 1
-	preparing_arrest_sounds = new()
+	preparing_arrest_sounds = null
 
 	combat_mode = TRUE
 	mob_bump_flag = HEAVY

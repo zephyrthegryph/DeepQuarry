@@ -11,8 +11,8 @@
 	max_transfer_amount = 60
 	flags = NONE
 	volume = 60
-	drop_sound = 'sound/items/drop/bottle.ogg'
-	pickup_sound = 'sound/items/pickup/bottle.ogg'
+	drop_sound = SFX_ITEMS_DROP_BOTTLE
+	pickup_sound = SFX_ITEMS_PICKUP_BOTTLE
 
 /obj/item/reagent_containers/glass/bottle/on_reagent_change()
 	update_icon()

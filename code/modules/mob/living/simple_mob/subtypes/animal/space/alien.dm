@@ -26,7 +26,7 @@
 	attack_injury_kind = INJURY_CUT
 
 	attacktext = list("slashed")
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 
 	meat_type = /obj/item/reagent_containers/food/snacks/xenomeat
 	meat_amount = 5
@@ -51,7 +51,7 @@
 	melee_damage_lower = 15
 	melee_damage_upper = 15
 	projectiletype = /obj/item/projectile/energy/neurotoxin/toxic
-	projectilesound = 'sound/weapons/pierce.ogg'
+	projectilesound = SFX_WEAPONS_PIERCE
 
 /mob/living/simple_mob/animal/space/alien/sentinel/praetorian
 	name = "alien praetorian"
@@ -78,7 +78,7 @@
 	melee_damage_lower = 15
 	melee_damage_upper = 15
 	projectiletype = /obj/item/projectile/energy/neurotoxin/toxic
-	projectilesound = 'sound/weapons/pierce.ogg'
+	projectilesound = SFX_WEAPONS_PIERCE
 
 
 	movement_cooldown = 3
@@ -172,7 +172,7 @@
 	melee_damage_upper = 35
 	movement_cooldown = 10
 	movement_shake_radius = 7
-	movement_sound = 'sound/weapons/heavysmash.ogg'
+	movement_sound = SFX_WEAPONS_HEAVYSMASH
 	projectiletype = null
 	size_multiplier = 2
 

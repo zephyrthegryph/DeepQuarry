@@ -740,7 +740,7 @@ DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
 		slot_l_hand_str = 'icons/mob/items/lefthand.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand.dmi',
 	)
-	honk_sound = 'sound/voice/quack.ogg'
+	honk_sound = SFX_VOICE_QUACK
 
 //Admin spawn duckies
 
@@ -750,7 +750,7 @@ DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_red"
 	item_state = "rubberducky_red"
-	honk_sound = 'sound/effects/adminhelp.ogg'
+	honk_sound = SFX_EFFECTS_ADMINHELP
 	var/honk_count = 0
 	special_handling = TRUE
 
@@ -778,7 +778,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/red, INTERACT_USE("Squeeze", 
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_blue"
 	item_state = "rubberducky_blue"
-	honk_sound = 'sound/effects/bubbles.ogg'
+	honk_sound = SFX_EFFECTS_BUBBLES
 	special_handling = TRUE
 
 EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/blue, INTERACT_USE("Squeeze", PROC_REF(duck_blue_self)))
@@ -801,7 +801,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/blue, INTERACT_USE("Squeeze",
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_pink"
 	item_state = "rubberducky_pink"
-	honk_sound = 'sound/vore/sunesound/pred/insertion_01.ogg'
+	honk_sound = SFX_VORE_SUNESOUND_PRED_INSERTION_01
 	special_handling = TRUE
 
 EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/pink, INTERACT_USE("Squeeze", PROC_REF(duck_pink_self)))
@@ -834,7 +834,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/pink, INTERACT_USE("Squeeze",
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_grey"
 	item_state = "rubberducky_grey"
-	honk_sound = 'sound/effects/ghost.ogg'
+	honk_sound = SFX_EFFECTS_GHOST
 	special_handling = TRUE
 
 EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/grey, INTERACT_USE("Squeeze", PROC_REF(duck_grey_self)))
@@ -863,7 +863,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/grey, INTERACT_USE("Squeeze",
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_green"
 	item_state = "rubberducky_green"
-	honk_sound = 'sound/arcade/mana.ogg'
+	honk_sound = SFX_ARCADE_MANA
 	var/static/list/flora = list(/obj/structure/flora/ausbushes,
 						/obj/structure/flora/ausbushes/reedbush,
 						/obj/structure/flora/ausbushes/leafybush,
@@ -903,7 +903,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/green, INTERACT_USE("Squeeze"
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_white"
 	item_state = "rubberducky_white"
-	honk_sound = 'sound/effects/lightningshock.ogg'
+	honk_sound = SFX_EFFECTS_LIGHTNINGSHOCK
 	special_handling = TRUE
 
 EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/white, INTERACT_USE("Squeeze", PROC_REF(duck_white_self)))
@@ -926,8 +926,8 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/white, INTERACT_USE("Squeeze"
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_black"
 	item_state = "rubberducky_black"
-	light_sound = 'sound/voice/quack.ogg'
-	blast_sound = 'sound/voice/quack.ogg'
+	light_sound = SFX_VOICE_QUACK
+	blast_sound = SFX_VOICE_QUACK
 
 /obj/item/bikehorn/rubberducky/gold
 	name = "rubber ducky"
@@ -935,7 +935,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/white, INTERACT_USE("Squeeze"
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_gold"
 	item_state = "rubberducky_gold"
-	honk_sound = 'sound/voice/quack_reverb.ogg'
+	honk_sound = SFX_VOICE_QUACK_REVERB
 	special_handling = TRUE
 
 EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/gold, INTERACT_USE("Squeeze", PROC_REF(duck_gold_self)))
@@ -961,7 +961,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/gold, INTERACT_USE("Squeeze",
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_viking"
 	item_state = "rubberducky_viking"
-	honk_sound = 'sound/voice/scream_jelly_m1.ogg'
+	honk_sound = SFX_VOICE_SCREAM_JELLY_M1
 	honk_text = "DUK ROH DAH!"
 	special_handling = TRUE
 
@@ -985,7 +985,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/viking, INTERACT_USE("Squeeze
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_galaxy"
 	item_state = "rubberducky_galaxy"
-	honk_sound = 'sound/effects/teleport.ogg'
+	honk_sound = SFX_EFFECTS_TELEPORT
 	special_handling = TRUE
 
 EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze", PROC_REF(duck_galaxy_self)))

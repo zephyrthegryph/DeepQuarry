@@ -38,8 +38,8 @@
 	var/material_quenched = FALSE
 	var/material_feedback_cooldown = 0
 
-	drop_sound = 'sound/items/drop/component.ogg'
-	pickup_sound = 'sound/items/pickup/component.ogg'
+	drop_sound = SFX_ITEMS_DROP_COMPONENT
+	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
 
 	// Overlay stuff.
 	var/standard_overlays = TRUE

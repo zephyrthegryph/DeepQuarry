@@ -22,8 +22,8 @@
 	var/list/sprite_stack
 
 	var/list/files
-	drop_sound = 'sound/items/drop/card.ogg'
-	pickup_sound = 'sound/items/pickup/card.ogg'
+	drop_sound = SFX_ITEMS_DROP_CARD
+	pickup_sound = SFX_ITEMS_PICKUP_CARD
 
 /obj/item/card/Initialize(mapload)
 	. = ..()
@@ -58,8 +58,8 @@
 	var/data = "null"
 	var/special = null
 	item_state = "card-id"
-	drop_sound = 'sound/items/drop/disk.ogg'
-	pickup_sound = 'sound/items/pickup/disk.ogg'
+	drop_sound = SFX_ITEMS_DROP_DISK
+	pickup_sound = SFX_ITEMS_PICKUP_DISK
 
 /obj/item/card/data/proc/data_label_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	// The old verb took the text as its argument; ask for it instead.
@@ -177,8 +177,8 @@ DECLARE_INTERACTIONS(/obj/item/card/emag, INTERACT_ITEM(null, PROC_REF(interacti
 	var/base_icon = 'icons/obj/card_fluff.dmi'
 	var/list/sprite_stack = list("") // ALLOW(instance_list): d: edited in place per instance (22 writers)
 
-	drop_sound = 'sound/items/drop/card.ogg'
-	pickup_sound = 'sound/items/pickup/card.ogg'
+	drop_sound = SFX_ITEMS_DROP_CARD
+	pickup_sound = SFX_ITEMS_PICKUP_CARD
 
 /obj/item/card_fluff/proc/reset_icon()
 	sprite_stack = list("")

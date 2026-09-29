@@ -255,8 +255,8 @@
 	desc = "It's wall-mounted storage unit for an AutoLok suit."
 	icon = 'icons/obj/closets/bases/wall_double.dmi'
 	closet_appearance = /datum/decl/closet_appearance/wall_double/autolok
-	open_sound = 'sound/machines/click.ogg'
-	close_sound = 'sound/machines/click.ogg'
+	open_sound = SFX_MACHINES_CLICK
+	close_sound = SFX_MACHINES_CLICK
 	anchored = TRUE
 	density = FALSE
 	wall_mounted = 1
@@ -276,8 +276,8 @@
 	desc = "It's wall-mounted storage unit for an emergency suit."
 	icon = 'icons/obj/closets/bases/wall.dmi'
 	closet_appearance = /datum/decl/closet_appearance/wall/emergency
-	open_sound = 'sound/machines/click.ogg'
-	close_sound = 'sound/machines/click.ogg'
+	open_sound = SFX_MACHINES_CLICK
+	close_sound = SFX_MACHINES_CLICK
 	anchored = TRUE
 	density = FALSE
 	wall_mounted = 1

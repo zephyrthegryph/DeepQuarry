@@ -132,7 +132,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	var/rotation_speed = 4.5 SECONDS  //How quickly we turn to face threats
 	var/engaging = null // The meteor we're shooting at
 	var/id_tag = null
-	var/fire_sounds = list('sound/weapons/frigate_turret/frigate_turret_fire1.ogg', 'sound/weapons/frigate_turret/frigate_turret_fire2.ogg', 'sound/weapons/frigate_turret/frigate_turret_fire3.ogg', 'sound/weapons/frigate_turret/frigate_turret_fire4.ogg')
+	var/fire_sounds = SFX_WEAPONS_FRIGATE_TURRET_FRIGATE_TURRET_FIRE_MIX
 
 /obj/machinery/pointdefense/Initialize(mapload)
 	. = ..()

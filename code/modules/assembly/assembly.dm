@@ -8,8 +8,8 @@
 	throwforce = 2
 	throw_speed = 3
 	throw_range = 10
-	drop_sound = 'sound/items/drop/component.ogg'
-	pickup_sound =  'sound/items/pickup/component.ogg'
+	drop_sound = SFX_ITEMS_DROP_COMPONENT
+	pickup_sound =  SFX_ITEMS_PICKUP_COMPONENT
 
 	var/secured = 1
 	var/list/attached_overlays = null

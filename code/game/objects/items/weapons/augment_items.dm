@@ -24,7 +24,7 @@
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	defend_chance = 10
 	projectile_parry_chance = 5
-	hitsound = 'sound/weapons/bladeslice.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
 
 /obj/item/melee/augment/blade/arm
 	name = "armblade"

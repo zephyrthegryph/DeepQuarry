@@ -45,8 +45,8 @@
 	name = "detective wardrobe"
 	closet_appearance = /datum/decl/closet_appearance/cabinet
 
-	open_sound = 'sound/effects/wooden_closet_open.ogg'
-	close_sound = 'sound/effects/wooden_closet_close.ogg'
+	open_sound = SFX_EFFECTS_WOODEN_CLOSET_OPEN
+	close_sound = SFX_EFFECTS_WOODEN_CLOSET_CLOSE
 
 	starts_with = list(
 		/obj/item/clothing/head/det = 2,
@@ -501,8 +501,8 @@
 	name = "site manager's wardrobe"
 	closet_appearance = /datum/decl/closet_appearance/cabinet
 
-	open_sound = 'sound/effects/wooden_closet_open.ogg'
-	close_sound = 'sound/effects/wooden_closet_close.ogg'
+	open_sound = SFX_EFFECTS_WOODEN_CLOSET_OPEN
+	close_sound = SFX_EFFECTS_WOODEN_CLOSET_CLOSE
 
 	starts_with = list(
 		/obj/item/storage/backpack/captain,

@@ -19,8 +19,8 @@
 	slot_flags = SLOT_HEAD
 	body_parts_covered = HEAD
 	attack_verb = list("bapped")
-	drop_sound = 'sound/items/drop/paper.ogg'
-	pickup_sound = 'sound/items/pickup/paper.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPER
+	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 
 	var/info		//What's actually written on the paper.
 	var/tmp/info_links	//A different version of the paper which includes html links at fields and EOF

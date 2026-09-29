@@ -1,5 +1,5 @@
 /mob/living/simple_mob/horror/bradley
-	reaction_sound = 'sound/h_sounds/holla.ogg'
+	reaction_sound = SFX_H_SOUNDS_HOLLA
 	name = "Bradley"
 	desc = "What you see is a ball of seemingly melty flesh, stitched together hastily over large, bulging scars. Four metal legs extend out of its sides, The two in the front are larger than the back; and all of the legs are segmented with a unique steel looking metal. In the middle of this monstrosity is a constantly tremmoring eye. While the eye never blinks, it is dyed faintly yellow, with a vertical, read pupil. It seems like it's crying, a weird, oil like liquid seeping from its socket."
 
@@ -11,7 +11,7 @@
 	icon = 'icons/mob/horror_show/GHPS.dmi'
 	icon_gib = "generic_gib"
 
-	attack_sound = 'sound/h_sounds/holla.ogg'
+	attack_sound = SFX_H_SOUNDS_HOLLA
 
 	endurance = 175
 

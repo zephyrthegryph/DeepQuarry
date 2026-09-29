@@ -5,8 +5,8 @@
  * Utensils
  */
 /obj/item/material/kitchen/utensil
-	drop_sound = 'sound/items/drop/knife.ogg'
-	pickup_sound = 'sound/items/pickup/knife.ogg'
+	drop_sound = SFX_ITEMS_DROP_KNIFE
+	pickup_sound = SFX_ITEMS_PICKUP_KNIFE
 	w_class = ITEMSIZE_TINY
 	thrown_force_divisor = 1
 	attack_verb = list("attacked", "stabbed", "poked")
@@ -213,8 +213,8 @@ DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 	force_divisor = 0.7 // 10 when wielded with weight 15 (wood)
 	dulled_divisor = 0.75	// Still a club
 	thrown_force_divisor = 1 // as above
-	drop_sound = 'sound/items/drop/wooden.ogg'
-	pickup_sound = 'sound/items/pickup/wooden.ogg'
+	drop_sound = SFX_ITEMS_DROP_WOODEN
+	pickup_sound = SFX_ITEMS_PICKUP_WOODEN
 
 /obj/item/material/kitchen/rollingpin/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(CLUMSY_HARM_CHANCE(user))

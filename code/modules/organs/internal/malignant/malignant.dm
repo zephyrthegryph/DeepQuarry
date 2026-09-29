@@ -556,7 +556,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/malignant/tumor/moneyorgan, INTERAC
 /obj/item/organ/internal/malignant/parasite/honker/feed()
 	..()
 	if(prob(80))
-		var/sound = pick( list('sound/misc/sadtrombone.ogg','sound/items/bikehorn.ogg','sound/effects/clownstep1.ogg','sound/effects/clownstep2.ogg'))
+		var/sound = SFX_MISC_SADTROMBONE_MIX
 		playsound(owner, sound, 50, 1)
 	else
 		// obnoxious, terrible jokes that'll get you punched by a vox

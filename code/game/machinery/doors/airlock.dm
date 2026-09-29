@@ -60,12 +60,12 @@
 	var/legacy_close_powered = 'sound/machines/door/old_airlockclose.ogg'
 	var/department_open_powered = null
 	var/department_close_powered = null
-	var/denied_sound = 'sound/machines/deniedbeep.ogg'
-	var/bolt_up_sound = 'sound/machines/door/boltsup.ogg'
-	var/bolt_down_sound = 'sound/machines/door/boltsdown.ogg'
-	var/knock_sound = 'sound/machines/2beeplow.ogg'
-	var/knock_hammer_sound = 'sound/weapons/sonic_jackhammer.ogg'
-	var/knock_unpowered_sound = 'sound/machines/door/knock_glass.ogg'
+	var/denied_sound = SFX_MACHINES_DENIEDBEEP
+	var/bolt_up_sound = SFX_MACHINES_DOOR_BOLTSUP
+	var/bolt_down_sound = SFX_MACHINES_DOOR_BOLTSDOWN
+	var/knock_sound = SFX_MACHINES_2BEEPLOW
+	var/knock_hammer_sound = SFX_WEAPONS_SONIC_JACKHAMMER
+	var/knock_unpowered_sound = SFX_MACHINES_DOOR_KNOCK_GLASS
 	var/hold_open_handle
 	rad_insulation = RAD_MEDIUM_INSULATION
 	rad_shield_material = MAT_STEEL

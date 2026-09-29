@@ -5,8 +5,8 @@
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "rcd"
 	item_state = "rcd"
-	drop_sound = 'sound/items/drop/gun.ogg'
-	pickup_sound = 'sound/items/pickup/gun.ogg'
+	drop_sound = SFX_ITEMS_DROP_GUN
+	pickup_sound = SFX_ITEMS_PICKUP_GUN
 	flags = NOBLUDGEON
 	force = 10
 	throwforce = 10

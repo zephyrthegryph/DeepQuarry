@@ -808,7 +808,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 	base_icon = "shuttle_chair"
 	icon_state = "shuttle_chair_preview"
 	buckle_movable = 0
-	var/buckling_sound = 'sound/effects/metal_close.ogg'
+	var/buckling_sound = SFX_EFFECTS_METAL_CLOSE
 	var/padding = MAT_CLOTH_BLUE
 
 /obj/structure/bed/chair/bay/shuttle/Initialize(mapload, new_material, new_padding_material)

@@ -11,8 +11,8 @@
 	var/obj/item/radio/radio
 	var/showing
 	var/showing_name
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 DECLARE_REF(/obj/item/tvcamera, "camera", OWNED, null)
 DECLARE_REF(/obj/item/tvcamera, "radio", OWNED, null)

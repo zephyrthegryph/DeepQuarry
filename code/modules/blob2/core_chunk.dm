@@ -17,7 +17,7 @@
 
 	var/can_genesis = TRUE	// Can the core chunk be used to grow a new blob?
 
-	drop_sound = 'sound/effects/slime_squish.ogg'
+	drop_sound = SFX_EFFECTS_SLIME_SQUISH
 
 /obj/item/blobcore_chunk/is_open_container()
 	return 1

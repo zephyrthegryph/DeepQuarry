@@ -15,7 +15,7 @@
 
 	caliber = "nsfw"
 
-	fire_sound = 'sound/weapons/taser.ogg'
+	fire_sound = SFX_WEAPONS_TASER
 
 	load_method = MAGAZINE //Nyeh heh hehhh.
 	magazine_type = null

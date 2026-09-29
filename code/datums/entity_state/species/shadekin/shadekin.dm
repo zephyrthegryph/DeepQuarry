@@ -50,7 +50,7 @@
 	//How long does it take to complete
 	var/phase_time = 0.5 SECONDS
 	//Phase sound
-	var/phase_noise = 'sound/effects/stealthoff.ogg'
+	var/phase_noise = SFX_EFFECTS_STEALTHOFF
 
 	//Dark Respite Vars (Unused on Virgo)
 	///If we are in dark respite or not

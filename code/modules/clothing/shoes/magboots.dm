@@ -20,8 +20,8 @@
 	var/unremovable_when_enabled = FALSE
 	actions_types = list(/datum/action/item_action/toggle_magboots)
 	step_volume_mod = 1.3
-	drop_sound = 'sound/items/drop/metalboots.ogg'
-	pickup_sound = 'sound/items/pickup/toolbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_METALBOOTS
+	pickup_sound = SFX_ITEMS_PICKUP_TOOLBOX
 	resistance_flags = FIRE_PROOF
 
 /obj/item/clothing/shoes/magboots/fit_constraint()

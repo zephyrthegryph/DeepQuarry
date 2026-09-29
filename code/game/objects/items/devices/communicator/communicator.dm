@@ -76,8 +76,8 @@ MATERIAL_MIX(/obj/item/communicator, list(MAT_STEEL = 30,MAT_GLASS = 10))
 
 	// Ringtones! (Based on the PDA ones)
 	var/ttone = "beep" //The ringtone!
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 // Proc: New()
 // Parameters: None

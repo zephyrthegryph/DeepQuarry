@@ -5,8 +5,8 @@
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "container"
 
-	drop_sound = 'sound/items/drop/gascan.ogg'
-	pickup_sound = 'sound/items/pickup/gascan.ogg'
+	drop_sound = SFX_ITEMS_DROP_GASCAN
+	pickup_sound = SFX_ITEMS_PICKUP_GASCAN
 
 	w_class = ITEMSIZE_COST_LARGE
 

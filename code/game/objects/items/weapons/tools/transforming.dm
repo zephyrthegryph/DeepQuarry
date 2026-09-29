@@ -41,7 +41,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/jawsoflife, list(MAT_METAL=150, MAT_SIL
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "jaws_pry"
 	item_state = "jawsoflife"
-	usesound = 'sound/items/jaws_pry.ogg'
+	usesound = SFX_ITEMS_JAWS_PRY
 	force = 15
 	toolspeed = 0.25
 	sharp = TRUE
@@ -55,7 +55,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/jawsoflife, list(MAT_METAL=150, MAT_SIL
 		if(TOOL_CROWBAR)
 			desc = initial(desc) + " It's fitted with a prying head."
 			icon_state = "jaws_pry"
-			usesound = 'sound/items/jaws_pry.ogg'
+			usesound = SFX_ITEMS_JAWS_PRY
 			pry = 1
 			tool_qualities = list(TOOL_CROWBAR)
 			if(user)
@@ -64,7 +64,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/jawsoflife, list(MAT_METAL=150, MAT_SIL
 		if(TOOL_WIRECUTTER)
 			desc = initial(desc) + " It's fitted with a cutting head."
 			icon_state = "jaws_cutter"
-			usesound = 'sound/items/jaws_cut.ogg'
+			usesound = SFX_ITEMS_JAWS_CUT
 			pry = 0
 			tool_qualities = list(TOOL_WIRECUTTER)
 			if(user)
@@ -78,8 +78,8 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "drill_bolt"
 	item_state = "drill"
-	hitsound = 'sound/items/drill_hit.ogg'
-	usesound = 'sound/items/drill_use.ogg'
+	hitsound = SFX_ITEMS_DRILL_HIT
+	usesound = SFX_ITEMS_DRILL_USE_2
 	force = 8
 	throwforce = 8
 	toolspeed = 0.25
@@ -124,7 +124,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 	sharp = FALSE
 	edge = FALSE
 	attack_verb = list("whacked", "slammed", "bashed", "wrenched", "fixed", "bolted", "clonked", "bonked")
-	hitsound = 'sound/weapons/smash.ogg'
+	hitsound = SFX_WEAPONS_SMASH
 	possible_tooltypes = list(TOOL_WRENCH,TOOL_CROWBAR,TOOL_WIRECUTTER,TOOL_SCREWDRIVER,TOOL_MULTITOOL,TOOL_WELDER)
 	weldertype = /obj/item/weldingtool/dummy/altevian
 
@@ -133,7 +133,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 		if(TOOL_WRENCH)
 			desc = initial(desc) + " It's currently in bolting mode."
 			icon_state = "altevian-wrench"
-			usesound = 'sound/items/Ratchet.ogg'
+			usesound = SFX_ITEMS_RATCHET
 			tool_qualities = list(TOOL_WRENCH)
 			if(user)
 				play_sfx(src, SFX_ITEMS_RATCHET)
@@ -141,7 +141,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 		if(TOOL_CROWBAR)
 			desc = initial(desc) + " It's currently in prying mode."
 			icon_state = "altevian-crowbar"
-			usesound = 'sound/items/Crowbar.ogg'
+			usesound = SFX_ITEMS_CROWBAR
 			tool_qualities = list(TOOL_CROWBAR)
 			if(user)
 				play_sfx(src, SFX_ITEMS_RATCHET)
@@ -149,7 +149,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 		if(TOOL_WIRECUTTER)
 			desc = initial(desc) + " It's currently in cutting mode."
 			icon_state = "altevian-wirecutter"
-			usesound = 'sound/items/Wirecutter.ogg'
+			usesound = SFX_ITEMS_WIRECUTTER
 			tool_qualities = list(TOOL_WIRECUTTER)
 			if(user)
 				play_sfx(src, SFX_ITEMS_RATCHET)
@@ -157,7 +157,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 		if(TOOL_SCREWDRIVER)
 			desc = initial(desc) + " It's currently in screwing mode."
 			icon_state = "altevian-screwdriver"
-			usesound = 'sound/items/Screwdriver.ogg'
+			usesound = SFX_ITEMS_SCREWDRIVER
 			tool_qualities = list(TOOL_SCREWDRIVER)
 			if(user)
 				play_sfx(src, SFX_ITEMS_RATCHET)
@@ -165,7 +165,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 		if(TOOL_MULTITOOL)
 			desc = initial(desc) + " It's currently in pulsing mode."
 			icon_state = "altevian-pulser"
-			usesound = 'sound/items/Screwdriver.ogg'
+			usesound = SFX_ITEMS_SCREWDRIVER
 			tool_qualities = list(TOOL_MULTITOOL)
 			if(user)
 				play_sfx(src, SFX_ITEMS_RATCHET)
@@ -174,7 +174,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 			desc = initial(desc) + " It's currently in welding mode."
 			icon_state = "altevian-welder-on"
 			welder.usesound = 'sound/items/Welder2.ogg'
-			usesound = 'sound/items/Welder2.ogg'
+			usesound = SFX_ITEMS_WELDER2
 			tool_qualities = list(TOOL_WELDER)
 			if(user)
 				play_sfx(src, SFX_ITEMS_RATCHET)

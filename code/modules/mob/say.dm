@@ -846,7 +846,7 @@
 		ourfreq = voice_freq
 
 	if(client)
-		playsound(T, pick(GLOB.emote_sound), 25, TRUE, falloff = 1 , is_global = TRUE, frequency = ourfreq, ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds) // ignore walls
+		playsound(T, SFX_TALKSOUNDS_EMOTE, 25, TRUE, falloff = 1 , is_global = TRUE, frequency = ourfreq, ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds) // ignore walls
 
 	var/list/in_range = get_mobs_and_objs_in_view_fast(T,world.view,2,remote_ghosts = client ? TRUE : FALSE)
 	var/list/m_viewers = in_range["mobs"]

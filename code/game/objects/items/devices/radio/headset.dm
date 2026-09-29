@@ -19,8 +19,8 @@
 	var/ks1type = null
 	var/ks2type = null
 
-	drop_sound = 'sound/items/drop/component.ogg'
-	pickup_sound = 'sound/items/pickup/component.ogg'
+	drop_sound = SFX_ITEMS_DROP_COMPONENT
+	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
 
 /obj/item/radio/headset/Initialize(mapload)
 	. = ..()

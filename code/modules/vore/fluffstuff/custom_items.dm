@@ -174,7 +174,7 @@
 	sharp = TRUE
 	edge = TRUE
 	injury_kind = INJURY_CUT
-	hitsound = 'sound/weapons/bladeslice.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
 
 /obj/item/sword/fluff/joanaria/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 
@@ -479,7 +479,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/centcom/station/fluff/aronai, INTERACT_SEL
 	siemens_coefficient = 0.7
 	w_class = ITEMSIZE_NORMAL
 	ear_protection = 1
-	drop_sound = 'sound/items/drop/helm.ogg'
+	drop_sound = SFX_ITEMS_DROP_HELM
 
 //SilencedMP5A5:Serdykov Antoz
 /obj/item/modkit_conversion/fluff/serdykit

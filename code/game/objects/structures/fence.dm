@@ -165,7 +165,7 @@
 	var/lock_type = "simple"	//string matched to "pick_type" on /obj/item/lockpick
 	var/can_pick = TRUE	//can it be picked/bypassed?
 	var/lock_difficulty = 1	//multiplier to picking/bypassing time
-	var/keysound = 'sound/items/toolbelt_equip.ogg'
+	var/keysound = SFX_ITEMS_TOOLBELT_EQUIP
 
 /obj/structure/fence/door/Initialize(mapload)
 	update_door_status()

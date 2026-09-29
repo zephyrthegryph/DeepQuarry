@@ -11,7 +11,7 @@
 		slot_l_hand_str = 'icons/mob/items/lefthand_magic.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_magic.dmi',
 		)
-	fire_sound = 'sound/weapons/emitter.ogg'
+	fire_sound = SFX_WEAPONS_EMITTER
 	w_class = ITEMSIZE_HUGE
 	projectile_type = null
 	var/checks_antimagic = TRUE

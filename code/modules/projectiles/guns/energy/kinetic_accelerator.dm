@@ -55,7 +55,7 @@
 	projectile_type = /obj/item/projectile/kinetic
 	charge_cost = 1200
 	battery_lock = TRUE
-	fire_sound = 'sound/weapons/kenetic_accel.ogg'
+	fire_sound = SFX_WEAPONS_KENETIC_ACCEL
 	var/overheat_time = 16
 	var/holds_charge = FALSE
 	var/unique_frequency = FALSE // modified by KA modkits

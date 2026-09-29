@@ -8,8 +8,8 @@
 	throwforce = 15.0
 	throw_speed = 5
 	throw_range = 20
-	drop_sound = 'sound/items/drop/metalweapon.ogg'
-	pickup_sound = 'sound/items/pickup/metalweapon.ogg'
+	drop_sound = SFX_ITEMS_DROP_METALWEAPON
+	pickup_sound = SFX_ITEMS_PICKUP_METALWEAPON
 	MATERIAL_BULK(MAT_STEEL, REAGENTS_PER_ROD)
 	max_amount = 60
 	attack_verb = list("hit", "bludgeoned", "whacked")

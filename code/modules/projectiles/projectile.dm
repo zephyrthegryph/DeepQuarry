@@ -15,7 +15,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	unacidable = TRUE
 	pass_flags = PASSTABLE
 	mouse_opacity = 0
-	hitsound = 'sound/weapons/pierce.ogg'
+	hitsound = SFX_WEAPONS_PIERCE
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
@@ -135,7 +135,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	embed_chance = 0	//Base chance for a projectile to embed
 
-	var/fire_sound = 'sound/weapons/gunshot_old.ogg' // Can be overriden in gun.dm's fire_sound var. It can also be null but I don't know why you'd ever want to do that. -Ace
+	var/fire_sound = SFX_WEAPONS_GUNSHOT_OLD // Can be overriden in gun.dm's fire_sound var. It can also be null but I don't know why you'd ever want to do that. -Ace
 
 	var/vacuum_traversal = TRUE //Determines if the projectile can exist in vacuum, if false, the projectile will be deleted if it enters vacuum.
 
@@ -937,7 +937,7 @@ DECLARE_REF(/obj/item/projectile, "my_case_handle", BACK_HANDLE, "BB")
 // === merged from projectile_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/projectile/bullet/pellet/shotgun/silver
 	name = "shrapnel"
-	fire_sound = 'sound/weapons/weaponsounds_shotgunshot.ogg'
+	fire_sound = SFX_WEAPONS_WEAPONSOUNDS_SHOTGUNSHOT
 	damage = 10
 	mob_bonus_damage = 16 // Potential 156 Damage against demons at point blank.
 	embed_chance = -1

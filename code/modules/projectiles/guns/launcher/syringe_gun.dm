@@ -85,7 +85,7 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 	MATERIAL_BULK(MAT_STEEL, 2000)
 	slot_flags = SLOT_BELT | SLOT_HOLSTER
 
-	fire_sound = 'sound/weapons/empty.ogg'
+	fire_sound = SFX_WEAPONS_EMPTY
 	fire_sound_text = "a metallic thunk"
 	recoil = 0
 	release_force = 10

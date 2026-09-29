@@ -20,7 +20,7 @@
 	friendly = list("pinches")
 	organ_names = /datum/decl/mob_organ_names/wraith
 	movement_cooldown = -1
-	attack_sound = 'sound/weapons/rapidslice.ogg'
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	construct_spells = list(/datum/spell/targeted/construct_advanced/crippling_beam,
 							/datum/spell/targeted/construct_advanced/banishment
 							)
@@ -61,7 +61,7 @@
 
 	//	environment_smash = 1	// Whatever this gets renamed to, Harvesters need to break things
 
-	attack_sound = 'sound/weapons/pierce.ogg'
+	attack_sound = SFX_WEAPONS_PIERCE
 
 /datum/decl/mob_organ_names/wraith
 	hit_zones = list("body", "eye", "crystaline spike", "left claw", "right claw")

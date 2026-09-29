@@ -306,9 +306,9 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	var/bolt_open = FALSE
 	var/bolt_locked = FALSE
 	var/bolt_release = "bolt release"
-	var/sound_ejectchamber = 'sound/weapons/ballistics/pistol_ejectchamber.ogg'
-	var/sound_eject = 'sound/weapons/ballistics/pistol_eject.ogg'
-	var/sound_chamber = 'sound/weapons/ballistics/pistol_chamber.ogg'
+	var/sound_ejectchamber = SFX_WEAPONS_BALLISTICS_PISTOL_EJECTCHAMBER
+	var/sound_eject = SFX_WEAPONS_BALLISTICS_PISTOL_EJECT
+	var/sound_chamber = SFX_WEAPONS_BALLISTICS_PISTOL_CHAMBER
 	special_handling = TRUE
 
 /obj/item/gun/projectile/handle_post_fire(mob/user, atom/target, pointblank=0, reflex=0)

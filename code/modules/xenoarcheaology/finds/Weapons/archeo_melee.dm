@@ -19,9 +19,9 @@
 	force = 30
 	throwforce = 10
 	toolspeed = 5 //Syncs perfectly with the animation time.
-	hitsound = 'sound/weapons/bladeslice.ogg'
-	drop_sound = 'sound/items/drop/sword.ogg'
-	pickup_sound = 'sound/items/pickup/sword.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
+	drop_sound = SFX_ITEMS_DROP_SWORD
+	pickup_sound = SFX_ITEMS_PICKUP_SWORD
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	edge = TRUE
 	sharp = TRUE
@@ -138,11 +138,7 @@
 		throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,10),5)
 
 	if(prob(10)) //During testing, this was set to 100% of the time to make sure it works... It went  from spooky to 'dear god make it stop'
-		var/spooky = pick('sound/effects/ghost.ogg', 'sound/effects/ghost2.ogg', 'sound/effects/Heart Beat.ogg', 'sound/effects/screech.ogg',\
-		'sound/hallucinations/behind_you1.ogg', 'sound/hallucinations/behind_you2.ogg', 'sound/hallucinations/far_noise.ogg', 'sound/hallucinations/growl1.ogg', 'sound/hallucinations/growl2.ogg',\
-		'sound/hallucinations/growl3.ogg', 'sound/hallucinations/im_here1.ogg', 'sound/hallucinations/im_here2.ogg', 'sound/hallucinations/i_see_you1.ogg', 'sound/hallucinations/i_see_you2.ogg',\
-		'sound/hallucinations/look_up1.ogg', 'sound/hallucinations/look_up2.ogg', 'sound/hallucinations/over_here1.ogg', 'sound/hallucinations/over_here2.ogg', 'sound/hallucinations/over_here3.ogg',\
-		'sound/hallucinations/wail.ogg') //It's just a cursed, talking sword. Nothing to fear!
+		var/spooky = SFX_EFFECTS_GHOST_MIX //It's just a cursed, talking sword. Nothing to fear!
 		playsound(src, spooky, 50, 1)
 
 	force = prior_force //Return our force back.

@@ -16,7 +16,7 @@
 	var/light_range_on = 2
 	var/light_power_on = 1
 
-	clicksound = "keyboard"
+	clicksound = SFX_KEYBOARD
 	integrity_failure = 0.5
 
 /obj/machinery/computer/Initialize(mapload)

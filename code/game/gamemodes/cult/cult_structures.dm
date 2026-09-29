@@ -26,8 +26,8 @@
 	var/wepon_handle
 
 	var/shatter_message = "The pylon shatters!"
-	var/impact_sound = 'sound/effects/Glasshit.ogg'
-	var/shatter_sound = 'sound/effects/Glassbr3.ogg'
+	var/impact_sound = SFX_EFFECTS_GLASSHIT
+	var/shatter_sound = SFX_EFFECTS_GLASSBR3
 
 	var/activation_cooldown = 30 SECONDS
 	COOLDOWN_DECLARE(activation_cooldown_until)

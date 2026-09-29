@@ -8,7 +8,7 @@
 	icon_state = "left"
 	var/base_state = "left"
 	min_force = 4
-	hitsound = 'sound/effects/Glasshit.ogg'
+	hitsound = SFX_EFFECTS_GLASSHIT
 	max_integrity = 150 //If you change this, consiter changing ../door/window/brigdoor/ max_integrity at the bottom of this .dm file
 	visible = 0.0
 	use_power = USE_POWER_OFF

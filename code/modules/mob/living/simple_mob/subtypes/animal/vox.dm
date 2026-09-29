@@ -26,7 +26,7 @@
 	melee_damage_upper = 40
 	attacktext = "slammed its enormous claws into"
 	movement_cooldown = 2
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 	status_flags = 0
 	max_oxy = 0
 

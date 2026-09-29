@@ -39,7 +39,7 @@
 
 	endurance = 200
 	movement_cooldown = 4
-	movement_sound = 'sound/weapons/heavysmash.ogg'
+	movement_sound = SFX_WEAPONS_HEAVYSMASH
 	movement_shake_radius = 5
 
 	taser_kill = FALSE

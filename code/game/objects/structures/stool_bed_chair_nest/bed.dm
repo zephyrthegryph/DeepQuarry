@@ -282,8 +282,8 @@
 	w_class = ITEMSIZE_LARGE
 	var/rollertype = /obj/item/roller
 	var/bedtype = /obj/structure/bed/roller
-	drop_sound = 'sound/items/drop/axe.ogg'
-	pickup_sound = 'sound/items/pickup/axe.ogg'
+	drop_sound = SFX_ITEMS_DROP_AXE
+	pickup_sound = SFX_ITEMS_PICKUP_AXE
 
 DECLARE_INTERACTIONS(/obj/item/roller, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \

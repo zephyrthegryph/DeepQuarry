@@ -13,8 +13,8 @@
 	var/list/datum/autopsy_data_scanner/chemtraces
 	var/target_name = null
 	var/timeofdeath = null
-	drop_sound = 'sound/items/drop/device.ogg'
-	pickup_sound = 'sound/items/pickup/device.ogg'
+	drop_sound = SFX_ITEMS_DROP_DEVICE
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 
 /datum/autopsy_data_scanner
 	var/weapon = null // this is the DEFINITE weapon type that was used

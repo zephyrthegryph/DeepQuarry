@@ -3,7 +3,7 @@
 	desc = "A long since abandoned \"trash 4 cash\" rewards kiosk. Now featuring a state of the art, monochrome holographic tube display!"
 	icon = 'code/modules/maint_recycler/icons/maint_vendor.dmi'
 	icon_state = "default"
-	clicksound = 'code/modules/maint_recycler/sfx/typing.ogg'
+	clicksound = SFX_RECYCLER_TYPING
 
 	anchored = TRUE
 	density = TRUE

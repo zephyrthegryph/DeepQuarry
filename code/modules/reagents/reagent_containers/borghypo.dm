@@ -26,7 +26,7 @@
 	var/is_dispensing_recipe = FALSE
 	/// The recipe we will dispense if `is_dispensing_recipe` is `TRUE`
 	var/selected_recipe_id
-	var/hypo_sound = 'sound/effects/hypospray.ogg'	// What sound do we play on use?
+	var/hypo_sound = SFX_EFFECTS_HYPOSPRAY	// What sound do we play on use?
 
 	var/list/reagent_ids = list(REAGENT_ID_TRICORDRAZINE, REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_ANTITOXIN, REAGENT_ID_KELOTANE, REAGENT_ID_TRAMADOL, REAGENT_ID_DEXALIN, REAGENT_ID_SPACEACILLIN) // ALLOW(instance_list): c: read-only per-subtype constant table (8 subtype overrides); a getter would share it, not worth it on a rare type
 	var/list/reagent_volumes = list() // ALLOW(instance_list): d: filled in Initialize() with every reagent the hypo carries
@@ -339,7 +339,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/borghypo, INTERACT_USE(null, P
 	max_transfer_amount = 30
 	is_dispensing_drinks = TRUE
 	transfer_amounts = list(5, 10, 20, 30)
-	hypo_sound = 'sound/machines/reagent_dispense.ogg'
+	hypo_sound = SFX_MACHINES_REAGENT_DISPENSE
 	reagent_ids = list(REAGENT_ID_ALE,
 		REAGENT_ID_APPLEJUICE, // it has literally every other type of juice..
 		REAGENT_ID_BEER,

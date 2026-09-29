@@ -14,8 +14,8 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/back/mob_teshari.dmi'
 		)
-	drop_sound = 'sound/items/drop/gascan.ogg'
-	pickup_sound = 'sound/items/pickup/gascan.ogg'
+	drop_sound = SFX_ITEMS_DROP_GASCAN
+	pickup_sound = SFX_ITEMS_PICKUP_GASCAN
 
 	var/gauge_icon = "indicator_tank"
 	var/last_gauge_pressure

@@ -29,8 +29,8 @@
 	var/obj/item/cell/device/weapon/power_source
 	var/tick_cost = 5 // For the ERPs.
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/radio_jammer/Initialize(mapload)
 	. = ..()

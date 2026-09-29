@@ -27,7 +27,7 @@
 	projectile_dispersion = 12
 	projectile_accuracy = -25
 
-	projectilesound = 'sound/weapons/thudswoosh.ogg'
+	projectilesound = SFX_WEAPONS_THUDSWOOSH
 	projectiletype = /obj/item/projectile/webball
 	base_attack_cooldown = 10
 	melee_damage_lower = 8

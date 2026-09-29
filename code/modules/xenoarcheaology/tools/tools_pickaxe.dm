@@ -9,7 +9,7 @@
 	throwforce = 0
 	desc = "Thick metallic wires for clearing away dust and loose scree (1 centimetre excavation depth)."
 	excavation_amount = 1
-	drill_sound = 'sound/weapons/thudswoosh.ogg'
+	drill_sound = SFX_WEAPONS_THUDSWOOSH
 	drill_verb = "brushing"
 	w_class = ITEMSIZE_SMALL
 
@@ -22,7 +22,7 @@
 	digspeed = 20
 	desc = "A miniature excavation tool for precise digging (2 centimetre excavation depth)."
 	excavation_amount = 2
-	drill_sound = 'sound/items/Screwdriver.ogg'
+	drill_sound = SFX_ITEMS_SCREWDRIVER
 	drill_verb = "delicately picking"
 	w_class = ITEMSIZE_SMALL
 
@@ -35,7 +35,7 @@
 	digspeed = 20
 	desc = "A miniature excavation tool for precise digging (4 centimetre excavation depth)."
 	excavation_amount = 4
-	drill_sound = 'sound/items/Screwdriver.ogg'
+	drill_sound = SFX_ITEMS_SCREWDRIVER
 	drill_verb = "delicately picking"
 	w_class = ITEMSIZE_SMALL
 
@@ -48,7 +48,7 @@
 	digspeed = 20
 	desc = "A miniature excavation tool for precise digging (6 centimetre excavation depth)."
 	excavation_amount = 6
-	drill_sound = 'sound/items/Screwdriver.ogg'
+	drill_sound = SFX_ITEMS_SCREWDRIVER
 	drill_verb = "delicately picking"
 	w_class = ITEMSIZE_SMALL
 
@@ -61,7 +61,7 @@
 	digspeed = 20
 	desc = "A miniature excavation tool for precise digging (8 centimetre excavation depth)."
 	excavation_amount = 8
-	drill_sound = 'sound/items/Screwdriver.ogg'
+	drill_sound = SFX_ITEMS_SCREWDRIVER
 	drill_verb = "delicately picking"
 	w_class = ITEMSIZE_SMALL
 
@@ -74,7 +74,7 @@
 	digspeed = 20
 	desc = "A miniature excavation tool for precise digging (10 centimetre excavation depth)."
 	excavation_amount = 10
-	drill_sound = 'sound/items/Screwdriver.ogg'
+	drill_sound = SFX_ITEMS_SCREWDRIVER
 	drill_verb = "delicately picking"
 	w_class = ITEMSIZE_SMALL
 
@@ -87,7 +87,7 @@
 	digspeed = 20
 	desc = "A miniature excavation tool for precise digging (12 centimetre excavation depth)."
 	excavation_amount = 12
-	drill_sound = 'sound/items/Screwdriver.ogg'
+	drill_sound = SFX_ITEMS_SCREWDRIVER
 	drill_verb = "delicately picking"
 	w_class = ITEMSIZE_SMALL
 
@@ -100,7 +100,7 @@
 	digspeed = 30
 	desc = "A smaller, more precise version of the pickaxe (30 centimetre excavation depth)."
 	excavation_amount = 30
-	drill_sound = 'sound/items/Crowbar.ogg'
+	drill_sound = SFX_ITEMS_CROWBAR
 	drill_verb = "clearing"
 	w_class = ITEMSIZE_SMALL
 
@@ -158,7 +158,7 @@
 	excavation_amount = 15
 	digspeed = 10
 	desc = "Advanced archaeological drill combining ultrasonic excitation and bluespace manipulation to provide extreme precision. The tip is adjustable from 1 to 30 cm."
-	drill_sound = 'sound/weapons/thudswoosh.ogg'
+	drill_sound = SFX_WEAPONS_THUDSWOOSH
 	drill_verb = "drilling"
 	force = 5
 	w_class = ITEMSIZE_SMALL

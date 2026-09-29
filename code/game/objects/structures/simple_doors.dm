@@ -15,15 +15,15 @@
 	var/state = 0 //closed, 1 == open
 	var/isSwitchingStates = 0
 	var/oreAmount = 7
-	var/knock_sound = 'sound/machines/door/knock_glass.ogg'
-	var/knock_hammer_sound = 'sound/weapons/sonic_jackhammer.ogg'
+	var/knock_sound = SFX_MACHINES_DOOR_KNOCK_GLASS
+	var/knock_hammer_sound = SFX_WEAPONS_SONIC_JACKHAMMER
 
 	var/locked = FALSE	//has the door been locked?
 	var/lock_id = null	//does the door have an associated key?
 	var/lock_type = "simple"	//string matched to "pick_type" on /obj/item/lockpick
 	var/can_pick = TRUE	//can it be picked/bypassed?
 	var/lock_difficulty = 1	//multiplier to picking/bypassing time
-	var/keysound = 'sound/items/toolbelt_equip.ogg'
+	var/keysound = SFX_ITEMS_TOOLBELT_EQUIP
 
 /// Heat behaviour rule: a flammable material door burns.
 /obj/structure/simple_door/proc/rule_burn(datum/rule/rule)
@@ -302,35 +302,35 @@ DECLARE_PERIODIC(/obj/structure/simple_door/uranium, PERIODIC_SLOW)
 //I was going to give wooden doors RAD_VERY_LIGHT_INSULATION but they need a proper parent instead of this garbage.
 /obj/structure/simple_door/wood/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_WOOD)
-	knock_sound = 'sound/machines/door/knock_wood.wav'
+	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
 /obj/structure/simple_door/hardwood/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_HARDWOOD)
-	knock_sound = 'sound/machines/door/knock_wood.wav'
+	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
 /obj/structure/simple_door/sifwood/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_SIFWOOD)
-	knock_sound = 'sound/machines/door/knock_wood.wav'
+	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
 /obj/structure/simple_door/birchwood/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_BIRCHWOOD)
-	knock_sound = 'sound/machines/door/knock_wood.wav'
+	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
 /obj/structure/simple_door/pinewood/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_PINEWOOD)
-	knock_sound = 'sound/machines/door/knock_wood.wav'
+	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
 /obj/structure/simple_door/oakwood/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_OAKWOOD)
-	knock_sound = 'sound/machines/door/knock_wood.wav'
+	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
 /obj/structure/simple_door/acaciawood/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_ACACIAWOOD)
-	knock_sound = 'sound/machines/door/knock_wood.wav'
+	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
 /obj/structure/simple_door/redwood/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_REDWOOD)
-	knock_sound = 'sound/machines/door/knock_wood.wav'
+	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
 /obj/structure/simple_door/resin/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_RESIN)

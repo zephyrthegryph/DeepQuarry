@@ -10,8 +10,8 @@
 	attack_verb = list("patted", "tapped")
 	force_divisor = 0.25 // 15 when wielded with hardness 60 (steel)
 	thrown_force_divisor = 0.25 // 5 when thrown with weight 20 (steel)
-	drop_sound = 'sound/items/drop/knife.ogg'
-	pickup_sound = 'sound/items/pickup/knife.ogg'
+	drop_sound = SFX_ITEMS_DROP_KNIFE
+	pickup_sound = SFX_ITEMS_PICKUP_KNIFE
 
 /obj/item/material/butterfly/update_force()
 	if(active)
@@ -19,7 +19,7 @@
 		sharp = TRUE
 		..() //Updates force.
 		throwforce = max(3,force-3)
-		hitsound = 'sound/weapons/bladeslice.ogg'
+		hitsound = SFX_WEAPONS_BLADESLICE
 		icon_state += "_open"
 		w_class = ITEMSIZE_NORMAL
 		attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
@@ -75,7 +75,7 @@ DECLARE_INTERACTIONS(/obj/item/material/butterfly, INTERACT_USE(null, PROC_REF(i
 	force_divisor = 0.15 // 9 when wielded with hardness 60 (steel)
 	MATERIAL_BULK(MAT_STEEL, 12000)
 	attack_verb = list("slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	drop_sound = 'sound/items/drop/knife.ogg'
+	drop_sound = SFX_ITEMS_DROP_KNIFE
 
 // These no longer inherit from hatchets.
 /obj/item/material/knife/tacknife

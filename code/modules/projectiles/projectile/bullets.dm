@@ -2,13 +2,13 @@
 	name = "bullet"
 	icon = 'icons/obj/projectiles_yw.dmi' // uses our bullet sprites
 	icon_state = "bullet"
-	fire_sound = 'sound/weapons/gunshot4.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT4
 	damage = 60
 	nodamage = 0
 	embed_chance = 20	//Modified in the actual embed process, but this should keep embed chance about the same
 	sharp = TRUE
 	injury_kind = INJURY_PIERCE
-	hitsound_wall = "ricochet"
+	hitsound_wall = SFX_RICOCHET
 	impact_effect_type = /obj/effect/temp_visual/impact_effect
 	var/mob_passthrough_check = 0
 	hud_state = "pistol_lightap"
@@ -73,7 +73,7 @@
 /* short-casing projectiles, like the kind used in pistols or SMGs */
 
 /obj/item/projectile/bullet/pistol // 9mm pistols and most SMGs. Sacrifice power for capacity.
-	fire_sound = 'sound/weapons/gunshot2.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT2
 	damage = 20
 	hud_state = "pistol"
 	hud_state_empty = "pistol_empty"
@@ -87,7 +87,7 @@
 	hud_state = "pistol_ap"
 
 /obj/item/projectile/bullet/pistol/medium // .45 (and maybe .40 if it ever gets added) caliber security pistols. Balance between capacity and power.
-	fire_sound = 'sound/weapons/gunshot3.ogg' // Snappier sound.
+	fire_sound = SFX_WEAPONS_GUNSHOT3 // Snappier sound.
 	damage = 25
 	hud_state = "pistol"
 
@@ -98,7 +98,7 @@
 
 /obj/item/projectile/bullet/pistol/medium/ap/suppressor // adminspawn only
 	name = "suppressor bullet" // this guy is Important and also Hates You
-	fire_sound = 'sound/weapons/doompistol.ogg' // converted from .wavs extracted from doom 2
+	fire_sound = SFX_WEAPONS_DOOMPISTOL // converted from .wavs extracted from doom 2
 	damage = 10 // high rof kinda fucked up lets be real
 	agony = 10 // brute easily heals, agony not so much
 	armor_penetration = 30 // reduces shield blockchance
@@ -116,12 +116,12 @@
 	hud_state = "pistol_ap"
 
 /obj/item/projectile/bullet/pistol/strong // .357 and .44 caliber stuff. High power pistols like the Mateba or Desert Eagle. Sacrifice capacity for power.
-	fire_sound = 'sound/weapons/gunshot4.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT4
 	damage = 60
 	hud_state = "pistol_heavy"
 
 /obj/item/projectile/bullet/pistol/rubber/strong // "Rubber" bullets for high power pistols.
-	fire_sound = 'sound/weapons/gunshot3.ogg' // Rubber shots have less powder, but these still have more punch than normal rubber shot.
+	fire_sound = SFX_WEAPONS_GUNSHOT3 // Rubber shots have less powder, but these still have more punch than normal rubber shot.
 	damage = 10
 	agony = 60
 	embed_chance = 0
@@ -136,14 +136,14 @@
 	sharp = FALSE
 	injury_kind = INJURY_BLUNT
 	hud_state = "pistol_special"
-	fire_sound ='sound/weapons/gunshot_pathetic.ogg' // Rubber shots have less powder in the casing.
+	fire_sound =SFX_WEAPONS_GUNSHOT_PATHETIC // Rubber shots have less powder in the casing.
 
 /* shotgun projectiles */
 
 /obj/item/projectile/bullet/shotgun
 	name = "slug"
 	icon_state = "bullet_chonk"
-	fire_sound = 'sound/weapons/gunshot_shotgun.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_SHOTGUN
 	damage = 50
 	armor_penetration = 20
 	hud_state = "shotgun_slug"
@@ -162,7 +162,7 @@
 //Overall less damage than slugs in exchange for more damage at very close range and more embedding
 /obj/item/projectile/bullet/pellet/shotgun
 	name = "shrapnel"
-	fire_sound = 'sound/weapons/gunshot_shotgun.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_SHOTGUN
 	damage = 13
 	pellets = 6
 	range_step = 1
@@ -179,7 +179,7 @@
 //EMP shotgun 'slug', it's basically a beanbag that pops a tiny emp when it hits. //Not currently used
 /obj/item/projectile/bullet/shotgun/ion
 	name = "ion slug"
-	fire_sound = 'sound/weapons/Laser.ogg' // Really? We got nothing better than this?
+	fire_sound = SFX_WEAPONS_LASER // Really? We got nothing better than this?
 	damage = 15
 	embed_chance = 0
 	sharp = FALSE
@@ -197,18 +197,18 @@
 /* "Rifle" rounds */
 
 /obj/item/projectile/bullet/rifle
-	fire_sound = 'sound/weapons/gunshot_generic_rifle.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_GENERIC_RIFLE
 	// penetrating = 1 This is the only thing I see that could cause stun and unsure what can be pierced with a penetrating of 1.
 	hud_state = "rifle"
 	hud_state_empty = "rifle_empty"
 
 /obj/item/projectile/bullet/rifle/a762
-	fire_sound = 'sound/weapons/gunshot_heavy.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_HEAVY
 	damage = 35
 	hud_state = "rifle_heavy"
 
 /obj/item/projectile/bullet/rifle/a762/sniper // Hitscan specifically for sniper ammo; to be implimented at a later date, probably for the SVD. -Ace
-	fire_sound = 'sound/weapons/gunshot_sniper.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_SNIPER
 	hitscan = 1 //so the ammo isn't useless as a sniper weapon
 	hud_state = "hivelo"
 
@@ -245,7 +245,7 @@
 	hud_state = "rifle_heavy"
 
 /obj/item/projectile/bullet/rifle/a145 // 14.5×114mm is bigger than a .50 BMG round.
-	fire_sound = 'sound/weapons/gunshot_cannon.ogg' // This is literally an anti-tank rifle caliber. It better sound like a fucking cannon.
+	fire_sound = SFX_WEAPONS_GUNSHOT_CANNON // This is literally an anti-tank rifle caliber. It better sound like a fucking cannon.
 	damage = 80
 	stun = 3
 	weaken = 3
@@ -293,7 +293,7 @@
 
 /obj/item/projectile/bullet/burstbullet
 	name = "exploding bullet"
-	fire_sound = 'sound/effects/Explosion1.ogg'
+	fire_sound = SFX_EFFECTS_EXPLOSION1
 	damage = 20
 	embed_chance = 0
 	edge = TRUE
@@ -363,7 +363,7 @@
 /obj/item/projectile/bullet/pistol/cap // Just the primer, such as a cap gun.
 	name = "cap"
 	injury_kind = INJURY_PAIN
-	fire_sound = 'sound/effects/snap.ogg'
+	fire_sound = SFX_EFFECTS_SNAP
 	damage = 0
 	nodamage = 1
 	embed_chance = 0
@@ -379,7 +379,7 @@
 /obj/item/projectile/bullet/blank
 	name = "blank"
 	injury_kind = INJURY_PAIN
-	fire_sound = 'sound/weapons/gunshot_generic_rifle.ogg' // Blanks still make loud noises.
+	fire_sound = SFX_WEAPONS_GUNSHOT_GENERIC_RIFLE // Blanks still make loud noises.
 	damage = 0
 	nodamage = 1
 	embed_chance = 0
@@ -420,7 +420,7 @@
 	sharp = FALSE
 	injury_kind = INJURY_PAIN
 	impact_effect_type = null
-	fire_sound = 'sound/effects/snap.ogg'
+	fire_sound = SFX_EFFECTS_SNAP
 	combustion = FALSE
 	hud_state = "pistol_light"
 
@@ -437,7 +437,7 @@
 	sharp = FALSE
 	injury_kind = INJURY_PAIN
 	impact_effect_type = null
-	fire_sound = 'sound/items/syringeproj.ogg'
+	fire_sound = SFX_ITEMS_SYRINGEPROJ
 	combustion = FALSE
 	icon = 'icons/obj/gun_toy.dmi'
 	icon_state = "foamdart_proj"
@@ -470,7 +470,7 @@
 	sharp = FALSE
 	injury_kind = INJURY_PAIN
 	impact_effect_type = null
-	fire_sound = 'sound/items/syringeproj.ogg'
+	fire_sound = SFX_ITEMS_SYRINGEPROJ
 	combustion = FALSE
 	icon = 'icons/obj/gun_toy.dmi'
 	icon_state = "foamdart_riot_proj"
@@ -496,7 +496,7 @@
 // === merged from bullets_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 //Pistol projectiles
 /obj/item/projectile/bullet/pistol	//9x19mm
-	fire_sound = 'sound/weapons/ballistics/a9mm.ogg'
+	fire_sound = SFX_WEAPONS_BALLISTICS_A9MM
 
 /obj/item/projectile/bullet/pistol/ap
 	armor_penetration = 15
@@ -505,13 +505,13 @@
 	armor_penetration = -10
 
 /obj/item/projectile/bullet/pistol/medium 	//.45
-	fire_sound = 'sound/weapons/ballistics/a45.ogg'
+	fire_sound = SFX_WEAPONS_BALLISTICS_A45
 
 /obj/item/projectile/bullet/pistol/medium/hp
 	armor_penetration = -10
 
 /obj/item/projectile/bullet/a57
-	fire_sound = 'sound/weapons/ballistics/smg_heavy.ogg'
+	fire_sound = SFX_WEAPONS_BALLISTICS_SMG_HEAVY
 	damage = 10
 	armor_penetration = 15	//Unfortunately my penetration code doesn't recognize the glory of 5.7x28 FN, so we must show it the wae.
 	hud_state = "smg_light"
@@ -527,7 +527,7 @@
 	hud_state = "smg"
 
 /obj/item/projectile/bullet/a357
-	fire_sound = 'sound/weapons/gunshot4.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT4
 	damage = 20
 	hud_state = "revolver"
 
@@ -540,7 +540,7 @@
 	hud_state = "revolver_slim"
 
 /obj/item/projectile/bullet/a38
-	fire_sound = 'sound/weapons/gunshot2.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT2
 	hud_state = "revolver_small"
 
 /obj/item/projectile/bullet/a38/ap
@@ -552,11 +552,11 @@
 	hud_state = "pistol_hollow"
 
 /obj/item/projectile/bullet/a762x25
-	fire_sound = 'sound/weapons/gunshot2.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT2
 	hud_state = "pistol_light"
 
 /obj/item/projectile/bullet/a9x18
-	fire_sound = 'sound/weapons/gunshot2.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT2
 	hud_state = "pistol"
 
 /obj/item/projectile/bullet/a9x18/rubber
@@ -568,7 +568,7 @@
 	injury_kind = INJURY_BLUNT
 
 /obj/item/projectile/bullet/a10mm
-	fire_sound = 'sound/weapons/gunshot2.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT2
 	hud_state = "pistol"
 	damage = 20
 
@@ -589,7 +589,7 @@
 	injury_kind = INJURY_BLUNT
 
 /obj/item/projectile/bullet/a380
-	fire_sound = 'sound/weapons/gunshot2.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT2
 	hud_state = "pistol_light"
 
 /obj/item/projectile/bullet/a380/ap
@@ -601,7 +601,7 @@
 	hud_state = "pistol_hollow"
 
 /obj/item/projectile/bullet/a22lr
-	fire_sound = 'sound/weapons/gunshot_pathetic.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_PATHETIC
 	hud_state = "pistol_light"
 
 /obj/item/projectile/bullet/a22lr/ap
@@ -615,7 +615,7 @@
 //Shotgun projectiles
 
 /obj/item/projectile/bullet/shotgun	//Slug
-	fire_sound = 'sound/weapons/ballistics/a12g.ogg'
+	fire_sound = SFX_WEAPONS_BALLISTICS_A12G
 	armor_penetration = -15		//Slugs needed a nerf. Will probably fix the stats for shotguns in general in future updates.
 
 /obj/item/projectile/bullet/shotgun/buckshot	//#00 Buckshot
@@ -634,7 +634,7 @@
 	armor_penetration = 0 //No. Rifle rounds don't get extra AP by default, their nature already makes them more armor penetrating.
 
 /obj/item/projectile/bullet/rifle/a762 //7.62x51 NATO
-	fire_sound = 'sound/weapons/ballistics/a762.ogg'
+	fire_sound = SFX_WEAPONS_BALLISTICS_A762
 
 /obj/item/projectile/bullet/rifle/a762/ap
 	armor_penetration = 25
@@ -651,7 +651,7 @@
 	injury_kind = INJURY_BLUNT
 
 /obj/item/projectile/bullet/rifle/a762x39 //7.62x39 Soviet
-	fire_sound = 'sound/weapons/ballistics/a762.ogg'
+	fire_sound = SFX_WEAPONS_BALLISTICS_A762
 	hud_state = "rifle"
 
 /obj/item/projectile/bullet/rifle/a762x39/ap
@@ -671,7 +671,7 @@
 	injury_kind = INJURY_BLUNT
 
 /obj/item/projectile/bullet/rifle/a545
-	fire_sound = 'sound/weapons/ballistics/a545.ogg'
+	fire_sound = SFX_WEAPONS_BALLISTICS_A545
 
 /obj/item/projectile/bullet/rifle/a545/ap
 	armor_penetration = 15
@@ -710,16 +710,16 @@
 	injury_kind = INJURY_BLUNT
 
 /obj/item/projectile/bullet/rifle/a145 // 14.5×114mm
-	fire_sound = 'sound/weapons/ballistics/a145.ogg'
+	fire_sound = SFX_WEAPONS_BALLISTICS_A145
 
 /obj/item/projectile/bullet/rifle/a44rifle
-	fire_sound = 'sound/weapons/ballistics/a44rifle.ogg'
+	fire_sound = SFX_WEAPONS_BALLISTICS_A44RIFLE
 
 //beware of cadyn cope above ^^ - Ocelot
 
 /obj/item/projectile/bullet/rifle/a9x39 //We also have actual 9x39mm
 	damage = 30 //9mm pistol with 7.62 cartridge? idk russiain chambers.
-	fire_sound = 'sound/weapons/ballistics/a545.ogg'
+	fire_sound = SFX_WEAPONS_BALLISTICS_A545
 	hud_state = "smartgun"
 
 /obj/item/projectile/bullet/rifle/a9x39/ap
@@ -747,7 +747,7 @@
 	injury_kind = INJURY_BLUNT
 
 /obj/item/projectile/bullet/rifle/a762x54
-	fire_sound = 'sound/weapons/ballistics/a762x54.ogg'
+	fire_sound = SFX_WEAPONS_BALLISTICS_A762X54
 	hitscan = 1
 	hud_state = "sniper_crude"
 
@@ -756,7 +756,7 @@
 	hud_state = "sniper_supersonic"
 
 /obj/item/projectile/bullet/rifle/a338
-	fire_sound = 'sound/weapons/ballistics/a762x54.ogg'
+	fire_sound = SFX_WEAPONS_BALLISTICS_A762X54
 	damage = 45
 	hitscan = 1
 	penetrating = 2
@@ -767,7 +767,7 @@
 	hud_state = "sniper_supersonic"
 
 /obj/item/projectile/bullet/rifle/a50bmg
-	fire_sound = 'sound/weapons/ballistics/a145.ogg'
+	fire_sound = SFX_WEAPONS_BALLISTICS_A145
 	damage = 65
 	hitscan = 1
 	penetrating = 2
@@ -777,7 +777,7 @@
 	armor_penetration = 50
 
 /obj/item/projectile/bullet/rifle/a127x108 //Bigass fuckoff LMG round, bigger than 50 BMG
-	fire_sound = 'sound/weapons/serdy/strela.ogg'
+	fire_sound = SFX_WEAPONS_SERDY_STRELA
 	damage = 60
 	penetrating = 2
 	armor_penetration = 30

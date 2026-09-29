@@ -5,7 +5,7 @@
 	integrity = 50 // Same as wood.
 	hardness = 15 // Same as wood.
 	table_icon_base = "stone"
-	dooropen_noise = 'sound/effects/attackblob.ogg'
+	dooropen_noise = SFX_EFFECTS_ATTACKBLOB
 	door_icon_base = "resin"
 	icon_reinf = "reinf_mesh"
 	melting_point = T0C+300

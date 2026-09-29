@@ -22,7 +22,7 @@
 	throw_speed = 4
 	throw_range = 20
 	force = 0
-	drop_sound = 'sound/items/drop/gloves.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLOVES
 
 /*
  * Balloons
@@ -32,7 +32,7 @@
 	desc = "A translucent balloon. There's nothing in it."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "waterballoon-e"
-	drop_sound = 'sound/items/drop/rubber.ogg'
+	drop_sound = SFX_ITEMS_DROP_RUBBER
 
 /obj/item/toy/balloon/Initialize(mapload)
 	. = ..()
@@ -98,7 +98,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/balloon, INTERACT_ITEM(null, PROC_REF(interac
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "syndballoon"
 	w_class = ITEMSIZE_LARGE
-	drop_sound = 'sound/items/drop/rubber.ogg'
+	drop_sound = SFX_ITEMS_DROP_RUBBER
 
 /obj/item/toy/nanotrasenballoon
 	name = "criminal balloon"
@@ -110,7 +110,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/balloon, INTERACT_ITEM(null, PROC_REF(interac
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "ntballoon"
 	w_class = ITEMSIZE_LARGE
-	drop_sound = 'sound/items/drop/rubber.ogg'
+	drop_sound = SFX_ITEMS_DROP_RUBBER
 
 /obj/item/toy/colorballoon /// To color it, VV the 'color' var with a hex color code with the # included.
 	name = "balloon"
@@ -122,7 +122,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/balloon, INTERACT_ITEM(null, PROC_REF(interac
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "colorballoon"
 	w_class = ITEMSIZE_LARGE
-	drop_sound = 'sound/items/drop/rubber.ogg'
+	drop_sound = SFX_ITEMS_DROP_RUBBER
 
 /*
  * Fake telebeacon
@@ -151,7 +151,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/balloon, INTERACT_ITEM(null, PROC_REF(interac
 	desc = "A cheap, plastic replica of an energy sword. Realistic sounds! Ages 8 and up."
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "esword"
-	drop_sound = 'sound/items/drop/gun.ogg'
+	drop_sound = SFX_ITEMS_DROP_GUN
 	var/lcolor
 	var/rainbow = FALSE
 	item_icons = list(
@@ -285,7 +285,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/sword, \
 	desc = "A genuine Admiral Krush Bosun's Whistle, for the aspiring ship's captain! Suitable for ages 8 and up, do not swallow."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "bosunwhistle"
-	drop_sound = 'sound/items/drop/card.ogg'
+	drop_sound = SFX_ITEMS_DROP_CARD
 	var/cooldown = 0
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS | SLOT_HOLSTER
@@ -311,7 +311,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/bosunwhistle, INTERACT_USE(null, PROC_REF(int
 	w_class = ITEMSIZE_TINY
 	var/cooldown = 0
 	var/toysay = "What the fuck did you do?"
-	drop_sound = 'sound/items/drop/accessory.ogg'
+	drop_sound = SFX_ITEMS_DROP_ACCESSORY
 
 /obj/item/toy/figure/Initialize(mapload)
 	. = ..()
@@ -644,7 +644,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/figure, INTERACT_USE(null, PROC_REF(interacti
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "basecarp"
 	attack_verb = list("bitten", "eaten", "fin slapped")
-	squeeze_sound = 'sound/weapons/bite.ogg'
+	squeeze_sound = SFX_WEAPONS_BITE
 	cooldown_length = 1 SECOND
 
 // Attack mob
@@ -821,7 +821,7 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 	desc = "A small toy plushie. It's very cute."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "nymphplushie"
-	drop_sound = 'sound/items/drop/plushie.ogg'
+	drop_sound = SFX_ITEMS_DROP_PLUSHIE
 	w_class = ITEMSIZE_TINY
 	var/last_message = 0
 	var/pokephrase = "Uww!"
@@ -837,7 +837,7 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 	var/special_handling = FALSE
 
 	///The sound we make when squeezed
-	var/squeeze_sound = 'sound/items/drop/plushie.ogg'
+	var/squeeze_sound = SFX_ITEMS_DROP_PLUSHIE
 
 	///Timer to track how long until we can play a sound again
 	var/cooldown_timer
@@ -1234,7 +1234,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/plushie, \
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "plushie_tin"
 	pokephrase = "Peep peep!"
-	squeeze_sound = 'sound/voice/peep.ogg'
+	squeeze_sound = SFX_VOICE_PEEP
 
 /obj/item/toy/plushie/tinytin_sec
 	name = "officer tiny tin plushie"
@@ -1243,7 +1243,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/plushie, \
 	icon_state = "plushie_tinsec"
 	bubble_icon = "security"
 	pokephrase = "That means you fucked up!"
-	squeeze_sound = 'sound/voice/tinytin_fuckedup.ogg'
+	squeeze_sound = SFX_VOICE_TINYTIN_FUCKEDUP
 
 //Toy cult sword
 /obj/item/toy/cultsword
@@ -1404,7 +1404,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/griffin, INTERACT_USE(null, PROC_REF(interact
 	icon_state = "inflatable"
 	icon = 'icons/inventory/belt/item.dmi'
 	slot_flags = SLOT_BELT
-	drop_sound = 'sound/items/drop/rubber.ogg'
+	drop_sound = SFX_ITEMS_DROP_RUBBER
 
 /obj/item/toy/xmastree
 	name = "Miniature Christmas tree"
@@ -1414,7 +1414,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/griffin, INTERACT_USE(null, PROC_REF(interact
 	w_class = ITEMSIZE_TINY
 	force = 1
 	throwforce = 1
-	drop_sound = 'sound/items/drop/box.ogg'
+	drop_sound = SFX_ITEMS_DROP_BOX
 
 //////////////////////////////////////////////////////
 //					Chess Pieces					//
@@ -1427,7 +1427,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/griffin, INTERACT_USE(null, PROC_REF(interact
 	w_class = ITEMSIZE_SMALL
 	force = 1
 	throwforce = 1
-	drop_sound = 'sound/items/drop/glass.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLASS
 
 /obj/item/toy/chess/pawn_white
 	name = "white pawn"
@@ -1573,9 +1573,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/teppi, \
 	if(interaction.stance == I_HURT || interaction.stance == I_GRAB)
 		play_sfx(user, SFX_VOICE_TEPPI_ROAR)
 	else
-		var/teppi_noise = pick(
-			'sound/voice/teppi/whine1.ogg',
-			'sound/voice/teppi/whine2.ogg')
+		var/teppi_noise = SFX_VOICE_TEPPI_WHINE_MIX
 		playsound(user, teppi_noise, 10, 0)
 		src.visible_message(span_notice("Gyooooooooh!"))
 	return interaction_squeeze(user, held, interaction)
@@ -1587,7 +1585,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/teppi, \
 	name = "steel ring"
 	desc = "Torus shaped finger decoration. It has a small piece of metal on the palm-side."
 	icon_state = "seal-signet"
-	drop_sound = 'sound/items/drop/ring.ogg'
+	drop_sound = SFX_ITEMS_DROP_RING
 
 /obj/item/clothing/gloves/ring/buzzer/toy/Touch(atom/A, proximity, stance = I_HURT)
 	if(proximity && istype(usr, /mob/living/carbon/human))
@@ -1665,7 +1663,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/teppi, \
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "kobold"
 	pokephrase = "Wehhh!"
-	drop_sound = 'sound/voice/weh.ogg'
+	drop_sound = SFX_VOICE_WEH
 	attack_verb = list("raided", "kobolded", "weh'd")
 
 /* // Disable, this is an upstream player reference.
@@ -1797,7 +1795,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/borgplushie/drake, INTERACT_ALT(null, 
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "plushie_vox"
 	pokephrase = "Skreee!"
-	squeeze_sound = 'sound/voice/shriek1.ogg'
+	squeeze_sound = SFX_VOICE_SHRIEK1
 
 /obj/item/toy/plushie/ipc
 	name = "IPC plushie"
@@ -1806,7 +1804,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/borgplushie/drake, INTERACT_ALT(null, 
 	icon_state = "plushie_ipc"
 	bubble_icon = "synthetic"
 	pokephrase = "Ping!"
-	squeeze_sound = 'sound/machines/ping.ogg'
+	squeeze_sound = SFX_MACHINES_PING
 
 /obj/item/reagent_containers/food/snacks/slice/bread
 	var/toasted = FALSE
@@ -1849,7 +1847,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/ipc, INTERACT_ITEM(null, PROC_REF(ipc_
 	attack_verb = list("toasted", "burnt")
 	pokephrase = "Ding!"
 	bubble_icon = "machine"
-	squeeze_sound = 'sound/machines/ding.ogg'
+	squeeze_sound = SFX_MACHINES_DING
 
 /obj/item/toy/plushie/snakeplushie
 	name = "snake plushie"
@@ -1873,7 +1871,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/ipc, INTERACT_ITEM(null, PROC_REF(ipc_
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "moth"
 	pokephrase = "Aaaaaaa."
-	squeeze_sound = 'sound/voice/moth/scream_moth.ogg'
+	squeeze_sound = SFX_VOICE_MOTH_SCREAM_MOTH
 
 /obj/item/toy/plushie/crab
 	name = "crab plushie"
@@ -1910,7 +1908,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/ipc, INTERACT_ITEM(null, PROC_REF(ipc_
 	pokephrase = "Stab!"
 	bubble_icon = "security"
 	attack_verb = list("stabbed", "slashed")
-	squeeze_sound = 'sound/weapons/slice.ogg'
+	squeeze_sound = SFX_WEAPONS_SLICE
 
 /obj/item/toy/plushie/sus/blue
 	name = "blue spaceman plushie"
@@ -2138,8 +2136,8 @@ DECLARE_INTERACTIONS(/obj/item/toy/AI, INTERACT_USE(null, PROC_REF(interaction_s
 	name = "plastic handcuffs"
 	desc = "Use this to keep plastic prisoners in line."
 	MATERIAL_BULK(MAT_PLASTIC, 500) // Was list(PLASTIC = 500): a "PLASTIC" key, no such material.
-	drop_sound = 'sound/items/drop/accessory.ogg'
-	pickup_sound = 'sound/items/pickup/accessory.ogg'
+	drop_sound = SFX_ITEMS_DROP_ACCESSORY
+	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 	breakouttime = 30
 	use_time = 60
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/mob/species/teshari/handcuffs.dmi')
@@ -2269,8 +2267,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/minigibber, \
 
 /obj/item/toy/toy_xeno/proc/hiss()
 	atom_say("Hiss!")
-	var/list/possible_sounds = list('sound/voice/hiss1.ogg', 'sound/voice/hiss2.ogg', 'sound/voice/hiss3.ogg', 'sound/voice/hiss4.ogg')
-	playsound(get_turf(src), pick(possible_sounds), 50, 1)
+	play_sfx(get_turf(src), SFX_HISS, volume = 50, vary = TRUE)
 	om_after(src, 45, PROC_REF(hiss_rewound))
 
 /obj/item/toy/toy_xeno/proc/hiss_rewound()
@@ -2553,7 +2550,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/snake_popper, \
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "sonic_driver"
 	item_state = "screwdriver_black"
-	usesound = 'sound/items/sonic_driver.ogg'
+	usesound = SFX_ITEMS_SONIC_DRIVER
 	toolspeed = 1
 	random_color = FALSE
 
@@ -2566,9 +2563,9 @@ DECLARE_INTERACTIONS(/obj/item/toy/snake_popper, \
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "time_cap"
 	max_storage_space = ITEMSIZE_COST_TINY * 2
-	use_sound = 'sound/machines/click.ogg'
-	drop_sound = 'sound/items/drop/accessory.ogg'
-	pickup_sound = 'sound/items/pickup/accessory.ogg'
+	use_sound = SFX_MACHINES_CLICK
+	drop_sound = SFX_ITEMS_DROP_ACCESSORY
+	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 
 /*
  * Action figures
@@ -2632,7 +2629,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/snake_popper, \
 /obj/item/toy/desk
 	icon = 'icons/obj/toy.dmi'
 	var/on = FALSE
-	var/activation_sound = 'sound/machines/click.ogg'
+	var/activation_sound = SFX_MACHINES_CLICK
 
 /obj/item/toy/desk/update_icon()
 	if(on)
@@ -2721,8 +2718,8 @@ DECLARE_INTERACTIONS(/obj/item/toy/desk, \
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "partypopper"
 	w_class = ITEMSIZE_TINY
-	drop_sound = 'sound/items/drop/cardboardbox.ogg'
-	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
+	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
 DECLARE_INTERACTIONS(/obj/item/toy/partypopper, INTERACT_USE(null, PROC_REF(interaction_self)))
 

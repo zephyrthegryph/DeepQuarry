@@ -67,7 +67,7 @@
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=100;rad=100" // Same armor are cult armor, may nerf since DAMN THAT IS GOOD ARMOR
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 
 
 /mob/living/simple_mob/humanoid/cultist/human
@@ -232,7 +232,7 @@
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=45;bullet=40;laser=30;energy=80;bomb=20;bio=100;rad=100" // Reduced Resistance to Approximate increased Tesh damage.
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 
 
 /mob/living/simple_mob/humanoid/cultist/tesh
@@ -281,7 +281,7 @@
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=70;bullet=60;laser=30;energy=80;bomb=35;bio=100;rad=100" // Better Armor to match lizard brute resist
-	attack_sound = 'sound/weapons/rapidslice.ogg'
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	movement_cooldown = 4
 	base_attack_cooldown = 7.5 //Two knives mean double stab.
 
@@ -330,8 +330,8 @@
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=100;rad=100" //Armor Rebalanced for Cult Robes.
-	attack_sound = 'sound/weapons/rapidslice.ogg'
-	projectilesound = 'sound/weapons/spiderlunge.ogg'
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
+	projectilesound = SFX_WEAPONS_SPIDERLUNGE
 
 
 /mob/living/simple_mob/humanoid/cultist/caster
@@ -379,7 +379,7 @@
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=100;rad=100" //Armor Rebalanced for Cult Robes.
-	attack_sound = 'sound/weapons/rapidslice.ogg'
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	movement_cooldown = 4
 
 
@@ -425,9 +425,9 @@
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=35;bullet=20;laser=35;energy=60;bomb=20;bio=100;rad=100" //Rebalanced for Robes and Tesh damage
-	attack_sound = 'sound/weapons/rapidslice.ogg'
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	base_attack_cooldown = 7.5
-	projectilesound = 'sound/weapons/spiderlunge.ogg'
+	projectilesound = SFX_WEAPONS_SPIDERLUNGE
 
 
 /mob/living/simple_mob/humanoid/cultist/castertesh
@@ -472,7 +472,7 @@
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=100;rad=100" // Same armor are cult armor, may nerf since DAMN THAT IS GOOD ARMOR
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM(null, PROC_REF(cultist_elite_interaction_item)))
@@ -547,10 +547,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=100;rad=100" //Super Armor since Boss Mob
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 
 	base_attack_cooldown = 5
-	projectilesound = 'sound/weapons/spiderlunge.ogg'
+	projectilesound = SFX_WEAPONS_SPIDERLUNGE
 	var/obj/item/shield_projector/shields = null
 
 
@@ -599,7 +599,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=100;rad=100" //Super Armor since Boss Mob
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun
 
@@ -609,7 +609,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 
 	needs_reload = TRUE
 	reload_max = 2
-	projectilesound = 'sound/weapons/gunshot_shotgun.ogg'
+	projectilesound = SFX_WEAPONS_GUNSHOT_SHOTGUN
 
 
 /mob/living/simple_mob/humanoid/cultist/hunter
@@ -723,9 +723,9 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=60;bullet=40;laser=60;energy=80;bomb=25;bio=100;rad=100"
-	attack_sound = 'sound/weapons/rapidslice.ogg'
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	projectiletype = /obj/item/projectile/energy/plasma/vepr
-	projectilesound = 'sound/weapons/spiderlunge.ogg'
+	projectilesound = SFX_WEAPONS_SPIDERLUNGE
 	movement_cooldown = 2
 
 /obj/item/shield_projector/rectangle/automatic/magus

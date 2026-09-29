@@ -848,7 +848,7 @@
 	if(species.suit_inhale_sound)
 		suit_inhale_sound = species.suit_inhale_sound
 	else // Failsafe
-		suit_inhale_sound = 'sound/effects/mob_effects/suit_breathe_in.ogg'
+		suit_inhale_sound = SFX_EFFECTS_MOB_EFFECTS_SUIT_BREATHE_IN
 
 	playsound_local(get_turf(src), suit_inhale_sound, 100, pressure_affected = FALSE, volume_channel = VOLUME_CHANNEL_AMBIENCE)
 	if(!exhale) // Did we fail exhale? If no, play it after inhale finishes.
@@ -859,7 +859,7 @@
 	if(species.suit_exhale_sound)
 		suit_exhale_sound = species.suit_exhale_sound
 	else // Failsafe
-		suit_exhale_sound = 'sound/effects/mob_effects/suit_breathe_out.ogg'
+		suit_exhale_sound = SFX_EFFECTS_MOB_EFFECTS_SUIT_BREATHE_OUT
 
 	playsound_local(get_turf(src), suit_exhale_sound, 100, pressure_affected = FALSE, volume_channel = VOLUME_CHANNEL_AMBIENCE)
 
@@ -1873,7 +1873,7 @@
 			/* 
 			if(text2num(time2text(world.timeofday, "MM")) == 4)
 				if(text2num(time2text(world.timeofday, "DD")) == 1)
-					playsound_local(self,pick(GLOB.scawwysownds),50, 0)
+					playsound_local(self,SFX_VOICE_SCAWWYSOWNDS,50, 0)
 					return
 			*/
 			self.playsound_local(self,pick(GLOB.scarySounds),50, 1, -1)

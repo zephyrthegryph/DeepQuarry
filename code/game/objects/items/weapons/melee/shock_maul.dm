@@ -33,8 +33,8 @@
 	throwforce = 25
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_HUGE
-	drop_sound = 'sound/items/drop/metalweapon.ogg'
-	pickup_sound = 'sound/items/pickup/metalweapon.ogg'
+	drop_sound = SFX_ITEMS_DROP_METALWEAPON
+	pickup_sound = SFX_ITEMS_PICKUP_METALWEAPON
 	attack_verb = list("beaten","slammed","smashed","mauled","hammered","bludgeoned")
 	var/lightcolor = "#D3FDFD"
 	var/status = 0		//whether the thing is on or not

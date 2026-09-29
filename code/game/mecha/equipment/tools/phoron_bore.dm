@@ -8,6 +8,6 @@
 	icon_state = "mecha_pbore"
 	energy_drain = 200
 	projectile = /obj/item/projectile/bullet/magnetic/bore
-	fire_sound = 'sound/weapons/railgun.ogg'
+	fire_sound = SFX_WEAPONS_RAILGUN
 
 	equip_type = EQUIP_UTILITY

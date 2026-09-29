@@ -12,9 +12,9 @@
 	speed = 2
 	armor_penetration = 15
 
-	var/impact_sound = 'sound/effects/uncloak.ogg'
+	var/impact_sound = SFX_EFFECTS_UNCLOAK
 	var/crack_sound = 'sound/effects/teleport.ogg'
-	fire_sound = 'sound/effects/zzzt.ogg'
+	fire_sound = SFX_EFFECTS_ZZZT
 
 	var/target_distance = null	// Shamelessly stolen from arcing projectiles.
 	var/my_tracking_beam = null	// Beam made by the launcher. Tracked here to destroy it in time with the impact.

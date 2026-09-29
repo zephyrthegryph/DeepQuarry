@@ -8,8 +8,8 @@
 	throwforce = 5.0
 	throw_range = 15
 	throw_speed = 3
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 
 DECLARE_INTERACTIONS(/obj/item/binoculars, INTERACT_USE(null, PROC_REF(zoom)))

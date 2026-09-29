@@ -77,8 +77,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge, INTERACT_SELF("Display",
 	badge_string = "Corporate Reporter"
 	w_class = ITEMSIZE_TINY
 
-	drop_sound = 'sound/items/drop/rubber.ogg'
-	pickup_sound = 'sound/items/pickup/rubber.ogg'
+	drop_sound = SFX_ITEMS_DROP_RUBBER
+	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
 
 /obj/item/clothing/accessory/badge/press/independent
 	name = "press pass"

@@ -526,7 +526,7 @@ DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_vo
 	energy_drain = 100
 	range = MECH_MELEE
 	equip_type = EQUIP_UTILITY
-	ready_sound = 'sound/weapons/flash.ogg'
+	ready_sound = SFX_WEAPONS_FLASH
 	required_type = list(/obj/mecha/medical)
 
 	tooltype = /obj/item/healthanalyzer/advanced

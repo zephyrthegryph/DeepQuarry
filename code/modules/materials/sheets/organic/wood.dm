@@ -4,8 +4,8 @@
 	default_type = MAT_WOOD
 	strict_color_stacking = TRUE
 	apply_colour = 1
-	drop_sound = 'sound/items/drop/wooden.ogg'
-	pickup_sound = 'sound/items/pickup/wooden.ogg'
+	drop_sound = SFX_ITEMS_DROP_WOODEN
+	pickup_sound = SFX_ITEMS_PICKUP_WOODEN
 	no_variants = FALSE
 
 /obj/item/stack/material/wood/sif
@@ -58,8 +58,8 @@
 	max_amount = 25
 	w_class = ITEMSIZE_HUGE
 	var/plank_type = /obj/item/stack/material/wood
-	drop_sound = 'sound/items/drop/wooden.ogg'
-	pickup_sound = 'sound/items/pickup/wooden.ogg'
+	drop_sound = SFX_ITEMS_DROP_WOODEN
+	pickup_sound = SFX_ITEMS_PICKUP_WOODEN
 
 /obj/item/stack/material/log/reagents_per_sheet()
 	return REAGENTS_PER_LOG
@@ -112,8 +112,8 @@ EXTEND_INTERACTIONS(/obj/item/stack/material/log, INTERACT_ITEM(null, PROC_REF(l
 	default_type = MAT_WOODEN_STICK
 	strict_color_stacking = TRUE
 	apply_colour = 1
-	drop_sound = 'sound/items/drop/wooden.ogg'
-	pickup_sound = 'sound/items/pickup/wooden.ogg'
+	drop_sound = SFX_ITEMS_DROP_WOODEN
+	pickup_sound = SFX_ITEMS_PICKUP_WOODEN
 	no_variants = FALSE
 	pass_color = TRUE
 	apply_colour = TRUE

@@ -17,8 +17,8 @@
 	w_class = ITEMSIZE_SMALL
 	flags = OPENCONTAINER | NOCONDUCT
 	unacidable = TRUE //glass doesn't dissolve in acid
-	drop_sound = 'sound/items/drop/bottle.ogg'
-	pickup_sound = 'sound/items/pickup/bottle.ogg'
+	drop_sound = SFX_ITEMS_DROP_BOTTLE
+	pickup_sound = SFX_ITEMS_PICKUP_BOTTLE
 	resistance_flags = ACID_PROOF
 
 	var/label_text = ""
@@ -178,8 +178,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass, \
 	center_of_mass_y = 11
 	material_template = /datum/material_template/container
 	material_total = 500
-	drop_sound = 'sound/items/drop/glass.ogg'
-	pickup_sound = 'sound/items/pickup/glass.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLASS
+	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 	var/rating = 1
 
 /obj/item/reagent_containers/glass/beaker/get_rating()
@@ -319,8 +319,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/beaker, INTERACT_HAND_DEF
 	volume = 120
 	flags = OPENCONTAINER
 	unacidable = FALSE
-	drop_sound = 'sound/items/drop/helm.ogg'
-	pickup_sound = 'sound/items/pickup/helm.ogg'
+	drop_sound = SFX_ITEMS_DROP_HELM
+	pickup_sound = SFX_ITEMS_PICKUP_HELM
 
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bucket, INTERACT_ITEM(null, PROC_REF(bucket_item)))
 
@@ -381,8 +381,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bucket, INTERACT_ITEM(nul
 	volume = 120
 	flags = OPENCONTAINER
 	unacidable = FALSE
-	drop_sound = 'sound/items/drop/wooden.ogg'
-	pickup_sound = 'sound/items/pickup/wooden.ogg'
+	drop_sound = SFX_ITEMS_DROP_WOODEN
+	pickup_sound = SFX_ITEMS_PICKUP_WOODEN
 
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bucket/wood, INTERACT_ITEM(null, PROC_REF(wood_bucket_item)))
 
@@ -425,8 +425,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bucket/wood, INTERACT_ITE
 	icon = 'icons/obj/drinks.dmi'
 	icon_state = "pint_mug"
 	MATERIAL_BULK(MAT_WOOD, 50)
-	drop_sound = 'sound/items/drop/wooden.ogg'
-	pickup_sound = 'sound/items/pickup/wooden.ogg'
+	drop_sound = SFX_ITEMS_DROP_WOODEN
+	pickup_sound = SFX_ITEMS_PICKUP_WOODEN
 
 /obj/item/reagent_containers/glass/beaker/vial/sustenance
 	name = "vial (artificial sustenance)"
@@ -442,8 +442,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bucket/wood, INTERACT_ITE
 	w_class = ITEMSIZE_SMALL
 	flags = OPENCONTAINER
 	MATERIAL_BULK(MAT_STEEL, 50)
-	drop_sound = 'sound/items/drop/crowbar.ogg'
-	pickup_sound = 'sound/items/pickup/drinkglass.ogg'
+	drop_sound = SFX_ITEMS_DROP_CROWBAR
+	pickup_sound = SFX_ITEMS_PICKUP_DRINKGLASS
 
 
 /obj/item/reagent_containers/glass/beaker/neurotoxin

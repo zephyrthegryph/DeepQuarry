@@ -22,7 +22,7 @@
 	melee_damage_lower = 8
 	melee_damage_upper = 12
 	attacktext = list("bitten")
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 
 	organ_names = /datum/decl/mob_organ_names/tree
 

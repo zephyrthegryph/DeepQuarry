@@ -102,7 +102,7 @@ DECLARE_INTERACTIONS(/obj/item/boop_module, INTERACT_USE(null, PROC_REF(interact
 	desc = "Useful for slurping mess off the floor before affectionately licking the crew members in the face."
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "synthtongue"
-	hitsound = 'sound/effects/attackblob.ogg'
+	hitsound = SFX_EFFECTS_ATTACKBLOB
 	var/emagged = 0
 	var/datum/matter_synth/water = null // readds water
 	flags = NOBLUDGEON //No more attack messages

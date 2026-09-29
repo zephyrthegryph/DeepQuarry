@@ -4,7 +4,7 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "fire_extinguisher0"
 	item_state = "fire_extinguisher"
-	hitsound = 'sound/weapons/smash.ogg'
+	hitsound = SFX_WEAPONS_SMASH
 	throwforce = 10
 	w_class = ITEMSIZE_NORMAL
 	throw_speed = 2
@@ -12,8 +12,8 @@
 	force = 10
 	MATERIAL_BULK(MAT_STEEL, 90)
 	attack_verb = list("slammed", "whacked", "bashed", "thunked", "battered", "bludgeoned", "thrashed")
-	drop_sound = 'sound/items/drop/gascan.ogg'
-	pickup_sound = 'sound/items/pickup/gascan.ogg'
+	drop_sound = SFX_ITEMS_DROP_GASCAN
+	pickup_sound = SFX_ITEMS_PICKUP_GASCAN
 
 	var/spray_particles = 3
 	var/spray_amount = 10	//units of liquid per particle

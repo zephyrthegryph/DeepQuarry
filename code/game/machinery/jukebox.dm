@@ -16,7 +16,7 @@
 	idle_power_usage = 10
 	active_power_usage = 100
 	circuit = /obj/item/circuitboard/jukebox
-	clicksound = 'sound/machines/buttonbeep.ogg'
+	clicksound = SFX_MACHINES_BUTTONBEEP
 	volume = 0.5
 	maintenance_flags = MACHINE_MAINT_STANDARD
 

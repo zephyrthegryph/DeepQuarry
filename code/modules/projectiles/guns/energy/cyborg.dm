@@ -43,7 +43,7 @@
 	desc = "A small and nonlethal gun produced by NT.."
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "ertgunstun"
-	fire_sound = 'sound/weapons/eLuger.ogg'
+	fire_sound = SFX_WEAPONS_ELUGER
 	projectile_type = /obj/item/projectile/beam/disable
 	charge_cost = 240
 	recharge_time = 10
@@ -62,7 +62,7 @@
 	desc = "Straight out of NT's testing laboratories, this small gun is used to subdue non-humanoid xeno life forms. \
 	While marketed towards handling slimes, it may be useful for other creatures."
 	icon_state = "taserblue"
-	fire_sound = 'sound/weapons/taser2.ogg'
+	fire_sound = SFX_WEAPONS_TASER2
 	charge_cost = 120
 	projectile_type = /obj/item/projectile/beam/stun/xeno
 	accuracy = 30
@@ -152,7 +152,7 @@
 
 /obj/item/melee/robotic/jaws
 	icon = 'icons/mob/dogborg_vr.dmi'
-	hitsound = 'sound/weapons/bite.ogg'
+	hitsound = SFX_WEAPONS_BITE
 	throwforce = 0
 	w_class = ITEMSIZE_NORMAL
 	pry = 1
@@ -210,7 +210,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/jaws/small, INTERACT_USE(null, PROC
 				desc = "Now this is a knife!"
 				icon = 'icons/obj/tools_robot.dmi'
 				icon_state = "claymore_cyborg"
-				hitsound = 'sound/weapons/slice.ogg'
+				hitsound = SFX_WEAPONS_SLICE
 				attack_verb = list("sliced", "slashed", "jabbed", "stabbed")
 				force = 30
 				armor_penetration = 25
@@ -219,7 +219,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/jaws/small, INTERACT_USE(null, PROC
 				name = "self defense knife"
 				icon = 'icons/obj/tools_robot.dmi'
 				icon_state = "knife_cyborg"
-				hitsound = 'sound/weapons/slash.ogg'
+				hitsound = SFX_WEAPONS_SLASH
 				desc = "A sharp knife used for defending crew against hostile threats. Not effective for non-defense use."
 				attack_verb = list("sliced", "slashed", "jabbed", "stabbed")
 				force = 15
@@ -236,7 +236,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/jaws/small, INTERACT_USE(null, PROC
 	desc = "Shocking!"
 	force = 15
 	throwforce = 0
-	hitsound = 'sound/weapons/genhit1.ogg'
+	hitsound = SFX_WEAPONS_GENHIT1
 	attack_verb = list("hit")
 	w_class = ITEMSIZE_NORMAL
 	var/charge_cost = 15
@@ -305,7 +305,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/jaws/small, INTERACT_USE(null, PROC
 	edge = TRUE
 	injury_kind = INJURY_CUT
 	throwforce = 0 //This shouldn't be thrown in the first place.
-	hitsound = 'sound/weapons/blade1.ogg'
+	hitsound = SFX_WEAPONS_BLADE1
 	attack_verb = list("slashed", "stabbed", "jabbed", "mauled", "sliced")
 	w_class = ITEMSIZE_NORMAL
 	var/active_force = 35
@@ -437,8 +437,8 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/blade, \
 	edge = FALSE
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_NORMAL
-	drop_sound = 'sound/items/drop/metalweapon.ogg'
-	pickup_sound = 'sound/items/pickup/metalweapon.ogg'
+	drop_sound = SFX_ITEMS_DROP_METALWEAPON
+	pickup_sound = SFX_ITEMS_PICKUP_METALWEAPON
 	attack_verb = list("beaten")
 	var/stunforce = 0
 	var/agonyforce = 60

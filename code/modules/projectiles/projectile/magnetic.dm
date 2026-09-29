@@ -3,7 +3,7 @@
 	name = "rod"
 	icon = 'icons/obj/projectiles.dmi' //Ywedit, uses default icon path not _yw
 	icon_state = "rod"
-	fire_sound = 'sound/weapons/railgun.ogg'
+	fire_sound = SFX_WEAPONS_RAILGUN
 	damage = 65
 	stun = 0 // Guaranteed stuns from a gun bad.
 	weaken = 0 // Guaranteed stuns from a gun bad.
@@ -21,7 +21,7 @@
 /obj/item/projectile/bullet/magnetic/flechette
 	name = "flechette"
 	icon_state = "flechette"
-	fire_sound = 'sound/weapons/rapidslice.ogg'
+	fire_sound = SFX_WEAPONS_RAPIDSLICE
 	damage = 20
 	armor_penetration = 100
 	hud_state = "alloy_spike"
@@ -29,7 +29,7 @@
 /obj/item/projectile/bullet/magnetic/flechette/small
 	name = "small flechette"
 	icon_state = "flechette"
-	fire_sound = 'sound/weapons/rapidslice.ogg'
+	fire_sound = SFX_WEAPONS_RAPIDSLICE
 	damage = 12
 	armor_penetration = 100
 	hud_state = "alloy_spike"
@@ -198,7 +198,7 @@
 /obj/item/projectile/bullet/magnetic/flechette/rapid
 	name = "rapid flechette"
 	icon_state = "flechette"
-	fire_sound = 'sound/weapons/rapidslice.ogg'
+	fire_sound = SFX_WEAPONS_RAPIDSLICE
 	damage = 15
 	armor_penetration = 60 // Now that stun's gone from the parent type, we can boost this back up.
 	hud_state = "alloy_spike"

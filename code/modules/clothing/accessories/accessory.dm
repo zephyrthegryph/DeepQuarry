@@ -20,8 +20,8 @@
 	var/concealed_holster = 0
 	var/list/on_rolled							// Lazylist. Used when jumpsuit sleeves are rolled ("rolled" entry) or it's rolled down ("down"). Set to "none" to hide in those states.
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/accessory/mob_teshari.dmi') //Teshari can into webbing, too!
-	drop_sound = 'sound/items/drop/accessory.ogg'
-	pickup_sound = 'sound/items/pickup/accessory.ogg'
+	drop_sound = SFX_ITEMS_DROP_ACCESSORY
+	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 
 // an attached accessory is removed from its clothing.
 /obj/item/clothing/accessory/on_destroy(force)
@@ -319,8 +319,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory, INTERACT_HAND_UNGATED(null, PR
 	desc = "A bronze medal."
 	icon_state = "bronze"
 	slot = ACCESSORY_SLOT_MEDAL
-	drop_sound = 'sound/items/drop/accessory.ogg'
-	pickup_sound = 'sound/items/pickup/accessory.ogg'
+	drop_sound = SFX_ITEMS_DROP_ACCESSORY
+	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 
 /obj/item/clothing/accessory/medal/conduct
 	name = "distinguished conduct medal"

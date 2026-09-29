@@ -17,8 +17,8 @@
 	var/tmp/important_message_handle
 	var/scribble=""
 	var/scribble_page = null
-	drop_sound = 'sound/items/drop/wrapper.ogg'
-	pickup_sound = 'sound/items/pickup/wrapper.ogg'
+	drop_sound = SFX_ITEMS_DROP_WRAPPER
+	pickup_sound = SFX_ITEMS_PICKUP_WRAPPER
 	resistance_flags = FLAMMABLE
 
 // TGUI migration. The 3-screen browse() pager becomes a

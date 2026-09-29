@@ -16,7 +16,7 @@
 	see_in_dark = 10 //SHADEkin
 	has_hands = TRUE //Pawbs
 	seedarkness = FALSE //SHAAAADEkin
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 	has_langs = list(LANGUAGE_GALCOM, LANGUAGE_SHADEKIN)
 
 	melee_damage_lower = 10

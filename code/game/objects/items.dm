@@ -11,7 +11,7 @@
 	var/health = null // organ condition (the body rewrite owns it). Object hit points are integrity (take_damage/get_integrity), never this.
 	// burn_point removed (dead, 0 refs)
 	var/burning = null
-	var/hitsound = "swing_hit"
+	var/hitsound = SFX_SWING_HIT
 	var/usesound = null // Like hitsound, but for when used properly and not to kill someone.
 	var/storage_cost = null
 	var/slot_flags = 0		//This is used to determine on which slots an item can fit.
@@ -103,9 +103,9 @@
 	// Sound used when equipping the items into a valid slot.
 	var/equip_sound
 	// pickup sound - this is the default
-	var/pickup_sound = "generic_pickup"
+	var/pickup_sound = SFX_GENERIC_PICKUP
 	// drop sound - this is the default
-	var/drop_sound = "generic_drop"
+	var/drop_sound = SFX_GENERIC_DROP
 
 	var/tmp/tip_timer // reference to timer id for a tooltip we might open soon
 

@@ -16,8 +16,8 @@ LINEN BINS
 	throw_speed = 1
 	throw_range = 2
 	w_class = ITEMSIZE_SMALL
-	drop_sound = 'sound/items/drop/clothing.ogg'
-	pickup_sound = 'sound/items/pickup/clothing.ogg'
+	drop_sound = SFX_ITEMS_DROP_CLOTHING
+	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
 	///var used for attack_self chain
 	var/special_handling = FALSE
 	resistance_flags = FLAMMABLE

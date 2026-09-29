@@ -5,8 +5,8 @@
 	overgloves = 1
 	punch_force = 3
 	w_class = ITEMSIZE_NORMAL
-	drop_sound = 'sound/items/drop/metalshield.ogg'
-	pickup_sound = 'sound/items/pickup/axe.ogg'
+	drop_sound = SFX_ITEMS_DROP_METALSHIELD
+	pickup_sound = SFX_ITEMS_PICKUP_AXE
 	resistance_flags = FIRE_PROOF
 
 /obj/item/clothing/gloves/arm_guard/equip_constraint()

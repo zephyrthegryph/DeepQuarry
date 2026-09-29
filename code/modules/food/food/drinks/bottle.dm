@@ -21,8 +21,8 @@
 	. = ..()
 	if(isGlass)
 		unacidable = TRUE
-		drop_sound = 'sound/items/drop/bottle.ogg'
-		pickup_sound = 'sound/items/pickup/bottle.ogg'
+		drop_sound = SFX_ITEMS_DROP_BOTTLE
+		pickup_sound = SFX_ITEMS_PICKUP_BOTTLE
 
 DECLARE_REF(/obj/item/reagent_containers/food/drinks/bottle, "rag", SPILL, null)
 

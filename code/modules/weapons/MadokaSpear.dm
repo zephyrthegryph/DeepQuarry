@@ -127,5 +127,5 @@ DECLARE_INTERACTIONS(/obj/item/oldtwohanded, INTERACT_USE(null, PROC_REF(interac
 	edge = 0
 	sharp = 1
 	injury_kind = INJURY_PIERCE
-	hitsound = 'sound/weapons/bladeslice.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
 	attack_verb = list("attacked", "poked", "jabbed", "torn", "gored")

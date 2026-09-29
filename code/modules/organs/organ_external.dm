@@ -1438,8 +1438,8 @@ Note that amputating the affected organ does in fact remove the infection from t
 	remove_splint()
 	get_icon()
 	unmutate()
-	drop_sound = 'sound/items/drop/weldingtool.ogg'
-	pickup_sound = 'sound/items/pickup/weldingtool.ogg'
+	drop_sound = SFX_ITEMS_DROP_WELDINGTOOL
+	pickup_sound = SFX_ITEMS_PICKUP_WELDINGTOOL
 
 	for(var/obj/item/organ/external/T in children)
 		T.robotize(company, keep_organs = keep_organs)

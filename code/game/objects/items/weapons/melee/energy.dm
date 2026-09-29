@@ -293,8 +293,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/axe/charge/loaded, "bcell", /obj/it
 	w_class = ITEMSIZE_SMALL
 	flags = NOBLOODY
 	colorable = TRUE
-	drop_sound = 'sound/items/drop/sword.ogg'
-	pickup_sound = 'sound/items/pickup/sword.ogg'
+	drop_sound = SFX_ITEMS_DROP_SWORD
+	pickup_sound = SFX_ITEMS_PICKUP_SWORD
 
 	projectile_parry_chance = 65
 

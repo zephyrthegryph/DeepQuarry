@@ -44,7 +44,7 @@
 	appendage_color = "#000000"
 
 	var/leap_warmup = 2 SECOND // How long the leap telegraphing is.
-	var/leap_sound = 'sound/weapons/spiderlunge.ogg'
+	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
 	var/random_skin = 1
 	var/list/skins = list( // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit

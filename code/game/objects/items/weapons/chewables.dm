@@ -2,7 +2,7 @@
 	name = "chewable item master"
 	desc = "If you are seeing this, ahelp it."
 	icon = 'icons/inventory/face/item.dmi'
-	drop_sound = 'sound/items/drop/food.ogg'
+	drop_sound = SFX_ITEMS_DROP_FOOD
 	body_parts_covered = 0
 
 	var/type_butt = null
@@ -125,8 +125,8 @@ DECLARE_REAGENTS_TINTED(/obj/item/clothing/mask/chewable/tobacco/nico, null, lis
 	icon = 'icons/obj/cigarettes.dmi'
 	icon_state = "cigpacket"
 	item_state = "cigpacket"
-	drop_sound = 'sound/items/drop/shovel.ogg'
-	use_sound = 'sound/items/storage/pillbottle.ogg'
+	drop_sound = SFX_ITEMS_DROP_SHOVEL
+	use_sound = SFX_ITEMS_STORAGE_PILLBOTTLE
 	w_class = ITEMSIZE_SMALL
 	throwforce = 2
 	slot_flags = SLOT_BELT
@@ -161,8 +161,8 @@ DECLARE_REAGENTS_TINTED(/obj/item/clothing/mask/chewable/tobacco/nico, null, lis
 	item_state = "Epacket"
 	starts_with = list(/obj/item/clothing/mask/chewable/tobacco/nico = 6)
 	storage_slots = 6
-	drop_sound = 'sound/items/drop/box.ogg'
-	use_sound = 'sound/items/storage/box.ogg'
+	drop_sound = SFX_ITEMS_DROP_BOX
+	use_sound = SFX_ITEMS_STORAGE_BOX
 	var/open = 0
 	var/open_state
 	var/closed_state
@@ -237,8 +237,8 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/candy, null, list(REAGENT_ID_S
 	slot_flags = SLOT_EARS
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/clothing/mask/chewable/candy/gum = 5)
-	use_sound = 'sound/items/drop/paper.ogg'
-	drop_sound = 'sound/items/drop/wrapper.ogg'
+	use_sound = SFX_ITEMS_DROP_PAPER
+	drop_sound = SFX_ITEMS_DROP_WRAPPER
 	max_storage_space = 5
 	foldable = null
 	trash = /obj/item/trash/gumpack
@@ -347,8 +347,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(
 	item_state = "pocky"
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/clothing/mask/chewable/candy/pocky = 8)
-	use_sound = 'sound/items/drop/paper.ogg'
-	drop_sound = 'sound/items/drop/wrapper.ogg'
+	use_sound = SFX_ITEMS_DROP_PAPER
+	drop_sound = SFX_ITEMS_DROP_WRAPPER
 	max_storage_space = 8
 	foldable = null
 	trash = /obj/item/trash/pocky

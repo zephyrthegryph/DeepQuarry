@@ -40,7 +40,7 @@
 	icon_override = 'icons/obj/guns/projectile/bows.dmi'
 	icon_state = "bow"
 	item_state = "bow"
-	fire_sound = 'sound/weapons/punchmiss.ogg' // TODO: Decent THWOK noise.
+	fire_sound = SFX_WEAPONS_PUNCHMISS // TODO: Decent THWOK noise.
 	fire_sound_text = "a solid thunk"
 	fire_delay = 25
 	slot_flags = SLOT_BACK

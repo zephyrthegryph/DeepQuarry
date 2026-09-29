@@ -6,10 +6,10 @@
 	force = 3.0
 	w_class = ITEMSIZE_NORMAL
 	attack_verb = list("whipped")
-	hitsound = 'sound/weapons/towelwhip.ogg'
+	hitsound = SFX_WEAPONS_TOWELWHIP
 	desc = "A soft cotton towel."
-	drop_sound = 'sound/items/drop/cloth.ogg'
-	pickup_sound = 'sound/items/pickup/cloth.ogg'
+	drop_sound = SFX_ITEMS_DROP_CLOTH
+	pickup_sound = SFX_ITEMS_PICKUP_CLOTH
 
 /obj/item/towel/equipped(M, slot)
 	..()

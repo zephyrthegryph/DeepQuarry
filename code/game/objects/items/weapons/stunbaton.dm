@@ -11,8 +11,8 @@
 	throwforce = 7
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_NORMAL
-	drop_sound = 'sound/items/drop/metalweapon.ogg'
-	pickup_sound = 'sound/items/pickup/metalweapon.ogg'
+	drop_sound = SFX_ITEMS_DROP_METALWEAPON
+	pickup_sound = SFX_ITEMS_PICKUP_METALWEAPON
 	attack_verb = list("beaten")
 	var/lightcolor = "#FF6A00"
 	var/stunforce = 0

@@ -267,7 +267,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/sniperrifle, INTERACT_VERB("Use Scope",
 	w_class = ITEMSIZE_NORMAL
 	force = 10
 	MATERIAL_BULK(MAT_STEEL, 2000)
-	fire_sound = 'sound/weapons/mandalorian.ogg'
+	fire_sound = SFX_WEAPONS_MANDALORIAN
 	projectile_type = /obj/item/projectile/beam/imperial
 
 /*
@@ -522,14 +522,14 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/monorifle, INTERACT_VERB("Aim Down Sigh
 
 /obj/item/gun/energy/gun
 	firemodes = list(
-		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun/med, modifystate="egunstun", fire_sound='sound/weapons/taser.ogg', charge_cost = 80),
-		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="egunkill", fire_sound='sound/weapons/Laser.ogg', charge_cost = 160),
+		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun/med, modifystate="egunstun", fire_sound=SFX_WEAPONS_TASER, charge_cost = 80),
+		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="egunkill", fire_sound=SFX_WEAPONS_LASER, charge_cost = 160),
 		)
 
 /obj/item/gun/energy/gun/rifle
 	firemodes = list(
-		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun, modifystate="riflestun", fire_sound='sound/weapons/taser.ogg', wielded_item_state="riflestun-wielded", charge_cost = 40),
-		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="riflekill", fire_sound='sound/weapons/Laser.ogg', wielded_item_state="riflekill-wielded", charge_cost = 80),
+		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun, modifystate="riflestun", fire_sound=SFX_WEAPONS_TASER, wielded_item_state="riflestun-wielded", charge_cost = 40),
+		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="riflekill", fire_sound=SFX_WEAPONS_LASER, wielded_item_state="riflekill-wielded", charge_cost = 80),
 		)
 
 /obj/item/gun/energy/gun/burst //Halving since by 3 seems too much
@@ -548,35 +548,35 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/monorifle, INTERACT_VERB("Aim Down Sigh
 
 /obj/item/gun/energy/gun/compact
 	firemodes = list(
-		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun/med, modifystate="PDWstun", fire_sound='sound/weapons/taser.ogg', charge_cost = 80),
-		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="PDWkill", fire_sound='sound/weapons/Laser.ogg', charge_cost = 160),
+		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun/med, modifystate="PDWstun", fire_sound=SFX_WEAPONS_TASER, charge_cost = 80),
+		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="PDWkill", fire_sound=SFX_WEAPONS_LASER, charge_cost = 160),
 		)
 
 /obj/item/gun/energy/gun/eluger
 	firemodes = list(
-		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun, modifystate="ep08stun", fire_sound='sound/weapons/taser.ogg', charge_cost = 40),
-		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam/eluger, modifystate="ep08kill", fire_sound='sound/weapons/Laser.ogg', charge_cost = 80),
+		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun, modifystate="ep08stun", fire_sound=SFX_WEAPONS_TASER, charge_cost = 40),
+		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam/eluger, modifystate="ep08kill", fire_sound=SFX_WEAPONS_LASER, charge_cost = 80),
 		)
 
 /obj/item/gun/energy/sf2000
 	firemodes = list(
-		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun/weak, modifystate="lasgunstun", fire_sound='sound/weapons/taser.ogg', charge_cost = 80),
-		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="lasgunkill", fire_sound='sound/weapons/Laser.ogg', charge_cost = 160),
+		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun/weak, modifystate="lasgunstun", fire_sound=SFX_WEAPONS_TASER, charge_cost = 80),
+		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="lasgunkill", fire_sound=SFX_WEAPONS_LASER, charge_cost = 160),
 		)
 
 /obj/item/gun/energy/gun/burst/mg42 //I am unsure what this weapon is, and it seems cheap on paper but just putting it at 80 for unity
 	firemodes = list(
-		list(mode_name="single fire", burst=1, projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="mg42-e", fire_sound='sound/weapons/Laser.ogg', charge_cost = 80),
-		list(mode_name="burst fire", burst=3, fire_delay=null, move_delay=4, burst_accuracy=list(0,0,0), dispersion=list(0.0, 0.2, 0.5), projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="mg42-e", fire_sound='sound/weapons/Laser.ogg'),
-		list(mode_name="5 laser burst", burst=5, fire_delay=null, move_delay=4, burst_accuracy=list(0,0,0,0,0), dispersion=list(0.0, 0.2, 0.5, 0.5, 0.5), projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="mg42-e", fire_sound='sound/weapons/Laser.ogg'),
-		list(mode_name="15 laser burst, ye boi.", burst=15, fire_delay=null, move_delay=4, burst_accuracy=list(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), dispersion=list(0.0, 0.2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5), projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="mg42-e", fire_sound='sound/weapons/Laser.ogg'),
+		list(mode_name="single fire", burst=1, projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="mg42-e", fire_sound=SFX_WEAPONS_LASER, charge_cost = 80),
+		list(mode_name="burst fire", burst=3, fire_delay=null, move_delay=4, burst_accuracy=list(0,0,0), dispersion=list(0.0, 0.2, 0.5), projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="mg42-e", fire_sound=SFX_WEAPONS_LASER),
+		list(mode_name="5 laser burst", burst=5, fire_delay=null, move_delay=4, burst_accuracy=list(0,0,0,0,0), dispersion=list(0.0, 0.2, 0.5, 0.5, 0.5), projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="mg42-e", fire_sound=SFX_WEAPONS_LASER),
+		list(mode_name="15 laser burst, ye boi.", burst=15, fire_delay=null, move_delay=4, burst_accuracy=list(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), dispersion=list(0.0, 0.2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5), projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="mg42-e", fire_sound=SFX_WEAPONS_LASER),
 		)
 
 /obj/item/gun/energy/x01
 	firemodes = list(
-		list(mode_name="stun", fire_delay = 8, projectile_type= /obj/item/projectile/beam/stun, modifystate="x01stun", fire_sound='sound/weapons/taser.ogg', charge_cost = 80),
-		list(mode_name="laser", fire_delay = 8, projectile_type=/obj/item/projectile/beam, modifystate="x01laser", fire_sound='sound/weapons/Laser.ogg', charge_cost = 160),
-		list(mode_name="gauss", fire_delay=15, projectile_type=/obj/item/projectile/energy/gauss, modifystate="x01gauss", fire_sound='sound/weapons/gauss_shoot.ogg', charge_cost = 120)
+		list(mode_name="stun", fire_delay = 8, projectile_type= /obj/item/projectile/beam/stun, modifystate="x01stun", fire_sound=SFX_WEAPONS_TASER, charge_cost = 80),
+		list(mode_name="laser", fire_delay = 8, projectile_type=/obj/item/projectile/beam, modifystate="x01laser", fire_sound=SFX_WEAPONS_LASER, charge_cost = 160),
+		list(mode_name="gauss", fire_delay=15, projectile_type=/obj/item/projectile/energy/gauss, modifystate="x01gauss", fire_sound=SFX_WEAPONS_GAUSS_SHOOT, charge_cost = 120)
 		)
 */
 
@@ -588,7 +588,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/monorifle, INTERACT_VERB("Aim Down Sigh
 	item_state = "gauss"
 	desc = "An older model of the experimental Gauss weapon series produced by Hephaestus industries. As it is unable to pass through glass, it was phased out during the mars-sol conflict due to the invention of laser carbines.Nevertheless, it still packs a punch and is easy to maintain, making it a favorite amongst sol privateers."
 	force = 5
-	fire_sound = 'sound/weapons/laser4.ogg' //lighter damage sound //CHMOMPEdit - Sound moved to modular files to prevent conflict with an upstream laser sound file
+	fire_sound = SFX_WEAPONS_LASER4 //lighter damage sound //CHMOMPEdit - Sound moved to modular files to prevent conflict with an upstream laser sound file
 	slot_flags = SLOT_BELT|SLOT_HOLSTER
 	w_class = 2
 	projectile_type = /obj/item/projectile/energy/gauss
@@ -605,7 +605,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/monorifle, INTERACT_VERB("Aim Down Sigh
 	item_icons = list(slot_r_hand_str = 'icons/mob/items/righthand_guns_yw.dmi', slot_l_hand_str = 'icons/mob/items/lefthand_guns_yw.dmi', slot_back_str = 'icons/mob/back_yw.dmi')
 	desc = "An older model of the experimental Gauss weapon series produced by Hephaestus industries. As it is unable to pass through glass, it was phased out during the mars-sol conflict due to the invention of laser carbines.Nevertheless, it still packs a punch and is easy to maintain, making it a favorite amongst sol privateers."
 	force = 8
-	fire_sound = 'sound/weapons/gauss_shoot.ogg'
+	fire_sound = SFX_WEAPONS_GAUSS_SHOOT
 	slot_flags = SLOT_BELT|SLOT_BACK
 	w_class = ITEMSIZE_HUGE //.
 	projectile_type = /obj/item/projectile/energy/gaussrifle

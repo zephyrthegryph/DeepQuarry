@@ -16,10 +16,10 @@
 	w_class = ITEMSIZE_SMALL
 	material_total = 80
 	attack_verb = list("pinched", "nipped")
-	hitsound = 'sound/items/Wirecutter.ogg'
-	usesound = 'sound/items/Wirecutter.ogg'
-	drop_sound = 'sound/items/drop/wirecutter.ogg'
-	pickup_sound = 'sound/items/pickup/wirecutter.ogg'
+	hitsound = SFX_ITEMS_WIRECUTTER
+	usesound = SFX_ITEMS_WIRECUTTER
+	drop_sound = SFX_ITEMS_DROP_WIRECUTTER
+	pickup_sound = SFX_ITEMS_PICKUP_WIRECUTTER
 	sharp = TRUE
 	edge = TRUE
 	injury_kind = INJURY_CUT
@@ -87,13 +87,13 @@
 	random_color = FALSE
 	w_class = ITEMSIZE_NORMAL
 	attack_verb = list("pinched", "nipped", "warped", "blasted")
-	usesound = 'sound/effects/stealthoff.ogg'
+	usesound = SFX_EFFECTS_STEALTHOFF
 	toolspeed = 0.4
 	reach = 2
 
 /obj/item/tool/wirecutters/power
 	name = "power cutters"
 	desc = "You shouldn't see this."
-	usesound = 'sound/items/jaws_cut.ogg'
+	usesound = SFX_ITEMS_JAWS_CUT
 	force = 15
 	toolspeed = 0.25

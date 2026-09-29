@@ -14,7 +14,7 @@
 	anchored = TRUE
 	density = TRUE
 	unacidable = TRUE
-	clicksound = "button"
+	clicksound = SFX_BUTTON
 	maintenance_flags = MACHINE_MAINT_WRENCH
 	maintenance_wrench_time = 2 SECONDS
 

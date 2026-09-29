@@ -35,7 +35,7 @@
 	opacity = 0
 	var/list/item_list
 
-	clicksound = "button"
+	clicksound = SFX_BUTTON
 	var/vending_sound = "machines/vending/vending_drop.ogg"
 
 	// Power

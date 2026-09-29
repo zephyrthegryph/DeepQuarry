@@ -8,8 +8,8 @@
 	var/list/known_targets
 	var/list/supported_types
 	var/datum/tgui_state/default/must_hack/hack_state
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/multitool/hacktool/override
 	hackspeed = 0.75

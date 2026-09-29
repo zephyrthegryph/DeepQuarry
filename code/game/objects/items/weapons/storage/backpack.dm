@@ -16,8 +16,8 @@
 	max_storage_space = INVENTORY_STANDARD_SPACE
 	var/flippable = 0
 	var/side = 0 //0 = right, 1 = left
-	drop_sound = 'sound/items/drop/backpack.ogg'
-	pickup_sound = 'sound/items/pickup/backpack.ogg'
+	drop_sound = SFX_ITEMS_DROP_BACKPACK
+	pickup_sound = SFX_ITEMS_PICKUP_BACKPACK
 
 /obj/item/storage/backpack/hold_constraint()
 	return list(HOLD_MAX_SIZE(ITEMSIZE_LARGE))

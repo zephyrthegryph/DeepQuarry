@@ -47,8 +47,8 @@
 	var/radio_filter_out
 	var/radio_filter_in
 
-	var/static/start_sound = 'sound/machines/air_pump/airpumpstart.ogg'
-	var/static/stop_sound = 'sound/machines/air_pump/airpumpshutdown.ogg'
+	var/static/start_sound = SFX_MACHINES_AIR_PUMP_AIRPUMPSTART
+	var/static/stop_sound = SFX_MACHINES_AIR_PUMP_AIRPUMPSHUTDOWN
 
 /obj/machinery/atmospherics/unary/vent_pump/on
 	use_power = USE_POWER_IDLE

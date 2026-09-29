@@ -7,8 +7,8 @@
 	desc = "Nutritious! Probably."
 	flags = NOCONDUCT
 	slot_flags = SLOT_HOLSTER
-	drop_sound = 'sound/items/drop/herb.ogg'
-	pickup_sound = 'sound/items/pickup/herb.ogg'
+	drop_sound = SFX_ITEMS_DROP_HERB
+	pickup_sound = SFX_ITEMS_PICKUP_HERB
 
 	var/plantname
 	var/tmp/datum/seed/seed_static
@@ -392,8 +392,8 @@ DECLARE_SHARED_CACHE_EX(fruit_icon, GLOBAL_PROC_REF(build_fruit_icon), SC_NEVER,
 
 	name = "[S.seed_name] slice"
 	desc = "A slice of \a [S.seed_name]. Tasty, probably."
-	drop_sound = 'sound/items/drop/herb.ogg'
-	pickup_sound = 'sound/items/pickup/herb.ogg'
+	drop_sound = SFX_ITEMS_DROP_HERB
+	pickup_sound = SFX_ITEMS_PICKUP_HERB
 
 	var/rind_colour = S.get_trait(TRAIT_PRODUCT_COLOUR)
 	var/flesh_colour = S.get_trait(TRAIT_FLESH_COLOUR)

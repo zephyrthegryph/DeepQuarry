@@ -89,7 +89,7 @@
 	special_attack_max_range = 7
 	special_attack_cooldown = 10 SECONDS
 	projectiletype = /obj/item/projectile/energy/homing_bolt // We're now a bullet hell game.
-	projectilesound = 'sound/weapons/wave.ogg'
+	projectilesound = SFX_WEAPONS_WAVE
 	var/obj/effect/overlay/energy_ball/energy_ball = null
 
 DECLARE_REF(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced, "energy_ball", OWNED, null)

@@ -28,7 +28,7 @@
 
 	stomp_sound = 'sound/mecha/fighter/engine_mid_fighter_move.ogg'
 	stomp_sound_2 = 'sound/mecha/fighter/engine_mid_fighter_move.ogg' // Fix for additional move sound on Chomp mecha.
-	swivel_sound = 'sound/mecha/fighter/engine_mid_boost_01.ogg'
+	swivel_sound = SFX_MECHA_FIGHTER_ENGINE_MID_BOOST_01
 
 	bound_height = 64
 	bound_width = 64

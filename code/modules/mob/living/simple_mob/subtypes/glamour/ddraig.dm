@@ -56,7 +56,7 @@
 	special_attack_cooldown = 15 SECONDS
 
 	var/leap_warmup = 2 SECOND // How long the leap telegraphing is.
-	var/leap_sound = 'sound/weapons/spiderlunge.ogg'
+	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
 	status_flags = null
 

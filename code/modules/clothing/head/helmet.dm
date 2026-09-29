@@ -12,8 +12,8 @@
 	siemens_coefficient = 0.7
 	w_class = ITEMSIZE_NORMAL
 	ear_protection = 1
-	drop_sound = 'sound/items/drop/helm.ogg'
-	pickup_sound = 'sound/items/pickup/helm.ogg'
+	drop_sound = SFX_ITEMS_DROP_HELM
+	pickup_sound = SFX_ITEMS_PICKUP_HELM
 	resistance_flags = FIRE_PROOF
 
 /obj/item/clothing/head/helmet/solgov

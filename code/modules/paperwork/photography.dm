@@ -29,8 +29,8 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	icon_state = "photo"
 	item_state = "paper"
 	w_class = ITEMSIZE_SMALL
-	drop_sound = 'sound/items/drop/paper.ogg'
-	pickup_sound = 'sound/items/pickup/paper.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPER
+	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	var/id
 	var/icon/img	//Big photo image
 	var/scribble	//Scribble on the back.

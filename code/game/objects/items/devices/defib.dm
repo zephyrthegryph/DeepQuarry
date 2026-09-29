@@ -16,8 +16,8 @@
 
 	var/paddle_path = /obj/item/shockpaddles/linked
 	var/obj/item/cell/bcell = null
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/defib_kit/get_cell()
 	return bcell

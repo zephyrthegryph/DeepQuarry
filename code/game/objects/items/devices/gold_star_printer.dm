@@ -8,8 +8,8 @@
 	slot_flags = SLOT_BELT | SLOT_HOLSTER
 	var/print_cooldown = 1 MINUTE
 	COOLDOWN_DECLARE(print_cooldown_until)
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 DECLARE_INTERACTIONS(/obj/item/gold_star_printer, INTERACT_USE(null, PROC_REF(interaction_self)))
 

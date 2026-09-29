@@ -1,7 +1,7 @@
 /obj/item/projectile/ion
 	name = "ion bolt"
 	icon_state = "ion"
-	fire_sound = 'sound/weapons/Laser.ogg'
+	fire_sound = SFX_WEAPONS_LASER
 	damage = 0
 	injury_kind = INJURY_BURN
 	nodamage = 1
@@ -13,8 +13,8 @@
 
 	combustion = FALSE
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/ion
-	hitsound_wall = 'sound/weapons/effects/searwall.ogg'
-	hitsound = 'sound/weapons/ionrifle.ogg'
+	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL
+	hitsound = SFX_WEAPONS_IONRIFLE
 
 	var/sev1_range = 0
 	var/sev2_range = 1
@@ -53,7 +53,7 @@
 /obj/item/projectile/temp
 	name = "freeze beam"
 	icon_state = "ice_2"
-	fire_sound = 'sound/weapons/pulse3.ogg'
+	fire_sound = SFX_WEAPONS_PULSE3
 	damage = 0
 	injury_kind = INJURY_BURN
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
@@ -133,7 +133,7 @@
 /obj/item/projectile/energy/floramut
 	name = "alpha somatoray"
 	icon_state = "energy"
-	fire_sound = 'sound/effects/stealthoff.ogg'
+	fire_sound = SFX_EFFECTS_STEALTHOFF
 	damage = 0
 	injury_kind = INJURY_TOXIN
 	nodamage = 1
@@ -174,7 +174,7 @@
 /obj/item/projectile/energy/floramut/gene
 	name = "gamma somatoray"
 	icon_state = "energy2"
-	fire_sound = 'sound/effects/stealthoff.ogg'
+	fire_sound = SFX_EFFECTS_STEALTHOFF
 	damage = 0
 	injury_kind = INJURY_TOXIN
 	nodamage = 1
@@ -184,7 +184,7 @@
 /obj/item/projectile/energy/florayield
 	name = "beta somatoray"
 	icon_state = "energy2"
-	fire_sound = 'sound/effects/stealthoff.ogg'
+	fire_sound = SFX_EFFECTS_STEALTHOFF
 	damage = 0
 	injury_kind = INJURY_TOXIN
 	nodamage = 1
@@ -209,7 +209,7 @@
 /obj/item/projectile/energy/floraprune
 	name = "delta somatoray"
 	icon_state = "energy2"
-	fire_sound = 'sound/effects/stealthoff.ogg'
+	fire_sound = SFX_EFFECTS_STEALTHOFF
 	damage = 0
 	injury_kind = INJURY_TOXIN
 	nodamage = 1
@@ -303,7 +303,7 @@
 /obj/item/projectile/beam/tungsten
 	name = "core of molten tungsten"
 	icon_state = "energy"
-	fire_sound = 'sound/weapons/gauss_shoot.ogg'
+	fire_sound = SFX_WEAPONS_GAUSS_SHOOT
 	pass_flags = PASSTABLE | PASSGRILLE
 	damage = 70
 	light_range = 4

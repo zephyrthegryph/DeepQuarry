@@ -8,7 +8,7 @@
 	w_class = ITEMSIZE_NORMAL
 	force = 10
 	MATERIAL_BULK(MAT_STEEL, 2000)
-	fire_sound = 'sound/weapons/mandalorian.ogg'
+	fire_sound = SFX_WEAPONS_MANDALORIAN
 	projectile_type = /obj/item/projectile/beam/imperial
 
 // Removed because gun64_vr.dmi guns don't work.
@@ -31,10 +31,10 @@
 	charge_meter = 0
 	modifystate = null
 	battery_lock = 1
-	fire_sound = 'sound/weapons/taser.ogg'
+	fire_sound = SFX_WEAPONS_TASER
 	firemodes = list(
-		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun, fire_sound='sound/weapons/taser.ogg', charge_cost = 600),
-		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, fire_sound='sound/weapons/Laser.ogg', charge_cost = 1200),
+		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun, fire_sound=SFX_WEAPONS_TASER, charge_cost = 600),
+		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, fire_sound=SFX_WEAPONS_LASER, charge_cost = 1200),
 		)
 
 /obj/item/gun/energy/gun/martin/proc/update_mode()
@@ -90,7 +90,7 @@
 	icon_state = "phaserkill"
 	item_state = "phaser"
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns_vr.dmi', slot_r_hand_str = 'icons/mob/items/righthand_guns_vr.dmi', "slot_belt" = 'icons/inventory/belt/mob.dmi')
-	fire_sound = 'sound/weapons/laser2.ogg'
+	fire_sound = SFX_WEAPONS_LASER2
 	charge_cost = 100 // Reduced cost
 
 	battery_lock = 1

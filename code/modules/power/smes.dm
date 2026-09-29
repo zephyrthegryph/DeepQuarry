@@ -21,7 +21,7 @@
 	unacidable = TRUE
 	use_power = USE_POWER_OFF
 	circuit = /obj/item/circuitboard/smes
-	clicksound = "switch"
+	clicksound = SFX_SWITCH
 	max_integrity = 500
 
 	var/capacity = 5e6 // maximum charge

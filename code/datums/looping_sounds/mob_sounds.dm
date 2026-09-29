@@ -9,7 +9,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /datum/looping_sound/mob/deafened
-	start_sound = 'sound/effects/ear_ring/ear_deaf_in.ogg'
+	start_sound = SFX_EFFECTS_EAR_RING_EAR_DEAF_IN
 	start_length = 4 SECONDS // 2 seconds shorter than the actual file ending, bc we want it to overlap
 	mid_sounds = list('sound/misc/silence.ogg'=1)
 	mid_length = 3 SECONDS

@@ -6,7 +6,7 @@
 	w_class = ITEMSIZE_HUGE //.
 	force = 10
 
-	fire_sound = 'sound/weapons/grenade_launcher.ogg'
+	fire_sound = SFX_WEAPONS_GRENADE_LAUNCHER
 	fire_sound_text = "a metallic thunk"
 	recoil = 0
 	throw_distance = 7

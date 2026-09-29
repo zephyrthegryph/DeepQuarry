@@ -92,7 +92,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper, INTERACT_VERB("Use Sco
 	accuracy = -45 //shooting at the hip
 	scoped_accuracy = 0
 	one_handed_penalty = 60 // The weapon itself is heavy, and the long barrel makes it hard to hold steady with just one hand.
-	fire_sound = 'sound/weapons/gunshot_svd.ogg' // Has a very unique sound.
+	fire_sound = SFX_WEAPONS_GUNSHOT_SVD // Has a very unique sound.
 	magazine_type = /obj/item/ammo_magazine/m762svd
 	allowed_magazines = list(/obj/item/ammo_magazine/m762svd)
 

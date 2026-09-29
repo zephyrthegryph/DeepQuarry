@@ -38,8 +38,8 @@
 	desc = "A collection of tiny colored bricks ready to be built into whatever you want."
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	icon_state = "smolematerial"
-	drop_sound = 'sound/items/drop/smolematerial.ogg'
-	pickup_sound = 'sound/items/pickup/pillbottle.ogg'
+	drop_sound = SFX_ITEMS_DROP_SMOLEMATERIAL
+	pickup_sound = SFX_ITEMS_PICKUP_PILLBOTTLE
 	default_type = MAT_SMOLEBRICKS
 	w_class = ITEMSIZE_SMALL
 
@@ -53,9 +53,9 @@
 	throw_range = 4
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 // most code copied from toolbox
-	use_sound = 'sound/items/storage/smolecase.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
-	pickup_sound = 'sound/items/pickup/device.ogg'
+	use_sound = SFX_ITEMS_STORAGE_SMOLECASE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	starts_with = list( /obj/item/stack/material/smolebricks,
 	/obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks,
 	/obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks,
@@ -344,7 +344,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 	icon_state = "tether_trash"
 	name = "tether"
 	desc = "Its a tiny bit of plastic in the shape of the tether. There seems to be a small button on top."
-	honk_sound = 'sound/items/tinytether.ogg'
+	honk_sound = SFX_ITEMS_TINYTETHER
 
 /obj/item/reagent_containers/food/snacks/snackplanet/moon
 	name = "moon"
@@ -354,7 +354,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 	bitesize = 1
 	nutriment_amt = 2
 	nutriment_desc = list(REAGENT_ID_SUGAR = 2)
-	drop_sound = 'sound/items/drop/basketball.ogg'
+	drop_sound = SFX_ITEMS_DROP_BASKETBALL
 
 /obj/item/reagent_containers/food/snacks/snackplanet/virgo3b
 	name = "Virgo 3B"
@@ -365,7 +365,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 	trash = /obj/item/bikehorn/tinytether
 	nutriment_amt = 2
 	nutriment_desc = list("spicy" = 2, "tang" = 2)
-	drop_sound = 'sound/items/drop/basketball.ogg'
+	drop_sound = SFX_ITEMS_DROP_BASKETBALL
 
 /obj/item/reagent_containers/food/snacks/snackplanet/phoron
 	name = "phoron giant"
@@ -376,7 +376,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 	trash = /obj/item/trash/candychunk
 	nutriment_amt = 2
 	nutriment_desc = list("spicy" = 2)
-	drop_sound = 'sound/items/drop/basketball.ogg'
+	drop_sound = SFX_ITEMS_DROP_BASKETBALL
 
 /obj/item/reagent_containers/food/snacks/snackplanet/virgoprime
 	name = "Virgo Prime"
@@ -387,7 +387,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 	trash = /obj/item/trash/candychunk
 	nutriment_amt = 2
 	nutriment_desc = list("salty" = 2)
-	drop_sound = 'sound/items/drop/basketball.ogg'
+	drop_sound = SFX_ITEMS_DROP_BASKETBALL
 
 /obj/item/storage/bagoplanets
 	name = "bag o' planets"
@@ -396,8 +396,8 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 	icon_state = "sp_storage"
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 // most code copied from toolbox
-	drop_sound = 'sound/items/drop/food.ogg'
-	pickup_sound = 'sound/items/pickup/food.ogg'
+	drop_sound = SFX_ITEMS_DROP_FOOD
+	pickup_sound = SFX_ITEMS_PICKUP_FOOD
 	starts_with = list(/obj/item/reagent_containers/food/snacks/snackplanet/phoron,
 	/obj/item/reagent_containers/food/snacks/snackplanet/virgo3b,/obj/item/reagent_containers/food/snacks/snackplanet/moon,
 	/obj/item/reagent_containers/food/snacks/snackplanet/virgoprime

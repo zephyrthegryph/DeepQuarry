@@ -1066,7 +1066,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/flannel, \
 	desc = "Caution! Wet Floor!"
 	description_fluff = "Used by the janitor to passive-aggressively point at when you eventually slip on one of their mopped floors."
 	icon_state = "caution"
-	drop_sound = 'sound/items/drop/shoes.ogg'
+	drop_sound = SFX_ITEMS_DROP_SHOES
 	force = 1
 	throwforce = 3
 	throw_speed = 2

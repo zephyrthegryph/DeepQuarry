@@ -11,7 +11,7 @@
 	anchored = TRUE
 	flags = WALL_ITEM
 	var/id_tag = null
-	var/chime_sound = 'sound/machines/doorbell.ogg'
+	var/chime_sound = SFX_MACHINES_DOORBELL
 
 /obj/machinery/doorbell_chime/Initialize(mapload)
 	. = ..()

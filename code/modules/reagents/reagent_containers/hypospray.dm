@@ -14,8 +14,8 @@
 	max_transfer_amount = null
 	flags = OPENCONTAINER
 	slot_flags = SLOT_BELT
-	drop_sound = 'sound/items/drop/gun.ogg'
-	pickup_sound = 'sound/items/pickup/gun.ogg'
+	drop_sound = SFX_ITEMS_DROP_GUN
+	pickup_sound = SFX_ITEMS_PICKUP_GUN
 	preserve_item = 1
 	var/filled = 0
 	var/list/filled_reagents
@@ -171,7 +171,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/hypospray/vial, \
 	filled = 1
 	filled_reagents = list(REAGENT_ID_INAPROVALINE = 5)
 	preserve_item = 0
-	hyposound = 'sound/effects/hypospray.ogg'
+	hyposound = SFX_EFFECTS_HYPOSPRAY
 
 /obj/item/reagent_containers/hypospray/autoinjector/on_reagent_change()
 	..()

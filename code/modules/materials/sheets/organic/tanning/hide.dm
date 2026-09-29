@@ -5,8 +5,8 @@
 	name = "hide"
 	desc = "The hide of some creature."
 	icon_state = "sheet-hide"
-	drop_sound = 'sound/items/drop/cloth.ogg'
-	pickup_sound = 'sound/items/pickup/cloth.ogg'
+	drop_sound = SFX_ITEMS_DROP_CLOTH
+	pickup_sound = SFX_ITEMS_PICKUP_CLOTH
 	amount = 1
 	max_amount = 20
 	stacktype = "hide"
@@ -69,8 +69,8 @@ EXTEND_INTERACTIONS(/obj/item/stack/animalhide, INTERACT_ITEM(null, PROC_REF(ani
 	singular_name = "skin piece"
 	icon_state = "sheet-hide"
 	no_variants = FALSE
-	drop_sound = 'sound/items/drop/leather.ogg'
-	pickup_sound = 'sound/items/pickup/leather.ogg'
+	drop_sound = SFX_ITEMS_DROP_LEATHER
+	pickup_sound = SFX_ITEMS_PICKUP_LEATHER
 	stacktype = "hide-human"
 
 /obj/item/stack/animalhide/corgi

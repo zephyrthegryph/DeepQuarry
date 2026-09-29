@@ -4,8 +4,8 @@
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "taperoll"
 	w_class = ITEMSIZE_TINY
-	drop_sound = 'sound/items/drop/cardboardbox.ogg'
-	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
+	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
 	toolspeed = 2 //It is now used in surgery as a not awful, but probably dangerous option, due to speed.
 

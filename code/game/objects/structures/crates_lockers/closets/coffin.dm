@@ -5,7 +5,7 @@
 
 	icon_state = "closed_unlocked"
 	seal_tool = /obj/item/tool/screwdriver
-	breakout_sound = 'sound/weapons/tablehit1.ogg'
+	breakout_sound = SFX_WEAPONS_TABLEHIT1
 	closet_appearance = null // Special icon for us
 
 /* Graves */
@@ -15,13 +15,13 @@
 	icon = 'icons/obj/closets/grave.dmi'
 	icon_state = ""
 	seal_tool = null
-	breakout_sound = 'sound/weapons/thudswoosh.ogg'
+	breakout_sound = SFX_WEAPONS_THUDSWOOSH
 	anchored = TRUE
 	max_closets = 1
 	opened = 1
 	closet_appearance = null // Special icon for us
-	open_sound = 'sound/effects/wooden_closet_open.ogg'
-	close_sound = 'sound/effects/wooden_closet_close.ogg'
+	open_sound = SFX_EFFECTS_WOODEN_CLOSET_OPEN
+	close_sound = SFX_EFFECTS_WOODEN_CLOSET_CLOSE
 
 // Grave's Use and item overrides fully replace closet's (the original overrides never
 // called ..() into it either), so it declares its own interactions.

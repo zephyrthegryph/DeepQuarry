@@ -9,7 +9,7 @@
 	layer = ABOVE_WINDOW_LAYER
 	vis_flags = VIS_HIDE
 	unacidable = TRUE
-	clicksound = "button"
+	clicksound = SFX_BUTTON
 	clickvol = 60
 
 	var/potion_reagent = 0

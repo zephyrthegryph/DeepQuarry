@@ -33,7 +33,7 @@
 	size_multiplier = 1.25
 	shock_resist = 0.5
 	ranged_attack_delay = 1 SECONDS
-	projectilesound = 'sound/weapons/gauss_shoot.ogg'
+	projectilesound = SFX_WEAPONS_GAUSS_SHOOT
 	damage_fatigue_mult = 0
 
 	projectiletype = /obj/item/projectile/bullet/rifle/a545/ap
