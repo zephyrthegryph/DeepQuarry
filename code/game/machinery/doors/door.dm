@@ -359,7 +359,7 @@ DAMAGE_REACTION_AFTER(/obj/machinery/door, DAMAGE_THROWN, PROC_REF(door_thrown_a
 
 /obj/machinery/door/crowbar_act(mob/user, obj/item/tool)
 	if(!reinforcing)
-		return ..() // the door's crowbar interactions (an airlock's pry())
+		return ..() // the door's crowbar interactions (an airlock's cap_pry())
 	var/obj/item/stack/material/plasteel/reinforcing_sheet = new /obj/item/stack/material/plasteel(get_turf(src), reinforcing)
 	reinforcing = 0
 	to_chat(user, span_notice("You remove \the [reinforcing_sheet]."))
@@ -379,7 +379,7 @@ DAMAGE_REACTION_AFTER(/obj/machinery/door, DAMAGE_THROWN, PROC_REF(door_thrown_a
 		use_tool(user, tool, src, delay = 1 SECOND, quality = TOOL_WELDER, volume = 50, amount = 0, start_self = "You start welding the plasteel into place.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 		return ITEM_INTERACT_SUCCESS
 
-	// The door's welder interactions first (an airlock's weld_shut(), offered only where welding it
+	// The door's welder interactions first (an airlock's cap_weld_shut(), offered only where welding it
 	// shut wins over repairing it), then the repair.
 	. = ..()
 	if(.)
@@ -444,7 +444,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/door, PROC_REF(on_emag), null)
 
 /obj/machinery/door/examine(mob/user)
 	. = ..()
-	if(has_stat(BROKEN) && !cap_of(src, /datum/capability/breakable)) // breakable() says it itself
+	if(has_stat(BROKEN) && !cap_of(src, /datum/capability/breakable)) // cap_breakable() says it itself
 		. += "It is broken!"
 
 /// What a door does when it breaks, after the base machinery break.

@@ -105,7 +105,7 @@
 	var/list/blocked = list()
 	var/list/priorities = resolution.priorities
 	// The type's interactions, then the construction edges leaving its current state (construction.dm).
-	for(var/datum/interaction/interaction as anything in interaction_candidates(target) + construction_edges_for(target))
+	for(var/datum/interaction/interaction as anything in interaction_candidates(target) + cap_extra_interactions(target) + construction_edges_for(target))
 		if(action && interaction.default_action != action)
 			continue
 		if(quality && interaction.tool != quality)

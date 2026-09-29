@@ -8,8 +8,8 @@
 
 /obj/cap_fixture/powered/capabilities()
 	. = ..()
-	. += needs_power()
-	. += hand("Poke", TYPE_PROC_REF(/obj/cap_fixture/powered, poke))
+	. += cap_power()
+	. += cap_hand("Poke", TYPE_PROC_REF(/obj/cap_fixture/powered, poke))
 
 /obj/cap_fixture/powered/proc/poke(mob/user, obj/item/held)
 	return TRUE
@@ -20,7 +20,7 @@
 
 /obj/machinery/cap_fixture_powered/capabilities()
 	. = ..()
-	. += needs_power()
+	. += cap_power()
 
 /// Dark and an examine line while unpowered; entries refuse unless works_unpowered.
 /datum/unit_test/dx_cap_powered_dark/Run()
@@ -51,6 +51,7 @@
 		M.stat_add(NOPOWER)
 	else
 		M.stat_remove(NOPOWER)
+	changed(M)
 	refresh_flush()
 	var/was_dark = cap_test_has_layer(M, "dark")
 	TEST_ASSERT(M.power_change(), "power_change() flips the power state")

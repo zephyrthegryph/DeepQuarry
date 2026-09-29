@@ -11,8 +11,8 @@
 
 /obj/cap_fixture/wires/capabilities()
 	. = ..()
-	. += panel()
-	. += wires(/datum/wires/cap_fixture)
+	. += cap_panel()
+	. += cap_wires(/datum/wires/cap_fixture)
 
 /// The wires are behind the panel, made on first use in cap_data, drawn while exposed and freed with the holder.
 /datum/unit_test/dx_cap_wires_owned/Run()

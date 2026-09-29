@@ -6,7 +6,7 @@
 
 /obj/cap_fixture/emag/capabilities()
 	. = ..()
-	. += emag(say = "You short out %T%.", effect = PROC_REF(on_emag), already_say = "It is fried already.")
+	. += cap_emag(say = "You short out %T%.", effect = PROC_REF(on_emag), already_say = "It is fried already.")
 
 /obj/cap_fixture/emag/proc/on_emag(mob/user, obj/item/card/emag/card)
 	effects++
@@ -18,7 +18,7 @@
 
 /obj/cap_fixture/emag_repeatable/capabilities()
 	. = ..()
-	. += emag(mode = EMAG_REPEATABLE)
+	. += cap_emag(mode = EMAG_REPEATABLE)
 
 /// An emag sets the bit, runs the effect and spends a use; EMAG_ONCE refuses a second swipe.
 /datum/unit_test/dx_cap_emag_once/Run()

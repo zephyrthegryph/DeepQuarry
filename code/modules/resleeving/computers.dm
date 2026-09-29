@@ -284,7 +284,7 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_ejectdisk)
 
 UI_ACT(/obj/machinery/computer/transhuman/resleeving, "create", ui_act_create)
 UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_create)
-	act_create_body()
+	resleeve_create_body()
 	. = TRUE
 
 UI_ACT(/obj/machinery/computer/transhuman/resleeving, "selectpod", ui_act_selectpod, UI_ARG_REF("ref", "pods", /obj/machinery/clonepod))
@@ -315,7 +315,7 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_menu)
 
 UI_ACT(/obj/machinery/computer/transhuman/resleeving, "genereset", ui_act_genereset)
 UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_genereset)
-	act_gene_reset()
+	resleeve_gene_reset()
 	. = TRUE
 
 UI_ACT(/obj/machinery/computer/transhuman/resleeving, "cleartemp", ui_act_cleartemp)
@@ -324,7 +324,7 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_cleartemp)
 	. = TRUE
 
 /// "create": grow or print the selected body record on the selected pod.
-/obj/machinery/computer/transhuman/resleeving/proc/act_create_body()
+/obj/machinery/computer/transhuman/resleeving/proc/resleeve_create_body()
 	var/datum/transhuman/body_record/active_br = current_br
 	if(!istype(active_br))
 		set_temp("Error: Data corruption.", "danger")
@@ -471,7 +471,7 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, act_sleeve)
 	return null
 
 /// "genereset": synthesize a DNA injector that resets structural enzymes to the selected body record.
-/obj/machinery/computer/transhuman/resleeving/proc/act_gene_reset()
+/obj/machinery/computer/transhuman/resleeving/proc/resleeve_gene_reset()
 	var/datum/transhuman/body_record/active_br = current_br
 	if(gene_sequencing)
 		set_temp("Sequencing Record... Please wait.")

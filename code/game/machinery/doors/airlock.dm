@@ -230,7 +230,7 @@ About the new airlock wires panel:
 		return TRUE
 	return FALSE
 
-// electrification() (code/datums/capabilities/library/doors.dm) reads these.
+// cap_electrify() (code/datums/capabilities/library/doors.dm) reads these.
 /obj/machinery/door/airlock/is_electrified()
 	return isElectrified()
 
@@ -437,23 +437,23 @@ APPEARANCE_NONE(/obj/machinery/door/airlock)
 
 /obj/machinery/door/airlock/capabilities()
 	. = ..()
-	. += panel(tool = TOOL_SCREWDRIVER)
-	. += wires(/datum/wires/airlock)
-	. += door_access()
-	. += breakable(repair_tool = null) // the door's own welder repair (door.dm) mends it
-	. += needs_power()
-	. += emag(effect = PROC_REF(emag_effect), mode = EMAG_REPEATABLE, log = LOG_GAME)
-	. += bolts(layer = null) // draw() shows door_locked while the bolt lights are on
-	. += electrification()
-	. += weld_shut(offered_if = PROC_REF(can_weld_now), help_offered_if = PROC_REF(can_weld_without_repair))
-	. += pry()
-	. += emergency_access(layer = null)
-	. += ai_control()
-	. += frozen_shut()
-	. += hand("Use", PROC_REF(touch_airlock), needs = PROC_REF(can_touch_by_hand))
-	. += use_on("Use", /obj/item, PROC_REF(use_item_on_airlock), works_broken = TRUE, works_unpowered = TRUE)
-	. += airlock_ctrl_entry(hand("Hammer on the door", PROC_REF(hammer_on_door), works_broken = TRUE, works_unpowered = TRUE, stance = I_HURT), insulated = TRUE)
-	. += airlock_ctrl_entry(hand("Hold the door open", PROC_REF(hold_door_open), works_broken = TRUE, works_unpowered = TRUE, stance = I_GRAB))
+	. += cap_panel(tool = TOOL_SCREWDRIVER)
+	. += cap_wires(/datum/wires/airlock)
+	. += cap_door_access()
+	. += cap_breakable(repair_tool = null) // the door's own welder repair (door.dm) mends it
+	. += cap_power()
+	. += cap_emag(effect = PROC_REF(emag_effect), mode = EMAG_REPEATABLE, log = LOG_GAME)
+	. += cap_bolts(layer = null) // draw() shows door_locked while the bolt lights are on
+	. += cap_electrify()
+	. += cap_weld_shut(applies = PROC_REF(can_weld_now), help_applies = PROC_REF(can_weld_without_repair))
+	. += cap_pry()
+	. += cap_emergency_access(layer = null)
+	. += cap_ai_control()
+	. += cap_frozen_shut()
+	. += cap_hand("Use", PROC_REF(touch_airlock), needs = PROC_REF(can_touch_by_hand))
+	. += cap_use_on("Use", /obj/item, PROC_REF(use_item_on_airlock), works_broken = TRUE, works_unpowered = TRUE)
+	. += airlock_ctrl_entry(cap_hand("Hammer on the door", PROC_REF(hammer_on_door), works_broken = TRUE, works_unpowered = TRUE, stance = I_HURT), insulated = TRUE)
+	. += airlock_ctrl_entry(cap_hand("Hold the door open", PROC_REF(hold_door_open), works_broken = TRUE, works_unpowered = TRUE, stance = I_GRAB))
 
 /// A ctrl-click entry: run from click_ctrl() for the stance it declares.
 /proc/airlock_ctrl_entry(datum/capability/entry/C, insulated = FALSE)
@@ -599,7 +599,7 @@ APPEARANCE_NONE(/obj/machinery/door/airlock)
 /obj/machinery/door/airlock/proc/can_touch_by_hand(mob/user, obj/item/held)
 	return can_operate_by_hand(user, src, held)
 
-/// A bare hand on the airlock (electrification() has already zapped): let go of a door someone holds,
+/// A bare hand on the airlock (cap_electrify() has already zapped): let go of a door someone holds,
 /// xenos tear at it, an open panel shows the wires. Otherwise declines, and the door's own Use opens it.
 /obj/machinery/door/airlock/proc/touch_airlock(mob/user, obj/item/held)
 	if(!Adjacent(hold_open()))
@@ -623,7 +623,7 @@ APPEARANCE_NONE(/obj/machinery/door/airlock)
 
 	return FALSE
 
-/// Anything held against the airlock (after electrification()): tape, a signaler, a pAI cable, or a
+/// Anything held against the airlock (after cap_electrify()): tape, a signaler, a pAI cable, or a
 /// prying weapon on an unpowered door. Otherwise declines, and the door's own item use follows.
 /obj/machinery/door/airlock/proc/use_item_on_airlock(mob/user, obj/item/held)
 	touched_with(user, held)
@@ -706,7 +706,7 @@ APPEARANCE_NONE(/obj/machinery/door/airlock)
 	playsound(src, knock_unpowered_sound, 50, 0, 3)
 	return CLICK_ACTION_SUCCESS
 
-// ---- weld_shut() and pry() ----
+// ---- cap_weld_shut() and cap_pry() ----
 
 /// Welding shut is offered on a closed, still door with no plasteel being fitted.
 /obj/machinery/door/airlock/proc/can_weld_now()
@@ -790,17 +790,17 @@ TYPE_TABLE(/obj/machinery/door/airlock, emag_decl, null)
 /datum/capability/frozen_shut
 
 /// A frozen airlock: every tool and item chips (or melts) the ice before anything else it would do.
-/proc/frozen_shut()
+/proc/cap_frozen_shut()
 	return new /datum/capability/frozen_shut
 
 /datum/capability/frozen_shut/interactions(atom/holder)
 	. = list()
 	for(var/quality in list(TOOL_CROWBAR, TOOL_SCREWDRIVER, TOOL_WIRECUTTER, TOOL_MULTITOOL, TOOL_WELDER))
-		var/datum/capability/entry/wrapper = tool("Clear the ice", quality, TYPE_PROC_REF(/obj/machinery/door/airlock, deice), works_broken = TRUE, works_unpowered = TRUE, priority = 100)
-		. += cap_entry_setup(own_entry(wrapper, id = "frozen_shut:[quality]"), offered_if = TYPE_PROC_REF(/obj/machinery/door/airlock, is_frozen), insulated = TRUE, tool_volume = 0)
+		var/datum/capability/entry/wrapper = cap_tool("Clear the ice", quality, TYPE_PROC_REF(/obj/machinery/door/airlock, deice), works_broken = TRUE, works_unpowered = TRUE, priority = 100)
+		. += cap_entry_setup(own_entry(wrapper, id = "frozen_shut:[quality]"), applies = TYPE_PROC_REF(/obj/machinery/door/airlock, is_frozen), insulated = TRUE, tool_volume = 0)
 	// Below the emag (50), above the airlock's other item uses.
-	var/datum/capability/entry/by_item = use_on("Clear the ice", /obj/item, TYPE_PROC_REF(/obj/machinery/door/airlock, deice), works_broken = TRUE, works_unpowered = TRUE, priority = 40)
-	. += cap_entry_setup(own_entry(by_item, id = "frozen_shut:item"), offered_if = TYPE_PROC_REF(/obj/machinery/door/airlock, is_frozen), insulated = TRUE)
+	var/datum/capability/entry/by_item = cap_use_on("Clear the ice", /obj/item, TYPE_PROC_REF(/obj/machinery/door/airlock, deice), works_broken = TRUE, works_unpowered = TRUE, priority = 40)
+	. += cap_entry_setup(own_entry(by_item, id = "frozen_shut:item"), applies = TYPE_PROC_REF(/obj/machinery/door/airlock, is_frozen), insulated = TRUE)
 
 /datum/capability/frozen_shut/examine(atom/holder, mob/user)
 	var/obj/machinery/door/airlock/A = holder
@@ -858,7 +858,7 @@ TYPE_TABLE(/obj/machinery/door/airlock, emag_decl, null)
 	unFreeze()
 	to_chat(user, span_notice("You finish chipping the ice off \the [src]"))
 
-// ---- the remote control panel (ai_control(), the AiAirlock window) ----
+// ---- the remote control panel (cap_ai_control(), the AiAirlock window) ----
 
 /obj/machinery/door/airlock/ui_allowed(mob/user, action)
 	return user_allowed(user)
@@ -871,60 +871,60 @@ TYPE_TABLE(/obj/machinery/door/airlock, emag_decl, null)
 		"emergency_toggle" = LOG_GAME,
 	)
 
-/obj/machinery/door/airlock/proc/ui_disrupt_main(mob/user)
+/obj/machinery/door/airlock/proc/act_disrupt_main(mob/user)
 	if(main_power_lost_until)
 		return refuse(user, "Main power is already offline.")
 	loseMainPower()
 	return TRUE
 
-/obj/machinery/door/airlock/proc/ui_disrupt_backup(mob/user)
+/obj/machinery/door/airlock/proc/act_disrupt_backup(mob/user)
 	if(backup_power_lost_until)
 		return refuse(user, "Backup power is already offline.")
 	loseBackupPower()
 	return TRUE
 
-/obj/machinery/door/airlock/proc/ui_shock_restore(mob/user)
+/obj/machinery/door/airlock/proc/act_shock_restore(mob/user)
 	electrify(0, TRUE, user)
 	return TRUE
 
-/obj/machinery/door/airlock/proc/ui_shock_temp(mob/user)
+/obj/machinery/door/airlock/proc/act_shock_temp(mob/user)
 	electrify(30, TRUE, user)
 	return TRUE
 
-/obj/machinery/door/airlock/proc/ui_shock_perm(mob/user)
+/obj/machinery/door/airlock/proc/act_shock_perm(mob/user)
 	electrify(-1, TRUE, user)
 	return TRUE
 
-/obj/machinery/door/airlock/proc/ui_idscan_toggle(mob/user)
+/obj/machinery/door/airlock/proc/act_idscan_toggle(mob/user)
 	set_idscan(aiDisabledIdScanner, TRUE, user)
 	return TRUE
 
-/obj/machinery/door/airlock/proc/ui_emergency_toggle(mob/user)
+/obj/machinery/door/airlock/proc/act_emergency_toggle(mob/user)
 	set_emergency_access(src, !emergency_access_on(src))
 	to_chat(user, span_notice("Emergency access is now [emergency_access_on(src) ? "engaged" : "disengaged"]."))
 	return TRUE
 
-/obj/machinery/door/airlock/proc/ui_bolt_toggle(mob/user)
+/obj/machinery/door/airlock/proc/act_bolt_toggle(mob/user)
 	toggle_bolt(user)
 	return TRUE
 
-/obj/machinery/door/airlock/proc/ui_light_toggle(mob/user)
+/obj/machinery/door/airlock/proc/act_light_toggle(mob/user)
 	if(wire_cut(WIRE_BOLT_LIGHT))
 		return refuse(user, "The bolt lights wire is cut - The door bolt lights are permanently disabled.")
 	lights = !lights
 	return TRUE
 
-/obj/machinery/door/airlock/proc/ui_safe_toggle(mob/user)
+/obj/machinery/door/airlock/proc/act_safe_toggle(mob/user)
 	set_safeties(!safe, TRUE, user)
 	return TRUE
 
-/obj/machinery/door/airlock/proc/ui_speed_toggle(mob/user)
+/obj/machinery/door/airlock/proc/act_speed_toggle(mob/user)
 	if(wire_cut(WIRE_SPEED))
 		return refuse(user, "The timing wire is cut - Cannot alter timing.")
 	normalspeed = !normalspeed
 	return TRUE
 
-/obj/machinery/door/airlock/proc/ui_open_close(mob/user)
+/obj/machinery/door/airlock/proc/act_open_close(mob/user)
 	user_toggle_open(user)
 	return TRUE
 
@@ -1196,7 +1196,7 @@ TYPE_TABLE(/obj/machinery/door/airlock, emag_decl, null)
 			killthis.ex_act(2)//Smashin windows
 	. = ..()
 
-/// Drops the bolts (bolts(): CAP_BOLTED). forced drops them mid-swing.
+/// Drops the bolts (cap_bolts(): CAP_BOLTED). forced drops them mid-swing.
 /obj/machinery/door/airlock/proc/lock(forced=0)
 	if(is_bolted(src))
 		return FALSE
@@ -1230,7 +1230,7 @@ TYPE_TABLE(/obj/machinery/door/airlock, emag_decl, null)
 	publish_door_mode()
 	return TRUE
 
-/// bolts() drops and raises through the airlock's own bolt mechanism.
+/// cap_bolts() drops and raises through the airlock's own bolt mechanism.
 /obj/machinery/door/airlock/set_bolted(on, forced = FALSE)
 	return on ? lock(forced) : unlock(forced)
 
@@ -1239,7 +1239,7 @@ TYPE_TABLE(/obj/machinery/door/airlock, emag_decl, null)
 		return FALSE
 	. = ..()
 
-/// The access check is the door_access() capability (the door's own req_access, design review H1),
+/// The access check is the cap_door_access() capability (the door's own req_access, design review H1),
 /// and emergency access lets anyone through.
 /obj/machinery/door/airlock/check_access_list(list/L)
 	if(emergency_access_on(src))

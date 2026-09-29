@@ -83,7 +83,7 @@ export const AiAirlock = (props) => {
                 <Button
                   icon="lightbulb-o"
                   disabled={!power.main}
-                  onClick={() => act('disrupt_main')}
+                  onClick={() => act('disrupt-main')}
                 >
                   Disrupt
                 </Button>
@@ -100,7 +100,7 @@ export const AiAirlock = (props) => {
                 <Button
                   icon="lightbulb-o"
                   disabled={!power.backup}
-                  onClick={() => act('disrupt_backup')}
+                  onClick={() => act('disrupt-backup')}
                 >
                   Disrupt
                 </Button>
@@ -120,7 +120,7 @@ export const AiAirlock = (props) => {
                     <Button
                       icon="wrench"
                       disabled={!(wires.shock && shock === 0)}
-                      onClick={() => act('shock_restore')}
+                      onClick={() => act('shock-restore')}
                     >
                       Restore
                     </Button>
@@ -129,7 +129,7 @@ export const AiAirlock = (props) => {
                     <Button
                       icon="bolt"
                       disabled={!wires.shock}
-                      onClick={() => act('shock_temp')}
+                      onClick={() => act('shock-temp')}
                     >
                       Temporary
                     </Button>
@@ -138,7 +138,7 @@ export const AiAirlock = (props) => {
                     <Button
                       icon="bolt"
                       disabled={!wires.shock}
-                      onClick={() => act('shock_perm')}
+                      onClick={() => act('shock-perm')}
                     >
                       Permanent
                     </Button>
@@ -163,7 +163,7 @@ export const AiAirlock = (props) => {
                   icon={id_scanner ? 'power-off' : 'times'}
                   selected={id_scanner}
                   disabled={!wires.id_scanner}
-                  onClick={() => act('idscan_toggle')}
+                  onClick={() => act('idscan-toggle')}
                 >
                   {id_scanner ? 'Enabled' : 'Disabled'}
                 </Button>
@@ -178,7 +178,7 @@ export const AiAirlock = (props) => {
                 <Button
                   icon={emergency ? 'power-off' : 'times'}
                   selected={emergency}
-                  onClick={() => act('emergency_toggle')}
+                  onClick={() => act('emergency-toggle')}
                 >
                   {emergency ? 'Enabled' : 'Disabled'}
                 </Button>
@@ -193,7 +193,7 @@ export const AiAirlock = (props) => {
                   icon={bolted ? 'lock' : 'unlock'}
                   selected={bolted}
                   disabled={!wires.bolts}
-                  onClick={() => act('bolt_toggle')}
+                  onClick={() => act('bolt-toggle')}
                 >
                   {bolted ? 'Lowered' : 'Raised'}
                 </Button>
@@ -209,7 +209,7 @@ export const AiAirlock = (props) => {
                   icon={lights ? 'power-off' : 'times'}
                   selected={lights}
                   disabled={!wires.lights}
-                  onClick={() => act('light_toggle')}
+                  onClick={() => act('light-toggle')}
                 >
                   {lights ? 'Enabled' : 'Disabled'}
                 </Button>
@@ -225,7 +225,7 @@ export const AiAirlock = (props) => {
                   icon={safe ? 'power-off' : 'times'}
                   selected={safe}
                   disabled={!wires.safe}
-                  onClick={() => act('safe_toggle')}
+                  onClick={() => act('safe-toggle')}
                 >
                   {safe ? 'Enabled' : 'Disabled'}
                 </Button>
@@ -241,7 +241,7 @@ export const AiAirlock = (props) => {
                   icon={speed ? 'power-off' : 'times'}
                   selected={speed}
                   disabled={!wires.timing}
-                  onClick={() => act('speed_toggle')}
+                  onClick={() => act('speed-toggle')}
                 >
                   {speed ? 'Enabled' : 'Disabled'}
                 </Button>
@@ -258,7 +258,7 @@ export const AiAirlock = (props) => {
                   icon={opened ? 'sign-out-alt' : 'sign-in-alt'}
                   selected={opened}
                   disabled={bolted || welded}
-                  onClick={() => act('open_close')}
+                  onClick={() => act('open-close')}
                 >
                   {opened ? 'Open' : 'Closed'}
                 </Button>

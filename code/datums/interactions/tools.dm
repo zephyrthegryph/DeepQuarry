@@ -40,6 +40,11 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 		amount = interaction.tool_amount
 		volume = interaction.tool_volume
 		start_feedback = interaction.start_feedback_for(actor, target, tool)
+		if(!start_feedback)
+			var/list/lines = interaction.start_lines(actor, target, tool)
+			if(lines)
+				start_self = lines[1]
+				start_others = lines[2]
 #ifdef UNIT_TESTS
 	GLOB.dq_tool_last_use = list("delay" = interaction ? interaction.base_duration(actor, target) : delay, "quality" = quality, "amount" = amount, "volume" = volume)
 #endif
@@ -65,7 +70,7 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 	// 6a. Start messages (an interaction's only when it takes time).
 	if(start_feedback && (!interaction || time > 0))
 		act_message_t(actor, target, start_feedback, tool)
-	else if(start_self || start_others)
+	else if((start_self || start_others) && (!interaction || time > 0))
 		act_message(actor, target, msg_span(start_self, "notice"), msg_span(start_others, "notice"), item = tool)
 
 	// 4. The wait: a tool job task, finished in use_tool_finish().

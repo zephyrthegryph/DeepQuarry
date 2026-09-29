@@ -2,8 +2,8 @@
 
 /obj/cap_fixture/lock/capabilities()
 	. = ..()
-	. += access_lock(access = list(ACCESS_SECURITY))
-	. += cover(open_tool = null, locked_by = LOCK)
+	. += cap_lock(access = list(ACCESS_SECURITY))
+	. += cap_cover(open_tool = BY_HAND, locked_by = LOCK)
 
 /// A swipe with access toggles the lock, which gates locked_by = LOCK entries; no access is refused.
 /datum/unit_test/dx_cap_lock_swipe/Run()
@@ -15,7 +15,7 @@
 	good.access = list(ACCESS_SECURITY)
 	bad.access = list()
 	var/datum/interaction/capability/swipe = cap_test_entry(A, "lock:[jointext(list(/obj/item/card/id, /obj/item/pda), ",")]")
-	var/datum/interaction/capability/cover_entry = cap_test_entry(A, "cover:hand")
+	var/datum/interaction/capability/cover_entry = cap_test_entry(A, "cover:[BY_HAND]")
 	TEST_ASSERT_NOTNULL(swipe, "the lock offers a swipe entry")
 	TEST_ASSERT(swipe.is_meant(H, A, good), "an ID is meant")
 	TEST_ASSERT(!swipe.is_meant(H, A, null), "an empty hand is not")

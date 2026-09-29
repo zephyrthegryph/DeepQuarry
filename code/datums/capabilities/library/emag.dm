@@ -13,7 +13,7 @@
 	var/already_say
 
 /// An emag: `say` to the user, `effect` (a proc on the holder) run, once or every time (`mode`).
-/proc/emag(say, effect, mode = EMAG_ONCE, already_say = "It is already emagged.", log = LOG_ADMIN)
+/proc/cap_emag(say, effect, mode = EMAG_ONCE, already_say = "It is already emagged.", log = LOG_ADMIN)
 	var/datum/capability/emag/C = new
 	C.say = say
 	C.effect = effect
@@ -23,7 +23,7 @@
 	return C
 
 /datum/capability/emag/interactions(atom/holder)
-	var/datum/capability/entry/wrapper = use_on("Emag", /obj/item/card/emag, TYPE_PROC_REF(/atom, cap_emag_use), works_unpowered = TRUE, log = log, priority = 50)
+	var/datum/capability/entry/wrapper = cap_use_on("Emag", /obj/item/card/emag, TYPE_PROC_REF(/atom, cap_emag_use), works_unpowered = TRUE, log = log, priority = 50)
 	return list(own_entry(wrapper, id = "emag"))
 
 /atom/proc/cap_emag_use(mob/user, obj/item/held)

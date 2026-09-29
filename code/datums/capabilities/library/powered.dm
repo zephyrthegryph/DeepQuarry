@@ -10,7 +10,7 @@
 /datum/capability/powered
 
 /// Shows the holder dark (and says so on examine) while it has no power.
-/proc/needs_power()
+/proc/cap_power()
 	return new /datum/capability/powered
 
 /datum/capability/powered/examine(atom/holder, mob/user)
