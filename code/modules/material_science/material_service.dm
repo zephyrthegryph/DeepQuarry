@@ -71,13 +71,19 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 				admit = severity >= 0.5
 	if(!admit)
 		return
+	var/first_sample = 0
 	if(!material_service)
 		material_service = new(src)
+		// Services admitted while the world initializes (every power cell, pipes seeing their
+		// first pressure) take their baseline sample spread over the first seconds after boot
+		// rather than all on the first tick.
+		if(!Master.current_runlevel)
+			first_sample = rand(0, MATERIAL_SERVICE_BOOT_SPREAD)
 	material_last_service_event = event
 	material_service.last_admission_event = event
 	if(isnum(observed_temperature) && observed_temperature > material_service.temperature)
 		material_service.temperature = observed_temperature
-	material_service.schedule(0)
+	material_service.schedule(first_sample)
 	return material_service
 
 /// Compatibility entry for explicit test/debug callers. Gameplay integrations
@@ -218,7 +224,9 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	EXPIRY_STAMP(src, chemical_last_update, CLOCK_WORLD)
 	initialize_thermal_stock()
 	register_diagnostics()
-	schedule(1 SECOND)
+	// Not scheduled here: material_service_event(), the only creator, schedules the first
+	// sample right after. A 1 s deadline here was superseded at once, leaving a stale wheel
+	// entry per service (about 1,400 at boot, one per power cell and admitted pipe).
 
 // unregisters diagnostics and its service behaviour; its owner forgets it.
 /datum/material_service/on_destroy(force)

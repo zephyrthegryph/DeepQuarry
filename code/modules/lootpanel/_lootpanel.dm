@@ -80,4 +80,3 @@
 
 DECLARE_REF(/datum/lootpanel, "searchables", OWNED_LIST, null)
 DECLARE_REF(/datum/lootpanel, "to_image", OWNED_LIST, null)
-DECLARE_REF(/datum/lootpanel, "contents", OWNED_LIST, null)

@@ -435,6 +435,30 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 				by_behaviour["[bname][is_live ? "" : " (stale)"]"] = (by_behaviour["[bname][is_live ? "" : " (stale)"]"] || 0) + 1
 		return json_encode(list("total" = total, "live" = live, "stale" = total - live, "max_bucket" = max_bucket, "by_owner" = by_owner, "by_behaviour" = by_behaviour))
 
+	// Localhost-only census of light source updates by source atom type since the last call
+	// (SSlighting.fire()), top 40; the call resets the counts.
+	if (T == "lightcensus" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
+		var/list/census = GLOB.lighting_update_census.Copy()
+		GLOB.lighting_update_census.Cut()
+		var/list/rows = list()
+		for(var/source_type in census)
+			rows["[source_type]"] = census[source_type]
+		rows = sortTim(rows, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+		if(length(rows) > 40)
+			rows.Cut(41)
+		return json_encode(list("world_time" = world.time, "queued" = length(SSlighting.sources_queue), "by_type" = rows)) // ALLOW(sys_world_time_write): reports the current clock in a diagnostic reply, not a stored time
+
+	// Localhost-only census of qdel() by type since boot (SSgarbage's per-type stats), top 40.
+	if (T == "qdelcensus" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
+		var/list/rows = list()
+		for(var/path in SSgarbage.items)
+			var/datum/qdel_item/item = SSgarbage.items[path]
+			rows[item.name] = item.qdels
+		rows = sortTim(rows, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+		if(length(rows) > 40)
+			rows.Cut(41)
+		return json_encode(list("world_time" = world.time, "by_type" = rows)) // ALLOW(sys_world_time_write): reports the current clock in a diagnostic reply, not a stored time
+
 	// Localhost-only on-demand proc profiling for live triage: mcprof_start begins a BYOND proc +
 	// sendmaps profile, mcprof_dump writes both as JSON into the round log dir and returns the paths,
 	// mcprof_stop ends collection.

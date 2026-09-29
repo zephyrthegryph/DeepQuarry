@@ -368,6 +368,22 @@ fn power_region_members(region: ByondValue) -> Result<ByondValue> {
     list(members.into_iter().map(entity::entity_value))
 }
 
+/// How many nodes `region` holds, or 0 for a retired or bad id. O(1): the
+/// region keeps its count. `power_refresh_network()` asks it of every power
+/// machine each machine step to tell a real grid from a lone node, which
+/// `vg_power_region_members` answered by building a DM list of the whole
+/// station grid per machine.
+#[auxmacros::bind("/proc/vg_power_region_size")]
+fn power_region_size(region: ByondValue) -> Result<ByondValue> {
+    let r = region_id(whole(&region, "region")?)?;
+    let n = with_world(|w| {
+        let host = w.network::<Cables>().map_err(|err| eyre!("{err}"))?;
+        Ok(host.network().region(r).map_or(0, |reg| reg.members()))
+    })?;
+    #[allow(clippy::cast_precision_loss)]
+    Ok(ByondValue::from(n as f32))
+}
+
 /// A mid-tick draw against `region`'s ledger, outside the normal
 /// `ApcTick`/`PowerBalance` pass (the material power overlay paying its
 /// resistive loss from the grid, `powernet.dm`'s `draw_power()`). Returns

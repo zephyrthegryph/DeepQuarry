@@ -20,6 +20,12 @@
 			return INITIALIZE_HINT_QDEL
 	icon = 'icons/obj/smoothlattice.dmi'
 	icon_state = "latticeblank"
+	if(mapload)
+		// Every mapped lattice exists before any initializes, and each draws itself here: no
+		// deferred redraw for it or its neighbours (that was up to five timers per lattice,
+		// about 2,900 wheel entries queued at boot on Southern Cross).
+		update_overlays_now()
+		return
 	updateOverlays()
 	for (var/dir in GLOB.cardinal)
 		var/obj/structure/lattice/L
@@ -68,8 +74,13 @@
 		replace_with(src, /obj/item/stack/rods, 1)
 	return TRUE
 
+/// Redraws next tick; requests before then share the one pending redraw.
 /obj/structure/lattice/proc/updateOverlays()
-	om_after(src, 1, PROC_REF(update_overlays_now))
+	if(om_timer_slot_pending(src, "overlays"))
+		return
+	om_after_slot(src, "overlays", 1, PROC_REF(update_overlays_now))
+
+OM_TIMER_SLOT(/obj/structure/lattice, overlays)
 
 // Moves upgrading lattices to their own proc for other stuff to call. Also makes them instant.
 /obj/structure/lattice/proc/upgrade(obj/item/stack/rods/R, mob/user)

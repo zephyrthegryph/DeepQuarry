@@ -187,7 +187,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 	if(power_region < 0)
 		return
 	var/id = vg_entity ? vg_power_region_of(vg_entity) : 0
-	var/connected = id && length(vg_power_region_members(id)) > 1
+	// A count, not the member list: this runs for every power machine each machine step.
+	var/connected = id && vg_power_region_size(id) > 1
 	power_bind(connected ? id : 0)
 
 /// Leaves the network and removes the node.
