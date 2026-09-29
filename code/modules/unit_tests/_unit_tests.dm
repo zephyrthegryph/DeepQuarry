@@ -109,6 +109,7 @@
 #include "dx_cap_checks_tests.dm"
 #include "dx_cap_doors_tests.dm"
 #include "dx_cap_library_api_tests.dm"
+#include "dx_vending_tests.dm"
 #include "focus_only_tests.dm"
 #include "font_awesome_icons.dm"
 #include "genetics_tests.dm"

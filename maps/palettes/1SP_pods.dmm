@@ -1238,7 +1238,7 @@
 /area/survivalpod)
 "acH" = (
 /obj/machinery/vending/engivend{
-	emagged = 1;
+	cap_state = 16;
 	req_access = null;
 	req_log_access = null
 	},
@@ -6778,8 +6778,8 @@
 /area/survivalpod/superpose/GrandLibrary)
 "dxM" = (
 /obj/machinery/vending/medical{
+	cap_state = 16;
 	dir = 4;
-	emagged = 1;
 	pixel_x = 5;
 	req_access = list(777)
 	},
@@ -12329,8 +12329,8 @@
 /area/survivalpod/superpose/TradingShip)
 "hhG" = (
 /obj/machinery/vending/nifsoft_shop{
+	cap_state = 16;
 	categories = 3;
-	emagged = 1;
 	name = "Hacked NIFSoft Shop"
 	},
 /turf/simulated/shuttle/wall/voidcraft/blue,
@@ -18845,7 +18845,7 @@
 /area/survivalpod/superpose/TradingShip)
 "lNF" = (
 /obj/machinery/vending/tool{
-	emagged = 1
+	cap_state = 16
 	},
 /turf/simulated/shuttle/floor/black,
 /area/survivalpod/superpose/TradingShip)
@@ -19425,7 +19425,7 @@
 /area/survivalpod/superpose/HydroCave)
 "mhg" = (
 /obj/machinery/vending/engivend{
-	emagged = 1
+	cap_state = 16
 	},
 /turf/simulated/shuttle/floor/black,
 /area/survivalpod/superpose/TradingShip)
@@ -19803,7 +19803,7 @@
 /area/survivalpod/superpose/HydroCave)
 "mwW" = (
 /obj/machinery/vending/engivend{
-	emagged = 1;
+	cap_state = 16;
 	req_access = list(777);
 	req_log_access = null
 	},
@@ -20429,7 +20429,7 @@
 /area/survivalpod/superpose/OldHotel)
 "mUW" = (
 /obj/machinery/vending/engivend{
-	emagged = 1;
+	cap_state = 16;
 	req_access = null;
 	req_log_access = null
 	},
@@ -30143,7 +30143,7 @@
 /area/template_noop)
 "sPt" = (
 /obj/machinery/vending/tool{
-	emagged = 1;
+	cap_state = 16;
 	req_log_access = null
 	},
 /turf/simulated/floor/plating,
@@ -35967,7 +35967,7 @@
 /area/template_noop)
 "xiw" = (
 /obj/machinery/vending/tool{
-	emagged = 1;
+	cap_state = 16;
 	req_access = list(777);
 	req_log_access = null
 	},

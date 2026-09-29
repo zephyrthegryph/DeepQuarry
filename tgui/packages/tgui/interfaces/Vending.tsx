@@ -260,7 +260,7 @@ export const VendingMaintenance = (props) => {
           <Button
             icon={speaker ? 'volume-up' : 'volume-off'}
             selected={speaker}
-            onClick={() => act('togglevoice')}
+            onClick={() => act('toggle_voice')}
           >
             {speaker ? 'Enabled' : 'Disabled'}
           </Button>

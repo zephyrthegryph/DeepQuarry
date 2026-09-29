@@ -246,7 +246,7 @@
 /area/survivalpod/superpose/MechStorageFab)
 "ns" = (
 /obj/machinery/vending/tool{
-	emagged = 1
+	cap_state = 16
 	},
 /turf/simulated/floor/tiled/steel_dirty,
 /area/survivalpod/superpose/MechStorageFab)
@@ -1023,7 +1023,7 @@
 /area/survivalpod/superpose/MechStorageFab)
 "Os" = (
 /obj/machinery/vending/engivend{
-	emagged = 1
+	cap_state = 16
 	},
 /turf/simulated/floor/tiled/asteroid_steel,
 /area/survivalpod/superpose/MechStorageFab)
