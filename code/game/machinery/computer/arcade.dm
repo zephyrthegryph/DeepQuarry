@@ -78,13 +78,14 @@
 	to_chat(user, span_notice("You turn in 2 tickets to the [src] and claim a prize!"))
 	return TRUE
 
-/obj/machinery/computer/arcade/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || (!operable()))
+DAMAGE_REACTION(/obj/machinery/computer/arcade, DAMAGE_EMP, PROC_REF(arcade_emp))
+/// An EMP makes a working arcade machine spit out prizes.
+/obj/machinery/computer/arcade/proc/arcade_emp(datum/damage_packet/packet)
+	if(!operable())
 		return
 	var/empprize = null
 	var/num_of_prizes = 0
-	switch(severity)
+	switch(packet.severity)
 		if(1)
 			num_of_prizes = rand(1,4)
 		if(2)

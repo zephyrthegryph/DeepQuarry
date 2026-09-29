@@ -16,9 +16,8 @@
 	var/wasactive = FALSE		//controls automatic reboot after power-loss
 	var/alwaysactive = FALSE	//for a special subtype
 
-	//how long it takes us to reboot if we're shut down by an EMP
-	var/reboot_delay_min = 50
-	var/reboot_delay_max = 75
+	/// Until when an EMP keeps the generator shut down (EMP_DISABLE).
+	EXPIRY_DECLARE(emp_until)
 
 	var/hatch_open = FALSE
 	var/wires_intact = TRUE
@@ -106,23 +105,20 @@
 		disable_field()
 		update_icon()
 
-/obj/machinery/atmospheric_field_generator/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || (has_stat(EMPED)))
-		return
-	stat_add(EMPED)
-	disable_field() //shutting dowwwwwwn
-	om_after(src, rand(reboot_delay_min, reboot_delay_max), PROC_REF(emp_reboot))
+EMP_DISABLE(/obj/machinery/atmospheric_field_generator, 7.5 SECONDS, "emp_until")
 
-/obj/machinery/atmospheric_field_generator/proc/emp_reboot()
-	stat_remove(EMPED)
-	if(alwaysactive || wasactive) //reboot after a short delay if we were online before
+/obj/machinery/atmospheric_field_generator/emp_disable_changed(disabled)
+	..()
+	if(disabled)
+		disable_field() //shutting dowwwwwwn
+	else if(alwaysactive || wasactive) //reboot after a short delay if we were online before
 		generate_field()
 
-/obj/machinery/atmospheric_field_generator/ex_act(severity)
-	if(severity == 3)
+DAMAGE_REACTION(/obj/machinery/atmospheric_field_generator, DAMAGE_EXPLOSION, PROC_REF(field_generator_blast))
+/// A light blast knocks the field generator out like a pulse.
+/obj/machinery/atmospheric_field_generator/proc/field_generator_blast(datum/damage_packet/packet)
+	if(packet.severity == 3)
 		emp_act(3)
-	return ..()
 
 /obj/machinery/atmospheric_field_generator/atom_break(damage_flag)
 	. = ..()

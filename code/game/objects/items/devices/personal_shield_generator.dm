@@ -83,15 +83,15 @@ DECLARE_DEFAULT_CHILD(/obj/item/personal_shield_generator, "bcell", null)
 		if(bcell.rigged)
 			. += "A red flashing 'WARNING' is visible on the display, noting that the cell is unstable and requires replacement."
 
-/obj/item/personal_shield_generator/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/personal_shield_generator, DAMAGE_EMP, PROC_REF(shield_generator_emp))
+/// An EMP on a running shield may burn or corrupt its cell.
+/obj/item/personal_shield_generator/proc/shield_generator_emp(datum/damage_packet/packet)
+	var/severity = packet.severity
 	if(bcell && shield_active)
 		switch(severity)
 			if(1) //Point blank EMP shots have a good chance of burning the cell charge.
 				if(prob(50))
-					bcell.emp_act(severity, recursive)
+					bcell.emp_act(severity)
 					if(prob(5)) //1 in 20% chance to fry the battery completly, which has a 1/10 chance of making the battery explode on next use.
 						bcell.corrupt() //Not too bad if you slotted a battery in. Disasterous if it has a self-charging battery.
 					if(bcell.rigged) //Did the above just rig the cell? Turn it off. Don't immediately have it go boom. Instead have the cell blow soon-ish.
@@ -107,8 +107,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/personal_shield_generator, "bcell", null)
 						update_icon()
 			else
 				if(prob(25))
-					bcell.emp_act(severity, recursive)
-	//Intentionally not calling ..() here, as we have special cell handling.
+					bcell.emp_act(severity)
 
 /obj/item/personal_shield_generator/ui_action_click(mob/user, actiontype)
 	toggle_shield_effect(user)

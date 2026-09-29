@@ -138,19 +138,24 @@ DECLARE_REF(/obj/machinery/camera, "assembly", OWNED, null)
 	EVENT_HANDLER
 	schedule_camera_timer()
 
-/obj/machinery/camera/emp_act(severity, recursive, forced)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
+DAMAGE_REACTION(/obj/machinery/camera, DAMAGE_EMP, PROC_REF(camera_emp))
+/// An EMP may knock the camera out (camera_disrupt()).
+/obj/machinery/camera/proc/camera_emp(datum/damage_packet/packet)
+	if(prob(100/packet.severity))
+		camera_disrupt(packet.severity)
+
+/// Knocks the camera out for 90 seconds / severity (EMPs, laser pointers). EMP-proof cameras shrug it off.
+/obj/machinery/camera/proc/camera_disrupt(severity)
+	if(isEmpProof())
 		return
-	if(!isEmpProof() && (forced || prob(100/severity)))
-		if(!affected_by_emp_until || EXPIRY_EXPIRED(src, affected_by_emp_until, CLOCK_WORLD))
-			affected_by_emp_until = max(affected_by_emp_until, world.time + (90 SECONDS / severity))
-			stat_add(EMPED)
-			set_light(0)
-			triggerCameraAlarm()
-			update_icon()
-			update_coverage()
-			schedule_camera_timer()
+	if(!affected_by_emp_until || EXPIRY_EXPIRED(src, affected_by_emp_until, CLOCK_WORLD))
+		affected_by_emp_until = max(affected_by_emp_until, world.time + (90 SECONDS / severity))
+		stat_add(EMPED)
+		set_light(0)
+		triggerCameraAlarm()
+		update_icon()
+		update_coverage()
+		schedule_camera_timer()
 
 /obj/machinery/camera/blob_act(obj/structure/blob/B)
 	if((has_stat(BROKEN)) || (resistance_flags & BOMB_PROOF))

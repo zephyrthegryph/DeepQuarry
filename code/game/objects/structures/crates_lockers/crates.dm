@@ -232,10 +232,10 @@
 		update_icon()
 		return 1
 
-/obj/structure/closet/crate/secure/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/structure/closet/crate/secure, DAMAGE_EMP, PROC_REF(secure_crate_emp))
+/// An EMP may toggle the lock, pop the crate or scramble its access.
+/obj/structure/closet/crate/secure/proc/secure_crate_emp(datum/damage_packet/packet)
+	var/severity = packet.severity
 	if(!broken && !opened  && prob(50/severity))
 		if(!locked)
 			locked = TRUE

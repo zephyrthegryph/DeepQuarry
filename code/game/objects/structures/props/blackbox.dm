@@ -8,8 +8,15 @@
 	icon_state = "blackbox_off"
 
 // Black boxes are resistant to explosions.
-/obj/structure/prop/blackbox/ex_act(severity)
-	..(++severity)
+DAMAGE_REACTION(/obj/structure/prop/blackbox, DAMAGE_EXPLOSION, PROC_REF(blackbox_blast))
+/// The black box takes a blast as if it were one severity step lighter.
+/obj/structure/prop/blackbox/proc/blackbox_blast(datum/damage_packet/packet)
+	var/old_fraction = explosion_blast_fraction(packet.severity)
+	var/new_fraction = explosion_blast_fraction(packet.severity + 1)
+	if(!old_fraction || !new_fraction)
+		return DAMAGE_REACTION_BLOCK
+	packet.scale(new_fraction / old_fraction)
+	packet.severity++
 
 
 /obj/structure/prop/blackbox/quarantined_shuttle

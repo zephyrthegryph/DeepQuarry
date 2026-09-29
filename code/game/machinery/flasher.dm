@@ -97,11 +97,12 @@ EXTEND_INTERACTIONS(/obj/machinery/flasher, INTERACT_SILICON("Flash", PROC_REF(f
 				L.flash_eyes()
 		O.status_at_least(EFFECT_WEAKENED, flash_time)
 
-/obj/machinery/flasher/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || !operable())
+DAMAGE_REACTION(/obj/machinery/flasher, DAMAGE_EMP, PROC_REF(flasher_emp))
+/// An EMP may set the flasher off.
+/obj/machinery/flasher/proc/flasher_emp(datum/damage_packet/packet)
+	if(!operable())
 		return
-	if(prob(75/severity))
+	if(prob(75/packet.severity))
 		flash()
 
 /obj/machinery/flasher/portable/HasProximity(turf/T, WF, oldloc)

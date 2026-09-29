@@ -23,10 +23,11 @@
 			computer.table = src
 			break
 
-/obj/machinery/optable/ex_act(severity)
-	if(severity == 3 && prob(25))
+DAMAGE_REACTION(/obj/machinery/optable, DAMAGE_EXPLOSION, PROC_REF(optable_blast))
+/// A light blast may knock the table flat.
+/obj/machinery/optable/proc/optable_blast(datum/damage_packet/packet)
+	if(packet.severity == 3 && prob(25))
 		set_density(FALSE)
-	return ..()
 
 EXTEND_INTERACTIONS(/obj/machinery/optable, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(optable_interaction_hand)), \

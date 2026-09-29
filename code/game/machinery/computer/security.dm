@@ -556,13 +556,14 @@
 		if (selection)
 			return selection.img
 
-/obj/machinery/computer/secure_data/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF ||!operable())
+DAMAGE_REACTION(/obj/machinery/computer/secure_data, DAMAGE_EMP, PROC_REF(secure_data_emp))
+/// An EMP scrambles or wipes some of the records.
+/obj/machinery/computer/secure_data/proc/secure_data_emp(datum/damage_packet/packet)
+	if(!operable())
 		return
 
 	for(var/datum/data/record/R in GLOB.data_core.security)
-		if(prob(10/severity))
+		if(prob(10/packet.severity))
 			switch(rand(1,6))
 				if(1)
 					R.fields["name"] = "[pick(pick(GLOB.first_names_male), pick(GLOB.first_names_female))] [pick(GLOB.last_names)]"

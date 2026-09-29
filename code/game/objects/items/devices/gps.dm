@@ -9,7 +9,8 @@
 	MATERIAL_BULK(MAT_STEEL, 500)
 
 	var/gps_tag = "GEN0"
-	var/emped = FALSE
+	/// Until when an EMP keeps the unit busted (EMP_DISABLE).
+	EXPIRY_DECLARE(emp_until)
 	var/tracking = FALSE		// Will not show other signals or emit its own signal if false.
 	var/long_range = FALSE		// If true, can see farther, depending on get_map_levels().
 	var/local_mode = FALSE		// If true, only GPS signals of the same Z level are shown.
@@ -100,7 +101,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gps, "compass", /obj/compass_holder)
 	..()
 
 /obj/item/gps/proc/can_track(obj/item/gps/other, reachable_z_levels)
-	if(!other.tracking || other.emped || other.hide_signal || is_vore_jammed(other))
+	if(!other.tracking || EXPIRY_ACTIVE(other, emp_until, CLOCK_WORLD) || other.hide_signal || is_vore_jammed(other))
 		return FALSE
 	var/turf/origin = get_turf(src)
 	var/turf/target = get_turf(other)
@@ -145,7 +146,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gps, "compass", /obj/compass_holder)
 /obj/item/gps/proc/toggletracking(mob/living/user)
 	if(!istype(user))
 		return
-	if(emped)
+	if(EXPIRY_ACTIVE(src, emp_until, CLOCK_WORLD))
 		to_chat(user, "It's busted!")
 		return
 
@@ -169,20 +170,17 @@ DECLARE_DEFAULT_CHILD(/obj/item/gps, "compass", /obj/compass_holder)
 	update_holder()
 	update_icon()
 
-/obj/item/gps/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || emped)
-		return
-	var/severity_modifier = severity ? severity : 4 // In case emp_act gets called without any arguments.
-	var/duration = 5 MINUTES / severity_modifier
-	emped = TRUE
-	update_icon()
+EMP_DISABLE(/obj/item/gps, 5 MINUTES, "emp_until")
 
-	om_after(src, duration, PROC_REF(emp_recovered))
+/obj/item/gps/emp_disable_changed(disabled)
+	..()
+	update_icon()
+	if(!disabled)
+		visible_message("\The [src] appears to be functional again.")
 
 /obj/item/gps/update_icon()
 	cut_overlays()
-	if(emped)
+	if(EXPIRY_ACTIVE(src, emp_until, CLOCK_WORLD))
 		add_overlay("emp")
 	else if(tracking)
 		add_overlay("working")
@@ -460,10 +458,6 @@ DECLARE_INTERACTIONS(/obj/item/gps, \
 	can_hide_signal = TRUE
 	theme = "syndicate"
 
-/obj/item/gps/proc/emp_recovered()
-	emped = FALSE
-	update_icon()
-	visible_message("\The [src] appears to be functional again.")
 
 /// LC-refs: holder -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/gps/proc/holder_ref() as /mob

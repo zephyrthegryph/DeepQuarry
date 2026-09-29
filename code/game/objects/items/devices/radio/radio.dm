@@ -608,10 +608,9 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
-/obj/item/radio/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
+/// An EMP switches the radio's microphone, speaker and channels off.
+/obj/item/radio/proc/radio_emp(datum/damage_packet/packet)
 	broadcasting = FALSE
 	listening = FALSE
 	for (var/ch_name in channels)

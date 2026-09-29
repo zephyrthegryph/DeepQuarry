@@ -180,12 +180,12 @@ OM_TIMER_SLOT(/obj/machinery/status_display, refresh_token)
 	if(.)
 		refresh()
 
-/obj/machinery/status_display/emp_act(severity, recursive)
+DAMAGE_REACTION(/obj/machinery/status_display, DAMAGE_EMP, PROC_REF(status_display_emp))
+/// An EMP blue-screens a working display.
+/obj/machinery/status_display/proc/status_display_emp(datum/damage_packet/packet)
 	if(!operable())
-		..(severity, recursive)
 		return
 	set_picture("ai_bsod")
-	..(severity, recursive)
 
 // set what is displayed
 /obj/machinery/status_display/proc/update()

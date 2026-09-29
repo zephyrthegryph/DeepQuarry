@@ -48,16 +48,17 @@ circuitry. Resulting faults can cause damage to the host's brain.<HR>
 Implant Specifics:<BR>"}
 	return dat
 
-/obj/item/implant/neural/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || !my_brain() || malfunction)
+DAMAGE_REACTION(/obj/item/implant/neural, DAMAGE_EMP, PROC_REF(neural_implant_emp))
+/// An EMP makes the implant malfunction and hurt the brain it sits in.
+/obj/item/implant/neural/proc/neural_implant_emp(datum/damage_packet/packet)
+	if(!my_brain() || malfunction)
 		return
 	malfunction = MALFUNCTION_TEMPORARY
 
 	var/delay = 10 //Don't let it just get emped twice in a second to kill someone.
 	var/brain_location = my_brain().owner.organs_by_name[my_brain().parent_organ]
 	var/mob/living/L = my_brain().owner
-	switch(severity)
+	switch(packet.severity)
 		if(1)
 			if(prob(10))
 				meltdown()

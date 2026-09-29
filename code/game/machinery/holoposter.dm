@@ -111,8 +111,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 	if(wasUnpowered != (has_stat(NOPOWER)))
 		update_icon()
 
-/obj/machinery/holoposter/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || has_stat(BROKEN))
+DAMAGE_REACTION(/obj/machinery/holoposter, DAMAGE_EMP, PROC_REF(holoposter_emp))
+/// An EMP breaks the poster.
+/obj/machinery/holoposter/proc/holoposter_emp(datum/damage_packet/packet)
+	if(has_stat(BROKEN))
 		return
 	atom_break()

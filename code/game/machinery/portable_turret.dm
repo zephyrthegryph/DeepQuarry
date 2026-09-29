@@ -181,8 +181,10 @@
 /obj/machinery/porta_turret/industrial/projectile_damage(obj/item/projectile/P, def_zone)
 	return receive_projectile(P, def_zone, 1.33)
 
-/obj/machinery/porta_turret/industrial/attack_generic(mob/living/L, damage)
-	return ..(L, damage * 0.8)
+DAMAGE_REACTION(/obj/machinery/porta_turret/industrial, DAMAGE_GENERIC_ATTACK, PROC_REF(industrial_turret_blow))
+/// The industrial casing takes a fifth off animal blows.
+/obj/machinery/porta_turret/industrial/proc/industrial_turret_blow(datum/damage_packet/packet)
+	packet.scale(0.8)
 
 /obj/machinery/porta_turret/industrial/teleport_defense
 	name = "defense turret"
@@ -649,10 +651,9 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 	..()
 	attempt_retaliate(damage)
 
-/obj/machinery/porta_turret/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/machinery/porta_turret, DAMAGE_EMP, PROC_REF(turret_emp))
+/// An EMP on an active turret disables it for a while and scrambles its settings.
+/obj/machinery/porta_turret/proc/turret_emp(datum/damage_packet/packet)
 	if(enabled)
 		//if the turret is on, the EMP no matter how severe disables the turret for a while
 		//and scrambles its settings, with a slight chance of having an emag effect
@@ -661,7 +662,7 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 		check_weapons = prob(50)
 		check_access = prob(20)	// check_access is a pretty big deal, so it's least likely to get turned on
 		check_anomalies = prob(50)
-		if(prob(20 * (1/severity))) //sev 1  = 20% chance sev 2 = 10% sev 3 = ~6 sev 4 = 5%
+		if(prob(20 * (1/packet.severity))) //sev 1  = 20% chance sev 2 = 10% sev 3 = ~6 sev 4 = 5%
 			set_emagged(TRUE)
 
 		enabled=0
@@ -672,14 +673,9 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 		enabled = TRUE
 	om_changed(src, CHANGE_MACHINE_SETTINGS)
 
-/obj/machinery/porta_turret/ai_defense/emp_act(severity, recursive)
+/obj/machinery/porta_turret/alien/turret_emp(datum/damage_packet/packet)
 	. = ..()
-	if (. & EMP_PROTECT_SELF || prob(33)) // One in three chance to resist an EMP.  This is significant if an AoE EMP is involved against multiple turrets.
-		return
-
-/obj/machinery/porta_turret/alien/emp_act(severity, recursive) // This is overrided to give an EMP resistance as well as avoid scambling the turret settings.
-	. = ..()
-	if (. & EMP_PROTECT_SELF || prob(75)) // Superior alien technology, I guess.
+	if(prob(75)) // Superior alien technology, I guess.
 		return
 	enabled = FALSE
 	om_after(src, rand(1 MINUTE, 2 MINUTES), PROC_REF(emp_reenable))

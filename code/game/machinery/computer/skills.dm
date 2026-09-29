@@ -770,13 +770,14 @@
 	if(update_now)
 		SStgui.update_uis(src)
 
-/obj/machinery/computer/skills/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || !operable())
+DAMAGE_REACTION(/obj/machinery/computer/skills, DAMAGE_EMP, PROC_REF(skills_emp))
+/// An EMP scrambles or wipes some of the records.
+/obj/machinery/computer/skills/proc/skills_emp(datum/damage_packet/packet)
+	if(!operable())
 		return
 
 	for(var/datum/data/record/R in GLOB.data_core.security)
-		if(prob(10/severity))
+		if(prob(10/packet.severity))
 			switch(rand(1,6))
 				if(1)
 					R.fields["name"] = "[pick(pick(GLOB.first_names_male), pick(GLOB.first_names_female))] [pick(GLOB.last_names)]"

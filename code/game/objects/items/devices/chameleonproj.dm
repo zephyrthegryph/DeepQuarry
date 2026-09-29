@@ -117,16 +117,14 @@ EXTEND_INTERACTIONS(/obj/effect/dummy/chameleon, \
 	master.disrupt()
 	return TRUE
 
-/obj/effect/dummy/chameleon/ex_act()
+DAMAGE_REACTION(/obj/effect/dummy/chameleon, DAMAGE_EXPLOSION, PROC_REF(chameleon_disrupted))
+DAMAGE_REACTION(/obj/effect/dummy/chameleon, DAMAGE_PROJECTILE, PROC_REF(chameleon_disrupted))
+/// A blast or a round drops the disguise.
+/obj/effect/dummy/chameleon/proc/chameleon_disrupted(datum/damage_packet/packet)
 	for(var/mob/M in contents_of(src))
 		to_chat(M, span_warning("Your chameleon-projector deactivates."))
 	master.disrupt()
-
-/obj/effect/dummy/chameleon/bullet_act()
-	for(var/mob/M in contents_of(src))
-		to_chat(M, span_warning("Your chameleon-projector deactivates."))
-	..()
-	master.disrupt()
+	return DAMAGE_REACTION_BLOCK
 
 /obj/effect/dummy/chameleon/proc/allow_move()
 	can_move = 1

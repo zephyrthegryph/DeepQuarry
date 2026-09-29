@@ -166,6 +166,7 @@ DECLARE_REF(/obj/item/storage, "hud", OWNED, null)
 	make_contents_real()
 	return ..()
 
+// ALLOW(sys_entry_override): virtual contents must be made real before the base emp_act recurses into contents; a reaction runs only after that recursion
 /obj/item/storage/emp_act(severity, recursive)
 	make_contents_real()
 	return ..()

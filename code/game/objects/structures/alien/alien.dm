@@ -11,10 +11,11 @@
 	set_density(0)
 	return ..()
 
-/obj/structure/alien/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
-	visible_message(span_danger("\The [src] was hit by \the [source]."))
+DAMAGE_REACTION(/obj/structure/alien, DAMAGE_THROWN, PROC_REF(alien_thrown_at))
+/// A throw squelches into the resin.
+/obj/structure/alien/proc/alien_thrown_at(datum/damage_packet/packet)
+	visible_message(span_danger("\The [src] was hit by \the [packet.source]."))
 	play_sfx(loc, SFX_EFFECTS_ATTACKBLOB, 2)
-	..()
 
 /obj/structure/alien/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))
