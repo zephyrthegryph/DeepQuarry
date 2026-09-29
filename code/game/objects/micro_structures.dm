@@ -343,7 +343,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 	PRIVATE_PROC(TRUE)
 	intern_access_lists()
 	if(micro_target)
-		verbs += /obj/proc/micro_interact
+		om_grant(src, GRANT_VERB, /obj/proc/micro_interact, src)
 
 /// Someone inside a micro-enterable object picks what to do. Re-checked: still inside.
 /datum/om/prompt/choice/micro_action

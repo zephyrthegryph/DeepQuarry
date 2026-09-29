@@ -129,15 +129,15 @@
 	add_language(LANGUAGE_TERMINUS, 1)
 	add_language(LANGUAGE_SIGN, 1)
 
-	add_verb(src, /mob/living/silicon/pai/proc/choose_chassis)
-	add_verb(src, /mob/living/silicon/pai/proc/choose_verbs)
-	add_verb(src, /mob/proc/dominate_predator)
-	add_verb(src, /mob/living/proc/dominate_prey)
-	add_verb(src, /mob/living/proc/set_size)
-	add_verb(src, /mob/living/proc/shred_limb)
-	add_verb(src, /mob/living/proc/toggle_trash_catching)
+	om_grant(src, GRANT_VERB, /mob/living/silicon/pai/proc/choose_chassis, src)
+	om_grant(src, GRANT_VERB, /mob/living/silicon/pai/proc/choose_verbs, src)
+	om_grant(src, GRANT_VERB, /mob/proc/dominate_predator, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/dominate_prey, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/set_size, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/shred_limb, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_trash_catching, src)
 
-	remove_verb(src, /mob/verb/toggle_gun_mode) // Pai doesn't have support for this and shouldn't be able to use guns anyway
+	remove_verb(src, /mob/verb/toggle_gun_mode) // ALLOW(sys_add_verb_pair): suppresses a verb every /mob has statically, not a grant. Pai doesn't have support for this and shouldn't be able to use guns anyway
 
 	//PDA
 	pda.ownjob = "Personal Assistant"

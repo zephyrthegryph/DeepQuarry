@@ -17,8 +17,8 @@ TYPE_TABLE(/obj/item/implant/reagent_generator/egg, reagent_implant_self_emotes,
 /obj/item/implant/reagent_generator/egg/post_implant(mob/living/carbon/source)
 	om_task_periodic(src, PERIODIC_SLOW)
 	to_chat(source, span_notice("You implant [source] with \the [src]."))
-	add_verb(source,assigned_proc) // TGPanel
-	add_verb(source,/mob/living/carbon/human/proc/toggle_cascade) // TGPanel
+	om_grant(source, GRANT_VERB, assigned_proc, src) // TGPanel
+	om_grant(source, GRANT_VERB, /mob/living/carbon/human/proc/toggle_cascade, src) // TGPanel
 	return 1
 
 /mob/living/carbon/human/proc/use_reagent_implant_egg()
@@ -199,7 +199,11 @@ DECLARE_DEFAULT_CHILD(/obj/item/implanter/reagent_generator, "imp", "implant_typ
 		else
 			return
 	else
-		remove_verb(imp_in(), assigned_proc)
+		if(ispath(assigned_proc))
+			om_revoke(imp_in(), GRANT_VERB, assigned_proc, src)
+		else
+			// ALLOW(sys_add_verb_pair): assigned_proc is a renamed verb instance made by new verb(mob, name, desc) in post_implant; grants key on verb paths
+			remove_verb(imp_in(), assigned_proc)
 		return
 
 	if(reagents)

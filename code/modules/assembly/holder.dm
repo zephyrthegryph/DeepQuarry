@@ -212,10 +212,12 @@ DECLARE_REF(/obj/item/assembly_holder, "a_right", BACK_VIA, "holder_handle")
 	update_icon()
 	name = initial(name) + " ([tmr.time] secs)"
 
-	loc.verbs += /obj/item/assembly_holder/timer_igniter/verb/configure
+	if(loc)
+		om_grant(loc, GRANT_VERB, /obj/item/assembly_holder/timer_igniter/verb/configure, src)
 
 /obj/item/assembly_holder/timer_igniter/detached()
-	loc.verbs -= /obj/item/assembly_holder/timer_igniter/verb/configure
+	if(loc)
+		om_revoke(loc, GRANT_VERB, /obj/item/assembly_holder/timer_igniter/verb/configure, src)
 	..()
 
 /obj/item/assembly_holder/timer_igniter/verb/configure()

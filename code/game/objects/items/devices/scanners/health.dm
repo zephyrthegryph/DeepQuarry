@@ -27,7 +27,7 @@
 /obj/item/healthanalyzer/Initialize(mapload)
 	. = ..()
 	if(profile_type != /datum/diagnostic_profile/health_analyzer)
-		verbs += /obj/item/healthanalyzer/proc/toggle_adv
+		om_grant(src, GRANT_VERB, /obj/item/healthanalyzer/proc/toggle_adv, src)
 
 /obj/item/healthanalyzer/examine(mob/user)
 	. = ..()

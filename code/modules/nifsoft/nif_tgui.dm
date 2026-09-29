@@ -40,11 +40,10 @@ DECLARE_REF(/datum/nif_menu, "owner", BACK, null)
 	if(owner.client)
 		create_mob_button(owner)
 
-// takes the NIF verb back from its owner. Hooks, the screen icon (owned; it
-// leaves client screens in its own teardown) and the owner ref are core work.
+// The NIF verb is granted with this menu as source, so its deletion takes the verb back.
+// Hooks, the screen icon (owned; it leaves client screens in its own teardown) and the
+// owner ref are core work.
 /datum/nif_menu/on_destroy(force)
-	if(ishuman(owner))
-		remove_verb(owner, /mob/living/carbon/human/proc/nif_menu)
 	..()
 
 /datum/nif_menu/proc/on_owner_qdeleting(datum/source, datum/om/event/qdeleting/event)
@@ -66,7 +65,7 @@ DECLARE_REF(/datum/nif_menu, "owner", BACK, null)
 	LAZYADD(HUD.other_important, screen_icon)
 	user.client?.screen += screen_icon
 
-	add_verb(user, /mob/living/carbon/human/proc/nif_menu)
+	om_grant(user, GRANT_VERB, /mob/living/carbon/human/proc/nif_menu, src)
 
 /datum/nif_menu/proc/nif_menu_click(datum/source, datum/om/event/click/event)
 	EVENT_HANDLER

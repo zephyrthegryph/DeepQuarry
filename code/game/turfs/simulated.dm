@@ -70,7 +70,7 @@ OM_TIMER_SLOT(/turf/simulated, wet_cleanup_timer)
 		holy = 1
 	levelupdate()
 	if(climbable)
-		verbs += /turf/simulated/proc/climb_wall
+		om_grant(src, GRANT_VERB, /turf/simulated/proc/climb_wall, src)
 	if(is_outdoors())
 		GLOB.planet_service.addTurf(src)
 
@@ -180,9 +180,9 @@ OM_TIMER_SLOT(/turf/simulated, wet_cleanup_timer)
 
 /turf/simulated/proc/toggle_climbability() //Again, b
 	if(climbable)
-		verbs -= /turf/simulated/proc/climb_wall
+		om_revoke(src, GRANT_VERB, /turf/simulated/proc/climb_wall, src)
 	else
-		verbs += /turf/simulated/proc/climb_wall
+		om_grant(src, GRANT_VERB, /turf/simulated/proc/climb_wall, src)
 	climbable = !climbable
 
 /turf/simulated/proc/snow_dries()

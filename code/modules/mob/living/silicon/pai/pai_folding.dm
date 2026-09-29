@@ -69,8 +69,8 @@
 		var/turf/T = get_turf(src)
 		if(istype(T)) T.visible_message(span_filter_notice(span_bold("[src]") + " folds outwards, expanding into a mobile form."))
 
-	add_verb(src, /mob/living/silicon/pai/proc/pai_nom)
-	add_verb(src, /mob/living/proc/vertical_nom)
+	om_grant(src, GRANT_VERB, /mob/living/silicon/pai/proc/pai_nom, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/vertical_nom, src)
 	update_icon()
 
 /mob/living/silicon/pai/verb/fold_up()
@@ -141,8 +141,8 @@
 	icon_state = GLOB.pai_service.chassis_data(chassis_name).sprite_icon_state
 	if(isopenspace(card.loc))
 		fall()
-	remove_verb(src, /mob/living/silicon/pai/proc/pai_nom)
-	remove_verb(src, /mob/living/proc/vertical_nom)
+	om_revoke(src, GRANT_VERB, /mob/living/silicon/pai/proc/pai_nom, src)
+	om_revoke(src, GRANT_VERB, /mob/living/proc/vertical_nom, src)
 
 /mob/living/silicon/pai/proc/is_folding_unsafe(check_location)
 	return isbelly(check_location) || istype(check_location, /obj/machinery) || istype(check_location, /obj/item/storage/vore_egg) || istype(check_location, /obj/item/pda)

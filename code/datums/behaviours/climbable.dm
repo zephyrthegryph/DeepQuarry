@@ -38,11 +38,11 @@
 	climber_handles = null
 
 /datum/om/behaviour/climbable/on_start(obj/O)
-	O.verbs += /obj/proc/climb_on
+	om_grant(O, GRANT_VERB, /obj/proc/climb_on, O)
 	add_trait(O, TRAIT_CLIMBABLE, CLIMBABLE_TRAIT_SOURCE)
 
 /datum/om/behaviour/climbable/on_stop(obj/O)
-	O.verbs -= /obj/proc/climb_on
+	om_revoke(O, GRANT_VERB, /obj/proc/climb_on, O)
 	remove_trait(O, TRAIT_CLIMBABLE, CLIMBABLE_TRAIT_SOURCE)
 	O.climber_handles = null
 

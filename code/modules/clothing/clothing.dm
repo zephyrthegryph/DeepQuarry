@@ -44,7 +44,7 @@
 
 	// start
 	if(polychromic)
-		verbs |= /obj/item/clothing/proc/change_color
+		om_grant(src, GRANT_VERB, /obj/item/clothing/proc/change_color, src)
 	// start
 
 /obj/item/clothing/update_icon()

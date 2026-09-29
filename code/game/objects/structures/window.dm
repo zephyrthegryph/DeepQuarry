@@ -366,13 +366,13 @@
 //Updates the availabiliy of the rotation verbs
 /obj/structure/window/proc/update_verbs()
 	if(anchored || is_fulltile())
-		verbs -= /atom/movable/proc/rotate_counterclockwise
-		verbs -= /atom/movable/proc/rotate_clockwise
-		verbs -= /atom/movable/proc/turn_around
+		om_revoke(src, GRANT_VERB, /atom/movable/proc/rotate_counterclockwise, src)
+		om_revoke(src, GRANT_VERB, /atom/movable/proc/rotate_clockwise, src)
+		om_revoke(src, GRANT_VERB, /atom/movable/proc/turn_around, src)
 	else if(!is_fulltile())
-		verbs |= /atom/movable/proc/rotate_counterclockwise
-		verbs |= /atom/movable/proc/rotate_clockwise
-		verbs |= /atom/movable/proc/turn_around
+		om_grant(src, GRANT_VERB, /atom/movable/proc/rotate_counterclockwise, src)
+		om_grant(src, GRANT_VERB, /atom/movable/proc/rotate_clockwise, src)
+		om_grant(src, GRANT_VERB, /atom/movable/proc/turn_around, src)
 
 //merges adjacent full-tile windows into one (blatant ripoff from game/smoothwall.dm)
 /obj/structure/window/update_icon()
