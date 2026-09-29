@@ -274,21 +274,6 @@ other types of metals and chemistry for reagents).
 	var/datum/material_template/template = material_template_singleton(material_template)
 	return !!template.resolve(material_choices)
 
-/datum/design_techweb/proc/material_choices_from_params(list/params)
-	var/list/choices = params?["materialSlots"]
-	if(islist(choices))
-		return choices
-	// Accept the previous single picker during rolling upgrades and tests.
-	var/legacy_material = params?["material"]
-	if(legacy_material && material_template)
-		var/list/legacy = list()
-		var/datum/material_template/template = material_template_singleton(material_template)
-		for(var/role in template.roles)
-			legacy[role] = legacy_material
-			break
-		return legacy
-	return list()
-
 // The techweb nodes that unlock this design: frozen definitions.
 
 /// Designs are immutable round definitions in GLOB.research_service.techweb_designs: shared.

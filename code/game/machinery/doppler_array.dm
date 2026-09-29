@@ -26,11 +26,7 @@
 	om_hook(OM_WORLD, /datum/om/event/world_explosion, src, PROC_REF(sense_explosion))
 	add_trait(src, TRAIT_ALT_CLICK_BLOCKER, ROUNDSTART_TRAIT)
 
-/obj/machinery/doppler_array/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "DopplerArray", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/doppler_array, "DopplerArray")
 
 /obj/machinery/doppler_array/tgui_static_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()

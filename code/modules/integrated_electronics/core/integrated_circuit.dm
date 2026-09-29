@@ -70,33 +70,23 @@ EXTEND_INTERACTIONS(/obj/item/integrated_circuit, INTERACT_VERB("Rename Circuit"
 		to_chat(M, span_notice("The circuit '[src.name]' is now labeled '[input]'."))
 		displayed_name = input
 
-/obj/item/integrated_circuit/tgui_state(mob/user)
-	return GLOB.tgui_physical_state
+DECLARE_UI_STATE(/obj/item/integrated_circuit, GLOB.tgui_physical_state)
 
 /obj/item/integrated_circuit/tgui_host(mob/user)
 	if(istype(loc, /obj/item/electronic_assembly))
 		return loc.tgui_host()
 	return ..()
 
-/obj/item/integrated_circuit/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ICCircuit", name, parent_ui)
-		ui.open()
+DECLARE_UI(/obj/item/integrated_circuit, "ICCircuit")
 
-/obj/item/integrated_circuit/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/integrated_circuit, "name:text", "desc:text", "displayed_name:text", "removable", "complexity:num", "power_draw_idle:num", "power_draw_per_use:num", "extended_desc:text", "merge:ui_data_obj_item_integrated_circuit{ref:text,inputs:list,outputs:list,activators:list}")
 
-	data["name"] = name
-	data["desc"] = desc
+/// The computed part of /obj/item/integrated_circuit's window data (declared on its UI_DATA row).
+/obj/item/integrated_circuit/proc/ui_data_obj_item_integrated_circuit(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["ref"] = REF(src)
-	data["displayed_name"] = displayed_name
-	data["removable"] = removable
 
-	data["complexity"] = complexity
-	data["power_draw_idle"] = power_draw_idle
-	data["power_draw_per_use"] = power_draw_per_use
-	data["extended_desc"] = extended_desc
 
 	var/list/inputs_list = list()
 	var/list/outputs_list = list()
@@ -136,74 +126,89 @@ EXTEND_INTERACTIONS(/obj/item/integrated_circuit, INTERACT_VERB("Rename Circuit"
 	pindata["linked"] = linked_list
 	return pindata
 
-/obj/item/integrated_circuit/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+/// Every pin of this circuit, for the UI's pin refs.
+/obj/item/integrated_circuit/proc/all_pins()
+	return inputs + outputs + activators
 
-	var/datum/integrated_io/pin = locate_in_list(inputs, params["pin"]) + outputs + activators
-	var/datum/integrated_io/linked = null
+/// Every pin the circuit's pins are wired to, for the UI's link refs.
+/obj/item/integrated_circuit/proc/all_linked_pins()
+	. = list()
+	for(var/datum/integrated_io/pin as anything in all_pins())
+		. |= pin.linked
 
-	if(params["link"] && pin)
-		linked = locate_in_list(pin.linked, params["link"])
-
-	var/obj/item/held_item = ui.user.get_active_hand()
-
+UI_ACT(/obj/item/integrated_circuit, "rename", ui_act_rename)
+UI_ACT_PROC(/obj/item/integrated_circuit, ui_act_rename)
 	. = TRUE
-	switch(action)
-		if("rename")
-			integrated_circuit_verb_rename(ui.user)
-			return
+	integrated_circuit_verb_rename(ui.user)
+	return
 
-		if("wire", "pin_name", "pin_data", "pin_unwire")
-			var/obj/item/multitool/M = held_item?.get_multitool()
-			if(M && allow_multitool)
-				switch(action)
-					if("pin_name")
-						M.wire(pin, ui.user)
-					if("pin_data")
-						var/datum/integrated_io/io = pin
-						io.ask_for_pin_data(ui.user, held_item) // The pins themselves will determine how to ask for data, and will validate the data.
-					if("pin_unwire")
-						M.unwire(pin, linked, ui.user)
+UI_ACT(/obj/item/integrated_circuit, "wire", ui_act_wire, UI_ARG_REF("link", "proc:all_linked_pins", /datum/integrated_io), UI_ARG_REF("pin", "proc:all_pins", /datum/integrated_io))
+UI_ACT(/obj/item/integrated_circuit, "pin_name", ui_act_wire, UI_ARG_REF("link", "proc:all_linked_pins", /datum/integrated_io), UI_ARG_REF("pin", "proc:all_pins", /datum/integrated_io))
+UI_ACT(/obj/item/integrated_circuit, "pin_data", ui_act_wire, UI_ARG_REF("link", "proc:all_linked_pins", /datum/integrated_io), UI_ARG_REF("pin", "proc:all_pins", /datum/integrated_io))
+UI_ACT(/obj/item/integrated_circuit, "pin_unwire", ui_act_wire, UI_ARG_REF("link", "proc:all_linked_pins", /datum/integrated_io), UI_ARG_REF("pin", "proc:all_pins", /datum/integrated_io))
+UI_ACT_PROC(/obj/item/integrated_circuit, ui_act_wire)
+	. = TRUE
+	var/datum/integrated_io/pin = params["pin"]
+	var/datum/integrated_io/linked = params["link"]
+	var/obj/item/held_item = ui.user.get_active_hand()
+	if(!pin || !(linked in pin.linked))
+		linked = null
+	var/obj/item/multitool/M = held_item?.get_multitool()
+	if(M && allow_multitool)
+		switch(action)
+			if("pin_name")
+				M.wire(pin, ui.user)
+			if("pin_data")
+				var/datum/integrated_io/io = pin
+				io.ask_for_pin_data(ui.user, held_item) // The pins themselves will determine how to ask for data, and will validate the data.
+			if("pin_unwire")
+				M.unwire(pin, linked, ui.user)
 
-			else if(istype(held_item, /obj/item/integrated_electronics/wirer))
-				var/obj/item/integrated_electronics/wirer/wirer = held_item
-				if(linked)
-					wirer.wire(linked, ui.user)
-				else if(pin)
-					wirer.wire(pin, ui.user)
+	else if(istype(held_item, /obj/item/integrated_electronics/wirer))
+		var/obj/item/integrated_electronics/wirer/wirer = held_item
+		if(linked)
+			wirer.wire(linked, ui.user)
+		else if(pin)
+			wirer.wire(pin, ui.user)
 
-			else if(istype(held_item, /obj/item/integrated_electronics/debugger))
-				var/obj/item/integrated_electronics/debugger/debugger = held_item
-				if(pin)
-					debugger.write_data(pin, ui.user)
-			else
-				to_chat(ui.user, span_warning("You can't do a whole lot without the proper tools."))
-			return
+	else if(istype(held_item, /obj/item/integrated_electronics/debugger))
+		var/obj/item/integrated_electronics/debugger/debugger = held_item
+		if(pin)
+			debugger.write_data(pin, ui.user)
+	else
+		to_chat(ui.user, span_warning("You can't do a whole lot without the proper tools."))
+	return
 
-		if("scan")
-			if(istype(held_item, /obj/item/integrated_electronics/debugger))
-				var/obj/item/integrated_electronics/debugger/D = held_item
-				if(D.accepting_refs)
-					D.afterattack(src, ui.user, TRUE)
-				else
-					to_chat(ui.user, span_warning("The Debugger's 'ref scanner' needs to be on."))
-			else
-				to_chat(ui.user, span_warning("You need a multitool/debugger set to 'ref' mode to do that."))
-			return
+UI_ACT(/obj/item/integrated_circuit, "scan", ui_act_scan)
+UI_ACT_PROC(/obj/item/integrated_circuit, ui_act_scan)
+	. = TRUE
+	var/obj/item/held_item = ui.user.get_active_hand()
+	if(istype(held_item, /obj/item/integrated_electronics/debugger))
+		var/obj/item/integrated_electronics/debugger/D = held_item
+		if(D.accepting_refs)
+			D.afterattack(src, ui.user, TRUE)
+		else
+			to_chat(ui.user, span_warning("The Debugger's 'ref scanner' needs to be on."))
+	else
+		to_chat(ui.user, span_warning("You need a multitool/debugger set to 'ref' mode to do that."))
+	return
 
-		if("examine")
-			var/obj/item/integrated_circuit/examined = locate(params["ref"])
-			if(istype(examined) && (examined.loc == loc))
-				if(ui.parent_ui())
-					examined.tgui_interact(ui.user, null, ui.parent_ui())
-				else
-					examined.tgui_interact(ui.user)
-
-		if("remove")
-			remove(ui.user)
-			return
+UI_ACT(/obj/item/integrated_circuit, "examine", ui_act_examine, UI_ARG_REF("ref", null, /obj/item/integrated_circuit))
+UI_ACT_PROC(/obj/item/integrated_circuit, ui_act_examine)
+	. = TRUE
+	var/obj/item/integrated_circuit/examined = params["ref"]
+	if(istype(examined) && (examined.loc == loc))
+		if(ui.parent_ui())
+			examined.tgui_interact(ui.user, null, ui.parent_ui())
+		else
+			examined.tgui_interact(ui.user)
 	return FALSE
+
+UI_ACT(/obj/item/integrated_circuit, "remove", ui_act_remove)
+UI_ACT_PROC(/obj/item/integrated_circuit, ui_act_remove)
+	. = TRUE
+	remove(ui.user)
+	return
 
 /obj/item/integrated_circuit/proc/remove(mob/user)
 	var/obj/item/electronic_assembly/A = assembly()

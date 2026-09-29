@@ -35,8 +35,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/crew, "crew_monitor", /datum/tgui_
 /obj/machinery/computer/crew/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
 
-/obj/machinery/computer/crew/tgui_interact(mob/user, datum/tgui/ui = null)
-	crew_monitor.tgui_interact(user, ui)
+/obj/machinery/computer/crew/ui_redirect(mob/user)
+	return crew_monitor
 
 /obj/machinery/computer/crew/interact(mob/user)
 	crew_monitor.tgui_interact(user)

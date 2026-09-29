@@ -124,18 +124,13 @@ DECLARE_INTERACTIONS(/obj/item/technomancer_catalog, \
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/technomancer_catalog/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "TechnomancerCatalog", "Catalog")
-		ui.open()
+DECLARE_UI(/obj/item/technomancer_catalog, "TechnomancerCatalog", UI_TITLE("Catalog"))
 
-/obj/item/technomancer_catalog/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/technomancer_catalog, "tab:num", "spell_tab", "budget:num", "max_budget:num", "merge:ui_data_obj_item_technomancer_catalog{spell_categories:list,spells:list,equipment:list,consumables:list,assistance:list}")
+
+/// The computed part of /obj/item/technomancer_catalog's window data (declared on its UI_DATA row).
+/obj/item/technomancer_catalog/proc/ui_data_obj_item_technomancer_catalog(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["tab"] = tab
-	data["spell_tab"] = spell_tab
-	data["budget"] = budget
-	data["max_budget"] = max_budget
 	data["spell_categories"] = list(ALL_SPELLS, OFFENSIVE_SPELLS, DEFENSIVE_SPELLS, UTILITY_SPELLS, SUPPORT_SPELLS)
 	var/list/spells = list()
 	for(var/datum/technomancer/spell/s in spell_instances)
@@ -163,79 +158,94 @@ DECLARE_INTERACTIONS(/obj/item/technomancer_catalog, \
 	data["assistance"] = assistance
 	return data
 
-/obj/item/technomancer_catalog/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
+/obj/item/technomancer_catalog/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	var/mob/living/carbon/human/H = ui.user
+	H.set_machine(src)
 	if(H.stat || H.restrained())
-		return TRUE
+		return FALSE
 	if(!ishuman(H))
-		return TRUE
+		return FALSE
 	if(H != owner)
 		to_chat(H, "\The [src] won't allow you to do that, as you don't own \the [src]!")
-		return TRUE
+		return FALSE
 	if(loc != H && !(in_range(src, H) && istype(loc, /turf)))
-		return TRUE
+		return FALSE
+	return TRUE
+
+UI_ACT(/obj/item/technomancer_catalog, "tab_choice", ui_act_tab_choice, UI_ARG_NUM("tab"))
+UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_tab_choice)
+	tab = params["tab"]
+	return TRUE
+
+UI_ACT(/obj/item/technomancer_catalog, "spell_category", ui_act_spell_category, UI_ARG_TEXT("category"))
+UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_spell_category)
+	spell_tab = params["category"]
+	return TRUE
+
+UI_ACT(/obj/item/technomancer_catalog, "spell_choice", ui_act_spell_choice, UI_ARG_TEXT("name"))
+UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_spell_choice)
+	var/mob/living/carbon/human/H = ui.user
 	H.set_machine(src)
-	switch(action)
-		if("tab_choice")
-			tab = text2num(params["tab"])
-			return TRUE
-		if("spell_category")
-			spell_tab = params["category"]
-			return TRUE
-		if("spell_choice")
-			var/datum/technomancer/new_spell = null
-			for(var/datum/technomancer/spell/s in spell_instances)
-				if(s.name == params["name"])
-					new_spell = s
+	var/datum/technomancer/new_spell = null
+	for(var/datum/technomancer/spell/s in spell_instances)
+		if(s.name == params["name"])
+			new_spell = s
+			break
+	var/obj/item/technomancer_core/core = null
+	if(istype(H.get_equipped_item(SLOT_ID_BACK), /obj/item/technomancer_core))
+		core = H.get_equipped_item(SLOT_ID_BACK)
+	if(new_spell && core)
+		if(new_spell.cost <= budget)
+			if(!core.has_spell(new_spell))
+				budget -= new_spell.cost
+				to_chat(H, span_notice("You have just bought [new_spell.name]."))
+				core.add_spell(new_spell.obj_path, new_spell.name, new_spell.ability_icon_state)
+			else
+				to_chat(H, span_danger("You already have [new_spell.name]!"))
+		else
+			to_chat(H, span_danger("You can't afford that!"))
+	return TRUE
+
+UI_ACT(/obj/item/technomancer_catalog, "item_choice", ui_act_item_choice, UI_ARG_TEXT("name"))
+UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_item_choice)
+	var/mob/living/carbon/human/H = ui.user
+	H.set_machine(src)
+	var/datum/technomancer/desired = null
+	for(var/datum/technomancer/o in equipment_instances + consumable_instances + assistance_instances)
+		if(o.name == params["name"])
+			desired = o
+			break
+	if(desired)
+		if(desired.cost <= budget)
+			budget -= desired.cost
+			to_chat(H, span_notice("You have just bought \a [desired.name]."))
+			var/obj/O = new desired.obj_path(get_turf(H))
+			registry_join(REGISTRY_TECHNOMANCER_BELONGINGS, O)
+		else
+			to_chat(H, span_danger("You can't afford that!"))
+	return TRUE
+
+UI_ACT(/obj/item/technomancer_catalog, "refund_functions", ui_act_refund_functions)
+UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_refund_functions)
+	var/mob/living/carbon/human/H = ui.user
+	H.set_machine(src)
+	var/turf/T = get_turf(H)
+	if(T && (T.z in using_map.player_levels))
+		to_chat(H, span_danger("You can only refund at your base, it's too late now!"))
+		return TRUE
+	var/obj/item/technomancer_core/core = null
+	if(istype(H.get_equipped_item(SLOT_ID_BACK), /obj/item/technomancer_core))
+		core = H.get_equipped_item(SLOT_ID_BACK)
+	if(core)
+		for(var/obj/spellbutton/spell in core.spells)
+			for(var/datum/technomancer/spell/spell_datum in spell_instances)
+				if(spell_datum.obj_path == spell.spellpath)
+					budget += spell_datum.cost
+					core.remove_spell(spell)
 					break
-			var/obj/item/technomancer_core/core = null
-			if(istype(H.get_equipped_item(SLOT_ID_BACK), /obj/item/technomancer_core))
-				core = H.get_equipped_item(SLOT_ID_BACK)
-			if(new_spell && core)
-				if(new_spell.cost <= budget)
-					if(!core.has_spell(new_spell))
-						budget -= new_spell.cost
-						to_chat(H, span_notice("You have just bought [new_spell.name]."))
-						core.add_spell(new_spell.obj_path, new_spell.name, new_spell.ability_icon_state)
-					else
-						to_chat(H, span_danger("You already have [new_spell.name]!"))
-				else
-					to_chat(H, span_danger("You can't afford that!"))
-			return TRUE
-		if("item_choice")
-			var/datum/technomancer/desired = null
-			for(var/datum/technomancer/o in equipment_instances + consumable_instances + assistance_instances)
-				if(o.name == params["name"])
-					desired = o
-					break
-			if(desired)
-				if(desired.cost <= budget)
-					budget -= desired.cost
-					to_chat(H, span_notice("You have just bought \a [desired.name]."))
-					var/obj/O = new desired.obj_path(get_turf(H))
-					registry_join(REGISTRY_TECHNOMANCER_BELONGINGS, O)
-				else
-					to_chat(H, span_danger("You can't afford that!"))
-			return TRUE
-		if("refund_functions")
-			var/turf/T = get_turf(H)
-			if(T && (T.z in using_map.player_levels))
-				to_chat(H, span_danger("You can only refund at your base, it's too late now!"))
-				return TRUE
-			var/obj/item/technomancer_core/core = null
-			if(istype(H.get_equipped_item(SLOT_ID_BACK), /obj/item/technomancer_core))
-				core = H.get_equipped_item(SLOT_ID_BACK)
-			if(core)
-				for(var/obj/spellbutton/spell in core.spells)
-					for(var/datum/technomancer/spell/spell_datum in spell_instances)
-						if(spell_datum.obj_path == spell.spellpath)
-							budget += spell_datum.cost
-							core.remove_spell(spell)
-							break
-			return TRUE
+	return TRUE
 
 /// Requirement: refunds only happen at the base.
 /obj/item/technomancer_catalog/proc/can_refund(mob/user, atom/target, obj/item/held)

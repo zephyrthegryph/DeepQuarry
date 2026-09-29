@@ -96,29 +96,26 @@ DECLARE_START_TIMER(/obj/item/uplink, "offer_time", PROC_REF(next_offer)) //It s
 /obj/item/uplink/tgui_host()
 	return loc
 
-/obj/item/uplink/hidden/tgui_state(mob/user)
-	return GLOB.tgui_deep_inventory_state
+DECLARE_UI_STATE(/obj/item/uplink/hidden, GLOB.tgui_deep_inventory_state)
 
-/obj/item/uplink/hidden/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
+DECLARE_UI(/obj/item/uplink/hidden, "Uplink", UI_TITLE("Remote Uplink"))
+
+/obj/item/uplink/hidden/ui_prepare(mob/user, datum/tgui/ui)
 	if(!active)
 		toggle()
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Uplink", "Remote Uplink")
-		// This UI is only ever opened by one person,
-		// and never is updated outside of user input.
-		ui.set_autoupdate(FALSE)
-		ui.open()
+	return TRUE
 
-/obj/item/uplink/hidden/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA(/obj/item/uplink/hidden, "compactMode=compact_mode:num", "merge:ui_data_obj_item_uplink_hidden{telecrystals:num,lockable:bool,discount_name:text,discount_amount:num,offer_expiry:unknown,exploit:list,locked_records:list}")
+
+/// The computed part of /obj/item/uplink/hidden's window data (declared on its UI_DATA row).
+/obj/item/uplink/hidden/proc/ui_data_obj_item_uplink_hidden(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	if(!user.mind)
 		return
 
-	var/list/data = ..()
+	var/list/data = list()
 
 	data["telecrystals"] = user.mind.tcrystals
 	data["lockable"] = TRUE
-	data["compactMode"] = compact_mode
 
 	data["discount_name"] = discount_item() ? discount_item().name : ""
 	data["discount_amount"] = (1-discount_amount)*100
@@ -188,27 +185,35 @@ DECLARE_START_TIMER(/obj/item/uplink, "offer_time", PROC_REF(next_offer)) //It s
 		return STATUS_CLOSE
 	return ..()
 
-/obj/item/uplink/hidden/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/item/uplink/hidden, "buy", ui_act_buy, UI_ARG_REF("ref", "proc:ui_source_glob_uplink_items"))
+UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_buy)
+	var/datum/uplink_item/UI = (params["ref"])
+	UI.buy(src, ui.user)
+	return TRUE
 
-	switch(action)
-		if("buy")
-			var/datum/uplink_item/UI = (locate_in_list(GLOB.uplink.items, params["ref"]))
-			UI.buy(src, ui.user)
-			return TRUE
-		if("lock")
-			toggle()
-			SStgui.close_uis(src)
-		if("select")
-			selected_cat = params["category"]
-			return TRUE
-		if("compact_toggle")
-			compact_mode = !compact_mode
-			return TRUE
-		if("view_exploits")
-			exploit_id = params["id"]
-			return TRUE
+UI_ACT(/obj/item/uplink/hidden, "lock", ui_act_lock)
+UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_lock)
+	toggle()
+	SStgui.close_uis(src)
+
+UI_ACT(/obj/item/uplink/hidden, "select", ui_act_select, UI_ARG_VALUE("category"))
+UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_select)
+	selected_cat = params["category"]
+	return TRUE
+
+UI_ACT(/obj/item/uplink/hidden, "compact_toggle", ui_act_compact_toggle)
+UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_compact_toggle)
+	compact_mode = !compact_mode
+	return TRUE
+
+UI_ACT(/obj/item/uplink/hidden, "view_exploits", ui_act_view_exploits, UI_ARG_NUM("id"))
+UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_view_exploits)
+	exploit_id = params["id"]
+	return TRUE
+
+/// The list the UI_ARG_REF rows resolve refs in.
+/obj/item/uplink/hidden/proc/ui_source_glob_uplink_items()
+	return GLOB.uplink.items
 
 // PRESET UPLINKS
 // A collection of preset uplinks.

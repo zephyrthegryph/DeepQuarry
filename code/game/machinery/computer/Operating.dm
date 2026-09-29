@@ -35,19 +35,18 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/operating, \
 	INTERACT_SILICON("Use", TYPE_PROC_REF(/obj/machinery, interaction_open_ui_powered_fingerprint)), \
 )
 
-/obj/machinery/computer/operating/tgui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "OperatingComputer", "Patient Monitor")
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/operating, "OperatingComputer", UI_TITLE("Patient Monitor"))
 
-/obj/machinery/computer/operating/tgui_data(mob/user)
-	var/data[0]
+UI_DATA_REPLACE(/obj/machinery/computer/operating, "verbose:num", "spo2Alarm:num", "choice", "health=healthAnnounce:num", "crit:num", "healthAlarm:num", "spo2:num", "merge:ui_data_obj_machinery_computer_operating{hasOccupant:num,occupant:list}")
+
+/// The computed part of /obj/machinery/computer/operating's window data (declared on its UI_DATA row).
+/obj/machinery/computer/operating/proc/ui_data_obj_machinery_computer_operating(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	var/mob/living/carbon/human/occupant
 	if(table)
 		occupant = table.victim
 	data["hasOccupant"] = occupant ? 1 : 0
-	var/occupantData[0]
+	var/list/occupantData = list()
 
 	if(occupant)
 		occupantData["name"] = occupant.name
@@ -62,50 +61,75 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/operating, \
 			occupantData["surgery"] = build_surgery_list(user)
 
 	data["occupant"] = occupantData
-	data["verbose"]=verbose
-	data["spo2Alarm"]=spo2Alarm
-	data["choice"]=choice
-	data["health"]=healthAnnounce
-	data["crit"]=crit
-	data["healthAlarm"]=healthAlarm
-	data["spo2"]=spo2
 
 	return data
 
-/obj/machinery/computer/operating/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+/obj/machinery/computer/operating/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if((ui.user.contents.Find(src) || (in_range(src, ui.user) && istype(src.loc, /turf))) || (istype(ui.user, /mob/living/silicon)))
 		ui.user.set_machine(src)
+	return TRUE
 
+UI_ACT(/obj/machinery/computer/operating, "verboseOn", ui_act_verboseon)
+UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_verboseon)
 	. = TRUE
-	switch(action)
-		if("verboseOn")
-			verbose = TRUE
-		if("verboseOff")
-			verbose = FALSE
-		if("healthOn")
-			healthAnnounce = TRUE
-		if("healthOff")
-			healthAnnounce = FALSE
-		if("critOn")
-			crit = TRUE
-		if("critOff")
-			crit = FALSE
-		if("spo2On")
-			spo2 = TRUE
-		if("spo2Off")
-			spo2 = FALSE
-		if("spo2_adj")
-			spo2Alarm = clamp(text2num(params["new"]), 0, 100)
-		if("choiceOn")
-			choice = TRUE
-		if("choiceOff")
-			choice = FALSE
-		if("health_adj")
-			healthAlarm = clamp(text2num(params["new"]), -100, 100)
-		else
-			return FALSE
+	verbose = TRUE
+
+UI_ACT(/obj/machinery/computer/operating, "verboseOff", ui_act_verboseoff)
+UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_verboseoff)
+	. = TRUE
+	verbose = FALSE
+
+UI_ACT(/obj/machinery/computer/operating, "healthOn", ui_act_healthon)
+UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_healthon)
+	. = TRUE
+	healthAnnounce = TRUE
+
+UI_ACT(/obj/machinery/computer/operating, "healthOff", ui_act_healthoff)
+UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_healthoff)
+	. = TRUE
+	healthAnnounce = FALSE
+
+UI_ACT(/obj/machinery/computer/operating, "critOn", ui_act_criton)
+UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_criton)
+	. = TRUE
+	crit = TRUE
+
+UI_ACT(/obj/machinery/computer/operating, "critOff", ui_act_critoff)
+UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_critoff)
+	. = TRUE
+	crit = FALSE
+
+UI_ACT(/obj/machinery/computer/operating, "spo2On", ui_act_spo2on)
+UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_spo2on)
+	. = TRUE
+	spo2 = TRUE
+
+UI_ACT(/obj/machinery/computer/operating, "spo2Off", ui_act_spo2off)
+UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_spo2off)
+	. = TRUE
+	spo2 = FALSE
+
+UI_ACT(/obj/machinery/computer/operating, "spo2_adj", ui_act_spo2_adj, UI_ARG_NUM("new", 0, 100))
+UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_spo2_adj)
+	. = TRUE
+	spo2Alarm = params["new"]
+
+UI_ACT(/obj/machinery/computer/operating, "choiceOn", ui_act_choiceon)
+UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_choiceon)
+	. = TRUE
+	choice = TRUE
+
+UI_ACT(/obj/machinery/computer/operating, "choiceOff", ui_act_choiceoff)
+UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_choiceoff)
+	. = TRUE
+	choice = FALSE
+
+UI_ACT(/obj/machinery/computer/operating, "health_adj", ui_act_health_adj, UI_ARG_NUM("new", -100, 100))
+UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_health_adj)
+	. = TRUE
+	healthAlarm = params["new"]
 
 /obj/machinery/computer/operating/machine_step()
 	if(!table || !table.check_victim())

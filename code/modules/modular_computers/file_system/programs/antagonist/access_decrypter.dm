@@ -50,38 +50,40 @@
 		message = "Successfully decrypted and saved operational key codes. Downloaded access codes for: [target_access().desc]"
 		target_access_static = null
 
-/datum/computer_file/program/access_decrypter/tgui_act(action, list/params, datum/tgui/ui)
-	if(..())
-		return TRUE
-	switch(action)
-		if("PRG_reset")
-			reset()
-			return TRUE
-		if("PRG_execute")
-			if(running)
-				return TRUE
-			if(text2num(params["allowed"]))
-				return TRUE
-			var/obj/item/computer_hardware/processor_unit/CPU = computer().processor_unit
-			var/obj/item/computer_hardware/card_slot/RFID = computer().card_slot
-			if(!istype(CPU) || !CPU.check_functionality() || !istype(RFID) || !RFID.check_functionality())
-				message = "A fatal hardware error has been detected."
-				return
-			if(!istype(RFID.stored_card(), /obj/item/card/id))
-				message = "RFID card is not present in the device. Operation aborted."
-				return
-			running = TRUE
-			target_access_static = SSaccess.get_access_by_id("[params["access_target"]]")
-			if(!target_access())
-				message = "Invalid access target. Operation aborted."
-				running = FALSE
-				return
-			if(GLOB.ntnet_global.intrusion_detection_enabled)
-				GLOB.ntnet_global.add_log("IDS WARNING - Unauthorised access attempt to primary keycode database from device: [computer().network_card.get_network_tag()]")
-				GLOB.ntnet_global.intrusion_detection_alarm = TRUE
-			return TRUE
+UI_ACT(/datum/computer_file/program/access_decrypter, "PRG_reset", ui_act_prg_reset)
+UI_ACT_PROC(/datum/computer_file/program/access_decrypter, ui_act_prg_reset)
+	reset()
+	return TRUE
 
-/datum/computer_file/program/access_decrypter/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_ACT(/datum/computer_file/program/access_decrypter, "PRG_execute", ui_act_prg_execute, UI_ARG_TEXT("access_target"), UI_ARG_NUM("allowed"))
+UI_ACT_PROC(/datum/computer_file/program/access_decrypter, ui_act_prg_execute)
+	if(running)
+		return TRUE
+	if(params["allowed"])
+		return TRUE
+	var/obj/item/computer_hardware/processor_unit/CPU = computer().processor_unit
+	var/obj/item/computer_hardware/card_slot/RFID = computer().card_slot
+	if(!istype(CPU) || !CPU.check_functionality() || !istype(RFID) || !RFID.check_functionality())
+		message = "A fatal hardware error has been detected."
+		return
+	if(!istype(RFID.stored_card(), /obj/item/card/id))
+		message = "RFID card is not present in the device. Operation aborted."
+		return
+	running = TRUE
+	target_access_static = SSaccess.get_access_by_id("[params["access_target"]]")
+	if(!target_access())
+		message = "Invalid access target. Operation aborted."
+		running = FALSE
+		return
+	if(GLOB.ntnet_global.intrusion_detection_enabled)
+		GLOB.ntnet_global.add_log("IDS WARNING - Unauthorised access attempt to primary keycode database from device: [computer().network_card.get_network_tag()]")
+		GLOB.ntnet_global.intrusion_detection_alarm = TRUE
+	return TRUE
+
+UI_DATA_REPLACE(/datum/computer_file/program/access_decrypter, "merge:ui_data_datum_computer_file_program_access_decrypter{message:text,running:num,rate:num,factor:num,regions:list}")
+
+/// The computed part of /datum/computer_file/program/access_decrypter's window data (declared on its UI_DATA row).
+/datum/computer_file/program/access_decrypter/proc/ui_data_datum_computer_file_program_access_decrypter(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	if(!GLOB.ntnet_global)
 		return
 	var/list/data = get_header_data()

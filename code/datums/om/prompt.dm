@@ -303,15 +303,15 @@ REL_PAIR(/datum/tgui_input_colormatrix/om, om_prompt, ui)
 
 REL_PAIR(/datum/tgui_bitfield_input/om, om_prompt, ui)
 
-/datum/tgui_bitfield_input/om/tgui_act(action, list/params, datum/tgui/ui)
+UI_ACT_OVERRIDE(/datum/tgui_bitfield_input/om, ui_act_submit)
 	// Answer before the window closes: closing it means cancel.
-	if(om_prompt && action == "submit")
-		var/datum/om/prompt/P = om_prompt
-		om_prompt = null
-		om_prompt_answer(P, value)
-		SStgui.close_uis(src)
-		return TRUE
-	return ..()
+	if(!om_prompt)
+		return ..()
+	var/datum/om/prompt/P = om_prompt
+	om_prompt = null
+	om_prompt_answer(P, value)
+	SStgui.close_uis(src)
+	return TRUE
 
 /datum/tgui_bitfield_input/om/tgui_close(mob/user)
 	. = ..()

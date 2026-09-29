@@ -25,11 +25,10 @@
 	. = using_map.station_networks.Copy()
 
 
-/obj/machinery/computer/security/tgui_interact(mob/user, datum/tgui/ui = null)
-	camera.tgui_interact(user, ui)
+/obj/machinery/computer/security/ui_redirect(mob/user)
+	return camera
 
-/obj/machinery/computer/security/tgui_state(mob/user)
-	return GLOB.tgui_camera_view
+DECLARE_UI_STATE(/obj/machinery/computer/security, GLOB.tgui_camera_view)
 
 /obj/machinery/computer/security/declare_interactions(list/into)
 	into += list(

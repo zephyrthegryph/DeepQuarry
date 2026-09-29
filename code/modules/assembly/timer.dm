@@ -61,38 +61,31 @@ MATERIAL_MIX(/obj/item/assembly/timer, list(MAT_STEEL = 500, MAT_GLASS = 50))
 		holder().update_icon()
 	return
 
-/obj/item/assembly/timer/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/obj/item/assembly/timer, "AssemblyTimer")
+
+/obj/item/assembly/timer/ui_prepare(mob/user, datum/tgui/ui)
 	if(!secured)
 		to_chat(user, span_warning("[src] is unsecured!"))
 		return FALSE
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AssemblyTimer", name)
-		ui.open()
+	return TRUE
 
-/obj/item/assembly/timer/tgui_data(mob/user)
-	var/list/data = ..()
-	data["time"] = time
-	data["timing"] = timing
-	return data
+UI_DATA(/obj/item/assembly/timer, "time:num", "timing:num")
 
-/obj/item/assembly/timer/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/item/assembly/timer, "timing", ui_act_timing)
+UI_ACT_PROC(/obj/item/assembly/timer, ui_act_timing)
+	set_state(!timing)
+	update_icon()
+	return TRUE
 
-	switch(action)
-		if("timing")
-			set_state(!timing)
-			update_icon()
-			return TRUE
-		if("set_time")
-			var/real_new_time = 0
-			var/new_time = params["time"]
-			var/list/L = splittext(new_time, ":")
-			if(LAZYLEN(L))
-				for(var/i in 1 to LAZYLEN(L))
-					real_new_time += text2num(L[i]) * (60 ** (LAZYLEN(L) - i))
-			else
-				real_new_time = text2num(new_time)
-			time = clamp(real_new_time, 0, 600)
-			return TRUE
+UI_ACT(/obj/item/assembly/timer, "set_time", ui_act_set_time, UI_ARG_NUM("time"))
+UI_ACT_PROC(/obj/item/assembly/timer, ui_act_set_time)
+	var/real_new_time = 0
+	var/new_time = params["time"]
+	if(isnum(new_time))
+		real_new_time = new_time
+	else
+		var/list/L = splittext(new_time, ":")
+		for(var/i in 1 to LAZYLEN(L))
+			real_new_time += text2num(L[i]) * (60 ** (LAZYLEN(L) - i))
+	time = clamp(real_new_time, 0, 600)
+	return TRUE

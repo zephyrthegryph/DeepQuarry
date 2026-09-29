@@ -63,8 +63,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/power_monitor, "power_monitor", /d
 	return proximity_flag
 
 // Uses dark magic to operate the NanoUI of this computer.
-/obj/machinery/computer/power_monitor/tgui_interact(mob/user, datum/tgui/ui = null)
-	power_monitor.tgui_interact(user, ui)
+/obj/machinery/computer/power_monitor/ui_redirect(mob/user)
+	return power_monitor
 
 // Verifies if any warnings were registered by connected sensors.
 /obj/machinery/computer/power_monitor/proc/check_warnings()

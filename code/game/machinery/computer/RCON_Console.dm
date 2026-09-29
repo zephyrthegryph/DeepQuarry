@@ -26,8 +26,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/rcon, "rcon", /datum/tgui_module/r
 
 // Proc: ui_interact()
 // Description: Uses dark magic (TGUI) to render this machine's UI
-/obj/machinery/computer/rcon/tgui_interact(mob/user, datum/tgui/ui)
-	rcon.tgui_interact(user, ui)
+/obj/machinery/computer/rcon/ui_redirect(mob/user)
+	return rcon
 
 /obj/machinery/computer/rcon/update_icon()
 	..()

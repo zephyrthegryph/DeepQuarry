@@ -16,19 +16,17 @@
 	testing_matrix = matrix(target.transform)
 
 
-/datum/nobody_wants_to_learn_matrix_math/tgui_state(mob/user)
-	return ADMIN_STATE(R_VAREDIT)
+DECLARE_UI_STATE(/datum/nobody_wants_to_learn_matrix_math, ADMIN_STATE(R_VAREDIT))
 
 /datum/nobody_wants_to_learn_matrix_math/tgui_close(mob/user)
 	qdel(src)
 
-/datum/nobody_wants_to_learn_matrix_math/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "MatrixMathTester")
-		ui.open()
+DECLARE_UI(/datum/nobody_wants_to_learn_matrix_math, "MatrixMathTester")
 
-/datum/nobody_wants_to_learn_matrix_math/tgui_data()
+UI_DATA_REPLACE(/datum/nobody_wants_to_learn_matrix_math, "merge:ui_data_datum_nobody_wants_to_learn_matrix_math{matrix_a:unknown,matrix_b:unknown,matrix_c:unknown,matrix_d:unknown,matrix_e:unknown,matrix_f:unknown,pixelated:num}")
+
+/// The computed part of /datum/nobody_wants_to_learn_matrix_math's window data (declared on its UI_DATA row).
+/datum/nobody_wants_to_learn_matrix_math/proc/ui_data_datum_nobody_wants_to_learn_matrix_math(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["matrix_a"] = testing_matrix.a
 	data["matrix_b"] = testing_matrix.b
@@ -39,33 +37,38 @@
 	data["pixelated"] = target().appearance_flags & PIXEL_SCALE
 	return data
 
-/datum/nobody_wants_to_learn_matrix_math/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
+UI_ACT(/datum/nobody_wants_to_learn_matrix_math, "change_var", ui_act_change_var, UI_ARG_TEXT("var_name"), UI_ARG_NUM("var_value"))
+UI_ACT_PROC(/datum/nobody_wants_to_learn_matrix_math, ui_act_change_var)
+	var/matrix_var_name = params["var_name"]
+	var/matrix_var_value = params["var_value"]
+	if(testing_matrix.vv_edit_var(matrix_var_name, matrix_var_value) == FALSE)
+		to_chat(src, "Your edit was rejected by the object. This is a bug with the matrix tester, not your fault, so report it on GitHub.", confidential = TRUE)
 		return
+	set_transform()
 
-	switch(action)
-		if("change_var")
-			var/matrix_var_name = params["var_name"]
-			var/matrix_var_value = params["var_value"]
-			if(testing_matrix.vv_edit_var(matrix_var_name, matrix_var_value) == FALSE)
-				to_chat(src, "Your edit was rejected by the object. This is a bug with the matrix tester, not your fault, so report it on GitHub.", confidential = TRUE)
-				return
-			set_transform()
-		if("scale")
-			testing_matrix.Scale(params["x"], params["y"])
-			set_transform()
-		if("translate")
-			testing_matrix.Translate(params["x"], params["y"])
-			set_transform()
-		if("shear")
-			testing_matrix.Shear(params["x"], params["y"])
-			set_transform()
-		if("turn")
-			testing_matrix.Turn(params["angle"])
-			set_transform()
-		if("toggle_pixel")
-			target().appearance_flags ^= PIXEL_SCALE
+UI_ACT(/datum/nobody_wants_to_learn_matrix_math, "scale", ui_act_scale, UI_ARG_NUM("x"), UI_ARG_NUM("y"))
+UI_ACT_PROC(/datum/nobody_wants_to_learn_matrix_math, ui_act_scale)
+	testing_matrix.Scale(params["x"], params["y"])
+	set_transform()
+
+UI_ACT(/datum/nobody_wants_to_learn_matrix_math, "translate", ui_act_translate, UI_ARG_NUM("x"), UI_ARG_NUM("y"))
+UI_ACT_PROC(/datum/nobody_wants_to_learn_matrix_math, ui_act_translate)
+	testing_matrix.Translate(params["x"], params["y"])
+	set_transform()
+
+UI_ACT(/datum/nobody_wants_to_learn_matrix_math, "shear", ui_act_shear, UI_ARG_NUM("x"), UI_ARG_NUM("y"))
+UI_ACT_PROC(/datum/nobody_wants_to_learn_matrix_math, ui_act_shear)
+	testing_matrix.Shear(params["x"], params["y"])
+	set_transform()
+
+UI_ACT(/datum/nobody_wants_to_learn_matrix_math, "turn", ui_act_turn, UI_ARG_NUM("angle"))
+UI_ACT_PROC(/datum/nobody_wants_to_learn_matrix_math, ui_act_turn)
+	testing_matrix.Turn(params["angle"])
+	set_transform()
+
+UI_ACT(/datum/nobody_wants_to_learn_matrix_math, "toggle_pixel", ui_act_toggle_pixel)
+UI_ACT_PROC(/datum/nobody_wants_to_learn_matrix_math, ui_act_toggle_pixel)
+	target().appearance_flags ^= PIXEL_SCALE
 
 /datum/nobody_wants_to_learn_matrix_math/proc/set_transform()
 	animate(target(), transform = testing_matrix, time = 0.5 SECONDS)

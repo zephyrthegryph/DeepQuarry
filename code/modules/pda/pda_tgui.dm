@@ -1,18 +1,14 @@
 // Self contained file for all things TGUI
-/obj/item/pda/tgui_state(mob/user)
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/pda, GLOB.tgui_inventory_state)
 
-/obj/item/pda/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Pda", "Personal Data Assistant", parent_ui)
-		ui.open()
+DECLARE_UI(/obj/item/pda, "Pda", UI_TITLE("Personal Data Assistant"))
 
-/obj/item/pda/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/pda, "owner:text", "ownjob", "useRetro=retro_mode:num", "touch_silent:num", "merge:ui_data_obj_item_pda{idInserted:num,idLink:unknown,cartridge_name:text,stationTime:text,app:list}")
 
-	data["owner"] = owner					// Who is your daddy...
-	data["ownjob"] = ownjob					// ...and what does he do?
+/// The computed part of /obj/item/pda's window data (declared on its UI_DATA row).
+/obj/item/pda/proc/ui_data_obj_item_pda(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 
 	// update list of shortcuts, only if they changed
 	if(!length(shortcut_cache))
@@ -43,8 +39,6 @@
 	data["idInserted"] = (id ? 1 : 0)
 	data["idLink"] = (id ? text("[id.registered_name], [id.assignment]") : "--------")
 
-	data["useRetro"] = retro_mode
-	data["touch_silent"] = touch_silent
 
 	data["cartridge_name"] = cartridge ? cartridge.name : ""
 	data["stationTime"] = stationtime2text() //worldtime2stationtime(world.time) // Aaa which fucking one is canonical there's SO MANY
@@ -59,56 +53,74 @@
 
 	return data
 
-/obj/item/pda/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+/// Actions the PDA itself has no row for are the running app's.
+UI_ACT_FORWARD(/obj/item/pda, ui_forward_to_app)
+/obj/item/pda/proc/ui_forward_to_app(mob/user, action)
+	return current_app()
 
+/obj/item/pda/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(ui.user)
-
 	if(!touch_silent)
 		play_sfx(src, SFX_MACHINES_PDA_CLICK)
-
-	. = TRUE
-	switch(action)
-		if("Home") //Go home, largely replaces the old Return
-			var/datum/data/pda/app/main_menu/A = find_program(/datum/data/pda/app/main_menu)
-			if(A)
-				start_program(A)
-		if("StartProgram")
-			if(params["program"])
-				var/datum/data/pda/app/A = locate(params["program"])
-				if(A)
-					start_program(A)
-		if("Eject")//Ejects the cart, only done from hub.
-			if(!isnull(cartridge))
-				var/turf/T = loc
-				if(ismob(T))
-					T = T.loc
-				var/obj/item/cartridge/C = cartridge
-				C.forceMove(T)
-				if(scanmode() in C.programs)
-					rel_clear(src, "scanmode")
-				if(current_app() in C.programs)
-					start_program(find_program(/datum/data/pda/app/main_menu))
-				if(C.radio)
-					rel_clear(C.radio, "hostpda")
-				for(var/datum/data/pda/P in notifying_programs)
-					if(P in C.programs)
-						P.unnotify()
-				own_take(src, "cartridge")
-				update_shortcuts()
-		if("Authenticate")//Checks for ID
-			id_check(ui.user, 1)
-		if("Retro")
-			retro_mode = !retro_mode
-		if("TouchSounds")
-			touch_silent = !touch_silent
-		if("Ringtone")
-			return set_ringtone(ui.user)
-		else
-			if(current_app())
-				. = current_app().tgui_act(action, params, ui, state)
-
 	if((honkamt > 0) && (prob(60)))//For clown virus.
 		honkamt--
 		play_sfx(loc, SFX_ITEMS_BIKEHORN, 0.6)
+	return TRUE
+
+UI_ACT(/obj/item/pda, "Home", ui_act_home)
+UI_ACT_PROC(/obj/item/pda, ui_act_home)
+	. = TRUE
+	var/datum/data/pda/app/main_menu/A = find_program(/datum/data/pda/app/main_menu)
+	if(A)
+		start_program(A)
+
+UI_ACT(/obj/item/pda, "StartProgram", ui_act_startprogram, UI_ARG_REF("program", null, /datum/data/pda/app))
+UI_ACT_PROC(/obj/item/pda, ui_act_startprogram)
+	. = TRUE
+	if(params["program"])
+		var/datum/data/pda/app/A = params["program"]
+		if(A)
+			start_program(A)
+
+UI_ACT(/obj/item/pda, "Eject", ui_act_eject)
+UI_ACT_PROC(/obj/item/pda, ui_act_eject)
+	. = TRUE
+	if(!isnull(cartridge))
+		var/turf/T = loc
+		if(ismob(T))
+			T = T.loc
+		var/obj/item/cartridge/C = cartridge
+		C.forceMove(T)
+		if(scanmode() in C.programs)
+			rel_clear(src, "scanmode")
+		if(current_app() in C.programs)
+			start_program(find_program(/datum/data/pda/app/main_menu))
+		if(C.radio)
+			rel_clear(C.radio, "hostpda")
+		for(var/datum/data/pda/P in notifying_programs)
+			if(P in C.programs)
+				P.unnotify()
+		own_take(src, "cartridge")
+		update_shortcuts()
+
+UI_ACT(/obj/item/pda, "Authenticate", ui_act_authenticate)
+UI_ACT_PROC(/obj/item/pda, ui_act_authenticate)
+	. = TRUE
+	id_check(ui.user, 1)
+
+UI_ACT(/obj/item/pda, "Retro", ui_act_retro)
+UI_ACT_PROC(/obj/item/pda, ui_act_retro)
+	. = TRUE
+	retro_mode = !retro_mode
+
+UI_ACT(/obj/item/pda, "TouchSounds", ui_act_touchsounds)
+UI_ACT_PROC(/obj/item/pda, ui_act_touchsounds)
+	. = TRUE
+	touch_silent = !touch_silent
+
+UI_ACT(/obj/item/pda, "Ringtone", ui_act_ringtone)
+UI_ACT_PROC(/obj/item/pda, ui_act_ringtone)
+	. = TRUE
+	return set_ringtone(ui.user)

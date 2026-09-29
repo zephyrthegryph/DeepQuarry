@@ -87,21 +87,18 @@
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/account_database/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AccountsTerminal", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/account_database, "AccountsTerminal")
 
 
-/obj/machinery/account_database/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/account_database, "machine_id:text", "creating_new_account:num", "merge:ui_data_obj_machinery_account_database{id_inserted:bool,id_card:unknown,access_level:unknown,detailed_account_view:bool,station_account_number:num,account_number:num,owner_name:text,money:num,suspended:num,transactions:unknown,accounts:list}")
+
+/// The computed part of /obj/machinery/account_database's window data (declared on its UI_DATA row).
+/obj/machinery/account_database/proc/ui_data_obj_machinery_account_database(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["id_inserted"] = !!held_card
 	data["id_card"] = held_card ? text("[held_card.registered_name], [held_card.assignment]") : "-----"
 	data["access_level"] = get_access_level()
-	data["machine_id"] = machine_id
-	data["creating_new_account"] = creating_new_account
 	data["detailed_account_view"] = !!detailed_account_view()
 	data["station_account_number"] = GLOB.station_account.account_number
 
@@ -144,91 +141,113 @@
 
 	return data
 
-/obj/machinery/account_database/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+/obj/machinery/account_database/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	var/access_level = get_access_level()
 	if(action != "insert_card" && !access_level)
 		return FALSE
+	return TRUE
 
-	switch(action)
-		if("create_account")
-			creating_new_account = 1
+UI_ACT(/obj/machinery/account_database, "create_account", ui_act_create_account)
+UI_ACT_PROC(/obj/machinery/account_database, ui_act_create_account)
+	creating_new_account = 1
+	return TRUE
 
-		if("add_funds")
-			if(access_level < 2)
-				return FALSE
-			var/amount = act_ask(ui.user, action, params, ui, "k161", /datum/om/prompt/number, message = "Enter the amount you wish to add", title = "Silently add funds")
-			if(isnull(amount))
-				return
-			if(detailed_account_view() && isnum(amount) && amount > 0)
-				var/allowed_amount = min(amount, fund_cap - detailed_account_view().money)
-				detailed_account_view().credit(allowed_amount, ui.user.real_name, "Authorized account adjustment", machine_id)
+UI_ACT(/obj/machinery/account_database, "add_funds", ui_act_add_funds)
+UI_ACT_PROC(/obj/machinery/account_database, ui_act_add_funds)
+	var/access_level = get_access_level()
+	if(access_level < 2)
+		return FALSE
+	var/amount = act_ask(ui.user, action, params, ui, "k161", /datum/om/prompt/number, message = "Enter the amount you wish to add", title = "Silently add funds")
+	if(isnull(amount))
+		return
+	if(detailed_account_view() && isnum(amount) && amount > 0)
+		var/allowed_amount = min(amount, fund_cap - detailed_account_view().money)
+		detailed_account_view().credit(allowed_amount, ui.user.real_name, "Authorized account adjustment", machine_id)
+	return TRUE
 
-		if("remove_funds")
-			if(access_level < 2)
-				return FALSE
-			var/amount = act_ask(ui.user, action, params, ui, "k169", /datum/om/prompt/number, message = "Enter the amount you wish to remove", title = "Silently remove funds")
-			if(isnull(amount))
-				return
-			if(detailed_account_view() && isnum(amount) && amount > 0)
-				detailed_account_view().debit(min(amount, detailed_account_view().money), ui.user.real_name, "Authorized account adjustment", machine_id)
+UI_ACT(/obj/machinery/account_database, "remove_funds", ui_act_remove_funds)
+UI_ACT_PROC(/obj/machinery/account_database, ui_act_remove_funds)
+	var/access_level = get_access_level()
+	if(access_level < 2)
+		return FALSE
+	var/amount = act_ask(ui.user, action, params, ui, "k169", /datum/om/prompt/number, message = "Enter the amount you wish to remove", title = "Silently remove funds")
+	if(isnull(amount))
+		return
+	if(detailed_account_view() && isnum(amount) && amount > 0)
+		detailed_account_view().debit(min(amount, detailed_account_view().money), ui.user.real_name, "Authorized account adjustment", machine_id)
+	return TRUE
 
-		if("toggle_suspension")
-			if(access_level < 2)
-				return FALSE
-			if(detailed_account_view())
-				detailed_account_view().suspended = !detailed_account_view().suspended
-				OM_EMIT_WORLD(/datum/om/event/world_payment_account_status, detailed_account_view())
+UI_ACT(/obj/machinery/account_database, "toggle_suspension", ui_act_toggle_suspension)
+UI_ACT_PROC(/obj/machinery/account_database, ui_act_toggle_suspension)
+	var/access_level = get_access_level()
+	if(access_level < 2)
+		return FALSE
+	if(detailed_account_view())
+		detailed_account_view().suspended = !detailed_account_view().suspended
+		OM_EMIT_WORLD(/datum/om/event/world_payment_account_status, detailed_account_view())
+	return TRUE
 
-		if("finalise_create_account")
-			var/account_name = params["holder_name"]
-			var/starting_funds = max(text2num(params["starting_funds"]), 0)
+UI_ACT(/obj/machinery/account_database, "finalise_create_account", ui_act_finalise_create_account, UI_ARG_TEXT("holder_name"), UI_ARG_NUM("starting_funds"))
+UI_ACT_PROC(/obj/machinery/account_database, ui_act_finalise_create_account)
+	var/account_name = params["holder_name"]
+	var/starting_funds = max(params["starting_funds"], 0)
 
-			starting_funds = CLAMP(starting_funds, 0, GLOB.station_account.money)	// Not authorized to put the station in debt.
-			starting_funds = min(starting_funds, fund_cap)						// Not authorized to give more than the fund cap.
+	starting_funds = CLAMP(starting_funds, 0, GLOB.station_account.money)	// Not authorized to put the station in debt.
+	starting_funds = min(starting_funds, fund_cap)						// Not authorized to give more than the fund cap.
 
-			if(!account_name)
-				return FALSE
-			if(!create_station_funded_account(account_name, starting_funds, src))
-				return FALSE
-			creating_new_account = 0
-		if("insert_card")
-			if(held_card)
-				held_card.forceMove(src.loc)
+	if(!account_name)
+		return FALSE
+	if(!create_station_funded_account(account_name, starting_funds, src))
+		return FALSE
+	creating_new_account = 0
+	return TRUE
 
-				if(ishuman(ui.user) && !ui.user.get_active_hand())
-					ui.user.put_in_hands(held_card)
-				own_take(src, "held_card")
+UI_ACT(/obj/machinery/account_database, "insert_card", ui_act_insert_card)
+UI_ACT_PROC(/obj/machinery/account_database, ui_act_insert_card)
+	if(held_card)
+		held_card.forceMove(src.loc)
 
-			else
-				var/obj/item/I = ui.user.get_active_hand()
-				if(istype(I, /obj/item/card/id))
-					var/obj/item/card/id/C = I
-					ui.user.drop_item()
-					C.forceMove(src)
-					own_set(src, "held_card", C)
+		if(ishuman(ui.user) && !ui.user.get_active_hand())
+			ui.user.put_in_hands(held_card)
+		own_take(src, "held_card")
 
-		if("view_account_detail")
-			var/index = text2num(params["account_index"])
-			if(index && index <= REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
-				rel_set(src, "detailed_account_view", REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)[index])
+	else
+		var/obj/item/I = ui.user.get_active_hand()
+		if(istype(I, /obj/item/card/id))
+			var/obj/item/card/id/C = I
+			ui.user.drop_item()
+			C.forceMove(src)
+			own_set(src, "held_card", C)
+	return TRUE
 
-		if("view_accounts_list")
-			rel_clear(src, "detailed_account_view")
-			creating_new_account = 0
+UI_ACT(/obj/machinery/account_database, "view_account_detail", ui_act_view_account_detail, UI_ARG_NUM("account_index"))
+UI_ACT_PROC(/obj/machinery/account_database, ui_act_view_account_detail)
+	var/index = params["account_index"]
+	if(index && index <= REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
+		rel_set(src, "detailed_account_view", REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)[index])
+	return TRUE
 
-		if("revoke_payroll")
-			if(access_level < 2 || !detailed_account_view() || detailed_account_view().is_budget_account)
-				return FALSE
-			var/funds = detailed_account_view().money
-			if(funds > 0)
-				transfer_account_funds(detailed_account_view(), GLOB.station_account, funds, "Revoke payroll", machine_id)
+UI_ACT(/obj/machinery/account_database, "view_accounts_list", ui_act_view_accounts_list)
+UI_ACT_PROC(/obj/machinery/account_database, ui_act_view_accounts_list)
+	rel_clear(src, "detailed_account_view")
+	creating_new_account = 0
+	return TRUE
 
+UI_ACT(/obj/machinery/account_database, "revoke_payroll", ui_act_revoke_payroll)
+UI_ACT_PROC(/obj/machinery/account_database, ui_act_revoke_payroll)
+	var/access_level = get_access_level()
+	if(access_level < 2 || !detailed_account_view() || detailed_account_view().is_budget_account)
+		return FALSE
+	var/funds = detailed_account_view().money
+	if(funds > 0)
+		transfer_account_funds(detailed_account_view(), GLOB.station_account, funds, "Revoke payroll", machine_id)
+	return TRUE
 
-		if("print")
-			print()
-
+UI_ACT(/obj/machinery/account_database, "print", ui_act_print)
+UI_ACT_PROC(/obj/machinery/account_database, ui_act_print)
+	print()
 	return TRUE
 
 /obj/machinery/account_database/proc/print()

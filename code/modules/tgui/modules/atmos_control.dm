@@ -23,32 +23,32 @@
 		for(var/obj/machinery/alarm/alarm as anything in dd_sortedObjectList(found))
 			rel_add(src, "monitored_alarms", alarm)
 
-/datum/tgui_module/atmos_control/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+/// The alarms this monitor shows (its own list, else every machine), for the UI's alarm refs.
+/datum/tgui_module/atmos_control/proc/alarm_sources()
+	return LAZYLEN(monitored_alarms) ? LAZYCOPY(monitored_alarms) : REGISTRY_MEMBERS(REGISTRY_MACHINES)
 
-	switch(action)
-		if("alarm")
-			if(ui_ref)
-				var/obj/machinery/alarm/alarm = locate_in_list((LAZYLEN(monitored_alarms) ? LAZYCOPY(monitored_alarms) : REGISTRY_MEMBERS(REGISTRY_MACHINES)), params["alarm"])
-				if(alarm)
-					var/datum/tgui_state/TS = generate_state(alarm)
-					alarm.tgui_interact(ui.user, parent_ui = ui_ref, state = TS)
-			return 1
-		if("setZLevel")
-			ui.set_map_z_level(params["mapZLevel"])
-			return TRUE
+UI_ACT(/datum/tgui_module/atmos_control, "alarm", ui_act_alarm, UI_ARG_REF("alarm", "proc:alarm_sources", /obj/machinery/alarm))
+UI_ACT_PROC(/datum/tgui_module/atmos_control, ui_act_alarm)
+	if(ui_ref)
+		var/obj/machinery/alarm/alarm = params["alarm"]
+		if(alarm)
+			var/datum/tgui_state/TS = generate_state(alarm)
+			alarm.tgui_interact(ui.user, parent_ui = ui_ref, custom_state = TS)
+	return 1
+
+UI_ACT(/datum/tgui_module/atmos_control, "setZLevel", ui_act_setzlevel, UI_ARG_NUM("mapZLevel"))
+UI_ACT_PROC(/datum/tgui_module/atmos_control, ui_act_setzlevel)
+	ui.set_map_z_level(params["mapZLevel"])
+	return TRUE
 
 /datum/tgui_module/atmos_control/ui_assets(mob/user)
 	. = ..()
 	. += get_asset_datum(/datum/asset/simple/holo_nanomap)
 
-/datum/tgui_module/atmos_control/tgui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, tgui_id, name)
-		ui.autoupdate = TRUE
-		ui.open()
+DECLARE_UI(/datum/tgui_module/atmos_control, UI_FROM_VAR("tgui_id"), UI_AUTOUPDATE)
+
+/datum/tgui_module/atmos_control/ui_opening(mob/user, datum/tgui/ui)
+	..()
 	ui_ref = ui
 
 /datum/tgui_module/atmos_control/tgui_static_data(mob/user)
@@ -73,7 +73,10 @@
 			"z" = alarm.z)
 	.["alarms"] = alarms
 
-/datum/tgui_module/atmos_control/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_module/atmos_control, "merge:ui_data_datum_tgui_module_atmos_control{map_levels:list}")
+
+/// The computed part of /datum/tgui_module/atmos_control's window data (declared on its UI_DATA row).
+/datum/tgui_module/atmos_control/proc/ui_data_datum_tgui_module_atmos_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	var/z = get_z(user)
@@ -111,8 +114,7 @@
 	ntos = TRUE
 
 /datum/tgui_module/atmos_control/robot
-/datum/tgui_module/atmos_control/robot/tgui_state(mob/user)
-	return GLOB.tgui_self_state
+DECLARE_UI_STATE(/datum/tgui_module/atmos_control/robot, GLOB.tgui_self_state)
 
 
 /// The atmos_control this refers to (a relation view: null once that is deleted).

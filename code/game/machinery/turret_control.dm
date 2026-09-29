@@ -142,13 +142,12 @@
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/turretid/tgui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PortableTurret", name, ui_x = 500, ui_y = 400) // 500, 400
-		ui.open()
+DECLARE_UI(/obj/machinery/turretid, "PortableTurret")
 
-/obj/machinery/turretid/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/turretid, "merge:ui_data_obj_machinery_turretid{locked:unknown,on:num,targetting_is_configurable:unknown,lethal:num,lethal_is_configurable:num,check_weapons:unknown,neutralize_noaccess:unknown,one_access:bool,selectedAccess:list,access_is_configurable:bool,neutralize_norecord:num,neutralize_criminals:num,neutralize_nonsynth:unknown,neutralize_all:unknown,neutralize_unidentified:unknown,neutralize_down:unknown}")
+
+/// The computed part of /obj/machinery/turretid's window data (declared on its UI_DATA row).
+/obj/machinery/turretid/proc/ui_data_obj_machinery_turretid(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list(
 		"locked" = isLocked(user), // does the current user have access?
 		"on" = enabled,
@@ -169,38 +168,88 @@
 	)
 	return data
 
-/obj/machinery/turretid/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return
+/obj/machinery/turretid/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(isLocked(ui.user))
-		return
+		return FALSE
+	return TRUE
 
+UI_ACT(/obj/machinery/turretid, "power", ui_act_power)
+UI_ACT_PROC(/obj/machinery/turretid, ui_act_power)
 	. = TRUE
-	switch(action)
-		if("power")
-			enabled = !enabled
-		if("lethal")
-			if(lethal_is_configurable)
-				lethal = !lethal
-	if(targetting_is_configurable)
-		switch(action)
-			if("authweapon")
-				check_weapons = !check_weapons
-			if("authaccess")
-				check_access = !check_access
-			if("authnorecord")
-				check_records = !check_records
-			if("autharrest")
-				check_arrest = !check_arrest
-			if("authxeno")
-				check_anomalies = !check_anomalies
-			if("authsynth")
-				check_synth = !check_synth
-			if("authall")
-				check_all = !check_all
-			if("authdown")
-				check_down = !check_down
+	enabled = !enabled
+	updateTurrets()
 
+UI_ACT(/obj/machinery/turretid, "lethal", ui_act_lethal)
+UI_ACT_PROC(/obj/machinery/turretid, ui_act_lethal)
+	. = TRUE
+	if(lethal_is_configurable)
+		lethal = !lethal
+	updateTurrets()
+
+UI_ACT(/obj/machinery/turretid, "authweapon", ui_act_authweapon)
+UI_ACT_PROC(/obj/machinery/turretid, ui_act_authweapon)
+	. = TRUE
+	if(!(targetting_is_configurable))
+		return FALSE
+	check_weapons = !check_weapons
+	updateTurrets()
+
+UI_ACT(/obj/machinery/turretid, "authaccess", ui_act_authaccess)
+UI_ACT_PROC(/obj/machinery/turretid, ui_act_authaccess)
+	. = TRUE
+	if(!(targetting_is_configurable))
+		return FALSE
+	check_access = !check_access
+	updateTurrets()
+
+UI_ACT(/obj/machinery/turretid, "authnorecord", ui_act_authnorecord)
+UI_ACT_PROC(/obj/machinery/turretid, ui_act_authnorecord)
+	. = TRUE
+	if(!(targetting_is_configurable))
+		return FALSE
+	check_records = !check_records
+	updateTurrets()
+
+UI_ACT(/obj/machinery/turretid, "autharrest", ui_act_autharrest)
+UI_ACT_PROC(/obj/machinery/turretid, ui_act_autharrest)
+	. = TRUE
+	if(!(targetting_is_configurable))
+		return FALSE
+	check_arrest = !check_arrest
+	updateTurrets()
+
+UI_ACT(/obj/machinery/turretid, "authxeno", ui_act_authxeno)
+UI_ACT_PROC(/obj/machinery/turretid, ui_act_authxeno)
+	. = TRUE
+	if(!(targetting_is_configurable))
+		return FALSE
+	check_anomalies = !check_anomalies
+	updateTurrets()
+
+UI_ACT(/obj/machinery/turretid, "authsynth", ui_act_authsynth)
+UI_ACT_PROC(/obj/machinery/turretid, ui_act_authsynth)
+	. = TRUE
+	if(!(targetting_is_configurable))
+		return FALSE
+	check_synth = !check_synth
+	updateTurrets()
+
+UI_ACT(/obj/machinery/turretid, "authall", ui_act_authall)
+UI_ACT_PROC(/obj/machinery/turretid, ui_act_authall)
+	. = TRUE
+	if(!(targetting_is_configurable))
+		return FALSE
+	check_all = !check_all
+	updateTurrets()
+
+UI_ACT(/obj/machinery/turretid, "authdown", ui_act_authdown)
+UI_ACT_PROC(/obj/machinery/turretid, ui_act_authdown)
+	. = TRUE
+	if(!(targetting_is_configurable))
+		return FALSE
+	check_down = !check_down
 	updateTurrets()
 
 /obj/machinery/turretid/proc/updateTurrets()

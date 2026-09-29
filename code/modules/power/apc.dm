@@ -805,13 +805,12 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 // TGUI
 // ─────────────────────────────────────────────────────────────────────────────
 
-/obj/machinery/power/apc/tgui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "APC", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/power/apc, "APC")
 
-/obj/machinery/power/apc/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/power/apc, "merge:ui_data_obj_machinery_power_apc{locked:num,normallyLocked:num,emagged:num,isOperating:num,externalPower:unknown,powerCellStatus:unknown,chargeMode:num,chargingStatus:num,totalLoad:num,totalCharging:num,failTime:num,gridCheck:num,coverLocked:num,siliconUser:bool,emergencyLights:bool,nightshiftLights:num,nightshiftSetting:unknown,powerChannels:listmap}")
+
+/// The computed part of /obj/machinery/power/apc's window data (declared on its UI_DATA row).
+/obj/machinery/power/apc/proc/ui_data_obj_machinery_power_apc(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list(
 		"locked"          = locked,
 		"normallyLocked"  = locked,
@@ -946,11 +945,9 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 		return 0
 	return 1
 
-/obj/machinery/power/apc/tgui_act(action, params, datum/tgui/ui)
-	wake_for_power_dependency()
-	if(..() || !can_use(ui.user, TRUE))
-		return TRUE
-
+/obj/machinery/power/apc/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	var/locked_exception = FALSE
 	if(siliconaccess(ui.user) || action == "nightshift")
 		locked_exception = TRUE
@@ -958,68 +955,109 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 		var/mob/observer/dead/D = ui.user
 		if(D.can_admin_interact())
 			locked_exception = TRUE
-
+	wake_for_power_dependency()
+	if(!can_use(ui.user, TRUE))
+		return FALSE
 	if(locked && !locked_exception)
-		return
+		return FALSE
+	return TRUE
 
+UI_ACT(/obj/machinery/power/apc, "lock", ui_act_lock)
+UI_ACT_PROC(/obj/machinery/power/apc, ui_act_lock)
 	. = TRUE
-	switch(action)
-		if("lock")
-			if(locked_exception)
-				if(emagged || (has_stat(BROKEN | MAINT)))
-					to_chat(ui.user, "The APC does not respond to the command.")
-					return
-				set_locked(!locked)
-				update_icon()
-		if("cover")
-			coverlocked = !coverlocked
-		if("breaker")
-			toggle_breaker()
-		if("nightshift")
-			if(!COOLDOWN_FINISHED(src, nightshift_switch_cooldown))
-				to_chat(ui.user, span_warning("[src]'s night lighting circuit breaker is still cycling!"))
-				return 0
-			var/requested_nightshift = text2num("[params["nightshift"]]")
-			if(requested_nightshift < NIGHTSHIFT_AUTO || requested_nightshift > NIGHTSHIFT_ALWAYS)
-				return 0
-			if(requested_nightshift == nightshift_setting)
-				return 0
-			COOLDOWN_START(src, nightshift_switch_cooldown, 1 SECOND)
-			nightshift_setting = requested_nightshift
-			update_nightshift()
-		if("charge")
-			chargemode = !chargemode
-			if(!chargemode)
-				charging = 0
-				update_icon()
-			power_sync()
-		if("channel")
-			if(params["eqp"])
-				equipment = setsubsystem(text2num(params["eqp"]))
-				set_channels(0, equipment)
-			else if(params["lgt"])
-				lighting = setsubsystem(text2num(params["lgt"]))
-				set_channels(1, lighting)
-			else if(params["env"])
-				environ = setsubsystem(text2num(params["env"]))
-				set_channels(2, environ)
-			update_icon()
-			update()
-		if("reboot")
-			failure_timer = 0
-			failure_until = 0
-			update_icon()
-			update()
-		if("emergency_lighting")
-			emergency_lights = !emergency_lights
-			for(var/obj/machinery/light/L in area())
-				if(!initial(L.no_emergency))
-					L.no_emergency = emergency_lights
-					L.update(FALSE)
-				CHECK_TICK
-		if("overload")
-			if(locked_exception)
-				overload_lighting()
+	var/locked_exception = FALSE
+	if(siliconaccess(ui.user) || action == "nightshift")
+		locked_exception = TRUE
+	if(isobserver(ui.user))
+		var/mob/observer/dead/D = ui.user
+		if(D.can_admin_interact())
+			locked_exception = TRUE
+	if(locked_exception)
+		if(emagged || (has_stat(BROKEN | MAINT)))
+			to_chat(ui.user, "The APC does not respond to the command.")
+			return
+		set_locked(!locked)
+		update_icon()
+
+UI_ACT(/obj/machinery/power/apc, "cover", ui_act_cover)
+UI_ACT_PROC(/obj/machinery/power/apc, ui_act_cover)
+	. = TRUE
+	coverlocked = !coverlocked
+
+UI_ACT(/obj/machinery/power/apc, "breaker", ui_act_breaker)
+UI_ACT_PROC(/obj/machinery/power/apc, ui_act_breaker)
+	. = TRUE
+	toggle_breaker()
+
+UI_ACT(/obj/machinery/power/apc, "nightshift", ui_act_nightshift, UI_ARG_NUM("nightshift"))
+UI_ACT_PROC(/obj/machinery/power/apc, ui_act_nightshift)
+	. = TRUE
+	if(!COOLDOWN_FINISHED(src, nightshift_switch_cooldown))
+		to_chat(ui.user, span_warning("[src]'s night lighting circuit breaker is still cycling!"))
+		return 0
+	var/requested_nightshift = params["nightshift"]
+	if(requested_nightshift < NIGHTSHIFT_AUTO || requested_nightshift > NIGHTSHIFT_ALWAYS)
+		return 0
+	if(requested_nightshift == nightshift_setting)
+		return 0
+	COOLDOWN_START(src, nightshift_switch_cooldown, 1 SECOND)
+	nightshift_setting = requested_nightshift
+	update_nightshift()
+
+UI_ACT(/obj/machinery/power/apc, "charge", ui_act_charge)
+UI_ACT_PROC(/obj/machinery/power/apc, ui_act_charge)
+	. = TRUE
+	chargemode = !chargemode
+	if(!chargemode)
+		charging = 0
+		update_icon()
+	power_sync()
+
+UI_ACT(/obj/machinery/power/apc, "channel", ui_act_channel, UI_ARG_NUM("env"), UI_ARG_NUM("eqp"), UI_ARG_NUM("lgt"))
+UI_ACT_PROC(/obj/machinery/power/apc, ui_act_channel)
+	. = TRUE
+	if(params["eqp"])
+		equipment = setsubsystem(params["eqp"])
+		set_channels(0, equipment)
+	else if(params["lgt"])
+		lighting = setsubsystem(params["lgt"])
+		set_channels(1, lighting)
+	else if(params["env"])
+		environ = setsubsystem(params["env"])
+		set_channels(2, environ)
+	update_icon()
+	update()
+
+UI_ACT(/obj/machinery/power/apc, "reboot", ui_act_reboot)
+UI_ACT_PROC(/obj/machinery/power/apc, ui_act_reboot)
+	. = TRUE
+	failure_timer = 0
+	failure_until = 0
+	update_icon()
+	update()
+
+UI_ACT(/obj/machinery/power/apc, "emergency_lighting", ui_act_emergency_lighting)
+UI_ACT_PROC(/obj/machinery/power/apc, ui_act_emergency_lighting)
+	. = TRUE
+	emergency_lights = !emergency_lights
+	for(var/obj/machinery/light/L in area())
+		if(!initial(L.no_emergency))
+			L.no_emergency = emergency_lights
+			L.update(FALSE)
+		CHECK_TICK
+
+UI_ACT(/obj/machinery/power/apc, "overload", ui_act_overload)
+UI_ACT_PROC(/obj/machinery/power/apc, ui_act_overload)
+	. = TRUE
+	var/locked_exception = FALSE
+	if(siliconaccess(ui.user) || action == "nightshift")
+		locked_exception = TRUE
+	if(isobserver(ui.user))
+		var/mob/observer/dead/D = ui.user
+		if(D.can_admin_interact())
+			locked_exception = TRUE
+	if(locked_exception)
+		overload_lighting()
 
 /obj/machinery/power/apc/proc/toggle_breaker()
 	wake_for_power_dependency()

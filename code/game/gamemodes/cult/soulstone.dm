@@ -49,36 +49,36 @@ DECLARE_INTERACTIONS(/obj/item/soulstone, INTERACT_USE(null, PROC_REF(interactio
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/soulstone/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Soulstone", "Soul Stone")
-		ui.open()
+DECLARE_UI(/obj/item/soulstone, "Soulstone", UI_TITLE("Soul Stone"))
 
-/obj/item/soulstone/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/soulstone, "merge:ui_data_obj_item_soulstone{has_shade:bool,shade_name:text}")
+
+/// The computed part of /obj/item/soulstone's window data (declared on its UI_DATA row).
+/obj/item/soulstone/proc/ui_data_obj_item_soulstone(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/mob/living/simple_mob/construct/shade/A = locate_within(src, /mob/living/simple_mob/construct/shade)
 	data["has_shade"] = !!A
 	data["shade_name"] = A ? A.name : ""
 	return data
 
-/obj/item/soulstone/tgui_act(action, list/params)
-	. = ..()
-	if(.)
-		return
+/obj/item/soulstone/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!in_range(src, usr))
-		return TRUE
+		return FALSE
 	add_fingerprint(usr)
-	switch(action)
-		if("summon")
-			for(var/mob/living/simple_mob/construct/shade/A in contents_of(src))
-				A.disable_godmode()
-				A.canmove = 1
-				to_chat(A, span_infoplain(span_bold("You have been released from your prison, but you are still bound to [usr.name]'s will. Help them suceed in their goals at all costs.")))
-				A.forceMove(usr.loc)
-				A.cancel_camera()
-				icon_state = "soulstone"
-			return TRUE
+	return TRUE
+
+UI_ACT(/obj/item/soulstone, "summon", ui_act_summon)
+UI_ACT_PROC(/obj/item/soulstone, ui_act_summon)
+	for(var/mob/living/simple_mob/construct/shade/A in contents_of(src))
+		A.disable_godmode()
+		A.canmove = 1
+		to_chat(A, span_infoplain(span_bold("You have been released from your prison, but you are still bound to [usr.name]'s will. Help them suceed in their goals at all costs.")))
+		A.forceMove(usr.loc)
+		A.cancel_camera()
+		icon_state = "soulstone"
+	return TRUE
 
 ///////////////////////////Transferring to constructs/////////////////////////////////////////////////////
 /obj/structure/constructshell

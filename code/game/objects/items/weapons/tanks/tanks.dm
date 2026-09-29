@@ -268,16 +268,14 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 		src.proxyassembly.assembly.attack_self(user)
 	return TRUE
 
-/obj/item/tank/tgui_state(mob/user)
-	return GLOB.tgui_deep_inventory_state
+DECLARE_UI_STATE(/obj/item/tank, GLOB.tgui_deep_inventory_state)
 
-/obj/item/tank/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Tank", name)
-		ui.open()
+DECLARE_UI(/obj/item/tank, "Tank")
 
-/obj/item/tank/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/tank, "merge:ui_data_obj_item_tank{tankPressure:num,releasePressure:num,defaultReleasePressure:num,minReleasePressure:num,maxReleasePressure:num,connected:bool,maskConnected:bool}")
+
+/// The computed part of /obj/item/tank's window data (declared on its UI_DATA row).
+/obj/item/tank/proc/ui_data_obj_item_tank(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["tankPressure"] = round(air_contents.return_pressure() ? air_contents.return_pressure() : 0)
 	data["releasePressure"] = round(distribute_pressure ? distribute_pressure : 0)
@@ -306,30 +304,28 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 
 	return data
 
-/obj/item/tank/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
-	switch(action)
-		if("pressure")
-			var/pressure = params["pressure"]
-			if(pressure == "reset")
-				pressure = TANK_DEFAULT_RELEASE_PRESSURE
-				. = TRUE
-			else if(pressure == "min")
-				pressure = 0
-				. = TRUE
-			else if(pressure == "max")
-				pressure = TANK_MAX_RELEASE_PRESSURE
-				. = TRUE
-			else if(text2num(pressure) != null)
-				pressure = text2num(pressure)
-				. = TRUE
-			if(.)
-				distribute_pressure = clamp(round(pressure), 0, TANK_MAX_RELEASE_PRESSURE)
-		if("toggle")
-			toggle_valve(ui.user)
-			. = TRUE
+UI_ACT(/obj/item/tank, "pressure", ui_act_pressure, UI_ARG_VALUE("pressure"))
+UI_ACT_PROC(/obj/item/tank, ui_act_pressure)
+	var/pressure = params["pressure"]
+	if(pressure == "reset")
+		pressure = TANK_DEFAULT_RELEASE_PRESSURE
+		. = TRUE
+	else if(pressure == "min")
+		pressure = 0
+		. = TRUE
+	else if(pressure == "max")
+		pressure = TANK_MAX_RELEASE_PRESSURE
+		. = TRUE
+	else if(isnum(pressure))
+		. = TRUE
+	if(.)
+		distribute_pressure = clamp(round(pressure), 0, TANK_MAX_RELEASE_PRESSURE)
+	add_fingerprint(ui.user)
 
+UI_ACT(/obj/item/tank, "toggle", ui_act_toggle)
+UI_ACT_PROC(/obj/item/tank, ui_act_toggle)
+	toggle_valve(ui.user)
+	. = TRUE
 	add_fingerprint(ui.user)
 
 /obj/item/tank/proc/toggle_valve(mob/user)

@@ -90,17 +90,15 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/anodevice/tgui_state(mob/user)
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/anodevice, GLOB.tgui_inventory_state)
 
-/obj/item/anodevice/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "XenoarchHandheldPowerUtilizer", name)
-		ui.open()
+DECLARE_UI(/obj/item/anodevice, "XenoarchHandheldPowerUtilizer")
 
-/obj/item/anodevice/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/anodevice, "merge:ui_data_obj_item_anodevice{inserted_battery:unknown,anomaly:text,charge:num,capacity:num,timeleft:num,activated:num,duration:num,interval:num}")
+
+/// The computed part of /obj/item/anodevice's window data (declared on its UI_DATA row).
+/obj/item/anodevice/proc/ui_data_obj_item_anodevice(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["inserted_battery"] = inserted_battery()
 	data["anomaly"] = null
@@ -121,41 +119,45 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 
 	return data
 
-/obj/item/anodevice/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/item/anodevice, "changeduration", ui_act_changeduration, UI_ARG_NUM("duration", 0, 300))
+UI_ACT_PROC(/obj/item/anodevice, ui_act_changeduration)
+	duration = params["duration"]
+	if(activated)
+		arm_emission_timer()
+	return TRUE
 
-	switch(action)
-		if("changeduration")
-			duration = clamp(text2num(params["duration"]), 0, 300)
-			if(activated)
-				arm_emission_timer()
-			return TRUE
-		if("changeinterval")
-			interval = clamp(text2num(params["interval"]), 0, 100)
-			return TRUE
-		if("startup")
-			if(inserted_battery() && inserted_battery().battery_effect && (inserted_battery().stored_charge > 0))
-				activated = TRUE
-				om_task_periodic(src, PERIODIC_SLOW)
-				visible_message(span_blue("[icon2html(src,viewers(src))] [src] whirrs."), span_blue("[icon2html(src,viewers(src))]You hear something whirr."))
-				if(!inserted_battery().battery_effect.activated)
-					inserted_battery().battery_effect.ToggleActivate(1)
-				arm_emission_timer()
-				EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
-			else
-				to_chat(ui.user, span_warning("[src] is unable to start due to no anomolous power source inserted/remaining."))
-			return TRUE
-		if("shutdown")
-			activated = FALSE
-			return TRUE
-		if("ejectbattery")
-			if(inserted_battery())
-				inserted_battery().forceMove(get_turf(src))
-				rel_clear(src, "inserted_battery")
-				UpdateSprite()
-			shutdown_emission()
-			return TRUE
+UI_ACT(/obj/item/anodevice, "changeinterval", ui_act_changeinterval, UI_ARG_NUM("interval", 0, 100))
+UI_ACT_PROC(/obj/item/anodevice, ui_act_changeinterval)
+	interval = params["interval"]
+	return TRUE
+
+UI_ACT(/obj/item/anodevice, "startup", ui_act_startup)
+UI_ACT_PROC(/obj/item/anodevice, ui_act_startup)
+	if(inserted_battery() && inserted_battery().battery_effect && (inserted_battery().stored_charge > 0))
+		activated = TRUE
+		om_task_periodic(src, PERIODIC_SLOW)
+		visible_message(span_blue("[icon2html(src,viewers(src))] [src] whirrs."), span_blue("[icon2html(src,viewers(src))]You hear something whirr."))
+		if(!inserted_battery().battery_effect.activated)
+			inserted_battery().battery_effect.ToggleActivate(1)
+		arm_emission_timer()
+		EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
+	else
+		to_chat(ui.user, span_warning("[src] is unable to start due to no anomolous power source inserted/remaining."))
+	return TRUE
+
+UI_ACT(/obj/item/anodevice, "shutdown", ui_act_shutdown)
+UI_ACT_PROC(/obj/item/anodevice, ui_act_shutdown)
+	activated = FALSE
+	return TRUE
+
+UI_ACT(/obj/item/anodevice, "ejectbattery", ui_act_ejectbattery)
+UI_ACT_PROC(/obj/item/anodevice, ui_act_ejectbattery)
+	if(inserted_battery())
+		inserted_battery().forceMove(get_turf(src))
+		rel_clear(src, "inserted_battery")
+		UpdateSprite()
+	shutdown_emission()
+	return TRUE
 
 /// Runs its battery effect every 2 s while activated (its "startup" starts it); off, it sleeps.
 /obj/item/anodevice/periodic_step()

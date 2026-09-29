@@ -352,18 +352,19 @@ update_flag
 		disconnect()
 	replace_with(src, /obj/item/stack/material/steel, 10)
 
-/obj/machinery/portable_atmospherics/canister/tgui_state(mob/user)
-	return GLOB.tgui_physical_state
+DECLARE_UI_STATE(/obj/machinery/portable_atmospherics/canister, GLOB.tgui_physical_state)
 
-/obj/machinery/portable_atmospherics/canister/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/obj/machinery/portable_atmospherics/canister, "Canister")
+
+/obj/machinery/portable_atmospherics/canister/ui_prepare(mob/user, datum/tgui/ui)
 	if(destroyed)
-		return
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Canister", name)
-		ui.open()
+		return FALSE
+	return TRUE
 
-/obj/machinery/portable_atmospherics/canister/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/portable_atmospherics/canister, "merge:ui_data_obj_machinery_portable_atmospherics_canister{can_relabel:num,connected:num,pressure:num,releasePressure:num,defaultReleasePressure:num,minReleasePressure:num,maxReleasePressure:num,valveOpen:num,holding:list}")
+
+/// The computed part of /obj/machinery/portable_atmospherics/canister's window data (declared on its UI_DATA row).
+/obj/machinery/portable_atmospherics/canister/proc/ui_data_obj_machinery_portable_atmospherics_canister(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["can_relabel"] = can_label ? 1 : 0
 	data["connected"] = connected_port() ? 1 : 0
@@ -383,69 +384,75 @@ update_flag
 
 	return data
 
-/obj/machinery/portable_atmospherics/canister/tgui_act(action, params, datum/tgui/ui)
-	if(..())
+UI_ACT(/obj/machinery/portable_atmospherics/canister, "relabel", ui_act_relabel)
+UI_ACT_PROC(/obj/machinery/portable_atmospherics/canister, ui_act_relabel)
+	if(can_label)
+		var/list/colors = list(\
+			"\[N2O\]" = "redws", \
+			"\[N2\]" = "red", \
+			"\[O2\]" = "blue", \
+			"\[Phoron\]" = "orangeps", \
+			"\[CO2\]" = "black", \
+			"\[CH4\]" = "green", \
+			"\[Air\]" = "grey", \
+			"\[CAUTION\]" = "yellow", \
+		)
+		om_ask(ui.user, /datum/om/prompt/choice/canister_label, PROC_REF(label_chosen), choices = colors)
+	add_fingerprint(ui.user)
+	update_icon()
+
+UI_ACT(/obj/machinery/portable_atmospherics/canister, "pressure", ui_act_pressure, UI_ARG_NUM("pressure"))
+UI_ACT_PROC(/obj/machinery/portable_atmospherics/canister, ui_act_pressure)
+	var/pressure = params["pressure"]
+	if(pressure == "reset")
+		pressure = initial(release_pressure)
+		. = TRUE
+	else if(pressure == "min")
+		pressure = ONE_ATMOSPHERE/10
+		. = TRUE
+	else if(pressure == "max")
+		pressure = 10*ONE_ATMOSPHERE
+		. = TRUE
+	else if(pressure == "input")
+		om_ask(ui.user, /datum/om/prompt/number/canister_pressure, PROC_REF(release_pressure_entered), title = name, default = release_pressure, ui_refresh = src)
 		return TRUE
+	else if(isnum(pressure))
+		. = TRUE
+	if(.)
+		release_pressure = clamp(round(pressure), ONE_ATMOSPHERE/10, 10*ONE_ATMOSPHERE)
+	add_fingerprint(ui.user)
+	update_icon()
 
-	switch(action)
-		if("relabel")
-			if(can_label)
-				var/list/colors = list(\
-					"\[N2O\]" = "redws", \
-					"\[N2\]" = "red", \
-					"\[O2\]" = "blue", \
-					"\[Phoron\]" = "orangeps", \
-					"\[CO2\]" = "black", \
-					"\[CH4\]" = "green", \
-					"\[Air\]" = "grey", \
-					"\[CAUTION\]" = "yellow", \
-				)
-				om_ask(ui.user, /datum/om/prompt/choice/canister_label, PROC_REF(label_chosen), choices = colors)
-		if("pressure")
-			var/pressure = params["pressure"]
-			if(pressure == "reset")
-				pressure = initial(release_pressure)
-				. = TRUE
-			else if(pressure == "min")
-				pressure = ONE_ATMOSPHERE/10
-				. = TRUE
-			else if(pressure == "max")
-				pressure = 10*ONE_ATMOSPHERE
-				. = TRUE
-			else if(pressure == "input")
-				om_ask(ui.user, /datum/om/prompt/number/canister_pressure, PROC_REF(release_pressure_entered), title = name, default = release_pressure, ui_refresh = src)
-				return TRUE
-			else if(text2num(pressure) != null)
-				pressure = text2num(pressure)
-				. = TRUE
-			if(.)
-				release_pressure = clamp(round(pressure), ONE_ATMOSPHERE/10, 10*ONE_ATMOSPHERE)
-		if("valve")
-			if(valve_open)
-				if(holding)
-					release_log += "Valve was " + span_bold("closed") + " by [ui.user] ([ui.user.ckey]), stopping the transfer into the [holding]<br>"
-				else
-					release_log += "Valve was " + span_bold("closed") + " by [ui.user] ([ui.user.ckey]), stopping the transfer into the " + span_red(span_bold("air")) + "<br>"
-			else
-				if(holding)
-					release_log += "Valve was " + span_bold("opened") + " by [ui.user] ([ui.user.ckey]), starting the transfer into the [holding]<br>"
-				else
-					release_log += "Valve was " + span_bold("opened") + " by [ui.user] ([ui.user.ckey]), starting the transfer into the " + span_red(span_bold("air")) + "<br>"
-					log_open()
-			set_valve_open(!valve_open)
-			om_changed(src, CHANGE_MACHINE_SETTINGS)
-			. = TRUE
-		if("eject")
-			if(holding)
-				if(valve_open)
-					set_valve_open(0)
-					release_log += "Valve was " + span_bold("closed") + " by [ui.user] ([ui.user.ckey]), stopping the transfer into the [holding]<br>"
-				if(istype(holding, /obj/item/tank))
-					holding.manipulated_by = ui.user.real_name
-				holding.forceMove(loc)
-				own_take(src, "holding")
-			. = TRUE
+UI_ACT(/obj/machinery/portable_atmospherics/canister, "valve", ui_act_valve)
+UI_ACT_PROC(/obj/machinery/portable_atmospherics/canister, ui_act_valve)
+	if(valve_open)
+		if(holding)
+			release_log += "Valve was " + span_bold("closed") + " by [ui.user] ([ui.user.ckey]), stopping the transfer into the [holding]<br>"
+		else
+			release_log += "Valve was " + span_bold("closed") + " by [ui.user] ([ui.user.ckey]), stopping the transfer into the " + span_red(span_bold("air")) + "<br>"
+	else
+		if(holding)
+			release_log += "Valve was " + span_bold("opened") + " by [ui.user] ([ui.user.ckey]), starting the transfer into the [holding]<br>"
+		else
+			release_log += "Valve was " + span_bold("opened") + " by [ui.user] ([ui.user.ckey]), starting the transfer into the " + span_red(span_bold("air")) + "<br>"
+			log_open()
+	set_valve_open(!valve_open)
+	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	. = TRUE
+	add_fingerprint(ui.user)
+	update_icon()
 
+UI_ACT(/obj/machinery/portable_atmospherics/canister, "eject", ui_act_eject)
+UI_ACT_PROC(/obj/machinery/portable_atmospherics/canister, ui_act_eject)
+	if(holding)
+		if(valve_open)
+			set_valve_open(0)
+			release_log += "Valve was " + span_bold("closed") + " by [ui.user] ([ui.user.ckey]), stopping the transfer into the [holding]<br>"
+		if(istype(holding, /obj/item/tank))
+			holding.manipulated_by = ui.user.real_name
+		holding.forceMove(loc)
+		own_take(src, "holding")
+	. = TRUE
 	add_fingerprint(ui.user)
 	update_icon()
 

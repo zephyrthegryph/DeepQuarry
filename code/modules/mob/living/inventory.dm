@@ -189,7 +189,7 @@
 
 	if(!inventory_panel)
 		own_set(src, "inventory_panel", new inventory_panel_type(src))
-	inventory_panel.tgui_interact(user, null, state)
+	inventory_panel.tgui_interact(user, custom_state = state)
 
 	return TRUE
 
@@ -207,8 +207,7 @@
 /datum/inventory_panel/tgui_host(mob/user)
 	return host.tgui_host()
 
-/datum/inventory_panel/tgui_state(mob/user)
-	return GLOB.tgui_physical_state
+DECLARE_UI_STATE(/datum/inventory_panel, GLOB.tgui_physical_state)
 
 /datum/inventory_panel/tgui_status(mob/user, datum/tgui_state/state)
 	if(!host)
@@ -217,25 +216,22 @@
 		return STATUS_CLOSE
 	return ..()
 
-/datum/inventory_panel/tgui_interact(mob/user, datum/tgui/ui, datum/tgui_state/custom_state)
+DECLARE_UI(/datum/inventory_panel, UI_FROM_VAR("tgui_id"))
+
+/datum/inventory_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(!host)
 		qdel(src)
-		return
-	// This looks kinda complicated, but it's just making sure that the correct state is definitely set
-	// before calling open(), so that there isn't any accidental UI closes
-	var/open = FALSE
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, tgui_id, host.name)
-		open = TRUE
-	if(custom_state)
-		ui.set_state(custom_state)
-	if(open)
-		ui.open()
-	return ui
+		return FALSE
+	return TRUE
 
-/datum/inventory_panel/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+/datum/inventory_panel/ui_title(mob/user)
+	return host.name
+
+UI_DATA(/datum/inventory_panel, "merge:ui_data_datum_inventory_panel{slots:list,internals:unknown,internalsValid:bool}")
+
+/// The computed part of /datum/inventory_panel's window data (declared on its UI_DATA row).
+/datum/inventory_panel/proc/ui_data_datum_inventory_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/list/slots = list()
 	slots.Add(list(list(
@@ -270,14 +266,7 @@
 
 	return data
 
-/datum/inventory_panel/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
 
-	// If anyone wants the inventory panel to actually work,
-	// add code to handle actions "mask", "l_hand", "r_hand", "back", "pockets", and "internals" here
-	// No mobs other than humans actually supported stripping or putting stuff on before the /datum/inventory_panel was
-	// created, so feature parity demands not adding that and risking breaking stuff
 
 /datum/inventory_panel/human
 	tgui_id = "InventoryPanelHuman"
@@ -288,23 +277,21 @@
 		return
 	return ..() // Let our parent assign the host.
 
-/datum/inventory_panel/human/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
+UI_ACT(/datum/inventory_panel/human, "targetSlot", ui_act_targetslot, UI_ARG_TEXT("slot"))
+UI_ACT_PROC(/datum/inventory_panel/human, ui_act_targetslot)
 	var/mob/living/carbon/human/H = host
-
-	switch(action)
-		if("targetSlot")
-			H.handle_strip(params["slot"], ui.user)
-			return TRUE
+	H.handle_strip(params["slot"], ui.user)
+	return TRUE
 
 /datum/inventory_panel/human/ui_assets(mob/user)
 	return list(
 		get_asset_datum(/datum/asset/simple/inventory)
 	)
 
-/datum/inventory_panel/human/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/inventory_panel/human, "merge:ui_data_datum_inventory_panel_human{slots:list,specialSlots:list,internals:unknown,internalsValid:bool,sensors:bool,handcuffed:bool,handcuffedParams:listmap,legcuffed:bool,legcuffedParams:listmap,accessory:bool}")
+
+/// The computed part of /datum/inventory_panel/human's window data (declared on its UI_DATA row).
+/datum/inventory_panel/human/proc/ui_data_datum_inventory_panel_human(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list() // We don't inherit TGUI data because humans are soooo different.
 
 	var/mob/living/carbon/human/H = host // Not my fault if this runtimes, a human inventory panel should never be created without a human attached.

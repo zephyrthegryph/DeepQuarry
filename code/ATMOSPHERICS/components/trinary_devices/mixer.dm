@@ -121,15 +121,13 @@
 
 	return 1
 
-/obj/machinery/atmospherics/trinary/mixer/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AtmosMixer", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/atmospherics/trinary/mixer, "AtmosMixer")
 
-/obj/machinery/atmospherics/trinary/mixer/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/atmospherics/trinary/mixer, "on=use_power", "merge:ui_data_obj_machinery_atmospherics_trinary_mixer{set_pressure:num,max_pressure:num,node1_concentration:num,node2_concentration:num,node1_dir:text,node2_dir:text}")
+
+/// The computed part of /obj/machinery/atmospherics/trinary/mixer's window data (declared on its UI_DATA row).
+/obj/machinery/atmospherics/trinary/mixer/proc/ui_data_obj_machinery_atmospherics_trinary_mixer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["on"] = use_power
 	data["set_pressure"] = round(set_flow_rate)
 	data["max_pressure"] = min(air1.return_volume(), air2.return_volume())
 	data["node1_concentration"] = round(node1_concentration*100, 1)
@@ -139,34 +137,41 @@
 	data["node2_dir"] = dir_name(node_connects[2],TRUE)
 	return data
 
-/obj/machinery/atmospherics/trinary/mixer/tgui_act(action, params)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/atmospherics/trinary/mixer, "power", ui_act_power)
+UI_ACT_PROC(/obj/machinery/atmospherics/trinary/mixer, ui_act_power)
+	set_use_power(!use_power)
+	. = TRUE
+	update_icon()
+	MACHINE_WAKE(src) // settings: re-evaluate the mix now
 
-	switch(action)
-		if("power")
-			set_use_power(!use_power)
-			. = TRUE
-		if("pressure")
-			var/pressure = params["pressure"]
-			if(pressure == "max")
-				pressure = min(air1.return_volume(), air2.return_volume())
-				. = TRUE
-			else if(text2num(pressure) != null)
-				pressure = text2num(pressure)
-				. = TRUE
-			if(.)
-				set_flow_rate = clamp(pressure, 0, min(air1.return_volume(), air2.return_volume()))
-		if("node1")
-			var/value = text2num(params["concentration"])
-			node1_concentration = max(0, min(1, value / 100))
-			node2_concentration = 1.0 - node1_concentration
-			. = TRUE
-		if("node2")
-			var/value = text2num(params["concentration"])
-			node2_concentration = max(0, min(1, value / 100))
-			node1_concentration = 1.0 - node2_concentration
-			. = TRUE
+UI_ACT(/obj/machinery/atmospherics/trinary/mixer, "pressure", ui_act_pressure, UI_ARG_VALUE("pressure"))
+UI_ACT_PROC(/obj/machinery/atmospherics/trinary/mixer, ui_act_pressure)
+	var/pressure = params["pressure"]
+	if(pressure == "max")
+		pressure = min(air1.return_volume(), air2.return_volume())
+		. = TRUE
+	else if(isnum(pressure))
+		. = TRUE
+	if(.)
+		set_flow_rate = clamp(pressure, 0, min(air1.return_volume(), air2.return_volume()))
+	update_icon()
+	MACHINE_WAKE(src) // settings: re-evaluate the mix now
+
+UI_ACT(/obj/machinery/atmospherics/trinary/mixer, "node1", ui_act_node1, UI_ARG_NUM("concentration"))
+UI_ACT_PROC(/obj/machinery/atmospherics/trinary/mixer, ui_act_node1)
+	var/value = params["concentration"]
+	node1_concentration = max(0, min(1, value / 100))
+	node2_concentration = 1.0 - node1_concentration
+	. = TRUE
+	update_icon()
+	MACHINE_WAKE(src) // settings: re-evaluate the mix now
+
+UI_ACT(/obj/machinery/atmospherics/trinary/mixer, "node2", ui_act_node2, UI_ARG_NUM("concentration"))
+UI_ACT_PROC(/obj/machinery/atmospherics/trinary/mixer, ui_act_node2)
+	var/value = params["concentration"]
+	node2_concentration = max(0, min(1, value / 100))
+	node1_concentration = 1.0 - node2_concentration
+	. = TRUE
 	update_icon()
 	MACHINE_WAKE(src) // settings: re-evaluate the mix now
 

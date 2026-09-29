@@ -126,112 +126,112 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 	held_type = /obj/item/stamp
 	effect = /obj/machinery/requests_console/proc/interaction_stamp
 
-/obj/machinery/requests_console/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "RequestConsole", "[department] Request Console")
-		ui.open()
+DECLARE_UI(/obj/machinery/requests_console, "RequestConsole")
 
-/obj/machinery/requests_console/tgui_data(mob/user)
-	var/list/data = ..()
-	data["department"] = department
-	data["screen"] = screen
+/obj/machinery/requests_console/ui_title(mob/user)
+	return "[department] Request Console"
+
+UI_DATA(/obj/machinery/requests_console, "department:text", "screen:num", "newmessagepriority:num", "silent:num", "announcementConsole:num", "message:text", "recipient:text", "priority:num", "msgStamped:text", "msgVerified:text", "announceAuth:num", "merge:ui_data_obj_machinery_requests_console{message_log:bool,assist_dept:unknown,supply_dept:unknown,info_dept:unknown}")
+
+/// The computed part of /obj/machinery/requests_console's window data (declared on its UI_DATA row).
+/obj/machinery/requests_console/proc/ui_data_obj_machinery_requests_console(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["message_log"] = (message_log || list())
-	data["newmessagepriority"] = newmessagepriority
-	data["silent"] = silent
-	data["announcementConsole"] = announcementConsole
 
 	data["assist_dept"] = GLOB.req_console_assistance
 	data["supply_dept"] = GLOB.req_console_supplies
 	data["info_dept"]   = GLOB.req_console_information
 
-	data["message"] = message
-	data["recipient"] = recipient
-	data["priority"] = priority
-	data["msgStamped"] = msgStamped
-	data["msgVerified"] = msgVerified
-	data["announceAuth"] = announceAuth
 	return data
 
-/obj/machinery/requests_console/tgui_act(action, list/params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
+/obj/machinery/requests_console/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(ui.user)
+	return TRUE
 
-	switch(action)
-		if("write")
-			if(reject_bad_text(params["write"]))
-				recipient = params["write"] //write contains the string of the receiving department's name
+UI_ACT(/obj/machinery/requests_console, "write", ui_act_write, UI_ARG_NUM("priority"), UI_ARG_TEXT("write"))
+UI_ACT_PROC(/obj/machinery/requests_console, ui_act_write)
+	if(reject_bad_text(params["write"]))
+		recipient = params["write"] //write contains the string of the receiving department's name
 
-				om_ask(ui.user, /datum/om/prompt/text/request_message, PROC_REF(message_written), priority = params["priority"])
-				. = TRUE
+		om_ask(ui.user, /datum/om/prompt/text/request_message, PROC_REF(message_written), priority = params["priority"])
+		. = TRUE
 
-		if("writeAnnouncement")
-			om_ask(ui.user, /datum/om/prompt/text/request_message, PROC_REF(announcement_written))
-			. = TRUE
+UI_ACT(/obj/machinery/requests_console, "writeAnnouncement", ui_act_writeannouncement)
+UI_ACT_PROC(/obj/machinery/requests_console, ui_act_writeannouncement)
+	om_ask(ui.user, /datum/om/prompt/text/request_message, PROC_REF(announcement_written))
+	. = TRUE
 
-		if("sendAnnouncement")
-			if(!announcementConsole)
-				return FALSE
-			announcement.Announce(message, msg_sanitized = 1)
-			reset_message(1)
-			. = TRUE
+UI_ACT(/obj/machinery/requests_console, "sendAnnouncement", ui_act_sendannouncement)
+UI_ACT_PROC(/obj/machinery/requests_console, ui_act_sendannouncement)
+	if(!announcementConsole)
+		return FALSE
+	announcement.Announce(message, msg_sanitized = 1)
+	reset_message(1)
+	. = TRUE
 
-		if("department")
-			if(!message)
-				return FALSE
-			var/log_msg = message
-			var/pass = 0
-			screen = RCS_SENTFAIL
-			for(var/obj/machinery/message_server/MS in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-				if(!MS.active)
-					continue
-				MS.send_rc_message(ckey(params["department"]), department, log_msg, msgStamped, msgVerified, priority)
-				pass = 1
-			if(pass)
-				screen = RCS_SENTPASS
-				LAZYADD(message_log, list(list("Message sent to [recipient]", "[message]")))
-			else
-				audible_message(text("[icon2html(src,viewers(src))] *The Requests Console beeps: 'NOTICE: No server detected!'"),,4)
-			. = TRUE
+UI_ACT(/obj/machinery/requests_console, "department", ui_act_department, UI_ARG_TEXT("department"))
+UI_ACT_PROC(/obj/machinery/requests_console, ui_act_department)
+	if(!message)
+		return FALSE
+	var/log_msg = message
+	var/pass = 0
+	screen = RCS_SENTFAIL
+	for(var/obj/machinery/message_server/MS in REGISTRY_MEMBERS(REGISTRY_MACHINES))
+		if(!MS.active)
+			continue
+		MS.send_rc_message(ckey(params["department"]), department, log_msg, msgStamped, msgVerified, priority)
+		pass = 1
+	if(pass)
+		screen = RCS_SENTPASS
+		LAZYADD(message_log, list(list("Message sent to [recipient]", "[message]")))
+	else
+		audible_message(text("[icon2html(src,viewers(src))] *The Requests Console beeps: 'NOTICE: No server detected!'"),,4)
+	. = TRUE
 
-		//Handle printing
-		if("print")
-			var/print_index = text2num(params["print"])
-			if(!print_index || print_index < 1 || print_index > length(message_log))
-				return
-			var/msg = LAZYACCESS(message_log, print_index)
-			if(msg)
-				msg = span_bold("[msg[1]]:") + "<br>[msg[2]]"
-				msg = replacetext(msg, "<BR>", "\n")
-				msg = strip_html_properly(msg)
-				var/obj/item/paper/R = new(src.loc)
-				R.name = "[department] Message"
-				R.info = "<H3>[department] Requests Console</H3><div>[msg]</div>"
-				. = TRUE
+//Handle printing
 
-		//Handle screen switching
-		if("setScreen")
-			var/tempScreen = text2num(params["setScreen"])
-			if(tempScreen == RCS_ANNOUNCE && !announcementConsole)
-				return
-			if(tempScreen == RCS_VIEWMSGS)
-				for (var/obj/machinery/requests_console/Console in REGISTRY_MEMBERS(REGISTRY_ALARM_CONSOLES))
-					if(Console.department == department)
-						Console.newmessagepriority = 0
-						Console.update_icon()
-			if(tempScreen == RCS_MAINMENU)
-				reset_message()
-			screen = tempScreen
-			. = TRUE
+UI_ACT(/obj/machinery/requests_console, "print", ui_act_print, UI_ARG_NUM("print"))
+UI_ACT_PROC(/obj/machinery/requests_console, ui_act_print)
+	var/print_index = params["print"]
+	if(!print_index || print_index < 1 || print_index > length(message_log))
+		return
+	var/msg = LAZYACCESS(message_log, print_index)
+	if(msg)
+		msg = span_bold("[msg[1]]:") + "<br>[msg[2]]"
+		msg = replacetext(msg, "<BR>", "\n")
+		msg = strip_html_properly(msg)
+		var/obj/item/paper/R = new(src.loc)
+		R.name = "[department] Message"
+		R.info = "<H3>[department] Requests Console</H3><div>[msg]</div>"
+		. = TRUE
 
-		//Handle silencing the console
-		if("toggleSilent")
-			silent = !silent
-			. = TRUE
+//Handle screen switching
 
-					//err... hacking code, which has no reason for existing... but anyway... it was once supposed to unlock priority 3 messaging on that console (EXTREME priority...), but the code for that was removed.
+UI_ACT(/obj/machinery/requests_console, "setScreen", ui_act_setscreen, UI_ARG_NUM("setScreen"))
+UI_ACT_PROC(/obj/machinery/requests_console, ui_act_setscreen)
+	var/tempScreen = params["setScreen"]
+	if(tempScreen == RCS_ANNOUNCE && !announcementConsole)
+		return
+	if(tempScreen == RCS_VIEWMSGS)
+		for (var/obj/machinery/requests_console/Console in REGISTRY_MEMBERS(REGISTRY_ALARM_CONSOLES))
+			if(Console.department == department)
+				Console.newmessagepriority = 0
+				Console.update_icon()
+	if(tempScreen == RCS_MAINMENU)
+		reset_message()
+	screen = tempScreen
+	. = TRUE
+
+//Handle silencing the console
+
+UI_ACT(/obj/machinery/requests_console, "toggleSilent", ui_act_togglesilent)
+UI_ACT_PROC(/obj/machinery/requests_console, ui_act_togglesilent)
+	silent = !silent
+	. = TRUE
+
+			//err... hacking code, which has no reason for existing... but anyway... it was once supposed to unlock priority 3 messaging on that console (EXTREME priority...), but the code for that was removed.
 
 /datum/om/prompt/text/request_message
 	title = "Awaiting Input"

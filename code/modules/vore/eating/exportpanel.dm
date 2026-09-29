@@ -5,23 +5,19 @@
 /datum/vore_look/export_panel/proc/open_export_panel(mob/user)
 	tgui_interact(user)
 
-/datum/vore_look/export_panel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "VorePanelExport", "Vore Export Panel")
-		ui.open()
-		ui.set_autoupdate(FALSE)
+DECLARE_UI(/datum/vore_look/export_panel, "VorePanelExport", UI_TITLE("Vore Export Panel"))
 
 /datum/vore_look/export_panel/tgui_fallback(payload)
 	if(..())
 		return TRUE
 
 
-/datum/vore_look/export_panel/tgui_act(action, params)
-	if(..())
-		return TRUE
 
-/datum/vore_look/export_panel/tgui_data(mob/user)
+
+UI_DATA_REPLACE(/datum/vore_look/export_panel, "merge:ui_data_datum_vore_look_export_panel{db_version:text,db_repo:text,mob_name:num,bellies:list,soulcatcher:list}")
+
+/// The computed part of /datum/vore_look/export_panel's window data (declared on its UI_DATA row).
+/datum/vore_look/export_panel/proc/ui_data_datum_vore_look_export_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/mob/living/host = user
 

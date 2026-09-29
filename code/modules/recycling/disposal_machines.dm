@@ -471,61 +471,68 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	update_icon()
 
 // user interaction
-/obj/machinery/disposal/tgui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "DisposalBin")
-		ui.open()
+DECLARE_UI(/obj/machinery/disposal, "DisposalBin")
 
-/obj/machinery/disposal/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/disposal, "flushing=flush", "merge:ui_data_obj_machinery_disposal{isAI:num,mode:num,pressure:num}")
+
+/// The computed part of /obj/machinery/disposal's window data (declared on its UI_DATA row).
+/obj/machinery/disposal/proc/ui_data_obj_machinery_disposal(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["isAI"] = isAI(user)
-	data["flushing"] = flush
 	data["mode"] = mode
 	data["pressure"] = round(clamp(100* air_contents.return_pressure() / (SEND_PRESSURE), 0, 100),1)
 
 	return data
 
-/obj/machinery/disposal/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return
-
+/obj/machinery/disposal/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(ui.user.loc == src)
 		to_chat(ui.user, span_warning("You cannot reach the controls from inside."))
-		return TRUE
-
+		return FALSE
 	if(mode == DISPOSALMODE_EJECTONLY && action != "eject") // If the mode is -1, only allow ejection
 		to_chat(ui.user, span_warning("The disposal units power is disabled."))
-		return
-
+		return FALSE
 	if(has_stat(BROKEN))
-		return
-
+		return FALSE
 	add_fingerprint(ui.user)
-
 	if(flushing)
-		return
+		return FALSE
+	return TRUE
 
-	switch(action)
-		if("pumpOn")
-			set_mode(DISPOSALMODE_CHARGING)
-			update_icon()
-		if("pumpOff")
-			set_mode(DISPOSALMODE_OFF)
-			update_icon()
-
-		if("engageHandle")
-			flush = TRUE
-			update_icon()
-		if("disengageHandle")
-			flush = FALSE
-			update_icon()
-
-		if("eject")
-			eject()
+UI_ACT(/obj/machinery/disposal, "pumpOn", ui_act_pumpon)
+UI_ACT_PROC(/obj/machinery/disposal, ui_act_pumpon)
+	set_mode(DISPOSALMODE_CHARGING)
+	update_icon()
 	wake_for_state_change()
+	return TRUE
 
+UI_ACT(/obj/machinery/disposal, "pumpOff", ui_act_pumpoff)
+UI_ACT_PROC(/obj/machinery/disposal, ui_act_pumpoff)
+	set_mode(DISPOSALMODE_OFF)
+	update_icon()
+	wake_for_state_change()
+	return TRUE
+
+UI_ACT(/obj/machinery/disposal, "engageHandle", ui_act_engagehandle)
+UI_ACT_PROC(/obj/machinery/disposal, ui_act_engagehandle)
+	flush = TRUE
+	update_icon()
+	wake_for_state_change()
+	return TRUE
+
+UI_ACT(/obj/machinery/disposal, "disengageHandle", ui_act_disengagehandle)
+UI_ACT_PROC(/obj/machinery/disposal, ui_act_disengagehandle)
+	flush = FALSE
+	update_icon()
+	wake_for_state_change()
+	return TRUE
+
+UI_ACT(/obj/machinery/disposal, "eject", ui_act_eject)
+UI_ACT_PROC(/obj/machinery/disposal, ui_act_eject)
+	eject()
+	wake_for_state_change()
 	return TRUE
 
 // eject the contents of the disposal unit

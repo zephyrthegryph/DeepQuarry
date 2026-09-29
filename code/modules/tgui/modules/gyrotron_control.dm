@@ -5,50 +5,48 @@
 	var/gyro_tag = ""
 	var/scan_range = 25
 
-/datum/tgui_module/gyrotron_control/tgui_act(action, params, datum/tgui/ui)
-	if(..())
+/// The devices this console controls, for the UI's refs.
+/datum/tgui_module/gyrotron_control/proc/gyrotrons()
+	return REGISTRY_MEMBERS(REGISTRY_GYROTRONS)
+
+UI_ACT(/datum/tgui_module/gyrotron_control, "set_tag", ui_act_set_tag)
+UI_ACT_PROC(/datum/tgui_module/gyrotron_control, ui_act_set_tag)
+	var/_answer_a1 = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "Enter a new ident tag.", title = "Gyrotron Control", default = gyro_tag)
+	if(isnull(_answer_a1))
+		return
+	var/new_ident = sanitize_text(_answer_a1)
+	if(new_ident)
+		gyro_tag = new_ident
+	return TRUE
+
+UI_ACT(/datum/tgui_module/gyrotron_control, "toggle_active", ui_act_toggle_active, UI_ARG_REF("gyro", "proc:gyrotrons", /obj/machinery/power/emitter/gyrotron))
+UI_ACT_PROC(/datum/tgui_module/gyrotron_control, ui_act_toggle_active)
+	var/obj/machinery/power/emitter/gyrotron/G = params["gyro"]
+	if(!G)
 		return TRUE
+	G.activate(ui.user)
+	return TRUE
 
-	// If the command requires a gyrotron, and we can't find it, we don't need to check any further
-	var/obj/machinery/power/emitter/gyrotron/G = null
-	if(params["gyro"])
-		G = locate_in_list(REGISTRY_MEMBERS(REGISTRY_GYROTRONS), params["gyro"])
-		if(!istype(G))
-			return FALSE
+UI_ACT(/datum/tgui_module/gyrotron_control, "set_str", ui_act_set_str, UI_ARG_REF("gyro", "proc:gyrotrons", /obj/machinery/power/emitter/gyrotron), UI_ARG_NUM("str"))
+UI_ACT_PROC(/datum/tgui_module/gyrotron_control, ui_act_set_str)
+	var/obj/machinery/power/emitter/gyrotron/G = params["gyro"]
+	var/new_strength = params["str"]
+	if(new_strength && G)
+		G.set_beam_power(new_strength)
+	return TRUE
 
-	switch(action)
-		if("set_tag")
-			var/_answer_a1 = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "Enter a new ident tag.", title = "Gyrotron Control", default = gyro_tag)
-			if(isnull(_answer_a1))
-				return
-			var/new_ident = sanitize_text(_answer_a1)
-			if(new_ident)
-				gyro_tag = new_ident
-			return TRUE
+UI_ACT(/datum/tgui_module/gyrotron_control, "set_rate", ui_act_set_rate, UI_ARG_REF("gyro", "proc:gyrotrons", /obj/machinery/power/emitter/gyrotron), UI_ARG_NUM("rate"))
+UI_ACT_PROC(/datum/tgui_module/gyrotron_control, ui_act_set_rate)
+	var/obj/machinery/power/emitter/gyrotron/G = params["gyro"]
+	var/new_delay = params["rate"]
+	if(new_delay && G)
+		G.rate = new_delay
+	return TRUE
 
-		if("toggle_active")
-			if(!G)
-				return TRUE
-			G.activate(ui.user)
-			return TRUE
+UI_DATA_REPLACE(/datum/tgui_module/gyrotron_control, "merge:ui_data_datum_tgui_module_gyrotron_control{gyros:list}")
 
-		if("set_str")
-			var/new_strength = params["str"]
-			if(istext(new_strength))
-				new_strength = text2num(new_strength)
-			if(new_strength && G)
-				G.set_beam_power(new_strength)
-			return TRUE
-
-		if("set_rate")
-			var/new_delay = params["rate"]
-			if(istext(new_delay))
-				new_delay = text2num(new_delay)
-			if(new_delay && G)
-				G.rate = new_delay
-			return TRUE
-
-/datum/tgui_module/gyrotron_control/tgui_data(mob/user)
+/// The computed part of /datum/tgui_module/gyrotron_control's window data (declared on its UI_DATA row).
+/datum/tgui_module/gyrotron_control/proc/ui_data_datum_tgui_module_gyrotron_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/gyros = list()
 

@@ -208,20 +208,20 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 /obj/machinery/oxygen_pump/proc/oxygen_pump_settings(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 
-/obj/machinery/oxygen_pump/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
+DECLARE_UI(/obj/machinery/oxygen_pump, "Tank")
+
+/obj/machinery/oxygen_pump/ui_prepare(mob/user, datum/tgui/ui)
 	if(!tank)
 		to_chat(user, span_warning("[src] is missing a tank."))
-		if(ui)
-			ui.close()
-		return
+		return FALSE
 
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Tank", name)
-		ui.open()
+	return TRUE
 
-/obj/machinery/oxygen_pump/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/oxygen_pump, "merge:ui_data_obj_machinery_oxygen_pump{showToggle:bool,maskConnected:bool,tankPressure:num,releasePressure:num,defaultReleasePressure:num,minReleasePressure:num,maxReleasePressure:num}")
+
+/// The computed part of /obj/machinery/oxygen_pump's window data (declared on its UI_DATA row).
+/obj/machinery/oxygen_pump/proc/ui_data_obj_machinery_oxygen_pump(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["showToggle"] = FALSE
 	data["maskConnected"] = !!breather()
@@ -239,27 +239,22 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 
 	return data
 
-/obj/machinery/oxygen_pump/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
-	switch(action)
-		if("pressure")
-			var/pressure = params["pressure"]
-			if(pressure == "reset")
-				pressure = TANK_DEFAULT_RELEASE_PRESSURE
-				. = TRUE
-			else if(pressure == "min")
-				pressure = 0
-				. = TRUE
-			else if(pressure == "max")
-				pressure = TANK_MAX_RELEASE_PRESSURE
-				. = TRUE
-			else if(text2num(pressure) != null)
-				pressure = text2num(pressure)
-				. = TRUE
-			if(.)
-				tank.distribute_pressure = clamp(round(pressure), 0, TANK_MAX_RELEASE_PRESSURE)
+UI_ACT(/obj/machinery/oxygen_pump, "pressure", ui_act_pressure, UI_ARG_VALUE("pressure"))
+UI_ACT_PROC(/obj/machinery/oxygen_pump, ui_act_pressure)
+	var/pressure = params["pressure"]
+	if(pressure == "reset")
+		pressure = TANK_DEFAULT_RELEASE_PRESSURE
+		. = TRUE
+	else if(pressure == "min")
+		pressure = 0
+		. = TRUE
+	else if(pressure == "max")
+		pressure = TANK_MAX_RELEASE_PRESSURE
+		. = TRUE
+	else if(isnum(pressure))
+		. = TRUE
+	if(.)
+		tank.distribute_pressure = clamp(round(pressure), 0, TANK_MAX_RELEASE_PRESSURE)
 
 /obj/machinery/oxygen_pump/anesthetic
 	name = "anesthetic pump"

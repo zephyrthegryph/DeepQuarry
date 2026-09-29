@@ -276,33 +276,25 @@ DAMAGE_REACTION(/obj/machinery/gravity_generator, DAMAGE_BLOB, PROC_REF(gravgen_
 	atom_fix()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/gravity_generator/main/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "GravityGenerator", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/gravity_generator/main, "GravityGenerator")
 
-/obj/machinery/gravity_generator/main/tgui_data(mob/user)
-	var/data[0]
+UI_DATA_REPLACE(/obj/machinery/gravity_generator/main, "breaker:num", "charge_count:num", "charging_state", "merge:ui_data_obj_machinery_gravity_generator_main{on:num,operational:bool}")
 
-	data["breaker"] = breaker
-	data["charge_count"] = charge_count
-	data["charging_state"] = charging_state
+/// The computed part of /obj/machinery/gravity_generator/main's window data (declared on its UI_DATA row).
+/obj/machinery/gravity_generator/main/proc/ui_data_obj_machinery_gravity_generator_main(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["on"] = on
 	data["operational"] = (has_stat(BROKEN)) ? FALSE : TRUE
 
 	return data
 
-/obj/machinery/gravity_generator/main/tgui_act(action, params, datum/tgui/ui)
-	if((..()))
-		return TRUE
-
-	switch(action)
-		if("gentoggle")
-			breaker = !breaker
-			investigate_log("was toggled [breaker ? span_green("ON") : span_red("OFF")] by [key_name(ui.user)].", "gravity")
-			set_power()
-			return TOPIC_REFRESH
+UI_ACT(/obj/machinery/gravity_generator/main, "gentoggle", ui_act_gentoggle)
+UI_ACT_PROC(/obj/machinery/gravity_generator/main, ui_act_gentoggle)
+	breaker = !breaker
+	investigate_log("was toggled [breaker ? span_green("ON") : span_red("OFF")] by [key_name(ui.user)].", "gravity")
+	set_power()
+	return TOPIC_REFRESH
 
 // Power and Icon States
 

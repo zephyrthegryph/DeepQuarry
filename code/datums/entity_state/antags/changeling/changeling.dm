@@ -438,21 +438,19 @@ DECLARE_INTERACTIONS(/obj/item/changeling_debug, INTERACT_USE(null, PROC_REF(int
 /datum/changeling_panel
 	var/datum/changeling/comp
 
-/datum/changeling_panel/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/changeling_panel, GLOB.tgui_always_state)
 
 /datum/changeling_panel/tgui_status(mob/user)
 	if(!isliving(user)) //We ghosted or something.
 		return STATUS_CLOSE
 	return ..()
 
-/datum/changeling_panel/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src,"ChangelingPanel", "Changeling Evolution Panel", parent_ui)
-		ui.open()
+DECLARE_UI(/datum/changeling_panel, "ChangelingPanel", UI_TITLE("Changeling Evolution Panel"))
 
-/datum/changeling_panel/tgui_data(mob/living/carbon/human/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/changeling_panel, "merge:ui_data_datum_changeling_panel{available_points:num,power_list:list}")
+
+/// The computed part of /datum/changeling_panel's window data (declared on its UI_DATA row).
+/datum/changeling_panel/proc/ui_data_datum_changeling_panel(mob/living/carbon/human/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/power_list = list()
 
@@ -470,14 +468,9 @@ DECLARE_INTERACTIONS(/obj/item/changeling_debug, INTERACT_USE(null, PROC_REF(int
 
 	return data
 
-/datum/changeling_panel/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
-	switch(action)
-		if("evolve_power")
-			comp().purchasePower(comp().owner, params["val"]) //The power must be the power's NAME.
-			return TRUE
+UI_ACT(/datum/changeling_panel, "evolve_power", ui_act_evolve_power, UI_ARG_TEXT("val"))
+UI_ACT_PROC(/datum/changeling_panel, ui_act_evolve_power)
+	comp().purchasePower(comp().owner, params["val"]) //The power must be the power's NAME.
 	return TRUE
 
 /// The changeling this panel shows (a relation view).

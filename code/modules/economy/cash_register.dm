@@ -132,14 +132,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		scan_item_price(O, user)
 	return TRUE
 
-/obj/machinery/cash_register/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
-	. = ..()
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "RetailScanner", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/cash_register, "RetailScanner")
 
-/obj/machinery/cash_register/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/machinery/cash_register, "merge:ui_data_obj_machinery_cash_register{locked:num,cash_locked:num,linked_account:text,machine_id:text,department_checkout:unknown,subsidized_checkout:unknown,transaction_logs:unknown,current_transactioon:unknown}")
+
+/// The computed part of /obj/machinery/cash_register's window data (declared on its UI_DATA row).
+/obj/machinery/cash_register/proc/ui_data_obj_machinery_cash_register(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/department_checkout = linked_account?.is_department_budget()
 	return list(
 		"locked" = locked,
@@ -152,143 +150,170 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		"current_transactioon" = get_current_transaction()
 	)
 
-/obj/machinery/cash_register/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
+UI_ACT(/obj/machinery/cash_register, "toggle_lock", ui_act_toggle_lock)
+UI_ACT_PROC(/obj/machinery/cash_register, ui_act_toggle_lock)
+	if(allowed(ui.user))
+		set_locked(!locked)
+		return TRUE
+	to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_warning("Insufficient access."))
+	return FALSE
 
-	switch(action)
-		if("toggle_lock")
-			if(allowed(ui.user))
-				set_locked(!locked)
-				return TRUE
-			to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_warning("Insufficient access."))
-			return FALSE
-		if("refund_transaction")
-			if(locked || !linked_account?.is_department_budget() || !service_refund_authorized(ui.user, linked_account))
-				return FALSE
-			var/datum/service_invoice/invoice = GLOB.supply_service.get_service_invoice(text2num(params["invoice_id"] || params["log_id"]))
-			return GLOB.supply_service.refund_service_invoice(invoice, linked_account, machine_id, ui.user)
-	return access_action(action, params, ui.user)
+UI_ACT(/obj/machinery/cash_register, "refund_transaction", ui_act_refund_transaction, UI_ARG_NUM("invoice_id"), UI_ARG_NUM("log_id"))
+UI_ACT_PROC(/obj/machinery/cash_register, ui_act_refund_transaction)
+	if(locked || !linked_account?.is_department_budget() || !service_refund_authorized(ui.user, linked_account))
+		return FALSE
+	var/datum/service_invoice/invoice = GLOB.supply_service.get_service_invoice(params["invoice_id"] || params["log_id"])
+	return GLOB.supply_service.refund_service_invoice(invoice, linked_account, machine_id, ui.user)
 
-/obj/machinery/cash_register/proc/access_action(action, list/params, mob/user)
+UI_ACT(/obj/machinery/cash_register, "toggle_cash_lock", ui_act_toggle_cash_lock)
+UI_ACT_PROC(/obj/machinery/cash_register, ui_act_toggle_cash_lock)
 	if(locked)
 		return FALSE
+	cash_locked = !cash_locked
 
-	switch(action)
-		if("toggle_cash_lock")
-			cash_locked = !cash_locked
-		if("link_account")
-			var/attempt_account_num = text2num(params["name"])
-			if(isnull(attempt_account_num))
-				return FALSE
-			var/attempt_pin = text2num(params["pin"])
-			if(isnull(attempt_pin))
-				return FALSE
-			var/datum/money_account/new_account = attempt_account_access(attempt_account_num, attempt_pin, 1)
-			if(new_account)
-				if(new_account.suspended)
-					visible_message("[icon2html(src, viewers(src))]" + span_warning("Account has been suspended."))
-					return FALSE
-				var/provider_changed = linked_account != new_account
-				rel_set(src, "linked_account", new_account)
-				if(provider_changed)
-					reset_memory()
-				else
-					ticket_changed()
-				return TRUE
-			to_chat(user, "[icon2html(src, user.client)]" + span_warning("Account not found."))
+UI_ACT(/obj/machinery/cash_register, "link_account", ui_act_link_account, UI_ARG_NUM("name"), UI_ARG_NUM("pin"))
+UI_ACT_PROC(/obj/machinery/cash_register, ui_act_link_account)
+	if(locked)
+		return FALSE
+	var/attempt_account_num = params["name"]
+	if(isnull(attempt_account_num))
+		return FALSE
+	var/attempt_pin = params["pin"]
+	if(isnull(attempt_pin))
+		return FALSE
+	var/datum/money_account/new_account = attempt_account_access(attempt_account_num, attempt_pin, 1)
+	if(new_account)
+		if(new_account.suspended)
+			visible_message("[icon2html(src, viewers(src))]" + span_warning("Account has been suspended."))
 			return FALSE
-		if("custom_order")
-			var/t_purpose = sanitize(params["purpose"], 200)
-			if (!t_purpose)
-				return FALSE
-			var/amount = params["amount"]
-			if(!isnum(amount))
-				return FALSE
-			amount = CLAMP(round(amount), 1, 20)
-			var/price = params["price"]
-			if(!isnum(price) || price <= 0)
-				return FALSE
-			price = CLAMP(round(price), 1, 1000000)
-			if(item_list[t_purpose])
-				if(price_list[t_purpose] != price || item_list[t_purpose] + amount > 20)
-					return FALSE
-				item_list[t_purpose] += amount
-			else
-				if(length(item_list) >= 10)
-					return FALSE
-				item_list[t_purpose] = amount
-			price_list[t_purpose] = price
-			capture_service_staff(user)
-			rebuild_ticket()
+		var/provider_changed = linked_account != new_account
+		rel_set(src, "linked_account", new_account)
+		if(provider_changed)
+			reset_memory()
+		else
 			ticket_changed()
-			play_sfx(src, SFX_MACHINES_TWOBEEP, 0.5, vary = FALSE)
-			visible_message("[icon2html(src, viewers(src))][t_purpose][amount > 1 ? " [amount] x" : ""]: [amount * price] Thaler\s.")
-			return TRUE
-		if("set_amount")
-			var/item_name = params["item"]
-			if(!item_name)
-				return FALSE
-			var/n_amount = text2num(params["amount"])
-			if(!isnum(n_amount))
-				return FALSE
-			n_amount = CLAMP(n_amount, 0, 20)
-			if(!item_list[item_name])
-				return FALSE
-			if(!n_amount)
-				item_list -= item_name
-				price_list -= item_name
-				rebuild_ticket()
-				ticket_changed()
-				return TRUE
-			item_list[item_name] = n_amount
-			rebuild_ticket()
-			ticket_changed()
-			return TRUE
-		if("subtract")
-			var/item_name = params["item"]
-			if(!item_name || !item_list[item_name] || !isnum(price_list[item_name]))
-				return FALSE
-			item_list[item_name]--
-			if(item_list[item_name] <= 0)
-				item_list -= item_name
-				price_list -= item_name
-			rebuild_ticket()
-			ticket_changed()
-			return TRUE
-		if("add")
-			var/item_name = params["item"]
-			if(!item_name || !item_list[item_name] || !isnum(price_list[item_name]))
-				return FALSE
-			if(item_list[item_name] >= 20)
-				return FALSE
-			item_list[item_name]++
-			rebuild_ticket()
-			ticket_changed()
-			return TRUE
-		if("clear")
-			var/item_name = params["item"]
-			if(!item_name || !item_list[item_name] || !isnum(price_list[item_name]))
-				return FALSE
-			item_list -= item_name
-			price_list -= item_name
-			rebuild_ticket()
-			ticket_changed()
-			return TRUE
-		if("clear_entry")
-			item_list.Cut()
-			price_list.Cut()
-			verified_sale_items = null
-			rebuild_ticket()
-			ticket_changed()
-			return TRUE
-		if("reset_log")
-			if(linked_account?.department_id == DEPARTMENT_CIVILIAN)
-				return FALSE
-			LAZYCLEARLIST(transaction_logs)
-			to_chat(user, "[icon2html(src, user.client)]" + span_notice("Transaction log reset."))
-			return TRUE
+		return TRUE
+	to_chat(user, "[icon2html(src, user.client)]" + span_warning("Account not found."))
+	return FALSE
+
+UI_ACT(/obj/machinery/cash_register, "custom_order", ui_act_custom_order, UI_ARG_NUM("amount"), UI_ARG_NUM("price"), UI_ARG_TEXT("purpose"))
+UI_ACT_PROC(/obj/machinery/cash_register, ui_act_custom_order)
+	if(locked)
+		return FALSE
+	var/t_purpose = sanitize(params["purpose"], 200)
+	if (!t_purpose)
+		return FALSE
+	var/amount = params["amount"]
+	if(!isnum(amount))
+		return FALSE
+	amount = CLAMP(round(amount), 1, 20)
+	var/price = params["price"]
+	if(!isnum(price) || price <= 0)
+		return FALSE
+	price = CLAMP(round(price), 1, 1000000)
+	if(item_list[t_purpose])
+		if(price_list[t_purpose] != price || item_list[t_purpose] + amount > 20)
+			return FALSE
+		item_list[t_purpose] += amount
+	else
+		if(length(item_list) >= 10)
+			return FALSE
+		item_list[t_purpose] = amount
+	price_list[t_purpose] = price
+	capture_service_staff(user)
+	rebuild_ticket()
+	ticket_changed()
+	play_sfx(src, SFX_MACHINES_TWOBEEP, 0.5, vary = FALSE)
+	visible_message("[icon2html(src, viewers(src))][t_purpose][amount > 1 ? " [amount] x" : ""]: [amount * price] Thaler\s.")
+	return TRUE
+
+UI_ACT(/obj/machinery/cash_register, "set_amount", ui_act_set_amount, UI_ARG_NUM("amount"), UI_ARG_TEXT("item"))
+UI_ACT_PROC(/obj/machinery/cash_register, ui_act_set_amount)
+	if(locked)
+		return FALSE
+	var/item_name = params["item"]
+	if(!item_name)
+		return FALSE
+	var/n_amount = params["amount"]
+	if(!isnum(n_amount))
+		return FALSE
+	n_amount = CLAMP(n_amount, 0, 20)
+	if(!item_list[item_name])
+		return FALSE
+	if(!n_amount)
+		item_list -= item_name
+		price_list -= item_name
+		rebuild_ticket()
+		ticket_changed()
+		return TRUE
+	item_list[item_name] = n_amount
+	rebuild_ticket()
+	ticket_changed()
+	return TRUE
+
+UI_ACT(/obj/machinery/cash_register, "subtract", ui_act_subtract, UI_ARG_NUM("item"))
+UI_ACT_PROC(/obj/machinery/cash_register, ui_act_subtract)
+	if(locked)
+		return FALSE
+	var/item_name = params["item"]
+	if(!item_name || !item_list[item_name] || !isnum(price_list[item_name]))
+		return FALSE
+	item_list[item_name]--
+	if(item_list[item_name] <= 0)
+		item_list -= item_name
+		price_list -= item_name
+	rebuild_ticket()
+	ticket_changed()
+	return TRUE
+
+UI_ACT(/obj/machinery/cash_register, "add", ui_act_add, UI_ARG_NUM("item"))
+UI_ACT_PROC(/obj/machinery/cash_register, ui_act_add)
+	if(locked)
+		return FALSE
+	var/item_name = params["item"]
+	if(!item_name || !item_list[item_name] || !isnum(price_list[item_name]))
+		return FALSE
+	if(item_list[item_name] >= 20)
+		return FALSE
+	item_list[item_name]++
+	rebuild_ticket()
+	ticket_changed()
+	return TRUE
+
+UI_ACT(/obj/machinery/cash_register, "clear", ui_act_clear, UI_ARG_NUM("item"))
+UI_ACT_PROC(/obj/machinery/cash_register, ui_act_clear)
+	if(locked)
+		return FALSE
+	var/item_name = params["item"]
+	if(!item_name || !item_list[item_name] || !isnum(price_list[item_name]))
+		return FALSE
+	item_list -= item_name
+	price_list -= item_name
+	rebuild_ticket()
+	ticket_changed()
+	return TRUE
+
+UI_ACT(/obj/machinery/cash_register, "clear_entry", ui_act_clear_entry)
+UI_ACT_PROC(/obj/machinery/cash_register, ui_act_clear_entry)
+	if(locked)
+		return FALSE
+	item_list.Cut()
+	price_list.Cut()
+	verified_sale_items = null
+	rebuild_ticket()
+	ticket_changed()
+	return TRUE
+
+UI_ACT(/obj/machinery/cash_register, "reset_log", ui_act_reset_log)
+UI_ACT_PROC(/obj/machinery/cash_register, ui_act_reset_log)
+	if(locked)
+		return FALSE
+	if(linked_account?.department_id == DEPARTMENT_CIVILIAN)
+		return FALSE
+	LAZYCLEARLIST(transaction_logs)
+	to_chat(user, "[icon2html(src, user.client)]" + span_notice("Transaction log reset."))
+	return TRUE
+
 
 /obj/machinery/cash_register/wrench_act(mob/user, obj/item/tool)
 	toggle_anchors(tool, user)

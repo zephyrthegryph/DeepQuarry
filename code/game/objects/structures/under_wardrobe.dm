@@ -36,13 +36,12 @@
 /obj/structure/undies_wardrobe/interact(mob/living/carbon/human/H)
 	tgui_interact(H)
 
-/obj/structure/undies_wardrobe/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "UndiesWardrobe", "Underwear Dresser")
-		ui.open()
+DECLARE_UI(/obj/structure/undies_wardrobe, "UndiesWardrobe", UI_TITLE("Underwear Dresser"))
 
-/obj/structure/undies_wardrobe/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/structure/undies_wardrobe, "merge:ui_data_obj_structure_undies_wardrobe{categories:list}")
+
+/// The computed part of /obj/structure/undies_wardrobe's window data (declared on its UI_DATA row).
+/obj/structure/undies_wardrobe/proc/ui_data_obj_structure_undies_wardrobe(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/cats = list()
 	if(!ishuman(user))
@@ -111,32 +110,47 @@
 	H.hide_underwear[category] = FALSE
 	H.update_underwear()
 
-/obj/structure/undies_wardrobe/tgui_act(action, list/params)
-	. = ..()
-	if(.)
-		return
+/obj/structure/undies_wardrobe/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!ishuman(usr))
-		return
+		return FALSE
+	return TRUE
+
+UI_ACT(/obj/structure/undies_wardrobe, "remove_underwear", ui_act_remove_underwear, UI_ARG_TEXT("category"))
+UI_ACT_PROC(/obj/structure/undies_wardrobe, ui_act_remove_underwear)
 	var/mob/living/carbon/human/H = usr
 	var/changed = FALSE
-	switch(action)
-		if("remove_underwear")
-			if(params["category"] in H.all_underwear)
-				LAZYREMOVE(H.all_underwear, params["category"])
-				changed = TRUE
-		if("change_underwear")
-			var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[params["category"]]
-			if(!UWC)
-				return TRUE
-			om_ask(H, /datum/om/prompt/choice/underwear, PROC_REF(underwear_chosen), choices = UWC.items, default = LAZYACCESS(H.all_underwear, UWC.name), category = UWC.name)
-		if("tweak")
-			var/underwear = params["category"]
-			if(!(underwear in H.all_underwear))
-				return TRUE
-			var/datum/gear_tweak/gt = locate(params["tweak"])
-			if(!gt)
-				return TRUE
-			gt.ask_metadata(H, get_metadata(H, underwear, gt), null, "Wardrobe Underwear Selection", src, PROC_REF(underwear_tweak_answered), new /datum/om/flow/ask_sequence/gear_tweak/underwear(underwear, gt), PROMPT_USABLE)
+	if(params["category"] in H.all_underwear)
+		LAZYREMOVE(H.all_underwear, params["category"])
+		changed = TRUE
+	if(changed)
+		H.update_underwear()
+	return TRUE
+
+UI_ACT(/obj/structure/undies_wardrobe, "change_underwear", ui_act_change_underwear, UI_ARG_TEXT("category"))
+UI_ACT_PROC(/obj/structure/undies_wardrobe, ui_act_change_underwear)
+	var/mob/living/carbon/human/H = usr
+	var/changed = FALSE
+	var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[params["category"]]
+	if(!UWC)
+		return TRUE
+	om_ask(H, /datum/om/prompt/choice/underwear, PROC_REF(underwear_chosen), choices = UWC.items, default = LAZYACCESS(H.all_underwear, UWC.name), category = UWC.name)
+	if(changed)
+		H.update_underwear()
+	return TRUE
+
+UI_ACT(/obj/structure/undies_wardrobe, "tweak", ui_act_tweak, UI_ARG_TEXT("category"), UI_ARG_REF("tweak", null, /datum/gear_tweak))
+UI_ACT_PROC(/obj/structure/undies_wardrobe, ui_act_tweak)
+	var/mob/living/carbon/human/H = usr
+	var/changed = FALSE
+	var/underwear = params["category"]
+	if(!(underwear in H.all_underwear))
+		return TRUE
+	var/datum/gear_tweak/gt = params["tweak"]
+	if(!gt)
+		return TRUE
+	gt.ask_metadata(H, get_metadata(H, underwear, gt), null, "Wardrobe Underwear Selection", src, PROC_REF(underwear_tweak_answered), new /datum/om/flow/ask_sequence/gear_tweak/underwear(underwear, gt), PROMPT_USABLE)
 	if(changed)
 		H.update_underwear()
 	return TRUE

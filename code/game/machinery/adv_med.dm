@@ -176,67 +176,63 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 		return src
 	return console ? console : src
 
-/obj/machinery/bodyscanner/tgui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "BodyScanner", "Body Scanner")
-		ui.open()
+DECLARE_UI(/obj/machinery/bodyscanner, "BodyScanner", UI_TITLE("Body Scanner"))
 
-/obj/machinery/bodyscanner/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/bodyscanner, "merge:ui_data_obj_machinery_bodyscanner{}")
+
+/// The computed part of /obj/machinery/bodyscanner's window data (declared on its UI_DATA row).
+/obj/machinery/bodyscanner/proc/ui_data_obj_machinery_bodyscanner(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// qualitative scanner output. The old block dumped exact
 	// damage numbers and every affliction's name; the new builder
 	// returns qualitative bands plus DQ scanner-audience findings.
 	// Implementation lives in code/modules/medical/bodyscanner/.
 	return dq_build_tgui_data()
 
-/obj/machinery/bodyscanner/tgui_act(action, params, datum/tgui/ui)
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
-	if(..())
-		return TRUE
-
+UI_ACT(/obj/machinery/bodyscanner, "ejectify", ui_act_ejectify)
+UI_ACT_PROC(/obj/machinery/bodyscanner, ui_act_ejectify)
 	. = TRUE
-	switch(action)
-		if("ejectify")
-			bodyscanner_eject(usr)
-		if("print_p")
-			var/atom/target = console ? console : src
-			visible_message(span_notice("[target] rattles and prints out a sheet of paper."))
-			play_sfx(src, SFX_MACHINES_PRINTER)
-			var/obj/item/paper/P = new /obj/item/paper(get_turf(target))
-			var/name = occupant ? occupant.name : "Unknown"
-			P.info = "<CENTER>" + span_bold("Body Scan - [name]") + "</CENTER><BR>"
-			P.info += span_bold("Time of scan:") + " [stationtime2text()]<br><br>"
-			P.info += "[generate_printing_text()]"
-			var/mob/living/carbon/human/scanned_human = occupant
-			if(istype(scanned_human))
-				P.info += scanned_human.clinical_exposure_printout()
-			P.info += "<br><br>" + span_bold("Notes:") + "<br>"
-			P.name = "Body Scan - [name] ([stationtime2text()])"
-			if(istype(scanned_human))
-				var/datum/money_account/operator_account = medical_trial_account_for_mob(ui?.user)
-				var/datum/contract_subject_identity/identity = SScontracts.subject_identity(scanned_human)
-				P.medical_scan_evidence = list(
-					"subject_ref" = identity.id,
-					"subject_id" = identity.id,
-					"subject_name" = scanned_human.real_name,
-					"scan_time" = EXPIRY_AT(src, CLOCK_WORLD, 0),
-					"snapshot" = medical_trial_snapshot(scanned_human),
-					"trial_markers" = scanned_human.medical_trial_marker_snapshot(),
-					"operator_account" = operator_account?.account_number,
-				)
-				var/evidence_id = SScontracts.register_evidence(CONTRACT_EVIDENCE_MEDICAL_SCAN, identity.id, operator_account?.account_number, P, P.medical_scan_evidence)
-				P.attach_contract_evidence(evidence_id)
-				emit_contract_event(CONTRACT_EVENT_MEDICAL_SCAN_CREATED, list(
-					"subject_id" = identity.id,
-					"subject_name" = scanned_human.real_name,
-					"actor_account" = operator_account?.account_number,
-					"department" = DEPARTMENT_MEDICAL,
-					"evidence_ids" = list(evidence_id),
-					"scan_time" = EXPIRY_AT(src, CLOCK_WORLD, 0),
-					"detail" = "Authenticated body scan printed",
-				), "medical-scan:[evidence_id]", src, ui?.user, scanned_human)
-		else
-			return FALSE
+	bodyscanner_eject(usr)
+
+UI_ACT(/obj/machinery/bodyscanner, "print_p", ui_act_print_p)
+UI_ACT_PROC(/obj/machinery/bodyscanner, ui_act_print_p)
+	. = TRUE
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
+	var/atom/target = console ? console : src
+	visible_message(span_notice("[target] rattles and prints out a sheet of paper."))
+	play_sfx(src, SFX_MACHINES_PRINTER)
+	var/obj/item/paper/P = new /obj/item/paper(get_turf(target))
+	var/name = occupant ? occupant.name : "Unknown"
+	P.info = "<CENTER>" + span_bold("Body Scan - [name]") + "</CENTER><BR>"
+	P.info += span_bold("Time of scan:") + " [stationtime2text()]<br><br>"
+	P.info += "[generate_printing_text()]"
+	var/mob/living/carbon/human/scanned_human = occupant
+	if(istype(scanned_human))
+		P.info += scanned_human.clinical_exposure_printout()
+	P.info += "<br><br>" + span_bold("Notes:") + "<br>"
+	P.name = "Body Scan - [name] ([stationtime2text()])"
+	if(istype(scanned_human))
+		var/datum/money_account/operator_account = medical_trial_account_for_mob(ui?.user)
+		var/datum/contract_subject_identity/identity = SScontracts.subject_identity(scanned_human)
+		P.medical_scan_evidence = list(
+			"subject_ref" = identity.id,
+			"subject_id" = identity.id,
+			"subject_name" = scanned_human.real_name,
+			"scan_time" = EXPIRY_AT(src, CLOCK_WORLD, 0),
+			"snapshot" = medical_trial_snapshot(scanned_human),
+			"trial_markers" = scanned_human.medical_trial_marker_snapshot(),
+			"operator_account" = operator_account?.account_number,
+		)
+		var/evidence_id = SScontracts.register_evidence(CONTRACT_EVIDENCE_MEDICAL_SCAN, identity.id, operator_account?.account_number, P, P.medical_scan_evidence)
+		P.attach_contract_evidence(evidence_id)
+		emit_contract_event(CONTRACT_EVENT_MEDICAL_SCAN_CREATED, list(
+			"subject_id" = identity.id,
+			"subject_name" = scanned_human.real_name,
+			"actor_account" = operator_account?.account_number,
+			"department" = DEPARTMENT_MEDICAL,
+			"evidence_ids" = list(evidence_id),
+			"scan_time" = EXPIRY_AT(src, CLOCK_WORLD, 0),
+			"detail" = "Authenticated body scan printed",
+		), "medical-scan:[evidence_id]", src, ui?.user, scanned_human)
 
 /// The printed report: the body scanner diagnosis (paper renderer) plus the
 /// patient details a printout carries (species, reagents, allergens, implants).

@@ -84,17 +84,16 @@
 /**
  * Open the UI!
  */
-/obj/machinery/computer/HolodeckControl/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Holodeck", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/HolodeckControl, "Holodeck")
 
 /**
  * Data for the TGUI UI
  */
-/obj/machinery/computer/HolodeckControl/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/computer/HolodeckControl, "currentProgram=current_program:text", "safetyDisabled=safety_disabled:num", "merge:ui_data_obj_machinery_computer_HolodeckControl{supportedPrograms:list,restrictedPrograms:list,isSilicon:bool,emagged:num,gravity:bool}")
+
+/// The computed part of /obj/machinery/computer/HolodeckControl's window data (declared on its UI_DATA row).
+/obj/machinery/computer/HolodeckControl/proc/ui_data_obj_machinery_computer_HolodeckControl(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	var/list/program_list = list()
 	var/list/restricted_program_list = list()
 
@@ -106,12 +105,10 @@
 
 	data["supportedPrograms"] = program_list
 	data["restrictedPrograms"] = restricted_program_list
-	data["currentProgram"] = current_program
 	data["isSilicon"] = FALSE
 	if(issilicon(user))
 		data["isSilicon"] = TRUE
 
-	data["safetyDisabled"] = safety_disabled
 	data["emagged"] = emagged
 	data["gravity"] = FALSE
 	if(linkedholodeck().get_gravity())
@@ -119,40 +116,36 @@
 
 	return data
 
-/obj/machinery/computer/HolodeckControl/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/computer/HolodeckControl, "program", ui_act_program, UI_ARG_TEXT("program"))
+UI_ACT_PROC(/obj/machinery/computer/HolodeckControl, ui_act_program)
+	var/prog = params["program"]
+	if(prog in (supported_programs + restricted_programs))
+		if(loadProgram(prog))
+			current_program = prog
+	return TRUE
 
-	switch(action)
-		if("program")
-			var/prog = params["program"]
-			if(prog in (supported_programs + restricted_programs))
-				if(loadProgram(prog))
-					current_program = prog
-			return TRUE
+UI_ACT(/obj/machinery/computer/HolodeckControl, "AIoverride", ui_act_aioverride)
+UI_ACT_PROC(/obj/machinery/computer/HolodeckControl, ui_act_aioverride)
+	if(!issilicon(ui.user))
+		return
 
-		if("AIoverride")
-			if(!issilicon(ui.user))
-				return
+	if(safety_disabled && emagged)
+		return //if a traitor has gone through the trouble to emag the thing, let them keep it.
 
-			if(safety_disabled && emagged)
-				return //if a traitor has gone through the trouble to emag the thing, let them keep it.
+	safety_disabled = !safety_disabled
+	update_projections()
+	if(safety_disabled)
+		message_admins("[key_name_admin(ui.user)] overrode the holodeck's safeties")
+		log_game("[key_name(ui.user)] overrided the holodeck's safeties")
+	else
+		message_admins("[key_name_admin(ui.user)] restored the holodeck's safeties")
+		log_game("[key_name(ui.user)] restored the holodeck's safeties")
+	return TRUE
 
-			safety_disabled = !safety_disabled
-			update_projections()
-			if(safety_disabled)
-				message_admins("[key_name_admin(ui.user)] overrode the holodeck's safeties")
-				log_game("[key_name(ui.user)] overrided the holodeck's safeties")
-			else
-				message_admins("[key_name_admin(ui.user)] restored the holodeck's safeties")
-				log_game("[key_name(ui.user)] restored the holodeck's safeties")
-			return TRUE
-
-		if("gravity")
-			toggleGravity(linkedholodeck())
-			return TRUE
-
-	add_fingerprint(ui.user)
+UI_ACT(/obj/machinery/computer/HolodeckControl, "gravity", ui_act_gravity)
+UI_ACT_PROC(/obj/machinery/computer/HolodeckControl, ui_act_gravity)
+	toggleGravity(linkedholodeck())
+	return TRUE
 
 /obj/machinery/computer/HolodeckControl/emag_act(remaining_charges, mob/user as mob)
 	play_sfx(src, SFX_EFFECTS_SPARKS4)

@@ -53,14 +53,13 @@
 	)
 	..()
 
-/obj/machinery/computer/looking_glass/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "LookingGlass", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/looking_glass, "LookingGlass")
 
-/obj/machinery/computer/looking_glass/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/computer/looking_glass, "currentProgram=current_program:text", "immersion:num", "merge:ui_data_obj_machinery_computer_looking_glass{supportedPrograms:list,gravity:num}")
+
+/// The computed part of /obj/machinery/computer/looking_glass's window data (declared on its UI_DATA row).
+/obj/machinery/computer/looking_glass/proc/ui_data_obj_machinery_computer_looking_glass(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/list/program_list = list()
 	for(var/P in supported_programs)
@@ -71,8 +70,6 @@
 			program_list.Add(P)
 
 	data["supportedPrograms"] = program_list
-	data["currentProgram"] = current_program
-	data["immersion"] = immersion
 	if(my_area()?.get_gravity())
 		data["gravity"] = 1
 	else
@@ -80,34 +77,30 @@
 
 	return data
 
-/obj/machinery/computer/looking_glass/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/computer/looking_glass, "program", ui_act_program, UI_ARG_TEXT("program"))
+UI_ACT_PROC(/obj/machinery/computer/looking_glass, ui_act_program)
+	if(COOLDOWN_FINISHED(src, ready))
+		var/prog = params["program"]
+		if(prog == "Off")
+			current_program = "Off"
+			unload_program()
+		else if((prog in supported_programs) || (emagged && (prog in secret_programs)))
+			current_program = prog
+			load_program(prog)
+	else
+		visible_message(span_warning("ERROR. Recalibrating displays."))
+	return TRUE
 
-	switch(action)
-		if("program")
-			if(COOLDOWN_FINISHED(src, ready))
-				var/prog = params["program"]
-				if(prog == "Off")
-					current_program = "Off"
-					unload_program()
-				else if((prog in supported_programs) || (emagged && (prog in secret_programs)))
-					current_program = prog
-					load_program(prog)
-			else
-				visible_message(span_warning("ERROR. Recalibrating displays."))
-			return TRUE
+UI_ACT(/obj/machinery/computer/looking_glass, "gravity", ui_act_gravity)
+UI_ACT_PROC(/obj/machinery/computer/looking_glass, ui_act_gravity)
+	toggle_gravity(my_area())
+	return TRUE
 
-		if("gravity")
-			toggle_gravity(my_area())
-			return TRUE
-
-		if("immersion")
-			immersion = !immersion
-			my_area()?.toggle_optional(immersion)
-			return TRUE
-
-	add_fingerprint(ui.user)
+UI_ACT(/obj/machinery/computer/looking_glass, "immersion", ui_act_immersion)
+UI_ACT_PROC(/obj/machinery/computer/looking_glass, ui_act_immersion)
+	immersion = !immersion
+	my_area()?.toggle_optional(immersion)
+	return TRUE
 
 /obj/machinery/computer/looking_glass/emag_act(remaining_charges, mob/user as mob)
 	if (!emagged)

@@ -745,11 +745,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock, INTERACT_USE(null
 		return
 	tgui_interact(user)
 
-/obj/item/clothing/accessory/collar/shock/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ShockCollar", name)
-		ui.open()
+DECLARE_UI(/obj/item/clothing/accessory/collar/shock, "ShockCollar")
 
 /obj/item/clothing/accessory/collar/shock/tgui_static_data(mob/user)
 	var/list/data = ..()
@@ -762,49 +758,43 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock, INTERACT_USE(null
 
 	return data
 
-/obj/item/clothing/accessory/collar/shock/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/clothing/accessory/collar/shock, "on:num", "frequency:num", "code")
 
-	data["on"] = on
-	data["frequency"] = frequency
-	data["code"] = code
+UI_ACT(/obj/item/clothing/accessory/collar/shock, "freq", ui_act_freq, UI_ARG_TEXT("freq"))
+UI_ACT_PROC(/obj/item/clothing/accessory/collar/shock, ui_act_freq)
+	var/new_freq = sanitize_frequency(params["freq"])
+	set_frequency(new_freq)
+	. = TRUE
 
-	return data
+UI_ACT(/obj/item/clothing/accessory/collar/shock, "code", ui_act_code, UI_ARG_NUM("code"))
+UI_ACT_PROC(/obj/item/clothing/accessory/collar/shock, ui_act_code)
+	code = CLAMP(params["code"], 1, 100)
+	. = TRUE
 
-/obj/item/clothing/accessory/collar/shock/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
+UI_ACT(/obj/item/clothing/accessory/collar/shock, "power", ui_act_power)
+UI_ACT_PROC(/obj/item/clothing/accessory/collar/shock, ui_act_power)
+	on = !on
+	if(!istype(src, /obj/item/clothing/accessory/collar/shock/bluespace))
+		icon_state = "collar_shk[on]"
+	. = TRUE
+
+UI_ACT(/obj/item/clothing/accessory/collar/shock, "tag", ui_act_tag)
+UI_ACT_PROC(/obj/item/clothing/accessory/collar/shock, ui_act_tag)
+	var/sanitized = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "Tag text?", title = "Set Tag", max_length = MAX_NAME_LEN)
+	if(isnull(sanitized))
+		return
+	if(isnull(sanitized))
 		return
 
-	switch(action)
-		if("freq")
-			var/new_freq = sanitize_frequency(params["freq"])
-			set_frequency(new_freq)
-			. = TRUE
-		if("code")
-			code = CLAMP(text2num(params["code"]), 1, 100)
-			. = TRUE
-		if("power")
-			on = !on
-			if(!istype(src, /obj/item/clothing/accessory/collar/shock/bluespace))
-				icon_state = "collar_shk[on]"
-			. = TRUE
-		if("tag")
-			var/sanitized = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "Tag text?", title = "Set Tag", max_length = MAX_NAME_LEN)
-			if(isnull(sanitized))
-				return
-			if(isnull(sanitized))
-				return
-
-			if(!length(sanitized))
-				to_chat(ui.user, span_notice("[src]'s tag set to blank."))
-				name = initial(name)
-				desc = initial(desc)
-			else
-				to_chat(ui.user, span_notice("[src]'s tag set to '[sanitized]'."))
-				name = initial(name) + " ([sanitized])"
-				desc = initial(desc) + " The tag says \"[sanitized]\"."
-			. = TRUE
+	if(!length(sanitized))
+		to_chat(ui.user, span_notice("[src]'s tag set to blank."))
+		name = initial(name)
+		desc = initial(desc)
+	else
+		to_chat(ui.user, span_notice("[src]'s tag set to '[sanitized]'."))
+		name = initial(name) + " ([sanitized])"
+		desc = initial(desc) + " The tag says \"[sanitized]\"."
+	. = TRUE
 
 /obj/item/clothing/accessory/collar/shock/receive_signal(datum/signal/signal)
 	if(!signal || signal.encryption != code)
@@ -971,23 +961,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
 	data["target_size_max"] = RESIZE_MAXIMUM_DORMS
 	return data
 
-/obj/item/clothing/accessory/collar/shock/bluespace/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
-	data["target_size"] = target_size
-	return data
+UI_DATA(/obj/item/clothing/accessory/collar/shock/bluespace, "target_size:num")
 
-/obj/item/clothing/accessory/collar/shock/bluespace/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
-
-	switch(action)
-		if("size")
-			target_size = clamp((params["size"]/100), RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS)
-			to_chat(ui.user, span_notice("You set the size to [target_size * 100]%"))
-			if(target_size < RESIZE_MINIMUM || target_size > RESIZE_MAXIMUM)
-				to_chat(ui.user, span_notice("Note: Resizing limited to 25-200% automatically while outside dormatory areas.")) //hint that we clamp it in resize
-			. = TRUE
+UI_ACT(/obj/item/clothing/accessory/collar/shock/bluespace, "size", ui_act_size, UI_ARG_NUM("size"))
+UI_ACT_PROC(/obj/item/clothing/accessory/collar/shock/bluespace, ui_act_size)
+	target_size = clamp((params["size"]/100), RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS)
+	to_chat(ui.user, span_notice("You set the size to [target_size * 100]%"))
+	if(target_size < RESIZE_MINIMUM || target_size > RESIZE_MAXIMUM)
+		to_chat(ui.user, span_notice("Note: Resizing limited to 25-200% automatically while outside dormatory areas.")) //hint that we clamp it in resize
+	. = TRUE
 
 /obj/item/clothing/accessory/collar/shock/bluespace/receive_signal(datum/signal/signal)
 	if(!signal || signal.encryption != code)
@@ -1073,15 +1055,16 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/modified
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/clothing/accessory/collar/shock/bluespace/modified/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/clothing/accessory/collar/shock/bluespace/modified, "merge:ui_data_obj_item_clothing_accessory_collar_shock_bluespace_modified{target_size:text}")
+
+/// The computed part of /obj/item/clothing/accessory/collar/shock/bluespace/modified's window data (declared on its UI_DATA row).
+/obj/item/clothing/accessory/collar/shock/bluespace/modified/proc/ui_data_obj_item_clothing_accessory_collar_shock_bluespace_modified(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["target_size"] = "code"
 	return data
 
-/obj/item/clothing/accessory/collar/shock/bluespace/modified/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(action == "size")
-		return // no modifying size
-	. = ..()
+UI_ACT_OVERRIDE(/obj/item/clothing/accessory/collar/shock/bluespace/modified, ui_act_size)
+	return // no modifying size
 
 /obj/item/clothing/accessory/collar/shock/bluespace/modified/receive_signal(datum/signal/signal)
 	if(!signal)
@@ -1145,15 +1128,16 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunct
 	to_chat(user, span_notice("The signaler doesn't respond to the connection attempt [src]."))
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning, "merge:ui_data_obj_item_clothing_accessory_collar_shock_bluespace_malfunctioning{target_size:text}")
+
+/// The computed part of /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning's window data (declared on its UI_DATA row).
+/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning/proc/ui_data_obj_item_clothing_accessory_collar_shock_bluespace_malfunctioning(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["target_size"] = "locked"
 	return data
 
-/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(action == "size")
-		return // no modifying size
-	. = ..()
+UI_ACT_OVERRIDE(/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning, ui_act_size)
+	return // no modifying size
 
 /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning/receive_signal(datum/signal/signal)
 	if(!signal)

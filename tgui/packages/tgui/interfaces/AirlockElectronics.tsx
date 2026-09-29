@@ -68,7 +68,7 @@ export const AirlockElectronics = () => {
                 <LabeledList.Item label="Quick">
                   <Button
                     color={all_selected ? 'bad' : 'default'}
-                    onClick={() => act('access', { access: 'all' })}
+                    onClick={() => act('access_all')}
                   >
                     {all_selected ? 'All (clear selection)' : 'All'}
                   </Button>
@@ -83,7 +83,7 @@ export const AirlockElectronics = () => {
                       color={
                         a.selected ? (one_access ? 'good' : 'bad') : 'default'
                       }
-                      onClick={() => act('access', { access: String(a.id) })}
+                      onClick={() => act('access', { access: a.id })}
                     >
                       {a.name}
                     </Button>

@@ -19,27 +19,26 @@
 		"colors" = possible_colors - "blue"
 	)
 
-/datum/board_game/four_row/tic_tac_toe/player_actions(action, list/params, mob/user)
-	switch(action)
-		if("place_chip")
-			var/list/validated_data = validate_coords(params)
-			if(!validated_data)
-				return FALSE
+UI_SUBACT(/datum/board_game/four_row/tic_tac_toe, "game", "place_chip", game_place_chip, UI_ARG_NUM("loc_x"), UI_ARG_NUM("loc_y"))
+UI_SUBACT_OVERRIDE(/datum/board_game/four_row/tic_tac_toe, game_place_chip)
+	var/list/validated_data = validate_coords(params["loc_x"], params["loc_y"])
+	if(!validated_data)
+		return FALSE
 
-			var/key = validated_data[1]
-			if(LAZYACCESS(placed_chips_pone, key) || LAZYACCESS(placed_chips_ptwo, key))
-				return FALSE
+	var/key = validated_data[1]
+	if(LAZYACCESS(placed_chips_pone, key) || LAZYACCESS(placed_chips_ptwo, key))
+		return FALSE
 
-			var/x_loc = validated_data[2]
-			var/y_loc = validated_data[3]
+	var/x_loc = validated_data[2]
+	var/y_loc = validated_data[3]
 
-			if(game_state == GAME_PLAYER_ONE)
-				LAZYSET(placed_chips_pone, key, TRUE)
-			else
-				LAZYSET(placed_chips_ptwo, key, TRUE)
+	if(game_state == GAME_PLAYER_ONE)
+		LAZYSET(placed_chips_pone, key, TRUE)
+	else
+		LAZYSET(placed_chips_ptwo, key, TRUE)
 
-			validate_victory(x_loc, y_loc, user.name)
-			return TRUE
+	validate_victory(x_loc, y_loc, user.name)
+	return TRUE
 
 /datum/board_game/four_row/tic_tac_toe/set_new_size(new_size)
 	return FALSE

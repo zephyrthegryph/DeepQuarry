@@ -190,138 +190,139 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 			return
 
 
-/datum/entity_narrate/tgui_state(mob/user)
-	return ADMIN_STATE(R_FUN)
+DECLARE_UI_STATE(/datum/entity_narrate, ADMIN_STATE(R_FUN))
 
-/datum/entity_narrate/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, tgui_id, "Entity Narration")
-		ui.open()
+DECLARE_UI(/datum/entity_narrate, UI_FROM_VAR("tgui_id"), UI_TITLE("Entity Narration"))
 
-/datum/entity_narrate/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/entity_narrate, "mode_select=tgui_narrate_mode:num", "privacy_select=tgui_narrate_privacy:num", "selected_id=tgui_selected_id:text", "selected_name=tgui_selected_name:text", "selected_type=tgui_selected_type:text", "selection_mode=tgui_selection_mode:num", "merge:ui_data_datum_entity_narrate{multi_id_selection:bool,number_mob_selected:num,entity_names:bool}")
+
+/// The computed part of /datum/entity_narrate's window data (declared on its UI_DATA row).
+/datum/entity_narrate/proc/ui_data_datum_entity_narrate(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["mode_select"] = tgui_narrate_mode
-	data["privacy_select"] = tgui_narrate_privacy
-	data["selected_id"] = tgui_selected_id
-	data["selected_name"] = tgui_selected_name
-	data["selected_type"] = tgui_selected_type
-	data["selection_mode"] = tgui_selection_mode
 	data["multi_id_selection"] = (tgui_selected_id_multi || list())
 	data["number_mob_selected"] = LAZYLEN(tgui_selected_id_multi)
 	data["entity_names"] = (entity_names || list())
 
 	return data
 
-/datum/entity_narrate/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
+/datum/entity_narrate/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
+	if(.)	return FALSE
+	if(!check_rights_for(ui.user.client, R_FUN)) return FALSE
+	return TRUE
 
-	if(.)	return
-	if(!check_rights_for(ui.user.client, R_FUN)) return
+UI_ACT(/datum/entity_narrate, "change_mode_multi", ui_act_change_mode_multi)
+UI_ACT_PROC(/datum/entity_narrate, ui_act_change_mode_multi)
+	tgui_selection_mode = !tgui_selection_mode
+	//Clearing selections after switching mode
+	tgui_selected_id_multi = list()
+	tgui_selected_id = ""
+	tgui_selected_type = ""
+	tgui_selected_name = ""
+	rel_clear(src, "tgui_selected_refs")
+	return TRUE
 
-	switch(action)
-		if("change_mode_multi")
-			tgui_selection_mode = !tgui_selection_mode
-			//Clearing selections after switching mode
-			tgui_selected_id_multi = list()
+UI_ACT(/datum/entity_narrate, "change_mode_privacy", ui_act_change_mode_privacy)
+UI_ACT_PROC(/datum/entity_narrate, ui_act_change_mode_privacy)
+	tgui_narrate_privacy = !tgui_narrate_privacy
+	return TRUE
+
+UI_ACT(/datum/entity_narrate, "change_mode_narration", ui_act_change_mode_narration)
+UI_ACT_PROC(/datum/entity_narrate, ui_act_change_mode_narration)
+	tgui_narrate_mode = !tgui_narrate_mode
+	return TRUE
+
+UI_ACT(/datum/entity_narrate, "select_entity", ui_act_select_entity, UI_ARG_TEXT("id_selected"))
+UI_ACT_PROC(/datum/entity_narrate, ui_act_select_entity)
+	if(tgui_selection_mode)
+		if(params["id_selected"] in tgui_selected_id_multi)
+			LAZYREMOVE(tgui_selected_id_multi, params["id_selected"])
+		else
+			LAZYADD(tgui_selected_id_multi, params["id_selected"])
+	else
+		if(params["id_selected"] in tgui_selected_id_multi)
+			LAZYREMOVE(tgui_selected_id_multi, params["id_selected"])
 			tgui_selected_id = ""
 			tgui_selected_type = ""
 			tgui_selected_name = ""
 			rel_clear(src, "tgui_selected_refs")
-			return TRUE
-		if("change_mode_privacy")
-			tgui_narrate_privacy = !tgui_narrate_privacy
-			return TRUE
-		if("change_mode_narration")
-			tgui_narrate_mode = !tgui_narrate_mode
-			return TRUE
-		if("select_entity")
-			if(tgui_selection_mode)
-				if(params["id_selected"] in tgui_selected_id_multi)
-					LAZYREMOVE(tgui_selected_id_multi, params["id_selected"])
-				else
-					LAZYADD(tgui_selected_id_multi, params["id_selected"])
+		else
+			tgui_selected_id_multi = list() //Using the same var for ease of implementation. Thus, we must reset to empty each time.
+			LAZYADD(tgui_selected_id_multi, params["id_selected"])
+			tgui_selected_id = params["id_selected"]
+			var/atom/picked = tracked(tgui_selected_id)
+			if(picked)
+				rel_set(src, "tgui_selected_refs", picked)
 			else
-				if(params["id_selected"] in tgui_selected_id_multi)
-					LAZYREMOVE(tgui_selected_id_multi, params["id_selected"])
-					tgui_selected_id = ""
-					tgui_selected_type = ""
-					tgui_selected_name = ""
-					rel_clear(src, "tgui_selected_refs")
+				rel_clear(src, "tgui_selected_refs")
+			if(!tgui_selected_refs)
+				to_chat(ui.user, span_notice("[tgui_selected_id] has invalid reference, deleting"))
+				LAZYREMOVE(entity_names, tgui_selected_id)
+				untrack(tgui_selected_id)
+				tgui_selected_id = ""
+				tgui_selected_type = ""
+				tgui_selected_name = ""
+				rel_clear(src, "tgui_selected_refs")
+			if(isliving(tgui_selected_refs))
+				var/mob/living/L = tgui_selected_refs
+				if(L.client)
+					tgui_selected_type = "!!!!PLAYER!!!!"
+					tgui_selected_name = L.name
 				else
-					tgui_selected_id_multi = list() //Using the same var for ease of implementation. Thus, we must reset to empty each time.
-					LAZYADD(tgui_selected_id_multi, params["id_selected"])
-					tgui_selected_id = params["id_selected"]
-					var/atom/picked = tracked(tgui_selected_id)
-					if(picked)
-						rel_set(src, "tgui_selected_refs", picked)
-					else
-						rel_clear(src, "tgui_selected_refs")
-					if(!tgui_selected_refs)
-						to_chat(ui.user, span_notice("[tgui_selected_id] has invalid reference, deleting"))
-						LAZYREMOVE(entity_names, tgui_selected_id)
-						untrack(tgui_selected_id)
-						tgui_selected_id = ""
-						tgui_selected_type = ""
-						tgui_selected_name = ""
-						rel_clear(src, "tgui_selected_refs")
-					if(isliving(tgui_selected_refs))
-						var/mob/living/L = tgui_selected_refs
-						if(L.client)
-							tgui_selected_type = "!!!!PLAYER!!!!"
-							tgui_selected_name = L.name
-						else
-							tgui_selected_type = L.type
-							tgui_selected_name = L.name
-					else if(istype(tgui_selected_refs, /atom))
-						var/atom/A = tgui_selected_refs
-						tgui_selected_type = A.type
-						tgui_selected_name = A.name
-			return TRUE
-		if("narrate")
-			if(!COOLDOWN_FINISHED(src, tgui_message_cooldown))
-				to_chat(ui.user, span_notice("You can't messages that quickly! Wait at least half a second"))
-			else
-				to_chat(ui.user, span_notice("Message successfully sent!"))
-				COOLDOWN_START(src, tgui_message_cooldown, 0.5 SECONDS)
-				var/message = params["message"] //Sanitizing before speaking it
-				if(tgui_selection_mode)
-					for(var/entity in tgui_selected_id_multi)
-						var/ref = tracked(entity)
-						if(!ref)
-							to_chat(ui.user, span_notice("[entity] has invalid reference, deleting"))
-							LAZYREMOVE(entity_names, entity)
-							untrack(entity)
-							LAZYREMOVE(tgui_selected_id_multi, entity)
-							continue
-						if(isliving(ref))
-							var/mob/living/L = ref
-							if(L.client)
-								log_and_message_admins("used entity-narrate to speak through [L.ckey]'s mob", ui.user)
-							narrate_tgui_mob(L, message)
-						else if(istype(ref, /atom))
-							var/atom/A = ref
-							narrate_tgui_atom(A, message)
-				else
-					var/ref = tracked(tgui_selected_id)
-					if(!ref)
-						to_chat(ui.user, span_notice("[tgui_selected_id] has invalid reference, deleting"))
-						LAZYREMOVE(entity_names, tgui_selected_id)
-						untrack(tgui_selected_id)
-						tgui_selected_id = ""
-						tgui_selected_type = ""
-						tgui_selected_name = ""
-						rel_clear(src, "tgui_selected_refs")
-						return TRUE
-					if(isliving(ref))
-						var/mob/living/L = ref
-						if(L.client)
-							log_and_message_admins("used entity-narrate to speak through [L.ckey]'s mob", ui.user)
-						narrate_tgui_mob(L, message)
-					else if(istype(ref, /atom))
-						var/atom/A = ref
-						narrate_tgui_atom(A, message)
-			return TRUE
+					tgui_selected_type = L.type
+					tgui_selected_name = L.name
+			else if(istype(tgui_selected_refs, /atom))
+				var/atom/A = tgui_selected_refs
+				tgui_selected_type = A.type
+				tgui_selected_name = A.name
+	return TRUE
+
+UI_ACT(/datum/entity_narrate, "narrate", ui_act_narrate, UI_ARG_TEXT("message"))
+UI_ACT_PROC(/datum/entity_narrate, ui_act_narrate)
+	if(!COOLDOWN_FINISHED(src, tgui_message_cooldown))
+		to_chat(ui.user, span_notice("You can't messages that quickly! Wait at least half a second"))
+	else
+		to_chat(ui.user, span_notice("Message successfully sent!"))
+		COOLDOWN_START(src, tgui_message_cooldown, 0.5 SECONDS)
+		var/message = params["message"] //Sanitizing before speaking it
+		if(tgui_selection_mode)
+			for(var/entity in tgui_selected_id_multi)
+				var/ref = tracked(entity)
+				if(!ref)
+					to_chat(ui.user, span_notice("[entity] has invalid reference, deleting"))
+					LAZYREMOVE(entity_names, entity)
+					untrack(entity)
+					LAZYREMOVE(tgui_selected_id_multi, entity)
+					continue
+				if(isliving(ref))
+					var/mob/living/L = ref
+					if(L.client)
+						log_and_message_admins("used entity-narrate to speak through [L.ckey]'s mob", ui.user)
+					narrate_tgui_mob(L, message)
+				else if(istype(ref, /atom))
+					var/atom/A = ref
+					narrate_tgui_atom(A, message)
+		else
+			var/ref = tracked(tgui_selected_id)
+			if(!ref)
+				to_chat(ui.user, span_notice("[tgui_selected_id] has invalid reference, deleting"))
+				LAZYREMOVE(entity_names, tgui_selected_id)
+				untrack(tgui_selected_id)
+				tgui_selected_id = ""
+				tgui_selected_type = ""
+				tgui_selected_name = ""
+				rel_clear(src, "tgui_selected_refs")
+				return TRUE
+			if(isliving(ref))
+				var/mob/living/L = ref
+				if(L.client)
+					log_and_message_admins("used entity-narrate to speak through [L.ckey]'s mob", ui.user)
+				narrate_tgui_mob(L, message)
+			else if(istype(ref, /atom))
+				var/atom/A = ref
+				narrate_tgui_atom(A, message)
+	return TRUE
 
 /datum/entity_narrate/proc/narrate_tgui_mob(mob/living/L, message as text)
 	//say and custom_emote sanitize it themselves, not sanitizing here to avoid double encoding.

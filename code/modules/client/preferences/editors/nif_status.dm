@@ -19,5 +19,4 @@
 		"durability" = preferences.read_preference(/datum/preference/numeric/nif_durability),
 	)
 
-/datum/preference_editor/nif_status/handle_action(datum/preferences/preferences, action, list/params, mob/user)
-	return PREF_UPDATE_UNCHANGED
+

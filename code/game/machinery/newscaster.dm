@@ -260,20 +260,20 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	if(update_now)
 		SStgui.update_uis(src)
 
-/obj/machinery/newscaster/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Newscaster", "Newscaster Unit #[unit_no]")
-		ui.open()
+DECLARE_UI(/obj/machinery/newscaster, "Newscaster")
 
-/obj/machinery/newscaster/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+/obj/machinery/newscaster/ui_title(mob/user)
+	return "Newscaster Unit #[unit_no]"
+
+UI_DATA(/obj/machinery/newscaster, "temp:text", "unit_no", "channel_name:text", "c_locked:num", "msg:text", "title:text", "paper_remaining:num", "merge:ui_data_obj_machinery_newscaster{user:text,wanted_issue:unknown,securityCaster:bool,channels:list,photo_data:bool,total_num:num,active_num:num,message_num:num,viewing_channel:unknown,company:text}")
+
+/// The computed part of /obj/machinery/newscaster's window data (declared on its UI_DATA row).
+/obj/machinery/newscaster/proc/ui_data_obj_machinery_newscaster(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	// Main menu
-	data["temp"] = temp
 
 	data["user"] = tgui_user_name(user)
-	data["unit_no"] = unit_no
 
 	var/list/wanted_issue = null
 	if(GLOB.news_network.wanted_issue())
@@ -301,13 +301,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	data["channels"] = network_channels
 
 	// Creating Channels
-	data["channel_name"] = channel_name
-	data["c_locked"] = c_locked
 
 	// Creating Messages
 	// data["channel_name"] = channel_name
-	data["msg"] = msg
-	data["title"] = title
 	data["photo_data"] = !!photo_data
 
 	// Printing menu
@@ -322,7 +318,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	data["total_num"] = total_num
 	data["active_num"] = active_num
 	data["message_num"] = message_num
-	data["paper_remaining"] = paper_remaining
 
 	// Viewing a specific channel
 	var/list/viewing = null
@@ -359,198 +354,212 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 
 	return data
 
-/obj/machinery/newscaster/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
+UI_ACT(/obj/machinery/newscaster, "cleartemp", ui_act_cleartemp)
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_cleartemp)
+	temp = null
+	return TRUE
+
+UI_ACT(/obj/machinery/newscaster, "set_channel_name", ui_act_set_channel_name, UI_ARG_TEXT("val"))
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_channel_name)
+	channel_name = sanitizeSafe(params["val"], MAX_LNAME_LEN)
+	return TRUE
+
+UI_ACT(/obj/machinery/newscaster, "set_channel_lock", ui_act_set_channel_lock)
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_channel_lock)
+	c_locked = !c_locked
+	return TRUE
+
+UI_ACT(/obj/machinery/newscaster, "submit_new_channel", ui_act_submit_new_channel)
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_submit_new_channel)
+	var/list/existing_authors = list()
+	for(var/datum/feed_channel/FC in GLOB.news_network.network_channels)
+		if(FC.author == "\[REDACTED\]")
+			existing_authors += FC.backup_author
+		else
+			existing_authors  +=FC.author
+	var/check = 0
+	for(var/datum/feed_channel/FC in GLOB.news_network.network_channels)
+		if(FC.channel_name == channel_name)
+			check = 1
+			break
+	var/our_user = tgui_user_name(ui.user)
+	if(channel_name == "" || channel_name == "\[REDACTED\]")
+		set_temp("Error: Could not submit feed channel to network: Invalid Channel Name.", "danger", FALSE)
 		return TRUE
-	switch(action)
-		if("cleartemp")
-			temp = null
-			return TRUE
+	if(our_user == "Unknown")
+		set_temp("Error: Could not submit feed channel to network: Channel author unverified.", "danger", FALSE)
+		return TRUE
+	if(check)
+		set_temp("Error: Could not submit feed channel to network: Channel name already in use.", "danger", FALSE)
+		return TRUE
+	if(our_user in existing_authors)
+		set_temp("Error: Could not submit feed channel to network: A feed channel already exists under your name.", "danger", FALSE)
+		return TRUE
 
-		if("set_channel_name")
-			channel_name = sanitizeSafe(params["val"], MAX_LNAME_LEN)
-			return TRUE
+	om_ask(ui.user, /datum/om/prompt/confirm/news_channel_create, PROC_REF(channel_creation_confirmed), message = "Please confirm Feed channel creation", title = "Network Channel Handler", requires = PROMPT_USABLE, yes_text = "Confirm", no_text = "Cancel", author = our_user, channel = channel_name, locked = c_locked)
+	return TRUE
 
-		if("set_channel_lock")
-			c_locked = !c_locked
-			return TRUE
+UI_ACT(/obj/machinery/newscaster, "set_channel_receiving", ui_act_set_channel_receiving)
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_channel_receiving)
+	var/list/available_channels = list()
+	for(var/datum/feed_channel/F in GLOB.news_network.network_channels)
+		if((!F.locked || F.author == scanned_user) && !F.censored)
+			available_channels += F.channel_name
+	om_ask(ui.user, /datum/om/prompt/choice, PROC_REF(receiving_channel_chosen), message = "Choose receiving Feed Channel", title = "Network Channel Handler", choices = available_channels, requires = PROMPT_USABLE)
+	return TRUE
 
-		if("submit_new_channel")
-			var/list/existing_authors = list()
-			for(var/datum/feed_channel/FC in GLOB.news_network.network_channels)
-				if(FC.author == "\[REDACTED\]")
-					existing_authors += FC.backup_author
-				else
-					existing_authors  +=FC.author
-			var/check = 0
-			for(var/datum/feed_channel/FC in GLOB.news_network.network_channels)
-				if(FC.channel_name == channel_name)
-					check = 1
-					break
-			var/our_user = tgui_user_name(ui.user)
-			if(channel_name == "" || channel_name == "\[REDACTED\]")
-				set_temp("Error: Could not submit feed channel to network: Invalid Channel Name.", "danger", FALSE)
-				return TRUE
-			if(our_user == "Unknown")
-				set_temp("Error: Could not submit feed channel to network: Channel author unverified.", "danger", FALSE)
-				return TRUE
-			if(check)
-				set_temp("Error: Could not submit feed channel to network: Channel name already in use.", "danger", FALSE)
-				return TRUE
-			if(our_user in existing_authors)
-				set_temp("Error: Could not submit feed channel to network: A feed channel already exists under your name.", "danger", FALSE)
-				return TRUE
+UI_ACT(/obj/machinery/newscaster, "set_new_message", ui_act_set_new_message)
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_new_message)
+	om_ask(ui.user, /datum/om/prompt/text, PROC_REF(story_written), message = "Write your Feed story", title = "Network Channel Handler", default = "", max_length = MAX_MESSAGE_LEN, multiline = TRUE, encode = FALSE, requires = PROMPT_USABLE, ui_refresh = src)
+	return TRUE
 
-			om_ask(ui.user, /datum/om/prompt/confirm/news_channel_create, PROC_REF(channel_creation_confirmed), message = "Please confirm Feed channel creation", title = "Network Channel Handler", requires = PROMPT_USABLE, yes_text = "Confirm", no_text = "Cancel", author = our_user, channel = channel_name, locked = c_locked)
-			return TRUE
+UI_ACT(/obj/machinery/newscaster, "set_new_title", ui_act_set_new_title)
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_new_title)
+	om_ask(ui.user, /datum/om/prompt/text, PROC_REF(title_written), message = "Enter your Feed title", title = "Network Channel Handler", default = "", max_length = MAX_KEYPAD_INPUT_LEN, requires = PROMPT_USABLE, ui_refresh = src)
+	return TRUE
 
-		if("set_channel_receiving")
-			var/list/available_channels = list()
-			for(var/datum/feed_channel/F in GLOB.news_network.network_channels)
-				if((!F.locked || F.author == scanned_user) && !F.censored)
-					available_channels += F.channel_name
-			om_ask(ui.user, /datum/om/prompt/choice, PROC_REF(receiving_channel_chosen), message = "Choose receiving Feed Channel", title = "Network Channel Handler", choices = available_channels, requires = PROMPT_USABLE)
-			return TRUE
+UI_ACT(/obj/machinery/newscaster, "set_attachment", ui_act_set_attachment)
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_attachment)
+	AttachPhoto(ui.user)
+	return TRUE
 
-		if("set_new_message")
-			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(story_written), message = "Write your Feed story", title = "Network Channel Handler", default = "", max_length = MAX_MESSAGE_LEN, multiline = TRUE, encode = FALSE, requires = PROMPT_USABLE, ui_refresh = src)
-			return TRUE
+UI_ACT(/obj/machinery/newscaster, "submit_new_message", ui_act_submit_new_message)
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_submit_new_message)
+	var/our_user = tgui_user_name(ui.user)
+	if(msg == "" || msg == "\[REDACTED\]")
+		set_temp("Error: Could not submit feed message to network: Invalid Message.", "danger", FALSE)
+		return TRUE
+	if(our_user == "Unknown")
+		set_temp("Error: Could not submit feed message to network: Channel author unverified.", "danger", FALSE)
+		return TRUE
+	if(channel_name == "")
+		set_temp("Error: Could not submit feed message to network: No feed channel selected.", "danger", FALSE)
+		return TRUE
+	if(title == "")
+		set_temp("Error: Invalid Title.", "danger", FALSE)
+		return TRUE
 
-		if("set_new_title")
-			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(title_written), message = "Enter your Feed title", title = "Network Channel Handler", default = "", max_length = MAX_KEYPAD_INPUT_LEN, requires = PROMPT_USABLE, ui_refresh = src)
-			return TRUE
+	var/image = photo_data ? photo_data.photo() : null
+	feedback_inc("newscaster_stories",1)
+	GLOB.news_network.SubmitArticle(msg, our_user, channel_name, image, 0, "", title)
+	set_temp("Feed message created successfully.", "success", FALSE)
+	return TRUE
 
-		if("set_attachment")
-			AttachPhoto(ui.user)
-			return TRUE
+UI_ACT(/obj/machinery/newscaster, "print_paper", ui_act_print_paper)
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_print_paper)
+	if(!paper_remaining)
+		set_temp("Unable to print newspaper. Insufficient paper. Please notify maintenance personnel to refill machine storage.", "danger", FALSE)
+		return TRUE
 
-		if("submit_new_message")
-			var/our_user = tgui_user_name(ui.user)
-			if(msg == "" || msg == "\[REDACTED\]")
-				set_temp("Error: Could not submit feed message to network: Invalid Message.", "danger", FALSE)
-				return TRUE
-			if(our_user == "Unknown")
-				set_temp("Error: Could not submit feed message to network: Channel author unverified.", "danger", FALSE)
-				return TRUE
-			if(channel_name == "")
-				set_temp("Error: Could not submit feed message to network: No feed channel selected.", "danger", FALSE)
-				return TRUE
-			if(title == "")
-				set_temp("Error: Invalid Title.", "danger", FALSE)
-				return TRUE
+	print_paper()
+	set_temp("Printing successful. Please receive your newspaper from the bottom of the machine.", "success", FALSE)
+	return TRUE
 
-			var/image = photo_data ? photo_data.photo() : null
-			feedback_inc("newscaster_stories",1)
-			GLOB.news_network.SubmitArticle(msg, our_user, channel_name, image, 0, "", title)
-			set_temp("Feed message created successfully.", "success", FALSE)
-			return TRUE
+UI_ACT(/obj/machinery/newscaster, "set_wanted_desc", ui_act_set_wanted_desc, UI_ARG_TEXT("val"))
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_wanted_desc)
+	msg = sanitize(params["val"])
+	return TRUE
 
-		if("print_paper")
-			if(!paper_remaining)
-				set_temp("Unable to print newspaper. Insufficient paper. Please notify maintenance personnel to refill machine storage.", "danger", FALSE)
-				return TRUE
+UI_ACT(/obj/machinery/newscaster, "submit_wanted", ui_act_submit_wanted)
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_submit_wanted)
+	if(!securityCaster)
+		return FALSE
+	var/our_user = tgui_user_name(ui.user)
+	if(channel_name == "")
+		set_temp("Error: Could not submit wanted issue to network: Invalid Criminal Name.", "danger", FALSE)
+		return TRUE
+	if(msg == "")
+		set_temp("Error: Could not submit wanted issue to network: Invalid Description.", "danger", FALSE)
+		return TRUE
+	if(our_user == "Unknown")
+		set_temp("Error: Could not submit wanted issue to network: Author unverified.", "danger", FALSE)
+		return TRUE
 
-			print_paper()
-			set_temp("Printing successful. Please receive your newspaper from the bottom of the machine.", "success", FALSE)
-			return TRUE
+	om_ask(ui.user, /datum/om/prompt/confirm, PROC_REF(wanted_change_confirmed), message = "Please confirm Wanted Issue change.", title = "Network Security Handler", requires = PROMPT_USABLE, yes_text = "Confirm", no_text = "Cancel")
+	return TRUE
 
-		if("set_wanted_desc")
-			msg = sanitize(params["val"])
-			return TRUE
+UI_ACT(/obj/machinery/newscaster, "cancel_wanted", ui_act_cancel_wanted)
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_cancel_wanted)
+	if(!securityCaster)
+		return FALSE
+	if(GLOB.news_network.wanted_issue().is_admin_message)
+		tgui_alert_async(ui.user, "The wanted issue has been distributed by a [using_map.company_name] higherup. You cannot take it down.")
+		return
+	om_ask(ui.user, /datum/om/prompt/confirm, PROC_REF(wanted_removal_confirmed), message = "Please confirm Wanted Issue removal", title = "Network Security Handler", requires = PROMPT_USABLE, yes_text = "Confirm", no_text = "Cancel")
+	return TRUE
 
-		if("submit_wanted")
-			if(!securityCaster)
-				return FALSE
-			var/our_user = tgui_user_name(ui.user)
-			if(channel_name == "")
-				set_temp("Error: Could not submit wanted issue to network: Invalid Criminal Name.", "danger", FALSE)
-				return TRUE
-			if(msg == "")
-				set_temp("Error: Could not submit wanted issue to network: Invalid Description.", "danger", FALSE)
-				return TRUE
-			if(our_user == "Unknown")
-				set_temp("Error: Could not submit wanted issue to network: Author unverified.", "danger", FALSE)
-				return TRUE
+UI_ACT(/obj/machinery/newscaster, "censor_channel_author", ui_act_censor_channel_author, UI_ARG_REF("ref", null, /datum/feed_channel))
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_censor_channel_author)
+	if(!securityCaster)
+		return FALSE
+	var/datum/feed_channel/FC = params["ref"]
+	if(FC.is_admin_channel)
+		tgui_alert_async(ui.user, "This channel was created by a [using_map.company_name] Officer. You cannot censor it.")
+		return
+	if(FC.author != "\[REDACTED\]")
+		FC.backup_author = FC.author
+		FC.author = "\[REDACTED\]"
+	else
+		FC.author = FC.backup_author
+	FC.update()
+	return TRUE
 
-			om_ask(ui.user, /datum/om/prompt/confirm, PROC_REF(wanted_change_confirmed), message = "Please confirm Wanted Issue change.", title = "Network Security Handler", requires = PROMPT_USABLE, yes_text = "Confirm", no_text = "Cancel")
-			return TRUE
+UI_ACT(/obj/machinery/newscaster, "censor_channel_story_author", ui_act_censor_channel_story_author, UI_ARG_REF("ref", null, /datum/feed_message))
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_censor_channel_story_author)
+	if(!securityCaster)
+		return FALSE
+	var/datum/feed_message/MSG = params["ref"]
+	if(MSG.is_admin_message)
+		tgui_alert_async(ui.user, "This message was created by a [using_map.company_name] Officer. You cannot censor its author.")
+		return
+	if(MSG.author != "\[REDACTED\]")
+		MSG.backup_author = MSG.author
+		MSG.author = "\[REDACTED\]"
+	else
+		MSG.author = MSG.backup_author
+	MSG.parent_channel().update()
+	return TRUE
 
-		if("cancel_wanted")
-			if(!securityCaster)
-				return FALSE
-			if(GLOB.news_network.wanted_issue().is_admin_message)
-				tgui_alert_async(ui.user, "The wanted issue has been distributed by a [using_map.company_name] higherup. You cannot take it down.")
-				return
-			om_ask(ui.user, /datum/om/prompt/confirm, PROC_REF(wanted_removal_confirmed), message = "Please confirm Wanted Issue removal", title = "Network Security Handler", requires = PROMPT_USABLE, yes_text = "Confirm", no_text = "Cancel")
-			return TRUE
+UI_ACT(/obj/machinery/newscaster, "censor_channel_story_body", ui_act_censor_channel_story_body, UI_ARG_REF("ref", null, /datum/feed_message))
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_censor_channel_story_body)
+	if(!securityCaster)
+		return FALSE
+	var/datum/feed_message/MSG = params["ref"]
+	if(MSG.is_admin_message)
+		tgui_alert_async(ui.user, "This channel was created by a [using_map.company_name] Officer. You cannot censor it.")
+		return
+	if(MSG.body != "\[REDACTED\]")
+		MSG.backup_body = MSG.body
+		MSG.backup_caption = MSG.caption
+		MSG.backup_img = MSG.img
+		MSG.body = "\[REDACTED\]"
+		MSG.caption = "\[REDACTED\]"
+		MSG.img = null
+	else
+		MSG.body = MSG.backup_body
+		MSG.caption = MSG.caption
+		MSG.img = MSG.backup_img
 
-		if("censor_channel_author")
-			if(!securityCaster)
-				return FALSE
-			var/datum/feed_channel/FC = locate(params["ref"])
-			if(FC.is_admin_channel)
-				tgui_alert_async(ui.user, "This channel was created by a [using_map.company_name] Officer. You cannot censor it.")
-				return
-			if(FC.author != "\[REDACTED\]")
-				FC.backup_author = FC.author
-				FC.author = "\[REDACTED\]"
-			else
-				FC.author = FC.backup_author
-			FC.update()
-			return TRUE
+	MSG.parent_channel().update()
+	return TRUE
 
-		if("censor_channel_story_author")
-			if(!securityCaster)
-				return FALSE
-			var/datum/feed_message/MSG = locate(params["ref"])
-			if(MSG.is_admin_message)
-				tgui_alert_async(ui.user, "This message was created by a [using_map.company_name] Officer. You cannot censor its author.")
-				return
-			if(MSG.author != "\[REDACTED\]")
-				MSG.backup_author = MSG.author
-				MSG.author = "\[REDACTED\]"
-			else
-				MSG.author = MSG.backup_author
-			MSG.parent_channel().update()
-			return TRUE
+UI_ACT(/obj/machinery/newscaster, "toggle_d_notice", ui_act_toggle_d_notice, UI_ARG_REF("ref", null, /datum/feed_channel))
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_toggle_d_notice)
+	if(!securityCaster)
+		return FALSE
+	var/datum/feed_channel/FC = params["ref"]
+	if(FC.is_admin_channel)
+		tgui_alert_async(ui.user, "This channel was created by a [using_map.company_name] Officer. You cannot place a D-Notice upon it.")
+		return
+	FC.censored = !FC.censored
+	FC.update()
+	return TRUE
 
-		if("censor_channel_story_body")
-			if(!securityCaster)
-				return FALSE
-			var/datum/feed_message/MSG = locate(params["ref"])
-			if(MSG.is_admin_message)
-				tgui_alert_async(ui.user, "This channel was created by a [using_map.company_name] Officer. You cannot censor it.")
-				return
-			if(MSG.body != "\[REDACTED\]")
-				MSG.backup_body = MSG.body
-				MSG.backup_caption = MSG.caption
-				MSG.backup_img = MSG.img
-				MSG.body = "\[REDACTED\]"
-				MSG.caption = "\[REDACTED\]"
-				MSG.img = null
-			else
-				MSG.body = MSG.backup_body
-				MSG.caption = MSG.caption
-				MSG.img = MSG.backup_img
-
-			MSG.parent_channel().update()
-			return TRUE
-
-		if("toggle_d_notice")
-			if(!securityCaster)
-				return FALSE
-			var/datum/feed_channel/FC = locate(params["ref"])
-			if(FC.is_admin_channel)
-				tgui_alert_async(ui.user, "This channel was created by a [using_map.company_name] Officer. You cannot place a D-Notice upon it.")
-				return
-			FC.censored = !FC.censored
-			FC.update()
-			return TRUE
-
-		if("show_channel")
-			var/datum/feed_channel/FC = locate(params["show_channel"])
-			rel_set(src, "viewing_channel", FC)
-			return TRUE
+UI_ACT(/obj/machinery/newscaster, "show_channel", ui_act_show_channel, UI_ARG_REF("show_channel", null, /datum/feed_channel))
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_show_channel)
+	var/datum/feed_channel/FC = params["show_channel"]
+	rel_set(src, "viewing_channel", FC)
+	return TRUE
 
 /datum/om/prompt/confirm/news_channel_create
 	var/author

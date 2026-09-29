@@ -72,15 +72,14 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/freezer, 120, null)
 	)
 	..()
 
-/obj/machinery/atmospherics/unary/freezer/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "GasTemperatureSystem", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/atmospherics/unary/freezer, "GasTemperatureSystem")
 
-/obj/machinery/atmospherics/unary/freezer/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/atmospherics/unary/freezer, "powerSetting=power_setting:num", "reagentPower=reagent_cooling:num", "merge:ui_data_obj_machinery_atmospherics_unary_freezer{on:num,gasPressure:num,gasTemperature:num,minGasTemperature:num,maxGasTemperature:num,targetGasTemperature:num,reagentVolume:num,reagentMaximum:num,gasTemperatureClass:text}")
+
+/// The computed part of /obj/machinery/atmospherics/unary/freezer's window data (declared on its UI_DATA row).
+/obj/machinery/atmospherics/unary/freezer/proc/ui_data_obj_machinery_atmospherics_unary_freezer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// this is the data which will be sent to the ui
-	var/data[0]
+	var/list/data = list()
 	var/air_temperature = air_contents.return_temperature()
 	data["on"] = use_power ? 1 : 0
 	data["gasPressure"] = round(air_contents.return_pressure())
@@ -88,11 +87,9 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/freezer, 120, null)
 	data["minGasTemperature"] = 0
 	data["maxGasTemperature"] = round(T20C+500)
 	data["targetGasTemperature"] = round(set_temperature)
-	data["powerSetting"] = power_setting
 
 	data["reagentVolume"] = reagents.total_volume
 	data["reagentMaximum"] = reagents.maximum_volume
-	data["reagentPower"] = reagent_cooling
 
 	var/temp_class = "good"
 	if(air_temperature > (T0C - 20))
@@ -103,25 +100,32 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/freezer, 120, null)
 
 	return data
 
-/obj/machinery/atmospherics/unary/freezer/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
+UI_ACT(/obj/machinery/atmospherics/unary/freezer, "toggleStatus", ui_act_togglestatus)
+UI_ACT_PROC(/obj/machinery/atmospherics/unary/freezer, ui_act_togglestatus)
 	. = TRUE
-	switch(action)
-		if("toggleStatus")
-			set_use_power(!use_power)
-			update_icon()
-		if("setGasTemperature")
-			var/amount = text2num(params["temp"])
-			if(amount > 0)
-				set_temperature = min(amount, 1000)
-			else
-				set_temperature = max(amount, 0)
-		if("setPower") //setting power to 0 is redundant anyways
-			var/new_setting = between(0, text2num(params["value"]), 100)
-			set_power_level(new_setting)
+	set_use_power(!use_power)
+	update_icon()
+	add_fingerprint(ui.user)
+	if(.)
+		invalidate_gas_dependencies()
 
+UI_ACT(/obj/machinery/atmospherics/unary/freezer, "setGasTemperature", ui_act_setgastemperature, UI_ARG_NUM("temp"))
+UI_ACT_PROC(/obj/machinery/atmospherics/unary/freezer, ui_act_setgastemperature)
+	. = TRUE
+	var/amount = params["temp"]
+	if(amount > 0)
+		set_temperature = min(amount, 1000)
+	else
+		set_temperature = max(amount, 0)
+	add_fingerprint(ui.user)
+	if(.)
+		invalidate_gas_dependencies()
+
+UI_ACT(/obj/machinery/atmospherics/unary/freezer, "setPower", ui_act_setpower, UI_ARG_NUM("value"))
+UI_ACT_PROC(/obj/machinery/atmospherics/unary/freezer, ui_act_setpower)
+	. = TRUE
+	var/new_setting = between(0, params["value"], 100)
+	set_power_level(new_setting)
 	add_fingerprint(ui.user)
 	if(.)
 		invalidate_gas_dependencies()

@@ -69,31 +69,32 @@
 	fx_sparks(src, 3)
 	return ..()
 
-/mob/living/bot/cleanbot/edCLN/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/mob/living/bot/cleanbot/edCLN, "red_switch:num", "green_switch:num", "blue_switch:num", "merge:ui_data_mob_living_bot_cleanbot_edCLN{version:text,rgbpanel:bool}")
+
+/// The computed part of /mob/living/bot/cleanbot/edCLN's window data (declared on its UI_DATA row).
+/mob/living/bot/cleanbot/edCLN/proc/ui_data_mob_living_bot_cleanbot_edCLN(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["version"] = "v3.0"
 	data["rgbpanel"] = TRUE
-	data["red_switch"] = red_switch
-	data["green_switch"] = green_switch
-	data["blue_switch"] = blue_switch
 	return data
 
-/mob/living/bot/cleanbot/edCLN/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-	switch(action)
-		if("red_switch")
-			red_switch = !red_switch
-			to_chat(ui.user, span_notice("You flip the red switch [red_switch ? "on" : "off"]."))
-			. = TRUE
-		if("green_switch")
-			green_switch = !green_switch
-			to_chat(ui.user, span_notice("You flip the green switch [green_switch ? "on" : "off"]."))
-			. = TRUE
-		if("blue_switch")
-			blue_switch = !blue_switch
-			to_chat(ui.user, span_notice("You flip the blue switch [blue_switch ? "on" : "off"]."))
-			. = TRUE
+UI_ACT(/mob/living/bot/cleanbot/edCLN, "red_switch", ui_act_red_switch)
+UI_ACT_PROC(/mob/living/bot/cleanbot/edCLN, ui_act_red_switch)
+	red_switch = !red_switch
+	to_chat(ui.user, span_notice("You flip the red switch [red_switch ? "on" : "off"]."))
+	. = TRUE
+
+UI_ACT(/mob/living/bot/cleanbot/edCLN, "green_switch", ui_act_green_switch)
+UI_ACT_PROC(/mob/living/bot/cleanbot/edCLN, ui_act_green_switch)
+	green_switch = !green_switch
+	to_chat(ui.user, span_notice("You flip the green switch [green_switch ? "on" : "off"]."))
+	. = TRUE
+
+UI_ACT(/mob/living/bot/cleanbot/edCLN, "blue_switch", ui_act_blue_switch)
+UI_ACT_PROC(/mob/living/bot/cleanbot/edCLN, ui_act_blue_switch)
+	blue_switch = !blue_switch
+	to_chat(ui.user, span_notice("You flip the blue switch [blue_switch ? "on" : "off"]."))
+	. = TRUE
 
 /mob/living/bot/cleanbot/edCLN/emag_act(remaining_uses, mob/user)
 	. = ..()

@@ -238,23 +238,18 @@
 /obj/machinery/power/smes/batteryrack/outputting()
 	return
 
-/obj/machinery/power/smes/batteryrack/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Batteryrack", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/power/smes/batteryrack, "Batteryrack")
 
-/obj/machinery/power/smes/batteryrack/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/power/smes/batteryrack, "transfer_max=max_transfer_rate:num", "equalise:num", "blink_tick=ui_tick:num", "cells_max=max_cells:num", "merge:ui_data_obj_machinery_power_smes_batteryrack{mode:num,output_load:num,input_load:num,cells_cur:num,cells_list:list}")
+
+/// The computed part of /obj/machinery/power/smes/batteryrack's window data (declared on its UI_DATA row).
+/obj/machinery/power/smes/batteryrack/proc/ui_data_obj_machinery_power_smes_batteryrack(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// DO NOT CALL PARENT.
 	var/list/data = list()
 
 	data["mode"] = mode
-	data["transfer_max"] = max_transfer_rate
 	data["output_load"] = round(output_used)
 	data["input_load"] = round(input_available)
-	data["equalise"] = equalise
-	data["blink_tick"] = ui_tick
-	data["cells_max"] = max_cells
 	data["cells_cur"] = length(internal_cells)
 	var/list/cells = list()
 	var/cell_index = 0
@@ -277,45 +272,50 @@
 
 	return data
 
-/obj/machinery/power/smes/batteryrack/tgui_act(action, list/params)
-	// ..() would respond to those topic calls, but we don't want to use them at all.
-	// Calls to these shouldn't occur anyway, due to usage of different nanoUI, but
-	// it's here in case someone decides to try hrefhacking/modified templates.
+/obj/machinery/power/smes/batteryrack/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!(action in list("disable", "enable", "equaliseon", "equaliseoff", "ejectcell")))
+		return FALSE
+	return TRUE
+
+UI_ACT(/obj/machinery/power/smes/batteryrack, "disable", ui_act_disable)
+UI_ACT_PROC(/obj/machinery/power/smes/batteryrack, ui_act_disable)
+	update_io(0)
+	return TRUE
+
+UI_ACT(/obj/machinery/power/smes/batteryrack, "enable", ui_act_enable, UI_ARG_NUM("enable"))
+UI_ACT_PROC(/obj/machinery/power/smes/batteryrack, ui_act_enable)
+	update_io(between(1, params["enable"], 3))
+	return TRUE
+
+UI_ACT(/obj/machinery/power/smes/batteryrack, "equaliseon", ui_act_equaliseon)
+UI_ACT_PROC(/obj/machinery/power/smes/batteryrack, ui_act_equaliseon)
+	equalise = 1
+	return TRUE
+
+UI_ACT(/obj/machinery/power/smes/batteryrack, "equaliseoff", ui_act_equaliseoff)
+UI_ACT_PROC(/obj/machinery/power/smes/batteryrack, ui_act_equaliseoff)
+	equalise = 0
+	return TRUE
+
+UI_ACT(/obj/machinery/power/smes/batteryrack, "ejectcell", ui_act_ejectcell, UI_ARG_NUM("ejectcell"))
+UI_ACT_PROC(/obj/machinery/power/smes/batteryrack, ui_act_ejectcell)
+	var/obj/item/cell/C
+	for(var/obj/item/cell/CL in internal_cells)
+		if(CL.c_uid == params["ejectcell"])
+			C = CL
+			break
+
+	if(!istype(C))
 		return TRUE
 
-	if(..())
-		return TRUE
-
-	switch(action)
-		if("disable")
-			update_io(0)
-			return TRUE
-		if("enable")
-			update_io(between(1, text2num(params["enable"]), 3))
-			return TRUE
-		if("equaliseon")
-			equalise = 1
-			return TRUE
-		if("equaliseoff")
-			equalise = 0
-			return TRUE
-		if("ejectcell")
-			var/obj/item/cell/C
-			for(var/obj/item/cell/CL in internal_cells)
-				if(CL.c_uid == text2num(params["ejectcell"]))
-					C = CL
-					break
-
-			if(!istype(C))
-				return TRUE
-
-			C.forceMove(get_turf(src))
-			own_take_member(src, "internal_cells", C)
-			update_icon()
-			RefreshParts()
-			update_maxcharge()
-			return TRUE
+	C.forceMove(get_turf(src))
+	own_take_member(src, "internal_cells", C)
+	update_icon()
+	RefreshParts()
+	update_maxcharge()
+	return TRUE
 
 #undef PSU_OFFLINE
 #undef PSU_OUTPUT

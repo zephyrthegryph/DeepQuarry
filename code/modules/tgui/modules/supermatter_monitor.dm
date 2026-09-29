@@ -30,8 +30,11 @@
 	for(var/obj/machinery/power/supermatter/S in supermatters)
 		. = max(., S.get_status())
 
-/datum/tgui_module/supermatter_monitor/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/supermatter_monitor, "merge:ui_data_datum_tgui_module_supermatter_monitor{active:num,SM_area:unknown,SM_integrity:unknown,SM_power:num,SM_ambienttemp:unknown,SM_ambientpressure:unknown,SM_EPR:unknown,SM_gas_O2:num,SM_gas_CO2:num,SM_gas_N2:num,SM_gas_PH:num,SM_gas_CH4:num,SM_gas_N2O:num,supermatters:list}")
+
+/// The computed part of /datum/tgui_module/supermatter_monitor's window data (declared on its UI_DATA row).
+/datum/tgui_module/supermatter_monitor/proc/ui_data_datum_tgui_module_supermatter_monitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	if(istype(active(), /obj/machinery/power/supermatter))
 		var/turf/T = get_turf(active())
@@ -83,23 +86,23 @@
 
 	return data
 
-/datum/tgui_module/supermatter_monitor/tgui_act(action, params)
-	if(..())
-		return TRUE
+UI_ACT(/datum/tgui_module/supermatter_monitor, "clear", ui_act_clear)
+UI_ACT_PROC(/datum/tgui_module/supermatter_monitor, ui_act_clear)
+	rel_clear(src, "active")
+	. = TRUE
 
-	switch(action)
-		if("clear")
-			rel_clear(src, "active")
-			. = TRUE
-		if("refresh")
-			refresh()
-			. = TRUE
-		if("set")
-			var/newuid = text2num(params["set"])
-			for(var/obj/machinery/power/supermatter/S in supermatters)
-				if(S.uid == newuid)
-					rel_set(src, "active", S)
-			. = TRUE
+UI_ACT(/datum/tgui_module/supermatter_monitor, "refresh", ui_act_refresh)
+UI_ACT_PROC(/datum/tgui_module/supermatter_monitor, ui_act_refresh)
+	refresh()
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/supermatter_monitor, "set", ui_act_set, UI_ARG_NUM("set"))
+UI_ACT_PROC(/datum/tgui_module/supermatter_monitor, ui_act_set)
+	var/newuid = params["set"]
+	for(var/obj/machinery/power/supermatter/S in supermatters)
+		if(S.uid == newuid)
+			rel_set(src, "active", S)
+	. = TRUE
 
 /datum/tgui_module/supermatter_monitor/ntos
 	ntos = TRUE

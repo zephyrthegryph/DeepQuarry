@@ -376,13 +376,12 @@ DAMAGE_REACTION(/obj/machinery/power/port_gen, DAMAGE_EMP, PROC_REF(port_gen_emp
 		return STATUS_CLOSE
 	return ..()
 
-/obj/machinery/power/port_gen/pacman/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PortableGenerator", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/power/port_gen/pacman, "PortableGenerator")
 
-/obj/machinery/power/port_gen/pacman/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/power/port_gen/pacman, "anchored:num", "temperature_current=temperature:num", "temperature_max=max_temperature:num", "temperature_overheat=overheating:num", "merge:ui_data_obj_machinery_power_port_gen_pacman{active:num,is_ai:bool,sheet_name:text,fuel_stored:num,fuel_capacity:num,fuel_usage:num,connected:num,ready_to_boot:bool,power_generated:unknown,power_output:num,unsafe_output:bool,power_available:unknown}")
+
+/// The computed part of /obj/machinery/power/port_gen/pacman's window data (declared on its UI_DATA row).
+/obj/machinery/power/port_gen/pacman/proc/ui_data_obj_machinery_power_port_gen_pacman(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["active"] = active
@@ -399,44 +398,44 @@ DAMAGE_REACTION(/obj/machinery/power/port_gen, DAMAGE_EMP, PROC_REF(port_gen_emp
 	data["fuel_capacity"] = round(max_sheets * 1000, 0.1)
 	data["fuel_usage"] = active ? round((power_output / time_per_sheet) * 1000) : 0
 
-	data["anchored"] = anchored
 	data["connected"] = (power_region ? 1 : 0)
 	data["ready_to_boot"] = anchored && HasFuel()
 	data["power_generated"] = DisplayPower(power_gen)
 	data["power_output"] = DisplayPower(power_gen * power_output)
 	data["unsafe_output"] = power_output > max_safe_output
 	data["power_available"] = (!power_region ? 0 : DisplayPower(avail()))
-	data["temperature_current"] = temperature
-	data["temperature_max"] = max_temperature
-	data["temperature_overheat"] = overheating
 	// 1 sheet = 1000cm3?
 
 	return data
 
-/obj/machinery/power/port_gen/pacman/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return
-
+/obj/machinery/power/port_gen/pacman/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(ui.user)
-	switch(action)
-		if("toggle_power")
-			TogglePower()
-			. = TRUE
+	return TRUE
 
-		if("eject")
-			if(!active)
-				DropFuel()
-				. = TRUE
+UI_ACT(/obj/machinery/power/port_gen/pacman, "toggle_power", ui_act_toggle_power)
+UI_ACT_PROC(/obj/machinery/power/port_gen/pacman, ui_act_toggle_power)
+	TogglePower()
+	. = TRUE
 
-		if("lower_power")
-			if(power_output > 1)
-				power_output--
-				. = TRUE
+UI_ACT(/obj/machinery/power/port_gen/pacman, "eject", ui_act_eject)
+UI_ACT_PROC(/obj/machinery/power/port_gen/pacman, ui_act_eject)
+	if(!active)
+		DropFuel()
+		. = TRUE
 
-		if("higher_power")
-			if(power_output < max_power_output || (emagged && power_output < round(max_power_output * 2.5)))
-				power_output++
-				. = TRUE
+UI_ACT(/obj/machinery/power/port_gen/pacman, "lower_power", ui_act_lower_power)
+UI_ACT_PROC(/obj/machinery/power/port_gen/pacman, ui_act_lower_power)
+	if(power_output > 1)
+		power_output--
+		. = TRUE
+
+UI_ACT(/obj/machinery/power/port_gen/pacman, "higher_power", ui_act_higher_power)
+UI_ACT_PROC(/obj/machinery/power/port_gen/pacman, ui_act_higher_power)
+	if(power_output < max_power_output || (emagged && power_output < round(max_power_output * 2.5)))
+		power_output++
+		. = TRUE
 
 /obj/machinery/power/port_gen/pacman/super
 	name = "S.U.P.E.R.P.A.C.M.A.N.-type Portable Generator"

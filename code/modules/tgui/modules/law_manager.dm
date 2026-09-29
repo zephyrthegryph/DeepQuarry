@@ -13,135 +13,153 @@
 
 	rel_set(src, "owner", S)
 
-/datum/tgui_module/law_manager/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
+/// Every law set the UI may name; handlers check a non-admin picked a player set.
+/datum/tgui_module/law_manager/proc/law_sets()
+	return GLOB.admin_laws | GLOB.player_laws
+
+UI_ACT(/datum/tgui_module/law_manager, "law_channel", ui_act_law_channel, UI_ARG_TEXT("law_channel"))
+UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_law_channel)
+	if(params["law_channel"] in owner().law_channels())
+		owner().lawchannel = params["law_channel"]
+	return TRUE
+
+UI_ACT(/datum/tgui_module/law_manager, "state_law", ui_act_state_law, UI_ARG_REF("ref", "proc:ui_source_owner_laws_all_laws", /datum/ai_law), UI_ARG_NUM("state_law"))
+UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_state_law)
+	var/datum/ai_law/AL = params["ref"]
+	if(AL)
+		var/state_law = params["state_law"]
+		owner().laws.set_state_law(AL, state_law)
+	return TRUE
+
+UI_ACT(/datum/tgui_module/law_manager, "add_zeroth_law", ui_act_add_zeroth_law)
+UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_add_zeroth_law)
+	if(zeroth_law && is_admin(ui.user) && !owner().laws.zeroth_law)
+		owner().set_zeroth_law(zeroth_law)
+	return TRUE
+
+UI_ACT(/datum/tgui_module/law_manager, "add_ion_law", ui_act_add_ion_law)
+UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_add_ion_law)
+	if(ion_law && is_malf(ui.user))
+		owner().add_ion_law(ion_law)
+	return TRUE
+
+UI_ACT(/datum/tgui_module/law_manager, "add_inherent_law", ui_act_add_inherent_law)
+UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_add_inherent_law)
+	if(inherent_law && is_malf(ui.user))
+		owner().add_inherent_law(inherent_law)
+	return TRUE
+
+UI_ACT(/datum/tgui_module/law_manager, "add_supplied_law", ui_act_add_supplied_law)
+UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_add_supplied_law)
+	if(supplied_law && supplied_law_position >= 1 && supplied_law_position <= MAX_SUPPLIED_LAW_NUMBER && is_malf(ui.user))
+		owner().add_supplied_law(supplied_law_position, supplied_law)
+	return TRUE
+
+UI_ACT(/datum/tgui_module/law_manager, "change_zeroth_law", ui_act_change_zeroth_law, UI_ARG_TEXT("val"))
+UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_change_zeroth_law)
+	var/new_law = sanitize(params["val"])
+	if(new_law && new_law != zeroth_law && can_still_topic(ui.user, state))
+		zeroth_law = new_law
+	return TRUE
+
+UI_ACT(/datum/tgui_module/law_manager, "change_ion_law", ui_act_change_ion_law, UI_ARG_TEXT("val"))
+UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_change_ion_law)
+	var/new_law = sanitize(params["val"])
+	if(new_law && new_law != ion_law && can_still_topic(ui.user, state))
+		ion_law = new_law
+	return TRUE
+
+UI_ACT(/datum/tgui_module/law_manager, "change_inherent_law", ui_act_change_inherent_law, UI_ARG_TEXT("val"))
+UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_change_inherent_law)
+	var/new_law = sanitize(params["val"])
+	if(new_law && new_law != inherent_law && can_still_topic(ui.user, state))
+		inherent_law = new_law
+	return TRUE
+
+UI_ACT(/datum/tgui_module/law_manager, "change_supplied_law", ui_act_change_supplied_law, UI_ARG_TEXT("val"))
+UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_change_supplied_law)
+	var/new_law = sanitize(params["val"])
+	if(new_law && new_law != supplied_law && can_still_topic(ui.user, state))
+		supplied_law = new_law
+	return TRUE
+
+UI_ACT(/datum/tgui_module/law_manager, "change_supplied_law_position", ui_act_change_supplied_law_position)
+UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_change_supplied_law_position)
+	var/new_position = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/number, message = "Enter new supplied law position between 1 and [MAX_SUPPLIED_LAW_NUMBER], inclusive. Inherent laws at the same index as a supplied law will not be stated.", title = "Law Position", default = supplied_law_position, max = MAX_SUPPLIED_LAW_NUMBER, min = 1)
+	if(isnull(new_position))
+		return
+	if(isnum(new_position) && can_still_topic(ui.user, state))
+		supplied_law_position = CLAMP(new_position, 1, MAX_SUPPLIED_LAW_NUMBER)
+	return TRUE
+
+UI_ACT(/datum/tgui_module/law_manager, "edit_law", ui_act_edit_law, UI_ARG_REF("edit_law", "proc:ui_source_owner_laws_all_laws", /datum/ai_law))
+UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_edit_law)
+	if(is_malf(ui.user))
+		var/datum/ai_law/AL = params["edit_law"]
+		if(AL)
+			var/new_law = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/text, message = "Enter new law. Leaving the field blank will cancel the edit.", title = "Edit Law", default = AL.law)
+			if(isnull(new_law))
+				return
+			if(new_law && new_law != AL.law && is_malf(ui.user) && can_still_topic(ui.user, state))
+				log_and_message_admins("has changed a law of [owner()] from '[AL.law]' to '[new_law]'")
+				AL.law = new_law
 		return TRUE
 
-	switch(action)
-		if("law_channel")
-			if(params["law_channel"] in owner().law_channels())
-				owner().lawchannel = params["law_channel"]
-			return TRUE
+UI_ACT(/datum/tgui_module/law_manager, "delete_law", ui_act_delete_law, UI_ARG_REF("delete_law", "proc:ui_source_owner_laws_all_laws", /datum/ai_law))
+UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_delete_law)
+	if(is_malf(ui.user))
+		var/datum/ai_law/AL = params["delete_law"]
+		if(AL && is_malf(ui.user))
+			owner().delete_law(AL)
+	return TRUE
 
-		if("state_law")
-			var/datum/ai_law/AL = locate_in_list(owner().laws.all_laws(), params["ref"])
-			if(AL)
-				var/state_law = text2num(params["state_law"])
-				owner().laws.set_state_law(AL, state_law)
-			return TRUE
+UI_ACT(/datum/tgui_module/law_manager, "state_laws", ui_act_state_laws)
+UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_state_laws)
+	owner().statelaws(owner().laws)
+	return TRUE
 
-		if("add_zeroth_law")
-			if(zeroth_law && is_admin(ui.user) && !owner().laws.zeroth_law)
-				owner().set_zeroth_law(zeroth_law)
-			return TRUE
+UI_ACT(/datum/tgui_module/law_manager, "state_law_set", ui_act_state_law_set, UI_ARG_REF("state_law_set", "proc:law_sets", /datum/ai_laws))
+UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_state_law_set)
+	var/datum/ai_laws/ALs = params["state_law_set"]
+	if(ALs && (is_admin(ui.user) || (ALs in GLOB.player_laws)))
+		owner().statelaws(ALs)
+	return TRUE
 
-		if("add_ion_law")
-			if(ion_law && is_malf(ui.user))
-				owner().add_ion_law(ion_law)
-			return TRUE
+UI_ACT(/datum/tgui_module/law_manager, "transfer_laws", ui_act_transfer_laws, UI_ARG_REF("transfer_laws", "proc:law_sets", /datum/ai_laws))
+UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_transfer_laws)
+	if(is_malf(ui.user))
+		var/datum/ai_laws/ALs = params["transfer_laws"]
+		if(ALs && (is_admin(ui.user) || (ALs in GLOB.player_laws)))
+			log_and_message_admins("has transfered the [ALs.name] laws to [owner()].")
+			ALs.sync(owner(), 0)
+	return TRUE
 
-		if("add_inherent_law")
-			if(inherent_law && is_malf(ui.user))
-				owner().add_inherent_law(inherent_law)
-			return TRUE
+UI_ACT(/datum/tgui_module/law_manager, "notify_laws", ui_act_notify_laws)
+UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_notify_laws)
+	to_chat(owner(), span_danger("Law Notice\n") + owner().laws.get_formatted_laws())
+	if(isAI(owner()))
+		var/mob/living/silicon/ai/AI = owner()
+		for(var/mob/living/silicon/robot/R in AI.connected_robots)
+			to_chat(R, span_danger("Law Notice\n") + R.laws.get_formatted_laws())
+	if(ui.user != owner())
+		to_chat(ui.user, span_notice("Laws displayed."))
+	return TRUE
 
-		if("add_supplied_law")
-			if(supplied_law && supplied_law_position >= 1 && supplied_law_position <= MAX_SUPPLIED_LAW_NUMBER && is_malf(ui.user))
-				owner().add_supplied_law(supplied_law_position, supplied_law)
-			return TRUE
+/// The list the UI_ARG_REF rows resolve refs in.
+/datum/tgui_module/law_manager/proc/ui_source_owner_laws_all_laws()
+	return owner().laws.all_laws()
 
-		if("change_zeroth_law")
-			var/new_law = sanitize(params["val"])
-			if(new_law && new_law != zeroth_law && can_still_topic(ui.user, state))
-				zeroth_law = new_law
-			return TRUE
-
-		if("change_ion_law")
-			var/new_law = sanitize(params["val"])
-			if(new_law && new_law != ion_law && can_still_topic(ui.user, state))
-				ion_law = new_law
-			return TRUE
-
-		if("change_inherent_law")
-			var/new_law = sanitize(params["val"])
-			if(new_law && new_law != inherent_law && can_still_topic(ui.user, state))
-				inherent_law = new_law
-			return TRUE
-
-		if("change_supplied_law")
-			var/new_law = sanitize(params["val"])
-			if(new_law && new_law != supplied_law && can_still_topic(ui.user, state))
-				supplied_law = new_law
-			return TRUE
-
-		if("change_supplied_law_position")
-			var/new_position = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/number, message = "Enter new supplied law position between 1 and [MAX_SUPPLIED_LAW_NUMBER], inclusive. Inherent laws at the same index as a supplied law will not be stated.", title = "Law Position", default = supplied_law_position, max = MAX_SUPPLIED_LAW_NUMBER, min = 1)
-			if(isnull(new_position))
-				return
-			if(isnum(new_position) && can_still_topic(ui.user, state))
-				supplied_law_position = CLAMP(new_position, 1, MAX_SUPPLIED_LAW_NUMBER)
-			return TRUE
-
-		if("edit_law")
-			if(is_malf(ui.user))
-				var/datum/ai_law/AL = locate_in_list(owner().laws.all_laws(), params["edit_law"])
-				if(AL)
-					var/new_law = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/text, message = "Enter new law. Leaving the field blank will cancel the edit.", title = "Edit Law", default = AL.law)
-					if(isnull(new_law))
-						return
-					if(new_law && new_law != AL.law && is_malf(ui.user) && can_still_topic(ui.user, state))
-						log_and_message_admins("has changed a law of [owner()] from '[AL.law]' to '[new_law]'")
-						AL.law = new_law
-				return TRUE
-
-		if("delete_law")
-			if(is_malf(ui.user))
-				var/datum/ai_law/AL = locate_in_list(owner().laws.all_laws(), params["delete_law"])
-				if(AL && is_malf(ui.user))
-					owner().delete_law(AL)
-			return TRUE
-
-		if("state_laws")
-			owner().statelaws(owner().laws)
-			return TRUE
-
-		if("state_law_set")
-			var/datum/ai_laws/ALs = locate_in_list((is_admin(ui.user) ? GLOB.admin_laws : GLOB.player_laws), params["state_law_set"])
-			if(ALs)
-				owner().statelaws(ALs)
-			return TRUE
-
-		if("transfer_laws")
-			if(is_malf(ui.user))
-				var/datum/ai_laws/ALs = locate_in_list((is_admin(ui.user) ? GLOB.admin_laws : GLOB.player_laws), params["transfer_laws"])
-				if(ALs)
-					log_and_message_admins("has transfered the [ALs.name] laws to [owner()].")
-					ALs.sync(owner(), 0)
-			return TRUE
-
-		if("notify_laws")
-			to_chat(owner(), span_danger("Law Notice\n") + owner().laws.get_formatted_laws())
-			if(isAI(owner()))
-				var/mob/living/silicon/ai/AI = owner()
-				for(var/mob/living/silicon/robot/R in AI.connected_robots)
-					to_chat(R, span_danger("Law Notice\n") + R.laws.get_formatted_laws())
-			if(ui.user != owner())
-				to_chat(ui.user, span_notice("Laws displayed."))
-			return TRUE
-
-/datum/tgui_module/law_manager/tgui_interact(mob/user, datum/tgui/ui)
+/datum/tgui_module/law_manager/ui_prepare(mob/user, datum/tgui/ui)
 	owner().lawsync()
-	return ..() // 800, is_malf(user) ? 600 : 400
+	return ..()
 
-/datum/tgui_module/law_manager/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/law_manager, "ion_law:text", "zeroth_law:text", "inherent_law:text", "supplied_law:text", "supplied_law_position", "merge:ui_data_datum_tgui_module_law_manager{ion_law_nr:unknown,isAI:num,isMalf:unknown,isSlaved:unknown,isAdmin:num,channel:unknown,channels:list,law_sets:unknown}")
+
+/// The computed part of /datum/tgui_module/law_manager's window data (declared on its UI_DATA row).
+/datum/tgui_module/law_manager/proc/ui_data_datum_tgui_module_law_manager(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["ion_law_nr"] = ionnum()
-	data["ion_law"] = ion_law
-	data["zeroth_law"] = zeroth_law
-	data["inherent_law"] = inherent_law
-	data["supplied_law"] = supplied_law
-	data["supplied_law_position"] = supplied_law_position
 
 	package_laws(data, "zeroth_laws", list(owner().laws.zeroth_law))
 	package_laws(data, "ion_laws", owner().laws.ion_laws)
@@ -204,12 +222,10 @@
 	log_and_message_admins("has syncronized [AI]'s laws with its borgs.")
 
 /datum/tgui_module/law_manager/robot
-/datum/tgui_module/law_manager/robot/tgui_state(mob/user)
-	return GLOB.tgui_self_state
+DECLARE_UI_STATE(/datum/tgui_module/law_manager/robot, GLOB.tgui_self_state)
 
 /datum/tgui_module/law_manager/admin
-/datum/tgui_module/law_manager/admin/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG)
+DECLARE_UI_STATE(/datum/tgui_module/law_manager/admin, ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG))
 
 /datum/tgui_module/law_manager/admin/tgui_close(mob/user)
 	. = ..()

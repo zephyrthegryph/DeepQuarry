@@ -51,24 +51,21 @@
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/computer/roguezones/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "RogueZones", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/roguezones, "RogueZones")
 
-/obj/machinery/computer/roguezones/tgui_data(mob/user)
+UI_DATA(/obj/machinery/computer/roguezones, "scanning:num", "debug:num", "merge:ui_data_obj_machinery_computer_roguezones{timeout_percent:num,diffstep:num,difficulty:unknown,occupied:unknown,updated:bool,shuttle_location:text,shuttle_at_station:num,scan_ready:num,can_recall_shuttle:bool}")
+
+/// The computed part of /obj/machinery/computer/roguezones's window data (declared on its UI_DATA row).
+/obj/machinery/computer/roguezones/proc/ui_data_obj_machinery_computer_roguezones(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/chargePercent = min(100, ((((world.time - GLOB.rm_controller.last_scan) / 10) / 60) / GLOB.rm_controller.scan_wait) * 100)
 	var/curZoneOccupied = GLOB.rm_controller.current_zone() ? GLOB.rm_controller.current_zone().is_occupied() : 0
 
-	var/list/data = ..()
+	var/list/data = list()
 	data["timeout_percent"] = chargePercent
 	data["diffstep"] = GLOB.rm_controller.diffstep
 	data["difficulty"] = GLOB.rm_controller.diffstep_strs[GLOB.rm_controller.diffstep]
 	data["occupied"] = curZoneOccupied
-	data["scanning"] = scanning
 	data["updated"] = ELAPSED(GLOB.rm_controller, last_scan, CLOCK_WORLD) < 20 SECONDS //Very recently scanned (20 seconds)
-	data["debug"] = debug
 
 	if(!shuttle_control())
 		data["shuttle_location"] = "Unknown"
@@ -97,17 +94,16 @@
 	data["can_recall_shuttle"] = (shuttle_control() && (shuttle_control().z in using_map.belter_belt_z) && !curZoneOccupied)
 	return data
 
-/obj/machinery/computer/roguezones/tgui_act(action, list/params, datum/tgui/ui)
-	if(..())
-		return TRUE
-	switch(action)
-		if("scan_for_new")
-			scan_for_new_zone()
-			. = TRUE
-		if("recall_shuttle")
-			failsafe_shuttle_recall(ui.user)
-			. = TRUE
+UI_ACT(/obj/machinery/computer/roguezones, "scan_for_new", ui_act_scan_for_new)
+UI_ACT_PROC(/obj/machinery/computer/roguezones, ui_act_scan_for_new)
+	scan_for_new_zone()
+	. = TRUE
+	add_fingerprint(ui.user)
 
+UI_ACT(/obj/machinery/computer/roguezones, "recall_shuttle", ui_act_recall_shuttle)
+UI_ACT_PROC(/obj/machinery/computer/roguezones, ui_act_recall_shuttle)
+	failsafe_shuttle_recall(ui.user)
+	. = TRUE
 	add_fingerprint(ui.user)
 
 /obj/machinery/computer/roguezones/proc/scan_for_new_zone()

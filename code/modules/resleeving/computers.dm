@@ -134,16 +134,18 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 		get_asset_datum(/datum/asset/simple/cloning/resleeving),
 	)
 
-/obj/machinery/computer/transhuman/resleeving/tgui_interact(mob/user, datum/tgui/ui = null)
+DECLARE_UI(/obj/machinery/computer/transhuman/resleeving, "ResleevingConsole", UI_TITLE("Resleeving Console"))
+
+/obj/machinery/computer/transhuman/resleeving/ui_prepare(mob/user, datum/tgui/ui)
 	if(!operable())
-		return
+		return FALSE
 
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ResleevingConsole", "Resleeving Console")
-		ui.open()
+	return TRUE
 
-/obj/machinery/computer/transhuman/resleeving/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/transhuman/resleeving, "merge:ui_data_obj_machinery_computer_transhuman_resleeving{menu:unknown,pods:list,spods:list,sleevers:list,coredumped:unknown,emergency:unknown,temp:unknown,selected_pod:text,selected_printer:text,selected_sleever:text,bodyrecords:list,mindrecords:list,active_b_rec:map,active_m_rec:map}")
+
+/// The computed part of /obj/machinery/computer/transhuman/resleeving's window data (declared on its UI_DATA row).
+/obj/machinery/computer/transhuman/resleeving/proc/ui_data_obj_machinery_computer_transhuman_resleeving(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/data[0]
 	data["menu"] = menu
 
@@ -245,74 +247,81 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 	disk().forceMove(get_turf(src))
 	own_take(src, "disk")
 
-/obj/machinery/computer/transhuman/resleeving/tgui_act(action, params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
+UI_ACT(/obj/machinery/computer/transhuman/resleeving, "view_b_rec", ui_act_view_b_rec, UI_ARG_VALUE("ref"))
+UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_view_b_rec)
+	view_b_rec(params["ref"])
+	. = TRUE
 
-	switch(action)
-		if("view_b_rec")
-			view_b_rec(params["ref"])
-			. = TRUE
-		if("clear_b_rec")
-			rel_clear(src, "current_br")
-			. = TRUE
-		if("view_m_rec")
-			view_m_rec(params["ref"])
-			. = TRUE
-		if("clear_m_rec")
-			rel_clear(src, "current_mr")
-			. = TRUE
-		if("coredump")
-			if(disk())
-				our_db().core_dump(disk())
-				om_after(src, 0.5 SECONDS, PROC_REF(eject_dump_disk))
-				. = TRUE
-		if("ejectdisk")
-			rel_clear(src, "current_br")
-			if(disk())
-				disk().forceMove(get_turf(src))
-				own_take(src, "disk")
-			. = TRUE
-		if("create")
-			act_create_body()
-			. = TRUE
-		if("sleeve")
-			act_sleeve(action, params, ui)
-			. = TRUE
-		if("selectpod")
-			var/ref = params["ref"]
-			if(!length(ref))
-				return
-			var/obj/machinery/clonepod/selected = locate(ref)
-			if(istype(selected) && (selected in pods))
-				rel_set(src, "selected_pod", selected)
-			. = TRUE
-		if("selectprinter")
-			var/ref = params["ref"]
-			if(!length(ref))
-				return
-			var/obj/machinery/transhuman/synthprinter/selected = locate(ref)
-			if(istype(selected) && (selected in spods))
-				rel_set(src, "selected_printer", selected)
-			. = TRUE
-		if("selectsleever")
-			var/ref = params["ref"]
-			if(!length(ref))
-				return
-			var/obj/machinery/transhuman/resleever/selected = locate(ref)
-			if(istype(selected) && (selected in sleevers))
-				rel_set(src, "selected_sleever", selected)
-			. = TRUE
-		if("menu")
-			menu = clamp(text2num(params["num"]), MENU_MAIN, MENU_MIND)
-			. = TRUE
-		if("genereset")
-			act_gene_reset()
-			. = TRUE
-		if("cleartemp")
-			temp = null
-			. = TRUE
+UI_ACT(/obj/machinery/computer/transhuman/resleeving, "clear_b_rec", ui_act_clear_b_rec)
+UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_clear_b_rec)
+	rel_clear(src, "current_br")
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/transhuman/resleeving, "view_m_rec", ui_act_view_m_rec, UI_ARG_VALUE("ref"))
+UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_view_m_rec)
+	view_m_rec(params["ref"])
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/transhuman/resleeving, "clear_m_rec", ui_act_clear_m_rec)
+UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_clear_m_rec)
+	rel_clear(src, "current_mr")
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/transhuman/resleeving, "coredump", ui_act_coredump)
+UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_coredump)
+	if(disk())
+		our_db().core_dump(disk())
+		om_after(src, 0.5 SECONDS, PROC_REF(eject_dump_disk))
+		. = TRUE
+
+UI_ACT(/obj/machinery/computer/transhuman/resleeving, "ejectdisk", ui_act_ejectdisk)
+UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_ejectdisk)
+	rel_clear(src, "current_br")
+	if(disk())
+		disk().forceMove(get_turf(src))
+		own_take(src, "disk")
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/transhuman/resleeving, "create", ui_act_create)
+UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_create)
+	act_create_body()
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/transhuman/resleeving, "selectpod", ui_act_selectpod, UI_ARG_REF("ref", "pods", /obj/machinery/clonepod))
+UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_selectpod)
+	var/obj/machinery/clonepod/selected = params["ref"]
+	if(selected)
+		rel_set(src, "selected_pod", selected)
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/transhuman/resleeving, "selectprinter", ui_act_selectprinter, UI_ARG_REF("ref", "spods", /obj/machinery/transhuman/synthprinter))
+UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_selectprinter)
+	var/obj/machinery/transhuman/synthprinter/selected = params["ref"]
+	if(selected)
+		rel_set(src, "selected_printer", selected)
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/transhuman/resleeving, "selectsleever", ui_act_selectsleever, UI_ARG_REF("ref", "sleevers", /obj/machinery/transhuman/resleever))
+UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_selectsleever)
+	var/obj/machinery/transhuman/resleever/selected = params["ref"]
+	if(selected)
+		rel_set(src, "selected_sleever", selected)
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/transhuman/resleeving, "menu", ui_act_menu, UI_ARG_NUM("num", MENU_MAIN, MENU_MIND))
+UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_menu)
+	menu = params["num"]
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/transhuman/resleeving, "genereset", ui_act_genereset)
+UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_genereset)
+	act_gene_reset()
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/transhuman/resleeving, "cleartemp", ui_act_cleartemp)
+UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_cleartemp)
+	temp = null
+	. = TRUE
 
 /// "create": grow or print the selected body record on the selected pod.
 /obj/machinery/computer/transhuman/resleeving/proc/act_create_body()
@@ -384,8 +393,10 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 	rel_clear(src, "current_br")
 
 /// "sleeve": put the selected mind record into the selected resleever's body (mode 1) or a card (mode 2).
-/// Prompts rerun tgui_act with the same action and params.
-/obj/machinery/computer/transhuman/resleeving/proc/act_sleeve(action, list/params, datum/tgui/ui)
+/// Prompts re-run the action with the same params.
+UI_ACT(/obj/machinery/computer/transhuman/resleeving, "sleeve", act_sleeve, UI_ARG_NUM("mode"))
+UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, act_sleeve)
+	. = TRUE
 	var/datum/transhuman/mind_record/active_mr = current_mr
 	if(!istype(active_mr))
 		set_temp("Error: Data corruption.", "danger")
@@ -395,7 +406,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 		set_temp("Error: No sleevers detected.", "danger")
 		rel_clear(src, "current_mr")
 		return
-	var/mode = text2num(params["mode"])
+	var/mode = params["mode"]
 	var/override
 	var/obj/machinery/transhuman/resleever/sleever = selected_sleever()
 	if(!istype(sleever))

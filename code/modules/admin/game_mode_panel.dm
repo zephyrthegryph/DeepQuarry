@@ -13,15 +13,12 @@
 
 // The game mode owns this panel (tgui_game_mode_panel); target_mode is a plain relation back.
 
-/datum/game_mode_panel/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN|R_EVENT)
+DECLARE_UI_STATE(/datum/game_mode_panel, ADMIN_STATE(R_ADMIN|R_EVENT))
 
-/datum/game_mode_panel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		recompute_antag_caps()
-		ui = new(user, src, "GameModePanel", "Edit Game Mode")
-		ui.open()
+DECLARE_UI(/datum/game_mode_panel, "GameModePanel", UI_TITLE("Edit Game Mode"))
+
+/datum/game_mode_panel/ui_opening(mob/user, datum/tgui/ui)
+	recompute_antag_caps()
 
 /datum/game_mode_panel/proc/recompute_antag_caps()
 	if(!target_mode?.antag_templates)
@@ -33,7 +30,10 @@
 	SStgui.close_uis(src)
 	qdel(src)
 
-/datum/game_mode_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/game_mode_panel, "merge:ui_data_datum_game_mode_panel{alive:bool,mode_name:text,config_tag:unknown,ert_enabled:bool,respawn_allowed:bool,shuttle_delay:num,shuttle_auto_recall:bool,event_modifier_moderate:unknown,event_modifier_major:unknown,autotraitor:bool,antag_scaling_coeff:num,core_antag_tags:list,antag_templates:list}")
+
+/// The computed part of /datum/game_mode_panel's window data (declared on its UI_DATA row).
+/datum/game_mode_panel/proc/ui_data_datum_game_mode_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	if(!target_mode)
 		return list("alive" = FALSE)
 	var/list/data = list("alive" = TRUE)
@@ -65,43 +65,53 @@
 	data["antag_templates"] = antag_templates
 	return data
 
-/datum/game_mode_panel/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
+/datum/game_mode_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!target_mode || !check_rights(R_ADMIN|R_EVENT))
-		return
+		return FALSE
+	return TRUE
 
-	switch(action)
-		if("toggle")
-			// Forward to the existing /game_mode Topic handler.
-			var/key = "[params["key"]]"
-			topic_dispatch(target_mode, ui.user, list("toggle" = key))
-			SStgui.update_uis(src)
-			return TRUE
-		if("set")
-			var/key = "[params["key"]]"
-			topic_dispatch(target_mode, ui.user, list("set" = key))
-			SStgui.update_uis(src)
-			return TRUE
-		if("debug_antag")
-			var/id = "[params["id"]]"
-			topic_dispatch(target_mode, ui.user, list("debug_antag" = id))
-			return TRUE
-		if("remove_antag_type")
-			var/id = "[params["id"]]"
-			topic_dispatch(target_mode, ui.user, list("remove_antag_type" = id))
-			SStgui.update_uis(src)
-			return TRUE
-		if("add_antag_type")
-			topic_dispatch(target_mode, ui.user, list("add_antag_type" = "1"))
-			recompute_antag_caps()
-			SStgui.update_uis(src)
-			return TRUE
-		if("refresh")
-			recompute_antag_caps()
-			SStgui.update_uis(src)
-			return TRUE
+UI_ACT(/datum/game_mode_panel, "toggle", ui_act_toggle, UI_ARG_TEXT("key"))
+UI_ACT_PROC(/datum/game_mode_panel, ui_act_toggle)
+	// Forward to the existing /game_mode Topic handler.
+	var/key = "[params["key"]]"
+	topic_dispatch(target_mode, ui.user, list("toggle" = key))
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/game_mode_panel, "set", ui_act_set, UI_ARG_TEXT("key"))
+UI_ACT_PROC(/datum/game_mode_panel, ui_act_set)
+	var/key = "[params["key"]]"
+	topic_dispatch(target_mode, ui.user, list("set" = key))
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/game_mode_panel, "debug_antag", ui_act_debug_antag, UI_ARG_TEXT("id"))
+UI_ACT_PROC(/datum/game_mode_panel, ui_act_debug_antag)
+	var/id = "[params["id"]]"
+	topic_dispatch(target_mode, ui.user, list("debug_antag" = id))
+	return TRUE
+
+UI_ACT(/datum/game_mode_panel, "remove_antag_type", ui_act_remove_antag_type, UI_ARG_TEXT("id"))
+UI_ACT_PROC(/datum/game_mode_panel, ui_act_remove_antag_type)
+	var/id = "[params["id"]]"
+	topic_dispatch(target_mode, ui.user, list("remove_antag_type" = id))
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/game_mode_panel, "add_antag_type", ui_act_add_antag_type)
+UI_ACT_PROC(/datum/game_mode_panel, ui_act_add_antag_type)
+	topic_dispatch(target_mode, ui.user, list("add_antag_type" = "1"))
+	recompute_antag_caps()
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/game_mode_panel, "refresh", ui_act_refresh)
+UI_ACT_PROC(/datum/game_mode_panel, ui_act_refresh)
+	recompute_antag_caps()
+	SStgui.update_uis(src)
+	return TRUE
 
 /datum/game_mode
 	var/datum/game_mode_panel/tgui_game_mode_panel

@@ -191,13 +191,12 @@ It is used to destroy hand-held objects and advance technological research. Used
 // Handling deconstruction
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/obj/machinery/rnd/destructive_analyzer/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "DestructiveAnalyzer")
-		ui.open()
+DECLARE_UI(/obj/machinery/rnd/destructive_analyzer, "DestructiveAnalyzer")
 
-/obj/machinery/rnd/destructive_analyzer/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/rnd/destructive_analyzer, "merge:ui_data_obj_machinery_rnd_destructive_analyzer{server_connected:bool,node_data:list,item_icon:text,indestructible:unknown,loaded_item:unknown,already_deconstructed:bool,recoverable_points:unknown}")
+
+/// The computed part of /obj/machinery/rnd/destructive_analyzer's window data (declared on its UI_DATA row).
+/obj/machinery/rnd/destructive_analyzer/proc/ui_data_obj_machinery_rnd_destructive_analyzer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["server_connected"] = !!stored_research
 	data["node_data"] = null
@@ -227,24 +226,21 @@ It is used to destroy hand-held objects and advance technological research. Used
 	data["research_point_id"] = DESTRUCTIVE_ANALYZER_DESTROY_POINTS
 	return data
 
-/obj/machinery/rnd/destructive_analyzer/tgui_act(action, params, datum/tgui/ui)
-	if(..())
+UI_ACT(/obj/machinery/rnd/destructive_analyzer, "eject_item", ui_act_eject_item)
+UI_ACT_PROC(/obj/machinery/rnd/destructive_analyzer, ui_act_eject_item)
+	var/current_item = loaded_item
+	if(busy)
+		balloon_alert(user, "already busy!")
+		return TRUE
+	if(current_item)
+		unload_item()
 		return TRUE
 
-	var/mob/user = usr
-	var/current_item = loaded_item
-	switch(action)
-		if("eject_item")
-			if(busy)
-				balloon_alert(user, "already busy!")
-				return TRUE
-			if(current_item)
-				unload_item()
-				return TRUE
-		if("deconstruct")
-			if(!user_try_decon_id(params["deconstruct_id"]))
-				balloon_alert(user, "analysis failed!")
-			return TRUE
+UI_ACT(/obj/machinery/rnd/destructive_analyzer, "deconstruct", ui_act_deconstruct, UI_ARG_TEXT("deconstruct_id"))
+UI_ACT_PROC(/obj/machinery/rnd/destructive_analyzer, ui_act_deconstruct)
+	if(!user_try_decon_id(params["deconstruct_id"]))
+		balloon_alert(user, "analysis failed!")
+	return TRUE
 
 ///Drops the loaded item where it can and nulls it.
 /obj/machinery/rnd/destructive_analyzer/proc/unload_item()

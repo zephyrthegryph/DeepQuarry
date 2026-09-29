@@ -9,8 +9,11 @@
 	var/list/watchers //Who's viewing a UAV through us (a relation list, kept by look()/unlook())
 	var/adhoc_range = 30 //How far we can operate on a UAV without NTnet
 
-/datum/tgui_module/uav/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/uav, "merge:ui_data_datum_tgui_module_uav{current_uav:unknown,signal_strength:unknown,in_use:num,paired_uavs:list}")
+
+/// The computed part of /datum/tgui_module/uav's window data (declared on its UI_DATA row).
+/datum/tgui_module/uav/proc/ui_data_datum_tgui_module_uav(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	if(current_uav())
 		if(QDELETED(current_uav()))
@@ -37,56 +40,55 @@
 	data["paired_uavs"] = paired_map
 	return data
 
-/datum/tgui_module/uav/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
+UI_ACT(/datum/tgui_module/uav, "switch_uav", ui_act_switch_uav, UI_ARG_REF("switch_uav", null, /obj/item/uav))
+UI_ACT_PROC(/datum/tgui_module/uav, ui_act_switch_uav)
+	var/obj/item/uav/U = params["switch_uav"] //This is a \ref to the UAV itself
+	if(!istype(U))
+		to_chat(ui.user,span_warning("Something is blocking the connection to that UAV. In-person investigation is required."))
+		return FALSE
+
+	if(!get_signal_to(U))
+		to_chat(ui.user,span_warning("The screen freezes for a moment, before returning to the UAV selection menu. It's not able to connect to that UAV."))
+		return FALSE
+
+	set_current(U)
+	return TRUE
+
+UI_ACT(/datum/tgui_module/uav, "del_uav", ui_act_del_uav, UI_ARG_TEXT("del_uav"))
+UI_ACT_PROC(/datum/tgui_module/uav, ui_act_del_uav)
+	var/refstring = params["del_uav"] //This is a \ref to the UAV itself
+	var/obj/item/modular_computer/mc_host = tgui_host()
+	//Deleted UAVs have already left the (relation) list; match on the \ref the UI sent
+	for(var/obj/item/uav/U in mc_host.paired_uavs)
+		if("\ref[U]" == refstring)
+			if(current_uav() == U)
+				set_current(null)
+			rel_remove(mc_host, "paired_uavs", U)
+	return TRUE
+
+UI_ACT(/datum/tgui_module/uav, "view_uav", ui_act_view_uav)
+UI_ACT_PROC(/datum/tgui_module/uav, ui_act_view_uav)
+	if(!current_uav())
+		return FALSE
+
+	if(!current_uav().state)
+		to_chat(ui.user,span_warning("The screen freezes for a moment, before returning to the UAV selection menu. It's not able to connect to that UAV."))
+	else
+		if(get_dist(ui.user, tgui_host()) > 1 || ui.user.blinded)
+			return FALSE
+		else if(!viewing_uav(ui.user))
+			start_coordinated_remoteview(src, ui.user, current_uav(), viewers, /datum/remote_view_config/uav_control)
+		else
+			ui.user.reset_perspective()
+	return TRUE
+
+UI_ACT(/datum/tgui_module/uav, "power_uav", ui_act_power_uav)
+UI_ACT_PROC(/datum/tgui_module/uav, ui_act_power_uav)
+	if(!current_uav())
+		return FALSE
+	else if(current_uav().toggle_power())
+		OM_EMIT(src, /datum/om/event/remote_view_clear)
 		return TRUE
-
-	switch(action)
-		if("switch_uav")
-			var/obj/item/uav/U = locate(params["switch_uav"]) //This is a \ref to the UAV itself
-			if(!istype(U))
-				to_chat(ui.user,span_warning("Something is blocking the connection to that UAV. In-person investigation is required."))
-				return FALSE
-
-			if(!get_signal_to(U))
-				to_chat(ui.user,span_warning("The screen freezes for a moment, before returning to the UAV selection menu. It's not able to connect to that UAV."))
-				return FALSE
-
-			set_current(U)
-			return TRUE
-
-		if("del_uav")
-			var/refstring = params["del_uav"] //This is a \ref to the UAV itself
-			var/obj/item/modular_computer/mc_host = tgui_host()
-			//Deleted UAVs have already left the (relation) list; match on the \ref the UI sent
-			for(var/obj/item/uav/U in mc_host.paired_uavs)
-				if("\ref[U]" == refstring)
-					if(current_uav() == U)
-						set_current(null)
-					rel_remove(mc_host, "paired_uavs", U)
-			return TRUE
-
-		if("view_uav")
-			if(!current_uav())
-				return FALSE
-
-			if(!current_uav().state)
-				to_chat(ui.user,span_warning("The screen freezes for a moment, before returning to the UAV selection menu. It's not able to connect to that UAV."))
-			else
-				if(get_dist(ui.user, tgui_host()) > 1 || ui.user.blinded)
-					return FALSE
-				else if(!viewing_uav(ui.user))
-					start_coordinated_remoteview(src, ui.user, current_uav(), viewers, /datum/remote_view_config/uav_control)
-				else
-					ui.user.reset_perspective()
-			return TRUE
-
-		if("power_uav")
-			if(!current_uav())
-				return FALSE
-			else if(current_uav().toggle_power())
-				OM_EMIT(src, /datum/om/event/remote_view_clear)
-				return TRUE
 
 /datum/tgui_module/uav/proc/set_current(obj/item/uav/U)
 	if(current_uav() == U)

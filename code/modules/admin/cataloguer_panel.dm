@@ -4,18 +4,15 @@
 // view. The DM side picks based on whether `displayed_data` is set on
 // the cataloguer.
 
-/obj/item/cataloguer/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/obj/item/cataloguer, GLOB.tgui_default_state)
 
-/obj/item/cataloguer/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Cataloguer", "Cataloguer")
-		ui.open()
+DECLARE_UI(/obj/item/cataloguer, "Cataloguer", UI_TITLE("Cataloguer"))
 
-/obj/item/cataloguer/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/cataloguer, "points_stored:num", "merge:ui_data_obj_item_cataloguer{debug:bool,detail:list,groups:list}")
+
+/// The computed part of /obj/item/cataloguer's window data (declared on its UI_DATA row).
+/obj/item/cataloguer/proc/ui_data_obj_item_cataloguer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["points_stored"] = points_stored
 	data["debug"] = !!debug
 	if(displayed_data)
 		var/cataloguers_text = null
@@ -49,32 +46,36 @@
 		data["groups"] = groups
 	return data
 
-/obj/item/cataloguer/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-	switch(action)
-		if("pulse_scan")
-			pulse_scan(ui.user)
-			return TRUE
-		if("show_data")
-			var/datum/category_item/catalogue/new_data = locate(params["ref"])
-			if(istype(new_data))
-				displayed_data = new_data
-				SStgui.update_uis(src)
-			return TRUE
-		if("back_to_list")
-			displayed_data = null
-			SStgui.update_uis(src)
-			return TRUE
-		if("refresh")
-			SStgui.update_uis(src)
-			return TRUE
-		if("debug_unlock")
-			if(!debug)
-				return TRUE
-			var/datum/category_item/catalogue/item = locate(params["ref"])
-			if(item)
-				item.discover(ui.user, list("Debugger"))
-			SStgui.update_uis(src)
-			return TRUE
+UI_ACT(/obj/item/cataloguer, "pulse_scan", ui_act_pulse_scan)
+UI_ACT_PROC(/obj/item/cataloguer, ui_act_pulse_scan)
+	pulse_scan(ui.user)
+	return TRUE
+
+UI_ACT(/obj/item/cataloguer, "show_data", ui_act_show_data, UI_ARG_REF("ref", null, /datum/category_item/catalogue))
+UI_ACT_PROC(/obj/item/cataloguer, ui_act_show_data)
+	var/datum/category_item/catalogue/new_data = params["ref"]
+	if(istype(new_data))
+		displayed_data = new_data
+		SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/item/cataloguer, "back_to_list", ui_act_back_to_list)
+UI_ACT_PROC(/obj/item/cataloguer, ui_act_back_to_list)
+	displayed_data = null
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/item/cataloguer, "refresh", ui_act_refresh)
+UI_ACT_PROC(/obj/item/cataloguer, ui_act_refresh)
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/item/cataloguer, "debug_unlock", ui_act_debug_unlock, UI_ARG_REF("ref", null, /datum/category_item/catalogue))
+UI_ACT_PROC(/obj/item/cataloguer, ui_act_debug_unlock)
+	if(!debug)
+		return TRUE
+	var/datum/category_item/catalogue/item = params["ref"]
+	if(item)
+		item.discover(ui.user, list("Debugger"))
+	SStgui.update_uis(src)
+	return TRUE

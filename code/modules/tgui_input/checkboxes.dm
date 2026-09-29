@@ -75,11 +75,7 @@
 	while (!closed && !QDELETED(src))
 		stoplag(1) // ALLOW(scheduler): tgui_input waits on the player (prompts, S10)
 
-/datum/tgui_checkbox_input/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "CheckboxInput")
-		ui.open()
+DECLARE_UI(/datum/tgui_checkbox_input, "CheckboxInput")
 
 /datum/tgui_checkbox_input/tgui_close(mob/user)
 	. = ..()
@@ -88,7 +84,10 @@
 /datum/tgui_checkbox_input/tgui_state(mob/user)
 	return state()
 
-/datum/tgui_checkbox_input/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_checkbox_input, "merge:ui_data_datum_tgui_checkbox_input{timeout:num}")
+
+/// The computed part of /datum/tgui_checkbox_input's window data (declared on its UI_DATA row).
+/datum/tgui_checkbox_input/proc/ui_data_datum_tgui_checkbox_input(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	if(timeout)
@@ -109,30 +108,24 @@
 
 	return data
 
-/datum/tgui_checkbox_input/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if (.)
-		return
+UI_ACT(/datum/tgui_checkbox_input, "submit", ui_act_submit, UI_ARG_LIST("entry"))
+UI_ACT_PROC(/datum/tgui_checkbox_input, ui_act_submit)
+	var/list/selections = params["entry"]
+	if(length(selections) >= min_checked && length(selections) <= max_checked)
+		var/list/valid_selections = list()
+		for(var/raw_entry in selections)
+			if(raw_entry in items)
+				valid_selections += raw_entry
+		set_choices(valid_selections)
+	closed = TRUE
+	SStgui.close_uis(src)
+	return TRUE
 
-	switch(action)
-		if("submit")
-			var/list/selections = params["entry"]
-			if(length(selections) >= min_checked && length(selections) <= max_checked)
-				var/list/valid_selections = list()
-				for(var/raw_entry in selections)
-					if(raw_entry in items)
-						valid_selections += raw_entry
-				set_choices(valid_selections)
-			closed = TRUE
-			SStgui.close_uis(src)
-			return TRUE
-
-		if("cancel")
-			closed = TRUE
-			SStgui.close_uis(src)
-			return TRUE
-
-	return FALSE
+UI_ACT(/datum/tgui_checkbox_input, "cancel", ui_act_cancel)
+UI_ACT_PROC(/datum/tgui_checkbox_input, ui_act_cancel)
+	closed = TRUE
+	SStgui.close_uis(src)
+	return TRUE
 
 /datum/tgui_checkbox_input/proc/set_choices(list/selections)
 	src.choices = selections.Copy()

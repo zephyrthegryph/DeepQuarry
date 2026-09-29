@@ -153,36 +153,31 @@
 	)
 	..()
 
-/obj/machinery/replicator/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "XenoarchReplicator", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/replicator, "XenoarchReplicator")
 
-/obj/machinery/replicator/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/replicator, "merge:ui_data_obj_machinery_replicator{tgui_construction:bool}")
+
+/// The computed part of /obj/machinery/replicator's window data (declared on its UI_DATA row).
+/obj/machinery/replicator/proc/ui_data_obj_machinery_replicator(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["tgui_construction"] = (tgui_construction || list())
 	return data
 
-/obj/machinery/replicator/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
-	switch(action)
-		if("construct")
-			var/key = params["key"]
-			if(key in construction)
-				if(LAZYLEN(stored_materials) > LAZYLEN(spawning_types))
-					if(LAZYLEN(spawning_types))
-						visible_message(span_notice("[icon2html(src,viewers(src))] a [pick("light","dial","display","meter","pad")] on [src]'s front [pick("blinks","flashes")] [pick("red","yellow","blue","orange","purple","green","white")]."))
-					else
-						visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
-					spawning_types.Add(LAZYACCESS(construction, key))
-					spawn_progress_time = 0
-					set_use_power(USE_POWER_ACTIVE)
-					icon_state = "borgcharger1(old)"
-				else
-					visible_message(fail_message)
+UI_ACT(/obj/machinery/replicator, "construct", ui_act_construct, UI_ARG_TEXT("key"))
+UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
+	var/key = params["key"]
+	if(key in construction)
+		if(LAZYLEN(stored_materials) > LAZYLEN(spawning_types))
+			if(LAZYLEN(spawning_types))
+				visible_message(span_notice("[icon2html(src,viewers(src))] a [pick("light","dial","display","meter","pad")] on [src]'s front [pick("blinks","flashes")] [pick("red","yellow","blue","orange","purple","green","white")]."))
+			else
+				visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
+			spawning_types.Add(LAZYACCESS(construction, key))
+			spawn_progress_time = 0
+			set_use_power(USE_POWER_ACTIVE)
+			icon_state = "borgcharger1(old)"
+		else
+			visible_message(fail_message)
 
 /// The old attackby: never called ..(), inserted a material into the replicator.
 /datum/interaction/machine_item/replicator_insert
@@ -443,30 +438,32 @@
 	act_message(user, src, others = span_filter_notice(span_bold("%U%") + " inserts %I% into %T%."), item = W)
 	return TRUE
 
-/obj/machinery/replicator/vore/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/replicator/vore, "merge:ui_data_obj_machinery_replicator_vore{tgui_construction:bool}")
+
+/// The computed part of /obj/machinery/replicator/vore's window data (declared on its UI_DATA row).
+/obj/machinery/replicator/vore/proc/ui_data_obj_machinery_replicator_vore(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["tgui_construction"] = (tgui_vore_selection || list())
 	return data
 
-/obj/machinery/replicator/vore/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
-	switch(action)
-		if("construct")
-			var/key = params["key"]
-			if(key in created_mobs)
-				if(LAZYLEN(stored_materials) > LAZYLEN(spawning_types))
-					if(LAZYLEN(spawning_types))
-						visible_message(span_notice("[icon2html(src,viewers(src))] a [pick("light","dial","display","meter","pad")] on [src]'s front [pick("blinks","flashes")] [pick("red","yellow","blue","orange","purple","green","white")]."))
-					else
-						visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
-					spawning_types.Add(LAZYACCESS(created_mobs, key))
-					spawn_progress_time = 0
-					set_use_power(USE_POWER_ACTIVE)
-					icon_state = "borgcharger1(old)"
-				else
-					visible_message(fail_message)
+UI_ACT(/obj/machinery/replicator/vore, "construct", ui_act_construct, UI_ARG_TEXT("key"))
+UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
+	. = ..()
+	if(.)
+		return
+	var/key = params["key"]
+	if(key in created_mobs)
+		if(LAZYLEN(stored_materials) > LAZYLEN(spawning_types))
+			if(LAZYLEN(spawning_types))
+				visible_message(span_notice("[icon2html(src,viewers(src))] a [pick("light","dial","display","meter","pad")] on [src]'s front [pick("blinks","flashes")] [pick("red","yellow","blue","orange","purple","green","white")]."))
+			else
+				visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
+			spawning_types.Add(LAZYACCESS(created_mobs, key))
+			spawn_progress_time = 0
+			set_use_power(USE_POWER_ACTIVE)
+			icon_state = "borgcharger1(old)"
+		else
+			visible_message(fail_message)
 
 
 
@@ -710,33 +707,31 @@
 	return TRUE
 
 
-/obj/machinery/replicator/clothing/tgui_interact(mob/user, datum/tgui/ui) //This creates the menu.
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "XenoarchReplicatorClothing", name) //This is required to prevent UI contamination.
-		ui.open()
+DECLARE_UI(/obj/machinery/replicator/clothing, "XenoarchReplicatorClothing")
 
-/obj/machinery/replicator/clothing/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state) //Gives data to the menu.
-	var/list/data = ..()
+UI_DATA(/obj/machinery/replicator/clothing, "merge:ui_data_obj_machinery_replicator_clothing{tgui_construction:bool}")
+
+/// The computed part of /obj/machinery/replicator/clothing's window data (declared on its UI_DATA row).
+/obj/machinery/replicator/clothing/proc/ui_data_obj_machinery_replicator_clothing(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["tgui_construction"] = (tgui_vore_selection || list())
 	return data
 
-/obj/machinery/replicator/clothing/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
-	switch(action)
-		if("construct")
-			var/key = params["key"]
-			if(key in created_items)
-				if(LAZYLEN(stored_materials) > LAZYLEN(spawning_types))
-					if(LAZYLEN(spawning_types))
-						visible_message(span_notice("[icon2html(src,viewers(src))] a [pick("light","dial","display","meter","pad")] on [src]'s front [pick("blinks","flashes")] [pick("red","yellow","blue","orange","purple","green","white")]."))
-					else
-						visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
-					spawning_types.Add(LAZYACCESS(created_items, key))
-					spawn_progress_time = 0
-					set_use_power(USE_POWER_ACTIVE)
-					icon_state = "borgcharger1(old)"
-				else
-					visible_message(fail_message)
+UI_ACT(/obj/machinery/replicator/clothing, "construct", ui_act_construct, UI_ARG_TEXT("key"))
+UI_ACT_OVERRIDE(/obj/machinery/replicator/clothing, ui_act_construct)
+	. = ..()
+	if(.)
+		return
+	var/key = params["key"]
+	if(key in created_items)
+		if(LAZYLEN(stored_materials) > LAZYLEN(spawning_types))
+			if(LAZYLEN(spawning_types))
+				visible_message(span_notice("[icon2html(src,viewers(src))] a [pick("light","dial","display","meter","pad")] on [src]'s front [pick("blinks","flashes")] [pick("red","yellow","blue","orange","purple","green","white")]."))
+			else
+				visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
+			spawning_types.Add(LAZYACCESS(created_items, key))
+			spawn_progress_time = 0
+			set_use_power(USE_POWER_ACTIVE)
+			icon_state = "borgcharger1(old)"
+		else
+			visible_message(fail_message)

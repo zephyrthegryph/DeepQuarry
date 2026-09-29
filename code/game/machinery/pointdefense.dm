@@ -37,11 +37,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	if(!id_tag)
 		. += "[desc_panel_image("multitool")]to set ident tag"
 
-/obj/machinery/pointdefense_control/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PointDefenseControl") // 400, 600
-		ui.open()
+DECLARE_UI(/obj/machinery/pointdefense_control, "PointDefenseControl")
 
 /obj/machinery/pointdefense_control/declare_interactions(list/into)
 	into += list(
@@ -50,27 +46,27 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	)
 	..()
 
-/obj/machinery/pointdefense_control/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/pointdefense_control, "toggle_active", ui_act_toggle_active, UI_ARG_REF("target", null, /obj/machinery/pointdefense))
+UI_ACT_PROC(/obj/machinery/pointdefense_control, ui_act_toggle_active)
+	var/obj/machinery/pointdefense/PD = params["target"]
+	if(!istype(PD))
+		return FALSE
 
-	if(action == "toggle_active")
-		var/obj/machinery/pointdefense/PD = locate(params["target"])
-		if(!istype(PD))
-			return FALSE
+	if(PD.id_tag != id_tag)
+		return FALSE
 
-		if(PD.id_tag != id_tag)
-			return FALSE
+	if(!(get_z(PD) in GetConnectedZlevels(get_z(src))))
+		to_chat(ui.user, span_warning("[PD] is not within control range."))
+		return FALSE
 
-		if(!(get_z(PD) in GetConnectedZlevels(get_z(src))))
-			to_chat(ui.user, span_warning("[PD] is not within control range."))
-			return FALSE
+	if(!PD.Activate()) //Activate() whilst the device is active will return false.
+		PD.Deactivate()
+	return TRUE
 
-		if(!PD.Activate()) //Activate() whilst the device is active will return false.
-			PD.Deactivate()
-		return TRUE
+UI_DATA_REPLACE(/obj/machinery/pointdefense_control, "merge:ui_data_obj_machinery_pointdefense_control{id:text,turrets:list}")
 
-/obj/machinery/pointdefense_control/tgui_data(mob/user)
+/// The computed part of /obj/machinery/pointdefense_control's window data (declared on its UI_DATA row).
+/obj/machinery/pointdefense_control/proc/ui_data_obj_machinery_pointdefense_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["id"] = id_tag
 	var/list/turrets = list()

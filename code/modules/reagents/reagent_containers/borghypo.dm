@@ -195,14 +195,14 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/borghypo, INTERACT_USE(null, P
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/reagent_containers/borghypo/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
-	. = ..()
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		// Assuming the user is opening the UI, empty the chem search preemptively.
-		ui_chemical_search = null
-		ui = new(user, src, "BorgHypo", "Integrated [is_dispensing_drinks ? "Drink Dispenser" : "Chemical Hypo"]")
-		ui.open()
+DECLARE_UI(/obj/item/reagent_containers/borghypo, "BorgHypo")
+
+/obj/item/reagent_containers/borghypo/ui_opening(mob/user, datum/tgui/ui)
+	// Assuming the user is opening the UI, empty the chem search preemptively.
+	ui_chemical_search = null
+
+/obj/item/reagent_containers/borghypo/ui_title(mob/user)
+	return "Integrated [is_dispensing_drinks ? "Drink Dispenser" : "Chemical Hypo"]"
 
 /obj/item/reagent_containers/borghypo/tgui_static_data(mob/user)
 	var/list/static_data = list()
@@ -211,13 +211,15 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/borghypo, INTERACT_USE(null, P
 	static_data["maxTransferAmount"] = max_transfer_amount
 	return static_data
 
-/obj/item/reagent_containers/borghypo/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/item/reagent_containers/borghypo, "amount=amount_per_transfer_from_this:num", "uiChemicalSearch=ui_chemical_search", "recordingRecipe=recording_recipe:list", "isDispensingRecipe=is_dispensing_recipe:num", "selectedRecipeId=selected_recipe_id", "merge:ui_data_obj_item_reagent_containers_borghypo{theme:unknown,transferAmounts:unknown,chemicals:list,selectedReagentId:unknown,recipes:bool}")
+
+/// The computed part of /obj/item/reagent_containers/borghypo's window data (declared on its UI_DATA row).
+/obj/item/reagent_containers/borghypo/proc/ui_data_obj_item_reagent_containers_borghypo(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(!isrobot(user))
 		return data
 	var/mob/living/silicon/robot/robot_user = user
 	data["theme"] = robot_user.get_ui_theme()
-	data["amount"] = amount_per_transfer_from_this
 	data["transferAmounts"] = TYPE_TABLE_GET(src, borghypo_transfer_amounts)
 
 	var/list/chemicals = list()
@@ -227,108 +229,109 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/borghypo, INTERACT_USE(null, P
 		if((ui_chemical_search && findtext(available_reagent.name, ui_chemical_search)) || !ui_chemical_search)
 			UNTYPED_LIST_ADD(chemicals, list("name" = available_reagent.name, "id" = key, "volume" = value))
 	data["chemicals"] = chemicals
-	data["uiChemicalSearch"] = ui_chemical_search
 	data["selectedReagentId"] = TYPE_TABLE_GET(src, borghypo_reagent_ids)[mode]
 	data["recipes"] = (saved_recipes || list())
-	data["recordingRecipe"] = recording_recipe
-	data["isDispensingRecipe"] = is_dispensing_recipe
-	data["selectedRecipeId"] = selected_recipe_id
 
 	return data
 
-/obj/item/reagent_containers/borghypo/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
+UI_ACT(/obj/item/reagent_containers/borghypo, "select_reagent", ui_act_select_reagent, UI_ARG_TEXT("selectedReagentId"))
+UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_select_reagent)
+	var/list/ids = TYPE_TABLE_GET(src, borghypo_reagent_ids)
+	var/new_mode = ids.Find(params["selectedReagentId"])
+	if(new_mode)
+		var/datum/reagent/selected_reagent = chemistry_service().chemical_reagents[TYPE_TABLE_GET(src, borghypo_reagent_ids)[new_mode]]
+		play_sfx(src, SFX_EFFECTS_POP)
+		if(recording_recipe)
+			UNTYPED_LIST_ADD(recording_recipe, list("id" = selected_reagent.id, "amount" = amount_per_transfer_from_this))
+		else
+			mode = new_mode
+			balloon_alert(ui.user, "synthesizer is now producing '[selected_reagent.name]'")
+			is_dispensing_recipe = FALSE
+	. = TRUE
+
+UI_ACT(/obj/item/reagent_containers/borghypo, "set_amount", ui_act_set_amount, UI_ARG_NUM("amount"))
+UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_set_amount)
+	amount_per_transfer_from_this = clamp(round(params["amount"], 1), min_transfer_amount, max_transfer_amount) // Round to nearest 1, clamp between min and max transfer amount
+	. = TRUE
+
+UI_ACT(/obj/item/reagent_containers/borghypo, "import_config", ui_act_import_config, UI_ARG_LIST("config"))
+UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_import_config)
+	var/list/our_data = params["config"]
+	if(!islist(our_data))
+		return FALSE
+	var/list/new_recipes = list()
+	for(var/key, value in our_data)
+		if(istext(key) && islist(value))
+			for(var/list/steps in value)
+				if(istext(steps["id"]) && isnum(steps["amount"]))
+					new_recipes[key] += list(list("id" = steps["id"], "amount" = steps["amount"]))
+	if(length(new_recipes))
+		saved_recipes = new_recipes
+	. = TRUE
+
+UI_ACT(/obj/item/reagent_containers/borghypo, "record_recipe", ui_act_record_recipe)
+UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_record_recipe)
+	recording_recipe = list()
+	. = TRUE
+
+UI_ACT(/obj/item/reagent_containers/borghypo, "cancel_recording", ui_act_cancel_recording)
+UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_cancel_recording)
+	recording_recipe = null
+	. = TRUE
+
+UI_ACT(/obj/item/reagent_containers/borghypo, "clear_recipes", ui_act_clear_recipes)
+UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_clear_recipes)
+	saved_recipes = list()
+	. = TRUE
+
+UI_ACT(/obj/item/reagent_containers/borghypo, "save_recording", ui_act_save_recording)
+UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_save_recording)
+	var/name = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "What do you want to name this recipe?", title = "Recipe Name?", default = "Recipe Name", max_length = MAX_NAME_LEN)
+	if(isnull(name))
 		return
-	switch(action)
-		if("select_reagent")
-			var/list/ids = TYPE_TABLE_GET(src, borghypo_reagent_ids)
-			var/new_mode = ids.Find(params["selectedReagentId"])
-			if(new_mode)
-				var/datum/reagent/selected_reagent = chemistry_service().chemical_reagents[TYPE_TABLE_GET(src, borghypo_reagent_ids)[new_mode]]
-				play_sfx(src, SFX_EFFECTS_POP)
-				if(recording_recipe)
-					UNTYPED_LIST_ADD(recording_recipe, list("id" = selected_reagent.id, "amount" = amount_per_transfer_from_this))
-				else
-					mode = new_mode
-					balloon_alert(ui.user, "synthesizer is now producing '[selected_reagent.name]'")
-					is_dispensing_recipe = FALSE
-			. = TRUE
-
-		if("set_amount")
-			amount_per_transfer_from_this = clamp(round(text2num(params["amount"]), 1), min_transfer_amount, max_transfer_amount) // Round to nearest 1, clamp between min and max transfer amount
-			. = TRUE
-
-		if("import_config")
-			var/list/our_data = params["config"]
-			if(!islist(our_data))
-				return FALSE
-			var/list/new_recipes = list()
-			for(var/key, value in our_data)
-				if(istext(key) && islist(value))
-					for(var/list/steps in value)
-						if(istext(steps["id"]) && isnum(steps["amount"]))
-							new_recipes[key] += list(list("id" = steps["id"], "amount" = steps["amount"]))
-			if(length(new_recipes))
-				saved_recipes = new_recipes
-			. = TRUE
-
-		if("record_recipe")
-			recording_recipe = list()
-			. = TRUE
-
-		if("cancel_recording")
-			recording_recipe = null
-			. = TRUE
-
-		if("clear_recipes")
-			saved_recipes = list()
-			. = TRUE
-
-		if("save_recording")
-			var/name = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "What do you want to name this recipe?", title = "Recipe Name?", default = "Recipe Name", max_length = MAX_NAME_LEN)
-			if(isnull(name))
+	if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
+		return
+	if(LAZYACCESS(saved_recipes, name) && act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/choice/alert, message = "\"[name]\" already exists, do you want to overwrite it?", choices = list("No", "Yes")) != "Yes")
+		return
+	if(name && recording_recipe)
+		for(var/list/L in recording_recipe)
+			var/label = L["id"]
+			// Verify this hypo can dispense every chemical
+			if(!(label in TYPE_TABLE_GET(src, borghypo_reagent_ids)))
+				to_chat(ui.user, span_warning("\The [src] cannot find ") + span_boldwarning(label) + span_warning("!"))
 				return
-			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
-				return
-			if(LAZYACCESS(saved_recipes, name) && act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/choice/alert, message = "\"[name]\" already exists, do you want to overwrite it?", choices = list("No", "Yes")) != "Yes")
-				return
-			if(name && recording_recipe)
-				for(var/list/L in recording_recipe)
-					var/label = L["id"]
-					// Verify this hypo can dispense every chemical
-					if(!(label in TYPE_TABLE_GET(src, borghypo_reagent_ids)))
-						to_chat(ui.user, span_warning("\The [src] cannot find ") + span_boldwarning(label) + span_warning("!"))
-						return
-				LAZYSET(saved_recipes, name, recording_recipe)
-				recording_recipe = null
-				. = TRUE
+		LAZYSET(saved_recipes, name, recording_recipe)
+		recording_recipe = null
+		. = TRUE
 
-		if("remove_recipe")
-			var/recipe_name = params["recipe"]
-			// If we've selected the recipe we're deleting, un-select it!
-			if(selected_recipe_id == recipe_name)
-				selected_recipe_id = null
-				is_dispensing_recipe = FALSE
-			LAZYREMOVE(saved_recipes, recipe_name)
-			. = TRUE
+UI_ACT(/obj/item/reagent_containers/borghypo, "remove_recipe", ui_act_remove_recipe, UI_ARG_TEXT("recipe"))
+UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_remove_recipe)
+	var/recipe_name = params["recipe"]
+	// If we've selected the recipe we're deleting, un-select it!
+	if(selected_recipe_id == recipe_name)
+		selected_recipe_id = null
+		is_dispensing_recipe = FALSE
+	LAZYREMOVE(saved_recipes, recipe_name)
+	. = TRUE
 
-		if("select_recipe")
-			// Make sure we actually have a recipe saved with the given name before setting it!
-			var/recipe_name = params["recipe"]
-			var/selectedRecipe = LAZYACCESS(saved_recipes, recipe_name)
-			if(!selectedRecipe)
-				to_chat(ui.user, span_warning("\The [src] cannot find the recipe ") + span_boldwarning(recipe_name) + span_warning("!"))
-				return
-			play_sfx(ui.user, SFX_EFFECTS_POP)
-			balloon_alert(ui.user, "synthesizer is using macro: '[recipe_name]'")
-			is_dispensing_recipe = TRUE
-			selected_recipe_id = recipe_name
-			. = TRUE
+UI_ACT(/obj/item/reagent_containers/borghypo, "select_recipe", ui_act_select_recipe, UI_ARG_TEXT("recipe"))
+UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_select_recipe)
+	// Make sure we actually have a recipe saved with the given name before setting it!
+	var/recipe_name = params["recipe"]
+	var/selectedRecipe = LAZYACCESS(saved_recipes, recipe_name)
+	if(!selectedRecipe)
+		to_chat(ui.user, span_warning("\The [src] cannot find the recipe ") + span_boldwarning(recipe_name) + span_warning("!"))
+		return
+	play_sfx(ui.user, SFX_EFFECTS_POP)
+	balloon_alert(ui.user, "synthesizer is using macro: '[recipe_name]'")
+	is_dispensing_recipe = TRUE
+	selected_recipe_id = recipe_name
+	. = TRUE
 
-		if("set_chemical_search")
-			ui_chemical_search = params["uiChemicalSearch"]
-			. = TRUE
+UI_ACT(/obj/item/reagent_containers/borghypo, "set_chemical_search", ui_act_set_chemical_search, UI_ARG_TEXT("uiChemicalSearch"))
+UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_set_chemical_search)
+	ui_chemical_search = params["uiChemicalSearch"]
+	. = TRUE
 
 /obj/item/reagent_containers/borghypo/examine(mob/user)
 	. = ..()

@@ -88,9 +88,7 @@ fundamental differences
 		return 1
 	return 0
 
-/obj/machinery/appliance/mixer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	.["icon_used"] = off_icon
+UI_DATA(/obj/machinery/appliance/mixer, "icon_used=off_icon:text")
 
 /// Requirement: something in the bowl to mix.
 /obj/machinery/appliance/mixer/can_toggle_power_verb(mob/user, atom/target, obj/item/held)

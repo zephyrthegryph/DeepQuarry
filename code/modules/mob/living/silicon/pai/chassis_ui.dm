@@ -5,8 +5,7 @@
 	var/selected_chassis
 	var/selected_color
 
-/datum/tgui_module/pai_chassis/tgui_state(mob/user)
-	return GLOB.tgui_self_state
+DECLARE_UI_STATE(/datum/tgui_module/pai_chassis, GLOB.tgui_self_state)
 
 /datum/tgui_module/pai_chassis/ui_assets(mob/user)
 	return list(
@@ -29,8 +28,11 @@
 
 	return data
 
-/datum/tgui_module/pai_chassis/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/pai_chassis, "merge:ui_data_datum_tgui_module_pai_chassis{pai_color:text,pai_chassis:text,selected_chassis:unknown,sprite_datum_class:text,sprite_datum_size:num}")
+
+/// The computed part of /datum/tgui_module/pai_chassis's window data (declared on its UI_DATA row).
+/datum/tgui_module/pai_chassis/proc/ui_data_datum_tgui_module_pai_chassis(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/mob/living/silicon/pai/pai_host = host()
 	data["pai_color"] = selected_color ? selected_color : pai_host.eye_color
@@ -45,28 +47,27 @@
 
 	return data
 
-/datum/tgui_module/pai_chassis/tgui_act(action, list/params,  datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
+UI_ACT(/datum/tgui_module/pai_chassis, "pick_icon", ui_act_pick_icon, UI_ARG_TEXT("value"))
+UI_ACT_PROC(/datum/tgui_module/pai_chassis, ui_act_pick_icon)
+	var/new_chassis = params["value"]
+	if(new_chassis && (new_chassis in GLOB.pai_service.get_chassis_list()))
+		selected_chassis = new_chassis
+	return TRUE
 
-	switch(action)
-		if("pick_icon")
-			var/new_chassis = params["value"]
-			if(new_chassis && (new_chassis in GLOB.pai_service.get_chassis_list()))
-				selected_chassis = new_chassis
-			return TRUE
-		if("confirm")
-			if(!selected_chassis)
-				return FALSE
-			var/mob/living/silicon/pai/pai_host = host()
-			if(selected_color)
-				pai_host.eye_color = selected_color
-			pai_host.change_chassis(selected_chassis)
-			return TRUE
-		if("change_color")
-			var/new_color = sanitize_hexcolor(params["color"])
-			if(!new_color)
-				return FALSE
-			selected_color = new_color
-			return TRUE
+UI_ACT(/datum/tgui_module/pai_chassis, "confirm", ui_act_confirm)
+UI_ACT_PROC(/datum/tgui_module/pai_chassis, ui_act_confirm)
+	if(!selected_chassis)
+		return FALSE
+	var/mob/living/silicon/pai/pai_host = host()
+	if(selected_color)
+		pai_host.eye_color = selected_color
+	pai_host.change_chassis(selected_chassis)
+	return TRUE
+
+UI_ACT(/datum/tgui_module/pai_chassis, "change_color", ui_act_change_color, UI_ARG_TEXT("color"))
+UI_ACT_PROC(/datum/tgui_module/pai_chassis, ui_act_change_color)
+	var/new_color = sanitize_hexcolor(params["color"])
+	if(!new_color)
+		return FALSE
+	selected_color = new_color
+	return TRUE

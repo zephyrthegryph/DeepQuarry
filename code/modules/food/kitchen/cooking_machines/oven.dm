@@ -47,18 +47,12 @@
 	own_set(src, "oven_loop", new /datum/looping_sound/oven(list(src), FALSE))
 
 
-/obj/machinery/appliance/cooker/oven/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	.["is_open"] = open
+UI_DATA(/obj/machinery/appliance/cooker/oven, "is_open=open:num")
 
-/obj/machinery/appliance/cooker/oven/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
-	switch(action)
-		if("toggle_door")
-			try_toggle_door(ui.user)
-			return TRUE
+UI_ACT(/obj/machinery/appliance/cooker/oven, "toggle_door", ui_act_toggle_door)
+UI_ACT_PROC(/obj/machinery/appliance/cooker/oven, ui_act_toggle_door)
+	try_toggle_door(ui.user)
+	return TRUE
 
 /obj/machinery/appliance/cooker/oven/update_icon()
 	if(!open)

@@ -88,11 +88,7 @@
 	while (!choice && !closed && !QDELETED(src))
 		stoplag(1) // ALLOW(scheduler): tgui_input waits on the player (prompts, S10)
 
-/datum/tgui_alert/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AlertModal")
-		ui.open()
+DECLARE_UI(/datum/tgui_alert, "AlertModal")
 
 /datum/tgui_alert/tgui_close(mob/user)
 	. = ..()
@@ -111,27 +107,28 @@
 	data["title"] = title
 	return data
 
-/datum/tgui_alert/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_alert, "merge:ui_data_datum_tgui_alert{timeout:num}")
+
+/// The computed part of /datum/tgui_alert's window data (declared on its UI_DATA row).
+/datum/tgui_alert/proc/ui_data_datum_tgui_alert(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(timeout)
 		data["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))
 	return data
 
-/datum/tgui_alert/tgui_act(action, list/params)
-	. = ..()
-	if (.)
+UI_ACT(/datum/tgui_alert, "choose", ui_act_choose, UI_ARG_TEXT("choice"))
+UI_ACT_PROC(/datum/tgui_alert, ui_act_choose)
+	if (!(params["choice"] in buttons))
 		return
-	switch(action)
-		if("choose")
-			if (!(params["choice"] in buttons))
-				return
-			set_choice(params["choice"])
-			SStgui.close_uis(src)
-			return TRUE
-		if("cancel")
-			closed = TRUE
-			SStgui.close_uis(src)
-			return TRUE
+	set_choice(params["choice"])
+	SStgui.close_uis(src)
+	return TRUE
+
+UI_ACT(/datum/tgui_alert, "cancel", ui_act_cancel)
+UI_ACT_PROC(/datum/tgui_alert, ui_act_cancel)
+	closed = TRUE
+	SStgui.close_uis(src)
+	return TRUE
 
 /datum/tgui_alert/proc/set_choice(choice)
 	src.choice = choice

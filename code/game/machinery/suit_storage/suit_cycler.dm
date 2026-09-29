@@ -326,28 +326,22 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/suit_cycler/tgui_state(mob/user)
-	return GLOB.tgui_notcontained_state
+DECLARE_UI_STATE(/obj/machinery/suit_cycler, GLOB.tgui_notcontained_state)
 
-/obj/machinery/suit_cycler/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "SuitCycler", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/suit_cycler, "SuitCycler")
 
-/obj/machinery/suit_cycler/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/suit_cycler, "model_text:text", "can_repair:num", "safeties:num", "uv_level=radiation_level:num", "merge:ui_data_obj_machinery_suit_cycler{userHasAccess:unknown,locked:num,active:num,uv_active:bool,max_uv_level:num,helmet:text,suit:text,damage:num,occupied:bool}")
+
+/// The computed part of /obj/machinery/suit_cycler's window data (declared on its UI_DATA row).
+/obj/machinery/suit_cycler/proc/ui_data_obj_machinery_suit_cycler(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/living/carbon/human/occupant = slot_item_real(OCCUPANT_SLOT_SUIT_CYCLER)
 	var/list/data = list()
 
-	data["model_text"] = model_text
-	data["can_repair"] = can_repair
 	data["userHasAccess"] = allowed(user)
 
 	data["locked"] = locked
 	data["active"] = active
-	data["safeties"] = safeties
 	data["uv_active"] = (active && irradiating > 0)
-	data["uv_level"] = radiation_level
 	data["max_uv_level"] = emagged ? 5 : 3
 	if(helmet)
 		data["helmet"] = helmet.name
@@ -389,78 +383,82 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 	return data
 
-/obj/machinery/suit_cycler/tgui_act(action, params, datum/tgui/ui)
+UI_ACT(/obj/machinery/suit_cycler, "dispense", ui_act_dispense, UI_ARG_TEXT("item"))
+UI_ACT_PROC(/obj/machinery/suit_cycler, ui_act_dispense)
+	switch(params["item"])
+		if("helmet")
+			if(helmet)
+				helmet.forceMove(get_turf(src))
+				own_take(src, "helmet")
+		if("suit")
+			if(suit)
+				suit.forceMove(get_turf(src))
+				own_take(src, "suit")
+	. = TRUE
+
+UI_ACT(/obj/machinery/suit_cycler, "department", ui_act_department, UI_ARG_VALUE("department"))
+UI_ACT_PROC(/obj/machinery/suit_cycler, ui_act_department)
+	var/choice = params["department"]
+	if(choice in departments)
+		target_department_static = departments[choice]
+	else if(emagged && (choice in emagged_departments))
+		target_department_static = emagged_departments[choice]
+		. = TRUE
+
+UI_ACT(/obj/machinery/suit_cycler, "species", ui_act_species, UI_ARG_VALUE("species"))
+UI_ACT_PROC(/obj/machinery/suit_cycler, ui_act_species)
+	var/choice = params["species"]
+	if(choice in species)
+		target_species_static = species[choice]
+		. = TRUE
+
+UI_ACT(/obj/machinery/suit_cycler, "radlevel", ui_act_radlevel, UI_ARG_NUM("radlevel"))
+UI_ACT_PROC(/obj/machinery/suit_cycler, ui_act_radlevel)
+	radiation_level = clamp(params["radlevel"], 1, emagged ? 5 : 3)
+	. = TRUE
+
+UI_ACT(/obj/machinery/suit_cycler, "repair_suit", ui_act_repair_suit)
+UI_ACT_PROC(/obj/machinery/suit_cycler, ui_act_repair_suit)
+	if(!suit || !can_repair)
+		return
+	set_active(1)
+	om_after(src, 10 SECONDS, PROC_REF(finish_repair), ui.user)
+	. = TRUE
+
+UI_ACT(/obj/machinery/suit_cycler, "apply_paintjob", ui_act_apply_paintjob)
+UI_ACT_PROC(/obj/machinery/suit_cycler, ui_act_apply_paintjob)
+	if(!suit && !helmet)
+		return
+	set_active(1)
+	om_after(src, 10 SECONDS, PROC_REF(finish_paintjob), ui.user)
+	. = TRUE
+
+UI_ACT(/obj/machinery/suit_cycler, "lock", ui_act_lock)
+UI_ACT_PROC(/obj/machinery/suit_cycler, ui_act_lock)
+	if(allowed(ui.user))
+		set_locked(!locked)
+		to_chat(ui.user, "You [locked ? "" : "un"]lock \the [src].")
+	else
+		to_chat(ui.user, span_danger("Access denied."))
+	. = TRUE
+
+UI_ACT(/obj/machinery/suit_cycler, "eject_guy", ui_act_eject_guy)
+UI_ACT_PROC(/obj/machinery/suit_cycler, ui_act_eject_guy)
+	eject_occupant(ui.user)
+	. = TRUE
+
+UI_ACT(/obj/machinery/suit_cycler, "uv", ui_act_uv)
+UI_ACT_PROC(/obj/machinery/suit_cycler, ui_act_uv)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SUIT_CYCLER)
-	if(..())
-		return TRUE
+	if(safeties && occupant)
+		to_chat(ui.user, span_danger("The cycler has detected an occupant. Please remove the occupant before commencing the decontamination cycle."))
+		return
 
-	switch(action)
-		if("dispense")
-			switch(params["item"])
-				if("helmet")
-					if(helmet)
-						helmet.forceMove(get_turf(src))
-						own_take(src, "helmet")
-				if("suit")
-					if(suit)
-						suit.forceMove(get_turf(src))
-						own_take(src, "suit")
-			. = TRUE
-
-		if("department")
-			var/choice = params["department"]
-			if(choice in departments)
-				target_department_static = departments[choice]
-			else if(emagged && (choice in emagged_departments))
-				target_department_static = emagged_departments[choice]
-				. = TRUE
-
-		if("species")
-			var/choice = params["species"]
-			if(choice in species)
-				target_species_static = species[choice]
-				. = TRUE
-
-		if("radlevel")
-			radiation_level = clamp(params["radlevel"], 1, emagged ? 5 : 3)
-			. = TRUE
-
-		if("repair_suit")
-			if(!suit || !can_repair)
-				return
-			set_active(1)
-			om_after(src, 10 SECONDS, PROC_REF(finish_repair), ui.user)
-			. = TRUE
-
-		if("apply_paintjob")
-			if(!suit && !helmet)
-				return
-			set_active(1)
-			om_after(src, 10 SECONDS, PROC_REF(finish_paintjob), ui.user)
-			. = TRUE
-
-		if("lock")
-			if(allowed(ui.user))
-				set_locked(!locked)
-				to_chat(ui.user, "You [locked ? "" : "un"]lock \the [src].")
-			else
-				to_chat(ui.user, span_danger("Access denied."))
-			. = TRUE
-
-		if("eject_guy")
-			eject_occupant(ui.user)
-			. = TRUE
-
-		if("uv")
-			if(safeties && occupant)
-				to_chat(ui.user, span_danger("The cycler has detected an occupant. Please remove the occupant before commencing the decontamination cycle."))
-				return
-
-			set_active(1)
-			irradiating = 10
-			MACHINE_WAKE(src)
-			om_after(src, 1 SECOND, PROC_REF(uv_wash))
-			. = TRUE
+	set_active(1)
+	irradiating = 10
+	MACHINE_WAKE(src)
+	om_after(src, 1 SECOND, PROC_REF(uv_wash))
+	. = TRUE
 
 /obj/machinery/suit_cycler/proc/uv_wash()
 	if(helmet)

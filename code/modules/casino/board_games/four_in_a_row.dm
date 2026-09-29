@@ -25,18 +25,17 @@
 	var/winner
 	var/static/list/possible_colors = list("red", "yellow", "green", "orange", "blue", "cyan")
 
-/datum/board_game/four_row/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "FourInARow", name)
-		ui.open()
+DECLARE_UI(/datum/board_game/four_row, "FourInARow")
 
 /datum/board_game/four_row/tgui_static_data(mob/user)
 	return list(
 		"colors" = possible_colors
 	)
 
-/datum/board_game/four_row/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/board_game/four_row, "merge:ui_data_datum_board_game_four_row{player_one:unknown,player_two:unknown,placed_chips_pone:bool,placed_chips_ptwo:bool,game_state:unknown,grid_x_size:num,grid_y_size:num,player_one_color:text,player_two_color:text,win_count:num,winner:unknown,has_won:bool,winning_tiles:bool}")
+
+/// The computed part of /datum/board_game/four_row's window data (declared on its UI_DATA row).
+/datum/board_game/four_row/proc/ui_data_datum_board_game_four_row(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/player_one_mob = player_one
 	var/mob/player_two_mob = player_two
 
@@ -56,110 +55,127 @@
 		"winning_tiles" = (winning_tiles || list()),
 	)
 
-/datum/board_game/four_row/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
+UI_ACT(/datum/board_game/four_row, "be_player_one", ui_act_be_player_one)
+UI_ACT_PROC(/datum/board_game/four_row, ui_act_be_player_one)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	if(player_one == ui.user)
+		rel_clear(src, "player_one")
+		return TRUE
+	rel_set(src, "player_one", ui.user)
+	return TRUE
 
-	switch(action)
-		if("be_player_one")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			if(player_one == ui.user)
-				rel_clear(src, "player_one")
-				return TRUE
-			rel_set(src, "player_one", ui.user)
-			return TRUE
-		if("be_player_two")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			if(player_two == ui.user)
-				rel_clear(src, "player_two")
-				return TRUE
-			rel_set(src, "player_two", ui.user)
-			return TRUE
-		if("swap_players")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			if(!player_one || !player_two)
-				return FALSE
-			var/mob/temp_player = player_one
-			rel_set(src, "player_one", player_two)
-			rel_set(src, "player_two", temp_player)
-		if("set_color_one")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			if(player_one != ui.user)
-				return FALSE
-			var/new_color = params["color"]
-			if(new_color == player_two_color)
-				return FALSE
-			if(!(new_color in possible_colors))
-				return FALSE
-			player_one_color = new_color
-			return TRUE
-		if("set_color_two")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			if(player_two != ui.user)
-				return FALSE
-			var/new_color = params["color"]
-			if(new_color == player_one_color)
-				return FALSE
-			if(!(new_color in possible_colors))
-				return FALSE
-			player_two_color = new_color
-			return TRUE
-		if("change_size")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			var/new_size = text2num(params["size"])
-			return set_new_size(new_size)
-		if("change_win")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			return change_win_count(text2num(params["count"]))
-		if("clear_game")
-			if(game_state == GAME_SETUP)
-				return FALSE
-			reset(TRUE)
-			return TRUE
-		if("start_game")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			if(!player_one || !player_two)
-				return FALSE
-			game_state = GAME_PLAYER_ONE
-			return TRUE
-		if("play_again")
+UI_ACT(/datum/board_game/four_row, "be_player_two", ui_act_be_player_two)
+UI_ACT_PROC(/datum/board_game/four_row, ui_act_be_player_two)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	if(player_two == ui.user)
+		rel_clear(src, "player_two")
+		return TRUE
+	rel_set(src, "player_two", ui.user)
+	return TRUE
+
+UI_ACT(/datum/board_game/four_row, "swap_players", ui_act_swap_players)
+UI_ACT_PROC(/datum/board_game/four_row, ui_act_swap_players)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	if(!player_one || !player_two)
+		return FALSE
+	var/mob/temp_player = player_one
+	rel_set(src, "player_one", player_two)
+	rel_set(src, "player_two", temp_player)
+
+UI_ACT(/datum/board_game/four_row, "set_color_one", ui_act_set_color_one, UI_ARG_VALUE("color"))
+UI_ACT_PROC(/datum/board_game/four_row, ui_act_set_color_one)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	if(player_one != ui.user)
+		return FALSE
+	var/new_color = params["color"]
+	if(new_color == player_two_color)
+		return FALSE
+	if(!(new_color in possible_colors))
+		return FALSE
+	player_one_color = new_color
+	return TRUE
+
+UI_ACT(/datum/board_game/four_row, "set_color_two", ui_act_set_color_two, UI_ARG_VALUE("color"))
+UI_ACT_PROC(/datum/board_game/four_row, ui_act_set_color_two)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	if(player_two != ui.user)
+		return FALSE
+	var/new_color = params["color"]
+	if(new_color == player_one_color)
+		return FALSE
+	if(!(new_color in possible_colors))
+		return FALSE
+	player_two_color = new_color
+	return TRUE
+
+UI_ACT(/datum/board_game/four_row, "change_size", ui_act_change_size, UI_ARG_NUM("size"))
+UI_ACT_PROC(/datum/board_game/four_row, ui_act_change_size)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	var/new_size = params["size"]
+	return set_new_size(new_size)
+
+UI_ACT(/datum/board_game/four_row, "change_win", ui_act_change_win, UI_ARG_NUM("count"))
+UI_ACT_PROC(/datum/board_game/four_row, ui_act_change_win)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	return change_win_count(params["count"])
+
+UI_ACT(/datum/board_game/four_row, "clear_game", ui_act_clear_game)
+UI_ACT_PROC(/datum/board_game/four_row, ui_act_clear_game)
+	if(game_state == GAME_SETUP)
+		return FALSE
+	reset(TRUE)
+	return TRUE
+
+UI_ACT(/datum/board_game/four_row, "start_game", ui_act_start_game)
+UI_ACT_PROC(/datum/board_game/four_row, ui_act_start_game)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	if(!player_one || !player_two)
+		return FALSE
+	game_state = GAME_PLAYER_ONE
+	return TRUE
+
+UI_ACT(/datum/board_game/four_row, "play_again", ui_act_play_again)
+UI_ACT_PROC(/datum/board_game/four_row, ui_act_play_again)
+	if(game_state < GAME_OVER)
+		return FALSE
+	if(!player_one || !player_two)
+		return FALSE
+	reset()
+	return TRUE
+
+UI_ACT(/datum/board_game/four_row, "play_again_swapped", ui_act_play_again_swapped)
+UI_ACT_PROC(/datum/board_game/four_row, ui_act_play_again_swapped)
+	if(game_state < GAME_OVER)
+		return FALSE
+	if(!player_one || !player_two)
+		return FALSE
+	reset()
+	var/mob/temp_player = player_one
+	rel_set(src, "player_one", player_two)
+	rel_set(src, "player_two", temp_player)
+	return TRUE
+
+UI_ACT(/datum/board_game/four_row, "game_action", ui_act_game_action, UI_ARG_TEXT("action", 64), UI_ARG_LIST("data"))
+UI_ACT_PROC(/datum/board_game/four_row, ui_act_game_action)
+	if(ui.user == player_one && game_state == GAME_PLAYER_ONE)
+		if(ui_subdispatch(src, "game", params["action"], params["data"], ui.user, ui, state))
 			if(game_state < GAME_OVER)
-				return FALSE
-			if(!player_one || !player_two)
-				return FALSE
-			reset()
+				game_state = GAME_PLAYER_TWO
 			return TRUE
-		if("play_again_swapped")
+	if(ui.user == player_two && game_state == GAME_PLAYER_TWO)
+		if(ui_subdispatch(src, "game", params["action"], params["data"], ui.user, ui, state))
 			if(game_state < GAME_OVER)
-				return FALSE
-			if(!player_one || !player_two)
-				return FALSE
-			reset()
-			var/mob/temp_player = player_one
-			rel_set(src, "player_one", player_two)
-			rel_set(src, "player_two", temp_player)
+				game_state = GAME_PLAYER_ONE
 			return TRUE
-		if("game_action")
-			if(ui.user == player_one && game_state == GAME_PLAYER_ONE)
-				if(player_actions(params["action"], params["data"], ui.user))
-					if(game_state < GAME_OVER)
-						game_state = GAME_PLAYER_TWO
-					return TRUE
-			if(ui.user == player_two && game_state == GAME_PLAYER_TWO)
-				if(player_actions(params["action"], params["data"], ui.user))
-					if(game_state < GAME_OVER)
-						game_state = GAME_PLAYER_ONE
-					return TRUE
-			return FALSE
+	return FALSE
 
 /datum/board_game/four_row/proc/change_win_count(new_count)
 	if(!isnum(new_count))
@@ -181,33 +197,32 @@
 	else
 		game_state = GAME_PLAYER_ONE
 
-/datum/board_game/four_row/proc/player_actions(action, list/params, mob/user)
-	switch(action)
-		if("place_chip")
-			var/list/validated_data = validate_coords(params)
-			if(!validated_data)
-				return FALSE
-			var/x_loc = validated_data[2]
+UI_SUBACT(/datum/board_game/four_row, "game", "place_chip", game_place_chip, UI_ARG_NUM("loc_x"), UI_ARG_NUM("loc_y"))
+UI_SUBACT_PROC(/datum/board_game/four_row, game_place_chip)
+	var/list/validated_data = validate_coords(params["loc_x"], params["loc_y"])
+	if(!validated_data)
+		return FALSE
+	var/x_loc = validated_data[2]
 
-			var/target_y = 0
-			for(var/y = grid_y_size; y >= 1; y--)
-				var/key = "[x_loc],[y]"
-				if(!LAZYACCESS(placed_chips_pone, key) && !LAZYACCESS(placed_chips_ptwo, key))
-					target_y = y
-					break
+	var/target_y = 0
+	for(var/y = grid_y_size; y >= 1; y--)
+		var/key = "[x_loc],[y]"
+		if(!LAZYACCESS(placed_chips_pone, key) && !LAZYACCESS(placed_chips_ptwo, key))
+			target_y = y
+			break
 
-			if(target_y == 0)
-				return FALSE
+	if(target_y == 0)
+		return FALSE
 
-			var/key = "[x_loc],[target_y]"
+	var/key = "[x_loc],[target_y]"
 
-			if(game_state == GAME_PLAYER_ONE)
-				LAZYSET(placed_chips_pone, key, TRUE)
-			else
-				LAZYSET(placed_chips_ptwo, key, TRUE)
+	if(game_state == GAME_PLAYER_ONE)
+		LAZYSET(placed_chips_pone, key, TRUE)
+	else
+		LAZYSET(placed_chips_ptwo, key, TRUE)
 
-			validate_victory(x_loc, target_y, user.name)
-			return TRUE
+	validate_victory(x_loc, target_y, user.name)
+	return TRUE
 
 /datum/board_game/four_row/proc/has_chip(list/player_list, x, y)
 	return player_list["[x],[y]"]
@@ -304,9 +319,7 @@
 		return FALSE
 	return TRUE
 
-/datum/board_game/four_row/proc/validate_coords(list/params)
-	var/x_loc = text2num(params["loc_x"])
-	var/y_loc = text2num(params["loc_y"])
+/datum/board_game/four_row/proc/validate_coords(x_loc, y_loc)
 
 	if(!isnum(x_loc) || !isnum(y_loc))
 		return null

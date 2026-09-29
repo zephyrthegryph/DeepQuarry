@@ -30,21 +30,15 @@
 	else
 		icon_state = "floorbot[on]e"
 
-/mob/living/bot/floorbot/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Floorbot", name)
-		ui.open()
+DECLARE_UI(/mob/living/bot/floorbot, "Floorbot")
 
-/mob/living/bot/floorbot/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/mob/living/bot/floorbot, "on:num", "open:num", "locked:num", "vocal:num", "amount:num", "merge:ui_data_mob_living_bot_floorbot{possible_bmode:list,improvefloors:num,eattiles:num,maketiles:num,bmode:text}")
 
-	data["on"] = on
-	data["open"] = open
-	data["locked"] = locked
+/// The computed part of /mob/living/bot/floorbot's window data (declared on its UI_DATA row).
+/mob/living/bot/floorbot/proc/ui_data_mob_living_bot_floorbot(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
-	data["vocal"] = vocal
-	data["amount"] = amount
+
 
 	data["possible_bmode"] = list("NORTH", "EAST", "SOUTH", "WEST")
 
@@ -71,39 +65,54 @@ EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open contro
 			play_sfx(src, SFX_MACHINES_BUZZBEEP)
 		return 1
 
-/mob/living/bot/floorbot/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
+/mob/living/bot/floorbot/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(src)
+	return TRUE
 
-	switch(action)
-		if("start")
-			if(on)
-				turn_off()
-			else
-				turn_on()
-			. = TRUE
+UI_ACT(/mob/living/bot/floorbot, "start", ui_act_start)
+UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_start)
+	if(on)
+		turn_off()
+	else
+		turn_on()
+	. = TRUE
 
+UI_ACT(/mob/living/bot/floorbot, "vocal", ui_act_vocal)
+UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_vocal)
 	if(locked && !issilicon(ui.user))
 		return
+	vocal = !vocal
+	. = TRUE
 
-	switch(action)
-		if("vocal")
-			vocal = !vocal
-			. = TRUE
-		if("improve")
-			improvefloors = !improvefloors
-			. = TRUE
-		if("tiles")
-			eattiles = !eattiles
-			. = TRUE
-		if("make")
-			maketiles = !maketiles
-			. = TRUE
-		if("bridgemode")
-			targetdirection = text2dir(params["dir"])
-			. = TRUE
+UI_ACT(/mob/living/bot/floorbot, "improve", ui_act_improve)
+UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_improve)
+	if(locked && !issilicon(ui.user))
+		return
+	improvefloors = !improvefloors
+	. = TRUE
+
+UI_ACT(/mob/living/bot/floorbot, "tiles", ui_act_tiles)
+UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_tiles)
+	if(locked && !issilicon(ui.user))
+		return
+	eattiles = !eattiles
+	. = TRUE
+
+UI_ACT(/mob/living/bot/floorbot, "make", ui_act_make)
+UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_make)
+	if(locked && !issilicon(ui.user))
+		return
+	maketiles = !maketiles
+	. = TRUE
+
+UI_ACT(/mob/living/bot/floorbot, "bridgemode", ui_act_bridgemode, UI_ARG_VALUE("dir"))
+UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_bridgemode)
+	if(locked && !issilicon(ui.user))
+		return
+	targetdirection = text2dir(params["dir"])
+	. = TRUE
 
 /mob/living/bot/floorbot/handleRegular()
 	++tilemake

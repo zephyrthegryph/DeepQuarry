@@ -29,16 +29,16 @@
 			ringtones += key
 	return list("ringtone_choices" = ringtones)
 
-/datum/preference_editor/starting_kit/handle_action(datum/preferences/preferences, action, list/params, mob/user)
-	switch(action)
-		if("set_ringtone")
-			var/value = params["value"]
-			if(!(value in GLOB.device_ringtones))
-				return PREF_UPDATE_REJECTED
-			preferences.update_preference_by_type(/datum/preference/text/human/ringtone, value)
-			return PREF_UPDATE_ACCEPTED
-		if("toggle_comm_visible")
-			var/cur = preferences.read_preference(/datum/preference/toggle/human/communicator_visibility)
-			preferences.update_preference_by_type(/datum/preference/toggle/human/communicator_visibility, !cur)
-			return PREF_UPDATE_ACCEPTED
-	return PREF_UPDATE_UNCHANGED
+UI_ACT(/datum/preference_editor/starting_kit, "set_ringtone", ui_act_set_ringtone, UI_ARG_VALUE("value"))
+UI_ACT_PREF_PROC(/datum/preference_editor/starting_kit, ui_act_set_ringtone)
+	var/value = params["value"]
+	if(!(value in GLOB.device_ringtones))
+		return PREF_UPDATE_REJECTED
+	preferences.update_preference_by_type(/datum/preference/text/human/ringtone, value)
+	return PREF_UPDATE_ACCEPTED
+
+UI_ACT(/datum/preference_editor/starting_kit, "toggle_comm_visible", ui_act_toggle_comm_visible)
+UI_ACT_PREF_PROC(/datum/preference_editor/starting_kit, ui_act_toggle_comm_visible)
+	var/cur = preferences.read_preference(/datum/preference/toggle/human/communicator_visibility)
+	preferences.update_preference_by_type(/datum/preference/toggle/human/communicator_visibility, !cur)
+	return PREF_UPDATE_ACCEPTED

@@ -20,16 +20,14 @@
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/computer/specops_shuttle/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/obj/machinery/computer/specops_shuttle, GLOB.tgui_default_state)
 
-/obj/machinery/computer/specops_shuttle/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "SpecopsShuttle", "Special Operations Shuttle")
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/specops_shuttle, "SpecopsShuttle", UI_TITLE("Special Operations Shuttle"))
 
-/obj/machinery/computer/specops_shuttle/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/specops_shuttle, "merge:ui_data_obj_machinery_computer_specops_shuttle{status_message:text,state:text,timeleft:unknown,destination:text}")
+
+/// The computed part of /obj/machinery/computer/specops_shuttle's window data (declared on its UI_DATA row).
+/obj/machinery/computer/specops_shuttle/proc/ui_data_obj_machinery_computer_specops_shuttle(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(temp)
 		data["status_message"] = temp
@@ -45,16 +43,14 @@
 		data["destination"] = station_name()
 	return data
 
-/obj/machinery/computer/specops_shuttle/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-	switch(action)
-		if("send_to_dock")
-			specops_send_to_dock(ui.user)
-			SStgui.update_uis(src)
-			return TRUE
-		if("send_to_station")
-			specops_send_to_station(ui.user)
-			SStgui.update_uis(src)
-			return TRUE
+UI_ACT(/obj/machinery/computer/specops_shuttle, "send_to_dock", ui_act_send_to_dock)
+UI_ACT_PROC(/obj/machinery/computer/specops_shuttle, ui_act_send_to_dock)
+	specops_send_to_dock(ui.user)
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/specops_shuttle, "send_to_station", ui_act_send_to_station)
+UI_ACT_PROC(/obj/machinery/computer/specops_shuttle, ui_act_send_to_station)
+	specops_send_to_station(ui.user)
+	SStgui.update_uis(src)
+	return TRUE

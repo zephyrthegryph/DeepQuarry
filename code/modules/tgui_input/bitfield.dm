@@ -70,20 +70,21 @@
 	while(!submitted && !closed && !QDELETED(src))
 		stoplag(1) // ALLOW(scheduler): tgui_input waits on the player (prompts, S10)
 
-/datum/tgui_bitfield_input/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/tgui_bitfield_input, GLOB.tgui_always_state)
 
-/datum/tgui_bitfield_input/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "BitfieldInput", title)
-		ui.open()
+DECLARE_UI(/datum/tgui_bitfield_input, "BitfieldInput")
+
+/datum/tgui_bitfield_input/ui_title(mob/user)
+	return title
 
 /datum/tgui_bitfield_input/tgui_close(mob/user)
 	. = ..()
 	closed = TRUE
 
-/datum/tgui_bitfield_input/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_bitfield_input, "merge:ui_data_datum_tgui_bitfield_input{title:text,flags:list}")
+
+/// The computed part of /datum/tgui_bitfield_input's window data (declared on its UI_DATA row).
+/datum/tgui_bitfield_input/proc/ui_data_datum_tgui_bitfield_input(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/flags = list()
 	for(var/name in bitflags)
 		var/bit = bitflags[name]
@@ -98,29 +99,29 @@
 		"flags" = flags,
 	)
 
-/datum/tgui_bitfield_input/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
+UI_ACT(/datum/tgui_bitfield_input, "toggle", ui_act_toggle, UI_ARG_NUM("bit"))
+UI_ACT_PROC(/datum/tgui_bitfield_input, ui_act_toggle)
+	var/bit = params["bit"]
+	if(!isnum(bit))
 		return
-	switch(action)
-		if("toggle")
-			var/bit = text2num("[params["bit"]]")
-			if(!isnum(bit))
-				return
-			if(!(allowed_edit_field & bit))
-				return
-			if(value & bit)
-				value &= ~bit
-			else
-				value |= bit
-			return TRUE
-		if("submit")
-			submitted = TRUE
-			SStgui.close_uis(src)
-			return TRUE
-		if("cancel")
-			value = initial_value
-			submitted = FALSE
-			closed = TRUE
-			SStgui.close_uis(src)
-			return TRUE
+	if(!(allowed_edit_field & bit))
+		return
+	if(value & bit)
+		value &= ~bit
+	else
+		value |= bit
+	return TRUE
+
+UI_ACT(/datum/tgui_bitfield_input, "submit", ui_act_submit)
+UI_ACT_PROC(/datum/tgui_bitfield_input, ui_act_submit)
+	submitted = TRUE
+	SStgui.close_uis(src)
+	return TRUE
+
+UI_ACT(/datum/tgui_bitfield_input, "cancel", ui_act_cancel)
+UI_ACT_PROC(/datum/tgui_bitfield_input, ui_act_cancel)
+	value = initial_value
+	submitted = FALSE
+	closed = TRUE
+	SStgui.close_uis(src)
+	return TRUE

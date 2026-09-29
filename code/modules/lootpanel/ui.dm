@@ -15,12 +15,11 @@
 
 
 /// Clicks an object from the searchables. Validates the object and the user
-/datum/lootpanel/proc/grab(mob/user, list/params)
-	var/ref = params["ref"]
-	if(isnull(ref))
+UI_ACT(/datum/lootpanel, "grab", ui_act_grab, UI_ARG_REF("ref", "searchables", /datum/search_object), UI_ARG_BOOL("ctrl"), UI_ARG_BOOL("middle"), UI_ARG_BOOL("shift"), UI_ARG_BOOL("alt"), UI_ARG_BOOL("right"))
+UI_ACT_PROC(/datum/lootpanel, ui_act_grab)
+	var/datum/search_object/index = params["ref"]
+	if(isnull(index))
 		return FALSE
-
-	var/datum/search_object/index = locate_in_list(searchables, ref)
 	var/atom/thing = index?.item()
 	if(QDELETED(index) || QDELETED(thing)) // Obj is gone
 		return FALSE

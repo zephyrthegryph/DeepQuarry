@@ -80,8 +80,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/radio/headset, "keyslot2", "ks2type")
 
 	return "[..()][append]"
 
-/obj/item/radio/headset/tgui_state(mob/user)
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/radio/headset, GLOB.tgui_inventory_state)
 
 // Extends the radio's own Use (the radio UI; interaction_self declines for packs/beacons).
 EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptionkey, PROC_REF(interaction_item), "Insert key", REQ_TARGET_STATE(/obj/item/radio/headset/proc/can_insert_key)))

@@ -38,18 +38,15 @@ GENERAL_PROTECT_DATUM(/datum/log_holder)
 ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the rounds logs.", ADMIN_CATEGORY_LOGS)
 	logger.tgui_interact(user.mob)
 
-/datum/log_holder/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/datum/log_holder, "LogViewer", UI_TITLE("Log Viewer"))
+
+/datum/log_holder/ui_prepare(mob/user, datum/tgui/ui)
 	if(!check_rights_for(user.client, R_ADMIN|R_MOD|R_DEBUG))
-		return
+		return FALSE
 
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(isnull(ui))
-		ui = new(user, src, "LogViewer", "Log Viewer")
-		ui.set_autoupdate(FALSE)
-		ui.open()
+	return TRUE
 
-/datum/log_holder/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN|R_MOD|R_DEBUG)
+DECLARE_UI_STATE(/datum/log_holder, ADMIN_STATE(R_ADMIN|R_MOD|R_DEBUG))
 
 /datum/log_holder/tgui_static_data(mob/user)
 	var/list/data = list(
@@ -71,7 +68,10 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 
 	return data
 
-/datum/log_holder/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/log_holder, "merge:ui_data_datum_log_holder{}")
+
+/// The computed part of /datum/log_holder's window data (declared on its UI_DATA row).
+/datum/log_holder/proc/ui_data_datum_log_holder(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	if(!last_data_update || ELAPSED_SINCE(src, last_data_update, CLOCK_WORLD) > LOG_UPDATE_TIMEOUT)
 		cache_ui_data()
 	return data_cache || list()
@@ -93,18 +93,11 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 	LAZYSET(data_cache, "categories", category_map)
 	LAZYSET(data_cache, "last_data_update", last_data_update)
 
-/datum/log_holder/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
-
-	switch(action)
-		if("refresh")
-			cache_ui_data()
-			SStgui.update_uis(src)
-			return TRUE
-		else
-			stack_trace("unknown ui_act action [action] for [type]")
+UI_ACT(/datum/log_holder, "refresh", ui_act_refresh)
+UI_ACT_PROC(/datum/log_holder, ui_act_refresh)
+	cache_ui_data()
+	SStgui.update_uis(src)
+	return TRUE
 
 /// Assembles basic information for logging, creating the log category datums and checking for config flags as required
 /datum/log_holder/proc/init_logging()

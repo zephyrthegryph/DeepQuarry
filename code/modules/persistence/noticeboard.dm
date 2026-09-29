@@ -130,14 +130,13 @@ DECLARE_INTERACTIONS(/obj/structure/noticeboard, \
 	tgui_interact(user)
 	return ..()
 
-/obj/structure/noticeboard/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "NoticeBoard", name)
-		ui.open()
+DECLARE_UI(/obj/structure/noticeboard, "NoticeBoard")
 
-/obj/structure/noticeboard/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/obj/structure/noticeboard, "merge:ui_data_obj_structure_noticeboard{notices:list}")
+
+/// The computed part of /obj/structure/noticeboard's window data (declared on its UI_DATA row).
+/obj/structure/noticeboard/proc/ui_data_obj_structure_noticeboard(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/list/tgui_notices = list()
 	for(var/obj/item/I in src.notices)
@@ -150,47 +149,46 @@ DECLARE_INTERACTIONS(/obj/structure/noticeboard, \
 	data["notices"] = tgui_notices
 	return data
 
-/obj/structure/noticeboard/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+UI_ACT(/obj/structure/noticeboard, "read", ui_act_read, UI_ARG_REF("ref", null, /obj/item/paper))
+UI_ACT_PROC(/obj/structure/noticeboard, ui_act_read)
+	var/obj/item/paper/P = params["ref"]
+	if(P && P.loc == src)
+		P.show_content(ui.user)
+	. = TRUE
 
-	switch(action)
-		if("read")
-			var/obj/item/paper/P = locate(params["ref"])
-			if(P && P.loc == src)
-				P.show_content(ui.user)
-			. = TRUE
+UI_ACT(/obj/structure/noticeboard, "look", ui_act_look, UI_ARG_REF("ref", null, /obj/item/photo))
+UI_ACT_PROC(/obj/structure/noticeboard, ui_act_look)
+	var/obj/item/photo/P = params["ref"]
+	if(P && P.loc == src)
+		P.show(ui.user)
+	. = TRUE
 
-		if("look")
-			var/obj/item/photo/P = locate(params["ref"])
-			if(P && P.loc == src)
-				P.show(ui.user)
-			. = TRUE
+UI_ACT(/obj/structure/noticeboard, "remove", ui_act_remove, UI_ARG_REF("ref", null, /obj/item))
+UI_ACT_PROC(/obj/structure/noticeboard, ui_act_remove)
+	if(!in_range(src, ui.user))
+		return FALSE
+	var/obj/item/I = params["ref"]
+	remove_paper(I)
+	if(istype(I))
+		ui.user.put_in_hands(I)
+	add_fingerprint(ui.user)
+	. = TRUE
 
-		if("remove")
-			if(!in_range(src, ui.user))
-				return FALSE
-			var/obj/item/I = locate(params["ref"])
-			remove_paper(I)
-			if(istype(I))
-				ui.user.put_in_hands(I)
-			add_fingerprint(ui.user)
-			. = TRUE
-
-		if("write")
-			if(!in_range(src, ui.user))
-				return FALSE
-			var/obj/item/P = locate(params["ref"])
-			if((P && P.loc == src)) //if the paper's on the board
-				var/mob/living/M = ui.user
-				if(istype(M))
-					var/obj/item/pen/E = M.get_type_in_hands(/obj/item/pen)
-					if(E)
-						add_fingerprint(M)
-						P.attackby(E, ui.user)
-					else
-						to_chat(M, span_notice("You'll need something to write with!"))
-						. = TRUE
+UI_ACT(/obj/structure/noticeboard, "write", ui_act_write, UI_ARG_REF("ref", null, /obj/item))
+UI_ACT_PROC(/obj/structure/noticeboard, ui_act_write)
+	if(!in_range(src, ui.user))
+		return FALSE
+	var/obj/item/P = params["ref"]
+	if((P && P.loc == src)) //if the paper's on the board
+		var/mob/living/M = ui.user
+		if(istype(M))
+			var/obj/item/pen/E = M.get_type_in_hands(/obj/item/pen)
+			if(E)
+				add_fingerprint(M)
+				P.attackby(E, ui.user)
+			else
+				to_chat(M, span_notice("You'll need something to write with!"))
+				. = TRUE
 
 /obj/structure/noticeboard/anomaly
 	notices = 5

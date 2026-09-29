@@ -50,21 +50,11 @@
 	name = "Use"
 	effect = /atom/proc/interaction_open_ui
 
-/obj/structure/dispenser/tgui_state(mob/user)
-	return GLOB.tgui_physical_state
+DECLARE_UI_STATE(/obj/structure/dispenser, GLOB.tgui_physical_state)
 
-/obj/structure/dispenser/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "TankDispenser", name)
-		ui.open()
+DECLARE_UI(/obj/structure/dispenser, "TankDispenser")
 
-/obj/structure/dispenser/tgui_data(mob/user)
-	var/list/data = list()
-	data["oxygen"] = oxygentanks
-	data["phoron"] = phorontanks
-
-	return data
+UI_DATA_REPLACE(/obj/structure/dispenser, "oxygen=oxygentanks", "phoron=phorontanks")
 
 /// Old attackby: store a tank, or take a hit on harm intent.
 /datum/interaction/entry_item/dispenser_item
@@ -112,26 +102,26 @@
 
 #undef TANK_DISPENSER_CAPACITY
 
-/obj/structure/dispenser/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return
-	switch(action)
-		if("phoron")
-			var/obj/item/tank/phoron/tank = locate_within(src, /obj/item/tank/phoron)
-			if(tank && Adjacent(ui.user))
-				ui.user.put_in_hands(tank)
-				phorontanks--
-			. = TRUE
-			play_sfx(src, SFX_ITEMS_DROP_GASCAN)
-		if("oxygen")
-			var/obj/item/tank/tank = null
-			for(var/obj/item/tank/T in contents_of(src))
-				if(istype(T, /obj/item/tank/oxygen) || istype(T, /obj/item/tank/air) || istype(T, /obj/item/tank/anesthetic))
-					tank = T
-					break
-			if(tank && Adjacent(ui.user))
-				ui.user.put_in_hands(tank)
-				oxygentanks--
-			. = TRUE
-			play_sfx(src, SFX_ITEMS_DROP_GASCAN)
+UI_ACT(/obj/structure/dispenser, "phoron", ui_act_phoron)
+UI_ACT_PROC(/obj/structure/dispenser, ui_act_phoron)
+	var/obj/item/tank/phoron/tank = locate_within(src, /obj/item/tank/phoron)
+	if(tank && Adjacent(ui.user))
+		ui.user.put_in_hands(tank)
+		phorontanks--
+	. = TRUE
+	play_sfx(src, SFX_ITEMS_DROP_GASCAN)
+	update_icon()
+
+UI_ACT(/obj/structure/dispenser, "oxygen", ui_act_oxygen)
+UI_ACT_PROC(/obj/structure/dispenser, ui_act_oxygen)
+	var/obj/item/tank/tank = null
+	for(var/obj/item/tank/T in contents_of(src))
+		if(istype(T, /obj/item/tank/oxygen) || istype(T, /obj/item/tank/air) || istype(T, /obj/item/tank/anesthetic))
+			tank = T
+			break
+	if(tank && Adjacent(ui.user))
+		ui.user.put_in_hands(tank)
+		oxygentanks--
+	. = TRUE
+	play_sfx(src, SFX_ITEMS_DROP_GASCAN)
 	update_icon()

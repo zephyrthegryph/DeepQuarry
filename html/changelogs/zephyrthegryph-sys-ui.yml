@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Every tgui window and action is now declared (DECLARE_UI / UI_ACT rows): arguments sent by the UI are parsed and validated in one place, and malformed or unexpected values are refused instead of reaching the handler."
+  - bugfix: "Answers to in-window prompts can no longer be forged by sending the answer key with the original click."
+  - code_imp: "tgui interface types are generated from the declared tables (tools/build/build.sh ui-types)."

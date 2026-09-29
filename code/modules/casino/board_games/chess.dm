@@ -43,18 +43,17 @@
 	EXPIRY_DECLARE(turn_start_time)
 	var/winner
 
-/datum/board_game/chess/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ChessCheckers", name)
-		ui.open()
+DECLARE_UI(/datum/board_game/chess, "ChessCheckers")
 
 GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 
 /datum/board_game/chess/tgui_static_data(mob/user)
 	return GLOB.chess_static_data
 
-/datum/board_game/chess/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/board_game/chess, "merge:ui_data_datum_board_game_chess{player_one:unknown,player_two:unknown,player_one_time:unknown,player_two_time:unknown,current_board:list,selected_figure:bool,valid_moves:bool,game_state:unknown,winner:unknown,has_won:bool,game_flags:unknown}")
+
+/// The computed part of /datum/board_game/chess's window data (declared on its UI_DATA row).
+/datum/board_game/chess/proc/ui_data_datum_board_game_chess(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/player_one_mob = player_one
 	var/mob/player_two_mob = player_two
 
@@ -72,85 +71,94 @@ GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 		"game_flags" = game_flags
 	)
 
-/datum/board_game/chess/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
+UI_ACT(/datum/board_game/chess, "be_player_one", ui_act_be_player_one)
+UI_ACT_PROC(/datum/board_game/chess, ui_act_be_player_one)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	if(player_one == ui.user)
+		rel_clear(src, "player_one")
+		return TRUE
+	rel_set(src, "player_one", ui.user)
+	return TRUE
 
-	switch(action)
-		if("be_player_one")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			if(player_one == ui.user)
-				rel_clear(src, "player_one")
-				return TRUE
-			rel_set(src, "player_one", ui.user)
+UI_ACT(/datum/board_game/chess, "be_player_two", ui_act_be_player_two)
+UI_ACT_PROC(/datum/board_game/chess, ui_act_be_player_two)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	if(player_two == ui.user)
+		rel_clear(src, "player_two")
+		return TRUE
+	rel_set(src, "player_two", ui.user)
+	return TRUE
+
+UI_ACT(/datum/board_game/chess, "swap_players", ui_act_swap_players)
+UI_ACT_PROC(/datum/board_game/chess, ui_act_swap_players)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	if(!player_one || !player_two)
+		return FALSE
+	var/mob/temp_player = player_one
+	rel_set(src, "player_one", player_two)
+	rel_set(src, "player_two", temp_player)
+
+UI_ACT(/datum/board_game/chess, "clear_game", ui_act_clear_game)
+UI_ACT_PROC(/datum/board_game/chess, ui_act_clear_game)
+	if(game_state == GAME_SETUP)
+		return FALSE
+	reset(TRUE)
+	return TRUE
+
+UI_ACT(/datum/board_game/chess, "start_game", ui_act_start_game)
+UI_ACT_PROC(/datum/board_game/chess, ui_act_start_game)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	if(!player_one || !player_two)
+		return FALSE
+	current_board = get_defaultboard()
+	game_state = GAME_PLAYER_ONE
+	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
+	return TRUE
+
+UI_ACT(/datum/board_game/chess, "play_again", ui_act_play_again)
+UI_ACT_PROC(/datum/board_game/chess, ui_act_play_again)
+	if(game_state < GAME_OVER)
+		return FALSE
+	if(!player_one || !player_two)
+		return FALSE
+	reset()
+	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
+	return TRUE
+
+UI_ACT(/datum/board_game/chess, "play_again_swapped", ui_act_play_again_swapped)
+UI_ACT_PROC(/datum/board_game/chess, ui_act_play_again_swapped)
+	if(game_state < GAME_OVER)
+		return FALSE
+	if(!player_one || !player_two)
+		return FALSE
+	reset()
+	var/mob/temp_player = player_one
+	rel_set(src, "player_one", player_two)
+	rel_set(src, "player_two", temp_player)
+	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
+	return TRUE
+
+UI_ACT(/datum/board_game/chess, "game_action", ui_act_game_action, UI_ARG_TEXT("action", 64), UI_ARG_LIST("data"))
+UI_ACT_PROC(/datum/board_game/chess, ui_act_game_action)
+	if(ui.user == player_one && game_state == GAME_PLAYER_ONE)
+		var/game_action = ui_subdispatch(src, "game", params["action"], params["data"], ui.user, ui, state, "w")
+		if(game_action)
+			if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
+				game_state = GAME_PLAYER_TWO
+				EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
-		if("be_player_two")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			if(player_two == ui.user)
-				rel_clear(src, "player_two")
-				return TRUE
-			rel_set(src, "player_two", ui.user)
+	if(ui.user == player_two && game_state == GAME_PLAYER_TWO)
+		var/game_action = ui_subdispatch(src, "game", params["action"], params["data"], ui.user, ui, state, "b")
+		if(game_action)
+			if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
+				game_state = GAME_PLAYER_ONE
+				EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
-		if("swap_players")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			if(!player_one || !player_two)
-				return FALSE
-			var/mob/temp_player = player_one
-			rel_set(src, "player_one", player_two)
-			rel_set(src, "player_two", temp_player)
-		if("clear_game")
-			if(game_state == GAME_SETUP)
-				return FALSE
-			reset(TRUE)
-			return TRUE
-		if("start_game")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			if(!player_one || !player_two)
-				return FALSE
-			current_board = get_defaultboard()
-			game_state = GAME_PLAYER_ONE
-			EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
-			return TRUE
-		if("play_again")
-			if(game_state < GAME_OVER)
-				return FALSE
-			if(!player_one || !player_two)
-				return FALSE
-			reset()
-			EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
-			return TRUE
-		if("play_again_swapped")
-			if(game_state < GAME_OVER)
-				return FALSE
-			if(!player_one || !player_two)
-				return FALSE
-			reset()
-			var/mob/temp_player = player_one
-			rel_set(src, "player_one", player_two)
-			rel_set(src, "player_two", temp_player)
-			EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
-			return TRUE
-		if("game_action")
-			if(ui.user == player_one && game_state == GAME_PLAYER_ONE)
-				var/game_action = player_actions(params["action"], params["data"], ui.user, "w")
-				if(game_action)
-					if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
-						game_state = GAME_PLAYER_TWO
-						EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
-					return TRUE
-			if(ui.user == player_two && game_state == GAME_PLAYER_TWO)
-				var/game_action = player_actions(params["action"], params["data"], ui.user, "b")
-				if(game_action)
-					if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
-						game_state = GAME_PLAYER_ONE
-						EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
-					return TRUE
-			return FALSE
+	return FALSE
 
 /datum/board_game/chess/proc/reset(full)
 	winner = null
@@ -169,75 +177,76 @@ GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 		current_board = get_defaultboard()
 		game_state = GAME_PLAYER_ONE
 
-/datum/board_game/chess/proc/player_actions(action, list/params, mob/user, active_color)
-	switch(action)
-		if("select_figure")
-			var/list/validated_data = validate_coords(params)
-			if(!validated_data)
-				return GAME_ACTION_NONE
+UI_SUBACT(/datum/board_game/chess, "game", "select_figure", game_select_figure, UI_ARG_NUM("loc_x"), UI_ARG_NUM("loc_y"))
+UI_SUBACT_PROC(/datum/board_game/chess, game_select_figure)
+	var/list/validated_data = validate_coords(params["loc_x"], params["loc_y"])
+	if(!validated_data)
+		return GAME_ACTION_NONE
 
-			var/piece = current_board[validated_data[2]][validated_data[1]]
-			if(!piece)
-				return GAME_ACTION_NONE
+	var/piece = current_board[validated_data[2]][validated_data[1]]
+	if(!piece)
+		return GAME_ACTION_NONE
 
-			if(piece[1] != active_color)
-				return GAME_ACTION_NONE
+	if(piece[1] != extra)
+		return GAME_ACTION_NONE
 
-			selected_figure = validated_data
-			update_valid_moves()
-			return GAME_ACTION_SELECT
-		if("move_figure")
-			var/list/coords = validate_coords(params)
-			if(!coords || !selected_figure)
-				return GAME_ACTION_NONE
+	selected_figure = validated_data
+	update_valid_moves()
+	return GAME_ACTION_SELECT
 
-			var/from_x = LAZYACCESS(selected_figure, 1)
-			var/from_y = LAZYACCESS(selected_figure, 2)
-			var/to_x = coords[1]
-			var/to_y = coords[2]
+UI_SUBACT(/datum/board_game/chess, "game", "move_figure", game_move_figure, UI_ARG_NUM("loc_x"), UI_ARG_NUM("loc_y"), UI_ARG_NUM("promotion_choice"))
+UI_SUBACT_PROC(/datum/board_game/chess, game_move_figure)
+	var/list/coords = validate_coords(params["loc_x"], params["loc_y"])
+	if(!coords || !selected_figure)
+		return GAME_ACTION_NONE
 
-			if(!valid_move(to_x, to_y))
-				return GAME_ACTION_NONE
+	var/from_x = LAZYACCESS(selected_figure, 1)
+	var/from_y = LAZYACCESS(selected_figure, 2)
+	var/to_x = coords[1]
+	var/to_y = coords[2]
 
-			var/moving_piece = current_board[from_y][from_x]
-			var/target_piece = current_board[to_y][to_x]
+	if(!valid_move(to_x, to_y))
+		return GAME_ACTION_NONE
 
-			var/turn_duration = world.time - turn_start_time
-			if(game_state == GAME_PLAYER_ONE)
-				player_one_time += turn_duration
-			else if(game_state == GAME_PLAYER_TWO)
-				player_two_time += turn_duration
+	var/moving_piece = current_board[from_y][from_x]
+	var/target_piece = current_board[to_y][to_x]
 
-			if(moving_piece[2] == "K" && abs(to_x - from_x) == 2)
-				if(!handle_castling(active_color, from_x, from_y, to_x, to_y))
-					return GAME_ACTION_NONE
-				do_castling(active_color, from_x, from_y, to_x, to_y)
+	var/turn_duration = world.time - turn_start_time
+	if(game_state == GAME_PLAYER_ONE)
+		player_one_time += turn_duration
+	else if(game_state == GAME_PLAYER_TWO)
+		player_two_time += turn_duration
 
-			if(moving_piece[2] == "P" && abs(to_x - from_x) == 1 && !target_piece)
-				if(can_en_passant(from_x, from_y, to_x, to_y))
-					current_board[from_y][to_x] = null
+	if(moving_piece[2] == "K" && abs(to_x - from_x) == 2)
+		if(!handle_castling(extra, from_x, from_y, to_x, to_y))
+			return GAME_ACTION_NONE
+		do_castling(extra, from_x, from_y, to_x, to_y)
 
-			if(!(moving_piece[2] == "K" && abs(to_x - from_x) == 2))
-				current_board[to_y][to_x] = moving_piece
-				current_board[from_y][from_x] = null
+	if(moving_piece[2] == "P" && abs(to_x - from_x) == 1 && !target_piece)
+		if(can_en_passant(from_x, from_y, to_x, to_y))
+			current_board[from_y][to_x] = null
 
-			if(moving_piece[2] == "P" && abs(to_y - from_y) == 2)
-				last_double_pawn_move = list(to_x, to_y, moving_piece[1])
-			else
-				LAZYCLEARLIST(last_double_pawn_move)
+	if(!(moving_piece[2] == "K" && abs(to_x - from_x) == 2))
+		current_board[to_y][to_x] = moving_piece
+		current_board[from_y][from_x] = null
 
-			if(moving_piece[2] == "P")
-				if((moving_piece[1] == "w" && to_y == 1) || (moving_piece[1] == "b" && to_y == GRID_SIZE))
-					var/promotion = params["promotion_choice"]
-					if(!(promotion in list("Q", "R", "B", "N")))
-						promotion = "Q"
-					current_board[to_y][to_x] = moving_piece[1] + promotion
+	if(moving_piece[2] == "P" && abs(to_y - from_y) == 2)
+		last_double_pawn_move = list(to_x, to_y, moving_piece[1])
+	else
+		LAZYCLEARLIST(last_double_pawn_move)
 
-			LAZYCLEARLIST(selected_figure)
-			update_valid_moves()
-			validate_victory(active_color)
+	if(moving_piece[2] == "P")
+		if((moving_piece[1] == "w" && to_y == 1) || (moving_piece[1] == "b" && to_y == GRID_SIZE))
+			var/promotion = params["promotion_choice"]
+			if(!(promotion in list("Q", "R", "B", "N")))
+				promotion = "Q"
+			current_board[to_y][to_x] = moving_piece[1] + promotion
 
-			return GAME_ACTION_END_TURN
+	LAZYCLEARLIST(selected_figure)
+	update_valid_moves()
+	validate_victory(extra)
+
+	return GAME_ACTION_END_TURN
 
 /datum/board_game/chess/proc/valid_move(to_x, to_y)
 	for(var/list/move in valid_moves)
@@ -530,9 +539,7 @@ GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 		return FALSE
 	return TRUE
 
-/datum/board_game/chess/proc/validate_coords(list/params)
-	var/x_loc = text2num(params["loc_x"])
-	var/y_loc = text2num(params["loc_y"])
+/datum/board_game/chess/proc/validate_coords(x_loc, y_loc)
 
 	if(!isnum(x_loc) || !isnum(y_loc))
 		return null

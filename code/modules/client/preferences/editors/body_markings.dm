@@ -43,82 +43,115 @@
 		)
 	return list("available_styles" = styles)
 
-/datum/preference_editor/body_markings/handle_action(datum/preferences/preferences, action, list/params, mob/user)
+UI_ACT(/datum/preference_editor/body_markings, "add", ui_act_add, UI_ARG_VALUE("marking"))
+UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_add)
 	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
 	if(!islist(markings))
 		markings = list()
-	switch(action)
-		if("add")
-			var/M = params["marking"]
-			if(!M || (M in markings) || !(M in GLOB.body_marking_styles_list))
-				return PREF_UPDATE_REJECTED
-			markings[M] = preferences.mass_edit_marking_list(M)
-			preferences.update_preference_by_type(/datum/preference/body_markings, markings)
-			return PREF_UPDATE_ACCEPTED
-		if("remove")
-			markings -= params["marking"]
-			preferences.update_preference_by_type(/datum/preference/body_markings, markings)
-			return PREF_UPDATE_ACCEPTED
-		if("move_up")
-			var/start = markings.Find(params["marking"])
-			if(!start)
-				return PREF_UPDATE_REJECTED
-			if(start != 1)
-				moveElement(markings, start, start - 1)
-			else
-				moveElement(markings, start, markings.len + 1)
-			preferences.update_preference_by_type(/datum/preference/body_markings, markings)
-			return PREF_UPDATE_ACCEPTED
-		if("move_down")
-			var/start = markings.Find(params["marking"])
-			if(!start)
-				return PREF_UPDATE_REJECTED
-			if(start != markings.len)
-				moveElement(markings, start, start + 2)
-			else
-				moveElement(markings, start, 1)
-			preferences.update_preference_by_type(/datum/preference/body_markings, markings)
-			return PREF_UPDATE_ACCEPTED
-		if("set_color")
-			// open BYOND's color picker dialog. The client sends just the marking
-			// key; we prompt the user, sanitize, then apply across all zones of the marking.
-			var/M = params["marking"]
-			if(!(M in markings))
-				return PREF_UPDATE_REJECTED
-			var/seed = "#FFFFFF"
-			if(islist(markings[M]) && length(markings[M]))
-				for(var/zone in markings[M])
-					if(markings[M][zone]["color"])
-						seed = markings[M][zone]["color"]
-						break
-			// The pick lands in marking_color_picked(), which writes and refreshes the UI.
-			om_ask(user, /datum/om/prompt/color/prefs/marking, PROC_REF(marking_color_picked), title = "Color picker", message = "Marking color", default = seed, preferences = preferences, marking = M, ui_refresh = preferences)
-			return PREF_UPDATE_UNCHANGED
-		if("set_zone_color")
-			var/M = params["marking"]
-			var/zone = params["zone"]
-			if(!(M in markings) || !islist(markings[M]) || !(zone in markings[M]))
-				return PREF_UPDATE_REJECTED
-			var/seed = markings[M][zone]["color"] || "#FFFFFF"
-			om_ask(user, /datum/om/prompt/color/prefs/marking, PROC_REF(zone_color_picked), title = "Color picker", message = "Zone color: [zone]", default = seed, preferences = preferences, marking = M, zone = zone, ui_refresh = preferences)
-			return PREF_UPDATE_UNCHANGED
-		if("toggle_zone")
-			var/M = params["marking"]
-			var/zone = params["zone"]
-			if(!(M in markings) || !islist(markings[M]) || !(zone in markings[M]))
-				return PREF_UPDATE_REJECTED
-			markings[M][zone]["on"] = !markings[M][zone]["on"]
-			preferences.update_preference_by_type(/datum/preference/body_markings, markings)
-			return PREF_UPDATE_ACCEPTED
-		if("toggle_all")
-			var/M = params["marking"]
-			var/on = text2num(params["on"])
-			if(!(M in markings))
-				return PREF_UPDATE_REJECTED
-			markings[M] = preferences.mass_edit_marking_list(M, TRUE, FALSE, markings[M], on = on)
-			preferences.update_preference_by_type(/datum/preference/body_markings, markings)
-			return PREF_UPDATE_ACCEPTED
+	var/M = params["marking"]
+	if(!M || (M in markings) || !(M in GLOB.body_marking_styles_list))
+		return PREF_UPDATE_REJECTED
+	markings[M] = preferences.mass_edit_marking_list(M)
+	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
+	return PREF_UPDATE_ACCEPTED
+
+UI_ACT(/datum/preference_editor/body_markings, "remove", ui_act_remove, UI_ARG_VALUE("marking"))
+UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_remove)
+	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	if(!islist(markings))
+		markings = list()
+	markings -= params["marking"]
+	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
+	return PREF_UPDATE_ACCEPTED
+
+UI_ACT(/datum/preference_editor/body_markings, "move_up", ui_act_move_up, UI_ARG_VALUE("marking"))
+UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_move_up)
+	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	if(!islist(markings))
+		markings = list()
+	var/start = markings.Find(params["marking"])
+	if(!start)
+		return PREF_UPDATE_REJECTED
+	if(start != 1)
+		moveElement(markings, start, start - 1)
+	else
+		moveElement(markings, start, markings.len + 1)
+	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
+	return PREF_UPDATE_ACCEPTED
+
+UI_ACT(/datum/preference_editor/body_markings, "move_down", ui_act_move_down, UI_ARG_VALUE("marking"))
+UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_move_down)
+	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	if(!islist(markings))
+		markings = list()
+	var/start = markings.Find(params["marking"])
+	if(!start)
+		return PREF_UPDATE_REJECTED
+	if(start != markings.len)
+		moveElement(markings, start, start + 2)
+	else
+		moveElement(markings, start, 1)
+	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
+	return PREF_UPDATE_ACCEPTED
+
+UI_ACT(/datum/preference_editor/body_markings, "set_color", ui_act_set_color, UI_ARG_VALUE("marking"))
+UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_set_color)
+	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	if(!islist(markings))
+		markings = list()
+	// open BYOND's color picker dialog. The client sends just the marking
+	// key; we prompt the user, sanitize, then apply across all zones of the marking.
+	var/M = params["marking"]
+	if(!(M in markings))
+		return PREF_UPDATE_REJECTED
+	var/seed = "#FFFFFF"
+	if(islist(markings[M]) && length(markings[M]))
+		for(var/zone in markings[M])
+			if(markings[M][zone]["color"])
+				seed = markings[M][zone]["color"]
+				break
+	// The pick lands in marking_color_picked(), which writes and refreshes the UI.
+	om_ask(user, /datum/om/prompt/color/prefs/marking, PROC_REF(marking_color_picked), title = "Color picker", message = "Marking color", default = seed, preferences = preferences, marking = M, ui_refresh = preferences)
 	return PREF_UPDATE_UNCHANGED
+
+UI_ACT(/datum/preference_editor/body_markings, "set_zone_color", ui_act_set_zone_color, UI_ARG_VALUE("marking"), UI_ARG_TEXT("zone"))
+UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_set_zone_color)
+	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	if(!islist(markings))
+		markings = list()
+	var/M = params["marking"]
+	var/zone = params["zone"]
+	if(!(M in markings) || !islist(markings[M]) || !(zone in markings[M]))
+		return PREF_UPDATE_REJECTED
+	var/seed = markings[M][zone]["color"] || "#FFFFFF"
+	om_ask(user, /datum/om/prompt/color/prefs/marking, PROC_REF(zone_color_picked), title = "Color picker", message = "Zone color: [zone]", default = seed, preferences = preferences, marking = M, zone = zone, ui_refresh = preferences)
+	return PREF_UPDATE_UNCHANGED
+
+UI_ACT(/datum/preference_editor/body_markings, "toggle_zone", ui_act_toggle_zone, UI_ARG_TEXT("marking"), UI_ARG_TEXT("zone"))
+UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_toggle_zone)
+	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	if(!islist(markings))
+		markings = list()
+	var/M = params["marking"]
+	var/zone = params["zone"]
+	if(!(M in markings) || !islist(markings[M]) || !(zone in markings[M]))
+		return PREF_UPDATE_REJECTED
+	markings[M][zone]["on"] = !markings[M][zone]["on"]
+	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
+	return PREF_UPDATE_ACCEPTED
+
+UI_ACT(/datum/preference_editor/body_markings, "toggle_all", ui_act_toggle_all, UI_ARG_VALUE("marking"), UI_ARG_NUM("on"))
+UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_toggle_all)
+	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	if(!islist(markings))
+		markings = list()
+	var/M = params["marking"]
+	var/on = params["on"]
+	if(!(M in markings))
+		return PREF_UPDATE_REJECTED
+	markings[M] = preferences.mass_edit_marking_list(M, TRUE, FALSE, markings[M], on = on)
+	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
+	return PREF_UPDATE_ACCEPTED
 
 /// A colour for a preference, picked from the character setup UI. Re-checked on the answer:
 /// the picker's prefs are still the ones being edited (a character swap mid-pick must not write

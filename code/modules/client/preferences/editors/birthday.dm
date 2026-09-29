@@ -35,22 +35,22 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/birthday, get_months, list( \
 		"months" = TYPE_TABLE_GET(src, get_months),
 	)
 
-/datum/preference_editor/birthday/handle_action(datum/preferences/preferences, action, list/params, mob/user)
-	switch(action)
-		if("set_month")
-			var/value = text2num(params["value"])
-			if(isnull(value) || value < 0 || value > 12)
-				return PREF_UPDATE_REJECTED
-			preferences.update_preference_by_type(/datum/preference/numeric/human/bday_month, value)
-			// Clamp day to new month's max
-			var/day = preferences.read_preference(/datum/preference/numeric/human/bday_day)
-			if(value > 0 && day > days_in_month(value))
-				preferences.update_preference_by_type(/datum/preference/numeric/human/bday_day, days_in_month(value))
-			return PREF_UPDATE_ACCEPTED
-		if("set_day")
-			var/value = text2num(params["value"])
-			if(isnull(value) || value < 0 || value > 31)
-				return PREF_UPDATE_REJECTED
-			preferences.update_preference_by_type(/datum/preference/numeric/human/bday_day, value)
-			return PREF_UPDATE_ACCEPTED
-	return PREF_UPDATE_UNCHANGED
+UI_ACT(/datum/preference_editor/birthday, "set_month", ui_act_set_month, UI_ARG_NUM("value"))
+UI_ACT_PREF_PROC(/datum/preference_editor/birthday, ui_act_set_month)
+	var/value = params["value"]
+	if(isnull(value) || value < 0 || value > 12)
+		return PREF_UPDATE_REJECTED
+	preferences.update_preference_by_type(/datum/preference/numeric/human/bday_month, value)
+	// Clamp day to new month's max
+	var/day = preferences.read_preference(/datum/preference/numeric/human/bday_day)
+	if(value > 0 && day > days_in_month(value))
+		preferences.update_preference_by_type(/datum/preference/numeric/human/bday_day, days_in_month(value))
+	return PREF_UPDATE_ACCEPTED
+
+UI_ACT(/datum/preference_editor/birthday, "set_day", ui_act_set_day, UI_ARG_NUM("value"))
+UI_ACT_PREF_PROC(/datum/preference_editor/birthday, ui_act_set_day)
+	var/value = params["value"]
+	if(isnull(value) || value < 0 || value > 31)
+		return PREF_UPDATE_REJECTED
+	preferences.update_preference_by_type(/datum/preference/numeric/human/bday_day, value)
+	return PREF_UPDATE_ACCEPTED

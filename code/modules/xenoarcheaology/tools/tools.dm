@@ -164,14 +164,9 @@ DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(intera
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/depth_scanner/tgui_state(mob/user)
-	return GLOB.tgui_deep_inventory_state
+DECLARE_UI_STATE(/obj/item/depth_scanner, GLOB.tgui_deep_inventory_state)
 
-/obj/item/depth_scanner/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "XenoarchDepthScanner", name)
-		ui.open()
+DECLARE_UI(/obj/item/depth_scanner, "XenoarchDepthScanner")
 
 /obj/item/depth_scanner/tgui_static_data(mob/user)
 	. = ..()
@@ -179,8 +174,11 @@ DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(intera
 		var/mob/living/silicon/robot/robot_owner = loc
 		.["theme"] = robot_owner.get_ui_theme()
 
-/obj/item/depth_scanner/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/depth_scanner, "merge:ui_data_obj_item_depth_scanner{current:list,positive_locations:list}")
+
+/// The computed part of /obj/item/depth_scanner's window data (declared on its UI_DATA row).
+/obj/item/depth_scanner/proc/ui_data_obj_item_depth_scanner(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["current"] = list()
 	if(current())
@@ -207,27 +205,25 @@ DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(intera
 
 	return data
 
-/obj/item/depth_scanner/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/item/depth_scanner, "select", ui_act_select, UI_ARG_NUM("select"))
+UI_ACT_PROC(/obj/item/depth_scanner, ui_act_select)
+	var/index = params["select"]
+	if(index && index <= LAZYLEN(positive_locations))
+		rel_set(src, "current", LAZYACCESS(positive_locations, index))
+	return TRUE
 
-	switch(action)
-		if("select")
-			var/index = text2num(params["select"])
-			if(index && index <= LAZYLEN(positive_locations))
-				rel_set(src, "current", LAZYACCESS(positive_locations, index))
-			return TRUE
-		if("clear")
-			var/index = text2num(params["clear"])
-			if(index)
-				if(index <= LAZYLEN(positive_locations))
-					var/datum/depth_scan/D = LAZYACCESS(positive_locations, index)
-					rel_clear(src, "current")
-					own_remove(src, "positive_locations", D) // deletes the scan
-			else
-				rel_clear(src, "current")
-				own_clear(src, "positive_locations", OWN_DELETE)
-			return TRUE
+UI_ACT(/obj/item/depth_scanner, "clear", ui_act_clear, UI_ARG_NUM("clear"))
+UI_ACT_PROC(/obj/item/depth_scanner, ui_act_clear)
+	var/index = params["clear"]
+	if(index)
+		if(index <= LAZYLEN(positive_locations))
+			var/datum/depth_scan/D = LAZYACCESS(positive_locations, index)
+			rel_clear(src, "current")
+			own_remove(src, "positive_locations", D) // deletes the scan
+	else
+		rel_clear(src, "current")
+		own_clear(src, "positive_locations", OWN_DELETE)
+	return TRUE
 
 MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
 /obj/item/beacon_locator
@@ -287,44 +283,38 @@ DECLARE_INTERACTIONS(/obj/item/beacon_locator, INTERACT_USE("Open", PROC_REF(int
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/beacon_locator/tgui_state(mob/user)
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/beacon_locator, GLOB.tgui_inventory_state)
 
-/obj/item/beacon_locator/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "BeaconLocator", name)
-		ui.open()
+DECLARE_UI(/obj/item/beacon_locator, "BeaconLocator")
 
-/obj/item/beacon_locator/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/beacon_locator, "scan_ticks:num", "rawfreq=frequency:num", "merge:ui_data_obj_item_beacon_locator{degrees:num,minFrequency:num,maxFrequency:num}")
 
-	data["scan_ticks"] = scan_ticks
+/// The computed part of /obj/item/beacon_locator's window data (declared on its UI_DATA row).
+/obj/item/beacon_locator/proc/ui_data_obj_item_beacon_locator(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["degrees"] = null
 	if(target_radio())
 		data["degrees"] = round(Get_Angle(get_turf(src), get_turf(target_radio())))
 
-	data["rawfreq"] = frequency
 	data["minFrequency"] = RADIO_LOW_FREQ
 	data["maxFrequency"] = RADIO_HIGH_FREQ
 
 	return data
 
-/obj/item/beacon_locator/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/item/beacon_locator, "reset_tracking", ui_act_reset_tracking)
+UI_ACT_PROC(/obj/item/beacon_locator, ui_act_reset_tracking)
+	scan_ticks = 1
+	rel_clear(src, "target_radio")
+	om_task_periodic(src, PERIODIC_SLOW)
+	return TRUE
 
-	switch(action)
-		if("reset_tracking")
-			scan_ticks = 1
-			rel_clear(src, "target_radio")
-			om_task_periodic(src, PERIODIC_SLOW)
-			return TRUE
-		if("setFrequency")
-			var/new_frequency = (text2num(params["freq"]))
-			new_frequency = sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
-			frequency = new_frequency
-			return TRUE
+UI_ACT(/obj/item/beacon_locator, "setFrequency", ui_act_setfrequency, UI_ARG_NUM("freq"))
+UI_ACT_PROC(/obj/item/beacon_locator, ui_act_setfrequency)
+	var/new_frequency = (params["freq"])
+	new_frequency = sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
+	frequency = new_frequency
+	return TRUE
 
 MATERIAL_MIX(/obj/item/xenoarch_multi_tool, list(MAT_STEEL = 10000,MAT_GLASS = 5000))
 /obj/item/xenoarch_multi_tool

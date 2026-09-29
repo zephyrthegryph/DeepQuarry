@@ -198,20 +198,18 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 	var/degradation = 0     // Increments with each scan, stops allowing gene mods after a certain point.
 	circuit = /obj/item/circuitboard/botany_extractor
 
-/obj/machinery/botany/extractor/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "BotanyIsolator", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/botany/extractor, "BotanyIsolator")
 
-/obj/machinery/botany/extractor/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/botany/extractor, "degradation:num", "merge:ui_data_obj_machinery_botany_extractor{geneMasks:list,activity:num,disk:num,loaded:unknown,hasGenetics:num,sourceName:unknown}")
+
+/// The computed part of /obj/machinery/botany/extractor's window data (declared on its UI_DATA row).
+/obj/machinery/botany/extractor/proc/ui_data_obj_machinery_botany_extractor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/list/geneMasks = GLOB.plant_service.gene_masked_list
 	data["geneMasks"] = geneMasks
 
 	data["activity"] = active
-	data["degradation"] = degradation
 
 	if(loaded_disk)
 		data["disk"] = 1
@@ -234,88 +232,87 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 
 	return data
 
-/obj/machinery/botany/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
+/obj/machinery/botany/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(ui.user)
+	return TRUE
 
-	switch(action)
-		if("eject_packet")
-			if(!seed)
-				return
-			seed.forceMove(get_turf(src))
+UI_ACT(/obj/machinery/botany, "eject_packet", ui_act_eject_packet)
+UI_ACT_PROC(/obj/machinery/botany, ui_act_eject_packet)
+	if(!seed)
+		return
+	seed.forceMove(get_turf(src))
 
-			if(seed.seed().name == "new line" || isnull(GLOB.plant_service.seeds[seed.seed().name]))
-				GLOB.plant_service.register_line(seed.seed()) // the packet keeps its private copy, renamed to the line
+	if(seed.seed().name == "new line" || isnull(GLOB.plant_service.seeds[seed.seed().name]))
+		GLOB.plant_service.register_line(seed.seed()) // the packet keeps its private copy, renamed to the line
 
-			seed.update_seed()
-			visible_message("[icon2html(src,viewers(src))] [src] beeps and spits out [seed].")
+	seed.update_seed()
+	visible_message("[icon2html(src,viewers(src))] [src] beeps and spits out [seed].")
 
-			own_take(src, "seed")
-			return TRUE
+	own_take(src, "seed")
+	return TRUE
 
-		if("eject_disk")
-			if(!loaded_disk)
-				return
-			loaded_disk.forceMove(get_turf(src))
-			visible_message("[icon2html(src,viewers(src))] [src] beeps and spits out [loaded_disk].")
-			own_take(src, "loaded_disk")
-			return TRUE
+UI_ACT(/obj/machinery/botany, "eject_disk", ui_act_eject_disk)
+UI_ACT_PROC(/obj/machinery/botany, ui_act_eject_disk)
+	if(!loaded_disk)
+		return
+	loaded_disk.forceMove(get_turf(src))
+	visible_message("[icon2html(src,viewers(src))] [src] beeps and spits out [loaded_disk].")
+	own_take(src, "loaded_disk")
+	return TRUE
 
-/obj/machinery/botany/extractor/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/botany/extractor, "scan_genome", ui_act_scan_genome)
+UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_scan_genome)
+	if(!seed)
+		return
 
-	switch(action)
-		if("scan_genome")
-			if(!seed)
-				return
+	COOLDOWN_START(src, action_cooldown, action_time)
+	set_active(1)
 
-			COOLDOWN_START(src, action_cooldown, action_time)
-			set_active(1)
+	if(seed && seed.seed())
+		seed_hand_over(seed, "seed_static", src, "genetics_static") // the packet is consumed below
+		degradation = 0
 
-			if(seed && seed.seed())
-				seed_hand_over(seed, "seed_static", src, "genetics_static") // the packet is consumed below
-				degradation = 0
+	consume(seed)
+	own_take(src, "seed")
+	return TRUE
 
-			consume(seed)
-			own_take(src, "seed")
-			return TRUE
+UI_ACT(/obj/machinery/botany/extractor, "get_gene", ui_act_get_gene, UI_ARG_TEXT("get_gene"))
+UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_get_gene)
+	if(!genetics() || !loaded_disk)
+		return
 
-		if("get_gene")
-			if(!genetics() || !loaded_disk)
-				return
+	COOLDOWN_START(src, action_cooldown, action_time)
+	set_active(1)
 
-			COOLDOWN_START(src, action_cooldown, action_time)
-			set_active(1)
+	var/datum/plantgene/P = genetics().get_gene(params["get_gene"])
+	if(!P)
+		return
+	own_add(loaded_disk, "genes", P) // get_gene() makes a fresh copy: the disk owns it
 
-			var/datum/plantgene/P = genetics().get_gene(params["get_gene"])
-			if(!P)
-				return
-			own_add(loaded_disk, "genes", P) // get_gene() makes a fresh copy: the disk owns it
+	loaded_disk.genesource = "[genetics().display_name]"
+	if(!genetics().roundstart)
+		loaded_disk.genesource += " (variety #[genetics().uid])"
 
-			loaded_disk.genesource = "[genetics().display_name]"
-			if(!genetics().roundstart)
-				loaded_disk.genesource += " (variety #[genetics().uid])"
+	loaded_disk.name += " ([GLOB.plant_service.gene_tag_masks[params["get_gene"]]], #[genetics().uid])"
+	loaded_disk.desc += " The label reads \'gene [GLOB.plant_service.gene_tag_masks[params["get_gene"]]], sampled from [genetics().display_name]\'."
+	eject_disk = 1
 
-			loaded_disk.name += " ([GLOB.plant_service.gene_tag_masks[params["get_gene"]]], #[genetics().uid])"
-			loaded_disk.desc += " The label reads \'gene [GLOB.plant_service.gene_tag_masks[params["get_gene"]]], sampled from [genetics().display_name]\'."
-			eject_disk = 1
+	degradation += rand(20,60)
+	if(degradation >= 100)
+		failed_task = 1
+		proto_set(src, "genetics_static", null)
+		degradation = 0
+	return TRUE
 
-			degradation += rand(20,60)
-			if(degradation >= 100)
-				failed_task = 1
-				proto_set(src, "genetics_static", null)
-				degradation = 0
-			return TRUE
-
-		if("clear_buffer")
-			if(!genetics())
-				return
-			proto_set(src, "genetics_static", null)
-			degradation = 0
-			return TRUE
+UI_ACT(/obj/machinery/botany/extractor, "clear_buffer", ui_act_clear_buffer)
+UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_clear_buffer)
+	if(!genetics())
+		return
+	proto_set(src, "genetics_static", null)
+	degradation = 0
+	return TRUE
 
 // Fires an extracted trait into another packet of seeds with a chance
 // of destroying it based on the size/complexity of the plasmid.
@@ -325,14 +322,13 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 	disk_needs_genes = 1
 	circuit = /obj/item/circuitboard/botany_editor
 
-/obj/machinery/botany/editor/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "BotanyEditor", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/botany/editor, "BotanyEditor")
 
-/obj/machinery/botany/editor/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/botany/editor, "merge:ui_data_obj_machinery_botany_editor{activity:num,degradation:num,disk:num,sourceName:unknown,locus:unknown,loaded:unknown}")
+
+/// The computed part of /obj/machinery/botany/editor's window data (declared on its UI_DATA row).
+/obj/machinery/botany/editor/proc/ui_data_obj_machinery_botany_editor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["activity"] = active
 
@@ -362,35 +358,31 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 
 	return data
 
-/obj/machinery/botany/editor/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/botany/editor, "apply_gene", ui_act_apply_gene)
+UI_ACT_PROC(/obj/machinery/botany/editor, ui_act_apply_gene)
+	if(!loaded_disk || !seed)
+		return
 
-	switch(action)
-		if("apply_gene")
-			if(!loaded_disk || !seed)
-				return
+	COOLDOWN_START(src, action_cooldown, action_time)
+	set_active(1)
 
-			COOLDOWN_START(src, action_cooldown, action_time)
-			set_active(1)
+	if(!isnull(GLOB.plant_service.seeds[seed.seed().name]))
+		var/datum/seed/modified_seed = seed.seed().diverge(1)
+		if(!modified_seed) // TRAIT_IMMUTABLE: never edit the shared line
+			set_active(FALSE)
+			return
+		proto_set(seed, "seed_static", modified_seed)
+		seed.seed_type = seed.seed().name
+		seed.update_seed()
 
-			if(!isnull(GLOB.plant_service.seeds[seed.seed().name]))
-				var/datum/seed/modified_seed = seed.seed().diverge(1)
-				if(!modified_seed) // TRAIT_IMMUTABLE: never edit the shared line
-					set_active(FALSE)
-					return
-				proto_set(seed, "seed_static", modified_seed)
-				seed.seed_type = seed.seed().name
-				seed.update_seed()
+	if(prob(seed.modified))
+		failed_task = 1
+		seed.modified = 101
 
-			if(prob(seed.modified))
-				failed_task = 1
-				seed.modified = 101
-
-			for(var/datum/plantgene/gene in loaded_disk.genes)
-				seed.seed().apply_gene(gene)
-				seed.modified += rand(5,10)
-			return TRUE
+	for(var/datum/plantgene/gene in loaded_disk.genes)
+		seed.seed().apply_gene(gene)
+		seed.modified += rand(5,10)
+	return TRUE
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/botany/step_start_condition()

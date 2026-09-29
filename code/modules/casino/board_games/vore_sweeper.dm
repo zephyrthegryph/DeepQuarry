@@ -23,13 +23,12 @@
 	. = ..()
 	rel_set(src, "parent", holder)
 
-/datum/board_game/vore_sweeper/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "VoreSweeper", name)
-		ui.open()
+DECLARE_UI(/datum/board_game/vore_sweeper, "VoreSweeper")
 
-/datum/board_game/vore_sweeper/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/board_game/vore_sweeper, "merge:ui_data_datum_board_game_vore_sweeper{grid_size:num,mine_count:num,max_mines:num,dealer:unknown,placed_mines:bool,revealed_fields:bool,placed_flags:bool,game_state:unknown,is_dealer:bool}")
+
+/// The computed part of /datum/board_game/vore_sweeper's window data (declared on its UI_DATA row).
+/datum/board_game/vore_sweeper/proc/ui_data_datum_board_game_vore_sweeper(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/dealer_mob = dealer
 
 	var/placed_mine_data = game_state > GAME_PLAYING || (ui.user == dealer_mob) ? (placed_mines || list()) : null
@@ -46,89 +45,97 @@
 		"is_dealer" = dealer_mob == ui.user
 	)
 
-/datum/board_game/vore_sweeper/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
+UI_ACT(/datum/board_game/vore_sweeper, "be_dealer", ui_act_be_dealer)
+UI_ACT_PROC(/datum/board_game/vore_sweeper, ui_act_be_dealer)
+	if(game_state == GAME_PLAYING)
+		return FALSE
+	rel_set(src, "dealer", ui.user)
+	return TRUE
 
-	switch(action)
-		if("be_dealer")
-			if(game_state == GAME_PLAYING)
-				return FALSE
-			rel_set(src, "dealer", ui.user)
-			return TRUE
-		if("clear_dealer")
-			var/mob/dealer_mob = dealer
-			if(!dealer_mob)
-				return FALSE
-			if(dealer_mob == ui.user)
-				parent().atom_say("[ui.user] stopped dealing.")
-				rel_clear(src, "dealer")
-				return TRUE
-			if(get_dist(ui.user, dealer_mob) > 3)
-				parent().atom_say("Dealer has been cleared by [ui.user].")
-				rel_clear(src, "dealer")
-				return TRUE
-			return FALSE
-		if("restart_game")
-			var/mob/dealer_mob = dealer
-			if(game_state < GAME_PLAYING)
-				return FALSE
-			LAZYCLEARLIST(placed_mines)
-			LAZYCLEARLIST(revealed_fields)
-			LAZYCLEARLIST(placed_flags)
-			if(!dealer_mob && game_state > GAME_PLAYING)
-				auto_place_mines(ui.user, TRUE)
-				return TRUE
-			game_state = GAME_SETUP
-			return TRUE
-		if("game_action")
-			if(player_actions(params["action"], params["data"], ui.user))
-				return TRUE
-			return FALSE
-		if("setup_action")
-			if(dealer_actions(params["action"], params["data"], ui.user))
-				return TRUE
-			return FALSE
+UI_ACT(/datum/board_game/vore_sweeper, "clear_dealer", ui_act_clear_dealer)
+UI_ACT_PROC(/datum/board_game/vore_sweeper, ui_act_clear_dealer)
+	var/mob/dealer_mob = dealer
+	if(!dealer_mob)
+		return FALSE
+	if(dealer_mob == ui.user)
+		parent().atom_say("[ui.user] stopped dealing.")
+		rel_clear(src, "dealer")
+		return TRUE
+	if(get_dist(ui.user, dealer_mob) > 3)
+		parent().atom_say("Dealer has been cleared by [ui.user].")
+		rel_clear(src, "dealer")
+		return TRUE
+	return FALSE
 
-/datum/board_game/vore_sweeper/proc/player_actions(action, list/params, mob/user)
+UI_ACT(/datum/board_game/vore_sweeper, "restart_game", ui_act_restart_game)
+UI_ACT_PROC(/datum/board_game/vore_sweeper, ui_act_restart_game)
+	var/mob/dealer_mob = dealer
+	if(game_state < GAME_PLAYING)
+		return FALSE
+	LAZYCLEARLIST(placed_mines)
+	LAZYCLEARLIST(revealed_fields)
+	LAZYCLEARLIST(placed_flags)
+	if(!dealer_mob && game_state > GAME_PLAYING)
+		auto_place_mines(ui.user, TRUE)
+		return TRUE
+	game_state = GAME_SETUP
+	return TRUE
+
+UI_ACT(/datum/board_game/vore_sweeper, "game_action", ui_act_game_action, UI_ARG_TEXT("action", 64), UI_ARG_LIST("data"))
+UI_ACT_PROC(/datum/board_game/vore_sweeper, ui_act_game_action)
+	if(can_play(ui.user) && ui_subdispatch(src, "game", params["action"], params["data"], ui.user, ui, state))
+		return TRUE
+	return FALSE
+
+UI_ACT(/datum/board_game/vore_sweeper, "setup_action", ui_act_setup_action, UI_ARG_TEXT("action", 64), UI_ARG_LIST("data"))
+UI_ACT_PROC(/datum/board_game/vore_sweeper, ui_act_setup_action)
+	if(can_setup(ui.user) && ui_subdispatch(src, "setup", params["action"], params["data"], ui.user, ui, state))
+		return TRUE
+	return FALSE
+
+/// Whether `user` may make a move now (players, not the dealer, during play).
+/datum/board_game/vore_sweeper/proc/can_play(mob/user)
 	if(user == dealer)
 		return FALSE
 	if(game_state != GAME_PLAYING)
 		return FALSE
-	switch(action)
-		if("open_field")
-			var/list/validated_data = validate_coords(params)
-			if(!validated_data)
-				return FALSE
-			var/key = validated_data[1]
-			if(LAZYACCESS(placed_flags, key))
-				return FALSE
-			if(LAZYACCESS(revealed_fields, key))
-				return FALSE
-			if(LAZYACCESS(placed_mines, key))
-				game_state = GAME_LOST
-				LAZYSET(revealed_fields, key, "M")
-				return TRUE
-			var/mine_count = count_surrounding_mines(validated_data[2], validated_data[3])
-			LAZYSET(revealed_fields, key, mine_count)
-			if(!mine_count)
-				reveal_empty_area(validated_data[2], validated_data[3])
-			validate_victory()
-			return TRUE
-		if("toggle_flag")
-			var/list/validated_data = validate_coords(params)
-			if(!validated_data)
-				return FALSE
-			var/key = validated_data[1]
-			if(LAZYACCESS(revealed_fields, key))
-				return FALSE
-			if(LAZYACCESS(placed_flags, key))
-				LAZYREMOVE(placed_flags, key)
-				return TRUE
-			LAZYSET(placed_flags, key, TRUE)
-			validate_flag_victory()
-			return TRUE
+	return TRUE
+
+UI_SUBACT(/datum/board_game/vore_sweeper, "game", "open_field", game_open_field, UI_ARG_NUM("loc_x"), UI_ARG_NUM("loc_y"))
+UI_SUBACT_PROC(/datum/board_game/vore_sweeper, game_open_field)
+	var/list/validated_data = validate_coords(params["loc_x"], params["loc_y"])
+	if(!validated_data)
+		return FALSE
+	var/key = validated_data[1]
+	if(LAZYACCESS(placed_flags, key))
+		return FALSE
+	if(LAZYACCESS(revealed_fields, key))
+		return FALSE
+	if(LAZYACCESS(placed_mines, key))
+		game_state = GAME_LOST
+		LAZYSET(revealed_fields, key, "M")
+		return TRUE
+	var/mine_count = count_surrounding_mines(validated_data[2], validated_data[3])
+	LAZYSET(revealed_fields, key, mine_count)
+	if(!mine_count)
+		reveal_empty_area(validated_data[2], validated_data[3])
+	validate_victory()
+	return TRUE
+
+UI_SUBACT(/datum/board_game/vore_sweeper, "game", "toggle_flag", game_toggle_flag, UI_ARG_NUM("loc_x"), UI_ARG_NUM("loc_y"))
+UI_SUBACT_PROC(/datum/board_game/vore_sweeper, game_toggle_flag)
+	var/list/validated_data = validate_coords(params["loc_x"], params["loc_y"])
+	if(!validated_data)
+		return FALSE
+	var/key = validated_data[1]
+	if(LAZYACCESS(revealed_fields, key))
+		return FALSE
+	if(LAZYACCESS(placed_flags, key))
+		LAZYREMOVE(placed_flags, key)
+		return TRUE
+	LAZYSET(placed_flags, key, TRUE)
+	validate_flag_victory()
+	return TRUE
 
 /datum/board_game/vore_sweeper/proc/validate_victory()
 	var/total_tiles = grid_size * grid_size
@@ -163,59 +170,76 @@
 
 	game_state = GAME_WON
 
-/datum/board_game/vore_sweeper/proc/dealer_actions(action, list/params, mob/user)
+/// Whether `user` may set the board up (the dealer, before play).
+/datum/board_game/vore_sweeper/proc/can_setup(mob/user)
 	if(user != dealer)
 		return FALSE
 	if(game_state != GAME_SETUP)
 		return FALSE
-	switch(action)
-		if("change_grid_size")
-			var/new_grid_size = text2num(params["new_grid"])
-			if(!new_grid_size)
-				return FALSE
-			if(new_grid_size < 4 || new_grid_size > 16)
-				return FALSE
-			validate_mine_count(mine_count, new_grid_size)
-			grid_size = new_grid_size
-			return TRUE
-		if("change_mine_count")
-			var/new_mine_count = text2num(params["new_mines"])
-			if(!new_mine_count)
-				return FALSE
-			validate_mine_count(new_mine_count, grid_size)
-			return TRUE
-		if("place_mine")
-			if(length(placed_mines) >= mine_count)
-				return FALSE
-			var/list/validated_data = validate_coords(params)
-			if(!validated_data)
-				return FALSE
-			var/key = validated_data[1]
-			if(LAZYACCESS(placed_mines, key))
-				return FALSE
-			LAZYSET(placed_mines, key, TRUE)
-			return TRUE
-		if("remove_mine")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			if(length(placed_mines) <= 0)
-				return FALSE
-			var/list/validated_data = validate_coords(params)
-			if(!validated_data)
-				return FALSE
-			var/key = validated_data[1]
-			LAZYREMOVE(placed_mines, key)
-			return TRUE
-		if("auto_place_mines")
-			return auto_place_mines(user)
-		if("auto_place_mines_self")
-			return auto_place_mines(user, TRUE)
-		if("clear_all_mines")
-			LAZYCLEARLIST(placed_mines)
-			return TRUE
-		if("start_game")
-			game_state = GAME_PLAYING
-			return TRUE
+	return TRUE
+
+UI_SUBACT(/datum/board_game/vore_sweeper, "setup", "change_grid_size", setup_change_grid_size, UI_ARG_NUM("new_grid"))
+UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_change_grid_size)
+	var/new_grid_size = params["new_grid"]
+	if(!new_grid_size)
+		return FALSE
+	if(new_grid_size < 4 || new_grid_size > 16)
+		return FALSE
+	validate_mine_count(mine_count, new_grid_size)
+	grid_size = new_grid_size
+	return TRUE
+
+UI_SUBACT(/datum/board_game/vore_sweeper, "setup", "change_mine_count", setup_change_mine_count, UI_ARG_NUM("new_mines"))
+UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_change_mine_count)
+	var/new_mine_count = params["new_mines"]
+	if(!new_mine_count)
+		return FALSE
+	validate_mine_count(new_mine_count, grid_size)
+	return TRUE
+
+UI_SUBACT(/datum/board_game/vore_sweeper, "setup", "place_mine", setup_place_mine, UI_ARG_NUM("loc_x"), UI_ARG_NUM("loc_y"))
+UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_place_mine)
+	if(length(placed_mines) >= mine_count)
+		return FALSE
+	var/list/validated_data = validate_coords(params["loc_x"], params["loc_y"])
+	if(!validated_data)
+		return FALSE
+	var/key = validated_data[1]
+	if(LAZYACCESS(placed_mines, key))
+		return FALSE
+	LAZYSET(placed_mines, key, TRUE)
+	return TRUE
+
+UI_SUBACT(/datum/board_game/vore_sweeper, "setup", "remove_mine", setup_remove_mine, UI_ARG_NUM("loc_x"), UI_ARG_NUM("loc_y"))
+UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_remove_mine)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	if(length(placed_mines) <= 0)
+		return FALSE
+	var/list/validated_data = validate_coords(params["loc_x"], params["loc_y"])
+	if(!validated_data)
+		return FALSE
+	var/key = validated_data[1]
+	LAZYREMOVE(placed_mines, key)
+	return TRUE
+
+UI_SUBACT(/datum/board_game/vore_sweeper, "setup", "auto_place_mines", setup_auto_place_mines)
+UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_auto_place_mines)
+	return auto_place_mines(user)
+
+UI_SUBACT(/datum/board_game/vore_sweeper, "setup", "auto_place_mines_self", setup_auto_place_mines_self)
+UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_auto_place_mines_self)
+	return auto_place_mines(user, TRUE)
+
+UI_SUBACT(/datum/board_game/vore_sweeper, "setup", "clear_all_mines", setup_clear_all_mines)
+UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_clear_all_mines)
+	LAZYCLEARLIST(placed_mines)
+	return TRUE
+
+UI_SUBACT(/datum/board_game/vore_sweeper, "setup", "start_game", setup_start_game)
+UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_start_game)
+	game_state = GAME_PLAYING
+	return TRUE
 
 /datum/board_game/vore_sweeper/proc/reveal_empty_area(x, y)
 	var/list/to_check = list(list(x, y))
@@ -303,9 +327,7 @@
 	parent().atom_say("The grid with [total_tiles] tiles only supports a maximum of [max_mines] mines.")
 	mine_count = max_mines
 
-/datum/board_game/vore_sweeper/proc/validate_coords(list/params)
-	var/x_loc = text2num(params["loc_x"])
-	var/y_loc = text2num(params["loc_y"])
+/datum/board_game/vore_sweeper/proc/validate_coords(x_loc, y_loc)
 
 	if(!isnum(x_loc) || !isnum(y_loc))
 		return null

@@ -192,8 +192,11 @@ OWN(/obj/machinery/mineral/equipment_vendor, inserted_id, OWN_SPILL)
 	)
 	..()
 
-/obj/machinery/mineral/equipment_vendor/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/mineral/equipment_vendor, "merge:ui_data_obj_machinery_mineral_equipment_vendor{has_id:bool,id:list}")
+
+/// The computed part of /obj/machinery/mineral/equipment_vendor's window data (declared on its UI_DATA row).
+/obj/machinery/mineral/equipment_vendor/proc/ui_data_obj_machinery_mineral_equipment_vendor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	// ID
 	if(inserted_id)
@@ -236,56 +239,49 @@ OWN(/obj/machinery/mineral/equipment_vendor, inserted_id, OWN_SPILL)
 		dirty_items = TRUE
 	return ..()
 
-/obj/machinery/mineral/equipment_vendor/tgui_interact(mob/user, datum/tgui/ui = null)
+DECLARE_UI(/obj/machinery/mineral/equipment_vendor, "MiningVendor")
+
+/obj/machinery/mineral/equipment_vendor/ui_prepare(mob/user, datum/tgui/ui)
 	// Update static data if need be
 	if(dirty_items)
 		update_tgui_static_data(user, ui)
 		dirty_items = FALSE
+	return TRUE
 
-	// Open the window
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "MiningVendor", name)
-		ui.open()
-		ui.set_autoupdate(FALSE)
+UI_ACT(/obj/machinery/mineral/equipment_vendor, "logoff", ui_act_logoff)
+UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_logoff)
+	. = TRUE
+	if(!inserted_id)
+		return
+	ui.user.put_in_hands(inserted_id)
+	own_take(src, "inserted_id")
+	add_fingerprint()
 
-/obj/machinery/mineral/equipment_vendor/tgui_act(action, params, datum/tgui/ui)
-	if(..())
+UI_ACT(/obj/machinery/mineral/equipment_vendor, "purchase", ui_act_purchase, UI_ARG_TEXT("cat"), UI_ARG_TEXT("name"))
+UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_purchase)
+	. = TRUE
+	if(!inserted_id)
+		flick(icon_deny, src)
+		return
+	var/category = params["cat"] // meow
+	var/name = params["name"]
+	if(!(category in prize_list) || !(name in prize_list[category])) // Not trying something that's not in the list, are you?
+		flick(icon_deny, src)
+		return
+	var/datum/data/mining_equipment/prize = prize_list[category][name]
+	if(prize.cost > get_points(inserted_id)) // shouldn't be able to access this since the button is greyed out, but..
+		to_chat(ui.user, span_danger("You have insufficient Thalers."))
+		flick(icon_deny, src)
 		return
 
-	. = TRUE
-	switch(action)
-		if("logoff")
-			if(!inserted_id)
-				return
-			ui.user.put_in_hands(inserted_id)
-			own_take(src, "inserted_id")
-		if("purchase")
-			if(!inserted_id)
-				flick(icon_deny, src)
-				return
-			var/category = params["cat"] // meow
-			var/name = params["name"]
-			if(!(category in prize_list) || !(name in prize_list[category])) // Not trying something that's not in the list, are you?
-				flick(icon_deny, src)
-				return
-			var/datum/data/mining_equipment/prize = prize_list[category][name]
-			if(prize.cost > get_points(inserted_id)) // shouldn't be able to access this since the button is greyed out, but..
-				to_chat(ui.user, span_danger("You have insufficient Thalers."))
-				flick(icon_deny, src)
-				return
-
-			if(!remove_points(inserted_id, prize.cost))
-				to_chat(ui.user, span_danger("The account transaction was declined."))
-				flick(icon_deny, src)
-				return
-			var/obj/item/I = new prize.equipment_path(loc)
-			if(isitem(I))
-				I.persist_storable = FALSE
-			flick(icon_vend, src)
-		else
-			flick(icon_deny, src)
-			return FALSE
+	if(!remove_points(inserted_id, prize.cost))
+		to_chat(ui.user, span_danger("The account transaction was declined."))
+		flick(icon_deny, src)
+		return
+	var/obj/item/I = new prize.equipment_path(loc)
+	if(isitem(I))
+		I.persist_storable = FALSE
+	flick(icon_vend, src)
 	add_fingerprint()
 
 /// Old attackby: a mining voucher redeems its selection.

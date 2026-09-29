@@ -7,33 +7,38 @@
 GLOBAL_LIST(tgui_modals)
 
 /**
- * Call this from a proc that is called in tgui_act() to process modal actions
+ * Modal actions (declared UI model, doc/rewrite/systems.md section 3).
  *
- * Example: /obj/machinery/chem_master/proc/tgui_act_modal
- * You can then switch based on the return value and show different
- * modals depending on the answer.
- * Arguments:
- * * source - The source datum
- * * action - The called action
- * * params - The params to the action
+ * A host that shows modals declares DECLARE_UI_MODAL(type), which adds the three UI_ACT rows
+ * modal_open / modal_answer / modal_close below, and implements
+ *	ui_modal_opened(user, id, arguments, ui, state)          (switch on id: build the modal)
+ *	ui_modal_answered(user, id, answer, arguments, ui, state) (switch on id: use the answer)
+ * `id` is the modal's text id, `arguments` the list passed to and from JS, `answer` the
+ * modal's answer text after the current modal's preprocess_answer().
  */
-/proc/tgui_modal_act(datum/source, action = "", params)
-	ASSERT(istype(source))
+UI_ACT_PROC(/datum, ui_modal_open)
+	return ui_modal_opened(user, params["id"], params["arguments"] || list(), ui, state)
 
-	. = null
-	switch(action)
-		if("modal_open") // Params: id, arguments
-			return TGUI_MODAL_OPEN
-		if("modal_answer") // Params: id, answer, arguments
-			params["answer"] = tgui_modal_preprocess_answer(source, params["answer"])
-			if(tgui_modal_answer(source, params["id"], params["answer"])) // If there's a current modal with a delegate that returned TRUE, no need to continue
-				. = TGUI_MODAL_DELEGATE
-			else
-				. = TGUI_MODAL_ANSWER
-			tgui_modal_clear(source)
-		if("modal_close") // Params: id
-			tgui_modal_clear(source)
-			return TGUI_MODAL_CLOSE
+UI_ACT_PROC(/datum, ui_modal_answer)
+	var/answer = tgui_modal_preprocess_answer(src, params["answer"])
+	// A current modal whose delegate handled the answer needs nothing more.
+	var/delegated = tgui_modal_answer(src, params["id"], answer)
+	tgui_modal_clear(src)
+	if(delegated)
+		return TRUE
+	return ui_modal_answered(user, params["id"], answer, params["arguments"] || list(), ui, state)
+
+UI_ACT_PROC(/datum, ui_modal_close)
+	tgui_modal_clear(src)
+	return TRUE
+
+/// A modal was requested: open it (tgui_modal_message/input/choice/...) by `id`. TRUE updates.
+/datum/proc/ui_modal_opened(mob/user, id, list/arguments, datum/tgui/ui, datum/tgui_state/state)
+	return FALSE
+
+/// A modal was answered (and no delegate took it): act on `answer` by `id`. TRUE updates.
+/datum/proc/ui_modal_answered(mob/user, id, answer, list/arguments, datum/tgui/ui, datum/tgui_state/state)
+	return FALSE
 
 /**
  * Call this from tgui_data() to return modal information if needed

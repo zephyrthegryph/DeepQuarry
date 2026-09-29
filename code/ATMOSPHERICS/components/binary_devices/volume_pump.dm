@@ -178,15 +178,17 @@ Thus, the two variables affect pump operation are set in New():
 
 	return TRUE
 
-/obj/machinery/atmospherics/binary/volume_pump/tgui_interact(mob/user, datum/tgui/ui)
-	if(!operable())
-		return
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "GasPump", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/atmospherics/binary/volume_pump, "GasPump")
 
-/obj/machinery/atmospherics/binary/volume_pump/tgui_data(mob/user)
+/obj/machinery/atmospherics/binary/volume_pump/ui_prepare(mob/user, datum/tgui/ui)
+	if(!operable())
+		return FALSE
+	return TRUE
+
+UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/volume_pump, "merge:ui_data_obj_machinery_atmospherics_binary_volume_pump{on:unknown,rate:unknown,max_rate:num,last_flow_rate:unknown,last_power_draw:num,max_power_draw:unknown}")
+
+/// The computed part of /obj/machinery/atmospherics/binary/volume_pump's window data (declared on its UI_DATA row).
+/obj/machinery/atmospherics/binary/volume_pump/proc/ui_data_obj_machinery_atmospherics_binary_volume_pump(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// this is the data which will be sent to the ui
 	var/list/data = list(
 		"on" = use_power,
@@ -246,28 +248,29 @@ Thus, the two variables affect pump operation are set in New():
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/atmospherics/binary/volume_pump/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/atmospherics/binary/volume_pump, "power", ui_act_power)
+UI_ACT_PROC(/obj/machinery/atmospherics/binary/volume_pump, ui_act_power)
+	set_use_power(!use_power)
+	. = TRUE
+	if(.)
+		update_rust_device()
+	add_fingerprint(ui.user)
+	update_icon()
 
-	switch(action)
-		if("power")
-			set_use_power(!use_power)
-			. = TRUE
-		if("set_press")
-			var/press = params["press"]
-			switch(press)
-				if("min")
-					transfer_rate = 0
-				if("max")
-					transfer_rate = max_transfer_rate
-				if("set")
-					var/new_rate = act_ask(ui.user, action, params, ui, "k269", /datum/om/prompt/number, message = "Enter new transfer rate (0-[max_transfer_rate] L/s)", title = "Flow Control", default = src.transfer_rate, max = max_transfer_rate)
-					if(isnull(new_rate))
-						return
-					src.transfer_rate = between(0, new_rate, max_transfer_rate)
-			. = TRUE
-
+UI_ACT(/obj/machinery/atmospherics/binary/volume_pump, "set_press", ui_act_set_press, UI_ARG_TEXT("press"))
+UI_ACT_PROC(/obj/machinery/atmospherics/binary/volume_pump, ui_act_set_press)
+	var/press = params["press"]
+	switch(press)
+		if("min")
+			transfer_rate = 0
+		if("max")
+			transfer_rate = max_transfer_rate
+		if("set")
+			var/new_rate = act_ask(ui.user, action, params, ui, "k269", /datum/om/prompt/number, message = "Enter new transfer rate (0-[max_transfer_rate] L/s)", title = "Flow Control", default = src.transfer_rate, max = max_transfer_rate)
+			if(isnull(new_rate))
+				return
+			src.transfer_rate = between(0, new_rate, max_transfer_rate)
+	. = TRUE
 	if(.)
 		update_rust_device()
 	add_fingerprint(ui.user)
