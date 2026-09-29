@@ -456,9 +456,10 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mecha/imperion/phase5, "
 /obj/item/grenade/shooter/laserpellet
 	name = "laser pellet grenade"
 	desc = "Unleashes not hit scan lasers."
-	projectile_types = list(/obj/item/projectile/energy/mob/midlaser)
 
 //te,porarly removing 	mob_overlay_state = "red_electricity_constant" to try and fix the visual bug
+
+TYPE_TABLE(/obj/item/grenade/shooter/laserpellet, shooter_grenade_projectiles, list(/obj/item/projectile/energy/mob/midlaser))
 /datum/body_effect/bossbuff
 	name = "boss_buff"
 

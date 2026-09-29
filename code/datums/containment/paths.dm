@@ -25,57 +25,60 @@
 /// with `exposure`, before armour. Conservative: the holder's shell takes
 /// blunt and cutting blows; heat and radiation have their own paths; EMPs and
 /// explosions already reach contents through their own recursion.
+GLOBAL_LIST_INIT(path_default_damage_external, list(
+	0, // blunt
+	0, // sharp
+	0, // pierce
+	0, // thermal: the heat path
+	0, // cold: the heat path
+	0, // shock
+	0, // corrosive
+	0, // toxic
+	0, // radiation: the radiation path
+	0, // ionic: emp_act recursion
+	0, // blast: ex_act recursion
+	0, // pain
+))
+
+// External contents are outside the shell: equipment zones (C3, D2)
+// decide what a hit on the holder does to them, not this path.
+GLOBAL_LIST_INIT(path_default_damage_internal, list(
+	0,    // blunt
+	0,    // sharp
+	0.5,  // pierce: a stab or a round can go through
+	0,    // thermal
+	0,    // cold
+	0,    // shock
+	0.25, // corrosive: acid seeps in
+	0,    // toxic
+	0,    // radiation
+	0,    // ionic
+	0,    // blast
+	0,    // pain
+))
+
+GLOBAL_LIST_INIT(path_default_damage_sealed, list(
+	0,    // blunt
+	0,    // sharp
+	0.5,  // pierce
+	0,    // thermal
+	0,    // cold
+	0,    // shock
+	0,    // corrosive: the seal keeps it out
+	0,    // toxic
+	0,    // radiation
+	0,    // ionic
+	0,    // blast
+	0,    // pain
+))
+
 /proc/dq_path_default_damage(exposure)
-	var/static/list/external = list(
-		0, // blunt
-		0, // sharp
-		0, // pierce
-		0, // thermal: the heat path
-		0, // cold: the heat path
-		0, // shock
-		0, // corrosive
-		0, // toxic
-		0, // radiation: the radiation path
-		0, // ionic: emp_act recursion
-		0, // blast: ex_act recursion
-		0, // pain
-	)
-	// External contents are outside the shell: equipment zones (C3, D2)
-	// decide what a hit on the holder does to them, not this path.
-	var/static/list/internal = list(
-		0,    // blunt
-		0,    // sharp
-		0.5,  // pierce: a stab or a round can go through
-		0,    // thermal
-		0,    // cold
-		0,    // shock
-		0.25, // corrosive: acid seeps in
-		0,    // toxic
-		0,    // radiation
-		0,    // ionic
-		0,    // blast
-		0,    // pain
-	)
-	var/static/list/sealed = list(
-		0,    // blunt
-		0,    // sharp
-		0.5,  // pierce
-		0,    // thermal
-		0,    // cold
-		0,    // shock
-		0,    // corrosive: the seal keeps it out
-		0,    // toxic
-		0,    // radiation
-		0,    // ionic
-		0,    // blast
-		0,    // pain
-	)
 	switch(exposure)
 		if(SLOT_EXPOSURE_EXTERNAL)
-			return external
+			return GLOB.path_default_damage_external
 		if(SLOT_EXPOSURE_SEALED)
-			return sealed
-	return internal
+			return GLOB.path_default_damage_sealed
+	return GLOB.path_default_damage_internal
 
 /// Damage kinds that land on one thing (a blow, a stab, a round). The rest
 /// (acid, blast, ...) spread over everything in the slot.

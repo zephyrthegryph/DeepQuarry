@@ -166,7 +166,7 @@ DECLARE_REF(/mob/living/simple_mob/mechanical/mining_drone, "my_storage", OWNED,
 				self.my_storage.remove_from_storage(I, OB)
 
 /datum/decl/mob_organ_names/miningdrone
-	hit_zones = list("chassis", "comms array", "sensor suite", "left excavator module", "right excavator module", "maneuvering thruster")
+TYPE_TABLE(/datum/decl/mob_organ_names/miningdrone, mob_organ_hit_zones, list("chassis", "comms array", "sensor suite", "left excavator module", "right excavator module", "maneuvering thruster"))
 
 /datum/say_list/malf_drone/mining
 	say_threaten = list("Armed intruder detected.", "Lay down your weapons.", "Mining personnel only.", "Threat detected.", "Mining gear check: negative.")

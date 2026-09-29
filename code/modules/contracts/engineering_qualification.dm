@@ -85,13 +85,14 @@ DECLARE_REF(/datum/contract_requirement/recorded_stages, "filter", OWNED, null)
 	var/measurement_kind = "power"
 	var/measurement_field = "minimum_output_watts"
 	var/measurement_unit = "W delivered"
-	var/list/thresholds = list(3500) // ALLOW(instance_list): c: read-only per-subtype constant table (2 subtype overrides); a getter would share it, not worth it on a rare type
+
+TYPE_TABLE_DECLARE(/datum/contract_definition/social/program/engineering_qualification, qualification_thresholds, list(3500))
 
 /datum/contract_definition/social/program/engineering_qualification/configure_contract(datum/contract/social/contract, list/context)
 	..()
 	add_social_role(contract, "designer", "Assembly designer", "Chooses and fabricates the functional parts.", list(DEPARTMENT_RESEARCH), 1, 3)
 	add_social_role(contract, "operator", "Operating engineer", "Builds the test circuit and records delivered operation.", list(DEPARTMENT_ENGINEERING), 1, 3)
-	var/datum/contract_requirement/recorded_stages/requirement = new(measurement_kind, measurement_field, measurement_unit, thresholds)
+	var/datum/contract_requirement/recorded_stages/requirement = new(measurement_kind, measurement_field, measurement_unit, TYPE_TABLE_GET(src, qualification_thresholds))
 	requirement.name = "Observed operating envelope"
 	requirement.description = "Fax one 45-second operating record. It must sustain the stated output with at least 50% conversion efficiency and remain below 400 K."
 	requirement.filter.require_number("maximum_temperature_k", CONTRACT_EVIDENCE_COMPARE_AT_MOST, 400)
@@ -104,7 +105,7 @@ DECLARE_REF(/datum/contract_requirement/recorded_stages, "filter", OWNED, null)
 	measurement_kind = "gas"
 	measurement_field = "minimum_flow_moles"
 	measurement_unit = "mol/s delivered"
-	thresholds = list(3)
+TYPE_TABLE(/datum/contract_definition/social/program/engineering_qualification/gas, qualification_thresholds, list(3))
 
 /datum/contract_definition/social/program/engineering_qualification/gas/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -117,4 +118,4 @@ DECLARE_REF(/datum/contract_requirement/recorded_stages, "filter", OWNED, null)
 	title = "Sustained Emitter Trial"
 	description = "Build an emitter that sustains useful beam output without exceeding 400 K. Arrange a safe target and power supply, record the run with a multitool, and fax the photocopied reading to NanoTrasen Engineering Assurance."
 	measurement_kind = "beam"
-	thresholds = list(15000)
+TYPE_TABLE(/datum/contract_definition/social/program/engineering_qualification/beam, qualification_thresholds, list(15000))

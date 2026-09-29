@@ -55,15 +55,11 @@
 
 //Still need color matrix addition, negation, and multiplication.
 
-//Returns an identity color matrix which does nothing
-/proc/color_identity()
-	return list(1,0,0, 0,1,0, 0,0,1)
-
 //Moves all colors angle degrees around the color wheel while maintaining intensity of the color and not affecting whites
 //TODO: Need a version that only affects one color (ie shift red to blue but leave greens and blues alone)
 /proc/color_rotation(angle)
 	if(angle == 0)
-		return color_identity()
+		return COLOR_MATRIX_IDENTITY_3X3
 	angle = CLAMP(angle, -180, 180)
 	var/cos = cos(angle)
 	var/sin = sin(angle)
@@ -101,7 +97,7 @@ GLOBAL_LIST_INIT(delta_index, list(
 /proc/color_contrast(value)
 	value = CLAMP(value, -100, 100)
 	if(value == 0)
-		return color_identity()
+		return COLOR_MATRIX_IDENTITY_3X3
 
 	var/x = 0
 	if (value < 0)
@@ -121,7 +117,7 @@ GLOBAL_LIST_INIT(delta_index, list(
 //Exxagerates or removes colors
 /proc/color_saturation(value as num)
 	if(value == 0)
-		return color_identity()
+		return COLOR_MATRIX_IDENTITY_3X3
 	value = CLAMP(value, -100, 100)
 	if(value > 0)
 		value *= 3

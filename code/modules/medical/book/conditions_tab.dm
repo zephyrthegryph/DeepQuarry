@@ -8,7 +8,7 @@
 
 /obj/item/book/dq_medical_reference/proc/_dq_book_conditions()
 	var/list/out = list()
-	for(var/T in dq_catalogued_affliction_types())
+	for(var/T in GLOBAL_TABLE_GET(dq_catalogued_affliction_types))
 		var/datum/affliction/proto = dq_proto(T)
 		var/list/entry = list()
 		entry["id"]              = "[T]"
@@ -61,7 +61,7 @@
 		// this condition's cures sees both the safe path and the
 		// chemical brute-force path.
 		var/list/od_cures = list()
-		for(var/CT in dq_catalogued_affliction_types())
+		for(var/CT in GLOBAL_TABLE_GET(dq_catalogued_affliction_types))
 			var/datum/affliction/od_proto = dq_proto(CT)
 			if(od_proto.subcategory != "Overdose")
 				continue
@@ -182,7 +182,7 @@
 		// resolve to their metric_threshold cause.
 		var/list/dam_pairs = list()  // "type|tag" → TRUE for dedupe
 		_dq_collect_damage_pairs(proto.organ_damage_type, proto.organ_damage_targets, proto.organ_damage_per_tick, proto.location, proto.caused_by_chems_organ, dam_pairs)
-		var/list/proto_stages = proto.get_stages()
+		var/list/proto_stages = TYPE_TABLE_GET(proto, affliction_stages)
 		if(islist(proto_stages))
 			for(var/sid in proto_stages)
 				var/list/sd = proto_stages[sid]
@@ -243,7 +243,7 @@
 		// non-empty always_spawns list contributes a complication group
 		// labelled by the stage. OD conditions use this for their
 		// Critical-stage cascades.
-		var/list/own_stages = proto.get_stages()
+		var/list/own_stages = TYPE_TABLE_GET(proto, affliction_stages)
 		if(islist(own_stages))
 			for(var/sid in own_stages)
 				var/list/sd = own_stages[sid]
@@ -289,7 +289,7 @@
 		// into the Complications section above so each damage type
 		// shows up as a clickable cause link with the failures it can
 		// spawn, without doubling up as a separate per-stage block.
-		var/list/stages = proto.get_stages()
+		var/list/stages = TYPE_TABLE_GET(proto, affliction_stages)
 		var/list/stages_out = list()
 		if(stages)
 			for(var/stage_id in stages)
@@ -369,15 +369,15 @@
 	return null
 
 
-/// Return every condition prototype whose get_stages() contains a stage
+/// Return every condition prototype whose the affliction_stages table contains a stage
 /// whose `always_spawns` list includes `target_type`. Used by the book's
 /// Causes section to surface OD conditions as causes of the complication
 /// they hardwire-spawn at Critical stage.
 /proc/_dq_conditions_spawning(target_type)
 	var/list/out = list()
-	for(var/CT in dq_catalogued_affliction_types())
+	for(var/CT in GLOBAL_TABLE_GET(dq_catalogued_affliction_types))
 		var/datum/affliction/cproto = dq_proto(CT)
-		var/list/stages = cproto.get_stages()
+		var/list/stages = TYPE_TABLE_GET(cproto, affliction_stages)
 		if(!islist(stages))
 			continue
 		for(var/sid in stages)

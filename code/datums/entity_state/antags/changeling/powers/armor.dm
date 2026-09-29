@@ -42,9 +42,7 @@
 	armor_spec = "cold=60" //No armor at all.
 	canremove = FALSE
 
-/obj/item/clothing/suit/space/changeling/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/changeling, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS))))
 
 /obj/item/clothing/suit/space/changeling/Initialize(mapload)
 	. = ..()

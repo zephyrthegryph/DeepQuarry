@@ -15,8 +15,6 @@
 	savefile_key = "tooltipstyle"
 	savefile_identifier = PREFERENCE_PLAYER
 
-/datum/preference/choiced/tooltip_style/init_possible_values()
-	return GLOB.all_tooltip_styles
-
+TYPE_TABLE(/datum/preference/choiced/tooltip_style, pref_choices, GLOB.all_tooltip_styles)
 /datum/preference/choiced/tooltip_style/create_default_value()
 	return GLOB.all_tooltip_styles[1]

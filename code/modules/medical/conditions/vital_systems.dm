@@ -217,37 +217,35 @@
 	if(!severity)
 		set_severity(25)
 
-/datum/affliction/pneumothorax/get_stages()
-	var/static/list/S = list(
-		"Simple" = list(
-			"name" = "pneumothorax",
-			"description" = "A partially collapsed lung. Breath sounds are quiet on the affected side.",
-			"symptom_pool" = list(
-				/datum/affliction_symptom/diminished_breath_sounds = 100,
-				/datum/affliction_symptom/short_breath             = 70,
-				/datum/affliction_symptom/sharp_chest_pain         = 60,
-			),
-			"min_symptoms" = 1,
-			"max_symptoms" = 3,
-			"factors" = alist(BF_SLOWDOWN = 0.5, BF_LUNG_MECHANICS = 0.7, BF_RESP_RATE = 6),
-		),
-		"Tension" = list(
-			"name" = "tension pneumothorax",
-			"description" = "Trapped air under pressure has shoved the trachea aside and is crushing the heart's venous return. Decompress now.",
-			"symptom_pool" = list(
-				/datum/affliction_symptom/diminished_breath_sounds = 100,
-				/datum/affliction_symptom/tracheal_deviation       = 90,
-				/datum/affliction_symptom/labored_breathing        = 90,
-				/datum/affliction_symptom/cyanosis                 = 60,
-			),
-			"min_symptoms" = 2,
-			"max_symptoms" = 4,
-			"factors" = alist(BF_SLOWDOWN = 1.5, BF_ACCURACY = -20, BF_HEART_RATE = 25, BF_BP_SYSTOLIC = -25, BF_RESP_RATE = 12, BF_LUNG_MECHANICS = 0.25, BF_PUMP = 0.6),
-			"spontaneous_emotes" = list("gasp", "wince"),
-			"spontaneous_emote_prob" = 6,
-		),
-	)
-	return S
+TYPE_TABLE(/datum/affliction/pneumothorax, affliction_stages, list( \
+	"Simple" = list( \
+		"name" = "pneumothorax", \
+		"description" = "A partially collapsed lung. Breath sounds are quiet on the affected side.", \
+		"symptom_pool" = list( \
+			/datum/affliction_symptom/diminished_breath_sounds = 100, \
+			/datum/affliction_symptom/short_breath             = 70, \
+			/datum/affliction_symptom/sharp_chest_pain         = 60, \
+		), \
+		"min_symptoms" = 1, \
+		"max_symptoms" = 3, \
+		"factors" = alist(BF_SLOWDOWN = 0.5, BF_LUNG_MECHANICS = 0.7, BF_RESP_RATE = 6), \
+	), \
+	"Tension" = list( \
+		"name" = "tension pneumothorax", \
+		"description" = "Trapped air under pressure has shoved the trachea aside and is crushing the heart's venous return. Decompress now.", \
+		"symptom_pool" = list( \
+			/datum/affliction_symptom/diminished_breath_sounds = 100, \
+			/datum/affliction_symptom/tracheal_deviation       = 90, \
+			/datum/affliction_symptom/labored_breathing        = 90, \
+			/datum/affliction_symptom/cyanosis                 = 60, \
+		), \
+		"min_symptoms" = 2, \
+		"max_symptoms" = 4, \
+		"factors" = alist(BF_SLOWDOWN = 1.5, BF_ACCURACY = -20, BF_HEART_RATE = 25, BF_BP_SYSTOLIC = -25, BF_RESP_RATE = 12, BF_LUNG_MECHANICS = 0.25, BF_PUMP = 0.6), \
+		"spontaneous_emotes" = list("gasp", "wince"), \
+		"spontaneous_emote_prob" = 6, \
+	), \
+))
 
 /datum/affliction/pneumothorax/recompute_stage_from_severity()
 	_apply_stage(severity >= PNEUMOTHORAX_TENSION_THRESHOLD ? "Tension" : "Simple")
@@ -304,61 +302,59 @@
 	. = ..()
 	set_rhythm(rhythm)
 
-/datum/affliction/cardiac_arrhythmia/get_stages()
-	var/static/list/S = list(
-		"Sinus" = list(
-			"name" = "post-arrest rhythm",
-			"description" = "The rhythm has been restored and is settling. Monitor; it resolves on its own.",
-			"symptom_pool" = list(
-				/datum/affliction_symptom/rhythm_finding/sinus = 100,
-				/datum/affliction_symptom/palpitations         = 30,
-			),
-			"min_symptoms" = 1,
-			"max_symptoms" = 2,
-			"consciousness_at_max" = 0,
-		),
-		"Tachycardia" = list(
-			"name" = "unstable tachyarrhythmia",
-			"description" = "A fast, disorganised rhythm that still perfuses the body. Cardiac drugs settle it; stimulants push it over into VF.",
-			"symptom_pool" = list(
-				/datum/affliction_symptom/rhythm_finding/tachy = 100,
-				/datum/affliction_symptom/palpitations         = 80,
-				/datum/affliction_symptom/dizziness            = 40,
-				/datum/affliction_symptom/pallor               = 40,
-			),
-			"min_symptoms" = 2,
-			"max_symptoms" = 3,
-			"consciousness_at_max" = 0,
-			"factors" = alist(BF_HEART_RATE = 55, BF_BP_SYSTOLIC = -15, BF_PUMP = 0.85),
-		),
-		"VF" = list(
-			"name" = "ventricular fibrillation",
-			"description" = "The ventricles quiver without pumping. No pulse, no blood pressure. Shockable: defibrillate, and keep up CPR until the paddles are ready.",
-			"symptom_pool" = list(
-				/datum/affliction_symptom/rhythm_finding/vf = 100,
-				/datum/affliction_symptom/absent_pulse      = 100,
-				/datum/affliction_symptom/cyanosis          = 70,
-			),
-			"min_symptoms" = 2,
-			"max_symptoms" = 3,
-			"consciousness_at_max" = 200,
-			"factors" = alist(BF_PUMP = 0),
-		),
-		"Asystole" = list(
-			"name" = "asystole",
-			"description" = "A flatline. No electrical activity to shock. CPR and a vasopressor may coarsen it into VF, which can then be shocked.",
-			"symptom_pool" = list(
-				/datum/affliction_symptom/rhythm_finding/asystole = 100,
-				/datum/affliction_symptom/absent_pulse            = 100,
-				/datum/affliction_symptom/cyanosis                = 70,
-			),
-			"min_symptoms" = 2,
-			"max_symptoms" = 3,
-			"consciousness_at_max" = 200,
-			"factors" = alist(BF_PUMP = 0),
-		),
-	)
-	return S
+TYPE_TABLE(/datum/affliction/cardiac_arrhythmia, affliction_stages, list( \
+	"Sinus" = list( \
+		"name" = "post-arrest rhythm", \
+		"description" = "The rhythm has been restored and is settling. Monitor; it resolves on its own.", \
+		"symptom_pool" = list( \
+			/datum/affliction_symptom/rhythm_finding/sinus = 100, \
+			/datum/affliction_symptom/palpitations         = 30, \
+		), \
+		"min_symptoms" = 1, \
+		"max_symptoms" = 2, \
+		"consciousness_at_max" = 0, \
+	), \
+	"Tachycardia" = list( \
+		"name" = "unstable tachyarrhythmia", \
+		"description" = "A fast, disorganised rhythm that still perfuses the body. Cardiac drugs settle it; stimulants push it over into VF.", \
+		"symptom_pool" = list( \
+			/datum/affliction_symptom/rhythm_finding/tachy = 100, \
+			/datum/affliction_symptom/palpitations         = 80, \
+			/datum/affliction_symptom/dizziness            = 40, \
+			/datum/affliction_symptom/pallor               = 40, \
+		), \
+		"min_symptoms" = 2, \
+		"max_symptoms" = 3, \
+		"consciousness_at_max" = 0, \
+		"factors" = alist(BF_HEART_RATE = 55, BF_BP_SYSTOLIC = -15, BF_PUMP = 0.85), \
+	), \
+	"VF" = list( \
+		"name" = "ventricular fibrillation", \
+		"description" = "The ventricles quiver without pumping. No pulse, no blood pressure. Shockable: defibrillate, and keep up CPR until the paddles are ready.", \
+		"symptom_pool" = list( \
+			/datum/affliction_symptom/rhythm_finding/vf = 100, \
+			/datum/affliction_symptom/absent_pulse      = 100, \
+			/datum/affliction_symptom/cyanosis          = 70, \
+		), \
+		"min_symptoms" = 2, \
+		"max_symptoms" = 3, \
+		"consciousness_at_max" = 200, \
+		"factors" = alist(BF_PUMP = 0), \
+	), \
+	"Asystole" = list( \
+		"name" = "asystole", \
+		"description" = "A flatline. No electrical activity to shock. CPR and a vasopressor may coarsen it into VF, which can then be shocked.", \
+		"symptom_pool" = list( \
+			/datum/affliction_symptom/rhythm_finding/asystole = 100, \
+			/datum/affliction_symptom/absent_pulse            = 100, \
+			/datum/affliction_symptom/cyanosis                = 70, \
+		), \
+		"min_symptoms" = 2, \
+		"max_symptoms" = 3, \
+		"consciousness_at_max" = 200, \
+		"factors" = alist(BF_PUMP = 0), \
+	), \
+))
 
 /datum/affliction/cardiac_arrhythmia/recompute_stage_from_severity()
 	switch(rhythm)
@@ -531,16 +527,12 @@
 	public_emote_chance = 8
 	scanner_phrase = "obstructed upper airway"
 
-/datum/affliction_symptom/choking/get_patient_messages()
-	var/static/list/L = list(
-		"You can't breathe! Something is stuck in your throat!",
-		"You try to cough, but nothing moves.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/choking, get_patient_messages, list( \
+		"You can't breathe! Something is stuck in your throat!", \
+		"You try to cough, but nothing moves.", \
+	))
 
-/datum/affliction_symptom/choking/get_public_emotes()
-	var/static/list/L = list("clutches at their throat", "makes a strangled noise")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/choking, get_public_emotes, list("clutches at their throat", "makes a strangled noise"))
 
 /datum/affliction_symptom/stridor
 	name = "stridor"
@@ -552,13 +544,9 @@
 	public_emote_chance = 4
 	scanner_phrase = "inspiratory stridor"
 
-/datum/affliction_symptom/stridor/get_patient_messages()
-	var/static/list/L = list("Your throat feels tight and narrow.", "Breathing in takes real effort.")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/stridor, get_patient_messages, list("Your throat feels tight and narrow.", "Breathing in takes real effort."))
 
-/datum/affliction_symptom/stridor/get_public_emotes()
-	var/static/list/L = list("breathes with a harsh, whistling rasp")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/stridor, get_public_emotes, list("breathes with a harsh, whistling rasp"))
 
 /datum/affliction_symptom/facial_swelling
 	name = "facial swelling"
@@ -570,9 +558,7 @@
 	public_emote_chance = 0
 	scanner_phrase = "angioedema of the face and tongue"
 
-/datum/affliction_symptom/facial_swelling/get_patient_messages()
-	var/static/list/L = list("Your tongue feels too big for your mouth.", "Your lips are tingling and swollen.")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/facial_swelling, get_patient_messages, list("Your tongue feels too big for your mouth.", "Your lips are tingling and swollen."))
 
 /datum/affliction_symptom/absent_breath_sounds
 	name = "absent breath sounds"
@@ -593,9 +579,7 @@
 	public_emote_chance = 5
 	scanner_phrase = "agonal respirations"
 
-/datum/affliction_symptom/agonal_gasping/get_public_emotes()
-	var/static/list/L = list("gasps once, then goes still")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/agonal_gasping, get_public_emotes, list("gasps once, then goes still"))
 
 /datum/affliction_symptom/diminished_breath_sounds
 	name = "diminished breath sounds"

@@ -15,59 +15,16 @@
 // LOOT TIERS
 // ---------------------------------------------------------------------------
 
-// The weighted item pool for a tier. Proc-static so each list allocates once.
-/proc/expedition_loot_pool(tier)
-	switch(tier)
-		if(EXP_LOOT_SCRAP)
-			var/static/list/scrap = list(
-				/obj/random/tool = 12,
-				/obj/random/awayloot = 8,
-				/obj/random/powercell = 5,
-				/obj/item/salvage/ruin/brick = 5,
-				/obj/item/salvage/ruin/carp = 4,
-			)
-			return scrap
-		if(EXP_LOOT_UNCOMMON)
-			var/static/list/uncommon = list(
-				/obj/random/awayloot/looseloot = 10,
-				/obj/item/aliencoin/silver = 8,
-				/obj/fiftyspawner/silver = 6,
-				/obj/fiftyspawner/gold = 4,
-				/obj/random/contraband = 4,
-				/obj/item/salvage/loot/syndicate = 5,
-				/obj/item/capture_crystal = 4,
-				/obj/item/stack/material/exotic_feedstock/random = 7,
-			)
-			return uncommon
-		if(EXP_LOOT_RARE)
-			var/static/list/rare = list(
-				/obj/item/aliencoin/gold = 8,
-				/obj/random/bluespace = 6,
-				/obj/item/capture_crystal/great = 5,
-				/obj/fiftyspawner/platinum = 4,
-				/obj/item/perfect_tele = 3,
-				/obj/item/bluespace_harpoon = 3,
-				/obj/item/denecrotizer = 4,
-				/obj/fiftyspawner/diamond = 2,
-				/obj/item/stack/material/exotic_feedstock/random = 6,
-			)
-			return rare
-		if(EXP_LOOT_EXOTIC)
-			var/static/list/exotic = list(
-				/obj/item/aliencoin/phoron = 6,
-				/obj/fiftyspawner/phoron = 5,
-				/obj/item/capture_crystal/ultra = 4,
-				/obj/item/cell/infinite = 3,
-				/obj/item/cell/void = 3,
-				/obj/item/melee/jellyfishwhip = 2,
-				/obj/item/melee/energy/tyr_sabre = 2,
-				/obj/item/personal_shield_generator/belt/magnetbelt = 2,
-				/obj/item/nif = 2,
-				/obj/item/paicard = 2,
-			)
-			return exotic
-	// EXP_LOOT_COMMON (default)
-	var/static/list/common = list(
+// The weighted item pool per tier, indexed by EXP_LOOT_*.
+GLOBAL_LIST_INIT(expedition_loot_pools, list(
+	list( // EXP_LOOT_SCRAP
+		/obj/random/tool = 12,
+		/obj/random/awayloot = 8,
+		/obj/random/powercell = 5,
+		/obj/item/salvage/ruin/brick = 5,
+		/obj/item/salvage/ruin/carp = 4,
+	),
+	list( // EXP_LOOT_COMMON
 		/obj/random/awayloot = 12,
 		/obj/random/medical = 6,
 		/obj/random/tech_supply = 6,
@@ -75,8 +32,47 @@
 		/obj/random/cash/big = 4,
 		/obj/item/salvage/ruin/pirate = 5,
 		/obj/item/aliencoin/basic = 5,
-	)
-	return common
+	),
+	list( // EXP_LOOT_UNCOMMON
+		/obj/random/awayloot/looseloot = 10,
+		/obj/item/aliencoin/silver = 8,
+		/obj/fiftyspawner/silver = 6,
+		/obj/fiftyspawner/gold = 4,
+		/obj/random/contraband = 4,
+		/obj/item/salvage/loot/syndicate = 5,
+		/obj/item/capture_crystal = 4,
+		/obj/item/stack/material/exotic_feedstock/random = 7,
+	),
+	list( // EXP_LOOT_RARE
+		/obj/item/aliencoin/gold = 8,
+		/obj/random/bluespace = 6,
+		/obj/item/capture_crystal/great = 5,
+		/obj/fiftyspawner/platinum = 4,
+		/obj/item/perfect_tele = 3,
+		/obj/item/bluespace_harpoon = 3,
+		/obj/item/denecrotizer = 4,
+		/obj/fiftyspawner/diamond = 2,
+		/obj/item/stack/material/exotic_feedstock/random = 6,
+	),
+	list( // EXP_LOOT_EXOTIC
+		/obj/item/aliencoin/phoron = 6,
+		/obj/fiftyspawner/phoron = 5,
+		/obj/item/capture_crystal/ultra = 4,
+		/obj/item/cell/infinite = 3,
+		/obj/item/cell/void = 3,
+		/obj/item/melee/jellyfishwhip = 2,
+		/obj/item/melee/energy/tyr_sabre = 2,
+		/obj/item/personal_shield_generator/belt/magnetbelt = 2,
+		/obj/item/nif = 2,
+		/obj/item/paicard = 2,
+	),
+))
+
+// The weighted item pool for a tier (shared, read-only). Unknown tiers read as common.
+/proc/expedition_loot_pool(tier)
+	if(!isnum(tier) || tier < EXP_LOOT_SCRAP || tier > EXP_LOOT_EXOTIC || tier != round(tier))
+		tier = EXP_LOOT_COMMON
+	return GLOB.expedition_loot_pools[tier]
 
 // Spawn one tier-appropriate item at a turf (or inside a container).
 /proc/expedition_spawn_loot(turf/where, tier = EXP_LOOT_COMMON, atom/container = null)
@@ -121,53 +117,45 @@
 // ---------------------------------------------------------------------------
 
 // Biome-appropriate set-dressing pool (weighted toward cheap non-dense decals,
-// with the odd structural prop).
-/proc/expedition_decor_pool(datum/expedition_biome/biome)
-	if(istype(biome, /datum/expedition_biome/plains))
-		var/static/list/plains = list(
-			/obj/effect/decal/cleanable/dirt = 8,
-			/obj/effect/decal/remains/deer = 4,
-			/obj/structure/flora/ausbushes = 5,
-			/obj/structure/flora/bush = 4,
-			/obj/structure/flora/tree/weepingcherry1 = 2,
-		)
-		return plains
-	if(istype(biome, /datum/expedition_biome/orbital))
-		var/static/list/orbital = list(
-			/obj/effect/decal/cleanable/blood = 6,
-			/obj/effect/decal/cleanable/ash = 6,
-			/obj/effect/decal/remains/robot = 4,
-			/obj/effect/decal/remains/human = 4,
-			/obj/effect/decal/mecha_wreckage = 3,
-			/obj/effect/decal/cleanable/blood/gibs = 3,
-		)
-		return orbital
-	if(istype(biome, /datum/expedition_biome/asteroid))
-		var/static/list/asteroid = list(
-			/obj/effect/decal/cleanable/ash = 8,
-			/obj/effect/decal/remains/robot = 4,
-			/obj/effect/decal/remains/ribcage = 4,
-			/obj/effect/decal/mecha_wreckage = 3,
-		)
-		return asteroid
-	// cavern (default)
-	var/static/list/cave = list(
-		/obj/effect/decal/cleanable/dirt = 8,
-		/obj/effect/decal/cleanable/cobweb = 5,
-		/obj/effect/decal/remains/lizard = 4,
-		/obj/effect/decal/remains/mouse = 4,
-		/obj/effect/decal/remains/ribcage = 3,
-		/obj/structure/flora/mushroom = 4,
-		/obj/structure/flora/bush = 2,
-	)
-	return cave
+// with the odd structural prop). The cavern pool is the default.
+GLOBAL_LIST_INIT(expedition_cave_decor_pool, list(
+	/obj/effect/decal/cleanable/dirt = 8,
+	/obj/effect/decal/cleanable/cobweb = 5,
+	/obj/effect/decal/remains/lizard = 4,
+	/obj/effect/decal/remains/mouse = 4,
+	/obj/effect/decal/remains/ribcage = 3,
+	/obj/structure/flora/mushroom = 4,
+	/obj/structure/flora/bush = 2,
+))
+TYPE_TABLE_DECLARE(/datum/expedition_biome, expedition_decor_pool, GLOB.expedition_cave_decor_pool)
+TYPE_TABLE(/datum/expedition_biome/plains, expedition_decor_pool, list( \
+	/obj/effect/decal/cleanable/dirt = 8, \
+	/obj/effect/decal/remains/deer = 4, \
+	/obj/structure/flora/ausbushes = 5, \
+	/obj/structure/flora/bush = 4, \
+	/obj/structure/flora/tree/weepingcherry1 = 2, \
+))
+TYPE_TABLE(/datum/expedition_biome/orbital, expedition_decor_pool, list( \
+	/obj/effect/decal/cleanable/blood = 6, \
+	/obj/effect/decal/cleanable/ash = 6, \
+	/obj/effect/decal/remains/robot = 4, \
+	/obj/effect/decal/remains/human = 4, \
+	/obj/effect/decal/mecha_wreckage = 3, \
+	/obj/effect/decal/cleanable/blood/gibs = 3, \
+))
+TYPE_TABLE(/datum/expedition_biome/asteroid, expedition_decor_pool, list( \
+	/obj/effect/decal/cleanable/ash = 8, \
+	/obj/effect/decal/remains/robot = 4, \
+	/obj/effect/decal/remains/ribcage = 4, \
+	/obj/effect/decal/mecha_wreckage = 3, \
+))
 
 // Scatter `count` pieces of biome-appropriate decoration on walkable floors
 // within `radius` of a centre.
 /proc/expedition_decorate(turf/center, radius, datum/expedition_biome/biome, count)
 	if(!isturf(center))
 		return
-	var/list/pool = expedition_decor_pool(biome)
+	var/list/pool = istype(biome) ? TYPE_TABLE_GET(biome, expedition_decor_pool) : GLOB.expedition_cave_decor_pool
 	if(!length(pool))
 		return
 	var/list/spots = list()

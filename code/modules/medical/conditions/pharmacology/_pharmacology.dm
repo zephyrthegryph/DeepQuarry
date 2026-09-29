@@ -49,19 +49,13 @@
 	progression_rate = 0
 	chem_scaling = TRUE
 	/// P2-D5: the Mild -> Severe -> Critical table as data, built once per type
-	/// by the generic get_stages(). Three entries, each
+	/// into the affliction_stages table. Three entries, each
 	/// list(symptom_pool, min_symptoms, max_symptoms[, extra stage keys]).
 	var/list/overdose_stage_data
 
 /// One generic builder for every overdose: `overdose_stage_data` becomes the
-/// stage table, cached per type (the per-type get_stages() copies are gone).
-/datum/affliction/overdose/get_stages()
-	var/static/list/tables_by_type = list()
-	if(type in tables_by_type)
-		return tables_by_type[type]
-	var/list/table = build_overdose_stage_table(overdose_stage_data)
-	tables_by_type[type] = table
-	return table
+/// stage table, built once per type.
+TYPE_TABLE(/datum/affliction/overdose, affliction_stages, build_overdose_stage_table(overdose_stage_data))
 
 /// Stage table from overdose data, or null for malformed data (logged).
 /proc/build_overdose_stage_table(list/data)

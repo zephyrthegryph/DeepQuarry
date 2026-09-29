@@ -273,20 +273,18 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 //Emp'ing this one bag causes a recursion loop of over 700 emp_act's,
 //Which is enough to trigger byond's recursion level protection
 
-/obj/item/storage/bag/circuits/hold_constraint()
-	var/list/holds = list(
-		/obj/item/integrated_circuit,
-		/obj/item/storage/bag/circuits/mini,
-		/obj/item/electronic_assembly,
-		/obj/item/integrated_electronics,
-		/obj/item/tool/crowbar,
-		/obj/item/tool/screwdriver,
-		/obj/item/multitool,
-		/obj/item/integrated_electronics/wirer,
-		/obj/item/integrated_electronics/debugger,
-		/obj/item/integrated_electronics/detailer,
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/bag/circuits, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/integrated_circuit, \
+		/obj/item/storage/bag/circuits/mini, \
+		/obj/item/electronic_assembly, \
+		/obj/item/integrated_electronics, \
+		/obj/item/tool/crowbar, \
+		/obj/item/tool/screwdriver, \
+		/obj/item/multitool, \
+		/obj/item/integrated_electronics/wirer, \
+		/obj/item/integrated_electronics/debugger, \
+		/obj/item/integrated_electronics/detailer, \
+		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 /obj/item/storage/bag/circuits/basic/Initialize(mapload)
 	emp_protection_flags |= EMP_PROTECT_SELF
 	new /obj/item/storage/bag/circuits/mini/arithmetic(src)
@@ -345,9 +343,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 	display_contents_with_number = 1
 	var/spawn_flags_to_use = IC_SPAWN_DEFAULT
 
-/obj/item/storage/bag/circuits/mini/hold_constraint()
-	var/list/holds = list(/obj/item/integrated_circuit)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/bag/circuits/mini, hold_spec, list(HOLD_ONLY(list(/obj/item/integrated_circuit)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/bag/circuits/mini/arithmetic
 	name = "arithmetic circuit box"

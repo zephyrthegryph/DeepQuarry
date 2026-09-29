@@ -522,7 +522,7 @@ DECLARE_REF(/datum/preferences, "middleware", OWNED_LIST, null)
 	// apply_hook is intentionally NOT called here — we don't want produceCopy()).
 	character.species?.blood_color = read_preference(/datum/preference/color/human/blood_color)
 
-	var/list/traits_to_copy = list(/datum/trait/neutral/tall,
+	var/static/list/traits_to_copy = list(/datum/trait/neutral/tall,
 									/datum/trait/neutral/taller,
 									/datum/trait/neutral/tallest,
 									/datum/trait/neutral/short,

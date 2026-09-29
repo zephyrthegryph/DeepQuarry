@@ -3,13 +3,14 @@
 	icon_state = "frggrenade"
 	item_state = "grenade"
 
-	// ALLOW(instance_list): c: read-only per-subtype constant table (12 subtype overrides); a getter would share it, not worth it on a rare type
-	var/list/projectile_types = list(/obj/item/projectile/bullet/pistol/rubber)	// What sorts of projectiles might we make?
 
 	//The radius of the circle used to launch projectiles. Lower values mean less projectiles are used but if set too low gaps may appear in the spread pattern
 	var/spread_range = 7
 
 	loadable = FALSE
+
+// What sorts of projectiles might we make?
+TYPE_TABLE_DECLARE(/obj/item/grenade/shooter, shooter_grenade_projectiles, list(/obj/item/projectile/bullet/pistol/rubber))
 
 /obj/item/grenade/shooter/detonate()
 	..()
@@ -18,7 +19,7 @@
 	if(!O)
 		return
 
-	src.launch_many_projectiles(O, spread_range, projectile_types)
+	src.launch_many_projectiles(O, spread_range, TYPE_TABLE_GET(src, shooter_grenade_projectiles))
 
 	consume(src)
 
@@ -27,9 +28,10 @@
 /obj/item/grenade/shooter/rubber
 	name = "rubber pellet grenade"
 	desc = "An anti-riot grenade that fires a cloud of rubber projectiles upon detonation."
-	projectile_types = list(/obj/item/projectile/bullet/pistol/rubber)
 
 // Exists mostly so I don't have to copy+paste the sprite vars to a billion things
+
+TYPE_TABLE(/obj/item/grenade/shooter/rubber, shooter_grenade_projectiles, list(/obj/item/projectile/bullet/pistol/rubber))
 /obj/item/grenade/shooter/energy
 	icon_state = "flashbang"
 	item_state = "flashbang"
@@ -38,19 +40,22 @@
 /obj/item/grenade/shooter/energy/laser
 	name = "laser grenade"
 	desc = "A horrifically dangerous rave in a can."
-	projectile_types = list(/obj/item/projectile/beam/midlaser)
+
+TYPE_TABLE(/obj/item/grenade/shooter/energy/laser, shooter_grenade_projectiles, list(/obj/item/projectile/beam/midlaser))
 
 /obj/item/grenade/shooter/energy/flash
 	name = "flash grenade"
 	desc = "A grenade that creates a large number of flashes upon detonation."
-	projectile_types = list(/obj/item/projectile/energy/flash)
+
+TYPE_TABLE(/obj/item/grenade/shooter/energy/flash, shooter_grenade_projectiles, list(/obj/item/projectile/energy/flash))
 
 /obj/item/grenade/shooter/energy/tesla
 	name = "tesla grenade"
-	projectile_types = list(/obj/item/projectile/beam/chain_lightning/lesser)
 
 
 // This is just fragmentate, but less specific. Don't know how to make either of them less awful, at the moment
+
+TYPE_TABLE(/obj/item/grenade/shooter/energy/tesla, shooter_grenade_projectiles, list(/obj/item/projectile/beam/chain_lightning/lesser))
 /obj/proc/launch_many_projectiles(turf/T=get_turf(src), spreading_range = 5, list/projectiletypes=list(/obj/item/projectile/bullet/pistol/rubber))
 	var/list/target_turfs = getcircle(T, spreading_range)
 

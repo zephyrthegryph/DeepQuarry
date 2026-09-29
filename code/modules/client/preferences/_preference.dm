@@ -588,7 +588,7 @@ DECLARE_SHARED_CACHE(preference_choices, GLOBAL_PROC_REF(build_preference_choice
 
 /// Shared-cache builder: a choiced preference's possible values, once per type.
 /proc/build_preference_choices(datum/preference/choiced/preference)
-	var/list/values = preference.init_possible_values()
+	var/list/values = TYPE_TABLE_GET(preference, pref_choices) || preference.init_possible_values()
 	ASSERT(length(values))
 	return values
 
@@ -603,6 +603,11 @@ DECLARE_SHARED_CACHE(preference_choices, GLOBAL_PROC_REF(build_preference_choice
 		serialized_choices += pref_serialize(choice)
 
 	return serialized_choices
+
+/// A choice list that is a fixed shared table (e.g. a GLOB list): set with
+/// TYPE_TABLE(/datum/preference/choiced/x, pref_choices, GLOB.y) instead of overriding
+/// `init_possible_values()`. Shared and read-only.
+TYPE_TABLE_DECLARE(/datum/preference/choiced, pref_choices, null)
 
 /// Returns a list of every possible value.
 /// This must be overriden by `/datum/preference/choiced` subtypes.

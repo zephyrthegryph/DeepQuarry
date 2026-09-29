@@ -75,7 +75,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/cow, \
 	emote_see = list("shakes its head")
 
 /datum/decl/mob_organ_names/cow
-	hit_zones = list("head", "torso", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "udder")
+TYPE_TABLE(/datum/decl/mob_organ_names/cow, mob_organ_hit_zones, list("head", "torso", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "udder"))
 
 /mob/living/simple_mob/animal/passive/cow/proc/get_up_after_tipping(mob/M)
 	if(!stat && M)

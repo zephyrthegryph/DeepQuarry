@@ -98,4 +98,4 @@
 	faction = FACTION_NEUTRAL
 
 /datum/decl/mob_organ_names/shantak
-	hit_zones = list("head", "torso", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "tail", "mane", "snout")
+TYPE_TABLE(/datum/decl/mob_organ_names/shantak, mob_organ_hit_zones, list("head", "torso", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "tail", "mane", "snout"))

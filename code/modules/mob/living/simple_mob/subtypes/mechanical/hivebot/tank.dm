@@ -95,7 +95,7 @@
 	return (..(P))
 
 /datum/decl/mob_organ_names/hivebottank
-	hit_zones = list("central chassis", "armor plating", "component shielding", "positioning servo", "head", "sensor suite", "heavy manipulator arm", "shoulder weapon mount", "weapons array", "front right leg", "front left leg", "rear left leg", "rear right leg")
+TYPE_TABLE(/datum/decl/mob_organ_names/hivebottank, mob_organ_hit_zones, list("central chassis", "armor plating", "component shielding", "positioning servo", "head", "sensor suite", "heavy manipulator arm", "shoulder weapon mount", "weapons array", "front right leg", "front left leg", "rear left leg", "rear right leg"))
 
 
 // === merged from tank_chomp.dm during hard-fork de-suffix (manually verified) ===

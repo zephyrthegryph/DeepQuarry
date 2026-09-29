@@ -155,16 +155,14 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	vore_standing_too = TRUE
 	can_be_drop_prey = FALSE
 
-/mob/living/simple_mob/vore/alienanimals/teppi/butchery_organ_types()
-	var/static/list/types = list(
-		/obj/item/organ/internal/brain,
-		/obj/item/organ/internal/heart,
-		/obj/item/organ/internal/liver,
-		/obj/item/organ/internal/stomach,
-		/obj/item/organ/internal/intestine,
-		/obj/item/organ/internal/lungs,
-		)
-	return types
+TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types, list( \
+		/obj/item/organ/internal/brain, \
+		/obj/item/organ/internal/heart, \
+		/obj/item/organ/internal/liver, \
+		/obj/item/organ/internal/stomach, \
+		/obj/item/organ/internal/intestine, \
+		/obj/item/organ/internal/lungs, \
+		))
 
 /mob/living/simple_mob/vore/alienanimals/teppi/load_default_bellies()
 	. = ..()

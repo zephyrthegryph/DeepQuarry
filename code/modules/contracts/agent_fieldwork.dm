@@ -411,27 +411,22 @@
 			return "engineering_goods"
 	return "general_manufactured"
 
+GLOBAL_LIST_INIT(agent_red_briefs, list(
+	REPUTATION_FACTION_NANOTRASEN = list("title" = "RED: Proprietary Asset Reclamation", "description" = "Recover station-developed prototypes for an undisclosed NanoTrasen program. The written mandate authorizes theft and covert export only as needed for this objective.", "requirement" = "Proprietary prototype portfolio"),
+	REPUTATION_FACTION_SOLGOV = list("title" = "RED: Embargoed Arms Seizure", "description" = "Divert controlled armaments into a sealed SolGov recovery channel without station authorization.", "requirement" = "Embargoed armaments portfolio"),
+	REPUTATION_FACTION_CHIMERA = list("title" = "RED: Restricted Biological Acquisition", "description" = "Acquire restricted biological products for an off-books Chimera program. Theft and concealment are authorized only for the listed recovery.", "requirement" = "Restricted biological portfolio"),
+	REPUTATION_FACTION_ECLIPSE = list("title" = "RED: Competitive Prototype Extraction", "description" = "Remove valuable station prototypes into Eclipse custody before their owner can restrict distribution.", "requirement" = "Competitive prototype portfolio"),
+	REPUTATION_FACTION_SYNDICATE = list("title" = "RED: Controlled Technology Exfiltration", "description" = "Route a significant armaments portfolio to a deniable buyer. Acceptance explicitly registers a bounded contract-operative antagonist role for this objective until it closes.", "requirement" = "Deniable armaments portfolio"),
+	REPUTATION_FACTION_TRADERS_GUILD = list("title" = "RED: Sanctioned Cargo Diversion", "description" = "Divert station property into an unregistered freeport portfolio despite any local claim to the goods.", "requirement" = "Diverted commercial portfolio"),
+	REPUTATION_FACTION_TALON = list("title" = "RED: Contested Salvage Recovery", "description" = "Recover contested salvage and field equipment claimed by TALON before station authorities can retain it.", "requirement" = "Contested salvage portfolio"),
+	REPUTATION_FACTION_WORKERS_UNION = list("title" = "RED: Seized Equipment Reclamation", "description" = "Remove technical equipment into a clandestine worker-controlled supply channel. The mandate permits theft only for that recovery.", "requirement" = "Reclaimed engineering portfolio"),
+	REPUTATION_FACTION_VEYMED = list("title" = "RED: Confidential Clinical Recovery", "description" = "Recover restricted clinical products into VeyMed custody without station authorization.", "requirement" = "Confidential clinical portfolio"),
+))
+GLOBAL_LIST_INIT(agent_red_briefs_default, list("title" = "RED: Restricted Asset Recovery", "description" = "Recover restricted station property through a covert freight route.", "requirement" = "Restricted asset portfolio"))
+
+/// Shared table entry for `faction_id` (read-only; Copy() before editing).
 /proc/agent_red_brief(faction_id) as /list
-	switch(faction_id)
-		if(REPUTATION_FACTION_NANOTRASEN)
-			return list("title" = "RED: Proprietary Asset Reclamation", "description" = "Recover station-developed prototypes for an undisclosed NanoTrasen program. The written mandate authorizes theft and covert export only as needed for this objective.", "requirement" = "Proprietary prototype portfolio")
-		if(REPUTATION_FACTION_SOLGOV)
-			return list("title" = "RED: Embargoed Arms Seizure", "description" = "Divert controlled armaments into a sealed SolGov recovery channel without station authorization.", "requirement" = "Embargoed armaments portfolio")
-		if(REPUTATION_FACTION_CHIMERA)
-			return list("title" = "RED: Restricted Biological Acquisition", "description" = "Acquire restricted biological products for an off-books Chimera program. Theft and concealment are authorized only for the listed recovery.", "requirement" = "Restricted biological portfolio")
-		if(REPUTATION_FACTION_ECLIPSE)
-			return list("title" = "RED: Competitive Prototype Extraction", "description" = "Remove valuable station prototypes into Eclipse custody before their owner can restrict distribution.", "requirement" = "Competitive prototype portfolio")
-		if(REPUTATION_FACTION_SYNDICATE)
-			return list("title" = "RED: Controlled Technology Exfiltration", "description" = "Route a significant armaments portfolio to a deniable buyer. Acceptance explicitly registers a bounded contract-operative antagonist role for this objective until it closes.", "requirement" = "Deniable armaments portfolio")
-		if(REPUTATION_FACTION_TRADERS_GUILD)
-			return list("title" = "RED: Sanctioned Cargo Diversion", "description" = "Divert station property into an unregistered freeport portfolio despite any local claim to the goods.", "requirement" = "Diverted commercial portfolio")
-		if(REPUTATION_FACTION_TALON)
-			return list("title" = "RED: Contested Salvage Recovery", "description" = "Recover contested salvage and field equipment claimed by TALON before station authorities can retain it.", "requirement" = "Contested salvage portfolio")
-		if(REPUTATION_FACTION_WORKERS_UNION)
-			return list("title" = "RED: Seized Equipment Reclamation", "description" = "Remove technical equipment into a clandestine worker-controlled supply channel. The mandate permits theft only for that recovery.", "requirement" = "Reclaimed engineering portfolio")
-		if(REPUTATION_FACTION_VEYMED)
-			return list("title" = "RED: Confidential Clinical Recovery", "description" = "Recover restricted clinical products into VeyMed custody without station authorization.", "requirement" = "Confidential clinical portfolio")
-	return list("title" = "RED: Restricted Asset Recovery", "description" = "Recover restricted station property through a covert freight route.", "requirement" = "Restricted asset portfolio")
+	return GLOB.agent_red_briefs[faction_id] || GLOB.agent_red_briefs_default
 
 // Reusable operation families. Faction doctrine composes different department
 // events and requirements onto the shared physical charter/contact/evidence

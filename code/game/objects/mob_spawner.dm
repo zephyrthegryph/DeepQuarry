@@ -8,10 +8,6 @@
 	COOLDOWN_DECLARE(spawn_cooldown)
 	var/spawn_delay = 10 MINUTES
 
-	var/list/spawn_types = list( // ALLOW(instance_list): c: read-only per-subtype constant table (10 subtype overrides); a getter would share it, not worth it on a rare type
-	/mob/living/simple_mob/animal/passive/dog/corgi = 100,
-	/mob/living/simple_mob/animal/passive/cat = 25
-	)
 
 	var/total_spawns = -1 //Total mob spawns, over all time, -1 for no limit
 	var/simultaneous_spawns = 3 //Max spawned mobs active at one time
@@ -21,6 +17,11 @@
 	max_integrity = 50
 
 	var/list/spawned_mobs
+
+TYPE_TABLE_DECLARE(/obj/structure/mob_spawner, mob_spawner_types, list( \
+	/mob/living/simple_mob/animal/passive/dog/corgi = 100, \
+	/mob/living/simple_mob/animal/passive/cat = 25 \
+	))
 
 /obj/structure/mob_spawner/Initialize(mapload)
 	. = ..()
@@ -51,7 +52,7 @@ DECLARE_REF(/obj/structure/mob_spawner, "spawned_mobs", LIST_BACK, "nest")
 	return 1
 
 /obj/structure/mob_spawner/proc/choose_spawn()
-	return pickweight(spawn_types)
+	return pickweight(TYPE_TABLE_GET(src, mob_spawner_types))
 
 /obj/structure/mob_spawner/proc/do_spawn(mob_path)
 	if(!ispath(mob_path))
@@ -191,16 +192,17 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	desc = "This is a proof of concept, not sure why you would use this one"
 	spawn_delay = 3 MINUTES
 	mob_faction = FACTION_CORGI
-	spawn_types = list(
-	/mob/living/simple_mob/animal/passive/dog/corgi = 75,
-	/mob/living/simple_mob/animal/passive/dog/corgi/puppy = 50
-	)
 
 	simultaneous_spawns = 5
 	range = 7
 	destructible = 1
 	max_integrity = 200
 	total_spawns = 100
+
+TYPE_TABLE(/obj/structure/mob_spawner/scanner/corgi, mob_spawner_types, list( \
+	/mob/living/simple_mob/animal/passive/dog/corgi = 75, \
+	/mob/living/simple_mob/animal/passive/dog/corgi/puppy = 50 \
+	))
 
 /obj/structure/mob_spawner/scanner/wild_animals
 	name = "Wilderness Lazy Spawner"
@@ -212,12 +214,13 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	destructible = 0
 	anchored = TRUE
 	invisibility = INVISIBILITY_ABSTRACT
-	spawn_types = list(
-	/mob/living/simple_mob/animal/passive/gaslamp = 20,
-//	/mob/living/simple_mob/vore/otie/feral = 10,
-	/mob/living/simple_mob/vore/aggressive/dino/virgo3b = 5,
-	/mob/living/simple_mob/vore/aggressive/dragon/virgo3b = 1
-	)
+
+TYPE_TABLE(/obj/structure/mob_spawner/scanner/wild_animals, mob_spawner_types, list( \
+	/mob/living/simple_mob/animal/passive/gaslamp = 20, \
+/* /mob/living/simple_mob/vore/otie/feral = 10, */ \
+	/mob/living/simple_mob/vore/aggressive/dino/virgo3b = 5, \
+	/mob/living/simple_mob/vore/aggressive/dragon/virgo3b = 1 \
+	))
 
 /obj/structure/mob_spawner/scanner/xenos
 	name = "Xenomorph Egg"
@@ -231,12 +234,13 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	anchored = TRUE
 	icon = 'icons/mob/actions.dmi'
 	icon_state = "alien_egg"
-	spawn_types = list(
-	/mob/living/simple_mob/animal/space/alien/drone = 20,
-	/mob/living/simple_mob/animal/space/alien = 10,
-	/mob/living/simple_mob/animal/space/alien/sentinel = 5,
-	/mob/living/simple_mob/animal/space/alien/queen = 1
-	)
+
+TYPE_TABLE(/obj/structure/mob_spawner/scanner/xenos, mob_spawner_types, list( \
+	/mob/living/simple_mob/animal/space/alien/drone = 20, \
+	/mob/living/simple_mob/animal/space/alien = 10, \
+	/mob/living/simple_mob/animal/space/alien/sentinel = 5, \
+	/mob/living/simple_mob/animal/space/alien/queen = 1 \
+	))
 
 /obj/structure/mob_spawner/scanner/xenos/royal
 	name = "Royal Xenomorph Egg"
@@ -250,9 +254,10 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	anchored = TRUE
 	icon = 'icons/mob/actions.dmi'
 	icon_state = "alien_egg"
-	spawn_types = list(
-	/mob/living/simple_mob/animal/space/alien/queen = 5,
-	)
+
+TYPE_TABLE(/obj/structure/mob_spawner/scanner/xenos/royal, mob_spawner_types, list( \
+	/mob/living/simple_mob/animal/space/alien/queen = 5, \
+	))
 
 /obj/structure/mob_spawner/scanner/mining_animals
 	name = "Mining Lazy Spawner"
@@ -264,35 +269,36 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	destructible = 0
 	anchored = 1
 	invisibility = INVISIBILITY_ABSTRACT
-	spawn_types = list(
-		/mob/living/simple_mob/vore/bat = 70,
-		/mob/living/simple_mob/animal/passive/cockroach = 60,
-		/obj/effect/spider/spiderling/non_growing = 50,
-		/mob/living/simple_mob/animal/giant_spider/tunneler/cave = 50,
-		/mob/living/simple_mob/vore/jelly = 40,
-		/mob/living/simple_mob/vore/aggressive/rat = 30,
-		/mob/living/simple_mob/animal/passive/mouse = 30,
-		/mob/living/simple_mob/animal/passive/mouse/rat = 25,
-		/mob/living/simple_mob/metroid/mine = 25, // Downstream //CHOMPEnable
-		/mob/living/simple_mob/vore/oregrub = 25,
-		/mob/living/simple_mob/vore/aggressive/dino = 20,
-		/mob/living/simple_mob/animal/space/carp = 20,
-		/mob/living/simple_mob/vore/oregrub/lava = 15,
-		/mob/living/simple_mob/vore/stalker = 10,
-		/mob/living/simple_mob/vore/lamia/copper/cave = 10,
-		/mob/living/simple_mob/vore/lamia/albino/cave = 5,
-		/mob/living/simple_mob/vore/aggressive/lizardman = 5,
-		/mob/living/simple_mob/vore/otie = 5,
-		/mob/living/simple_mob/animal/passive/pillbug = 5, // These aren't dangerous, but are made rare just because few people are going to bother killing them.
-		/obj/structure/closet/crate/mimic/cointoss = 1,
-		/obj/structure/closet/crate/mimic/closet/cointoss = 1,
-		/mob/living/simple_mob/vore/otie/feral = 1,
-		// /mob/living/simple_mob/vore/sonadile = 1, // Removed until sprite issues fixed.
-		/mob/living/simple_mob/animal/space/bear/brown = 1,
-		/mob/living/simple_mob/vore/aggressive/deathclaw = 1,
-		/mob/living/simple_mob/vore/gryphon = 1,
-		/mob/living/simple_mob/vore/demon = 0.5 // VERY rare!
-	)
+
+TYPE_TABLE(/obj/structure/mob_spawner/scanner/mining_animals, mob_spawner_types, list( \
+		/mob/living/simple_mob/vore/bat = 70, \
+		/mob/living/simple_mob/animal/passive/cockroach = 60, \
+		/obj/effect/spider/spiderling/non_growing = 50, \
+		/mob/living/simple_mob/animal/giant_spider/tunneler/cave = 50, \
+		/mob/living/simple_mob/vore/jelly = 40, \
+		/mob/living/simple_mob/vore/aggressive/rat = 30, \
+		/mob/living/simple_mob/animal/passive/mouse = 30, \
+		/mob/living/simple_mob/animal/passive/mouse/rat = 25, \
+		/mob/living/simple_mob/metroid/mine = 25, /* Downstream - CHOMPEnable */ \
+		/mob/living/simple_mob/vore/oregrub = 25, \
+		/mob/living/simple_mob/vore/aggressive/dino = 20, \
+		/mob/living/simple_mob/animal/space/carp = 20, \
+		/mob/living/simple_mob/vore/oregrub/lava = 15, \
+		/mob/living/simple_mob/vore/stalker = 10, \
+		/mob/living/simple_mob/vore/lamia/copper/cave = 10, \
+		/mob/living/simple_mob/vore/lamia/albino/cave = 5, \
+		/mob/living/simple_mob/vore/aggressive/lizardman = 5, \
+		/mob/living/simple_mob/vore/otie = 5, \
+		/mob/living/simple_mob/animal/passive/pillbug = 5, /* These aren't dangerous, but are made rare just because few people are going to bother killing them. */ \
+		/obj/structure/closet/crate/mimic/cointoss = 1, \
+		/obj/structure/closet/crate/mimic/closet/cointoss = 1, \
+		/mob/living/simple_mob/vore/otie/feral = 1, \
+/* /mob/living/simple_mob/vore/sonadile = 1, - Removed until sprite issues fixed. */ \
+		/mob/living/simple_mob/animal/space/bear/brown = 1, \
+		/mob/living/simple_mob/vore/aggressive/deathclaw = 1, \
+		/mob/living/simple_mob/vore/gryphon = 1, \
+		/mob/living/simple_mob/vore/demon = 0.5 /* VERY rare! */ \
+	))
 
 /obj/structure/mob_spawner/proc/get_used_report(obj/structure/closet/crate/mimic/O)
 	if(O in spawned_mobs)
@@ -303,11 +309,12 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	desc = "A small hole, critters seem to move in and out from here."
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "tunnel_hole"
-	spawn_types = list(
-	/mob/living/simple_mob/animal/passive/mouse = 100,
-	/mob/living/simple_mob/animal/passive/cockroach = 25,
-	/mob/living/simple_mob/animal/passive/mouse/rat/strong = 10, // Because I'm a horrible person. <3
-	/obj/effect/spider/spiderling/non_growing = 5)
+
+TYPE_TABLE(/obj/structure/mob_spawner/mouse_nest/mousehole, mob_spawner_types, list( \
+	/mob/living/simple_mob/animal/passive/mouse = 100, \
+	/mob/living/simple_mob/animal/passive/cockroach = 25, \
+	/mob/living/simple_mob/animal/passive/mouse/rat/strong = 10, /* Because I'm a horrible person. <3 */ \
+	/obj/effect/spider/spiderling/non_growing = 5))
 
 DECLARE_APPEARANCE(/obj/structure/mob_spawner/mouse_nest/mousehole, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "tunnel_hole")))
 
@@ -319,7 +326,8 @@ DECLARE_APPEARANCE(/obj/structure/mob_spawner/mouse_nest/mousehole, null, list(A
 	name = "hivebot assembler"
 	simultaneous_spawns = 6
 	spawn_delay = 300
-	spawn_types = list(/mob/living/simple_mob/mechanical/hivebot/swarm = 200, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/basic = 50, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser = 25, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/ion = 10, /mob/living/simple_mob/mechanical/hivebot/tank/meatshield = 10)
+
+TYPE_TABLE(/obj/structure/mob_spawner/recycler, mob_spawner_types, list(/mob/living/simple_mob/mechanical/hivebot/swarm = 200, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/basic = 50, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser = 25, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/ion = 10, /mob/living/simple_mob/mechanical/hivebot/tank/meatshield = 10))
 
 /obj/structure/mob_spawner/recycler
 	desc = "A bizarre mess of robotic limbs, glowing microrefineries, and nanoassemblers gradually converting the pile of raw materials into active hivebots."
@@ -329,6 +337,7 @@ DECLARE_APPEARANCE(/obj/structure/mob_spawner/mouse_nest/mousehole, null, list(A
 	name = "hivebot assembler"
 	simultaneous_spawns = 6
 	spawn_delay = 300
-	spawn_types = list(/mob/living/simple_mob/mechanical/hivebot/swarm = 200, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/basic = 50, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser = 25, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/ion = 10, /mob/living/simple_mob/mechanical/hivebot/tank/meatshield = 10)
+
+TYPE_TABLE(/obj/structure/mob_spawner/recycler, mob_spawner_types, list(/mob/living/simple_mob/mechanical/hivebot/swarm = 200, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/basic = 50, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser = 25, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/ion = 10, /mob/living/simple_mob/mechanical/hivebot/tank/meatshield = 10))
 
 DECLARE_REF(/obj/structure/mob_spawner/scanner, "prox", OWNED, null)

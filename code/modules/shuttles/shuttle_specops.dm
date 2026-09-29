@@ -108,7 +108,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 
 /// The countdown: announcements at the marked seconds, then the launch. A cancel stops it.
 /datum/shuttle/autodock/ferry/specops/proc/start_launch_countdown(user)
-	var/list/message_tracker = list(0,1,2,3,5,10,30,45)//The seconds left that are announced.
+	var/static/list/message_tracker = list(0,1,2,3,5,10,30,45)//The seconds left that are announced.
 	cancel_countdown = 0
 	launch_prep = 1
 	for(var/seconds in message_tracker)

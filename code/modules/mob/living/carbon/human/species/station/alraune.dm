@@ -149,21 +149,19 @@
 	var/poison_reagent
 
 /// Reagents the gland can lace its fruit with (constant).
-/obj/item/organ/internal/fruitgland/proc/poison_options()
-	var/static/list/options = list(
-								REAGENT_ID_MICROCILLIN,
-								REAGENT_ID_MACROCILLIN,
-								REAGENT_ID_NORMALCILLIN,
-								REAGENT_ID_NUMBENZYME,
-								REAGENT_ID_ANDROROVIR,
-								REAGENT_ID_GYNOROVIR,
-								REAGENT_ID_ANDROGYNOROVIR,
-								REAGENT_ID_STOXIN,
-								REAGENT_ID_RAINBOWTOXIN,
-								REAGENT_ID_PARALYSISTOXIN,
-								REAGENT_ID_PAINENZYME
-	)
-	return options
+TYPE_TABLE_DECLARE(/obj/item/organ/internal/fruitgland, poison_options, list( \
+								REAGENT_ID_MICROCILLIN, \
+								REAGENT_ID_MACROCILLIN, \
+								REAGENT_ID_NORMALCILLIN, \
+								REAGENT_ID_NUMBENZYME, \
+								REAGENT_ID_ANDROROVIR, \
+								REAGENT_ID_GYNOROVIR, \
+								REAGENT_ID_ANDROGYNOROVIR, \
+								REAGENT_ID_STOXIN, \
+								REAGENT_ID_RAINBOWTOXIN, \
+								REAGENT_ID_PARALYSISTOXIN, \
+								REAGENT_ID_PAINENZYME \
+	))
 
 DECLARE_REAGENTS(/obj/item/organ/internal/fruitgland, "usable_volume", null)
 
@@ -283,7 +281,7 @@ DECLARE_REAGENTS(/obj/item/organ/internal/fruitgland, "usable_volume", null)
 
 	if(fruit_gland)
 		// A cancel answers "" and clears the poison.
-		om_ask(src, /datum/om/prompt/choice/fruit_gland, PROC_REF(alraune_poison_chosen), message = "Choose which reagent to poison your fruit with! Be aware, this option is intended for use in scenes and ERP. This is not for use as pranks or to change the gender of unsuspecting crew, and you must be aware of the preferences of the people who eat it. Do not just leave it out unattended.", title = "Select reagent", choices = fruit_gland.poison_options(), ask_flags = ASK_CONSCIOUS, cancel_answer = "", gland = fruit_gland)
+		om_ask(src, /datum/om/prompt/choice/fruit_gland, PROC_REF(alraune_poison_chosen), message = "Choose which reagent to poison your fruit with! Be aware, this option is intended for use in scenes and ERP. This is not for use as pranks or to change the gender of unsuspecting crew, and you must be aware of the preferences of the people who eat it. Do not just leave it out unattended.", title = "Select reagent", choices = TYPE_TABLE_GET(fruit_gland, poison_options), ask_flags = ASK_CONSCIOUS, cancel_answer = "", gland = fruit_gland)
 
 /mob/living/carbon/human/proc/alraune_poison_chosen(datum/om/prompt/choice/fruit_gland/ask)
 	var/obj/item/organ/internal/fruitgland/fruit_gland = ask.gland

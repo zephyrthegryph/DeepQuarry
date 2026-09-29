@@ -94,7 +94,7 @@
 	peak_tick_usage = 0
 	rustg_time_reset(timer_id)
 	last_checkpoint_microseconds = 0
-	phases = materializer().materialize_phases()
+	phases = TYPE_TABLE_GET(materializer(), materialize_phases)
 	if(!materializer().prepare_materialization(spec, z_level, origin_x, origin_y, src))
 		failed = TRUE
 		return FALSE

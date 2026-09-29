@@ -92,7 +92,7 @@
 /// Every structural check on definitions and providers. Returns error strings.
 /datum/property_registry/proc/validate()
 	var/list/out = list()
-	var/list/units = dq_property_units()
+	var/list/units = GLOB.property_units
 	for(var/id in defs)
 		var/datum/property_def/def = LAZYACCESS(defs, id)
 		if(!dq_property_valid_aggregator(def.aggregator))
@@ -148,13 +148,11 @@
 	return out
 
 /// Known PROP_UNIT_* symbols.
-/proc/dq_property_units()
-	var/static/list/units = list(
-		PROP_UNIT_KELVIN, PROP_UNIT_JOULES, PROP_UNIT_PASCALS, PROP_UNIT_MOLES,
-		PROP_UNIT_WATTS, PROP_UNIT_HEAT_CAPACITY, PROP_UNIT_KILOGRAMS,
-		PROP_UNIT_CUBIC_METRES, PROP_UNIT_SIZE_CLASS, PROP_UNIT_RATIO,
-	)
-	return units
+GLOBAL_LIST_INIT(property_units, list(
+	PROP_UNIT_KELVIN, PROP_UNIT_JOULES, PROP_UNIT_PASCALS, PROP_UNIT_MOLES,
+	PROP_UNIT_WATTS, PROP_UNIT_HEAT_CAPACITY, PROP_UNIT_KILOGRAMS,
+	PROP_UNIT_CUBIC_METRES, PROP_UNIT_SIZE_CLASS, PROP_UNIT_RATIO,
+))
 
 /// Checks one value against its definition. Returns an error string or null.
 /datum/property_registry/proc/check_value(id, value)

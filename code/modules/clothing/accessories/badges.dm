@@ -403,9 +403,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 	max_storage_space = (ITEMSIZE_COST_SMALL * 4) + (ITEMSIZE_COST_TINY * 1)
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/storage/box/dosimeter/hold_constraint()
-	var/list/holds = list(/obj/item/paper/dosimeter_manual, /obj/item/clothing/accessory/dosimeter, /obj/item/dosimeter_film)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/dosimeter, hold_spec, list(HOLD_ONLY(list(/obj/item/paper/dosimeter_manual, /obj/item/clothing/accessory/dosimeter, /obj/item/dosimeter_film)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/box/dosimeter/Initialize(mapload)
 	. = ..()

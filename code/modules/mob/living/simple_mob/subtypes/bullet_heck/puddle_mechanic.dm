@@ -44,7 +44,8 @@ DECLARE_START_TIMER(/obj/item/grenade/shooter/auto_explode, "fuse_time", PROC_RE
 
 /obj/item/grenade/shooter/auto_explode/blood_boss
 	spread_range = 2
-	projectile_types = list(/obj/item/projectile/energy/blood_bullet)
+
+TYPE_TABLE(/obj/item/grenade/shooter/auto_explode/blood_boss, shooter_grenade_projectiles, list(/obj/item/projectile/energy/blood_bullet))
 
 /datum/body_effect/mmo_drop/lingering/blood_flower
 	puddleitem = /obj/item/grenade/shooter/auto_explode/blood_boss
@@ -56,22 +57,26 @@ DECLARE_START_TIMER(/obj/item/grenade/shooter/auto_explode, "fuse_time", PROC_RE
 
 /obj/item/grenade/shooter/auto_explode/blade_boss_long
 	spread_range = 1
-	projectile_types = list(/obj/item/projectile/bullet/astral_blade)
+
+TYPE_TABLE(/obj/item/grenade/shooter/auto_explode/blade_boss_long, shooter_grenade_projectiles, list(/obj/item/projectile/bullet/astral_blade))
 
 /obj/item/grenade/shooter/auto_explode/blade_boss_short
 	spread_range = 3
-	projectile_types = list(/obj/item/projectile/bullet/astral_blade/short)
+
+TYPE_TABLE(/obj/item/grenade/shooter/auto_explode/blade_boss_short, shooter_grenade_projectiles, list(/obj/item/projectile/bullet/astral_blade/short))
 
 /obj/item/grenade/shooter/auto_explode/occult_fireball
 	spread_range = 2
-	projectile_types = list(/obj/item/projectile/bullet/incendiary/dragonflame/occult)
+
+TYPE_TABLE(/obj/item/grenade/shooter/auto_explode/occult_fireball, shooter_grenade_projectiles, list(/obj/item/projectile/bullet/incendiary/dragonflame/occult))
 
 /datum/body_effect/mmo_drop/occult_fireball
 	puddleitem = /obj/item/grenade/shooter/auto_explode/occult_fireball
 
 /obj/item/grenade/shooter/auto_explode/eclipse_iceball
 	spread_range = 2
-	projectile_types = list(/obj/item/projectile/energy/eclipse_boss/chillingwind)
+
+TYPE_TABLE(/obj/item/grenade/shooter/auto_explode/eclipse_iceball, shooter_grenade_projectiles, list(/obj/item/projectile/energy/eclipse_boss/chillingwind))
 
 /datum/body_effect/mmo_drop/eclipse_iceball
 	puddleitem = /obj/item/grenade/shooter/auto_explode/eclipse_iceball
@@ -81,7 +86,8 @@ DECLARE_START_TIMER(/obj/item/grenade/shooter/auto_explode, "fuse_time", PROC_RE
 
 /obj/item/grenade/shooter/auto_explode/eclipse_dagger
 	spread_range = 4
-	projectile_types = list(/obj/item/projectile/energy/astral_collective/dagger)
+
+TYPE_TABLE(/obj/item/grenade/shooter/auto_explode/eclipse_dagger, shooter_grenade_projectiles, list(/obj/item/projectile/energy/astral_collective/dagger))
 
 /datum/body_effect/mmo_drop/eclipse_dagger
 	puddleitem = /obj/item/grenade/shooter/auto_explode/eclipse_dagger

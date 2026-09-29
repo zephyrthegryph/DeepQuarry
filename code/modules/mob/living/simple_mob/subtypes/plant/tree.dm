@@ -51,4 +51,4 @@
 	new /obj/item/stack/material/wood(loc)
 
 /datum/decl/mob_organ_names/tree
-	hit_zones = list("trunk", "branches", "twigs")
+TYPE_TABLE(/datum/decl/mob_organ_names/tree, mob_organ_hit_zones, list("trunk", "branches", "twigs"))

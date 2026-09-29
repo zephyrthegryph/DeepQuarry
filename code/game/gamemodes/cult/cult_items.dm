@@ -79,9 +79,7 @@
 	flags_inv = HIDEJUMPSUIT
 	siemens_coefficient = 0
 
-/obj/item/clothing/suit/cultrobes/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_CULT)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/cultrobes, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_CULT))))
 
 /obj/item/clothing/suit/cultrobes/cultify()
 	return
@@ -116,9 +114,7 @@
 	siemens_coefficient = 0
 	flags_inv = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
 
-/obj/item/clothing/suit/space/cult/suit_storage_constraint()
-	var/list/stores = list(POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_CULT)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/cult, suit_storage_spec, list(HOLD_ONLY(list(POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_CULT))))
 
 /obj/item/clothing/suit/space/cult/cultify()
 	return

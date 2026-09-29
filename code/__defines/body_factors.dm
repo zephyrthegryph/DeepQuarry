@@ -5,7 +5,7 @@
 // (afflictions, reagents, modifiers, species and traits, forms, worn
 // equipment) and any number of consumers read with `L.factor(BF_X)`.
 // Every factor has one combine rule, a baseline and bounds, registered once in
-// body_factor_defs(). Sources declare static alist tables keyed by these ids,
+// GLOBAL_TABLE_GET(body_factor_defs). Sources declare static alist tables keyed by these ids,
 // e.g. `factors = alist(BF_SLOWDOWN = 1, BF_ACCURACY = -20)`.
 //
 // Flat-list indices: keep contiguous from 1 and keep BF_COUNT last.

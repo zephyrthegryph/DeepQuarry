@@ -453,7 +453,7 @@
 		update_icon()
 
 /obj/machinery/atmospherics/unary/vent_pump/multitool_act(mob/user, obj/item/W)
-	var/list/options = list(
+	var/static/list/options = list(
 		"ID Tag", "Frequency", "Direction", "-SAVE TO BUFFER-")
 	var/choice = rerun_ask(user, "k471", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/choice, message = "[src] has an ID of \"[id_tag]\" and a frequency of [frequency]. What would you like to change?", title = "[src] Config", choices = options)
 	if(isnull(choice))

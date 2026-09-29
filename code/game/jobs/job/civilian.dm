@@ -261,8 +261,7 @@
 /datum/alt_title/ia_investigator
 	title = JOB_ALT_INTERNAL_AFFAIRS_INVESTIGATOR
 
-/datum/job/pilot/get_request_reasons()
-	return list("Assembling expedition team")
+TYPE_TABLE(/datum/job/pilot, get_request_reasons, list("Assembling expedition team"))
 
 //////////////////////////////////
 //			Entertainer

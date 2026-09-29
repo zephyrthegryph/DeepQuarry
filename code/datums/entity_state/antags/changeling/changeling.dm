@@ -309,7 +309,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 //Former /turf procs
 /turf/proc/AdjacentTurfsRangedSting()
 	//Yes this is snowflakey, but I couldn't get it to work any other way.. -Luke
-	var/list/allowed = list(
+	var/static/list/allowed = list(
 		/obj/structure/table,
 		/obj/structure/closet,
 		/obj/structure/frame,

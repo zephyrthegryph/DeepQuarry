@@ -74,5 +74,4 @@
 	icon_state = "tribal_sandals"
 	body_parts_covered = 0
 
-/obj/item/clothing/shoes/tribalwear/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/tribalwear, fit_spec, null)

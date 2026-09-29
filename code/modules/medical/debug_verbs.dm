@@ -29,7 +29,7 @@ ADMIN_VERB(dq_apply_condition, R_DEBUG, "DQ Apply Medical Condition", "Apply a /
 	if(!target)
 		return
 	var/list/options = list()
-	for(var/T in dq_catalogued_affliction_types())
+	for(var/T in GLOBAL_TABLE_GET(dq_catalogued_affliction_types))
 		var/datum/affliction/proto = T
 		options["[initial(proto.name)] ([T])"] = T
 	if(!length(options))

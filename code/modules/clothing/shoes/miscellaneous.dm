@@ -10,8 +10,7 @@
 	pickup_sound = 'sound/items/pickup/rubber.ogg'
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
-/obj/item/clothing/shoes/syndigaloshes/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/syndigaloshes, fit_spec, null)
 
 /obj/item/clothing/shoes/mime
 	name = "mime shoes"
@@ -30,8 +29,7 @@
 	pickup_sound = 'sound/items/pickup/rubber.ogg'
 	resistance_flags = ACID_PROOF
 
-/obj/item/clothing/shoes/galoshes/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/galoshes, fit_spec, null)
 
 /obj/item/clothing/shoes/dress
 	name = "dress shoes"
@@ -51,8 +49,7 @@
 
 	wizard_garb = 1
 
-/obj/item/clothing/shoes/sandal/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/sandal, fit_spec, null)
 
 /obj/item/clothing/shoes/sandals
 	desc = "A pair of simple sandals."
@@ -71,8 +68,7 @@
 	icon_state = "cookflops"
 	body_parts_covered = 0
 
-/obj/item/clothing/shoes/cookflop/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/cookflop, fit_spec, null)
 
 /obj/item/clothing/shoes/tourist_1
 	name = "tourist sandals"
@@ -80,8 +76,7 @@
 	icon_state = "tourist_1"
 	body_parts_covered = 0
 
-/obj/item/clothing/shoes/tourist_1/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/tourist_1, fit_spec, null)
 
 /obj/item/clothing/shoes/tourist_2
 	name = "tourist sandals"
@@ -89,8 +84,7 @@
 	icon_state = "tourist_2"
 	body_parts_covered = 0
 
-/obj/item/clothing/shoes/tourist_2/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/tourist_2, fit_spec, null)
 
 /obj/item/clothing/shoes/sandal/clogs
 	name = "plastic clogs"
@@ -123,8 +117,7 @@
 		playsound(src, "clownstep", 20, 1)
 */
 
-/obj/item/clothing/shoes/clown_shoes/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/clown_shoes, fit_spec, null)
 
 /obj/item/clothing/shoes/cult
 	name = "boots"
@@ -137,8 +130,7 @@
 	min_cold_protection_temperature = SHOE_MIN_COLD_PROTECTION_TEMPERATURE
 	max_heat_protection_temperature = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE
 
-/obj/item/clothing/shoes/cult/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/cult, fit_spec, null)
 
 /obj/item/clothing/shoes/cult/cultify()
 	return
@@ -157,8 +149,7 @@
 	drop_sound = 'sound/items/drop/clothing.ogg'
 	pickup_sound = 'sound/items/pickup/clothing.ogg'
 
-/obj/item/clothing/shoes/slippers/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/slippers, fit_spec, null)
 
 /obj/item/clothing/shoes/slippers/worn
 	name = "worn bunny slippers"
@@ -186,8 +177,7 @@
 	item_flags = NOSLIP
 	slowdown = SHOES_SLOWDOWN+0.5
 
-/obj/item/clothing/shoes/swimmingfins/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/swimmingfins, fit_spec, null)
 
 /obj/item/clothing/shoes/athletic
 	name = "athletic shoes"
@@ -220,8 +210,7 @@
 	drop_sound = 'sound/items/drop/clothing.ogg'
 	pickup_sound = 'sound/items/pickup/clothing.ogg'
 
-/obj/item/clothing/shoes/footwraps/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/footwraps, fit_spec, null)
 
 /obj/item/clothing/shoes/boots/ranger
 	var/bootcolor = "white"
@@ -395,32 +384,35 @@
 	siemens_coefficient = 0.7 // Same as loadout jackboots.
 	can_hold_knife = 1
 	force = 2
-	// ALLOW(instance_list): c: read-only per-subtype constant table (3 subtype overrides); a getter would share it, not worth it on a rare type
-	var/list/squeak_sound = list("mechstep"=1)	//Squeak sound list. Necessary so our subtypes can have different sounds loaded into their component
 
-/obj/item/clothing/shoes/mech_shoes/fit_constraint()
-	return null
+//Squeak sound list. Necessary so our subtypes can have different sounds loaded into their component
+TYPE_TABLE_DECLARE(/obj/item/clothing/shoes/mech_shoes, mech_shoes_squeak_sounds, list("mechstep"=1))
+
+TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes, fit_spec, null)
 
 /obj/item/clothing/shoes/mech_shoes/Initialize(mapload)
 	.=..()
-	make_squeaky(squeak_sound, 15*step_volume_mod)
+	make_squeaky(TYPE_TABLE_GET(src, mech_shoes_squeak_sounds), 15*step_volume_mod)
 
 /obj/item/clothing/shoes/mech_shoes/light
 	name = "light mech shoes"
 	desc = "Thud thud, but quieter."
-	squeak_sound = list("powerloaderstep"=1)
+
+TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/light, mech_shoes_squeak_sounds, list("powerloaderstep"=1))
 
 /obj/item/clothing/shoes/mech_shoes/heavy
 	name = "heavy mech shoes"
 	desc = "Thud thud, but heavy."
-	squeak_sound = list('sound/mob/footstep_large.ogg'=1,'sound/mob/footstep_large2.ogg'=1)
 	step_volume_mod = 4
+
+TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/heavy, mech_shoes_squeak_sounds, list('sound/mob/footstep_large.ogg'=1,'sound/mob/footstep_large2.ogg'=1))
 
 /obj/item/clothing/shoes/mech_shoes/mister_x
 	name = "concealed extra large jackboots"
 	desc = "Lets hope there's no evil in this residence."
-	squeak_sound = list('sound/mob/heavy_boots.ogg'=1)
 	step_volume_mod = 5
+
+TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/mister_x, mech_shoes_squeak_sounds, list('sound/mob/heavy_boots.ogg'=1))
 
 /obj/item/clothing/shoes/mech_shoes/mister_x/visible
 	name = "visible extra large jackboots"
@@ -446,8 +438,7 @@
 	drop_sound = 'sound/items/drop/rubber.ogg'
 	pickup_sound = 'sound/items/pickup/rubber.ogg'
 
-/obj/item/clothing/shoes/dry_galoshes/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/dry_galoshes, fit_spec, null)
 
 DECLARE_BEHAVIOUR(/obj/item/clothing/shoes/dry_galoshes, /datum/om/behaviour/dry)
 

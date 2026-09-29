@@ -25,18 +25,16 @@
 	/// OM handle of the player the gryphon is currently fixating on.
 	var/dq_maybe_eating = null
 
-/mob/living/simple_mob/vore/gryphon/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/gryphon_stalk,
-		/datum/ai_behavior/gryphon_leap,
-		/datum/ai_behavior/melee_attack,
-		/datum/ai_behavior/maul_unconscious,
-		/datum/ai_behavior/retaliate_to_attacker,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/idle_wander,
-		/datum/ai_behavior/idle_speak,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/vore/gryphon, get_ai_behaviors, list( \
+	/datum/ai_behavior/gryphon_stalk, \
+	/datum/ai_behavior/gryphon_leap, \
+	/datum/ai_behavior/melee_attack, \
+	/datum/ai_behavior/maul_unconscious, \
+	/datum/ai_behavior/retaliate_to_attacker, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/idle_wander, \
+	/datum/ai_behavior/idle_speak, \
+))
 
 // ---------------------------------------------------------------------------
 // Shared helper — is M a valid lone-meal candidate? (edible + sentient).
@@ -186,11 +184,9 @@
 	brain.last_attack_at = world.time
 	return DQ_BEHAVIOR_DONE
 
-/datum/ai_behavior/gryphon_leap/get_player_verb_info()
-	var/static/list/L = list(
-		"name" = "Leap",
-		"desc" = "Pounce at a nearby target to knock them down.",
-		"category" = "Combat",
-		"auto_target" = FALSE,
-	)
-	return L
+TYPE_TABLE(/datum/ai_behavior/gryphon_leap, get_player_verb_info, list( \
+		"name" = "Leap", \
+		"desc" = "Pounce at a nearby target to knock them down.", \
+		"category" = "Combat", \
+		"auto_target" = FALSE, \
+	))

@@ -134,8 +134,7 @@
 	storage_slots = 14	// Twice the capacity of a typical belt.
 	max_storage_space = ITEMSIZE_COST_NORMAL * 14
 
-/obj/item/storage/belt/holding/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/belt/holding, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /datum/technomancer/equipment/thermals
 	name = "Thermoncle"

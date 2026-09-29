@@ -55,16 +55,17 @@
 
 /// The measures the ledger aggregates: every registered measure with an
 /// aggregator, in a fixed order. Tag words follow them in a snapshot.
-/proc/dq_ledger_measure_ids()
+/// Read with CACHED(ledger_measure_ids, "ids"); built once on first use.
+DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure_ids), SC_NEVER)
+
+/proc/dq_build_ledger_measure_ids()
 	RETURN_TYPE(/list)
-	var/static/list/ids
-	if(!ids)
-		ids = list()
-		var/datum/property_registry/registry = dq_property_registry()
-		for(var/id in registry.measure_ids)
-			var/datum/property_def/def = registry.defs[id]
-			if(def.aggregator != PROP_AGG_NONE)
-				ids += id
+	var/list/ids = list()
+	var/datum/property_registry/registry = dq_property_registry()
+	for(var/id in registry.measure_ids)
+		var/datum/property_def/def = registry.defs[id]
+		if(def.aggregator != PROP_AGG_NONE)
+			ids += id
 	return ids
 
 /// Number of tag words in a snapshot.
@@ -76,7 +77,7 @@
 
 /// Aggregator for position `i` of a snapshot.
 /proc/dq_ledger_aggregator(i)
-	var/list/ids = dq_ledger_measure_ids()
+	var/list/ids = CACHED(ledger_measure_ids, "ids")
 	if(i > length(ids))
 		return PROP_AGG_OR
 	var/datum/property_def/def = dq_property_registry().defs[ids[i]]
@@ -88,7 +89,7 @@
 /// `from_scratch` recomputes nested holders instead of reading their ledgers.
 /proc/dq_ledger_contribution(atom/movable/thing, from_scratch = FALSE)
 	var/datum/property_registry/registry = dq_property_registry()
-	var/list/ids = dq_ledger_measure_ids()
+	var/list/ids = CACHED(ledger_measure_ids, "ids")
 	var/count = length(ids)
 	var/words = dq_ledger_tag_words()
 	var/list/nested
@@ -135,7 +136,7 @@
 	var/tracked = 0
 	/// Entry serials only increase, so an entry id is never reused.
 	var/next_serial = 0
-	/// Measure accumulators (dq_ledger_measure_ids() order) then tag-word
+	/// Measure accumulators (ledger_measure_ids order) then tag-word
 	/// accumulators. Each is made when its first value arrives.
 	var/tmp/list/accumulators
 	/// The slot the next note_enter() of `pending_thing` goes to (api.dm).
@@ -172,7 +173,7 @@
 	if(!default_id)
 		var/datum/om/relation/slot/first = defs[1]
 		default_id = first.slot_id
-	accumulators = new /list(length(dq_ledger_measure_ids()) + dq_ledger_tag_words())
+	accumulators = new /list(length(CACHED(ledger_measure_ids, "ids")) + dq_ledger_tag_words())
 
 // the ledger is the containment engine itself; it lets go of its holder.
 DECLARE_REF(/datum/ledger, "holder", BACK, "ledger")
@@ -422,7 +423,8 @@ DECLARE_REF(/datum/ledger, "holder", BACK, "ledger")
 
 /// Aggregate of measure `id` over everything inside, or null.
 /datum/ledger/proc/aggregate(id)
-	var/index = dq_ledger_measure_ids().Find(id)
+	var/list/ids = CACHED(ledger_measure_ids, "ids")
+	var/index = ids.Find(id)
 	if(!index)
 		CRASH("[id] is not a ledger aggregate")
 	var/datum/property_accumulator/acc = accumulators[index]
@@ -433,14 +435,14 @@ DECLARE_REF(/datum/ledger, "holder", BACK, "ledger")
 	var/bit = dq_property_registry().tag_bits[tag]
 	if(isnull(bit))
 		CRASH("unknown tag [tag]")
-	var/datum/property_accumulator/acc = accumulators[length(dq_ledger_measure_ids()) + round(bit / PROP_TAG_WORD_BITS) + 1]
+	var/datum/property_accumulator/acc = accumulators[length(CACHED(ledger_measure_ids, "ids")) + round(bit / PROP_TAG_WORD_BITS) + 1]
 	return (acc?.value() & (1 << (bit % PROP_TAG_WORD_BITS))) ? TRUE : FALSE
 
 /// Mismatches between the ledger and the holder's real contents, and between
 /// the incremental aggregates and a recomputation, as text. Empty when sound.
 /datum/ledger/proc/verify()
 	. = list()
-	var/list/ids = dq_ledger_measure_ids()
+	var/list/ids = CACHED(ledger_measure_ids, "ids")
 	var/list/have = totals()
 	var/list/want = recompute()
 	for(var/i in 1 to length(have))

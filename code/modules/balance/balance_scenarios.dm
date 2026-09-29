@@ -13,19 +13,18 @@
 	id = "baseline"
 	description = "Control: the site's air and an unhurt human over 60 s"
 
-/datum/balance_scenario/baseline/expected_keys()
-	return list(
-		"baseline.site.pressure_kpa",
-		"baseline.site.o2_share",
-		"baseline.healthy.consciousness_after_first_life",
-		"baseline.healthy.sleeping_after_first_life",
-		"baseline.healthy.time_to_unconscious_s",
-		"baseline.healthy.ventilation_end",
-		"baseline.healthy.oxygenation_end",
-		"baseline.healthy.breath_quality_end",
-		"baseline.healthy.oxygen_debt_end",
-		"baseline.healthy.dead",
-	)
+TYPE_TABLE(/datum/balance_scenario/baseline, balance_expected_keys, list( \
+	"baseline.site.pressure_kpa", \
+	"baseline.site.o2_share", \
+	"baseline.healthy.consciousness_after_first_life", \
+	"baseline.healthy.sleeping_after_first_life", \
+	"baseline.healthy.time_to_unconscious_s", \
+	"baseline.healthy.ventilation_end", \
+	"baseline.healthy.oxygenation_end", \
+	"baseline.healthy.breath_quality_end", \
+	"baseline.healthy.oxygen_debt_end", \
+	"baseline.healthy.dead", \
+))
 
 /datum/balance_scenario/baseline/Run()
 	var/datum/gas_mixture/air = site.return_air()
@@ -75,77 +74,71 @@
 
 /// id -> list(class, path, amount source). Amount sources: "force" (a melee
 /// swing), "throwforce" (thrown), "damage" (a projectile).
-/datum/balance_scenario/ttk/proc/weapons()
-	var/static/list/weapons = list(
-		"combat_knife" = list("melee", /obj/item/material/knife/tacknife/combatknife, "force"),
-		"classic_baton" = list("melee", /obj/item/melee/classic_baton, "force"),
-		"toolbox" = list("melee", /obj/item/storage/toolbox, "force"),
-		"spear" = list("melee", /obj/item/material/twohanded/spear, "force"),
-		"stun_baton" = list("melee", /obj/item/melee/baton, "force"),
-		"energy_sword" = list("melee", /obj/item/melee/energy/sword, "force"),
-		"pistol_9mm" = list("ballistic", /obj/item/projectile/bullet/pistol, "damage"),
-		"pistol_45" = list("ballistic", /obj/item/projectile/bullet/pistol/medium, "damage"),
-		"rifle_545" = list("ballistic", /obj/item/projectile/bullet/rifle/a545, "damage"),
-		"rifle_762" = list("ballistic", /obj/item/projectile/bullet/rifle/a762, "damage"),
-		"shotgun_slug" = list("ballistic", /obj/item/projectile/bullet/shotgun, "damage"),
-		"laser" = list("laser", /obj/item/projectile/beam, "damage"),
-		"laser_mid" = list("laser", /obj/item/projectile/beam/midlaser, "damage"),
-		"laser_heavy" = list("laser", /obj/item/projectile/beam/heavylaser, "damage"),
-		"xray" = list("laser", /obj/item/projectile/beam/xray, "damage"),
-		"taser_electrode" = list("energy", /obj/item/projectile/energy/electrode, "damage"),
-		"stun_beam" = list("energy", /obj/item/projectile/beam/stun, "damage"),
-		"plasma_stun" = list("energy", /obj/item/projectile/energy/plasmastun, "damage"),
-		"phase_wave" = list("energy", /obj/item/projectile/energy/phase, "damage"),
-		"thrown_toolbox" = list("thrown", /obj/item/storage/toolbox, "throwforce"),
-		"thrown_spear" = list("thrown", /obj/item/material/twohanded/spear, "throwforce"),
-		"thrown_star" = list("thrown", /obj/item/material/star, "throwforce"),
-		"thrown_shard" = list("thrown", /obj/item/material/shard, "throwforce"),
-	)
-	return weapons
+TYPE_TABLE_DECLARE(/datum/balance_scenario/ttk, balance_ttk_weapons, list( \
+	"combat_knife" = list("melee", /obj/item/material/knife/tacknife/combatknife, "force"), \
+	"classic_baton" = list("melee", /obj/item/melee/classic_baton, "force"), \
+	"toolbox" = list("melee", /obj/item/storage/toolbox, "force"), \
+	"spear" = list("melee", /obj/item/material/twohanded/spear, "force"), \
+	"stun_baton" = list("melee", /obj/item/melee/baton, "force"), \
+	"energy_sword" = list("melee", /obj/item/melee/energy/sword, "force"), \
+	"pistol_9mm" = list("ballistic", /obj/item/projectile/bullet/pistol, "damage"), \
+	"pistol_45" = list("ballistic", /obj/item/projectile/bullet/pistol/medium, "damage"), \
+	"rifle_545" = list("ballistic", /obj/item/projectile/bullet/rifle/a545, "damage"), \
+	"rifle_762" = list("ballistic", /obj/item/projectile/bullet/rifle/a762, "damage"), \
+	"shotgun_slug" = list("ballistic", /obj/item/projectile/bullet/shotgun, "damage"), \
+	"laser" = list("laser", /obj/item/projectile/beam, "damage"), \
+	"laser_mid" = list("laser", /obj/item/projectile/beam/midlaser, "damage"), \
+	"laser_heavy" = list("laser", /obj/item/projectile/beam/heavylaser, "damage"), \
+	"xray" = list("laser", /obj/item/projectile/beam/xray, "damage"), \
+	"taser_electrode" = list("energy", /obj/item/projectile/energy/electrode, "damage"), \
+	"stun_beam" = list("energy", /obj/item/projectile/beam/stun, "damage"), \
+	"plasma_stun" = list("energy", /obj/item/projectile/energy/plasmastun, "damage"), \
+	"phase_wave" = list("energy", /obj/item/projectile/energy/phase, "damage"), \
+	"thrown_toolbox" = list("thrown", /obj/item/storage/toolbox, "throwforce"), \
+	"thrown_spear" = list("thrown", /obj/item/material/twohanded/spear, "throwforce"), \
+	"thrown_star" = list("thrown", /obj/item/material/star, "throwforce"), \
+	"thrown_shard" = list("thrown", /obj/item/material/shard, "throwforce"), \
+))
 
 /// id -> list(mob path, worn item paths...).
-/datum/balance_scenario/ttk/proc/targets()
-	var/static/list/targets = list(
-		"unarmoured" = list(/mob/living/carbon/human),
-		"security_vest" = list(/mob/living/carbon/human, /obj/item/clothing/suit/armor/vest/security),
-		"riot_suit" = list(/mob/living/carbon/human, /obj/item/clothing/suit/armor/riot, /obj/item/clothing/head/helmet/riot),
-		"hardsuit" = list(/mob/living/carbon/human, /obj/item/clothing/suit/space/void/security),
-		"cyborg" = list(/mob/living/silicon/robot),
-		"protean" = list(/mob/living/carbon/human/protean),
-	)
-	return targets
+TYPE_TABLE_DECLARE(/datum/balance_scenario/ttk, balance_ttk_targets, list( \
+	"unarmoured" = list(/mob/living/carbon/human), \
+	"security_vest" = list(/mob/living/carbon/human, /obj/item/clothing/suit/armor/vest/security), \
+	"riot_suit" = list(/mob/living/carbon/human, /obj/item/clothing/suit/armor/riot, /obj/item/clothing/head/helmet/riot), \
+	"hardsuit" = list(/mob/living/carbon/human, /obj/item/clothing/suit/space/void/security), \
+	"cyborg" = list(/mob/living/silicon/robot), \
+	"protean" = list(/mob/living/carbon/human/protean), \
+))
 
-/datum/balance_scenario/ttk/proc/result_names()
-	var/static/list/names = list("hits_to_crit", "time_to_crit_s", "hits_to_kill", "time_to_kill_s", "first_hit_applied")
-	return names
+TYPE_TABLE_DECLARE(/datum/balance_scenario/ttk, balance_ttk_results, list("hits_to_crit", "time_to_crit_s", "hits_to_kill", "time_to_kill_s", "first_hit_applied"))
 
 /datum/balance_scenario/ttk/expected_keys()
 	. = list()
-	for(var/weapon_id in weapons())
+	for(var/weapon_id in TYPE_TABLE_GET(src, balance_ttk_weapons))
 		. += "ttk.[weapon_id].raw_damage"
 		. += "ttk.[weapon_id].seconds_per_hit"
-		for(var/target_id in targets())
-			for(var/name in result_names())
+		for(var/target_id in TYPE_TABLE_GET(src, balance_ttk_targets))
+			for(var/name in TYPE_TABLE_GET(src, balance_ttk_results))
 				. += "ttk.[weapon_id].[target_id].[name]"
-	for(var/target_id in targets())
+	for(var/target_id in TYPE_TABLE_GET(src, balance_ttk_targets))
 		. += "ttk.target.[target_id].equipped"
 
 /datum/balance_scenario/ttk/Run()
 	var/list/equipped = list()
-	for(var/target_id in targets())
+	for(var/target_id in TYPE_TABLE_GET(src, balance_ttk_targets))
 		begin_trial()
 		var/mob/living/probe = make_target(target_id)
 		equipped[target_id] = !!probe
 		record("ttk.target.[target_id].equipped", probe ? 1 : 0)
-	for(var/weapon_id in weapons())
-		for(var/target_id in targets())
+	for(var/weapon_id in TYPE_TABLE_GET(src, balance_ttk_weapons))
+		for(var/target_id in TYPE_TABLE_GET(src, balance_ttk_targets))
 			trial(weapon_id, target_id, equipped[target_id])
 			CHECK_TICK
 	cleanup()
 
 /// Spawns target `target_id` wearing its kit, or null if the kit wouldn't go on.
 /datum/balance_scenario/ttk/proc/make_target(target_id)
-	var/list/spec = targets()[target_id]
+	var/list/spec = TYPE_TABLE_GET(src, balance_ttk_targets)[target_id]
 	var/mob/living/L = spawn_thing(spec[1])
 	for(var/i in 2 to length(spec))
 		var/obj/item/worn = spawn_thing(spec[i])
@@ -157,7 +150,7 @@
 	return L
 
 /datum/balance_scenario/ttk/proc/trial(weapon_id, target_id, target_ok)
-	var/list/spec = weapons()[weapon_id]
+	var/list/spec = TYPE_TABLE_GET(src, balance_ttk_weapons)[weapon_id]
 	begin_trial()
 	var/obj/item/weapon = spawn_thing(spec[2])
 	var/amount = 0
@@ -178,7 +171,7 @@
 	var/prefix = "ttk.[weapon_id].[target_id]"
 	var/mob/living/L = target_ok ? make_target(target_id) : null
 	if(!L)
-		for(var/name in result_names())
+		for(var/name in TYPE_TABLE_GET(src, balance_ttk_results))
 			record("[prefix].[name]", null)
 		return
 	var/zone = ishuman(L) ? BP_TORSO : null
@@ -230,45 +223,39 @@
 	description = "Bleed-out time per wound type: untreated, gauze, hemostatic gauze, tourniquet"
 
 /// id -> list(wound path, initial damage: the wound's first stage).
-/datum/balance_scenario/bleedout/proc/wounds()
-	var/static/list/wounds = list(
-		"cut_small" = list(/datum/affliction/wound/cut/small, 20),
-		"cut_deep" = list(/datum/affliction/wound/cut/deep, 25),
-		"cut_flesh" = list(/datum/affliction/wound/cut/flesh, 35),
-		"cut_gaping" = list(/datum/affliction/wound/cut/gaping, 50),
-		"cut_massive" = list(/datum/affliction/wound/cut/massive, 70),
-		"puncture_flesh" = list(/datum/affliction/wound/puncture/flesh, 15),
-		"puncture_gaping" = list(/datum/affliction/wound/puncture/gaping, 30),
-		"puncture_massive" = list(/datum/affliction/wound/puncture/massive, 60),
-		"bruise_huge" = list(/datum/affliction/wound/bruise, 50),
-		"arterial" = list(/datum/affliction/wound/internal_bleeding, 30),
-	)
-	return wounds
+TYPE_TABLE_DECLARE(/datum/balance_scenario/bleedout, balance_bleedout_wounds, list( \
+	"cut_small" = list(/datum/affliction/wound/cut/small, 20), \
+	"cut_deep" = list(/datum/affliction/wound/cut/deep, 25), \
+	"cut_flesh" = list(/datum/affliction/wound/cut/flesh, 35), \
+	"cut_gaping" = list(/datum/affliction/wound/cut/gaping, 50), \
+	"cut_massive" = list(/datum/affliction/wound/cut/massive, 70), \
+	"puncture_flesh" = list(/datum/affliction/wound/puncture/flesh, 15), \
+	"puncture_gaping" = list(/datum/affliction/wound/puncture/gaping, 30), \
+	"puncture_massive" = list(/datum/affliction/wound/puncture/massive, 60), \
+	"bruise_huge" = list(/datum/affliction/wound/bruise, 50), \
+	"arterial" = list(/datum/affliction/wound/internal_bleeding, 30), \
+))
 
-/datum/balance_scenario/bleedout/proc/treatments()
-	var/static/list/treatments = list("untreated", "gauze", "hemostatic_gauze", "tourniquet")
-	return treatments
+TYPE_TABLE_DECLARE(/datum/balance_scenario/bleedout, balance_bleedout_treatments, list("untreated", "gauze", "hemostatic_gauze", "tourniquet"))
 
-/datum/balance_scenario/bleedout/proc/result_names()
-	var/static/list/names = list("bleeding_after_treatment", "time_to_unconscious_s", "time_to_death_s", "blood_fraction_end")
-	return names
+TYPE_TABLE_DECLARE(/datum/balance_scenario/bleedout, balance_bleedout_results, list("bleeding_after_treatment", "time_to_unconscious_s", "time_to_death_s", "blood_fraction_end"))
 
 /datum/balance_scenario/bleedout/expected_keys()
 	. = list()
-	for(var/wound_id in wounds())
-		for(var/treatment in treatments())
-			for(var/name in result_names())
+	for(var/wound_id in TYPE_TABLE_GET(src, balance_bleedout_wounds))
+		for(var/treatment in TYPE_TABLE_GET(src, balance_bleedout_treatments))
+			for(var/name in TYPE_TABLE_GET(src, balance_bleedout_results))
 				. += "bleedout.[wound_id].[treatment].[name]"
 
 /datum/balance_scenario/bleedout/Run()
-	for(var/wound_id in wounds())
-		for(var/treatment in treatments())
+	for(var/wound_id in TYPE_TABLE_GET(src, balance_bleedout_wounds))
+		for(var/treatment in TYPE_TABLE_GET(src, balance_bleedout_treatments))
 			trial(wound_id, treatment)
 			CHECK_TICK
 	cleanup()
 
 /datum/balance_scenario/bleedout/proc/trial(wound_id, treatment)
-	var/list/spec = wounds()[wound_id]
+	var/list/spec = TYPE_TABLE_GET(src, balance_bleedout_wounds)[wound_id]
 	begin_trial()
 	var/prefix = "bleedout.[wound_id].[treatment]"
 	var/mob/living/carbon/human/H = spawn_thing(/mob/living/carbon/human)
@@ -317,28 +304,22 @@
 	id = "hypoxia"
 	description = "Hypoxia timeline (unconscious, brain lesion, brain death, death) with none, BVM or CPR"
 
-/datum/balance_scenario/hypoxia/proc/causes()
-	var/static/list/causes = list("airway_obstruction", "respiratory_arrest", "cardiac_arrest_vf")
-	return causes
+TYPE_TABLE_DECLARE(/datum/balance_scenario/hypoxia, balance_hypoxia_causes, list("airway_obstruction", "respiratory_arrest", "cardiac_arrest_vf"))
 
-/datum/balance_scenario/hypoxia/proc/interventions()
-	var/static/list/interventions = list("none", "bvm", "cpr")
-	return interventions
+TYPE_TABLE_DECLARE(/datum/balance_scenario/hypoxia, balance_hypoxia_interventions, list("none", "bvm", "cpr"))
 
-/datum/balance_scenario/hypoxia/proc/result_names()
-	var/static/list/names = list("time_to_unconscious_s", "time_to_brain_lesion_s", "time_to_brain_death_s", "time_to_death_s", "oxygen_debt_end", "brain_damage_end")
-	return names
+TYPE_TABLE_DECLARE(/datum/balance_scenario/hypoxia, balance_hypoxia_results, list("time_to_unconscious_s", "time_to_brain_lesion_s", "time_to_brain_death_s", "time_to_death_s", "oxygen_debt_end", "brain_damage_end"))
 
 /datum/balance_scenario/hypoxia/expected_keys()
 	. = list()
-	for(var/cause in causes())
-		for(var/intervention in interventions())
-			for(var/name in result_names())
+	for(var/cause in TYPE_TABLE_GET(src, balance_hypoxia_causes))
+		for(var/intervention in TYPE_TABLE_GET(src, balance_hypoxia_interventions))
+			for(var/name in TYPE_TABLE_GET(src, balance_hypoxia_results))
 				. += "hypoxia.[cause].[intervention].[name]"
 
 /datum/balance_scenario/hypoxia/Run()
-	for(var/cause in causes())
-		for(var/intervention in interventions())
+	for(var/cause in TYPE_TABLE_GET(src, balance_hypoxia_causes))
+		for(var/intervention in TYPE_TABLE_GET(src, balance_hypoxia_interventions))
 			trial(cause, intervention)
 			CHECK_TICK
 	cleanup()
@@ -410,44 +391,38 @@
 	description = "Time to treat standard conditions with standard chems, and single-use tool efficacy"
 
 /// condition -> list(treatment -> reagent id or null for the untreated control, dose).
-/datum/balance_scenario/treatment/proc/conditions()
-	var/static/list/conditions = list(
-		"trauma_40" = list("none" = null, "bicaridine" = list(REAGENT_ID_BICARIDINE, 15), "tricordrazine" = list(REAGENT_ID_TRICORDRAZINE, 15)),
-		"burn_40" = list("none" = null, "kelotane" = list(REAGENT_ID_KELOTANE, 15), "dermaline" = list(REAGENT_ID_DERMALINE, 15)),
-		"toxin_30" = list("none" = null, "dylovene" = list(REAGENT_ID_ANTITOXIN, 15)),
-		"oxygen_debt_40" = list("none" = null, "dexalin" = list(REAGENT_ID_DEXALIN, 15)),
-		"brain_30" = list("none" = null, "alkysine" = list(REAGENT_ID_ALKYSINE, 10)),
-		"heart_20" = list("none" = null, "peridaxon" = list(REAGENT_ID_PERIDAXON, 10)),
-		"pain_60" = list("none" = null, "tramadol" = list(REAGENT_ID_TRAMADOL, 10)),
-	)
-	return conditions
+TYPE_TABLE_DECLARE(/datum/balance_scenario/treatment, balance_treatment_conditions, list( \
+	"trauma_40" = list("none" = null, "bicaridine" = list(REAGENT_ID_BICARIDINE, 15), "tricordrazine" = list(REAGENT_ID_TRICORDRAZINE, 15)), \
+	"burn_40" = list("none" = null, "kelotane" = list(REAGENT_ID_KELOTANE, 15), "dermaline" = list(REAGENT_ID_DERMALINE, 15)), \
+	"toxin_30" = list("none" = null, "dylovene" = list(REAGENT_ID_ANTITOXIN, 15)), \
+	"oxygen_debt_40" = list("none" = null, "dexalin" = list(REAGENT_ID_DEXALIN, 15)), \
+	"brain_30" = list("none" = null, "alkysine" = list(REAGENT_ID_ALKYSINE, 10)), \
+	"heart_20" = list("none" = null, "peridaxon" = list(REAGENT_ID_PERIDAXON, 10)), \
+	"pain_60" = list("none" = null, "tramadol" = list(REAGENT_ID_TRAMADOL, 10)), \
+))
 
-/datum/balance_scenario/treatment/proc/tools()
-	var/static/list/tools = list("hemostatic_gauze_stops_bleed", "airway_kit_clears_obstruction", "defibrillator_converts_vf", "tourniquet_stops_arterial_bleed")
-	return tools
+TYPE_TABLE_DECLARE(/datum/balance_scenario/treatment, balance_treatment_tools, list("hemostatic_gauze_stops_bleed", "airway_kit_clears_obstruction", "defibrillator_converts_vf", "tourniquet_stops_arterial_bleed"))
 
-/datum/balance_scenario/treatment/proc/result_names()
-	var/static/list/names = list("start", "remaining_share_at_120s", "time_to_treated_s")
-	return names
+TYPE_TABLE_DECLARE(/datum/balance_scenario/treatment, balance_treatment_results, list("start", "remaining_share_at_120s", "time_to_treated_s"))
 
 /datum/balance_scenario/treatment/expected_keys()
 	. = list()
-	var/list/conditions = conditions()
+	var/list/conditions = TYPE_TABLE_GET(src, balance_treatment_conditions)
 	for(var/condition in conditions)
 		for(var/treatment in conditions[condition])
-			for(var/name in result_names())
+			for(var/name in TYPE_TABLE_GET(src, balance_treatment_results))
 				. += "treatment.[condition].[treatment].[name]"
-	for(var/tool in tools())
+	for(var/tool in TYPE_TABLE_GET(src, balance_treatment_tools))
 		. += "treatment.tool.[tool]"
 
 /datum/balance_scenario/treatment/Run()
-	var/list/conditions = conditions()
+	var/list/conditions = TYPE_TABLE_GET(src, balance_treatment_conditions)
 	for(var/condition in conditions)
 		var/list/treatments = conditions[condition]
 		for(var/treatment in treatments)
 			trial(condition, treatment, treatments[treatment])
 			CHECK_TICK
-	for(var/tool in tools())
+	for(var/tool in TYPE_TABLE_GET(src, balance_treatment_tools))
 		record("treatment.tool.[tool]", tool_trial(tool) ? 1 : 0, "resolved")
 	cleanup()
 
@@ -562,31 +537,27 @@
 	id = "digestion"
 	description = "Totals per belly mode over 60 s"
 
-/datum/balance_scenario/digestion/proc/modes()
-	var/static/list/modes = list(
-		"hold" = DM_HOLD,
-		"digest" = DM_DIGEST,
-		"absorb" = DM_ABSORB,
-		"drain" = DM_DRAIN,
-		"shrink" = DM_SHRINK,
-		"grow" = DM_GROW,
-		"size_steal" = DM_SIZE_STEAL,
-		"heal" = DM_HEAL,
-	)
-	return modes
+TYPE_TABLE_DECLARE(/datum/balance_scenario/digestion, balance_digestion_modes, list( \
+	"hold" = DM_HOLD, \
+	"digest" = DM_DIGEST, \
+	"absorb" = DM_ABSORB, \
+	"drain" = DM_DRAIN, \
+	"shrink" = DM_SHRINK, \
+	"grow" = DM_GROW, \
+	"size_steal" = DM_SIZE_STEAL, \
+	"heal" = DM_HEAL, \
+))
 
-/datum/balance_scenario/digestion/proc/result_names()
-	var/static/list/names = list("prey_injury_delta", "prey_nutrition_delta", "pred_nutrition_delta", "prey_size_delta", "prey_absorbed", "prey_dead")
-	return names
+TYPE_TABLE_DECLARE(/datum/balance_scenario/digestion, balance_digestion_results, list("prey_injury_delta", "prey_nutrition_delta", "pred_nutrition_delta", "prey_size_delta", "prey_absorbed", "prey_dead"))
 
 /datum/balance_scenario/digestion/expected_keys()
 	. = list()
-	for(var/mode_id in modes())
-		for(var/name in result_names())
+	for(var/mode_id in TYPE_TABLE_GET(src, balance_digestion_modes))
+		for(var/name in TYPE_TABLE_GET(src, balance_digestion_results))
 			. += "digestion.[mode_id].[name]"
 
 /datum/balance_scenario/digestion/Run()
-	for(var/mode_id in modes())
+	for(var/mode_id in TYPE_TABLE_GET(src, balance_digestion_modes))
 		trial(mode_id)
 		CHECK_TICK
 	cleanup()
@@ -600,7 +571,7 @@
 	var/obj/belly/B = pred.vore_selected
 	if(!B)
 		note("[mode_id]: the predator has no belly")
-		for(var/name in result_names())
+		for(var/name in TYPE_TABLE_GET(src, balance_digestion_results))
 			record("[prefix].[name]", null)
 		return
 	pred.set_nutrition(300)
@@ -608,7 +579,7 @@
 	if(mode_id == "heal")
 		prey.injure(INJURY_BLUNT, BALANCE_DIGEST_HEAL_INJURY, BP_TORSO)
 		live(prey)
-	B.digest_mode = modes()[mode_id]
+	B.digest_mode = TYPE_TABLE_GET(src, balance_digestion_modes)[mode_id]
 	B.nom_atom(prey, pred)
 	if(prey.loc != B)
 		note("[mode_id]: the prey would not go in")
@@ -644,28 +615,24 @@
 	description = "Survival time of a dying patient without and with stasis"
 
 /// id -> stasis modifier path (null: none).
-/datum/balance_scenario/stasis/proc/levels()
-	var/static/list/levels = list(
-		"none" = null,
-		"light" = /datum/body_effect/stasis/light,
-		"moderate" = /datum/body_effect/stasis/moderate,
-		"deep" = /datum/body_effect/stasis/deep,
-	)
-	return levels
+TYPE_TABLE_DECLARE(/datum/balance_scenario/stasis, balance_stasis_levels, list( \
+	"none" = null, \
+	"light" = /datum/body_effect/stasis/light, \
+	"moderate" = /datum/body_effect/stasis/moderate, \
+	"deep" = /datum/body_effect/stasis/deep, \
+))
 
-/datum/balance_scenario/stasis/proc/result_names()
-	var/static/list/names = list("time_to_unconscious_s", "time_to_death_s", "survival_multiplier")
-	return names
+TYPE_TABLE_DECLARE(/datum/balance_scenario/stasis, balance_stasis_results, list("time_to_unconscious_s", "time_to_death_s", "survival_multiplier"))
 
 /datum/balance_scenario/stasis/expected_keys()
 	. = list()
-	for(var/level in levels())
-		for(var/name in result_names())
+	for(var/level in TYPE_TABLE_GET(src, balance_stasis_levels))
+		for(var/name in TYPE_TABLE_GET(src, balance_stasis_results))
 			. += "stasis.[level].[name]"
 
 /datum/balance_scenario/stasis/Run()
 	var/baseline
-	for(var/level in levels())
+	for(var/level in TYPE_TABLE_GET(src, balance_stasis_levels))
 		var/died_at = trial(level)
 		if(level == "none")
 			baseline = died_at
@@ -684,7 +651,7 @@
 	var/obj/item/organ/external/leg = H.get_organ(BP_L_LEG)
 	chest.add_wound(new /datum/affliction/wound/internal_bleeding(chest, 30))
 	leg.add_wound(new /datum/affliction/wound/cut/massive(leg, 70))
-	var/stasis_type = levels()[level]
+	var/stasis_type = TYPE_TABLE_GET(src, balance_stasis_levels)[level]
 	if(stasis_type)
 		H.set_stasis(stasis_type, src)
 	var/unconscious_at

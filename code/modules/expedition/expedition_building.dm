@@ -215,30 +215,30 @@
 // Each room gets a theme and a light scatter of matching furniture (kept under
 // a third of the floor so the room stays walkable). Crates may hold loot.
 
+GLOBAL_LIST_INIT(expedition_room_furniture, list(
+	"storage" = list(
+		/obj/structure/closet/crate,
+		/obj/structure/closet/crate,
+		/obj/structure/closet,
+		/obj/structure/table/standard,
+	),
+	"quarters" = list(
+		/obj/structure/bed,
+		/obj/structure/bed/chair,
+		/obj/structure/table/standard,
+		/obj/structure/closet,
+	),
+	"work" = list(
+		/obj/structure/table/standard,
+		/obj/structure/table/standard,
+		/obj/structure/bed/chair,
+		/obj/structure/closet,
+	),
+))
+
+/// The furniture palette for a room theme (shared, read-only), or null for "empty".
 /datum/expedition_building/proc/furniture_for(theme)
-	switch(theme)
-		if("storage")
-			return list(
-				/obj/structure/closet/crate,
-				/obj/structure/closet/crate,
-				/obj/structure/closet,
-				/obj/structure/table/standard,
-			)
-		if("quarters")
-			return list(
-				/obj/structure/bed,
-				/obj/structure/bed/chair,
-				/obj/structure/table/standard,
-				/obj/structure/closet,
-			)
-		if("work")
-			return list(
-				/obj/structure/table/standard,
-				/obj/structure/table/standard,
-				/obj/structure/bed/chair,
-				/obj/structure/closet,
-			)
-	return null // "empty"
+	return GLOB.expedition_room_furniture[theme]
 
 /datum/expedition_building/proc/furnish_rooms()
 	for(var/list/r in rooms)

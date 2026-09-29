@@ -81,4 +81,4 @@
 	apply_body_effect(/datum/body_effect/berserk, 30 SECONDS)
 
 /datum/decl/mob_organ_names/savik
-	hit_zones = list("head", "torso", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "right bone plate", "left bone plate", "tail", "left claw", "right claw")
+TYPE_TABLE(/datum/decl/mob_organ_names/savik, mob_organ_hit_zones, list("head", "torso", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "right bone plate", "left bone plate", "tail", "left claw", "right claw"))

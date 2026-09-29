@@ -156,4 +156,4 @@ DECLARE_REF(/mob/living/simple_mob/blob/spore, "infested", HELD, null)
 	return damage_to_do
 
 /datum/decl/mob_organ_names/spore
-	hit_zones = list("sporangium", "stolon", "sporangiophore")
+TYPE_TABLE(/datum/decl/mob_organ_names/spore, mob_organ_hit_zones, list("sporangium", "stolon", "sporangiophore"))

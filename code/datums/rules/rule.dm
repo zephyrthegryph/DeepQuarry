@@ -313,18 +313,19 @@
 // ---- Registry ----
 
 /// Every compiled rule singleton: type -> /datum/rule.
-/proc/dq_rules()
-	var/static/list/rules
-	if(!rules)
-		rules = list()
-		for(var/path in subtypesof(/datum/rule))
-			var/datum/rule/rule = new path
-			if(rule.test_only || rule.type == rule.abstract_type)
-				continue
-			if(!rule.compile())
-				stack_trace("rule [path] failed to compile: [jointext(rule.errors, "; ")]")
-				continue
-			rules[path] = rule
+GLOBAL_TABLE(dq_rules, GLOBAL_PROC_REF(build_dq_rules))
+
+/proc/build_dq_rules()
+	var/list/rules
+	rules = list()
+	for(var/path in subtypesof(/datum/rule))
+		var/datum/rule/rule = new path
+		if(rule.test_only || rule.type == rule.abstract_type)
+			continue
+		if(!rule.compile())
+			stack_trace("rule [path] failed to compile: [jointext(rule.errors, "; ")]")
+			continue
+		rules[path] = rule
 	return rules
 
 /// A compiled test-only rule singleton.
@@ -346,7 +347,7 @@ DECLARE_SHARED_CACHE(rules_for_type, GLOBAL_PROC_REF(build_rules_for_type), SC_N
 
 /proc/build_rules_for_type(path)
 	var/list/found
-	var/list/rules = dq_rules()
+	var/list/rules = GLOBAL_TABLE_GET(dq_rules)
 	for(var/rule_path in rules)
 		var/datum/rule/rule = rules[rule_path]
 		if(!dq_rule_applies(rule, path))

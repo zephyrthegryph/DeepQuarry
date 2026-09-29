@@ -4,48 +4,46 @@
 	icon = 'icons/obj/casino_ch.dmi'
 	icon_state = "casinowallet_black"
 
-/obj/item/storage/wallet/casino/hold_constraint()
-	var/list/holds = list(
-		/obj/item/spacecash,
-		/obj/item/card,
-		/obj/item/clothing/mask/smokable/cigarette/,
-		/obj/item/flashlight/pen,
-		/obj/item/tape,
-		/obj/item/cartridge,
-		/obj/item/encryptionkey,
-		/obj/item/seeds,
-		/obj/item/stack/medical,
-		/obj/item/coin,
-		/obj/item/dice,
-		/obj/item/disk,
-		/obj/item/implanter,
-		/obj/item/flame/lighter,
-		/obj/item/flame/match,
-		/obj/item/forensics,
-		/obj/item/glass_extra,
-		/obj/item/haircomb,
-		/obj/item/hand,
-		/obj/item/key,
-		/obj/item/lipstick,
-		/obj/item/paper,
-		/obj/item/pen,
-		/obj/item/photo,
-		/obj/item/reagent_containers/dropper,
-		/obj/item/sample,
-		/obj/item/tool/screwdriver,
-		/obj/item/stamp,
-		/obj/item/clothing/accessory/permit,
-		/obj/item/clothing/accessory/badge,
-		/obj/item/makeover,
-		/obj/item/spacecasinocash,
-		/obj/item/casino_platinum_chip,
-		/obj/item/deck,
-		/obj/item/book/codex/casino,
-		/obj/item/storage/pill_bottle/dice,
-		/obj/item/storage/pill_bottle/dice_nerd,
-		/obj/item/storage/dicecup/loaded
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/wallet/casino, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/spacecash, \
+		/obj/item/card, \
+		/obj/item/clothing/mask/smokable/cigarette/, \
+		/obj/item/flashlight/pen, \
+		/obj/item/tape, \
+		/obj/item/cartridge, \
+		/obj/item/encryptionkey, \
+		/obj/item/seeds, \
+		/obj/item/stack/medical, \
+		/obj/item/coin, \
+		/obj/item/dice, \
+		/obj/item/disk, \
+		/obj/item/implanter, \
+		/obj/item/flame/lighter, \
+		/obj/item/flame/match, \
+		/obj/item/forensics, \
+		/obj/item/glass_extra, \
+		/obj/item/haircomb, \
+		/obj/item/hand, \
+		/obj/item/key, \
+		/obj/item/lipstick, \
+		/obj/item/paper, \
+		/obj/item/pen, \
+		/obj/item/photo, \
+		/obj/item/reagent_containers/dropper, \
+		/obj/item/sample, \
+		/obj/item/tool/screwdriver, \
+		/obj/item/stamp, \
+		/obj/item/clothing/accessory/permit, \
+		/obj/item/clothing/accessory/badge, \
+		/obj/item/makeover, \
+		/obj/item/spacecasinocash, \
+		/obj/item/casino_platinum_chip, \
+		/obj/item/deck, \
+		/obj/item/book/codex/casino, \
+		/obj/item/storage/pill_bottle/dice, \
+		/obj/item/storage/pill_bottle/dice_nerd, \
+		/obj/item/storage/dicecup/loaded \
+		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/wallet/casino/proc/casino_toggle_design_effect(mob/user, obj/item/held, datum/interaction/interaction)
 

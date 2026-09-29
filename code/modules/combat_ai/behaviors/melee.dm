@@ -135,11 +135,9 @@ OM_TIMER_SLOT(/datum/ai_behavior/charge_slam, dash)
 			L.apply_effect(2, WEAKEN)
 	brain.stop_active(DQ_BEHAVIOR_STOP_COMPLETED)
 
-/datum/ai_behavior/charge_slam/get_player_verb_info()
-	var/static/list/L = list(
-		"name" = "Charge Slam",
-		"desc" = "Crouch, then dash at a target for heavy damage.",
-		"category" = "Combat",
-		"auto_target" = FALSE,
-	)
-	return L
+TYPE_TABLE(/datum/ai_behavior/charge_slam, get_player_verb_info, list( \
+		"name" = "Charge Slam", \
+		"desc" = "Crouch, then dash at a target for heavy damage.", \
+		"category" = "Combat", \
+		"auto_target" = FALSE, \
+	))

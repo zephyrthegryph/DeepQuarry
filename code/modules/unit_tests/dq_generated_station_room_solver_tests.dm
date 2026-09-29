@@ -124,8 +124,7 @@
 	max_height = 255
 	allow_narrow_irregular = TRUE
 
-/datum/generated_room_definition/test_impossible/build_required_features()
-	return list(/datum/generated_room_feature/test_impossible_dependency)
+TYPE_TABLE(/datum/generated_room_definition/test_impossible, build_required_features, list(/datum/generated_room_feature/test_impossible_dependency))
 
 /datum/generated_station_materializer/test_impossible_room
 

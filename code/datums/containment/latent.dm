@@ -103,7 +103,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	return CACHED(latent_type_snapshot, path) || null
 
 /proc/build_latent_type_snapshot(path)
-	var/list/ids = dq_ledger_measure_ids()
+	var/list/ids = CACHED(ledger_measure_ids, "ids")
 	var/count = length(ids)
 	var/words = dq_ledger_tag_words()
 	var/list/snapshot = new /list(count + words)
@@ -127,7 +127,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	. = unit.Copy()
 	if(n == 1)
 		return .
-	var/count = length(dq_ledger_measure_ids())
+	var/count = length(CACHED(ledger_measure_ids, "ids"))
 	for(var/i in 1 to count)
 		var/value = unit[i]
 		if(isnull(value))

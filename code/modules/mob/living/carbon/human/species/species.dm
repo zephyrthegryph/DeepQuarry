@@ -422,9 +422,7 @@
 /// Names of list vars that subtypes override but nothing edits in place. Every
 /// instance of a species type shares the first instance's lists (one per human
 /// plus one in GLOB.all_species), so writers must assign a new list, never edit.
-/datum/species/proc/shared_table_vars()
-	var/static/list/names = list("assisted_langs", "unarmed_types", "cold_discomfort_strings", "heat_discomfort_strings", "has_organ", "genders", "secondary_langs", "inherent_verbs", "default_emotes", "speech_sounds", "species_component")
-	return names
+TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "unarmed_types", "cold_discomfort_strings", "heat_discomfort_strings", "has_organ", "genders", "secondary_langs", "inherent_verbs", "default_emotes", "speech_sounds", "species_component"))
 
 /datum/species/proc/share_type_tables()
 	var/static/list/tables_by_type = list()
@@ -434,7 +432,7 @@
 			vars[name] = shared[name] // ALLOW(api): species copy and shared-list interning
 		return
 	shared = list()
-	for(var/name in shared_table_vars())
+	for(var/name in TYPE_TABLE_GET(src, shared_table_vars))
 		shared[name] = vars[name]
 	tables_by_type[type] = shared
 

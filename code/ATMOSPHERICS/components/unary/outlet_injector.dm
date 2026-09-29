@@ -188,7 +188,7 @@
 	return TRUE
 
 /obj/machinery/atmospherics/unary/outlet_injector/multitool_act(mob/user, obj/item/W)
-	var/list/options = list("Frequency", "ID Tag", "-SAVE TO BUFFER-", "Cancel")
+	var/static/list/options = list("Frequency", "ID Tag", "-SAVE TO BUFFER-", "Cancel")
 	var/answer = rerun_ask(user, "k197", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/choice/alert, message = "[src] has an ID of \"[id]\" and a frequency of [frequency]. What would you like to change?", title = "Options!", choices = options)
 	if(isnull(answer))
 		return ITEM_INTERACT_BLOCKING

@@ -32,14 +32,15 @@
  * whatever BYOND counts. The counting loops go by index so no loop variable
  * holds a node.
  */
-/proc/state_refcount_overhead()
-	var/static/list/overhead
-	if(!overhead)
-		var/datum/state_refcount_probe/probe = new
-		// One reference is this proc's `probe` variable, standing in for held_refs = 1.
-		overhead = probe.measure_refcount_overhead()
-		overhead[1] -= 1
-		qdel(probe)
+GLOBAL_TABLE(state_refcount_overhead, GLOBAL_PROC_REF(build_state_refcount_overhead))
+
+/proc/build_state_refcount_overhead()
+	var/list/overhead
+	var/datum/state_refcount_probe/probe = new
+	// One reference is this proc's `probe` variable, standing in for held_refs = 1.
+	overhead = probe.measure_refcount_overhead()
+	overhead[1] -= 1
+	qdel(probe)
 	return overhead
 
 /datum/state_refcount_probe/proc/measure_refcount_overhead()
@@ -138,7 +139,7 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 /// Compares refcount() of each object in the subtree with the references accounted for.
 /proc/state_refcount_blockers(list/nodes, list/internal, held_refs, name_holders = FALSE)
 	. = list()
-	var/list/overhead = state_refcount_overhead()
+	var/list/overhead = GLOBAL_TABLE_GET(state_refcount_overhead)
 	for(var/i in 1 to length(nodes))
 		var/extra = state_refcount_excess(nodes, internal, i) - (i == 1 ? overhead[1] + held_refs : overhead[2])
 		if(extra > 0)

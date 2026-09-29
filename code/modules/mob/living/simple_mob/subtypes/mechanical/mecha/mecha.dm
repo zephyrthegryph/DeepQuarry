@@ -135,4 +135,4 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/mecha, INTERACT_ITEM(null,
 	..(severity)
 
 /datum/decl/mob_organ_names/mecha
-	hit_zones = list("central chassis", "control module", "hydraulics", "left arm", "right arm", "left leg", "right leg", "sensor suite", "radiator", "power supply", "left equipment mount", "right equipment mount")
+TYPE_TABLE(/datum/decl/mob_organ_names/mecha, mob_organ_hit_zones, list("central chassis", "control module", "hydraulics", "left arm", "right arm", "left leg", "right leg", "sensor suite", "radiator", "power supply", "left equipment mount", "right equipment mount"))

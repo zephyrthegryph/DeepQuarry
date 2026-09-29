@@ -31,19 +31,17 @@
 		ai_brain.returns_home = TRUE
 		ai_brain.max_home_distance = 1   // never stray far from water unless infesting
 
-/mob/living/simple_mob/animal/sif/leech/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/leech_seek_water,
-		/datum/ai_behavior/leech_infest,
-		/datum/ai_behavior/leech_poison,
-		/datum/ai_behavior/melee_attack,
-		/datum/ai_behavior/maul_unconscious,
-		/datum/ai_behavior/retaliate_to_attacker,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/return_home,
-		/datum/ai_behavior/idle_wander,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/animal/sif/leech, get_ai_behaviors, list( \
+	/datum/ai_behavior/leech_seek_water, \
+	/datum/ai_behavior/leech_infest, \
+	/datum/ai_behavior/leech_poison, \
+	/datum/ai_behavior/melee_attack, \
+	/datum/ai_behavior/maul_unconscious, \
+	/datum/ai_behavior/retaliate_to_attacker, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/return_home, \
+	/datum/ai_behavior/idle_wander, \
+))
 
 // ---------------------------------------------------------------------------
 // Shared helper — does the leech currently want to be in water? (No host, and

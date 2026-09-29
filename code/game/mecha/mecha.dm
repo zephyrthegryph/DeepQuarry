@@ -108,13 +108,6 @@
 		MECH_GAS = null,
 		MECH_ELECTRIC = null
 		)
-	var/list/starting_components = list( // ALLOW(instance_list): c: read-only per-subtype constant table (9 subtype overrides); a getter would share it, not worth it on a rare type
-		/obj/item/mecha_parts/component/hull,
-		/obj/item/mecha_parts/component/actuator,
-		/obj/item/mecha_parts/component/armor,
-		/obj/item/mecha_parts/component/gas,
-		/obj/item/mecha_parts/component/electrical
-		)
 
 //Working exosuit vars
 	var/list/cargo
@@ -183,6 +176,14 @@
 	var/list/micro_utility_equipment
 	var/list/micro_weapon_equipment
 
+TYPE_TABLE_DECLARE(/obj/mecha, mecha_starting_components, list( \
+		/obj/item/mecha_parts/component/hull, \
+		/obj/item/mecha_parts/component/actuator, \
+		/obj/item/mecha_parts/component/armor, \
+		/obj/item/mecha_parts/component/gas, \
+		/obj/item/mecha_parts/component/electrical \
+		))
+
 REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 // Actions and effect systems: declared children (new type(src)); an action's target is the mecha.
@@ -208,7 +209,7 @@ DECLARE_PERIODIC(/obj/mecha, PERIODIC_SLOW)
 /obj/mecha/Initialize(mapload)
 	. = ..()
 
-	for(var/path in starting_components)
+	for(var/path in TYPE_TABLE_GET(src, mecha_starting_components))
 		var/obj/item/mecha_parts/component/C = new path(src)
 		C.attach(src)
 

@@ -264,7 +264,8 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 	icon_dead = "brittany_dead"
 
 /datum/decl/mob_organ_names/corgi
-	hit_zones = list("head", "body", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "tail", "heart") //You monster.
+//You monster.
+TYPE_TABLE(/datum/decl/mob_organ_names/corgi, mob_organ_hit_zones, list("head", "body", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "tail", "heart"))
 
 DECLARE_REF(/mob/living/simple_mob/animal/passive/dog, "inventory_head", SPILL, null)
 DECLARE_REF(/mob/living/simple_mob/animal/passive/dog, "inventory_back", SPILL, null)

@@ -121,9 +121,7 @@
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 	resistance_flags = FIRE_PROOF
 
-/obj/item/clothing/gloves/vox/fit_constraint()
-	var/list/bodytypes = list("Vox")
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/gloves/vox, fit_spec, list(REQ_FITS_BODYTYPES(list("Vox"))))
 
 /obj/item/clothing/gloves/ranger
 	var/glovecolor = "white"

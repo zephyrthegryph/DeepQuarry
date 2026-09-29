@@ -8,9 +8,7 @@
 	flags_inv = HIDEHOLSTER
 	armor_spec = "bio=50"
 
-/obj/item/clothing/suit/storage/toggle/labcoat/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/labcoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL))))
 
 /obj/item/clothing/suit/storage/toggle/labcoat/red
 	name = "red labcoat"

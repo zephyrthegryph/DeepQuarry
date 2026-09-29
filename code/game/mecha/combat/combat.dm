@@ -15,13 +15,14 @@
 
 	encumbrance_gap = 1.5
 
-	starting_components = list(
-		/obj/item/mecha_parts/component/hull/durable,
-		/obj/item/mecha_parts/component/actuator,
-		/obj/item/mecha_parts/component/armor/reinforced,
-		/obj/item/mecha_parts/component/gas,
-		/obj/item/mecha_parts/component/electrical
-		)
+TYPE_TABLE(/obj/mecha/combat, mecha_starting_components, list( \
+		/obj/item/mecha_parts/component/hull/durable, \
+		/obj/item/mecha_parts/component/actuator, \
+		/obj/item/mecha_parts/component/armor/reinforced, \
+		/obj/item/mecha_parts/component/gas, \
+		/obj/item/mecha_parts/component/electrical \
+		))
+
 
 /*
 /obj/mecha/combat/range_action(target as obj|mob|turf)

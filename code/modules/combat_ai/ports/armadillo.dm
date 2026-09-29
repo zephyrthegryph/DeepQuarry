@@ -17,16 +17,14 @@
 	// Docile: never aggresses on sight, only fights back when struck.
 	ai_attack_on_sight = FALSE
 
-/mob/living/simple_mob/animal/passive/armadillo/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/retaliate_to_attacker,
-		/datum/ai_behavior/flee_low_hp,
-		/datum/ai_behavior/melee_attack,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/idle_wander,
-		/datum/ai_behavior/idle_speak,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/animal/passive/armadillo, get_ai_behaviors, list( \
+	/datum/ai_behavior/retaliate_to_attacker, \
+	/datum/ai_behavior/flee_low_hp, \
+	/datum/ai_behavior/melee_attack, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/idle_wander, \
+	/datum/ai_behavior/idle_speak, \
+))
 
 // ---------------------------------------------------------------------------
 // Torta — voice-triggered growth. Hearing "grande" grows it a hair.

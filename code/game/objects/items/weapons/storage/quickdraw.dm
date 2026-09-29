@@ -85,10 +85,8 @@ EXTEND_INTERACTIONS(/obj/item/storage/quickdraw, \
 		/obj/item/reagent_containers/syringe
 	)
 
-/obj/item/storage/quickdraw/syringe_case/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/syringe, /obj/item/reagent_containers/hypospray/autoinjector,
-					/obj/item/reagent_containers/pill, /obj/item/pen, /obj/item/flashlight/pen, /obj/item/clothing/mask/smokable/cigarette)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_TINY))
+TYPE_TABLE(/obj/item/storage/quickdraw/syringe_case, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/syringe, /obj/item/reagent_containers/hypospray/autoinjector, \
+					/obj/item/reagent_containers/pill, /obj/item/pen, /obj/item/flashlight/pen, /obj/item/clothing/mask/smokable/cigarette)), HOLD_MAX_SIZE(ITEMSIZE_TINY)))
 
 /obj/item/storage/quickdraw/syringe_case/clotting
 	desc = "A small case for safely carrying sharps around. This one is deluxe!"
@@ -98,10 +96,8 @@ EXTEND_INTERACTIONS(/obj/item/storage/quickdraw, \
 		/obj/item/reagent_containers/hypospray/autoinjector/biginjector/clotting
 	)
 
-/obj/item/storage/quickdraw/syringe_case/clotting/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/syringe, /obj/item/reagent_containers/hypospray/autoinjector,
-					/obj/item/reagent_containers/pill, /obj/item/pen, /obj/item/flashlight/pen, /obj/item/clothing/mask/smokable/cigarette)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/quickdraw/syringe_case/clotting, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/syringe, /obj/item/reagent_containers/hypospray/autoinjector, \
+					/obj/item/reagent_containers/pill, /obj/item/pen, /obj/item/flashlight/pen, /obj/item/clothing/mask/smokable/cigarette)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/quickdraw/syringe_case/bonemed
 	desc = "A small case for safely carrying sharps around. This one is deluxe!"
@@ -111,10 +107,8 @@ EXTEND_INTERACTIONS(/obj/item/storage/quickdraw, \
 		/obj/item/reagent_containers/hypospray/autoinjector/bonemed
 	)
 
-/obj/item/storage/quickdraw/syringe_case/bonemed/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/syringe, /obj/item/reagent_containers/hypospray/autoinjector,
-					/obj/item/reagent_containers/pill, /obj/item/pen, /obj/item/flashlight/pen, /obj/item/clothing/mask/smokable/cigarette)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/quickdraw/syringe_case/bonemed, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/syringe, /obj/item/reagent_containers/hypospray/autoinjector, \
+					/obj/item/reagent_containers/pill, /obj/item/pen, /obj/item/flashlight/pen, /obj/item/clothing/mask/smokable/cigarette)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/quickdraw/syringe_case/clonemed
 	desc = "A small case for safely carrying sharps around. This one is deluxe!"
@@ -124,7 +118,5 @@ EXTEND_INTERACTIONS(/obj/item/storage/quickdraw, \
 		/obj/item/reagent_containers/hypospray/autoinjector/clonemed
 	)
 
-/obj/item/storage/quickdraw/syringe_case/clonemed/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/syringe, /obj/item/reagent_containers/hypospray/autoinjector,
-					/obj/item/reagent_containers/pill, /obj/item/pen, /obj/item/flashlight/pen, /obj/item/clothing/mask/smokable/cigarette)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/quickdraw/syringe_case/clonemed, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/syringe, /obj/item/reagent_containers/hypospray/autoinjector, \
+					/obj/item/reagent_containers/pill, /obj/item/pen, /obj/item/flashlight/pen, /obj/item/clothing/mask/smokable/cigarette)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))

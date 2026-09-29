@@ -1000,10 +1000,10 @@
 	LAZYADD(internal_devices, new /obj/item/gps/explorer(src))
 
 /obj/item/commcard/explorer/get_data()
-	var/list/GPS = get_GPS_lists()
+	var/list/gps_lists = get_GPS_lists()
 
 	return list(
-			list("field" = "gps_access", "value" = GPS[1]),
-			list("field" = "gps_signal", "value" = GPS[2]),
-			list("field" = "gps_status", "value" = GPS[3])
+			list("field" = "gps_access", "value" = gps_lists[1]),
+			list("field" = "gps_signal", "value" = gps_lists[2]),
+			list("field" = "gps_status", "value" = gps_lists[3])
 		)

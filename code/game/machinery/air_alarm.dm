@@ -99,7 +99,7 @@
 	/// Keys are things like temperature and certain gasses. Values are lists, which contain, in order:
 	/// red warning minimum value, yellow warning minimum value, yellow warning maximum value, red warning maximum value
 	/// Use code\defines\gases.dm as reference for id/name. Please keep it consistent
-	/// Starts as the type's shared default_TLV() table, which is read-only; call own_TLV() before editing.
+	/// Starts as the type's shared alarm_TLV table, which is read-only; call own_TLV() before editing.
 	var/list/TLV
 	/// TRUE once TLV is a private deep copy that this alarm may edit.
 	var/TLV_owned = FALSE
@@ -170,25 +170,26 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 
 /obj/machinery/alarm/proc/set_initial_TLV()
 	invalidate_gas_dependencies()
-	TLV = default_TLV()
+	TLV = TYPE_TABLE_GET(src, alarm_TLV)
 	TLV_owned = FALSE
 	update_icon()
 
-/// The shared, read-only threshold table for this alarm type. Subtypes override
-/// this with their own proc-local static table built from a copy of the parent's.
-/obj/machinery/alarm/proc/default_TLV()
-	var/static/list/table
-	if(!table)
-		table = list()
-		// breathable air according to human/Life()
-		table[GAS_O2] =			list(16, 19, 135, 140) // Partial pressure, kpa
-		table[GAS_N2] =			list(0, 0, 135, 140) // Partial pressure, kpa
-		table[GAS_CO2] =		list(-1.0, -1.0, 5, 10) // Partial pressure, kpa
-		table[GAS_PHORON] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
-		table[GAS_CH4] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
-		table["other"] =		list(-1.0, -1.0, 0.5, 1.0) // Partial pressure, kpa
-		table["pressure"] =		list(ONE_ATMOSPHERE * 0.80, ONE_ATMOSPHERE * 0.90, ONE_ATMOSPHERE * 1.10, ONE_ATMOSPHERE * 1.20) /* kpa */
-		table["temperature"] =	list(T0C - 26, T0C, T0C + 40, T0C + 66) // K
+/// The shared, read-only threshold table for each alarm type (TLV starts as it; own_TLV() copies
+/// before an edit). Subtypes override it with a builder that edits a fresh base table.
+TYPE_TABLE_DECLARE(/obj/machinery/alarm, alarm_TLV, air_alarm_TLV_base())
+
+/// A fresh copy of the default threshold table (breathable air).
+/proc/air_alarm_TLV_base()
+	var/list/table = list()
+	// breathable air according to human/Life()
+	table[GAS_O2] =			list(16, 19, 135, 140) // Partial pressure, kpa
+	table[GAS_N2] =			list(0, 0, 135, 140) // Partial pressure, kpa
+	table[GAS_CO2] =		list(-1.0, -1.0, 5, 10) // Partial pressure, kpa
+	table[GAS_PHORON] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
+	table[GAS_CH4] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
+	table["other"] =		list(-1.0, -1.0, 0.5, 1.0) // Partial pressure, kpa
+	table["pressure"] =		list(ONE_ATMOSPHERE * 0.80, ONE_ATMOSPHERE * 0.90, ONE_ATMOSPHERE * 1.10, ONE_ATMOSPHERE * 1.20) /* kpa */
+	table["temperature"] =	list(T0C - 26, T0C, T0C + 40, T0C + 66) // K
 	return table
 
 /proc/copy_air_alarm_TLV(list/table)
@@ -830,7 +831,7 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 		var/list/selected
 		var/list/thresholds = list()
 
-		var/list/gas_names = list(GAS_O2, GAS_CO2, GAS_PHORON, GAS_CH4, "other")	//Gas ids made to match code\defines\gases.dm
+		var/static/list/gas_names = list(GAS_O2, GAS_CO2, GAS_PHORON, GAS_CH4, "other")	//Gas ids made to match code\defines\gases.dm
 		for(var/g in gas_names)
 			thresholds[++thresholds.len] = list("name" = g, "settings" = list())
 			selected = TLV[g]
@@ -1066,40 +1067,40 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 	req_access = list(ACCESS_RD, ACCESS_ATMOSPHERICS, ACCESS_ENGINE_EQUIP)
 	target_temperature = 90
 
-/obj/machinery/alarm/server/default_TLV()
-	var/static/list/table
-	if(!table)
-		table = copy_air_alarm_TLV(..())
-		table[GAS_O2] =			list(-1.0, -1.0,-1.0,-1.0) // Partial pressure, kpa
-		table[GAS_CO2] =		list(-1.0, -1.0,   5,  10) // Partial pressure, kpa
-		table[GAS_PHORON] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
-		table[GAS_CH4] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
-		table["other"] =		list(-1.0, -1.0, 0.5, 1.0) // Partial pressure, kpa
-		table["pressure"] =		list(0,ONE_ATMOSPHERE*0.10,ONE_ATMOSPHERE*1.40,ONE_ATMOSPHERE*1.60) /* kpa */
-		table["temperature"] =	list(20, 40, 140, 160) // K
+TYPE_TABLE(/obj/machinery/alarm/server, alarm_TLV, air_alarm_TLV_server())
+
+/proc/air_alarm_TLV_server()
+	var/list/table = air_alarm_TLV_base()
+	table[GAS_O2] =			list(-1.0, -1.0,-1.0,-1.0) // Partial pressure, kpa
+	table[GAS_CO2] =		list(-1.0, -1.0,   5,  10) // Partial pressure, kpa
+	table[GAS_PHORON] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
+	table[GAS_CH4] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
+	table["other"] =		list(-1.0, -1.0, 0.5, 1.0) // Partial pressure, kpa
+	table["pressure"] =		list(0,ONE_ATMOSPHERE*0.10,ONE_ATMOSPHERE*1.40,ONE_ATMOSPHERE*1.60) /* kpa */
+	table["temperature"] =	list(20, 40, 140, 160) // K
 	return table
 
 /obj/machinery/alarm/freezer
 	target_temperature = T0C - 13.15 // Chilly freezer room
 
-/obj/machinery/alarm/freezer/default_TLV()
-	var/static/list/table
-	if(!table)
-		table = copy_air_alarm_TLV(..())
-		table["temperature"] =	list(T0C - 40, T0C - 20, T0C + 40, T0C + 66) // K, lower temperature for freezer air alarms
+TYPE_TABLE(/obj/machinery/alarm/freezer, alarm_TLV, air_alarm_TLV_freezer())
+
+/proc/air_alarm_TLV_freezer()
+	var/list/table = air_alarm_TLV_base()
+	table["temperature"] =	list(T0C - 40, T0C - 20, T0C + 40, T0C + 66) // K, lower temperature for freezer air alarms
 	return table
 
 /obj/machinery/alarm/sifwilderness
 	breach_detection = 0
 	report_danger_level = 0
 
-/obj/machinery/alarm/sifwilderness/default_TLV()
-	var/static/list/table
-	if(!table)
-		table = copy_air_alarm_TLV(..())
-		table["oxygen"] =		list(16, 17, 135, 140)
-		table["pressure"] =		list(0,ONE_ATMOSPHERE*0.10,ONE_ATMOSPHERE*1.50,ONE_ATMOSPHERE*1.60)
-		table["temperature"] =	list(T0C - 40, T0C - 31, T0C + 40, T0C + 120)
+TYPE_TABLE(/obj/machinery/alarm/sifwilderness, alarm_TLV, air_alarm_TLV_sifwilderness())
+
+/proc/air_alarm_TLV_sifwilderness()
+	var/list/table = air_alarm_TLV_base()
+	table["oxygen"] =		list(16, 17, 135, 140)
+	table["pressure"] =		list(0,ONE_ATMOSPHERE*0.10,ONE_ATMOSPHERE*1.50,ONE_ATMOSPHERE*1.60)
+	table["temperature"] =	list(T0C - 40, T0C - 31, T0C + 40, T0C + 120)
 	return table
 
 #undef LOAD_TLV_VALUES

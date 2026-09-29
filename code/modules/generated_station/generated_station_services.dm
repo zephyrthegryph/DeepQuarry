@@ -106,23 +106,20 @@ DECLARE_REF(/datum/generated_station_service_route, "physical_markers", OWNED_LI
 	var/station_id
 	var/service_id
 
+GLOBAL_LIST_INIT(generated_station_module_role_table, list(
+	"command" = list("operations", "communications"),
+	"ai" = list("core", "support"),
+	"security" = list("operations", "brig"),
+	"medical" = list("treatment", "ward"),
+	"engineering" = list("power", "atmospherics"),
+	"logistics" = list("cargo", "processing"),
+	"docking" = list("control", "berth"),
+))
+GLOBAL_LIST_INIT(generated_station_module_role_table_default, list("control", "support"))
+
+/// Shared list; never write into it.
 /proc/generated_station_module_roles(department_id)
-	switch(department_id)
-		if("command")
-			return list("operations", "communications")
-		if("ai")
-			return list("core", "support")
-		if("security")
-			return list("operations", "brig")
-		if("medical")
-			return list("treatment", "ward")
-		if("engineering")
-			return list("power", "atmospherics")
-		if("logistics")
-			return list("cargo", "processing")
-		if("docking")
-			return list("control", "berth")
-	return list("control", "support")
+	return GLOB.generated_station_module_role_table[department_id] || GLOB.generated_station_module_role_table_default
 
 /// Chooses a divider that satisfies both room contracts and wastes the least usable width.
 /datum/generated_station_materializer/proc/generated_module_division(datum/generated_station_layout_node/node, department_id, list/roles)
@@ -259,7 +256,7 @@ DECLARE_REF(/datum/generated_station_service_route, "physical_markers", OWNED_LI
 		list(interior_x1, street_y + 2, street_x - 2, interior_y2),
 		list(street_x + 2, street_y + 2, interior_x2, interior_y2),
 	)
-	var/list/shape_variants = list("northwest-notch", "south-bay", "service-notch", "foyer-wrap")
+	var/static/list/shape_variants = list("northwest-notch", "south-bay", "service-notch", "foyer-wrap")
 
 	// Begin with structure everywhere. Floors are carved only where circulation
 	// or a solved room requires them, leaving useful wall thickness and alcoves.

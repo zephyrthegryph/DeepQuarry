@@ -6,28 +6,36 @@
 	var/list/area/areas		//List of areas to affect. Filled by start()
 
 	var/eventDept = "Security"			//Department name in announcement
-	// ALLOW(instance_list): c: read-only per-subtype constant table (3 subtype overrides); a getter would share it, not worth it on a rare type
-	var/list/areaName = list("Brig")	//Names of areas mentioned in AI and Engineering announcements
-	// ALLOW(instance_list): c: read-only per-subtype constant table (3 subtype overrides); a getter would share it, not worth it on a rare type
-	var/list/areaType = list(/area/security/prison, /area/security/brig)	//Area types to include.
 	var/list/areaNotType		//Area types to specifically exclude.
+
+//Area types to include.
+TYPE_TABLE_DECLARE(/datum/event/prison_break, prison_break_area_types, list(/area/security/prison, /area/security/brig))
+
+//Names of areas mentioned in AI and Engineering announcements
+TYPE_TABLE_DECLARE(/datum/event/prison_break, prison_break_area_names, list("Brig"))
 
 /datum/event/prison_break/virology
 	eventDept = "Medical"
-	areaName = list("Virology")
-	areaType = list(/area/medical/virology, /area/medical/virologyaccess)
+
+TYPE_TABLE(/datum/event/prison_break/virology, prison_break_area_types, list(/area/medical/virology, /area/medical/virologyaccess))
+
+TYPE_TABLE(/datum/event/prison_break/virology, prison_break_area_names, list("Virology"))
 
 /datum/event/prison_break/xenobiology
 	eventDept = "Science"
-	areaName = list("Xenobiology")
-	areaType = list(/area/rnd/xenobiology)
 	areaNotType = list(/area/rnd/xenobiology/xenoflora, /area/rnd/xenobiology/xenoflora_storage)
+
+TYPE_TABLE(/datum/event/prison_break/xenobiology, prison_break_area_types, list(/area/rnd/xenobiology))
+
+TYPE_TABLE(/datum/event/prison_break/xenobiology, prison_break_area_names, list("Xenobiology"))
 
 /datum/event/prison_break/station
 	eventDept = "Station"
-	areaName = list("Brig","Virology","Xenobiology")
-	areaType = list(/area/security/prison, /area/security/brig, /area/medical/virology, /area/medical/virologyaccess, /area/rnd/xenobiology)
 	areaNotType = list(/area/rnd/xenobiology/xenoflora, /area/rnd/xenobiology/xenoflora_storage)
+
+TYPE_TABLE(/datum/event/prison_break/station, prison_break_area_types, list(/area/security/prison, /area/security/brig, /area/medical/virology, /area/medical/virologyaccess, /area/rnd/xenobiology))
+
+TYPE_TABLE(/datum/event/prison_break/station, prison_break_area_names, list("Brig","Virology","Xenobiology"))
 
 
 /datum/event/prison_break/setup()
@@ -44,16 +52,16 @@
 
 /datum/event/prison_break/start()
 	for(var/area/A in world)
-		if(is_type_in_list(A,areaType) && !is_type_in_list(A,areaNotType))
+		if(is_type_in_list(A,TYPE_TABLE_GET(src, prison_break_area_types)) && !is_type_in_list(A,areaNotType))
 			LAZYADD(areas, A)
 
 	if(areas && length(areas) > 0)
 		var/my_department = "[station_name()] firewall subroutines"
-		var/rc_message = "An unknown malicious program has been detected in the [english_list(areaName)] lighting and airlock control systems at [stationtime2text()]. Systems will be fully compromised within approximately three minutes. Direct intervention is required immediately.<br>"
+		var/rc_message = "An unknown malicious program has been detected in the [english_list(TYPE_TABLE_GET(src, prison_break_area_names))] lighting and airlock control systems at [stationtime2text()]. Systems will be fully compromised within approximately three minutes. Direct intervention is required immediately.<br>"
 		for(var/obj/machinery/message_server/MS in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			MS.send_rc_message("Engineering", my_department, rc_message, "", "", 2)
 		for(var/mob/living/silicon/ai/A in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-			to_chat(A, span_danger("Malicious program detected in the [english_list(areaName)] lighting and airlock control systems by [my_department]."))
+			to_chat(A, span_danger("Malicious program detected in the [english_list(TYPE_TABLE_GET(src, prison_break_area_names))] lighting and airlock control systems by [my_department]."))
 
 	else
 		log_world("ERROR: Could not initate grey-tide. Unable to find suitable containment area.")

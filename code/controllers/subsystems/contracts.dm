@@ -202,10 +202,13 @@ SUBSYSTEM_DEF(contracts)
 		security_record_subject_ids["[record_id]"] = identity.id
 	return resolved
 
+/// physical_custody_snapshot() for a subject that cannot be found (shared; callers only read it).
+GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration" = 0))
+
 /datum/controller/subsystem/contracts/proc/physical_custody_snapshot(record_id, subject_name)
 	var/mob/living/carbon/human/subject = find_subject_for_record(record_id, subject_name)
 	if(!subject)
-		return list("verified" = FALSE, "duration" = 0)
+		return GLOB.unverified_custody_snapshot
 	refresh_physical_custody(subject)
 	var/datum/contract_subject_identity/identity = subject_identity(subject)
 	var/started_at = custody_started_by_subject[identity.id] || 0

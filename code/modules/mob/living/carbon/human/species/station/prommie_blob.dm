@@ -3,9 +3,7 @@
 
 /datum/forms/promethean
 
-/datum/forms/promethean/get_form_types()
-	var/static/list/types = list(/datum/form/human, /datum/form/promethean_blob)
-	return types
+TYPE_TABLE(/datum/forms/promethean, get_form_types, list(/datum/form/human, /datum/form/promethean_blob))
 
 /datum/form/promethean_blob
 	name = "promethean blob"
@@ -21,13 +19,11 @@
 	/// Gemstone shine overlay.
 	var/shiny = FALSE
 
-/datum/form/promethean_blob/get_form_verbs()
-	var/static/list/form_verbs = list(
-		/mob/living/carbon/human/proc/prommie_toggle_expand,
-		/mob/living/carbon/human/proc/prommie_toggle_shine,
-		/mob/living/carbon/human/proc/prommie_select_colour,
-	)
-	return form_verbs
+TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
+		/mob/living/carbon/human/proc/prommie_toggle_expand, \
+		/mob/living/carbon/human/proc/prommie_toggle_shine, \
+		/mob/living/carbon/human/proc/prommie_select_colour, \
+	))
 
 /datum/form/promethean_blob/on_enter(datum/forms/F, mob/living/carbon/human/H)
 	release_everything(H)

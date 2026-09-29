@@ -89,23 +89,22 @@
 	B.absorbchance = 1
 	B.escapechance = 15
 
-/mob/living/simple_mob/vore/alienanimals/catslug/ventcrawl_get_item_whitelist()
-	return list(
-		VENTCRAWL_BASE_WHITELIST,
-		VENTCRAWL_VORE_WHITELIST,
-		VENTCRAWL_SMALLITEM_WHITELIST,
-		// Catslug unique items.
-		/obj/item/material,
-		/obj/item/melee,
-		/obj/item/stack/,
-		/obj/item/tool,
-		/obj/item/reagent_containers/food,
-		/obj/item/ore,
-		/obj/item/disk/nuclear,
-		/obj/item/card,
-		/obj/item/radio,
-		/obj/item/perfect_tele_beacon,
-		)
+// Catslug unique items.
+TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/catslug, ventcrawl_get_item_whitelist, list( \
+		VENTCRAWL_BASE_WHITELIST, \
+		VENTCRAWL_VORE_WHITELIST, \
+		VENTCRAWL_SMALLITEM_WHITELIST, \
+		/obj/item/material, \
+		/obj/item/melee, \
+		/obj/item/stack/, \
+		/obj/item/tool, \
+		/obj/item/reagent_containers/food, \
+		/obj/item/ore, \
+		/obj/item/disk/nuclear, \
+		/obj/item/card, \
+		/obj/item/radio, \
+		/obj/item/perfect_tele_beacon, \
+		))
 
 /mob/living/simple_mob/vore/alienanimals/catslug/Initialize(mapload)
 	. = ..()

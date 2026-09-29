@@ -29,9 +29,7 @@
 
 //Deathsquad suit
 
-/obj/item/clothing/suit/armor/captain/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/armor/captain, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
 /obj/item/clothing/head/helmet/space/deathsquad
 	name = "deathsquad helmet"
 	desc = "That's not red paint. That's real blood."
@@ -71,9 +69,7 @@
 
 //Space pirate outfit
 
-/obj/item/clothing/suit/space/santa/suit_storage_constraint()
-	var/list/stores = list(/obj/item)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/santa, suit_storage_spec, list(HOLD_ONLY(list(/obj/item))))
 /obj/item/clothing/head/helmet/space/pirate
 	name = "pirate hat"
 	desc = "Yarr."
@@ -97,9 +93,7 @@
 
 //Orange emergency space suit
 
-/obj/item/clothing/suit/space/pirate/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/pirate, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO))))
 /obj/item/clothing/head/helmet/space/emergency
 	name = "emergency soft helmet"
 	icon_state = "syndicate-helm-orange"

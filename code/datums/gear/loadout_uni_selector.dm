@@ -184,7 +184,7 @@
 /datum/gear/uniform/undersuit/New()
 	..()
 	var/list/suits = list()
-	var/list/blacklisted_types = list(/obj/item/clothing/under/undersuit/sec,
+	var/static/list/blacklisted_types = list(/obj/item/clothing/under/undersuit/sec,
 									  /obj/item/clothing/under/undersuit/sec/hos,
 									  /obj/item/clothing/under/undersuit/hazard,
 									  /obj/item/clothing/under/undersuit/command,

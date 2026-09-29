@@ -379,14 +379,13 @@
 /// Returns a list of keys this reagent's data assoc list must always contain, or null if this
 /// reagent uses no structured data. Subtypes override to document their schema.
 /// Used by validate_data() to detect missing keys introduced by code changes.
-/datum/reagent/proc/get_data_schema()
-	return null
+TYPE_TABLE_DECLARE(/datum/reagent, get_data_schema, null)
 
 /// Validates that the data assoc list contains all keys declared by get_data_schema().
 /// Logs a stack trace for any missing key so issues surface during testing rather than
 /// producing silent null reads at access time.
 /datum/reagent/proc/validate_data()
-	var/list/schema = get_data_schema()
+	var/list/schema = TYPE_TABLE_GET(src, get_data_schema)
 	if(!schema)
 		return
 	if(!islist(data))

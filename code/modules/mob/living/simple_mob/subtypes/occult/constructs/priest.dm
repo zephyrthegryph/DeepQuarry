@@ -25,4 +25,4 @@
 
 
 /datum/decl/mob_organ_names/artificer
-	hit_zones = list("body", "carapace", "right manipulator", "left manipulator", "upper left appendage", "upper right appendage", "eye")
+TYPE_TABLE(/datum/decl/mob_organ_names/artificer, mob_organ_hit_zones, list("body", "carapace", "right manipulator", "left manipulator", "upper left appendage", "upper right appendage", "eye"))

@@ -28,7 +28,6 @@
 	var/selected_recipe_id
 	var/hypo_sound = 'sound/effects/hypospray.ogg'	// What sound do we play on use?
 
-	var/list/reagent_ids = list(REAGENT_ID_TRICORDRAZINE, REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_ANTITOXIN, REAGENT_ID_KELOTANE, REAGENT_ID_TRAMADOL, REAGENT_ID_DEXALIN, REAGENT_ID_SPACEACILLIN) // ALLOW(instance_list): c: read-only per-subtype constant table (8 subtype overrides); a getter would share it, not worth it on a rare type
 	var/list/reagent_volumes = list() // ALLOW(instance_list): d: filled in Initialize() with every reagent the hypo carries
 	/// Associated list of the names of each of our reagents. Indexed via `mode`.
 	var/list/reagent_names
@@ -37,23 +36,31 @@
 	/// Associated list of the recipes we have saved. Indexed via the string ID of the recipe.
 	var/list/saved_recipes
 	/// In the hypo's TGUI, this determines the amount buttons that will be available to change this hypo's transfer amount.
-	var/list/transfer_amounts = list(5, 10) // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
+
+TYPE_TABLE_DECLARE(/obj/item/reagent_containers/borghypo, borghypo_transfer_amounts, list(5, 10))
+
+TYPE_TABLE_DECLARE(/obj/item/reagent_containers/borghypo, borghypo_reagent_ids, list(REAGENT_ID_TRICORDRAZINE, REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_ANTITOXIN, REAGENT_ID_KELOTANE, REAGENT_ID_TRAMADOL, REAGENT_ID_DEXALIN, REAGENT_ID_SPACEACILLIN))
 
 /obj/item/reagent_containers/borghypo/surgeon
-	reagent_ids = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_DEXALIN, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_OXYCODONE)
+
+TYPE_TABLE(/obj/item/reagent_containers/borghypo/surgeon, borghypo_reagent_ids, list(REAGENT_ID_INAPROVALINE, REAGENT_ID_DEXALIN, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_OXYCODONE))
 
 /obj/item/reagent_containers/borghypo/crisis
-	reagent_ids = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_DEXALIN, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL, REAGENT_ID_ADRANOL) // Unifying chems with dogborg equivalent.
+
+// Unifying chems with dogborg equivalent.
+TYPE_TABLE(/obj/item/reagent_containers/borghypo/crisis, borghypo_reagent_ids, list(REAGENT_ID_INAPROVALINE, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_DEXALIN, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL, REAGENT_ID_ADRANOL))
 
 /obj/item/reagent_containers/borghypo/lost
-	reagent_ids = list(REAGENT_ID_TRICORDRAZINE, REAGENT_ID_BICARIDINE, REAGENT_ID_DEXALIN, REAGENT_ID_ANTITOXIN, REAGENT_ID_TRAMADOL, REAGENT_ID_SPACEACILLIN)
+
+TYPE_TABLE(/obj/item/reagent_containers/borghypo/lost, borghypo_reagent_ids, list(REAGENT_ID_TRICORDRAZINE, REAGENT_ID_BICARIDINE, REAGENT_ID_DEXALIN, REAGENT_ID_ANTITOXIN, REAGENT_ID_TRAMADOL, REAGENT_ID_SPACEACILLIN))
 
 /obj/item/reagent_containers/borghypo/merc
 	name = "advanced cyborg hypospray"
 	desc = "An advanced nanite and chemical synthesizer and injection system, designed for heavy-duty medical equipment.  This type is capable of safely bypassing \
 	thick materials that other hyposprays would struggle with."
 	bypass_protection = TRUE // Because mercs tend to be in spacesuits.
-	reagent_ids = list(REAGENT_ID_HEALINGNANITES, REAGENT_ID_HYPERZINE, REAGENT_ID_TRAMADOL, REAGENT_ID_OXYCODONE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_PERIDAXON, REAGENT_ID_OSTEODAXON, REAGENT_ID_MYELAMINE, REAGENT_ID_SYNTHBLOOD)
+
+TYPE_TABLE(/obj/item/reagent_containers/borghypo/merc, borghypo_reagent_ids, list(REAGENT_ID_HEALINGNANITES, REAGENT_ID_HYPERZINE, REAGENT_ID_TRAMADOL, REAGENT_ID_OXYCODONE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_PERIDAXON, REAGENT_ID_OSTEODAXON, REAGENT_ID_MYELAMINE, REAGENT_ID_SYNTHBLOOD))
 
 /// Performs a single reagent addition. Returns its success (or error) status at doing so.
 /obj/item/reagent_containers/borghypo/proc/try_add_reagent(datum/reagents/target_reagents, mob/user, reagent_id, amount)
@@ -95,12 +102,12 @@
 		return BORGHYPO_STATUS_SUCCESS
 	else
 		// Just add reagents
-		return try_add_reagent(target_reagents, user, reagent_ids[mode], amount_per_transfer_from_this)
+		return try_add_reagent(target_reagents, user, TYPE_TABLE_GET(src, borghypo_reagent_ids)[mode], amount_per_transfer_from_this)
 
 /obj/item/reagent_containers/borghypo/Initialize(mapload)
 	. = ..()
 
-	for(var/T in reagent_ids)
+	for(var/T in TYPE_TABLE_GET(src, borghypo_reagent_ids))
 		reagent_volumes[T] = volume
 		var/datum/reagent/hypo_reagent = chemistry_service().chemical_reagents[T]
 		LAZYADD(reagent_names, hypo_reagent.name)
@@ -109,7 +116,7 @@
 /// dose starts it); full, it sleeps.
 /obj/item/reagent_containers/borghypo/periodic_step()
 	var/short = FALSE
-	for(var/T in reagent_ids)
+	for(var/T in TYPE_TABLE_GET(src, borghypo_reagent_ids))
 		if(reagent_volumes[T] < volume)
 			short = TRUE
 			break
@@ -123,7 +130,7 @@
 	if(isrobot(loc))
 		var/mob/living/silicon/robot/robot_user = loc
 		if(robot_user && robot_user.cell)
-			for(var/T in reagent_ids)
+			for(var/T in TYPE_TABLE_GET(src, borghypo_reagent_ids))
 				if(reagent_volumes[T] < volume)
 					if(!robot_user.draw_power(ROBOT_CELL_JOULES(charge_cost), src, ROBOT_CELL_JOULES(800)))
 						return 0
@@ -144,7 +151,7 @@
 	if(M.can_inject(user, 1, ignore_thickness = bypass_protection))
 
 		if(M.reagents)
-			var/reagent_id = reagent_ids[mode]
+			var/reagent_id = TYPE_TABLE_GET(src, borghypo_reagent_ids)[mode]
 			var/amount_to_add = min(amount_per_transfer_from_this, reagent_volumes[reagent_id])
 			var/result = try_injection(M.reagents, user)
 			if(is_dispensing_recipe)
@@ -211,7 +218,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/borghypo, INTERACT_USE(null, P
 	var/mob/living/silicon/robot/robot_user = user
 	data["theme"] = robot_user.get_ui_theme()
 	data["amount"] = amount_per_transfer_from_this
-	data["transferAmounts"] = transfer_amounts
+	data["transferAmounts"] = TYPE_TABLE_GET(src, borghypo_transfer_amounts)
 
 	var/list/chemicals = list()
 	for(var/key, value in reagent_volumes)
@@ -221,7 +228,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/borghypo, INTERACT_USE(null, P
 			UNTYPED_LIST_ADD(chemicals, list("name" = available_reagent.name, "id" = key, "volume" = value))
 	data["chemicals"] = chemicals
 	data["uiChemicalSearch"] = ui_chemical_search
-	data["selectedReagentId"] = reagent_ids[mode]
+	data["selectedReagentId"] = TYPE_TABLE_GET(src, borghypo_reagent_ids)[mode]
 	data["recipes"] = (saved_recipes || list())
 	data["recordingRecipe"] = recording_recipe
 	data["isDispensingRecipe"] = is_dispensing_recipe
@@ -235,9 +242,10 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/borghypo, INTERACT_USE(null, P
 		return
 	switch(action)
 		if("select_reagent")
-			var/new_mode = reagent_ids.Find(params["selectedReagentId"])
+			var/list/ids = TYPE_TABLE_GET(src, borghypo_reagent_ids)
+			var/new_mode = ids.Find(params["selectedReagentId"])
 			if(new_mode)
-				var/datum/reagent/selected_reagent = chemistry_service().chemical_reagents[reagent_ids[new_mode]]
+				var/datum/reagent/selected_reagent = chemistry_service().chemical_reagents[TYPE_TABLE_GET(src, borghypo_reagent_ids)[new_mode]]
 				playsound(src, 'sound/effects/pop.ogg', 50, 0)
 				if(recording_recipe)
 					UNTYPED_LIST_ADD(recording_recipe, list("id" = selected_reagent.id, "amount" = amount_per_transfer_from_this))
@@ -289,7 +297,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/borghypo, INTERACT_USE(null, P
 				for(var/list/L in recording_recipe)
 					var/label = L["id"]
 					// Verify this hypo can dispense every chemical
-					if(!reagent_ids.Find(label))
+					if(!(label in TYPE_TABLE_GET(src, borghypo_reagent_ids)))
 						to_chat(ui.user, span_warning("\The [src] cannot find ") + span_boldwarning(label) + span_warning("!"))
 						return
 				LAZYSET(saved_recipes, name, recording_recipe)
@@ -325,8 +333,8 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/borghypo, INTERACT_USE(null, P
 /obj/item/reagent_containers/borghypo/examine(mob/user)
 	. = ..()
 	if(get_dist(user, src) <= 2)
-		var/datum/reagent/current_reagent = chemistry_service().chemical_reagents[reagent_ids[mode]]
-		. += span_notice("It is currently producing [current_reagent.name] and has [reagent_volumes[reagent_ids[mode]]] out of [volume] units left.")
+		var/datum/reagent/current_reagent = chemistry_service().chemical_reagents[TYPE_TABLE_GET(src, borghypo_reagent_ids)[mode]]
+		. += span_notice("It is currently producing [current_reagent.name] and has [reagent_volumes[TYPE_TABLE_GET(src, borghypo_reagent_ids)[mode]]] out of [volume] units left.")
 
 /obj/item/reagent_containers/borghypo/service
 	name = "integrated drink synthesizer"
@@ -338,54 +346,57 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/borghypo, INTERACT_USE(null, P
 	volume = 60
 	max_transfer_amount = 30
 	is_dispensing_drinks = TRUE
-	transfer_amounts = list(5, 10, 20, 30)
 	hypo_sound = 'sound/machines/reagent_dispense.ogg'
-	reagent_ids = list(REAGENT_ID_ALE,
-		REAGENT_ID_APPLEJUICE, // it has literally every other type of juice..
-		REAGENT_ID_BEER,
-		REAGENT_ID_BERRYJUICE,
-		REAGENT_ID_BITTERS,
-		REAGENT_ID_BLUECURACAO,
-		REAGENT_ID_CIDER,
-		REAGENT_ID_COFFEE,
-		REAGENT_ID_COGNAC,
-		REAGENT_ID_COLA,
-		REAGENT_ID_CREAM,
-		REAGENT_ID_DRGIBB,
-		REAGENT_ID_EGG,
-		REAGENT_ID_GIN,
-		REAGENT_ID_GINGERALE,
-		REAGENT_ID_HOTCOCO,
-		REAGENT_ID_ICE,
-		REAGENT_ID_ICETEA,
-		REAGENT_ID_KAHLUA,
-		REAGENT_ID_LEMONJUICE,
-		REAGENT_ID_LEMONLIME,
-		REAGENT_ID_LIMEJUICE,
-		REAGENT_ID_MEAD,
-		REAGENT_ID_MELONLIQUOR,
-		REAGENT_ID_MILK,
-		REAGENT_ID_MINT,
-		REAGENT_ID_ORANGEJUICE,
-		REAGENT_ID_REDWINE,
-		REAGENT_ID_RUM,
-		REAGENT_ID_SAKE,
-		REAGENT_ID_SODAWATER,
-		REAGENT_ID_SOYMILK,
-		REAGENT_ID_SPACEUP,
-		REAGENT_ID_SPACEMOUNTAINWIND,
-		REAGENT_ID_SPACESPICE,
-		REAGENT_ID_SPECIALWHISKEY,
-		REAGENT_ID_SUGAR,
-		REAGENT_ID_TEA,
-		REAGENT_ID_TEQUILA,
-		REAGENT_ID_TOMATOJUICE,
-		REAGENT_ID_TONIC,
-		REAGENT_ID_VERMOUTH,
-		REAGENT_ID_VODKA,
-		REAGENT_ID_WATER,
-		REAGENT_ID_WATERMELONJUICE,
-		REAGENT_ID_WHISKEY)
+
+TYPE_TABLE(/obj/item/reagent_containers/borghypo/service, borghypo_transfer_amounts, list(5, 10, 20, 30))
+
+// it has literally every other type of juice..
+TYPE_TABLE(/obj/item/reagent_containers/borghypo/service, borghypo_reagent_ids, list(REAGENT_ID_ALE, \
+	REAGENT_ID_APPLEJUICE, \
+	REAGENT_ID_BEER, \
+	REAGENT_ID_BERRYJUICE, \
+	REAGENT_ID_BITTERS, \
+	REAGENT_ID_BLUECURACAO, \
+	REAGENT_ID_CIDER, \
+	REAGENT_ID_COFFEE, \
+	REAGENT_ID_COGNAC, \
+	REAGENT_ID_COLA, \
+	REAGENT_ID_CREAM, \
+	REAGENT_ID_DRGIBB, \
+	REAGENT_ID_EGG, \
+	REAGENT_ID_GIN, \
+	REAGENT_ID_GINGERALE, \
+	REAGENT_ID_HOTCOCO, \
+	REAGENT_ID_ICE, \
+	REAGENT_ID_ICETEA, \
+	REAGENT_ID_KAHLUA, \
+	REAGENT_ID_LEMONJUICE, \
+	REAGENT_ID_LEMONLIME, \
+	REAGENT_ID_LIMEJUICE, \
+	REAGENT_ID_MEAD, \
+	REAGENT_ID_MELONLIQUOR, \
+	REAGENT_ID_MILK, \
+	REAGENT_ID_MINT, \
+	REAGENT_ID_ORANGEJUICE, \
+	REAGENT_ID_REDWINE, \
+	REAGENT_ID_RUM, \
+	REAGENT_ID_SAKE, \
+	REAGENT_ID_SODAWATER, \
+	REAGENT_ID_SOYMILK, \
+	REAGENT_ID_SPACEUP, \
+	REAGENT_ID_SPACEMOUNTAINWIND, \
+	REAGENT_ID_SPACESPICE, \
+	REAGENT_ID_SPECIALWHISKEY, \
+	REAGENT_ID_SUGAR, \
+	REAGENT_ID_TEA, \
+	REAGENT_ID_TEQUILA, \
+	REAGENT_ID_TOMATOJUICE, \
+	REAGENT_ID_TONIC, \
+	REAGENT_ID_VERMOUTH, \
+	REAGENT_ID_VODKA, \
+	REAGENT_ID_WATER, \
+	REAGENT_ID_WATERMELONJUICE, \
+REAGENT_ID_WHISKEY))
 
 /obj/item/reagent_containers/borghypo/service/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	return NONE
@@ -408,7 +419,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/borghypo, INTERACT_USE(null, P
 			if(is_dispensing_recipe)
 				balloon_alert(user, "not enough reagents to finish recipe '[selected_recipe_id]'!")
 			else
-				var/datum/reagent/empty_reagent = chemistry_service().chemical_reagents[reagent_ids[mode]]
+				var/datum/reagent/empty_reagent = chemistry_service().chemical_reagents[TYPE_TABLE_GET(src, borghypo_reagent_ids)[mode]]
 				balloon_alert(user, "not enough of reagent '[empty_reagent.name]'!")
 		if(BORGHYPO_STATUS_NORECIPE)
 			balloon_alert(user, "recipe '[selected_recipe_id]' not found!")

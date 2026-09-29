@@ -126,7 +126,7 @@ DECLARE_REF(/obj/machinery/hyperpad/centre, "linked", OWNED_LIST, null)
 
 /obj/machinery/hyperpad/centre/proc/detect(mob/user)
 	if(!ready)
-		var/list/dirs = list(1,2,4,8,5,9,6,10) //A really dumb way of making a circle of dirs around the centre piece. If there's a better way, tell me.
+		var/static/list/dirs = list(1,2,4,8,5,9,6,10) //A really dumb way of making a circle of dirs around the centre piece. If there's a better way, tell me.
 		var/list/turfs = trange(1, src) - loc
 		var/iterate = 1
 		for(var/turf/T in turfs)

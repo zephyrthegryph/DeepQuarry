@@ -67,11 +67,7 @@
 	savefile_key = "tgui_layout"
 	savefile_identifier = PREFERENCE_PLAYER
 
-/datum/preference/choiced/tgui_layout/init_possible_values()
-	return list(
-		TGUI_LAYOUT_GRID,
-		TGUI_LAYOUT_LIST,
-	)
+TYPE_TABLE(/datum/preference/choiced/tgui_layout, pref_choices, list(TGUI_LAYOUT_GRID, TGUI_LAYOUT_LIST))
 
 /datum/preference/choiced/tgui_layout/create_default_value()
 	return TGUI_LAYOUT_GRID

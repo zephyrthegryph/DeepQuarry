@@ -41,17 +41,17 @@
 
 /// Every catalogued /datum/affliction subtype. Built once. Abstract family
 /// bases (`abstract_type` == their own type) are skipped.
-/proc/dq_catalogued_affliction_types()
-	var/static/list/types
-	if(!types)
-		types = list()
-		for(var/T in subtypesof(/datum/affliction))
-			var/datum/affliction/typed = T
-			// Checked before building a prototype: uncatalogued families
-			// (engineered contagion strains) have constructors with side effects.
-			if(!initial(typed.catalogued))
-				continue
-			var/datum/affliction/proto = dq_proto(T)
-			if(proto.catalogued && proto.abstract_type != T)
-				types += T
+/proc/build_dq_catalogued_affliction_types()
+	var/list/types = list()
+	for(var/T in subtypesof(/datum/affliction))
+		var/datum/affliction/typed = T
+		// Checked before building a prototype: uncatalogued families
+		// (engineered contagion strains) have constructors with side effects.
+		if(!initial(typed.catalogued))
+			continue
+		var/datum/affliction/proto = dq_proto(T)
+		if(proto.catalogued && proto.abstract_type != T)
+			types += T
 	return types
+
+GLOBAL_TABLE(dq_catalogued_affliction_types, GLOBAL_PROC_REF(build_dq_catalogued_affliction_types))

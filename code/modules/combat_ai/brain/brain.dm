@@ -221,7 +221,7 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 
 	// Innate behaviors via the mob's getter — falls back to the default factory
 	// for simple_mobs that haven't been hand-tuned yet.
-	var/list/innate = holder.get_ai_behaviors()
+	var/list/innate = TYPE_TABLE_GET(holder, get_ai_behaviors)
 	if(!innate && istype(holder, /mob/living/simple_mob))
 		innate = dq_default_behavior_list_for(holder)
 	if(innate)
@@ -230,7 +230,7 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 
 	// Equipment-granted (held items).
 	for(var/obj/item/I as anything in holder.get_all_held_items())
-		var/list/granted = I.get_dq_granted_behaviors()
+		var/list/granted = TYPE_TABLE_GET(I, item_granted_behaviors)
 		if(granted)
 			for(var/btype as anything in granted)
 				effective_behaviors[btype] = om_handle(I)

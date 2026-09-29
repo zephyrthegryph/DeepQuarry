@@ -318,8 +318,7 @@
 	icon = 'icons/effects/effects.dmi' //This is to make the unit test happy. These are invisible which are... Less than ideal. This should probably be moved to a trait or sound selector, but I digress. Outside scope of this PR.
 	icon_state = "nothing" // Horribly illegal and shouldn't be a thing, but whatever.
 
-/obj/item/clothing/shoes/none/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/none, fit_spec, null)
 
 /obj/item/clothing/shoes/none/Initialize(mapload)
 	. = ..()

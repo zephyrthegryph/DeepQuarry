@@ -51,7 +51,7 @@
 	apply_body_effect(/datum/body_effect/berserk, 30 SECONDS)
 
 /datum/decl/mob_organ_names/goose
-	hit_zones = list("head", "chest", "left leg", "right leg", "left wing", "right wing", "neck")
+TYPE_TABLE(/datum/decl/mob_organ_names/goose, mob_organ_hit_zones, list("head", "chest", "left leg", "right leg", "left wing", "right wing", "neck"))
 
 /mob/living/simple_mob/animal/space/goose/white
 	icon = 'icons/mob/animal_vr.dmi'

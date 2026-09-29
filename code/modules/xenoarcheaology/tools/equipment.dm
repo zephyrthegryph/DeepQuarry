@@ -26,9 +26,7 @@
 	slowdown = 1
 	// Pressure protection inherited from space suits
 
-/obj/item/clothing/suit/space/anomaly/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_ALL_TANKS)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/anomaly, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_ALL_TANKS))))
 
 /obj/item/clothing/head/helmet/space/anomaly
 	name = "Excavation hood"

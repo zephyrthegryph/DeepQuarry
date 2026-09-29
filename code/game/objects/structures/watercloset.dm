@@ -592,7 +592,7 @@ DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
 	effect = /obj/machinery/shower/proc/interaction_set_temperature
 
 /obj/machinery/shower/proc/interaction_set_temperature(mob/user, obj/item/held, datum/interaction/interaction)
-	var/list/temperature_settings = list(SHOWER_NORMAL, SHOWER_BOILING, SHOWER_FREEZING)
+	var/static/list/temperature_settings = list(SHOWER_NORMAL, SHOWER_BOILING, SHOWER_FREEZING)
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(temperature_chosen), choices = temperature_settings, title = "Water Temperature Valve", message = "What setting would you like to set the temperature valve to?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	return TRUE
 
@@ -684,7 +684,7 @@ DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
 		return PROCESS_KILL
 
 /obj/machinery/shower/proc/check_heat(mob/living/L)
-	var/list/temperature_settings = list(SHOWER_FREEZING = SHOWER_TEMP_FREEZING, SHOWER_NORMAL = SHOWER_TEMP_NORMAL, SHOWER_BOILING = SHOWER_TEMP_BOILING)
+	var/static/list/temperature_settings = list(SHOWER_FREEZING = SHOWER_TEMP_FREEZING, SHOWER_NORMAL = SHOWER_TEMP_NORMAL, SHOWER_BOILING = SHOWER_TEMP_BOILING)
 	var/temperature = temperature_settings[current_temperature]
 	switch(current_temperature)
 		if(SHOWER_FREEZING)

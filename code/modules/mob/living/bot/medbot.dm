@@ -54,13 +54,9 @@
 
 /// Reagent ids the internal synthesizer can make. The medbot injects whichever
 /// best answers the patient's treatment demand.
-/mob/living/bot/medbot/proc/synthesized_reagents()
-	var/static/list/reagents = list(REAGENT_ID_TRICORDRAZINE)
-	return reagents
+TYPE_TABLE_DECLARE(/mob/living/bot/medbot, synthesized_reagents, list(REAGENT_ID_TRICORDRAZINE))
 
-/mob/living/bot/medbot/mysterious/synthesized_reagents()
-	var/static/list/reagents = list(REAGENT_ID_BICARIDINE, REAGENT_ID_DERMALINE, REAGENT_ID_DEXALIN, REAGENT_ID_ANTITOXIN, REAGENT_ID_TRICORDRAZINE)
-	return reagents
+TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT_ID_BICARIDINE, REAGENT_ID_DERMALINE, REAGENT_ID_DEXALIN, REAGENT_ID_ANTITOXIN, REAGENT_ID_TRICORDRAZINE))
 
 /mob/living/bot/medbot/handleIdle()
 	if(is_tipped) // Don't handle idle things if we're incapacitated!
@@ -485,7 +481,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 		. = best_reagent_for_demand(demand, reagent_glass.reagents.reagent_list, H)
 		if(.)
 			return
-	return best_reagent_for_demand(demand, synthesized_reagents(), H)
+	return best_reagent_for_demand(demand, TYPE_TABLE_GET(src, synthesized_reagents), H)
 
 /* Construction */
 

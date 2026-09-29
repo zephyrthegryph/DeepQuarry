@@ -20,7 +20,7 @@
 	var/picked_beacon
 
 /datum/spell/rune_write/choose_targets(mob/user = usr)
-	var/list/runes = list("Teleport", "Teleport Other", "Spawn a Tome", "Change Construct Type", "Convert", "EMP", "Drain Blood", "See Invisible", "Resurrect", "Hide Runes", "Reveal Runes", "Astral Journey", "Manifest a Ghost", "Imbue Talisman", "Sacrifice", "Wall", "Free Cultist", "Summon Cultist", "Deafen", "Blind", "BloodBoil", "Communicate", "Stun")
+	var/static/list/runes = list("Teleport", "Teleport Other", "Spawn a Tome", "Change Construct Type", "Convert", "EMP", "Drain Blood", "See Invisible", "Resurrect", "Hide Runes", "Reveal Runes", "Astral Journey", "Manifest a Ghost", "Imbue Talisman", "Sacrifice", "Wall", "Free Cultist", "Summon Cultist", "Deafen", "Blind", "BloodBoil", "Communicate", "Stun")
 	if(!GLOB.cultwords["travel"])
 		runerandom()
 	var/r = cast_ask(user, "rune", /datum/om/prompt/choice, message = "Choose a rune to scribe", title = "Rune Scribing", choices = runes, timeout = 30 SECONDS)

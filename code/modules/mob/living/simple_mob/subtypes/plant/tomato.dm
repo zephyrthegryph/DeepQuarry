@@ -31,4 +31,4 @@
 	can_pain_emote = FALSE
 
 /datum/decl/mob_organ_names/tomato
-	hit_zones = list("flesh", "leaf", "mouth")
+TYPE_TABLE(/datum/decl/mob_organ_names/tomato, mob_organ_hit_zones, list("flesh", "leaf", "mouth"))

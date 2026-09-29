@@ -59,7 +59,12 @@
 /// list(heat capacity J/K, conductance to the surroundings W/K, emissivity).
 /// Items take theirs from their materials (heat_objects.dm).
 /atom/proc/thermal_properties()
-	return list(THERMAL_CAPACITY_DEFAULT, THERMAL_CONDUCTANCE_DEFAULT, THERMAL_EMISSIVITY_DEFAULT)
+	return GLOB.default_thermal_properties
+
+/// The default thermal_properties(). Shared, read-only.
+GLOBAL_LIST_INIT(default_thermal_properties, list(THERMAL_CAPACITY_DEFAULT, THERMAL_CONDUCTANCE_DEFAULT, THERMAL_EMISSIVITY_DEFAULT))
+/// heat_coupling() of an atom with nothing around it. Shared, read-only.
+GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 
 
 /// This atom's heat capacity changed (reagents added or removed): update its body.
@@ -114,7 +119,7 @@
 		var/turf/T = holder
 		return T.heat_has_air() ? list(HEAT_TARGET_TURF_AIR, T) : list(HEAT_TARGET_SOLID, T)
 	if(isnull(holder))
-		return list(HEAT_TARGET_NONE, 0)
+		return GLOB.heat_coupling_none
 	if(!isnull(holder.heat_body))
 		return list(HEAT_TARGET_BODY, holder.heat_body)
 	return holder.heat_coupling()
@@ -170,9 +175,6 @@
 
 /turf/thermal_properties()
 	return list(heat_capacity, thermal_conductivity, THERMAL_EMISSIVITY_DEFAULT)
-
-/turf/heat_coupling()
-	return list(HEAT_TARGET_NONE, 0)
 
 /turf/create_heat_body(keep = FALSE, start_temperature = null)
 	return FALSE

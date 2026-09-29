@@ -338,29 +338,27 @@ DECLARE_REF(/datum/generated_station_materializer, "active_job", OWNED, null)
 
 /// The phases of a materialization, in order: procs on the materializer called as (cursor), each
 /// returning null when it is done, GENERATED_STATION_PHASE_FAILED, or the cursor it resumes from.
-/datum/generated_station_materializer/proc/materialize_phases()
-	var/static/list/phases = list(
-		/datum/generated_station_materializer/proc/phase_tile_grid,
-		/datum/generated_station_materializer/proc/phase_tile_nodes,
-		/datum/generated_station_materializer/proc/phase_tile_circulation,
-		/datum/generated_station_materializer/proc/phase_tile_maintenance,
-		/datum/generated_station_materializer/proc/phase_tile_structure,
-		/datum/generated_station_materializer/proc/phase_tile_hull,
-		/datum/generated_station_materializer/proc/phase_tile_seal,
-		/datum/generated_station_materializer/proc/phase_modules,
-		/datum/generated_station_materializer/proc/phase_utilities,
-		/datum/generated_station_materializer/proc/phase_apply_turfs,
-		/datum/generated_station_materializer/proc/phase_apply_doors,
-		/datum/generated_station_materializer/proc/phase_floor_styling,
-		/datum/generated_station_materializer/proc/phase_services,
-		/datum/generated_station_materializer/proc/phase_synthesis,
-		/datum/generated_station_materializer/proc/phase_emergency,
-		/datum/generated_station_materializer/proc/phase_access,
-		/datum/generated_station_materializer/proc/phase_walls,
-		/datum/generated_station_materializer/proc/phase_air,
-		/datum/generated_station_materializer/proc/phase_finalize,
-	)
-	return phases
+TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, list( \
+		/datum/generated_station_materializer/proc/phase_tile_grid, \
+		/datum/generated_station_materializer/proc/phase_tile_nodes, \
+		/datum/generated_station_materializer/proc/phase_tile_circulation, \
+		/datum/generated_station_materializer/proc/phase_tile_maintenance, \
+		/datum/generated_station_materializer/proc/phase_tile_structure, \
+		/datum/generated_station_materializer/proc/phase_tile_hull, \
+		/datum/generated_station_materializer/proc/phase_tile_seal, \
+		/datum/generated_station_materializer/proc/phase_modules, \
+		/datum/generated_station_materializer/proc/phase_utilities, \
+		/datum/generated_station_materializer/proc/phase_apply_turfs, \
+		/datum/generated_station_materializer/proc/phase_apply_doors, \
+		/datum/generated_station_materializer/proc/phase_floor_styling, \
+		/datum/generated_station_materializer/proc/phase_services, \
+		/datum/generated_station_materializer/proc/phase_synthesis, \
+		/datum/generated_station_materializer/proc/phase_emergency, \
+		/datum/generated_station_materializer/proc/phase_access, \
+		/datum/generated_station_materializer/proc/phase_walls, \
+		/datum/generated_station_materializer/proc/phase_air, \
+		/datum/generated_station_materializer/proc/phase_finalize, \
+	))
 
 /// A phase failed: drop the partial result. Returns GENERATED_STATION_PHASE_FAILED.
 /datum/generated_station_materializer/proc/abort_materialization(stage, details)

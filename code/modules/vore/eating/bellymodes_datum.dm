@@ -1,4 +1,6 @@
 GLOBAL_LIST_INIT(digest_modes, list())
+/// The process_mob() result asking for a vore panel update. Shared, read-only.
+GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
 
 /datum/digest_mode
 	var/id = DM_HOLD
@@ -43,7 +45,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 			B.handle_digestion_death(L)
 		if(!L)
 			B.owner.handle_belly_update()
-			return list("to_update" = TRUE)
+			return GLOB.digest_result_update
 	if(!L)
 		return
 
@@ -97,7 +99,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 	else
 		B.owner_adjust_nutrition(offset * (4.5 * damage_gain / difference) * L.get_digestion_nutrition_modifier() * B.owner.get_digestion_efficiency_modifier())
 	if(L.stat != oldstat)
-		return list("to_update" = TRUE)
+		return GLOB.digest_result_update
 
 /datum/digest_mode/absorb
 	id = DM_ABSORB
@@ -114,7 +116,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 		if(B.show_liquids && B.reagent_mode_flags & DM_FLAG_REAGENTSABSORB && B.reagents.total_volume < B.reagents.maximum_volume) //absorption reagent production
 			B.GenerateBellyReagents_absorbed() //A bonus for pred, I know for a fact prey is usually at zero nutrition when absorption finally happens
 		consider_healthbar(L, old_nutrition, B.owner)
-		return list("to_update" = TRUE)
+		return GLOB.digest_result_update
 	else
 		consider_healthbar(L, old_nutrition, B.owner)
 
@@ -126,12 +128,12 @@ GLOBAL_LIST_INIT(digest_modes, list())
 		if(B.owner.nutrition >= 100)
 			B.owner.adjust_nutrition(-100)
 			B.unabsorb_living(L)
-			return list("to_update" = TRUE)
+			return GLOB.digest_result_update
 		else if(isrobot(B.owner))
 			var/mob/living/silicon/robot/robot_owner = B.owner
 			if(robot_owner.draw_power(100 * CYBORG_POWER_USAGE_MULTIPLIER, B))
 				B.unabsorb_living(L)
-				return list("to_update" = TRUE)
+				return GLOB.digest_result_update
 
 /datum/digest_mode/drain
 	id = DM_DRAIN
@@ -213,7 +215,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 		B.owner.adjust_nutrition(-1 * delta_factor)
 		L.adjust_nutrition(1 * delta_factor)
 	if(L.stat != oldstat)
-		return list("to_update" = TRUE)
+		return GLOB.digest_result_update
 
 // E G G
 /datum/digest_mode/egg
@@ -274,7 +276,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 				B.ownegg().update_transform()
 				egg_contents -= I
 				B.ownegg_handle = null
-				return list("to_update" = TRUE)
+				return GLOB.digest_result_update
 			if(isitem(C))
 				var/obj/item/I = C
 				B.ownegg().w_class += I.w_class //Let's assume a regular outfit can reach total w_class of 16.
@@ -301,7 +303,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 		if(B.ownegg().w_class > 4)
 			B.ownegg().slowdown = 4
 		B.ownegg_handle = null
-		return list("to_update" = TRUE)
+		return GLOB.digest_result_update
 	return
 
 /datum/digest_mode/selective //unselectable, "smart" digestion mode for mobs only

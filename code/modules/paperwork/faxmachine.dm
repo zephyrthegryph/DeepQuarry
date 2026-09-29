@@ -136,7 +136,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	var/datum/job/job_to_request = SSjob.get_job(role)
 	var/reason = "Unspecified"
 	var/list/possible_reasons = list("Unspecified", "General duties", "Emergency situation")
-	possible_reasons += job_to_request.get_request_reasons()
+	possible_reasons += TYPE_TABLE_GET(job_to_request, get_request_reasons)
 	var/_answer_k136 = rerun_ask(L, "k136", PROC_REF(request_roles), args, /datum/om/prompt/choice, message = "Pick request reason.", title = "Request reason", choices = possible_reasons)
 	if(isnull(_answer_k136))
 		return

@@ -1,7 +1,7 @@
 // Default behavior factory.
 //
 // When a mob declares use_modern_ai = TRUE but doesn't override
-// get_ai_behaviors(), the brain composes a sensible default list from the
+// the get_ai_behaviors type table, the brain composes a sensible default list from the
 // mob's stats (melee_damage, projectiletype, has_hands) and its
 // ai_attack_on_sight flag. This lets us migrate every simple_mob to the new
 // framework by flipping one flag, without hand-editing each subtype.

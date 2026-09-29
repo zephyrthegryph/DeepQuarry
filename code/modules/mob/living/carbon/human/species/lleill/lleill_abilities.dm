@@ -101,7 +101,7 @@
 	set desc = "Convert an object into a piece of glamour."
 	set category = "Abilities.Lleill"
 
-	var/list/transmute_list = list(
+	var/static/list/transmute_list = list(
 		"Transparent Glamour" = /obj/item/potion_material/glamour_transparent,
 		"Shrinking Glamour" = /obj/item/potion_material/glamour_shrinking,
 		"Twinkling Glamour" = /obj/item/potion_material/glamour_twinkling,
@@ -508,7 +508,7 @@
 		to_chat(src, span_warning("You do not have enough energy to do that! You currently have [species.lleill_energy] energy."))
 		return
 
-	var/list/beast_options = list("Armadillo" = /mob/living/simple_mob/animal/passive/armadillo,
+	var/static/list/beast_options = list("Armadillo" = /mob/living/simple_mob/animal/passive/armadillo,
 									"Azure Tit" = /mob/living/simple_mob/animal/passive/bird/azure_tit/beastmode,
 									"Bear" = /mob/living/simple_mob/animal/space/bear/brown/beastmode,
 									"Cat" = /mob/living/simple_mob/animal/passive/cat/black/beastmode,
@@ -672,7 +672,7 @@
 		to_chat(src, span_warning("You do not have enough energy to do that! You currently have [species.lleill_energy] energy."))
 		return
 
-	var/list/beast_options = list("Armadillo" = /mob/living/simple_mob/animal/passive/armadillo,
+	var/static/list/beast_options = list("Armadillo" = /mob/living/simple_mob/animal/passive/armadillo,
 									"Azure Tit" = /mob/living/simple_mob/animal/passive/bird/azure_tit/beastmode,
 									"Bear" = /mob/living/simple_mob/animal/space/bear/brown/beastmode,
 									"Cat" = /mob/living/simple_mob/animal/passive/cat/black/beastmode,

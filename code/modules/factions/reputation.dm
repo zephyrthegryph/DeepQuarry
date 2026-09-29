@@ -1,8 +1,7 @@
 GLOBAL_LIST_INIT(reputation_factions, init_reputation_factions())
 GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, new())
 
-/proc/reputation_affiliation_choices() as /list
-	return list(AFFILIATION_HOSTILE, AFFILIATION_OPPOSED, AFFILIATION_NEUTRAL, AFFILIATION_FRIENDLY, AFFILIATION_MEMBER)
+GLOBAL_LIST_INIT(reputation_affiliation_choices, list(AFFILIATION_HOSTILE, AFFILIATION_OPPOSED, AFFILIATION_NEUTRAL, AFFILIATION_FRIENDLY, AFFILIATION_MEMBER))
 
 /proc/reputation_for_affiliation(affiliation)
 	switch(affiliation)
@@ -224,26 +223,25 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 	department_ledgers = list()
 	personal_ledgers = list()
 	agent_records = list()
-	for(var/department in get_reputation_departments())
+	for(var/department in TYPE_TABLE_GET(src, get_reputation_departments))
 		department_ledgers[department] = new /datum/faction_reputation_ledger(reputations)
 
 DECLARE_REF(/datum/station_faction_relations, "department_ledgers", OWNED_VALUES, null)
 DECLARE_REF(/datum/station_faction_relations, "personal_ledgers", OWNED_VALUES, null)
 DECLARE_REF(/datum/station_faction_relations, "agent_records", OWNED_LIST, null)
 
-/datum/station_faction_relations/proc/get_reputation_departments()
-	return list(
-		DEPARTMENT_COMMAND,
-		DEPARTMENT_SECURITY,
-		DEPARTMENT_ENGINEERING,
-		DEPARTMENT_MEDICAL,
-		DEPARTMENT_RESEARCH,
-		DEPARTMENT_CARGO,
-		DEPARTMENT_CIVILIAN,
-		DEPARTMENT_PLANET,
-		DEPARTMENT_SYNTHETIC,
-		DEPARTMENT_TALON,
-	)
+TYPE_TABLE_DECLARE(/datum/station_faction_relations, get_reputation_departments, list( \
+		DEPARTMENT_COMMAND, \
+		DEPARTMENT_SECURITY, \
+		DEPARTMENT_ENGINEERING, \
+		DEPARTMENT_MEDICAL, \
+		DEPARTMENT_RESEARCH, \
+		DEPARTMENT_CARGO, \
+		DEPARTMENT_CIVILIAN, \
+		DEPARTMENT_PLANET, \
+		DEPARTMENT_SYNTHETIC, \
+		DEPARTMENT_TALON, \
+	))
 
 /datum/station_faction_relations/proc/get_department_ledger(department, create = TRUE)
 	var/datum/faction_reputation_ledger/ledger = department_ledgers[department]
@@ -511,7 +509,7 @@ DECLARE_REF(/datum/station_faction_relations, "agent_records", OWNED_LIST, null)
 	var/datum/faction_reputation_ledger/ledger = ensure_faction_reputation()
 	for(var/faction_id in GLOB.reputation_factions)
 		var/affiliation = affiliations?[faction_id]
-		if(!(affiliation in reputation_affiliation_choices()))
+		if(!(affiliation in GLOB.reputation_affiliation_choices))
 			affiliation = AFFILIATION_NEUTRAL
 		faction_affiliations[faction_id] = affiliation
 		if(!ledger.affiliations_initialized)

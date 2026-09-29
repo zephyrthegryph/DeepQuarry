@@ -65,8 +65,7 @@
 //Track code
 //defineing actions
 
-/obj/item/storage/smolebrickcase/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/smolebrickcase, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/structure/smoletrack
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	color = "#ffffff"
@@ -403,5 +402,4 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 	/obj/item/reagent_containers/food/snacks/snackplanet/virgoprime
 	)
 
-/obj/item/storage/bagoplanets/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/bagoplanets, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))

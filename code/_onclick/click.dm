@@ -180,7 +180,7 @@
 
 /atom/movable/screen/click_catcher/Click(location, control, params)
 	var/list/P = params2list(params)
-	switch(GLOB.input_router.classify(P, GLOB.input_router.click_catcher_table()))
+	switch(GLOB.input_router.classify(P, TYPE_TABLE_GET(GLOB.input_router, click_catcher_table)))
 		if(INPUT_ACTION_SWAP_HANDS)
 			if(istype(usr, /mob/living/carbon))
 				var/mob/living/carbon/C = usr
@@ -190,7 +190,7 @@
 	if(T)
 		T = screen_loc2turf(P[SCREEN_LOC], T)
 		if(T)
-			if(GLOB.input_router.classify(P, GLOB.input_router.shift_table()) == INPUT_ACTION_INSPECT)
+			if(GLOB.input_router.classify(P, TYPE_TABLE_GET(GLOB.input_router, shift_table)) == INPUT_ACTION_INSPECT)
 				usr.face_atom(T)
 				return 1
 			T.Click(location, control, params)

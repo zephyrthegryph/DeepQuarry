@@ -34,7 +34,7 @@
 		L.apply_body_effect(/datum/body_effect/deep_wounds, 30 SECONDS)
 
 /datum/decl/mob_organ_names/wraith
-	hit_zones = list("body", "eye", "crystaline spike", "left claw", "right claw")
+TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body", "eye", "crystaline spike", "left claw", "right claw"))
 
 ////////////////////////////
 //	Purity Construct - Archbishop
@@ -64,4 +64,4 @@
 	attack_sound = 'sound/weapons/pierce.ogg'
 
 /datum/decl/mob_organ_names/wraith
-	hit_zones = list("body", "eye", "crystaline spike", "left claw", "right claw")
+TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body", "eye", "crystaline spike", "left claw", "right claw"))

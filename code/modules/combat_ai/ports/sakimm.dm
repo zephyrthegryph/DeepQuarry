@@ -26,30 +26,26 @@
 /mob/living/simple_mob/animal/sif/sakimm
 	use_modern_ai = TRUE
 
-/mob/living/simple_mob/animal/sif/sakimm/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/sakimm_hoard_tick,
-		/datum/ai_behavior/sakimm_steal_item,
-		/datum/ai_behavior/sakimm_smart_melee,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/retaliate_to_attacker,
-		/datum/ai_behavior/call_for_help,
-		/datum/ai_behavior/return_home,
-		/datum/ai_behavior/follow_leader,
-		/datum/ai_behavior/flee_low_hp,
-		/datum/ai_behavior/idle_wander,
-		/datum/ai_behavior/idle_speak,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/animal/sif/sakimm, get_ai_behaviors, list( \
+	/datum/ai_behavior/sakimm_hoard_tick, \
+	/datum/ai_behavior/sakimm_steal_item, \
+	/datum/ai_behavior/sakimm_smart_melee, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/retaliate_to_attacker, \
+	/datum/ai_behavior/call_for_help, \
+	/datum/ai_behavior/return_home, \
+	/datum/ai_behavior/follow_leader, \
+	/datum/ai_behavior/flee_low_hp, \
+	/datum/ai_behavior/idle_wander, \
+	/datum/ai_behavior/idle_speak, \
+))
 
 // The base sakimm is passive (retaliate-only); only the /intelligent variant
 // went actively hunting. We keep that distinction via ai_attack_on_sight, which
 // both inherit as FALSE-ish through faction dispositions — they do not aggress
 // on sight, matching legacy hostile = FALSE.
 
-/mob/living/simple_mob/animal/sif/sakimm/get_ai_target_selectors()
-	var/static/list/L = list(/datum/target_selector/sakimm_loot)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/animal/sif/sakimm, get_ai_target_selectors, list(/datum/target_selector/sakimm_loot))
 
 // ---------------------------------------------------------------------------
 // Loot-aware target selector. Falls back to the closest hostile, but when the
@@ -58,10 +54,8 @@
 // legacy list_targets()/find_target() item-injection.
 // ---------------------------------------------------------------------------
 
-/// Shared loot table — the item types a sakimm covets. Proc-local static so it
-/// is allocated once and shared, the DM-idiomatic per-type constant table.
-/proc/dq_sakimm_loot_types()
-	var/static/list/L = list(
+/// Shared loot table — the item types a sakimm covets.
+GLOBAL_LIST_INIT(dq_sakimm_loot_types, list(
 		/obj/item/coin,
 		/obj/item/gun,
 		/obj/item/fossil,
@@ -74,8 +68,7 @@
 		/obj/item/stack/medical,
 		/obj/item/seeds,
 		/obj/item/spacecash,
-	)
-	return L
+	))
 
 /// Find the nearest covetable, unanchored, unowned item outside the sakimm's
 /// hoard radius. Returns null if the sakimm already holds something.
@@ -83,7 +76,7 @@
 	if(!istype(S) || S.get_active_hand())
 		return null
 	var/turf/home = S.ai_brain?.home_turf()
-	var/list/loot_types = dq_sakimm_loot_types()
+	var/list/loot_types = GLOB.dq_sakimm_loot_types
 	var/obj/item/best = null
 	var/best_dist = INFINITY
 	for(var/obj/item/I in view(range, S))

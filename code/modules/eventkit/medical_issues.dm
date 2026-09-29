@@ -18,26 +18,22 @@
 //                 with it).
 
 /// Surgical cures a GM may pick for a custom affliction on a limb: name -> TREAT_*.
-/proc/dq_custom_external_surgeries()
-	var/static/list/L = list(
-		"bone reinforcement" = TREAT_BONE_SETTING,
-		"remove growths" = TREAT_RESECTION,
-		"redirect blood vessels" = TREAT_VESSEL_REPAIR,
-		"extract object" = TREAT_FOREIGN_BODY_REMOVAL,
-		"flesh graft" = TREAT_TISSUE_REPAIR,
-	)
-	return L
+GLOBAL_LIST_INIT(dq_custom_external_surgeries, list( \
+	"bone reinforcement" = TREAT_BONE_SETTING, \
+	"remove growths" = TREAT_RESECTION, \
+	"redirect blood vessels" = TREAT_VESSEL_REPAIR, \
+	"extract object" = TREAT_FOREIGN_BODY_REMOVAL, \
+	"flesh graft" = TREAT_TISSUE_REPAIR, \
+))
 
 /// Surgical cures a GM may pick for a custom affliction on an internal organ.
-/proc/dq_custom_internal_surgeries()
-	var/static/list/L = list(
-		"remove growths" = TREAT_RESECTION,
-		"redirect blood vessels" = TREAT_VESSEL_REPAIR,
-		"close holes" = TREAT_SURGICAL_REPAIR,
-		"ultrasound" = TREAT_LITHOTRIPSY,
-		"reoxygenate tissue" = TREAT_OXYGENATION,
-	)
-	return L
+GLOBAL_LIST_INIT(dq_custom_internal_surgeries, list( \
+	"remove growths" = TREAT_RESECTION, \
+	"redirect blood vessels" = TREAT_VESSEL_REPAIR, \
+	"close holes" = TREAT_SURGICAL_REPAIR, \
+	"ultrasound" = TREAT_LITHOTRIPSY, \
+	"reoxygenate tissue" = TREAT_OXYGENATION, \
+))
 
 /// Per-tick cure strength of the cure reagent at a standard dose (the old
 /// system removed 10 "unhealth" per tick while the reagent was present).
@@ -258,7 +254,7 @@
 		if(!cure_reagent_type)
 			return
 	if(cure_q == "Surgery")
-		var/_answer_a10 = rerun_ask(user, "a10", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice, message = "Which surgery step should cure it?", title = "Cure", choices = istype(issue_organ, /obj/item/organ/internal) ? dq_custom_internal_surgeries() : dq_custom_external_surgeries())
+		var/_answer_a10 = rerun_ask(user, "a10", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice, message = "Which surgery step should cure it?", title = "Cure", choices = istype(issue_organ, /obj/item/organ/internal) ? GLOB.dq_custom_internal_surgeries : GLOB.dq_custom_external_surgeries)
 		if(isnull(_answer_a10))
 			return
 		cure_surgery_name = _answer_a10
@@ -307,7 +303,7 @@
 		A.cured_by = list()
 		A.cured_by[initial(cure_reagent_type.id)] = DQ_CUSTOM_CURE_RATE
 	if(cure_surgery_name)
-		var/list/surgeries = istype(issue_organ, /obj/item/organ/internal) ? dq_custom_internal_surgeries() : dq_custom_external_surgeries()
+		var/list/surgeries = istype(issue_organ, /obj/item/organ/internal) ? GLOB.dq_custom_internal_surgeries : GLOB.dq_custom_external_surgeries
 		A.cure_surgery = surgeries[cure_surgery_name]
 		A.cure_surgery_name = cure_surgery_name
 		A.treated_by = list()

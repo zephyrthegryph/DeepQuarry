@@ -437,9 +437,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory, INTERACT_HAND_UNGATED(null, PR
 	desc = "a neckscarf that is too small for a human's neck"
 	icon_state = "tesh_neckscarf"
 
-/obj/item/clothing/accessory/scarf/teshari/neckscarf/fit_constraint()
-	var/list/bodytypes = list(SPECIES_TESHARI)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/accessory/scarf/teshari/neckscarf, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
 /obj/item/clothing/accessory/halfcape
 	name = "half cape"
@@ -1214,9 +1212,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunct
 
 //Medals
 
-/obj/item/clothing/accessory/holster/machete/hold_constraint()
-	var/list/holds = list(/obj/item/material/knife/machete, /obj/item/kinetic_crusher/machete)
-	return list(HOLD_ONLY(holds))
+TYPE_TABLE(/obj/item/clothing/accessory/holster/machete, hold_spec, list(HOLD_ONLY(list(/obj/item/material/knife/machete, /obj/item/kinetic_crusher/machete))))
 
 /obj/item/clothing/accessory/medal/silver/unity
 	name = "medal of unity"

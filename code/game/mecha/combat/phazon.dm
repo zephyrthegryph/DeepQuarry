@@ -24,18 +24,20 @@
 // end
 	encumbrance_gap = 2
 
-	starting_components = list(
-		/obj/item/mecha_parts/component/hull, // normal hull
-		/obj/item/mecha_parts/component/actuator,
-		/obj/item/mecha_parts/component/armor/alien,
-		/obj/item/mecha_parts/component/gas,
-		/obj/item/mecha_parts/component/electrical
-		)
 
 	cloak_possible = FALSE // Cloaking is too much for something like this, and is moderately useless anyway.
 	phasing_possible = TRUE
 	switch_dmg_type_possible = TRUE
-	var/list/inherent_damage_absorption = list("brute"=0.7,"fire"=0.7,"bullet"=0.7,"laser"=0.7,"energy"=0.7,"bomb"=0.7) // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
+
+TYPE_TABLE(/obj/mecha/combat/phazon, mecha_starting_components, list( \
+		/obj/item/mecha_parts/component/hull, /* normal hull */ \
+		/obj/item/mecha_parts/component/actuator, \
+		/obj/item/mecha_parts/component/armor/alien, \
+		/obj/item/mecha_parts/component/gas, \
+		/obj/item/mecha_parts/component/electrical \
+		))
+
+TYPE_TABLE_DECLARE(/obj/mecha/combat/phazon, phazon_damage_absorption, list("brute"=0.7,"fire"=0.7,"bullet"=0.7,"laser"=0.7,"energy"=0.7,"bomb"=0.7))
 
 /obj/mecha/combat/phazon/equipped/Initialize(mapload)
 	starting_equipment = list(
@@ -89,7 +91,6 @@
 	dir_in = 1 //Facing North.
 	step_energy_drain = 3
 	max_integrity = 350
-	inherent_damage_absorption = list("brute"=0.6,"fire"=0.7,"bullet"=0.7,"laser"=0.9,"energy"=0.7,"bomb"=0.5)
 	max_temperature = 10000
 	infra_luminosity = 3
 	wreckage = /obj/effect/decal/mecha_wreckage/janus
@@ -106,6 +107,8 @@
 	phasing_possible = TRUE
 	switch_dmg_type_possible = TRUE
 	cloak_possible = TRUE // Allows Janus to cloak.
+
+TYPE_TABLE(/obj/mecha/combat/phazon/janus, phazon_damage_absorption, list("brute"=0.6,"fire"=0.7,"bullet"=0.7,"laser"=0.9,"energy"=0.7,"bomb"=0.5))
 
 /obj/mecha/combat/phazon/janus/take_damage(amount, type="brute")
 	..()
@@ -130,7 +133,7 @@
 		src.visible_message(span_alien("The [src.name] absorbs the incoming projectile's force, negating it!"))
 		src.log_append_to_last("Armor negated.")
 		return TRUE
-	else if((Proj.damage && !Proj.nodamage) && istype(Proj, /obj/item/projectile/beam) && prob(max(1, (50 - round((Proj.damage / 2) * inherent_damage_absorption["laser"])) * (1 - (Proj.armor_penetration / 100)))))	// Base 50% chance to deflect a beam,lowered by half the beam's damage scaled to laser absorption, then multiplied by the remaining percent of non-penetrated armor, with a minimum chance of 1%.
+	else if((Proj.damage && !Proj.nodamage) && istype(Proj, /obj/item/projectile/beam) && prob(max(1, (50 - round((Proj.damage / 2) * TYPE_TABLE_GET(src, phazon_damage_absorption)["laser"])) * (1 - (Proj.armor_penetration / 100)))))	// Base 50% chance to deflect a beam,lowered by half the beam's damage scaled to laser absorption, then multiplied by the remaining percent of non-penetrated armor, with a minimum chance of 1%.
 		src.occupant_message(span_alien("The armor reflects the incoming beam, negating it!"))
 		src.visible_message(span_alien("The [src.name] reflects the incoming beam, negating it!"))
 		src.log_append_to_last("Armor reflected.")
@@ -139,7 +142,7 @@
 	return ..()
 
 /obj/mecha/combat/phazon/janus/dynattackby(obj/item/W as obj, mob/user as mob)
-	if(prob(max(1, (50 - round((W.force / 2) * inherent_damage_absorption["brute"])) * (1 - (W.armor_penetration / 100)))))
+	if(prob(max(1, (50 - round((W.force / 2) * TYPE_TABLE_GET(src, phazon_damage_absorption)["brute"])) * (1 - (W.armor_penetration / 100)))))
 		src.occupant_message(span_alien("The armor absorbs the incoming attack's force, negating it!"))
 		src.visible_message(span_alien("The [src.name] absorbs the incoming attack's force, negating it!"))
 		src.log_append_to_last("Armor absorbed.")

@@ -8,10 +8,6 @@
 	siemens_coefficient = 1 //Its literally metal
 	resistance_flags = FIRE_PROOF
 
-/obj/item/clothing/suit/armor/vox_scrap/fit_constraint()
-	var/list/bodytypes = list(SPECIES_VOX)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/suit/armor/vox_scrap, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
 
-/obj/item/clothing/suit/armor/vox_scrap/suit_storage_constraint()
-	var/list/stores = list(POCKET_EMERGENCY, POCKET_EXPLO, POCKET_ALL_TANKS)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/armor/vox_scrap, suit_storage_spec, list(HOLD_ONLY(list(POCKET_EMERGENCY, POCKET_EXPLO, POCKET_ALL_TANKS))))

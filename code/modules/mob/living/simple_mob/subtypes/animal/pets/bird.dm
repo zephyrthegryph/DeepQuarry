@@ -89,7 +89,7 @@
 	icon_scale_y = 0.5
 
 /datum/decl/mob_organ_names/bird
-	hit_zones = list("head", "chest", "left leg", "right leg", "left wing", "right wing")
+TYPE_TABLE(/datum/decl/mob_organ_names/bird, mob_organ_hit_zones, list("head", "chest", "left leg", "right leg", "left wing", "right wing"))
 
 /mob/living/simple_mob/animal/passive/bird/european_robin/beastmode
 	movement_cooldown = 1

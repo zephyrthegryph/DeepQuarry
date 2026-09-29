@@ -128,8 +128,7 @@
 
 // Shapeshifters have some behaviour that doesn't play well with this species so I have taken the main parts needed for here.
 
-/datum/species/lleill/shared_table_vars()
-	return ..() + "valid_transform_species"
+TYPE_TABLE(/datum/species/lleill, shared_table_vars, list("assisted_langs", "unarmed_types", "cold_discomfort_strings", "heat_discomfort_strings", "has_organ", "genders", "secondary_langs", "inherent_verbs", "default_emotes", "speech_sounds", "species_component", "valid_transform_species"))
 
 /datum/species/lleill/get_valid_shapeshifter_forms(mob/living/carbon/human/H)
 	return valid_transform_species

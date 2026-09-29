@@ -30,16 +30,14 @@
 	// Retaliate, don't aggress on sight — it would rather drain power.
 	ai_attack_on_sight = FALSE
 
-/mob/living/simple_mob/vore/solargrub/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/solargrub_break_free,
-		/datum/ai_behavior/retaliate_to_attacker,
-		/datum/ai_behavior/melee_attack,
-		/datum/ai_behavior/maul_unconscious,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/idle_speak,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/vore/solargrub, get_ai_behaviors, list( \
+	/datum/ai_behavior/solargrub_break_free, \
+	/datum/ai_behavior/retaliate_to_attacker, \
+	/datum/ai_behavior/melee_attack, \
+	/datum/ai_behavior/maul_unconscious, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/idle_speak, \
+))
 
 // Damage-triggered: unanchor from the powernet and release the AI lock so the
 // grub can turn to fight. Mirrors the legacy
@@ -93,16 +91,12 @@
 	/// Mirrors the legacy ai_holder.ignored_targets.
 	var/list/dq_ignored_machines = null
 
-/mob/living/simple_mob/animal/solargrub_larva/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/larva_infest_machine,
-		/datum/ai_behavior/idle_wander,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/animal/solargrub_larva, get_ai_behaviors, list( \
+	/datum/ai_behavior/larva_infest_machine, \
+	/datum/ai_behavior/idle_wander, \
+))
 
-/mob/living/simple_mob/animal/solargrub_larva/get_ai_target_selectors()
-	var/static/list/L = list(/datum/target_selector/larva_machine)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/animal/solargrub_larva, get_ai_target_selectors, list(/datum/target_selector/larva_machine))
 
 /// Shared validity check for a candidate machine, mirroring the legacy
 /// list_targets() / can_attack() filters: powered (or APC/SMES), not on the

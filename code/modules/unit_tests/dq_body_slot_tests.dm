@@ -185,7 +185,7 @@
 		if(heat ? C.handle_high_temperature(temperature) : C.handle_low_temperature(temperature))
 			. |= heat ? C.get_heat_protection_flags() : C.get_cold_protection_flags()
 	var/parts = 0
-	for(var/part in dq_worn_zone_parts())
+	for(var/part in GLOB.dq_worn_zone_parts)
 		parts |= part
 	. &= parts
 

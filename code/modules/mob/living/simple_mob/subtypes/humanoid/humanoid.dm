@@ -36,4 +36,5 @@
 			new_corpse.set_low_priority(TRUE)
 
 /datum/decl/mob_organ_names/humanoid
-	hit_zones = list("head", "torso", "left leg", "right leg", "left arm", "right arm", "left hand", "right hand", "left foot", "right foot") //Same as real people!
+//Same as real people!
+TYPE_TABLE(/datum/decl/mob_organ_names/humanoid, mob_organ_hit_zones, list("head", "torso", "left leg", "right leg", "left arm", "right arm", "left hand", "right hand", "left foot", "right foot"))

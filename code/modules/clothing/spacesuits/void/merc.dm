@@ -20,9 +20,7 @@
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.05 //Military Armor
 
-/obj/item/clothing/suit/space/void/merc/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_SECURITY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/void/merc, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_SECURITY))))
 
 /obj/item/clothing/head/helmet/space/void/merc/fire
 	icon_state = "rig0-firebug"
@@ -47,9 +45,7 @@
 	breach_threshold = 18 //Super Extra Thicc
 	slowdown = 1
 
-/obj/item/clothing/suit/space/void/merc/fire/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_SECURITY, /obj/item/material/twohanded/fireaxe, /obj/item/flamethrower)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/void/merc/fire, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_SECURITY, /obj/item/material/twohanded/fireaxe, /obj/item/flamethrower))))
 
 
 /obj/item/clothing/head/helmet/space/void/merc

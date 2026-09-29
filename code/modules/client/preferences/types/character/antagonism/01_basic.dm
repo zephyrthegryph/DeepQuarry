@@ -4,9 +4,7 @@
 	savefile_identifier = PREFERENCE_CHARACTER
 	can_randomize = FALSE
 
-/datum/preference/choiced/uplinklocation/init_possible_values()
-	return GLOB.uplink_locations
-
+TYPE_TABLE(/datum/preference/choiced/uplinklocation, pref_choices, GLOB.uplink_locations)
 // No application
 /datum/preference/choiced/uplinklocation/apply_to_living(mob/living/target, value)
 	return

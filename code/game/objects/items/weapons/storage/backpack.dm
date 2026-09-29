@@ -19,8 +19,7 @@
 	drop_sound = 'sound/items/drop/backpack.ogg'
 	pickup_sound = 'sound/items/pickup/backpack.ogg'
 
-/obj/item/storage/backpack/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_LARGE))
+TYPE_TABLE(/obj/item/storage/backpack, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_LARGE)))
 
 
 /obj/item/storage/backpack/equipped(mob/user, slot)
@@ -59,9 +58,7 @@
 	max_storage_space = ITEMSIZE_COST_NORMAL * 14 // 56
 	storage_cost = INVENTORY_STANDARD_SPACE + 1
 
-/obj/item/storage/backpack/holding/hold_constraint()
-	var/list/refuses = list(/obj/item/storage/backpack/holding)
-	return list(HOLD_NOT(refuses), HOLD_MAX_SIZE(ITEMSIZE_LARGE))
+TYPE_TABLE(/obj/item/storage/backpack/holding, hold_spec, list(HOLD_NOT(list(/obj/item/storage/backpack/holding)), HOLD_MAX_SIZE(ITEMSIZE_LARGE)))
 
 /obj/item/storage/backpack/holding/duffle
 	name = "dufflebag of holding"
@@ -479,8 +476,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/backpack/holding, \
 
 //Parachutes
 
-/obj/item/storage/backpack/purse/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/backpack/purse, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/backpack/parachute
 	name = "parachute"
 	desc = "A specially made backpack, designed to help one survive jumping from incredible heights. It sacrifices some storage space for that added functionality."
@@ -566,8 +562,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/backpack/holding, \
 	var/taurtype = /datum/sprite_accessory/tail/taur/horse //Acceptable taur type to be wearing this
 	var/no_message = "You aren't the appropriate taur type to wear this!"
 
-/obj/item/storage/backpack/saddlebag/equip_constraint()
-	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/storage/backpack/saddlebag/proc/taur_fit, null)))
+TYPE_TABLE(/obj/item/storage/backpack/saddlebag, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/storage/backpack/saddlebag/proc/taur_fit, null))))
 
 /obj/item/storage/backpack/saddlebag/proc/taur_fit(mob/living/carbon/human/H)
 	return (istype(H) && istype(H.tail_style, taurtype)) ? TRUE : lowertext(no_message)
@@ -590,8 +585,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/backpack/holding, \
 	slowdown = 0.5 //And are slower, too...
 	var/no_message = "You aren't the appropriate taur type to wear this!"
 
-/obj/item/storage/backpack/saddlebag_common/equip_constraint()
-	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/storage/backpack/saddlebag_common/proc/taur_fit, null)))
+TYPE_TABLE(/obj/item/storage/backpack/saddlebag_common, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/storage/backpack/saddlebag_common/proc/taur_fit, null))))
 
 /// Any taur half; the bags take the look of the wearer's.
 /obj/item/storage/backpack/saddlebag_common/proc/taur_fit(mob/living/carbon/human/H)

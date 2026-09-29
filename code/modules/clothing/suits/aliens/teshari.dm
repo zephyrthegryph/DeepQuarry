@@ -9,9 +9,7 @@
 	icon_state = "tesh_cloak_bn"
 	body_parts_covered = UPPER_TORSO|ARMS
 
-/obj/item/clothing/suit/storage/teshari/cloak/fit_constraint()
-	var/list/bodytypes = list(SPECIES_TESHARI)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/cloak, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
 /obj/item/clothing/suit/storage/teshari/cloak/standard/black_red
 	name = "black and red cloak"
@@ -209,9 +207,7 @@
 	siemens_coefficient = 0.6
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
-/obj/item/clothing/suit/storage/teshari/cloak/jobs/hos/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_SECURITY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/cloak/jobs/hos, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_SECURITY))))
 
 /obj/item/clothing/suit/storage/teshari/cloak/jobs/sec
 	name = "security cloak"
@@ -222,9 +218,7 @@
 	siemens_coefficient = 0.6
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
-/obj/item/clothing/suit/storage/teshari/cloak/jobs/sec/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_SECURITY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/cloak/jobs/sec, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_SECURITY))))
 
 /obj/item/clothing/suit/storage/teshari/cloak/jobs/iaa
 	name = "internal affairs cloak"
@@ -251,9 +245,7 @@
 	icon = 'icons/inventory/suit/item_teshari.dmi'
 	icon_state = "labcoat"
 
-/obj/item/clothing/suit/storage/toggle/labcoat/teshari/fit_constraint()
-	var/list/bodytypes = list(SPECIES_TESHARI)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/labcoat/teshari, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
 /obj/item/clothing/suit/storage/toggle/tesharicoat
 	name = "small black coat"
@@ -262,9 +254,7 @@
 	icon_state = "tesharicoat"
 	body_parts_covered = CHEST|ARMS|LEGS
 
-/obj/item/clothing/suit/storage/toggle/tesharicoat/fit_constraint()
-	var/list/bodytypes = list(SPECIES_TESHARI)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/tesharicoat, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
 /obj/item/clothing/suit/storage/toggle/tesharicoatwhite
 	name = "small coat"
@@ -275,9 +265,7 @@
 
 //Hooded teshari cloaks
 
-/obj/item/clothing/suit/storage/toggle/tesharicoatwhite/fit_constraint()
-	var/list/bodytypes = list(SPECIES_TESHARI)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/tesharicoatwhite, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 /obj/item/clothing/suit/storage/hooded/teshari
 	name = "Hooded Teshari Cloak"
 	desc = "A soft teshari cloak with an added hood."
@@ -289,13 +277,9 @@
 	actions_types = list(/datum/action/item_action/toggle_hood)
 	hoodtype = /obj/item/clothing/head/tesh_hood
 
-/obj/item/clothing/suit/storage/hooded/teshari/fit_constraint()
-	var/list/bodytypes = list(SPECIES_TESHARI)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/teshari, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
-/obj/item/clothing/suit/storage/hooded/teshari/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/teshari, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/head/tesh_hood
 	name = "Cloak Hood"
@@ -308,9 +292,7 @@
 	flags_inv = BLOCKHAIR
 	body_parts_covered = HEAD
 
-/obj/item/clothing/head/tesh_hood/fit_constraint()
-	var/list/bodytypes = list(SPECIES_TESHARI)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/head/tesh_hood, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
 /obj/item/clothing/suit/storage/hooded/teshari/standard/black_orange
 	name = "black and orange hooded cloak"
@@ -445,9 +427,7 @@
 
 //Belted job cloaks
 
-/obj/item/clothing/suit/storage/teshari/beltcloak/fit_constraint()
-	var/list/bodytypes = list(SPECIES_TESHARI)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/beltcloak, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 /obj/item/clothing/suit/storage/teshari/beltcloak/jobs/cargo
 	name = "cargo belted cloak"
 	desc = "A soft Teshari cloak made for the Cargo department"
@@ -522,9 +502,7 @@
 	siemens_coefficient = 0.6
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
-/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/sec/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_SECURITY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/sec, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_SECURITY))))
 
 /obj/item/clothing/suit/storage/teshari/beltcloak/jobs/qm
 	name = "quartermaster belted cloak"
@@ -555,9 +533,7 @@
 	siemens_coefficient = 0.6
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
-/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/hos/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_SECURITY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/hos, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_SECURITY))))
 
 /obj/item/clothing/suit/storage/teshari/beltcloak/jobs/jani
 	name = "janitor belted cloak"

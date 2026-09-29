@@ -103,38 +103,36 @@
 	organ_damage_per_tick = 1.5
 	organ_damage_targets = list(O_HEART)
 
-/datum/affliction/heart_damage/get_stages()
-	var/static/list/S = list(
-		"Moderate" = list(
-			"name" = "cardiogenic shock",
-			"description" = "The heart is failing to pump effectively. Tissue perfusion drops despite adequate blood volume.",
-			"symptom_pool" = list(
-				/datum/affliction_symptom/chest_pain_crushing = 70,
-				/datum/affliction_symptom/short_breath        = 80,
-				/datum/affliction_symptom/pallor              = 70,
-				/datum/affliction_symptom/palpitations        = 50,
-				/datum/affliction_symptom/cyanosis            = 40,
-			),
-			"min_symptoms" = 2,
-			"max_symptoms" = 4,
-			"factors" = alist(BF_BP_SYSTOLIC = -20, BF_BP_DIASTOLIC = -10, BF_O2_SAT = -8),
-		),
-		"Critical" = list(
-			"name" = "decompensated heart failure",
-			"description" = "The failing heart muscle can no longer hold a rhythm: it fibrillates into cardiac arrest (see cardiac arrhythmia). Without intervention, irreversible brain injury follows within minutes.",
-			"always_spawns" = list(/datum/affliction/cardiac_arrhythmia),
-			"symptom_pool" = list(
-				/datum/affliction_symptom/chest_pain_crushing = 90,
-				/datum/affliction_symptom/cyanosis            = 60,
-				/datum/affliction_symptom/palpitations        = 60,
-				/datum/affliction_symptom/short_breath        = 70,
-			),
-			"min_symptoms" = 2,
-			"max_symptoms" = 4,
-			"factors" = alist(BF_HEART_RATE = -30, BF_BP_SYSTOLIC = -50, BF_O2_SAT = -10),
-		),
-	)
-	return S
+TYPE_TABLE(/datum/affliction/heart_damage, affliction_stages, list( \
+	"Moderate" = list( \
+		"name" = "cardiogenic shock", \
+		"description" = "The heart is failing to pump effectively. Tissue perfusion drops despite adequate blood volume.", \
+		"symptom_pool" = list( \
+			/datum/affliction_symptom/chest_pain_crushing = 70, \
+			/datum/affliction_symptom/short_breath        = 80, \
+			/datum/affliction_symptom/pallor              = 70, \
+			/datum/affliction_symptom/palpitations        = 50, \
+			/datum/affliction_symptom/cyanosis            = 40, \
+		), \
+		"min_symptoms" = 2, \
+		"max_symptoms" = 4, \
+		"factors" = alist(BF_BP_SYSTOLIC = -20, BF_BP_DIASTOLIC = -10, BF_O2_SAT = -8), \
+	), \
+	"Critical" = list( \
+		"name" = "decompensated heart failure", \
+		"description" = "The failing heart muscle can no longer hold a rhythm: it fibrillates into cardiac arrest (see cardiac arrhythmia). Without intervention, irreversible brain injury follows within minutes.", \
+		"always_spawns" = list(/datum/affliction/cardiac_arrhythmia), \
+		"symptom_pool" = list( \
+			/datum/affliction_symptom/chest_pain_crushing = 90, \
+			/datum/affliction_symptom/cyanosis            = 60, \
+			/datum/affliction_symptom/palpitations        = 60, \
+			/datum/affliction_symptom/short_breath        = 70, \
+		), \
+		"min_symptoms" = 2, \
+		"max_symptoms" = 4, \
+		"factors" = alist(BF_HEART_RATE = -30, BF_BP_SYSTOLIC = -50, BF_O2_SAT = -10), \
+	), \
+))
 
 
 // --- Brain (staged: significant → critical) ----------------------------
@@ -148,36 +146,34 @@
 	// older generic and still helps but more slowly.
 	treated_by = list(TREAT_NEURAL_REPAIR = 0.7)
 
-/datum/affliction/brain_damage/get_stages()
-	var/static/list/S = list(
-		"Significant" = list(
-			"name" = "anoxic brain injury",
-			"description" = "Brain tissue starved of oxygen long enough to show neurological deficits — confusion, slowed cognition, impaired vision. Alkysine can repair the underlying damage.",
-			"symptom_pool" = list(
-				/datum/affliction_symptom/confusion            = 80,
-				/datum/affliction_symptom/blurred_vision       = 60,
-				/datum/affliction_symptom/dizziness            = 70,
-				/datum/affliction_symptom/unsteady_gait        = 60,
-				/datum/affliction_symptom/pupillary_asymmetry  = 50,
-			),
-			"min_symptoms" = 2,
-			"max_symptoms" = 4,
-		),
-		"Critical" = list(
-			"name" = "brain herniation",
-			"description" = "Cranial pressure has displaced brain tissue past the structures that contain it. Past this point, neurological function does not return.",
-			"always_spawns" = list(/datum/affliction/respiratory_arrest),
-			"symptom_pool" = list(
-				/datum/affliction_symptom/confusion      = 90,
-				/datum/affliction_symptom/blurred_vision = 80,
-				/datum/affliction_symptom/dizziness      = 80,
-				/datum/affliction_symptom/pallor         = 60,
-			),
-			"min_symptoms" = 2,
-			"max_symptoms" = 4,
-			"factors" = alist(BF_SLOWDOWN = 2.5, BF_ACCURACY = -60, BF_MOTOR_CONTROL = 0.9, BF_ACTION_BLOCKS = ACTION_BLOCK_SPEECH | ACTION_BLOCK_SURGERY, BF_HEART_RATE = -20, BF_BP_SYSTOLIC = -30, BF_O2_SAT = -10),
-			"spontaneous_emotes" = list("collapse", "groan"),
-			"spontaneous_emote_prob" = 8,
-		),
-	)
-	return S
+TYPE_TABLE(/datum/affliction/brain_damage, affliction_stages, list( \
+	"Significant" = list( \
+		"name" = "anoxic brain injury", \
+		"description" = "Brain tissue starved of oxygen long enough to show neurological deficits — confusion, slowed cognition, impaired vision. Alkysine can repair the underlying damage.", \
+		"symptom_pool" = list( \
+			/datum/affliction_symptom/confusion            = 80, \
+			/datum/affliction_symptom/blurred_vision       = 60, \
+			/datum/affliction_symptom/dizziness            = 70, \
+			/datum/affliction_symptom/unsteady_gait        = 60, \
+			/datum/affliction_symptom/pupillary_asymmetry  = 50, \
+		), \
+		"min_symptoms" = 2, \
+		"max_symptoms" = 4, \
+	), \
+	"Critical" = list( \
+		"name" = "brain herniation", \
+		"description" = "Cranial pressure has displaced brain tissue past the structures that contain it. Past this point, neurological function does not return.", \
+		"always_spawns" = list(/datum/affliction/respiratory_arrest), \
+		"symptom_pool" = list( \
+			/datum/affliction_symptom/confusion      = 90, \
+			/datum/affliction_symptom/blurred_vision = 80, \
+			/datum/affliction_symptom/dizziness      = 80, \
+			/datum/affliction_symptom/pallor         = 60, \
+		), \
+		"min_symptoms" = 2, \
+		"max_symptoms" = 4, \
+		"factors" = alist(BF_SLOWDOWN = 2.5, BF_ACCURACY = -60, BF_MOTOR_CONTROL = 0.9, BF_ACTION_BLOCKS = ACTION_BLOCK_SPEECH | ACTION_BLOCK_SURGERY, BF_HEART_RATE = -20, BF_BP_SYSTOLIC = -30, BF_O2_SAT = -10), \
+		"spontaneous_emotes" = list("collapse", "groan"), \
+		"spontaneous_emote_prob" = 8, \
+	), \
+))

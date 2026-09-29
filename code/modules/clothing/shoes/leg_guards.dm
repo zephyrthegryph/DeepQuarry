@@ -10,11 +10,9 @@
 	pickup_sound = 'sound/items/pickup/boots.ogg'
 	resistance_flags = FIRE_PROOF
 
-/obj/item/clothing/shoes/leg_guard/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/leg_guard, fit_spec, null)
 
-/obj/item/clothing/shoes/leg_guard/equip_constraint()
-	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/shoes/leg_guard/proc/suit_clearance, null)))
+TYPE_TABLE(/obj/item/clothing/shoes/leg_guard, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/shoes/leg_guard/proc/suit_clearance, null))))
 
 /obj/item/clothing/shoes/leg_guard/proc/suit_clearance(mob/living/carbon/human/H)
 	if(!istype(H) || !H.get_equipped_item(SLOT_ID_SUIT))

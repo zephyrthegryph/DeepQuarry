@@ -71,4 +71,4 @@
 	melee_damage_upper = 25
 
 /datum/decl/mob_organ_names/abberation
-	hit_zones = list("fleshy mass", "maw", "eye(?)", "orifice(?)")
+TYPE_TABLE(/datum/decl/mob_organ_names/abberation, mob_organ_hit_zones, list("fleshy mass", "maw", "eye(?)", "orifice(?)"))

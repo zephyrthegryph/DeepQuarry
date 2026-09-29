@@ -968,14 +968,14 @@
 			var/amount = flow_ask(C.mob, "body_injure_amount", /datum/om/prompt/number, message = "How much [choice]?", title = "Injure [src]", default = 10, min = 0, round_entry = FALSE)
 			if(!amount || QDELETED(src))
 				return null
-			var/list/zones = list("whole body") + BP_ALL
+			var/static/list/zones = list("whole body") + BP_ALL
 			var/zone = flow_ask(C.mob, "body_injure_zone", /datum/om/prompt/choice, message = "Where? (systemic kinds ignore this)", title = "Injure [src]", choices = zones, default = "whole body")
 			if(!zone || QDELETED(src))
 				return null
 			var/dealt = injure(kinds[choice], amount, zone == "whole body" ? null : zone, flags = INJURE_IGNORE_RESISTANCE)
 			return "injured ([choice], [amount] requested, [round(dealt, 0.1)] dealt[zone == "whole body" ? "" : " at [zone]"])"
 		if("mend")
-			var/list/names = dq_treatment_tag_names()
+			var/list/names = GLOB.dq_treatment_tag_names
 			var/list/tags = list()
 			for(var/tag in names)
 				tags[names[tag]] = tag
@@ -1246,19 +1246,18 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 		return
 	ask_metainfo(src, "dislikes", reopen)
 
-/// An OOC note field: list(identity var, preference type, what the question calls the preferences).
+/// OOC note fields: field => list(identity var, preference type, what the question calls the preferences).
+GLOBAL_LIST_INIT(metainfo_fields, list(
+	"notes" = list("ooc_notes", /datum/preference/text/living/ooc_notes, null),
+	"likes" = list("ooc_notes_likes", /datum/preference/text/living/ooc_notes_likes, "LIKED"),
+	"dislikes" = list("ooc_notes_dislikes", /datum/preference/text/living/ooc_notes_dislikes, "DISLIKED"),
+	"favs" = list("ooc_notes_favs", /datum/preference/text/living/ooc_notes_favs, "FAVOURITE"),
+	"maybes" = list("ooc_notes_maybes", /datum/preference/text/living/ooc_notes_maybes, "MAYBE"),
+))
+
+/// An OOC note field (shared, read-only), or null for an unknown field.
 /mob/living/proc/metainfo_field(field)
-	switch(field)
-		if("notes")
-			return list("ooc_notes", /datum/preference/text/living/ooc_notes, null)
-		if("likes")
-			return list("ooc_notes_likes", /datum/preference/text/living/ooc_notes_likes, "LIKED")
-		if("dislikes")
-			return list("ooc_notes_dislikes", /datum/preference/text/living/ooc_notes_dislikes, "DISLIKED")
-		if("favs")
-			return list("ooc_notes_favs", /datum/preference/text/living/ooc_notes_favs, "FAVOURITE")
-		if("maybes")
-			return list("ooc_notes_maybes", /datum/preference/text/living/ooc_notes_maybes, "MAYBE")
+	return istext(field) ? GLOB.metainfo_fields[field] : null
 
 /// Asks for one OOC note field; `chain` lists the fields asked next (and "style", which toggles the note style).
 /mob/living/proc/ask_metainfo(mob/user, field, reopen = TRUE, list/chain)
@@ -1384,7 +1383,7 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 	set desc = "Sets your voice frequency to be higher or lower pitched!"
 	set category = "OOC.Game Settings"
 
-	var/list/preset_voice_freqs = list("high" = MAX_VOICE_FREQ, "middle-high" = 56250, "middle" = 425000, "middle-low"= 28750, "low" = MIN_VOICE_FREQ, "custom" = 1, "random" = 0)
+	var/static/list/preset_voice_freqs = list("high" = MAX_VOICE_FREQ, "middle-high" = 56250, "middle" = 425000, "middle-low"= 28750, "low" = MIN_VOICE_FREQ, "custom" = 1, "random" = 0)
 	om_ask(src, /datum/om/prompt/choice, PROC_REF(voice_freq_preset_chosen), title = "Voice Frequency", message = "What would you like to set your voice frequency to?", choices = preset_voice_freqs)
 
 /mob/living/proc/voice_freq_preset_chosen(datum/om/prompt/choice/ask)

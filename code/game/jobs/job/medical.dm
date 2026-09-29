@@ -41,8 +41,7 @@
 						transported to Medical for treatment. They are expected to keep the crew informed about threats to their health and safety, and \
 						about the importance of Suit Sensors."
 
-/datum/job/cmo/get_request_reasons()
-	return list("Surgery pending", "Viral outbreak", "Training crew", "Assembling expedition team")
+TYPE_TABLE(/datum/job/cmo, get_request_reasons, list("Surgery pending", "Viral outbreak", "Training crew", "Assembling expedition team"))
 
 /datum/alt_title/chief_physician
 	title = JOB_ALT_CHIEF_PHYSICIAN
@@ -80,8 +79,7 @@
 
 	min_age_by_species = list(SPECIES_PROMETHEAN = 3)
 
-/datum/job/doctor/get_request_reasons()
-	return list("Surgery pending", "Viral outbreak", "Assembling expedition team")
+TYPE_TABLE(/datum/job/doctor, get_request_reasons, list("Surgery pending", "Viral outbreak", "Assembling expedition team"))
 
 //Medical Doctor Alt Titles
 /datum/alt_title/surgeon
@@ -254,8 +252,7 @@
 
 	min_age_by_species = list(SPECIES_PROMETHEAN = 2)
 
-/datum/job/paramedic/get_request_reasons()
-	return list("Assembling expedition team")
+TYPE_TABLE(/datum/job/paramedic, get_request_reasons, list("Assembling expedition team"))
 
 // Paramedic Alt Titles
 /datum/alt_title/emt

@@ -64,13 +64,11 @@
 	owner.setClickCooldown(8)
 	return DQ_BEHAVIOR_DONE
 
-/datum/ai_behavior/throw_grenade/get_player_verb_info()
-	// auto_target = TRUE: re-uses evaluate()'s cluster-finder so the player
-	// hurls at the densest enemy clump. Manual click-throw is still available.
-	var/static/list/L = list(
-		"name" = "Throw Grenade (smart)",
-		"desc" = "Throw a held grenade at the densest enemy cluster.",
-		"category" = "Combat",
-		"auto_target" = TRUE,
-	)
-	return L
+// auto_target = TRUE: re-uses evaluate()'s cluster-finder so the player
+// hurls at the densest enemy clump. Manual click-throw is still available.
+TYPE_TABLE(/datum/ai_behavior/throw_grenade, get_player_verb_info, list( \
+		"name" = "Throw Grenade (smart)", \
+		"desc" = "Throw a held grenade at the densest enemy cluster.", \
+		"category" = "Combat", \
+		"auto_target" = TRUE, \
+	))

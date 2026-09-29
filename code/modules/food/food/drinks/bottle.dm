@@ -51,7 +51,7 @@ DECLARE_REF(/obj/item/reagent_containers/food/drinks/bottle, "rag", SPILL, null)
 	if(!isGlass || !smash_duration)
 		return 0
 
-	var/list/chance_table = list(100, 95, 90, 85, 75, 55, 35) //starting from distance 0
+	var/static/list/chance_table = list(100, 95, 90, 85, 75, 55, 35) //starting from distance 0
 	var/idx = max(distance + 1, 1) //since list indices start at 1
 	if(idx > chance_table.len)
 		return 0

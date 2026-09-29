@@ -872,6 +872,9 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 /// Tick usage above this percentage shares the top percentile bin.
 #define PERF_HISTOGRAM_BINS 1000
 
+/// performance_window() with no samples (shared; callers only read it).
+GLOBAL_LIST_INIT(empty_performance_window, list("samples" = 0, "avg" = 0, "p50" = 0, "p95" = 0, "p99" = 0, "max" = 0, "overruns" = 0, "tps" = 0))
+
 /datum/controller/master/proc/performance_window(seconds, start_index_override)
 	var/sample_count
 	var/start_index
@@ -882,7 +885,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		sample_count = min(perf_tick_usage.len, max(round(world.fps * seconds), 1))
 		start_index = perf_tick_usage.len - sample_count + 1
 	if(!sample_count)
-		return list("samples" = 0, "avg" = 0, "p50" = 0, "p95" = 0, "p99" = 0, "max" = 0, "overruns" = 0, "tps" = 0)
+		return GLOB.empty_performance_window
 	// Percentiles come from a 1%-wide histogram filled in the same pass as the
 	// average, so the window is never copied or sorted (Q7). Usage above
 	// PERF_HISTOGRAM_BINS% lands in the top bin; "max" stays exact.

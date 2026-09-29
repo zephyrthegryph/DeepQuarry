@@ -22,8 +22,7 @@ MRE Stuff
 	)
 	special_handling = TRUE
 
-/obj/item/storage/mre/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/mre, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/mre/examine(mob/user)
 	. = ..()
@@ -232,8 +231,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/mre, INTERACT_USE("Open", PROC_REF(interac
 	starts_with = list(/obj/item/reagent_containers/food/snacks/slice/meatpizza/filled)
 	special_handling = TRUE
 
-/obj/item/storage/mrebag/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/mrebag, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/mrebag/update_icon()
 	if(opened)
@@ -315,8 +313,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/mrebag, INTERACT_USE("Open", PROC_REF(inte
 	foldable = null
 	var/isopened = 0
 
-/obj/item/storage/box/tgmc_mre/hold_constraint()
-	return list(HOLD_MAX_SIZE(0))
+TYPE_TABLE(/obj/item/storage/box/tgmc_mre, hold_spec, list(HOLD_MAX_SIZE(0)))
 
 /obj/item/storage/box/tgmc_mre/Initialize(mapload)
 	. = ..()

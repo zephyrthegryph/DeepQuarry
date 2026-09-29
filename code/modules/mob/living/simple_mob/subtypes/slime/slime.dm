@@ -103,13 +103,12 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 
 DECLARE_REF(/mob/living/simple_mob/slime, "hat", SPILL, null)
 
-/mob/living/simple_mob/slime/ventcrawl_get_item_whitelist()
-	return list(
-		VENTCRAWL_BASE_WHITELIST,
-		VENTCRAWL_VORE_WHITELIST,
-		// Slime unique items
-		/obj/item/clothing/head,
-		)
+// Slime unique items
+TYPE_TABLE(/mob/living/simple_mob/slime, ventcrawl_get_item_whitelist, list( \
+		VENTCRAWL_BASE_WHITELIST, \
+		VENTCRAWL_VORE_WHITELIST, \
+		/obj/item/clothing/head, \
+		))
 
 /mob/living/simple_mob/slime/on_death(gibbed)
 	// Make dead slimes stop glowing.
@@ -269,7 +268,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime, \
 	visible_message(span_infoplain(span_bold("\The [src]") + " squishes!"))
 
 /datum/decl/mob_organ_names/slime
-	hit_zones = list("cytoplasmic membrane")
+TYPE_TABLE(/datum/decl/mob_organ_names/slime, mob_organ_hit_zones, list("cytoplasmic membrane"))
 
 // === merged from slime_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/slime

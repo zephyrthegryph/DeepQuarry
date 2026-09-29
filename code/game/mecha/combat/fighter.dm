@@ -41,13 +41,14 @@
 
 	zoom_possible = 1
 
-	starting_components = list(
-		/obj/item/mecha_parts/component/hull/fighter,
-		/obj/item/mecha_parts/component/actuator,
-		/obj/item/mecha_parts/component/armor/fighter,
-		/obj/item/mecha_parts/component/gas,
-		/obj/item/mecha_parts/component/electrical
-		)
+TYPE_TABLE(/obj/mecha/combat/fighter, mecha_starting_components, list( \
+		/obj/item/mecha_parts/component/hull/fighter, \
+		/obj/item/mecha_parts/component/actuator, \
+		/obj/item/mecha_parts/component/armor/fighter, \
+		/obj/item/mecha_parts/component/gas, \
+		/obj/item/mecha_parts/component/electrical \
+		))
+
 
 DECLARE_DEFAULT_CHILD(/obj/mecha/combat/fighter, "ion_trail", /datum/effect/effect/system/ion_trail_follow)
 

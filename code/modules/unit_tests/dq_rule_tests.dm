@@ -82,7 +82,7 @@
 	var/list/errors = dq_rules_validate()
 	TEST_ASSERT(!length(errors), "declared rules compile: [jointext(errors, "; ")]")
 
-	var/list/rules = dq_rules()
+	var/list/rules = GLOBAL_TABLE_GET(dq_rules)
 	var/datum/rule/paper = rules[/datum/rule/ignition]
 	TEST_ASSERT(paper, "the ignition rule is registered")
 	TEST_ASSERT_EQUAL(length(paper.triggers), 1, "ignition has one trigger")
@@ -128,7 +128,7 @@
 	GLOB.dq_rule_fire_log.Cut()
 	var/declared = 0
 	var/passed = 0
-	var/list/rules = dq_rules()
+	var/list/rules = GLOBAL_TABLE_GET(dq_rules)
 	for(var/rule_path in rules)
 		var/datum/rule/rule = rules[rule_path]
 		if(rule.skip_generated_test)
@@ -246,7 +246,7 @@
 /// itself when the rule's per-type filter takes it, otherwise every topmost
 /// subtype the filter takes (the types that declare the breakpoint).
 ///
-/// Cached per (rule type, root): rules come from the dq_rules()/dq_rule_fixture()
+/// Cached per (rule type, root): rules come from the GLOBAL_TABLE_GET(dq_rules)/dq_rule_fixture()
 /// singleton registries, so a rule's applies_to/excludes are fixed for the
 /// world's lifetime and this is a pure function of its two arguments. Only
 /// test code calls this (the generated-threshold-test sweep and breakpoint
@@ -442,7 +442,7 @@
 	third.take_damage(10, BRUTE, MELEE, FALSE)
 	var/datum/rule_binding/binding = dq_rule_binding_of(third)
 	var/list/bound_rules = binding.rule_list()
-	var/break_index = bound_rules.Find(dq_rules()[/datum/rule/integrity_breaks])
+	var/break_index = bound_rules.Find(GLOBAL_TABLE_GET(dq_rules)[/datum/rule/integrity_breaks])
 	TEST_ASSERT(break_index, "grilles have the breaking-point rule")
 	TEST_ASSERT(binding.is_holding(break_index), "broken: the rule holds")
 	third.repair_damage(10)

@@ -67,10 +67,10 @@ Tags replace most of the type lists: an item declares `suit_storable`, and a sui
 The code is in `code/datums/properties/constraints.dm` (API), `code/datums/properties/equip_slots.dm` (equip slots) and `code/datums/properties/families/wearable.dm` (tags). Defines are in `code/__defines/constraints.dm`.
 
 - **Declaring.** An item type overrides a proc and returns a spec (a list of `REQ_*` clauses), or null for none. The proc runs once per type and the spec is compiled and cached by type:
-  - `hold_constraint()`: what a holder takes (storage, holsters). `HOLD_ONLY(types)`, `HOLD_NOT(types)` and `HOLD_MAX_SIZE(size)` are shorthands.
-  - `suit_storage_constraint()`: what a worn suit's suit-storage slot takes. Null means no suit storage. PDAs and pens always fit a suit that has one.
-  - `fit_constraint()`: whose body the item fits, with `REQ_FITS_BODYTYPES(list)` (the old `species_restricted` rules, include or `"exclude"` form, and the Teshari and Werebeast sprite rule).
-  - `equip_constraint()`: what the item needs of its wearer in any slot (taur halves, a robotic head, not wielded, owner-only fluff items).
+  - the `hold_spec` type table: what a holder takes (storage, holsters). `HOLD_ONLY(types)`, `HOLD_NOT(types)` and `HOLD_MAX_SIZE(size)` are shorthands.
+  - the `suit_storage_spec` type table: what a worn suit's suit-storage slot takes. Null means no suit storage. PDAs and pens always fit a suit that has one.
+  - the `fit_spec` type table: whose body the item fits, with `REQ_FITS_BODYTYPES(list)` (the old `species_restricted` rules, include or `"exclude"` form, and the Teshari and Werebeast sprite rule).
+  - the `equip_spec` type table: what the item needs of its wearer in any slot (taur halves, a robotic head, not wielded, owner-only fluff items).
 - **New clauses.** `REQ_TYPE(subject, types)` compiles a typecache; `REQ_FITS_BODYTYPES` evaluates the fit rule against `PRED_ACTOR`.
 - **Instances.** `set_constraint(kind, spec, key)` installs a compiled override on one instance: `restrict_hold()` (exact-fit boxes, internal pockets, random xenoarch boxes), `restrict_fit()` (refits, paint kits), `adopt_constraint()` (a rig's chest piece takes the rig's suit storage).
 - **Reading.** `dq_constraint(I, kind)` gives the compiled predicate, and `dq_constraint_refusal(I, kind, thing, actor)` the reason.

@@ -32,7 +32,7 @@ DECLARE_REAGENTS_TYPED(/obj/distilling_tester, 5000, null, /datum/reagents/disti
 
 	// Try this 10 times, We need to know if something is blocking at multiple temps.
 	// If it passes unit test, it might still be awful to make though, gotta find the right gas mix!
-	current_temp = LERP( D.temp_range[1], D.temp_range[2], temp_prog)
+	current_temp = LERP( TYPE_TABLE_GET(D, distilling_temp_range)[1], TYPE_TABLE_GET(D, distilling_temp_range)[2], temp_prog)
 	reagents.handle_reactions()
 
 DECLARE_REF(/obj/distilling_tester, "GM", OWNED, null)
