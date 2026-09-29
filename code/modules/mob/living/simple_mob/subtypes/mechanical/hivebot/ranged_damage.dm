@@ -153,7 +153,7 @@
 	projectiletype = /obj/item/projectile/arc/fragmentation
 
 /datum/decl/mob_organ_names/hivebotsiege
-	hit_zones = list("central chassis", "armor plating", "reinforced positioning servo", "head", "sensor suite", "manipulator arm", "heavy weapons mount", "advanced weapons array", "front right leg", "front left leg", "rear left leg", "rear right leg")
+TYPE_TABLE(/datum/decl/mob_organ_names/hivebotsiege, mob_organ_hit_zones, list("central chassis", "armor plating", "reinforced positioning servo", "head", "sensor suite", "manipulator arm", "heavy weapons mount", "advanced weapons array", "front right leg", "front left leg", "rear left leg", "rear right leg"))
 
 
 // === merged from ranged_damage_vr.dm during hard-fork de-suffix (verified no override-order change) ===

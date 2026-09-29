@@ -163,7 +163,7 @@
 	icon_state = "blue_vial"
 	var/splatter = FALSE			// Will this make a cloud of reagents?
 	var/splatter_volume = 5			// The volume of its chemical container, for said cloud of reagents.
-	var/list/my_chems = list(REAGENT_ID_MOLD) // ALLOW(instance_list): c: read-only per-subtype constant table (4 subtype overrides); a getter would share it, not worth it on a rare type
+TYPE_TABLE_DECLARE(/obj/item/projectile/arc/vial, vial_chems, list(REAGENT_ID_MOLD))
 
 /obj/item/projectile/arc/vial/Initialize(mapload)
 	. = ..()
@@ -183,8 +183,9 @@
 
 /obj/item/projectile/arc/vial/proc/ready_chemicals()
 	if(reagents)
-		var/reagent_vol = (round((splatter_volume / my_chems.len) * 100) / 100) //Cut it at the hundreds place, please.
-		for(var/reagent in my_chems)
+		var/list/chems = TYPE_TABLE_GET(src, vial_chems)
+		var/reagent_vol = (round((splatter_volume / chems.len) * 100) / 100) //Cut it at the hundreds place, please.
+		for(var/reagent in chems)
 			reagents.add_reagent(reagent, reagent_vol)
 
 /obj/item/projectile/arc/vial/frostvial
@@ -192,40 +193,40 @@
 	damage = 10
 	armor_penetration = 0
 	splatter_volume = 60
-	my_chems = list(REAGENT_ID_FROSTOIL)
 	modifier_type_to_apply = /datum/body_effect/wizpoison/frost
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
+TYPE_TABLE(/obj/item/projectile/arc/vial/frostvial, vial_chems, list(REAGENT_ID_FROSTOIL))
 
 /obj/item/projectile/arc/vial/poisonvial
 	icon_state = "green_vial"
 	damage = 10
 	armor_penetration = 0
 	splatter_volume = 60
-	my_chems = list(REAGENT_ID_TOXIN)
 	modifier_type_to_apply = /datum/body_effect/wizpoison
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
+TYPE_TABLE(/obj/item/projectile/arc/vial/poisonvial, vial_chems, list(REAGENT_ID_TOXIN))
 
 /obj/item/projectile/arc/vial/firevial
 	icon_state = "red_vial"
 	damage = 10
 	armor_penetration = 0
 	splatter_volume = 60
-	my_chems = list(REAGENT_ID_SACID)
 	modifier_type_to_apply = /datum/body_effect/wizfire
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
+TYPE_TABLE(/obj/item/projectile/arc/vial/firevial, vial_chems, list(REAGENT_ID_SACID))
 
 /obj/item/projectile/arc/vial/lightingvial
 	icon_state = "orange_vial"
 	damage = 10
 	armor_penetration = 0
 	splatter_volume = 60
-	my_chems = list(REAGENT_ID_SHREDDINGNANITES)
 	modifier_type_to_apply = /datum/body_effect/wizfire/lighting
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
+TYPE_TABLE(/obj/item/projectile/arc/vial/lightingvial, vial_chems, list(REAGENT_ID_SHREDDINGNANITES))
 
 /obj/item/projectile/energy/nuclearblast
 	name = "nuclear blast"

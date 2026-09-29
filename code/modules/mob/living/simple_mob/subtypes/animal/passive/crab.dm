@@ -53,4 +53,4 @@
 	adjust_scale(rand(5,12) / 10)
 
 /datum/decl/mob_organ_names/crab
-	hit_zones = list("cephalothorax", "abdomen", "left walking legs", "right walking legs", "left swimming legs", "right swimming legs", "left pincer", "right pincer")
+TYPE_TABLE(/datum/decl/mob_organ_names/crab, mob_organ_hit_zones, list("cephalothorax", "abdomen", "left walking legs", "right walking legs", "left swimming legs", "right swimming legs", "left pincer", "right pincer"))

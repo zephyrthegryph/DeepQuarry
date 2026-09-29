@@ -123,7 +123,7 @@
 	return (..(P))
 
 /datum/decl/mob_organ_names/juggernaut
-	hit_zones = list("body", "left pauldron", "right pauldron", "left arm", "right arm", "eye", "head", "crystaline spike")
+TYPE_TABLE(/datum/decl/mob_organ_names/juggernaut, mob_organ_hit_zones, list("body", "left pauldron", "right pauldron", "left arm", "right arm", "eye", "head", "crystaline spike"))
 
 /mob/living/simple_mob/construct/juggernaut/behemoth/unstoppable
 	name = "Behemoth"

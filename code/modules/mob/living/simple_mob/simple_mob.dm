@@ -390,8 +390,8 @@ DECLARE_REF(/mob/living/simple_mob, "mob_radio", OWNED, null)
 	return ..()
 
 /datum/decl/mob_organ_names
-	// ALLOW(instance_list): c: read-only per-subtype constant table (55 subtype overrides); a getter would share it, not worth it on a rare type
-	var/list/hit_zones = list("body") //When in doubt, it's probably got a body.
+//When in doubt, it's probably got a body.
+TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"))
 
 /*
  * How injured are we? Returns a number that is then added to movement cooldown and firing/melee delay respectively.

@@ -52,4 +52,4 @@
 	organ_names = /datum/decl/mob_organ_names/space_gnat
 
 /datum/decl/mob_organ_names/space_gnat
-	hit_zones = list("cephalothorax", "stubby winglets", "flailing tail")
+TYPE_TABLE(/datum/decl/mob_organ_names/space_gnat, mob_organ_hit_zones, list("cephalothorax", "stubby winglets", "flailing tail"))

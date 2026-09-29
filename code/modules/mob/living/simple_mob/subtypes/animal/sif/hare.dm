@@ -54,4 +54,4 @@
 	emote_see = list("stomps the ground", "sniffs the air", "chews on something")
 
 /datum/decl/mob_organ_names/hare
-	hit_zones = list("head", "chest", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "left head spike", "right head spike")
+TYPE_TABLE(/datum/decl/mob_organ_names/hare, mob_organ_hit_zones, list("head", "chest", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "left head spike", "right head spike"))

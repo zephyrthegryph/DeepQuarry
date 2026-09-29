@@ -369,4 +369,4 @@
 	factors = alist(BF_BLEEDING = 0.7, BF_EVASION = 20, BF_ATTACK_SPEED = 0.8, BF_MELEE_DAMAGE = 1.5, BF_INCOMING_ALL = 0.7, BF_DISABLE_DURATION = 0.8, BF_HEALING_RECEIVED = 1.5, BF_ENDURANCE_FLAT = 25, BF_ENDURANCE_MULT = 1.2)
 
 /datum/decl/mob_organ_names/kururak
-	hit_zones = list("head", "chest", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "far left tail", "far right tail", "left middle tail", "right middle tail")
+TYPE_TABLE(/datum/decl/mob_organ_names/kururak, mob_organ_hit_zones, list("head", "chest", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "far left tail", "far right tail", "left middle tail", "right middle tail"))

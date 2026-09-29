@@ -41,6 +41,6 @@
 	return ..()
 
 /datum/decl/mob_organ_names/ward
-	hit_zones = list("chassis", "sensor array", "hover thruster")
+TYPE_TABLE(/datum/decl/mob_organ_names/ward, mob_organ_hit_zones, list("chassis", "sensor array", "hover thruster"))
 
 DECLARE_REF(/mob/living/simple_mob/mechanical/ward, "owner", HELD, null)

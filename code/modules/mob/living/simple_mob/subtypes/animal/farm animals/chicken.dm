@@ -157,4 +157,4 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/chicken, INTERACT_ITEM
 	emote_see = list("pecks at the ground","flaps its tiny wings")
 
 /datum/decl/mob_organ_names/chicken
-	hit_zones = list("head", "body", "left wing", "right wing", "left leg", "right leg", "tendies")
+TYPE_TABLE(/datum/decl/mob_organ_names/chicken, mob_organ_hit_zones, list("head", "body", "left wing", "right wing", "left leg", "right leg", "tendies"))

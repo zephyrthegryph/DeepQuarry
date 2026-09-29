@@ -211,4 +211,4 @@
 
 	ai_busy_end()
 /datum/decl/mob_organ_names/spider
-	hit_zones = list("cephalothorax", "abdomen", "left forelegs", "right forelegs", "left hind legs", "right hind legs", "pedipalp", "mouthparts")
+TYPE_TABLE(/datum/decl/mob_organ_names/spider, mob_organ_hit_zones, list("cephalothorax", "abdomen", "left forelegs", "right forelegs", "left hind legs", "right hind legs", "pedipalp", "mouthparts"))

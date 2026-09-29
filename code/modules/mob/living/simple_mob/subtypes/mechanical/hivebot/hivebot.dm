@@ -46,7 +46,7 @@
 	attack_armor_pen = 5
 
 /datum/decl/mob_organ_names/hivebot
-	hit_zones = list("central chassis", "positioning servo", "head", "sensor suite", "manipulator arm", "shoulder weapon mount", "weapons array", "front right leg", "front left leg", "rear left leg", "rear right leg")
+TYPE_TABLE(/datum/decl/mob_organ_names/hivebot, mob_organ_hit_zones, list("central chassis", "positioning servo", "head", "sensor suite", "manipulator arm", "shoulder weapon mount", "weapons array", "front right leg", "front left leg", "rear left leg", "rear right leg"))
 
 
 // === merged from hivebot_vr.dm during hard-fork de-suffix (verified no override-order change) ===

@@ -778,7 +778,7 @@ DECLARE_REF(/obj/item/projectile, "my_case_handle", BACK_HANDLE, "BB")
 	if(isanimal(target_mob))
 		var/mob/living/simple_mob/SM = target_mob
 		var/datum/decl/mob_organ_names/organ_plan = SM.organ_names
-		impacted_organ = pick(organ_plan.hit_zones)
+		impacted_organ = pick(TYPE_TABLE_GET(organ_plan, mob_organ_hit_zones))
 
 	//hit messages
 	if(silenced)

@@ -1254,11 +1254,11 @@
 	/datum/trait/neutral/food_pref/coffee,
 	/datum/trait/neutral/food_pref/stimulant
 	)
-	var/list/our_allergens = list(ALLERGEN_MEAT) // ALLOW(instance_list): c: read-only per-subtype constant table (11 subtype overrides); a getter would share it, not worth it on a rare type
+TYPE_TABLE_DECLARE(/datum/trait/neutral/food_pref, food_pref_allergens, list(ALLERGEN_MEAT))
 
 /datum/trait/neutral/food_pref/apply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	. = ..()
-	for(var/a in our_allergens)
+	for(var/a in TYPE_TABLE_GET(src, food_pref_allergens))
 		LAZYOR(S.food_preference, a)
 
 /datum/trait/neutral/food_pref/herbivore
@@ -1277,7 +1277,7 @@
 	/datum/trait/neutral/food_pref/coffee,
 	/datum/trait/neutral/food_pref/stimulant
 	)
-	our_allergens = list(ALLERGEN_VEGETABLE,ALLERGEN_FRUIT)
+TYPE_TABLE(/datum/trait/neutral/food_pref/herbivore, food_pref_allergens, list(ALLERGEN_VEGETABLE,ALLERGEN_FRUIT))
 
 /datum/trait/neutral/food_pref/beanivore
 	name = "Food Preference - Legumovore"
@@ -1295,7 +1295,7 @@
 	/datum/trait/neutral/food_pref/coffee,
 	/datum/trait/neutral/food_pref/stimulant
 	)
-	our_allergens = list(ALLERGEN_BEANS)
+TYPE_TABLE(/datum/trait/neutral/food_pref/beanivore, food_pref_allergens, list(ALLERGEN_BEANS))
 
 /datum/trait/neutral/food_pref/omnivore
 	name = "Food Preference - Omnivore"
@@ -1313,7 +1313,7 @@
 	/datum/trait/neutral/food_pref/coffee,
 	/datum/trait/neutral/food_pref/stimulant
 	)
-	our_allergens = list(ALLERGEN_VEGETABLE,ALLERGEN_MEAT)
+TYPE_TABLE(/datum/trait/neutral/food_pref/omnivore, food_pref_allergens, list(ALLERGEN_VEGETABLE,ALLERGEN_MEAT))
 
 /datum/trait/neutral/food_pref/fungivore
 	name = "Food Preference - Fungivore"
@@ -1331,7 +1331,7 @@
 	/datum/trait/neutral/food_pref/coffee,
 	/datum/trait/neutral/food_pref/stimulant
 	)
-	our_allergens = list(ALLERGEN_FUNGI)
+TYPE_TABLE(/datum/trait/neutral/food_pref/fungivore, food_pref_allergens, list(ALLERGEN_FUNGI))
 
 /datum/trait/neutral/food_pref/piscivore
 	name = "Food Preference - Piscivore"
@@ -1349,7 +1349,7 @@
 	/datum/trait/neutral/food_pref/coffee,
 	/datum/trait/neutral/food_pref/stimulant
 	)
-	our_allergens = list(ALLERGEN_FISH)
+TYPE_TABLE(/datum/trait/neutral/food_pref/piscivore, food_pref_allergens, list(ALLERGEN_FISH))
 
 /datum/trait/neutral/food_pref/granivore
 	name = "Food Preference - Granivore"
@@ -1367,7 +1367,7 @@
 	/datum/trait/neutral/food_pref/coffee,
 	/datum/trait/neutral/food_pref/stimulant
 	)
-	our_allergens = list(ALLERGEN_GRAINS,ALLERGEN_SEEDS)
+TYPE_TABLE(/datum/trait/neutral/food_pref/granivore, food_pref_allergens, list(ALLERGEN_GRAINS,ALLERGEN_SEEDS))
 
 /datum/trait/neutral/food_pref/cocoavore
 	name = "Food Preference - Cocoavore"
@@ -1385,7 +1385,7 @@
 	/datum/trait/neutral/food_pref/coffee,
 	/datum/trait/neutral/food_pref/stimulant
 	)
-	our_allergens = list(ALLERGEN_CHOCOLATE)
+TYPE_TABLE(/datum/trait/neutral/food_pref/cocoavore, food_pref_allergens, list(ALLERGEN_CHOCOLATE))
 
 /datum/trait/neutral/food_pref/glycovore
 	name = "Food Preference - Glycovore"
@@ -1403,7 +1403,7 @@
 	/datum/trait/neutral/food_pref/coffee,
 	/datum/trait/neutral/food_pref/stimulant
 	)
-	our_allergens = list(ALLERGEN_SUGARS)
+TYPE_TABLE(/datum/trait/neutral/food_pref/glycovore, food_pref_allergens, list(ALLERGEN_SUGARS))
 
 /datum/trait/neutral/food_pref/lactovore
 	name = "Food Preference - Lactovore"
@@ -1421,7 +1421,7 @@
 	/datum/trait/neutral/food_pref/coffee,
 	/datum/trait/neutral/food_pref/stimulant
 	)
-	our_allergens = list(ALLERGEN_DAIRY)
+TYPE_TABLE(/datum/trait/neutral/food_pref/lactovore, food_pref_allergens, list(ALLERGEN_DAIRY))
 
 /datum/trait/neutral/food_pref/coffee
 	name = "Food Preference - Coffee Dependant"
@@ -1439,7 +1439,7 @@
 	/datum/trait/neutral/food_pref/lactovore,
 	/datum/trait/neutral/food_pref/stimulant
 	)
-	our_allergens = list(ALLERGEN_COFFEE)
+TYPE_TABLE(/datum/trait/neutral/food_pref/coffee, food_pref_allergens, list(ALLERGEN_COFFEE))
 
 /datum/trait/neutral/food_pref/stimulant
 	name = "Food Preference - Stimulant Dependant"
@@ -1457,7 +1457,7 @@
 	/datum/trait/neutral/food_pref/lactovore,
 	/datum/trait/neutral/food_pref/coffee
 	)
-	our_allergens = list(ALLERGEN_STIMULANT)
+TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(ALLERGEN_STIMULANT))
 
 
 //////////////PHOBIAS/////////////////

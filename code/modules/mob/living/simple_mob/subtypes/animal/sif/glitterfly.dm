@@ -102,4 +102,5 @@
 	emote_hear = list("pips", "clicks", "chirps")
 
 /datum/decl/mob_organ_names/smallflying
-	hit_zones = list("body", "left wing", "right wing") //For flying things too tiny to be granular
+//For flying things too tiny to be granular
+TYPE_TABLE(/datum/decl/mob_organ_names/smallflying, mob_organ_hit_zones, list("body", "left wing", "right wing"))

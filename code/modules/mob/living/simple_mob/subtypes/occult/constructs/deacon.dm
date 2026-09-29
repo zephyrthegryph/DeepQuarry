@@ -35,4 +35,4 @@
 		)
 
 /datum/decl/mob_organ_names/harvester
-	hit_zones = list("cephalothorax", "eye", "carapace", "energy crystal", "mandible")
+TYPE_TABLE(/datum/decl/mob_organ_names/harvester, mob_organ_hit_zones, list("cephalothorax", "eye", "carapace", "energy crystal", "mandible"))

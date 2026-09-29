@@ -117,10 +117,10 @@
 	holder_type = /obj/item/holder/possum/poppy
 
 /datum/decl/mob_organ_names/possum
-	hit_zones = list("head", "body", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "pouch")
+TYPE_TABLE(/datum/decl/mob_organ_names/possum, mob_organ_hit_zones, list("head", "body", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "pouch"))
 
 /datum/decl/mob_organ_names/poppy
-	hit_zones = list("head", "body", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "pouch", "cute little jacket")
+TYPE_TABLE(/datum/decl/mob_organ_names/poppy, mob_organ_hit_zones, list("head", "body", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "pouch", "cute little jacket"))
 
 /mob/living/simple_mob/animal/passive/opossum/beastmode/Initialize(mapload)
 	. = ..()

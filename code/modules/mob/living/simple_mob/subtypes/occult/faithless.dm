@@ -80,4 +80,4 @@
 	melee_damage_upper = 28
 
 /datum/decl/mob_organ_names/faithless
-	hit_zones = list("body", "left appendage", "right appendage", "shadowy tendrils", "head", "right stump", "left stump", "infernal eye")
+TYPE_TABLE(/datum/decl/mob_organ_names/faithless, mob_organ_hit_zones, list("body", "left appendage", "right appendage", "shadowy tendrils", "head", "right stump", "left stump", "infernal eye"))

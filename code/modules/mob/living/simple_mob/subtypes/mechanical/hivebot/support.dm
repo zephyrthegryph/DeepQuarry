@@ -87,7 +87,7 @@
 				break // Only one resupply per pulse.
 
 /datum/decl/mob_organ_names/hivebotsupport
-	hit_zones = list("central chassis", "positioning servo", "head", "sensor suite", "manipulator arm", "battle analytics mount", "weapons array", "front right leg", "front left leg", "rear left leg", "rear right leg")
+TYPE_TABLE(/datum/decl/mob_organ_names/hivebotsupport, mob_organ_hit_zones, list("central chassis", "positioning servo", "head", "sensor suite", "manipulator arm", "battle analytics mount", "weapons array", "front right leg", "front left leg", "rear left leg", "rear right leg"))
 
 /mob/living/simple_mob/mechanical/hivebot/support/harry
 	name = "Harry the hivelessbot"
