@@ -44,8 +44,10 @@ Static approximations (documented limits):
     `cell.charge` reads `charge` on another object.
   - Context roots are not state: user, held, look, entry, data, ui, state, world, global, GLOB (only
     its member after the global var), subsystem/define roots (SSx, ALL_CAPS of 3+ chars), and locals
-    holding a capability flyweight (typed /datum/capability/..., or `= cap_of(...)`: per-type config).
+    holding a capability flyweight or a per-type shared definition (typed /datum/capability/..., or
+    `= cap_of(...)` / `= ladder_for(...)` / `= caps_all(...)`: config), and locals read off those.
     Locals holding the holder's capability state (`= cap_data(...)` / `= cap_data?[...]`) are own.
+    `initial(x.y)` is a compile-time default, not a read.
   - Reads through `reagents` are fresh: the reagent holder marks its atom on every change (review 2
     M8). A watched relation var works the same way.
   - Chains after a call or an index (`get_area(src).power`, `L[1].x`) are not seen; `len`, `type`
@@ -76,9 +78,18 @@ CONTEXT_ROOTS = {"src", "user", "held", "look", "entry", "data", "ui", "state", 
 # Relation vars whose target marks its owner changed on every write (review 2 M8: the reagent
 # holder calls changed(my_atom)), so a read through them stays fresh.
 MARKING_RELATIONS = frozenset({"reagents"})
-# `var/datum/capability/x/C = ...` / `var/T/C = cap_of(...)` (capability config) and
-# `var/T/D = cap_data(...)` / `= cap_data?[...]` (the holder's own capability state).
-CAP_LOCAL = re.compile(r"\bvar/(datum/capability[\w/]*/)?(?:[\w/]+/)?(\w+)\s*=\s*(?:((?:\w+\s*\??\.\s*)?cap_data\s*(?:\(|\??\[))|(cap_of\s*\())?")
+# Per-proc local classification (own_roots_of):
+#   var/datum/capability/x/C ...                  a capability flyweight: per-type config (context)
+#   var/T/C = cap_of(...) / = ladder_for(...)     a per-type shared definition (context)
+#   var/T/X = C.anything...  (C context)          derived from config (context)
+#   var/T/D = [holder.]cap_data(...) / ?[...]     the holder's own capability state (own)
+#   var/T/R = [holder.]reagents                   a marking relation (reads through it are fresh)
+CAP_TYPED = re.compile(r"\bvar/datum/capability(?:/\w+)*/(\w+)\b")
+LOCAL_FROM = re.compile(r"\bvar/(?:[\w/]+/)?(\w+)\s*=\s*(.+)$")
+CONFIG_CALLS = re.compile(r"^(?:cap_of|ladder_for|caps_of|caps_all)\s*\(")
+CAP_DATA_EXPR = re.compile(r"^(?:(\w+)\s*\??\.\s*)?cap_data\s*(?:\(|\??\[)")
+RELATION_EXPR = re.compile(r"^(?:(\w+)\s*\??\.\s*)?(\w+)\s*$")
+INITIAL_CALL = re.compile(r"\binitial\s*\(")
 NEVER_STATE = {"len", "type", "parent_type"}
 # Subsystems (SSair) and defines (ALL_CAPS, 3+ chars); single-letter locals (M, C, H) are objects.
 GLOBAL_ROOT = re.compile(r"^(?:SS[a-z]\w*|[A-Z][A-Z0-9_]{2,})$")
@@ -320,26 +331,36 @@ def reactive_writes(proc):
     return out
 
 
-def own_roots_of(proc):
-    """(own roots, context roots) of a proc. Own: src, the holder (a capability proc's first
-    parameter), local aliases of either, and locals holding the holder's capability state
-    (`= cap_data(...)` / `= cap_data?[...]`). Context: locals holding a capability flyweight (typed
-    /datum/capability/..., or `= cap_of(...)`), whose vars are per-type configuration."""
+def own_roots_of(proc, relations=MARKING_RELATIONS):
+    """(own roots, context roots, relation roots) of a proc. Own: src, the holder (a capability
+    proc's first parameter), local aliases of either, and locals holding the holder's capability
+    state. Context: capability flyweights and per-type shared definitions (config, not state), and
+    locals derived from them. Relations: locals aliasing a marking relation (`= holder.reagents`)."""
     roots = {"src"}
     context = set()
+    rels = set()
     if proc.path.startswith("/datum/capability") and proc.params:
         roots.add(proc.params[0])
     for _n, text in proc.lines():
-        m = ALIAS.search(text.rstrip())
-        if m and m.group(2) in roots:
-            roots.add(m.group(1))
-        d = CAP_LOCAL.search(text)
-        if d:
-            if d.group(3):
-                roots.add(d.group(2))
-            elif d.group(1) or d.group(4):
-                context.add(d.group(2))
-    return roots, context
+        for m in CAP_TYPED.finditer(text):
+            context.add(m.group(1))
+        m = LOCAL_FROM.search(text.rstrip())
+        if not m:
+            continue
+        name, expr = m.group(1), m.group(2).strip()
+        if expr in roots:
+            roots.add(name)
+        elif CAP_DATA_EXPR.match(expr) and (not CAP_DATA_EXPR.match(expr).group(1) or CAP_DATA_EXPR.match(expr).group(1) in roots):
+            roots.add(name)
+        elif CONFIG_CALLS.match(expr):
+            context.add(name)
+        elif re.match(r"^(\w+)\s*\??\.", expr) and re.match(r"^(\w+)", expr).group(1) in context:
+            context.add(name)
+        else:
+            r = RELATION_EXPR.match(expr)
+            if r and r.group(2) in relations and (not r.group(1) or r.group(1) in roots):
+                rels.add(name)
+    return roots, context, rels
 
 
 def analyse(files):
@@ -364,9 +385,11 @@ def analyse(files):
     out = {rule: [] for rule in RULES}
     for proc in procs_list:
         if is_reactive(proc, needs_names):
-            own_roots, context = own_roots_of(proc)
             relations = watched | MARKING_RELATIONS
+            own_roots, context, local_rels = own_roots_of(proc, relations)
+            relations = relations | local_rels
             for number, text in proc.lines():
+                text = blank_calls(text, INITIAL_CALL)  # initial(x.y) is a compile-time default
                 bad = [name for name in foreign_reads(text, own_roots, context, relations) if name not in tracked]
                 if bad:
                     out["dx_untracked_read"].append((proc.rel, number))
@@ -427,6 +450,12 @@ SETTER(/obj/item/cell, sealed)
 		return FALSE
 	if(held.force || C.max_pours <= D.pours)
 		return FALSE
+	var/datum/reagents/R = reagents
+	var/datum/construction_ladder/built = ladder_for(src)
+	var/datum/ladder_stage/stage = built.stage_named("x")
+	for(var/datum/capability/K as anything in caps_all(src))
+		if(K.cadence && stage.icon && R.total_volume && initial(cell.charge))
+			return TRUE
 	return reagents?.total_volume > 0
 
 /obj/cap_fixture/meter/capabilities()

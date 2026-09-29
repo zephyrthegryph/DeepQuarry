@@ -11,10 +11,11 @@ Rule:
                  0 that is not scaled by a time define. Calls and their delay position (or the named
                  argument `delay =` / `for_time =`):
                    after(E, delay), om_after(E, delay), om_after_unique/om_after_replace(E, delay),
-                   om_after_slot(E, slot, delay), om_after_realtime(delay), addtimer(cb, delay),
-                   do_after(user, delay), COOLDOWN_START(src, index, delay),
-                   timed_set(D, name, value, for_time), cap_tool(name, quality, handler, delay), and
-                   `delay =` on any cap_* constructor.
+                   after_slot/om_after_slot(E, slot, delay), om_after_realtime(delay),
+                   look_flash(A, state, duration), addtimer(cb, delay), do_after(user, delay),
+                   COOLDOWN_START(src, index, delay), timed_set(D, name, value, for_time),
+                   cap_tool(name, quality, handler, delay), and `delay =` / `cooldown =` on any
+                   cap_* constructor.
                  A literal is fine when it is followed by a time define (`2 SECONDS`), when the group
                  or call it sits in is (`rand(2, 5) SECONDS`, `(base + 1) SECONDS`), or when it is a
                  factor (`delay * 2`, `delay / 2`, `2 * delay`), which scales a value that already
@@ -42,6 +43,8 @@ DELAY_ARGS = {
     "om_after_unique": (1, "delay"),
     "om_after_replace": (1, "delay"),
     "om_after_slot": (2, "delay"),
+    "after_slot": (2, "delay"),
+    "look_flash": (2, "duration"),
     "om_after_realtime": (0, "delay"),
     "addtimer": (1, "wait"),
     "do_after": (1, "delay"),
@@ -83,15 +86,20 @@ def raw_literal(expr):
     return False
 
 
-def delay_of(name, args):
+def delays_of(name, args):
+    """The delay expressions of one call: its DELAY_ARGS position (or named key), and on a cap_*
+    constructor the named `delay =` / `cooldown =`."""
+    out = []
     if name in DELAY_ARGS:
         index, key = DELAY_ARGS[name]
         got = dm.pick_arg(args, index, key)
         if got is None and key != "delay":
             got = dm.pick_arg(args, None, "delay")
-        return got
-    # any other cap_* constructor: only its named `delay =`
-    return dm.pick_arg(args, None, "delay")
+        out.append(got)
+    if name.startswith("cap_"):
+        out.append(dm.pick_arg(args, None, "delay"))
+        out.append(dm.pick_arg(args, None, "cooldown"))
+    return [d for d in out if d]
 
 
 def scan_lines(rel, clean):
@@ -101,8 +109,7 @@ def scan_lines(rel, clean):
             args = dm.call_args(code, m.end() - 1)
             if not args:
                 continue
-            delay = delay_of(m.group(1), args)
-            if delay and raw_literal(delay):
+            if any(raw_literal(delay) for delay in delays_of(m.group(1), args)):
                 found.append((rel, number))
                 break
     return found
@@ -113,7 +120,7 @@ def scan(files):
     tree = dm.tree(files)
     for rel, _lines in files:
         text = tree.raw_text(rel)
-        if not any(k in text for k in ("after", "addtimer", "COOLDOWN_START", "timed_set", "cap_")):
+        if not any(k in text for k in ("after", "addtimer", "COOLDOWN_START", "timed_set", "cap_", "look_flash")):
             continue
         out["dx_raw_delay"].extend(scan_lines(rel, tree.clean[rel]))
     return out
@@ -139,7 +146,11 @@ def selftest():
         "/proc/om_after(datum/E, delay, proc_ref, ...)",                # 16 ok: the definition
         "addtimer(CALLBACK(src, PROC_REF(x)), 10)",                     # 17 bad
         "do_after(user, 1.5 SECONDS, target)",                          # 18 ok
+        "after_slot(src, \"x\", 5, PROC_REF(x))",                       # 19 bad
+        "cap_hand(\"Ring\", PROC_REF(ring), cooldown = 30)",            # 20 bad
+        "cap_hand(\"Ring\", PROC_REF(ring), cooldown = 3 SECONDS)",     # 21 ok
+        "look_flash(src, \"sparks\", 12)",                              # 22 bad
     ]
     got = [n for _rel, n in scan_lines("x.dm", dm.sanitize(fixture))]
-    assert got == [1, 3, 6, 8, 11, 13, 15, 17], got
+    assert got == [1, 3, 6, 8, 11, 13, 15, 17, 19, 20, 22], got
     return "dx_raw_delay"
