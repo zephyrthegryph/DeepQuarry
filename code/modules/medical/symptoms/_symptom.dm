@@ -81,18 +81,16 @@
 /// The cost is one extra proc call per read instead of a direct field
 /// access, which is negligible compared to a list allocation per
 /// instance.
-/datum/affliction_symptom/proc/get_patient_messages()
-	return null
+TYPE_TABLE_DECLARE(/datum/affliction_symptom, get_patient_messages, null)
 
-/datum/affliction_symptom/proc/get_public_emotes()
-	return null
+TYPE_TABLE_DECLARE(/datum/affliction_symptom, get_public_emotes, null)
 
 /datum/affliction_symptom/proc/on_present(mob/living/M, datum/affliction/source)
 	if(!M)
 		return
 	// Initial announcement — a single message when the symptom first
 	// appears, on top of the regular drip.
-	var/list/msgs = get_patient_messages()
+	var/list/msgs = TYPE_TABLE_GET(src, get_patient_messages)
 	if((audiences & SYMPTOM_AUDIENCE_PATIENT) && length(msgs))
 		send_patient_message(M, initial = TRUE)
 
@@ -106,17 +104,17 @@
 		return
 	// Patient drip: only while conscious. Unconscious patients lose
 	// this channel entirely — by design.
-	var/list/msgs = get_patient_messages()
+	var/list/msgs = TYPE_TABLE_GET(src, get_patient_messages)
 	if((audiences & SYMPTOM_AUDIENCE_PATIENT) && length(msgs))
 		if(M.stat == CONSCIOUS && prob(patient_message_chance))
 			send_patient_message(M)
-	var/list/emotes = get_public_emotes()
+	var/list/emotes = TYPE_TABLE_GET(src, get_public_emotes)
 	if((audiences & SYMPTOM_AUDIENCE_PUBLIC) && length(emotes))
 		if(prob(public_emote_chance))
 			M.emote(pick(emotes))
 
 /datum/affliction_symptom/proc/send_patient_message(mob/living/M, initial = FALSE)
-	var/list/msgs = get_patient_messages()
+	var/list/msgs = TYPE_TABLE_GET(src, get_patient_messages)
 	if(!length(msgs))
 		return
 	var/msg = pick(msgs)

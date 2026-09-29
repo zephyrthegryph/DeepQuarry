@@ -170,18 +170,17 @@
 	valid_names -= not_included
 	var/list/nicknames = splittext(nickname, " ")
 	valid_names += nicknames
-	valid_names += special_mentions()
+	valid_names += TYPE_TABLE_GET(src, special_mentions)
 	for(var/name in valid_names)
 		if(findtext(message, regex("\\b[name]\\b", "i"))) // This is to stop 'ai' from triggering if someone says 'wait'.
 			return TRUE
 	return FALSE
 
 // Override this if you want something besides the mob's name to count for being mentioned in check_mentioned().
-/mob/proc/special_mentions()
-	return list()
+TYPE_TABLE_DECLARE(/mob, special_mentions, list())
 
-/mob/living/silicon/ai/special_mentions()
-	return list("AI") // AI door!
+// AI door!
+TYPE_TABLE(/mob/living/silicon/ai, special_mentions, list("AI"))
 
 /proc/encode_html_emphasis(message)
 	var/tagged_message = message

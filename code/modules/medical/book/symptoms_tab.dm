@@ -64,8 +64,8 @@
 			aud += "scanner"
 		entry["audiences"]            = aud
 		entry["clinical_description"] = proto.clinical_description || ""
-		var/list/patient_messages = proto.get_patient_messages()
-		var/list/public_emotes = proto.get_public_emotes()
+		var/list/patient_messages = TYPE_TABLE_GET(proto, get_patient_messages)
+		var/list/public_emotes = TYPE_TABLE_GET(proto, get_public_emotes)
 		entry["patient_messages"]     = patient_messages?.Copy() || list()
 		entry["public_emotes"]        = public_emotes?.Copy() || list()
 		entry["scanner_phrase"]       = proto.scanner_phrase || ""

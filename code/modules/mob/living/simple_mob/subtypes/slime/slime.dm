@@ -103,13 +103,12 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 
 DECLARE_REF(/mob/living/simple_mob/slime, "hat", SPILL, null)
 
-/mob/living/simple_mob/slime/ventcrawl_get_item_whitelist()
-	return list(
-		VENTCRAWL_BASE_WHITELIST,
-		VENTCRAWL_VORE_WHITELIST,
-		// Slime unique items
-		/obj/item/clothing/head,
-		)
+// Slime unique items
+TYPE_TABLE(/mob/living/simple_mob/slime, ventcrawl_get_item_whitelist, list( \
+		VENTCRAWL_BASE_WHITELIST, \
+		VENTCRAWL_VORE_WHITELIST, \
+		/obj/item/clothing/head, \
+		))
 
 /mob/living/simple_mob/slime/on_death(gibbed)
 	// Make dead slimes stop glowing.

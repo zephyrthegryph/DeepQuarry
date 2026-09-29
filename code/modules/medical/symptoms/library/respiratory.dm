@@ -19,16 +19,12 @@
 	public_emote_chance = 4
 	scanner_phrase = "elevated respiratory rate"
 
-/datum/affliction_symptom/short_breath/get_patient_messages()
-	var/static/list/L = list(
-		"You're having trouble catching your breath.",
-		"Each breath feels harder than the last.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/short_breath, get_patient_messages, list( \
+		"You're having trouble catching your breath.", \
+		"Each breath feels harder than the last.", \
+	))
 
-/datum/affliction_symptom/short_breath/get_public_emotes()
-	var/static/list/L = list("breathes heavily")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/short_breath, get_public_emotes, list("breathes heavily"))
 
 
 /datum/affliction_symptom/wet_cough
@@ -40,16 +36,12 @@
 	public_emote_chance = 5
 	scanner_phrase = "productive cough with fluid"
 
-/datum/affliction_symptom/wet_cough/get_patient_messages()
-	var/static/list/L = list(
-		"You cough up something wet.",
-		"You taste copper in your mouth.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/wet_cough, get_patient_messages, list( \
+		"You cough up something wet.", \
+		"You taste copper in your mouth.", \
+	))
 
-/datum/affliction_symptom/wet_cough/get_public_emotes()
-	var/static/list/L = list("coughs wetly")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/wet_cough, get_public_emotes, list("coughs wetly"))
 
 
 /datum/affliction_symptom/wheeze
@@ -61,15 +53,11 @@
 	public_emote_chance = 4
 	scanner_phrase = "audible wheeze on auscultation"
 
-/datum/affliction_symptom/wheeze/get_patient_messages()
-	var/static/list/L = list(
-		"Each breath comes with a whistling sound.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/wheeze, get_patient_messages, list( \
+		"Each breath comes with a whistling sound.", \
+	))
 
-/datum/affliction_symptom/wheeze/get_public_emotes()
-	var/static/list/L = list("wheezes")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/wheeze, get_public_emotes, list("wheezes"))
 
 
 /datum/affliction_symptom/labored_breathing
@@ -81,13 +69,9 @@
 	public_emote_chance = 5
 	scanner_phrase = "severely labored respiration"
 
-/datum/affliction_symptom/labored_breathing/get_patient_messages()
-	var/static/list/L = list(
-		"You're working hard for every breath.",
-		"Each inhale takes effort.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/labored_breathing, get_patient_messages, list( \
+		"You're working hard for every breath.", \
+		"Each inhale takes effort.", \
+	))
 
-/datum/affliction_symptom/labored_breathing/get_public_emotes()
-	var/static/list/L = list("gasps", "struggles to breathe")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/labored_breathing, get_public_emotes, list("gasps", "struggles to breathe"))

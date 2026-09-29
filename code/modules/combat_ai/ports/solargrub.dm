@@ -100,9 +100,7 @@
 	)
 	return L
 
-/mob/living/simple_mob/animal/solargrub_larva/get_ai_target_selectors()
-	var/static/list/L = list(/datum/target_selector/larva_machine)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/animal/solargrub_larva, get_ai_target_selectors, list(/datum/target_selector/larva_machine))
 
 /// Shared validity check for a candidate machine, mirroring the legacy
 /// list_targets() / can_attack() filters: powered (or APC/SMES), not on the

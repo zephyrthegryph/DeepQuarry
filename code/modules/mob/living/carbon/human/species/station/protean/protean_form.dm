@@ -9,9 +9,7 @@
 	/// world.time of the last form change (form strain).
 	var/last_switch_time = 0
 
-/datum/forms/protean/get_form_types()
-	var/static/list/types = list(/datum/form/human, /datum/form/protean_blob)
-	return types
+TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/form/protean_blob))
 
 /datum/forms/protean/attach()
 	. = ..()
@@ -336,12 +334,11 @@
 /datum/protean_blob_style/layered/New()
 	..()
 	layers = list()
-	for(var/list/spec as anything in layer_specs())
+	for(var/list/spec as anything in TYPE_TABLE_GET(src, layer_specs))
 		layers += new /datum/protean_blob_layer(arglist(spec))
 
 /// Constructor arguments for each layer, in draw order.
-/datum/protean_blob_style/layered/proc/layer_specs()
-	return list()
+TYPE_TABLE_DECLARE(/datum/protean_blob_style/layered, layer_specs, list())
 
 /datum/protean_blob_style/layered/proc/default_states()
 	. = list()
@@ -457,15 +454,14 @@
 /datum/protean_blob_style/layered/dragon/radial_image()
 	return image(icon = preview_icon, icon_state = preview_state)
 
-/datum/protean_blob_style/layered/dragon/layer_specs()
-	return list(
-		list("Underbelly", list("dragon_underSmooth", "dragon_underPlated"), "dragon_underSmooth", TRUE, TRUE, TRUE, FALSE, EAST, -48, 0),
-		list("Body", list("dragon_bodySmooth", "dragon_bodyScaled"), "dragon_bodySmooth", TRUE, TRUE, FALSE, FALSE, EAST, -48, 0),
-		list("Ears", list("dragon_earsNormal"), "dragon_earsNormal", TRUE, TRUE, FALSE, FALSE, EAST, -76, -50),
-		list("Mane", list("dragon_maneNone", "dragon_maneShaggy", "dragon_maneDorsalfin"), "dragon_maneShaggy", TRUE, TRUE, FALSE, FALSE, EAST, -76, -50),
-		list("Horns", list("dragon_hornsPointy", "dragon_hornsCurved", "dragon_hornsCurved2", "dragon_hornsJagged", "dragon_hornsCrown", "dragon_hornsSkull"), "dragon_hornsPointy", TRUE, TRUE, FALSE, FALSE, EAST, -86, -50),
-		list("Eyes", list("dragon_eyesNormal"), "dragon_eyesNormal", TRUE, TRUE, FALSE, TRUE, SOUTH, -48, -50),
-	)
+TYPE_TABLE(/datum/protean_blob_style/layered/dragon, layer_specs, list( \
+		list("Underbelly", list("dragon_underSmooth", "dragon_underPlated"), "dragon_underSmooth", TRUE, TRUE, TRUE, FALSE, EAST, -48, 0), \
+		list("Body", list("dragon_bodySmooth", "dragon_bodyScaled"), "dragon_bodySmooth", TRUE, TRUE, FALSE, FALSE, EAST, -48, 0), \
+		list("Ears", list("dragon_earsNormal"), "dragon_earsNormal", TRUE, TRUE, FALSE, FALSE, EAST, -76, -50), \
+		list("Mane", list("dragon_maneNone", "dragon_maneShaggy", "dragon_maneDorsalfin"), "dragon_maneShaggy", TRUE, TRUE, FALSE, FALSE, EAST, -76, -50), \
+		list("Horns", list("dragon_hornsPointy", "dragon_hornsCurved", "dragon_hornsCurved2", "dragon_hornsJagged", "dragon_hornsCrown", "dragon_hornsSkull"), "dragon_hornsPointy", TRUE, TRUE, FALSE, FALSE, EAST, -86, -50), \
+		list("Eyes", list("dragon_eyesNormal"), "dragon_eyesNormal", TRUE, TRUE, FALSE, TRUE, SOUTH, -48, -50), \
+	))
 
 /datum/protean_blob_style/layered/dullahan
 	id = "dullahan"
@@ -479,16 +475,15 @@
 /datum/protean_blob_style/layered/dullahan/radial_image()
 	return image(icon = preview_icon, icon_state = preview_state)
 
-/datum/protean_blob_style/layered/dullahan/layer_specs()
-	return list(
-		list("Body", list("dullahanbody"), "dullahanbody", FALSE, FALSE),
-		list("Eyes", list("dullahaneyes"), "dullahaneyes", TRUE, TRUE, TRUE, FALSE, SOUTH, -16, 0),
-		list("Metalshell", list("dullahanmetal", "dullahanmetal2", "dullahancommand"), "dullahanmetal", TRUE, TRUE, TRUE, FALSE, SOUTH, -16, 0),
-		list("Head", list("dullahanhead", "dullahanhead2"), "dullahanhead", FALSE, TRUE, TRUE, FALSE, SOUTH, -16, -16),
-		list("Lights", list("dullahanlightsempty", "dullahanlights", "dullahanwings", "dullahanlights2", "dullahanwings2", "dullahanwings3"), "dullahanlightsempty", TRUE, TRUE, TRUE, FALSE, SOUTH, -16, -16),
-		list("Breastplate", list("dullahanextendedoff", "dullahanextendedon"), "dullahanextendedoff", FALSE, FALSE),
-		list("Clothes", list("dullahanclothesempty", "dullahanclothes", "dullahanclothes2", "dullahanengibreastplate"), "dullahanclothesempty", FALSE, TRUE, TRUE, FALSE, SOUTH, -16, -16),
-	)
+TYPE_TABLE(/datum/protean_blob_style/layered/dullahan, layer_specs, list( \
+		list("Body", list("dullahanbody"), "dullahanbody", FALSE, FALSE), \
+		list("Eyes", list("dullahaneyes"), "dullahaneyes", TRUE, TRUE, TRUE, FALSE, SOUTH, -16, 0), \
+		list("Metalshell", list("dullahanmetal", "dullahanmetal2", "dullahancommand"), "dullahanmetal", TRUE, TRUE, TRUE, FALSE, SOUTH, -16, 0), \
+		list("Head", list("dullahanhead", "dullahanhead2"), "dullahanhead", FALSE, TRUE, TRUE, FALSE, SOUTH, -16, -16), \
+		list("Lights", list("dullahanlightsempty", "dullahanlights", "dullahanwings", "dullahanlights2", "dullahanwings2", "dullahanwings3"), "dullahanlightsempty", TRUE, TRUE, TRUE, FALSE, SOUTH, -16, -16), \
+		list("Breastplate", list("dullahanextendedoff", "dullahanextendedon"), "dullahanextendedoff", FALSE, FALSE), \
+		list("Clothes", list("dullahanclothesempty", "dullahanclothes", "dullahanclothes2", "dullahanengibreastplate"), "dullahanclothesempty", FALSE, TRUE, TRUE, FALSE, SOUTH, -16, -16), \
+	))
 
 /// The command shell is reserved for command staff.
 /datum/protean_blob_style/layered/dullahan/layer_options(datum/protean_blob_layer/L, mob/living/carbon/human/H)

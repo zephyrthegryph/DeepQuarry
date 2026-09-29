@@ -531,16 +531,12 @@
 	public_emote_chance = 8
 	scanner_phrase = "obstructed upper airway"
 
-/datum/affliction_symptom/choking/get_patient_messages()
-	var/static/list/L = list(
-		"You can't breathe! Something is stuck in your throat!",
-		"You try to cough, but nothing moves.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/choking, get_patient_messages, list( \
+		"You can't breathe! Something is stuck in your throat!", \
+		"You try to cough, but nothing moves.", \
+	))
 
-/datum/affliction_symptom/choking/get_public_emotes()
-	var/static/list/L = list("clutches at their throat", "makes a strangled noise")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/choking, get_public_emotes, list("clutches at their throat", "makes a strangled noise"))
 
 /datum/affliction_symptom/stridor
 	name = "stridor"
@@ -552,13 +548,9 @@
 	public_emote_chance = 4
 	scanner_phrase = "inspiratory stridor"
 
-/datum/affliction_symptom/stridor/get_patient_messages()
-	var/static/list/L = list("Your throat feels tight and narrow.", "Breathing in takes real effort.")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/stridor, get_patient_messages, list("Your throat feels tight and narrow.", "Breathing in takes real effort."))
 
-/datum/affliction_symptom/stridor/get_public_emotes()
-	var/static/list/L = list("breathes with a harsh, whistling rasp")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/stridor, get_public_emotes, list("breathes with a harsh, whistling rasp"))
 
 /datum/affliction_symptom/facial_swelling
 	name = "facial swelling"
@@ -570,9 +562,7 @@
 	public_emote_chance = 0
 	scanner_phrase = "angioedema of the face and tongue"
 
-/datum/affliction_symptom/facial_swelling/get_patient_messages()
-	var/static/list/L = list("Your tongue feels too big for your mouth.", "Your lips are tingling and swollen.")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/facial_swelling, get_patient_messages, list("Your tongue feels too big for your mouth.", "Your lips are tingling and swollen."))
 
 /datum/affliction_symptom/absent_breath_sounds
 	name = "absent breath sounds"
@@ -593,9 +583,7 @@
 	public_emote_chance = 5
 	scanner_phrase = "agonal respirations"
 
-/datum/affliction_symptom/agonal_gasping/get_public_emotes()
-	var/static/list/L = list("gasps once, then goes still")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/agonal_gasping, get_public_emotes, list("gasps once, then goes still"))
 
 /datum/affliction_symptom/diminished_breath_sounds
 	name = "diminished breath sounds"

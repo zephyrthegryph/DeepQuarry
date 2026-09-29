@@ -45,12 +45,10 @@
 	)
 	return L
 
-/mob/living/simple_mob/metroid/juvenile/get_ai_target_selectors()
-	var/static/list/L = list(
-		/datum/target_selector/metroid_prefer_monkey,
-		/datum/target_selector/closest,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile, get_ai_target_selectors, list( \
+		/datum/target_selector/metroid_prefer_monkey, \
+		/datum/target_selector/closest, \
+	))
 
 // ---------------------------------------------------------------------------
 // Monkey-preferring target selector. Monkeys (incl. alien monkeys via istype)

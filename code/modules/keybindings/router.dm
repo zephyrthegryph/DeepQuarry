@@ -14,47 +14,35 @@ GLOBAL_DATUM_INIT(input_router, /datum/input_router, new)
 
 /// The standard click table. Rows are checked in order; the first whose
 /// modifiers are all held wins. No match means Use.
-/datum/input_router/proc/standard_click_table()
-	var/static/list/table = list(
-		list(list(BUTTON4), INPUT_ACTION_NONE),
-		list(list(BUTTON5), INPUT_ACTION_NONE),
-		list(list(SHIFT_CLICK, MIDDLE_CLICK), INPUT_ACTION_POINT),
-		list(list(SHIFT_CLICK, CTRL_CLICK), INPUT_ACTION_QUICK),
-		list(list(SHIFT_CLICK, ALT_CLICK), INPUT_ACTION_LOOT),
-		list(list(SHIFT_CLICK), INPUT_ACTION_INSPECT),
-		list(list(MIDDLE_CLICK, CTRL_CLICK), INPUT_ACTION_TAG),
-		list(list(MIDDLE_CLICK), INPUT_ACTION_SWAP_HANDS),
-		list(list(ALT_CLICK, RIGHT_CLICK), INPUT_ACTION_ALTERNATE_SECONDARY),
-		list(list(ALT_CLICK), INPUT_ACTION_ALTERNATE),
-		list(list(CTRL_CLICK), INPUT_ACTION_PULL),
-		list(list(RIGHT_CLICK), INPUT_ACTION_RIGHT_CLICK_BINDING),
-	)
-	return table
+TYPE_TABLE_DECLARE(/datum/input_router, standard_click_table, list( \
+		list(list(BUTTON4), INPUT_ACTION_NONE), \
+		list(list(BUTTON5), INPUT_ACTION_NONE), \
+		list(list(SHIFT_CLICK, MIDDLE_CLICK), INPUT_ACTION_POINT), \
+		list(list(SHIFT_CLICK, CTRL_CLICK), INPUT_ACTION_QUICK), \
+		list(list(SHIFT_CLICK, ALT_CLICK), INPUT_ACTION_LOOT), \
+		list(list(SHIFT_CLICK), INPUT_ACTION_INSPECT), \
+		list(list(MIDDLE_CLICK, CTRL_CLICK), INPUT_ACTION_TAG), \
+		list(list(MIDDLE_CLICK), INPUT_ACTION_SWAP_HANDS), \
+		list(list(ALT_CLICK, RIGHT_CLICK), INPUT_ACTION_ALTERNATE_SECONDARY), \
+		list(list(ALT_CLICK), INPUT_ACTION_ALTERNATE), \
+		list(list(CTRL_CLICK), INPUT_ACTION_PULL), \
+		list(list(RIGHT_CLICK), INPUT_ACTION_RIGHT_CLICK_BINDING), \
+	))
 
 /// The screen click catcher: middle click swaps hands.
-/datum/input_router/proc/click_catcher_table()
-	var/static/list/table = list(list(list(MIDDLE_CLICK), INPUT_ACTION_SWAP_HANDS))
-	return table
+TYPE_TABLE_DECLARE(/datum/input_router, click_catcher_table, list(list(list(MIDDLE_CLICK), INPUT_ACTION_SWAP_HANDS)))
 
 /// Shift alone means Inspect (the click catcher faces the clicked tile).
-/datum/input_router/proc/shift_table()
-	var/static/list/table = list(list(list(SHIFT_CLICK), INPUT_ACTION_INSPECT))
-	return table
+TYPE_TABLE_DECLARE(/datum/input_router, shift_table, list(list(list(SHIFT_CLICK), INPUT_ACTION_INSPECT)))
 
 /// Alt alone means Alternate (screen buttons and consoles with an alt-click toggle).
-/datum/input_router/proc/alternate_table()
-	var/static/list/table = list(list(list(ALT_CLICK), INPUT_ACTION_ALTERNATE))
-	return table
+TYPE_TABLE_DECLARE(/datum/input_router, alternate_table, list(list(list(ALT_CLICK), INPUT_ACTION_ALTERNATE)))
 
 /// Right-click means the secondary action (screen buttons, secondary item interactions, click intercepts).
-/datum/input_router/proc/secondary_table()
-	var/static/list/table = list(list(list(RIGHT_CLICK), INPUT_ACTION_ALTERNATE_SECONDARY))
-	return table
+TYPE_TABLE_DECLARE(/datum/input_router, secondary_table, list(list(list(RIGHT_CLICK), INPUT_ACTION_ALTERNATE_SECONDARY)))
 
 /// A plain left click means Use (click intercepts that ignore middle clicks).
-/datum/input_router/proc/primary_table()
-	var/static/list/table = list(list(list(LEFT_CLICK), INPUT_ACTION_USE))
-	return table
+TYPE_TABLE_DECLARE(/datum/input_router, primary_table, list(list(list(LEFT_CLICK), INPUT_ACTION_USE)))
 
 /// Whether a click (params text or list) produces `action` with `table`. No match is no action.
 /// For screen objects and click intercepts that read one action outside the adapters.

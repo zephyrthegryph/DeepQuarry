@@ -69,18 +69,17 @@
 		all_jobs.Add(jobdatum.title)
 	return all_jobs
 
-/proc/get_all_centcom_jobs()
-	return list("VIP Guest",
-		"Custodian",
-		"Thunderdome Overseer",
-		"Intel Officer",
-		"Medical Officer",
-		"Death Commando",
-		"Research Officer",
-		"BlackOps Commander",
-		"Supreme Commander",
-		"Emergency Response Team",
-		"Emergency Response Team Leader")
+TYPE_TABLE(/proc, get_all_centcom_jobs, list("VIP Guest", \
+		"Custodian", \
+		"Thunderdome Overseer", \
+		"Intel Officer", \
+		"Medical Officer", \
+		"Death Commando", \
+		"Research Officer", \
+		"BlackOps Commander", \
+		"Supreme Commander", \
+		"Emergency Response Team", \
+		"Emergency Response Team Leader"))
 
 /atom/movable/proc/GetIdCard()
 	return null
@@ -124,7 +123,7 @@
 		if(I.rank in job_icons)
 			return I.rank
 
-		var/centcom = get_all_centcom_jobs()
+		var/centcom = TYPE_TABLE_GET(src, get_all_centcom_jobs)
 		if(I.assignment	in centcom) //Return with the NT logo if it is a CentCom job
 			return "CentCom"
 		if(I.rank in centcom)

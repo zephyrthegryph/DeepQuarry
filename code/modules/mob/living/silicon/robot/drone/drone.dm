@@ -78,13 +78,12 @@ DECLARE_SHARED_CACHE_EX(mob_hat, GLOBAL_PROC_REF(build_mob_hat), SC_NEVER, 1024,
 /mob/living/silicon/robot/drone/is_sentient()
 	return FALSE
 
-/mob/living/silicon/robot/drone/ventcrawl_get_item_whitelist()
-	// Yes this allows any object, yes it's silly. I don't know if it's ever been abused by drones though.
-	return list(
-		/atom/movable/emissive_blocker,
-		/atom/movable/screen,
-		/obj
-		)
+// Yes this allows any object, yes it's silly. I don't know if it's ever been abused by drones though.
+TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( \
+		/atom/movable/emissive_blocker, \
+		/atom/movable/screen, \
+		/obj \
+		))
 
 /mob/living/silicon/robot/drone/construction
 	name = "construction drone"

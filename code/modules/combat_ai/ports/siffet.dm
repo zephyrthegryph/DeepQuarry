@@ -20,12 +20,10 @@
 // take (mob_size <= 10), but anything that has personally wronged it (a grudge
 // from being attacked) is fair game regardless of size.
 
-/mob/living/simple_mob/animal/sif/siffet/get_ai_target_selectors()
-	var/static/list/L = list(
-		/datum/target_selector/siffet_prey,
-		/datum/target_selector/closest,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/animal/sif/siffet, get_ai_target_selectors, list( \
+		/datum/target_selector/siffet_prey, \
+		/datum/target_selector/closest, \
+	))
 
 /datum/target_selector/siffet_prey
 	name = "siffet prey"

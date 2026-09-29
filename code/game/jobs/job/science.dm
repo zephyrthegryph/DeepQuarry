@@ -44,8 +44,7 @@
 	alt_titles = list(JOB_ALT_RESEARCH_SUPERVISOR = /datum/alt_title/research_supervisor, JOB_ALT_RESEARCH_MANAGER = /datum/alt_title/research_manager,
 						JOB_ALT_HEAD_OF_DEVELOPMENT = /datum/alt_title/head_of_development,JOB_ALT_HEAD_SCIENTIST = /datum/alt_title/head_scientist)
 
-/datum/job/rd/get_request_reasons()
-	return list("Repairs needed", "Training crew", "Assembling expedition team")
+TYPE_TABLE(/datum/job/rd, get_request_reasons, list("Repairs needed", "Training crew", "Assembling expedition team"))
 
 // " + JOB_RESEARCH_DIRECTOR + " Alt Titles
 /datum/alt_title/research_supervisor
@@ -91,8 +90,7 @@
 						JOB_ALT_GAS_PHYSICIST = /datum/alt_title/gas_physicist, JOB_ALT_CIRCUIT_DESIGNER = /datum/alt_title/circuit_designer, JOB_ALT_CIRCUIT_PROGRAMMER = /datum/alt_title/circuit_programmer,
 						JOB_ALT_RESEARCH_CONTRACTOR = /datum/alt_title/research_contractor)
 
-/datum/job/scientist/get_request_reasons()
-	return list("Assembling expedition team")
+TYPE_TABLE(/datum/job/scientist, get_request_reasons, list("Assembling expedition team"))
 
 // Scientist Alt Titles
 /datum/alt_title/xenoarch
@@ -216,8 +214,7 @@
 			JOB_ALT_MECHATRONIC_ENGINEER = /datum/alt_title/mech_tech,
 		JOB_ALT_SOFTWARE_ENGINEER = /datum/alt_title/software_engi)
 
-/datum/job/roboticist/get_request_reasons()
-	return list("Repairs needed")
+TYPE_TABLE(/datum/job/roboticist, get_request_reasons, list("Repairs needed"))
 
 // Roboticist Alt Titles
 /datum/alt_title/biomech

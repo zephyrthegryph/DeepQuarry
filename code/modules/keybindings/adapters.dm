@@ -66,7 +66,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	return TRUE
 
 /datum/input_adapter/proc/click_table()
-	return GLOB.input_router.standard_click_table()
+	return TYPE_TABLE_GET(GLOB.input_router, standard_click_table)
 
 /// The mob proc that runs a non-Use action, or null if the action does nothing.
 /// Each action is one mob proc named after it; mob types override the proc (AI, cyborgs, hardsuits).

@@ -116,8 +116,7 @@
 		//Batter which is part of objects at compiletime spawns in a cooked state
 
 /// Coating data always requires a "cooked" key.
-/datum/reagent/nutriment/coating/get_data_schema()
-	return list("cooked")
+TYPE_TABLE(/datum/reagent/nutriment/coating, get_data_schema, list("cooked"))
 
 //Handles setting the temperature when oils are mixed
 /datum/reagent/nutriment/coating/mix_data(newdata, newamount)
@@ -201,8 +200,7 @@
 		data = list("temperature" = T20C)
 
 /// Oil data always requires a "temperature" key.
-/datum/reagent/nutriment/triglyceride/oil/get_data_schema()
-	return list("temperature")
+TYPE_TABLE(/datum/reagent/nutriment/triglyceride/oil, get_data_schema, list("temperature"))
 
 //Handles setting the temperature when oils are mixed
 /datum/reagent/nutriment/triglyceride/oil/mix_data(newdata, newamount)

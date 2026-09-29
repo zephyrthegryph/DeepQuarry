@@ -119,7 +119,7 @@
 	treated_by = list()
 	if(organ_tag_rate)
 		treated_by[O ? O.lesion_repair_tag() : TREAT_TISSUE_REPAIR] = organ_tag_rate
-	var/list/extra = get_extra_treatments()
+	var/list/extra = TYPE_TABLE_GET(src, get_extra_treatments)
 	for(var/tag in extra)
 		treated_by[tag] = max(treated_by[tag], extra[tag])
 	if(self_heals)
@@ -133,12 +133,10 @@
 		symptom_pool[symptom_type] = organ_pool[symptom_type]
 
 /// Mechanisms beyond the organ's repair tag: TREAT_* -> rate. Static per kind.
-/datum/affliction/lesion/proc/get_extra_treatments()
-	return null
+TYPE_TABLE_DECLARE(/datum/affliction/lesion, get_extra_treatments, null)
 
 /// Mechanisms that fully repair this kind (ignore drug_floor). Static per kind.
-/datum/affliction/lesion/proc/get_full_repair_tags()
-	return null
+TYPE_TABLE_DECLARE(/datum/affliction/lesion, get_full_repair_tags, null)
 
 /datum/affliction/lesion/proc/lesion_name(obj/item/organ/internal/O)
 	return "[O.name] [lesion_noun]"
@@ -191,7 +189,7 @@
 /datum/affliction/lesion/proc/is_full_repair(tag)
 	if(tag == TREAT_RESTORATION)
 		return TRUE
-	var/list/full = get_full_repair_tags()
+	var/list/full = TYPE_TABLE_GET(src, get_full_repair_tags)
 	return full && (tag in full)
 
 /// Is a continuous treatment holding this lesion (no bleeding, leaking or
@@ -329,13 +327,9 @@
 	clinical_description = "Bruised organ tissue from blunt force. Heals slowly on its own; the organ's repair drug speeds recovery."
 	drift = -0.02
 
-/datum/affliction/lesion/contusion/get_extra_treatments()
-	var/static/list/L = list(TREAT_TISSUE_REPAIR = 0.25, TREAT_SURGICAL_REPAIR = 1)
-	return L
+TYPE_TABLE(/datum/affliction/lesion/contusion, get_extra_treatments, list(TREAT_TISSUE_REPAIR = 0.25, TREAT_SURGICAL_REPAIR = 1))
 
-/datum/affliction/lesion/contusion/get_full_repair_tags()
-	var/static/list/L = list(TREAT_SURGICAL_REPAIR)
-	return L
+TYPE_TABLE(/datum/affliction/lesion/contusion, get_full_repair_tags, list(TREAT_SURGICAL_REPAIR))
 
 /datum/affliction/lesion/contusion/lesion_name(obj/item/organ/internal/O)
 	if(O.organ_tag == O_BRAIN)
@@ -372,13 +366,9 @@
 	organ_tag_rate = 0.3
 	drug_floor = 0.5
 
-/datum/affliction/lesion/laceration/get_extra_treatments()
-	var/static/list/L = list(TREAT_SURGICAL_REPAIR = 1, TREAT_HEMOSTATIC = 0.1, TREAT_TISSUE_REPAIR = 0.2)
-	return L
+TYPE_TABLE(/datum/affliction/lesion/laceration, get_extra_treatments, list(TREAT_SURGICAL_REPAIR = 1, TREAT_HEMOSTATIC = 0.1, TREAT_TISSUE_REPAIR = 0.2))
 
-/datum/affliction/lesion/laceration/get_full_repair_tags()
-	var/static/list/L = list(TREAT_SURGICAL_REPAIR)
-	return L
+TYPE_TABLE(/datum/affliction/lesion/laceration, get_full_repair_tags, list(TREAT_SURGICAL_REPAIR))
 
 /datum/affliction/lesion/laceration/lesion_effects()
 	var/mob/living/carbon/human/H = owner
@@ -401,13 +391,9 @@
 	organ_tag_rate = 0.3
 	drug_floor = 0.6
 
-/datum/affliction/lesion/perforation/get_extra_treatments()
-	var/static/list/L = list(TREAT_SURGICAL_REPAIR = 1, TREAT_ANTIMICROBIAL = 0.1)
-	return L
+TYPE_TABLE(/datum/affliction/lesion/perforation, get_extra_treatments, list(TREAT_SURGICAL_REPAIR = 1, TREAT_ANTIMICROBIAL = 0.1))
 
-/datum/affliction/lesion/perforation/get_full_repair_tags()
-	var/static/list/L = list(TREAT_SURGICAL_REPAIR)
-	return L
+TYPE_TABLE(/datum/affliction/lesion/perforation, get_full_repair_tags, list(TREAT_SURGICAL_REPAIR))
 
 /datum/affliction/lesion/perforation/lesion_effects()
 	var/obj/item/organ/internal/O = location
@@ -437,13 +423,9 @@
 	organ_tag_rate = 0
 	drug_efficiency = 0.25
 
-/datum/affliction/lesion/necrosis/get_extra_treatments()
-	var/static/list/L = list(TREAT_RESECTION = 1, TREAT_GENETIC_REPAIR = 0.2, TREAT_ANTIMICROBIAL = 0.02)
-	return L
+TYPE_TABLE(/datum/affliction/lesion/necrosis, get_extra_treatments, list(TREAT_RESECTION = 1, TREAT_GENETIC_REPAIR = 0.2, TREAT_ANTIMICROBIAL = 0.02))
 
-/datum/affliction/lesion/necrosis/get_full_repair_tags()
-	var/static/list/L = list(TREAT_RESECTION)
-	return L
+TYPE_TABLE(/datum/affliction/lesion/necrosis, get_full_repair_tags, list(TREAT_RESECTION))
 
 /datum/affliction/lesion/necrosis/lesion_name(obj/item/organ/internal/O)
 	return "necrotic [O.name] tissue"
@@ -459,13 +441,9 @@
 	lesion_noun = "ischemic injury"
 	clinical_description = "Tissue damaged by oxygen starvation. Responds to the organ's repair drug and oxygenation."
 
-/datum/affliction/lesion/ischemic_injury/get_extra_treatments()
-	var/static/list/L = list(TREAT_OXYGENATION = 0.3, TREAT_SURGICAL_REPAIR = 1)
-	return L
+TYPE_TABLE(/datum/affliction/lesion/ischemic_injury, get_extra_treatments, list(TREAT_OXYGENATION = 0.3, TREAT_SURGICAL_REPAIR = 1))
 
-/datum/affliction/lesion/ischemic_injury/get_full_repair_tags()
-	var/static/list/L = list(TREAT_SURGICAL_REPAIR)
-	return L
+TYPE_TABLE(/datum/affliction/lesion/ischemic_injury, get_full_repair_tags, list(TREAT_SURGICAL_REPAIR))
 
 /datum/affliction/lesion/ischemic_injury/lesion_name(obj/item/organ/internal/O)
 	if(O.organ_tag == O_BRAIN)
@@ -493,13 +471,9 @@
 	lesion_noun = "toxic injury"
 	clinical_description = "Tissue damaged by toxins the organ was clearing. Responds to the organ's repair drug and antitoxins."
 
-/datum/affliction/lesion/toxic_injury/get_extra_treatments()
-	var/static/list/L = list(TREAT_ANTITOXIN = 0.3, TREAT_SURGICAL_REPAIR = 1)
-	return L
+TYPE_TABLE(/datum/affliction/lesion/toxic_injury, get_extra_treatments, list(TREAT_ANTITOXIN = 0.3, TREAT_SURGICAL_REPAIR = 1))
 
-/datum/affliction/lesion/toxic_injury/get_full_repair_tags()
-	var/static/list/L = list(TREAT_SURGICAL_REPAIR)
-	return L
+TYPE_TABLE(/datum/affliction/lesion/toxic_injury, get_full_repair_tags, list(TREAT_SURGICAL_REPAIR))
 
 /datum/affliction/lesion/toxic_injury/lesion_symptoms(organ_tag)
 	switch(organ_tag)
@@ -530,13 +504,9 @@
 	lesion_noun = "component fault"
 	clinical_description = "Damaged components inside a prosthetic organ. Repaired by plating and wiring work or a system restore."
 
-/datum/affliction/lesion/synthetic/component_fault/get_extra_treatments()
-	var/static/list/L = list(TREAT_PLATING_REPAIR = 1, TREAT_WIRING_REPAIR = 1, TREAT_SYSTEM_RESTORE = 1)
-	return L
+TYPE_TABLE(/datum/affliction/lesion/synthetic/component_fault, get_extra_treatments, list(TREAT_PLATING_REPAIR = 1, TREAT_WIRING_REPAIR = 1, TREAT_SYSTEM_RESTORE = 1))
 
-/datum/affliction/lesion/synthetic/component_fault/get_full_repair_tags()
-	var/static/list/L = list(TREAT_PLATING_REPAIR, TREAT_WIRING_REPAIR, TREAT_SYSTEM_RESTORE)
-	return L
+TYPE_TABLE(/datum/affliction/lesion/synthetic/component_fault, get_full_repair_tags, list(TREAT_PLATING_REPAIR, TREAT_WIRING_REPAIR, TREAT_SYSTEM_RESTORE))
 
 // --- Scanner findings -------------------------------------------------------------
 // What an advanced scan reports for each lesion kind: the specific thing a

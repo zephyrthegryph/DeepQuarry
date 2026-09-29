@@ -177,9 +177,7 @@
 	name = "cohesion warnings"
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 	clinical_description = "The swarm reports failing inter-nanite bonds."
-/datum/affliction_symptom/nanite/cohesion_warning/get_patient_messages()
-	var/static/list/msgs = list("Your mass feels loose, as if it could run off you.", "Bond integrity warnings flicker through your swarm.")
-	return msgs
+TYPE_TABLE(/datum/affliction_symptom/nanite/cohesion_warning, get_patient_messages, list("Your mass feels loose, as if it could run off you.", "Bond integrity warnings flicker through your swarm."))
 
 /datum/affliction_symptom/nanite/bond_density_low
 	name = "low bond density"
@@ -197,9 +195,7 @@
 	name = "feedstock warnings"
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 	clinical_description = "The refactory reports an empty steel store."
-/datum/affliction_symptom/nanite/feedstock_warning/get_patient_messages()
-	var/static/list/msgs = list("Your refactory is empty. You need steel.", "Your nanites are cannibalising one another.")
-	return msgs
+TYPE_TABLE(/datum/affliction_symptom/nanite/feedstock_warning, get_patient_messages, list("Your refactory is empty. You need steel.", "Your nanites are cannibalising one another."))
 
 /datum/affliction_symptom/nanite/refactory_stock_empty
 	name = "refactory stock empty"
@@ -217,9 +213,7 @@
 	name = "control errors"
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 	clinical_description = "The orchestrator reports lost control packets."
-/datum/affliction_symptom/nanite/control_errors/get_patient_messages()
-	var/static/list/msgs = list("Your swarm lags behind your intentions.", "Orchestrator fault: control packets dropped.")
-	return msgs
+TYPE_TABLE(/datum/affliction_symptom/nanite/control_errors, get_patient_messages, list("Your swarm lags behind your intentions.", "Orchestrator fault: control packets dropped."))
 
 /datum/affliction_symptom/nanite/orchestrator_fault
 	name = "orchestrator fault"
@@ -237,9 +231,7 @@
 	name = "contaminant warnings"
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 	clinical_description = "The refactory reports matter it cannot process."
-/datum/affliction_symptom/nanite/contaminant_warning/get_patient_messages()
-	var/static/list/msgs = list("Something foreign is gumming up your nanites.", "Refactory warning: unprocessable matter detected.")
-	return msgs
+TYPE_TABLE(/datum/affliction_symptom/nanite/contaminant_warning, get_patient_messages, list("Something foreign is gumming up your nanites.", "Refactory warning: unprocessable matter detected."))
 
 /datum/affliction_symptom/nanite/foreign_matter
 	name = "foreign matter"
@@ -257,9 +249,7 @@
 	name = "strain warnings"
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 	clinical_description = "The swarm reports structural fatigue."
-/datum/affliction_symptom/nanite/strain_warning/get_patient_messages()
-	var/static/list/msgs = list("Holding this shape is getting harder.", "Your swarm aches to settle into its natural form.")
-	return msgs
+TYPE_TABLE(/datum/affliction_symptom/nanite/strain_warning, get_patient_messages, list("Holding this shape is getting harder.", "Your swarm aches to settle into its natural form."))
 
 /datum/affliction_symptom/nanite/structural_fatigue
 	name = "structural fatigue"

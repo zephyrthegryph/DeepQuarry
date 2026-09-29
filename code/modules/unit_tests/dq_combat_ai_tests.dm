@@ -47,12 +47,10 @@
 	)
 	return L
 
-/mob/living/simple_mob/combat_ai_test_subject/get_ai_target_selectors()
-	var/static/list/L = list(
-		/datum/target_selector/prefer_players,
-		/datum/target_selector/closest,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selectors, list( \
+		/datum/target_selector/prefer_players, \
+		/datum/target_selector/closest, \
+	))
 
 // --- static: behaviors are flyweights ----------------------------------
 
@@ -140,7 +138,7 @@
 	var/list/failures = list()
 	for(var/T in subtypesof(/datum/ai_behavior))
 		var/datum/ai_behavior/B = dq_get_behavior(T)
-		var/list/info = B.get_player_verb_info()
+		var/list/info = TYPE_TABLE_GET(B, get_player_verb_info)
 		if(!info)
 			continue
 		if(!info["name"])

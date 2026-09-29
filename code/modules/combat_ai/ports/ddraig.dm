@@ -36,12 +36,10 @@
 	)
 	return L
 
-/mob/living/simple_mob/vore/ddraig/get_ai_target_selectors()
-	var/static/list/L = list(
-		/datum/target_selector/prefer_players,
-		/datum/target_selector/closest,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/vore/ddraig, get_ai_target_selectors, list( \
+		/datum/target_selector/prefer_players, \
+		/datum/target_selector/closest, \
+	))
 
 // ---------------------------------------------------------------------------
 // Special-attack rotation. All three sit in the same range band (2..6) and
@@ -93,14 +91,12 @@
 	brain.last_attack_at = world.time
 	return DQ_BEHAVIOR_DONE
 
-/datum/ai_behavior/ddraig_lunge/get_player_verb_info()
-	var/static/list/L = list(
-		"name" = "Lunge",
-		"desc" = "Telegraph, then leap at a target to knock them down.",
-		"category" = "Dragon",
-		"auto_target" = FALSE,
-	)
-	return L
+TYPE_TABLE(/datum/ai_behavior/ddraig_lunge, get_player_verb_info, list( \
+		"name" = "Lunge", \
+		"desc" = "Telegraph, then leap at a target to knock them down.", \
+		"category" = "Dragon", \
+		"auto_target" = FALSE, \
+	))
 
 // --- Fire breath -----------------------------------------------------------
 
@@ -129,14 +125,12 @@
 	brain.last_attack_at = world.time
 	return DQ_BEHAVIOR_DONE
 
-/datum/ai_behavior/ddraig_firebreath/get_player_verb_info()
-	var/static/list/L = list(
-		"name" = "Fire Breath",
-		"desc" = "Open your maw and spew a gout of flame at a target.",
-		"category" = "Dragon",
-		"auto_target" = FALSE,
-	)
-	return L
+TYPE_TABLE(/datum/ai_behavior/ddraig_firebreath, get_player_verb_info, list( \
+		"name" = "Fire Breath", \
+		"desc" = "Open your maw and spew a gout of flame at a target.", \
+		"category" = "Dragon", \
+		"auto_target" = FALSE, \
+	))
 
 // --- Transformation beam ---------------------------------------------------
 
@@ -165,14 +159,12 @@
 	brain.last_attack_at = world.time
 	return DQ_BEHAVIOR_DONE
 
-/datum/ai_behavior/ddraig_tfbeam/get_player_verb_info()
-	var/static/list/L = list(
-		"name" = "Polymorph Beam",
-		"desc" = "Breathe a rainbow beam that briefly transforms a target into a critter.",
-		"category" = "Dragon",
-		"auto_target" = FALSE,
-	)
-	return L
+TYPE_TABLE(/datum/ai_behavior/ddraig_tfbeam, get_player_verb_info, list( \
+		"name" = "Polymorph Beam", \
+		"desc" = "Breathe a rainbow beam that briefly transforms a target into a critter.", \
+		"category" = "Dragon", \
+		"auto_target" = FALSE, \
+	))
 
 // ---------------------------------------------------------------------------
 // Emergency cloak — once per life, below 25% HP, vanish and bolt.

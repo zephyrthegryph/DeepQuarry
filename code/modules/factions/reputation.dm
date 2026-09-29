@@ -224,26 +224,25 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 	department_ledgers = list()
 	personal_ledgers = list()
 	agent_records = list()
-	for(var/department in get_reputation_departments())
+	for(var/department in TYPE_TABLE_GET(src, get_reputation_departments))
 		department_ledgers[department] = new /datum/faction_reputation_ledger(reputations)
 
 DECLARE_REF(/datum/station_faction_relations, "department_ledgers", OWNED_VALUES, null)
 DECLARE_REF(/datum/station_faction_relations, "personal_ledgers", OWNED_VALUES, null)
 DECLARE_REF(/datum/station_faction_relations, "agent_records", OWNED_LIST, null)
 
-/datum/station_faction_relations/proc/get_reputation_departments()
-	return list(
-		DEPARTMENT_COMMAND,
-		DEPARTMENT_SECURITY,
-		DEPARTMENT_ENGINEERING,
-		DEPARTMENT_MEDICAL,
-		DEPARTMENT_RESEARCH,
-		DEPARTMENT_CARGO,
-		DEPARTMENT_CIVILIAN,
-		DEPARTMENT_PLANET,
-		DEPARTMENT_SYNTHETIC,
-		DEPARTMENT_TALON,
-	)
+TYPE_TABLE_DECLARE(/datum/station_faction_relations, get_reputation_departments, list( \
+		DEPARTMENT_COMMAND, \
+		DEPARTMENT_SECURITY, \
+		DEPARTMENT_ENGINEERING, \
+		DEPARTMENT_MEDICAL, \
+		DEPARTMENT_RESEARCH, \
+		DEPARTMENT_CARGO, \
+		DEPARTMENT_CIVILIAN, \
+		DEPARTMENT_PLANET, \
+		DEPARTMENT_SYNTHETIC, \
+		DEPARTMENT_TALON, \
+	))
 
 /datum/station_faction_relations/proc/get_department_ledger(department, create = TRUE)
 	var/datum/faction_reputation_ledger/ledger = department_ledgers[department]

@@ -53,7 +53,7 @@
 			return TRUE
 	//Try to find it in our allowed list (istype includes subtypes)
 	var/listed = FALSE
-	var/list/vent_allow = ventcrawl_get_item_whitelist()
+	var/list/vent_allow = TYPE_TABLE_COPY(src, ventcrawl_get_item_whitelist)
 	if(islist(ventcraw_item_admin_allow)) // If mob has a list varedited onto it, we allow anything in this list as well
 		vent_allow += ventcraw_item_admin_allow
 	for(var/test_type in vent_allow)
@@ -89,12 +89,11 @@
 			return FALSE
 	return TRUE
 
-/mob/living/proc/ventcrawl_get_item_whitelist()
-	return list(
-		VENTCRAWL_BASE_WHITELIST,
-		VENTCRAWL_VORE_WHITELIST,
-		VENTCRAWL_SMALLITEM_WHITELIST
-		)
+TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
+		VENTCRAWL_BASE_WHITELIST, \
+		VENTCRAWL_VORE_WHITELIST, \
+		VENTCRAWL_SMALLITEM_WHITELIST \
+		))
 
 /// The pipe to crawl into; picking one of several re-runs `caller_verb` (null meanwhile).
 /mob/proc/start_ventcrawl(caller_verb)

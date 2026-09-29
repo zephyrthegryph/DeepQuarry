@@ -47,9 +47,7 @@
 // both inherit as FALSE-ish through faction dispositions — they do not aggress
 // on sight, matching legacy hostile = FALSE.
 
-/mob/living/simple_mob/animal/sif/sakimm/get_ai_target_selectors()
-	var/static/list/L = list(/datum/target_selector/sakimm_loot)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/animal/sif/sakimm, get_ai_target_selectors, list(/datum/target_selector/sakimm_loot))
 
 // ---------------------------------------------------------------------------
 // Loot-aware target selector. Falls back to the closest hostile, but when the

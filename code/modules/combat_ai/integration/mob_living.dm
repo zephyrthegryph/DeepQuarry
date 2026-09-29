@@ -36,8 +36,7 @@
 
 /// Override per subtype. Returns a proc-local static list of
 /// /datum/target_selector typepaths used as the brain's selector chain.
-/mob/living/proc/get_ai_target_selectors()
-	return null
+TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 
 /// Creates the brain for a mob that opts in. Subtypes that should never get
 /// a brain (player-controlled mobs like succlet, synx, borer) override this
@@ -48,7 +47,7 @@
 	if(ai_brain)
 		QDEL_NULL(ai_brain)
 	ai_brain = new /datum/ai_brain(src)
-	var/list/sels = get_ai_target_selectors()
+	var/list/sels = TYPE_TABLE_GET(src, get_ai_target_selectors)
 	if(sels && length(sels))
 		ai_brain.target_selector_chain = sels.Copy()
 	// Player-castable dispatcher verb is added lazily on Login (see player_verbs.dm)

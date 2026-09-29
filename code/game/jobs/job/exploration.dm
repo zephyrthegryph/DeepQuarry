@@ -57,8 +57,7 @@
 /datum/alt_title/exploration_manager
 	title = JOB_ALT_EXPLORATION_MANAGER
 
-/datum/job/pathfinder/get_request_reasons()
-	return list("Training crew", "Assembling expedition team")
+TYPE_TABLE(/datum/job/pathfinder, get_request_reasons, list("Training crew", "Assembling expedition team"))
 
 
 /datum/job/pilot
@@ -115,8 +114,7 @@
 /datum/alt_title/offsite_scout
 	title = JOB_ALT_OFFSITE_SCOUT
 
-/datum/job/explorer/get_request_reasons()
-	return list("Assembling expedition team")
+TYPE_TABLE(/datum/job/explorer, get_request_reasons, list("Assembling expedition team"))
 
 /datum/job/sar
 	title = JOB_FIELD_MEDIC
@@ -143,5 +141,4 @@
 /datum/alt_title/offsite_medic
 	title = JOB_ALT_OFFSITE_MEDIC
 
-/datum/job/sar/get_request_reasons()
-	return list("Assembling expedition team")
+TYPE_TABLE(/datum/job/sar, get_request_reasons, list("Assembling expedition team"))

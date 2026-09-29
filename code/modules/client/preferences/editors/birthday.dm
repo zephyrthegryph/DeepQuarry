@@ -9,12 +9,10 @@
 	display_name = "Birthday"
 	pref_keys = list("bday_month", "bday_day")
 
-/datum/preference_editor/birthday/proc/get_months()
-	var/static/list/L = list(
-		"January", "February", "March", "April", "May", "June",
-		"July", "August", "September", "October", "November", "December",
-	)
-	return L
+TYPE_TABLE_DECLARE(/datum/preference_editor/birthday, get_months, list( \
+		"January", "February", "March", "April", "May", "June", \
+		"July", "August", "September", "October", "November", "December", \
+	))
 
 /datum/preference_editor/birthday/proc/days_in_month(month_idx)
 	switch(month_idx)
@@ -34,7 +32,7 @@
 
 /datum/preference_editor/birthday/build_ui_static_data(datum/preferences/preferences)
 	return list(
-		"months" = get_months(),
+		"months" = TYPE_TABLE_GET(src, get_months),
 	)
 
 /datum/preference_editor/birthday/handle_action(datum/preferences/preferences, action, list/params, mob/user)

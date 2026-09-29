@@ -25,8 +25,7 @@
 ///                   player prompt if evaluate returns null). If FALSE, the
 ///                   player always chooses from visible mobs (or turfs for
 ///                   DQ_TARGET_TURF behaviors).
-/datum/ai_behavior/proc/get_player_verb_info()
-	return null
+TYPE_TABLE_DECLARE(/datum/ai_behavior, get_player_verb_info, null)
 
 // ---------------------------------------------------------------------------
 // Lazy verb registration on client login.
@@ -66,7 +65,7 @@
 	var/list/options = list()  // label => list("type" = btype, "source" = source)
 	for(var/btype in ai_brain.effective_behaviors)
 		var/datum/ai_behavior/B = dq_get_behavior(btype)
-		var/list/info = B.get_player_verb_info()
+		var/list/info = TYPE_TABLE_GET(B, get_player_verb_info)
 		if(!info)
 			continue
 		if(!B.applicable_to(src))

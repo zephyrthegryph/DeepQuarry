@@ -94,27 +94,25 @@
 /// Body slot display table. Keep in head-down order; `multi` controls whether the slot can
 /// hold more than one item (only SLOT_ID_TIE should). SLOT_ID_LEGS is generally fluff layer.
 /// `group` collapses related slots into one section in the UI for visual scanability.
-/datum/preference_editor/loadout/proc/body_slot_table()
-	var/static/list/L = list(
-		list("id" = SLOT_ID_HEAD,       "label" = "Head",         "group" = "Face & Head"),
-		list("id" = SLOT_ID_EYES,    "label" = "Eyes",         "group" = "Face & Head"),
-		list("id" = SLOT_ID_MASK,  "label" = "Mask",         "group" = "Face & Head"),
-		list("id" = SLOT_ID_EAR_L,      "label" = "Left Ear",     "group" = "Face & Head"),
-		list("id" = SLOT_ID_EAR_R,      "label" = "Right Ear",    "group" = "Face & Head"),
-		list("id" = SLOT_ID_UNIFORM,  "label" = "Uniform",      "group" = "Clothing"),
-		list("id" = SLOT_ID_SUIT,  "label" = "Outer Suit",   "group" = "Clothing"),
-		list("id" = SLOT_ID_TIE,        "label" = "Accessories",  "group" = "Clothing", "multi" = TRUE),
-		list("id" = SLOT_ID_GLOVES,     "label" = "Gloves",       "group" = "Hands & Feet"),
-		list("id" = SLOT_ID_SHOES,      "label" = "Shoes",        "group" = "Hands & Feet"),
-		list("id" = SLOT_ID_BACK,       "label" = "Back",         "group" = "Carry"),
-		list("id" = SLOT_ID_BELT,       "label" = "Belt",         "group" = "Carry"),
-		list("id" = SLOT_ID_ID,    "label" = "ID",           "group" = "Carry"),
-		list("id" = SLOT_ID_POCKET_L,    "label" = "Left Pocket",  "group" = "Pockets"),
-		list("id" = SLOT_ID_POCKET_R,    "label" = "Right Pocket", "group" = "Pockets"),
-		list("id" = SLOT_ID_SUIT_STORAGE,    "label" = "Suit Storage", "group" = "Pockets"),
-		list("id" = SLOT_ID_LEGS,       "label" = "Legs Layer",   "group" = "Other"),
-	)
-	return L
+TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, body_slot_table, list( \
+		list("id" = SLOT_ID_HEAD,       "label" = "Head",         "group" = "Face & Head"), \
+		list("id" = SLOT_ID_EYES,    "label" = "Eyes",         "group" = "Face & Head"), \
+		list("id" = SLOT_ID_MASK,  "label" = "Mask",         "group" = "Face & Head"), \
+		list("id" = SLOT_ID_EAR_L,      "label" = "Left Ear",     "group" = "Face & Head"), \
+		list("id" = SLOT_ID_EAR_R,      "label" = "Right Ear",    "group" = "Face & Head"), \
+		list("id" = SLOT_ID_UNIFORM,  "label" = "Uniform",      "group" = "Clothing"), \
+		list("id" = SLOT_ID_SUIT,  "label" = "Outer Suit",   "group" = "Clothing"), \
+		list("id" = SLOT_ID_TIE,        "label" = "Accessories",  "group" = "Clothing", "multi" = TRUE), \
+		list("id" = SLOT_ID_GLOVES,     "label" = "Gloves",       "group" = "Hands & Feet"), \
+		list("id" = SLOT_ID_SHOES,      "label" = "Shoes",        "group" = "Hands & Feet"), \
+		list("id" = SLOT_ID_BACK,       "label" = "Back",         "group" = "Carry"), \
+		list("id" = SLOT_ID_BELT,       "label" = "Belt",         "group" = "Carry"), \
+		list("id" = SLOT_ID_ID,    "label" = "ID",           "group" = "Carry"), \
+		list("id" = SLOT_ID_POCKET_L,    "label" = "Left Pocket",  "group" = "Pockets"), \
+		list("id" = SLOT_ID_POCKET_R,    "label" = "Right Pocket", "group" = "Pockets"), \
+		list("id" = SLOT_ID_SUIT_STORAGE,    "label" = "Suit Storage", "group" = "Pockets"), \
+		list("id" = SLOT_ID_LEGS,       "label" = "Legs Layer",   "group" = "Other"), \
+	))
 
 /// Returns the body-slot key (numeric string or "other") for the given /datum/gear.
 /datum/preference_editor/loadout/proc/slot_key_for(datum/gear/G)
@@ -467,7 +465,7 @@
 
 	return list(
 		"categories" = categories,
-		"body_slots" = body_slot_table(),
+		"body_slots" = TYPE_TABLE_GET(src, body_slot_table),
 		"starting_kit" = sk_static,
 		"underwear" = uw_static,
 	)

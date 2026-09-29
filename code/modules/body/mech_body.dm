@@ -30,9 +30,7 @@
 
 /// Body parts in the order a hit reaches them. Armour and hull soak first; the rest are
 /// internal parts hit by chance.
-/datum/mech_body_plan/proc/part_order()
-	var/static/list/order = list(MECH_ARMOR, MECH_HULL, MECH_ACTUATOR, MECH_ELECTRIC, MECH_GAS)
-	return order
+TYPE_TABLE_DECLARE(/datum/mech_body_plan, part_order, list(MECH_ARMOR, MECH_HULL, MECH_ACTUATOR, MECH_ELECTRIC, MECH_GAS))
 
 /// The affliction flyweights, keyed by their MECHA_INT_* flag as text.
 /datum/mech_body_plan/proc/afflictions()
@@ -117,7 +115,7 @@
 		hull.damage_part(hull_share, armor_key)
 		damage -= hull_share
 	// Internal parts: hit by chance, each taking a quarter.
-	for(var/slot in part_order())
+	for(var/slot in TYPE_TABLE_GET(src, part_order))
 		if(slot == MECH_ARMOR || slot == MECH_HULL)
 			continue
 		var/obj/item/mecha_parts/component/C = part(host, slot)

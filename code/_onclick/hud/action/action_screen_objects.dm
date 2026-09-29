@@ -48,7 +48,7 @@
 		return
 
 	var/list/modifiers = params2list(params)
-	if(GLOB.input_router.click_is(modifiers, GLOB.input_router.shift_table(), INPUT_ACTION_INSPECT))
+	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, shift_table), INPUT_ACTION_INSPECT))
 		var/datum/hud/our_hud = usr.hud_used
 		our_hud.position_action(src, SCRN_OBJ_DEFAULT)
 		return TRUE
@@ -56,7 +56,7 @@
 		return
 	usr.setClickCooldown(1)
 	var/trigger_flags
-	if(GLOB.input_router.click_is(modifiers, GLOB.input_router.secondary_table(), INPUT_ACTION_ALTERNATE_SECONDARY))
+	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, secondary_table), INPUT_ACTION_ALTERNATE_SECONDARY))
 		trigger_flags |= TRIGGER_SECONDARY_ACTION
 	linked_action().Trigger(trigger_flags = trigger_flags)
 	return TRUE
@@ -323,7 +323,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	if(!can_use(usr))
 		return
 
-	if(GLOB.input_router.click_is(params, GLOB.input_router.alternate_table(), INPUT_ACTION_ALTERNATE))
+	if(GLOB.input_router.click_is(params, TYPE_TABLE_GET(GLOB.input_router, alternate_table), INPUT_ACTION_ALTERNATE))
 		for(var/datum/action/action as anything in usr.actions) // Reset action positions to default
 			for(var/hud_handle in action.viewers)
 				var/datum/hud/hud = om_resolve(hud_handle)

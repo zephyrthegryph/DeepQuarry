@@ -186,11 +186,9 @@
 	brain.last_attack_at = world.time
 	return DQ_BEHAVIOR_DONE
 
-/datum/ai_behavior/gryphon_leap/get_player_verb_info()
-	var/static/list/L = list(
-		"name" = "Leap",
-		"desc" = "Pounce at a nearby target to knock them down.",
-		"category" = "Combat",
-		"auto_target" = FALSE,
-	)
-	return L
+TYPE_TABLE(/datum/ai_behavior/gryphon_leap, get_player_verb_info, list( \
+		"name" = "Leap", \
+		"desc" = "Pounce at a nearby target to knock them down.", \
+		"category" = "Combat", \
+		"auto_target" = FALSE, \
+	))

@@ -134,11 +134,9 @@ TYPE_TABLE(/datum/cargo_market_profile/frontier_salvage, accepted_type_paths, li
 	var/legal_class = CARGO_MARKET_LEGAL_PUBLIC
 	var/active_cover_name
 
-/datum/cargo_market_counterparty/proc/seller_groups() as /list
-	return list()
+TYPE_TABLE_DECLARE(/datum/cargo_market_counterparty, seller_groups, list())
 
-/datum/cargo_market_counterparty/proc/buyer_profiles() as /list
-	return list()
+TYPE_TABLE_DECLARE(/datum/cargo_market_counterparty, buyer_profiles, list())
 
 /datum/cargo_market_counterparty/proc/cover_names() as /list
 	return list(name)
@@ -155,13 +153,9 @@ TYPE_TABLE(/datum/cargo_market_profile/frontier_salvage, accepted_type_paths, li
 	seller_price_multiplier = 0.95
 	buyer_price_multiplier = 1.05
 
-/datum/cargo_market_counterparty/nanotrasen/seller_groups()
-	var/static/list/groups = list("Supplies", "Engineering", "Security", "Vendor Refills")
-	return groups
+TYPE_TABLE(/datum/cargo_market_counterparty/nanotrasen, seller_groups, list("Supplies", "Engineering", "Security", "Vendor Refills"))
 
-/datum/cargo_market_counterparty/nanotrasen/buyer_profiles()
-	var/static/list/profiles = list(/datum/cargo_market_profile/general_manufactured, /datum/cargo_market_profile/materials)
-	return profiles
+TYPE_TABLE(/datum/cargo_market_counterparty/nanotrasen, buyer_profiles, list(/datum/cargo_market_profile/general_manufactured, /datum/cargo_market_profile/materials))
 
 /datum/cargo_market_counterparty/solgov
 	id = "solgov_procurement"
@@ -169,13 +163,9 @@ TYPE_TABLE(/datum/cargo_market_profile/frontier_salvage, accepted_type_paths, li
 	faction_id = REPUTATION_FACTION_SOLGOV
 	description = "A regulated public-sector buyer and emergency-equipment supplier."
 
-/datum/cargo_market_counterparty/solgov/seller_groups()
-	var/static/list/groups = list("Security", "Medical", "Atmospherics")
-	return groups
+TYPE_TABLE(/datum/cargo_market_counterparty/solgov, seller_groups, list("Security", "Medical", "Atmospherics"))
 
-/datum/cargo_market_counterparty/solgov/buyer_profiles()
-	var/static/list/profiles = list(/datum/cargo_market_profile/medical_goods, /datum/cargo_market_profile/food)
-	return profiles
+TYPE_TABLE(/datum/cargo_market_counterparty/solgov, buyer_profiles, list(/datum/cargo_market_profile/medical_goods, /datum/cargo_market_profile/food))
 
 /datum/cargo_market_counterparty/chimera
 	id = "chimera_biologics"
@@ -185,13 +175,9 @@ TYPE_TABLE(/datum/cargo_market_profile/frontier_salvage, accepted_type_paths, li
 	seller_price_multiplier = 1.05
 	buyer_price_multiplier = 1.1
 
-/datum/cargo_market_counterparty/chimera/seller_groups()
-	var/static/list/groups = list("Hydroponics", "Medical")
-	return groups
+TYPE_TABLE(/datum/cargo_market_counterparty/chimera, seller_groups, list("Hydroponics", "Medical"))
 
-/datum/cargo_market_counterparty/chimera/buyer_profiles()
-	var/static/list/profiles = list(/datum/cargo_market_profile/medical_goods, /datum/cargo_market_profile/food)
-	return profiles
+TYPE_TABLE(/datum/cargo_market_counterparty/chimera, buyer_profiles, list(/datum/cargo_market_profile/medical_goods, /datum/cargo_market_profile/food))
 
 /datum/cargo_market_counterparty/eclipse
 	id = "eclipse_acquisitions"
@@ -202,13 +188,9 @@ TYPE_TABLE(/datum/cargo_market_profile/frontier_salvage, accepted_type_paths, li
 	buyer_price_multiplier = 1.15
 	legal_class = CARGO_MARKET_LEGAL_RESTRICTED
 
-/datum/cargo_market_counterparty/eclipse/seller_groups()
-	var/static/list/groups = list("Science", "Robotics", "Munitions")
-	return groups
+TYPE_TABLE(/datum/cargo_market_counterparty/eclipse, seller_groups, list("Science", "Robotics", "Munitions"))
 
-/datum/cargo_market_counterparty/eclipse/buyer_profiles()
-	var/static/list/profiles = list(/datum/cargo_market_profile/research_goods, /datum/cargo_market_profile/weapons)
-	return profiles
+TYPE_TABLE(/datum/cargo_market_counterparty/eclipse, buyer_profiles, list(/datum/cargo_market_profile/research_goods, /datum/cargo_market_profile/weapons))
 
 /datum/cargo_market_counterparty/syndicate
 	id = "syndicate_brokerage"
@@ -231,13 +213,9 @@ TYPE_TABLE(/datum/cargo_market_profile/frontier_salvage, accepted_type_paths, li
 	)
 	return names
 
-/datum/cargo_market_counterparty/syndicate/seller_groups()
-	var/static/list/groups = list("Munitions", "Miscellaneous", "Supplies")
-	return groups
+TYPE_TABLE(/datum/cargo_market_counterparty/syndicate, seller_groups, list("Munitions", "Miscellaneous", "Supplies"))
 
-/datum/cargo_market_counterparty/syndicate/buyer_profiles()
-	var/static/list/profiles = list(/datum/cargo_market_profile/weapons, /datum/cargo_market_profile/research_goods, /datum/cargo_market_profile/medical_goods)
-	return profiles
+TYPE_TABLE(/datum/cargo_market_counterparty/syndicate, buyer_profiles, list(/datum/cargo_market_profile/weapons, /datum/cargo_market_profile/research_goods, /datum/cargo_market_profile/medical_goods))
 
 /datum/cargo_market_counterparty/traders_guild
 	id = "itg_exchange"
@@ -247,13 +225,9 @@ TYPE_TABLE(/datum/cargo_market_profile/frontier_salvage, accepted_type_paths, li
 	seller_price_multiplier = 0.9
 	buyer_price_multiplier = 1.1
 
-/datum/cargo_market_counterparty/traders_guild/seller_groups()
-	var/static/list/groups = list("Miscellaneous", "Materials", "Recreation", "Costumes")
-	return groups
+TYPE_TABLE(/datum/cargo_market_counterparty/traders_guild, seller_groups, list("Miscellaneous", "Materials", "Recreation", "Costumes"))
 
-/datum/cargo_market_counterparty/traders_guild/buyer_profiles()
-	var/static/list/profiles = list(/datum/cargo_market_profile/general_manufactured, /datum/cargo_market_profile/frontier_salvage)
-	return profiles
+TYPE_TABLE(/datum/cargo_market_counterparty/traders_guild, buyer_profiles, list(/datum/cargo_market_profile/general_manufactured, /datum/cargo_market_profile/frontier_salvage))
 
 /datum/cargo_market_counterparty/talon
 	id = "talon_outfitters"
@@ -261,13 +235,9 @@ TYPE_TABLE(/datum/cargo_market_profile/frontier_salvage, accepted_type_paths, li
 	faction_id = REPUTATION_FACTION_TALON
 	description = "A frontier outfitter trading in field equipment, salvage, and expedition supplies."
 
-/datum/cargo_market_counterparty/talon/seller_groups()
-	var/static/list/groups = list("Hardsuits", "Voidsuits", "Engineering", "Atmospherics")
-	return groups
+TYPE_TABLE(/datum/cargo_market_counterparty/talon, seller_groups, list("Hardsuits", "Voidsuits", "Engineering", "Atmospherics"))
 
-/datum/cargo_market_counterparty/talon/buyer_profiles()
-	var/static/list/profiles = list(/datum/cargo_market_profile/frontier_salvage, /datum/cargo_market_profile/engineering_goods)
-	return profiles
+TYPE_TABLE(/datum/cargo_market_counterparty/talon, buyer_profiles, list(/datum/cargo_market_profile/frontier_salvage, /datum/cargo_market_profile/engineering_goods))
 
 /datum/cargo_market_counterparty/workers_union
 	id = "union_cooperative"
@@ -276,13 +246,9 @@ TYPE_TABLE(/datum/cargo_market_profile/frontier_salvage, accepted_type_paths, li
 	description = "A worker-owned purchasing cooperative focused on tools, provisions, and locally made goods."
 	seller_price_multiplier = 0.95
 
-/datum/cargo_market_counterparty/workers_union/seller_groups()
-	var/static/list/groups = list("Materials", "Supplies", "Hospitality")
-	return groups
+TYPE_TABLE(/datum/cargo_market_counterparty/workers_union, seller_groups, list("Materials", "Supplies", "Hospitality"))
 
-/datum/cargo_market_counterparty/workers_union/buyer_profiles()
-	var/static/list/profiles = list(/datum/cargo_market_profile/food, /datum/cargo_market_profile/engineering_goods, /datum/cargo_market_profile/general_manufactured)
-	return profiles
+TYPE_TABLE(/datum/cargo_market_counterparty/workers_union, buyer_profiles, list(/datum/cargo_market_profile/food, /datum/cargo_market_profile/engineering_goods, /datum/cargo_market_profile/general_manufactured))
 
 /datum/cargo_market_counterparty/veymed
 	id = "veymed_distribution"
@@ -292,13 +258,9 @@ TYPE_TABLE(/datum/cargo_market_profile/frontier_salvage, accepted_type_paths, li
 	seller_price_multiplier = 1.05
 	buyer_price_multiplier = 1.15
 
-/datum/cargo_market_counterparty/veymed/seller_groups()
-	var/static/list/groups = list("Medical", "Robotics")
-	return groups
+TYPE_TABLE(/datum/cargo_market_counterparty/veymed, seller_groups, list("Medical", "Robotics"))
 
-/datum/cargo_market_counterparty/veymed/buyer_profiles()
-	var/static/list/profiles = list(/datum/cargo_market_profile/medical_goods, /datum/cargo_market_profile/research_goods)
-	return profiles
+TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/cargo_market_profile/medical_goods, /datum/cargo_market_profile/research_goods))
 
 /datum/cargo_market_listing
 	var/id
@@ -449,7 +411,7 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 		var/datum/cargo_market_counterparty/counterparty = market_counterparties[counterparty_id]
 		counterparty.rotate_cover()
 		var/list/eligible_packs = list()
-		var/list/groups = counterparty.seller_groups()
+		var/list/groups = TYPE_TABLE_GET(counterparty, seller_groups)
 		for(var/pack_name in supply_pack)
 			var/datum/supply_pack/pack = supply_pack[pack_name]
 			if(!(pack.group in groups) || (!counterparty.allows_contraband && pack.contraband))
@@ -466,7 +428,7 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 			listing.expires_at = expiry
 			listing.cover_name = counterparty.active_cover_name
 			market_listings[listing.id] = listing
-		var/list/profile_paths = counterparty.buyer_profiles().Copy()
+		var/list/profile_paths = TYPE_TABLE_COPY(counterparty, buyer_profiles)
 		for(var/bid_index in 1 to min(CARGO_MARKET_BIDS_PER_PARTY, length(profile_paths)))
 			var/profile_path = pick_n_take(profile_paths)
 			var/datum/cargo_market_profile/profile = new profile_path
@@ -767,7 +729,7 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 
 /datum/world_service/supply/proc/create_reserved_market_listing(datum/cargo_market_counterparty/counterparty, reserved_account, reservation_key, expires_at, excluded_group)
 	var/list/eligible_packs = list()
-	var/list/groups = counterparty.seller_groups()
+	var/list/groups = TYPE_TABLE_GET(counterparty, seller_groups)
 	for(var/pack_name in supply_pack)
 		var/datum/supply_pack/pack = supply_pack[pack_name]
 		if((excluded_group && pack.group == excluded_group) || !(pack.group in groups) || (!counterparty.allows_contraband && pack.contraband))

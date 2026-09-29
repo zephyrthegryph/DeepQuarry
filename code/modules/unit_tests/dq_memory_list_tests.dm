@@ -49,7 +49,7 @@
 
 /datum/unit_test/dq_butchery_organs_spawn_from_type_table/Run()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
-	var/list/types = M.butchery_organ_types()
+	var/list/types = TYPE_TABLE_GET(M, butchery_organ_types)
 	TEST_ASSERT(length(types), "an animal should declare butchery organ types")
 	M.spawn_butchery_organs()
 	TEST_ASSERT_EQUAL(length(INTERNAL_ORGANS(M)), length(types), "butchery should create one organ per declared type")

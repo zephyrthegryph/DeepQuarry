@@ -135,8 +135,8 @@
 /datum/unit_test/dq_med7_p2d6_daxon_data/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/reagent/respiro = chemistry_service().chemical_reagents[REAGENT_ID_RESPIRODAXON]
-	TEST_ASSERT(O_LUNGS in respiro.daxon_organs(), "respirodaxon targets the lungs")
-	TEST_ASSERT(REAGENT_ID_GASTIRODAXON in respiro.daxon_partners(), "gastirodaxon is its partner")
+	TEST_ASSERT(O_LUNGS in TYPE_TABLE_GET(respiro, daxon_organs), "respirodaxon targets the lungs")
+	TEST_ASSERT(REAGENT_ID_GASTIRODAXON in TYPE_TABLE_GET(respiro, daxon_partners), "gastirodaxon is its partner")
 	H.losebreath = 8
 	respiro.affect_blood(H, null, REM)
 	TEST_ASSERT_EQUAL(H.losebreath, 4, "alone, respirodaxon eases breathing")

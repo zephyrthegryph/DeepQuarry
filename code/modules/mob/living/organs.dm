@@ -18,8 +18,7 @@
 
 /// Organ types a mob without a body plan yields when butchered or gibbed
 /// (constant per type). Null for mobs whose organs are real from the start.
-/mob/living/proc/butchery_organ_types()
-	return null
+TYPE_TABLE_DECLARE(/mob/living, butchery_organ_types, null)
 
 /// Create the butchery organs inside the mob, once. Each lands in the mob's
 /// interior slot, where it belongs to the mob (organ_in(), code/modules/body/parts/queries.dm)
@@ -27,7 +26,7 @@
 /mob/living/proc/spawn_butchery_organs()
 	if(length(internal_organ_list()))
 		return
-	for(var/path in butchery_organ_types())
+	for(var/path in TYPE_TABLE_GET(src, butchery_organ_types))
 		var/obj/item/organ/neworg = new path(src, TRUE)
 		neworg.name = "[name] [neworg.name]"
 		neworg.meat_type = meat_type

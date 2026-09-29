@@ -127,17 +127,13 @@
 	examine_line = "Thin blue coolant is dripping from a seam in their chassis."
 	clinical_description = "Visible coolant loss from a breached loop."
 	public_emote_chance = 3
-/datum/affliction_symptom/synthetic/coolant_drip/get_public_emotes()
-	var/static/list/emotes = list("drips coolant onto the floor.")
-	return emotes
+TYPE_TABLE(/datum/affliction_symptom/synthetic/coolant_drip, get_public_emotes, list("drips coolant onto the floor."))
 
 /datum/affliction_symptom/synthetic/overheat_warning
 	name = "overheat warnings"
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 	clinical_description = "Internal diagnostics report rising core temperature."
-/datum/affliction_symptom/synthetic/overheat_warning/get_patient_messages()
-	var/static/list/msgs = list("WARNING: core temperature rising.", "Thermal management reports reduced heat rejection.")
-	return msgs
+TYPE_TABLE(/datum/affliction_symptom/synthetic/overheat_warning, get_patient_messages, list("WARNING: core temperature rising.", "Thermal management reports reduced heat rejection."))
 
 /datum/affliction_symptom/synthetic/low_coolant_pressure
 	name = "low coolant pressure"
@@ -157,9 +153,7 @@
 	audiences = SYMPTOM_AUDIENCE_PUBLIC
 	clinical_description = "Cooling fans running flat out, audibly."
 	public_emote_chance = 4
-/datum/affliction_symptom/synthetic/fan_whine/get_public_emotes()
-	var/static/list/emotes = list("whirs loudly as their fans spin up.")
-	return emotes
+TYPE_TABLE(/datum/affliction_symptom/synthetic/fan_whine, get_public_emotes, list("whirs loudly as their fans spin up."))
 
 /datum/affliction_symptom/synthetic/jerky_motion
 	name = "jerky movement"
@@ -172,12 +166,8 @@
 	audiences = SYMPTOM_AUDIENCE_PUBLIC | SYMPTOM_AUDIENCE_PATIENT
 	clinical_description = "Audible grinding from a misaligned joint."
 	public_emote_chance = 3
-/datum/affliction_symptom/synthetic/servo_grind/get_public_emotes()
-	var/static/list/emotes = list("makes a faint grinding noise as they move.")
-	return emotes
-/datum/affliction_symptom/synthetic/servo_grind/get_patient_messages()
-	var/static/list/msgs = list("A joint grinds as it moves.", "Actuator feedback doesn't match the commanded position.")
-	return msgs
+TYPE_TABLE(/datum/affliction_symptom/synthetic/servo_grind, get_public_emotes, list("makes a faint grinding noise as they move."))
+TYPE_TABLE(/datum/affliction_symptom/synthetic/servo_grind, get_patient_messages, list("A joint grinds as it moves.", "Actuator feedback doesn't match the commanded position."))
 
 /datum/affliction_symptom/synthetic/calibration_offset
 	name = "calibration offset"
@@ -189,9 +179,7 @@
 	name = "error messages"
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 	clinical_description = "The unit's own diagnostics report memory and processing errors."
-/datum/affliction_symptom/synthetic/error_chatter/get_patient_messages()
-	var/static/list/msgs = list("ERROR: segmentation fault in cognitive subroutine.", "Memory checksum mismatch. Retrying...", "A thought loops, stalls, and restarts.")
-	return msgs
+TYPE_TABLE(/datum/affliction_symptom/synthetic/error_chatter, get_patient_messages, list("ERROR: segmentation fault in cognitive subroutine.", "Memory checksum mismatch. Retrying...", "A thought loops, stalls, and restarts."))
 
 /datum/affliction_symptom/synthetic/speech_glitch
 	name = "speech glitches"
@@ -219,9 +207,7 @@
 	name = "power warnings"
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 	clinical_description = "The unit reports brownouts and low supply voltage."
-/datum/affliction_symptom/synthetic/power_warning/get_patient_messages()
-	var/static/list/msgs = list("WARNING: supply voltage low.", "Your systems brown out for a moment.")
-	return msgs
+TYPE_TABLE(/datum/affliction_symptom/synthetic/power_warning, get_patient_messages, list("WARNING: supply voltage low.", "Your systems brown out for a moment."))
 
 /datum/affliction_symptom/synthetic/bus_voltage_low
 	name = "low bus voltage"

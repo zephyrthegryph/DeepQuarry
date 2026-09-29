@@ -49,8 +49,7 @@ GLOBAL_DATUM_INIT(captain_announcement, /datum/announcement/minor, new(do_newsca
 /datum/job/captain/get_access()
 	return SSaccess.get_all_station_access().Copy()
 
-/datum/job/captain/get_request_reasons()
-	return list("Training crew", "Assembling expedition team")
+TYPE_TABLE(/datum/job/captain, get_request_reasons, list("Training crew", "Assembling expedition team"))
 
 // Captain Alt Titles
 /datum/alt_title/overseer
@@ -110,8 +109,7 @@ GLOBAL_DATUM_INIT(captain_announcement, /datum/announcement/minor, new(do_newsca
 	access = list(ACCESS_SECURITY, ACCESS_SEC_DOORS, ACCESS_BRIG, ACCESS_FORENSICS_LOCKERS, ACCESS_MEDICAL, ACCESS_ENGINE, ACCESS_CHANGE_IDS, ACCESS_AI_UPLOAD, ACCESS_EVA, ACCESS_HEADS, ACCESS_ALL_PERSONAL_LOCKERS, ACCESS_MAINT_TUNNELS, ACCESS_BAR, ACCESS_JANITOR, ACCESS_CONSTRUCTION, ACCESS_MORGUE, ACCESS_CREMATORIUM, ACCESS_KITCHEN, ACCESS_CARGO, ACCESS_CARGO_BOT, ACCESS_MAILSORTING, ACCESS_QM, ACCESS_HYDROPONICS, ACCESS_LAWYER, ACCESS_CHAPEL_OFFICE, ACCESS_LIBRARY, ACCESS_RESEARCH, ACCESS_MINING, ACCESS_HEADS_VAULT, ACCESS_MINING_STATION, ACCESS_HOP, ACCESS_RC_ANNOUNCE, ACCESS_CLOWN, ACCESS_TOMFOOLERY, ACCESS_MIME, ACCESS_KEYCARD_AUTH, ACCESS_GATEWAY, ACCESS_ENTERTAINMENT)
 
 
-/datum/job/hop/get_request_reasons()
-	return list("ID modification", "Training crew", "Assembling expedition team")
+TYPE_TABLE(/datum/job/hop, get_request_reasons, list("ID modification", "Training crew", "Assembling expedition team"))
 
 // HOP Alt Titles
 /datum/alt_title/cro

@@ -39,8 +39,7 @@
 						perform the duties of absent Security roles, such as distributing gear from the Armory."
 	alt_titles = list(JOB_ALT_SECURITY_COMMANDER = /datum/alt_title/sec_commander, JOB_ALT_CHIEF_OF_SECURITY = /datum/alt_title/sec_chief, JOB_ALT_SECURITY_MANAGER = /datum/alt_title/security_manager)
 
-/datum/job/hos/get_request_reasons()
-	return list("Wildlife management", "Forensic investigation", "Training crew", "Assembling expedition team")
+TYPE_TABLE(/datum/job/hos, get_request_reasons, list("Wildlife management", "Forensic investigation", "Training crew", "Assembling expedition team"))
 
 // Head of Security Alt Titles
 /datum/alt_title/sec_commander
@@ -87,8 +86,7 @@
 						Armoury gear in a crisis, and retrieving it when the crisis has passed. In an emergency, the " + JOB_WARDEN + " may be called upon to direct the \
 						Security Department as a whole."
 
-/datum/job/warden/get_request_reasons()
-	return list("Wildlife management")
+TYPE_TABLE(/datum/job/warden, get_request_reasons, list("Wildlife management"))
 
 //Warden Alt Titles
 /datum/alt_title/brig_sentry
@@ -125,8 +123,7 @@
 						For crimes only witnessed after the fact, or those with no survivors, they attempt to piece together what they can from pure evidence."
 	alt_titles = list(JOB_ALT_INVESTIGATOR = /datum/alt_title/investigator, JOB_ALT_SECURITY_INSPECTOR = /datum/alt_title/security_inspector, JOB_ALT_FORENSIC_TECHNICIAN = /datum/alt_title/forensic_tech)
 
-/datum/job/detective/get_request_reasons()
-	return list("Forensic investigation")
+TYPE_TABLE(/datum/job/detective, get_request_reasons, list("Forensic investigation"))
 
 // Detective Alt Titles
 /datum/alt_title/forensic_tech
@@ -170,8 +167,7 @@
 
 	min_age_by_species = list(SPECIES_PROMETHEAN = 3)
 
-/datum/job/officer/get_request_reasons()
-	return list("Wildlife management", "Assembling expedition team")
+TYPE_TABLE(/datum/job/officer, get_request_reasons, list("Wildlife management", "Assembling expedition team"))
 
 // Security Officer Alt Titles
 /datum/alt_title/junior_officer

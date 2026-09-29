@@ -151,13 +151,13 @@ DECLARE_REF(/obj/machinery/computer/security/telescreen/entertainment, "radio", 
 
 /obj/machinery/computer/security/telescreen/entertainment/Click(location, control, params)
 	var/list/modifiers = params2list(params)
-	if(GLOB.input_router.click_is(modifiers, GLOB.input_router.alternate_table(), INPUT_ACTION_ALTERNATE))
+	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, alternate_table), INPUT_ACTION_ALTERNATE))
 		if(isliving(usr) && Adjacent(usr) && !usr.incapacitated())
 			toggle()
 			visible_message(span_infoplain(span_bold("[usr]") + " toggles [src] [enabled ? "on" : "off"]."),span_info("You toggle [src] [enabled ? "on" : "off"]."), runemessage = "click")
 	// start - Changing click to only come into play when shift or alt clicking. These things are ANNOYING.
 			return
-	if(GLOB.input_router.click_is(modifiers, GLOB.input_router.shift_table(), INPUT_ACTION_INSPECT))
+	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, shift_table), INPUT_ACTION_INSPECT))
 		attack_hand(usr)
 		return
 	..()

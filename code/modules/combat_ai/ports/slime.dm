@@ -32,12 +32,10 @@ DECLARE_REF(/mob/living/simple_mob/slime/xenobio, "slime_state", OWNED, null)
 	)
 	return L
 
-/mob/living/simple_mob/slime/get_ai_target_selectors()
-	var/static/list/L = list(
-		/datum/target_selector/slime_prefer_food,
-		/datum/target_selector/closest,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/slime, get_ai_target_selectors, list( \
+		/datum/target_selector/slime_prefer_food, \
+		/datum/target_selector/closest, \
+	))
 
 // ---------------------------------------------------------------------------
 // Slime-aware target selector.

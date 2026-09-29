@@ -305,7 +305,7 @@
 /obj/mecha/proc/paste_repair(mob/actor, obj/item/stack/nanopaste/held, datum/interaction/interaction)
 	var/datum/mech_body_plan/plan = mech_body_plan()
 	var/any_part = FALSE
-	for(var/slot in plan.part_order())
+	for(var/slot in TYPE_TABLE_GET(plan, part_order))
 		var/obj/item/mecha_parts/component/C = plan.part(src, slot)
 		if(!C)
 			continue

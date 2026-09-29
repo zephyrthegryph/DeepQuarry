@@ -153,14 +153,12 @@
 	SM.dq_heal_pounce(patient)
 	return DQ_BEHAVIOR_DONE
 
-/datum/ai_behavior/healbelly_heal_ally/get_player_verb_info()
-	var/static/list/L = list(
-		"name" = "Heal Swallow",
-		"desc" = "Swallow a wounded ally into a healing belly.",
-		"category" = "Friendly",
-		"auto_target" = FALSE,
-	)
-	return L
+TYPE_TABLE(/datum/ai_behavior/healbelly_heal_ally, get_player_verb_info, list( \
+		"name" = "Heal Swallow", \
+		"desc" = "Swallow a wounded ally into a healing belly.", \
+		"category" = "Friendly", \
+		"auto_target" = FALSE, \
+	))
 
 /// Point a healbelly mob's vore_selected at its dedicated heal gut, if it has
 /// one. Bigdragon tracks it as `gut2`; other healbelly mobs (leopardmander)

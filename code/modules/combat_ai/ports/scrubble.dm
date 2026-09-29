@@ -35,12 +35,10 @@
 	)
 	return L
 
-/mob/living/simple_mob/vore/scrubble/get_ai_target_selectors()
-	var/static/list/L = list(
-		/datum/target_selector/scrubble_prey,
-		/datum/target_selector/closest,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/vore/scrubble, get_ai_target_selectors, list( \
+		/datum/target_selector/scrubble_prey, \
+		/datum/target_selector/closest, \
+	))
 
 // ---------------------------------------------------------------------------
 // Target selector — reproduce find_target()'s "prefer something I can eat,

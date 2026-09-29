@@ -34,12 +34,10 @@
 	)
 	return L
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/get_ai_target_selectors()
-	var/static/list/L = list(
-		/datum/target_selector/prefer_players,
-		/datum/target_selector/closest,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/mechanical/mecha/eclipse, get_ai_target_selectors, list( \
+		/datum/target_selector/prefer_players, \
+		/datum/target_selector/closest, \
+	))
 
 // ---------------------------------------------------------------------------
 // Phase machine + bullet-hell special attack.

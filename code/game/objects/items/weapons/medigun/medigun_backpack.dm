@@ -71,14 +71,12 @@
 #define MEDIGUN_TANK_COUNT 3
 
 /// TREAT_* -> the tank (MEDIGUN_TANK_*) that powers it.
-/obj/item/medigun_backpack/proc/medigun_mode_tags()
-	var/static/list/tags = list(
-		TREAT_TISSUE_REPAIR = MEDIGUN_TANK_BRUTE,
-		TREAT_HEMOSTATIC = MEDIGUN_TANK_BRUTE,
-		TREAT_BURN_CARE = MEDIGUN_TANK_BURN,
-		TREAT_ANTITOXIN = MEDIGUN_TANK_TOX,
-	)
-	return tags
+TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
+		TREAT_TISSUE_REPAIR = MEDIGUN_TANK_BRUTE, \
+		TREAT_HEMOSTATIC = MEDIGUN_TANK_BRUTE, \
+		TREAT_BURN_CARE = MEDIGUN_TANK_BURN, \
+		TREAT_ANTITOXIN = MEDIGUN_TANK_TOX, \
+	))
 
 /obj/item/medigun_backpack/proc/tank_charge(tank)
 	switch(tank)
@@ -106,7 +104,7 @@
 	var/list/demand = H.treatment_demand(/datum/diagnostic_profile/automation)
 	if(!demand || strength <= 0)
 		return
-	var/list/tags = medigun_mode_tags()
+	var/list/tags = TYPE_TABLE_GET(src, medigun_mode_tags)
 	var/list/spent = new /list(MEDIGUN_TANK_COUNT)
 	for(var/tag in tags)
 		if(!demand[tag])

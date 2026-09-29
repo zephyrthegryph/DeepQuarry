@@ -1079,18 +1079,17 @@ SUBSYSTEM_DEF(job)
 		all_jobs += current_job.title
 	return all_jobs
 
-/datum/controller/subsystem/job/proc/get_all_centcom_jobs()
-	return list("VIP Guest",
-		"Custodian",
-		"Thunderdome Overseer",
-		"Intel Officer",
-		"Medical Officer",
-		"Death Commando",
-		"Research Officer",
-		"BlackOps Commander",
-		"Supreme Commander",
-		"Emergency Response Team",
-		"Emergency Response Team Leader")
+TYPE_TABLE_DECLARE(/datum/controller/subsystem/job, get_all_centcom_jobs, list("VIP Guest", \
+		"Custodian", \
+		"Thunderdome Overseer", \
+		"Intel Officer", \
+		"Medical Officer", \
+		"Death Commando", \
+		"Research Officer", \
+		"BlackOps Commander", \
+		"Supreme Commander", \
+		"Emergency Response Team", \
+		"Emergency Response Team Leader"))
 
 // start
 /datum/controller/subsystem/job/proc/load_camp_lists()

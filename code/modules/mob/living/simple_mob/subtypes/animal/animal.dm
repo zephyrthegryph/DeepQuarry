@@ -12,16 +12,14 @@
 		/obj/item/stack/animalhide = 3\
 		)
 
-/mob/living/simple_mob/animal/butchery_organ_types()
-	var/static/list/types = list(
-		/obj/item/organ/internal/brain,
-		/obj/item/organ/internal/heart,
-		/obj/item/organ/internal/liver,
-		/obj/item/organ/internal/stomach,
-		/obj/item/organ/internal/intestine,
-		/obj/item/organ/internal/lungs,
-		)
-	return types
+TYPE_TABLE(/mob/living/simple_mob/animal, butchery_organ_types, list( \
+		/obj/item/organ/internal/brain, \
+		/obj/item/organ/internal/heart, \
+		/obj/item/organ/internal/liver, \
+		/obj/item/organ/internal/stomach, \
+		/obj/item/organ/internal/intestine, \
+		/obj/item/organ/internal/lungs, \
+		))
 
 /datum/decl/mob_organ_names/quadruped //Most subtypes have this basic body layout.
 	hit_zones = list("head", "torso", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "tail")

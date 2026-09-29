@@ -449,13 +449,11 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 // medical status lives on the general record), the rest the "records" set.
 
 /// HUD type -> list(href prefix, records set, status set, title, comment length).
-/mob/living/carbon/human/proc/hud_record_kinds()
-	var/static/list/kinds = list(
-		"security" = list("sec", "security", "security", "Sec. records", MAX_MESSAGE_LEN),
-		"medical" = list("med", "medical", "general", "Med. records", MAX_MESSAGE_LEN),
-		"best" = list("emp", "general", "general", "Emp. records", MAX_RECORD_LENGTH),
-	)
-	return kinds
+TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
+		"security" = list("sec", "security", "security", "Sec. records", MAX_MESSAGE_LEN), \
+		"medical" = list("med", "medical", "general", "Med. records", MAX_MESSAGE_LEN), \
+		"best" = list("emp", "general", "general", "Emp. records", MAX_RECORD_LENGTH), \
+	))
 
 /// Handle a HUD record link. TRUE when the link was an "add comment" one (Topic stops there).
 /mob/living/carbon/human/proc/hud_record_topic(mob/user, list/href_list)
@@ -463,7 +461,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		hud_topic_status(user, "security")
 	if(href_list["medical"] && hasHUD(user, "medical"))
 		hud_topic_status(user, "medical")
-	var/list/kinds = hud_record_kinds()
+	var/list/kinds = TYPE_TABLE_GET(src, hud_record_kinds)
 	for(var/hud_type in kinds)
 		var/prefix = kinds[hud_type][1]
 		if(href_list["[prefix]record"] && hasHUD(user, hud_type))
@@ -505,7 +503,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 /// The criminal (security) or physical (medical) status picker.
 /mob/living/carbon/human/proc/hud_topic_status(mob/user, hud_type)
-	var/datum/data/record/R = hud_find_record(hud_record_kinds()[hud_type][3])
+	var/datum/data/record/R = hud_find_record(TYPE_TABLE_GET(src, hud_record_kinds)[hud_type][3])
 	if(!R)
 		hud_no_record(user)
 		return
@@ -516,7 +514,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 /// Print the record `hud_type` reads.
 /mob/living/carbon/human/proc/hud_topic_show_record(mob/user, hud_type)
-	var/list/kind = hud_record_kinds()[hud_type]
+	var/list/kind = TYPE_TABLE_GET(src, hud_record_kinds)[hud_type]
 	var/datum/data/record/R = hud_find_record(kind[2])
 	if(!R)
 		hud_no_record(user)
@@ -554,7 +552,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 /// Print the comment log of the record `hud_type` reads.
 /mob/living/carbon/human/proc/hud_topic_show_comments(mob/user, hud_type)
-	var/list/kind = hud_record_kinds()[hud_type]
+	var/list/kind = TYPE_TABLE_GET(src, hud_record_kinds)[hud_type]
 	var/datum/data/record/R = hud_find_record(kind[2])
 	if(!R)
 		hud_no_record(user)
