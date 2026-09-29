@@ -373,8 +373,8 @@ TYPE_TABLE_DECLARE(/mob/living/silicon/robot, robot_component_types, list( \
 
 /// Hand the afflictions back and forget them.
 /datum/carried_afflictions/proc/release()
-	. = afflictions || list()
-	own_take_all(src, "afflictions")
+	// own_take_all() empties `afflictions` in place: hand back the detached members it returns.
+	return own_take_all(src, "afflictions") || list()
 
 /// Structural load the part carries (examine, installing checks).
 /datum/carried_afflictions/proc/carried_load()

@@ -248,13 +248,8 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	return
 
 /mob/living/silicon/robot/proc/setup_cell()
-	var/obj/item/cell/new_cell = cell
-	own_take(src, "cell")
-	if(ispath(new_cell))
-		new_cell = new new_cell(src)
-	else if(!new_cell && cell_type)
-		new_cell = new cell_type(src)
-	set_cell(new_cell)
+	if(!cell && cell_type)
+		set_cell(new cell_type(src))
 
 /mob/living/silicon/robot/proc/setup_hud_images()
 	own_put(src, "hud_list", HEALTH_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_HEALTH))
@@ -396,6 +391,8 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 
 /// The one writer of `cell`. Watches the cell for deletion and shields it
 /// from EMP recursion (the robot drains it itself in emp_act()).
+/// Ownership: the power mount's `wrapped` owns the cell (install() adopts it); `cell` is a
+/// relation alias of it, so the cell has exactly one owner.
 /mob/living/silicon/robot/proc/set_cell(obj/item/cell/new_cell)
 	if(cell == new_cell)
 		return
@@ -403,21 +400,19 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	if(old_cell)
 		om_unhook(old_cell, list(/datum/om/event/before/atom_pre_emp_act, /datum/om/event/qdeleting), src)
 	if(new_cell && new_cell.loc != src)
-		new_cell.forceMove(src) // CONTAINED: in our contents before own_set()
-	own_set(src, "cell", new_cell)
+		new_cell.forceMove(src)
+	rel_set(src, "cell", new_cell)
+	var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
 	// A5: a replacement (not a removal: remove_cell() uninstalls first and keeps the cell) takes
 	// the old cell out of the mount and deletes it, instead of orphaning it in contents (a
 	// suit-built borg's default cell, overwritten by the chest's).
-	if(old_cell && new_cell)
-		var/datum/robot_component/old_mount = get_component(ROBOT_SLOT_POWER)
-		if(old_mount?.wrapped == old_cell)
-			old_mount.uninstall()
-		if(old_cell.loc == src)
-			qdel(old_cell)
+	if(old_cell && new_cell && mount?.wrapped == old_cell)
+		var/obj/item/cell/removed = mount.uninstall()
+		if(removed && !QDELETED(removed))
+			qdel(removed)
 	if(new_cell)
 		om_hook(new_cell, /datum/om/event/before/atom_pre_emp_act, src, PROC_REF(shield_cell_from_emp))
 		om_hook(new_cell, /datum/om/event/qdeleting, src, PROC_REF(on_cell_deleted))
-		var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
 		if(mount && mount.wrapped != new_cell)
 			mount.install(new_cell)
 	if(!QDELETED(src))
@@ -1913,6 +1908,7 @@ OWN(/mob/living/silicon/robot, hat, OWN_SPILL)
 // on_destroy() still takes these apart in order: the MMI hands its mind on, the cell unhooks.
 // The module, radio, camera and components are deleted by phase 4, after the AI link and shell are undone.
 OWN(/mob/living/silicon/robot, mmi, OWN_CONTAINED)
-OWN(/mob/living/silicon/robot, cell, OWN_CONTAINED)
+// The power mount (components[ROBOT_SLOT_POWER].wrapped) owns the cell; `cell` is its alias.
+REL(/mob/living/silicon/robot, cell)
 // A registered robot sprite, or the robot's private fallback default (copy-on-write).
 PROTO(/mob/living/silicon/robot, sprite_datum)

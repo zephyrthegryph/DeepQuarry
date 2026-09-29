@@ -20,7 +20,7 @@
 	icon_state = "tachi"
 	color = "#68a2f2"
 
-	cell =        /obj/item/cell/mech
+	cell_type =   /obj/item/cell/mech
 	module =      /obj/item/robot_module/robot/platform
 
 	lawupdate = FALSE
