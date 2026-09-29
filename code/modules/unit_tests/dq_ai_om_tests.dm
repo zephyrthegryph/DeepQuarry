@@ -84,7 +84,10 @@
 	B.give_target(target, TRUE)
 	var/start_dist = get_dist(hunter, target)
 	var/closest = start_dist
-	for(var/i in 1 to 30)
+	// Breaks as soon as it attacks; the budget only matters on a loaded machine,
+	// where 30 rounds sometimes ran out just before the swing (also seen on
+	// unsharded merge runs), so it's 60.
+	for(var/i in 1 to 60)
 		hunter.next_click = 0
 		om_tick_now(hunter, /datum/om/behaviour/ai_brain/strategic, 2)
 		om_tick_now(hunter, /datum/om/behaviour/ai_brain/tactical, 0.25)

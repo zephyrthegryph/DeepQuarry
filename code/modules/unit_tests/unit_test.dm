@@ -312,19 +312,19 @@ GLOBAL_VAR_INIT(dq_test_shard_index, 0)
 /// See dq_test_shard_index.
 GLOBAL_VAR_INIT(dq_test_shard_count, 1)
 
-/// Non-sweep test types assigned to this shard, or null when this world runs
-/// every test (a plain dm-test/focused run, or a shard-count-1 "sharded"
-/// run). Read from the file named by the `shard-tests` world param: one test
-/// type path per line. Sweep-test types (RunUnitTests() checks
-/// is_sweep_test) always run regardless of this list -- their cost is
-/// already spread across every shard by sweep_types(), so the sharded
-/// runner's bin-packer excludes them from this assignment entirely rather
-/// than pinning them to one shard.
-GLOBAL_VAR(dq_test_shard_names)
+/// The sharded runner's assignment of non-sweep test types to shards, as
+/// path -> shard index, or null when this world runs every test (a plain
+/// dm-test/focused run). Read from the file named by the `shard-tests` world
+/// param: one "path<TAB>index" line per test, the same file for every shard.
+/// A test the file doesn't name (new since the durations it was balanced on)
+/// goes to shard dq_test_shard_of_unlisted(), so every test runs in exactly one
+/// shard. Sweep-test types (is_sweep_test) run in every shard regardless --
+/// sweep_types() already spreads their cost -- and are never assigned.
+GLOBAL_VAR(dq_test_shard_assignment)
 
 /// Explicit test selection from `dm-test --domains=`/`--tier=`/`--affected`
 /// (see doc/testing.md "Domains, tiers and --affected"), or null to run
-/// every test that survives shard/focus filtering. Unlike dq_test_shard_names,
+/// every test that survives shard/focus filtering. Unlike the shard assignment,
 /// this applies to sweep tests too: a domain filter can legitimately exclude
 /// a sweep unrelated to the requested domains, so there's no is_sweep_test
 /// bypass here.
@@ -353,6 +353,40 @@ GLOBAL_VAR(dq_test_select_names)
 		names[path] = TRUE
 	return names
 
+/// Reads the shard-tests assignment file ("path<TAB>index" per line) into an
+/// assoc list path -> index. A name the build doesn't have (the durations the
+/// runner balanced on can name a test removed since) is logged and skipped.
+/proc/dq_test_read_shard_assignment(file)
+	if(isnull(file))
+		return null
+	if(!fexists(file))
+		stack_trace("dq_test_read_shard_assignment: shard-tests file [file] does not exist")
+		return null
+	var/list/assignment = list()
+	for(var/line in splittext(file2text(file), "\n"))
+		line = trim(line)
+		if(!length(line))
+			continue
+		var/list/parts = splittext(line, "\t")
+		var/path = text2path(parts[1])
+		var/index = length(parts) > 1 ? text2num(parts[2]) : GLOB.dq_test_shard_index
+		if(!path)
+			log_test("Shard assignment names [parts[1]], which this build doesn't have; skipped.")
+			continue
+		assignment[path] = index
+	return assignment
+
+/// The shard that runs a non-sweep test missing from the assignment: a stable
+/// hash of its path, so every world agrees without seeing the others.
+/proc/dq_test_shard_of_unlisted(test_path)
+	// A plain rolling hash of the path text (text2num(hex, 16) came back null
+	// here, which sent every unlisted test to shard 0).
+	var/text = "[test_path]"
+	var/hash = 0
+	for(var/i in 1 to length(text))
+		hash = (hash * 31 + text2ascii(text, i)) % 1000003
+	return hash % GLOB.dq_test_shard_count
+
 /// Reads shard-index/shard-count/shard-tests/test-select from world params
 /// into the globals above. Called once, early, from
 /// world/proc/HandleTestRun(). Missing shard-index/shard-count params leave
@@ -370,7 +404,7 @@ GLOBAL_VAR(dq_test_select_names)
 			GLOB.dq_test_shard_count = count
 			GLOB.dq_test_shard_index = index
 
-	GLOB.dq_test_shard_names = dq_test_read_name_list(TEST_SHARD_TESTS_FILE_PARAMETER, world.params[TEST_SHARD_TESTS_FILE_PARAMETER])
+	GLOB.dq_test_shard_assignment = dq_test_read_shard_assignment(world.params[TEST_SHARD_TESTS_FILE_PARAMETER])
 	GLOB.dq_test_select_names = dq_test_read_name_list(TEST_SELECT_FILE_PARAMETER, world.params[TEST_SELECT_FILE_PARAMETER])
 
 /datum/unit_test
@@ -937,14 +971,26 @@ DECLARE_REF(/datum/unit_test, "allocated", OWNED_LIST, null)
 	if(length(focused_tests))
 		tests_to_run = focused_tests.Copy()
 
-	// Sharded run: keep only this shard's assigned non-sweep tests, plus
-	// every sweep test (it always runs -- see is_sweep_test).
-	if(GLOB.dq_test_shard_names)
+	// Sharded run: keep this shard's non-sweep tests (assigned here, or
+	// unlisted and hashed here), plus every sweep test (it always runs -- see
+	// is_sweep_test).
+	var/list/assignment = GLOB.dq_test_shard_assignment
+	if(assignment)
 		var/list/sharded = list()
+		var/unlisted = 0
 		for(var/_test_to_run in tests_to_run)
 			var/datum/unit_test/test_to_run = _test_to_run
-			if(initial(test_to_run.is_sweep_test) || GLOB.dq_test_shard_names[test_to_run])
+			if(initial(test_to_run.is_sweep_test))
 				sharded += test_to_run
+				continue
+			var/assigned = assignment[test_to_run]
+			if(isnull(assigned))
+				assigned = dq_test_shard_of_unlisted(test_to_run)
+				if(assigned == GLOB.dq_test_shard_index)
+					unlisted++
+			if(assigned == GLOB.dq_test_shard_index)
+				sharded += test_to_run
+		log_test("Shard [GLOB.dq_test_shard_index + 1]/[GLOB.dq_test_shard_count]: [length(sharded)] test types ([unlisted] not in the assignment, placed by hash).")
 		tests_to_run = sharded
 
 	// dm-test --domains=/--tier=/--affected: an explicit selection, applied

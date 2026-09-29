@@ -837,9 +837,15 @@ async function runIsolatedTestWorld(
       fs.copyFileSync(`${base}.dmb`, `${runBase}.dmb`);
       fs.copyFileSync(`${base}.rsc`, `${runBase}.rsc`);
     }
+    // Generated spritesheets and the asset caches go to a directory per run
+    // slot (SPRITESHEET_DIR): worlds in one worktree -- a sharded run, or two
+    // focused runs -- otherwise write the same data/spritesheets files at once.
+    const spritesheetDir = `data/spritesheets/${slot.tag}/`;
+    fs.mkdirSync(spritesheetDir, { recursive: true });
     const params: Record<string, string> = {
       'log-directory': slot.tag,
       'unit-tests-file': resultsFile,
+      'spritesheet-dir': spritesheetDir,
       ...worldParams,
     };
     if (focus) {
@@ -1037,17 +1043,35 @@ function classifyDomain(filePath: string): string {
   return 'misc';
 }
 
+/** The unit-test source files the build includes (`#include`d from
+ * code/modules/unit_tests/_unit_tests.dm). A file left out of it declares
+ * types the world doesn't have, so the source scans below skip it. */
+function includedUnitTestFiles(): string[] {
+  const dir = 'code/modules/unit_tests';
+  const text = fs.readFileSync(`${dir}/_unit_tests.dm`, 'utf-8');
+  const files: string[] = [];
+  for (const match of text.matchAll(/^\s*#include\s+"([^"]+\.dm)"/gm)) {
+    const file = `${dir}/${match[1].replace(/\\/g, '/')}`;
+    if (fs.existsSync(file)) files.push(file);
+  }
+  return files;
+}
+
 /** Every declared unit-test type, the file it's declared in, and its
  * inferred domain -- a source scan (see enumerateUnitTestTypes()'s doc), not
  * a world boot. */
 function enumerateUnitTestsWithDomain(): { name: string; file: string; domain: string }[] {
-  const TYPE_DECL = /^\/datum\/unit_test\/[A-Za-z0-9_/]+$/;
+  // Bare `/datum/unit_test/foo` lines and `/datum/unit_test/foo/Run()` definitions.
+  const TYPE_DECL = /^(\/datum\/unit_test\/[A-Za-z0-9_/]+?)(?:\/Run\(\))?$/;
   const out: { name: string; file: string; domain: string }[] = [];
-  for (const file of Juke.glob('code/modules/unit_tests/*.dm')) {
+  const seen = new Set<string>();
+  for (const file of includedUnitTestFiles()) {
     const domain = classifyDomain(file);
     for (const line of fs.readFileSync(file, 'utf-8').split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (TYPE_DECL.test(trimmed)) out.push({ name: trimmed, file, domain });
+      const match = TYPE_DECL.exec(line.trim());
+      if (!match || seen.has(match[1])) continue;
+      seen.add(match[1]);
+      out.push({ name: match[1], file, domain });
     }
   }
   return out;
@@ -1215,7 +1239,7 @@ function declaredVarPredicate(varName: string, isTrue: (value: string) => boolea
   const TYPE_DECL = /^\/datum\/unit_test\/[A-Za-z0-9_/]+$/;
   const VAR_LINE = new RegExp(`^\\s+${varName}\\s*=\\s*([A-Za-z0-9_]+)`);
   const declared = new Map<string, boolean>();
-  for (const file of Juke.glob('code/modules/unit_tests/*.dm')) {
+  for (const file of includedUnitTestFiles()) {
     let current: string | null = null;
     for (const line of fs.readFileSync(file, 'utf-8').split(/\r?\n/)) {
       const trimmed = line.trimEnd();
@@ -1321,15 +1345,18 @@ const SHARD_DIR = 'data/test-shards';
  * assignment for tests with no historical duration yet (new tests, or a
  * fresh checkout with no data/test-runs/ history). */
 function enumerateUnitTestTypes(): string[] {
-  const TYPE_DECL = /^\/datum\/unit_test\/[A-Za-z0-9_/]+$/;
-  const names: string[] = [];
-  for (const file of Juke.glob('code/modules/unit_tests/*.dm')) {
+  // A bare `/datum/unit_test/foo` line, or a `/datum/unit_test/foo/Run()`
+  // definition (plenty of tests have only the latter). Types that aren't
+  // tests (abstract parents) are harmless: the world skips them.
+  const TYPE_DECL = /^(\/datum\/unit_test\/[A-Za-z0-9_/]+?)(?:\/Run\(\))?$/;
+  const names = new Set<string>();
+  for (const file of includedUnitTestFiles()) {
     for (const line of fs.readFileSync(file, 'utf-8').split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (TYPE_DECL.test(trimmed)) names.push(trimmed);
+      const match = TYPE_DECL.exec(line.trim());
+      if (match) names.add(match[1]);
     }
   }
-  return names;
+  return [...names];
 }
 
 /** Greedy bin-packing of every known non-sweep test onto `shardCount`
@@ -1342,12 +1369,16 @@ function assignTestShards(shardCount: number, selection: Set<string> | null, tie
   const loads = new Array(shardCount).fill(0);
   const durations = new Map<string, number>();
   const isSweep = sweepTestPredicate();
+  // Durations from the newest run that covered most of the suite, not just
+  // the newest run: that is often a focused run of a handful of tests.
   const runs = listRuns(TEST_RUNS_DIR);
-  if (runs.length) {
-    const latest = readJson<TestRun>(runs[runs.length - 1]);
-    for (const [name, entry] of Object.entries(latest.tests)) {
+  for (let i = runs.length - 1; i >= 0; i--) {
+    const run = readJson<TestRun>(runs[i]);
+    if (Object.keys(run.tests).length < 500) continue;
+    for (const [name, entry] of Object.entries(run.tests)) {
       if (!isSweep(name)) durations.set(name, entry.duration_ds ?? 1);
     }
+    break;
   }
   const known = new Set(durations.keys());
   for (const name of enumerateUnitTestTypes()) {
@@ -1498,7 +1529,14 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
   const selectionSet = selection ? new Set(selection) : null;
   if (selection) worldParams['test-select'] = writeRunList('select.txt', selection);
   const assignment = assignTestShards(shardCount, selectionSet, tier);
-  const testFiles = assignment.map((names, i) => writeRunList(`shard-${i}-of-${shardCount}.txt`, names));
+  // One assignment file for every shard ("path<TAB>shard" per line): a world
+  // runs what's assigned to it, and places any test the file doesn't name by
+  // a hash of its path (dq_test_shard_of_unlisted()), so none is skipped.
+  const assignmentFile = writeRunList(
+    `shard-assignment-${shardCount}.txt`,
+    assignment.flatMap((names, i) => names.map((name) => `${name}\t${i}`)),
+  );
+  const testFiles = assignment.map(() => assignmentFile);
   Juke.logger.info(
     `dm-test --shards=${shardCount} --tier=${tier}: `
       + `${assignment.map((a, i) => `shard ${i}: ${a.length} test(s)`).join(', ')}, `

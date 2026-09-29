@@ -183,13 +183,26 @@ time) and the failures.
   also builds only its own probe items). Round-robin keeps every slice
   representative when a list is clustered. A test that isn't a sweep gets its
   whole list from `sweep_types()`, wherever it runs.
-- **Every other test** is greedy bin-packed onto one shard by its duration in
-  the latest `data/test-runs/` record (heaviest first onto the lightest
-  shard; tests with no history weigh 0.5 s). Only tests in the chosen tier
-  are packed. Each shard's list goes to the world as `-params
-  shard-tests=<file>`. Sweep and tier status come from a source scan of each
-  test's `is_sweep_test` and `tier` vars (nearest declaration up the type
-  path, like DM inheritance), so there is no list to keep in sync.
+- **Every other test** runs in exactly one shard. The runner greedy
+  bin-packs the tests it knows onto shards by duration (heaviest first onto
+  the lightest shard), taken from the newest `data/test-runs/` record that
+  covered most of the suite. Tests without a duration weigh 0.5 s. It only
+  packs tests in the chosen tier. Every shard gets the same assignment file
+  (`-params shard-tests=<file>`, one `path<TAB>shard` line per test). A world
+  runs what is assigned to it. A test the file doesn't name (added since
+  those durations, or missed by the source scan) goes to the shard a hash of
+  its path picks (`dq_test_shard_of_unlisted()`), so no test is skipped.
+  Sweep and tier status come from a source scan of each test's
+  `is_sweep_test` and `tier` vars (nearest declaration up the type path, like
+  DM inheritance), over the files `_unit_tests.dm` includes. So there is no
+  list to keep in sync.
+- Each run's assignment file is kept in `data/test-shards/<run id>/`, so a
+  failure that depends on what else ran in its world can be rerun with the
+  same set (`dm-test --focus=` that shard's tests).
+- Worlds sharing a worktree also get their own spritesheet directory
+  (`-params spritesheet-dir=data/spritesheets/runN/`, `SPRITESHEET_DIR`), and
+  their own `<world>.dyn.rsc` is cleared per run. Otherwise they write the
+  same generated files at once.
 - A sweep test's per-shard entries are merged into one: durations and
   runtimes summed, worst status kept.
 
