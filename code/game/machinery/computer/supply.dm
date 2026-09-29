@@ -75,7 +75,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 	return id_card && ((ACCESS_CARGO in id_card.access) || (ACCESS_HEADS in id_card.access) || can_manage_budget(user, DEPARTMENT_CARGO))
 
 
-// TGUI (doc/rewrite/dx_conventions.md §5): tgui_data() and one ui_<action> proc per action.
+// TGUI (doc/rewrite/dx_conventions.md §5): tgui_data() and one act_<action> proc per action.
 /obj/machinery/computer/supplycomp/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
 	var/list/shuttle_status = list()
@@ -252,7 +252,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 		return null
 	return "[src]'s monitor flashes, \"[DisplayTimeText(COOLDOWN_TIMELEFT(src, reqtime))] remaining until another requisition form may be printed.\""
 
-/obj/machinery/computer/supplycomp/proc/ui_market_request(mob/user, contract, id, personal)
+/obj/machinery/computer/supplycomp/proc/act_market_request(mob/user, contract, id, personal)
 	var/datum/cargo_market_listing/listing = GLOB.supply_service.market_listing(ui_text(id, 128))
 	if(!listing)
 		return refuse(user, "That listing is gone.")
@@ -268,7 +268,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 	to_chat(user, span_notice("The quoted market order was submitted[contract ? " against the contract allowance" : (personal ? " with personal funding" : " for departmental approval")]."))
 	return TRUE
 
-/obj/machinery/computer/supplycomp/proc/ui_market_route(mob/user, bid, crate)
+/obj/machinery/computer/supplycomp/proc/act_market_route(mob/user, bid, crate)
 	bid = ui_text(bid, 128)
 	var/datum/cargo_market_bid/market_bid = GLOB.supply_service.market_bid(bid)
 	var/datum/cargo_market_counterparty/counterparty = GLOB.supply_service.market_counterparties?[market_bid?.counterparty_id]
@@ -281,7 +281,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 		return refuse(user, "That route is no longer valid for this crate.")
 	return TRUE
 
-/obj/machinery/computer/supplycomp/proc/ui_view_crate(mob/user, crate)
+/obj/machinery/computer/supplycomp/proc/act_view_crate(mob/user, crate)
 	var/datum/supply_pack/P = ui_ref(crate, null, /datum/supply_pack)
 	if(!P)
 		return refuse(user, null)
@@ -296,7 +296,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 	tgui_modal_message(src, "view_crate", "", null, payload)
 	return TRUE
 
-/obj/machinery/computer/supplycomp/proc/ui_request_crate_multi(mob/user, personal, ref)
+/obj/machinery/computer/supplycomp/proc/act_request_crate_multi(mob/user, personal, ref)
 	var/datum/supply_pack/S = orderable_pack(user, ref)
 	if(!S)
 		return UI_REFUSED
@@ -308,7 +308,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 		return
 	return request_crates(user, S, reason, amount, !!personal)
 
-/obj/machinery/computer/supplycomp/proc/ui_request_crate(mob/user, personal, ref)
+/obj/machinery/computer/supplycomp/proc/act_request_crate(mob/user, personal, ref)
 	var/datum/supply_pack/S = orderable_pack(user, ref)
 	if(!S)
 		return UI_REFUSED
@@ -380,7 +380,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 	refuse(user, "This console can't manage orders.")
 	return FALSE
 
-/obj/machinery/computer/supplycomp/proc/ui_edit_order_value(mob/user, default, edit, ref)
+/obj/machinery/computer/supplycomp/proc/act_edit_order_value(mob/user, default, edit, ref)
 	var/datum/supply_order/O = ui_ref(ref, GLOB.supply_service.order_history, /datum/supply_order)
 	var/field = ui_choice(edit, list("Supply Pack", "Cost", "Index", "Reason", "Ordered by", "Ordered at", "Approved by", "Approved at"))
 	if(!O || !field || !accepts_orders(user))
@@ -407,7 +407,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 			O.approved_at = new_val
 	return TRUE
 
-/obj/machinery/computer/supplycomp/proc/ui_approve_order(mob/user, ref)
+/obj/machinery/computer/supplycomp/proc/act_approve_order(mob/user, ref)
 	var/datum/supply_order/O = ui_ref(ref, GLOB.supply_service.order_history, /datum/supply_order)
 	if(!O)
 		return refuse(user, null)
@@ -416,21 +416,21 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 	GLOB.supply_service.approve_order(O, user)
 	return TRUE
 
-/obj/machinery/computer/supplycomp/proc/ui_deny_order(mob/user, ref)
+/obj/machinery/computer/supplycomp/proc/act_deny_order(mob/user, ref)
 	var/datum/supply_order/O = ui_ref(ref, GLOB.supply_service.order_history, /datum/supply_order)
 	if(!O || !accepts_orders(user))
 		return UI_REFUSED
 	GLOB.supply_service.deny_order(O, user)
 	return TRUE
 
-/obj/machinery/computer/supplycomp/proc/ui_delete_order(mob/user, ref)
+/obj/machinery/computer/supplycomp/proc/act_delete_order(mob/user, ref)
 	var/datum/supply_order/O = ui_ref(ref, GLOB.supply_service.order_history, /datum/supply_order)
 	if(!O || !accepts_orders(user))
 		return UI_REFUSED
 	GLOB.supply_service.delete_order(O, user)
 	return TRUE
 
-/obj/machinery/computer/supplycomp/proc/ui_clear_all_requests(mob/user)
+/obj/machinery/computer/supplycomp/proc/act_clear_all_requests(mob/user)
 	if(!accepts_orders(user))
 		return UI_REFUSED
 	GLOB.supply_service.deny_all_pending(user)
@@ -444,7 +444,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 		return null
 	return accepts_orders(user) ? E : null
 
-/obj/machinery/computer/supplycomp/proc/ui_export_edit_field(mob/user, index, ref)
+/obj/machinery/computer/supplycomp/proc/act_export_edit_field(mob/user, index, ref)
 	var/datum/exported_crate/E = editable_export(user, ref)
 	index = E && ui_number(index, 1, length(E.contents), round_to = 1)
 	if(!index)
@@ -468,7 +468,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 			row["value"] = ui_number(new_val, 0) || row["value"]
 	return TRUE
 
-/obj/machinery/computer/supplycomp/proc/ui_export_delete_field(mob/user, index, ref)
+/obj/machinery/computer/supplycomp/proc/act_export_delete_field(mob/user, index, ref)
 	var/datum/exported_crate/E = editable_export(user, ref)
 	index = E && ui_number(index, 1, length(E.contents), round_to = 1)
 	if(!index)
@@ -476,14 +476,14 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 	E.contents.Cut(index, index + 1) // ALLOW(containment): datum field list named contents, not atom contents
 	return TRUE
 
-/obj/machinery/computer/supplycomp/proc/ui_export_add_field(mob/user, ref)
+/obj/machinery/computer/supplycomp/proc/act_export_add_field(mob/user, ref)
 	var/datum/exported_crate/E = editable_export(user, ref)
 	if(!E)
 		return UI_REFUSED
 	GLOB.supply_service.add_export_item(E, user)
 	return TRUE
 
-/obj/machinery/computer/supplycomp/proc/ui_export_edit(mob/user, default, edit, ref)
+/obj/machinery/computer/supplycomp/proc/act_export_edit(mob/user, default, edit, ref)
 	var/datum/exported_crate/E = editable_export(user, ref)
 	var/field = ui_choice(edit, list("Name", "Value"))
 	if(!E || !field)
@@ -498,14 +498,14 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 			E.value = ui_number(new_val, 0) || E.value
 	return TRUE
 
-/obj/machinery/computer/supplycomp/proc/ui_export_delete(mob/user, ref)
+/obj/machinery/computer/supplycomp/proc/act_export_delete(mob/user, ref)
 	var/datum/exported_crate/E = editable_export(user, ref)
 	if(!E)
 		return UI_REFUSED
 	GLOB.supply_service.delete_export(E, user)
 	return TRUE
 
-/obj/machinery/computer/supplycomp/proc/ui_send_shuttle(mob/user, mode)
+/obj/machinery/computer/supplycomp/proc/act_send_shuttle(mob/user, mode)
 	if(!(authorization & SUP_SEND_SHUTTLE))
 		return refuse(user, "This console can't control the shuttle.")
 	var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service.shuttle

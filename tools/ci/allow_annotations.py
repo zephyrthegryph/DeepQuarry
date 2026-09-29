@@ -48,6 +48,7 @@ LINTS = {
     "scheduler": "tools/ci/scheduler_lints.py",
     "silent_catch": "tools/ci/silent_catch_lint.py (catches that swallow an exception)",
     "spatial": "tools/ci/spatial_lint.py",
+    "tracked": "tools/ci/tracked_lint.py (writes to a TRACKED var outside its setter; target 0)",
     "subsystem_fire": "tools/ci/subsystem_fire_lint.py (fire() outside the core allowlist)",
     "ui_actions": "tools/ci/ui_actions_lint.py (ui_ parameters no act() sends, or used before validation)",
 }

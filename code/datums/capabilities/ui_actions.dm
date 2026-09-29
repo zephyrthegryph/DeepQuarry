@@ -1,18 +1,20 @@
 // UI actions as named procs (doc/rewrite/dx_conventions.md §5).
 //
-//	/obj/machinery/atmospherics/binary/pump/proc/ui_set_pressure(mob/user, pressure)
+//	/obj/machinery/atmospherics/binary/pump/proc/act_set_pressure(mob/user, pressure)
 //		pressure = ui_number(pressure, 0, MAX_PUMP_PRESSURE)
 //		if(isnull(pressure))
 //			return refuse(user, "That isn't a pressure.")
 //		set_target_pressure(pressure)
 //
-// tgui_act() finds `ui_<action>` on the host and calls it as
-// call(src, proc)(arglist(list("user" = user) + params)). An argument name the proc doesn't declare
-// is a runtime, caught by dispatch_call(), logged and refused. Types are not enforced by DM: the
-// body validates with ui_number/ui_text/ui_choice/ui_ref/ui_bool. ui_allowed() is the type-wide gate, and
-// ui_logged() says which actions are logged. tools/ci/ui_actions_lint.py checks that every TSX
-// act() names an existing ui_ proc with matching argument names, that every ui_ parameter is sent
-// by some act() (C1), and that each parameter's first use is a validator or a constant compare (C2).
+// tgui_act() finds `act_<action>` on the host: only procs named act_* are client actions (ui_* are
+// framework hooks, ui_act_* legacy handlers; neither is reachable). The client's params become named
+// args, then the reserved names (user, src, usr, ui, state) are written LAST, so a payload can never
+// set them. Action names and keys are normalised in one place (ui_action_key(): lowercase, hyphens
+// and camelCase to snake_case), shared with tools/ci/ui_actions_lint.py. An argument name the proc
+// doesn't declare is a runtime, caught by dispatch_call(), logged and refused. Types are not
+// enforced by DM: the body validates each param first with ui_number/ui_text/ui_choice/ui_ref/
+// ui_bool (the validator-first lint). ui_allowed() is the type-wide gate; ui_logged() says which
+// actions are logged. Any proc named act_* on a UI host is a client action by rule.
 
 /// The type-wide gate for every ui_<action>: FALSE refuses silently.
 /datum/proc/ui_allowed(mob/user, action)
@@ -24,11 +26,10 @@
 
 /// Runs `ui_<action>` if the host has one. Returns list(handled, result).
 /proc/ui_named_dispatch(datum/host, action, list/params, datum/tgui/ui)
-	// Only [a-z0-9_]+ action names reach a proc lookup: a client can't name ui_ procs it has no row for
-	// by smuggling other characters, and only procs that exist on the host are candidates.
-	if(!istext(action) || !GLOB.ui_action_name_regex.Find(action))
+	var/key = ui_action_key(action)
+	if(!key)
 		return null
-	var/proc_name = "ui_[action]"
+	var/proc_name = "act_[key]"
 	if(!hascall(host, proc_name))
 		return null
 	// A legacy UI_ACT row for this action still wins until its host is migrated.
@@ -36,28 +37,50 @@
 	if(decl?.acts[action])
 		return null
 	var/mob/user = ui?.user
-	if(!host.ui_allowed(user, action))
+	if(!host.ui_allowed(user, key))
 		return list(TRUE, FALSE)
-	// The client's keys first, then the reserved names LAST, so a payload can never set user (or
-	// src/usr/ui/state). Every other ui_ parameter is client-facing by rule (ui_actions_lint): internal
-	// flags live on separate procs.
+	// The client's keys first, then the reserved names LAST.
 	var/list/named = list()
-	for(var/key in params)
-		if(!istext(key) || !GLOB.ui_action_name_regex.Find(key) || (key in GLOB.ui_reserved_arg_names))
+	for(var/raw in params)
+		var/arg = ui_action_key(raw)
+		if(!arg || (arg in GLOB.ui_reserved_arg_names))
 			continue
-		named[key] = params[key]
+		named[arg] = params[raw]
 	named["user"] = user
 	var/datum/dispatch_context/ctx = new(user, host, null, null, ui)
 	var/list/logged = type_list(host, TYPE_PROC_REF(/datum, ui_logged))
-	var/result = dispatch_call(ctx, host, proc_name, named, action, logged[action])
-	return list(TRUE, result != UI_REFUSED && result != FALSE)
+	var/result = dispatch_call(ctx, host, proc_name, named, key, logged[key])
+	return list(TRUE, dispatch_succeeded(result))
 
-/// Action names and argument keys: lowercase letters, digits and underscores only.
-GLOBAL_DATUM_INIT(ui_action_name_regex, /regex, regex(@"^[a-z0-9_]+$"))
+/// The one normalisation of client action names and argument keys: "bolt-toggle" and "boltToggle"
+/// both become "bolt_toggle". Null for anything that isn't text of [A-Za-z0-9_-] (max 64).
+/proc/ui_action_key(raw)
+	if(!istext(raw) || !length(raw) || length(raw) > 64 || !GLOB.ui_action_raw_regex.Find(raw))
+		return null
+	var/out = GLOB.ui_action_camel_regex.Replace(raw, "$1_$2")
+	out = replacetext(lowertext(out), "-", "_")
+	return out
+
+/// Raw action names and keys: letters, digits, underscores and hyphens.
+GLOBAL_DATUM_INIT(ui_action_raw_regex, /regex, regex(@"^[A-Za-z0-9_-]+$"))
+/// camelCase boundaries (a lowercase letter or digit followed by an uppercase letter).
+GLOBAL_DATUM_INIT(ui_action_camel_regex, /regex, regex(@"([a-z0-9])([A-Z])", "g"))
 /// Argument names a client may never supply (the dispatcher sets or forbids them).
 GLOBAL_LIST_INIT(ui_reserved_arg_names, list("user", "src", "usr", "ui", "state"))
 
 // ---- validators: null when the value is not acceptable ----
+
+/// TRUE for true/1/"1"/"true"/"yes", FALSE for false/0/"0"/"false"/"no"/"", null for anything else.
+/proc/ui_bool(value)
+	if(isnum(value))
+		return value ? TRUE : FALSE
+	if(istext(value))
+		switch(lowertext(value))
+			if("1", "true", "yes", "on")
+				return TRUE
+			if("0", "false", "no", "off", "")
+				return FALSE
+	return null
 
 /// A number (or numeric text) clamped to [min_value, max_value]; null if it isn't one.
 /proc/ui_number(value, min_value = -INFINITY, max_value = INFINITY, round_to = 0)
@@ -91,14 +114,3 @@ GLOBAL_LIST_INIT(ui_reserved_arg_names, list("user", "src", "usr", "ui", "state"
 	if(!D || (type && !istype(D, type)))
 		return null
 	return D
-
-/// A boolean from the client: TRUE for true/1/"1"/"true", FALSE for any other scalar (null, 0, other
-/// text or numbers), null for a non-scalar (a list or a datum) so a malformed payload is refused.
-/proc/ui_bool(value)
-	if(isnull(value))
-		return FALSE
-	if(isnum(value))
-		return value == 1
-	if(istext(value))
-		return value == "1" || lowertext(value) == "true"
-	return null
