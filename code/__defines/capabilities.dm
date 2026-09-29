@@ -73,3 +73,11 @@
 #define TYPE_DERIVES_PENDING (1<<3)
 /// type_verbs() lists something.
 #define TYPE_DERIVES_TYPE_VERBS (1<<4)
+
+// ---- periodic cadences (periodic_cadence = CADENCE_*; periodic_step(delta) gets the interval in ds) ----
+/// Every 2 seconds.
+#define CADENCE_SLOW /datum/om/pipeline/periodic/slow
+/// Every second.
+#define CADENCE_SECOND /datum/om/pipeline/periodic/second
+/// Every 0.2 seconds (continuous lanes need a reason).
+#define CADENCE_FAST /datum/om/pipeline/periodic/fast
