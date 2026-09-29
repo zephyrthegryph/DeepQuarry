@@ -332,7 +332,7 @@
 			if("Emag")
 				if(istype(A,/obj/machinery/door))
 					return TRUE //for doors use the doorjack
-				return A.emag_act(1,user,src)
+				return emag_target(A, 1,user,src)
 			if("MultiTool")
 				A.attackby(multitool,user)
 				return TRUE
@@ -788,8 +788,9 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 		return TRUE
 	return FALSE
 
-/obj/item/paicard/emag_act(remaining_charges, mob/user, emag_source)
-	. = ..()
+DECLARE_EMAG_REPEATABLE(/obj/item/paicard, PROC_REF(on_emag), null)
+/obj/item/paicard/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	. = EMAG_DECLINED
 	if(!pai)
 		if(!emagged)
 			to_chat(user, span_warning("Without a pAI inhabiting \the [src] nothing happens."))

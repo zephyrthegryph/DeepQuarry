@@ -37,7 +37,8 @@
 		return ITEM_INTERACT_BLOCKING
 	return ..()
 
-/obj/machinery/computer/message_monitor/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/message_monitor, PROC_REF(on_emag), null)
+/obj/machinery/computer/message_monitor/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	// Will create sparks and print out the console's password. You will then have to wait a while for the console to be back online.
 	// It'll take more time if there's more characters in the password..
 	if(!emag && operable())

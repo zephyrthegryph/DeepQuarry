@@ -14,12 +14,12 @@
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/computer/communications, "communications", /datum/tgui_module/communications)
 
-/obj/machinery/computer/communications/emag_act(remaining_charges, mob/user)
-	if(!emagged)
-		set_emagged(TRUE)
-		communications.emagged = TRUE
-		to_chat(user, "You scramble the communication routing circuits!")
-		return TRUE
+DECLARE_EMAG(/obj/machinery/computer/communications, PROC_REF(on_emag), null, null)
+/obj/machinery/computer/communications/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	set_emagged(TRUE)
+	communications.emagged = TRUE
+	to_chat(user, "You scramble the communication routing circuits!")
+	return TRUE
 
 /obj/machinery/computer/communications/declare_interactions(list/into)
 	into += list(

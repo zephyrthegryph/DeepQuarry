@@ -109,14 +109,13 @@
 
 	add_fingerprint(ui.user)
 
-/obj/machinery/computer/looking_glass/emag_act(remaining_charges, mob/user as mob)
-	if (!emagged)
-		play_sfx(src, SFX_EFFECTS_SPARKS4)
-		set_emagged(1)
-		to_chat(user, span_notice("You unlock several programs that were hidden somewhere in memory."))
-		log_game("[key_name(user)] emagged the [name]")
-		return 1
-	return
+DECLARE_EMAG(/obj/machinery/computer/looking_glass, PROC_REF(on_emag), null, null)
+/obj/machinery/computer/looking_glass/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	play_sfx(src, SFX_EFFECTS_SPARKS4)
+	set_emagged(1)
+	to_chat(user, span_notice("You unlock several programs that were hidden somewhere in memory."))
+	log_game("[key_name(user)] emagged the [name]")
+	return 1
 
 /obj/machinery/computer/looking_glass/proc/load_program(prog_name)
 	COOLDOWN_START(src, ready, 10 SECONDS)

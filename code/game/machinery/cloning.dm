@@ -325,7 +325,8 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 	multitool.update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/clonepod/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/clonepod, PROC_REF(on_emag), null)
+/obj/machinery/clonepod/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(isnull(get_occupant()))
 		return
 	to_chat(user, "You force an emergency ejection.")

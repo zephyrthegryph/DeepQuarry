@@ -67,9 +67,9 @@
 		icon_state = icon_state_open
 	return
 
-// Proc: emag_act()
+// Proc: on_emag()
 // Description: Emag action to allow blast doors to double their yeet distance and speed.
-/obj/machinery/door/blast/emag_act()
+/obj/machinery/door/blast/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!emagged)
 		set_emagged(1)
 		multiplier = 2 // Haha emag go yeet

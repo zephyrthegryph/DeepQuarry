@@ -95,7 +95,7 @@
 			to_chat(ui.user, span_notice("You flip the blue switch [blue_switch ? "on" : "off"]."))
 			. = TRUE
 
-/mob/living/bot/cleanbot/edCLN/emag_act(remaining_uses, mob/user)
+/mob/living/bot/cleanbot/edCLN/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	. = ..()
 	if(!emagged)
 		if(user)

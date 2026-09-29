@@ -109,7 +109,8 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 	. = ..()
 	. += "The safety guard is [emagged ? span_danger("disabled") : "enabled"]."
 
-/obj/machinery/gibber/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
+/obj/machinery/gibber/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	set_emagged(!emagged)
 	to_chat(user, span_danger("You [emagged ? "disable" : "enable"] the gibber safety guard."))
 	return 1

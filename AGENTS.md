@@ -401,6 +401,13 @@ accident or assume they work:
   subtypes add theirs with `also_requires`. `code/__defines/sys_requirements.dm`,
   doc/rewrite/systems.md Â§6; the `sys_inline_refusal` lint (baseline empty) rejects a
   message-and-return guard at the head of an effect proc.
+- **Emag is a declared interaction.** There is no `emag_act()`. A type that reacts to a
+  cryptographic sequencer writes `DECLARE_EMAG(/type, PROC_REF(on_emag), msg, already)` (gated on
+  `REQ_NOT_EMAGGED`, sets `emagged`, no "already" guard in the effect) or `DECLARE_EMAG_REPEATABLE(...)` next to
+  `/type/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)`, returning uses consumed
+  or `EMAG_DECLINED`; subtypes override `on_emag()`. Emagging without a card goes through
+  `emag_target(target, charges, user, source)`. `tools/ci/sys_rules/emag.py` rejects the old
+  pattern. See `doc/rewrite/systems.md` §13.
 - **Variants.** Families of subtypes that differ only in data are collapsed into one type
   plus a registry to save memory. See `code/datums/variants/README.md`.
 - **Material behaviour system — rewritten; material synergies removed.** A material's three active

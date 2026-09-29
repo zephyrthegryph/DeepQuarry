@@ -143,7 +143,8 @@ Ships can now be hijacked!
 /obj/machinery/computer/ship
 	var/hacked = 0   // Has been emagged, no access restrictions.
 
-/obj/machinery/computer/ship/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/ship, PROC_REF(on_emag), null)
+/obj/machinery/computer/ship/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if (!hacked)
 		req_access = list()
 		req_one_access = list()

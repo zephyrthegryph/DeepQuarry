@@ -295,23 +295,23 @@ DAMAGE_REACTION(/obj/machinery/computer/arcade, DAMAGE_EMP, PROC_REF(arcade_emp)
 	return
 
 
-/obj/machinery/computer/arcade/battle/emag_act(charges, mob/user)
-	if(!emagged)
-		to_chat(user, span_notice("You override the cheat code menu and skip to Cheat #[rand(1, 50)]: Hyper-Lethal Mode."))
+DECLARE_EMAG(/obj/machinery/computer/arcade/battle, PROC_REF(on_emag), null, null)
+/obj/machinery/computer/arcade/battle/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	to_chat(user, span_notice("You override the cheat code menu and skip to Cheat #[rand(1, 50)]: Hyper-Lethal Mode."))
 
-		temp = "If you die in the game, you die for real!"
-		player_hp = 30
-		player_mp = 10
-		enemy_hp = 45
-		enemy_mp = 20
-		gameover = 0
-		blocked = 0
-		set_emagged(1)
+	temp = "If you die in the game, you die for real!"
+	player_hp = 30
+	player_mp = 10
+	enemy_hp = 45
+	enemy_mp = 20
+	gameover = 0
+	blocked = 0
+	set_emagged(1)
 
-		enemy_name = "Cuban Pete"
-		name = "Outbomb Cuban Pete"
+	enemy_name = "Cuban Pete"
+	name = "Outbomb Cuban Pete"
 
-		return 1
+	return 1
 
 
 //////////////////////////
@@ -1025,14 +1025,14 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 	name = "The Orion Trail"
 	desc = "Learn how our ancestors got to Orion, and have fun in the process!"
 
-/obj/machinery/computer/arcade/orion_trail/emag_act(mob/user)
-	if(!emagged)
-		to_chat(user, span_notice("You override the cheat code menu and skip to Cheat #[rand(1, 50)]: Realism Mode."))
-		name = "The Orion Trail: Realism Edition"
-		desc = "Learn how our ancestors got to Orion, and try not to die in the process!"
-		newgame(user)
-		set_emagged(1)
-		return 1
+DECLARE_EMAG(/obj/machinery/computer/arcade/orion_trail, PROC_REF(on_emag), null, null)
+/obj/machinery/computer/arcade/orion_trail/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	to_chat(user, span_notice("You override the cheat code menu and skip to Cheat #[rand(1, 50)]: Realism Mode."))
+	name = "The Orion Trail: Realism Edition"
+	desc = "Learn how our ancestors got to Orion, and try not to die in the process!"
+	newgame(user)
+	set_emagged(1)
+	return 1
 
 /obj/item/orion_ship
 	name = "model settler ship"
@@ -1334,18 +1334,18 @@ DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interacti
 	icon_state = "clawmachine_new"
 	gameStatus = "CLAWMACHINE_END"
 
-/obj/machinery/computer/arcade/clawmachine/emag_act(mob/user)
-	if(!emagged)
-		to_chat(user, span_info("You modify the claw of the machine. The next one is sure to win! You just have to pay..."))
-		name = "AlliCo Snag-A-Prize"
-		desc = "Get some goodies, all for you!"
-		instructions = "Swipe a card to play!"
-		winprob = 100
-		gamepaid = 0
-		wintick = 0
-		gameStatus = "CLAWMACHINE_NEW"
-		set_emagged(1)
-		return 1
+DECLARE_EMAG(/obj/machinery/computer/arcade/clawmachine, PROC_REF(on_emag), null, null)
+/obj/machinery/computer/arcade/clawmachine/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	to_chat(user, span_info("You modify the claw of the machine. The next one is sure to win! You just have to pay..."))
+	name = "AlliCo Snag-A-Prize"
+	desc = "Get some goodies, all for you!"
+	instructions = "Swipe a card to play!"
+	winprob = 100
+	gamepaid = 0
+	wintick = 0
+	gameStatus = "CLAWMACHINE_NEW"
+	set_emagged(1)
+	return 1
 
 // === merged from arcade_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/computer/arcade

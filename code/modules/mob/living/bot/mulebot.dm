@@ -191,7 +191,7 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 	rel_set(src, "target", get_turf(ask.choices[ask.choice]))
 	targetName = ask.choice
 
-/mob/living/bot/mulebot/emag_act(remaining_charges, user)
+/mob/living/bot/mulebot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	locked = !locked
 	to_chat(user, span_notice("You [locked ? "lock" : "unlock"] the mulebot's controls!"))
 	flick("mulebot-emagged", src)

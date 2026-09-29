@@ -327,7 +327,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 			declare_treatment = !declare_treatment
 			. = TRUE
 
-/mob/living/bot/medbot/emag_act(remaining_uses, mob/user)
+/mob/living/bot/medbot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	. = ..()
 	if(!emagged)
 		if(user)

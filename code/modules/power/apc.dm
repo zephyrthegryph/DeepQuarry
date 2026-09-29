@@ -711,7 +711,8 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 	togglelock(user)
 	return TRUE
 
-/obj/machinery/power/apc/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/power/apc, PROC_REF(on_emag), null)
+/obj/machinery/power/apc/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!(emagged || hacker))
 		if(opened)
 			to_chat(user, "You must close the cover to do that.")

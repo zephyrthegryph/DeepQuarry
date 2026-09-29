@@ -184,13 +184,13 @@
 			rel_clear(src, "servers")
 			temp = span_blue("- NEW NETWORK TAG SET IN ADDRESS \[[network]\] -")
 
-/obj/machinery/computer/telecomms/traffic/emag_act(remaining_charges, mob/user)
-	if(!emagged)
-		play_sfx(src, SFX_EFFECTS_SPARKS4)
-		set_emagged(1)
-		to_chat(user, span_notice("You you disable the security protocols"))
-		updateUsrDialog(user)
-		return 1
+DECLARE_EMAG(/obj/machinery/computer/telecomms/traffic, PROC_REF(on_emag), null, null)
+/obj/machinery/computer/telecomms/traffic/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	play_sfx(src, SFX_EFFECTS_SPARKS4)
+	set_emagged(1)
+	to_chat(user, span_notice("You you disable the security protocols"))
+	updateUsrDialog(user)
+	return 1
 
 /// editingcode (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telecomms/traffic/proc/editingcode() as /mob

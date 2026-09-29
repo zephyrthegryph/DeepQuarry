@@ -134,12 +134,12 @@
 	. = TRUE
 
 
-/obj/machinery/computer/telecomms/monitor/emag_act(remaining_charges, mob/user)
-	if(!emagged)
-		play_sfx(src, SFX_EFFECTS_SPARKS4)
-		set_emagged(1)
-		to_chat(user, span_notice("You you disable the security protocols"))
-		return 1
+DECLARE_EMAG(/obj/machinery/computer/telecomms/monitor, PROC_REF(on_emag), null, null)
+/obj/machinery/computer/telecomms/monitor/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	play_sfx(src, SFX_EFFECTS_SPARKS4)
+	set_emagged(1)
+	to_chat(user, span_notice("You you disable the security protocols"))
+	return 1
 
 /obj/machinery/computer/telecomms/monitor/proc/set_temp(text, color = "average")
 	temp = list("color" = color, "text" = text)

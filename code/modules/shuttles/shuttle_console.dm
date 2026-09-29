@@ -146,7 +146,8 @@
 	shuttle_tag = new_shuttle_tag
 	return TRUE
 
-/obj/machinery/computer/shuttle_control/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/shuttle_control, PROC_REF(on_emag), null)
+/obj/machinery/computer/shuttle_control/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if (!hacked)
 		req_access = list()
 		req_one_access = list()

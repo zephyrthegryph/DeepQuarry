@@ -274,7 +274,8 @@ DAMAGE_REACTION(/obj/machinery/power/port_gen, DAMAGE_EMP, PROC_REF(port_gen_emp
 	sheet_left = 0
 	..()
 
-/obj/machinery/power/port_gen/pacman/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/power/port_gen/pacman, PROC_REF(on_emag), null)
+/obj/machinery/power/port_gen/pacman/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if (active && prob(25))
 		explode() //if they're foolish enough to emag while it's running
 

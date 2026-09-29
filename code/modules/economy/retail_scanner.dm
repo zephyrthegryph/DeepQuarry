@@ -494,9 +494,11 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 	service_staff_name = null
 	ticket_changed()
 
-/obj/item/retail_scanner/emag_act(remaining_charges, mob/user)
-	if(emagged)
-		return
+DECLARE_EMAG(/obj/item/retail_scanner, PROC_REF(on_emag), null, null)
+
+/obj/item/retail_scanner/mark_emagged()
+	emagged = TRUE
+/obj/item/retail_scanner/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	to_chat(user, span_danger("You stealthily swipe the cryptographic sequencer through \the [src]."))
 	play_sfx(src, SFX_SPARKS)
 	req_access = list()

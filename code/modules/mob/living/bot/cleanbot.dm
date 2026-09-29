@@ -260,7 +260,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/cleanbot, INTERACT_HAND_UNGATED("Open contro
 			to_chat(ui.user, span_notice("You press the weird button."))
 			. = TRUE
 
-/mob/living/bot/cleanbot/emag_act(remaining_uses, mob/user)
+/mob/living/bot/cleanbot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	. = ..()
 	if(!wet_floors || !spray_blood)
 		if(user)

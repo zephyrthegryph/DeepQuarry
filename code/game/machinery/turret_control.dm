@@ -121,13 +121,13 @@
 		return TRUE
 	return FALSE
 
-/obj/machinery/turretid/emag_act(remaining_charges, mob/user)
-	if(!emagged)
-		to_chat(user, span_danger("You short out the turret controls' access analysis module."))
-		set_emagged(TRUE)
-		set_locked(FALSE)
-		ailock = FALSE
-		return TRUE
+DECLARE_EMAG(/obj/machinery/turretid, PROC_REF(on_emag), null, null)
+/obj/machinery/turretid/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	to_chat(user, span_danger("You short out the turret controls' access analysis module."))
+	set_emagged(TRUE)
+	set_locked(FALSE)
+	ailock = FALSE
+	return TRUE
 
 /obj/machinery/turretid
 	silicon_use = SILICON_USE_UI

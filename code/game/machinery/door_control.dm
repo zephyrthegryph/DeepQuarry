@@ -64,7 +64,8 @@
 /datum/interaction/machine_item/remote_toggle_item/applies_to(atom/target)
 	return !istype(target, /obj/machinery/button/remote/driver)
 
-/obj/machinery/button/remote/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/button/remote, PROC_REF(on_emag), null)
+/obj/machinery/button/remote/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(LAZYLEN(req_access) || LAZYLEN(req_one_access))
 		req_access = null
 		req_one_access = null
