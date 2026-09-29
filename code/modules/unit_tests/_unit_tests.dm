@@ -285,6 +285,7 @@
 #include "dq_sys_grants_tests.dm"
 #include "dq_tool_tests.dm"
 #include "dq_construction_tests.dm"
+#include "dq_capability_construction_tests.dm"
 #include "dq_construction_mech_tests.dm"
 #include "dq_construction_assembly_tests.dm"
 #include "dq_memory_list_tests.dm"
