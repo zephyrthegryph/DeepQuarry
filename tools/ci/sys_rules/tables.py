@@ -198,7 +198,7 @@ def scan(files):
             match = LOCAL_CONST.match(code)
             if match:
                 text, end = gather(lines, number - 1, line.index("list("))
-                if not constant(text):
+                if not constant(text) or gather.tail:
                     continue
                 name = match.group(2)
                 touched = re.compile(r"\b" + name + WRITE + r"|return\s+" + name + r"\b|[(,]\s*" + name
