@@ -7,6 +7,11 @@
 #   bash tools/dq_focused_test.sh --repeat=5 belly_damage                  # run it 5 times, report each
 #   bash tools/dq_focused_test.sh --full-map /datum/unit_test/...          # boot Southern Cross instead of the test map
 #   bash tools/dq_focused_test.sh --some-flag=x name                       # any other --flag goes to dm-test
+#   bash tools/dq_focused_test.sh --profile-tests name                     # per-test proc profile (data/logs/runN/profile/)
+#
+# A named test runs whatever its tier: an exhaustive sweep (tier =
+# TEST_TIER_EXHAUSTIVE, normally only in CI via dm-test --tier=all) runs here
+# by name like any other test.
 #
 # A name without a leading slash gets /datum/unit_test/ prepended. A name
 # containing * ? or [ is matched against every /datum/unit_test type defined

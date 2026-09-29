@@ -66,14 +66,26 @@ DECLARE_REF(/datum/dq_state_holder, "held", HELD, null)
 /// Every latent-safe type (and subtype) survives serialize -> materialize, also through JSON.
 /datum/unit_test/dq_state_latent_round_trip
 	is_sweep_test = TRUE
+	tier = TEST_TIER_EXHAUSTIVE
+
+/// Normal tier: the round trip on a fixed subset (one type per latent-safe
+/// family). The whole-tree sweep runs in CI and nightly.
+/datum/unit_test/dq_state_latent_round_trip/representative
+	is_sweep_test = FALSE
+	tier = TEST_TIER_NORMAL
+
+/datum/unit_test/dq_state_latent_round_trip/representative/curated_types()
+	return dq_latent_representative_types()
 
 /datum/unit_test/dq_state_latent_round_trip/Run()
 	var/list/failures = list()
 	var/tested = 0
+	var/list/tested_paths
 	for(var/atom/movable/path as anything in sweep_types(subtypesof(/atom/movable)))
 		if(!initial(path.latent_safe) || is_abstract(path))
 			continue
 		tested++
+		LAZYSET(tested_paths, path, TRUE)
 		var/atom/movable/original = new path(test_floor())
 		dq_state_perturb(original)
 		var/list/errors = list()
@@ -96,6 +108,13 @@ DECLARE_REF(/datum/dq_state_holder, "held", HELD, null)
 			qdel(copy)
 		qdel(original)
 	TEST_ASSERT(tested > 0, "no latent-safe types found")
+	var/list/curated = curated_types()
+	if(curated)
+		var/list/untested = list()
+		for(var/path in curated)
+			if(!LAZYACCESS(tested_paths, path))
+				untested += "[path]"
+		TEST_ASSERT(!length(untested), "curated types that are not latent-safe: [jointext(untested, ", ")]")
 	if(length(failures))
 		TEST_FAIL("[length(failures)] of [tested] latent-safe types failed:\n[jointext(failures, "\n")]")
 

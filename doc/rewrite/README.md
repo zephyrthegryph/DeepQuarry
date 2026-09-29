@@ -70,7 +70,7 @@ Rust  vg-ffi ──────────────────────�
 ## How the work runs
 
 - The work is split into tracks and delivered in waves ([roadmap.md](roadmap.md)). Every wave:
-  - compiles clean and keeps the suite green: `tools/build/build.sh dm-test`, plus `cargo test` in `verdigris/` for Rust changes;
+  - compiles clean and keeps the suite green: `tools/build/build.sh dm-test` (the normal tier; CI also runs the exhaustive tier with `--tier=all`), plus `cargo test` in `verdigris/` for Rust changes;
   - deletes what it replaces;
   - adds its lint rules and a changelog entry;
   - keeps and extends debug logging;

@@ -390,6 +390,12 @@ GLOBAL_VAR(dq_test_select_names)
 	/// its cost is already spread across shards by sweep_types() rather than
 	/// being pinned to one shard by the runner's bin-packer.
 	var/is_sweep_test = FALSE
+	/// TEST_TIER_NORMAL or TEST_TIER_EXHAUSTIVE. Exhaustive tests only run with
+	/// the test-tier world param set to "all"/"exhaustive" (dm-test --tier=all),
+	/// or when named by a focused run.
+	var/tier = TEST_TIER_NORMAL
+	/// Curated entries sweep_types() actually found (see curated_types()).
+	var/list/curated_matched
 	//internal shit
 	var/focus = FALSE
 	var/succeeded = TRUE
@@ -441,7 +447,19 @@ GLOBAL_VAR(dq_test_select_names)
 	catch(var/exception/e)
 		log_world("UNIT TEST RUNTIME: [type]: [e.name] at [e.file]:[e.line] -- [e.desc]")
 		Fail("runtime in Run(): [e.name]", e.file || "RUNTIME", e.line || 0)
+	// A representative must actually cover its curated subset: an entry that
+	// was renamed or removed would otherwise shrink it silently.
+	var/list/curated = curated_types()
+	if(curated)
+		for(var/entry in curated)
+			if(!LAZYACCESS(curated_matched, "[entry]"))
+				Fail("curated entry [entry] was not in the sweep (renamed or removed? update curated_types())", __FILE__, __LINE__)
 	run_finished = TRUE
+
+/// A normal-tier representative's fixed subset of an exhaustive sweep, or null
+/// (the default: sweep everything). Filters sweep_types(); see doc/testing.md "Tiers".
+/datum/unit_test/proc/curated_types()
+	return null
 
 /proc/cmp_unit_test_priority(datum/unit_test/a, datum/unit_test/b)
 	return initial(a.priority) - initial(b.priority)
@@ -547,7 +565,23 @@ DECLARE_REF(/datum/unit_test, "allocated", OWNED_LIST, null)
 /// straight through, e.g.:
 ///   for(var/atom/movable/path as anything in sweep_types(subtypesof(/atom/movable)))
 /datum/unit_test/proc/sweep_types(list/types)
-	if(GLOB.dq_test_shard_count <= 1)
+	// A normal-tier representative of an exhaustive sweep names its fixed
+	// subset in curated_types(); the sweep then covers only those entries
+	// (matched by text, so a list of type paths or of path strings both work).
+	var/list/curated = curated_types()
+	if(curated)
+		var/list/wanted = list()
+		for(var/entry in curated)
+			wanted["[entry]"] = TRUE
+		var/list/kept = list()
+		for(var/entry in types)
+			if(wanted["[entry]"])
+				kept += entry
+				LAZYSET(curated_matched, "[entry]", TRUE)
+		types = kept
+	// Only a sweep test (runs in every shard) takes a slice; anything else runs
+	// in the one shard it was assigned to and must cover all of `types` there.
+	if(GLOB.dq_test_shard_count <= 1 || !is_sweep_test)
 		return types
 	. = list()
 	var/i = 0
@@ -555,6 +589,14 @@ DECLARE_REF(/datum/unit_test, "allocated", OWNED_LIST, null)
 		if((i % GLOB.dq_test_shard_count) == GLOB.dq_test_shard_index)
 			. += entry
 		i++
+
+/// Whether this world's shard owns work unit `index` (0-based) of a sweep test
+/// that slices by its own counter rather than through sweep_types(). TRUE for
+/// every unit when not sharded, or for a test that isn't a sweep.
+/datum/unit_test/proc/sweep_owns(index)
+	if(GLOB.dq_test_shard_count <= 1 || !is_sweep_test)
+		return TRUE
+	return (index % GLOB.dq_test_shard_count) == GLOB.dq_test_shard_index
 
 /// Resets the air of our testing room to its default
 /datum/unit_test/proc/restore_atmos()
@@ -642,6 +684,17 @@ DECLARE_REF(/datum/unit_test, "allocated", OWNED_LIST, null)
 			overruns++
 	return list("samples" = usage.len - start_index + 1, "overruns" = overruns, "max" = worst)
 
+/// Writes the proc profile gathered around one test to
+/// data/logs/<log dir>/profile/<test path>.json and stops the profiler.
+/proc/dq_test_write_profile(test_path)
+	var/profile = world.Profile(PROFILE_REFRESH, null, "json")
+	world.Profile(PROFILE_STOP)
+	var/safe_name = replacetext(copytext("[test_path]", length("/datum/unit_test/") + 1), "/", "__")
+	var/file_name = "[GLOB.log_directory]/profile/[safe_name].json"
+	fdel(file_name)
+	text2file(profile, file_name)
+	log_test("Profile for [test_path] written to [file_name]")
+
 /proc/RunUnitTest(datum/unit_test/test_path, list/test_results, current_index, total_tests)
 	if(ispath(test_path, /datum/unit_test/focus_only))
 		return
@@ -676,6 +729,12 @@ DECLARE_REF(/datum/unit_test, "allocated", OWNED_LIST, null)
 		log_world("[TEST_OUTPUT_YELLOW("SKIPPED")] Skipped run on map [SSmapping.current_map.name].")
 
 	else
+		// dm-test --profile-tests: BYOND's proc profiler around each test, dumped
+		// per test so a slow test's hot procs can be read without a one-off script.
+		var/profiling = !!world.params?[TEST_PROFILE_PARAMETER]
+		if(profiling)
+			world.Profile(PROFILE_CLEAR)
+			world.Profile(PROFILE_START)
 		duration = REALTIMEOFDAY
 		tick_start_index = Master.perf_samples_total + 1
 		INVOKE_ASYNC(test, TYPE_PROC_REF(/datum/unit_test, RunWrapped))
@@ -690,6 +749,8 @@ DECLARE_REF(/datum/unit_test, "allocated", OWNED_LIST, null)
 		test.restore_atmos()
 
 		duration = REALTIMEOFDAY - duration
+		if(profiling)
+			dq_test_write_profile(test_path)
 		tick_stats = unit_test_tick_stats(Master.perf_index_of(tick_start_index))
 		GLOB.current_test = null
 		GLOB.failed_any_test |= !test.succeeded
@@ -895,6 +956,20 @@ DECLARE_REF(/datum/unit_test, "allocated", OWNED_LIST, null)
 			if(GLOB.dq_test_select_names[_test_to_run])
 				selected += _test_to_run
 		tests_to_run = selected
+
+	// Tier: a plain run is the normal tier; "all" adds the exhaustive sweeps,
+	// "exhaustive" runs only those. A focused run runs exactly what it named.
+	if(!length(focused_tests))
+		var/tier_param = world.params?[TEST_TIER_PARAMETER] || "normal"
+		var/want_normal = tier_param != "exhaustive"
+		var/want_exhaustive = tier_param == "all" || tier_param == "exhaustive"
+		var/list/tiered = list()
+		for(var/_test_to_run in tests_to_run)
+			var/datum/unit_test/test_to_run = _test_to_run
+			if(initial(test_to_run.tier) == TEST_TIER_EXHAUSTIVE ? want_exhaustive : want_normal)
+				tiered += test_to_run
+		log_test("Unit-test tier '[tier_param]': [length(tiered)] of [length(tests_to_run)] test types.")
+		tests_to_run = tiered
 
 	sortTim(tests_to_run, GLOBAL_PROC_REF(cmp_unit_test_priority))
 

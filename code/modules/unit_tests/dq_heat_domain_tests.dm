@@ -28,6 +28,11 @@
 		if(T.heat_has_air() && east.heat_has_air())
 			handed_out[T] = TRUE
 			handed_out[east] = TRUE
+			// Handed out at room temperature with their own cells: an earlier test
+			// (a vacuum or space-floor round trip) can leave a floor at 2.7 K,
+			// which only showed up once sharding changed the test order.
+			heat_test_restore(T)
+			heat_test_restore(east)
 			return T
 
 /// Gives `T` its own heat cell back, at room temperature.

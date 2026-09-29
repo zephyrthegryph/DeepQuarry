@@ -50,7 +50,10 @@
 		if(QDELETED(thing) || dq_rule_fire_count(thing, rule) >= count)
 			return
 
-/// Let `ds` deciseconds of reactor time pass, then dispatch.
+/// Let `ds` deciseconds of reactor time pass, then dispatch. This has to be a
+/// real sleep: the reactor's clock is world.time, fed by the scheduler's
+/// vg_world_step(tick) (world_watch.dm), and vg_world_run_steps() doesn't
+/// advance it, so rate models (a rule's hold_for) only move with real ticks.
 /proc/dq_rx_test_advance(ds)
 	sleep(ds)
 	dq_rx_flush()
@@ -122,6 +125,24 @@
 /// quiet side does nothing; just across fires the effect exactly once; further
 /// across does not fire it again.
 /datum/unit_test/dq_rule_thresholds
+	tier = TEST_TIER_EXHAUSTIVE
+
+/// Normal tier: the generated threshold tests for a fixed set of rules -- one
+/// per trigger shape (heat above, integrity below, a flavour band). The hold
+/// rules (cooking holds 30 s of real reactor time) are left to the exhaustive
+/// run; dq_rule_hold_and_band covers the hold path on every merge.
+/datum/unit_test/dq_rule_thresholds/representative
+	tier = TEST_TIER_NORMAL
+
+/datum/unit_test/dq_rule_thresholds/representative/curated_types()
+	return list(
+		/datum/rule/ignition,
+		/datum/rule/melting,
+		/datum/rule/integrity_breaks,
+		/datum/rule/damage_flavour/light,
+		/datum/rule/heat_behaviour/light_breaks,
+		/datum/rule/heat_behaviour/rag_ignites,
+	)
 
 /datum/unit_test/dq_rule_thresholds/Run()
 	GLOB.dq_rule_recording = TRUE
@@ -129,16 +150,21 @@
 	var/declared = 0
 	var/passed = 0
 	var/list/rules = GLOBAL_TABLE_GET(dq_rules)
-	for(var/rule_path in rules)
+	for(var/rule_path in sweep_types(rules))
 		var/datum/rule/rule = rules[rule_path]
 		if(rule.skip_generated_test)
 			continue
+		var/rule_started = REALTIMEOFDAY
+		var/rule_cases = 0
 		for(var/root in (rule.test_types || rule.applies_to))
 			for(var/declaring in dq_rule_declaring_types(rule, root))
 				for(var/datum/rule_trigger/trigger as anything in rule.thresholds())
 					declared++
+					rule_cases++
 					if(run_case(rule, declaring, trigger))
 						passed++
+		// Per-rule cost, to see which rules dominate this sweep.
+		log_test("RULE THRESHOLDS: [rule_path]: [rule_cases] case(s) in [(REALTIMEOFDAY - rule_started) / 10]s")
 	GLOB.dq_rule_recording = FALSE
 	TEST_NOTICE(src, "[passed]/[declared] generated rule threshold tests passed")
 	TEST_ASSERT(declared > 0, "some thresholds are declared")

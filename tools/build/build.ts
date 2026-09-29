@@ -455,11 +455,15 @@ export const ProfileParameter = new Juke.Parameter({ type: 'boolean' });
 export const LabelParameter = new Juke.Parameter({ type: 'string' });
 /** `dm-test --shards=N`: boots N DreamDaemon worlds instead of one.
  * `--shards=0` means "auto": size it from currently-free dd-slots (see
- * pickAutoShardCount()). Omitted entirely, behavior is unchanged (one
- * world) -- this is opt-in, not a new default for the plain `dm-test`
- * every existing caller (CI, the merge-to-master run) uses. See
- * doc/testing.md "Sharded sweeps". */
+ * pickAutoShardCount()). Omitted, it defaults to defaultShardCount() (cores
+ * minus one, capped at 4); `--shards=1` is the single-world mode. See
+ * doc/testing.md "Sharded runs". */
 export const ShardsParameter = new Juke.Parameter({ type: 'number' });
+/** `dm-test --exhaustive`: shorthand for `--tier=all`. */
+export const ExhaustiveParameter = new Juke.Parameter({ type: 'boolean' });
+/** `dm-test --profile-tests`: write BYOND's proc profile for each test to
+ * data/logs/<run>/profile/<test>.json (see dq_test_write_profile()). */
+export const ProfileTestsParameter = new Juke.Parameter({ type: 'boolean' });
 
 /** Sizes `dm-test --shards=0` (auto) from a snapshot of currently-free
  * dd-slots (lib/dd_slot.ts) -- "sized by dd-slot availability". Clamped to
@@ -784,6 +788,17 @@ function acquireRunSlot(): RunSlot {
   throw new Juke.ExitCode(1);
 }
 
+/** Hard-links `from` to `to` (replacing `to`), falling back to a copy where
+ * links aren't possible (another volume, a filesystem without them). */
+function linkOrCopy(from: string, to: string): void {
+  fs.rmSync(to, { force: true });
+  try {
+    fs.linkSync(from, to);
+  } catch {
+    fs.copyFileSync(from, to);
+  }
+}
+
 /** Default hard timeout for a focused run; the full suite keeps lib/byond.ts's 45 minutes. */
 const FOCUSED_TIMEOUT_MINUTES = Number(process.env.DQ_FOCUS_TIMEOUT_MINUTES) || 15;
 
@@ -800,6 +815,7 @@ async function runIsolatedTestWorld(
   dmVersion: string | null,
   worldParams: Record<string, string>,
   focus: string[] | null,
+  options: { watchdogTimeoutMs?: number; sampler?: ProcessSampler; label?: string; linkFrom?: string } = {},
 ): Promise<IsolatedRun> {
   const slot = acquireRunSlot();
   const base = dmbFile.replace(/\.dmb$/, '');
@@ -808,8 +824,19 @@ async function runIsolatedTestWorld(
   const resultsFile = `${slot.dir}/unit_tests.json`;
   try {
     fs.rmSync(logDir, { recursive: true, force: true });
-    fs.copyFileSync(`${base}.dmb`, `${runBase}.dmb`);
-    fs.copyFileSync(`${base}.rsc`, `${runBase}.rsc`);
+    // DreamDaemon keeps icons made at runtime in <world>.dyn.rsc beside the
+    // .dmb. Run slots are reused, so without this a world inherited the last
+    // one's cache, possibly from another build ("failed to write new icon").
+    fs.rmSync(`${runBase}.dyn.rsc`, { force: true });
+    if (options.linkFrom) {
+      // A sharded run's private copy (see runSharded()): hard links, so N
+      // shards don't each copy the ~270 MB .dmb/.rsc again.
+      linkOrCopy(`${options.linkFrom}.dmb`, `${runBase}.dmb`);
+      linkOrCopy(`${options.linkFrom}.rsc`, `${runBase}.rsc`);
+    } else {
+      fs.copyFileSync(`${base}.dmb`, `${runBase}.dmb`);
+      fs.copyFileSync(`${base}.rsc`, `${runBase}.rsc`);
+    }
     const params: Record<string, string> = {
       'log-directory': slot.tag,
       'unit-tests-file': resultsFile,
@@ -821,7 +848,9 @@ async function runIsolatedTestWorld(
       params['test-focus'] = focusFile;
     }
     const port = await freePort();
-    Juke.logger.info(`Test world ${slot.tag}: ${runBase}.dmb on port ${port}, logs in ${logDir}.`);
+    Juke.logger.info(
+      `Test world ${slot.tag}${options.label ? ` (${options.label})` : ''}: ${runBase}.dmb on port ${port}, logs in ${logDir}.`,
+    );
     const started = Date.now();
     let killedByWatchdog = false;
     try {
@@ -830,7 +859,8 @@ async function runIsolatedTestWorld(
           dmbFile: `${runBase}.dmb`,
           namedDmVersion: dmVersion,
           watchdogFile: resultsFile,
-          watchdogTimeoutMs: focus ? FOCUSED_TIMEOUT_MINUTES * 60 * 1000 : undefined,
+          watchdogTimeoutMs: options.watchdogTimeoutMs ?? (focus ? FOCUSED_TIMEOUT_MINUTES * 60 * 1000 : undefined),
+          onSpawn: options.sampler ? (pid) => options.sampler?.start(pid) : undefined,
         },
         String(port),
         '-close',
@@ -855,19 +885,21 @@ async function runIsolatedTestWorld(
     } catch {
       // the world died before finishing
     }
+    const processSummary = options.sampler ? options.sampler.stop() : null;
     return {
       clean: cleanText !== null,
       cleanText,
       results,
       durationSeconds: (Date.now() - started) / 1000,
-      process: null,
-      samples: [],
+      process: processSummary,
+      samples: options.sampler?.samples ?? [],
       killedByWatchdog,
       logDir,
     };
   } finally {
     await removeDerivedArtifacts(`${runBase}.dmb`);
     await removeDerivedArtifacts(`${runBase}.rsc`);
+    await removeDerivedArtifacts(`${runBase}.dyn.rsc`);
     slot.release();
   }
 }
@@ -1151,52 +1183,117 @@ function recordSweepHashes(results: Record<string, UnitTestEntry>): void {
   }
 }
 
-/** Resolves --domains/--tier/--affected/--incremental into an explicit test
- * selection (null = no filter, run everything), and reports what it picked.
- * `--tier=sweep` selects only the type-sweep tests; `--tier=fast` (default)
- * excludes them; `--domains=a,b` (any tier) keeps only tests in those
- * domains; `--affected` unions in every domain touched by changed files.
- * Combining `--affected` with explicit `--domains` unions both.
- * `--incremental` additionally drops eligible sweeps whose inputs are
- * unchanged since their last passing run (see SWEEP_INCREMENTAL_SCOPE) --
- * conservative: anything not in that map always runs. CI and the
- * merge-to-master run must never pass --incremental (or any of these
- * flags): they need the full, unfiltered suite. */
+type TestTier = 'normal' | 'all' | 'exhaustive';
+
+/** `--tier=`: `normal` (the default: every integration merge), `all` (normal
+ * plus the exhaustive whole-type sweeps: CI and nightly) or `exhaustive`
+ * (only those sweeps). The older names still work: fast = normal,
+ * full = all, sweep = exhaustive. `--exhaustive` is shorthand for `--tier=all`.
+ * The world does the filtering (the test-tier world param against each
+ * test's `tier` var); a --focus run ignores the tier and runs what it names. */
+function resolveTier(get: any): TestTier {
+  if (get(ExhaustiveParameter)) return 'all';
+  const raw = ((get(TierParameter) as string | null) ?? 'normal').toLowerCase();
+  const aliases: Record<string, TestTier> = {
+    normal: 'normal', fast: 'normal', all: 'all', full: 'all', exhaustive: 'exhaustive', sweep: 'exhaustive',
+  };
+  const tier = aliases[raw];
+  if (!tier) {
+    Juke.logger.error(`--tier=${raw}: expected normal, all or exhaustive.`);
+    throw new Juke.ExitCode(2);
+  }
+  return tier;
+}
+
+/** A predicate over unit-test type paths for a var declared in test type
+ * bodies, by source scan: the nearest `<varName> = ...` line in the type's own
+ * body or its closest ancestor test type's body decides, mirroring DM var
+ * inheritance (so a `.../representative` subtype that sets the var back under
+ * its parent wins). `isTrue` maps the declared value text to the answer; a type
+ * with no declaration up its chain gets `fallback`. */
+function declaredVarPredicate(varName: string, isTrue: (value: string) => boolean, fallback = false): (name: string) => boolean {
+  const TYPE_DECL = /^\/datum\/unit_test\/[A-Za-z0-9_/]+$/;
+  const VAR_LINE = new RegExp(`^\\s+${varName}\\s*=\\s*([A-Za-z0-9_]+)`);
+  const declared = new Map<string, boolean>();
+  for (const file of Juke.glob('code/modules/unit_tests/*.dm')) {
+    let current: string | null = null;
+    for (const line of fs.readFileSync(file, 'utf-8').split(/\r?\n/)) {
+      const trimmed = line.trimEnd();
+      if (TYPE_DECL.test(trimmed)) {
+        current = trimmed;
+        continue;
+      }
+      if (/^\S/.test(trimmed)) {
+        current = null;
+        continue;
+      }
+      const match = current ? VAR_LINE.exec(trimmed) : null;
+      if (match && current) declared.set(current, isTrue(match[1]));
+    }
+  }
+  return (name: string) => {
+    for (let path = name; path.length > '/datum/unit_test'.length; path = path.slice(0, path.lastIndexOf('/'))) {
+      const value = declared.get(path);
+      if (value !== undefined) return value;
+    }
+    return fallback;
+  };
+}
+
+/** Whether a unit-test type is in the exhaustive tier (its `tier` var). */
+function exhaustiveTestPredicate(): (name: string) => boolean {
+  return declaredVarPredicate('tier', (v) => v === 'TEST_TIER_EXHAUSTIVE');
+}
+
+/** Whether a unit-test type is a sweep test (`is_sweep_test`): it runs in every
+ * shard and slices its own work through sweep_types()/sweep_owns(). */
+function sweepTestPredicate(): (name: string) => boolean {
+  return declaredVarPredicate('is_sweep_test', (v) => v === 'TRUE' || v === '1');
+}
+
+function tierIncludes(tier: TestTier, exhaustive: boolean): boolean {
+  if (tier === 'all') return true;
+  return exhaustive ? tier === 'exhaustive' : tier === 'normal';
+}
+
+/** World params every dm-test world gets: the tier, and --profile-tests. */
+function testWorldParams(get: any): Record<string, string> {
+  const params: Record<string, string> = { 'test-tier': resolveTier(get) };
+  if (get(ProfileTestsParameter)) params['test-profile'] = '1';
+  return params;
+}
+
+/** Resolves --domains/--affected/--incremental into an explicit test
+ * selection (null = no filter), and reports what it picked. The tier is not
+ * a selection: the world filters it (see resolveTier()). `--domains=a,b`
+ * keeps only tests in those domains; `--affected` unions in every domain
+ * touched by changed files. `--incremental` additionally drops eligible
+ * sweeps whose inputs are unchanged since their last passing run (see
+ * SWEEP_INCREMENTAL_SCOPE). CI and the merge-to-master run never pass these. */
 function resolveTestSelection(get: any): string[] | null {
-  const tierRaw = get(TierParameter) as string | null;
   const explicitDomains = new Set(get(DomainsParameter) as string[]);
   const affected = get(AffectedParameter) as boolean;
   const incremental = get(IncrementalParameter) as boolean;
-  // No --tier/--domains/--affected/--incremental at all: run everything,
-  // unfiltered. This must stay a real "no filter" (return null, not a
-  // computed full list) -- a plain `dm-test`/`dm-test --shards=N` with no
-  // flags is the default path every existing caller (CI, the
-  // merge-to-master run, dq_focused_test.sh) uses, and it must never
-  // silently drop tests.
-  if (!tierRaw && !explicitDomains.size && !affected && !incremental) return null;
-  const tier = tierRaw ?? 'fast';
+  if (!explicitDomains.size && !affected && !incremental) return null;
 
   const domains = new Set(explicitDomains);
   if (affected) {
     const touched = affectedDomains();
     if (!touched.size) {
-      Juke.logger.warn('--affected: no changed files found against master; falling back to --tier only.');
+      Juke.logger.warn('--affected: no changed files found against master; running the whole tier.');
     }
     for (const d of touched) domains.add(d);
   }
 
-  const includeSweeps = tier === 'sweep' || tier === 'full';
-  const includeNonSweeps = tier !== 'sweep';
   const skips = incremental ? incrementalSkips() : null;
   const all = enumerateUnitTestsWithDomain();
   const selected = all
-    .filter((t) => (SWEEP_TEST_NAMES.has(t.name) ? includeSweeps : includeNonSweeps))
     .filter((t) => (domains.size ? domains.has(t.domain) : true))
     .filter((t) => !skips?.has(t.name))
     .map((t) => t.name);
 
   Juke.logger.info(
-    `Test selection: tier=${tier}${domains.size ? `, domains=${[...domains].join(',')}` : ''}`
+    `Test selection: ${domains.size ? `domains=${[...domains].join(',')}` : 'all domains'}`
       + `${incremental ? ', incremental' : ''} -> ${selected.length}/${all.length} test(s).`,
   );
   return selected;
@@ -1211,19 +1308,10 @@ function resolveTestSelection(get: any): string[] | null {
  * already spreads each one's cost evenly across every shard's world, so
  * pinning one to a single shard (as if it were a normal test) would both
  * double-count its historical duration in that shard's load estimate and
- * under-count it everywhere else. Keep this in sync with each test's
- * `is_sweep_test = TRUE` in code/modules/unit_tests/*.dm.
+ * under-count it everywhere else. They are found by source scan
+ * (sweepTestPredicate(), each test's `is_sweep_test` var), so there is no
+ * hand-kept list to fall out of sync.
  */
-const SWEEP_TEST_NAMES = new Set([
-  '/datum/unit_test/dq_lifecycle_sandbox',
-  '/datum/unit_test/dq_state_latent_round_trip',
-  '/datum/unit_test/dq_property_type_values_valid',
-  '/datum/unit_test/all_clothing_shall_be_valid',
-  '/datum/unit_test/dq_constraint_parity/equip',
-  '/datum/unit_test/dq_constraint_parity/storage',
-  '/datum/unit_test/dq_constraint_parity/suit_storage',
-  '/datum/unit_test/dq_constraint_parity/holster',
-]);
 
 const SHARD_DIR = 'data/test-shards';
 
@@ -1249,22 +1337,25 @@ function enumerateUnitTestTypes(): string[] {
  * heaviest first onto the currently lightest shard. Tests with no
  * historical record get a small default weight, so new tests still balance
  * instead of piling onto shard 0. */
-function assignTestShards(shardCount: number, selection: Set<string> | null): string[][] {
+function assignTestShards(shardCount: number, selection: Set<string> | null, tier: TestTier): string[][] {
   const shards: string[][] = Array.from({ length: shardCount }, () => []);
   const loads = new Array(shardCount).fill(0);
   const durations = new Map<string, number>();
+  const isSweep = sweepTestPredicate();
   const runs = listRuns(TEST_RUNS_DIR);
   if (runs.length) {
     const latest = readJson<TestRun>(runs[runs.length - 1]);
     for (const [name, entry] of Object.entries(latest.tests)) {
-      if (!SWEEP_TEST_NAMES.has(name)) durations.set(name, entry.duration_ds ?? 1);
+      if (!isSweep(name)) durations.set(name, entry.duration_ds ?? 1);
     }
   }
   const known = new Set(durations.keys());
   for (const name of enumerateUnitTestTypes()) {
-    if (!SWEEP_TEST_NAMES.has(name)) known.add(name);
+    if (!isSweep(name)) known.add(name);
   }
   if (selection) for (const name of [...known]) if (!selection.has(name)) known.delete(name);
+  const isExhaustive = exhaustiveTestPredicate();
+  for (const name of [...known]) if (!tierIncludes(tier, isExhaustive(name))) known.delete(name);
   const DEFAULT_WEIGHT_DS = 5; // ~0.5s: most non-sweep tests are quick
   const sorted = [...known].sort(
     (a, b) => (durations.get(b) ?? DEFAULT_WEIGHT_DS) - (durations.get(a) ?? DEFAULT_WEIGHT_DS),
@@ -1278,15 +1369,15 @@ function assignTestShards(shardCount: number, selection: Set<string> | null): st
   return shards;
 }
 
-type ShardRun = WorldRun & { index: number };
+type ShardRun = WorldRun & { index: number; logDir: string };
 
-/** Boots one shard's world: its own log directory, results file and process
- * sampler (data/logs/shardN, data/unit_tests-shardN.json,
- * data/bench/process-shardN.json) so N concurrent worlds in the same
- * worktree never share a path, and its own machine-wide dd-slot (see
- * lib/dd_slot.ts) so shards throttle against the same budget as every other
- * DreamDaemon on this machine. The slot is released the moment this
- * shard's daemon exits, not when every shard finishes. */
+/** Boots one shard's world through runIsolatedTestWorld(): its own run slot
+ * (data/runs/runN lock + directory), .dmb/.rsc copy, free TCP port, log
+ * directory and results file, so N shards -- and anyone else's test worlds in
+ * the same worktree -- never share a path or port. A machine-wide dd-slot
+ * (lib/dd_slot.ts) is also taken when DQ_DD_SLOT_BASE configures a shared
+ * DreamDaemon budget; without one, the dd-slot fallback is per-worktree with
+ * only two non-priority slots, which would serialize a 4-shard run. */
 async function runShardWorld(
   dmbFile: string,
   dmVersion: string | null,
@@ -1294,76 +1385,36 @@ async function runShardWorld(
   shardCount: number,
   testsFile: string,
   priority: boolean,
-  selectFile: string | null,
+  worldParams: Record<string, string>,
+  linkFrom: string,
 ): Promise<ShardRun> {
   const tag = `shard${shardIndex}`;
-  Juke.rm(`data/logs/${tag}`, { recursive: true });
-  const resultsFile = `data/unit_tests-${tag}.json`;
-  Juke.rm(resultsFile);
   fs.mkdirSync('data/bench', { recursive: true });
   const sampler = new ProcessSampler(`data/bench/process-${tag}.json`);
-  const slot = await acquireDdSlot(priority);
-  const params = new URLSearchParams({
-    'log-directory': tag,
-    'unit-tests-file': resultsFile,
-    'shard-index': String(shardIndex),
-    'shard-count': String(shardCount),
-    'shard-tests': testsFile,
-    ...(selectFile ? { 'test-select': selectFile } : {}),
-  }).toString();
+  const ddSlot = process.env.DQ_DD_SLOT_BASE ? await acquireDdSlot(priority) : null;
   // Each shard does roughly 1/shardCount of the suite's work (sweeps
-  // self-divide via sweep_types(), non-sweep tests are bin-packed), so its
+  // self-divide via sweep_types(), other tests are bin-packed), so its
   // watchdog backstop scales down with shard count too -- sqrt rather than
-  // linear, since per-world boot/settle overhead and any single still-heavy
-  // sweep slice don't shrink that fast. Floored at 12 minutes;
-  // DQ_DD_WATCHDOG_MINUTES (read in lib/byond.ts) overrides this entirely.
+  // linear, since boot overhead and a still-heavy slice don't shrink that
+  // fast. Floored at 12 minutes; DQ_DD_WATCHDOG_MINUTES (lib/byond.ts) overrides it.
   const shardWatchdogMs = Math.max(Math.round((45 / Math.sqrt(shardCount)) * 60 * 1000), 12 * 60 * 1000);
-  const started = Date.now();
-  let killedByWatchdog = false;
   try {
-    const result = await DreamDaemon(
+    const run = await runIsolatedTestWorld(
+      dmbFile,
+      dmVersion,
       {
-        dmbFile,
-        namedDmVersion: dmVersion,
-        watchdogFile: resultsFile,
-        onSpawn: (pid) => sampler.start(pid),
-        watchdogTimeoutMs: shardWatchdogMs,
+        'shard-index': String(shardIndex),
+        'shard-count': String(shardCount),
+        'shard-tests': testsFile,
+        ...worldParams,
       },
-      '-close',
-      ddSecurityFlag(),
-      '-verbose',
-      '-params',
-      params,
+      null,
+      { watchdogTimeoutMs: shardWatchdogMs, sampler, label: `${tag} of ${shardCount}`, linkFrom },
     );
-    killedByWatchdog = !!result.killedByWatchdog;
-  } catch {
-    // DreamDaemon exits non-zero even on clean runs; the files below decide.
+    return { ...run, index: shardIndex };
   } finally {
-    slot.release();
+    ddSlot?.release();
   }
-  const processSummary = sampler.stop();
-  let cleanText: string | null = null;
-  try {
-    cleanText = fs.readFileSync(`data/logs/${tag}/clean_run.lk`, 'utf-8');
-  } catch {
-    // not clean
-  }
-  let results: Record<string, UnitTestEntry> | null = null;
-  try {
-    results = JSON.parse(fs.readFileSync(resultsFile, 'utf-8'));
-  } catch {
-    // the world died before finishing
-  }
-  return {
-    index: shardIndex,
-    clean: cleanText !== null,
-    cleanText,
-    results,
-    durationSeconds: (Date.now() - started) / 1000,
-    process: processSummary,
-    samples: sampler.samples,
-    killedByWatchdog,
-  };
 }
 
 function statusPriority(status: number): number {
@@ -1415,39 +1466,72 @@ function mergeShardResults(runs: ShardRun[]): {
   return { results: merged, clean, totalCpuSeconds };
 }
 
+/** Writes a test-name list under a directory private to this process, so two
+ * dm-test invocations in one worktree never overwrite each other's lists. */
+function writeRunList(name: string, names: string[]): string {
+  const dir = `${SHARD_DIR}/${process.pid}`;
+  fs.mkdirSync(dir, { recursive: true });
+  const file = `${dir}/${name}`;
+  fs.writeFileSync(file, names.length ? `${names.join('\n')}\n` : '');
+  return file;
+}
+
+/** Default `dm-test` shard count: cores minus one (leave one for the rest of
+ * the machine), capped at 4 -- past that, per-world boot overhead and the
+ * heaviest single test dominate. DQ_TEST_SHARDS overrides it. */
+function defaultShardCount(): number {
+  const env = Number(process.env.DQ_TEST_SHARDS);
+  if (Number.isInteger(env) && env >= 1) return env;
+  return Math.min(Math.max(os.cpus().length - 1, 1), 4);
+}
+
 /** The `--shards=N` path for DmTestTarget: compiles once, boots N worlds in
- * parallel (each racing the same dd-slot budget as everything else on the
- * machine), and merges their results into one data/test-runs/ record. */
+ * parallel on the same .dmb (each in its own run slot and port), and merges
+ * their results into one data/test-runs/ record. */
 async function runSharded(shardCount: number, get: any): Promise<void> {
   reportFocus();
   await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
   const priority = process.env.DQ_DD_PRIORITY === '1';
-  fs.mkdirSync(SHARD_DIR, { recursive: true });
+  const tier = resolveTier(get);
+  const worldParams = testWorldParams(get);
   const selection = resolveTestSelection(get);
   const selectionSet = selection ? new Set(selection) : null;
-  let selectFile: string | null = null;
-  if (selection) {
-    selectFile = `${SHARD_DIR}/select.txt`;
-    fs.writeFileSync(selectFile, selection.length ? `${selection.join('\n')}\n` : '');
-  }
-  const assignment = assignTestShards(shardCount, selectionSet);
-  const testFiles: string[] = [];
-  for (let i = 0; i < shardCount; i++) {
-    const file = `${SHARD_DIR}/shard-${i}-of-${shardCount}.txt`;
-    fs.writeFileSync(file, assignment[i].length ? `${assignment[i].join('\n')}\n` : '');
-    testFiles.push(file);
-  }
+  if (selection) worldParams['test-select'] = writeRunList('select.txt', selection);
+  const assignment = assignTestShards(shardCount, selectionSet, tier);
+  const testFiles = assignment.map((names, i) => writeRunList(`shard-${i}-of-${shardCount}.txt`, names));
   Juke.logger.info(
-    `dm-test --shards=${shardCount}: `
+    `dm-test --shards=${shardCount} --tier=${tier}: `
       + `${assignment.map((a, i) => `shard ${i}: ${a.length} test(s)`).join(', ')}, `
-      + `plus every sweep test in each shard${selection ? ' that matches the selection' : ''}.`,
+      + `plus every sweep test in the tier in each shard${selection ? ' that matches the selection' : ''}.`,
   );
   const shardWatchdogMinutes = Math.max(45 / Math.sqrt(shardCount), 12);
   const started = Date.now();
-  const runs = await Promise.all(
-    Array.from({ length: shardCount }, (_, i) =>
-      runShardWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), i, shardCount, testFiles[i], priority, selectFile)),
-  );
+  // One private copy of the build for this run (a concurrent recompile in this
+  // worktree must not swap the binary under running worlds), which every
+  // shard's run slot hard-links. Copying it once per shard was over 1 GB of
+  // synchronous writes before any world started: minutes on a busy disk.
+  const privateBase = `${DME_NAME}.test.shards-${process.pid}`;
+  await fs.promises.copyFile(`${DME_NAME}.test.dmb`, `${privateBase}.dmb`);
+  await fs.promises.copyFile(`${DME_NAME}.test.rsc`, `${privateBase}.rsc`);
+  let runs: ShardRun[];
+  try {
+    runs = await Promise.all(
+      Array.from({ length: shardCount }, (_, i) =>
+        runShardWorld(
+          `${DME_NAME}.test.dmb`,
+          get(DmVersionParameter),
+          i,
+          shardCount,
+          testFiles[i],
+          priority,
+          worldParams,
+          privateBase,
+        )),
+    );
+  } finally {
+    await removeDerivedArtifacts(`${privateBase}.dmb`);
+    await removeDerivedArtifacts(`${privateBase}.rsc`);
+  }
   const wallSeconds = (Date.now() - started) / 1000;
   for (const run of runs) {
     if (run.killedByWatchdog) {
@@ -1458,12 +1542,8 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
       );
     }
     if (!run.clean) {
-      Juke.logger.error(`Shard ${run.index} was not clean:`);
-      for (const logFile of [`data/logs/shard${run.index}/tests.log`, `data/logs/shard${run.index}/runtime.log`]) {
-        if (!fs.existsSync(logFile)) continue;
-        const lines = fs.readFileSync(logFile, 'utf-8').trim().split(/\r?\n/);
-        console.error(lines.slice(-40).join('\n'));
-      }
+      Juke.logger.error(`Shard ${run.index} (logs in ${run.logDir}) was not clean:`);
+      printLogTails(run.logDir, 40);
     }
   }
   const { results, clean, totalCpuSeconds } = mergeShardResults(runs);
@@ -1477,15 +1557,23 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
     results,
   );
   writeJson(`${TEST_RUNS_DIR}/${record.id}.json`, record);
+  const shardTimes = runs.map((r) => `${Math.round(r.durationSeconds)}s`).join('/');
   Juke.logger.info(
-    `Unit-test summary (${shardCount} shards): ${record.counts.passed} passed, ${record.counts.failed} failed, `
-      + `${record.counts.skipped} skipped in ${Math.round(wallSeconds)}s wall / ~${Math.round(totalCpuSeconds)}s `
-      + `summed CPU (saved ${TEST_RUNS_DIR}/${record.id}.json).`,
+    `Unit-test summary (${shardCount} shards, tier ${tier}): ${record.counts.passed} passed, ${record.counts.failed} failed, `
+      + `${record.counts.skipped} skipped in ${Math.round(wallSeconds)}s wall (shards ${shardTimes}) / `
+      + `~${Math.round(totalCpuSeconds)}s summed CPU (saved ${TEST_RUNS_DIR}/${record.id}.json).`,
   );
   console.log(testHotspots(results, 20));
   for (const name of record.failed) {
     Juke.logger.error(`FAILED ${name}: ${results[name].message ?? ''}`);
   }
+  // Keep this run's shard lists beside its record, so a failure that depends on
+  // what else ran in its world can be rerun with the same set of tests
+  // (`dm-test --focus=` the shard's list; the world orders tests by priority).
+  const keptLists = `${SHARD_DIR}/${record.id}`;
+  fs.rmSync(keptLists, { recursive: true, force: true });
+  fs.renameSync(`${SHARD_DIR}/${process.pid}`, keptLists);
+  if (record.failed.length) Juke.logger.info(`Each shard's test list is kept in ${keptLists}.`);
   await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
   if (!clean) {
     Juke.logger.error('Sharded test run was not clean, exiting');
@@ -1506,6 +1594,8 @@ export const DmTestTarget = new Juke.Target({
     TierParameter,
     AffectedParameter,
     IncrementalParameter,
+    ExhaustiveParameter,
+    ProfileTestsParameter,
   ],
   dependsOn: ({ get }) => [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
@@ -1515,24 +1605,28 @@ export const DmTestTarget = new Juke.Target({
     MapBoundsTarget, // tests boot the world, which reads template bounds
   ],
   executes: async ({ get }) => {
+    const focus = focusedTestNames(get);
+    // Sharded by default (defaultShardCount()); --shards=1 is the single-world
+    // mode, --shards=0 sizes from free dd-slots. A --focus run is one world:
+    // it's a handful of tests, so extra boots would only cost time.
     const requestedShards = get(ShardsParameter);
-    const shardCount = requestedShards === 0 ? pickAutoShardCount() : Math.max(requestedShards ?? 1, 1);
+    const shardCount = focus
+      ? 1
+      : requestedShards === 0
+        ? pickAutoShardCount()
+        : Math.max(requestedShards ?? defaultShardCount(), 1);
     if (shardCount > 1) {
       await runSharded(shardCount, get);
       return;
     }
-    const focus = focusedTestNames(get);
     reportFocus(focus);
     await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
     const selection = resolveTestSelection(get);
-    let worldParams: Record<string, string> = {};
-    if (selection) {
-      fs.mkdirSync(SHARD_DIR, { recursive: true });
-      const selectFile = `${SHARD_DIR}/select.txt`;
-      fs.writeFileSync(selectFile, selection.length ? `${selection.join('\n')}\n` : '');
-      worldParams = { 'test-select': selectFile };
-    }
+    const worldParams = testWorldParams(get);
+    if (selection) worldParams['test-select'] = writeRunList('select.txt', selection);
+    if (!focus) Juke.logger.info(`dm-test: single world, tier ${worldParams['test-tier']}.`);
     const run = await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), worldParams, focus);
+    fs.rmSync(`${SHARD_DIR}/${process.pid}`, { recursive: true, force: true });
     if (!run.clean) printLogTails(run.logDir, run.killedByWatchdog ? 40 : 80);
     recordTestRun(run, get(LabelParameter), get(DefineParameter));
     // Keep deepquarry.test.dmb/.rsc (only drop the derived .dme text) so an

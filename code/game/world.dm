@@ -21,6 +21,13 @@
 /// `dm-test --domains=`/`--tier=`/`--affected`. See TEST_SHARD_INDEX_PARAMETER.
 #define TEST_SELECT_FILE_PARAMETER "test-select"
 
+/// Set by `dm-test --profile-tests`: profile each unit test and write its proc
+/// profile under the log directory. See dq_test_write_profile().
+#define TEST_PROFILE_PARAMETER "test-profile"
+/// Which unit-test tier to run: "normal" (default), "all" or "exhaustive".
+/// See TEST_TIER_* in code/modules/unit_tests/_unit_tests.dm.
+#define TEST_TIER_PARAMETER "test-tier"
+
 GLOBAL_VAR(restart_counter)
 
 /**

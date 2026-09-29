@@ -240,6 +240,21 @@
 /// Every closet type with a generator: resolving and opening gives what the
 /// old starts_with spawn gave, and each serializes and round-trips.
 /datum/unit_test/dq_latent_closet_types
+	tier = TEST_TIER_EXHAUSTIVE
+
+/// Normal tier: the closet round trip on a fixed set of stocked closets. Every
+/// closet type runs in CI and nightly.
+/datum/unit_test/dq_latent_closet_types/representative
+	tier = TEST_TIER_NORMAL
+
+/datum/unit_test/dq_latent_closet_types/representative/curated_types()
+	return list(
+		/obj/structure/closet/firecloset,
+		/obj/structure/closet/toolcloset,
+		/obj/structure/closet/secure_closet/medical1,
+		/obj/structure/closet/wardrobe/grey,
+		/obj/structure/closet/l3closet/general,
+	)
 
 /datum/unit_test/dq_latent_closet_types/Run()
 	var/list/failures = list()
@@ -248,7 +263,7 @@
 	var/turf/T = test_floor()
 	for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
 		qdel(I)
-	for(var/path in subtypesof(/obj/structure/closet))
+	for(var/path in sweep_types(subtypesof(/obj/structure/closet)))
 		if(is_abstract(path) || ispath(path, /obj/structure/closet/dq_latent_test))
 			continue
 		var/obj/structure/closet/closet = new path(T)
@@ -306,6 +321,9 @@
 			qdel(I)
 	TEST_ASSERT(tested > 0, "no latent closets found")
 	log_test("dq_latent_closet_types: [tested] latent closet types, [unserializable] hold real things that don't serialize")
+	var/list/curated = curated_types()
+	if(curated)
+		TEST_ASSERT_EQUAL(tested, length(curated), "every curated closet should hold latent contents")
 	if(length(failures))
 		TEST_FAIL("[length(failures)] problem(s) across [tested] closet types:\n[jointext(failures, "\n")]")
 
