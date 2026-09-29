@@ -419,12 +419,12 @@
 /area/survivalpod/superpose/MercShip)
 "fK" = (
 /obj/machinery/power/apc/hyper{
+	cap_state = 0;
 	coverlocked = 0;
 	dir = 4;
 	environ = 1;
 	equipment = 1;
 	lighting = 1;
-	locked = 0;
 	pixel_x = 23
 	},
 /obj/structure/cable{
@@ -1376,12 +1376,12 @@
 /area/survivalpod/superpose/MercShip)
 "tj" = (
 /obj/machinery/power/apc/hyper{
+	cap_state = 0;
 	coverlocked = 0;
 	dir = 4;
 	environ = 1;
 	equipment = 1;
 	lighting = 1;
-	locked = 0;
 	pixel_x = 23
 	},
 /obj/structure/cable{

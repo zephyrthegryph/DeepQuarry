@@ -101,7 +101,7 @@ class Converter:
         if var == "_default_bits":
             return list(spec)
         if isinstance(spec, dict):
-            return [v for v in spec.values() if v]
+            return [b for v in spec.values() if v for b in v.split("|")]
         if isinstance(spec, str) and spec.startswith("CAP_"):
             return [spec]
         return []
@@ -174,9 +174,9 @@ class Converter:
                     warns.append("%s: %s = %s has no value mapping (left alone)" % (path, name, v))
                     out.append((name, value)); continue
                 for bitname in (b for b in spec.values() if b):
-                    state &= ~self.bits[bitname]
+                    state &= ~self.value_to_bits(bitname)
                 if spec[v]:
-                    state |= self.bits[spec[v]]
+                    state |= self.value_to_bits(spec[v])
             else:
                 if v in FALSY:
                     state &= ~self.bits[spec]

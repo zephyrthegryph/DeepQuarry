@@ -282,7 +282,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 /obj/item/gripper/proc/handle_afterattack_special(atom/target, mob/living/user)
 	if(istype(target, /obj/machinery/power/apc))
 		var/obj/machinery/power/apc/A = target
-		if(!A.opened)
+		if(!cover_is_open(A))
 			return TRUE
 
 		if(!A.cell || dq_constraint_refusal(src, CONSTRAINT_HOLD, A.cell, user))
@@ -291,8 +291,8 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 		if(!grab_cell(A.cell, user))
 			return TRUE
 
-		own_take(A, nameof(A.cell))
-		A.charging = FALSE
+		var/obj/item/cell/taken = own_take(A, nameof(A.cell))
+		A.slot_ejected(nameof(A.cell), taken, user)
 		A.update_icon()
 
 		act_message(user, A, MSG_SELF("You remove the power cell."), MSG_OTHERS(span_danger("%U% removes the power cell from %T%!")))

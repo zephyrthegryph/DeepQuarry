@@ -30,8 +30,7 @@
  * which faces it away from its wall and offsets it onto the wall.
  */
 /proc/wall_machine(board, offset = 26, repair_tool = TOOL_WELDER)
-	// without(), not anchored_by = null: DM passes an explicit null argument as the default.
-	. = without(machine_basics(board = board, repair_tool = repair_tool), /datum/capability/anchor)
+	. = machine_basics(board = board, anchored_by = NONE, repair_tool = repair_tool) // NONE: DM substitutes the default for an explicit null
 	. += cap_wall_mount(offset = offset)
 
 /**
@@ -140,7 +139,14 @@
 			if(iswall(T))
 				holder.set_dir(REVERSE_DIR(direction))
 				break
-	wall_mount_offset(holder, offset)
+	// A holder the map placed by hand (pixel_x / pixel_y set) stays where it was put.
+	if(!holder.pixel_x && !holder.pixel_y)
+		holder.wall_mount_orient(offset)
+
+/// Sits the holder `offset` pixels onto the wall behind it. Types with an odd sprite (the angled APC)
+/// override it.
+/atom/proc/wall_mount_orient(offset = 26)
+	wall_mount_offset(src, offset)
 
 /// Offsets holder onto the wall behind it (toward its dir).
 /proc/wall_mount_offset(atom/holder, offset)

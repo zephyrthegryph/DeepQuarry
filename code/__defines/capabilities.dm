@@ -125,3 +125,18 @@
 
 /// /datum/capability/condition `blocks`: the condition refuses every other capability entry of its holder.
 #define ALL_ENTRIES "all_entries"
+
+// ---- power_channels() / powered_by() / cell_bay() / cap_wall_mount() ----
+/// power_channels(): channel indices (Rust's channel order).
+#define POWER_CHANNEL_EQUIPMENT 0
+#define POWER_CHANNEL_LIGHTING 1
+#define POWER_CHANNEL_ENVIRON 2
+/// powered_by(/datum/cap_system/power, role =): what the holder is to the power system.
+#define POWER_ROLE_AREA_SUPPLY "area_supply"
+#define POWER_ROLE_PRODUCER "producer"
+#define POWER_ROLE_STORAGE "storage"
+#define POWER_ROLE_CONSUMER "consumer"
+/// cell_bay(): at or below this charge (percent) cap_cell_charged() refuses.
+#define CELL_BAY_LOW_PERCENT 15
+/// cap_wall_mount(): pixels from the turf centre into the wall.
+#define WALL_MOUNT_OFFSET 26

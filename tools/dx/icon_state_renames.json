@@ -1,18 +1,22 @@
 {
   "_doc": "Starter PROPOSAL (not applied): dmi source -> {old_state: new_state}, standard capability layer names (cover_open, panel_open, wires, locked, sparks, broken, dark). Vending states are per-base prefixes: '<base>-panel' -> '<base>-panel_open', '<base>-off' -> '<base>-dark' ('<base>-broken' already matches); their code sites are interpolated, so the tool lists them as ambiguous and vending.dm is migrated by hand.",
   "icons/obj/power.dmi": {
-    "apc-spark": "sparks",
-    "apcewires": "wires",
+    "apc1": "cover_open",
+    "apc2": "cell",
     "apc-b": "broken",
-    "apcmaint": "cover_open",
+    "apcewires": "panel_open",
+    "apcemag": "emagged",
+    "apc-spark": "sparks",
     "apcox-1": "locked",
     "apcox-0": "unlocked"
   },
   "icons/obj/wall_machines_angled.dmi": {
-    "apc-spark": "sparks",
-    "apcewires": "wires",
+    "apc1": "cover_open",
+    "apc2": "cell",
     "apc-b": "broken",
-    "apcmaint": "cover_open",
+    "apcewires": "panel_open",
+    "apcemag": "emagged",
+    "apc-spark": "sparks",
     "apcox-1": "locked",
     "apcox-0": "unlocked"
   },
