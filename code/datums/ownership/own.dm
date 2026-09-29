@@ -101,8 +101,10 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		policy = own_policy(holder, var_name, entry)
 	switch(policy)
 		if(OWN_CONTAINED)
+			// During the holder's own teardown the ledger slot has already resolved it (phase 3:
+			// deleted, spilled or transferred), so it is only let go here.
 			var/atom/movable/AM = value
-			if(!ismovable(AM) || AM.loc != holder)
+			if(!QDELETED(holder) && (!ismovable(AM) || AM.loc != holder))
 				OWN_REPORT("[holder.type].[var_name] is CONTAINED but [value.type] is not in its contents (loc [ismovable(AM) ? AM.loc?.type : "n/a"])")
 			return
 		if(OWN_SPILL)
