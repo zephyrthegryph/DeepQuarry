@@ -36,6 +36,6 @@
 	if(input)
 		log_message("(GHOST EMOTE) [input]", LOG_EMOTE)
 		if(!invisibility) //If the ghost is made visible by admins or cult. And to see if the ghost has toggled its own visibility, as well. -Mech
-			act_message(src, null, others = span_deadsay(span_bold("%U%") + " [input]"))
+			act_message(src, null, others = span_deadsay(span_bold("%U%") + " [MSG_LITERAL(input)]"))
 		else
 			say_dead_direct(input, src)

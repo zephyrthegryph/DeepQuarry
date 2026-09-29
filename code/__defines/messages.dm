@@ -14,6 +14,9 @@
 #define MSG_SELF(text) (text)
 #define MSG_OTHERS(text) (text)
 #define MSG_BLIND(text) (text)
+/// Free text a player supplied (an emote, a label, a typed name): its % is shown as typed and never
+/// read as a token. Wrap only the player's part, e.g. "%U% writes: [MSG_LITERAL(str)]".
+#define MSG_LITERAL(text) msg_literal(text)
 
 /// Declares a template in one line: MSG_DEF(pry, "You pry %T% open.", "%U% pries %T% open.")
 #define MSG_DEF(name, self_text, others_text) /datum/msg/##name{self = self_text; others = others_text}

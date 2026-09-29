@@ -344,6 +344,10 @@ As built (rewrite/sys-messages):
   `act_message(src, user, ...)` where the user may be null. Obj calls that passed a self line
   as the blind argument (`visible_message(others, "You ...")`) now show it to the user.
   Tokens render `	he`, so proper names are unchanged and objects gain "the".
+- Player text is literal: wrap it in `MSG_LITERAL()` (emotes, ghost emotes, narrate, package
+  labels). It swaps `%` for a private-use mark that `msg_fill()` restores after filling, so a typed
+  `%U%` shows as typed. Token names (`msg_name()`) are marked the same way, so a character named
+  `%T%` stays literal. Only pass MSG_LITERAL text to act_message (the fill is what unmarks it).
 
 ## 16. Sound and effect sets
 

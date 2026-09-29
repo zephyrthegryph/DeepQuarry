@@ -431,7 +431,7 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 		return INTERACTION_HANDLED_PASS
 	else if (istype(W, /obj/item) && get_dist(src,user)<2)
 		user.drop_item(src.loc)
-		act_message(user, src, others = span_notice("%U% dunks [W] into %T%!"), blind = 3)
+		act_message(user, src, others = span_notice("%U% dunks [W] into %T%!"))
 		return INTERACTION_HANDLED_PASS
 	return INTERACTION_HANDLED_PASS
 

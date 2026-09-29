@@ -643,7 +643,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 			to_chat(L, span_warning("You have other entities attached to yourself. Remove them first."))
 			return TRUE
 
-	act_message(user, src, others = "%U% [on_enter_visible_message] %T%.", blind = 3)
+	act_message(user, src, others = "%U% [on_enter_visible_message] %T%.")
 
 	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_enter_timed_done), done_args = list(user))
 
@@ -755,9 +755,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 
 	if(willing)
 		if(M == user)
-			act_message(user, src, others = "%U% [on_enter_visible_message] %T%.", blind = 3)
+			act_message(user, src, others = "%U% [on_enter_visible_message] %T%.")
 		else
-			act_message(user, M, others = "%U% starts putting %T% into \the [src].", blind = 3)
+			act_message(user, M, others = "%U% starts putting %T% into \the [src].")
 
 		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
 

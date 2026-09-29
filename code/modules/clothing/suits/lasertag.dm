@@ -69,7 +69,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/lasertag, \
 		return null
 	lasertag_max_health = new_health
 	lasertag_health = lasertag_max_health
-	act_message(user, src, MSG_SELF(span_notice("Set %T%'s allowed shots to [lasertag_max_health], fully healing the vest!")), MSG_OTHERS(user))
+	act_message(user, src, MSG_SELF(span_notice("Set %T%'s allowed shots to [lasertag_max_health], fully healing the vest!")))
 
 /// Old verb "Adjust Healing Timer".
 /obj/item/clothing/suit/lasertag/proc/lasertag_adjust_heal_time_verb(mob/user, obj/item/held, datum/interaction/interaction)

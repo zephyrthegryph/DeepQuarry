@@ -41,16 +41,42 @@ GLOBAL_LIST_EMPTY(msg_defs)
 /proc/msg_name(atom/A, capital)
 	if(isnull(A))
 		return ""
+	// A name is player text (a custom character name): a % in it must never read as a token.
 	if(!isatom(A))
-		return "[A]"
-	return capital ? "\The [A]" : "\the [A]"
+		return msg_literal("[A]")
+	return msg_literal(capital ? "\The [A]" : "\the [A]")
+
+/// The stand-in for a literal % inside a line (a private-use character); msg_fill() restores it.
+/proc/msg_percent_mark()
+	var/static/mark = ascii2text(0xE025)
+	return mark
+
+/**
+ * Marks free text (anything a player typed: emotes, labels, names) as literal, so a `%U%` in it
+ * is shown as typed instead of being filled. Use it through MSG_LITERAL(), and only in the text
+ * arguments of act_message(): msg_fill() is what turns the marks back into `%`.
+ */
+/proc/msg_literal(text)
+	if(!istext(text) || !findtext(text, "%"))
+		return text
+	return replacetext(text, "%", msg_percent_mark())
+
+/// Turns msg_literal()'s marks back into %.
+/proc/msg_unmark(text)
+	if(!istext(text))
+		return text
+	var/mark = msg_percent_mark()
+	if(!findtext(text, mark))
+		return text
+	return replacetext(text, mark, "%")
 
 /// Fills the tokens of one line. A token that opens the line (after any tags) is capitalised.
+/// Literal text (MSG_LITERAL(), names) is marked, so it survives every pass and is restored last.
 /proc/msg_fill(text, atom/user, atom/target, obj/item/item)
 	if(!text)
 		return text
 	if(!findtext(text, "%"))
-		return text
+		return msg_unmark(text)
 	var/static/regex/lead = regex(@"^((?:<[^>]*>|\s)*)%(U|T|I)%")
 	if(lead.Find(text))
 		var/atom/first
@@ -79,7 +105,7 @@ GLOBAL_LIST_EMPTY(msg_defs)
 		text = replacetext(text, "%THEYVE%", user.p_theyve())
 		text = replacetext(text, "%ES%", user.p_es())
 		text = replacetext(text, "%S%", user.p_s())
-	return text
+	return msg_unmark(text)
 
 /**
  * An action seen from two sides: `user` reads `self`, everyone else in `range` who can see

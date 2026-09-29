@@ -182,7 +182,7 @@
 
 /obj/machinery/door/window/proc/interaction_shred(mob/user, obj/item/held, datum/interaction/interaction)
 	play_sfx(src, SFX_EFFECTS_GLASSHIT)
-	act_message(user, null, others = span_danger("%U% smashes against the [src.name]."), blind = 1)
+	act_message(user, null, others = span_danger("%U% smashes against the [src.name]."))
 	user.do_attack_animation(src)
 	user.setClickCooldown(user.get_attack_speed())
 	take_damage(25, BRUTE, MELEE)

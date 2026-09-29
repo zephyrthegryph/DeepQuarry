@@ -54,3 +54,31 @@ MSG_DEF(unit_test/pry, "You pry %T% open with %I%.", "%U% pries %T% open.")
 			for(var/text in list(def.self, def.others))
 				if(text && (findtext(text, "%ACTOR%") || findtext(text, "%TARGET%")))
 					TEST_FAIL("[path]: template [msg_type] still uses the old %ACTOR%/%TARGET% tokens")
+
+/// Player text is literal: a "%U%" typed into an emote, a label or a character name is shown as
+/// typed, never filled.
+/datum/unit_test/dq_sys_messages_literal
+
+/datum/unit_test/dq_sys_messages_literal/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	H.real_name = "Alice Test"
+	H.name = "Alice Test"
+	var/obj/structure/closet/box = allocate(/obj/structure/closet, test_floor())
+
+	// The emote path: the finished lines go in whole through MSG_LITERAL.
+	var/typed = "waves at %U% and %T%, 100%THEIR% sure"
+	var/use_3p = span_emote(span_bold("Alice Test") + " [typed]")
+	TEST_ASSERT_EQUAL(msg_fill(MSG_LITERAL(use_3p), H, box), use_3p, "a typed emote renders literally")
+	TEST_ASSERT_EQUAL(msg_fill(MSG_LITERAL("%U%"), H, box), "%U%", "a bare typed %U% renders literally")
+
+	// A template around player text: only the template's own tokens are filled.
+	TEST_ASSERT_EQUAL(msg_fill("%U% labels %T%: \"[MSG_LITERAL("%U%")]\"", H, box), \
+		"Alice Test labels the [box.name]: \"%U%\"", "template tokens fill, typed tokens don't")
+
+	// A character name is player text too: filling %U% must not expose a token inside it.
+	H.name = "Bob %T%"
+	TEST_ASSERT_EQUAL(msg_fill("%U% opens %T%.", H, box), "Bob %T% opens the [box.name].", "a %T% in a name is literal")
+	TEST_ASSERT(!findtext(msg_fill("%U%", H, box), msg_percent_mark()), "no literal mark leaks out of msg_fill")
+
+	// And the whole act_message path takes literal text without a runtime.
+	act_message(H, box, MSG_SELF(MSG_LITERAL(typed)), MSG_OTHERS(MSG_LITERAL(use_3p)), runemessage = MSG_LITERAL(typed))

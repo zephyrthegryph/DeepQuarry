@@ -389,7 +389,7 @@ DECLARE_PERIODIC(/obj/structure/simple_door/uranium, PERIODIC_SLOW)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	var/mob/living/carbon/M = user
 	if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/hivenode))
-		act_message(user, null, others = span_warning("%U% strokes the [name] and it melts away!"), blind = 1)
+		act_message(user, null, others = span_warning("%U% strokes the [name] and it melts away!"))
 		Dismantle(1)
 		return TRUE
 	act_message(user, null, others = span_warning("%U% tears at the [name]!"))
