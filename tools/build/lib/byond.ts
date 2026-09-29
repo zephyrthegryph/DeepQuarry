@@ -240,7 +240,60 @@ type DDOptions = {
   watchdogTimeoutMs?: number;
   /** Called with the daemon's pid once it has started (watchdog runs only). */
   onSpawn?: (pid: number) => void;
+  /** Set by DreamDaemon(): the -logself file the world's output goes to (Windows). */
+  daemonLog?: string;
 };
+
+/** Prints the tail of a DreamDaemon -logself file, if there is one. */
+export function printDaemonLog(daemonLog: string | undefined, lineCount = 60): void {
+  if (!daemonLog || !fs.existsSync(daemonLog)) {
+    Juke.logger.warn('DreamDaemon left no output log to show.');
+    return;
+  }
+  const lines = fs.readFileSync(daemonLog, 'utf-8').trim().split(/\r?\n/);
+  Juke.logger.error(`Last DreamDaemon output (${daemonLog}):`);
+  console.error(lines.slice(-lineCount).join('\n'));
+}
+
+/**
+ * Refuses to boot a world against a verdigris library built from a different
+ * bind set. The DLL embeds its ABI hash (`verdigris/ffi/src/abi.rs`, a
+ * `pub const &str`) as plain bytes, and `_bindings.dm` carries the DM side's
+ * VERDIGRIS_ABI, so a byte search catches a stale or copied-in library before
+ * DreamDaemon spends minutes booting only to shut down at `verdigris_init`
+ * ("null is not an external function", then an arbitrary exit code, with no
+ * logs written). Workers copy verdigris.dll between worktrees, which is how
+ * this goes wrong. DQ_SKIP_VERDIGRIS_ABI_CHECK=1 bypasses it.
+ */
+export function checkVerdigrisAbi(root = '.'): void {
+  if (process.env.DQ_SKIP_VERDIGRIS_ABI_CHECK === '1') return;
+  const bindings = path.join(root, 'code/__defines/verdigris/_bindings.dm');
+  const lib = path.join(root, process.platform === 'win32' ? 'verdigris.dll' : 'libverdigris.so');
+  let abi: string | undefined;
+  try {
+    abi = /#define VERDIGRIS_ABI "([0-9a-f]+)"/.exec(fs.readFileSync(bindings, 'utf-8'))?.[1];
+  } catch {
+    // no bindings in this tree
+  }
+  if (!abi) return;
+  if (!fs.existsSync(lib)) {
+    Juke.logger.error(`verdigris check: ${lib} is missing; the world cannot boot without it.`);
+    Juke.logger.error('Build it with tools/build/build.sh verdigris (unset DQ_PREBUILT_VERDIGRIS).');
+    throw new Juke.ExitCode(1);
+  }
+  if (fs.readFileSync(lib).includes(Buffer.from(abi, 'latin1'))) return;
+  const stat = fs.statSync(lib);
+  Juke.logger.error(
+    `verdigris check: ${path.resolve(lib)} (modified ${stat.mtime.toISOString()}) was not built from this tree: `
+      + `it does not contain VERDIGRIS_ABI ${abi} from ${bindings}.`,
+  );
+  Juke.logger.error(
+    'DreamDaemon would shut down at verdigris_init with an ABI mismatch and write no results. '
+      + 'Rebuild the library here (drop DQ_PREBUILT_VERDIGRIS=1, or run tools/build/build.sh verdigris), '
+      + 'or copy verdigris.dll from a worktree on the same commit.',
+  );
+  throw new Juke.ExitCode(1);
+}
 
 /** Force-kill a process tree cross-platform. */
 function killProcessTree(pid: number): void {
@@ -347,6 +400,10 @@ function runDreamDaemonWithWatchdog(
         // a clean world shutdown.
         const hex = code === null ? 'null' : `0x${(code >>> 0).toString(16).toUpperCase()}`;
         Juke.logger.warn(`DreamDaemon exited before the run completed: code=${code} (${hex}) signal=${signal}`);
+        // The exit code alone says nothing useful (a world that shuts itself
+        // down, e.g. on a verdigris ABI mismatch, returns an arbitrary value
+        // such as 48/80/96/128). Show what the world actually printed.
+        printDaemonLog(options.daemonLog);
       }
       finish(false, 'exited', false);
     });
@@ -399,6 +456,7 @@ export async function DreamDaemon(
   options: DDOptions,
   ...args: any[]
 ): Promise<DDResult> {
+  checkVerdigrisAbi();
   await approveWorldDlls(options.dmbFile);
   const dmPath = await getDmPath(options.namedDmVersion);
   const baseDir = path.dirname(dmPath);
@@ -407,6 +465,14 @@ export async function DreamDaemon(
   const ddExePath = baseDir === '.' ? ddExeName : path.join(baseDir, ddExeName);
 
   if (options.watchdogFile) {
+    // On Windows dreamdaemon.exe writes nothing to our stdout, so a world that
+    // dies early would leave no trace. -logself sends its output to
+    // <dmb>.log beside the (per-run) .dmb, which we print on an early exit.
+    if (process.platform === 'win32' && !args.includes('-logself')) {
+      options.daemonLog = options.dmbFile.replace(/\.dmb$/, '.log');
+      fs.rmSync(options.daemonLog, { force: true });
+      args = [...args, '-logself'];
+    }
     return runDreamDaemonWithWatchdog(ddExePath, [options.dmbFile, ...args], options);
   }
   return Juke.exec(ddExePath, [options.dmbFile, ...args]);
