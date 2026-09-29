@@ -401,20 +401,20 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	var/obj/cap_fixture/dx_core/F = new
 	made += F
 	refresh_flush()
-	TEST_ASSERT(timed_set(F, nameof(F.power_level), 7, for_time = 2 SECONDS), "timed_set ran")
+	TEST_ASSERT(timed_set(F, nameof(F.power_level), 7, for_time = 2 SECONDS, clock = CLOCK_OWN), "timed_set ran")
 	TEST_ASSERT_EQUAL(F.power_level, 7, "written through the setter")
 	TEST_ASSERT(F.refresh_queued, "the setter marked it changed")
 	TEST_ASSERT(time_left(F, nameof(F.power_level)) > 1 SECONDS, "time_left on the own clock")
 	scheduler_advance(1)
 	TEST_ASSERT_EQUAL(F.power_level, 7, "not reverted early")
-	TEST_ASSERT(!timed_set(F, nameof(F.power_level), 9, for_time = 0.5 SECONDS, keep_longer = TRUE), "keep_longer keeps the later end")
+	TEST_ASSERT(!timed_set(F, nameof(F.power_level), 9, for_time = 0.5 SECONDS, clock = CLOCK_OWN, keep_longer = TRUE), "keep_longer keeps the later end")
 	TEST_ASSERT_EQUAL(F.power_level, 7, "and does not write")
 	scheduler_advance(1.5)
 	TEST_ASSERT_EQUAL(F.power_level, 0, "reverted through the setter")
 	TEST_ASSERT_EQUAL(time_left(F, nameof(F.power_level)), 0, "nothing pending after the revert")
 
-	timed_set(F, nameof(F.power_level), 4, for_time = 1 SECONDS)
-	timed_set(F, nameof(F.power_level), 6, for_time = 3 SECONDS)
+	timed_set(F, nameof(F.power_level), 4, for_time = 1 SECONDS, clock = CLOCK_OWN)
+	timed_set(F, nameof(F.power_level), 6, for_time = 3 SECONDS, clock = CLOCK_OWN)
 	scheduler_advance(1.5)
 	TEST_ASSERT_EQUAL(F.power_level, 6, "a replaced timer does not fire")
 	scheduler_advance(2)
@@ -425,12 +425,12 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	scheduler_advance(1.5)
 	TEST_ASSERT_EQUAL(F.power_level, 0, "the world clock reverts")
 
-	timed_set(F, nameof(F.power_level), 2, for_time = 1 SECONDS)
+	timed_set(F, nameof(F.power_level), 2, for_time = 1 SECONDS, clock = CLOCK_OWN)
 	timed_cancel(F, nameof(F.power_level))
 	scheduler_advance(1.5)
 	TEST_ASSERT_EQUAL(F.power_level, 2, "timed_cancel keeps the current value")
 
-	timed_set(F, nameof(F.power_level), 8, for_time = 1 SECONDS)
+	timed_set(F, nameof(F.power_level), 8, for_time = 1 SECONDS, clock = CLOCK_OWN)
 	TEST_ASSERT(om_timer_slot_pending(F, "timed:[nameof(F.power_level)]"), "the owned slot is pending")
 	qdel(F)
 	TEST_ASSERT(!om_timer_slot_pending(F, "timed:[nameof(F.power_level)]"), "teardown drops the timer")
@@ -521,9 +521,9 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 			if(E.name == "Configure")
 				entry = E
 		TEST_ASSERT_NOTNULL(entry, "[path] has the entry")
-		TEST_ASSERT(interaction_by_id(entry.id) == entry, "[path]'s entry id [entry.id] resolves to its own entry")
-		TEST_ASSERT(!(entry.id in ids), "[path]'s entry id [entry.id] is unique")
-		ids += entry.id
+		ids |= entry.id
+	// Ids are unique per target, not globally: the three types share one (interned) entry and id.
+	TEST_ASSERT_EQUAL(length(ids), 1, "the inherited entry keeps one id across the subtypes")
 	for(var/path in list(/obj/cap_fixture/dx_core, /obj/cap_fixture/dx_core/child, /obj/cap_fixture/dx_core/child/grand))
 		var/obj/cap_fixture/dx_core/F = allocate(path, get_turf(user))
 		var/datum/interaction/capability/entry

@@ -46,9 +46,22 @@
 /datum/capability/proc/draw(atom/holder, datum/look/look)
 	return
 
-/// Adds keys to the holder's tgui_data().
+/// Action -> LOG_GAME / LOG_ADMIN for this capability's own act_<action> procs. A capability owns
+/// UI actions by defining `/datum/capability/<x>/proc/act_<action>(mob/user, atom/holder, ...args)`:
+/// the dispatcher finds it on the holder's capabilities when the holder has no act_<action> itself.
+/datum/capability/ui_logged()
+	return null
+
+/// Adds keys to this capability's own UI list: the holder's tgui_data() carries it as
+/// data["caps"][ui_key()] (caps_ui_data()).
 /datum/capability/proc/ui_data(atom/holder, mob/user, list/data)
 	return
+
+/// This capability's key under data["caps"]: its layer name, else its key.
+/datum/capability/proc/ui_key()
+	if(layer_name && layer_name != CAP_NO_LAYER)
+		return layer_name
+	return "[key]"
 
 /// Gates ANOTHER entry: null lets it through, text refuses with that reason. The cover gates
 /// every entry whose `behind` includes COVER while it is closed; the lock does the same for

@@ -3,19 +3,19 @@
 // multitool or wirecutters on the exposed wires opens the wires window. Layer: "wires" while exposed.
 // Accessors: wires_exposed(), wires_of().
 //
-//	. += wires(/datum/wires/apc, behind = PANEL)
+//	. += cap_wires(/datum/wires/apc, behind = PANEL)
 
 /datum/capability/wires
+	layer_name = "wires"
 	/// The /datum/wires subtype made for each holder.
 	var/wires_type
 
 /// Wires of `wires_type`, reachable while everything in `behind` is open.
-/proc/cap_wires(wires_type, behind = PANEL, log)
+/proc/cap_wires(wires_type, behind = PANEL, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = "wires")
 	var/datum/capability/wires/C = new
 	C.wires_type = wires_type
-	C.behind = behind
-	C.log = log
-	return C
+	C.layer_name = layer
+	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 /// A's wires datum (made on first use), or null when A has no wires capability.
 /proc/wires_of(atom/A)
@@ -31,12 +31,12 @@
 
 /datum/capability/wires/interactions(atom/holder)
 	return list(
-		own_entry(cap_tool("Pulse wires", TOOL_MULTITOOL, TYPE_PROC_REF(/atom, cap_wires_open), behind = behind, log = log, priority = 10), id = "wires:multitool"),
-		own_entry(cap_tool("Cut wires", TOOL_WIRECUTTER, TYPE_PROC_REF(/atom, cap_wires_open), behind = behind, log = log, priority = 10), id = "wires:wirecutter"),
+		adopt_entry(cap_tool("Pulse wires", TOOL_MULTITOOL, TYPE_PROC_REF(/atom, cap_wires_open), priority = 10), id = "wires:multitool"),
+		adopt_entry(cap_tool("Cut wires", TOOL_WIRECUTTER, TYPE_PROC_REF(/atom, cap_wires_open), priority = 10), id = "wires:wirecutter"),
 	)
 
 /datum/capability/wires/draw(atom/holder, datum/look/look)
-	look.overlay("wires", when = wires_exposed(holder))
+	draw_layer(look, when = wires_exposed(holder))
 
 /datum/capability/wires/on_holder_destroy(atom/holder)
 	var/datum/wires/W = holder.cap_data?[key]
