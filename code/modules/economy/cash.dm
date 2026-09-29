@@ -35,20 +35,19 @@
 	var/note_seed = 0
 
 /// The scattered note transforms, rolled once for the whole round and shared by every pile.
-/proc/spacecash_note_layouts()
-	var/static/list/layouts
-	if(!layouts)
-		layouts = list()
-		for(var/i in 1 to SPACECASH_NOTE_LAYOUTS)
-			var/matrix/M = matrix()
-			M.Translate(rand(-6, 6), rand(-4, 8))
-			M.Turn(pick(-45, -27.5, 0, 0, 0, 0, 0, 0, 0, 27.5, 45))
-			layouts += M
-	return layouts
+GLOBAL_LIST_INIT(spacecash_note_layouts, build_spacecash_note_layouts())
+
+/proc/build_spacecash_note_layouts()
+	. = list()
+	for(var/i in 1 to SPACECASH_NOTE_LAYOUTS)
+		var/matrix/M = matrix()
+		M.Translate(rand(-6, 6), rand(-4, 8))
+		M.Turn(pick(-45, -27.5, 0, 0, 0, 0, 0, 0, 0, 27.5, 45))
+		. += M
 
 /// The banknote image for the `index`th note of this pile.
 /obj/item/spacecash/proc/banknote_image(denomination, index)
-	var/list/layouts = spacecash_note_layouts()
+	var/list/layouts = GLOB.spacecash_note_layouts
 	var/image/banknote = image('icons/obj/economy.dmi', "spacecash[denomination]")
 	banknote.transform = layouts[((note_seed + index) % SPACECASH_NOTE_LAYOUTS) + 1]
 	return banknote

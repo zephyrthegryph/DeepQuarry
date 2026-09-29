@@ -546,13 +546,6 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		AM.pipe_eject(0)
 	update_icon()
 
-/// A broken bin stops pumping and won't flush (the redraw used to do this).
-/obj/machinery/disposal/atom_break(damage_flag)
-	. = ..()
-	if(.)
-		set_mode(DISPOSALMODE_OFF)
-		flush = 0
-
 // update the icon & overlays to reflect mode & status
 DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/disposal/appearance_overlays()
@@ -584,6 +577,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 /obj/machinery/disposal/machine_step()
 	if(!air_contents || (has_stat(BROKEN)))			// nothing can happen if broken
 		set_use_power(USE_POWER_OFF)
+		if(has_stat(BROKEN)) // a broken bin stops pumping and won't flush (the redraw used to do this)
+			set_mode(DISPOSALMODE_OFF)
+			flush = 0
 		return PROCESS_KILL
 
 	if(mode != DISPOSALMODE_CHARGING && !flush && !length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
