@@ -59,12 +59,9 @@ DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 	name = "Use"
 	held_type = /obj/item
 	effect = /obj/machinery/radiocarbon_spectrometer/proc/interaction_use_item
+	also_requires = list(REQ_FIELD_NOT("scanning", "you can't do that while it's scanning"))
 
 /obj/machinery/radiocarbon_spectrometer/proc/interaction_use_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(scanning)
-		to_chat(user, span_warning("You can't do that while [src] is scanning!"))
-		return TRUE
-
 	if(istype(I, /obj/item/reagent_containers/glass))
 		var/obj/item/reagent_containers/glass/G = I
 		if(!G.is_open_container())

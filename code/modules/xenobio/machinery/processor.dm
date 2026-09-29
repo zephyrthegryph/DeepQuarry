@@ -30,11 +30,9 @@
 	id = "processor_start"
 	name = "Start"
 	effect = /obj/machinery/processor/proc/interaction_start
+	also_requires = list(REQ_FIELD_NOT("processing", "the processor is in the process of processing"))
 
 /obj/machinery/processor/proc/interaction_start(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(processing)
-		to_chat(user, span_warning("The processor is in the process of processing!"))
-		return TRUE
 	if(length(to_be_processed))
 		om_after(src, 1, PROC_REF(begin_processing))
 	else

@@ -63,11 +63,13 @@ DECLARE_REF(/obj/machinery/computer/telescience, "inserted_gps", SPILL, null)
 	category = INTERACTION_CAT_INSERT
 	held_type = /obj/item/bluespace_crystal
 	effect = /obj/machinery/computer/telescience/proc/interaction_insert_crystal
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/telescience/proc/has_crystal_slot))
+
+/// Requirement: a free crystal slot.
+/obj/machinery/computer/telescience/proc/has_crystal_slot(mob/user, atom/target, obj/item/held)
+	return length(crystals) >= max_crystals ? "there are not enough crystal slots" : TRUE
 
 /obj/machinery/computer/telescience/proc/interaction_insert_crystal(mob/user, obj/item/W, datum/interaction/interaction)
-	if(length(crystals) >= max_crystals)
-		to_chat(user, span_warning("There are not enough crystal slots."))
-		return TRUE
 	if(!user.unEquip(W))
 		return TRUE
 	LAZYADD(crystals, W)

@@ -191,11 +191,15 @@
 	category = INTERACTION_CAT_INSERT
 	held_type = /obj/item
 	effect = /obj/machinery/replicator/proc/interaction_insert
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/replicator/proc/can_insert))
+
+/// Requirement: no armblades, no grabs, nothing the user can't let go of.
+/obj/machinery/replicator/proc/can_insert(mob/living/user, atom/target, obj/item/held)
+	if(!istype(held) || !held.canremove || !user.canUnEquip(held))
+		return "you cannot put [held] into the machine"
+	return TRUE
 
 /obj/machinery/replicator/proc/interaction_insert(mob/living/user, obj/item/W, datum/interaction/interaction)
-	if(!W.canremove || !user.canUnEquip(W)) //No armblades, no grabs. No other-thing-I-didn't-think-of.
-		to_chat(user, span_notice("You cannot put \the [W] into the machine."))
-		return TRUE
 	user.drop_item()
 	W.forceMove(src)
 	stored_materials.Add(W)
@@ -330,10 +334,13 @@
 	EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 
 
+/// Requirement: also no possessed or vore-blacklisted items.
+/obj/machinery/replicator/vore/can_insert(mob/living/user, atom/target, obj/item/held)
+	. = ..()
+	if(. == TRUE && (held.possessed_voice || is_type_in_list(held, GLOB.item_vore_blacklist)))
+		return "you cannot put [held] into the machine"
+
 /obj/machinery/replicator/vore/interaction_insert(mob/living/user, obj/item/W, datum/interaction/interaction)
-	if(!W.canremove || !user.canUnEquip(W) || W.possessed_voice || is_type_in_list(W, GLOB.item_vore_blacklist)) //No armblades, no putting possessed items in it!
-		to_chat(user, span_notice("You cannot put \the [W] into the machine."))
-		return TRUE
 	if(istype(W, /obj/item/holder/micro)) //Are you putting a micro in it?
 		var/obj/item/holder/micro/micro_holder = W
 		var/mob/living/inserted_mob = micro_holder.held_mob //Get the actual mob.
@@ -595,10 +602,13 @@
 
 	EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 
+/// Requirement: also no possessed or vore-blacklisted items.
+/obj/machinery/replicator/clothing/can_insert(mob/living/user, atom/target, obj/item/held)
+	. = ..()
+	if(. == TRUE && (held.possessed_voice || is_type_in_list(held, GLOB.item_vore_blacklist)))
+		return "you cannot put [held] into the machine"
+
 /obj/machinery/replicator/clothing/interaction_insert(mob/living/user, obj/item/W, datum/interaction/interaction)
-	if(!W.canremove || !user.canUnEquip(W) || W.possessed_voice || is_type_in_list(W, GLOB.item_vore_blacklist)) //No armblades, no putting already possessed items in it!
-		to_chat(user, span_notice("You cannot put \the [W] into the machine."))
-		return TRUE
 	if(istype(W, /obj/item/holder/micro) || istype(W, /obj/item/holder/mouse)) //Are you putting a micro/mouse in it?
 		var/obj/item/holder/micro/micro_holder = W
 		var/mob/living/inserted_mob = micro_holder.held_mob //Get the actual mob.

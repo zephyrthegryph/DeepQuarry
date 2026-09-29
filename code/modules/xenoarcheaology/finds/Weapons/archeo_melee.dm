@@ -152,13 +152,14 @@
 		last_touched_handle = om_handle(user)
 		om_task_periodic(src, PERIODIC_SLOW)
 
-DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/melee/artifact_blade/proc/cooled_down)))
+
+/// Requirement: the blade rests between actions.
+/obj/item/melee/artifact_blade/proc/cooled_down(mob/user, atom/target, obj/item/held)
+	return COOLDOWN_FINISHED(src, special_cooldown) ? TRUE : "the blade does not respond to your attempts, having recently performed an action"
 
 /// Old attack_self.
 /obj/item/melee/artifact_blade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!COOLDOWN_FINISHED(src, special_cooldown))
-		to_chat(user, span_cult("The blade does not respond to your attempts, having recently performed an action!"))
-		return TRUE
 	COOLDOWN_START(src, special_cooldown, 12 SECONDS)
 	if(stored_blood < 10)
 		to_chat(user, span_cult("The blade does not respond to your attempts, seeming to have not enough blood to perform any actions!"))

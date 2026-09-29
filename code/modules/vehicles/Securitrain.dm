@@ -87,8 +87,8 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/security/trolley, INTERACT_ITEM("Toggle l
 
 EXTEND_INTERACTIONS(/obj/vehicle/train/security/engine, \
 	INTERACT_ITEM("Insert key", PROC_REF(interaction_security_engine_key)), \
-	INTERACT_VERB("Start engine", PROC_REF(security_engine_start_engine), REQ_REACH(0), REQ_ON(PRED_TARGET, /obj/vehicle/train/security/engine/proc/pred_security_engine_stopped, null)), \
-	INTERACT_VERB("Stop engine", PROC_REF(security_engine_stop_engine), REQ_REACH(0), REQ_ON(PRED_TARGET, /obj/vehicle/train/security/engine/proc/pred_security_engine_running, null)), \
+	INTERACT_VERB("Start engine", PROC_REF(security_engine_start_engine), REQ_REACH(0), REQ_ON(PRED_TARGET, /obj/vehicle/train/security/engine/proc/pred_security_engine_stopped, "the engine is already running")), \
+	INTERACT_VERB("Stop engine", PROC_REF(security_engine_stop_engine), REQ_REACH(0), REQ_ON(PRED_TARGET, /obj/vehicle/train/security/engine/proc/pred_security_engine_running, "the engine is already stopped")), \
 	INTERACT_VERB("Remove key", PROC_REF(security_engine_remove_key), REQ_REACH(0), REQ_ON(PRED_TARGET, /obj/vehicle/train/security/engine/proc/pred_security_engine_has_key, null)), \
 )
 
@@ -200,10 +200,6 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/security/engine, \
 	if(!ishuman(user))
 		return
 
-	if(on)
-		to_chat(user, "The engine is already running.")
-		return
-
 	turn_on()
 	if (on)
 		to_chat(user, "You start [src]'s engine.")
@@ -216,10 +212,6 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/security/engine, \
 /// Old verb "Stop engine".
 /obj/vehicle/train/security/engine/proc/security_engine_stop_engine(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!ishuman(user))
-		return
-
-	if(!on)
-		to_chat(user, "The engine is already stopped.")
 		return
 
 	turn_off()
