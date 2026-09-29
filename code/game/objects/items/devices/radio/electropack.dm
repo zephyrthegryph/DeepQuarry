@@ -38,7 +38,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
 
 		user.drop_from_inventory(W)
 		W.forceMove(A)
-		rel_set(W, "master", A)
+		rel_set(W, "master", A) // ALLOW(ownership): item.master is a REL view; code/modules/assembly/shock_kit.dm still writes it with own_take
 		own_set(A, "part1", W)
 
 		user.drop_from_inventory(src)

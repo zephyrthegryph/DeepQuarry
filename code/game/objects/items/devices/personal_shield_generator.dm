@@ -49,7 +49,7 @@
 			rel_set(active_weapon, "power_supply", bcell)
 		else
 			own_set(src, "active_weapon", new /obj/item/gun/energy/gun/generator(src, src)) // ALLOW(decl): constructor arguments
-			rel_set(active_weapon, "power_supply", bcell)
+			rel_set(active_weapon, "power_supply", bcell) // ALLOW(ownership): the generator owns the cell; this gun subtype only names it (REL decl below)
 	om_task_periodic_stop(src) //We do this so it doesn't start processing until it's first used.
 	update_icon()
 
