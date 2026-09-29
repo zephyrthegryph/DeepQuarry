@@ -230,6 +230,9 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 		A.look_key = key
 	return key
 
+/// Brings A's derived verb hides in line with hidden_verbs(). The verb store stays the only writer of a
+/// verbs list: a hidden verb is one more reason verb_store_wants() says no, and only the keys whose
+/// hidden state flipped are re-synced.
 /proc/refresh_verbs(atom/A, apply = TRUE)
 	var/list/hidden = A.hidden_verbs() || list()
 	if(!length(hidden) && !length(A.refresh_hidden_verbs))
@@ -237,11 +240,10 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 	if(!apply)
 		return hidden
 	var/list/was = A.refresh_hidden_verbs || list()
-	for(var/V in was - hidden)
-		A.verbs += V
-	for(var/V in hidden - was)
-		A.verbs -= V
+	var/list/flipped = (was - hidden) + (hidden - was)
 	A.refresh_hidden_verbs = length(hidden) ? hidden : null
+	if(length(flipped))
+		verb_store_refresh(A, flipped)
 	return hidden
 
 // ---- the background sweep ----

@@ -112,6 +112,20 @@ GLOBAL_LIST_EMPTY(caps_interned)
 		return (A.cap_state & W.behind) == W.behind
 	return !!(A.cap_state & CAP_WIRES_EXPOSED)
 
+/**
+ * Verbs this type has by what it is, beyond the /type/verb/ procs it inherits: a per-type list
+ * (built once, no per-instance entry), read by the verb store. For a difference between types that
+ * never changes per instance (an advanced scanner has the toggle, a basic one doesn't); state that
+ * changes uses hidden_verbs(). Pure: read only initial() values here.
+ *	/obj/item/healthanalyzer/type_verbs()
+ *		. = ..()
+ *		if(initial(profile_type) != /datum/diagnostic_profile/health_analyzer)
+ *			. += /obj/item/healthanalyzer/proc/toggle_adv
+ */
+/atom/proc/type_verbs()
+	RETURN_TYPE(/list)
+	return list()
+
 /// Whether A has power for its entries. Machines answer through their power state; anything else
 /// is always powered. The powered capability overrides nothing: it reads this.
 /atom/proc/cap_powered()
@@ -128,6 +142,8 @@ GLOBAL_LIST_EMPTY(caps_interned)
 /// the first instance of each type is always queued, and its refresh records what the type derives.
 /atom/proc/caps_init(mapload)
 	var/flags = type_derive_flags(src)
+	if(flags & TYPE_DERIVES_TYPE_VERBS)
+		verb_store_refresh(src, type_list(src, TYPE_PROC_REF(/atom, type_verbs)))
 	if(flags & TYPE_DERIVES_CAPS)
 		for(var/datum/capability/C as anything in caps_of(src))
 			C.on_holder_init(src, mapload)
@@ -144,6 +160,8 @@ GLOBAL_LIST_EMPTY(caps_interned)
 	. = TYPE_DERIVES_PENDING
 	if(length(caps_of(A)))
 		. |= TYPE_DERIVES_CAPS
+	if(length(type_list(A, TYPE_PROC_REF(/atom, type_verbs))))
+		. |= TYPE_DERIVES_TYPE_VERBS
 	GLOB.type_derives_cache[A.type] = .
 
 /// A refresh of A just ran draw() and hidden_verbs(): record what its type derives (first time only).

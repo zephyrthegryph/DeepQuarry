@@ -66,3 +66,5 @@
 #define TYPE_DERIVES_VERBS (1<<2)
 /// Not yet known: the type's first refresh fills in LOOK and VERBS.
 #define TYPE_DERIVES_PENDING (1<<3)
+/// type_verbs() lists something.
+#define TYPE_DERIVES_TYPE_VERBS (1<<4)
