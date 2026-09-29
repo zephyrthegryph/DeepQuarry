@@ -62,6 +62,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	name = "Remove ID card"
 	requires = list(REQ_INTERACTION_REACH)
 	effect = /obj/machinery/photocopier/faxmachine/proc/interaction_remove_card
+	also_requires = list(REQ_FIELD("scan", "there is no ID card to remove"))
 
 /obj/machinery/photocopier/faxmachine/proc/interaction_remove_card(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/L = user
@@ -71,9 +72,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	if(!ishuman(L) && !issilicon(L))
 		return TRUE
 	if(L.stat || L.restrained())
-		return TRUE
-	if(!scan)
-		to_chat(L, span_notice("There is no I.D card to remove!"))
 		return TRUE
 
 	scan.forceMove(loc)

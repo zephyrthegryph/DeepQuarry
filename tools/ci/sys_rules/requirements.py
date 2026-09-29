@@ -41,12 +41,13 @@ MESSAGE = re.compile(r"\b(?:to_chat|balloon_alert|visible_message|audible_messag
 QUIET = re.compile(r"^(?:playsound|SEND_SOUND)\s*\(")
 RETURN = re.compile(r"^return\b")
 IF = re.compile(r"^if\s*\(")
-# A condition that performs the action (drops the item, spends a stack, asks the player) reports
-# that action failing, which is effect-time feedback, not a refusal a requirement could declare.
+# A condition that performs the action (drops the item, spends a stack, asks the player, moves the
+# user) reports that action failing, and a random one (prob(), a clumsy fumble) is an outcome of
+# doing it: both are effect-time feedback, not a refusal a requirement could declare.
 ACTING = re.compile(r"\b(?:drop_from_inventory|unEquip|drop_item|drop_held_item|put_in_\w+|remove_from_mob|"
                     r"use|use_charge|checked_use|use_tool|do_after|do_mob|tgui_\w+|input|alert|forceMove|"
                     r"try_\w+|attempt_\w+|consume\w*|transfer\w*|insert_item|user_unbuckle_mob|"
-                    r"buckle_mob|Move|remove_fuel|use_resource|spend\w*|pay\w*|charge|om_task_timed)\s*\(")
+                    r"buckle_mob|Move|prob|rand|CLUMSY_FAIL_CHANCE|remove_fuel|use_resource|spend\w*|pay\w*|charge|om_task_timed)\s*\(")
 ELSE = re.compile(r"^else\b")
 
 

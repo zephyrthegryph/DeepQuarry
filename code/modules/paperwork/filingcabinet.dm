@@ -64,17 +64,17 @@
 	return ITEM_INTERACT_SUCCESS
 
 DECLARE_INTERACTIONS(/obj/structure/filingcabinet, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/structure/filingcabinet/proc/has_files)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_TK(null, PROC_REF(interaction_tk)), \
 )
 
+/// Requirement: TRUE when the cabinet holds something to browse.
+/obj/structure/filingcabinet/proc/has_files(mob/user, atom/target, obj/item/held)
+	return contents_count(src) > 0 ? TRUE : "it's empty"
+
 /// Old attack_hand.
 /obj/structure/filingcabinet/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(contents_count(src) <= 0)
-		to_chat(user, span_notice("\The [src] is empty."))
-		return TRUE
-
 	tgui_interact(user)
 	return TRUE
 

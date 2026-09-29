@@ -351,19 +351,20 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 	else
 		to_chat(user, span_notice("You cannot do this while restrained."))
 
+/// Requirement: TRUE, or why the cartridge can't be ejected. Silicons are turned away silently by the verb.
+/obj/item/pda/proc/can_remove_cartridge(mob/user, atom/target, obj/item/held)
+	if(issilicon(user))
+		return TRUE
+	if(!can_use(user))
+		return "you cannot do this while restrained"
+	if(isnull(cartridge))
+		return "there's no cartridge to eject"
+	return TRUE
+
 /// Old Remove cartridge verb.
 /obj/item/pda/proc/pda_verb_remove_cartridge(mob/user, obj/item/held, datum/interaction/interaction)
 	if(issilicon(user))
 		return
-
-	if(!can_use(user))
-		to_chat(user, span_notice("You cannot do this while restrained."))
-		return
-
-	if(isnull(cartridge))
-		to_chat(user, span_notice("There's no cartridge to eject."))
-		return
-
 	cartridge.forceMove(get_turf(src))
 	if(ismob(loc))
 		var/mob/M = loc
@@ -406,7 +407,7 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 	INTERACT_VERB("Reset PDA", PROC_REF(pda_verb_reset), REQ_IN_INVENTORY), \
 	INTERACT_VERB("Remove id", PROC_REF(pda_verb_remove_id), REQ_IN_INVENTORY), \
 	INTERACT_VERB("Remove pen", PROC_REF(pda_verb_remove_pen), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Remove cartridge", PROC_REF(pda_verb_remove_cartridge), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Remove cartridge", PROC_REF(pda_verb_remove_cartridge), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/pda/proc/can_remove_cartridge)), \
 )
 
 /// Old attackby.
