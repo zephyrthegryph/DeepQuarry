@@ -215,7 +215,8 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 			start_location.move_contents_to(end_location)
 	return
 
-/obj/machinery/computer/prison_shuttle/emag_act(charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/prison_shuttle, PROC_REF(on_emag), null)
+/obj/machinery/computer/prison_shuttle/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!hacked)
 		hacked = 1
 		to_chat(user, span_notice("You disable the lock."))

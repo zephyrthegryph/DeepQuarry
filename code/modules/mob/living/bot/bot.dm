@@ -186,7 +186,8 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 	else
 		..()
 
-/mob/living/bot/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
+/mob/living/bot/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	return 0
 
 /// Calls `step_proc` `count` times, `delay` apart (the bot's movement within one AI tick).

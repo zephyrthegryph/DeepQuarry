@@ -28,8 +28,8 @@
 		return TRUE
 	return FALSE
 
-/obj/machinery/door/unpowered/emag_act()
-	return -1
+/obj/machinery/door/unpowered/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	return EMAG_DECLINED
 
 /obj/machinery/door/unpowered/shuttle
 	icon = 'icons/turf/shuttle_white.dmi'

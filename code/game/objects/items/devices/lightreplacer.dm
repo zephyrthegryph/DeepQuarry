@@ -209,7 +209,8 @@ APPEARANCE_TEMPLATE(/obj/item/lightreplacer, "lightreplacer{emagged}")
 		to_chat(U, "There is a working [target.get_fitting_name()] already inserted.")
 		return
 
-/obj/item/lightreplacer/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/item/lightreplacer, PROC_REF(on_emag), null)
+/obj/item/lightreplacer/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	emagged = !emagged
 	play_sfx(src, SFX_SPARKS, 2)
 	update_icon()

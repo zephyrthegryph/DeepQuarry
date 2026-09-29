@@ -115,7 +115,8 @@ DAMAGE_REACTION(/obj/machinery/deployable/barrier, DAMAGE_EMP, PROC_REF(barrier_
 	if(delete_after && !QDELETED(src))
 		qdel(src)
 
-/obj/machinery/deployable/barrier/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/deployable/barrier, PROC_REF(on_emag), null)
+/obj/machinery/deployable/barrier/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(emagged == 0)
 		set_emagged(1)
 		req_access = null

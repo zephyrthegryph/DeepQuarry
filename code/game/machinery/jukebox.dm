@@ -281,13 +281,13 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 
 	replace_with(src, /obj/effect/decal/cleanable/blood/oil)
 
-/obj/machinery/media/jukebox/emag_act(remaining_charges, mob/user)
-	if(!emagged)
-		set_emagged(1)
-		StopPlaying()
-		visible_message(span_danger("\The [src] makes a fizzling sound."))
-		update_icon()
-		return 1
+DECLARE_EMAG(/obj/machinery/media/jukebox, PROC_REF(on_emag), null, null)
+/obj/machinery/media/jukebox/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	set_emagged(1)
+	StopPlaying()
+	visible_message(span_danger("\The [src] makes a fizzling sound."))
+	update_icon()
+	return 1
 
 /obj/machinery/media/jukebox/proc/StopPlaying()
 	playing = 0
@@ -363,7 +363,7 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 	return
 /obj/machinery/media/jukebox/ghost/power_change()
 	return
-/obj/machinery/media/jukebox/ghost/emag_act(remaining_charges, mob/user)
+/obj/machinery/media/jukebox/ghost/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	return
 /obj/machinery/media/jukebox/ghost/explode()
 	return

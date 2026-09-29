@@ -1630,7 +1630,8 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 	log_game("[key_name(user)] emagged [key_name(src)]. Laws overridden.")
 	laws_changed()
 
-/mob/living/silicon/robot/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
+/mob/living/silicon/robot/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!opened)//Cover is closed
 		if(!locked)
 			to_chat(user, span_filter_notice("The cover is already unlocked."))

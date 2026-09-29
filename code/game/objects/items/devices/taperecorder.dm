@@ -176,7 +176,8 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 	if(mytape && recording)
 		mytape.record_noise("[strip_html_properly(recordedtext)]")
 
-/obj/item/taperecorder/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/item/taperecorder, PROC_REF(on_emag), null)
+/obj/item/taperecorder/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(emagged == 0)
 		emagged = 1
 		recording = 0

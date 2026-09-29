@@ -282,7 +282,8 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/chest, INTERACT_ITEM(null, PROC_REF(i
 		to_chat(user, span_notice("You insert the flash into the eye socket!"))
 
 
-/obj/item/robot_parts/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/item/robot_parts, PROC_REF(on_emag), null)
+/obj/item/robot_parts/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(sabotaged)
 		to_chat(user, span_warning("[src] is already sabotaged!"))
 	else

@@ -47,7 +47,8 @@ DECLARE_INTERACTIONS(/obj/item/hailer, INTERACT_USE(null, PROC_REF(interaction_s
 
 	COOLDOWN_START(src, spamcheck, 2 SECONDS)
 
-/obj/item/hailer/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/item/hailer, PROC_REF(on_emag), null)
+/obj/item/hailer/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(isnull(insults))
 		to_chat(user, span_danger("You overload \the [src]'s voice synthesizer."))
 		insults = rand(1, 3)//to prevent dickflooding

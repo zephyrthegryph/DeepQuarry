@@ -197,11 +197,11 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 	if(packet.severity == 3 && prob(25))
 		malfunction()
 
-/obj/machinery/vending/emag_act(remaining_charges, mob/user)
-	if(!emagged)
-		set_emagged(1)
-		to_chat(user, span_filter_notice("You short out \the [src]'s product lock."))
-		return 1
+DECLARE_EMAG(/obj/machinery/vending, PROC_REF(on_emag), null, null)
+/obj/machinery/vending/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	set_emagged(1)
+	to_chat(user, span_filter_notice("You short out \the [src]'s product lock."))
+	return 1
 
 /obj/machinery/vending/declare_interactions(list/into)
 	var/static/list/actor_specs = list(

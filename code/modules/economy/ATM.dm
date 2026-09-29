@@ -70,10 +70,8 @@ log transactions
 	if(. && !has_stat(NOPOWER) && (ticks_left_timeout > 0 || ticks_left_locked_down > 0))
 		MACHINE_WAKE(src)
 
-/obj/machinery/atm/emag_act(remaining_charges, mob/user)
-	if(emagged)
-		return
-
+DECLARE_EMAG(/obj/machinery/atm, PROC_REF(on_emag), null, null)
+/obj/machinery/atm/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	//short out the machine, shoot sparks, spew money!
 	set_emagged(1)
 	fx_sparks(src, 5, FALSE)

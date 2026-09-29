@@ -63,10 +63,11 @@ MATERIAL_MIX(/obj/item/circuitboard/security/telescreen/bodycamera, list(MAT_STE
 	if (..(C))
 		network = C.network.Copy()
 
-/obj/item/circuitboard/security/emag_act(remaining_charges, mob/user)
-	if(emagged)
-		to_chat(user, "Circuit lock is already removed.")
-		return
+DECLARE_EMAG(/obj/item/circuitboard/security, PROC_REF(on_emag), null, "Circuit lock is already removed.")
+
+/obj/item/circuitboard/security/mark_emagged()
+	emagged = TRUE
+/obj/item/circuitboard/security/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	to_chat(user, span_notice("You override the circuit lock and open controls."))
 	emagged = 1
 	locked = 0

@@ -548,7 +548,8 @@
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/librarycomp/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/librarycomp, PROC_REF(on_emag), null)
+/obj/machinery/librarycomp/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if (src.density && !src.emagged)
 		set_emagged(1)
 		return 1

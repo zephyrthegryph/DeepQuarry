@@ -520,6 +520,45 @@ DECLARE_EMAG(/obj/machinery/vending, PROC_REF(on_emagged), "You short out the pr
   `emagged` field, consumes an emag use, shows the message template. Returns via the field.
 - Lint `sys_emag_act` (overrides → 0; `emag_act` is deleted).
 
+**As built (rewrite/sys-emag).**
+
+- Defines `code/__defines/sys_emag.dm`, runtime `code/datums/sys/emag.dm`. The declaration is a
+  per-type table (`TYPE_TABLE` `emag_decl`, inherited, overridable per subtype):
+  `DECLARE_EMAG(T, PROC_REF(on_emag), msg, already)` (gated on `REQ_NOT_EMAGGED`; after a successful
+  effect the `emagged` field is set, through `set_emagged()` on machinery; `already`, when not
+  null, replaces the generic refusal on an emagged target) and
+  `DECLARE_EMAG_REPEATABLE(T, PROC_REF(on_emag), msg)` (no gate, no field write: toggles, locks
+  also broken by other means, multi-stage subversion such as cyborgs and bots). `msg` (usually
+  null: the effects already speak) is shown after a successful effect.
+- The effect is `on_emag(remaining_charges, mob/user, obj/item/emag_source)` on the declaring
+  type; subtypes override that proc. It returns the uses it consumed (0/null: tried, nothing
+  used) or `EMAG_DECLINED` (the target doesn't take it; the card then hits it as an ordinary
+  item, as the old `-1` did).
+- `emag_target(target, charges, user, source)` is the one entry point: the card's interaction,
+  and every cardless emag (ion storms, the gamemaster airlock failure, the pAI emag toolkit, the
+  changeling lockpick, the defib kit forwarding to its paddles, energy blades on secure crates).
+  Blade slicing on lockers, lockboxes and secure cases calls the type's own `break_lock()` /
+  `short_lock()`, which its `on_emag()` also calls (the old extra feedback arguments on
+  `emag_act`).
+- Interactions `/datum/interaction/emag` (id `emag`) and `/datum/interaction/emag/gated`
+  (`emag_gated`, `also_requires REQ_NOT_EMAGGED`): held type `/obj/item/card/emag`, attackby entry,
+  priority 50, added to a declaring type's candidates by `build_interaction_candidates()`, so they
+  show in the Menu, examine and screentips. The card's `resolve_attackby()` (and the borg card's
+  `afterattack()`) attempts the target's emag interaction before the target's own attackby, as
+  the card did before; `spend()` pays the uses and logs, `spent()` breaks the card.
+- A gated effect never sees an emagged target, so the old per-type "already emagged" guards at
+  the head of the 34 gated effects were deleted (block unwrapped); the three whose message said
+  something specific moved it to `already` (suit cycler, security camera circuit, holobadge). The
+  secure case's `short_lock()` keeps its guard: a blade reaches it without the gate.
+- Migrated: all 104 `emag_act` overrides (78 roots declared, 26 subtype overrides of the root's
+  `on_emag`; 34 roots gated, 44 repeatable) and 13 call sites, by converter script plus hand fixes (roots that
+  called `..()` into the deleted base, overrides whose first parameter was really the user, the
+  feedback-argument lockers). `/atom/proc/emag_act` is deleted. No ALLOW.
+- Lint `tools/ci/sys_rules/emag.py` (`emag_act`, baseline empty, 0): any `emag_act`; a direct
+  `on_emag(...)` call bypassing `emag_target()`; `used_uses` bookkeeping outside the card.
+- Test: `code/modules/unit_tests/dq_sys_emag_tests.dm`. The interaction snapshots (i7 bulk,
+  items, structures, `dq_interaction_snapshots`) now list `emag` / `emag_gated`.
+
 ## 14. Keyed relation auto-link and rosters
 
 Built on the ownership rewrite's relation API. `AUTO_LINK(type, relation, partner_type, key_var)`

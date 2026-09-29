@@ -1342,7 +1342,8 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 		else
 			choice.forceMove(get_turf(src))
 
-/obj/structure/biowaste_tank/emag_act(remaining_charges, mob/user, emag_source)
+DECLARE_EMAG_REPEATABLE(/obj/structure/biowaste_tank, PROC_REF(on_emag), null)
+/obj/structure/biowaste_tank/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(muffinmonster() && muffin_mode)
 		muffinmonster().name = "Muffin Monster"
 		muffinmonster().forceMove(get_turf(src))

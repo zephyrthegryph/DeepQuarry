@@ -291,11 +291,8 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	to_chat(user, "You [panel_open ? "open" : "close"] the maintenance panel.")
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/suit_cycler/emag_act(remaining_charges, mob/user)
-	if(emagged)
-		to_chat(user, span_danger("The cycler has already been subverted."))
-		return
-
+DECLARE_EMAG(/obj/machinery/suit_cycler, PROC_REF(on_emag), null, "The cycler has already been subverted.")
+/obj/machinery/suit_cycler/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	//Clear the access reqs, disable the safeties, and open up all paintjobs.
 	to_chat(user, span_danger("You run the sequencer across the interface, corrupting the operating protocols."))
 

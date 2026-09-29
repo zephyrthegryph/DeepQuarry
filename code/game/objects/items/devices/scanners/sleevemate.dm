@@ -411,7 +411,8 @@ APPEARANCE_TEMPLATE(/obj/item/sleevemate, "{initial(icon_state)}{appearance_has_
 	act_message(user, null, MSG_SELF(span_notice("You begin downloading [target]'s mind!")), MSG_OTHERS(span_warning("%U% begins downloading [target]'s mind!")))
 	om_task_timed(user, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done3), done_args = list(target, user))
 
-/obj/item/sleevemate/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/item/sleevemate, PROC_REF(on_emag), null)
+/obj/item/sleevemate/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	var/list/choices = list("Body Snatcher","Mind Binder")
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(hack_chosen), message = "How would you like to modify the [src]?", choices = choices, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	return 1

@@ -95,7 +95,7 @@
 /datum/event2/event/airlock_failure/proc/break_door(obj/machinery/door/airlock/door)
 
 /datum/event2/event/airlock_failure/emag/break_door(obj/machinery/door/airlock/door)
-	door.emag_act(1)
+	emag_target(door, 1)
 
 /datum/event2/event/airlock_failure/door_crush/break_door(obj/machinery/door/airlock/door)
 	door.normalspeed = FALSE

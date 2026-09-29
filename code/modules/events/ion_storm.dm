@@ -88,7 +88,7 @@
 			if(!(bot.z in affecting_z))
 				continue
 			if(prob(botEmagChance))
-				bot.emag_act(1)
+				emag_target(bot, 1)
 
 // Overmap version
 /datum/event/ionstorm/overmap/announce()

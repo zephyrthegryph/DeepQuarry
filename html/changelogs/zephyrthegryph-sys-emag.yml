@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Emagging is now a declared interaction: it shows in the interaction menu and examine when you hold a cryptographic sequencer."
+  - qol: "Emagging something that is already emagged now tells you why it does nothing."
+  - bugfix: "Emagging the Orion Trail and claw arcade machines, defibrillator paddles and security hailer masks now messages the right person."

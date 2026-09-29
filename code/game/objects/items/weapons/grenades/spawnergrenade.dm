@@ -104,8 +104,8 @@ DECLARE_INTERACTIONS(/obj/item/grenade/spawnergrenade/manhacks/station/locked, I
 		return FALSE
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/grenade/spawnergrenade/manhacks/station/locked/emag_act(remaining_charges,mob/user)
-	..()
+DECLARE_EMAG_REPEATABLE(/obj/item/grenade/spawnergrenade/manhacks/station/locked, PROC_REF(on_emag), null)
+/obj/item/grenade/spawnergrenade/manhacks/station/locked/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	locked = !locked
 	to_chat(user, span_warning("You [locked ? "enable" : "disable"] the safety lock on \the [src]!"))
 

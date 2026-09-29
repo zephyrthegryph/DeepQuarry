@@ -32,7 +32,7 @@
 
 	return ..()
 
-/obj/item/gun/energy/gun/fluff/dominator/emag_act(remaining_charges,mob/user)
+/obj/item/gun/energy/gun/fluff/dominator/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	..()
 	if(!emagged)
 		emagged = TRUE

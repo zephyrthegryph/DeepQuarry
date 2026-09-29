@@ -64,7 +64,7 @@
 		else
 			to_chat(user, span_warning("Access Denied"))
 	else if(istype(W, /obj/item/melee/energy/blade))
-		if(emag_act(INFINITY, user, "The locker has been sliced open by [user] with \an [W]!", "You hear metal being sliced and sparks flying."))
+		if(break_lock(user, null, "The locker has been sliced open by [user] with \an [W]!", "You hear metal being sliced and sparks flying."))
 			fx_sparks(src.loc, 5, FALSE)
 			play_sfx(src, SFX_WEAPONS_BLADE1)
 			play_sfx(src, SFX_SPARKS)
@@ -73,7 +73,7 @@
 	update_icon()
 	return TRUE
 
-/obj/structure/closet/secure_closet/personal/emag_act(remaining_charges, mob/user, visual_feedback, audible_feedback)
+/obj/structure/closet/secure_closet/personal/break_lock(mob/user, obj/item/emag_source, visual_feedback, audible_feedback)
 	if(!broken)
 		broken = 1
 		locked = 0

@@ -67,7 +67,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/martin, TYPE_PROC_REF(/atom, ap
 		return INTERACTION_HANDLED_PASS
 	return ..()
 
-/obj/item/gun/energy/locked/emag_act(remaining_charges,mob/user)
+/obj/item/gun/energy/locked/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	..()
 	if(lockable)
 		locked = !locked

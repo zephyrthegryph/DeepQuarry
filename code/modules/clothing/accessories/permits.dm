@@ -27,7 +27,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/permit, INTERACT_USE("Register"
 		src.name += " ([new_name])"
 		desc += " It belongs to [new_name]."
 
-/obj/item/clothing/accessory/permit/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/item/clothing/accessory/permit, PROC_REF(on_emag), null)
+/obj/item/clothing/accessory/permit/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	to_chat(user, "You reset the naming locks on [src]!")
 	owner = 0
 

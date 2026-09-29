@@ -87,7 +87,8 @@ DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 	rel_clear(src, "paired_uavs")
 	..()
 
-/obj/item/modular_computer/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/item/modular_computer, PROC_REF(on_emag), null)
+/obj/item/modular_computer/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(computer_emagged)
 		to_chat(user, "\The [src] was already emagged.")
 		return //NO_EMAG_ACT

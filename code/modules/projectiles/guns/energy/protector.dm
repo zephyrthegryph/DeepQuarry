@@ -62,7 +62,7 @@
 	else
 		set_light(0)
 
-/obj/item/gun/energy/gun/protector/emag_act(remaining_charges,mob/user)
+/obj/item/gun/energy/gun/protector/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	..()
 	if(!emagged)
 		emagged = TRUE
@@ -139,7 +139,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/protector, TYPE_PROC_REF(/atom,
 		return INTERACTION_HANDLED_PASS
 	return ..()
 
-/obj/item/gun/energy/gun/protector/pilotgun/locked/emag_act(remaining_charges,mob/user)
+/obj/item/gun/energy/gun/protector/pilotgun/locked/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	return ..()
 
 /obj/item/gun/energy/gun/protector/pilotgun/locked/special_check(mob/user)

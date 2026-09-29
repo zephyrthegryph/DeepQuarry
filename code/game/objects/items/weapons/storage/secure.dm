@@ -43,7 +43,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/secure, \
 /// Old attackby: locked, only an energy blade does anything; unlocked, the storage takes the item.
 /obj/item/storage/secure/proc/interaction_secure_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(locked)
-		if (istype(W, /obj/item/melee/energy/blade) && emag_act(INFINITY, user, "You slice through the lock of \the [src]"))
+		if (istype(W, /obj/item/melee/energy/blade) && short_lock(user, "You slice through the lock of \the [src]"))
 			fx_sparks(src.loc, 5, FALSE)
 			play_sfx(src, SFX_WEAPONS_BLADE1)
 			play_sfx(src, SFX_SPARKS)
@@ -165,7 +165,15 @@ EXTEND_INTERACTIONS(/obj/item/storage/secure, \
 	locked = 0
 	to_chat(user, (feedback ? feedback : "You short out the lock of \the [src]."))
 
-/obj/item/storage/secure/emag_act(remaining_charges, mob/user, feedback)
+DECLARE_EMAG(/obj/item/storage/secure, PROC_REF(on_emag), null, null)
+
+/obj/item/storage/secure/mark_emagged()
+	emagged = TRUE
+/obj/item/storage/secure/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	return short_lock(user)
+
+/// Shorts the lock out (an emag, or a blade slicing it). Returns 1 if it wasn't already.
+/obj/item/storage/secure/proc/short_lock(mob/user, feedback)
 	if(!emagged)
 		emagged = 1
 		src.add_overlay(icon_sparking)

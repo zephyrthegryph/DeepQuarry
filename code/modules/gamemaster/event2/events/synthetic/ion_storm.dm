@@ -45,7 +45,7 @@
 	for(var/mob/living/bot/B in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(B.z in get_location_z_levels())
 			if(prob(bot_emag_chance))
-				B.emag_act(1)
+				emag_target(B, 1)
 
 	// Messaging server spam filters.
 	// This might be better served as a seperate event since it seems more like a hacker attack than a natural occurance.

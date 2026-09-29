@@ -1857,16 +1857,18 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
 		if(emagged)
 			. += span_warning("The crystal is flickering.")
 
-/obj/item/clothing/gloves/bluespace/emag_act(R_charges, mob/user, emag_source)
-	. = ..()
-	if(!emagged)
-		emagged = TRUE
-		target_size = (rand(25,200)) /100 // set to our rule cap
-		if(target_size < 0.25) // set to our rule cap
-			target_size = 0.25 // set to our rule cap
-		act_message(user, src, MSG_SELF(span_notice("You swipes the [emag_source] over %T%.")), \
-			MSG_OTHERS(span_notice("%U% swipes the [emag_source] over %T%.")))
-		return 1
+DECLARE_EMAG(/obj/item/clothing/gloves/bluespace, PROC_REF(on_emag), null, null)
+
+/obj/item/clothing/gloves/bluespace/mark_emagged()
+	emagged = TRUE
+/obj/item/clothing/gloves/bluespace/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	emagged = TRUE
+	target_size = (rand(25,200)) /100 // set to our rule cap
+	if(target_size < 0.25) // set to our rule cap
+		target_size = 0.25 // set to our rule cap
+	act_message(user, src, MSG_SELF(span_notice("You swipes the [emag_source] over %T%.")), \
+		MSG_OTHERS(span_notice("%U% swipes the [emag_source] over %T%.")))
+	return 1
 
 /obj/item/clothing/gloves/bluespace/emagged
 	emagged = TRUE

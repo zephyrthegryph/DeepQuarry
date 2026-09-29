@@ -423,6 +423,13 @@ accident or assume they work:
   change state there). Declared fields a declaration reads refresh it automatically, once per
   frame, on the presentation lane; machines watch their core fields. So never follow a setter with
   `update_icon()`; `tools/ci/sys_rules/appearance.py` rejects it. Template tokens are `{ }`.
+- **Emag is a declared interaction.** There is no `emag_act()`. A type that reacts to a
+  cryptographic sequencer writes `DECLARE_EMAG(/type, PROC_REF(on_emag), msg, already)` (gated on
+  `REQ_NOT_EMAGGED`, sets `emagged`, no "already" guard in the effect) or `DECLARE_EMAG_REPEATABLE(...)` next to
+  `/type/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)`, returning uses consumed
+  or `EMAG_DECLINED`; subtypes override `on_emag()`. Emagging without a card goes through
+  `emag_target(target, charges, user, source)`. `tools/ci/sys_rules/emag.py` rejects the old
+  pattern. See `doc/rewrite/systems.md` §13.
 - **Variants.** Families of subtypes that differ only in data are collapsed into one type
   plus a registry to save memory. See `code/datums/variants/README.md`.
 - **Material behaviour system — rewritten; material synergies removed.** A material's three active

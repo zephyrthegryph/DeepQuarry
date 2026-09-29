@@ -175,5 +175,5 @@ Would like to add a law like "Law x is _______" where x = a number, and _____ is
 	if(botEmagChance)
 		for(var/mob/living/bot/bot in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(prob(botEmagChance))
-				bot.emag_act(1)
+				emag_target(bot, 1)
 */

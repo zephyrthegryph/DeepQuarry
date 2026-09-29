@@ -154,7 +154,8 @@
 
 	add_fingerprint(ui.user)
 
-/obj/machinery/computer/HolodeckControl/emag_act(remaining_charges, mob/user as mob)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/HolodeckControl, PROC_REF(on_emag), null)
+/obj/machinery/computer/HolodeckControl/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	play_sfx(src, SFX_EFFECTS_SPARKS4)
 	rel_set(src, "last_to_emag", user) //emag again to change the owner
 	if (!emagged)

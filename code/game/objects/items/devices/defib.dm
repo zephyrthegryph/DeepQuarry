@@ -104,10 +104,11 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/defib_kit/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/item/defib_kit, PROC_REF(on_emag), null)
+/obj/item/defib_kit/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	var/obj/item/shockpaddles/linked/paddles = get_paddles()
 	if(paddles)
-		. = paddles.emag_act(user)
+		. = emag_target(paddles, remaining_charges, user, emag_source)
 		update_icon()
 	return
 
@@ -531,7 +532,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_
 /obj/item/shockpaddles/proc/make_announcement(message, msg_class)
 	audible_message(span_bold(span_info("\The [src]") + " [message]"), span_info("\The [src] vibrates slightly."), runemessage = "buzz")
 
-/obj/item/shockpaddles/emag_act(mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/item/shockpaddles, PROC_REF(on_emag), null)
+/obj/item/shockpaddles/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(safety)
 		safety = 0
 		to_chat(user, span_warning("You silently disable \the [src]'s safety protocols with the cryptographic sequencer."))

@@ -571,7 +571,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	ticket_changed()
 
 /// Old object verb, now a plain proc: still called directly by interaction_use(),
-/// interaction_open_box_alt() and emag_act().
+/// interaction_open_box_alt() and on_emag().
 /datum/interaction/machine_verb/cash_register_open_box_verb
 	id = "cash_register_open_box_verb"
 	name = "Open Cash Box"
@@ -612,15 +612,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	set_anchored(!anchored)
 	return
 
-/obj/machinery/cash_register/emag_act(remaining_charges, mob/user)
-	if(!emagged)
-		act_message(user, src, others = span_danger("%T%'s cash box springs open as %U% swipes the card through the scanner!"))
-		play_sfx(src, SFX_SPARKS)
-		req_access = list()
-		set_emagged(1)
-		set_locked(0)
-		cash_locked = 0
-		open_cash_box(user)
+DECLARE_EMAG(/obj/machinery/cash_register, PROC_REF(on_emag), null, null)
+/obj/machinery/cash_register/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	act_message(user, src, others = span_danger("%T%'s cash box springs open as %U% swipes the card through the scanner!"))
+	play_sfx(src, SFX_SPARKS)
+	req_access = list()
+	set_emagged(1)
+	set_locked(0)
+	cash_locked = 0
+	open_cash_box(user)
 
 //--Premades--//
 
