@@ -62,7 +62,9 @@ TRACKED(/obj/cap_fixture/dx_deps_source, other, CHANGE_EFFECTS)
 	var/obj/cap_fixture/dx_deps_source/source
 	var/draw_calls = 0
 
-REL(/obj/cap_fixture/dx_deps_watcher, source)
+/obj/cap_fixture/dx_deps_watcher/relations()
+	. = ..()
+	. += rel_one(nameof(source))
 
 /obj/cap_fixture/dx_deps_watcher/derived()
 	. = ..()
@@ -77,7 +79,9 @@ REL(/obj/cap_fixture/dx_deps_watcher, source)
 /datum/dx_deps_panel
 	var/list/members
 
-REL_LIST(/datum/dx_deps_panel, members)
+/datum/dx_deps_panel/relations()
+	. = ..()
+	. += rel_many(nameof(members))
 
 /datum/dx_deps_panel/New()
 	..()
@@ -100,7 +104,9 @@ REL_LIST(/datum/dx_deps_panel, members)
 	var/derive_calls = 0
 	var/draw_calls = 0
 
-REL(/obj/cap_fixture/dx_deps_derive, feed)
+/obj/cap_fixture/dx_deps_derive/relations()
+	. = ..()
+	. += rel_one(nameof(feed))
 TRACKED(/obj/cap_fixture/dx_deps_derive, a, CHANGE_EFFECTS)
 TRACKED(/obj/cap_fixture/dx_deps_derive, b, CHANGE_EFFECTS)
 

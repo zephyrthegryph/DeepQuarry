@@ -66,13 +66,9 @@ OWN_TIMER(/datum, periodic_interval)
 /proc/changed(datum/E, channel = CHANGE_EXPLICIT, var_name)
 	if(!E || QDELING(E))
 		return
-	om_changed(E, channel)
-	refresh_mark(E, channel)
-
-/// Queues E's refresh (and its drawing owners', H2). changed() and om_changed() both come here.
-/proc/refresh_mark(datum/E, channel)
-	if(!E || QDELING(E))
-		return
+	// OM observers only: om_changed()'s own refresh hook would mark every output, undoing the mask below.
+	if(E.om_listen & channel)
+		om_dispatch_change(E, channel)
 	// The look applying itself (set_light, vis_contents) is presentation, not a state change.
 	if(E == GLOB.refresh_applying)
 		return

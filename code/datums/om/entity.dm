@@ -363,7 +363,7 @@
 	// One change API (dx_conventions.md §1): any raise on an atom whose type derives something (a look,
 	// hidden verbs, capabilities, periodic work) queues its refresh, as changed() does.
 	if(isatom(E) && !E.refresh_queued && (GLOB.type_derives_cache[E.type] || E.periodic_cadence || E.periodic_interval))
-		refresh_mark(E, bits)
+		refresh_mark(E, DEP_ALL, bits)
 
 /proc/om_dispatch_change(datum/E, bits)
 	if((bits & shared_cache_change_mask) && E == GLOB.om_world)
