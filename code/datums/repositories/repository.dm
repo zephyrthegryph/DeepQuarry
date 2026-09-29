@@ -2,11 +2,11 @@
 	return
 
 /datum/cache_entry
-	var/timestamp
+	EXPIRY_DECLARE(timestamp)
 	var/data
 
 /datum/cache_entry/New()
-	timestamp = world.time
+	EXPIRY_STAMP(src, timestamp, CLOCK_WORLD)
 
 /datum/cache_entry/proc/is_valid()
 	return FALSE

@@ -35,7 +35,7 @@
 	var/on_open_network = 0
 	var/always_visible = FALSE //Visable from any map, good for entertainment network cameras
 
-	var/affected_by_emp_until = 0
+	EXPIRY_DECLARE(affected_by_emp_until)
 	/// The om_after() timer for next_camera_deadline(), and the deadline it was set for.
 	var/tmp/camera_timer_token
 	var/tmp/camera_timer_at = 0

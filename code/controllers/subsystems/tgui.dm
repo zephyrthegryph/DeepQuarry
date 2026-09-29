@@ -314,7 +314,7 @@ SUBSYSTEM_DEF(tgui)
 	if(window.locked || window.status != TGUI_WINDOW_CLOSED)
 		return
 	window.prewarmed = TRUE
-	window.prewarm_started_at = world.time
+	EXPIRY_STAMP(window, prewarm_started_at, CLOCK_WORLD)
 	window.initialize(
 		strict_mode = TRUE,
 		fancy = client.prefs?.read_preference(/datum/preference/toggle/tgui_fancy),

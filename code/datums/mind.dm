@@ -50,7 +50,8 @@
 	var/list/learned_recipes //List of learned recipe TYPES.
 
 	// the world.time since the mob has been brigged, or -1 if not at all
-	var/brigged_since = -1
+	EXPIRY_DECLARE(brigged_since)
+	brigged_since = -1
 
 	//put this here for easier tracking ingame
 	var/initial_account_handle

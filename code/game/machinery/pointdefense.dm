@@ -127,7 +127,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	appearance_flags = PIXEL_SCALE
 	var/active = TRUE
 	var/charge_cooldown = 1 SECOND  //time between it can fire at different targets
-	var/last_shot = 0
+	EXPIRY_DECLARE(last_shot)
 	var/kill_range = 18
 	var/rotation_speed = 4.5 SECONDS  //How quickly we turn to face threats
 	var/engaging = null // The meteor we're shooting at
@@ -212,7 +212,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	if(PC)
 		PC.targets -= target
 
-	last_shot = world.time
+	EXPIRY_STAMP(src, last_shot, CLOCK_WORLD)
 	var/obj/effect/meteor/M = om_resolve(target)
 	if(!istype(M))
 		return

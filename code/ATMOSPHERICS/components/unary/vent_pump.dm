@@ -291,7 +291,7 @@
 		"checks" = pressure_checks,
 		"internal" = internal_pressure_bound,
 		"external" = external_pressure_bound,
-		"timestamp" = world.time,
+		"timestamp" = EXPIRY_AT(src, CLOCK_WORLD, 0),
 		"sigtype" = "status",
 		"power_draw" = last_power_draw,
 		"flow_rate" = last_flow_rate,

@@ -198,12 +198,12 @@ DECLARE_REF(/datum/contract_negotiation_clause, "options", OWNED_VALUES, null)
 	var/station_reputation_reward = 0
 	var/department_reputation_reward = 0
 	var/personal_reputation_reward = 0
-	var/deadline = 0
+	EXPIRY_DECLARE(deadline)
 	var/deadline_duration = 0
 	var/deadline_timer
 	var/deadline_grace_duration = CONTRACT_DEFAULT_GRACE_DURATION
-	var/grace_until = 0
-	var/offer_expires_at = 0
+	EXPIRY_DECLARE(grace_until)
+	EXPIRY_DECLARE(offer_expires_at)
 	var/offer_timer
 	var/accepted_at = 0
 	var/accepted_by_account = 0

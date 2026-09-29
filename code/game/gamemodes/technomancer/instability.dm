@@ -10,7 +10,7 @@
 
 /mob/living
 	var/last_instability = 0 // Used to calculate instability delta.
-	var/last_instability_event = null // most recent world.time that something bad happened due to instability.
+	EXPIRY_DECLARE(last_instability_event) // most recent world.time that something bad happened due to instability.
 
 // Proc: adjust_instability()
 // Parameters: 0
@@ -90,7 +90,7 @@
 // Description: Does a variety of bad effects to the entity holding onto the instability, with more severe effects occuring if they have
 // a lot of instability.
 /mob/living/proc/instability_effects()
-	last_instability_event = world.time
+	EXPIRY_STAMP(src, last_instability_event, CLOCK_WORLD)
 	var/image/instability_flash = image('icons/obj/spells.dmi',"instability")
 	add_overlay(instability_flash)
 	om_after(src, 4, PROC_REF(instability_flash_clear), instability_flash)

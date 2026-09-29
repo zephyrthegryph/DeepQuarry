@@ -28,9 +28,10 @@
 
 	var/aiControlDisabled = 0 //If 1, AI control is disabled until the AI hacks back in and disables the lock. If 2, the AI has bypassed the lock. If -1, the control is enabled but the AI had bypassed it earlier, so if it is disabled again the AI would have no trouble getting back in.
 	var/hackProof = 0 // if 1, this door can't be hacked by the AI
-	var/electrified_until = 0			//World time when the door is no longer electrified. -1 if it is permanently electrified until someone fixes it.
-	var/main_power_lost_until = 0	 	//World time when main power is restored.
-	var/backup_power_lost_until = -1	//World time when backup power is restored.
+	EXPIRY_DECLARE(electrified_until) //World time when the door is no longer electrified. -1 if it is permanently electrified until someone fixes it.
+	EXPIRY_DECLARE(main_power_lost_until) //World time when main power is restored.
+	EXPIRY_DECLARE(backup_power_lost_until) //World time when backup power is restored.
+	backup_power_lost_until = -1
 	var/has_beeped = 0					//If 1, will not beep on failed closing attempt. Resets when door closes.
 	var/spawnPowerRestoreRunning = 0
 	var/welded = null
@@ -281,7 +282,7 @@ About the new airlock wires panel:
 
 	// If backup power is permanently disabled then activate in 10 seconds if possible, otherwise it's already enabled or a timer is already running
 	if(backup_power_lost_until == -1 && !backupPowerCablesCut())
-		backup_power_lost_until = world.time + (10 SECONDS)
+		EXPIRY_SET(src, backup_power_lost_until, (10 SECONDS), CLOCK_WORLD)
 
 	schedule_door_timer()
 

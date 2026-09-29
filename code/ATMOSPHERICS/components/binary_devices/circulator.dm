@@ -57,7 +57,7 @@
 				//Update the gas networks.
 				network1.mark_dirty()
 
-				last_worldtime_transfer = world.time
+				EXPIRY_STAMP(src, last_worldtime_transfer, CLOCK_WORLD)
 				// The "running" overlay times out 5 s after the last transfer: one timer,
 				// re-armed per transfer, instead of a machine polling the clock.
 				om_after_replace(src, 5 SECONDS, PROC_REF(expire_transfer_display))

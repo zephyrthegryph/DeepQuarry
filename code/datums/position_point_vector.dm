@@ -191,21 +191,21 @@
 	return
 
 /datum/point/vector/processed		//pixel_speed is per decisecond.
-	var/last_process = 0
-	var/last_move = 0
+	EXPIRY_DECLARE(last_process)
+	EXPIRY_DECLARE(last_move)
 	var/paused = FALSE
 
 /datum/point/vector/processed/proc/start()
-	last_process = world.time
-	last_move = world.time
+	EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
+	EXPIRY_STAMP(src, last_move, CLOCK_WORLD)
 	om_task_periodic(src, PERIODIC_PROJECTILES)
 
 /datum/point/vector/processed/periodic_step()
 	if(paused)
 		last_move += world.time - last_process
-		last_process = world.time
+		EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
 		return
 	var/needed_time = world.time - last_move
-	last_process = world.time
-	last_move = world.time
+	EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
+	EXPIRY_STAMP(src, last_move, CLOCK_WORLD)
 	increment(needed_time) // was needed_time / SSprojectiles.wait, and that wait was 1

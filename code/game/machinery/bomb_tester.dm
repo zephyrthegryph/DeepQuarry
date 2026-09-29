@@ -219,7 +219,7 @@
 		return
 	simulating = 1
 	update_use_power(USE_POWER_ACTIVE)
-	simulation_started = world.time
+	EXPIRY_STAMP(src, simulation_started, CLOCK_WORLD)
 	update_icon()
 	switch(sim_mode)
 		if(MODE_SINGLE)

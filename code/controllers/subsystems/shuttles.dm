@@ -23,7 +23,7 @@ SUBSYSTEM_DEF(shuttles)
 	var/list/active_process_shuttles = list()      // Event-driven working set; idle shuttles stay in the registry only.
 
 	var/list/registered_shuttle_landmarks = list() // Maps shuttle landmark tags to instances
-	var/last_landmark_registration_time            // world.time of most recent addition to registered_shuttle_landmarks
+	EXPIRY_DECLARE(last_landmark_registration_time) // world.time of most recent addition to registered_shuttle_landmarks
 	var/list/shuttle_logs = list()                 // (Not Implemented) Keeps records of shuttle movement, format is list(datum/shuttle = datum/shuttle_log)
 	var/list/shuttle_areas = list()                // All the areas of all shuttles.
 	var/list/docking_registry = list()             // Docking controller tag -> docking controller program, mostly for init purposes.
@@ -48,7 +48,7 @@ SUBSYSTEM_DEF(shuttles)
 	var/list/profile_type_calls = list()
 
 /datum/controller/subsystem/shuttles/Initialize()
-	last_landmark_registration_time = world.time
+	EXPIRY_STAMP(src, last_landmark_registration_time, CLOCK_WORLD)
 	// Find all declared shuttle datums and initailize them. (Okay, queue them for initialization a few lines further down)
 	for(var/shuttle_type in subtypesof(/datum/shuttle)) // This accounts for most shuttles, though away maps can queue up more.
 		var/datum/shuttle/shuttle = shuttle_type
@@ -142,7 +142,7 @@ SUBSYSTEM_DEF(shuttles)
 		CRASH("Attempted to register shuttle landmark with tag [shuttle_landmark_tag], but it is already registered!")
 	if (istype(shuttle_landmark))
 		registered_shuttle_landmarks[shuttle_landmark_tag] = shuttle_landmark
-		last_landmark_registration_time = world.time
+		EXPIRY_STAMP(src, last_landmark_registration_time, CLOCK_WORLD)
 
 		var/obj/effect/overmap/visitable/O = landmarks_still_needed[shuttle_landmark_tag]
 		if(O) //These need to be added to sectors, which we handle.

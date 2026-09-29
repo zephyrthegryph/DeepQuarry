@@ -7,7 +7,7 @@
 /// asks radiation_countdown_check() directly.
 /mob/living
 	/// world.time the countdown started, or 0 when none is running.
-	var/rad_countdown_started = 0
+	EXPIRY_DECLARE(rad_countdown_started)
 	/// The shortest minimum time before being irradiated. An attempted irradiation outside
 	/// this timeframe goes through.
 	var/rad_countdown_minimum = 0
@@ -15,7 +15,7 @@
 /// Starts (or keeps) the countdown with `minimum_exposure_time`.
 /mob/living/proc/radiation_countdown_start(minimum_exposure_time)
 	if(!rad_countdown_started)
-		rad_countdown_started = world.time
+		EXPIRY_STAMP(src, rad_countdown_started, CLOCK_WORLD)
 		rad_countdown_minimum = minimum_exposure_time
 	else
 		rad_countdown_minimum = min(rad_countdown_minimum, minimum_exposure_time)

@@ -17,7 +17,7 @@
 	var/beam_type = /obj/effect/ebeam //must be subtype
 
 /datum/beam/New(beam_origin,beam_target,beam_icon='icons/effects/beam.dmi',beam_icon_state="b_beam",time=50,maxdistance=10,btype = /obj/effect/ebeam,beam_sleep_time=3,new_beam_color = null)
-	endtime = world.time+time
+	EXPIRY_SET(src, endtime, time, CLOCK_WORLD)
 	origin_handle = om_handle(beam_origin)
 	origin_oldloc =	get_turf(origin())
 	target_handle = om_handle(beam_target)

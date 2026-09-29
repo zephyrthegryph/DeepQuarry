@@ -1,6 +1,6 @@
 /obj/machinery/camera
 	var/list/motionTargets = null
-	var/detectTime = 0
+	EXPIRY_DECLARE(detectTime)
 	var/area_motion_handle
 	var/alarm_delay = 100 // Don't forget, there's another 10 seconds in queueAlarm()
 
@@ -16,7 +16,7 @@
 /obj/machinery/camera/proc/newTarget(mob/target)
 	if (isAI(target)) return 0
 	if (detectTime == 0)
-		detectTime = world.time // start the clock
+		EXPIRY_STAMP(src, detectTime, CLOCK_WORLD) // start the clock
 	if (!(target in motionTargets))
 		LAZYADD(motionTargets, target)
 		// Losing a target is event driven: it moves, dies or is deleted.

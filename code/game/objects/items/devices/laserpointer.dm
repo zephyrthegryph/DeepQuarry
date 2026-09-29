@@ -13,7 +13,7 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 	var/max_energy = 8
 	var/effectchance = 20
 	var/cooldown = 10
-	var/last_used_time = 0
+	EXPIRY_DECLARE(last_used_time)
 	var/recharging = 0
 	var/recharge_locked = 0
 	var/obj/item/stock_parts/micro_laser/diode //used for upgrading!
@@ -204,7 +204,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 	else
 		user.visible_message(span_info("[user] points [src] at [target]."), span_info("You point [src] at [target]."))
 
-	last_used_time = world.time
+	EXPIRY_STAMP(src, last_used_time, CLOCK_WORLD)
 	energy -= 1
 	if(energy <= max_energy)
 		if(!recharging)

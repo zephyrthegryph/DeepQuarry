@@ -16,7 +16,7 @@ SUBSYSTEM_DEF(behaviours)
 	/// Milliseconds spent in fire() since boot (benchmarks: life_sweep).
 	var/bench_ms = 0
 	/// The pipeline missed-wake audit (pipeline.dm): next run, and the admin verb's switch.
-	var/next_audit = 0
+	EXPIRY_DECLARE(next_audit)
 	var/audit_forced = FALSE
 
 /datum/controller/subsystem/behaviours/Initialize()
@@ -34,7 +34,7 @@ SUBSYSTEM_DEF(behaviours)
 	last_done = sched.run_pass(Master.current_ticklimit)
 	bench_ms += TICK_USAGE_TO_MS(start)
 	if(EXPIRY_EXPIRED(src, next_audit, CLOCK_WORLD) && audit_enabled())
-		next_audit = world.time + OM_AUDIT_INTERVAL
+		EXPIRY_SET(src, next_audit, OM_AUDIT_INTERVAL, CLOCK_WORLD)
 		om_pipeline_audit(sched, OM_AUDIT_PARKED_SAMPLE, OM_AUDIT_AWAKE_SAMPLE)
 		om_sleeper_audit(64, TRUE)
 

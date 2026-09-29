@@ -192,7 +192,7 @@ DECLARE_REF(/obj/machinery/computer/timeclock, "card", SPILL, null)
 		card.assignment = newassignment
 		card.name = text("[card.registered_name]'s ID Card ([card.assignment])")
 		GLOB.data_core.manifest_modify(card.registered_name, card.assignment, card.rank)
-		card.last_job_switch = world.time
+		EXPIRY_STAMP(card, last_job_switch, CLOCK_WORLD)
 		newjob.current_positions++
 		var/mob/living/carbon/human/H = user
 		H.mind.assigned_role = card.rank
@@ -217,7 +217,7 @@ DECLARE_REF(/obj/machinery/computer/timeclock, "card", SPILL, null)
 		card.assignment = ptojob.title
 		card.name = text("[card.registered_name]'s ID Card ([card.assignment])")
 		GLOB.data_core.manifest_modify(card.registered_name, card.assignment, card.rank)
-		card.last_job_switch = world.time
+		EXPIRY_STAMP(card, last_job_switch, CLOCK_WORLD)
 		var/mob/living/carbon/human/H = user
 		H.mind.assigned_role = ptojob.title
 		H.mind.role_alt_title = ptojob.title
@@ -248,7 +248,7 @@ DECLARE_REF(/obj/machinery/computer/timeclock, "card", SPILL, null)
 		return TRUE
 
 /obj/item/card/id
-	var/last_job_switch
+	EXPIRY_DECLARE(last_job_switch)
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
@@ -259,7 +259,7 @@ DECLARE_REF(/obj/machinery/computer/timeclock, "card", SPILL, null)
 
 /obj/item/card/id/Initialize(mapload)
 	. = ..()
-	last_job_switch = world.time
+	EXPIRY_STAMP(src, last_job_switch, CLOCK_WORLD)
 
 //
 // Frame type for construction

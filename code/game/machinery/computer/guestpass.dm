@@ -69,7 +69,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE_AS(I_HELP, "Show", PRO
 		user.visible_message(span_infoplain(span_bold("\The [user]") + "deactivates \the [src]."))
 		icon_state = "guest-invalid"
 		update_icon()
-		expiration_time = world.time
+		EXPIRY_STAMP(src, expiration_time, CLOCK_WORLD)
 		expired = 1
 
 /obj/item/card/id/guest/Initialize(mapload)
@@ -271,7 +271,7 @@ DECLARE_PERIODIC(/obj/item/card/id/guest, PERIODIC_SLOW)
 				var/obj/item/card/id/guest/pass = new(src.loc)
 				pass.temp_access = LAZYCOPY(accesses)
 				pass.registered_name = giv_name
-				pass.expiration_time = world.time + duration*10*60
+				EXPIRY_SET(pass, expiration_time, duration*10*60, CLOCK_WORLD)
 				pass.reason = reason
 				pass.name = "guest pass #[number]"
 			else

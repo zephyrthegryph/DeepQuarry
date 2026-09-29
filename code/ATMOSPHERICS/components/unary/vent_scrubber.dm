@@ -160,7 +160,7 @@
 		"area" = area_uid,
 		"tag" = id_tag,
 		"device" = "AScr",
-		"timestamp" = world.time,
+		"timestamp" = EXPIRY_AT(src, CLOCK_WORLD, 0),
 		"power" = use_power,
 		"scrubbing" = scrubbing,
 		"panic" = panic,

@@ -32,7 +32,7 @@ SUBSYSTEM_DEF(atoms)
 	/// Atoms that will be deleted once the subsystem is initialized
 	var/list/queued_deletions = list()
 
-	var/init_start_time
+	EXPIRY_DECLARE(init_start_time)
 
 	#ifdef PROFILE_MAPLOAD_INIT_ATOM
 	var/list/mapload_init_times = list()
@@ -41,7 +41,7 @@ SUBSYSTEM_DEF(atoms)
 	atom_initialized = INITIALIZATION_INSSATOMS
 
 /datum/controller/subsystem/atoms/Initialize()
-	init_start_time = world.time
+	EXPIRY_STAMP(src, init_start_time, CLOCK_WORLD)
 	// Mapload resleeving machines register with the transcore databases (was a SStranscore dependency).
 	boot_world_service(GLOB.transcore_service)
 	// Planets register their floors and walls as turfs initialize (fold wave F4; was SSplanets).

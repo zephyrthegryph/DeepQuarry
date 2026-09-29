@@ -76,7 +76,7 @@
 /obj/machinery/media/jukebox/proc/start_stop_song()
 	if(current_track() && playing)
 		media_url = current_track().url
-		media_start_time = world.time
+		EXPIRY_STAMP(src, media_start_time, CLOCK_WORLD)
 		audible_message(span_notice("\The [src] begins to play [current_track().display()]."), runemessage = "[current_track().display()]")
 	else
 		media_url = ""

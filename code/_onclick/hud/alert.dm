@@ -53,7 +53,7 @@
 
 	if(alert.timeout)
 		om_after(src, alert.timeout, PROC_REF(alert_timeout), alert, category)
-		alert.timeout = world.time + alert.timeout - world.tick_lag
+		EXPIRY_SET(alert, timeout, alert.timeout - world.tick_lag, CLOCK_WORLD)
 	return alert
 
 /mob/proc/alert_timeout(atom/movable/screen/alert/alert, category)

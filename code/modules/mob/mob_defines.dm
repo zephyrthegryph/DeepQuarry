@@ -125,7 +125,7 @@
 
 	var/name_archive //For admin things like possession
 
-	var/timeofdeath = 0.0//Living
+	EXPIRY_DECLARE(timeofdeath) //Living
 	/// What onlookers see when this mob dies ("\The [src] <death_message>"). See /mob/proc/get_death_message().
 	var/death_message = "seizes up and falls limp..."
 	COOLDOWN_DECLARE(cpr_time) //Carbon
@@ -215,7 +215,7 @@
 	var/status_flags = CANPUSH	//bitflags: CANPUSH, LEAPING, HIDING, PASSEMOTES, FAKEDEATH. Status immunities and godmode are effects (EFFECT_IMMUNE_*, EFFECT_GODMODE).
 
 	var/tmp/area/lastarea = null
-	var/tmp/lastareachange = null
+	EXPIRY_TMP_DECLARE(lastareachange)
 
 	var/digitalcamo = 0 // Can they be tracked by the AI?
 

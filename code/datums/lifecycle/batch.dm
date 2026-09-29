@@ -282,7 +282,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 	if(GLOB.dq_destroy_collect_depth && !dq_destroy_collect_live())
 		return dq_destroy_collect_begin()
 	if(!GLOB.dq_destroy_collect_depth)
-		GLOB.dq_destroy_collect_time = world.time
+		GLOB.dq_destroy_collect_time = EXPIRY_AT(world, CLOCK_WORLD, 0)
 		GLOB.dq_destroy_effect_turfs.Cut()
 		// Contract damage reports accumulate per atom and publish once when
 		// the outermost scope ends (code/modules/contracts/damage_batch.dm),

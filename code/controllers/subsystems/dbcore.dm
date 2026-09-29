@@ -6,7 +6,7 @@ SUBSYSTEM_DEF(dbcore)
 	runlevels = RUNLEVEL_LOBBY|RUNLEVELS_DEFAULT
 	priority = FIRE_PRIORITY_DATABASE
 
-	var/failed_connection_timeout = 0
+	EXPIRY_DECLARE(failed_connection_timeout)
 
 	var/schema_mismatch = 0
 	var/db_minor = 0
@@ -445,7 +445,7 @@ mass_insert_io() runs it on the I/O lane; on_done gets the outcome.
 	var/job_id
 	var/last_error
 	var/last_activity
-	var/last_activity_time
+	EXPIRY_DECLARE(last_activity_time)
 
 	// Output
 	var/list/list/rows
@@ -478,7 +478,7 @@ mass_insert_io() runs it on the I/O lane; on_done gets the outcome.
 
 /datum/db_query/proc/Activity(activity)
 	last_activity = activity
-	last_activity_time = world.time
+	EXPIRY_STAMP(src, last_activity_time, CLOCK_WORLD)
 
 /datum/db_query/proc/warn_execute(async = TRUE)
 	. = Execute(async)

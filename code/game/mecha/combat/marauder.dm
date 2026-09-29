@@ -87,12 +87,12 @@
 	if(zoom)
 		if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 			src.occupant_message("Unable to move while in zoom mode.")
-			last_message = world.time
+			EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
 		return 0
 	if(connected_port)
 		if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 			src.occupant_message("Unable to move while connected to the air system port")
-			last_message = world.time
+			EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
 		return 0
 	if(!thrusters && (current_processes & MECHA_PROC_MOVEMENT))
 		return 0

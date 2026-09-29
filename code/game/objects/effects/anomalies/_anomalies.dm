@@ -11,7 +11,7 @@
 	var/impact_area_handle
 
 	var/lifespan = ANOMALY_COUNTDOWN_TIMER
-	var/death_time
+	EXPIRY_DECLARE(death_time)
 
 	var/countdown_colour
 	var/obj/effect/countdown/anomaly/countdown
@@ -42,7 +42,7 @@
 
 	if(new_lifespan)
 		lifespan = new_lifespan
-	death_time = world.time + lifespan
+	EXPIRY_SET(src, death_time, lifespan, CLOCK_WORLD)
 
 	if(countdown_colour)
 		countdown.color = countdown_colour
@@ -87,7 +87,7 @@ DECLARE_REF(/obj/effect/anomaly, "stats", OWNED, null)
 	stats.pulse_effect()
 	if(QDELETED(src))
 		return FALSE
-	stats.next_activation = world.time + rand(stats.min_activation, stats.max_activation)
+	EXPIRY_SET(stats, next_activation, rand(stats.min_activation, stats.max_activation), CLOCK_WORLD)
 	return TRUE
 
 /obj/effect/anomaly/proc/move_anomaly()

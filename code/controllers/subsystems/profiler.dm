@@ -106,7 +106,7 @@ SUBSYSTEM_DEF(profiler)
 	subsystems["world_step"] = om_world_diagnostics()
 	var/list/profile = list(
 		"sequence" = ++diagnostic_sequence,
-		"world_time_ds" = world.time,
+		"world_time_ds" = EXPIRY_AT(src, CLOCK_WORLD, 0),
 		"players" = length(GLOB.clients),
 		"map_cpu" = world.cpu,
 		"map_tick_usage" = world.tick_usage,

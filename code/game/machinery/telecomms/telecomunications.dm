@@ -47,7 +47,7 @@
 	/// Traffic decay and the heat level it sets are slow; they do not justify
 	/// keeping every network node in the two-second machinery roster.
 	var/thermal_timer
-	var/last_thermal_check
+	EXPIRY_DECLARE(last_thermal_check)
 
 /obj/machinery/telecomms/proc/relay_information(datum/signal/signal, filter, copysig, amount = 20)
 	// relay signal to all linked machinery that are of type [filter]. If signal has been sent [amount] times, stop sending
@@ -210,7 +210,7 @@ DECLARE_REF(/obj/machinery/telecomms, "soundloop", OWNED, null)
 	var/power_changed = update_power()
 
 	var/elapsed_cycles = last_thermal_check ? max(round((world.time - last_thermal_check) / max(MACHINE_SERVICE_INTERVAL, 1)), 1) : 1
-	last_thermal_check = world.time
+	EXPIRY_STAMP(src, last_thermal_check, CLOCK_WORLD)
 
 	// Power transitions are the only process-time state that changes this icon.
 	// Reassigning icon_state every machinery tick is surprisingly expensive,

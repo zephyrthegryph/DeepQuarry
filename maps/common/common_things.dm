@@ -62,11 +62,11 @@
 
 /obj/effect/step_trigger/lost_in_space/bluespace
 	deathmessage = "Everything goes blue as your component particles are scattered throughout the known and unknown universe."
-	var/last_sound = 0
+	EXPIRY_DECLARE(last_sound)
 
 /obj/effect/step_trigger/lost_in_space/bluespace/Trigger(A)
 	if(ELAPSED(src, last_sound, CLOCK_WORLD) > 5 SECONDS)
-		last_sound = world.time
+		EXPIRY_STAMP(src, last_sound, CLOCK_WORLD)
 		playsound(src, 'sound/effects/supermatter.ogg', 75, 1)
 	if(ismob(A) && prob(5))//lucky day
 		var/destturf = locate(rand(5,world.maxx-5),rand(5,world.maxy-5),pick(using_map.station_levels))

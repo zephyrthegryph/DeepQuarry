@@ -7,7 +7,8 @@
 	var/anchored = FALSE
 	var/tmp/moving_diagonally
 	var/tmp/move_speed = 10
-	var/tmp/l_move_time = 1
+	EXPIRY_TMP_DECLARE(l_move_time)
+	l_move_time = 1
 	var/datum/thrownthing/throwing // ALLOW(state_ref): running: set only mid-throw
 	var/tmp/throw_source_handle
 	var/throw_speed = 2
@@ -311,7 +312,7 @@
 
 	// Update timers/cooldown stuff
 	move_speed = world.time - l_move_time
-	l_move_time = world.time
+	EXPIRY_STAMP(src, l_move_time, CLOCK_WORLD)
 	last_move = direct // The direction you last moved
 	// set_dir(direct) //Don't think this is necessary
 
@@ -384,7 +385,7 @@
 	OM_EMIT(src, /datum/om/event/before/movable_bump, A)
 
 	A.Bumped(src)
-	A.last_bumped = world.time
+	EXPIRY_STAMP(A, last_bumped, CLOCK_WORLD)
 
 /atom/movable/proc/forceMove(atom/destination, direction, movetime)
 	. = FALSE

@@ -154,7 +154,7 @@ SUBSYSTEM_DEF(contracts)
 	var/active = is_physically_custodied(subject)
 	if(active && !started_at)
 		var/start_revision = next_custody_revision++
-		custody_started_by_subject[key] = world.time
+		custody_started_by_subject[key] = EXPIRY_AT(src, CLOCK_WORLD, 0)
 		emit_contract_event(CONTRACT_EVENT_CUSTODY_CHANGED, list(
 			"subject_id" = key,
 			"subject_name" = subject.real_name,
@@ -169,7 +169,7 @@ SUBSYSTEM_DEF(contracts)
 		var/duration = max(0, world.time - started_at)
 		custody_started_by_subject -= key
 		custody_last_duration_by_subject[key] = duration
-		custody_last_ended_at_by_subject[key] = world.time
+		custody_last_ended_at_by_subject[key] = EXPIRY_AT(src, CLOCK_WORLD, 0)
 		emit_contract_event(CONTRACT_EVENT_CUSTODY_CHANGED, list(
 			"subject_id" = key,
 			"subject_name" = subject.real_name,
@@ -466,7 +466,7 @@ SUBSYSTEM_DEF(contracts)
 			event_occurrence_order.Cut(1, 2)
 			seen_event_occurrences -= expired_key
 	event.id = "DQ-CE-[next_event_id++]"
-	event.occurred_at = world.time
+	EXPIRY_STAMP(event, occurred_at, CLOCK_WORLD)
 	events_published++
 	recent_events += event
 	if(length(recent_events) > CONTRACT_EVENT_HISTORY_LIMIT)
