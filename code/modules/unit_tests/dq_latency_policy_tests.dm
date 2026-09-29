@@ -23,12 +23,9 @@
 	latent_contents = TRUE
 	latent_idle_delay = 1 SECONDS
 
-/obj/item/dq_latency_test_box/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/dq_latency_test_interior)
-	return types
-
-/datum/slot_def/dq_latency_test_interior
-	id = "dq_latency_interior"
+/datum/om/relation/slot/dq_latency_test_interior
+	holder = /obj/item/dq_latency_test_box
+	slot_id = "dq_latency_interior"
 	capacity_model = SLOT_CAPACITY_COUNT
 	capacity = 10
 	drop_policy = SLOT_DROP_SPILL
@@ -46,9 +43,52 @@
 	latent_contents = TRUE
 	latent_idle_delay = 1 SECONDS
 
-/obj/item/dq_latency_test_machine/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/machine_internals, /datum/slot_def/stock)
-	return types
+// The real internals and stock slots (stock.dm), held by this test machine: the sweep's stock
+// exclusion keys on CONTAINER_SLOT_STOCK, so the subtypes keep the production semantics.
+/datum/om/relation/slot/machine_internals/dq_latency_test
+	holder = /obj/item/dq_latency_test_machine
+	is_default = TRUE
+
+/datum/om/relation/slot/stock/dq_latency_test
+	holder = /obj/item/dq_latency_test_machine
+
+/// Which of can_be_latent()'s conditions refuses `A`, for failure messages.
+/proc/dq_latency_explain(atom/movable/A)
+	if(!A || QDELETED(A) || !A.loc)
+		return "gone or loc-less"
+	var/list/why = list()
+	if(!A.loc.latent_contents)
+		why += "holder has no latent_contents"
+	if(!dq_latent_eligible(A.type))
+		why += "type not latent-eligible"
+	if(A.latent_explicitly_pinned())
+		why += "explicitly pinned"
+	if(isturf(A.loc))
+		why += "on a turf"
+	var/list/blockers = A.state_collapse_blockers(1, TRUE)
+	if(length(blockers))
+		why += "blockers: [jointext(blockers, "; ")]"
+	var/list/nodes = list(A)
+	state_collect_subtree(A, nodes)
+	var/list/counts = state_internal_ref_counts(nodes, nodes.Copy())
+	why += "internal refs one-pass [counts[1]] vs per-node [state_internal_refs(A, nodes.Copy())]"
+	why += "idle [ELAPSED(A, latent_touched_at, CLOCK_WORLD)] of [A.loc.latent_idle_delay]"
+	return jointext(why, ", ")
+
+/// can_be_latent() asked from a test's Run(), which holds `A` in one local variable. Calling this
+/// as src.latent_ok() moves Run()'s last-method-call reference onto the test datum, so the frames
+/// above hold exactly that local and this argument.
+/datum/unit_test/proc/latent_ok(atom/movable/A)
+	return can_be_latent(A, 2)
+
+/// dq_latent_attempt_collapse() asked the same way (see latent_ok()): Run() holds `A` in one
+/// variable (a local or its loop variable).
+/datum/unit_test/proc/collapse_now(atom/movable/A)
+	return dq_latent_attempt_collapse(A, 2)
+
+/// dq_latent_pinned() asked the same way (see latent_ok()).
+/datum/unit_test/proc/pinned_now(atom/movable/A)
+	return dq_latent_pinned(A, 2)
 
 /datum/unit_test/proc/dq_latency_floor()
 	for(var/turf/simulated/floor/T in world)
@@ -70,9 +110,9 @@
 
 	var/was_enabled = CONFIG_GET(flag/latency_policy_enabled)
 	CONFIG_SET(flag/latency_policy_enabled, FALSE)
-	TEST_ASSERT(!can_be_latent(item), "the kill switch must refuse collapse when off")
+	TEST_ASSERT(!latent_ok(item), "the kill switch must refuse collapse when off")
 	CONFIG_SET(flag/latency_policy_enabled, TRUE)
-	TEST_ASSERT(can_be_latent(item), "an idle, unpinned, storable item should be latent-eligible once the switch is on")
+	TEST_ASSERT(latent_ok(item), "an idle, unpinned, storable item should be latent-eligible once the switch is on ([dq_latency_explain(item)]): [GLOB.latency_last_ineligible]")
 	CONFIG_SET(flag/latency_policy_enabled, was_enabled)
 	qdel(box)
 
@@ -84,9 +124,9 @@
 	var/obj/item/dq_latency_test_box/box = new(floor)
 	var/obj/item/dq_latency_test_item/item = new(box)
 	dq_ledger(box)
-	TEST_ASSERT(!can_be_latent(item), "a freshly touched item must not be latent-eligible yet")
+	TEST_ASSERT(!latent_ok(item), "a freshly touched item must not be latent-eligible yet")
 	item.latent_touched_at = world.time - (box.latent_idle_delay * 2)
-	TEST_ASSERT(can_be_latent(item), "an item idle past the delay should be latent-eligible")
+	TEST_ASSERT(latent_ok(item), "an item idle past the delay should be latent-eligible: [GLOB.latency_last_ineligible]")
 	qdel(box)
 
 /datum/unit_test/dq_latency_pin_blocks
@@ -98,19 +138,19 @@
 	var/obj/item/dq_latency_test_item/item = new(box)
 	dq_ledger(box)
 	item.latent_touched_at = world.time - (box.latent_idle_delay * 2)
-	TEST_ASSERT(can_be_latent(item), "should be eligible before any pin")
+	TEST_ASSERT(latent_ok(item), "should be eligible before any pin: [GLOB.latency_last_ineligible]")
 	item.latent_pin("test")
-	TEST_ASSERT(!can_be_latent(item), "an explicit pin must block collapse")
-	TEST_ASSERT(dq_latent_pinned(item), "dq_latent_pinned must see the explicit pin")
+	TEST_ASSERT(!latent_ok(item), "an explicit pin must block collapse")
+	TEST_ASSERT(pinned_now(item), "dq_latent_pinned must see the explicit pin")
 	item.latent_unpin("test")
-	TEST_ASSERT(can_be_latent(item), "releasing the only pin should restore eligibility")
+	TEST_ASSERT(latent_ok(item), "releasing the only pin should restore eligibility: [GLOB.latency_last_ineligible]")
 	// A second, independent pin of the same reason must not unpin early.
 	item.latent_pin("a")
 	item.latent_pin("a")
 	item.latent_unpin("a")
-	TEST_ASSERT(dq_latent_pinned(item), "one of two pins released should still pin")
+	TEST_ASSERT(pinned_now(item), "one of two pins released should still pin")
 	item.latent_unpin("a")
-	TEST_ASSERT(!dq_latent_pinned(item), "the last pin released should unpin")
+	TEST_ASSERT(!pinned_now(item), "the last pin released should unpin")
 	qdel(box)
 
 /datum/unit_test/dq_latency_turf_pins
@@ -119,7 +159,7 @@
 	var/turf/floor = dq_latency_floor()
 	TEST_ASSERT_NOTNULL(floor, "need a clean floor")
 	var/obj/item/dq_latency_test_item/item = new(floor)
-	TEST_ASSERT(dq_latent_pinned(item), "an item sitting directly on a turf must be pinned (it's visibly rendered)")
+	TEST_ASSERT(pinned_now(item), "an item sitting directly on a turf must be pinned (it's visibly rendered)")
 	qdel(item)
 
 /datum/unit_test/dq_latency_viewer_blocks
@@ -131,12 +171,12 @@
 	var/obj/item/dq_latency_test_item/item = new(box)
 	dq_ledger(box)
 	item.latent_touched_at = world.time - (box.latent_idle_delay * 2)
-	TEST_ASSERT(can_be_latent(item), "should be eligible with no viewers")
+	TEST_ASSERT(latent_ok(item), "should be eligible with no viewers: [GLOB.latency_last_ineligible]")
 	LAZYADD(box.open_tguis, new /datum) // stand in for an open tgui/browse window
-	TEST_ASSERT(!can_be_latent(item), "an open window on the holder must block collapse")
+	TEST_ASSERT(!latent_ok(item), "an open window on the holder must block collapse")
 	qdel(box.open_tguis[1])
 	box.open_tguis = null
-	TEST_ASSERT(can_be_latent(item), "closing the window should restore eligibility")
+	TEST_ASSERT(latent_ok(item), "closing the window should restore eligibility: [GLOB.latency_last_ineligible]")
 	qdel(box)
 
 /// Rollout (containment.md §4.7): machine internals are eligible, the stock
@@ -154,8 +194,8 @@
 	dq_ledger(machine)
 	part.latent_touched_at = world.time - (machine.latent_idle_delay * 2)
 	product.latent_touched_at = world.time - (machine.latent_idle_delay * 2)
-	TEST_ASSERT(can_be_latent(part), "an idle item in the internals slot should be latent-eligible")
-	TEST_ASSERT(!can_be_latent(product), "an idle item in the stock slot must not be latent-eligible (C9 owns it)")
+	TEST_ASSERT(latent_ok(part), "an idle item in the internals slot should be latent-eligible: [GLOB.latency_last_ineligible]")
+	TEST_ASSERT(!latent_ok(product), "an idle item in the stock slot must not be latent-eligible (C9 owns it)")
 	qdel(machine)
 
 /// Worn/held pin path (containment.md §4.7): equipped()/dropped() pin and
@@ -170,11 +210,11 @@
 	var/mob/living/carbon/human/H = new(holder)
 	H.set_species(SPECIES_HUMAN)
 	var/obj/item/dq_latency_test_item/item = new(holder)
-	TEST_ASSERT(!dq_latent_pinned(item), "an unworn item should not be pinned")
+	TEST_ASSERT(!pinned_now(item), "an unworn item should not be pinned")
 	TEST_ASSERT(H.equip_to_slot_if_possible(item, SLOT_ID_HAND_L), "the item should equip into a hand")
-	TEST_ASSERT(dq_latent_pinned(item), "a held item must be pinned")
+	TEST_ASSERT(pinned_now(item), "a held item must be pinned")
 	H.unEquip(item)
-	TEST_ASSERT(!dq_latent_pinned(item), "dropping should release the pin")
+	TEST_ASSERT(!pinned_now(item), "dropping should release the pin")
 	qdel(holder)
 
 // ---- Collapse/materialize round trip, and the audit ----
@@ -188,9 +228,9 @@
 	var/obj/item/dq_latency_test_item/item = new(box)
 	var/datum/ledger/L = dq_ledger(box)
 	item.latent_touched_at = world.time - (box.latent_idle_delay * 2)
-	TEST_ASSERT(can_be_latent(item), "should be eligible")
+	TEST_ASSERT(latent_ok(item), "should be eligible: [GLOB.latency_last_ineligible]")
 	var/before_type = item.type
-	TEST_ASSERT(dq_latent_attempt_collapse(item), "the item should collapse under the policy")
+	TEST_ASSERT(collapse_now(item), "the item should collapse under the policy")
 	TEST_ASSERT(QDELETED(item) || item == null, "a collapsed item is deleted")
 	TEST_ASSERT_EQUAL(L.latent_count(), 1, "the box should hold exactly one latent entry")
 	var/list/things = L.latent_materialize_all()
@@ -213,17 +253,18 @@
 	var/obj/item/dq_latency_test_item/item = new(box)
 	var/datum/ledger/L = dq_ledger(box)
 	item.latent_touched_at = world.time - (box.latent_idle_delay * 2)
-	dq_latent_attempt_collapse(item)
+	collapse_now(item)
 	var/list/things = L.latent_materialize_all()
 	TEST_ASSERT_EQUAL(length(things), 1, "expected one materialized atom")
 	var/atom/movable/remade = things[1]
-	TEST_ASSERT(!can_be_latent(remade), "a just-materialized atom must not be immediately eligible again (hysteresis)")
+	TEST_ASSERT(!latent_ok(remade), "a just-materialized atom must not be immediately eligible again (hysteresis)")
 	qdel(box)
 
 // ---- Fuzz: collapse/materialize/move/destroy cycles, conservation and parity ----
 
 /datum/unit_test/dq_latency_fuzz
-	/// Lazy: everything the fuzz made (filled at once by Run()).
+	/// The fuzz's boxes (filled at once by Run()). Items are not listed: a list holding them is an
+	/// outside reference, and would keep every one from collapsing.
 	var/list/made
 	var/turf/floor
 	var/collapses = 0
@@ -240,46 +281,63 @@
 		boxes += box
 		dq_ledger(box)
 		for(var/j in 1 to 3)
-			var/obj/item/dq_latency_test_item/item = new(box)
-			made += item
+			new /obj/item/dq_latency_test_item(box)
 
 	for(var/step in 1 to 150)
-		var/obj/item/dq_latency_test_box/box = pick(boxes)
-		var/datum/ledger/L = dq_ledger(box)
 		var/op = pick("age", "collapse", "materialize", "move", "touch")
-		switch(op)
-			if("age")
-				for(var/atom/movable/A as anything in contents_of(box))
-					A.latent_touched_at = world.time - (box.latent_idle_delay * 2)
-			if("collapse")
-				for(var/atom/movable/A as anything in contents_of(box))
-					if(dq_latent_attempt_collapse(A))
-						collapses++
-						break
-			if("materialize")
-				if(L.latent_total > 0)
-					var/list/made_now = L.latent_materialize_all()
-					materializes += length(made_now)
-					made += made_now
-			if("move")
-				var/list/real = list()
-				for(var/atom/movable/A as anything in contents_of(box))
-					real += A
-				if(length(real))
-					var/atom/movable/A = pick(real)
-					var/obj/item/dq_latency_test_box/dest = pick(boxes)
-					if(dest != box)
-						A.forceMove(dest)
-						dq_latent_touch(A)
-			if("touch")
-				for(var/atom/movable/A as anything in contents_of(box))
-					dq_latent_touch(A)
+		fuzz_step(pick(boxes), op, boxes)
 		if(!check_conservation(boxes, "step [step] ([op])"))
 			break
 
-	TEST_ASSERT(collapses > 0, "the fuzz should have collapsed at least one item")
-	TEST_ASSERT(materializes > 0, "the fuzz should have materialized at least one entry")
 	check_conservation(boxes, "final")
+	var/fuzz_ok = collapses > 0 && materializes > 0
+	// Boxes spill their contents when deleted: delete what they hold first.
+	for(var/obj/item/dq_latency_test_box/box as anything in boxes)
+		if(QDELETED(box))
+			continue
+		var/datum/ledger/fuzz_ledger = dq_ledger(box)
+		if(fuzz_ledger.latent_total)
+			fuzz_ledger.latent_materialize_all()
+		for(var/atom/movable/A as anything in box.contents.Copy())
+			qdel(A)
+	if(!fuzz_ok)
+		TEST_FAIL("the fuzz should have collapsed ([collapses]) and materialized ([materializes]) at least one item: [GLOB.latency_last_ineligible] / [GLOB.latent_last_refusal]")
+
+
+/// One fuzz operation on `box`. Its own frame: Run()'s locals live for the whole proc, and a
+/// list or variable there still naming an item is an outside reference that blocks collapse.
+/datum/unit_test/dq_latency_fuzz/proc/fuzz_step(obj/item/dq_latency_test_box/box, op, list/boxes)
+	var/datum/ledger/L = dq_ledger(box)
+	switch(op)
+		if("age")
+			dq_latency_age_contents(box)
+		if("collapse")
+			if(dq_latency_fuzz_collapse_one(box))
+				collapses++
+		if("materialize")
+			if(L.latent_total > 0)
+				materializes += length(L.latent_materialize_all())
+		if("move")
+			dq_latency_fuzz_move_one(box, pick(boxes))
+		if("touch")
+			for(var/atom/movable/A as anything in box.contents)
+				dq_latent_touch(A)
+
+/// Tries to collapse one real item in `box` through the policy; TRUE if one collapsed.
+/// This frame's loop holds each item as the sweep's does (LATENCY_SWEEP_FRAME_REFS).
+/proc/dq_latency_fuzz_collapse_one(atom/box)
+	for(var/atom/movable/A as anything in box.contents)
+		if(dq_latent_attempt_collapse(A, 2))
+			return TRUE
+	return FALSE
+
+/// Moves one random real item from `box` to `dest`.
+/proc/dq_latency_fuzz_move_one(atom/box, atom/dest)
+	if(dest == box || !length(box.contents))
+		return
+	var/atom/movable/A = pick(box.contents)
+	A.forceMove(dest)
+	dq_latent_touch(A)
 
 /// Total real + latent count across every box must stay exactly 12 (4 boxes *
 /// 3 items): nothing is lost or duplicated by any collapse/materialize/move.
@@ -296,3 +354,63 @@
 	return TRUE
 
 DECLARE_REF(/datum/unit_test/dq_latency_fuzz, "made", OWNED_LIST, null)
+
+/// The real sweep frame (the budgeted, time-capped periodic step) collapses an idle item nothing
+/// else holds. The test keeps no reference to the item itself: a test-held local is an outside
+/// reference the collapse check rightly refuses.
+/datum/unit_test/dq_latency_sweep_collapses
+
+/datum/unit_test/dq_latency_sweep_collapses/Run()
+	var/turf/floor = dq_latency_floor()
+	TEST_ASSERT_NOTNULL(floor, "need a clean floor")
+	// Built in a helper: a frame that creates the item (new() calls its procs) keeps a reference.
+	var/obj/item/dq_latency_test_box/box = dq_latency_new_box_with_item(floor)
+	var/datum/ledger/L = dq_ledger(box)
+	dq_latency_age_contents(box)
+	var/list/saved = GLOB.latency_sweep_holders.Copy()
+	GLOB.latency_sweep_holders.Cut()
+	GLOB.latency_sweep_holders[box] = TRUE
+	GLOB.latency_sweep.cursor = 0
+	GLOB.latency_last_ineligible = ""
+	GLOB.latency_sweep.periodic_step(2 SECONDS)
+	var/sweep_reason = GLOB.latency_last_ineligible
+	GLOB.latency_sweep_holders = saved
+	TEST_ASSERT_EQUAL(L.latent_total, 1, "the sweep should collapse the idle item: sweep said '[sweep_reason]', collapse said '[GLOB.latent_last_refusal]'")
+	TEST_ASSERT_EQUAL(length(box.contents), 0, "the collapsed item is no longer real")
+	qdel(box)
+
+/// Ages every real item in `box` past its idle delay without the caller holding one.
+/proc/dq_latency_age_contents(atom/box)
+	for(var/atom/movable/A as anything in box.contents)
+		A.latent_touched_at = world.time - (box.latent_idle_delay * 2)
+
+
+
+
+/// A test box holding one test item, made outside the caller's frame.
+/proc/dq_latency_new_box_with_item(turf/floor)
+	var/obj/item/dq_latency_test_box/box = new(floor)
+	new /obj/item/dq_latency_test_item(box)
+	return box
+
+/// The sweep's reference credit covers only its own frame: one outside holder keeps the item real.
+/datum/unit_test/dq_latency_sweep_outside_ref_blocks
+	var/list/outside_holder
+
+/datum/unit_test/dq_latency_sweep_outside_ref_blocks/Run()
+	var/turf/floor = dq_latency_floor()
+	TEST_ASSERT_NOTNULL(floor, "need a clean floor")
+	var/obj/item/dq_latency_test_box/box = dq_latency_new_box_with_item(floor)
+	var/datum/ledger/L = dq_ledger(box)
+	outside_holder = box.contents.Copy()
+	dq_latency_age_contents(box)
+	var/list/saved = GLOB.latency_sweep_holders.Copy()
+	GLOB.latency_sweep_holders.Cut()
+	GLOB.latency_sweep_holders[box] = TRUE
+	GLOB.latency_sweep.cursor = 0
+	GLOB.latency_sweep.periodic_step(2 SECONDS)
+	GLOB.latency_sweep_holders = saved
+	TEST_ASSERT_EQUAL(L.latent_total, 0, "an item with an outside holder must stay real")
+	TEST_ASSERT_EQUAL(length(box.contents), 1, "the held item is still in the box")
+	outside_holder = null
+	qdel(box)

@@ -58,21 +58,33 @@
  * caller (dq_latent_attempt_collapse()) still goes through latent_collapse(),
  * which re-checks everything atomically.
  */
-/proc/can_be_latent(atom/movable/A)
+/// Why the last can_be_latent() call refused, for diagnostics and test failure messages.
+GLOBAL_VAR_INIT(latency_last_ineligible, "")
+
+/// `caller_refs`: references to A in the frames above (dq_latent_pinned()); 1 for a caller's variable.
+/proc/can_be_latent(atom/movable/A, caller_refs = 1)
+	. = FALSE
 	if(!CONFIG_GET(flag/latency_policy_enabled))
-		return FALSE
+		GLOB.latency_last_ineligible = "policy disabled"
+		return
 	if(!A || QDELETED(A) || !A.loc)
-		return FALSE
+		GLOB.latency_last_ineligible = "gone or loc-less"
+		return
 	if(A.latency_policy_disabled || A.loc.latency_policy_disabled)
-		return FALSE
+		GLOB.latency_last_ineligible = "policy disabled for [A.type] or its holder"
+		return
 	if(!A.loc.latent_contents)
-		return FALSE
+		GLOB.latency_last_ineligible = "[A.loc.type] holds no latent contents"
+		return
 	if(!dq_latent_eligible(A.type))
-		return FALSE
-	if(dq_latent_pinned(A))
-		return FALSE
+		GLOB.latency_last_ineligible = "[A.type] is not latent-eligible"
+		return
+	if(dq_latent_pinned(A, caller_refs + 1))
+		GLOB.latency_last_ineligible = "[A.type] is pinned ([GLOB.latency_last_pin_reason])"
+		return
 	if(LAZYLEN(A.loc.open_tguis))
-		return FALSE
+		GLOB.latency_last_ineligible = "[A.loc.type] has an open UI"
+		return
 	// The stock slot (C9) is stock.dm's own: a vended item with unique
 	// state lives in /datum/stored_item.instances, a bespoke collapse
 	// the generic latent_entry API (latent_add()) doesn't know about.
@@ -82,10 +94,14 @@
 	var/datum/ledger/L = dq_ledger_peek(A.loc)
 	var/list/record = L?.entries[A]
 	if(record && record[LEDGER_E_SLOT] == CONTAINER_SLOT_STOCK)
-		return FALSE
+		GLOB.latency_last_ineligible = "[A.type] is in a stock slot"
+		return
 	var/delay = A.loc.latent_idle_delay
-	if(ELAPSED(A, latent_touched_at, CLOCK_WORLD) < delay)
-		return FALSE
+	var/idle = ELAPSED(A, latent_touched_at, CLOCK_WORLD)
+	if(idle < delay)
+		GLOB.latency_last_ineligible = "[A.type] idle [idle] of [delay]"
+		return
+	GLOB.latency_last_ineligible = ""
 	return TRUE
 
 // ---- Logging (containment.md §4.7 "Safety") ----
@@ -145,10 +161,10 @@ GLOBAL_LIST_EMPTY(latency_policy_log)
 /// Tries to collapse `A` under the policy. Logging and the audit blob are
 /// latent_collapse()'s own job (latent.dm), so every collapse is covered,
 /// not just sweep-triggered ones. Returns TRUE if it collapsed (src deleted).
-/proc/dq_latent_attempt_collapse(atom/movable/A)
-	if(!can_be_latent(A))
+/proc/dq_latent_attempt_collapse(atom/movable/A, caller_refs = 1)
+	if(!can_be_latent(A, caller_refs + 1))
 		return FALSE
-	return A.latent_collapse(2)
+	return A.latent_collapse(caller_refs + 1)
 
 // ---- The sweep (containment.md §4.7 "Sweep and hysteresis") ----
 
@@ -159,6 +175,8 @@ GLOBAL_LIST_EMPTY(latency_policy_log)
 /// 2 s on Southern Cross. Past the budget the frame stops and the next frame resumes at the same
 /// holder (refused atoms are on cooldown and collapsed ones are gone, so nothing repeats).
 #define LATENCY_SWEEP_MS_BUDGET 4
+/// References the sweep frame itself holds to the atom it checks (see periodic_step()).
+#define LATENCY_SWEEP_FRAME_REFS 2
 /// Shortest wait before the sweep re-offers an atom latent_collapse() refused.
 #define LATENCY_REFUSAL_BACKOFF_MIN (1 MINUTES)
 
@@ -227,8 +245,11 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 				out_of_time = TRUE
 				break
 			var/eligible = FALSE
+			// References this frame holds to A (dq_latent_pinned()'s caller_refs), measured by
+			// dq_latency_sweep_collapses/dq_latency_sweep_outside_ref_blocks: the loop variable and
+			// one more inside the try block.
 			try
-				eligible = can_be_latent(A)
+				eligible = can_be_latent(A, LATENCY_SWEEP_FRAME_REFS)
 			catch(var/exception/e)
 				// One bad atom must not end the whole frame (and with it every
 				// other holder's turn): log it with context and back it off.
@@ -238,7 +259,7 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 			if(!eligible)
 				continue
 			// Through dq_latent_attempt_collapse(): its frame is part of the calibrated held_refs.
-			if(dq_latent_attempt_collapse(A))
+			if(dq_latent_attempt_collapse(A, LATENCY_SWEEP_FRAME_REFS))
 				collapsed++
 				break // holder.contents changed; the rest wait for next turn
 			// Refused by latent_collapse() itself: back off for the holder's idle
@@ -252,6 +273,7 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 #undef LATENCY_SWEEP_BUDGET
 #undef LATENCY_SWEEP_MS_BUDGET
 #undef LATENCY_REFUSAL_BACKOFF_MIN
+#undef LATENCY_SWEEP_FRAME_REFS
 
 // ---- Admin toggle (containment.md §4.7 "Safety") ----
 
