@@ -65,14 +65,14 @@
 	var/interact_sound_volume = 40
 
 
-/// LC-refs: A currently active program running on the computer. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// A currently active program running on the computer. (a relation view: null once that is deleted).
 /obj/item/modular_computer/proc/active_program() as /datum/computer_file/program
 	return active_program
 
-/// LC-refs: AI slot, an intellicard housing that allows modifications of AIs. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// AI slot, an intellicard housing that allows modifications of AIs. (a relation view: null once that is deleted).
 /obj/item/modular_computer/proc/ai_slot()
 	return ai_slot
 
-/// LC-refs: the stored_pen this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The stored_pen this refers to (a relation view: null once that is deleted).
 /obj/item/modular_computer/proc/stored_pen() as /obj/item/pen
 	return stored_pen

@@ -571,6 +571,6 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 	make_exact_fit()
 	. = ..()
 
-/// LC-refs: the selected_io this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The selected_io this refers to (a relation view: null once that is deleted).
 /obj/item/multitool/proc/selected_io() as /datum/integrated_io
 	return selected_io

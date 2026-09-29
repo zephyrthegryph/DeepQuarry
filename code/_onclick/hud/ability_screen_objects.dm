@@ -302,15 +302,15 @@ DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/abili
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
-/// LC-refs: the mob these abilities belong to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mob these abilities belong to (a relation view: null once that is deleted).
 /atom/movable/screen/movable/ability_master/proc/my_mob() as /mob
 	return my_mob
 
-/// LC-refs: the object this ability clicks -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The object this ability clicks (a relation view: null once that is deleted).
 /atom/movable/screen/ability/obj_based/proc/object() as /obj
 	return object
 
-/// LC-refs: the ability master listing this ability -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The ability master listing this ability (a relation view: null once that is deleted).
 /atom/movable/screen/ability/proc/master_of() as /atom/movable/screen/movable/ability_master
 	return ability_master
 

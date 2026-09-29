@@ -89,16 +89,14 @@ EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
 	rel_set(input, "assembly", src)
 	rel_set(output, "assembly", src)
 
-// its holder device forgets the assembly.
+// The holder device owns us (its EA default child); holder is a plain relation back.
 
 /obj/item/electronic_assembly/device/check_interactivity(mob/user)
 	if(!CanInteract(user, state = GLOB.tgui_deep_inventory_state))
 		return 0
 	return 1
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The holder this refers to (a relation view: null once that is deleted).
 /obj/item/electronic_assembly/device/proc/holder() as /obj/item/assembly/electronic_assembly
 	return holder
 
-REL_PAIR(/obj/item/assembly/electronic_assembly, EA, holder)
-REL_PAIR(/obj/item/electronic_assembly/device, holder, EA)

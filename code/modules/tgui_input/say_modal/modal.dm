@@ -148,6 +148,6 @@
 
 
 
-/// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client this refers to (a relation view: null once that is deleted).
 /datum/tgui_say/proc/client() as /client
 	return client

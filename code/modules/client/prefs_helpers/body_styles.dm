@@ -73,6 +73,6 @@
 // tgui_act/tgui_constant_data/has_flag/reset_limbs helpers were the Bay-prefs Body tab.
 // Deleted; the new auto-renderer + accessories/markings apply_hooks own the equivalent.
 
-/// LC-refs: the markings_subwindow this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The markings_subwindow this refers to (a relation view: null once that is deleted).
 /datum/preferences/proc/markings_subwindow()
 	return markings_subwindow

@@ -28,13 +28,13 @@
 	if(target() && executed)
 		target().dos_overload += dos_speed
 		if(!target().operable())
-			LAZYREMOVE(target().dos_sources, src)
+			rel_remove(target(), "dos_sources", src)
 			rel_clear(src, "target")
 			error = "Connection to destination relay lost."
 
 /datum/computer_file/program/ntnet_dos/kill_program(forced)
 	if(target())
-		LAZYREMOVE(target().dos_sources, src)
+		rel_remove(target(), "dos_sources", src)
 		rel_clear(src, "target")
 	executed = 0
 
@@ -74,7 +74,7 @@
 			return TRUE
 		if("PRG_reset")
 			if(target())
-				LAZYREMOVE(target().dos_sources, src)
+				rel_remove(target(), "dos_sources", src)
 				rel_clear(src, "target")
 			executed = FALSE
 			error = ""
@@ -82,13 +82,13 @@
 		if("PRG_execute")
 			if(target())
 				executed = TRUE
-				LAZYADD(target().dos_sources, src)
+				rel_add(target(), "dos_sources", src)
 				if(GLOB.ntnet_global.intrusion_detection_enabled)
 					var/obj/item/computer_hardware/network_card/network_card = computer().network_card
 					GLOB.ntnet_global.add_log("IDS WARNING - Excess traffic flood targeting relay [target().uid] detected from device: [network_card.get_network_tag()]")
 					GLOB.ntnet_global.intrusion_detection_alarm = TRUE
 			return TRUE
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The target this refers to (a relation view: null once that is deleted).
 /datum/computer_file/program/ntnet_dos/proc/target() as /obj/machinery/ntnet_relay
 	return target

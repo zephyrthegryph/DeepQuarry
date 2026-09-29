@@ -180,14 +180,14 @@
 /obj/item/paper/admin/get_signature(obj/item/pen/P, mob/user)
 	return admin_signature || "Anonymous"
 
-/// LC-refs: the admindatum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The admindatum this refers to (a relation view: null once that is deleted).
 /obj/item/paper/admin/proc/admindatum() as /datum/admins
 	return admindatum
 
-/// LC-refs: the sender this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The sender this refers to (a relation view: null once that is deleted).
 /obj/item/paper/admin/proc/sender() as /mob
 	return sender
 
-/// LC-refs: the destination this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The destination this refers to (a relation view: null once that is deleted).
 /obj/item/paper/admin/proc/destination() as /obj/machinery/photocopier/faxmachine
 	return destination

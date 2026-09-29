@@ -300,10 +300,10 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 			SStgui.update_uis(src)
 			return TRUE
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The holder this refers to (a relation view: null once that is deleted).
 /datum/edit_player_panel/proc/holder() as /datum/admins
 	return holder
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The target this refers to (a relation view: null once that is deleted).
 /datum/edit_player_panel/proc/target() as /mob
 	return target

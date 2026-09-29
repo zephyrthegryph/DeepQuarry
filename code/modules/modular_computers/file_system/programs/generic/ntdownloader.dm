@@ -197,6 +197,6 @@
 	return "Incompatible!"
 
 
-/// LC-refs: the my_computer this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The my_computer this refers to (a relation view: null once that is deleted).
 /datum/computer_file/program/ntnetdownload/proc/my_computer() as /obj/item/modular_computer
 	return my_computer

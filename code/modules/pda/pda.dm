@@ -324,7 +324,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 
 	if(can_use(user))
 		start_program(find_program(/datum/data/pda/app/main_menu))
-		LAZYCLEARLIST(notifying_programs)
+		rel_clear(src, "notifying_programs")
 		cut_overlay("pda-r")
 		to_chat(user, span_notice("You press the reset button on \the [src]."))
 	else
@@ -393,7 +393,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 	else
 		var/obj/item/card/I = user.get_active_hand()
 		if (istype(I, /obj/item/card/id) && I:registered_name && user.unEquip(I))
-			var/obj/old_id = id
+			var/obj/old_id = own_take(src, "id") // handed back below, not disposed of
 			I.forceMove(src)
 			own_set(src, "id", I)
 			user.put_in_hands(old_id)
@@ -475,13 +475,6 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 	return
 
 
-// its ID drops out unless flagged to go with it.
-/obj/item/pda/on_destroy(force)
-	if (id && !delete_id && id.loc == src)
-		id.forceMove(get_turf(loc))
-	else
-		own_clear(src, "id", OWN_DELETE)
-	..()
 
 //Some spare PDAs in a box
 /obj/item/storage/box/PDAs
@@ -534,16 +527,17 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 /obj/item/pda/pilot
 	icon_state = "pda-pilot"		//New sprites, but still no ROM cartridge or anything
 
-OWN(/obj/item/pda, id, OWN_CONTAINED)
+// Its ID drops out when it is destroyed, unless flagged (delete_id) to go with it.
+OWN_IF(/obj/item/pda, id, OWN_DELETE, delete_id, OWN_SPILL)
 
-/// LC-refs: the scanmode this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The scanmode this refers to (a relation view: null once that is deleted).
 /obj/item/pda/proc/scanmode() as /datum/data/pda/utility/scanmode
 	return scanmode
 
-/// LC-refs: the current_app this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The current_app this refers to (a relation view: null once that is deleted).
 /obj/item/pda/proc/current_app() as /datum/data/pda/app
 	return current_app
 
-/// LC-refs: the lastapp this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The lastapp this refers to (a relation view: null once that is deleted).
 /obj/item/pda/proc/lastapp() as /datum/data/pda/app
 	return lastapp

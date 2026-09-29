@@ -127,6 +127,6 @@
 	var/datum/dq_stock_chart_panel/panel = new(name, values)
 	panel.tgui_interact(user)
 
-/// LC-refs: the forward_host this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The forward_host this refers to (a relation view: null once that is deleted).
 /datum/admin_report/proc/forward_host() as /datum
 	return forward_host

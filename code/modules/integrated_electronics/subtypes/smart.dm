@@ -260,10 +260,10 @@
 	push_data()
 	activate_pin(2)
 
-/// LC-refs: the last_known_position this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The last_known_position this refers to (a relation view: null once that is deleted).
 /obj/item/integrated_circuit/smart/targeted_pathfinder/proc/last_known_position() as /turf
 	return last_known_position
 
-/// LC-refs: the last_known_position this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The last_known_position this refers to (a relation view: null once that is deleted).
 /obj/item/integrated_circuit/smart/pathfinding_locomotion/proc/last_known_position() as /turf
 	return last_known_position

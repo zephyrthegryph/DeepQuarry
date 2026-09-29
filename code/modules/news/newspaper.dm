@@ -124,6 +124,6 @@ DECLARE_INTERACTIONS(/obj/item/newspaper, \
 		return INTERACTION_HANDLED_PASS
 	return INTERACTION_HANDLED_PASS
 
-/// LC-refs: the important_message this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The important_message this refers to (a relation view: null once that is deleted).
 /obj/item/newspaper/proc/important_message() as /datum/feed_message
 	return important_message

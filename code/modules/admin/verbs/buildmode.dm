@@ -1006,18 +1006,18 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 /obj/effect/bmode/buildholder/proc/cl() as /client
 	return GLOB.directory[cl_ckey]
 
-/// LC-refs: the throw_atom this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The throw_atom this refers to (a relation view: null once that is deleted).
 /obj/effect/bmode/buildholder/proc/throw_atom() as /atom/movable
 	return throw_atom
 
-/// LC-refs: the coordA this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The coordA this refers to (a relation view: null once that is deleted).
 /obj/effect/bmode/buildmode/proc/coordA() as /turf
 	return coordA
 
-/// LC-refs: the coordB this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The coordB this refers to (a relation view: null once that is deleted).
 /obj/effect/bmode/buildmode/proc/coordB() as /turf
 	return coordB
 
-/// LC-refs: the master this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The master this refers to (a relation view: null once that is deleted).
 /obj/effect/bmode/proc/master() as /obj/effect/bmode/buildholder
 	return master

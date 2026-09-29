@@ -181,7 +181,7 @@
 		om_unhook(source, /datum/om/event/popup_cleared, src)
 		popup_screen.hide_from(source)
 
-/// LC-refs: the atom this view is centred on -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom this view is centred on (a relation view: null once that is deleted).
 /atom/movable/screen/movable/pic_in_pic/proc/center() as /atom
 	return center
 

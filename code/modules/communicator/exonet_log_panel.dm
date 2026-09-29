@@ -41,6 +41,6 @@
 	dq_exonet_log_panel_cache.tgui_interact(src)
 
 
-/// LC-refs: the host this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The host this refers to (a relation view: null once that is deleted).
 /datum/exonet_log_panel/proc/host() as /mob/observer/dead
 	return host

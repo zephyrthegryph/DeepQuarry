@@ -320,7 +320,7 @@ DECLARE_INTERACTIONS(/obj/item/book, \
 					rel_set(scanner, "book", src)
 					for(var/datum/borrowbook/b in scanner.computer().checkouts)
 						if(b.bookname == src.name)
-							LAZYREMOVE(scanner.computer().checkouts, b)
+							own_remove(scanner.computer(), "checkouts", b)
 							to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Book has been checked in.'")
 							return INTERACTION_HANDLED_PASS
 					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. No active check-out record found for current title.'")
@@ -330,7 +330,7 @@ DECLARE_INTERACTIONS(/obj/item/book, \
 						if(book == src)
 							to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title already present in inventory, aborting to avoid duplicate entry.'")
 							return INTERACTION_HANDLED_PASS
-					LAZYADD(scanner.computer().inventory, src)
+					rel_add(scanner.computer(), "inventory", src)
 					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title added to general inventory.'")
 	else if(istype(W, /obj/item/material/knife))
 		return carve_pages(user)
@@ -491,14 +491,14 @@ DECLARE_INTERACTIONS(/obj/item/barcodescanner, INTERACT_USE(null, PROC_REF(inter
 	to_chat(user, "\n")
 	return TRUE
 
-/// LC-refs: What's in the book? -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// What's in the book? (a relation view: null once that is deleted).
 /obj/item/book/proc/store() as /obj/item
 	return store
 
-/// LC-refs: Associated computer - Modes 1 to 3 use this -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Associated computer - Modes 1 to 3 use this (a relation view: null once that is deleted).
 /obj/item/barcodescanner/proc/computer() as /obj/machinery/librarycomp
 	return computer
 
-/// LC-refs: Currently scanned book -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Currently scanned book (a relation view: null once that is deleted).
 /obj/item/barcodescanner/proc/book() as /obj/item/book
 	return book

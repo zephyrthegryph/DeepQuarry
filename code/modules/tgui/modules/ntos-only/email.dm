@@ -488,10 +488,10 @@
 			return 1
 
 
-/// LC-refs: the current_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The current_account this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/email_client/proc/current_account() as /datum/computer_file/data/email_account
 	return current_account
 
-/// LC-refs: the current_message this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The current_message this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/email_client/proc/current_message() as /datum/computer_file/data/email_message
 	return current_message

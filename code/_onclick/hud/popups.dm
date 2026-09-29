@@ -70,6 +70,6 @@
 	icon_state = "popup[rand(1,10)]"
 	. = ..()
 
-/// LC-refs: the client this popup is shown to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client this popup is shown to (a relation view: null once that is deleted).
 /atom/movable/screen/popup/proc/holder() as /client
 	return holder

@@ -47,6 +47,6 @@
 				H.enabled = !H.enabled
 			. = TRUE
 
-/// LC-refs: the movable this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The movable this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/computer_configurator/proc/movable() as /obj/item/modular_computer
 	return movable

@@ -152,6 +152,6 @@
 					ui.user.client?.holder?.Topic("adminplayerobservecoodjump=1", list("_src_" = "holder", "adminplayerobservecoodjump" = "1", "X" = "[E.usr_loc().x]", "Y" = "[E.usr_loc().y]", "Z" = "[E.usr_loc().z]"))
 			return TRUE
 
-/// LC-refs: the dq_back_to this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The dq_back_to this refers to (a relation view: null once that is deleted).
 /datum/error_viewer/proc/dq_back_to() as /datum/error_viewer
 	return dq_back_to

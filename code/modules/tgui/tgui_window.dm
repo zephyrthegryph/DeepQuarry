@@ -663,18 +663,18 @@
 /datum/tgui_window/proc/remove_oversized_payload(payload_id)
 	LAZYREMOVE(oversized_payloads, payload_id)
 
-/// LC-refs: the asset_generation this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The asset_generation this refers to (a relation view: null once that is deleted).
 /datum/tgui_window/proc/asset_generation() as /datum/tgui_asset_generation
 	return asset_generation
 
-/// LC-refs: the subscriber_object this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The subscriber_object this refers to (a relation view: null once that is deleted).
 /datum/tgui_window/proc/subscriber_object() as /datum
 	return subscriber_object
 
-/// LC-refs: the locked_by this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The locked_by this refers to (a relation view: null once that is deleted).
 /datum/tgui_window/proc/locked_by() as /datum/tgui
 	return locked_by
 
-/// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client this refers to (a relation view: null once that is deleted).
 /datum/tgui_window/proc/client() as /client
 	return client

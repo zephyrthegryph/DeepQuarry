@@ -70,11 +70,11 @@
 
 	return FALSE
 
-/// LC-refs: the source_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The source_turf this refers to (a relation view: null once that is deleted).
 /datum/lootpanel/proc/source_turf() as /turf
 	return source_turf
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The owner this refers to (a relation view: null once that is deleted).
 /datum/lootpanel/proc/owner() as /client
 	return owner
 

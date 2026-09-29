@@ -156,6 +156,6 @@
 /datum/tgui_input_number/proc/set_entry(entry)
 	src.entry = entry
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared (registered) definition/flyweight: never cleared.
 /datum/tgui_input_number/proc/state() as /datum/tgui_state
 	return state_static

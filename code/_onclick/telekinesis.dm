@@ -140,10 +140,10 @@ DECLARE_INTERACTIONS(/obj/item/tk_grab, INTERACT_USE(null, PROC_REF(interaction_
 		add_overlay(icon(focus().icon, focus().icon_state))
 	return
 
-/// LC-refs: the thing held by telekinesis -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The thing held by telekinesis (a relation view: null once that is deleted).
 /obj/item/tk_grab/proc/focus() as /atom/movable
 	return focus
 
-/// LC-refs: the mob using telekinesis -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mob using telekinesis (a relation view: null once that is deleted).
 /obj/item/tk_grab/proc/host() as /mob/living
 	return host

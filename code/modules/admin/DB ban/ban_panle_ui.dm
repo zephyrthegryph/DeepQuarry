@@ -207,10 +207,10 @@
 	db_records = all_bans
 	update_static_data_for_all_viewers()
 
-/// LC-refs: the admin_datum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The admin_datum this refers to (a relation view: null once that is deleted).
 /datum/tgui_ban_panel/proc/admin_datum() as /datum/admins
 	return admin_datum
 
-/// LC-refs: client of whoever is using this datum -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Client of whoever is using this datum (a relation view: null once that is deleted).
 /datum/tgui_ban_panel/proc/holder() as /client
 	return holder

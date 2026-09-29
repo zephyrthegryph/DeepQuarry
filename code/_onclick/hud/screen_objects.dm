@@ -1073,31 +1073,31 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 	qdel(F)
 	overlays += empty
 
-/// LC-refs: the hud this screen object belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The hud this screen object belongs to (a relation view: null once that is deleted).
 /atom/movable/screen/proc/owner_hud() as /datum/hud
 	return hud
 
-/// LC-refs: the item this button acts for -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The item this button acts for (a relation view: null once that is deleted).
 /atom/movable/screen/item_action/proc/owner() as /obj/item
 	return owner
 
-/// LC-refs: the screen object this button belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The screen object this button belongs to (a relation view: null once that is deleted).
 /atom/movable/screen/component_button/proc/parent() as /atom/movable/screen
 	return parent
 
-/// LC-refs: the preferences this preview shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The preferences this preview shows (a relation view: null once that is deleted).
 /atom/movable/screen/setup_preview/proc/pref() as /datum/preferences
 	return pref
 
-/// LC-refs: the mapping unit this holder shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mapping unit this holder shows (a relation view: null once that is deleted).
 /atom/movable/screen/movable/mapper_holder/proc/owner() as /obj/item/mapping_unit
 	return owner
 
-/// LC-refs: the extras overlay the mapping unit handed us -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The extras overlay the mapping unit handed us (a relation view: null once that is deleted).
 /atom/movable/screen/movable/mapper_holder/proc/extras_holder() as /atom/movable/screen/mapper/extras_holder
 	return extras_holder
 
-/// LC-refs: the mapper holder this element belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mapper holder this element belongs to (a relation view: null once that is deleted).
 /atom/movable/screen/mapper/proc/parent() as /atom/movable/screen/movable/mapper_holder
 	return parent
 

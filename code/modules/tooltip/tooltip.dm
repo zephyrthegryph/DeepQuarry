@@ -41,7 +41,7 @@
 /datum/tooltip/New(client/C)
 	if(!C)
 		return
-	rel_set(src, "owner", C)
+	owner = C // a client, not a datum: plain (the client owns us as its tooltips)
 	own_set(src, "tooltip_window", new /datum/tgui_window(C, control))
 	// The tgui ui is opened lazily in show(), bound to the CURRENT mob. Opening it
 	// here (at login) binds it to the lobby new_player mob, which is deleted on
@@ -49,12 +49,14 @@
 	// never refreshes (it stays on its initial visible=FALSE/empty data).
 	..()
 
-// ALLOW(lifecycle): closes its tooltip window before phase 4 deletes it (DECLARE_REF(..., OWNED)).
-/datum/tooltip/lifecycle_unbind()
-	tooltip_window?.close()
+// Our tooltip window (owned) is closed client-side whenever it leaves us: replaced, or disposed
+// of with us in teardown.
+/datum/tooltip/on_owned_release(var_name, datum/child)
+	if(var_name == "tooltip_window")
+		var/datum/tgui_window/window = child
+		window.close()
 	return ..()
 
-// drops its owner and last target.
 /datum/tooltip/tgui_state(mob/user)
 	return GLOB.tgui_always_state
 
@@ -198,10 +200,10 @@
 	user.client.tooltips.hide(tip_src)
 
 
-/// LC-refs: the last_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The last_target this refers to (a relation view: null once that is deleted).
 /datum/tooltip/proc/last_target() as /atom
 	return last_target
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client this tooltip belongs to.
 /datum/tooltip/proc/owner() as /client
 	return owner

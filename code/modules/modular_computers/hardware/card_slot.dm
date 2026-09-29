@@ -29,6 +29,6 @@ OWN(/obj/item/modular_computer, tesla_link, OWN_CONTAINED)
 		stored_card().forceMove(get_turf(holder2()))
 	..()
 
-/// LC-refs: the stored_card this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The stored_card this refers to (a relation view: null once that is deleted).
 /obj/item/computer_hardware/card_slot/proc/stored_card() as /obj/item/card/id
 	return stored_card

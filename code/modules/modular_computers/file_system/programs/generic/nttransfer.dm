@@ -182,10 +182,10 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 			return TRUE
 
 
-/// LC-refs: File which is provided to clients. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// File which is provided to clients. (a relation view: null once that is deleted).
 /datum/computer_file/program/nttransfer/proc/provided_file() as /datum/computer_file
 	return provided_file
 
-/// LC-refs: Client var, specifies who are we downloading from. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Client var, specifies who are we downloading from. (a relation view: null once that is deleted).
 /datum/computer_file/program/nttransfer/proc/remote() as /datum/computer_file/program/nttransfer
 	return remote

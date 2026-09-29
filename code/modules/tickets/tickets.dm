@@ -755,19 +755,19 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 	return msg
 
 
-/// LC-refs: the ticket_datum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The ticket_datum this refers to (a relation view: null once that is deleted).
 /obj/effect/statclick/ticket/proc/ticket_datum() as /datum/ticket
 	return ticket_datum
 
-/// LC-refs: the current ticket being viewed in the Tickets Panel (usually) admin/mentor client -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The current ticket being viewed in the Tickets Panel (usually) admin/mentor client (a relation view: null once that is deleted).
 /client/proc/selected_ticket() as /datum/ticket
 	return GLOB.tickets?.ticket_by_id(selected_ticket_id)
 
-/// LC-refs: the current ticket the (usually) not-admin client is dealing with -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The current ticket the (usually) not-admin client is dealing with (a relation view: null once that is deleted).
 /client/proc/current_ticket() as /datum/ticket
 	return GLOB.tickets?.ticket_by_id(current_ticket_id)
 
-/// LC-refs: semi-misnomer, it's the person who ahelped/was bwoinked -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Semi-misnomer, it's the person who ahelped/was bwoinked (a relation view: null once that is deleted).
 /datum/ticket/proc/initiator() as /client
 	return initiator
 

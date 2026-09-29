@@ -265,6 +265,6 @@
 	host_mob.healths.appearance = MA
 	return HEALTH_ICON_EVENT_HANDLED
 
-/// LC-refs: The UAV we're watching -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The UAV we're watching (a relation view: null once that is deleted).
 /datum/tgui_module/uav/proc/current_uav() as /obj/item/uav
 	return current_uav

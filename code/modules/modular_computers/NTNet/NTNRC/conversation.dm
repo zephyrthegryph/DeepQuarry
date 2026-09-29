@@ -64,6 +64,6 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 	add_status_message("[client.username] has changed channel title from [title] to [newtitle]")
 	title = newtitle
 
-/// LC-refs: "Administrator" of this channel. Creator starts as channel's operator, -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// "Administrator" of this channel. Creator starts as channel's operator, (a relation view: null once that is deleted).
 /datum/ntnet_conversation/proc/channel_operator() as /datum/computer_file/program/chatclient
 	return operator

@@ -922,6 +922,6 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				return
 			Tar.revert_mob_tf()
 
-/// LC-refs: The target of the effects -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The target of the effects (a relation view: null once that is deleted).
 /datum/eventkit/player_effects/proc/target() as /mob
 	return target

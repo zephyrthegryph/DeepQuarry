@@ -531,19 +531,19 @@
 			var/atom/A = src_object()
 			A.interaction_ran(user, null)
 
-/// LC-refs: the src_object this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The src_object this refers to (a relation view: null once that is deleted).
 /datum/tgui/proc/src_object() as /datum
 	return src_object
 
-/// LC-refs: the window this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The window this refers to (a relation view: null once that is deleted).
 /datum/tgui/proc/window() as /datum/tgui_window
 	return window
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared (registered) definition/flyweight: never cleared.
 /datum/tgui/proc/state() as /datum/tgui_state
 	return state_static
 
-/// LC-refs: the parent_ui this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The parent_ui this refers to (a relation view: null once that is deleted).
 /datum/tgui/proc/parent_ui() as /datum/tgui
 	return parent_ui
 

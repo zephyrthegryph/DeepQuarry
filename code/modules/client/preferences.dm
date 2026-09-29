@@ -603,6 +603,6 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	feedback_add_details("admin_verb","TCaptureCrystal") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 
-/// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client this refers to (a relation view: null once that is deleted).
 /datum/preferences/proc/client() as /client
 	return client

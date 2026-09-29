@@ -197,11 +197,11 @@
 	owner_mech.toggle_internal_tank()
 
 
-/// LC-refs: the rig this hud shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The rig this hud shows (a relation view: null once that is deleted).
 /datum/mini_hud/rig/proc/owner_rig() as /obj/item/rig
 	return owner_rig
 
-/// LC-refs: the mech this hud shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mech this hud shows (a relation view: null once that is deleted).
 /datum/mini_hud/mech/proc/owner_mech() as /obj/mecha
 	return owner_mech
 

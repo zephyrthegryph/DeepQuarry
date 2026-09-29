@@ -39,11 +39,11 @@
 
 	if(blink && !(src in pda().notifying_programs))
 		pda().add_overlay("pda-r")
-		LAZYOR(pda().notifying_programs, src)
+		rel_add(pda(), "notifying_programs", src)
 
 /datum/data/pda/proc/unnotify()
 	if(src in pda().notifying_programs)
-		LAZYREMOVE(pda().notifying_programs, src)
+		rel_remove(pda(), "notifying_programs", src)
 		if(!length(pda().notifying_programs))
 			pda().cut_overlay("pda-r")
 
@@ -103,6 +103,6 @@
 
 /datum/data/pda/utility/scanmode/proc/scan_atom(atom/A, mob/user)
 
-/// LC-refs: if this is null, and the app is running code, something's gone wrong -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// If this is null, and the app is running code, something's gone wrong (a relation view: null once that is deleted).
 /datum/data/pda/proc/pda() as /obj/item/pda
 	return pda

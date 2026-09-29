@@ -23,9 +23,9 @@ GLOBAL_PROTECT(href_token)
 
 	var/admincaster_screen = 0	//See newscaster.dm under machinery for a full description
 	var/datum/feed_message/admincaster_feed_message = new /datum/feed_message   //These two will act as holders.
-	/// The admin newscaster's working channel: a network channel picked into admincaster_feed_channel_handle,
-	/// or while none is picked its own scratch channel (admincaster_feed_channel() reads either).
-	var/tmp/datum/admincaster_feed_channel
+	/// The admin newscaster's working channel: a picked network channel (a relation view), or while
+	/// none is picked its own scratch channel (admincaster_feed_channel() reads either).
+	var/tmp/datum/feed_channel/admincaster_feed_channel
 	var/datum/feed_channel/admincaster_scratch_channel = new /datum/feed_channel
 	var/admincaster_signature	//What you'll sign the newsfeeds as
 
@@ -291,15 +291,15 @@ you will have to do something like if(client.rights & R_ADMIN) yourself.
 
 // Shared admin_rank registry entries.
 
-/// LC-refs: the marked_datum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The marked_datum this refers to (a relation view: null once that is deleted).
 /datum/admins/proc/marked_datum() as /datum
 	return marked_datum
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The owner this refers to (a relation view: null once that is deleted).
 /datum/admins/proc/owner() as /client
 	return owner
 
-/// LC-refs: the channel the admin newscaster is working on -- a picked network channel (an OM handle) or the scratch one.
+/// The channel the admin newscaster is working on: a picked network channel (a relation view) or the scratch one.
 /datum/admins/proc/admincaster_feed_channel() as /datum/feed_channel
 	return admincaster_feed_channel || admincaster_scratch_channel
 

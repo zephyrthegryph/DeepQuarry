@@ -380,6 +380,6 @@ GLOBAL_LIST(tgui_modals)
 	.["yes_text"] = yes_text
 	.["no_text"] = no_text
 
-/// LC-refs: the owning_source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The owning_source this refers to (a relation view: null once that is deleted).
 /datum/tgui_modal/proc/owning_source() as /datum
 	return owning_source

@@ -49,28 +49,29 @@
 
 // Organizes pages together.
 /datum/lore/codex/category
-	// ALLOW(instance_list): d: codex categories exist to hold children
-	var/list/children = list() // Pages or more categories relevant to this category.  Self initializes from types to refs in New()
+	/// The types of the pages or categories relevant to this category (New() builds child_pages from it).
+	// ALLOW(instance_list): d: a per-subtype type table, set in the type definitions
+	var/list/children = list()
+	/// Our pages and sub-categories (owned), built from `children` in New().
+	var/list/child_pages
 
 /datum/lore/codex/category/New()
 	..()
-	var/list/new_children_list = list()
 	for(var/type in children)
-		new_children_list.Add(new type(holder(), src))
-	children = new_children_list
+		own_add(src, "child_pages", new type(holder(), src))
 
 /datum/lore/codex/category/index_page()
 	// First, get our own keywords.
 	var/list/results = ..()
 	// Now get our children.  If a child is also a category, it will get their children too.
-	for(var/datum/lore/codex/child in children)
+	for(var/datum/lore/codex/child in child_pages)
 		results += child.index_page()
 	return results
 
-/// LC-refs: Category above us -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Category above us (a relation view: null once that is deleted).
 /datum/lore/codex/proc/parent() as /datum/lore/codex
 	return parent
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The holder this refers to (a relation view: null once that is deleted).
 /datum/lore/codex/proc/holder() as /datum/codex_tree
 	return holder

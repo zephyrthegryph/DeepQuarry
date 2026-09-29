@@ -523,10 +523,10 @@
 		host_mob.reset_perspective()
 		return
 
-/// LC-refs: the linked this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The linked this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/ship/proc/linked() as /obj/effect/overmap/visitable/ship
 	return linked
 
-/// LC-refs: the sensors this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The sensors this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/ship/fullmonty/proc/sensors() as /obj/machinery/shipsensors
 	return sensors

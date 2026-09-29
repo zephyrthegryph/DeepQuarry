@@ -51,6 +51,6 @@
 
 			. = TRUE
 
-/// LC-refs: the T this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The T this refers to (a relation view: null once that is deleted).
 /datum/ticket_chat/proc/T() as /datum/ticket
 	return T

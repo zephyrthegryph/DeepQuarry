@@ -23,7 +23,7 @@
 // the mob owns us in its spell_masters list; we leave it in phase 2.
 // (Screen objects leave every client's screen in phase 5.)
 
-/// LC-refs: the mob whose spells these are -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mob whose spells these are (a relation view: null once that is deleted).
 /atom/movable/screen/movable/spell_master/proc/spell_holder() as /mob
 	return spell_holder
 
@@ -170,7 +170,7 @@
 	var/icon/last_charged_icon
 
 
-/// LC-refs: the spell this button casts -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The spell this button casts (a relation view: null once that is deleted).
 /atom/movable/screen/spell/proc/spell() as /datum/spell
 	return spell
 

@@ -237,6 +237,6 @@ list[](
 /datum/integrated_io/activate/out // All this does is just make the UI say 'out' instead of 'in'
 	data = 1
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The holder this refers to (a relation view: null once that is deleted).
 /datum/integrated_io/proc/holder() as /obj/item/integrated_circuit
 	return holder

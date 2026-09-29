@@ -797,11 +797,11 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 /datum/eventkit/modify_robot/proc/is_special_role(mob/user)
 	return user.mind?.special_role ? TRUE : FALSE
 
-/// LC-refs: Currently selected multibelt. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Currently selected multibelt. (a relation view: null once that is deleted).
 /datum/eventkit/modify_robot/proc/multibelt_holder() as /obj/item/robotic_multibelt
 	return multibelt_holder
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The target this refers to (a relation view: null once that is deleted).
 /datum/eventkit/modify_robot/proc/target() as /mob/living/silicon/robot
 	return target
 

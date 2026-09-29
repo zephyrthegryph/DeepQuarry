@@ -207,6 +207,6 @@
 	. = ..()
 	owner()?.palette_actions.refresh_actions() // We effect them, so we gotta refresh em
 
-/// LC-refs: the hud that owns this group -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The hud that owns this group (a relation view: null once that is deleted).
 /datum/action_group/proc/owner() as /datum/hud
 	return owner

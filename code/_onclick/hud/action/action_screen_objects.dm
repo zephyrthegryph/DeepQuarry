@@ -453,23 +453,23 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	var/datum/hud/our_hud = owner()?.owner()
 	our_hud.position_action(button, owner().location)
 
-/// LC-refs: the action this button triggers -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The action this button triggers (a relation view: null once that is deleted).
 /atom/movable/screen/movable/action_button/proc/linked_action() as /datum/action
 	return linked_action
 
-/// LC-refs: the hud this is shown on -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The hud this is shown on (a relation view: null once that is deleted).
 /atom/movable/screen/movable/action_button/proc/our_hud() as /datum/hud
 	return our_hud
 
-/// LC-refs: the hud this is shown on -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The hud this is shown on (a relation view: null once that is deleted).
 /atom/movable/screen/button_palette/proc/our_hud() as /datum/hud
 	return our_hud
 
-/// LC-refs: the hud this is shown on -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The hud this is shown on (a relation view: null once that is deleted).
 /atom/movable/screen/palette_scroll/proc/our_hud() as /datum/hud
 	return our_hud
 
-/// LC-refs: the action group this landing belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The action group this landing belongs to (a relation view: null once that is deleted).
 /atom/movable/screen/action_landing/proc/owner() as /datum/action_group
 	return owner
 

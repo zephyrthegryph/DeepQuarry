@@ -10,7 +10,7 @@
 // The mapping unit owns us as its hud_datum and views our holder screen object as hud_item;
 // owner is a plain relation back.
 
-/// LC-refs: the mapping unit this hud shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mapping unit this hud shows (a relation view: null once that is deleted).
 /datum/mini_hud/mapper/proc/owner() as /obj/item/mapping_unit
 	return owner
 

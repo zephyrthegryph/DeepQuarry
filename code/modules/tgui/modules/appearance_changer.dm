@@ -1093,11 +1093,11 @@
 	if(!QDELETED(src))
 		qdel(src)
 
-/// LC-refs: the last_camera_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The last_camera_turf this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/appearance_changer/proc/last_camera_turf() as /turf
 	return last_camera_turf
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The owner this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/appearance_changer/proc/owner() as /mob/living/carbon/human
 	return owner
 

@@ -154,7 +154,9 @@
 	var/buffer_book
 	var/buffer_mob
 	var/upload_category = "Fiction"
+	/// Check-out records (owned /datum/borrowbook)
 	var/list/checkouts
+	/// Books in the general inventory (a relation list)
 	var/list/inventory
 	var/checkoutperiod = 5 // In minutes
 	var/tmp/obj/machinery/libraryscanner/scanner	// Book scanner that will be used when uploading books to the Archive
@@ -399,17 +401,17 @@
 			b.mobname = sanitize(buffer_mob)
 			b.getdate = world.time
 			b.duedate = world.time + (checkoutperiod * 600)
-			LAZYADD(checkouts, b)
+			own_add(src, "checkouts", b)
 			return TRUE
 		if("checkin")
 			var/datum/borrowbook/b = locate(params["ref"])
 			if(b)
-				LAZYREMOVE(checkouts, b)
+				own_remove(src, "checkouts", b)
 			return TRUE
 		if("delbook")
 			var/obj/item/book/b = locate(params["ref"])
 			if(b)
-				LAZYREMOVE(inventory, b)
+				rel_remove(src, "inventory", b)
 			return TRUE
 		if("setauthor")
 			var/newauthor = act_ask(usr, action, params, ui, "k381", /datum/om/prompt/text, message = "Enter the author's name:")
@@ -690,10 +692,10 @@
 	b.icon_state = "book[rand(1,7)]"
 	qdel(source_bundle)
 
-/// LC-refs: Book scanner that will be used when uploading books to the Archive -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Book scanner that will be used when uploading books to the Archive (a relation view: null once that is deleted).
 /obj/machinery/librarycomp/proc/scanner() as /obj/machinery/libraryscanner
 	return scanner
 
-/// LC-refs: Last scanned book -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Last scanned book (a relation view: null once that is deleted).
 /obj/machinery/libraryscanner/proc/cache() as /obj/item/book
 	return cache

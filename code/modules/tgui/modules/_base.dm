@@ -94,6 +94,6 @@ Code is pretty much ripped verbatim from nano modules, but with un-needed stuff 
 /datum/tgui_module/proc/close_ui()
 	SStgui.close_uis(src)
 
-/// LC-refs: the host this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The host this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/proc/host() as /datum
 	return host

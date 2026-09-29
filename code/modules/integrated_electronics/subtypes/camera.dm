@@ -241,6 +241,6 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/input/video_camera_input, INTE
 		rel_clear(src, "last_camera_turf")
 	. = ..()
 
-/// LC-refs: the owner_circuit this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The owner_circuit this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/camera/intcircuit/proc/owner_circuit() as /obj/item/integrated_circuit/input/video_camera_input
 	return owner_circuit

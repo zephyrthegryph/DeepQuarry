@@ -183,6 +183,6 @@
 /datum/mind
 	var/datum/edit_memory_panel/tgui_edit_memory_panel
 
-/// LC-refs: the admin_user this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The admin_user this refers to (a relation view: null once that is deleted).
 /datum/edit_memory_panel/proc/admin_user() as /mob
 	return admin_user

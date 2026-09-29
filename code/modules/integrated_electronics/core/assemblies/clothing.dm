@@ -35,9 +35,10 @@
 
 // This is defined higher up, in /clothing to avoid lots of copypasta.
 /obj/item/clothing
-	var/obj/item/electronic_assembly/clothing/IC = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
-	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/obj/item/integrated_circuit/built_in/action_button/action_circuit = null // This gets pulsed when someone clicks the button on the hud.
+	/// Our circuit holder (owned; it sits in our contents)
+	var/obj/item/electronic_assembly/clothing/IC = null
+	/// A relation view of the action circuit inside IC (IC's contents own it). This gets pulsed when someone clicks the button on the hud.
+	var/obj/item/integrated_circuit/built_in/action_button/action_circuit = null
 
 /obj/item/clothing/examine(mob/user)
 	. = ..()
@@ -82,8 +83,9 @@
 	IC.name = name
 
 	// Clothing assemblies can be triggered by clicking on the HUD. This allows that to occur.
-	own_set(src, "action_circuit", new /obj/item/integrated_circuit/built_in/action_button(src.IC))
-	IC.force_add_circuit(action_circuit)
+	var/obj/item/integrated_circuit/built_in/action_button/button_circuit = new /obj/item/integrated_circuit/built_in/action_button(src.IC)
+	IC.force_add_circuit(button_circuit)
+	rel_set(src, "action_circuit", button_circuit)
 
 	add_item_action(new /datum/action/item_action/activate(src, name))
 
@@ -101,11 +103,11 @@
 	return ..()
 
 /obj/item/clothing/under/circuitry/equipped(mob/user, slot) // Set wearer var when equiped.
-	wearer = om_handle(user)
+	rel_set(src, "wearer", user)
 	..()
 
 /obj/item/clothing/under/circuitry/dropped(mob/user, equipping, slot) // Remove wearer var.
-	wearer = null
+	rel_clear(src, "wearer")
 	..()
 
 // Gloves.
@@ -121,11 +123,11 @@
 	return ..()
 
 /obj/item/clothing/gloves/circuitry/equipped(mob/user, slot)
-	wearer = om_handle(user)
+	rel_set(src, "wearer", user)
 	..()
 
 /obj/item/clothing/gloves/circuitry/dropped(mob/user, equipping, slot)
-	wearer = null
+	rel_clear(src, "wearer")
 	..()
 
 // Glasses.
@@ -141,11 +143,11 @@
 	return ..()
 
 /obj/item/clothing/glasses/circuitry/equipped(mob/user, slot)
-	wearer = om_handle(user)
+	rel_set(src, "wearer", user)
 	..()
 
 /obj/item/clothing/glasses/circuitry/dropped(mob/user, equipping, slot)
-	wearer = null
+	rel_clear(src, "wearer")
 	..()
 
 // Shoes
@@ -161,11 +163,11 @@
 	return ..()
 
 /obj/item/clothing/shoes/circuitry/equipped(mob/user, slot)
-	wearer = om_handle(user)
+	rel_set(src, "wearer", user)
 	..()
 
 /obj/item/clothing/shoes/circuitry/dropped(mob/user, equipping, slot)
-	wearer = null
+	rel_clear(src, "wearer")
 	..()
 
 // Head
@@ -181,11 +183,11 @@
 	return ..()
 
 /obj/item/clothing/head/circuitry/equipped(mob/user, slot)
-	wearer = om_handle(user)
+	rel_set(src, "wearer", user)
 	..()
 
 /obj/item/clothing/head/circuitry/dropped(mob/user, equipping, slot)
-	wearer = null
+	rel_clear(src, "wearer")
 	..()
 
 // Ear
@@ -203,11 +205,11 @@
 	return ..()
 
 /obj/item/clothing/ears/circuitry/equipped(mob/user, slot)
-	wearer = om_handle(user)
+	rel_set(src, "wearer", user)
 	..()
 
 /obj/item/clothing/ears/circuitry/dropped(mob/user, equipping, slot)
-	wearer = null
+	rel_clear(src, "wearer")
 	..()
 
 // Exo-slot
@@ -223,14 +225,14 @@
 	return ..()
 
 /obj/item/clothing/suit/circuitry/equipped(mob/user, slot)
-	wearer = om_handle(user)
+	rel_set(src, "wearer", user)
 	..()
 
 /obj/item/clothing/suit/circuitry/dropped(mob/user, equipping, slot)
-	wearer = null
+	rel_clear(src, "wearer")
 	..()
 
 
-/// LC-refs: the clothing this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The clothing this refers to (a relation view: null once that is deleted).
 /obj/item/electronic_assembly/clothing/proc/clothing() as /obj/item/clothing
 	return clothing
