@@ -477,7 +477,7 @@
 	var/area/A = M.alarm_area_ref()
 	if(!A)
 		return TRUE
-	var/obj/machinery/alarm/MA = om_resolve(A.main_air_alarm)
+	var/obj/machinery/alarm/MA = A.main_air_alarm
 	return !MA || MA != M || MA.shorted
 
 // ---------------------------------------------------------------- canisters
