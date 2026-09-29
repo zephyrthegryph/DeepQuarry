@@ -29,6 +29,13 @@
 	if(!CheckAdminHref(list2params(href_list), href_list))
 		return FALSE
 
+/// A trusted in-game panel (tgui) running one of this holder's href actions for `user`:
+/// the admin token is supplied, every row's rights and the owner check still apply.
+/datum/admins/proc/topic_internal(mob/user, list/href_list)
+	var/list/trusted = href_list.Copy()
+	trusted["admin_token"] = href_token
+	return topic_dispatch(src, user, trusted)
+
 /mob/living/proc/can_centcom_reply()
 	return 0
 

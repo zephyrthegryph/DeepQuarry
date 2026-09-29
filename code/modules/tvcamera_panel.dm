@@ -26,15 +26,15 @@
 		return
 	switch(action)
 		if("set_channel")
-			Topic("channel=1", list("channel" = "1"))
+			camera_set_channel(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("toggle_video")
-			Topic("video=1", list("video" = "1"))
+			camera_toggle_video(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("toggle_audio")
-			Topic("sound=1", list("sound" = "1"))
+			camera_toggle_audio(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 
@@ -67,15 +67,15 @@
 		return
 	switch(action)
 		if("set_channel")
-			Topic("channel=1", list("channel" = "1"))
+			camera_set_channel(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("toggle_video")
-			Topic("video=1", list("video" = "1"))
+			camera_toggle_video(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("toggle_audio")
-			Topic("sound=1", list("sound" = "1"))
+			camera_toggle_audio(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 

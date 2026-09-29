@@ -69,3 +69,25 @@ DECLARE_INTERACTIONS(/obj/item/moneybag, \
 	new /obj/item/coin/silver(src)
 	new /obj/item/coin/gold(src)
 	new /obj/item/coin/gold(src)
+
+/// Takes one coin of material `coin_type` out of the bag.
+/obj/item/moneybag/proc/moneybag_remove_coin(mob/living/user, coin_type)
+	// Standard interaction gating: the actor must be a conscious, unrestrained mob
+	// adjacent to the bag before any contents can be moved.
+	if(!istype(user) || user.stat != CONSCIOUS || user.restrained() || !user.Adjacent(src))
+		return
+	var/static/list/coin_types = list(
+		MAT_GOLD = /obj/item/coin/gold,
+		MAT_SILVER = /obj/item/coin/silver,
+		MAT_IRON = /obj/item/coin/iron,
+		MAT_DIAMOND = /obj/item/coin/diamond,
+		MAT_PHORON = /obj/item/coin/phoron,
+		MAT_URANIUM = /obj/item/coin/uranium,
+	)
+	var/coin_path = coin_types[coin_type]
+	if(!coin_path)
+		return
+	var/obj/item/coin/COIN = locate(coin_path) in src.contents
+	if(!COIN)
+		return
+	COIN.forceMove(src.loc)

@@ -130,13 +130,13 @@
 			if(istype(src, /datum/error_viewer/error_entry))
 				var/datum/error_viewer/error_entry/E = src
 				if(E.usr_ref)
-					ui.user.client?.holder?.Topic("adminplayeropts=[E.usr_ref]", list("_src_" = "holder", "adminplayeropts" = E.usr_ref))
+					ui.user.client?.holder?.topic_internal(ui.user, list("_src_" = "holder", "adminplayeropts" = E.usr_ref))
 			return TRUE
 		if("follow_usr")
 			if(istype(src, /datum/error_viewer/error_entry))
 				var/datum/error_viewer/error_entry/E = src
 				if(E.usr_ref)
-					ui.user.client?.holder?.Topic("adminplayerobservefollow=[E.usr_ref]", list("_src_" = "holder", "adminplayerobservefollow" = E.usr_ref))
+					ui.user.client?.holder?.topic_internal(ui.user, list("_src_" = "holder", "adminplayerobservefollow" = E.usr_ref))
 			return TRUE
 		if("vv_usr_loc")
 			if(istype(src, /datum/error_viewer/error_entry))
@@ -149,7 +149,7 @@
 			if(istype(src, /datum/error_viewer/error_entry))
 				var/datum/error_viewer/error_entry/E = src
 				if(E.usr_loc())
-					ui.user.client?.holder?.Topic("adminplayerobservecoodjump=1", list("_src_" = "holder", "adminplayerobservecoodjump" = "1", "X" = "[E.usr_loc().x]", "Y" = "[E.usr_loc().y]", "Z" = "[E.usr_loc().z]"))
+					ui.user.client?.holder?.topic_internal(ui.user, list("_src_" = "holder", "adminplayerobservecoodjump" = "1", "X" = "[E.usr_loc().x]", "Y" = "[E.usr_loc().y]", "Z" = "[E.usr_loc().z]"))
 			return TRUE
 
 /// LC-refs: the dq_back_to this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.

@@ -305,3 +305,52 @@ DECLARE_INTERACTIONS(/obj/item/TVAssembly, INTERACT_ITEM(null, PROC_REF(interact
 				return TRUE
 
 	return FALSE
+
+/obj/item/tvcamera/proc/camera_set_channel(mob/user)
+	om_ask(user, /datum/om/prompt/text, PROC_REF(channel_named), default = channel, title = "Select new channel name", message = "Channel name", max_length = MAX_NAME_LEN, requires = PROMPT_USABLE_BY("physical"))
+
+/obj/item/tvcamera/proc/camera_toggle_video(mob/user)
+	camera.set_status(!camera.status)
+	if(camera.status)
+		to_chat(user,span_notice("Video streaming activated. Broadcasting on channel '[channel]'"))
+		show_tvs(loc)
+	else
+		to_chat(user,span_notice("Video streaming deactivated."))
+		hide_tvs()
+		for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
+			ES.stop_showing()
+	update_icon()
+
+/obj/item/tvcamera/proc/camera_toggle_audio(mob/user)
+	radio.ToggleBroadcast()
+	if(radio.broadcasting)
+		to_chat(user,span_notice("Audio streaming activated. Broadcasting on frequency [format_frequency(radio.frequency)]."))
+	else
+		to_chat(user,span_notice("Audio streaming deactivated."))
+
+/obj/item/clothing/accessory/bodycam/proc/camera_set_channel(mob/user)
+	om_ask(user, /datum/om/prompt/text, PROC_REF(channel_named), default = channel, title = "Select new channel name", message = "Channel name", max_length = MAX_NAME_LEN, requires = PROMPT_USABLE_BY("physical"))
+
+/obj/item/clothing/accessory/bodycam/proc/camera_toggle_video(mob/user)
+	bcamera.set_status(!bcamera.status)
+	var/turf/here = get_turf(user)
+	if(bcamera.status)
+		to_chat(user,span_notice("Video streaming activated. Broadcasting on channel '[channel]'"))
+		if(here)
+			here.visible_message(span_notice("[user] turns on their body camera."))
+		show_bodycamera_tvs(loc)
+	else
+		to_chat(user,span_notice("Video streaming deactivated."))
+		if(here)
+			here.visible_message(span_warning("[user] turns off their body camera!"))
+		hide_bodycamera_tvs()
+		for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
+			ES.stop_showing()
+	update_icon()
+
+/obj/item/clothing/accessory/bodycam/proc/camera_toggle_audio(mob/user)
+	bradio.ToggleBroadcast()
+	if(bradio.broadcasting)
+		to_chat(user,span_notice("Audio streaming activated. Broadcasting on frequency [format_frequency(bradio.frequency)]."))
+	else
+		to_chat(user,span_notice("Audio streaming deactivated."))

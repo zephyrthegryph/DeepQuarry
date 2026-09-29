@@ -216,3 +216,31 @@
 				reagents.trans_to_mob(L, reagent_amount, CHEM_BLOOD)
 		else if(istype(target, /obj/item/reagent_containers/food) || istype(target, /obj/item/slime_extract))
 			reagents.trans_to_obj(target, reagent_amount)
+
+/// Starts (`mix` TRUE) or stops mixing the beaker in slot `index`.
+/obj/item/gun/projectile/dartgun/proc/dartgun_set_mixing(mob/user, index, mix)
+	add_fingerprint(user)
+	if(!isnum(index) || index < 1 || index > length(beakers))
+		return
+	var/obj/item/B = LAZYACCESS(beakers, index)
+	if(!B)
+		return
+	if(mix)
+		LAZYOR(mixing, B)
+	else
+		LAZYREMOVE(mixing, B)
+	updateUsrDialog(user)
+
+/// Ejects the beaker in slot `index` onto the floor.
+/obj/item/gun/projectile/dartgun/proc/dartgun_eject_beaker(mob/user, index)
+	add_fingerprint(user)
+	if(!isnum(index) || index < 1 || index > length(beakers))
+		return
+	var/obj/item/reagent_containers/glass/beaker/B = LAZYACCESS(beakers, index)
+	if(!B)
+		return
+	to_chat(user, "You remove [B] from [src].")
+	LAZYREMOVE(mixing, B)
+	LAZYREMOVE(beakers, B)
+	B.forceMove(get_turf(src))
+	updateUsrDialog(user)
