@@ -41,6 +41,8 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	var/list/L = value
 	if(D in L)
 		return TRUE
+	if(var_name == "contents") // built in: no assoc values, and a lookup is a "bad index"
+		return FALSE
 	for(var/key in L)
 		if(!isnum(key) && L[key] == D)
 			return TRUE

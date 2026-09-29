@@ -55,7 +55,9 @@
 	TEST_ASSERT(body_identity.has_genetic_effect(/datum/body_effect/no_clone), "the body identity should carry no_clone")
 	var/datum/mind/probe = new /datum/mind("dq_p0_probe")
 	TEST_ASSERT_NULL(probe.identity, "a fresh mind has no identity until it enters a body")
+	qdel(probe)
 	H.mind_initialize()
+	own(H.mind) // the mind owns the identity: the test deletes it rather than dropping it
 	TEST_ASSERT_EQUAL(H.mind.get_identity(), body_identity, "the new mind should adopt the body's identity")
 	TEST_ASSERT_EQUAL(H.identity(), body_identity, "the body should keep its identity")
 	TEST_ASSERT(H.identity().has_genetic_effect(/datum/body_effect/no_clone), "no_clone must survive mind_initialize()")
