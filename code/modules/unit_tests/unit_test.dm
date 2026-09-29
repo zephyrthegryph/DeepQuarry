@@ -470,7 +470,16 @@ GLOBAL_VAR(dq_test_select_names)
 	TEST_ASSERT(isfloorturf(run_loc_floor_bottom_left), "run_loc_floor_bottom_left was not a floor ([run_loc_floor_bottom_left])")
 	TEST_ASSERT(isfloorturf(run_loc_floor_top_right), "run_loc_floor_top_right was not a floor ([run_loc_floor_top_right])")
 
-/// Everything allocate() made is the test's to delete when it ends.
+/// Everything allocate() made is the test's to delete when it ends. `allocated` is a relation
+/// list, never ownership: production code adopts allocated things freely, and whatever is still
+/// alive here when the test is torn down is deleted (deleted entries have left the view).
+REL_LIST(/datum/unit_test, allocated)
+
+/datum/unit_test/on_destroy(force)
+	for(var/datum/thing as anything in allocated?.Copy())
+		if(!QDELETED(thing))
+			qdel(thing)
+	..()
 
 /datum/unit_test/proc/Run()
 	TEST_FAIL("[type]/Run() called parent or not implemented")
@@ -503,7 +512,7 @@ GLOBAL_VAR(dq_test_select_names)
 		instance = new type(arglist(arguments))
 	else
 		instance = new type()
-	own_add(src, "allocated", instance)
+	rel_add(src, "allocated", instance)
 	return instance
 
 /// Hands something the test didn't allocate() but did cause (a construction product, a
@@ -511,21 +520,8 @@ GLOBAL_VAR(dq_test_select_names)
 /// Returns `thing`.
 /datum/unit_test/proc/own(datum/thing)
 	if(thing && !QDELETED(thing))
-		// A thing some other holder already owns goes when that owner goes.
-		if(!owner_of(thing))
-			own_add(src, "allocated", thing)
+		rel_add(src, "allocated", thing)
 	return thing
-
-/// Adds `thing` to dest's owned list `var_name`, detaching it first from whatever owns it now
-/// (the test's `allocated`, most often). own_move() would own_set() an empty list var.
-/datum/unit_test/proc/adopt_into_list(datum/thing, datum/dest, var_name)
-	var/datum/current = owner_of(thing)
-	if(current)
-		if(islist(current.vars[thing.own_slot]))
-			own_take_member(current, thing.own_slot, thing)
-		else
-			own_take(current, thing.own_slot)
-	return own_add(dest, var_name, thing)
 
 /// own()s everything currently on `T` (landmarks excepted): for a test whose subject
 /// deliberately leaves its products on the floor (deconstruction salvage, a finished build).

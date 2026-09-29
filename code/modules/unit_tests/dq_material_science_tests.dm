@@ -233,7 +233,7 @@
 	var/slots_total = SHEET_MATERIAL_AMOUNT
 	part.apply_material_construction(list(MATERIAL_ROLE_DIELECTRIC = MAT_DIAMOND), slots.type, slots_total)
 	own_clear(machine, "component_parts", OWN_DELETE)
-	adopt_into_list(part, machine, "component_parts")
+	own_add(machine, "component_parts", part)
 	TEST_ASSERT(machine.finalize_material_assembly(), "A constructed machine must retain the material makeup of its installed parts")
 	TEST_ASSERT(length(machine.material_component_manifest), "Machine material composition must remain inspectable after the frame is consumed")
 	TEST_ASSERT(machine.material_emp_resistance > 0, "Installed dielectric parts must affect whole-machine EMP behavior")

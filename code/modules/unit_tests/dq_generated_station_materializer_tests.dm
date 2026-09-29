@@ -73,13 +73,13 @@
 	spec.maximum_area = 704
 	spec.department_definitions = list(command_definition, docking_definition)
 	own_clear(spec, "departments", OWN_DELETE)
-	adopt_into_list(command, spec, "departments")
-	adopt_into_list(docking, spec, "departments")
+	own_add(spec, "departments", command)
+	own_add(spec, "departments", docking)
 	own_clear(spec, "layout_nodes", OWN_DELETE)
-	adopt_into_list(command_node, spec, "layout_nodes")
-	adopt_into_list(docking_node, spec, "layout_nodes")
+	own_add(spec, "layout_nodes", command_node)
+	own_add(spec, "layout_nodes", docking_node)
 	own_clear(spec, "layout_edges", OWN_DELETE)
-	adopt_into_list(edge, spec, "layout_edges")
+	own_add(spec, "layout_edges", edge)
 
 	var/datum/generated_station_materializer/materializer = new
 	var/origin_x = world.maxx - spec.grid_width + 1
