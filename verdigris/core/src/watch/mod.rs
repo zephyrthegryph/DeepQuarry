@@ -800,6 +800,8 @@ pub struct WatchState<D: Channels> {
     pending: Vec<WatchCmd>,
     changed: Vec<bool>,
     stats: WatchStats,
+    /// A watch was added or grew since the last evaluation (a bucket may be fresh).
+    fresh_pending: bool,
 }
 
 impl<D: Channels> WatchState<D> {
@@ -813,6 +815,7 @@ impl<D: Channels> WatchState<D> {
             pending: Vec::new(),
             changed: vec![false; layout.chunk_count()],
             stats: WatchStats::default(),
+            fresh_pending: false,
         }
     }
 
@@ -856,6 +859,7 @@ impl<D: Channels> WatchState<D> {
                     bucket.remote += 1;
                 }
                 bucket.fresh = true;
+                self.fresh_pending = true;
                 let index = w.id.index as usize;
                 if self.loc.len() <= index {
                     self.loc.resize(index + 1, None);
@@ -888,6 +892,7 @@ impl<D: Channels> WatchState<D> {
                     }
                     let (b, _) = self.loc[id.index as usize].expect("found");
                     self.buckets[b as usize].fresh = true;
+                    self.fresh_pending = true;
                 }
             }
             WatchCmd::RemoveEntry(id, payload) => {
@@ -913,6 +918,23 @@ impl<D: Channels> WatchState<D> {
         for cmd in std::mem::take(&mut self.pending) {
             self.apply(cmd);
         }
+        // Nothing new to evaluate and no cell changed since the last pass:
+        // every watch would read what it read then, and a watch's result
+        // depends only on the cells it reads, so none can fire. Skip the
+        // snapshot, the chunk sweep and the parallel bucket pass, which cost
+        // a few hundred microseconds per port per call on the 16k-chunk gas
+        // mirrors, several times a tick, while the station idles.
+        if !self.fresh_pending
+            && let Some(prev) = &self.prev
+            && store.chunks_differing_from(prev).next().is_none()
+        {
+            self.stats = WatchStats {
+                watches: self.stats.watches,
+                ..WatchStats::default()
+            };
+            return;
+        }
+        self.fresh_pending = false;
         match &self.prev {
             None => self.changed.fill(true),
             Some(prev) => {
@@ -973,6 +995,58 @@ impl<D: Channels> WatchState<D> {
         }
         self.stats = stats;
         self.prev = Some(store.snapshot());
+    }
+
+    /// Applies queued registrations and evaluates only the watches they
+    /// added or grew, against `store`: a new `Changed` watch takes its
+    /// baseline, a threshold its first reading. Every other watch, and the
+    /// change baseline [`evaluate`](Self::evaluate) diffs against, is left
+    /// alone, so registering costs the new watch's own evaluation instead of
+    /// a pass over every chunk (a snapshot, a chunk diff and a bucket sweep:
+    /// about 1 ms with the gas mirrors' 16k chunks, paid per registration).
+    pub fn evaluate_fresh(&mut self, store: &CowStore<D::Value>, out: &mut Outbox<D::Value>) {
+        let mut homes: Vec<u32> = Vec::new();
+        for cmd in std::mem::take(&mut self.pending) {
+            let id = match &cmd {
+                WatchCmd::Add(w) => Some(w.id),
+                WatchCmd::AddEntry(id, ..) => Some(*id),
+                _ => None,
+            };
+            self.apply(cmd);
+            if let Some(id) = id
+                && let Some(Some((b, _))) = self.loc.get(id.index as usize)
+            {
+                homes.push(*b);
+            }
+        }
+        homes.sort_unstable();
+        homes.dedup();
+        let reader = Reader::<D> { store };
+        let mut events = Vec::new();
+        self.fresh_pending = false;
+        for b in homes {
+            self.buckets[b as usize].fresh = false;
+            for w in &mut self.buckets[b as usize].watches {
+                if !w.fresh {
+                    continue;
+                }
+                w.fresh = false;
+                let mut fired = Fired::default();
+                w.node.eval(&reader, w.id, &mut fired, &mut events);
+                if fired.reason != 0 {
+                    out.push_wake(Wake {
+                        subscriber: w.subscriber,
+                        lane: w.lane,
+                        reason: fired.reason,
+                        source: fired.source.unwrap_or(0),
+                        watch: w.id,
+                    });
+                }
+            }
+        }
+        for e in events {
+            out.push_event(e);
+        }
     }
 
     /// The frame task body: evaluate against the domain's live store and

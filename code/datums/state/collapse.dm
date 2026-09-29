@@ -46,7 +46,8 @@ GLOBAL_TABLE(state_refcount_overhead, GLOBAL_PROC_REF(build_state_refcount_overh
 /datum/state_refcount_probe/proc/measure_refcount_overhead()
 	var/list/nodes = list(src, new /datum/state_refcount_probe)
 	var/list/internal = nodes.Copy()
-	. = list(state_refcount_excess(nodes, internal, 1), state_refcount_excess(nodes, internal, 2))
+	var/list/counts = state_internal_ref_counts(nodes, internal)
+	. = list(state_refcount_excess(nodes, internal, 1, counts), state_refcount_excess(nodes, internal, 2, counts))
 	qdel(nodes[2])
 
 /// Built-in vars the incoming-reference scan skips: they are counted by the
@@ -140,20 +141,23 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 /proc/state_refcount_blockers(list/nodes, list/internal, held_refs, name_holders = FALSE)
 	. = list()
 	var/list/overhead = GLOBAL_TABLE_GET(state_refcount_overhead)
+	var/list/counts = state_internal_ref_counts(nodes, internal)
 	for(var/i in 1 to length(nodes))
-		var/extra = state_refcount_excess(nodes, internal, i) - (i == 1 ? overhead[1] + held_refs : overhead[2])
+		var/extra = state_refcount_excess(nodes, internal, i, counts) - (i == 1 ? overhead[1] + held_refs : overhead[2])
 		if(extra > 0)
 			. += state_describe_outside_refs(nodes[i], extra, name_holders)
 
 /// refcount() of nodes[i] less the references its container, contents and subtree account for.
-/proc/state_refcount_excess(list/nodes, list/internal, i)
-	return refcount(nodes[i]) - state_accounted_refs(nodes[i], internal)
+/// `internal_counts` (state_internal_ref_counts()) carries the subtree's references to every node,
+/// counted in one pass; without it they are counted for this node alone.
+/proc/state_refcount_excess(list/nodes, list/internal, i, list/internal_counts)
+	return refcount(nodes[i]) - state_accounted_refs(nodes[i], internal, internal_counts ? internal_counts[i] : null)
 
 /// References to `node` that its container, its contents and the subtree account for.
 /// Relation views naming it count too: collapse parks them (om_handle_park()) and they re-link
-/// when the thing re-materializes.
-/proc/state_accounted_refs(datum/node, list/internal)
-	. = state_internal_refs(node, internal) + rel_incoming_refs(node)
+/// when the thing re-materializes. `internal_refs`: the subtree's references to it, when already counted.
+/proc/state_accounted_refs(datum/node, list/internal, internal_refs)
+	. = (isnull(internal_refs) ? state_internal_refs(node, internal) : internal_refs) + rel_incoming_refs(node)
 	if(ismovable(node))
 		var/atom/movable/movable = node
 		if(movable.loc)
@@ -195,6 +199,54 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 			if(name in GLOB.state_refscan_skip)
 				continue
 			. += state_count_refs_in(holder.vars[name], node, 0, (name in GLOB.state_refscan_flat))
+
+/// References to each of `nodes` from the vars of the subtree and its owned parts, as counts by
+/// index: one pass over the holders' vars. state_internal_refs() per node rescanned every holder
+/// once per node, O(nodes x holders), which made one collapse check on a full locker cost 5-25 ms.
+/// Nodes are matched with nodes.Find(), so counting holds no reference to any node beyond what
+/// `nodes` already does and the refcount overhead calibration is unaffected.
+/proc/state_internal_ref_counts(list/nodes, list/internal)
+	var/list/counts = new /list(length(nodes))
+	for(var/i in 1 to length(counts))
+		counts[i] = 0
+	for(var/j in 1 to length(internal))
+		var/datum/holder = internal[j]
+		for(var/name in holder.vars)
+			if(name in GLOB.state_refscan_skip)
+				continue
+			state_tally_refs_in(holder.vars[name], nodes, counts, 0, (name in GLOB.state_refscan_flat))
+	return counts
+
+/// state_count_refs_in() for every node at once: adds each reference to one of `nodes` found in
+/// `value` to `counts` at that node's index. Same traversal and flat-list rules.
+/proc/state_tally_refs_in(value, list/nodes, list/counts, depth, flat = FALSE)
+	if(isdatum(value))
+		var/found = nodes.Find(value)
+		if(found)
+			counts[found]++
+		return
+	if(!islist(value) || depth > 4)
+		return
+	var/list/L = value
+	for(var/key in L)
+		if(isnull(key))
+			continue
+		if(islist(key))
+			state_tally_refs_in(key, nodes, counts, depth + 1)
+		else if(isdatum(key))
+			var/found = nodes.Find(key)
+			if(found)
+				counts[found]++
+		if(!flat && !isnum(key) && !islist(key))
+			var/assoc
+			// See state_count_refs_in(): a built-in list with no associated values.
+			try
+				assoc = L[key]
+			catch // ALLOW(silent_catch): a list with no associated values is expected here; it is read as flat
+				flat = TRUE
+				continue
+			if(!isnull(assoc))
+				state_tally_refs_in(assoc, nodes, counts, depth + 1)
 
 /// `flat`: a built-in list with no associated values (vis_contents), where
 /// L[object] is a "bad index" runtime rather than null.

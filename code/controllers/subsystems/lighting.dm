@@ -1,3 +1,7 @@
+/// Source atom type -> light source updates (update_corners()) since boot or the last
+/// "lightcensus" reset. Read through the localhost world Topic "lightcensus".
+GLOBAL_LIST_EMPTY(lighting_update_census)
+
 SUBSYSTEM_DEF(lighting)
 	name = "Lighting"
 	dependencies = list(
@@ -49,6 +53,9 @@ SUBSYSTEM_DEF(lighting)
 		i += 1
 
 		var/datum/light_source/L = queue[i]
+		// Steady-state census (world Topic "lightcensus"): which sources keep being re-queued.
+		var/census_key = L.source_atom ? L.source_atom.type : /datum/light_source
+		GLOB.lighting_update_census[census_key] = (GLOB.lighting_update_census[census_key] || 0) + 1
 		L.update_corners()
 
 		if(!QDELETED(L))

@@ -34,6 +34,7 @@
 	var/window_world_wakes = 0
 	/// The machine world service's cumulative step time at the window start (it is no subsystem).
 	var/window_machines_ms = 0
+	var/window_om_deadlines = 0
 
 /// The scenario body. Call fail() to abort with a reason.
 /datum/benchmark/proc/Run()
@@ -102,6 +103,7 @@
 	window_subsystem_fires = list()
 	window_world_wakes = GLOB.om_live_sched?.world_wakes
 	window_machines_ms = GLOB.machine_service.total_ms
+	window_om_deadlines = benchmark_om_deadline_count()
 	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)
 		window_subsystem_fires[subsystem] = subsystem.times_fired
 	if(profiling)
@@ -161,6 +163,10 @@
 	var/list/world_step = om_world_diagnostics()
 	world_step["window_wakes"] = world_step["total_wakes"] - window_world_wakes
 	count_metric("[prefix]_world_wakes", world_step["window_wakes"], "wakes", "lower")
+	// OM deadline wheel entries (timers, task steps, throttles) at the window's ends: a boot
+	// backlog still draining shows as a large start count falling over the window.
+	count_metric("[prefix]_wheel_deadlines_start", window_om_deadlines, "entries")
+	count_metric("[prefix]_wheel_deadlines_end", benchmark_om_deadline_count(), "entries")
 	detail("[prefix]_world_step", world_step)
 	detail("[prefix]_outliers", Master.perf_outliers.Copy())
 	detail("[prefix]_worst_tick", LAZYCOPY(Master.perf_worst_tick))
@@ -168,6 +174,13 @@
 		SSprofiler.StopProfiling()
 		SSprofiler.DumpFile(allow_yield = FALSE)
 	return tick
+
+/// Entries on the OM scheduler's deadline wheel right now.
+/proc/benchmark_om_deadline_count()
+	. = 0
+	var/datum/om/scheduler/sched = om_scheduler()
+	for(var/list/L as anything in sched?.buckets)
+		. += length(L) / 4
 
 /// Records a named point in time with process memory and every Rust metric.
 /datum/benchmark/proc/mark(name)

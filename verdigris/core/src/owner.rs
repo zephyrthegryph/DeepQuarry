@@ -438,8 +438,16 @@ pub struct MainPort<D: Domain> {
     state: Res<DomainState<D>>,
     fallback: Option<Fallback<D::Value>>,
     ticks_since_view: u32,
+    /// Cells DM wrote, in order (see [`writes_since`](Self::writes_since)).
+    journal: Vec<u32>,
+    /// The write number of `journal[0]`: older writes were dropped.
+    journal_start: u64,
     _main_thread_only: PhantomData<Cell<()>>,
 }
+
+/// Writes the journal keeps before dropping its older half. A reader that
+/// falls further behind re-reads everything it mirrors.
+const JOURNAL_CAP: usize = 1 << 16;
 
 impl<D: Domain> MainPort<D> {
     pub(crate) fn new(
@@ -467,6 +475,8 @@ impl<D: Domain> MainPort<D> {
                 rejected_pieces: 0,
             }),
             ticks_since_view: 0,
+            journal: Vec::new(),
+            journal_start: 0,
             _main_thread_only: PhantomData,
         }
     }
@@ -547,6 +557,12 @@ impl<D: Domain> MainPort<D> {
         if self.layout.locate(cell).is_none() {
             return Err(PortError::OutOfRange(cell));
         }
+        if self.journal.len() >= JOURNAL_CAP {
+            let dropped = JOURNAL_CAP / 2;
+            self.journal.drain(..dropped);
+            self.journal_start += dropped as u64;
+        }
+        self.journal.push(cell);
         if let Some(fb) = &mut self.fallback {
             self.commands.issue();
             fb.written_since_dispatch.insert(cell, ());
@@ -585,6 +601,24 @@ impl<D: Domain> MainPort<D> {
             self.commands.last_issued().0,
             self.fallback.as_ref().map_or(0, |fb| fb.applied_pieces),
         )
+    }
+
+    /// A mark for [`writes_since`](Self::writes_since): the number of DM
+    /// writes so far.
+    #[must_use]
+    pub fn write_mark(&self) -> u64 {
+        self.journal_start + self.journal.len() as u64
+    }
+
+    /// The cells DM wrote (commands and puts, one entry per write) since
+    /// `mark` from [`write_mark`](Self::write_mark), or `None` when the
+    /// journal no longer reaches back that far (or `mark` is from another
+    /// port). Readers that mirror cells (the gas watch probes) re-read only
+    /// these after a write, instead of every cell they mirror.
+    #[must_use]
+    pub fn writes_since(&self, mark: u64) -> Option<&[u32]> {
+        let from = usize::try_from(mark.checked_sub(self.journal_start)?).ok()?;
+        self.journal.get(from..)
     }
 
     /// The view pinned for this tick.

@@ -202,6 +202,16 @@ impl Mirror {
         self.port.filter(&mut outbox);
         outbox.wakes().to_vec()
     }
+
+    /// Evaluates only the watches registered since the last evaluation
+    /// (`WatchState::evaluate_fresh`): what a registration pays.
+    fn prime(&mut self, probes: &CowStore<GasCell>) -> Vec<Wake> {
+        let mut outbox: Outbox<GasCell> = Outbox::default();
+        self.port.dispatch(&mut self.state);
+        self.state.evaluate_fresh(probes, &mut outbox);
+        self.port.filter(&mut outbox);
+        outbox.wakes().to_vec()
+    }
 }
 
 struct Mixes {
@@ -266,6 +276,7 @@ pub(crate) fn reset_watches() {
         m.cells = fresh.cells;
         m.dirty = fresh.dirty;
     });
+    forget_turf_mark();
 }
 
 /// Frees every live main slot not in `keep`, returning how many were freed.
@@ -469,11 +480,21 @@ pub fn store(r: MixRef, before: &Mixture, after: &Mixture) {
     mirror(r, after);
 }
 
+/// Writes a mirror only when it changes. `CowStore::set` copies the whole
+/// chunk (1024 cells) when the watch states' last snapshot still shares it,
+/// even for an equal value, and a changed chunk also makes every watch in it
+/// re-evaluate at the next drain.
+fn set_probe(probes: &mut CowStore<GasCell>, h: u32, cell: GasCell) {
+    if probes.get(h) != Some(cell) {
+        probes.set(h, cell);
+    }
+}
+
 /// Refreshes a watched main or pipe mixture's mirror.
 fn mirror(r: MixRef, mix: &Mixture) {
     with_mixes(|m| {
         if m.watched.contains_key(&r.id()) {
-            m.probes.set(r.id(), cell_of_mixture(mix));
+            set_probe(&mut m.probes, r.id(), cell_of_mixture(mix));
         }
     });
 }
@@ -665,15 +686,27 @@ fn watch_mirrored(
         for (h, mix) in loaded {
             *m.watched.entry(h).or_default() += 1;
             if let Some(mix) = mix {
-                m.probes.set(h, cell_of_mixture(&mix));
+                set_probe(&mut m.probes, h, cell_of_mixture(&mix));
             }
         }
         m.cells.insert((port, id), ids);
-        Ok::<_, eyre::Report>((id, evaluate(m)))
+        // Only the new watch is evaluated (its baseline): a full evaluate of
+        // both ports here cost ~1 ms per registration and made boot, which
+        // registers thousands, quadratic. Other watches see the probes just
+        // set at the next drain.
+        let wakes = if port == DEPENDENCY_PORT {
+            m.deps.prime(&m.probes)
+        } else {
+            m.reactor.prime(&m.probes)
+        };
+        Ok::<_, eyre::Report>((id, wakes))
     })?;
     HELD.with_borrow_mut(|h| {
-        h.2.extend(primed.0);
-        h.1.extend(primed.1);
+        if port == DEPENDENCY_PORT {
+            h.1.extend(primed);
+        } else {
+            h.2.extend(primed);
+        }
     });
     Ok(id)
 }
@@ -730,23 +763,23 @@ fn take_wakes() -> Vec<Wake> {
     // cells are primed at watch time (`watch_mirrored`), so an unchanged
     // view leaves every mirror current.
     let started = std::time::Instant::now();
-    let signature = turf_view_signature();
-    let changed = signature.is_none() || LAST_TURF_SIGNATURE.get() != signature;
-    let mut fresh: Vec<(u32, GasCell)> = Vec::new();
-    if changed {
-        let turfs: Vec<u32> = with_mixes(|m| {
+    let plan = turf_refresh_plan();
+    let changed = !matches!(plan, TurfRefresh::Unchanged);
+    let turfs: Vec<u32> = match plan {
+        TurfRefresh::Unchanged => Vec::new(),
+        TurfRefresh::All => with_mixes(|m| {
             m.watched
                 .keys()
                 .copied()
                 .filter(|&h| h >= TURF_BASE)
                 .collect()
-        });
-        fresh = turfs
-            .into_iter()
-            .filter_map(|h| Some((h, cell_of_mixture(&load(MixRef::from_id(h)?)?))))
-            .collect();
-        LAST_TURF_SIGNATURE.set(signature);
-    }
+        }),
+        TurfRefresh::Only(handles) => handles,
+    };
+    let fresh: Vec<(u32, GasCell)> = turfs
+        .into_iter()
+        .filter_map(|h| Some((h, cell_of_mixture(&load(MixRef::from_id(h)?)?))))
+        .collect();
     {
         let metrics = crate::metrics::registry();
         #[allow(clippy::cast_precision_loss)]
@@ -768,7 +801,7 @@ fn take_wakes() -> Vec<Wake> {
     }
     let deps = with_mixes(|m| {
         for (h, c) in fresh {
-            m.probes.set(h, c);
+            set_probe(&mut m.probes, h, c);
         }
         let (reactor, deps) = evaluate(m);
         out.extend(reactor);
@@ -781,25 +814,128 @@ fn take_wakes() -> Vec<Wake> {
     out
 }
 
-thread_local! {
-    /// [`turf_view_signature`] as of the last turf mirror refresh.
-    static LAST_TURF_SIGNATURE: std::cell::Cell<Option<TurfViewSignature>> = const { std::cell::Cell::new(None) };
+/// Which watched turf cells a drain must re-read (`turf_refresh_plan`).
+enum TurfRefresh {
+    /// DM's view of the field is as it was: every mirror is current.
+    Unchanged,
+    /// Re-read every watched turf cell.
+    All,
+    /// Re-read these watched turf handles only.
+    Only(Vec<u32>),
 }
 
-type TurfViewSignature = ((usize, u64, u64, u64), (usize, u64, u64, u64));
+type PortSignature = (usize, u64, u64, u64);
 
-/// What DM reads from the turf gas field (cells and geometry) changes only
-/// when this does (`MainPort::read_signature`). `None` before the field exists.
-fn turf_view_signature() -> Option<TurfViewSignature> {
-    let key = super::turf_key().ok()?;
-    with_world(|w| {
+/// DM's view of the turf field as of the last mirror refresh.
+struct TurfMark {
+    cells: PortSignature,
+    geometry: PortSignature,
+    /// The cells port's pinned view, to diff the next one against by chunk.
+    pinned: std::sync::Arc<vg_core::owner::View<GasCell>>,
+    /// The cells port's write mark (`MainPort::write_mark`).
+    writes: u64,
+}
+
+thread_local! {
+    static LAST_TURF_MARK: RefCell<Option<TurfMark>> = const { RefCell::new(None) };
+}
+
+/// Forgets the turf mark: the next drain re-reads every watched turf cell
+/// (the world, and with it the field's ports, was rebuilt).
+fn forget_turf_mark() {
+    LAST_TURF_MARK.with_borrow_mut(|m| *m = None);
+}
+
+/// What changed in DM's view of the turf field (cells and geometry,
+/// `MainPort::read_signature`) since the last refresh, as the watched turf
+/// handles to re-read. The turf field pins a new frame about once a second
+/// while this drain runs every tick (twice: reactor wakes and dependency
+/// observations), and every DM write (any vent) moves the signature too.
+/// Re-reading every watched turf cell on each of those cost most of the OM
+/// world step on Southern Cross, so only the cells that can differ are
+/// re-read: the cells DM wrote since (the port's write journal) and, after
+/// a new frame, the watched cells in chunks the frame changed. A geometry
+/// change, a fallback piece, or a journal that no longer reaches back
+/// re-reads everything. Newly watched cells are primed at watch time
+/// (`watch_mirrored`).
+fn turf_refresh_plan() -> TurfRefresh {
+    let Ok(key) = super::turf_key() else {
+        return TurfRefresh::All;
+    };
+    let now = with_world(|w| {
         let sim = w.sim();
+        let cells = sim.port_ref(key.cells);
+        let geometry = sim.port_ref(key.geometry);
         Ok((
-            sim.port_ref(key.cells).read_signature(),
-            sim.port_ref(key.geometry).read_signature(),
+            cells.read_signature(),
+            geometry.read_signature(),
+            std::sync::Arc::clone(cells.pinned()),
+            cells.write_mark(),
         ))
+    });
+    let Ok((cells_sig, geom_sig, pinned, writes)) = now else {
+        return TurfRefresh::All;
+    };
+    let last = LAST_TURF_MARK.with_borrow_mut(|m| {
+        m.replace(TurfMark {
+            cells: cells_sig,
+            geometry: geom_sig,
+            pinned: std::sync::Arc::clone(&pinned),
+            writes,
+        })
+    });
+    let Some(last) = last else {
+        return TurfRefresh::All;
+    };
+    if last.cells == cells_sig && last.geometry == geom_sig {
+        return TurfRefresh::Unchanged;
+    }
+    // Geometry (capacity) or a fallback piece applied to the live store.
+    if last.geometry != geom_sig || last.cells.3 != cells_sig.3 {
+        return TurfRefresh::All;
+    }
+    let written: Option<Vec<u32>> = with_world(|w| {
+        Ok(w.sim()
+            .port_ref(key.cells)
+            .writes_since(last.writes)
+            .map(<[u32]>::to_vec))
     })
     .ok()
+    .flatten();
+    let Some(mut written) = written else {
+        return TurfRefresh::All;
+    };
+    let layout = pinned.store().layout();
+    let changed_chunks: Vec<bool> = if std::sync::Arc::ptr_eq(&last.pinned, &pinned) {
+        Vec::new()
+    } else {
+        let mut mask = vec![false; layout.chunk_count()];
+        let mut any = false;
+        for c in pinned.store().chunks_differing_from(last.pinned.store()) {
+            mask[c] = true;
+            any = true;
+        }
+        if any { mask } else { Vec::new() }
+    };
+    written.sort_unstable();
+    written.dedup();
+    TurfRefresh::Only(with_mixes(|m| {
+        let mut out: Vec<u32> = written
+            .iter()
+            .map(|&c| TURF_BASE + c)
+            .filter(|h| m.watched.contains_key(h))
+            .collect();
+        if !changed_chunks.is_empty() {
+            out.extend(m.watched.keys().copied().filter(|&h| {
+                h >= TURF_BASE
+                    && layout
+                        .locate(h - TURF_BASE)
+                        .is_some_and(|(chunk, _)| changed_chunks[chunk])
+                    && written.binary_search(&(h - TURF_BASE)).is_err()
+            }));
+        }
+        out
+    }))
 }
 
 thread_local! {

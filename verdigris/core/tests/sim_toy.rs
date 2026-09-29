@@ -735,3 +735,23 @@ fn write_direct_is_seen_at_once_and_folds_in_queued_writes() {
     assert_eq!(sim.port(keys.heat).read(3), Some(Heat { energy: 3.0 }));
     assert_eq!(sim.port(keys.heat).read(5), Some(Heat { energy: 7.0 }));
 }
+
+#[test]
+fn write_journal_lists_cells_written_since_a_mark() {
+    let (builder, keys) = toy_builder(config(1), false);
+    let mut sim = builder.build().unwrap();
+    let port = sim.port(keys.heat);
+    let start = port.write_mark();
+    assert_eq!(port.writes_since(start), Some(&[][..]));
+    port.submit(3, HeatCmd::Add(1.0)).unwrap();
+    port.put(7, Heat { energy: 2.0 }).unwrap();
+    let mid = port.write_mark();
+    port.submit(3, HeatCmd::Add(1.0)).unwrap();
+    assert_eq!(port.writes_since(start), Some(&[3, 7, 3][..]));
+    assert_eq!(port.writes_since(mid), Some(&[3][..]));
+    // A mark from the future (another port) reaches nothing.
+    assert_eq!(port.writes_since(port.write_mark() + 1), None);
+    // An out-of-range write is refused and not journalled.
+    assert!(port.submit(CELLS + 5, HeatCmd::Add(1.0)).is_err());
+    assert_eq!(port.writes_since(mid), Some(&[3][..]));
+}
