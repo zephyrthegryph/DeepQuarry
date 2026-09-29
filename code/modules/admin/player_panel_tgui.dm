@@ -6,7 +6,7 @@
 
 /datum/player_panel
 	var/datum/admins/owner_admin
-	var/list/cached_players
+	var/list/shown_players
 
 /datum/player_panel/New(datum/admins/owner_admin)
 	..()
@@ -77,10 +77,10 @@ DECLARE_REF(/datum/admins, "tgui_player_panel", PAIR, "owner_admin")
 			"ref" = "\ref[M]",
 			"ip" = M.lastKnownIP,
 		))
-	cached_players = players
+	shown_players = players
 
 /datum/player_panel/tgui_data(mob/user)
-	return list("players" = cached_players || list())
+	return list("players" = shown_players || list())
 
 /datum/player_panel/tgui_act(action, list/params, datum/tgui/ui)
 	. = ..()

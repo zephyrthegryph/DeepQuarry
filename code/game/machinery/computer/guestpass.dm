@@ -80,6 +80,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE_AS(I_HELP, "Show", PRO
 DECLARE_PERIODIC(/obj/item/card/id/guest, PERIODIC_SLOW)
 
 /obj/item/card/id/guest/periodic_step()
+	// ALLOW(sys_deadline_poll): expiry state (guest pass expiration_time), owned by the EXPIRY_* migration
 	if(expired == 0 && world.time >= expiration_time)
 		visible_message(span_warning("\The [src] flashes a few times before turning red."))
 		icon_state = "guest-invalid"

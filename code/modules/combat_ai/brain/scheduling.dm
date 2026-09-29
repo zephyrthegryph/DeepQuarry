@@ -37,6 +37,7 @@
 	var/datum/ai_brain/A = brain_of(L)
 	if(!A || A.is_busy() || !L.loc)
 		return
+	// ALLOW(sys_deadline_poll): backoff gate on a behaviour that already ticks every 2 s; the brain moves next_strategic_at itself
 	if(A.next_strategic_at > world.time)
 		return
 	A.handle_strategicals()

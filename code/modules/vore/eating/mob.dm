@@ -38,7 +38,7 @@
 	var/allow_mimicry = TRUE 	// Allows mimicking their character
 	var/allow_mind_transfer = FALSE			//Allows ones mind to be taken over or swapped
 	var/nutrition_message_visible = TRUE
-	var/list/nutrition_messages = list( // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/nutrition_messages = list( // ALLOW(instance_list): d: per-mob nutrition_messages with starting entries, edited at runtime; mobs are few
 							"They are starving! You can hear their stomach snarling from across the room!",
 							"They are extremely hungry. A deep growl occasionally rumbles from their empty stomach.",
 							"",
@@ -50,7 +50,7 @@
 							"They are so absolutely stuffed that you aren't sure how it's possible for them to move. They can't seem to swell any bigger. The surface of their belly looks sorely strained!",
 							"They are utterly filled to the point where it's hard to even imagine them moving, much less comprehend it when they do. Their gut is swollen to monumental sizes and amount of food they consumed must be insane.")
 	var/weight_message_visible = TRUE
-	var/list/weight_messages = list( // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/weight_messages = list( // ALLOW(instance_list): d: per-mob weight_messages with starting entries, edited at runtime; mobs are few
 							"They are terribly lithe and frail!",
 							"They have a very slender frame.",
 							"They have a lightweight, athletic build.",
@@ -65,13 +65,13 @@
 	var/vore_capacity = 0				// Maximum capacity, -1 for unlimited
 	var/vore_capacity_ex = list("stomach" = 0) //expanded list of capacities
 	var/vore_fullness = 0				// How "full" the belly is (controls icons)
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): d: per-mob vore_fullness_ex with starting entries, edited at runtime; mobs are few
 	var/list/vore_fullness_ex = list("stomach" = 0) // Expanded list of fullness
 	var/belly_size_multiplier = 1
 	var/vore_sprite_multiply = list("stomach" = FALSE, "taur belly" = FALSE)
 	var/vore_sprite_color = list("stomach" = "#000", "taur belly" = "#000")
 
-	var/list/vore_icon_bellies = list("stomach") // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/vore_icon_bellies = list("stomach") // ALLOW(instance_list): d: per-mob vore_icon_bellies with starting entries, edited at runtime; mobs are few
 	var/updating_fullness = FALSE
 	var/tmp/obj/belly/previewing_belly
 
@@ -101,7 +101,7 @@
 
 	var/voice_freq = 42500	// Preference for character voice frequency
 	var/emote_sound_mode = EMOTE_SOUND_VOICE_FREQ
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): d: per-mob voice_sounds_list, filled at runtime; mobs are few
 	var/list/voice_sounds_list = list()	// The sound list containing our voice sounds!
 	var/died_in_vr = FALSE //For virtual reality sleepers
 	var/last_move_time = 0 //For movement smoothing

@@ -9,7 +9,6 @@
 	slot = ACCESSORY_SLOT_DECOR
 	var/base_icon
 	var/open
-	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/tmp/held_handle	//Item inside locket.
 	special_handling = TRUE
 

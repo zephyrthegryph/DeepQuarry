@@ -349,7 +349,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 
 /mob/observer/dead
 	var/datum/exonet_protocol/exonet = null
-	var/list/exonet_messages = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/exonet_messages = list() // ALLOW(instance_list): d: per-mob exonet_messages, filled at runtime; mobs are few
 
 // Proc: New()
 // Parameters: None

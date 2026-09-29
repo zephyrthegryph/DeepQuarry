@@ -35,8 +35,8 @@
 
 // This is defined higher up, in /clothing to avoid lots of copypasta.
 /obj/item/clothing
-	var/obj/item/electronic_assembly/clothing/IC = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
-	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/obj/item/electronic_assembly/clothing/IC = null // ALLOW(state_ref): owned: the built-in electronic assembly, kept in the clothing's contents
+	// ALLOW(state_ref): owned: the action-button circuit inside the built-in assembly
 	var/obj/item/integrated_circuit/built_in/action_button/action_circuit = null // This gets pulsed when someone clicks the button on the hud.
 
 /obj/item/clothing/examine(mob/user)

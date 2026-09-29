@@ -15,8 +15,8 @@
 	var/max_blob_points = 200
 	var/last_attack = 0
 	var/datum/blob_type/blob_type = null
-	var/list/blob_mobs = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
-	var/list/resource_blobs = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/blob_mobs = list() // ALLOW(instance_list): d: per-mob blob_mobs, filled at runtime; mobs are few
+	var/list/resource_blobs = list() // ALLOW(instance_list): d: per-mob resource_blobs, filled at runtime; mobs are few
 	var/placed = 0
 	var/base_point_rate = 2 //for blob core placement
 	var/ai_controlled = TRUE
@@ -24,7 +24,7 @@
 
 	universal_understand = TRUE
 
-	var/list/has_langs = list(LANGUAGE_ANIMAL) // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/has_langs = list(LANGUAGE_ANIMAL) // ALLOW(instance_list): c: read-only per-subtype table on a mob (27 subtype overrides); mobs are few, a getter is not worth it
 	var/tmp/datum/language/default_language_static
 
 /mob/observer/blob/get_default_language()

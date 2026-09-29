@@ -5,7 +5,7 @@
 	var/electronic_warfare = 1
 	var/registered_user_handle
 
-	var/datum/tgui_module/agentcard/agentcard_module // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/tmp/datum/tgui_module/agentcard/agentcard_module
 
 // agentcard_module is rebuilt fresh by Initialize() every time (like reset_icon());
 // registered_user is a mob ref (and a live observer registration) (C5).

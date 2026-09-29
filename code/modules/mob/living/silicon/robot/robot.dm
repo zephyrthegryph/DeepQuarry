@@ -106,7 +106,7 @@ OM_TIMER_SLOT(/mob/living/silicon/robot, weapon_lock)
 	var/power_demand = 0
 	/// Accumulated heat the cooling loop failed to shed (machine physiology).
 	var/heat_debt = 0
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): d: per-mob req_access with starting entries, edited at runtime; mobs are few
 	var/list/req_access = list(ACCESS_ROBOTICS) // Interned per subtype in Initialize().
 	var/ident = 0
 	var/viewalerts = 0

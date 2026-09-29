@@ -36,7 +36,7 @@
 	vore_pounce_maxhealth = 1000
 	vore_bump_emote = "encloses on"
 	/// OM handles of the mobs already eaten once.
-	var/list/eaten_mobs = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/eaten_mobs = list() // ALLOW(instance_list): d: per-mob eaten_mobs, filled at runtime; mobs are few
 
 /mob/living/simple_mob/vore/mantrap/load_default_bellies()
 	. = ..()

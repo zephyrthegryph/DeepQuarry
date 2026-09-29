@@ -104,6 +104,7 @@
 #define LIFT_WAITING_B 3	// Waiting floor_wait_delay after announcement before potentially moving again.
 
 /datum/turbolift/periodic_step()
+	// ALLOW(sys_deadline_poll): lift state machine pacing: each state sets its own wait before the next move or announcement
 	if(world.time < next_process)
 		return
 	switch(busy_state)

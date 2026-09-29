@@ -5,12 +5,15 @@ A process() that compares world.time with a stored deadline is polling a timer: 
 every tick only to find out that the deadline has not passed yet. Such work belongs in a
 om_after() timer, which wakes the datum once, at the deadline.
 
-This flags every process() body (periodic_step() on a declared continuous lane is exempt: it is continuous
-work) with a comparison between world.time and a variable, such as
+This flags every periodic body -- process(), periodic_step(), machine_step(), service_step() and an
+object-model behaviour's tick() -- with a comparison between world.time and a variable, such as
 `world.time >= next_fire` or `close_at <= world.time`. Arithmetic like
 `world.time - last_run` is not a comparison against a deadline and is not flagged.
 
-What is left is listed in tools/ci/deadline_polling_allowlist.txt, one `path:proc_path`
+A site that must stay (a rate gate inside continuous work, a deadline that slides every step)
+carries `// ALLOW(sys_deadline_poll): <reason>` (the sys_lint rule deadline_poll in
+tools/ci/sys_rules/hygiene.py reads the same scan). Whole procs can still be listed in
+tools/ci/deadline_polling_allowlist.txt, one `path:proc_path`
 per line with a reason after `#`. An entry that no longer matches anything is an error too,
 so the list only shrinks.
 
@@ -25,10 +28,16 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ALLOWLIST = os.path.join(ROOT, "tools", "ci", "deadline_polling_allowlist.txt")
 
-# `/type/path/process(` at column 0, or `process(` / `proc/process(` indented one level under a type block.
-TOP_LEVEL = re.compile(r"^(/[\w/]+?)/(?:proc/)?process\(")
+# The periodic bodies: `/type/path/<name>(` at column 0, or `<name>(` / `proc/<name>(` indented one
+# level under a type block. tick() counts only on object-model behaviours (/datum/om/behaviour/...).
+PERIODIC = r"(process|periodic_step|machine_step|service_step|tick)"
+TOP_LEVEL = re.compile(r"^(/[\w/]+?)/(?:proc/)?" + PERIODIC + r"\(")
 TYPE_BLOCK = re.compile(r"^(/[\w/]+)\s*(?://.*)?$")
-NESTED = re.compile(r"^\t(?:proc/)?process\(")
+NESTED = re.compile(r"^\t(?:proc/)?" + PERIODIC + r"\(")
+
+
+def is_periodic(type_path, name):
+    return name != "tick" or type_path.startswith("/datum/om/behaviour")
 
 IDENT = r"[A-Za-z_][\w.\[\]?]*"
 TIME = r"(?:world\.time|REALTIMEOFDAY)"
@@ -61,9 +70,14 @@ def indent_of(line):
 
 
 def scan_file(path):
-    """Yields (proc_path, line_number, text) for each deadline comparison in a process() body."""
+    """Yields (proc_path, line_number, text) for each deadline comparison in a periodic body."""
     with open(path, encoding="utf-8", errors="ignore") as f:
         lines = f.read().split("\n")
+    yield from scan_lines(lines)
+
+
+def scan_lines(lines):
+    """scan_file() over a file's lines (tools/ci/sys_rules/hygiene.py calls this directly)."""
     current_type = None
     i = 0
     while i < len(lines):
@@ -71,8 +85,8 @@ def scan_file(path):
         proc_path = None
         body_indent = None
         m = TOP_LEVEL.match(line)
-        if m:
-            proc_path = m.group(1) + "/process"
+        if m and is_periodic(m.group(1), m.group(2)):
+            proc_path = m.group(1) + "/" + m.group(2)
             body_indent = 1
         else:
             tb = TYPE_BLOCK.match(line)
@@ -80,8 +94,9 @@ def scan_file(path):
                 current_type = tb.group(1)
             elif line and not line.startswith(("\t", " ", "#", "//")):
                 current_type = None
-            if current_type and NESTED.match(line):
-                proc_path = current_type + "/process"
+            nested = NESTED.match(line) if current_type else None
+            if nested and is_periodic(current_type, nested.group(1)):
+                proc_path = current_type + "/" + nested.group(1)
                 body_indent = 2
         if not proc_path:
             i += 1
@@ -115,6 +130,8 @@ def load_allowlist():
 
 
 def main():
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from allow_annotations import allowed
     list_all = "--list" in sys.argv
     os.chdir(ROOT)
     findings = {}
@@ -122,7 +139,11 @@ def main():
         rel = path.replace("\\", "/")
         if "/unit_tests/" in rel:
             continue
-        for proc_path, number, text in scan_file(path):
+        with open(path, encoding="utf-8", errors="ignore") as f:
+            raw = f.read().split("\n")
+        for proc_path, number, text in scan_lines(raw):
+            if allowed(raw, number, "sys_deadline_poll"):
+                continue
             findings.setdefault(f"{rel}:{proc_path}", []).append((number, text))
     allow = load_allowlist()
     bad = []
@@ -138,7 +159,7 @@ def main():
         print(f"{rel}:{number}: {proc_path} compares world.time with a stored deadline: {text}")
     for key in stale:
         print(f"{ALLOWLIST}:{allow[key]}: stale entry (nothing matches it any more): {key}")
-    print(f"Deadline polling: {len(findings)} process() bodies found, {len(allow)} allowlisted, {len(bad)} new finding(s), {len(stale)} stale entr{'y' if len(stale) == 1 else 'ies'}.")
+    print(f"Deadline polling: {len(findings)} periodic bodies found, {len(allow)} allowlisted, {len(bad)} new finding(s), {len(stale)} stale entr{'y' if len(stale) == 1 else 'ies'}.")
     if bad or stale:
         print("Use om_after(src, deadline - world.time, PROC_REF(...)) instead (doc/rewrite/object_model_core.md §4.11), or allowlist with a reason.")
         return 1

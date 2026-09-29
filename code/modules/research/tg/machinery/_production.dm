@@ -16,7 +16,7 @@
 	/// The types of designs this fabricator can print.
 	var/allowed_buildtypes = NONE
 	/// All designs in the techweb that can be fabricated by this machine, since the last update.
-	var/list/datum/design_techweb/cached_designs
+	var/list/datum/design_techweb/available_designs
 	/// What color is this machine's stripe? Leave null to not have a stripe.
 	var/stripe_color = null
 	///direction we output onto (if 0, on top of us)
@@ -28,7 +28,7 @@
 	/// Personal account credited for the current print run's production bonus.
 	var/current_producer_account = 0
 
-DECLARE_REF(/obj/machinery/rnd/production, "cached_designs", DEF, null)
+DECLARE_REF(/obj/machinery/rnd/production, "available_designs", DEF, null)
 
 /obj/machinery/rnd/production/Initialize(mapload)
 	print_sound = new(list(src), FALSE)
@@ -40,7 +40,7 @@ DECLARE_REF(/obj/machinery/rnd/production, "cached_designs", DEF, null)
 		) \
 	)
 
-	cached_designs = list()
+	available_designs = list()
 
 	. = ..()
 
@@ -92,9 +92,9 @@ DECLARE_REF(/obj/machinery/rnd/production, "materials", OWNED, null)
 	PROTECTED_PROC(TRUE)
 	techweb_updating = FALSE
 
-	var/previous_design_count = cached_designs.len
+	var/previous_design_count = available_designs.len
 
-	cached_designs.Cut()
+	available_designs.Cut()
 
 	for(var/design_id in stored_research.researched_designs)
 		var/datum/design_techweb/design = GLOB.research_service.techweb_design_by_id(design_id)
@@ -102,9 +102,9 @@ DECLARE_REF(/obj/machinery/rnd/production, "materials", OWNED, null)
 		// TODO: only enable this if we port departmental techfabs
 		// if((isnull(allowed_department_flags) || (design.departmental_flags & allowed_department_flags)) && (design.build_type & allowed_buildtypes))
 		if(design.build_type & allowed_buildtypes)
-			cached_designs |= design
+			available_designs |= design
 
-	var/design_delta = cached_designs.len - previous_design_count
+	var/design_delta = available_designs.len - previous_design_count
 
 	if(design_delta > 0)
 		atom_say("Received [design_delta] new design[design_delta == 1 ? "" : "s"].")
@@ -218,7 +218,7 @@ DECLARE_REF(/obj/machinery/rnd/production, "materials", OWNED, null)
 	var/size32x32 = "[spritesheet.name]32x32"
 
 	var/coefficient
-	for(var/datum/design_techweb/design in cached_designs)
+	for(var/datum/design_techweb/design in available_designs)
 		if(!(isnull(allowed_department_flags) || (design.departmental_flags & allowed_department_flags)))
 			continue
 		if(!hacked && (RND_CATEGORY_HACKED in design.category))

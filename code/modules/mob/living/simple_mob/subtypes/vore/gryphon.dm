@@ -39,7 +39,7 @@
 	buckle_lying = FALSE
 
 	var/random_skin = TRUE
-	var/list/skins = list( // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/skins = list( // ALLOW(instance_list): d: per-mob skins with starting entries, edited at runtime; mobs are few
 		"gryphon"
 	)
 

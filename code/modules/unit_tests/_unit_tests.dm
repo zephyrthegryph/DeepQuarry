@@ -271,6 +271,7 @@
 #include "dq_w6_critical_tests.dm"
 #include "dq_om_core_tests.dm"
 #include "dq_shared_cache_tests.dm"
+#include "dq_sys_hygiene_tests.dm"
 #include "dq_om_core_fix_tests.dm"
 #include "dq_om_pipeline_tests.dm"
 #include "dq_om_relations_tests.dm"

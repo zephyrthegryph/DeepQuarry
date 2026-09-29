@@ -12,7 +12,7 @@ SUBSYSTEM_DEF(air)
 	ss_flags = SS_BACKGROUND
 	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
 
-	var/cached_cost = 0
+	var/phase_cost = 0
 
 	// cost_atoms / atom_process / process_atoms removed alongside
 	// /atom/proc/process_exposure. /tg/'s atom-exposure pipeline (paper
@@ -200,12 +200,12 @@ SUBSYSTEM_DEF(air)
 	if(currentpart == SSAIR_PIPENETS || !resumed)
 		timer = TICK_USAGE_REAL
 		if(!resumed)
-			cached_cost = 0
+			phase_cost = 0
 		process_pipenets(resumed)
-		cached_cost += TICK_USAGE_REAL - timer
+		phase_cost += TICK_USAGE_REAL - timer
 		if(state != SS_RUNNING)
 			return
-		cost_pipenets = MC_AVERAGE(cost_pipenets, TICK_DELTA_TO_MS(cached_cost))
+		cost_pipenets = MC_AVERAGE(cost_pipenets, TICK_DELTA_TO_MS(phase_cost))
 		resumed = FALSE
 		currentpart = SSAIR_TURFS
 
@@ -221,11 +221,11 @@ SUBSYSTEM_DEF(air)
 		gas_pressure_last = 0
 		vg_drain_events()
 		gas_frames++
-		cached_cost = TICK_USAGE_REAL - timer
+		phase_cost = TICK_USAGE_REAL - timer
 		// Dispatch no longer has a cost separate from the tick itself (both
 		// happen in this one non-resumable step now); tracked identically
 		// so the stat panel/profiler/benchmarks keep reading a real number.
-		cost_turfs = MC_AVERAGE(cost_turfs, TICK_DELTA_TO_MS(cached_cost))
+		cost_turfs = MC_AVERAGE(cost_turfs, TICK_DELTA_TO_MS(phase_cost))
 		cost_gas_events = cost_turfs
 		resumed = FALSE
 		currentpart = SSAIR_HIGHPRESSURE
@@ -235,12 +235,12 @@ SUBSYSTEM_DEF(air)
 	if(currentpart == SSAIR_HIGHPRESSURE)
 		timer = TICK_USAGE_REAL
 		if(!resumed)
-			cached_cost = 0
+			phase_cost = 0
 		process_high_pressure_delta(resumed)
-		cached_cost += TICK_USAGE_REAL - timer
+		phase_cost += TICK_USAGE_REAL - timer
 		if(state != SS_RUNNING)
 			return
-		cost_highpressure = MC_AVERAGE(cost_highpressure, TICK_DELTA_TO_MS(cached_cost))
+		cost_highpressure = MC_AVERAGE(cost_highpressure, TICK_DELTA_TO_MS(phase_cost))
 		resumed = FALSE
 		currentpart = SSAIR_SUPERCONDUCTIVITY
 

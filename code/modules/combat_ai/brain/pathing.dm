@@ -16,7 +16,7 @@
 
 /datum/ai_brain
 	/// Cached A* path. List of turfs from current position to path_goal.
-	var/list/cached_path = null
+	var/list/planned_path = null
 	/// Turf the cached path was computed to. Recomputed when target moves far.
 	var/tmp/path_goal_handle
 	/// Consecutive failed step attempts. After 3 we recompute.
@@ -32,7 +32,7 @@
 	var/path_fail_backoff = 0
 
 /datum/ai_brain/proc/clear_path()
-	cached_path = null
+	planned_path = null
 	path_goal_handle = null
 	failed_steps = 0
 
@@ -58,7 +58,7 @@
 		return FALSE
 
 	// Recompute if no cached path, goal moved too far, or we keep failing.
-	var/need_recompute = !length(cached_path)
+	var/need_recompute = !length(planned_path)
 	if(!need_recompute && path_goal() && get_dist(path_goal(), target_turf) > path_recompute_tolerance)
 		need_recompute = TRUE
 	if(!need_recompute && failed_steps >= 3)
@@ -73,11 +73,11 @@
 			&& path_goal() && get_dist(path_goal(), target_turf) <= path_recompute_tolerance \
 			&& path_navigation_revision == GLOB.ai_navigation_revision)
 			return FALSE
-		cached_path = dq_pathfind(holder, target_turf, get_to)
+		planned_path = dq_pathfind(holder, target_turf, get_to)
 		path_goal_handle = om_handle(target_turf)
 		path_navigation_revision = GLOB.ai_navigation_revision
 		failed_steps = 0
-		if(!length(cached_path))
+		if(!length(planned_path))
 			path_fail_backoff = path_fail_backoff ? min(path_fail_backoff * 2, DQ_PATH_BACKOFF_MAX) : DQ_PATH_BACKOFF_MIN
 			next_path_attempt_at = world.time + path_fail_backoff
 			dqai_log("[holder] brain: A* to [target_turf] failed, backing off [path_fail_backoff]ds")
@@ -86,13 +86,13 @@
 		next_path_attempt_at = 0
 
 	// Strip any path entries we've already reached (mob moved by other means).
-	while(length(cached_path) && cached_path[1] == get_turf(holder))
-		cached_path.Cut(1, 2)
-	if(!length(cached_path))
+	while(length(planned_path) && planned_path[1] == get_turf(holder))
+		planned_path.Cut(1, 2)
+	if(!length(planned_path))
 		clear_path()
 		return FALSE
 
-	var/turf/next = cached_path[1]
+	var/turf/next = planned_path[1]
 	if(get_dist(holder, next) > 1)
 		// Path desynced — recompute next tick.
 		failed_steps++
@@ -101,7 +101,7 @@
 	var/old_loc = get_turf(holder)
 	step_to(holder, next)
 	if(get_turf(holder) != old_loc)
-		cached_path.Cut(1, 2)
+		planned_path.Cut(1, 2)
 		failed_steps = 0
 		return TRUE
 	failed_steps++

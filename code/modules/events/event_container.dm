@@ -19,6 +19,7 @@
 
 	if(delayed || !CONFIG_GET(flag/allow_random_events))
 		next_event_time += (world.time - last_world_time)
+	// ALLOW(sys_deadline_poll): sliding deadline: next_event_time is pushed back every step while events are delayed
 	else if(world.time > next_event_time)
 		start_event()
 

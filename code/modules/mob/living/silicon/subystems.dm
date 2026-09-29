@@ -9,7 +9,7 @@
 	var/datum/tgui_module/rcon/robot/rcon
 
 /mob/living/silicon
-	var/list/silicon_subsystems = list( // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/silicon_subsystems = list( // ALLOW(instance_list): c: read-only per-subtype table on a mob (2 subtype overrides); mobs are few, a getter is not worth it
 		/mob/living/silicon/proc/subsystem_alarm_monitor,
 		/mob/living/silicon/proc/subsystem_crew_manifest,
 		/mob/living/silicon/proc/subsystem_law_manager

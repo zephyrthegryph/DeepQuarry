@@ -14,7 +14,7 @@
 	canmove = FALSE
 	blinded = FALSE
 	anchored = TRUE	//  don't get pushed around
-	var/list/visibleChunks = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/visibleChunks = list() // ALLOW(instance_list): d: per-mob visibleChunks, filled at runtime; mobs are few
 	var/datum/visualnet/ghost/visualnet
 	var/static_visibility_range = 16
 

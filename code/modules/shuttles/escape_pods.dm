@@ -132,9 +132,9 @@
 		return TRUE // Eat all commands.
 	return ..(command)
 
-/datum/embedded_program/docking/simple/escape_pod_berth/periodic_step()
-	..()
-	if (eject_time && world.time >= eject_time && !closing)
+/// om_after() callback from prepare_for_undocking(): the latecomers' grace is over.
+/datum/embedded_program/docking/simple/escape_pod_berth/proc/eject_timer_fired()
+	if(!closing)
 		close_door()
 		closing = 1
 
@@ -149,6 +149,7 @@
 
 /datum/embedded_program/docking/simple/escape_pod_berth/prepare_for_undocking()
 	eject_time = world.time + eject_delay*10
+	om_after(src, eject_delay*10, PROC_REF(eject_timer_fired))
 
 /// LC-refs: the arming_controller this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/shuttle/autodock/ferry/escape_pod/proc/arming_controller() as /datum/embedded_program/docking/simple/escape_pod_berth

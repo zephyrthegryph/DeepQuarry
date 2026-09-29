@@ -142,7 +142,7 @@ OM_TIMER_SLOT(/mob/living/simple_mob/vore/bigdragon, chargetimer)
 	//Modular icons. Lists are referred to when picking styles.
 
 	//Sprites are layered ontop of one-another in order of this list
-	var/list/overlay_colors = list( // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/overlay_colors = list( // ALLOW(instance_list): c: read-only per-subtype table on a mob (0 subtype overrides); mobs are few, a getter is not worth it
 		"Underbelly" = "#FFFFFF",
 		"Body" = "#FFFFFF",
 		"Ears" = "#FFFFFF",

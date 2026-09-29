@@ -830,7 +830,7 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 	var/last_message = 0
 	var/pokephrase = "Uww!"
 	var/opened = FALSE	// has this been slit open? this will allow you to store an object in a plushie.
-	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	// ALLOW(state_ref): owned: the item hidden inside the plushie, kept in its contents
 	var/obj/item/stored_item	// Note: Stored items can't be bigger than the plushie itself.
 	var/adjusted_name // Our modified name. Used so people don't do funny business with us!
 
@@ -2209,7 +2209,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/nuke, \
 	icon_state = "gibber"
 	attack_verb = list("grinded", "gibbed")
 	COOLDOWN_DECLARE(cooldown)
-	var/obj/stored_minature = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/obj/stored_minature = null // ALLOW(state_ref): owned: the miniature held by the toy gibber, kept in its contents
 
 DECLARE_REF(/obj/item/toy/minigibber, "stored_minature", OWNED, null)
 

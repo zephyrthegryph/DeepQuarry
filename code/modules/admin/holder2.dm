@@ -28,8 +28,8 @@ GLOBAL_PROTECT(href_token)
 	var/href_token
 
 	/// Link from the database pointing to the admin's feedback forum
-	var/cached_feedback_link
-	/// The om_io job fetching cached_feedback_link, while one is in flight.
+	var/fetched_feedback_link
+	/// The om_io job fetching fetched_feedback_link, while one is in flight.
 	var/feedback_link_pending = 0
 
 	var/deadmined
@@ -141,11 +141,11 @@ GLOBAL_PROTECT(href_token)
 /datum/admins/proc/feedback_link()
 	// This intentionally does not follow the 10-second maximum TTL rule,
 	// as this can be reloaded through the Reload-Admins verb.
-	if (cached_feedback_link == NO_FEEDBACK_LINK)
+	if (fetched_feedback_link == NO_FEEDBACK_LINK)
 		return null
 
-	if (!isnull(cached_feedback_link))
-		return cached_feedback_link
+	if (!isnull(fetched_feedback_link))
+		return fetched_feedback_link
 
 	if (!SSdbcore.IsConnected())
 		return FALSE
@@ -163,10 +163,10 @@ GLOBAL_PROTECT(href_token)
 		return
 	var/list/rows = result["rows"]
 	if(!length(rows))
-		cached_feedback_link = NO_FEEDBACK_LINK
+		fetched_feedback_link = NO_FEEDBACK_LINK
 		return
 	var/list/row = rows[1]
-	cached_feedback_link = row[1] || NO_FEEDBACK_LINK
+	fetched_feedback_link = row[1] || NO_FEEDBACK_LINK
 
 /datum/admins/proc/check_for_rights(rights_required)
 	if(rights_required && !(rights_required & rank_flags()))

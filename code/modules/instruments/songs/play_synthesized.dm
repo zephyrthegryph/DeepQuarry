@@ -108,8 +108,8 @@
  * * wait_ds - the deciseconds we should decay by. This is to compensate for any lag, as otherwise songs would get pretty nasty during high time dilation.
  */
 /datum/song/proc/process_decay(wait_ds)
-	var/linear_dropoff = cached_linear_dropoff * wait_ds
-	var/exponential_dropoff = cached_exponential_dropoff ** wait_ds
+	var/linear_dropoff = linear_dropoff_rate() * wait_ds
+	var/exponential_dropoff = sustain_exponential_dropoff ** wait_ds
 	for(var/channel in channels_playing)
 		if(full_sustain_held_note && (channel == last_channel_played))
 			continue

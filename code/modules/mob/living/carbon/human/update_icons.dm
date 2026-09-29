@@ -58,7 +58,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		overlays_standing[cache_index] = null
 
 /mob/living/carbon/human
-	var/list/overlays_standing[TOTAL_LAYERS] // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/overlays_standing[TOTAL_LAYERS] // ALLOW(instance_list): d: per-mob overlays_standing, filled at runtime; mobs are few
 	var/previous_damage_appearance // store what the body last looked like, so we only have to update it if something changed
 
 //UPDATES OVERLAYS FROM OVERLAYS_LYING/OVERLAYS_STANDING

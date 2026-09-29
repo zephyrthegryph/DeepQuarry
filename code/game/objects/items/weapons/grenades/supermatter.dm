@@ -9,6 +9,7 @@
 	..()
 	om_task_periodic(src, PERIODIC_SLOW)
 	implode_at = world.time + 10 SECONDS
+	om_after(src, 10 SECONDS, PROC_REF(implode))
 	update_icon()
 	playsound(src, 'sound/weapons/wave.ogg', 100)
 
@@ -25,6 +26,8 @@
 		forceMove(get_turf(src))
 	playsound(src, 'sound/effects/supermatter.ogg', 100)
 	supermatter_pull(src, world.view, STAGE_THREE)
-	if(world.time > implode_at)
-		explosion(loc, 1, 3, 5, 4)
-		qdel(src)
+
+/// om_after() callback from detonate(): the pull ends in the implosion.
+/obj/item/grenade/supermatter/proc/implode()
+	explosion(loc, 1, 3, 5, 4)
+	qdel(src)

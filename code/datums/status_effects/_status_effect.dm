@@ -114,7 +114,7 @@ DECLARE_REF(/datum/status_effect, "owner", BACKLIST, "status_effects")
 
 	if(tick_interval == STATUS_EFFECT_AUTO_TICK)
 		tick(delta / (1 SECONDS)) // the periodic lane passes deciseconds
-	// ALLOW(cooldown): status effect core: tick_interval is the next tick time, not a rate limit
+	// ALLOW(cooldown, sys_deadline_poll): status effect core: tick_interval is the next tick time, a cadence gate inside the framework's shared periodic step
 	else if(tick_interval != STATUS_EFFECT_NO_TICK && tick_interval < world.time)
 		var/tick_length = (tick_interval_upperbound && tick_interval_lowerbound) ? rand(tick_interval_lowerbound, tick_interval_upperbound) : initial(tick_interval)
 		tick(tick_length / (1 SECONDS))
@@ -125,7 +125,7 @@ DECLARE_REF(/datum/status_effect, "owner", BACKLIST, "status_effects")
 		return
 
 	if(duration != STATUS_EFFECT_PERMANENT)
-		// ALLOW(cooldown): status effect core: duration is the effect end time
+		// ALLOW(cooldown, sys_deadline_poll): status effect core: duration is the effect end time (expiry state, owned by the EXPIRY_* migration)
 		if(duration < world.time)
 			qdel(src)
 			return

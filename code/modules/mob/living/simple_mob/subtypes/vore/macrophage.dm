@@ -25,7 +25,7 @@
 	water_resist = 1
 
 	var/datum/affliction/contagion/base_disease = null
-	var/list/infections = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/infections = list() // ALLOW(instance_list): d: per-mob infections, filled at runtime; mobs are few
 
 	melee_damage_lower = 1
 	melee_damage_upper = 5
