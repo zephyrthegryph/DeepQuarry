@@ -83,6 +83,8 @@ GLOBAL_VAR_INIT(type_list_expect_impure, FALSE)
 		for(var/name in da.vars)
 			if(name == "vars" || name == "tag")
 				continue
+			if(!issaved(da.vars[name]))
+				continue // tmp vars are caches filled on use (a capability's built_entries), not declared data
 			var/va = da.vars[name]
 			if(va == initial(da.vars[name]) && db.vars[name] == initial(db.vars[name]))
 				continue

@@ -130,7 +130,9 @@
 	F.powered = FALSE
 	TEST_ASSERT_EQUAL(poke.why_not(H, F, null), "it has no power", "entries refuse unpowered")
 	TEST_ASSERT_NULL(dx_cap_entry(F, "Unpowered ok").why_not(H, F, null), "works_unpowered ignores it")
-	TEST_ASSERT_NULL(dx_cap_entry(F, "Tighten").why_not(H, F, null), "tool entries default to works_unpowered")
+	var/obj/item/tool/wrench/wrench = allocate(/obj/item/tool/wrench, T)
+	TEST_ASSERT_EQUAL(dx_cap_entry(F, "Tighten").why_not(H, F, null), "needs a wrench", "a tool entry wants its tool")
+	TEST_ASSERT_NULL(dx_cap_entry(F, "Tighten").why_not(H, F, wrench), "tool entries default to works_unpowered")
 	F.powered = TRUE
 
 /// tool/use_on/insert pass the held item to the handler; the selector wants the right item.

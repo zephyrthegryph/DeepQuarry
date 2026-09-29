@@ -26,10 +26,14 @@
 	var/atom/movable/AM = holder
 	if(!istype(AM))
 		return
+	// The args are type defaults (design review H1): a map varedit of these holder vars wins.
 	AM.can_buckle = TRUE
-	AM.max_buckled_mobs = max
-	AM.buckle_lying = lying ? 1 : 0
-	AM.buckle_require_restraints = needs_restraints
+	if(AM.max_buckled_mobs == initial(AM.max_buckled_mobs))
+		AM.max_buckled_mobs = max
+	if(AM.buckle_lying == initial(AM.buckle_lying))
+		AM.buckle_lying = lying ? 1 : 0
+	if(AM.buckle_require_restraints == initial(AM.buckle_require_restraints))
+		AM.buckle_require_restraints = needs_restraints
 
 /datum/capability/buckle/interactions(atom/holder)
 	var/datum/capability/entry/grabbed = use_on("Buckle", /obj/item/grab, TYPE_PROC_REF(/atom/movable, cap_buckle_grabbed), behind = behind, works_broken = TRUE, works_unpowered = TRUE, log = log)
