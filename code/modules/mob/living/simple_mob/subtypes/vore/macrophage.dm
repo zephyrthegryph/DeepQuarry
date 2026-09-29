@@ -25,6 +25,8 @@
 	water_resist = 1
 
 	var/datum/affliction/contagion/base_disease = null
+	/// Strains the creature carries (owned copies, lazy).
+	var/list/datum/affliction/contagion/infections
 
 	melee_damage_lower = 1
 	melee_damage_upper = 5

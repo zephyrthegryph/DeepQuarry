@@ -3,14 +3,8 @@ GLOBAL_LIST_EMPTY(robolimb_data)
 GLOBAL_LIST_EMPTY(chargen_robolimbs)
 GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 
-/// Robolimb models are registry singletons (built once by populate_robolimb_list()): a
-/// /datum/robolimb var is implicitly shared.
-REGISTRY_TYPE(/datum/robolimb, GLOBAL_PROC_REF(registry_robolimb))
-
-/proc/registry_robolimb(datum/robolimb/D)
-	if(D == GLOB.basic_robolimb || GLOB.all_robolimbs[D.company] == D)
-		return D
-	return null
+// Robolimb models are registry singletons (REGISTRY_TYPE in code/datums/ownership/registry_types.dm):
+// a /datum/robolimb var is implicitly shared.
 
 /proc/populate_robolimb_list()
 	GLOB.basic_robolimb = new()

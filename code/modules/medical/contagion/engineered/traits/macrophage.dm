@@ -91,7 +91,7 @@ BONUS
 	phage.endurance += A.resistance
 	// The creature carries detached copies, never the host's own affliction.
 	var/datum/affliction/contagion/engineered/strain = A.Copy()
-	phage.infections += strain
+	own_add(phage, "infections", strain)
 	// base_disease is its own copy: never alias one contagion between two holders.
 	own_set(phage, "base_disease", A.Copy())
 
@@ -101,6 +101,6 @@ BONUS
 				continue
 			if(D == A)
 				continue
-			phage.infections += D.Copy()
+			own_add(phage, "infections", D.Copy())
 	M.visible_message(span_danger("A strange creature burst out of [M]!"), span_userdanger("A slimy creature bursts forth from your flesh!"))
 	om_after(phage, 3 MINUTES, TYPE_PROC_REF(/mob/living/simple_mob/vore/aggressive/macrophage, deathcheck))
