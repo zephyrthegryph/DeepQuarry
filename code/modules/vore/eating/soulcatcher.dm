@@ -26,11 +26,11 @@
 /obj/soulgem
 	state_version = 3
 
-/obj/soulgem/state_migrate(list/vars, from_version)
+/obj/soulgem/state_migrate(list/saved, from_version)
 	..()
-	if(from_version == 2 && ("linked_belly_handle" in vars))
-		vars["linked_belly"] = vars["linked_belly_handle"]
-		vars -= "linked_belly_handle"
+	if(from_version == 2 && ("linked_belly_handle" in saved))
+		saved["linked_belly"] = saved["linked_belly_handle"]
+		saved -= "linked_belly_handle"
 
 /obj/soulgem/Initialize(mapload)
 	. = ..()
