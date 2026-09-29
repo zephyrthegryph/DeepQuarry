@@ -127,7 +127,7 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 /// init_and_turfs.md sec 3.5). Built once per (flooring, border, corners) and shared by every
 /// floor in that state. Read-only: callers pass it to add_overlay(), which copies.
 /datum/decl/flooring/proc/get_edge_overlays(has_border, inner_corners)
-	return CACHED_KEY(flooring_edge_overlays, "[ref(src)]|[has_border | (inner_corners << 4)]", src, has_border, inner_corners)
+	return CACHED_KEY(flooring_edge_overlays, "[type]|[has_border | (inner_corners << 4)]", src, has_border, inner_corners)
 
 DECLARE_SHARED_CACHE(flooring_edge_overlays, GLOBAL_PROC_REF(build_flooring_edge_overlays), SC_NEVER)
 

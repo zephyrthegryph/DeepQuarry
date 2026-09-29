@@ -104,3 +104,78 @@ DECLARE_SHARED_CACHE_EX(sc_test_intern, GLOBAL_PROC_REF(sc_test_build_same), SC_
 	for(var/datum/shared_cache/C as anything in shared_cache_registry)
 		TEST_ASSERT_EQUAL(C.verify_all(), 0, "cache [C.name] holds no mutated list")
 		TEST_ASSERT_EQUAL(C.mutations, 0, "cache [C.name] caught no mutation")
+
+/proc/sc_test_build_images(key)
+	return list("state", list(image('icons/obj/items.dmi', "x"), image('icons/obj/items.dmi', "y")))
+
+/proc/sc_test_build_obj(key)
+	return list(key)
+
+DECLARE_SHARED_CACHE_EX(sc_test_images, GLOBAL_PROC_REF(sc_test_build_images), SC_NEVER, 0, SC_INTERN)
+DECLARE_SHARED_CACHE(sc_test_obj, GLOBAL_PROC_REF(sc_test_build_obj), SC_NEVER)
+
+/// Nested lists and plain images intern by content, and a write into a nested list is caught.
+/datum/unit_test/dq_shared_cache_intern_nested
+
+/datum/unit_test/dq_shared_cache_intern_nested/Run()
+	var/list/a = CACHED(sc_test_images, "a")
+	var/list/b = CACHED(sc_test_images, "b")
+	TEST_ASSERT(a == b, "rows whose images have the same appearance are one list")
+	var/list/images = a[2]
+	images += image('icons/obj/items.dmi', "z")
+	var/caught = FALSE
+	try
+		CACHED(sc_test_images, "a")
+	catch // ALLOW(silent_catch): the test expects this runtime and asserts on it
+		caught = TRUE
+	TEST_ASSERT(caught, "a write into a nested shared list runtimes on the next hit")
+	TEST_ASSERT_EQUAL(length(images), 2, "and the nested list is restored")
+	var/datum/shared_cache/C = SHARED_CACHE(sc_test_images)
+	C.mutations = 0
+
+/// Keys must be stable: an unregistered object or a ref in a text key fails loudly; registered
+/// singletons, registry ids and SHARED_CACHE_UID() are accepted.
+/datum/unit_test/dq_shared_cache_stable_keys
+
+/datum/unit_test/dq_shared_cache_stable_keys/Run()
+	var/datum/loose = new
+	var/caught = FALSE
+	try
+		CACHED(sc_test_obj, loose)
+	catch // ALLOW(silent_catch): the test expects this runtime and asserts on it
+		caught = TRUE
+	TEST_ASSERT(caught, "an unregistered datum key runtimes")
+	caught = FALSE
+	try
+		CACHED(sc_test_obj, "k[ref(loose)]")
+	catch // ALLOW(silent_catch): the test expects this runtime and asserts on it
+		caught = TRUE
+	TEST_ASSERT(caught, "a text key embedding a ref runtimes")
+	var/datum/material/steel = get_material_by_name(MAT_STEEL)
+	TEST_ASSERT(CACHED(sc_test_obj, steel), "a registered material is a stable key")
+	TEST_ASSERT(CACHED(sc_test_obj, GET_DECL(/datum/decl/flooring/tiling)), "a fetched decl is a stable key")
+	var/uid = SHARED_CACHE_UID(loose)
+	TEST_ASSERT(CACHED(sc_test_obj, "k[uid]"), "a SHARED_CACHE_UID key is accepted")
+	TEST_ASSERT_EQUAL(SHARED_CACHE_UID(loose), uid, "the uid is stable")
+	qdel(loose)
+	var/datum/other = new
+	TEST_ASSERT_NOTEQUAL(SHARED_CACHE_UID(other), uid, "and never reused by a later datum")
+	qdel(other)
+
+/// Materials key by registry id; a material outside the registry gets its own never-reused id,
+/// so it can never be handed a registered material's facts; a facts change clears the caches.
+/datum/unit_test/dq_shared_cache_material_ids
+
+/datum/unit_test/dq_shared_cache_material_ids/Run()
+	var/datum/material/steel = get_material_by_name(MAT_STEEL)
+	TEST_ASSERT_EQUAL(MATERIAL_CACHE_ID(steel), "m:[steel.name]", "a registered material keys by its registry id")
+	var/datum/material/steel/copy = new
+	copy.radiation_resistance = steel.radiation_resistance + 50
+	TEST_ASSERT_NOTEQUAL(MATERIAL_CACHE_ID(copy), MATERIAL_CACHE_ID(steel), "an unregistered material of the same name has its own id")
+	var/steel_rad = steel.material_radiation_transmission(60)
+	TEST_ASSERT(copy.material_radiation_transmission(60) < steel_rad, "and its own facts")
+	var/datum/shared_cache/rad = SHARED_CACHE(material_radiation_transmission)
+	TEST_ASSERT(rad.entry_count() >= 2, "both cached")
+	steel.material_facts_changed()
+	TEST_ASSERT_EQUAL(rad.entry_count(), 0, "a facts change clears the material caches (event policy)")
+	qdel(copy)

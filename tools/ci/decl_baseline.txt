@@ -657,8 +657,6 @@ init_visuals	code/modules/generated_station/generated_station_utility_topology.d
 init_visuals	code/modules/holodeck/HolodeckObjects.dm	add_overlay("asteroid[rand(0,9)]")
 init_visuals	code/modules/holomap/mapper.dm	icon_state = initial(icon_state) + (in_list ? "_on" : "")
 init_visuals	code/modules/hydroponics/beekeeping/beehive.dm	add_overlay("beepack-full")
-init_visuals	code/modules/hydroponics/grown.dm	add_overlay(GLOB.fruit_icon_cache["rind-[rind_colour]"])
-init_visuals	code/modules/hydroponics/grown.dm	add_overlay(GLOB.fruit_icon_cache["slice-[rind_colour]"])
 init_visuals	code/modules/mining/machinery/machine_input_output_plates.dm	icon_state = "blank"
 init_visuals	code/modules/mining/machinery/machine_input_output_plates.dm	icon_state = "blank"
 init_visuals	code/modules/mining/mine_outcrops.dm	add_overlay("[initial(icon_state)]-egg")

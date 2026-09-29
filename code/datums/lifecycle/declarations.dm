@@ -2,9 +2,11 @@
 // (doc/rewrite/declarative_lifecycle.md, macros in code/__defines/lifecycle_decl.dm).
 //
 // A type's DECLARE_* lines each override declare_lifecycle() and add one entry on top of the
-// parent's. lifecycle_decls_of() builds the table once per type (the first instance asks) and
-// caches it; a type with no declarations caches FALSE, so every lookup after the first is one
-// assoc read. Nothing here allocates per instance except what the declarations create.
+// parent's. lifecycle_decls_of() builds the table once per type (the first instance asks) in the
+// `lifecycle_decls` shared cache (doc/rewrite/caching.md), so every lookup after the first is one
+// list read. Built appearances live in the `decl_appearance` shared cache and binder singletons in
+// `decl_binders`: the declaration runtime keeps no private cache. Nothing here allocates per
+// instance except what the declarations create.
 //
 // Order (also in the define file's header and the doc, keep all three in step):
 //   init:          children, gas, reagents, appearance
@@ -20,20 +22,25 @@
 	return
 
 /// The declaration table for D's type, or null when the type declares nothing.
+/// Hot (every update_icon() asks), so a type with no declarations caches its table too (with
+/// work = 0) rather than FALSE: a falsy entry would miss the cache's fast path.
 /proc/lifecycle_decls_of(datum/D)
 	RETURN_TYPE(/datum/lifecycle_decls)
-	var/static/list/cache = list()
-	var/datum/lifecycle_decls/decls = cache[D.type]
-	if(!isnull(decls))
-		return decls || null
-	decls = new /datum/lifecycle_decls(D.type)
+	var/datum/lifecycle_decls/decls = CACHED_KEY(lifecycle_decls, D.type, D)
+	return decls.work ? decls : null
+
+/// Builder for lifecycle_decls: D is the first instance of its type to ask (finish() validates
+/// the declarations against it). Keyed by type; a per-type table never goes stale.
+/proc/build_lifecycle_decls(datum/D)
+	var/datum/lifecycle_decls/decls = new /datum/lifecycle_decls(D.type)
 	D.declare_lifecycle(decls)
 	decls.finish(D)
 	if(!decls.work)
-		cache[D.type] = FALSE
-		return null
-	cache[D.type] = decls
+		// Only the flag is read for a type with nothing to do: drop what it declared.
+		return decls.emptied()
 	return decls
+
+DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC_NEVER)
 
 /// One type's declarations. Read-only after finish().
 /datum/lifecycle_decls
@@ -53,9 +60,8 @@
 	/// Set color from the reagents after filling.
 	var/reagent_tint = FALSE
 	/// Appearance layers: state var name (APPEARANCE_ANY for a static layer) -> rows (key -> row).
+	/// The built combinations are in the decl_appearance shared cache (appearance_row()).
 	var/list/appearance_layers
-	/// Combined key -> list(icon_state, color, list of overlay images, icon); built lazily.
-	var/list/appearance_built
 	/// Registry ids declared with DECLARE_REGISTRY that are conditional (joined at materialize).
 	var/list/registries
 	/// list of list(service GLOB name, join proc, leave proc).
@@ -71,6 +77,20 @@
 
 /datum/lifecycle_decls/New(owner_type)
 	src.owner_type = owner_type
+
+/// A table with no work: every declaration list dropped (finish() found nothing to run).
+/datum/lifecycle_decls/proc/emptied()
+	children = null
+	gas = null
+	clear_reagents()
+	appearance_layers = null
+	registries = null
+	services = null
+	binders = null
+	behaviours = null
+	periodic = null
+	timers = null
+	return src
 
 /datum/lifecycle_decls/proc/add_child(var_name, default)
 	LAZYSET(children, var_name, default)
@@ -101,7 +121,6 @@
 
 /datum/lifecycle_decls/proc/set_appearance(state_var, list/rows)
 	LAZYSET(appearance_layers, state_var || APPEARANCE_ANY, rows)
-	appearance_built = null
 
 /datum/lifecycle_decls/proc/add_registry(id)
 	LAZYOR(registries, id)
@@ -276,22 +295,27 @@
 
 /// The built appearance for a combined key, shared by every instance: list(icon_state, color,
 /// overlay images, icon). Later layers win for icon_state, color and icon; overlays add up.
+/// One `decl_appearance` shared cache entry per (type, key), interned: types whose layers build
+/// the same overlays share one list. Read-only (test builds runtime on a write).
 /datum/lifecycle_decls/proc/appearance_row(atom/A, key)
-	var/list/built = appearance_built?[key]
-	if(built)
-		return built
+	return CACHED_KEY(decl_appearance, "[owner_type]|[key]", src, key)
+
+/// Builder for decl_appearance. The table's owner type is the instance's type
+/// (lifecycle_decls_of() is keyed by it), so its initial icon is the type's.
+/proc/build_decl_appearance(datum/lifecycle_decls/decls, key)
+	var/atom/owner = decls.owner_type
 	var/list/row_keys = splittext(key, "|")
 	var/state
 	var/tint
 	var/row_icon
 	var/list/images
 	var/i = 0
-	for(var/layer_var in appearance_layers)
+	for(var/layer_var in decls.appearance_layers)
 		i++
 		var/row_key = row_keys[i]
 		if(!row_key)
 			continue
-		var/list/row = appearance_layers[layer_var][row_key]
+		var/list/row = decls.appearance_layers[layer_var][row_key]
 		if(row[APPEARANCE_ICON])
 			row_icon = row[APPEARANCE_ICON]
 		if(!isnull(row[APPEARANCE_ICON_STATE]))
@@ -300,12 +324,12 @@
 			tint = row[APPEARANCE_COLOR]
 		for(var/overlay in row[APPEARANCE_OVERLAYS])
 			if(istext(overlay))
-				LAZYADD(images, image(row[APPEARANCE_ICON] || initial(A.icon), overlay))
+				LAZYADD(images, image(row[APPEARANCE_ICON] || initial(owner.icon), overlay))
 			else
 				LAZYADD(images, overlay)
-	built = list(state, tint, images, row_icon)
-	LAZYSET(appearance_built, key, built)
-	return built
+	return list(state, tint, images, row_icon)
+
+DECLARE_SHARED_CACHE_EX(decl_appearance, GLOBAL_PROC_REF(build_decl_appearance), SC_NEVER, 0, SC_INTERN)
 
 /// Applies the appearance for A's current state; swaps out the overlays the previous one added.
 /datum/lifecycle_decls/proc/apply_appearance(atom/A)
@@ -393,12 +417,12 @@
 /// The singleton for binder type `path`.
 /proc/decl_binder(path)
 	RETURN_TYPE(/datum/decl_binder)
-	var/static/list/singletons = list()
-	var/datum/decl_binder/binder = singletons[path]
-	if(!binder)
-		binder = new path
-		singletons[path] = binder
-	return binder
+	return CACHED(decl_binders, path)
+
+/proc/build_decl_binder(path)
+	return new path
+
+DECLARE_SHARED_CACHE(decl_binders, GLOBAL_PROC_REF(build_decl_binder), SC_NEVER)
 
 /datum/controller/subsystem/atoms
 	/// While a batch initializes: binder type -> atoms queued for it. Null outside a batch.

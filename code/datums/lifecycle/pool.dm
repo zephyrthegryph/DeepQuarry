@@ -81,7 +81,10 @@ DECLARE_REF(/datum/object_pool, "free", OWNED_LIST, null)
 			CRASH("pool_take: [type] is not declared with POOL_DECLARE.")
 		pool.created++
 		if(isnull(pool.transient))
-			pool.transient = dq_lifecycle_link_table(D)[REFKIND_TRANSIENT] || list()
+			// The link table is a shared cache entry: the pool keeps its own copy (it only reads
+			// it, in pool_release(), but a long-lived holder must not alias a shared list).
+			var/list/transient_names = dq_lifecycle_link_table(D)[REFKIND_TRANSIENT]
+			pool.transient = transient_names ? transient_names.Copy() : list()
 	D.pool_state = POOL_STATE_TAKEN
 	pool.taken++
 	pool.out++
