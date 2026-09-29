@@ -120,7 +120,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 			if(MED_DATA_RECORD)
 				var/list/general = list()
 				data["general"] = general
-				if(istype(active1(), /datum/data/record) && GLOB.data_core.general.Find(active1()))
+				if(istype(active1(), /datum/data/record) && (active1() in GLOB.data_core.general))
 					var/list/fields = list()
 					general["fields"] = fields
 					fields[++fields.len] = FIELD("Name", active1().fields["name"], null)
@@ -142,7 +142,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 
 				var/list/medical = list()
 				data["medical"] = medical
-				if(istype(active2(), /datum/data/record) && GLOB.data_core.medical.Find(active2()))
+				if(istype(active2(), /datum/data/record) && (active2() in GLOB.data_core.medical))
 					var/list/fields = list()
 					medical["fields"] = fields
 					fields[++fields.len] = MED_FIELD("Gender identity", active2().fields["id_gender"], "id_gender", TRUE)
@@ -190,9 +190,9 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 	if(..())
 		return TRUE
 
-	if(!GLOB.data_core.general.Find(active1()))
+	if(!(active1() in GLOB.data_core.general))
 		rel_clear(src, "active1")
-	if(!GLOB.data_core.medical.Find(active2()))
+	if(!(active2() in GLOB.data_core.medical))
 		rel_clear(src, "active2")
 
 	. = TRUE
@@ -269,7 +269,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 					qdel(active2())
 			if("d_rec")
 				var/datum/data/record/general_record = locate(params["d_rec"] || "")
-				if(!GLOB.data_core.general.Find(general_record))
+				if(!(general_record in GLOB.data_core.general))
 					set_temp("Record not found.", "danger")
 					return
 
@@ -442,7 +442,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 /obj/machinery/computer/med_data/proc/print_finish()
 	var/obj/item/paper/P = new(loc)
 	P.info = "<center>" + span_bold("Medical Record") + "</center><br>"
-	if(istype(active1(), /datum/data/record) && GLOB.data_core.general.Find(active1()))
+	if(istype(active1(), /datum/data/record) && (active1() in GLOB.data_core.general))
 		P.info += {"Name: [active1().fields["name"]] ID: [active1().fields["id"]]
 		<br>\nSex: [active1().fields["sex"]]
 		<br>\nSpecies: [active1().fields["species"]]
@@ -452,7 +452,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 		<br>\nMental Status: [active1().fields["m_stat"]]<br>"}
 	else
 		P.info += span_bold("General Record Lost!") + "<br>"
-	if(istype(active2(), /datum/data/record) && GLOB.data_core.medical.Find(active2()))
+	if(istype(active2(), /datum/data/record) && (active2() in GLOB.data_core.medical))
 		P.info += {"<br>\n<center><b>Medical Data</b></center>
 		<br>\nGender Identity: [active2().fields["id_gender"]]
 		<br>\nBlood Type: [active2().fields["b_type"]]

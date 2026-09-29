@@ -267,7 +267,7 @@
 	// detect a planned wall that was accidentally replaced with space, because
 	// that turf also disappears from the generated area.
 	for(var/key in tile_plan?.tiles)
-		var/datum/generated_station_tile_intent/intent = tile_plan.tiles[key]
+		var/datum/generated_station_tile_intent/intent = tile_plan.tiles?[key]
 		var/turf/planned_turf = world_turf(intent.local_x, intent.local_y)
 		if(intent.structure_kind == GENERATED_STATION_TILE_FLOOR && !istype(planned_turf, /turf/simulated/floor))
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "plan-floor-mismatch", "Planned floor materialized as [planned_turf?.type || "null"].", "[intent.local_x],[intent.local_y]")
@@ -302,7 +302,7 @@
 	// never become a giant solid substitute for spatial planning.
 	var/list/unvisited_structure = list()
 	for(var/key in tile_plan?.tiles)
-		var/datum/generated_station_tile_intent/intent = tile_plan.tiles[key]
+		var/datum/generated_station_tile_intent/intent = tile_plan.tiles?[key]
 		if(intent.owner_id == "station-structure" && intent.structure_kind == GENERATED_STATION_TILE_HULL)
 			unvisited_structure[key] = intent
 	while(length(unvisited_structure))

@@ -156,9 +156,9 @@
 				data["cur_attachment_filename"] = "[current_message().attachment.filename].[current_message().attachment.filetype]"
 				data["cur_attachment_size"] = current_message().attachment.size
 		else
-			data["label_inbox"] = "Inbox ([current_account().inbox.len])"
-			data["label_spam"] = "Spam ([current_account().spam.len])"
-			data["label_deleted"] = "Deleted ([current_account().deleted.len])"
+			data["label_inbox"] = "Inbox ([length(current_account().inbox)])"
+			data["label_spam"] = "Spam ([length(current_account().spam)])"
+			data["label_deleted"] = "Deleted ([length(current_account().deleted)])"
 			var/list/message_source
 			if(folder == "Inbox")
 				message_source = current_account().inbox
@@ -311,12 +311,13 @@
 			if(!istype(M))
 				return 1
 			if(folder == "Deleted")
-				current_account().deleted.Remove(M)
+				rel_remove(current_account(), "deleted", M)
 				qdel(M)
 			else
-				current_account().deleted.Add(M)
-				current_account().inbox.Remove(M)
-				current_account().spam.Remove(M)
+				var/datum/computer_file/data/email_account/mailbox = current_account()
+				rel_add(mailbox, "deleted", M)
+				rel_remove(mailbox, "inbox", M)
+				rel_remove(mailbox, "spam", M)
 			if(current_message() == M)
 				rel_clear(src, "current_message")
 			return 1

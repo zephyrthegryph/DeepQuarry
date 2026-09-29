@@ -41,7 +41,7 @@
 	var/obj/item/card/id/I = user.GetIdCard()
 	var/datum/data/record/random_general_record
 	var/datum/data/record/random_medical_record
-	if(GLOB.data_core.general.len)
+	if(length(GLOB.data_core.general))
 		random_general_record	= pick(GLOB.data_core.general)
 		random_medical_record	= find_medical_record("id", random_general_record.fields["id"])
 

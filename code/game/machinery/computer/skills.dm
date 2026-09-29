@@ -381,7 +381,7 @@
 			if(GENERAL_RECORD_DATA)
 				var/list/general = list()
 				data["general"] = general
-				if(istype(active1(), /datum/data/record) && GLOB.data_core.general.Find(active1()))
+				if(istype(active1(), /datum/data/record) && (active1() in GLOB.data_core.general))
 					var/list/fields = list()
 					general["fields"] = fields
 					fields[++fields.len] = FIELD("Name", active1().fields["name"], "name")
@@ -459,7 +459,7 @@
 
 	add_fingerprint(ui.user)
 
-	if(!GLOB.data_core.general.Find(active1()))
+	if(!(active1() in GLOB.data_core.general))
 		rel_clear(src, "active1")
 
 	. = TRUE
@@ -625,7 +625,7 @@
 					QDEL_NULL(deleted_record)
 			if("d_rec")
 				var/datum/data/record/general_record = locate(params["d_rec"] || "")
-				if(!GLOB.data_core.general.Find(general_record))
+				if(!(general_record in GLOB.data_core.general))
 					set_temp("Record not found.", "danger")
 					return
 
@@ -732,7 +732,7 @@
 /obj/machinery/computer/skills/proc/print_finish()
 	var/obj/item/paper/P = new(loc)
 	P.info = "<center>" + span_bold("Medical Record") + "</center><br>"
-	if(istype(active1(), /datum/data/record) && GLOB.data_core.general.Find(active1()))
+	if(istype(active1(), /datum/data/record) && (active1() in GLOB.data_core.general))
 		P.info += {"Name: [active1().fields["name"]] ID: [active1().fields["id"]]
 		<br>\nSex: [active1().fields["sex"]]
 		<br>\nSpecies: [active1().fields["species"]]

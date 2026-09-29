@@ -96,12 +96,12 @@
 				covert_market_detections++
 	var/market_listing_stock = 0
 	for(var/listing_id in GLOB.supply_service.market_listings)
-		var/datum/cargo_market_listing/listing = GLOB.supply_service.market_listings[listing_id]
+		var/datum/cargo_market_listing/listing = GLOB.supply_service.market_listings?[listing_id]
 		market_listing_stock += listing.stock
 	var/market_target_units = 0
 	var/market_fulfilled_units = 0
 	for(var/bid_id in GLOB.supply_service.market_bids)
-		var/datum/cargo_market_bid/bid = GLOB.supply_service.market_bids[bid_id]
+		var/datum/cargo_market_bid/bid = GLOB.supply_service.market_bids?[bid_id]
 		market_target_units += bid.target_units
 		market_fulfilled_units += bid.fulfilled_units
 	var/agent_contracts_completed = 0

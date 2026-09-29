@@ -280,7 +280,7 @@
 /proc/reconcile_medical_trial_side_contracts()
 	for(var/datum/contract/medical_trial/trial in SScontracts.active_contracts)
 		for(var/subject_id in trial.participants)
-			var/datum/medical_trial_participant/participant = trial.participants[subject_id]
+			var/datum/medical_trial_participant/participant = trial.participants?[subject_id]
 			var/mob/living/carbon/human/subject = participant.current_subject()
 			if(participant.corpse_contract_offered || subject?.stat != DEAD)
 				continue
@@ -346,7 +346,7 @@
 	payload["subject_name"] = subject.real_name
 	payload["signature"] = signature
 	payload["signature_time"] = world.time
-	var/datum/medical_trial_participant/signed_participant = trial.participants[identity.id]
+	var/datum/medical_trial_participant/signed_participant = trial.participants?[identity.id]
 	signed_participant.consent_time = world.time
 	signed_participant.consent_evidence_id = evidence_id
 	rel_set(signed_participant, "consent_record", paper)

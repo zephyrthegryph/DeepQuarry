@@ -127,7 +127,7 @@
 
 	var/dat
 	dat =  "<head>"
-	dat += "<title>[holder().name] ([D.name])</title>"
+	dat += "<title>[holder()?.name] ([D.name])</title>"
 	dat += "<link rel='stylesheet' href='codex.css' />"
 	dat += "</head>"
 
