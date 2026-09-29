@@ -18,6 +18,8 @@
 #define CAP_WELDED (1<<6)
 /// Bolted (airlocks).
 #define CAP_BOLTED (1<<7)
+/// Lit and burning (the smokable capability).
+#define CAP_LIT (1<<8)
 
 // ---- gating keywords: behind = COVER|PANEL, locked_by = LOCK ----
 /// The entry is only reachable with the cover open.
