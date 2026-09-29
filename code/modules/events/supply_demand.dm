@@ -14,7 +14,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 
 /datum/event/supply_demand/setup()
 	my_department = "[using_map.company_name] Supply Division" // Can't have company name in initial value (not const)
-	end_time = EXPIRY_AT(null, CLOCK_WORLD, 0) + 1 HOUR + (severity * 30 MINUTES)
+	EXPIRY_SET(src, end_time, 1 HOUR + (severity * 30 MINUTES), CLOCK_WORLD)
 	registry_join(REGISTRY_DEMAND_EVENTS, src)
 	// Decide what items are requried!
 	// We base this on what departmets are most active, excluding departments we don't have

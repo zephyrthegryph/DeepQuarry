@@ -43,7 +43,7 @@
 
 	if(high_messages == TRUE)
 		if(ELAPSED_SINCE(src, data, CLOCK_WORLD) > 90 SECONDS && volume > 0.5) /// Spam prevention.
-			data = EXPIRY_AT(src, CLOCK_WORLD, 0)
+			data = EXPIRY_AT(src, CLOCK_WORLD, 0) // ALLOW(sys_world_time_write): reagent `data` is an untyped per-reagent payload slot, not a declarable var
 			var/msg = pick(high_message_list)
 			to_chat(M, span_warning("[msg]"))
 		else if(volume <= 0.2 && data != -1)

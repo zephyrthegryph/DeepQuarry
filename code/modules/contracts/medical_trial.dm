@@ -418,7 +418,7 @@ DECLARE_REF(/datum/contract/medical_trial, "participants", OWNED_VALUES, null)
 	var/dose = 0
 	var/challenge_dose = 0
 	EXPIRY_DECLARE(exposure_time)
-	var/consent_time = 0
+	EXPIRY_DECLARE(consent_time)
 	var/completed = FALSE
 	var/faxed = FALSE
 

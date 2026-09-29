@@ -62,7 +62,7 @@ DECLARE_REF(/datum/expedition_mission, "objectives", OWNED_LIST, null)
 	for(var/datum/expedition_objective/O in objectives)
 		O.populate(S)
 	if(time_limit)
-		deadline = EXPIRY_AT(null, CLOCK_WORLD, 0) + time_limit
+		EXPIRY_SET(src, deadline, time_limit, CLOCK_WORLD)
 
 /datum/expedition_mission/proc/has_viable_objectives()
 	if(!length(objectives))

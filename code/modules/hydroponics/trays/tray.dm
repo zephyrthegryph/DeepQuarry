@@ -254,7 +254,7 @@ DECLARE_REF(/obj/machinery/portable_atmospherics/hydroponics, "ov_alert3", OWNED
 	age = 1
 	//Snowflakey, maybe move this to the seed datum
 	health = (istype(S, /obj/item/seeds/cutting) ? round(seed.get_trait(TRAIT_ENDURANCE)/rand(2,5)) : seed.get_trait(TRAIT_ENDURANCE))
-	lastcycle = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
 	MACHINE_WAKE(src)
 
 	qdel(S)
@@ -457,7 +457,7 @@ DECLARE_REF(/obj/machinery/portable_atmospherics/hydroponics, "ov_alert3", OWNED
 	age = 0
 	age_mod = 0
 	health = seed.get_trait(TRAIT_ENDURANCE)
-	lastcycle = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
 	harvest = 0
 	weedlevel = 0
 	pestlevel = 0
@@ -546,7 +546,7 @@ DECLARE_REF(/obj/machinery/portable_atmospherics/hydroponics, "ov_alert3", OWNED
 	mutate(1)
 	age = 0
 	health = seed.get_trait(TRAIT_ENDURANCE)
-	lastcycle = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
 	harvest = 0
 	weedlevel = 0
 

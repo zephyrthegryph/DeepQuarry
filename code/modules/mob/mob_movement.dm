@@ -250,7 +250,7 @@
 	if(istype(my_mob?.buckled_to(), /obj/vehicle) || ismob(my_mob?.buckled_to()))
 		//manually set move_delay for vehicles so we don't inherit any mob movement penalties
 		//specific vehicle move delays are set in code\modules\vehicles\vehicle.dm
-		my_mob.next_move = EXPIRY_AT(null, CLOCK_WORLD, 0)
+		EXPIRY_STAMP(my_mob, next_move, CLOCK_WORLD)
 		//drunk driving
 		if(my_mob.has_status(EFFECT_CONFUSED) && prob(20)) //vehicles tend to keep moving in the same direction
 			direct = turn(direct, pick(90, -90))
@@ -360,7 +360,7 @@
 
 	// We're not in the middle of a move anymore
 	moving = 0
-	mob.last_move_time = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	EXPIRY_STAMP(mob, last_move_time, CLOCK_WORLD)
 
 /mob/proc/SelfMove(turf/n, direct, movetime)
 	return Move(n, direct, movetime)

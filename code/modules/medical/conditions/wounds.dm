@@ -88,7 +88,7 @@
 /datum/affliction/wound/New(location, initial_damage = 0)
 	..()
 	wound_category = injury_category
-	created = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	EXPIRY_STAMP(src, created, CLOCK_WORLD)
 	damage = initial_damage
 	init_stage(initial_damage)
 	bleed_timer += initial_damage

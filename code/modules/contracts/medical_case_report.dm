@@ -43,7 +43,7 @@
 	var/target_name
 	var/target_condition_type
 	var/target_condition_name
-	var/consent_time = 0
+	EXPIRY_DECLARE(consent_time)
 	var/tmp/consent_record_handle
 	var/consent_evidence_id
 	var/datum/contract_requirement/event_count/evidence_requirement
@@ -87,7 +87,7 @@
 /datum/contract/medical_case_report/proc/register_consent(obj/item/paper/paper, mob/living/carbon/human/subject)
 	if(state != CONTRACT_ACTIVE || consent_time || SScontracts.subject_identity(subject)?.id != target_ref || !target_condition())
 		return FALSE
-	consent_time = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	EXPIRY_STAMP(src, consent_time, CLOCK_WORLD)
 	consent_record_handle = om_handle(paper)
 	return TRUE
 

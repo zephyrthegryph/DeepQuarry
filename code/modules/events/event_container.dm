@@ -7,7 +7,7 @@
 	var/list/last_event_time
 	var/tmp/next_event_handle
 
-	var/last_world_time = 0
+	EXPIRY_DECLARE(last_world_time)
 
 /// The random-event clock: every 2 s it advances (or, paused, pushes back) the next event.
 /datum/event_container/periodic_step()
@@ -22,7 +22,7 @@
 	else if(ELAPSED_SINCE(src, next_event_time, CLOCK_WORLD) > 0)
 		start_event()
 
-	last_world_time = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	EXPIRY_STAMP(src, last_world_time, CLOCK_WORLD)
 
 /datum/event_container/proc/start_event()
 	if(!next_event())	// If non-one has explicitly set an event, randomly pick one
@@ -96,7 +96,7 @@
 		var/lower = (event_delays["lower"] MINUTES)
 		var/upper = (event_delays["upper"] MINUTES)
 		var/event_delay = rand(lower, upper)
-		next_event_time = EXPIRY_AT(null, CLOCK_WORLD, 0) + event_delay
+		EXPIRY_SET(src, next_event_time, event_delay, CLOCK_WORLD)
 	// Otherwise, follow the standard setup process
 	else
 		var/playercount_modifier = 1
@@ -114,7 +114,7 @@
 		playercount_modifier = playercount_modifier * delay_modifier
 
 		var/event_delay = rand(CONFIG_GET(number_list/event_delay_lower)[severity] MINUTES, CONFIG_GET(number_list/event_delay_upper)[severity] MINUTES) * playercount_modifier
-		next_event_time = EXPIRY_AT(null, CLOCK_WORLD, 0) + event_delay
+		EXPIRY_SET(src, next_event_time, event_delay, CLOCK_WORLD)
 
 	log_game("Next event of severity [GLOB.severity_to_string[severity]] in [(next_event_time - world.time)/600] minutes.")
 

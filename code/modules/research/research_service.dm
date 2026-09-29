@@ -157,14 +157,14 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 				bitcoins = single_server_income.Copy()
 				break //Just need one to work.
 
-		if(!isnull(techweb_list.last_income))
-			var/income_time_difference = world.time - techweb_list.last_income
+		if(techweb_list.last_income)
+			var/income_time_difference = ELAPSED(techweb_list, last_income, CLOCK_WORLD)
 			techweb_list.last_bitcoins = bitcoins  // Doesn't take tick drift into account
 			for(var/i in bitcoins)
 				bitcoins[i] *= (income_time_difference / 10) * techweb_list.income_modifier
 			techweb_list.add_point_list(bitcoins)
 
-		techweb_list.last_income = EXPIRY_AT(techweb_list, CLOCK_WORLD, 0)
+		EXPIRY_STAMP(techweb_list, last_income, CLOCK_WORLD)
 
 		if(length(techweb_list.research_queue_nodes))
 			techweb_list.research_node_id(LAZYACCESS(techweb_list.research_queue_nodes, 1)) // Attempt to research the first node in queue if possible

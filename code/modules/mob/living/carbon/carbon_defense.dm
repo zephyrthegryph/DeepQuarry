@@ -53,7 +53,7 @@
 
 	user.visible_message(span_danger("\The [user] begins to slit [src]'s throat with \the [W]!"))
 
-	user.next_move = EXPIRY_AT(null, CLOCK_WORLD, 0) + 20 //also should prevent user from triggering this repeatedly
+	EXPIRY_SET(user, next_move, 20, CLOCK_WORLD) //also should prevent user from triggering this repeatedly
 	om_task_start(/datum/om/task/timed/carbon_attack_throat_carbon, user, src, receiver = src, W = W, G = G)
 	return TRUE
 

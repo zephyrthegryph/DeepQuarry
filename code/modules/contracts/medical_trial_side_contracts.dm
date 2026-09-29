@@ -348,7 +348,7 @@ DECLARE_REF(/datum/contract_document, "holder", BACK, "contract_document")
 	payload["signature"] = signature
 	payload["signature_time"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	var/datum/medical_trial_participant/signed_participant = trial.participants[identity.id]
-	signed_participant.consent_time = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	EXPIRY_STAMP(signed_participant, consent_time, CLOCK_WORLD)
 	signed_participant.consent_evidence_id = evidence_id
 	signed_participant.consent_record = paper
 	paper.name = "signed VeyMed observation record - [subject.real_name]"

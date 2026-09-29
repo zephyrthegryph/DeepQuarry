@@ -6,7 +6,7 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 	EXPIRY_DECLARE(end_time)
 
 /datum/event/money_hacker/setup()
-	end_time = EXPIRY_AT(null, CLOCK_WORLD, 0) + 6000
+	EXPIRY_SET(src, end_time, 6000, CLOCK_WORLD)
 	if(REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
 		affected_account_handle = om_handle(pick(REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)))
 

@@ -102,3 +102,41 @@ def scan(files):  # noqa: F811
         if name not in declared:
             out["expiry_undeclared"].append((rel, number))
     return out
+
+
+# A member written through EXPIRY_AT (`x = EXPIRY_AT(D, clock, N)`, `obj.x = ...`) is EXPIRY_SET /
+# EXPIRY_STAMP on a declared var dressed up; EXPIRY_AT is for list slots, records, locals, args.
+AT_WRITE = re.compile(r"^\s*((?:\w+\.)*)(\w+)\s*=\s*EXPIRY_AT\(")
+PROC_HEAD = re.compile(r"^/[\w/]*\(([^)]*)\)")
+LOCAL_DECL = re.compile(r"\bvar/(?:[\w]+/)*(\w+)")
+
+_scan_writes = scan
+
+
+def scan(files):  # noqa: F811
+    out = _scan_writes(files)
+    for rel, lines in files:
+        if rel.startswith(SKIP) or not any("EXPIRY_AT(" in l for l in lines):
+            continue
+        local = set()
+        for number, line in enumerate(lines, 1):
+            if line and not line[0].isspace():
+                local = set()
+                head = PROC_HEAD.match(line)
+                if head:
+                    local.update(LOCAL_DECL.findall(head.group(1)))
+                    local.update(w.strip().split("=")[0].strip() for w in head.group(1).split(","))
+                continue
+            code = line.split("//", 1)[0]
+            local.update(LOCAL_DECL.findall(code))
+            m = AT_WRITE.match(code)
+            if not m or code.lstrip().startswith("var/"):
+                continue
+            owner, name = m.groups()
+            if owner.startswith("GLOB."):
+                owner = owner[5:]
+                if not owner:
+                    continue  # a GLOBAL_VAR cannot be EXPIRY_DECLAREd
+            if owner or name not in local:
+                out["world_time_write"].append((rel, number))
+    return out

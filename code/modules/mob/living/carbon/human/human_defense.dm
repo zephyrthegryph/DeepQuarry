@@ -560,7 +560,7 @@ emp_act
 
 	if(W.edge)
 		organ_chance = 75
-	user.next_move = EXPIRY_AT(null, CLOCK_WORLD, 0) + 20
+	EXPIRY_SET(user, next_move, 20, CLOCK_WORLD)
 	user.visible_message(span_danger("\The [user] begins to twist \the [W] around inside [src]'s [chest]!"))
 	om_task_start(/datum/om/task/timed/human_shank_attack_human, user, src, receiver = src, W = W, G = G, organ_chance = organ_chance, damage = damage, chest = chest)
 	return TRUE

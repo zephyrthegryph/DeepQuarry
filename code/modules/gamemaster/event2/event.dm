@@ -122,11 +122,11 @@ This allows for events that have their announcement happen after the end itself.
 
 	if(announce_delay_lower_bound)
 		announce_delay = rand(announce_delay_lower_bound, announce_delay_upper_bound ? announce_delay_upper_bound : announce_delay_lower_bound)
-		time_to_announce = EXPIRY_AT(null, CLOCK_WORLD, 0) + announce_delay
+		EXPIRY_SET(src, time_to_announce, announce_delay, CLOCK_WORLD)
 
 	if(start_delay_lower_bound)
 		start_delay = rand(start_delay_lower_bound, start_delay_upper_bound ? start_delay_upper_bound : start_delay_lower_bound)
-		time_to_start = EXPIRY_AT(null, CLOCK_WORLD, 0) + start_delay
+		EXPIRY_SET(src, time_to_start, start_delay, CLOCK_WORLD)
 
 	if(length_lower_bound)
 		var/starting_point = time_to_start ? time_to_start : world.time

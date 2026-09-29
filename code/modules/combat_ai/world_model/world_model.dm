@@ -72,7 +72,7 @@
 		else
 			visible_neutrals += M
 
-	last_update = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
 	trim_old_damage()
 	trim_old_sounds()
 	trim_old_hazards()

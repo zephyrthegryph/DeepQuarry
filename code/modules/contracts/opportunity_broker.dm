@@ -310,7 +310,7 @@ DECLARE_REF(/datum/contract_opportunity_rule, "signals", OWNED_LIST, null)
 	return !!queued || !!controller.find_live_offer(offer_key) || !!controller.find_candidate(offer_key)
 
 /datum/contract_opportunity_history_entry
-	var/time
+	EXPIRY_DECLARE(time)
 	var/rule_id
 	var/bucket
 	var/event_id
@@ -319,7 +319,7 @@ DECLARE_REF(/datum/contract_opportunity_rule, "signals", OWNED_LIST, null)
 
 /datum/contract_opportunity_history_entry/New(datum/contract_opportunity_rule/rule, datum/contract_opportunity_window/window, datum/contract_event/event, list/_snapshots)
 	. = ..()
-	time = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	EXPIRY_STAMP(src, time, CLOCK_WORLD)
 	rule_id = rule.id
 	bucket = window.bucket
 	event_id = event.id

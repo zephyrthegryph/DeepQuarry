@@ -28,7 +28,7 @@
 	context = _context ? deepCopyList(_context) : list()
 
 /datum/contract_lifecycle_entry
-	var/time
+	EXPIRY_DECLARE(time)
 	var/action
 	var/contract_id
 	var/definition_id
@@ -38,7 +38,7 @@
 
 /datum/contract_lifecycle_entry/New(_action, _contract_id, _definition_id, _offer_key, _board_key, _reason)
 	. = ..()
-	time = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	EXPIRY_STAMP(src, time, CLOCK_WORLD)
 	action = _action
 	contract_id = _contract_id
 	definition_id = _definition_id

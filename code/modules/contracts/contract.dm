@@ -1,11 +1,11 @@
 /datum/contract_audit_entry
-	var/time
+	EXPIRY_DECLARE(time)
 	var/category
 	var/detail
 
 /datum/contract_audit_entry/New(_category, _detail)
 	. = ..()
-	time = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	EXPIRY_STAMP(src, time, CLOCK_WORLD)
 	category = _category
 	detail = _detail
 
@@ -445,7 +445,7 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 	EXPIRY_STAMP(src, accepted_at, CLOCK_WORLD)
 	accepted_by_account = accepting_account?.account_number || contract_account_for_mob(user)?.account_number
 	if(deadline_duration > 0)
-		deadline = EXPIRY_AT(null, CLOCK_WORLD, 0) + deadline_duration
+		EXPIRY_SET(src, deadline, deadline_duration, CLOCK_WORLD)
 	if(BEFORE(src, deadline, CLOCK_WORLD))
 		deadline_timer = om_after(src, deadline - world.time, PROC_REF(check_deadline))
 	SScontracts.set_contract_state(src, old_state, state)
@@ -669,7 +669,7 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 	grace_until = 0
 	state = new_state
 	closure_code = _closure_code
-	closed_at = EXPIRY_AT(null, CLOCK_WORLD, 0)
+	EXPIRY_STAMP(src, closed_at, CLOCK_WORLD)
 	SScontracts.set_contract_state(src, old_state, state)
 	audit(category, detail)
 	SScontracts?.on_contract_closed(src)
