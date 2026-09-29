@@ -18,7 +18,7 @@ RULES = {
 }
 
 STATIC_DECL = re.compile(r"^(\s+)var/static/list/(\w+)\s*=\s*list\(")
-RETURN_LIST = re.compile(r"^\s+(?:return|\.\s*=)\s*list\(")
+RETURN_LIST = re.compile(r"(?:^\s+|\)\s*)(?:return|\.\s*=)\s*list\(")
 NOT_WORTH = re.compile(r"ALLOW\(instance_list\):.*not worth it", re.I)
 # A constant list literal: strings without interpolation, numbers, UPPER_CASE defines, type
 # paths, nested list(), operators. Any lowercase identifier (a var or proc call) disqualifies.
@@ -88,7 +88,7 @@ def proc_body(lines, index):
     return out
 
 
-RETURN_ANY = re.compile(r"^\s+return\b\s*(.*)$")
+RETURN_ANY = re.compile(r"(?:^\s+|\)\s*)return\b\s*(.*)$")
 
 
 def all_returns_constant(lines, header_index):
@@ -97,7 +97,7 @@ def all_returns_constant(lines, header_index):
     that its callers own; its constant fallback branch is not a table."""
     for k in proc_body(lines, header_index):
         code = lines[k].split("//", 1)[0]
-        match = RETURN_ANY.match(code)
+        match = RETURN_ANY.search(code)
         if not match:
             continue
         value = match.group(1).strip()
@@ -105,7 +105,7 @@ def all_returns_constant(lines, header_index):
             continue
         if not value.startswith(("list(", "alist(")):
             return False
-        text, _ = gather(lines, k, code.index(value[:5]))
+        text, _ = gather(lines, k, match.start(1))
         if not constant(text) or gather.tail:
             return False
     return True
@@ -142,10 +142,11 @@ def scan(files):
                 if any(ret.match(lines[k].split("//", 1)[0]) for k in proc_body(lines, number - 1)):
                     out["static_getter"].append((rel, number))
                 continue
-            if RETURN_LIST.match(code):
-                text, end = gather(lines, number - 1, line.index("list("))
+            ret = RETURN_LIST.search(code)
+            if ret:
+                text, end = gather(lines, number - 1, ret.end() - len("list("))
                 if constant(text) and not gather.tail and all_returns_constant(lines, header_index):
-                    if not code.lstrip().startswith("return") and any(
+                    if "return" not in code[ret.start():ret.end()] and any(
                             DOT_WRITE.search(lines[k].split("//", 1)[0]) for k in proc_body(lines, end)):
                         continue  # `. = list(...)` seeding a result the proc then fills in
                     out["const_list_alloc"].append((rel, number))
