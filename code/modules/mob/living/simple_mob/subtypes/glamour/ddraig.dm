@@ -192,7 +192,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 	ai_busy_begin()
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% opens its maw, emitting flames!")))
 	do_windup_animation(A, charge_warmup)
-	om_after_slot(src, "firebreathtimer", charge_warmup, PROC_REF(firebreathend), A)
+	after_slot(src, "firebreathtimer", charge_warmup, PROC_REF(firebreathend), A)
 	playsound(src, "sound/magic/Fireball.ogg", 50, 1)
 
 /mob/living/simple_mob/vore/ddraig/proc/firebreathend(atom/A)

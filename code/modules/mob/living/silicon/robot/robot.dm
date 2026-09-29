@@ -542,7 +542,7 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 /mob/living/silicon/robot/proc/start_killswitch(delay = ROBOT_KILLSWITCH_DELAY)
 	if(om_timer_slot_pending(src, "killswitch"))
 		return FALSE
-	om_after_slot(src, "killswitch", delay, PROC_REF(fire_killswitch))
+	after_slot(src, "killswitch", delay, PROC_REF(fire_killswitch))
 	log_game("ROBOT: killswitch armed on [key_name(src)] ([delay / (1 SECOND)]s).")
 	return TRUE
 
@@ -563,7 +563,7 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 /mob/living/silicon/robot/proc/start_weapon_lock(duration = ROBOT_WEAPON_LOCK_DELAY)
 	if(om_timer_slot_pending(src, "weapon_lock"))
 		om_cancel_timer_slot(src, "weapon_lock")
-	om_after_slot(src, "weapon_lock", duration, PROC_REF(end_weapon_lock))
+	after_slot(src, "weapon_lock", duration, PROC_REF(end_weapon_lock))
 	uneq_all()
 	to_chat(src, span_danger("Weapon lock engaged."))
 

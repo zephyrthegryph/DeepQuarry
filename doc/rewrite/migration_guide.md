@@ -214,7 +214,7 @@ The decision table. **Read it before writing anything with a timer.**
 | A var that reverts after N | `timed_set(src, nameof(var), value, for_time = N)`, read the var directly, `time_left(src, nameof(var))` for a countdown, `timed_cancel(...)` | [built] |
 | A temporary condition **with behaviour** (EMP'd, failed, jammed, on fire) | a timed grant of a capability: `om_grant_for(src, GRANT_CAPABILITY, /datum/capability/condition/x, source, N)` | [planned] (plan §2.17) |
 | Do something once, later | `after(src, N, PROC_REF(x), args...)`; owned, weak, dropped if src or any datum arg is gone | [built] |
-| One pending "do later" per name (re-arming replaces it) | `om_after_slot(src, "name", N, PROC_REF(x))` | [built] |
+| One pending "do later" per name (re-arming replaces it) | `after_slot(src, "name", N, PROC_REF(x))` | [built] |
 | Something repeating while a condition holds | a cadence: `should_run()` + `periodic_step(dt)`, **never** a timer that re-arms itself | [built] |
 | Delete after N | `expire(N)` (movables) | [built] |
 | Long work split over ticks | a system `periodic_step()` returning `STEP_YIELD` | [planned] (kernel) |
@@ -262,7 +262,7 @@ The decision table. **Read it before writing anything with a timer.**
 
 - **Base types:** never add a var to `/atom`, `/obj`, `/obj/item`, `/obj/machinery`, `/mob`, `/mob/living` or `/mob/living/carbon/human` without asking. A ratchet counts them [planned].
 - **No `= list()` on instance vars:** use lazy lists.
-- **Null policy (library and framework code):** accessors never return null (a count is 0, a list is empty, a state is FALSE); use a null object or a sentinel where "nothing" must be represented; relations, timers (`after`, `om_after_slot`, `timed_set`) and dispatch drop dead targets, so a handler never receives a null or deleted target.
+- **Null policy (library and framework code):** accessors never return null (a count is 0, a list is empty, a state is FALSE); use a null object or a sentinel where "nothing" must be represented; relations, timers (`after`, `after_slot`, `timed_set`) and dispatch drop dead targets, so a handler never receives a null or deleted target.
 - **Accessors never return null.** Use a null object (`/datum/thermal_profile/default`) or a defined sentinel (`NIGHTSHIFT_AUTO`), not null.
 - **No defensive guards in converted code:** no `?.` chains or `if(!x) return` on values the framework guarantees (owned vars, relation targets inside their hooks, timer and callback args). `QDELETED()` checks belong only at edges: I/O callbacks and user input.
 
@@ -654,9 +654,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/general_air_control/fuel_injectio
 | Old | Count | New |
 |---|---|---|
 | `om_after(E, d, PROC_REF(x), ...)` | 1,505 | `after(E, d, PROC_REF(x), ...)`, the same semantics (owned by E, weak args); a rename |
-| `om_after_unique` / `om_after_replace` | 19 / 20 | `om_after_slot(E, "name", d, PROC_REF(x))`: a slot is unique, and re-arming replaces |
+| `om_after_unique` / `om_after_replace` | 19 / 20 | `after_slot(E, "name", d, PROC_REF(x))`: a slot is unique, and re-arming replaces |
 | a proc that re-arms its own timer, `om_after_stagger`, `om_after_drift` | 4 + 7 + loops | a cadence (B12) |
-| `OWN_TIMER(type, name)` | 52 | `om_after_slot` (a slot is already owned and cancelled on destroy) |
+| `OWN_TIMER(type, name)` | 52 | `after_slot` (a slot is already owned and cancelled on destroy) |
 | `om_qdel_after(E, d)` | 47 | `expire(d)` on E |
 | `om_deadline` | 31 | internal to the scheduler; never call it in gameplay code |
 | `world_next_tick` | 2 | keep (world-level only) |

@@ -167,7 +167,7 @@ demand (admin verb "Ownership Audit").
 A timer an entity keeps by name is owned, like a child. It is declared in the same ownership table:
 `OWN_TIMER(/type/path, name)` (a keyed family `"name:key"` is declared once by `name`). The API:
 
-- `om_after_slot(E, "name", delay, proc_ref, args...)` schedules into the slot, replacing whatever
+- `after_slot(E, "name", delay, proc_ref, args...)` schedules into the slot, replacing whatever
   was pending there (at most one timer per entity and name);
 - `om_timer_slot_pending(E, "name")` / `om_timer_slot_left(E, "name")` read it. Pending is derived
   from the entity's live timers, never a stored flag, so firing and cancelling empty it by

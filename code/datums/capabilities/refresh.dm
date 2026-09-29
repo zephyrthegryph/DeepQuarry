@@ -35,7 +35,7 @@ OWN_TIMER(/datum, periodic_interval)
 	var/want = !!D.should_run()
 	var/pending = om_timer_slot_pending(D, "periodic_interval")
 	if(want && !pending)
-		om_after_slot(D, "periodic_interval", D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), D)
+		after_slot(D, "periodic_interval", D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), D)
 	else if(!want && pending)
 		om_cancel_timer_slot(D, "periodic_interval")
 
@@ -45,7 +45,7 @@ OWN_TIMER(/datum, periodic_interval)
 		return
 	if(D.periodic_step(D.periodic_interval) == PROCESS_KILL || !D.should_run())
 		return
-	om_after_slot(D, "periodic_interval", D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), D)
+	after_slot(D, "periodic_interval", D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), D)
 
 /// Marks E changed: queues its refresh (and its owners', up the chain) and raises `channel` for OM
 /// observers. The rare direct write outside a dispatched call or a TRACKED setter calls this.
@@ -245,6 +245,11 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 	var/datum/look/L = GLOB.look_builder
 	L.reset()
 	A.draw(L)
+	// Transient flashes (look_flash()) sit on top of whatever draw() described.
+	if(A.look_flash_state)
+		L.state(A.look_flash_state)
+	for(var/state in A.look_flashes)
+		L.overlay(state)
 	if(!L.touched)
 		if(apply && !isnull(A.look_key))
 			// It drew before and draws nothing now: applying the empty look takes back everything the
