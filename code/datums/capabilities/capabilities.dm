@@ -446,7 +446,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	return list(entry)
 
 /// Shared constructor body for hand()/tool()/use_on()/insert().
-/proc/cap_entry(entry_kind, name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, list/form, held_type, tool_quality, delay, priority, stance, name_proc, applies, blocked_by)
+/proc/cap_entry(entry_kind, name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, list/form, held_type, tool_quality, delay, priority, stance, name_proc, applies, blocked_by, fuel = 0, volume)
 	var/datum/capability/entry/C = new
 	var/datum/interaction/capability/E = new
 	E.name = name
@@ -474,7 +474,9 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 			E.default_action = INPUT_ACTION_USE
 		if("tool")
 			E.tool = tool_quality
-			E.duration = delay || 0
+			E.tool_amount = fuel || 0
+			if(!isnull(volume))
+				E.tool_volume = volume
 			E.category = INTERACTION_CAT_MAINTAIN
 			E.default_action = INPUT_ACTION_USE
 		if("use_on")
@@ -485,6 +487,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 			E.held_type = held_type
 			E.category = INTERACTION_CAT_INSERT
 			E.default_action = INPUT_ACTION_USE
+	E.duration = delay || 0
 	E.apply_stance_tags()
 	C.entry = E
 	C.key = E.id
@@ -494,17 +497,18 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	return C
 
 /// An empty-hand action: hand("Toggle", PROC_REF(toggle)). Handler (mob/user).
-/proc/cap_hand(name, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, stance, name_proc, applies, blocked_by = NONE)
-	return cap_entry("hand", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, null, null, null, priority, stance, name_proc, applies, blocked_by)
+/proc/cap_hand(name, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, stance, name_proc, applies, blocked_by = NONE, delay)
+	return cap_entry("hand", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, null, null, delay, priority, stance, name_proc, applies, blocked_by)
 
 /// A tool action: tool("Unbolt", TOOL_WRENCH, PROC_REF(unbolt), delay = 2 SECONDS). Handler (mob/user, obj/item/held).
-/proc/cap_tool(name, quality, handler, delay, behind = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, list/form, priority, name_proc, applies, blocked_by = NONE)
-	return cap_entry("tool", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, null, quality, delay, priority, null, name_proc, applies, blocked_by)
+/// `fuel`: welder fuel (or other tool resource) used; `volume`: the tool sound's volume (0 for none).
+/proc/cap_tool(name, quality, handler, delay, behind = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, list/form, priority, name_proc, applies, blocked_by = NONE, fuel = 0, volume)
+	return cap_entry("tool", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, null, quality, delay, priority, null, name_proc, applies, blocked_by, fuel = fuel, volume = volume)
 
 /// Using a held item of `held_type` on the holder, which keeps the item. Handler (mob/user, obj/item/held).
-/proc/cap_use_on(name, held_type, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, stance, name_proc, applies, blocked_by = NONE)
-	return cap_entry("use_on", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, held_type, null, null, priority, stance, name_proc, applies, blocked_by)
+/proc/cap_use_on(name, held_type, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, stance, name_proc, applies, blocked_by = NONE, delay)
+	return cap_entry("use_on", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, held_type, null, delay, priority, stance, name_proc, applies, blocked_by)
 
 /// Putting a held item of `held_type` into the holder (the handler adopts it: own_set moves it).
-/proc/cap_insert(name, held_type, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = TRUE, log, list/form, priority, name_proc, applies, blocked_by = NONE)
-	return cap_entry("insert", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, held_type, null, null, priority, null, name_proc, applies, blocked_by)
+/proc/cap_insert(name, held_type, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = TRUE, log, list/form, priority, name_proc, applies, blocked_by = NONE, delay)
+	return cap_entry("insert", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, held_type, null, delay, priority, null, name_proc, applies, blocked_by)

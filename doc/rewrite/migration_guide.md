@@ -101,8 +101,8 @@ Every constructor below also takes the standard gating arguments `behind`, `bloc
 | `cap_power(...gating)` | [built] | the `dark` state and examine while unpowered; entries refuse unpowered unless `works_unpowered` |
 | `cap_slot(var_name, accepts, ...gating, eject_needs, name, ...)` | [built] | one item slot: insert, eject, examine, UI data; the var becomes owned; draws its item when it has a layer |
 | `cap_deconstruct(board, behind = PANEL, ...)` | [built] | crowbar dismantle to a frame (in the design, `deconstructible`) |
-| `cap_construction(stage(...), ..., ladder_options(...))` | [built] (being cleaned up on rewrite/dx-construct2: entries as costs, named args) | build/undo ladders |
-| `cap_frame_ladder()` | [built] | the standard machine/computer frame ladder |
+| `cap_construction(stage(...), ..., ladder_options(...))` | [built] (costs are `cap_tool`/`cap_insert`/`cap_use_on`/`cap_hand` entries with no handler; `uses`, `sfx`, `icon` on `stage()`) | build/undo ladders |
+| `cap_frame_ladder()` | [built] (a proc on `/obj/structure/frame`) | the standard machine/computer frame ladder |
 | `cap_wall_mount(offset)` | [built] | faces a wall machine away from its wall and offsets it onto it |
 | `cap_atmos_unwrench(delay)` | [built] | unfasten an atmos device into its pipe item, refused while running or over-pressured |
 | **Bundles** [built]: `machine_basics(board, anchored_by = TOOL_WRENCH, repair_tool)` (panel, breakable, power, anchor, deconstruct behind the panel), `wall_machine(board, offset, repair_tool)` (basics without anchoring + wall mount), `console(board)`, `atmos_device(uses_power, unwrench_delay)`, `maintenance_hatch(wires, access, cover_locked_while, panel_needs_cover_closed, cover_tool, removable_cover, emag_say, emag_effect, emag_mode)` (cover + panel + wires behind it + lock + emag; the lock and emag only work closed up; the coverlock only holds the cover shut) | [built] | a later capability with the same key replaces an earlier one in place, so a bundle can refine another's part (the hatch's panel replaces the basics' panel) |
