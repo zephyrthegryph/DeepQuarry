@@ -253,9 +253,9 @@
 		//Delete the log.
 		if("delete")
 			if(params["type"] == "pda")
-				own_remove(linkedServer(), "pda_msgs", locate(params["id"]) in linkedServer().pda_msgs)
+				own_remove(linkedServer(), "pda_msgs", locate_in_list(linkedServer().pda_msgs, params["id"]))
 			else
-				own_remove(linkedServer(), "rc_msgs", locate(params["id"]) in linkedServer().rc_msgs)
+				own_remove(linkedServer(), "rc_msgs", locate_in_list(linkedServer().rc_msgs, params["id"]))
 			set_temp("NOTICE: Log Deleted!", "average")
 			. = TRUE
 		//Fake messaging selection - KEY REQUIRED

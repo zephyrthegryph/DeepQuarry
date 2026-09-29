@@ -823,7 +823,7 @@
 			host().soulgem.take_control_owner()
 			return TRUE
 		if("soulcatcher_select")
-			var/mob/picked_soul = locate(params["selected_soul"]) in host().soulgem.brainmobs
+			var/mob/picked_soul = locate_in_list(host().soulgem.brainmobs, params["selected_soul"])
 			if(picked_soul)
 				rel_set(host().soulgem, "selected_soul", picked_soul)
 			return TRUE

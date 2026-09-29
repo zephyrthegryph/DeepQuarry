@@ -212,7 +212,6 @@ initialize	code/game/machinery/computer/guestpass.dm	/obj/machinery/computer/gue
 initialize	code/game/machinery/computer/medical.dm	/obj/machinery/computer/med_data/Initialize(mapload)
 initialize	code/game/machinery/computer/message.dm	/obj/machinery/computer/message_monitor/Initialize(mapload)
 initialize	code/game/machinery/computer/message.dm	/obj/item/paper/monitorkey/Initialize(mapload)
-initialize	code/game/machinery/computer/pod.dm	/obj/machinery/computer/pod/Initialize(mapload)
 initialize	code/game/machinery/computer/security.dm	/obj/machinery/computer/secure_data/Initialize(mapload)
 initialize	code/game/machinery/computer/skills.dm	/obj/machinery/computer/skills/Initialize(mapload)
 initialize	code/game/machinery/computer/station_alert.dm	/obj/machinery/computer/station_alert/Initialize(mapload)
@@ -463,9 +462,6 @@ initialize	code/game/objects/effects/spiders.dm	/obj/effect/spider/spiderling/In
 initialize	code/game/objects/effects/spiders.dm	/obj/effect/spider/spiderling/princess/Initialize(mapload, atom/parent)
 initialize	code/game/objects/effects/spiders.dm	/obj/effect/spider/cocoon/Initialize(mapload)
 initialize	code/game/objects/effects/step_triggers.dm	/obj/effect/step_trigger/teleporter/landmark/Initialize(mapload)
-initialize	code/game/objects/effects/step_triggers.dm	/obj/effect/step_trigger/autostrip/Initialize(mapload)
-initialize	code/game/objects/effects/step_triggers.dm	/obj/effect/autostriptarget/Initialize(mapload)
-initialize	code/game/objects/effects/step_triggers.dm	/obj/effect/autostriptarget/mob/Initialize(mapload)
 initialize	code/game/objects/effects/step_triggers.dm	/obj/effect/step_trigger/teleporter/deathfall/Initialize(mapload)
 initialize	code/game/objects/effects/step_triggers.dm	/obj/effect/step_trigger/teleporter/poi/Initialize(mapload) //This is for placing teleporters in gateways/POIS, where Z levels can be different and I cant be assed to make fake teleporter stairs
 initialize	code/game/objects/effects/step_triggers.dm	/obj/effect/step_trigger/teleporter/randomspawn/Initialize(mapload)
@@ -1157,7 +1153,6 @@ initialize	code/modules/blob2/blobs/base_blob.dm	/obj/structure/blob/Initialize(
 initialize	code/modules/blob2/blobs/core.dm	/obj/structure/blob/core/Initialize(mapload, client/new_overmind = null, new_rate = 2, placed = 0)
 initialize	code/modules/blob2/blobs/node.dm	/obj/structure/blob/node/Initialize(mapload, new_overmind)
 initialize	code/modules/blob2/blobs/normal.dm	/obj/structure/blob/normal/Initialize(mapload, new_overmind)
-initialize	code/modules/blob2/blobs/resource.dm	/obj/structure/blob/resource/Initialize(mapload, new_overmind)
 initialize	code/modules/blob2/core_chunk.dm	/obj/item/blobcore_chunk/Initialize(mapload, datum/blob_type/parentblob = null)
 initialize	code/modules/blob2/overmind/overmind.dm	/mob/observer/blob/Initialize(mapload, pre_placed = 0, starting_points = 60, desired_blob_type = null)
 initialize	code/modules/body/body.dm	/mob/living/Initialize(mapload)
@@ -1329,7 +1324,6 @@ initialize	code/modules/entrepreneur/entrepreneur_items.dm	/obj/item/entrepreneu
 initialize	code/modules/entrepreneur/entrepreneur_items.dm	/obj/item/entrepreneur/emf/Initialize(mapload)
 initialize	code/modules/entrepreneur/entrepreneur_items.dm	/obj/item/entrepreneur/crystal/Initialize(mapload)
 initialize	code/modules/env_message/env_message.dm	/obj/effect/env_message/Initialize(mapload)
-initialize	code/modules/eventkit/collector_event/blockers.dm	/obj/structure/event_collector_blocker/Initialize(mapload)
 initialize	code/modules/events/meteor_strike.dm	/obj/effect/meteor_falling/Initialize(mapload)
 initialize	code/modules/events/meteor_strike.dm	/obj/structure/meteorite/Initialize(mapload)
 initialize	code/modules/exploration/lootsafe.dm	/obj/structure/closet/crate/secure/lootsafe/numberlock/Initialize(mapload)
@@ -1604,7 +1598,7 @@ initialize	code/modules/mining/ore.dm	/obj/item/ore/Initialize(mapload)
 initialize	code/modules/mining/ore_box.dm	/obj/structure/ore_box/Initialize(mapload)
 initialize	code/modules/mining/ore_redemption_machine/equipment_vendor.dm	/obj/machinery/mineral/equipment_vendor/Initialize(mapload)
 initialize	code/modules/mining/ore_redemption_machine/survey_vendor.dm	/obj/machinery/mineral/equipment_vendor/survey/Initialize(mapload)
-initialize	code/modules/mining/resonator.dm	/obj/effect/resonance/Initialize(mapload, creator = null, timetoburst)
+initialize	code/modules/mining/resonator.dm	/obj/effect/resonance/Initialize(mapload, mob/new_creator = null, timetoburst)
 initialize	code/modules/mining/resonator.dm	/obj/effect/temp_visual/resonance_crush/Initialize(mapload)
 initialize	code/modules/mining/shelter_atoms.dm	/obj/structure/table/survival_pod/Initialize(mapload)
 initialize	code/modules/mining/shelter_atoms.dm	/obj/structure/bed/pod/Initialize(mapload)
@@ -2503,7 +2497,6 @@ late_initialize	code/game/gamemodes/technomancer/spells/spawner/pulsar.dm	/obj/e
 late_initialize	code/game/machinery/atmoalter/portable_atmospherics.dm	/obj/machinery/portable_atmospherics/LateInitialize()
 late_initialize	code/game/machinery/computer/message.dm	/obj/machinery/computer/message_monitor/LateInitialize()
 late_initialize	code/game/machinery/computer/message.dm	/obj/item/paper/monitorkey/LateInitialize()
-late_initialize	code/game/machinery/computer/pod.dm	/obj/machinery/computer/pod/LateInitialize()
 late_initialize	code/game/machinery/doors/brigdoors.dm	/obj/machinery/door_timer/LateInitialize()
 late_initialize	code/game/machinery/flasher.dm	/obj/machinery/flasher/portable/LateInitialize()
 late_initialize	code/game/machinery/newscaster.dm	/obj/machinery/newscaster/LateInitialize()
@@ -2584,7 +2577,6 @@ late_initialize	code/modules/power/gravitygenerator.dm	/obj/machinery/gravity_ge
 late_initialize	code/modules/power/port_gen.dm	/obj/machinery/power/rtg/LateInitialize()
 late_initialize	code/modules/power/smes.dm	/obj/machinery/power/smes/LateInitialize()
 late_initialize	code/modules/power/turbine.dm	/obj/machinery/computer/turbine_computer/LateInitialize()
-late_initialize	code/modules/recycling/conveyor2.dm	/obj/machinery/conveyor_switch/LateInitialize()
 late_initialize	code/modules/recycling/disposal_trunk.dm	/obj/structure/disposalpipe/trunk/LateInitialize()
 late_initialize	code/modules/research/tg/experisci/handheld_scanner.dm	/obj/item/experi_scanner/LateInitialize()
 late_initialize	code/modules/rogueminer/zone_console.dm	/obj/machinery/computer/roguezones/LateInitialize()
@@ -2810,8 +2802,6 @@ unreasoned	code/game/machinery/computer/message.dm	/obj/machinery/computer/messa
 unreasoned	code/game/machinery/computer/message.dm	/obj/machinery/computer/message_monitor/LateInitialize()
 unreasoned	code/game/machinery/computer/message.dm	/obj/item/paper/monitorkey/Initialize(mapload)
 unreasoned	code/game/machinery/computer/message.dm	/obj/item/paper/monitorkey/LateInitialize()
-unreasoned	code/game/machinery/computer/pod.dm	/obj/machinery/computer/pod/Initialize(mapload)
-unreasoned	code/game/machinery/computer/pod.dm	/obj/machinery/computer/pod/LateInitialize()
 unreasoned	code/game/machinery/computer/security.dm	/obj/machinery/computer/secure_data/Initialize(mapload)
 unreasoned	code/game/machinery/computer/skills.dm	/obj/machinery/computer/skills/Initialize(mapload)
 unreasoned	code/game/machinery/computer/station_alert.dm	/obj/machinery/computer/station_alert/Initialize(mapload)
@@ -3069,9 +3059,6 @@ unreasoned	code/game/objects/effects/spiders.dm	/obj/effect/spider/spiderling/In
 unreasoned	code/game/objects/effects/spiders.dm	/obj/effect/spider/spiderling/princess/Initialize(mapload, atom/parent)
 unreasoned	code/game/objects/effects/spiders.dm	/obj/effect/spider/cocoon/Initialize(mapload)
 unreasoned	code/game/objects/effects/step_triggers.dm	/obj/effect/step_trigger/teleporter/landmark/Initialize(mapload)
-unreasoned	code/game/objects/effects/step_triggers.dm	/obj/effect/step_trigger/autostrip/Initialize(mapload)
-unreasoned	code/game/objects/effects/step_triggers.dm	/obj/effect/autostriptarget/Initialize(mapload)
-unreasoned	code/game/objects/effects/step_triggers.dm	/obj/effect/autostriptarget/mob/Initialize(mapload)
 unreasoned	code/game/objects/effects/step_triggers.dm	/obj/effect/step_trigger/teleporter/deathfall/Initialize(mapload)
 unreasoned	code/game/objects/effects/step_triggers.dm	/obj/effect/step_trigger/teleporter/poi/Initialize(mapload) //This is for placing teleporters in gateways/POIS, where Z levels can be different and I cant be assed to make fake teleporter stairs
 unreasoned	code/game/objects/effects/step_triggers.dm	/obj/effect/step_trigger/teleporter/randomspawn/Initialize(mapload)
@@ -3800,7 +3787,6 @@ unreasoned	code/modules/blob2/blobs/core.dm	/obj/structure/blob/core/Initialize(
 unreasoned	code/modules/blob2/blobs/core.dm	/obj/structure/blob/core/LateInitialize()
 unreasoned	code/modules/blob2/blobs/node.dm	/obj/structure/blob/node/Initialize(mapload, new_overmind)
 unreasoned	code/modules/blob2/blobs/normal.dm	/obj/structure/blob/normal/Initialize(mapload, new_overmind)
-unreasoned	code/modules/blob2/blobs/resource.dm	/obj/structure/blob/resource/Initialize(mapload, new_overmind)
 unreasoned	code/modules/blob2/core_chunk.dm	/obj/item/blobcore_chunk/Initialize(mapload, datum/blob_type/parentblob = null)
 unreasoned	code/modules/blob2/overmind/overmind.dm	/mob/observer/blob/Initialize(mapload, pre_placed = 0, starting_points = 60, desired_blob_type = null)
 unreasoned	code/modules/body/body.dm	/mob/living/Initialize(mapload)
@@ -3972,7 +3958,6 @@ unreasoned	code/modules/entrepreneur/entrepreneur_items.dm	/obj/item/entrepreneu
 unreasoned	code/modules/entrepreneur/entrepreneur_items.dm	/obj/item/entrepreneur/emf/Initialize(mapload)
 unreasoned	code/modules/entrepreneur/entrepreneur_items.dm	/obj/item/entrepreneur/crystal/Initialize(mapload)
 unreasoned	code/modules/env_message/env_message.dm	/obj/effect/env_message/Initialize(mapload)
-unreasoned	code/modules/eventkit/collector_event/blockers.dm	/obj/structure/event_collector_blocker/Initialize(mapload)
 unreasoned	code/modules/events/meteor_strike.dm	/obj/effect/meteor_falling/Initialize(mapload)
 unreasoned	code/modules/events/meteor_strike.dm	/obj/structure/meteorite/Initialize(mapload)
 unreasoned	code/modules/exploration/lootsafe.dm	/obj/structure/closet/crate/secure/lootsafe/numberlock/Initialize(mapload)
@@ -4253,7 +4238,7 @@ unreasoned	code/modules/mining/ore.dm	/obj/item/ore/Initialize(mapload)
 unreasoned	code/modules/mining/ore_box.dm	/obj/structure/ore_box/Initialize(mapload)
 unreasoned	code/modules/mining/ore_redemption_machine/equipment_vendor.dm	/obj/machinery/mineral/equipment_vendor/Initialize(mapload)
 unreasoned	code/modules/mining/ore_redemption_machine/survey_vendor.dm	/obj/machinery/mineral/equipment_vendor/survey/Initialize(mapload)
-unreasoned	code/modules/mining/resonator.dm	/obj/effect/resonance/Initialize(mapload, creator = null, timetoburst)
+unreasoned	code/modules/mining/resonator.dm	/obj/effect/resonance/Initialize(mapload, mob/new_creator = null, timetoburst)
 unreasoned	code/modules/mining/resonator.dm	/obj/effect/temp_visual/resonance_crush/Initialize(mapload)
 unreasoned	code/modules/mining/shelter_atoms.dm	/obj/structure/table/survival_pod/Initialize(mapload)
 unreasoned	code/modules/mining/shelter_atoms.dm	/obj/structure/bed/pod/Initialize(mapload)
@@ -4923,7 +4908,6 @@ unreasoned	code/modules/reagents/reagents/other.dm	/obj/item/storage/pill_bottle
 unreasoned	code/modules/reagents/reagents/other.dm	/obj/item/storage/pill_bottle/phenethylamine/Initialize(mapload)
 unreasoned	code/modules/recycling/conveyor2.dm	/obj/machinery/conveyor/Initialize(mapload, newdir, on = 0)
 unreasoned	code/modules/recycling/conveyor2.dm	/obj/machinery/conveyor_switch/Initialize(mapload)
-unreasoned	code/modules/recycling/conveyor2.dm	/obj/machinery/conveyor_switch/LateInitialize()
 unreasoned	code/modules/recycling/disposal-construction.dm	/obj/structure/disposalconstruct/Initialize(mapload, newtype, newdir, flipped, newsubtype)
 unreasoned	code/modules/recycling/disposal.dm	/obj/structure/disposalpipe/Initialize(mapload)
 unreasoned	code/modules/recycling/disposal.dm	/obj/structure/disposalpipe/segment/Initialize(mapload)
@@ -5201,15 +5185,13 @@ world_reads	code/game/gamemodes/cult/ritual.dm	for(var/V in GLOB.cultwords)
 world_reads	code/game/gamemodes/cult/ritual.dm	words[GLOB.cultwords[V]] = V
 world_reads	code/game/gamemodes/meteor/meteors.dm	om_changed(GLOB.meteor_watch, CHANGE_METEORS)
 world_reads	code/game/machinery/atm_ret_field.dm	for(var/direction in GLOB.cardinal)
-world_reads	code/game/machinery/autolathe.dm	if(!GLOB.autounlock_techwebs[/datum/techweb/autounlocking/autolathe])
-world_reads	code/game/machinery/autolathe.dm	GLOB.autounlock_techwebs[/datum/techweb/autounlocking/autolathe] = new /datum/techweb/autounlocking/autolathe
-world_reads	code/game/machinery/autolathe.dm	stored_research_static = GLOB.autounlock_techwebs[/datum/techweb/autounlocking/autolathe]
+world_reads	code/game/machinery/autolathe.dm	stored_research_static = GLOB.research_service.autounlock_techweb(/datum/techweb/autounlocking/autolathe)
 world_reads	code/game/machinery/camera/camera.dm	LAZYOR(client_huds, GLOB.global_hud.whitense)
 world_reads	code/game/machinery/computer/atmos_alert.dm	GLOB.atmosphere_alarm.register_alarm(src, /atom/proc/update_icon)
-world_reads	code/game/machinery/computer/bodycamera.dm	bpinboard = GLOB.vis_overlays_service.add_vis_overlay(src, icon = icon, iconstate = "pinboard", layer = 0.1, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE)
-world_reads	code/game/machinery/computer/camera.dm	pinboard = GLOB.vis_overlays_service.add_vis_overlay(src, icon = icon, iconstate = "pinboard", layer = 0.1, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE)
+world_reads	code/game/machinery/computer/bodycamera.dm	own_set(src, "bpinboard", GLOB.vis_overlays_service.add_vis_overlay(src, icon = icon, iconstate = "pinboard", layer = 0.1, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
+world_reads	code/game/machinery/computer/camera.dm	own_set(src, "pinboard", GLOB.vis_overlays_service.add_vis_overlay(src, icon = icon, iconstate = "pinboard", layer = 0.1, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
 world_reads	code/game/machinery/doors/alarmlock.dm	GLOB.radio_service.remove_object(src, air_frequency)
-world_reads	code/game/machinery/doors/alarmlock.dm	air_connection_handle = om_handle(GLOB.radio_service.add_object(src, air_frequency, RADIO_TO_AIRALARM))
+world_reads	code/game/machinery/doors/alarmlock.dm	rel_set(src, "air_connection", GLOB.radio_service.add_object(src, air_frequency, RADIO_TO_AIRALARM))
 world_reads	code/game/machinery/doors/firedoor.dm	for(var/direction in GLOB.cardinal)
 world_reads	code/game/machinery/fire_alarm.dm	set_security_level(GLOB.security_level ? get_security_level() : "green")
 world_reads	code/game/machinery/gear_dispenser.dm	if(!GLOB.gear_distributed_to["[type]"] && (dispenser_flags & GD_NOGREED))
@@ -5217,7 +5199,7 @@ world_reads	code/game/machinery/gear_dispenser.dm	GLOB.gear_distributed_to["[typ
 world_reads	code/game/machinery/magnet.dm	if(GLOB.radio_service)
 world_reads	code/game/machinery/magnet.dm	GLOB.radio_service.add_object(src, freq, RADIO_MAGNETS)
 world_reads	code/game/machinery/magnet.dm	if(GLOB.radio_service)
-world_reads	code/game/machinery/magnet.dm	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_MAGNETS))
+world_reads	code/game/machinery/magnet.dm	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_MAGNETS))
 world_reads	code/game/machinery/requests_console.dm	GLOB.req_console_assistance |= department
 world_reads	code/game/machinery/requests_console.dm	GLOB.req_console_supplies |= department
 world_reads	code/game/machinery/requests_console.dm	GLOB.req_console_information |= department
@@ -5227,7 +5209,7 @@ world_reads	code/game/machinery/supplybeacon.dm	if(!drop_type) drop_type = pick(
 world_reads	code/game/machinery/teleporter.dm	for(var/direction in GLOB.cardinal)
 world_reads	code/game/machinery/teleporter.dm	for(direction in GLOB.cardinal)
 world_reads	code/game/objects/effects/anomalies/anomalies_weather.dm	for(var/spread_dir in GLOB.alldirs)
-world_reads	code/game/objects/effects/anomalies/anomalies_weather.dm	LAZYADD(affected_turfs, GetBelow(turf))
+world_reads	code/game/objects/effects/anomalies/anomalies_weather.dm	rel_add(src, "affected_turfs", GetBelow(turf))
 world_reads	code/game/objects/effects/landmarks.dm	GLOB.monkeystart += loc
 world_reads	code/game/objects/effects/landmarks.dm	GLOB.newplayer_start += loc
 world_reads	code/game/objects/effects/landmarks.dm	GLOB.latejoin_gateway += loc
@@ -5254,8 +5236,6 @@ world_reads	code/game/objects/effects/landmarks.dm	GLOB.vinestart += loc
 world_reads	code/game/objects/effects/landmarks_poi.dm	GLOB.poi_service.enqueue(src)
 world_reads	code/game/objects/effects/spawners/gibspawner.dm	gibdirections = list(list(NORTH, NORTHEAST, NORTHWEST),list(SOUTH, SOUTHEAST, SOUTHWEST),list(WEST, NORTHWEST, SOUTHWEST),list(EAST, NORTHEAST, SOUTHEAST), GLOB.alldirs, GLOB.alldirs, list())
 world_reads	code/game/objects/effects/spawners/gibspawner.dm	gibdirections = list(list(NORTH, NORTHEAST, NORTHWEST),list(SOUTH, SOUTHEAST, SOUTHWEST),list(WEST, NORTHWEST, SOUTHWEST),list(EAST, NORTHEAST, SOUTHEAST), GLOB.alldirs, GLOB.alldirs)
-world_reads	code/game/objects/effects/step_triggers.dm	GLOB.mapped_autostrips[targetid] = src
-world_reads	code/game/objects/effects/step_triggers.dm	GLOB.mapped_autostrips_mob[targetid] = src
 world_reads	code/game/objects/items/devices/communicator/cartridge.dm	GLOB.radio_service.add_object(src, 1435)
 world_reads	code/game/objects/items/devices/communicator/communicator.dm	LAZYOR(client_huds, GLOB.global_hud.whitense)
 world_reads	code/game/objects/items/devices/communicator/communicator.dm	LAZYOR(client_huds, GLOB.global_hud.darkMask)
@@ -5267,7 +5247,7 @@ world_reads	code/game/objects/items/devices/radio/radio.dm	internal_channels = G
 world_reads	code/game/objects/items/devices/radio/radio.dm	internal_channels = GLOB.default_medbay_channels.Copy()
 world_reads	code/game/objects/items/devices/radio/radio.dm	internal_channels = GLOB.default_medbay_channels.Copy()
 world_reads	code/game/objects/items/devices/scanners/motion_tracker.dm	om_hook(GLOB.motiontracker_service, /datum/om/event/movable_motiontracker, src, PROC_REF(handle_motion_tracking))
-world_reads	code/game/objects/items/ghost_hunting/goggles.dm	overlay_handle = om_handle(GLOB.global_hud.heavy_whitense) //obscures your vision of the real realm AND makes actually seeing ghosts difficult.
+world_reads	code/game/objects/items/ghost_hunting/goggles.dm	rel_set(src, "overlay", GLOB.global_hud.heavy_whitense) //obscures your vision of the real realm AND makes actually seeing ghosts difficult.
 world_reads	code/game/objects/items/stacks/sandbags.dm	recipes = GLOB.sandbag_recipes
 world_reads	code/game/objects/items/weapons/circuitboards/computer/camera_monitor.dm	network = GLOB.engineering_networks
 world_reads	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral + GLOB.dna_genes_bad), FALSE, TRUE)
@@ -5293,7 +5273,7 @@ world_reads	code/game/turfs/flooring/seasonal.dm	switch(GLOB.world_time_season)
 world_reads	code/game/turfs/flooring/seasonal.dm	var/tree_type = pickweight(GLOB.grass_trees[trees])
 world_reads	code/game/turfs/flooring/seasonal.dm	var/animal_type = pickweight(GLOB.grass_animals[animals])
 world_reads	code/game/turfs/simulated.dm	GLOB.planet_service.addTurf(src)
-world_reads	code/game/turfs/simulated/fancy_shuttles.dm	GLOB.fancy_shuttles[fancy_shuttle_tag] = src
+world_reads	code/game/turfs/simulated/fancy_shuttles.dm	GLOB.fancy_shuttles[fancy_shuttle_tag] = list(split_icon, x, y)
 world_reads	code/game/turfs/simulated/fancy_shuttles.dm	var/obj/effect/fancy_shuttle/F = GLOB.fancy_shuttles[fancy_shuttle_tag]
 world_reads	code/game/turfs/simulated/floor_types.dm	for(var/diag in GLOB.cornerdirs)
 world_reads	code/game/turfs/simulated/outdoors/grass.dm	var/grass_type = pickweight(GLOB.grass_grass[grass])
@@ -5306,7 +5286,7 @@ world_reads	code/modules/admin/callproc/callproc.dm	GLOB.AdminProcCallHandler = 
 world_reads	code/modules/asset_cache/transports/asset_transport.dm	for(var/client/C in GLOB.clients)
 world_reads	code/modules/blob2/blobs/base_blob.dm	set_dir(pick(GLOB.cardinal))
 world_reads	code/modules/blob2/overmind/overmind.dm	languages |= GLOB.all_languages[L]
-world_reads	code/modules/clothing/accessories/accessory.dm	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_CHAT)) // Makes it so you don't need to change the frequency off of default for it to work.
+world_reads	code/modules/clothing/accessories/accessory.dm	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_CHAT)) // Makes it so you don't need to change the frequency off of default for it to work.
 world_reads	code/modules/clothing/chameleon.dm	if(!GLOB.chamelion_jumpsuit_choices)
 world_reads	code/modules/clothing/chameleon.dm	GLOB.chamelion_jumpsuit_choices = generate_chameleon_choices(/obj/item/clothing/under, blocked)
 world_reads	code/modules/clothing/chameleon.dm	if(!GLOB.chamelion_head_choices)
@@ -5327,43 +5307,32 @@ world_reads	code/modules/clothing/chameleon.dm	if(!GLOB.chamelion_accessory_choi
 world_reads	code/modules/clothing/chameleon.dm	GLOB.chamelion_accessory_choices = generate_chameleon_choices(/obj/item/clothing/accessory, blocked)
 world_reads	code/modules/clothing/chameleon.dm	if(!LAZYLEN(GLOB.gun_choices))
 world_reads	code/modules/clothing/chameleon.dm	GLOB.gun_choices[initial(G.name)] = gun_type
-world_reads	code/modules/clothing/glasses/glasses.dm	overlay_handle = om_handle(GLOB.global_hud.meson)
-world_reads	code/modules/clothing/glasses/glasses.dm	overlay_handle = om_handle(GLOB.global_hud.science)
-world_reads	code/modules/clothing/glasses/glasses.dm	overlay_handle = om_handle(GLOB.global_hud.nvg)
-world_reads	code/modules/clothing/glasses/glasses.dm	overlay_handle = om_handle(GLOB.global_hud.material)
-world_reads	code/modules/clothing/glasses/glasses.dm	overlay_handle = om_handle(GLOB.global_hud.material)
-world_reads	code/modules/clothing/glasses/glasses.dm	overlay_handle = om_handle(GLOB.global_hud.thermal)
+world_reads	code/modules/clothing/glasses/glasses.dm	rel_set(src, "overlay", GLOB.global_hud.meson)
+world_reads	code/modules/clothing/glasses/glasses.dm	rel_set(src, "overlay", GLOB.global_hud.science)
+world_reads	code/modules/clothing/glasses/glasses.dm	rel_set(src, "overlay", GLOB.global_hud.nvg)
+world_reads	code/modules/clothing/glasses/glasses.dm	rel_set(src, "overlay", GLOB.global_hud.material)
+world_reads	code/modules/clothing/glasses/glasses.dm	rel_set(src, "overlay", GLOB.global_hud.material)
+world_reads	code/modules/clothing/glasses/glasses.dm	rel_set(src, "overlay", GLOB.global_hud.thermal)
 world_reads	code/modules/economy/ATM.dm	machine_id = "[station_name()] RT #[GLOB.num_financial_terminals++]"
 world_reads	code/modules/economy/Accounts_DB.dm	machine_id = "[station_name()] Acc. DB #[GLOB.num_financial_terminals++]"
-world_reads	code/modules/economy/EFTPOS.dm	linked_account_handle = om_handle(GLOB.station_account)
+world_reads	code/modules/economy/EFTPOS.dm	rel_set(src, "linked_account", GLOB.station_account)
 world_reads	code/modules/economy/EFTPOS.dm	machine_id = "[station_name()] EFTPOS #[GLOB.num_financial_terminals++]"
 world_reads	code/modules/economy/cash_register.dm	machine_id = "[station_name()] RETAIL #[GLOB.num_financial_terminals++]"
 world_reads	code/modules/economy/cash_register.dm	if(GLOB.economy_init && account_to_connect)
-world_reads	code/modules/economy/cash_register.dm	linked_account = GLOB.department_accounts[account_to_connect]
+world_reads	code/modules/economy/cash_register.dm	rel_set(src, "linked_account", GLOB.department_accounts[account_to_connect])
 world_reads	code/modules/economy/retail_scanner.dm	machine_id = "[station_name()] RETAIL #[GLOB.num_financial_terminals++]"
 world_reads	code/modules/economy/retail_scanner.dm	if(GLOB.economy_init && account_to_connect)
-world_reads	code/modules/economy/retail_scanner.dm	linked_account = GLOB.department_accounts[account_to_connect]
+world_reads	code/modules/economy/retail_scanner.dm	rel_set(src, "linked_account", GLOB.department_accounts[account_to_connect])
 world_reads	code/modules/economy/sales_lots.dm	machine_id = "[station_name()] STOREFRONT #[GLOB.num_financial_terminals++]"
 world_reads	code/modules/emotes/emote_define.dm	LAZYSET(GLOB.emotes_by_key, key, src)
-world_reads	code/modules/eventkit/collector_event/blockers.dm	if(GLOB.event_collector_associations == null)
-world_reads	code/modules/eventkit/collector_event/blockers.dm	GLOB.event_collector_associations = list()
-world_reads	code/modules/eventkit/collector_event/blockers.dm	if(GLOB.event_collector_associations[blocker_channel] == null)
-world_reads	code/modules/eventkit/collector_event/blockers.dm	GLOB.event_collector_associations[blocker_channel] = list()
-world_reads	code/modules/eventkit/collector_event/blockers.dm	GLOB.event_collector_associations[blocker_channel] |= src
 world_reads	code/modules/food/kitchen/gibber.dm	for(var/i in GLOB.cardinal)
 world_reads	code/modules/hydroponics/beekeeping/beehive.dm	recipes = GLOB.wax_recipes
 world_reads	code/modules/hydroponics/fruit_spawner.dm	if(!seedtype || !GLOB.plant_service.seeds[seedtype])
 world_reads	code/modules/hydroponics/fruit_spawner.dm	var/datum/seed/S = GLOB.plant_service.seeds[seedtype]
-world_reads	code/modules/hydroponics/grown.dm	seed_static = GLOB.plant_service.seeds[plantname]
-world_reads	code/modules/hydroponics/grown.dm	if(!GLOB.fruit_icon_cache["rind-[rind_colour]"])
-world_reads	code/modules/hydroponics/grown.dm	GLOB.fruit_icon_cache["rind-[rind_colour]"] = I
-world_reads	code/modules/hydroponics/grown.dm	add_overlay(GLOB.fruit_icon_cache["rind-[rind_colour]"])
-world_reads	code/modules/hydroponics/grown.dm	if(!GLOB.fruit_icon_cache["slice-[rind_colour]"])
-world_reads	code/modules/hydroponics/grown.dm	GLOB.fruit_icon_cache["slice-[rind_colour]"] = I
-world_reads	code/modules/hydroponics/grown.dm	add_overlay(GLOB.fruit_icon_cache["slice-[rind_colour]"])
+world_reads	code/modules/hydroponics/grown.dm	proto_set(src, "seed_static", GLOB.plant_service.seeds[plantname])
 world_reads	code/modules/hydroponics/grown_inedible.dm	var/datum/seed/S = GLOB.plant_service.seeds[plantname]
 world_reads	code/modules/hydroponics/seed_packets.dm	if(_seed_type in GLOB.plant_service.seeds)
-world_reads	code/modules/hydroponics/seed_packets.dm	seed_static = GLOB.plant_service.create_random_seed()
+world_reads	code/modules/hydroponics/seed_packets.dm	proto_set(src, "seed_static", GLOB.plant_service.create_random_seed())
 world_reads	code/modules/hydroponics/spreading/spreading.dm	if(!GLOB.plant_service)
 world_reads	code/modules/hydroponics/spreading/spreading.dm	newseed = GLOB.plant_service.seeds[DEFAULT_SEED]
 world_reads	code/modules/integrated_electronics/core/tools.dm	for(var/obj/item/integrated_circuit/arithmetic/IC in GLOB.all_integrated_circuits)
@@ -5388,11 +5357,11 @@ world_reads	code/modules/maint_recycler/code/util.dm	GLOB.recycler_vendor_locati
 world_reads	code/modules/materials/sheets/metals/rods.dm	recipes = GLOB.rods_recipes
 world_reads	code/modules/mining/machine_silo.dm	if(!GLOB.ore_silo_default && mapload && (z in using_map.station_levels))
 world_reads	code/modules/mining/machine_silo.dm	GLOB.ore_silo_default = src
-world_reads	code/modules/mining/machinery/machine_processing.dm	src.machine_handle = om_handle(locate_in_list(range(5, src), /obj/machinery/mineral/processing_unit))
+world_reads	code/modules/mining/machinery/machine_processing.dm	rel_set(src, "machine", locate_in_list(range(5, src), /obj/machinery/mineral/processing_unit))
 world_reads	code/modules/mining/machinery/machine_processing.dm	for(var/ore, value in GLOB.ore_data)
 world_reads	code/modules/mining/machinery/machine_processing.dm	for (var/dir in GLOB.cardinal)
 world_reads	code/modules/mining/machinery/machine_processing.dm	for (var/dir in GLOB.cardinal)
-world_reads	code/modules/mining/machinery/machine_stacking.dm	src.machine_handle = om_handle(locate_in_list(range(5,src), /obj/machinery/mineral/stacking_machine))
+world_reads	code/modules/mining/machinery/machine_stacking.dm	rel_set(src, "machine", locate_in_list(range(5,src), /obj/machinery/mineral/stacking_machine))
 world_reads	code/modules/mining/machinery/machine_stacking.dm	for (var/dir in GLOB.cardinal)
 world_reads	code/modules/mining/machinery/machine_stacking.dm	for (var/dir in GLOB.cardinal)
 world_reads	code/modules/mining/machinery/machine_unloading.dm	for(var/dir in GLOB.cardinal)
@@ -5401,12 +5370,12 @@ world_reads	code/modules/mining/mine_turfs.dm	dir = pick(GLOB.alldirs)
 world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLOB.first_names_male)) + " " + capitalize(pick(GLOB.last_names))
 world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLOB.first_names_female)) + " " + capitalize(pick(GLOB.last_names))
 world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLOB.first_names_male)) + " " + capitalize(pick(GLOB.last_names))
-world_reads	code/modules/mob/dead/observer/observer.dm	visualnet = GLOB.ghostnet
-world_reads	code/modules/mob/freelook/ai/eye.dm	visualnet = GLOB.cameranet
-world_reads	code/modules/mob/freelook/mask/eye.dm	visualnet = GLOB.cultnet
+world_reads	code/modules/mob/dead/observer/observer.dm	rel_set(src, "visualnet", GLOB.ghostnet)
+world_reads	code/modules/mob/freelook/ai/eye.dm	rel_set(src, "visualnet", GLOB.cameranet)
+world_reads	code/modules/mob/freelook/mask/eye.dm	rel_set(src, "visualnet", GLOB.cultnet)
 world_reads	code/modules/mob/freelook/mask/update_triggers.dm	GLOB.cultnet.updateVisibility(src, 0)
 world_reads	code/modules/mob/living/bot/bot.dm	default_language = GLOB.all_languages[LANGUAGE_GALCOM]
-world_reads	code/modules/mob/living/carbon/alien/diona/diona.dm	species = GLOB.all_species[SPECIES_DIONA]
+world_reads	code/modules/mob/living/carbon/alien/diona/diona.dm	proto_set(src, "species", GLOB.all_species[SPECIES_DIONA])
 world_reads	code/modules/mob/living/carbon/brain/brain.dm	default_language = GLOB.all_languages[LANGUAGE_GALCOM]
 world_reads	code/modules/mob/living/carbon/carbon.dm	default_language = GLOB.all_languages[species_language]
 world_reads	code/modules/mob/living/carbon/human/human.dm	for(var/category in GLOB.global_underwear.categories_by_name)
@@ -5436,8 +5405,8 @@ world_reads	code/modules/mob/living/simple_mob/subtypes/vore/succubi.dm	safeword
 world_reads	code/modules/mob/living/voice/voice.dm	apply_default_language(GLOB.all_languages[LANGUAGE_GALCOM])
 world_reads	code/modules/mob/mob_planes.dm	add_filter("em_block_masking", 1, color_matrix_filter(GLOB.em_mask_matrix))
 world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	if(GLOB.ntnet_global)
-world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	LAZYADD(GLOB.ntnet_global.relays, src)
-world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	NTNet_static = GLOB.ntnet_global
+world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	rel_add(GLOB.ntnet_global, "relays", src)
+world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	NTNet_static = GLOB.ntnet_global // a registered singleton: shared
 world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	GLOB.ntnet_global.add_log("New quantum relay activated. Current amount of linked relays: [length(NTNet().relays)]")
 world_reads	code/modules/modular_computers/hardware/network_card.dm	identification_id = GLOB.ntnet_card_uid
 world_reads	code/modules/modular_computers/hardware/network_card.dm	GLOB.ntnet_card_uid++
@@ -5483,7 +5452,7 @@ world_reads	code/modules/research/tg/design_disks/engineering.dm	LAZYADD(bluepri
 world_reads	code/modules/research/tg/design_disks/engineering.dm	LAZYADD(blueprints, GLOB.research_service.techweb_design_by_id(/datum/design_techweb/rsf::id)) // may as well
 world_reads	code/modules/research/tg/design_disks/security.dm	var/datum/techweb_node/node = GLOB.research_service.techweb_node_by_id(node_id)
 world_reads	code/modules/research/tg/design_disks/security.dm	var/datum/design_techweb/design = GLOB.research_service.techweb_design_by_id(id)
-world_reads	code/modules/research/tg/disks.dm	stored_research_static = locate_in_list(GLOB.research_service.techwebs, /datum/techweb/admin)
+world_reads	code/modules/research/tg/disks.dm	proto_set(src, "stored_research_static", locate_in_list(GLOB.research_service.techwebs, /datum/techweb/admin))
 world_reads	code/modules/research/tg/server.dm	var/datum/techweb/science_web = locate_in_list(GLOB.research_service.techwebs, /datum/techweb/science)
 world_reads	code/modules/resleeving/designer.dm	our_db_static = GLOB.transcore_service.db_by_key(db_key)
 world_reads	code/modules/resleeving/sleevecard.dm	default_language = GLOB.all_languages[LANGUAGE_GALCOM] // Same issue as bots
@@ -5491,5 +5460,5 @@ world_reads	code/modules/shieldgen/shield_gen.dm	for(var/obj/machinery/shield_ca
 world_reads	code/modules/vehicles/train.dm	for(var/obj/vehicle/train/T in orange(1, src))
 world_reads	code/modules/xenoarcheaology/finds/find_spawning.dm	currently_banned_chems += GLOB.obtainable_chemical_blacklist
 world_reads	code/modules/xenoarcheaology/finds/special.dm	if(new_chem in GLOB.obtainable_chemical_blacklist)
-world_reads	code/modules/xenoarcheaology/tools/artifact_harvester.dm	owned_scanner_handle = om_handle(locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
+world_reads	code/modules/xenoarcheaology/tools/artifact_harvester.dm	rel_set(src, "owned_scanner", locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
 world_reads	maps/common/common_shuttles_crew.dm	GLOB.shuttdisp_list |= src //Populates the global list for the roundstart hook.

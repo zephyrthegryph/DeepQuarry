@@ -627,7 +627,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 //Giving borgs their own radio to have some more room to work with -Sieve
 
 /obj/item/radio/borg
-	var/mob/living/silicon/robot/myborg // Cyborg which owns this radio. Used for power checks
+	var/tmp/mob/living/silicon/robot/myborg // Cyborg which owns this radio (a relation view). Used for power checks
 	var/obj/item/encryptionkey/keyslot = null//Borg radios can handle a single encryption key
 	icon = 'icons/obj/robot_component.dmi' // Cyborgs radio icons should look like the component.
 	icon_state = "radio"

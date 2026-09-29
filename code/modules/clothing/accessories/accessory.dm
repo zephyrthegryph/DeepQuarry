@@ -12,7 +12,7 @@
 	var/can_remove = TRUE						// Can it be taken off once attached?
 	var/tmp/obj/item/clothing/has_suit	// The suit the tie may be attached to
 	var/tmp/image/inv_overlay = null				// Overlay used when attached to clothing.
-	var/image/mob_overlay = null
+	var/tmp/image/mob_overlay = null
 	var/overlay_state = null
 	var/punch_force	= 0							// added melee damage
 	var/punch_injury_kind						// what punches inflict (INJURY_*); null = the punch's own kind

@@ -34,12 +34,12 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 	return made
 
 /// Drops the test hooks; the probes are own()ed and go with the test. The probe log is read
-/// after this, so it is cleared when the test goes (Destroy), not here.
+/// after this, so it is cleared when the test goes (on_destroy), not here.
 /datum/unit_test/dq_materialize_batch/proc/reset_hooks()
 	SSatoms.batch_yield_probe = null
 	SSatoms.batch_trace = null
 
-/datum/unit_test/dq_materialize_batch/Destroy()
+/datum/unit_test/dq_materialize_batch/on_destroy(force)
 	GLOB.dq_batch_probe_log.Cut()
 	return ..()
 

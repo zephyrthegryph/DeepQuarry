@@ -275,8 +275,8 @@ _OWNERSHIP = {}
 def ownership_kind(owner, name):
     """The ownership kind (OWN / PROTO / REL / SHARED) of `owner`.`name`, declared or inferred from
     accessor writes (tools/ci/ownership_lint.py's index), or None."""
+    import ownership_lint
     if "idx" not in _OWNERSHIP:
-        import ownership_lint
         idx = ownership_lint.Index()
         idx.load()
         _OWNERSHIP["idx"] = idx
@@ -286,8 +286,19 @@ def ownership_kind(owner, name):
                 func = m.group(1)
                 kind = "OWN" if func.startswith("own_") else "REL" if func.startswith("rel_") else "PROTO" if func.startswith("proto_") else "SHARED"
                 usage.setdefault(m.group(3), set()).add(kind)
+        # A declared default child (DECLARE_DEFAULT_CHILD) is adopted with own_set/own_add.
+        default_children = set()
+        for r, (raw, code) in idx.files.items():
+            for line in raw:
+                m = re.match(r'^DECLARE_DEFAULT_CHILD\(\s*(/[\w/]+)\s*,\s*"(\w+)"', line)
+                if m:
+                    default_children.add((m.group(1), m.group(2)))
         _OWNERSHIP["usage"] = usage
+        _OWNERSHIP["default_children"] = default_children
     idx = _OWNERSHIP["idx"]
+    for p in ownership_lint.parents(owner):
+        if (p, name) in _OWNERSHIP["default_children"]:
+            return "OWN"
     d = idx.decl(owner, name)
     if d:
         return d[1]

@@ -430,7 +430,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/gloves, "special_attack", "special_atta
 	light_cone_y_offset = 11
 
 	var/light_overlay = "helmet_light"
-	var/image/helmet_light
+	var/tmp/image/helmet_light
 
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi',
@@ -1092,8 +1092,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 		|ACCESSORY_SLOT_DEPT\
 		|ACCESSORY_SLOT_OVER)
 
-	var/icon/rolled_down_icon = 'icons/inventory/uniform/mob_rolled_down.dmi'
-	var/icon/rolled_down_sleeves_icon = 'icons/inventory/uniform/mob_sleeves_rolled.dmi'
+	var/tmp/icon/rolled_down_icon = 'icons/inventory/uniform/mob_rolled_down.dmi'
+	var/tmp/icon/rolled_down_sleeves_icon = 'icons/inventory/uniform/mob_sleeves_rolled.dmi'
 
 	update_icon_define_digi = "icons/inventory/uniform/mob_digi.dmi"
 

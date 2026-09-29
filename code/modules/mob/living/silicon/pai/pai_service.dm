@@ -105,7 +105,7 @@ GLOBAL_DATUM_INIT(pai_service, /datum/world_service/pai, new)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!ghost_ref)
 		return null
-	return locate(ghost_ref) in pai_ghosts
+	return locate_in_list(pai_ghosts, ghost_ref)
 
 /datum/world_service/pai/proc/get_invite_list_data()
 	RETURN_TYPE(/list)

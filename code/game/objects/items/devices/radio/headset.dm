@@ -708,7 +708,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	var/mob/living/carbon/human/wearer
 	var/effect_icon = 'icons/effects/effects.dmi'	//Cosmetic Effect that will be applied to the mob as an overlay
 	var/effect_icon_state = "arrow2"
-	var/image/effect_overlay = null	//Reference to an overlay so we can remove it on unequip
+	var/tmp/image/effect_overlay = null	//Reference to an overlay so we can remove it on unequip
 	var/overlay_offset_y = 32
 	//Spells that will be added on equip
 	var/static/list/spells = list(/datum/spell/targeted/unrestricted/mend, /datum/spell/targeted/unrestricted/plasmastun)
