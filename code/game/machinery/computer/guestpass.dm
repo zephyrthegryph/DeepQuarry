@@ -76,16 +76,19 @@ EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE_AS(I_HELP, "Show", PRO
 	. = ..()
 	update_icon()
 
-/// Expiry ticking is world registration (L3): it runs while the pass is live.
-DECLARE_PERIODIC(/obj/item/card/id/guest, PERIODIC_SLOW)
+/// Sets the pass to expire `duration` from now and schedules the moment it turns red (one
+/// om_after on the pass, cancelled with it; no polling).
+/obj/item/card/id/guest/proc/set_expiry(duration)
+	EXPIRY_SET(src, expiration_time, duration, CLOCK_WORLD)
+	om_after(src, EXPIRY_LEFT(src, expiration_time, CLOCK_WORLD), PROC_REF(expire_timer))
 
-/obj/item/card/id/guest/periodic_step()
-	if(expired == 0 && EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))
-		visible_message(span_warning("\The [src] flashes a few times before turning red."))
-		icon_state = "guest-invalid"
-		update_icon()
-		expired = 1
+/obj/item/card/id/guest/proc/expire_timer()
+	if(expired || EXPIRY_ACTIVE(src, expiration_time, CLOCK_WORLD))
 		return
+	visible_message(span_warning("\The [src] flashes a few times before turning red."))
+	icon_state = "guest-invalid"
+	update_icon()
+	expired = 1
 
 /////////////////////////////////////////////
 //Guest pass terminal////////////////////////
@@ -271,7 +274,7 @@ DECLARE_PERIODIC(/obj/item/card/id/guest, PERIODIC_SLOW)
 				var/obj/item/card/id/guest/pass = new(src.loc)
 				pass.temp_access = LAZYCOPY(accesses)
 				pass.registered_name = giv_name
-				EXPIRY_SET(pass, expiration_time, duration*10*60, CLOCK_WORLD)
+				pass.set_expiry(duration * 1 MINUTES)
 				pass.reason = reason
 				pass.name = "guest pass #[number]"
 			else

@@ -70,8 +70,7 @@
 		linked_alert = new_alert //so we can reference the alert, if we need to
 		update_shown_duration()
 
-	// ALLOW(cooldown): status effect core: duration/tick_interval hold a length until on_apply turns them into end times
-	if(duration > world.time || tick_interval > world.time) //don't process if we don't care
+	if(EXPIRY_ACTIVE(src, duration, CLOCK_WORLD) || EXPIRY_ACTIVE(src, tick_interval, CLOCK_WORLD)) //don't process if we don't care
 		switch(processing_speed)
 			if(STATUS_EFFECT_FAST_PROCESS)
 				om_task_periodic(src, PERIODIC_FAST)
@@ -102,7 +101,7 @@ DECLARE_REF(/datum/status_effect, "owner", BACKLIST, "status_effects")
 	if(!linked_alert || !show_duration)
 		return
 
-	linked_alert.maptext = MAPTEXT("<span style='text-align:center'>[round((duration - world.time)/10, 1)]s</span>")
+	linked_alert.maptext = MAPTEXT("<span style='text-align:center'>[round(EXPIRY_LEFT(src, duration, CLOCK_WORLD)/10, 1)]s</span>")
 
 // Status effect process. Handles adjusting its duration and ticks.
 // If you're adding processed effects, put them in [proc/tick]
@@ -116,8 +115,7 @@ DECLARE_REF(/datum/status_effect, "owner", BACKLIST, "status_effects")
 
 	if(tick_interval == STATUS_EFFECT_AUTO_TICK)
 		tick(delta / (1 SECONDS)) // the periodic lane passes deciseconds
-	// ALLOW(cooldown): status effect core: tick_interval is the next tick time, not a rate limit
-	else if(tick_interval != STATUS_EFFECT_NO_TICK && tick_interval < world.time)
+	else if(tick_interval != STATUS_EFFECT_NO_TICK && EXPIRY_EXPIRED(src, tick_interval, CLOCK_WORLD))
 		var/tick_length = (tick_interval_upperbound && tick_interval_lowerbound) ? rand(tick_interval_lowerbound, tick_interval_upperbound) : initial(tick_interval)
 		tick(tick_length / (1 SECONDS))
 		EXPIRY_SET(src, tick_interval, tick_length, CLOCK_WORLD)
@@ -127,8 +125,7 @@ DECLARE_REF(/datum/status_effect, "owner", BACKLIST, "status_effects")
 		return
 
 	if(duration != STATUS_EFFECT_PERMANENT)
-		// ALLOW(cooldown): status effect core: duration is the effect end time
-		if(duration < world.time)
+		if(EXPIRY_EXPIRED(src, duration, CLOCK_WORLD))
 			qdel(src)
 			return
 		update_shown_duration()
@@ -209,8 +206,7 @@ DECLARE_REF(/datum/status_effect, "owner", BACKLIST, "status_effects")
 		return FALSE
 
 	duration -= seconds
-	// ALLOW(cooldown): status effect core: duration is the effect end time
-	if(duration <= world.time)
+	if(EXPIRY_EXPIRED(src, duration, CLOCK_WORLD))
 		qdel(src)
 		return TRUE
 
