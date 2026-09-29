@@ -401,37 +401,81 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	if(. > 30 && prob(. - 20))
 		induce_arrhythmia(CARDIAC_RHYTHM_VF)
 
-/mob/living/carbon/human/Topic(href, href_list)
-	if (href_list["mach_close"]) // This is horrible.
-		unset_machine()
+TOPIC_ACTION(/mob/living/carbon/human, "lookitem", PROC_REF(topic_lookitem), TOPIC_REF("lookitem", /obj/item))
+TOPIC_ACTION(/mob/living/carbon/human, "lookitem_desc_only", PROC_REF(topic_lookitem_desc_only), TOPIC_REF("lookitem_desc_only", /obj/item, PROC_REF(topic_worn_items)))
+TOPIC_ACTION(/mob/living/carbon/human, "flavor_change", PROC_REF(topic_flavor_change_part), TOPIC_TEXT("flavor_change", 32))
+// HUD record links (examine): see hud_record_kinds().
+TOPIC_ACTION(/mob/living/carbon/human, "criminal", PROC_REF(topic_hud_criminal))
+TOPIC_ACTION(/mob/living/carbon/human, "medical", PROC_REF(topic_hud_medical))
+TOPIC_ACTION(/mob/living/carbon/human, "secrecord", PROC_REF(topic_hud_secrecord))
+TOPIC_ACTION(/mob/living/carbon/human, "medrecord", PROC_REF(topic_hud_medrecord))
+TOPIC_ACTION(/mob/living/carbon/human, "emprecord", PROC_REF(topic_hud_emprecord))
+TOPIC_ACTION(/mob/living/carbon/human, "secrecordComment", PROC_REF(topic_hud_seccomments))
+TOPIC_ACTION(/mob/living/carbon/human, "medrecordComment", PROC_REF(topic_hud_medcomments))
+TOPIC_ACTION(/mob/living/carbon/human, "emprecordComment", PROC_REF(topic_hud_empcomments))
+TOPIC_ACTION(/mob/living/carbon/human, "secrecordadd", PROC_REF(topic_hud_secadd))
+TOPIC_ACTION(/mob/living/carbon/human, "medrecordadd", PROC_REF(topic_hud_medadd))
+TOPIC_ACTION(/mob/living/carbon/human, "emprecordadd", PROC_REF(topic_hud_empadd))
 
-	if(href_list["item"])
-		log_runtime(EXCEPTION("Warning: human/Topic was called with item [href_list["item"]], but the item Topic is deprecated!"))
+/// TOPIC_REF source: everything this human wears or carries (accessories included).
+/mob/living/carbon/human/proc/topic_worn_items()
+	return get_all_contents()
 
-	if(hud_record_topic(usr, href_list))
+/mob/living/carbon/human/proc/topic_lookitem(mob/user, list/args)
+	var/obj/item/I = args["lookitem"]
+	src.examinate(I)
+	return TRUE
+
+/mob/living/carbon/human/proc/topic_lookitem_desc_only(mob/user, list/args)
+	var/obj/item/I = args["lookitem_desc_only"]
+	if(istype(I,/obj/item/hand))
+		to_chat(user,span_warning("You can't see the card faces from here."))
 		return
+	user.examinate(I, 1)
+	return TRUE
 
-	if (href_list["lookitem"])
-		var/obj/item/I = locate(href_list["lookitem"])
-		src.examinate(I)
-
-	if (href_list["lookitem_desc_only"])
-		var/obj/item/I = locate(href_list["lookitem_desc_only"])
-		if(!I)
-			return
-		if(istype(I,/obj/item/hand))
-			to_chat(usr,span_warning("You can't see the card faces from here."))
-			return
-		usr.examinate(I, 1)
-
-	if (href_list["lookmob"])
-		var/mob/M = locate(href_list["lookmob"])
-		src.examinate(M)
-
-	if (href_list["flavor_change"])
-		flavor_change_topic(usr, href_list["flavor_change"])
+/mob/living/carbon/human/proc/topic_flavor_change_part(mob/user, list/args)
+	if(user != src) // only your own flavor text
 		return
-	..()
+	flavor_change_topic(user, args["flavor_change"])
+	return TRUE
+
+/mob/living/carbon/human/proc/topic_hud_criminal(mob/user, list/args)
+	if(hasHUD(user, "security"))
+		hud_topic_status(user, "security")
+	return TRUE
+
+/mob/living/carbon/human/proc/topic_hud_medical(mob/user, list/args)
+	if(hasHUD(user, "medical"))
+		hud_topic_status(user, "medical")
+	return TRUE
+
+/mob/living/carbon/human/proc/topic_hud_secrecord(mob/user, list/args)
+	return hud_record_link(user, "security", "show")
+
+/mob/living/carbon/human/proc/topic_hud_medrecord(mob/user, list/args)
+	return hud_record_link(user, "medical", "show")
+
+/mob/living/carbon/human/proc/topic_hud_emprecord(mob/user, list/args)
+	return hud_record_link(user, "best", "show")
+
+/mob/living/carbon/human/proc/topic_hud_seccomments(mob/user, list/args)
+	return hud_record_link(user, "security", "comments")
+
+/mob/living/carbon/human/proc/topic_hud_medcomments(mob/user, list/args)
+	return hud_record_link(user, "medical", "comments")
+
+/mob/living/carbon/human/proc/topic_hud_empcomments(mob/user, list/args)
+	return hud_record_link(user, "best", "comments")
+
+/mob/living/carbon/human/proc/topic_hud_secadd(mob/user, list/args)
+	return hud_record_link(user, "security", "add")
+
+/mob/living/carbon/human/proc/topic_hud_medadd(mob/user, list/args)
+	return hud_record_link(user, "medical", "add")
+
+/mob/living/carbon/human/proc/topic_hud_empadd(mob/user, list/args)
+	return hud_record_link(user, "best", "add")
 
 /// The flavor text editor's links: close it, or edit one part.
 /mob/living/carbon/human/proc/flavor_change_topic(mob/user, part)
@@ -457,25 +501,22 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	)
 	return kinds
 
-/// Handle a HUD record link. TRUE when the link was an "add comment" one (Topic stops there).
-/mob/living/carbon/human/proc/hud_record_topic(mob/user, list/href_list)
-	if(href_list["criminal"] && hasHUD(user, "security"))
-		hud_topic_status(user, "security")
-	if(href_list["medical"] && hasHUD(user, "medical"))
-		hud_topic_status(user, "medical")
-	var/list/kinds = hud_record_kinds()
-	for(var/hud_type in kinds)
-		var/prefix = kinds[hud_type][1]
-		if(href_list["[prefix]record"] && hasHUD(user, hud_type))
+
+/// Handle a HUD record link for `hud_type`: "show" the record, its "comments", or "add" one.
+/mob/living/carbon/human/proc/hud_record_link(mob/user, hud_type, what)
+	if(!hasHUD(user, hud_type))
+		return
+	var/list/kind = hud_record_kinds()[hud_type]
+	switch(what)
+		if("show")
 			hud_topic_show_record(user, hud_type)
-		if(href_list["[prefix]recordComment"] && hasHUD(user, hud_type))
+		if("comments")
 			hud_topic_show_comments(user, hud_type)
-		if(href_list["[prefix]recordadd"] && hasHUD(user, hud_type))
-			var/datum/data/record/R = hud_find_record(kinds[hud_type][2])
+		if("add")
+			var/datum/data/record/R = hud_find_record(kind[2])
 			if(R)
-				hud_ask_comment(user, R, hud_type, kinds[hud_type][4], kinds[hud_type][5])
-				return TRUE
-	return FALSE
+				hud_ask_comment(user, R, hud_type, kind[4], kind[5])
+	return TRUE
 
 /// Our record in data core set `set_name` ("general", "security" or "medical"), matched through
 /// the general record of our ID's name (else our name).

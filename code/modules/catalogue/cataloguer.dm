@@ -273,29 +273,6 @@ DECLARE_INTERACTIONS(/obj/item/cataloguer, \
 	tgui_interact(user)
 	add_fingerprint(user)
 
-/obj/item/cataloguer/Topic(href, href_list)
-	if(..())
-		// close TGUI viewer (legacy browse(null) close)
-		SStgui.close_uis(src)
-		return 0
-	if(href_list["close"] )
-		// close TGUI viewer (legacy browse(null) close)
-		SStgui.close_uis(src)
-		return 0
-
-	if(href_list["show_data"])
-		displayed_data = locate(href_list["show_data"])
-
-	if(href_list["pulse_scan"])
-		pulse_scan(usr)
-		return // Don't refresh the window for this or it will open it back if its closed during the highlighting.
-
-	if(href_list["debug_unlock"] && debug)
-		var/datum/category_item/catalogue/item = locate(href_list["debug_unlock"])
-		item.discover(usr, list("Debugger"))
-
-	interact(usr) // So it refreshes the window.
-	return 1
 
 /// Old attackby.
 /obj/item/cataloguer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

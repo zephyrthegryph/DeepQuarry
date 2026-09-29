@@ -410,12 +410,6 @@ DECLARE_REF(/mob/living/silicon, "queued_alarms", STATIC, null)
 	return FALSE
 
 // === merged from silicon_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-TOPIC_ACTION(/mob/living/silicon, "ooc_notes", PROC_REF(topic_ooc_notes)) //For Robots and pAI's. And possibly AI's too.
-
-/mob/living/silicon/proc/topic_ooc_notes(mob/user, list/args)
-	do_examine_ooc(user)
-	return TRUE
-
 // For handling any custom visibility in borgo sensor modes, like sleeve implants - not needed anymore but leaving anyways - Tank
 ///mob/living/silicon/toggle_sensor_mode()
 //	. = ..()

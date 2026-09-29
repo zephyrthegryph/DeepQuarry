@@ -576,29 +576,29 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	set category = "OOC.Game"
 	reset_perspective()
 
-/mob/Topic(href, href_list)
-	if(href_list["mach_close"])
-		// legacy browse(null) close removed; the machinery's
-		// TGUI window owns its own close lifecycle. We still unset the
-		// machine binding so the mob isn't held to the now-closed device.
-		unset_machine()
+TOPIC_ACTION(/mob, "flavor_more", PROC_REF(topic_flavor_more))
+TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 
-	if(href_list["flavor_more"])
-		var/examine_text = splittext(flavor_text, "||")
-		var/index = 0
-		var/rendered_text = ""
-		for(var/part in examine_text)
-			if(index % 2)
-				rendered_text += span_spoiler("[part]")
-			else
-				rendered_text += "[part]"
-			index++
-		examine_text = replacetext(rendered_text, "\n", "<BR>")
-		// structured TGUI AdminReport.
-		dq_admin_report_html(usr, "[name]", examine_text)
-	if(href_list["flavor_change"])
-		update_flavor_text()
-	return ..()
+/mob/proc/topic_flavor_more(mob/user, list/args)
+	var/examine_text = splittext(flavor_text, "||")
+	var/index = 0
+	var/rendered_text = ""
+	for(var/part in examine_text)
+		if(index % 2)
+			rendered_text += span_spoiler("[part]")
+		else
+			rendered_text += "[part]"
+		index++
+	examine_text = replacetext(rendered_text, "\n", "<BR>")
+	// structured TGUI AdminReport.
+	dq_admin_report_html(user, "[name]", examine_text)
+	return TRUE
+
+/mob/proc/topic_flavor_change(mob/user, list/args)
+	if(user != src) // only your own flavor text
+		return
+	update_flavor_text()
+	return TRUE
 
 ///Proc that checks to see if we DO damage via pulling or not.
 /mob/proc/pull_damage()
