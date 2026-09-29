@@ -91,6 +91,7 @@ GLOBAL_LIST_INIT(generic_fishing_chance_list, list(FISHING_RARE = 5, FISHING_UNC
 		junk_list = GLOB.generic_fishing_pool_list
 		fishing_loot = GLOB.generic_fishing_chance_list
 
+// ALLOW(sys_entry_override): must run before /turf/simulated/floor/receive_explosion(), whose severity ladder changes the turf or deals entry-less blast packets, so a DAMAGE_EXPLOSION reaction on the water would never fire
 /turf/simulated/floor/water/ex_act(severity)	// Explosive fishing.
 	if(prob(5 * severity))
 		pick_fish()

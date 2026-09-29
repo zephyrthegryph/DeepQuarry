@@ -15,13 +15,16 @@
 	var/stability = 100//TODO: add all the stability things to this so its not very safe if you keep hitting in on things
 
 
-/obj/item/am_containment/ex_act(severity)
-	// A devastating blast, or a lucky one against an unstable jar, sets off the fuel.
-	if(severity <= 1 || (severity == 2 && prob((fuel/10)-stability)))
+DAMAGE_REACTION(/obj/item/am_containment, DAMAGE_EXPLOSION, PROC_REF(jar_blast))
+
+/// A devastating blast, or a lucky one against an unstable jar, sets off the fuel; any other blast only destabilises it.
+/obj/item/am_containment/proc/jar_blast(datum/damage_packet/packet)
+	if(packet.severity <= 1 || (packet.severity == 2 && prob((fuel/10)-stability)))
 		explosion(get_turf(src), 1, 2, 3, 5)
 		qdel(src)
-		return
-	stability -= 40 / (severity - 1)
+		return DAMAGE_REACTION_BLOCK
+	stability -= 40 / (packet.severity - 1)
+	return DAMAGE_REACTION_BLOCK
 
 /obj/item/am_containment/proc/usefuel(wanted)
 	if(fuel < wanted)

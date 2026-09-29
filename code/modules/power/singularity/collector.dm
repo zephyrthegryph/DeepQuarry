@@ -134,11 +134,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 	if(get_dist(user, src) <= 3)
 		. += "The meter indicates that it is collecting [last_power] W."
 
-/obj/machinery/power/rad_collector/ex_act(severity)
-	switch(severity)
+DAMAGE_REACTION(/obj/machinery/power/rad_collector, DAMAGE_EXPLOSION, PROC_REF(collector_blast_eject))
+
+/// A lesser blast knocks the tank out.
+/obj/machinery/power/rad_collector/proc/collector_blast_eject(datum/damage_packet/packet)
+	switch(packet.severity)
 		if(2, 3)
 			eject()
-	return ..()
 
 /obj/machinery/power/rad_collector/proc/eject()
 	set_locked(0)

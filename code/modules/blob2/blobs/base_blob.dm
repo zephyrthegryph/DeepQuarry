@@ -73,11 +73,13 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 		return overmind.blob_type.effect_desc
 	return ..()
 
-/obj/structure/blob/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || !overmind)
+DAMAGE_REACTION(/obj/structure/blob, DAMAGE_EMP, PROC_REF(blob_on_emp))
+
+/// A live blob's type reacts to a pulse.
+/obj/structure/blob/proc/blob_on_emp(datum/damage_packet/packet)
+	if(!overmind)
 		return
-	overmind.blob_type.on_emp(src, severity)
+	overmind.blob_type.on_emp(src, packet.severity)
 
 /obj/structure/blob/proc/pulsed()
 	if(!BEFORE(src, pulse_timestamp, CLOCK_WORLD))
@@ -453,8 +455,7 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 	alpha = 140
 	mouse_opacity = 0
 
-/obj/structure/grille/blob_act()
-	qdel(src)
+DAMAGE_REACTION(/obj/structure/grille, DAMAGE_BLOB, TYPE_PROC_REF(/atom, damage_reaction_qdel))
 
 /turf/simulated/wall/blob_act(obj/structure/blob/B)
 	deal_damage(DAMAGE_BLUNT, 100, MELEE, B, B?.overmind)

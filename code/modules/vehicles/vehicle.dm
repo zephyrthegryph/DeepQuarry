@@ -44,6 +44,13 @@
 
 	var/datum/looping_sound/idle_carengine/soundloop // Looping engine audio.
 
+	/// Until when an EMP keeps the vehicle dead (EMP_DISABLE).
+	EXPIRY_DECLARE(emp_until)
+	/// Whether it was running when the EMP took it down (it restarts when the outage lapses).
+	var/emp_was_on = FALSE
+
+EMP_DISABLE(/obj/vehicle, 30 SECONDS, "emp_until")
+
 //-------------------------------------------
 // Standard procs
 //-------------------------------------------
@@ -165,12 +172,22 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	else
 		repair_damage(amount)
 
-/obj/vehicle/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || !mechanical)
+/// Only mechanical vehicles care about EMPs.
+/obj/vehicle/emp_disable_react(datum/damage_packet/packet)
+	if(!mechanical)
 		return
+	return ..()
 
-	var/was_on = on
+/// Down: sparks and the engine dies. Back: it restarts if it was running.
+/obj/vehicle/emp_disable_changed(disabled)
+	..()
+	if(!disabled)
+		stat_remove(EMPED)
+		if(emp_was_on)
+			turn_on()
+		emp_was_on = FALSE
+		return
+	emp_was_on = on
 	stat_add(EMPED)
 	var/obj/effect/overlay/pulse2 = new /obj/effect/overlay(src.loc)
 	pulse2.icon = 'icons/effects/effects.dmi'
@@ -182,7 +199,6 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	om_qdel_after(pulse2, 1 SECOND)
 	if(on)
 		turn_off()
-	om_after(src, severity*300, PROC_REF(emp_recover), was_on)
 
 // For downstream compatibility (in particular Paradise)
 /obj/vehicle/proc/handle_rotation()
@@ -428,10 +444,6 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	exclusive = TRUE
 	volume_chan = VOLUME_CHANNEL_AMBIENCE
 
-/obj/vehicle/proc/emp_recover(was_on)
-	stat_remove(EMPED)
-	if(was_on)
-		turn_on()
 
 DECLARE_REF(/obj/vehicle, "cell", HELD, null)
 DECLARE_REF(/obj/vehicle, "load", BACK, null)

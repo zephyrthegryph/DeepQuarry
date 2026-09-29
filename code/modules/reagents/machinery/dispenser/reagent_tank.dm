@@ -55,8 +55,12 @@ DECLARE_REAGENTS(/obj/structure/reagent_dispensers, 5000, null)
 	if (N)
 		amount_per_transfer_from_this = N
 
-/obj/structure/reagent_dispensers/blob_act()
+DAMAGE_REACTION(/obj/structure/reagent_dispensers, DAMAGE_BLOB, PROC_REF(dispenser_blob_burst))
+
+/// A blob bursts the tank outright.
+/obj/structure/reagent_dispensers/proc/dispenser_blob_burst(datum/damage_packet/packet)
 	qdel(src)
+	return DAMAGE_REACTION_BLOCK
 
 /// Old click_alt.
 /obj/structure/reagent_dispensers/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
@@ -257,11 +261,17 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 		if(!istype(Proj ,/obj/item/projectile/beam/lasertag) && !istype(Proj ,/obj/item/projectile/beam/practice) )
 			explode()
 
-/obj/structure/reagent_dispensers/fueltank/ex_act()
-	explode()
+DAMAGE_REACTION(/obj/structure/reagent_dispensers/fueltank, DAMAGE_EXPLOSION, PROC_REF(tank_blast_explode))
 
-/obj/structure/reagent_dispensers/fueltank/blob_act()
+/// A blast sets the fuel off.
+/obj/structure/reagent_dispensers/fueltank/proc/tank_blast_explode(datum/damage_packet/packet)
 	explode()
+	return DAMAGE_REACTION_BLOCK
+
+/// A blob sets the fuel off.
+/obj/structure/reagent_dispensers/fueltank/dispenser_blob_burst(datum/damage_packet/packet)
+	explode()
+	return DAMAGE_REACTION_BLOCK
 
 /obj/structure/reagent_dispensers/fueltank/proc/explode()
 	if (reagents.total_volume > 500)
@@ -524,8 +534,12 @@ DECLARE_REAGENTS(/obj/structure/reagent_dispensers/cookingoil, null, list(REAGEN
 	if(Proj.get_structure_damage())
 		explode()
 
-/obj/structure/reagent_dispensers/cookingoil/ex_act()
+DAMAGE_REACTION(/obj/structure/reagent_dispensers/cookingoil, DAMAGE_EXPLOSION, PROC_REF(tank_blast_explode))
+
+/// A blast bursts the barrel.
+/obj/structure/reagent_dispensers/cookingoil/proc/tank_blast_explode(datum/damage_packet/packet)
 	explode()
+	return DAMAGE_REACTION_BLOCK
 
 /obj/structure/reagent_dispensers/cookingoil/proc/explode()
 	reagents.splash_area(get_turf(src), 3)

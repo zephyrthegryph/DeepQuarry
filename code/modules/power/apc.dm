@@ -727,10 +727,14 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 	to_chat(user, span_notice("You emag the APC interface."))
 	update_icon()
 
-/obj/machinery/power/apc/blob_act()
+DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wires))
+
+/// A blob tears the wiring out instead of damaging the frame.
+/obj/machinery/power/apc/proc/apc_blob_rip_wires(datum/damage_packet/packet)
 	wires.cut_all()
 	wiresexposed = TRUE
 	update_icon()
+	return DAMAGE_REACTION_BLOCK
 
 /// Old attack_hand (never called ..()).
 /datum/interaction/machine_hand/ungated/apc_use
@@ -1079,22 +1083,21 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 // Damage / destruction
 // ─────────────────────────────────────────────────────────────────────────────
 
-/obj/machinery/power/apc/emp_act(severity, recursive)
+DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_EMP, PROC_REF(apc_emp_fail))
+DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_EXPLOSION, PROC_REF(apc_blast_wake))
+
+/// A pulse knocks the output out for a while (critical APCs resist it).
+/obj/machinery/power/apc/proc/apc_emp_fail(datum/damage_packet/packet)
 	wake_for_power_dependency()
-	. = ..()
-	if(. & EMP_PROTECT_SELF)
-		return
 	if(is_critical)
-		energy_fail(rand(240, 360) / severity / CRITICAL_APC_EMP_PROTECTION)
-		severity = severity + 2
+		energy_fail(rand(240, 360) / packet.severity / CRITICAL_APC_EMP_PROTECTION)
 	else
-		energy_fail(rand(240, 360) / severity)
-		severity = severity + 1
+		energy_fail(rand(240, 360) / packet.severity)
 	update_icon()
 
-/obj/machinery/power/apc/ex_act(severity)
+/// A blast wakes the power pipeline before the damage lands.
+/obj/machinery/power/apc/proc/apc_blast_wake(datum/damage_packet/packet)
 	wake_for_power_dependency()
-	return ..()
 
 /obj/machinery/power/apc/explosion_contents_severity(severity)
 	return severity

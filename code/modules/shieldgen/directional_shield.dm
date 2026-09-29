@@ -236,11 +236,11 @@ DECLARE_INTERACTIONS(/obj/item/shield_projector, INTERACT_SELF("Toggle", PROC_RE
 	if(Adjacent(user))
 		. += "Its shield matrix is at [round( (get_integrity() / max_integrity) * 100, 0.01)]% strength."
 
-/obj/item/shield_projector/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
-	adjust_health(-max_integrity / severity) // A strong EMP will kill the shield instantly, but weaker ones won't on the first hit.
+DAMAGE_REACTION(/obj/item/shield_projector, DAMAGE_EMP, PROC_REF(projector_emp_drain))
+
+/// A pulse drains the shield; a strong one kills it outright.
+/obj/item/shield_projector/proc/projector_emp_drain(datum/damage_packet/packet)
+	adjust_health(-max_integrity / packet.severity) // A strong EMP will kill the shield instantly, but weaker ones won't on the first hit.
 
 // Subtypes
 

@@ -119,11 +119,15 @@
 		return 1	//end the search!
 	return 0
 
-/obj/item/assembly/mousetrap/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
+DAMAGE_REACTION(/obj/item/assembly/mousetrap, DAMAGE_THROWN, PROC_REF(mousetrap_thrown_trigger))
+
+/// An armed trap snaps shut on whatever is thrown at it (and takes nothing else from the hit).
+/obj/item/assembly/mousetrap/proc/mousetrap_thrown_trigger(datum/damage_packet/packet)
 	if(!armed)
-		return ..()
-	visible_message(span_warning("[src] is triggered by [source]."))
+		return
+	visible_message(span_warning("[src] is triggered by [packet.source]."))
 	triggered(null)
+	return DAMAGE_REACTION_BLOCK
 
 /obj/item/assembly/mousetrap/armed
 	icon_state = "mousetraparmed"

@@ -152,9 +152,11 @@
 	unload_program()
 	..()
 
-/obj/machinery/computer/looking_glass/ex_act(severity)
+DAMAGE_REACTION(/obj/machinery/computer/looking_glass, DAMAGE_EXPLOSION, PROC_REF(looking_glass_blast_unload))
+
+/// A blast unloads the running program.
+/obj/machinery/computer/looking_glass/proc/looking_glass_blast_unload(datum/damage_packet/packet)
 	unload_program()
-	..()
 
 /obj/machinery/computer/looking_glass/power_change()
 	. = ..()
