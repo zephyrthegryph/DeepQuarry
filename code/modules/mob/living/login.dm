@@ -21,26 +21,26 @@
 	add_character_setup_button()
 
 	// Vore stuff
-	add_verb(src, /mob/living/proc/escapeOOC)
-	add_verb(src, /mob/living/proc/lick)
-	add_verb(src, /mob/living/proc/smell)
-	add_verb(src, /mob/living/proc/switch_scaling)
-	add_verb(src, /mob/living/proc/center_offset)
-	add_verb(src, /mob/living/proc/mute_entry)
-	add_verb(src, /mob/living/proc/liquidbelly_visuals)
-	add_verb(src, /mob/living/proc/fix_vore_effects)
+	om_grant(src, GRANT_VERB, /mob/living/proc/escapeOOC, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/lick, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/smell, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/switch_scaling, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/center_offset, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/mute_entry, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/liquidbelly_visuals, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/fix_vore_effects, src)
 
 	if(!no_vore)
-		add_verb(src, /mob/living/proc/vorebelly_printout)
+		om_grant(src, GRANT_VERB, /mob/living/proc/vorebelly_printout, src)
 		if(!vorePanel)
 			add_vore_panel_button()
 
-	add_verb(src,/mob/living/proc/vore_transfer_reagents) // If mob doesnt have bellies it cant use this verb for anything
-	add_verb(src,/mob/living/proc/vore_check_reagents) // If mob doesnt have bellies it cant use this verb for anything
-	add_verb(src,/mob/proc/nsay_vore)
-	add_verb(src,/mob/proc/nme_vore)
-	add_verb(src,/mob/proc/nsay_vore_ch)
-	add_verb(src,/mob/proc/nme_vore_ch)
+	om_grant(src, GRANT_VERB, /mob/living/proc/vore_transfer_reagents, src) // If mob doesnt have bellies it cant use this verb for anything
+	om_grant(src, GRANT_VERB, /mob/living/proc/vore_check_reagents, src) // If mob doesnt have bellies it cant use this verb for anything
+	om_grant(src, GRANT_VERB, /mob/proc/nsay_vore, src)
+	om_grant(src, GRANT_VERB, /mob/proc/nme_vore, src)
+	om_grant(src, GRANT_VERB, /mob/proc/nsay_vore_ch, src)
+	om_grant(src, GRANT_VERB, /mob/proc/nme_vore_ch, src)
 	om_grant(src, GRANT_VERB, /mob/proc/enter_soulcatcher, src)
 
 	if(!length(voice_sounds_list))

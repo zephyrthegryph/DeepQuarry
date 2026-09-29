@@ -598,13 +598,13 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 
 /mob/living/bot/Login()
 	no_vore = FALSE // ROBOT VORE
-	add_verb(src, /mob/proc/insidePanel)
+	om_grant(src, GRANT_VERB, /mob/proc/insidePanel, src)
 
 	return ..()
 
 /mob/living/bot/Logout()
 	release_vore_contents()
-	remove_verb(src, /mob/proc/insidePanel)
+	om_revoke(src, GRANT_VERB, /mob/proc/insidePanel, src)
 	no_vore = TRUE
 	devourable = FALSE
 	feeding = FALSE

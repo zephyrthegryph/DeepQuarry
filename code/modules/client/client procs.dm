@@ -312,7 +312,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		admin_datum.associate(src)
 		connecting_admin = TRUE
 	else if(GLOB.deadmins[ckey])
-		add_verb(src, /client/proc/readmin)
+		add_verb(src, /client/proc/readmin) // ALLOW(sys_add_verb_pair): readmin is a client verb (clients hold no grants)
 		connecting_admin = TRUE
 
 	if (byond_version >= 512)

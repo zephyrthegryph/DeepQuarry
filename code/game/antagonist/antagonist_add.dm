@@ -28,16 +28,16 @@
 	LAZYOR(current_antagonists, player)
 
 	if(faction_verb && player.current)
-		add_verb(player.current, faction_verb)
+		om_grant(player.current, GRANT_VERB, faction_verb, src)
 
 	var/msg = span_notice("Once you decide on a goal to pursue, you can optionally display it to \
 		everyone at the end of the shift with the " + span_bold("Set Ambition") + " verb, located in the IC tab.  You can change this at any time, \
 		and it otherwise has no bearing on your round.")
 	om_after(player.current, 1 SECOND, TYPE_PROC_REF(/datum, om_chat), msg) //Added a delay so that this should pop up at the bottom and not the top of the text flood the new antag gets.
-	add_verb(player.current, /mob/living/proc/write_ambition)
+	om_grant(player.current, GRANT_VERB, /mob/living/proc/write_ambition, src)
 
 	if(can_speak_aooc)
-		add_verb(player.current.client, /client/proc/aooc)
+		add_verb(player.current.client, /client/proc/aooc) // ALLOW(sys_add_verb_pair): aooc is a client verb (clients hold no grants)
 
 	// Handle only adding a mind and not bothering with gear etc.
 	if(nonstandard_role_type)
@@ -51,7 +51,7 @@
 
 /datum/antagonist/proc/remove_antagonist(datum/mind/player, show_message, implanted)
 	if(player.current && faction_verb)
-		remove_verb(player.current, faction_verb)
+		om_revoke(player.current, GRANT_VERB, faction_verb, src)
 	if(player in current_antagonists)
 		to_chat(player.current, span_danger(span_large("You are no longer a [role_text]!")))
 		LAZYREMOVE(current_antagonists, player)
@@ -60,9 +60,9 @@
 		update_icons_removed(player)
 		BITSET(player.current.hud_updateflag, SPECIALROLE_HUD)
 		if(!is_special_character(player))
-			remove_verb(player.current, /mob/living/proc/write_ambition)
+			om_revoke(player.current, GRANT_VERB, /mob/living/proc/write_ambition, src)
 			if(player.current.client)
-				remove_verb(player.current.client, /client/proc/aooc)
+				remove_verb(player.current.client, /client/proc/aooc) // ALLOW(sys_add_verb_pair): aooc is a client verb (clients hold no grants)
 			player.ambitions = ""
 		return 1
 	return 0
