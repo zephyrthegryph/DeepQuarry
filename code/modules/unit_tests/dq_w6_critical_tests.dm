@@ -172,7 +172,7 @@
 	R.set_syndicate(FALSE)
 	TEST_ASSERT(!R.syndicate, "the cyborg is no longer syndicate")
 	TEST_ASSERT_NULL(R.traitor_hud_client, "unsetting clears the HUD")
-	LAZYREMOVE(GLOB.traitors.current_antagonists, M)
+	rel_remove(GLOB.traitors, "current_antagonists", M)
 	M.special_role = null
 
 #endif

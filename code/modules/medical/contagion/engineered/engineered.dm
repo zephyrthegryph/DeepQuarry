@@ -271,7 +271,8 @@ GLOBAL_LIST_INIT(advance_cures, list(
 	stage_prob = max(stage_rate, 2)
 	SetDanger(threat)
 	GenerateCure()
-	symptoms = sortList(symptoms, GLOBAL_PROC_REF(cmp_advdisease_symptomid_asc))
+	if(symptoms)
+		sortTim(symptoms, GLOBAL_PROC_REF(cmp_advdisease_symptomid_asc)) // in place: the owned list keeps its members
 	// Resistant strains provoke a weaker immune response: the host takes
 	// longer to fight them off on their own.
 	immunogenicity = clamp(1 - (0.05 * resistance), 0.25, 1.5)
@@ -370,7 +371,7 @@ GLOBAL_LIST_INIT(advance_cures, list(
 /datum/affliction/contagion/engineered/proc/Neuter(ignore_mutable = FALSE)
 	if(global_flag_check(virus_modifiers, IMMUTABLE) && !ignore_mutable)
 		return
-	if(symptoms.len)
+	if(length(symptoms))
 		var/s = safepick(symptoms)
 		if(s)
 			NeuterSymptom(s)
@@ -518,7 +519,7 @@ ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create a
 	var/mob/living/carbon/human/H = null
 
 	var/datum/affliction/contagion/engineered/D = new(0, null)
-	D.symptoms = list()
+	own_clear(D, "symptoms", OWN_DELETE)
 
 	var/list/symptoms = list()
 	symptoms += "Done"
@@ -536,7 +537,7 @@ ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create a
 		else if(ispath(symptom))
 			var/datum/viral_trait/S = new symptom
 			if(!D.HasSymptom(S))
-				D.symptoms += S
+				own_add(D, "symptoms", S)
 				i -= 1
 	while(i > 0)
 
@@ -607,7 +608,7 @@ ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create a
 
 	if(stealth >=2)
 		prefixes += "Crypto "
-	switch(max(resistance - (symptoms.len / 2), 1))
+	switch(max(resistance - (length(symptoms) / 2), 1))
 		if(1)
 			suffixes += "-alpha"
 		if(2)
@@ -631,7 +632,7 @@ ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create a
 		if(11 to INFINITY)
 			suffixes += "-omega"
 			prefixes += "Robust "
-	switch(transmission - symptoms.len)
+	switch(transmission - length(symptoms))
 		if(-INFINITY to 2)
 			prefixes += "Bloodborne "
 		if(3)

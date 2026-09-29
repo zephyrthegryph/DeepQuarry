@@ -1,6 +1,8 @@
 /mob/living/silicon/pai/Initialize(mapload)
 	. = ..()
-	software = GLOB.default_pai_software.Copy()
+	software = list()
+	for(var/id in GLOB.default_pai_software)
+		software[id] = TRUE
 
 /mob/living/silicon/pai/verb/paiInterface()
 	set category = "Abilities.pAI Commands"
@@ -62,7 +64,7 @@
 	switch(action)
 		if("software")
 			var/soft = params["software"]
-			var/datum/pai_software/S = software[soft]
+			var/datum/pai_software/S = software[soft] ? GLOB.pai_software_by_key[soft] : null
 			if(S.toggle)
 				S.toggle(src)
 			else
@@ -74,7 +76,7 @@
 			var/datum/pai_software/S = GLOB.pai_software_by_key[soft]
 			if(S && (ram >= S.ram_cost))
 				ram -= S.ram_cost
-				software[S.id] = S
+				software[S.id] = TRUE
 			return TRUE
 
 		if("image")

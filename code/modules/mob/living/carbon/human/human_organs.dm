@@ -65,7 +65,7 @@
 	self.handle_stance()
 	self.handle_grasp()
 
-	if(!force_process && !self.bad_external_organs.len)
+	if(!force_process && !length(self.bad_external_organs))
 		return
 
 	self.number_wounds = 0

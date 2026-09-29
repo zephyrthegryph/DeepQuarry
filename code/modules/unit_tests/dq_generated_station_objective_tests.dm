@@ -59,7 +59,8 @@
 	var/obj/machinery/generated_station_department_control/control = new(null)
 	control.station_id = spec.id
 	control.department_id = "engineering-1"
-	site.station_controls = list(control)
+	own_clear(site, "station_controls", OWN_DELETE)
+	own_add(site, "station_controls", control)
 	var/datum/expedition_objective/generated_department/preserve_engineering/objective = new(FALSE)
 	objective.populate(site)
 	site.station_simulation.set_integrity("engineering-1", 0)

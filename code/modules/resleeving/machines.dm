@@ -159,7 +159,7 @@
 
 /obj/machinery/transhuman/synthprinter/Initialize(mapload)
 	. = ..()
-	own_take_all(src, "component_parts")
+	own_clear(src, "component_parts", OWN_DELETE) // this machine runs without stock parts
 	RefreshParts()
 	update_icon()
 
@@ -341,7 +341,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/synthprinter, \
 
 /obj/machinery/transhuman/resleever/Initialize(mapload)
 	. = ..()
-	own_take_all(src, "component_parts")
+	own_clear(src, "component_parts", OWN_DELETE) // this machine runs without stock parts
 	RefreshParts()
 	update_icon()
 

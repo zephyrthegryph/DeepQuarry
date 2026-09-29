@@ -1328,7 +1328,8 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		vessel.remove_reagent(REAGENT_ID_BLOOD,vessel.total_volume - species.blood_volume) //This one should stay remove_reagent to work even lack of a O_heart
 		vessel.maximum_volume = species.blood_volume
 	fixblood()
-	species.update_attack_types() //Required for any trait that updates unarmed_types in setup.
+	var/datum/species/own_species = proto_private(src, "species") // the rebuild writes the species: the mob's private copy
+	own_species.update_attack_types() //Required for any trait that updates unarmed_types in setup.
 	species.update_vore_belly_def_variant()
 
 /mob/living/carbon/human/proc/bloody_doodle()

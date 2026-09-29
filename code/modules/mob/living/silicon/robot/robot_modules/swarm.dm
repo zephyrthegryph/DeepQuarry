@@ -7,7 +7,7 @@
 
 	var/obj/item/card/id/robot_id = robot.idcard
 	robot_id.forceMove(src)
-	own_add(src, "modules", robot_id)
+	modules |= robot_id // ALLOW(ownership): the robot owns its idcard (robot.idcard); the module only lists it as a usable item
 
 	own_add(src, "modules", new /obj/item/rcd/electric/mounted/borg/swarm(src))
 	own_add(src, "modules", new /obj/item/flash/robot(src))

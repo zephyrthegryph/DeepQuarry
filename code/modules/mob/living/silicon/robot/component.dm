@@ -320,7 +320,7 @@
 /// are always present; the power slot waits for set_cell().
 /mob/living/silicon/robot/proc/initialize_components()
 	var/list/types = get_component_types()
-	components = new /list(ROBOT_SLOT_COUNT)
+	components = new /list(ROBOT_SLOT_COUNT) // ALLOW(ownership): a fresh positional slot table (nulls only); each part is adopted by own_put() below
 	for(var/slot in 1 to ROBOT_SLOT_COUNT)
 		var/component_type = types[slot]
 		var/datum/robot_component/C = new component_type(src, slot)

@@ -450,7 +450,6 @@ GLOBAL_VAR(dq_test_select_names)
 	if (isnull(uncreatables))
 		uncreatables = build_list_of_uncreatables()
 
-	allocated = new
 	rel_set(src, "test_block", acquire_unit_test_block())
 	rel_set(src, "run_loc_floor_bottom_left", test_block.bottom_left)
 	rel_set(src, "run_loc_floor_top_right", test_block.top_right)
@@ -471,7 +470,16 @@ GLOBAL_VAR(dq_test_select_names)
 	TEST_ASSERT(isfloorturf(run_loc_floor_bottom_left), "run_loc_floor_bottom_left was not a floor ([run_loc_floor_bottom_left])")
 	TEST_ASSERT(isfloorturf(run_loc_floor_top_right), "run_loc_floor_top_right was not a floor ([run_loc_floor_top_right])")
 
-/// Everything allocate() made is the test's to delete when it ends.
+/// Everything allocate() made is the test's to delete when it ends. `allocated` is a relation
+/// list, never ownership: production code adopts allocated things freely, and whatever is still
+/// alive here when the test is torn down is deleted (deleted entries have left the view).
+REL_LIST(/datum/unit_test, allocated)
+
+/datum/unit_test/on_destroy(force)
+	for(var/datum/thing as anything in allocated?.Copy())
+		if(!QDELETED(thing))
+			qdel(thing)
+	..()
 
 /datum/unit_test/proc/Run()
 	TEST_FAIL("[type]/Run() called parent or not implemented")
@@ -504,7 +512,7 @@ GLOBAL_VAR(dq_test_select_names)
 		instance = new type(arglist(arguments))
 	else
 		instance = new type()
-	allocated += instance
+	rel_add(src, "allocated", instance)
 	return instance
 
 /// Hands something the test didn't allocate() but did cause (a construction product, a
@@ -512,7 +520,7 @@ GLOBAL_VAR(dq_test_select_names)
 /// Returns `thing`.
 /datum/unit_test/proc/own(datum/thing)
 	if(thing && !QDELETED(thing))
-		allocated |= thing
+		rel_add(src, "allocated", thing)
 	return thing
 
 /// own()s everything currently on `T` (landmarks excepted): for a test whose subject

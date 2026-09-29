@@ -346,10 +346,10 @@
 	site.status = EXP_STATUS_ACTIVE
 	site.deployed_at = world.time - EXP_DEPLOY_GRACE - 1
 	site.last_occupied = world.time - EXP_AUTO_RELEASE_GRACE - 1
-	GLOB.expedition_service.sites["assignment-lifecycle-test"] = site
+	own_put(GLOB.expedition_service, "sites", "assignment-lifecycle-test", site)
 	GLOB.expedition_service.service_step()
 	TEST_ASSERT(GLOB.expedition_service.sites["assignment-lifecycle-test"] == site, "An empty active site was released while its incomplete assignment was still held by the shuttle console")
-	GLOB.expedition_service.sites -= "assignment-lifecycle-test"
+	own_take_member(GLOB.expedition_service, "sites", "assignment-lifecycle-test")
 
 	rel_clear(console, "active_expedition")
 	TEST_ASSERT(!site.has_active_assignment(), "A site remained actively assigned after its console released it")

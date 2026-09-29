@@ -78,12 +78,12 @@
 /datum/diagnosis/proc/sort_findings()
 	if(LAZYLEN(findings) < 2)
 		return
-	var/list/sorted = list()
-	for(var/rank in list(DIAG_BAND_CRITICAL, DIAG_BAND_SEVERE, DIAG_BAND_MODERATE, DIAG_BAND_MINOR, DIAG_BAND_NONE))
-		for(var/datum/diagnosis_finding/F as anything in findings)
-			if(F.band == rank)
-				sorted += F
-	findings = sorted
+	// In place (timsort is stable): the owned list keeps its members.
+	sortTim(findings, GLOBAL_PROC_REF(cmp_diagnosis_finding_severity))
+
+/// Most severe band first.
+/proc/cmp_diagnosis_finding_severity(datum/diagnosis_finding/a, datum/diagnosis_finding/b)
+	return _dq_band_rank(b.band) - _dq_band_rank(a.band)
 
 /// One finding: a condition, a lesion, a wound or a sign (a presenting
 /// symptom whose cause the instrument may not see).

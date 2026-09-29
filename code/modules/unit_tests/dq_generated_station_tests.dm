@@ -43,9 +43,14 @@
 	spec.maximum_area = 50
 	spec.grid_width = 20
 	spec.grid_height = 12
-	spec.departments = list(engineering_instance, medical_instance)
-	spec.layout_nodes = list(engineering_node, medical_node)
-	spec.layout_edges = list(hall)
+	own_clear(spec, "departments", OWN_DELETE)
+	own_add(spec, "departments", engineering_instance)
+	own_add(spec, "departments", medical_instance)
+	own_clear(spec, "layout_nodes", OWN_DELETE)
+	own_add(spec, "layout_nodes", engineering_node)
+	own_add(spec, "layout_nodes", medical_node)
+	own_clear(spec, "layout_edges", OWN_DELETE)
+	own_add(spec, "layout_edges", hall)
 	var/datum/generated_station_validation_result/result = spec.validate()
 	TEST_ASSERT(result.is_valid(), "A complete station contract failed validation")
 	qdel(result)

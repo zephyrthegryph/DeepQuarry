@@ -33,11 +33,10 @@
 
 	var/jetpack = new/obj/item/tank/jetpack/carbondioxide(src)
 	own_add(src, "modules", jetpack)
-	own_set(robot, "internals", jetpack)
 
 	var/obj/item/card/id/robot_id = robot.idcard
 	robot_id.forceMove(src)
-	own_add(src, "modules", robot_id)
+	modules |= robot_id // ALLOW(ownership): the robot owns its idcard (robot.idcard); the module only lists it as a usable item
 
 /obj/item/robot_module/robot/syndicate/adjust_gps(obj/item/gps/robot/robot_gps)
 	robot_gps.long_range = TRUE

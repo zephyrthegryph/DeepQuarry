@@ -50,7 +50,8 @@ BLOOD_VOLUME_SURVIVE = 40
 			if(HAS_SYNTHETIC_BIOLOGY(src))
 				B.data["species"] = "synthetic"
 
-			B.data["changeling"] = (!isnull(mind) && is_changeling(mind)) || species?.ambulant_blood || has_trait(src, TRAIT_REDSPACE_CORRUPTED)
+			var/changeling_blood = (!isnull(mind) && is_changeling(mind)) || species?.ambulant_blood || has_trait(src, TRAIT_REDSPACE_CORRUPTED)
+			B.data["changeling"] = changeling_blood
 			B.color = B.data["blood_colour"]
 			B.name = B.data["blood_name"]
 
@@ -291,7 +292,7 @@ BLOOD_VOLUME_SURVIVE = 40
 	B.volume += amount
 
 	//set reagent data
-	B.data["donor"] = src
+	B.data["donor"] = src // ALLOW(ownership): reagent data is a plain payload dict shared with the chemistry code; donor is read back as a nullable mob
 	if(!B.data["viruses"])
 		B.data["viruses"] = list()
 
@@ -305,12 +306,14 @@ BLOOD_VOLUME_SURVIVE = 40
 		B.data["resistances"] |= get_contagion_immunities()
 	B.data["blood_DNA"] = copytext(src.dna.unique_enzymes,1,0)
 	B.data["blood_type"] = copytext(src.dna.b_type,1,0)
-	B.data["changeling"] = (!isnull(mind) && is_changeling(mind)) || species?.ambulant_blood || has_trait(src, TRAIT_REDSPACE_CORRUPTED)
+	var/changeling_blood = (!isnull(mind) && is_changeling(mind)) || species?.ambulant_blood || has_trait(src, TRAIT_REDSPACE_CORRUPTED)
+	B.data["changeling"] = changeling_blood
 
 	// Putting this here due to return shenanigans.
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
-		B.data["blood_colour"] = H.species.get_blood_colour(H)
+		var/drawn_colour = H.species.get_blood_colour(H)
+		B.data["blood_colour"] = drawn_colour
 		B.color = B.data["blood_colour"]
 		// B17: drawn blood carries its species, as the vessel's does (fixblood()), so
 		// blood_incompatible() can refuse a cross-species transfusion.

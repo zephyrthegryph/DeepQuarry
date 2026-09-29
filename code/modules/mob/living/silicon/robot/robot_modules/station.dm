@@ -111,7 +111,7 @@
 
 	robot.scrubbing = FALSE
 
-	own_take_member(src, "modules", robot.idcard)
+	modules -= robot.idcard // ALLOW(ownership): the robot owns its idcard (robot.idcard); the module only lists it as a usable item
 	if(robot.idcard.loc != robot)
 		robot.idcard.forceMove(robot)
 	own_take(robot, "module")
@@ -138,11 +138,9 @@
 		T.add_charge(T.recharge_rate * rate)
 
 /obj/item/robot_module/proc/rebuild()//Rebuilds the list so it's possible to add/remove items from the module
-	var/list/temp_list = modules
-	own_take_all(src, "modules")
-	for(var/obj/O in temp_list)
-		if(O)
-			own_add(src, "modules", O)
+	// In place: the members keep their owners (the robot's idcard is listed, not owned, here).
+	if(modules)
+		listclearnulls(modules)
 
 /obj/item/robot_module/proc/add_languages(mob/living/silicon/robot/R)
 	// Stores the languages as they were before receiving the module, and whether they could be synthezized.
@@ -221,9 +219,13 @@
 /obj/item/robot_module/proc/add_item(atom/movable/new_item, mob/living/silicon/robot/robot)
 	if(istype(new_item, /obj/item/card/id))
 		if(robot.idcard)
-			own_take_member(src, "modules", robot.idcard)
+			modules -= robot.idcard // ALLOW(ownership): the robot owns its idcard (robot.idcard); the module only lists it as a usable item
 			own_clear(robot, "idcard", OWN_DELETE)
 		own_move(new_item, robot, "idcard")
+		modules |= new_item // ALLOW(ownership): the robot owns its idcard (robot.idcard); the module only lists it as a usable item
+		new_item.forceMove(src)
+		robot.hud_used?.update_robot_modules_display()
+		return
 	own_add(src, "modules", new_item)
 	new_item.forceMove(src)
 	robot.hud_used?.update_robot_modules_display()
@@ -794,7 +796,7 @@
 	robot_id.initial_sprite_stack = list("base-stamp", "top-brown", "stamp-n", "stripe-purple")
 	robot_id.reset_icon()
 	robot_id.forceMove(src)
-	own_add(src, "modules", robot_id)
+	modules |= robot_id // ALLOW(ownership): the robot owns its idcard (robot.idcard); the module only lists it as a usable item
 	own_add(src, "modules", new /obj/item/mail_scanner(src))
 	own_add(src, "modules", new /obj/item/storage/bag/mail/borg(src))
 	own_add(src, "modules", new /obj/item/destTagger(src))
@@ -926,8 +928,7 @@
 	own_add(src, "modules", new /obj/item/floor_painter(src))
 	own_add(src, "modules", new /obj/item/pipe_dispenser(src))
 
-	own_set(robot, "internals", new/obj/item/tank/jetpack/carbondioxide(src))
-	own_add(src, "modules", robot.internals)
+	own_add(src, "modules", new/obj/item/tank/jetpack/carbondioxide(src))
 
 	var/obj/item/pickaxe/plasmacutter/borg/PC = new /obj/item/pickaxe/plasmacutter/borg(src)
 	own_add(src, "emag", PC)

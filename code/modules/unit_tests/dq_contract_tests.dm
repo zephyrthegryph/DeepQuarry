@@ -863,7 +863,9 @@
 	consent.forceMove(evidence_packet)
 	baseline_scan.forceMove(evidence_packet)
 	followup_scan.forceMove(evidence_packet)
-	evidence_packet.pages = list(consent, baseline_scan, followup_scan)
+	rel_clear(evidence_packet, "pages")
+	for(var/obj/item/page as anything in list(consent, baseline_scan, followup_scan))
+		rel_add(evidence_packet, "pages", page)
 	var/list/authenticated_baseline = SScontracts.authenticated_scan_payload(baseline_scan)
 	var/list/authenticated_followup = SScontracts.authenticated_scan_payload(followup_scan)
 	TEST_ASSERT(authenticated_baseline && authenticated_followup, "physical scanner pages lost their evidence-ledger records")
@@ -1090,7 +1092,9 @@
 	narrative.forceMove(packet)
 	baseline.forceMove(packet)
 	followup.forceMove(packet)
-	packet.pages = list(consent, narrative, baseline, followup)
+	rel_clear(packet, "pages")
+	for(var/obj/item/page as anything in list(consent, narrative, baseline, followup))
+		rel_add(packet, "pages", page)
 	var/obj/machinery/photocopier/faxmachine/fax = new(test_turf)
 	fax.stat = 0
 	own_set(fax, "copyitem", packet)
@@ -1371,7 +1375,7 @@
 	var/datum/data/record/general_record = new
 	general_record.fields["id"] = "producer-case"
 	general_record.fields["name"] = actor.real_name
-	GLOB.data_core.general += general_record
+	own_add(GLOB.data_core, "general", general_record)
 	var/datum/data/record/security_record = new
 	security_record.fields["criminal"] = "Released"
 	rel_set(security_console, "active1", general_record)
@@ -1958,7 +1962,7 @@
 	record.account_number = account_number
 	record.faction_id = REPUTATION_FACTION_SYNDICATE
 	record.tier = FACTION_AGENT_TIER_ACCREDITED
-	GLOB.station_faction_relations.agent_records["[account_number]"] = record
+	own_put(GLOB.station_faction_relations, "agent_records", "[account_number]", record)
 
 	TEST_ASSERT(GLOB.station_faction_relations.add_agent_exposure(account_number, REPUTATION_FACTION_SYNDICATE, 15, "Focused trace A", "broker-trace-a"), "first covert trace was rejected")
 	TEST_ASSERT(!SScontracts.find_live_offer(offer_key) && !SScontracts.find_candidate(offer_key), "one covert trace generated an investigation")
@@ -1976,7 +1980,7 @@
 	SScontracts.opportunity_windows -= window_key
 	qdel(window)
 	SScontracts.opportunity_cooldowns -= window_key
-	GLOB.station_faction_relations.agent_records -= "[account_number]"
+	own_take_member(GLOB.station_faction_relations, "agent_records", "[account_number]")
 	qdel(record)
 
 /datum/unit_test/dq_supply_shortage_uses_opportunity_broker

@@ -132,7 +132,12 @@
 	rel_set(A, "body", src)
 	rel_set(A, "owner", owner)
 	rel_set(A, "location", location)
-	rel_add(src, "afflictions", A)
+	// The body owns its afflictions. One carried in from elsewhere (an organ's
+	// detached_afflictions) is detached from that holder first.
+	var/datum/previous_holder = owner_of(A)
+	if(previous_holder && previous_holder != src)
+		own_take_member(previous_holder, A.own_slot, A)
+	own_add(src, "afflictions", A)
 	LAZYADDASSOCLIST(afflictions_by_type, A.type, A)
 	if(location)
 		LAZYADDASSOCLIST(afflictions_by_location, location, A)
@@ -146,7 +151,8 @@
 /datum/body/proc/remove_affliction(datum/affliction/A)
 	if(!A || A.body != src)
 		return FALSE
-	rel_remove(src, "afflictions", A)
+	// Detached, not deleted: the caller deletes it or hands it on (detach_part()).
+	own_take_member(src, "afflictions", A)
 	LAZYREMOVEASSOC(afflictions_by_type, A.type, A)
 	if(A.location)
 		LAZYREMOVEASSOC(afflictions_by_location, A.location, A)
@@ -162,7 +168,7 @@
 /datum/body/proc/unlink_affliction(datum/affliction/A)
 	if(!A || A.body != src)
 		return FALSE
-	rel_remove(src, "afflictions", A)
+	own_take_member(src, "afflictions", A)
 	LAZYREMOVEASSOC(afflictions_by_type, A.type, A)
 	if(A.location)
 		LAZYREMOVEASSOC(afflictions_by_location, A.location, A)

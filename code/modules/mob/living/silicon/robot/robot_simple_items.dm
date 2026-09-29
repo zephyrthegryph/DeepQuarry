@@ -22,6 +22,7 @@
 		/obj/item/weldingtool/electric/mounted/cyborg = null,
 		)
 
+	/// The carried tools' names (text), in menu order; tools are looked up with integrated_tool_named().
 	var/list/integrated_tools_by_name
 
 	var/list/integrated_tool_images
@@ -65,17 +66,31 @@ REL(/obj/item/robotic_multibelt, selected_item)
 		if(ispath(path)) //Some things like the materials printer makes its own tools and it won't be a path.
 			if(!cyborg_integrated_tools[path])
 				own_put(src, "cyborg_integrated_tools", path, new path(src))
-		else
-			cyborg_integrated_tools[path] = path
-		var/obj/item/I = cyborg_integrated_tools[path]
+		var/obj/item/I = integrated_tool_at(path)
 		I.canremove = FALSE
 
 	for(var/tool in cyborg_integrated_tools)
-		var/obj/item/real_tool = cyborg_integrated_tools[tool]
-		integrated_tools_by_name[real_tool.name] = real_tool
+		var/obj/item/real_tool = integrated_tool_at(tool)
+		integrated_tools_by_name |= real_tool.name
 		var/image/tool_image = image(icon = real_tool.icon, icon_state = real_tool.icon_state)
 		tool_image.color = real_tool.color
 		integrated_tool_images[real_tool.name] = tool_image
+
+/// The tool under `key` in cyborg_integrated_tools: the value put under a type path, or the
+/// member itself (a made-in-place tool such as a material stack is its own key).
+/obj/item/robotic_multibelt/proc/integrated_tool_at(key)
+	var/obj/item/tool = cyborg_integrated_tools[key]
+	if(!tool && isitem(key))
+		tool = key
+	return tool
+
+/// The carried tool called `tool_name`, or null.
+/obj/item/robotic_multibelt/proc/integrated_tool_named(tool_name)
+	for(var/key in cyborg_integrated_tools)
+		var/obj/item/tool = integrated_tool_at(key)
+		if(tool?.name == tool_name)
+			return tool
+	return null
 
 // The selection and the by-name index point into cyborg_integrated_tools.
 
@@ -101,7 +116,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	if(!ask.choice)
 		return
 	cut_overlays()
-	assume_selected_item(integrated_tools_by_name[ask.choice])
+	assume_selected_item(integrated_tool_named(ask.choice))
 
 /obj/item/robotic_multibelt/proc/assume_selected_item(obj/item/chosen_item)
 	if(!chosen_item)
@@ -497,10 +512,9 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 		if(is_type_in_list(our_item, possible_synths))
 			possible_synths -= our_item.type
 		else
-			own_take_member(src, "cyborg_integrated_tools", our_item)
-			integrated_tools_by_name -= our_item
-			integrated_tool_images -= our_item
-			qdel(our_item)
+			integrated_tools_by_name -= our_item.name
+			integrated_tool_images -= our_item.name
+			own_remove(src, "cyborg_integrated_tools", our_item)
 
 	for(var/stack_to_add in possible_synths)
 		var/obj/item/stack/current_stack = new stack_to_add(src)
@@ -547,7 +561,6 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 
 	var/obj/item/current_pocket = null //What pocket (or item!) we currently have selected
 
-	var/list/pockets_by_name
 
 	var/list/photo_images
 
@@ -581,7 +594,7 @@ REL(/obj/item/gripper, our_robot)
 		for(var/i = 1, i <= total_pockets, i++)
 			var/obj/new_pocket = new /obj/item/storage/internal/gripper(src)
 			new_pocket.name = "Pocket [i]"
-			pockets += new_pocket
+			own_add(src, "pockets", new_pocket)
 	rel_set(src, "current_pocket", peek(pockets))
 	if(isrobot(loc.loc)) //We're in the module.
 		rel_set(src, "our_robot", loc.loc)

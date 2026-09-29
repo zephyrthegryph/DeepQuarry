@@ -53,17 +53,14 @@
 /obj/item/gripper/proc/generate_icons()
 	if(LAZYLEN(pockets))
 
-		pockets_by_name = list()
 
 		photo_images = list()
 
 		for(var/obj/item/storage/internal/gripper/pocket_to_check in pockets)
 			if(!LAZYLEN(pocket_to_check.contents))
-				pockets_by_name[pocket_to_check.name] = pocket_to_check
 				photo_images[pocket_to_check.name] = image(icon = 'icons/effects/effects.dmi', icon_state = "nothing")
 				continue
 			var/obj/item/pocket_content = pocket_to_check.contents[1]
-			pockets_by_name["[pocket_to_check.name]" + "[pocket_content.name]"] = pocket_content
 			var/image/pocket_image = image(icon = pocket_content.icon, icon_state = pocket_content.icon_state)
 			if(pocket_content.color)
 				pocket_image.color = pocket_content.color
@@ -71,6 +68,19 @@
 				for(var/overlay in pocket_content.overlays)
 					pocket_image.overlays += overlay
 			photo_images["[pocket_to_check.name]" + "[pocket_content.name]"] = pocket_image
+
+/// The pocket (when empty) or the pocket's first item that a radial choice built by
+/// generate_icons() names; null when nothing matches any more.
+/obj/item/gripper/proc/pocket_choice_target(choice)
+	for(var/obj/item/storage/internal/gripper/pocket as anything in pockets)
+		if(!LAZYLEN(pocket.contents))
+			if(pocket.name == choice)
+				return pocket
+			continue
+		var/obj/item/pocket_content = pocket.contents[1]
+		if("[pocket.name]" + "[pocket_content.name]" == choice)
+			return pocket_content
+	return null
 
 DECLARE_INTERACTIONS(/obj/item/gripper, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
@@ -89,7 +99,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 
 	var/list/options = list()
 
-	for(var/Iname in pockets_by_name)
+	for(var/Iname in photo_images)
 		options[Iname] = photo_images[Iname]
 
 	in_radial_menu = TRUE
@@ -121,7 +131,9 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 	var/choice = ask.choice
 	var/obj/item/wrapped = get_wrapped_item()
 	if(choice)
-		var/obj/item/storage/internal/gripper/selected_pocket = pockets_by_name[choice]
+		var/obj/item/storage/internal/gripper/selected_pocket = pocket_choice_target(choice)
+		if(!selected_pocket)
+			return TRUE
 		if(!isgripperpocket(selected_pocket)) //The pocket we're selecting is NOT a gripper storage
 			if(!isgripperpocket(selected_pocket.loc)) //We kept the radial menu opened, used the item, then selected it again.
 				clear_and_select_pocket() //Pick the next open pocket.

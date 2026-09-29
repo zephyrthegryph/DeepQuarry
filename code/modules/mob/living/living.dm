@@ -49,7 +49,7 @@
 		tf_mob_holder.mob_belly_transfer(src)
 	if(tf_mob_holder)
 		set_tf_mob_holder(null)
-	QDEL_NULL_LIST(hud_list)
+	own_clear(src, "hud_list", OWN_DELETE)
 	// Deleting a part detaches it, and the detach hook empties these caches
 	// (code/modules/body/parts/attach.dm). Copies: they shrink as we go.
 	for(var/OR in organs?.Copy())
@@ -897,16 +897,16 @@
 
 //Add an entry to overlays, assuming it exists
 /mob/living/proc/apply_hud(cache_index, image/I)
-	hud_list[cache_index] = I
+	if(I)
+		own_put(src, "hud_list", cache_index, I) // the mob owns its HUD images; a replaced one is deleted
 	if((. = hud_list[cache_index]))
 		add_overlay(.)
 
-//Remove an entry from overlays, and from the list
+//Remove an entry from overlays for editing; it stays owned in its slot until apply_hud() re-adds it
 /mob/living/proc/grab_hud(cache_index)
 	var/I = hud_list[cache_index]
 	if(I)
 		cut_overlay(I)
-		hud_list[cache_index] = null
 		return I
 
 /mob/living/proc/make_hud_overlays()
@@ -1059,8 +1059,9 @@
 /datum/character_setup_button/on_destroy(force)
 	if(screen_icon)
 		owner?.client?.screen -= screen_icon
-		var/datum/hud/HUD = owner?.hud_used
-		LAZYREMOVE(HUD?.other_important, screen_icon)
+		var/datum/hud/button_hud = owner_of(screen_icon)
+		if(istype(button_hud))
+			own_remove(button_hud, "other_important", screen_icon)
 	..()
 
 /// Gives the mob its character setup HUD button if it has none.
@@ -1075,8 +1076,12 @@
 
 /datum/character_setup_button/proc/create_mob_button(mob/user)
 	var/datum/hud/HUD = user.hud_used
+	// The hud owns the button (other_important); a new hud's button is made afresh
+	// (the old hud deleted its own, which cleared this relation).
 	if(!screen_icon)
-		own_set(src, "screen_icon", new /atom/movable/screen/character_setup())
+		var/atom/movable/screen/character_setup/button = new
+		own_add(HUD, "other_important", button)
+		rel_set(src, "screen_icon", button)
 		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(character_setup_click))
 	if(ispAI(user))
 		screen_icon.icon = 'icons/mob/pai_hud.dmi'
@@ -1087,7 +1092,6 @@
 		screen_icon.alpha = HUD.ui_alpha
 	if(isAI(user))
 		screen_icon.screen_loc = ui_ai_pda_send
-	own_add(HUD, "other_important", screen_icon)
 	user.client?.screen += screen_icon
 
 /datum/character_setup_button/proc/character_setup_click(datum/source, datum/om/event/click/event)
@@ -1140,8 +1144,8 @@
 		// Note, this should be refactored to drop priority overlays
 		// ALLOW(decl): priority overlay from a global, gated on has_huds
 		add_overlay(GLOB.backplane,TRUE) //Strap this on here, to block HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
-		hud_list = list()
-		hud_list.len = TOTAL_HUDS
+		own_clear(src, "hud_list", OWN_DELETE)
+		hud_list = new /list(TOTAL_HUDS) // ALLOW(ownership): a fresh slot table (nulls only); its images are adopted through own_put()
 		make_hud_overlays()
 
 	//I'll just hang my coat up over here
