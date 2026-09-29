@@ -1,0 +1,545 @@
+# sys_lint baseline for tools/ci/sys_rules/grants.py (doc/rewrite/systems.md); shrink-only, target 0
+add_verb_pair	code/datums/behaviours/climbable.dm	O.verbs += /obj/proc/climb_on
+add_verb_pair	code/datums/behaviours/climbable.dm	O.verbs -= /obj/proc/climb_on
+add_verb_pair	code/datums/behaviours/rotatable.dm	verbs |= /atom/movable/proc/rotate_clockwise
+add_verb_pair	code/datums/behaviours/rotatable.dm	verbs |= /atom/movable/proc/rotate_counterclockwise
+add_verb_pair	code/datums/behaviours/rotatable.dm	verbs |= /atom/movable/proc/turn_around
+add_verb_pair	code/datums/behaviours/rotatable.dm	verbs -= /atom/movable/proc/rotate_clockwise
+add_verb_pair	code/datums/behaviours/rotatable.dm	verbs -= /atom/movable/proc/rotate_counterclockwise
+add_verb_pair	code/datums/behaviours/rotatable.dm	verbs -= /atom/movable/proc/turn_around
+add_verb_pair	code/datums/behaviours/tethered_item.dm	verbs += /obj/item/proc/toggle_tethered_handheld
+add_verb_pair	code/datums/behaviours/tethered_item.dm	host_item.verbs -= /obj/item/proc/toggle_tethered_handheld
+add_verb_pair	code/datums/entity_state/antags/changeling/changeling.dm	add_verb(owner,/mob/proc/EvolutionMenu)
+add_verb_pair	code/datums/entity_state/antags/changeling/changeling.dm	add_verb(owner,/mob/proc/changeling_respec)
+add_verb_pair	code/datums/entity_state/antags/changeling/changeling.dm	add_verb(src, P.verbpath)
+add_verb_pair	code/datums/entity_state/antags/changeling/changeling.dm	add_verb(H, /mob/living/carbon/human/proc/innate_shapeshifting)
+add_verb_pair	code/datums/entity_state/antags/changeling/changeling.dm	remove_verb(src, P.verbpath)
+add_verb_pair	code/datums/entity_state/reagent_hose/connector.dm	carrier.verbs |= /atom/proc/disconnect_hose
+add_verb_pair	code/datums/entity_state/reagent_hose/connector.dm	carrier.verbs -= /atom/proc/disconnect_hose
+add_verb_pair	code/datums/entity_state/reagent_hose/inflation.dm	remove_verb(human_owner(),/atom/proc/disconnect_hose)
+add_verb_pair	code/datums/entity_state/reagent_hose/inflation.dm	add_verb(human_owner(),/atom/proc/disconnect_hose)
+add_verb_pair	code/datums/entity_state/reagent_hose/inflation.dm	remove_verb(human_owner(),/atom/proc/disconnect_hose)
+add_verb_pair	code/datums/entity_state/species/shadekin/shadekin.dm	add_verb(owner, /mob/living/proc/shadekin_control_panel)
+add_verb_pair	code/datums/entity_state/species/shadekin/shadekin.dm	remove_verb(owner, /mob/living/proc/shadekin_control_panel)
+add_verb_pair	code/datums/entity_state/species/xenochimera.dm	add_verb(owner, /mob/living/carbon/human/proc/reconstitute_form)
+add_verb_pair	code/datums/entity_state/species/xenochimera.dm	remove_verb(owner, /mob/living/carbon/human/proc/reconstitute_form)
+add_verb_pair	code/datums/entity_state/species/xenochimera.dm	add_verb(owner, /mob/living/carbon/human/proc/hatch)
+add_verb_pair	code/datums/entity_state/species/xenochimera.dm	add_verb(owner, /mob/living/carbon/human/proc/hatch)
+add_verb_pair	code/datums/entity_state/species/xenochimera.dm	remove_verb(src, /mob/living/carbon/human/proc/hatch)
+add_verb_pair	code/datums/entity_state/species/xenochimera.dm	remove_verb(owner, /mob/living/carbon/human/proc/hatch)
+add_verb_pair	code/datums/entity_state/traits/gargoyle.dm	add_verb(owner,/mob/living/carbon/human/proc/gargoyle_transformation)
+add_verb_pair	code/datums/entity_state/traits/gargoyle.dm	add_verb(owner,/mob/living/carbon/human/proc/gargoyle_pause)
+add_verb_pair	code/datums/entity_state/traits/gargoyle.dm	add_verb(owner,/mob/living/carbon/human/proc/gargoyle_checkenergy)
+add_verb_pair	code/datums/entity_state/traits/radiation_effects.dm	add_verb(owner, /mob/living/proc/radiation_control_panel)
+add_verb_pair	code/datums/entity_state/traits/radiation_effects.dm	remove_verb(owner, /mob/living/proc/radiation_control_panel)
+add_verb_pair	code/datums/entity_state/traits/waddle.dm	add_verb(owner, /mob/living/proc/waddle_adjust)
+add_verb_pair	code/datums/entity_state/traits/waddle.dm	remove_verb(living_owner(), /mob/living/proc/waddle_adjust)
+add_verb_pair	code/datums/entity_state/traits/weaver.dm	add_verb(owner, /mob/living/proc/weaver_control_panel)
+add_verb_pair	code/datums/entity_state/traits/weaver.dm	add_verb(owner, /mob/living/carbon/human/proc/enter_cocoon)
+add_verb_pair	code/datums/entity_state/traits/weaver.dm	remove_verb(owner, /mob/living/proc/weaver_control_panel)
+add_verb_pair	code/datums/entity_state/traits/weaver.dm	remove_verb(owner, /mob/living/carbon/human/proc/enter_cocoon)
+add_verb_pair	code/datums/interactions/menu.dm	verbs += target_verb.name
+add_verb_pair	code/datums/mind.dm	remove_verb(current, /mob/proc/EvolutionMenu)
+add_verb_pair	code/datums/mind.dm	add_verb(src.client, /client/proc/aooc)
+add_verb_pair	code/game/antagonist/antagonist_add.dm	add_verb(player.current, faction_verb)
+add_verb_pair	code/game/antagonist/antagonist_add.dm	add_verb(player.current, /mob/living/proc/write_ambition)
+add_verb_pair	code/game/antagonist/antagonist_add.dm	add_verb(player.current.client, /client/proc/aooc)
+add_verb_pair	code/game/antagonist/antagonist_add.dm	remove_verb(player.current, faction_verb)
+add_verb_pair	code/game/antagonist/antagonist_add.dm	remove_verb(player.current, /mob/living/proc/write_ambition)
+add_verb_pair	code/game/antagonist/antagonist_add.dm	remove_verb(player.current.client, /client/proc/aooc)
+add_verb_pair	code/game/antagonist/station/changeling.dm	remove_verb(ling_mob, /mob/proc/EvolutionMenu)
+add_verb_pair	code/game/atoms_movable.dm	src.verbs -= x
+add_verb_pair	code/game/gamemodes/malfunction/malf_hardware.dm	add_verb(owner_ref(), driver)
+add_verb_pair	code/game/gamemodes/malfunction/malf_research.dm	add_verb(owner_ref(), get_focus().ability)
+add_verb_pair	code/game/gamemodes/malfunction/newmalf_ability_trees/tree_networking.dm	add_verb(user, new /datum/game_mode/malfunction/verb/ai_destroy_station())
+add_verb_pair	code/game/machinery/petrification.dm	add_verb(statue,/mob/living/carbon/human/proc/gargoyle_transformation)
+add_verb_pair	code/game/machinery/petrification.dm	remove_verb(statue,/mob/living/carbon/human/proc/gargoyle_transformation)
+add_verb_pair	code/game/machinery/petrification.dm	remove_verb(statue,/mob/living/carbon/human/proc/gargoyle_pause)
+add_verb_pair	code/game/machinery/petrification.dm	remove_verb(statue,/mob/living/carbon/human/proc/gargoyle_checkenergy)
+add_verb_pair	code/game/machinery/virtual_reality/ar_console.dm	add_verb(avatar(),/mob/living/carbon/human/proc/perform_exit_vr)
+add_verb_pair	code/game/machinery/virtual_reality/vr_console.dm	add_verb(avatar(),/mob/living/carbon/human/proc/perform_exit_vr)
+add_verb_pair	code/game/machinery/virtual_reality/vr_console.dm	add_verb(avatar(),/mob/living/carbon/human/proc/vr_transform_into_mob)
+add_verb_pair	code/game/machinery/virtual_reality/vr_console.dm	add_verb(avatar(),/mob/living/proc/set_size)
+add_verb_pair	code/game/machinery/virtual_reality/vr_console.dm	add_verb(new_form,/mob/living/proc/vr_revert_mob_tf)
+add_verb_pair	code/game/machinery/virtual_reality/vr_console.dm	add_verb(avatar(), /mob/living/carbon/human/proc/perform_exit_vr) //ahealing removes the prommie verbs and the VR verbs, giving it back
+add_verb_pair	code/game/machinery/virtual_reality/vr_procs.dm	add_verb(new_form,/mob/living/proc/vr_revert_mob_tf)
+add_verb_pair	code/game/machinery/virtual_reality/vr_procs.dm	add_verb(avatar,/mob/living/carbon/human/proc/fake_exit_vr)
+add_verb_pair	code/game/machinery/virtual_reality/vr_procs.dm	add_verb(avatar,/mob/living/carbon/human/proc/vr_transform_into_mob)
+add_verb_pair	code/game/machinery/virtual_reality/vr_procs.dm	add_verb(avatar,/mob/living/proc/set_size)
+add_verb_pair	code/game/objects/effects/decals/Cleanable/humans.dm	add_verb(user, /mob/living/carbon/human/proc/bloody_doodle)
+add_verb_pair	code/game/objects/items.dm	remove_verb(new_voice, /mob/living/voice/verb/change_name) //No changing your name! Bad!
+add_verb_pair	code/game/objects/items.dm	remove_verb(new_voice, /mob/living/voice/verb/hang_up) //Also you can't hang up. You are the item!
+add_verb_pair	code/game/objects/items/devices/scanners/health.dm	verbs += /obj/item/healthanalyzer/proc/toggle_adv
+add_verb_pair	code/game/objects/items/robot/robot_upgrades.dm	add_verb(R, /mob/living/proc/set_size)
+add_verb_pair	code/game/objects/items/weapons/implants/implantreagent.dm	add_verb(source,assigned_proc) // TGPanel
+add_verb_pair	code/game/objects/items/weapons/implants/implantreagent.dm	add_verb(source,/mob/living/carbon/human/proc/toggle_cascade) // TGPanel
+add_verb_pair	code/game/objects/items/weapons/implants/implantreagent.dm	remove_verb(imp_in(), assigned_proc)
+add_verb_pair	code/game/objects/items/weapons/storage/wallets.dm	verbs += /obj/item/storage/wallet/poly/proc/change_color
+add_verb_pair	code/game/objects/items/weapons/traps.dm	add_verb(H, /mob/living/proc/shred_limb_temp)
+add_verb_pair	code/game/objects/items/weapons/traps.dm	remove_verb(H, /mob/living/proc/shred_limb_temp)
+add_verb_pair	code/game/objects/items/weapons/traps.dm	remove_verb(user, /mob/living/proc/shred_limb_temp)
+add_verb_pair	code/game/objects/micro_structures.dm	verbs += /obj/proc/micro_interact
+add_verb_pair	code/game/objects/structures/gargoyle.dm	remove_verb(gargoyle,/mob/living/carbon/human/proc/gargoyle_transformation)
+add_verb_pair	code/game/objects/structures/window.dm	verbs -= /atom/movable/proc/rotate_counterclockwise
+add_verb_pair	code/game/objects/structures/window.dm	verbs -= /atom/movable/proc/rotate_clockwise
+add_verb_pair	code/game/objects/structures/window.dm	verbs -= /atom/movable/proc/turn_around
+add_verb_pair	code/game/objects/structures/window.dm	verbs |= /atom/movable/proc/rotate_counterclockwise
+add_verb_pair	code/game/objects/structures/window.dm	verbs |= /atom/movable/proc/rotate_clockwise
+add_verb_pair	code/game/objects/structures/window.dm	verbs |= /atom/movable/proc/turn_around
+add_verb_pair	code/game/turfs/simulated.dm	verbs += /turf/simulated/proc/climb_wall
+add_verb_pair	code/game/turfs/simulated.dm	verbs -= /turf/simulated/proc/climb_wall
+add_verb_pair	code/game/turfs/simulated.dm	verbs += /turf/simulated/proc/climb_wall
+add_verb_pair	code/modules/admin/admin_verbs.dm	add_verb(user, /client/proc/show_verbs)
+add_verb_pair	code/modules/admin/admin_verbs.dm	remove_verb(src, /client/proc/show_verbs)
+add_verb_pair	code/modules/admin/holder2.dm	add_verb(client, /client/proc/readmin)
+add_verb_pair	code/modules/admin/holder2.dm	remove_verb(owner(), /client/proc/readmin)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/carbon/human/proc/enter_cocoon)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/carbon/human/proc/shapeshifter_select_hair)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/carbon/human/proc/shapeshifter_select_hair_colors)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/carbon/human/proc/shapeshifter_select_gender)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/carbon/human/proc/shapeshifter_select_wings)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/carbon/human/proc/shapeshifter_select_tail)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/carbon/human/proc/shapeshifter_select_ears)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/carbon/human/proc/lleill_select_shape) //designed for non-shapeshifter mobs
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/carbon/human/proc/lleill_select_colour)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/proc/set_size)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/carbon/human/proc/lleill_invisibility)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/carbon/human/proc/lleill_beast_form)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/carbon/human/proc/lleill_transmute)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/carbon/human/proc/lleill_alchemy)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/carbon/human/proc/lleill_contact)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/proc/shred_limb)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/proc/eat_trash)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/proc/toggle_trash_catching)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/proc/toggle_active_cloaking)
+add_verb_pair	code/modules/admin/player_effects.dm	add_verb(Tar, /mob/living/simple_mob/proc/ColorMate)
+add_verb_pair	code/modules/admin/verb_datums/_admin_verb_datum.dm	add_verb(admin, verb_path)
+add_verb_pair	code/modules/admin/verb_datums/_admin_verb_datum.dm	remove_verb(admin, verb_path)
+add_verb_pair	code/modules/admin/verbs/randomverbs.dm	remove_verb(dead_mob, /mob/observer/dead/verb/toggle_antagHUD)
+add_verb_pair	code/modules/admin/verbs/randomverbs.dm	add_verb(dead_mob, /mob/observer/dead/verb/toggle_antagHUD)
+add_verb_pair	code/modules/assembly/holder.dm	loc.verbs += /obj/item/assembly_holder/timer_igniter/verb/configure
+add_verb_pair	code/modules/assembly/holder.dm	loc.verbs -= /obj/item/assembly_holder/timer_igniter/verb/configure
+add_verb_pair	code/modules/client/client procs.dm	add_verb(src, /client/proc/readmin)
+add_verb_pair	code/modules/clothing/clothing.dm	verbs |= /obj/item/clothing/proc/change_color
+add_verb_pair	code/modules/clothing/clothing_accessories.dm	src.verbs |= /obj/item/clothing/proc/removetie_verb
+add_verb_pair	code/modules/clothing/clothing_accessories.dm	src.verbs -= /obj/item/clothing/proc/removetie_verb
+add_verb_pair	code/modules/clothing/spacesuits/spacesuits.dm	verbs |= /obj/item/clothing/head/helmet/space/proc/toggle_camera
+add_verb_pair	code/modules/combat_ai/integration/player_verbs.dm	add_verb(source, /mob/living/proc/dq_use_combat_move)
+add_verb_pair	code/modules/mob/dead/observer/observer.dm	remove_verb(ghost, /mob/observer/dead/verb/toggle_antagHUD) // Poor guys, don't know what they are missing!
+add_verb_pair	code/modules/mob/language/language.dm	add_verb(speaker, /mob/proc/adjust_hive_range)
+add_verb_pair	code/modules/mob/language/language.dm	add_verb(src, /mob/proc/adjust_hive_range)
+add_verb_pair	code/modules/mob/living/bot/bot.dm	add_verb(src, /mob/proc/insidePanel)
+add_verb_pair	code/modules/mob/living/bot/bot.dm	remove_verb(src, /mob/proc/insidePanel)
+add_verb_pair	code/modules/mob/living/carbon/alien/alien.dm	add_verb(src, /mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/carbon/alien/alien.dm	add_verb(src, /mob/living/proc/hide)
+add_verb_pair	code/modules/mob/living/carbon/alien/diona/diona.dm	add_verb(src, /mob/living/carbon/alien/diona/proc/merge)
+add_verb_pair	code/modules/mob/living/carbon/alien/diona/diona_powers.dm	remove_verb(src, /mob/living/carbon/alien/diona/proc/merge)
+add_verb_pair	code/modules/mob/living/carbon/alien/diona/diona_powers.dm	add_verb(src, /mob/living/carbon/alien/diona/proc/split)
+add_verb_pair	code/modules/mob/living/carbon/alien/diona/diona_powers.dm	remove_verb(src, /mob/living/carbon/alien/diona/proc/merge)
+add_verb_pair	code/modules/mob/living/carbon/alien/diona/diona_powers.dm	remove_verb(src, /mob/living/carbon/alien/diona/proc/split)
+add_verb_pair	code/modules/mob/living/carbon/alien/diona/diona_powers.dm	remove_verb(src, /mob/living/carbon/alien/diona/proc/split)
+add_verb_pair	code/modules/mob/living/carbon/alien/diona/diona_powers.dm	add_verb(src, /mob/living/carbon/alien/diona/proc/merge)
+add_verb_pair	code/modules/mob/living/carbon/alien/progression.dm	remove_verb(src, /mob/living/carbon/alien/verb/evolve)
+add_verb_pair	code/modules/mob/living/carbon/human/death.dm	remove_verb(src, /mob/living/carbon/proc/release_control)
+add_verb_pair	code/modules/mob/living/carbon/human/human.dm	remove_verb(src, /mob/living/carbon/human/proc/morph)
+add_verb_pair	code/modules/mob/living/carbon/human/human.dm	remove_verb(src, /mob/living/carbon/human/proc/remotesay)
+add_verb_pair	code/modules/mob/living/carbon/human/human.dm	add_verb(src, /mob/living/carbon/human/proc/bloody_doodle)
+add_verb_pair	code/modules/mob/living/carbon/human/human.dm	remove_verb(src, /mob/living/carbon/human/proc/bloody_doodle)
+add_verb_pair	code/modules/mob/living/carbon/human/human_modular_limbs.dm	add_verb(src, /mob/living/carbon/human/proc/attach_limb_verb)
+add_verb_pair	code/modules/mob/living/carbon/human/human_modular_limbs.dm	remove_verb(src, /mob/living/carbon/human/proc/attach_limb_verb)
+add_verb_pair	code/modules/mob/living/carbon/human/human_modular_limbs.dm	add_verb(src, /mob/living/carbon/human/proc/detach_limb_verb)
+add_verb_pair	code/modules/mob/living/carbon/human/human_modular_limbs.dm	remove_verb(src, /mob/living/carbon/human/proc/detach_limb_verb)
+add_verb_pair	code/modules/mob/living/carbon/human/human_powers.dm	remove_verb(src, /mob/living/carbon/human/proc/diona_split_nymph)
+add_verb_pair	code/modules/mob/living/carbon/human/human_powers.dm	remove_verb(src, /mob/living/carbon/human/proc/regenerate)
+add_verb_pair	code/modules/mob/living/carbon/human/species/lleill/hanner.dm	add_verb(H, P.verbpath)
+add_verb_pair	code/modules/mob/living/carbon/human/species/lleill/lleill.dm	add_verb(H, P.verbpath)
+add_verb_pair	code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm	add_verb(new_mob, /mob/living/proc/revert_beast_form)
+add_verb_pair	code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm	add_verb(new_mob, /mob/living/proc/set_size)
+add_verb_pair	code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm	add_verb(new_mob, /mob/living/simple_mob/proc/ColorMate)
+add_verb_pair	code/modules/mob/living/carbon/human/species/lleill/lleill_items.dm	add_verb(target, /mob/living/proc/set_size)
+add_verb_pair	code/modules/mob/living/carbon/human/species/species.dm	remove_verb(H, verb_path)
+add_verb_pair	code/modules/mob/living/carbon/human/species/species.dm	add_verb(H, verb_path)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/alraune.dm	add_verb(src, /mob/living/carbon/human/proc/alraune_fruit_pick)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/alraune.dm	add_verb(src, /mob/living/carbon/human/proc/alraune_fruit_reagent)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/protean/forms.dm	add_verb(H, form_verbs)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/protean/forms.dm	remove_verb(H, form_verbs)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm	add_verb(H, power_verbs)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm	remove_verb(H, power_verbs)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/station.dm	remove_verb(H, /mob/living/carbon/human/proc/diona_split_nymph)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/station.dm	remove_verb(H, /mob/living/carbon/human/proc/regenerate)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/carbon/human/proc/bloodsuck)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/carbon/human/proc/bloodsuck)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/carbon/human/proc/succubus_drain)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/carbon/human/proc/succubus_drain_finalize)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/carbon/human/proc/succubus_drain_lethal)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/proc/injection)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/proc/long_vore)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/carbon/human/proc/slime_feed)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/proc/toggle_stuffing_mode)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/proc/shred_limb)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/proc/eat_trash)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/proc/toggle_trash_catching)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	remove_verb(H,/mob/living/proc/eat_trash)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	remove_verb(H,/mob/living/proc/toggle_trash_catching)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/proc/eat_minerals)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	remove_verb(H,/mob/living/proc/eat_minerals)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/carbon/human/proc/toggle_eye_glow)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	remove_verb(H,/mob/living/carbon/human/proc/toggle_eye_glow)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/proc/glow_toggle)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/proc/glow_color)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	remove_verb(H,/mob/living/proc/glow_toggle)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	remove_verb(H,/mob/living/proc/glow_color)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/proc/dominate_predator)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	remove_verb(H,/mob/proc/dominate_predator)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/proc/dominate_prey)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	remove_verb(H,/mob/living/proc/dominate_prey)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/proc/lend_prey_control)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	remove_verb(H,/mob/living/proc/lend_prey_control)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/proc/vertical_nom)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/carbon/human/proc/toggle_pain_module)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/proc/toggle_patting_defence)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/proc/toggle_personal_space)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/proc/toggle_pickup_dodge)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H, /mob/living/carbon/human/proc/shapeshifter_select_eye_colour)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H,/mob/living/proc/hide)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H,/mob/living/proc/mobegglaying)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/neutral.dm	add_verb(H,/mob/living/proc/succubus_bite)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive.dm	add_verb(H, /mob/living/proc/flying_toggle)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive.dm	add_verb(H, /mob/living/proc/flying_vore_toggle)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive.dm	add_verb(H, /mob/living/proc/start_wings_hovering)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive.dm	add_verb(H, /mob/living/carbon/human/proc/lick_wounds)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive.dm	add_verb(H, /mob/living/carbon/human/proc/water_stealth)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive.dm	add_verb(H, /mob/living/carbon/human/proc/underwater_devour)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive.dm	add_verb(H, /mob/living/carbon/human/proc/enter_cocoon)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive.dm	add_verb(H,/mob/living/proc/toggle_pass_table)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive.dm	remove_verb(H,/mob/living/proc/toggle_pass_table)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive.dm	add_verb(H,/mob/living/carbon/human/proc/sonar_ping)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive.dm	remove_verb(H,/mob/living/carbon/human/proc/sonar_ping)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive.dm	add_verb(H,/mob/living/proc/insect_sting)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive.dm	add_verb(H,/mob/living/carbon/human/proc/bloodsuck)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive.dm	add_verb(H, /mob/living/carbon/human/proc/innate_shapeshifting)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive.dm	add_verb(H, /mob/living/proc/name_change_verb)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive_genes.dm	add_verb(H, /mob/living/carbon/human/proc/remoteobserve)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive_genes.dm	remove_verb(H, /mob/living/carbon/human/proc/remoteobserve)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive_genes.dm	add_verb(H, /mob/living/carbon/human/proc/remotesay)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive_genes.dm	remove_verb(H, /mob/living/carbon/human/proc/remotesay)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive_genes.dm	add_verb(H, /mob/living/carbon/human/proc/shapeshfit_form)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/positive_genes.dm	remove_verb(H, /mob/living/carbon/human/proc/shapeshfit_form)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/trait.dm	add_verb(H, /mob/living/carbon/human/proc/trait_tutorial)
+add_verb_pair	code/modules/mob/living/carbon/human/species/station/traits/xenomorph_hybrid_trait.dm	add_verb(H,/mob/living/proc/toggle_pass_table) // TGPanel
+add_verb_pair	code/modules/mob/living/carbon/human/species/xenomorphs/alien_powers.dm	remove_verb(src, /mob/living/carbon/human/proc/lay_egg)
+add_verb_pair	code/modules/mob/living/carbon/human/update_icons.dm	add_verb(src, /mob/living/carbon/human/proc/taur_mount)
+add_verb_pair	code/modules/mob/living/carbon/human/update_icons.dm	add_verb(src, /mob/living/proc/toggle_rider_reins)
+add_verb_pair	code/modules/mob/living/living.dm	add_verb(src,/mob/living/proc/click_self) // TGPanel
+add_verb_pair	code/modules/mob/living/living_defense.dm	add_verb(src, /mob/proc/yank_out_object)
+add_verb_pair	code/modules/mob/living/login.dm	add_verb(src, /mob/living/proc/escapeOOC)
+add_verb_pair	code/modules/mob/living/login.dm	add_verb(src, /mob/living/proc/lick)
+add_verb_pair	code/modules/mob/living/login.dm	add_verb(src, /mob/living/proc/smell)
+add_verb_pair	code/modules/mob/living/login.dm	add_verb(src, /mob/living/proc/switch_scaling)
+add_verb_pair	code/modules/mob/living/login.dm	add_verb(src, /mob/living/proc/center_offset)
+add_verb_pair	code/modules/mob/living/login.dm	add_verb(src, /mob/living/proc/mute_entry)
+add_verb_pair	code/modules/mob/living/login.dm	add_verb(src, /mob/living/proc/liquidbelly_visuals)
+add_verb_pair	code/modules/mob/living/login.dm	add_verb(src, /mob/living/proc/fix_vore_effects)
+add_verb_pair	code/modules/mob/living/login.dm	add_verb(src, /mob/living/proc/vorebelly_printout)
+add_verb_pair	code/modules/mob/living/login.dm	add_verb(src,/mob/living/proc/vore_transfer_reagents) // If mob doesnt have bellies it cant use this verb for anything
+add_verb_pair	code/modules/mob/living/login.dm	add_verb(src,/mob/living/proc/vore_check_reagents) // If mob doesnt have bellies it cant use this verb for anything
+add_verb_pair	code/modules/mob/living/login.dm	add_verb(src,/mob/proc/nsay_vore)
+add_verb_pair	code/modules/mob/living/login.dm	add_verb(src,/mob/proc/nme_vore)
+add_verb_pair	code/modules/mob/living/login.dm	add_verb(src,/mob/proc/nsay_vore_ch)
+add_verb_pair	code/modules/mob/living/login.dm	add_verb(src,/mob/proc/nme_vore_ch)
+add_verb_pair	code/modules/mob/living/login.dm	add_verb(src,/mob/proc/enter_soulcatcher)
+add_verb_pair	code/modules/mob/living/silicon/ai/ai.dm	add_verb(src, GLOB.ai_verbs_default)
+add_verb_pair	code/modules/mob/living/silicon/ai/ai.dm	add_verb(src, silicon_subsystems)
+add_verb_pair	code/modules/mob/living/silicon/ai/ai.dm	remove_verb(src, GLOB.ai_verbs_default)
+add_verb_pair	code/modules/mob/living/silicon/ai/ai.dm	remove_verb(src, silicon_subsystems)
+add_verb_pair	code/modules/mob/living/silicon/ai/ai.dm	add_verb(src, /mob/living/silicon/ai/proc/deploy_to_shell_act)
+add_verb_pair	code/modules/mob/living/silicon/ai/malf.dm	add_verb(src, new/datum/game_mode/malfunction/verb/ai_select_hardware())
+add_verb_pair	code/modules/mob/living/silicon/ai/malf.dm	add_verb(src, new/datum/game_mode/malfunction/verb/ai_select_research())
+add_verb_pair	code/modules/mob/living/silicon/ai/malf.dm	add_verb(src, new/datum/game_mode/malfunction/verb/ai_help())
+add_verb_pair	code/modules/mob/living/silicon/pai/pai.dm	add_verb(src, /mob/living/silicon/pai/proc/choose_chassis)
+add_verb_pair	code/modules/mob/living/silicon/pai/pai.dm	add_verb(src, /mob/living/silicon/pai/proc/choose_verbs)
+add_verb_pair	code/modules/mob/living/silicon/pai/pai.dm	add_verb(src, /mob/proc/dominate_predator)
+add_verb_pair	code/modules/mob/living/silicon/pai/pai.dm	add_verb(src, /mob/living/proc/dominate_prey)
+add_verb_pair	code/modules/mob/living/silicon/pai/pai.dm	add_verb(src, /mob/living/proc/set_size)
+add_verb_pair	code/modules/mob/living/silicon/pai/pai.dm	add_verb(src, /mob/living/proc/shred_limb)
+add_verb_pair	code/modules/mob/living/silicon/pai/pai.dm	add_verb(src, /mob/living/proc/toggle_trash_catching)
+add_verb_pair	code/modules/mob/living/silicon/pai/pai.dm	remove_verb(src, /mob/verb/toggle_gun_mode) // Pai doesn't have support for this and shouldn't be able to use guns anyway
+add_verb_pair	code/modules/mob/living/silicon/pai/pai_folding.dm	add_verb(src, /mob/living/silicon/pai/proc/pai_nom)
+add_verb_pair	code/modules/mob/living/silicon/pai/pai_folding.dm	add_verb(src, /mob/living/proc/vertical_nom)
+add_verb_pair	code/modules/mob/living/silicon/pai/pai_folding.dm	remove_verb(src, /mob/living/silicon/pai/proc/pai_nom)
+add_verb_pair	code/modules/mob/living/silicon/pai/pai_folding.dm	remove_verb(src, /mob/living/proc/vertical_nom)
+add_verb_pair	code/modules/mob/living/silicon/robot/drone/drone.dm	add_verb(src, /mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/silicon/robot/drone/drone.dm	add_verb(src, /mob/living/proc/hide)
+add_verb_pair	code/modules/mob/living/silicon/robot/drone/drone.dm	add_verb(src, silicon_subsystems)
+add_verb_pair	code/modules/mob/living/silicon/robot/drone/drone.dm	remove_verb(src, silicon_subsystems)
+add_verb_pair	code/modules/mob/living/silicon/robot/robot.dm	add_verb(src, /obj/item/pda/ai/verb/cmd_pda_open_ui)
+add_verb_pair	code/modules/mob/living/silicon/robot/robot.dm	add_verb(src, /obj/item/communicator/integrated/verb/activate)
+add_verb_pair	code/modules/mob/living/silicon/robot/robot.dm	remove_verb(src, /mob/living/silicon/robot/proc/ResetSecurityCodes)
+add_verb_pair	code/modules/mob/living/silicon/robot/robot.dm	add_verb(src, robot_verbs_default)
+add_verb_pair	code/modules/mob/living/silicon/robot/robot.dm	add_verb(src, silicon_subsystems)
+add_verb_pair	code/modules/mob/living/silicon/robot/robot.dm	remove_verb(src, robot_verbs_default)
+add_verb_pair	code/modules/mob/living/silicon/robot/robot.dm	remove_verb(src, silicon_subsystems)
+add_verb_pair	code/modules/mob/living/silicon/robot/robot_modules/station.dm	add_verb(R, subsystems)
+add_verb_pair	code/modules/mob/living/silicon/robot/robot_modules/station.dm	remove_verb(R, subsystems)
+add_verb_pair	code/modules/mob/living/silicon/robot/robot_remote_control.dm	add_verb(src,/mob/living/silicon/robot/proc/transfer_shell_act) // TGPanel // add sideloader
+add_verb_pair	code/modules/mob/living/silicon/robot/robot_remote_control.dm	add_verb(src,/mob/living/silicon/robot/proc/transfer_shell_act) // TGPanel // add sideloader
+add_verb_pair	code/modules/mob/living/silicon/robot/robot_remote_control.dm	remove_verb(src,/mob/living/silicon/robot/proc/transfer_shell_act ) // remove sideloader //
+add_verb_pair	code/modules/mob/living/silicon/robot/robot_remote_control.dm	add_verb(src, /mob/living/silicon/robot/proc/undeploy_act)
+add_verb_pair	code/modules/mob/living/simple_mob/simple_mob.dm	remove_verb(src, /mob/verb/observe)
+add_verb_pair	code/modules/mob/living/simple_mob/simple_mob.dm	add_verb(src,/mob/living/simple_mob/proc/animal_nom)
+add_verb_pair	code/modules/mob/living/simple_mob/simple_mob.dm	add_verb(src,/mob/living/proc/shred_limb)
+add_verb_pair	code/modules/mob/living/simple_mob/simple_mob.dm	add_verb(src,/mob/living/simple_mob/proc/nutrition_heal)
+add_verb_pair	code/modules/mob/living/simple_mob/simple_mob.dm	add_verb(src, /mob/living/simple_mob/proc/ColorMate)
+add_verb_pair	code/modules/mob/living/simple_mob/simple_mob.dm	add_verb(src,/mob/living/simple_mob/proc/use_headset) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/simple_mob.dm	add_verb(src,/mob/living/simple_mob/proc/use_pda) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/simple_mob.dm	add_verb(src,/mob/living/simple_mob/proc/pick_size)
+add_verb_pair	code/modules/mob/living/simple_mob/simple_mob.dm	add_verb(src,/mob/living/simple_mob/proc/pick_color)
+add_verb_pair	code/modules/mob/living/simple_mob/simple_mob.dm	add_verb(src, /mob/living/simple_mob/proc/hunting_vision) //So that maint preds can see prey through walls, to make it easier to find them.
+add_verb_pair	code/modules/mob/living/simple_mob/simple_mob.dm	add_verb(src, /mob/living/simple_mob/proc/toggle_digestion)
+add_verb_pair	code/modules/mob/living/simple_mob/simple_mob.dm	add_verb(src, /mob/living/simple_mob/proc/toggle_fancygurgle)
+add_verb_pair	code/modules/mob/living/simple_mob/simple_mob.dm	add_verb(src, /mob/living/proc/vertical_nom)
+add_verb_pair	code/modules/mob/living/simple_mob/simple_mob.dm	add_verb(src, /mob/living/simple_mob/proc/animal_nom)
+add_verb_pair	code/modules/mob/living/simple_mob/simple_mob.dm	add_verb(src, /mob/living/proc/shred_limb)
+add_verb_pair	code/modules/mob/living/simple_mob/simple_mob.dm	add_verb(src, /mob/living/simple_mob/proc/nutrition_heal)
+add_verb_pair	code/modules/mob/living/simple_mob/simple_mob.dm	add_verb(src, /mob/living/proc/eat_trash)
+add_verb_pair	code/modules/mob/living/simple_mob/simple_mob.dm	add_verb(src, /mob/living/proc/toggle_trash_catching)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	add_verb(src, /mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	add_verb(src, /mob/living/proc/hide)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	add_verb(src, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	add_verb(src, /mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	add_verb(src, /mob/living/proc/hide)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	remove_verb(src, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color) //Most of these have custom sprites with colour already, so we'll not let them have this.
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	add_verb(src, /mob/living/simple_mob/vore/alienanimals/catslug/suslug/proc/assussinate)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	remove_verb(src, /mob/living/simple_mob/proc/set_name)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	remove_verb(src, /mob/living/simple_mob/proc/set_desc)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	add_verb(src,/mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	add_verb(src,/mob/living/simple_mob/animal/synx/proc/distend_stomach)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	add_verb(src,/mob/living/simple_mob/proc/contort)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	add_verb(src,/mob/living/simple_mob/animal/synx/proc/sonar_ping)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	add_verb(src,/mob/living/proc/shred_limb)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	add_verb(src,/mob/living/simple_mob/animal/synx/proc/disguise)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	add_verb(src,/mob/living/simple_mob/animal/synx/proc/randomspeech)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	add_verb(src,/mob/living/simple_mob/animal/synx/proc/set_style)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	add_verb(src,/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	add_verb(src,/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	add_verb(src,/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	add_verb(src, /mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	add_verb(src, /mob/living/proc/hide)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	add_verb(src, /mob/living/simple_mob/vore/alienanimals/teppi/proc/produce_offspring)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	add_verb(src, /mob/living/simple_mob/vore/alienanimals/teppi/proc/toggle_producing_offspring)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/borer/borer.dm	add_verb(src, /mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/borer/borer.dm	add_verb(src, /mob/living/proc/hide)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/borer/borer.dm	remove_verb(host, /mob/living/carbon/proc/release_control)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/borer/borer.dm	remove_verb(host, /mob/living/carbon/proc/punish_host)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/borer/borer.dm	remove_verb(host, /mob/living/carbon/proc/spawn_larvae)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/borer/borer_control.dm	add_verb(host, /mob/living/carbon/proc/release_control)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/borer/borer_control.dm	add_verb(host, /mob/living/carbon/proc/punish_host)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/borer/borer_control.dm	add_verb(host, /mob/living/carbon/proc/spawn_larvae)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/borer/borer_powers.dm	remove_verb(src, /mob/living/carbon/human/proc/jumpstart)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/passive/mothroach.dm	add_verb(src, /mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/passive/mothroach.dm	add_verb(src, /mob/living/proc/hide)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	add_verb(src, /mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	add_verb(src, /mob/living/proc/hide)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	remove_verb(src,/mob/living/simple_mob/animal/passive/mouse/verb/set_mouse_colour)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	add_verb(src,/mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	add_verb(src,/mob/living/proc/hide)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	remove_verb(src,/mob/living/proc/ventcrawl) //No ventcrawl for hanner
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/passive/possum.dm	add_verb(src, /mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/passive/possum.dm	add_verb(src, /mob/living/proc/hide)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/passive/possum.dm	remove_verb(src,/mob/living/proc/ventcrawl) //No ventcrawl for hanner
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/sif/frostfly.dm	add_verb(src, /mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/sif/frostfly.dm	add_verb(src, /mob/living/proc/hide)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/sif/leech.dm	add_verb(src, /mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/sif/leech.dm	add_verb(src, /mob/living/proc/hide)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/sif/moth.dm	add_verb(src, /mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/sif/moth.dm	add_verb(src, /mob/living/proc/hide)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/sif/racoon.dm	add_verb(src, /mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/sif/racoon.dm	add_verb(src, /mob/living/proc/hide)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm	add_verb(src,/mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm	add_verb(src,/mob/living/proc/hide)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/gateway/alchemistbee.dm	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/gateway/alchemistbee.dm	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/glamour/blaidd.dm	verbs |= /mob/living/simple_mob/proc/animal_mount
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/glamour/blaidd.dm	verbs |= /mob/living/proc/toggle_rider_reins
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/glamour/blaidd.dm	verbs |= /mob/living/simple_mob/vore/blaidd/proc/blaidd_invis
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/glamour/ddraig.dm	verbs |= /mob/living/simple_mob/proc/animal_mount
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/glamour/ddraig.dm	verbs |= /mob/living/proc/toggle_rider_reins
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/glamour/ddraig.dm	verbs |= /mob/living/proc/set_size
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/glamour/ddraig.dm	verbs |= /mob/living/proc/polymorph
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/glamour/ddraig.dm	verbs |= /mob/living/proc/glamour_invisibility
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/glamour/ddraig.dm	new_mob.verbs |= /mob/living/proc/revert_beast_form
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/glamour/ddraig.dm	new_mob.verbs |= /mob/living/proc/set_size
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/humanoid/cultboss.dm	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/humanoid/cultboss.dm	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/metroid/metBaseType.dm	add_verb(src,/mob/living/proc/ventcrawl) // TGPanel //May not do anything at the moment.
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	add_verb(src, /mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	add_verb(src, /mob/living/proc/toggle_rider_reins)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	add_verb(src, /mob/living/simple_mob/vore/bigdragon/proc/set_style)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	add_verb(src, /mob/living/simple_mob/vore/bigdragon/proc/toggle_glow)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	add_verb(src, /mob/living/simple_mob/vore/bigdragon/proc/sprite_toggle)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	add_verb(src, /mob/living/simple_mob/vore/bigdragon/proc/flame_toggle)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	add_verb(src, /mob/living/simple_mob/vore/bigdragon/proc/special_toggle)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	add_verb(src,/mob/living/simple_mob/vore/bigdragon/proc/export_style)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	add_verb(src,/mob/living/simple_mob/vore/bigdragon/proc/import_style)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/corrupt_hounds.dm	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/corrupt_hounds.dm	add_verb(src, /mob/living/proc/toggle_rider_reins)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/corrupt_hounds.dm	verbs |= /mob/living/simple_mob/proc/animal_mount
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/corrupt_hounds.dm	verbs |= /mob/living/proc/toggle_rider_reins
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/cryptdrake.dm	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/cryptdrake.dm	add_verb(src, /mob/living/proc/toggle_rider_reins)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/deathclaw.dm	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/deathclaw.dm	add_verb(src, /mob/living/proc/toggle_rider_reins)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm	add_verb(src, /mob/living/dominated_brain/proc/resist_control)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm	add_verb(prey_goes_here, /mob/living/dominated_brain/proc/cease_this_foolishness)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm	remove_verb(pred_body, /mob/proc/release_predator)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm	add_verb(src, /mob/proc/adjust_hive_range)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm	remove_verb(src, /mob/proc/release_predator)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm	remove_verb(src, /mob/living/dominated_brain/proc/cease_this_foolishness)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm	add_verb(pred, /mob/proc/release_predator)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm	add_verb(db, /mob/living/dominated_brain/proc/cease_this_foolishness)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/dragon.dm	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/dragon.dm	add_verb(src, /mob/living/proc/toggle_rider_reins)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	add_verb(src,/mob/living/simple_mob/vore/zorgoia/proc/appearance_switch)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	add_verb(src,/mob/living/simple_mob/vore/zorgoia/proc/recolor)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	add_verb(src,/mob/living/proc/injection) //Poison sting c:
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	add_verb(src,/mob/living/simple_mob/vore/zorgoia/proc/export_style)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	add_verb(src,/mob/living/simple_mob/vore/zorgoia/proc/import_style)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	add_verb(src,/mob/living/simple_mob/proc/animal_mount)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	add_verb(src,/mob/living/proc/toggle_rider_reins)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/greatwolf.dm	add_verb(src,/mob/living/simple_mob/proc/animal_mount)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/greatwolf.dm	add_verb(src,/mob/living/proc/toggle_rider_reins)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/greatwolf.dm	add_verb(src,/mob/living/simple_mob/proc/pick_color)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/gryphon.dm	add_verb(src,/mob/living/simple_mob/proc/animal_mount)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/gryphon.dm	add_verb(src,/mob/living/proc/toggle_rider_reins)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/hippo.dm	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/hippo.dm	add_verb(src, /mob/living/proc/toggle_rider_reins)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/horse.dm	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/horse.dm	add_verb(src, /mob/living/proc/toggle_rider_reins)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/leopardmander.dm	add_verb(src,/mob/living/simple_mob/proc/animal_mount)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/leopardmander.dm	add_verb(src,/mob/living/proc/toggle_rider_reins)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/leopardmander.dm	add_verb(src,/mob/living/simple_mob/vore/leopardmander/exotic/proc/toggle_glow)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/lion.dm	add_verb(src, /mob/living/simple_mob/vore/retaliate/lion/proc/set_sex)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/lion.dm	add_verb(src,/mob/living/simple_mob/proc/pick_color)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/lion.dm	add_verb(src, /mob/living/simple_mob/vore/retaliate/lion/proc/set_mane_color)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm	add_verb(src, /mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm	add_verb(src, /mob/living/simple_mob/vore/morph/proc/take_over_prey)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm	add_verb(src, /mob/living/simple_mob/vore/morph/proc/morph_color)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/otie.dm	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/otie.dm	add_verb(src, /mob/living/proc/toggle_rider_reins)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/panther.dm	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/panther.dm	add_verb(src, /mob/living/proc/toggle_rider_reins)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/raptor.dm	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/raptor.dm	add_verb(src, /mob/living/proc/toggle_rider_reins)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	add_verb(src, /mob/living/proc/toggle_rider_reins)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/scel.dm	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/scel.dm	add_verb(src, /mob/living/proc/toggle_rider_reins)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/scel.dm	add_verb(src, /mob/living/proc/glow_toggle)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/scel.dm	add_verb(src, /mob/living/proc/glow_color)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/scel.dm	add_verb(src, /mob/living/proc/long_vore)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/scel.dm	add_verb(src, /mob/living/proc/target_lunge)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/sect_drone.dm	add_verb(src, /mob/living/simple_mob/vore/sect_drone/proc/set_abdomen_color)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/sect_queen.dm	add_verb(src, /mob/living/simple_mob/vore/sect_queen/proc/set_abdomen_color)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	add_verb(src, /mob/proc/adjust_hive_range)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/sheep.dm	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/sheep.dm	add_verb(src, /mob/living/proc/toggle_rider_reins)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	add_verb(src, /mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	add_verb(src, /mob/living/proc/hide)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/solargrub_larva.dm	add_verb(src, /mob/living/proc/ventcrawl)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/swoopie.dm	add_verb(src,/mob/living/proc/restrict_trasheater)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/swoopie.dm	verbs -= /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/verb/change_settings //Controlled swoopies dont need their settings changed externally
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/vore.dm	add_verb(src, /mob/living/simple_mob/proc/set_name)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/vore.dm	add_verb(src, /mob/living/simple_mob/proc/set_desc)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/vore.dm	add_verb(src, /mob/living/simple_mob/proc/set_gender)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/wolf.dm	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/wolf.dm	add_verb(src, /mob/living/proc/toggle_rider_reins)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/vore/wolf.dm	add_verb(src,/mob/living/simple_mob/proc/pick_color)
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	add_verb(src,/mob/living/simple_mob/xeno_ch/proc/xeno_build) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	add_verb(src,/mob/living/simple_mob/verb/toggle_speech_sounds) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	add_verb(src,/mob/living/simple_mob/proc/pounce_toggle) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	add_verb(src,/mob/living/proc/ventcrawl) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	add_verb(src,/mob/living/proc/hide) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	add_verb(src,/mob/living/simple_mob/proc/pounce_toggle) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	add_verb(src,/mob/living/proc/hide) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	add_verb(src,/mob/living/simple_mob/proc/neurotoxin) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	add_verb(src,/mob/living/simple_mob/proc/acidspit) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	add_verb(src,/mob/living/simple_mob/proc/corrosive_acid) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	add_verb(src,/mob/living/simple_mob/proc/neurotoxin) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	add_verb(src,/mob/living/simple_mob/proc/acidspit) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	add_verb(src,/mob/living/simple_mob/proc/corrosive_acid) // TGPanel
+add_verb_pair	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	add_verb(src,/mob/living/simple_mob/proc/speen) // TGPanel
+add_verb_pair	code/modules/mob/mob.dm	remove_verb(src, /mob/proc/yank_out_object)
+add_verb_pair	code/modules/mob/mob.dm	add_verb(src, verb)
+add_verb_pair	code/modules/mob/mob.dm	remove_verb(src, ask.choice)
+add_verb_pair	code/modules/mob/motiontracker.dm	add_verb(src,/mob/proc/toggle_motion_echo_vis)
+add_verb_pair	code/modules/mob/motiontracker.dm	remove_verb(src,/mob/proc/toggle_motion_echo_vis)
+add_verb_pair	code/modules/mob/new_player/lobby_browser.dm	remove_verb(observer, /mob/observer/dead/verb/toggle_antagHUD) // Poor guys, don't know what they are missing!
+add_verb_pair	code/modules/mob/new_player/login.dm	add_verb(src, /mob/proc/insidePanel)
+add_verb_pair	code/modules/nifsoft/nif.dm	add_verb(H, /mob/living/carbon/human/proc/set_nif_examine)
+add_verb_pair	code/modules/nifsoft/nif.dm	remove_verb(H, /mob/living/carbon/human/proc/set_nif_examine)
+add_verb_pair	code/modules/nifsoft/nif.dm	remove_verb(src, /mob/living/carbon/human/proc/set_nif_examine)
+add_verb_pair	code/modules/nifsoft/nif_tgui.dm	remove_verb(owner, /mob/living/carbon/human/proc/nif_menu)
+add_verb_pair	code/modules/nifsoft/nif_tgui.dm	add_verb(user, /mob/living/carbon/human/proc/nif_menu)
+add_verb_pair	code/modules/nifsoft/software/13_soulcatcher.dm	add_verb(nif().human, /mob/proc/nsay)
+add_verb_pair	code/modules/nifsoft/software/13_soulcatcher.dm	add_verb(nif().human, /mob/proc/nme)
+add_verb_pair	code/modules/nifsoft/software/13_soulcatcher.dm	remove_verb(nif().human, /mob/proc/nsay)
+add_verb_pair	code/modules/nifsoft/software/13_soulcatcher.dm	remove_verb(nif().human, /mob/proc/nme)
+add_verb_pair	code/modules/organs/internal/eyes.dm	verbs |= /obj/item/organ/internal/eyes/proc/change_eye_color
+add_verb_pair	code/modules/organs/organ.dm	add_verb(owner, verb_path)
+add_verb_pair	code/modules/organs/organ.dm	remove_verb(owner, verb_path)
+add_verb_pair	code/modules/organs/organ_external.dm	add_verb(owner, /mob/living/carbon/human/proc/relocate)
+add_verb_pair	code/modules/organs/organ_external.dm	remove_verb(owner, /mob/living/carbon/human/proc/relocate)
+add_verb_pair	code/modules/organs/organ_external.dm	add_verb(owner, /mob/proc/yank_out_object)
+add_verb_pair	code/modules/reagents/reagents/medicine.dm	add_verb(target, /mob/living/carbon/human/proc/enter_cocoon)
+add_verb_pair	code/modules/spells/spellbook.dm	remove_verb(user, V)
+add_verb_pair	code/modules/spells/spellbook.dm	remove_verb(stored_swap(), V)
+add_verb_pair	code/modules/spells/spellbook.dm	add_verb(user, V)
+add_verb_pair	code/modules/spells/spellbook.dm	add_verb(user, V)
+add_verb_pair	code/modules/spells/targeted/mind_transfer.dm	remove_verb(caster, V)//But a safety nontheless.
+add_verb_pair	code/modules/spells/targeted/mind_transfer.dm	remove_verb(victim, V)
+add_verb_pair	code/modules/spells/targeted/mind_transfer.dm	add_verb(caster, V)
+add_verb_pair	code/modules/spells/targeted/mind_transfer.dm	add_verb(caster, V)
+add_verb_pair	code/modules/surgery/organs.dm	add_verb(target, /mob/living/carbon/human/proc/diona_split_nymph)
+add_verb_pair	code/modules/surgery/organs.dm	add_verb(target, /mob/living/carbon/human/proc/regenerate)
+add_verb_pair	code/modules/tickets/procs.dm	remove_verb(src,/client/verb/mentorhelp)
+add_verb_pair	code/modules/tickets/procs.dm	add_verb(src,/client/verb/mentorhelp) // 1 minute cool-down for mentorhelps
+add_verb_pair	code/modules/tickets/procs.dm	remove_verb(src,/client/verb/adminhelp)
+add_verb_pair	code/modules/tickets/procs.dm	add_verb(src,/client/verb/adminhelp ) // 2 minute cool-down for adminhelp
+add_verb_pair	code/modules/tickets/procs.dm	remove_verb(src,/client/verb/adminspice)
+add_verb_pair	code/modules/tickets/procs.dm	add_verb(src,/client/verb/adminspice) // 10 minute cool-down for spice request
+add_verb_pair	code/modules/vore/eating/living.dm	add_verb(owner, /mob/proc/insidePanel)
+add_verb_pair	code/modules/vore/eating/living.dm	remove_verb(M, /mob/proc/insidePanel)
+add_verb_pair	code/modules/vore/eating/soulcatcher.dm	remove_verb(brainmob, /mob/proc/enter_soulcatcher) //No recursive self capturing...
+add_verb_pair	code/modules/vore/eating/soulcatcher.dm	add_verb(brainmob, /mob/living/carbon/brain/caught_soul/vore/proc/transfer_self)
+add_verb_pair	code/modules/vore/eating/soulcatcher.dm	add_verb(brainmob, /mob/living/carbon/brain/caught_soul/vore/proc/reenter_body)
+add_verb_pair	code/modules/vore/fluffstuff/custom_items.dm	add_verb(user, /mob/living/carbon/human/proc/shapeshifter_select_gender)
+add_verb_pair	code/modules/vore/mob_tf.dm	add_verb(new_mob,/mob/living/proc/shapeshift_form)
+add_verb_pair	code/modules/vore/resizing/sizegun.dm	verbs += /obj/item/gun/energy/sizegun/proc/select_size
+add_verb_pair	code/modules/vore/resizing/sizegun.dm	verbs += /obj/item/gun/energy/sizegun/proc/spin_dial
+add_verb_pair	code/modules/xenobio/items/slimepotions.dm	add_verb(xenobio_slime, /mob/living/simple_mob/proc/animal_nom)

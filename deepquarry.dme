@@ -748,6 +748,7 @@
 #include "code\datums\om\derived.dm"
 #include "code\datums\om\entity.dm"
 #include "code\datums\om\fields.dm"
+#include "code\datums\om\grant_verbs.dm"
 #include "code\datums\om\io.dm"
 #include "code\datums\om\flow.dm"
 #include "code\datums\om\event.dm"
