@@ -197,6 +197,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 		for(var/datum/interaction/capability/E as anything in C.built_entries)
 			if(!E.cap)
 				E.cap = C
+			cap_apply_gating(C, E)
 			var/datum/interaction/clash = GLOB.cap_entries_by_id[E.id]
 			if(clash && clash != E)
 				E.id = "[E.id]#[C.key]"
@@ -207,7 +208,8 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 
 /**
  * Why `entry` (a capability entry of A) can't run for user now, or null. Order: broken, unpowered,
- * behind, locked_by, needs, then every capability's gate() (the cover, the lock, a slot's rules).
+ * behind (needs the bits SET), blocked_by (needs them CLEAR: "only while the cover is closed"),
+ * locked_by, needs, then every capability's gate() (the cover, the lock, a slot's rules).
  */
 /proc/cap_gate_reason(atom/A, mob/user, obj/item/held, datum/interaction/capability/entry)
 	if(!entry.works_broken && is_broken(A))
@@ -219,6 +221,13 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 		if(missing & CAP_COVER_OPEN)
 			return "open the cover first"
 		return "open the maintenance panel first"
+	if(entry.blocked_by & A.cap_state)
+		var/present = entry.blocked_by & A.cap_state
+		if(present & CAP_COVER_OPEN)
+			return "close the cover first"
+		if(present & CAP_PANEL_OPEN)
+			return "close the maintenance panel first"
+		return "you can't do that in its current state"
 	if(entry.locked_by && (A.cap_state & entry.locked_by))
 		return "it's locked"
 	if(entry.needs)
@@ -244,12 +253,17 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	/// PROC_REF on the holder.
 	var/handler
 	var/behind = NONE
+	/// CAP_* bits that must be CLEAR (the APC's ID swipe only while the cover is closed).
+	var/blocked_by = NONE
 	var/locked_by = NONE
 	var/needs
 	var/else_say
 	var/works_broken = FALSE
 	var/works_unpowered = FALSE
 	var/log
+	/// Whether the handler takes the held item: (mob/user, obj/item/held, ...). hand() handlers are
+	/// (mob/user, ...); tool()/use_on()/insert() and library item entries pass `held`.
+	var/passes_held = TRUE
 	/// Form fields (choice_field()/text_field()/number_field()): asked in order, answers passed by name.
 	var/list/form
 	/// A proc on the holder, (mob/user) -> the Menu name for this state ("Open cover"/"Close cover").
@@ -269,6 +283,10 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	return name
 
 /datum/interaction/capability/applies_to(atom/target)
+	// A holder can suspend all its capability entries (a frozen airlock): the input falls through to
+	// whatever comes next (an attack), as if the entries weren't there.
+	if(target.caps_suspended())
+		return FALSE
 	return applies ? call(target, applies)() : TRUE
 
 /datum/interaction/capability/why_not(mob/actor, atom/target, obj/item/held)
@@ -278,15 +296,31 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	return cap_gate_reason(target, actor, held, src)
 
 /datum/interaction/capability/run_effect(mob/actor, atom/target, obj/item/held)
+	// The holder-wide hook with side effects (the airlock's shock) runs only here, never while the
+	// Menu is built: FALSE stops the entry (the input is used).
+	if(!target.before_entry(actor, src, held))
+		return UI_REFUSED
 	var/datum/dispatch_context/ctx = new(actor, target, held, src)
 	. = cap_dispatch(ctx)
 	if(isnull(.))
 		. = TRUE // a handler that returned nothing (or went async to ask) handled it
 
+/// Holder-wide hook before any of its capability entries runs, with side effects allowed (the airlock
+/// shocks a non-silicon while electrified). FALSE stops the entry; the input is used up.
+/atom/proc/before_entry(mob/user, datum/interaction/capability/entry, obj/item/held)
+	return TRUE
+
+/// TRUE while none of this atom's capability entries are offered at all (a frozen airlock): input
+/// falls through to the next handler instead of being refused.
+/atom/proc/caps_suspended()
+	return FALSE
+
 /// Runs the entry's form and handler for ctx, async when it prompts (dispatch_call()).
 /proc/cap_dispatch(datum/dispatch_context/ctx)
 	var/datum/interaction/capability/E = ctx.entry
-	var/list/named = list("user" = ctx.user, "held" = ctx.held)
+	var/list/named = list("user" = ctx.user)
+	if(E.passes_held)
+		named["held"] = ctx.held
 	if(length(E.form))
 		return cap_dispatch_form(ctx, named)
 	return dispatch_call(ctx, ctx.target, E.handler, named, E.name, E.log)
@@ -301,8 +335,50 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 		named[F.name] = answer
 	// Reserved names last: no form field can shadow them.
 	named["user"] = ctx.user
-	named["held"] = ctx.held
+	if(E.passes_held)
+		named["held"] = ctx.held
+	else
+		named -= "held"
 	dispatch_call(ctx, ctx.target, E.handler, named, E.name, E.log)
+
+/**
+ * Merges capability C's gating (its constructor's behind / blocked_by / locked_by / needs / else_say /
+ * works_* / log) onto entry E, which may be stricter on its own: bits are OR-ed, needs are all
+ * required, works_* hold only when both allow, the entry's own log and else_say win. Every library
+ * constructor takes the same gating arguments and sets them on the capability with cap_gating();
+ * this applies them once, centrally, when the entries are built.
+ */
+/proc/cap_apply_gating(datum/capability/C, datum/interaction/capability/E)
+	if(C == E.cap && istype(C, /datum/capability/entry))
+		return // a bespoke entry: its gating is the entry's own
+	E.behind |= C.behind
+	E.blocked_by |= C.blocked_by
+	E.locked_by |= C.locked_by
+	if(C.needs)
+		var/list/merged = list()
+		if(E.needs)
+			merged += E.needs
+		merged += C.needs
+		E.needs = merged
+	E.else_say ||= C.else_say
+	if(!C.works_broken)
+		E.works_broken = FALSE
+	if(!C.works_unpowered)
+		E.works_unpowered = FALSE
+	E.log ||= C.log
+
+/// Sets the standard gating arguments on capability C (every library constructor calls it with its
+/// own same-named arguments). Returns C.
+/proc/cap_gating(datum/capability/C, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+	C.behind = behind
+	C.blocked_by = blocked_by
+	C.locked_by = locked_by
+	C.needs = needs
+	C.else_say = else_say
+	C.works_broken = works_broken
+	C.works_unpowered = works_unpowered
+	C.log = log
+	return C
 
 // ---- the bespoke entries: small capabilities ----
 
@@ -324,13 +400,15 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	return E
 
 /// Shared constructor body for hand()/tool()/use_on()/insert().
-/proc/cap_entry(entry_kind, name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, list/form, held_type, tool_quality, delay, priority, stance, name_proc, applies)
+/proc/cap_entry(entry_kind, name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, list/form, held_type, tool_quality, delay, priority, stance, name_proc, applies, blocked_by)
 	var/datum/capability/entry/C = new
 	var/datum/interaction/capability/E = new
 	E.name = name
 	E.id = "[entry_kind]:[name]:[handler]"
 	E.handler = handler
 	E.behind = behind
+	E.blocked_by = blocked_by
+	E.passes_held = entry_kind != "hand"
 	E.locked_by = locked_by
 	E.needs = needs
 	E.else_say = else_say
@@ -370,17 +448,17 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	return C
 
 /// An empty-hand action: hand("Toggle", PROC_REF(toggle)). Handler (mob/user).
-/proc/cap_hand(name, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, stance, name_proc, applies)
-	return cap_entry("hand", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, null, null, null, priority, stance, name_proc, applies)
+/proc/cap_hand(name, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, stance, name_proc, applies, blocked_by = NONE)
+	return cap_entry("hand", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, null, null, null, priority, stance, name_proc, applies, blocked_by)
 
 /// A tool action: tool("Unbolt", TOOL_WRENCH, PROC_REF(unbolt), delay = 2 SECONDS). Handler (mob/user, obj/item/held).
-/proc/cap_tool(name, quality, handler, delay, behind = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, list/form, priority, name_proc, applies)
-	return cap_entry("tool", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, null, quality, delay, priority, null, name_proc, applies)
+/proc/cap_tool(name, quality, handler, delay, behind = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, list/form, priority, name_proc, applies, blocked_by = NONE)
+	return cap_entry("tool", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, null, quality, delay, priority, null, name_proc, applies, blocked_by)
 
 /// Using a held item of `held_type` on the holder, which keeps the item. Handler (mob/user, obj/item/held).
-/proc/cap_use_on(name, held_type, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, stance, name_proc, applies)
-	return cap_entry("use_on", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, held_type, null, null, priority, stance, name_proc, applies)
+/proc/cap_use_on(name, held_type, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, stance, name_proc, applies, blocked_by = NONE)
+	return cap_entry("use_on", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, held_type, null, null, priority, stance, name_proc, applies, blocked_by)
 
 /// Putting a held item of `held_type` into the holder (the handler adopts it: own_set moves it).
-/proc/cap_insert(name, held_type, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = TRUE, log, list/form, priority, name_proc, applies)
-	return cap_entry("insert", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, held_type, null, null, priority, null, name_proc, applies)
+/proc/cap_insert(name, held_type, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = TRUE, log, list/form, priority, name_proc, applies, blocked_by = NONE)
+	return cap_entry("insert", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, held_type, null, null, priority, null, name_proc, applies, blocked_by)

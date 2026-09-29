@@ -6,7 +6,6 @@
 
 /datum/capability/dx_test
 	var/label
-	var/layer_name
 
 /datum/capability/dx_test/examine(atom/holder, mob/user)
 	return list(label)
