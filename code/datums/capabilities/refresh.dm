@@ -53,6 +53,9 @@ OWN_TIMER(/datum, periodic_interval)
 	if(!E || QDELING(E))
 		return
 	om_changed(E, channel)
+	// The look applying itself (set_light, vis_contents) is presentation, not a state change.
+	if(E == GLOB.refresh_applying)
+		return
 #if defined(UNIT_TESTS)
 	// H5: a refresh that marks its own entity again is a feedback loop (a reactive proc wrote state).
 	if(E == GLOB.refresh_running)
@@ -81,6 +84,8 @@ GLOBAL_VAR_INIT(refresh_bench_drained, 0)
 /// The entity whose refresh is running now (the self-mark detector reads it).
 GLOBAL_DATUM(refresh_running, /datum)
 GLOBAL_VAR_INIT(refresh_self_mark_expected, FALSE)
+/// The atom whose look is being applied now: marks it raises meanwhile are its own presentation.
+GLOBAL_DATUM(refresh_applying, /atom)
 /// Self-mark reports this round (the detector test reads them).
 GLOBAL_LIST_EMPTY(refresh_self_marks)
 
@@ -259,7 +264,10 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 		return null
 	var/key = L.change_key()
 	if(apply && key != A.look_key)
+		var/atom/outer = GLOB.refresh_applying
+		GLOB.refresh_applying = A
 		L.apply_to(A)
+		GLOB.refresh_applying = outer
 		A.look_key = key
 	return key
 
