@@ -2002,7 +2002,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 	var_changes = list("unarmed_types" = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/punch/chimera, /datum/unarmed_attack/bite/sharp), "heat_level_1" = 420, "heat_level_2" = 480, "heat_level_3" = 1100, "breath_heat_level_1" = 450, "breath_heat_level_2" = 530, "breath_heat_level_3" = 1500, "heat_discomfort_level" = 390) //xenochim are already tank
 
 /datum/trait/neutral/xenochimera_YR3/environment_effects(mob/living/carbon/human/H)
-	var/list/nanitereagents = list(REAGENT_HEALINGNANITES, REAGENT_SHREDDINGNANITES, REAGENT_IRRADIATEDNANITES, REAGENT_NEUROPHAGENANITES, REAGENT_NIFREPAIRNANITES)
+	var/static/list/nanitereagents = list(REAGENT_HEALINGNANITES, REAGENT_SHREDDINGNANITES, REAGENT_IRRADIATEDNANITES, REAGENT_NEUROPHAGENANITES, REAGENT_NIFREPAIRNANITES)
 	if(istype(H.loc, /turf/simulated/floor/water/digestive_enzymes/nanites))
 		var/turf/simulated/floor/water/digestive_enzymes/nanites/N = H.loc
 		if(N.active)

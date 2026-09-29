@@ -282,7 +282,7 @@
 	set desc = "Take the form of a non-humanoid creature."
 	set category = "Abilities"
 
-	var/list/beast_options = list("Rabbit" = /mob/living/simple_mob/vore/rabbit,
+	var/static/list/beast_options = list("Rabbit" = /mob/living/simple_mob/vore/rabbit,
 									"Red Panda" = /mob/living/simple_mob/vore/redpanda,
 									"Fennec" = /mob/living/simple_mob/vore/fennec,
 									"Giant Frog" = /mob/living/simple_mob/vore/aggressive/frog,

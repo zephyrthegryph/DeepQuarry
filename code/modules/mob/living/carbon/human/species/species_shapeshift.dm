@@ -488,7 +488,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 			tail_style = style
 		if("wings")
 			wing_style = style
-	var/list/suffixes = list("c1" = "", "c2" = "2", "c3" = "3")
+	var/static/list/suffixes = list("c1" = "", "c2" = "2", "c3" = "3")
 	for(var/key in suffixes)
 		var/new_color = colors[key]
 		if(!new_color)
