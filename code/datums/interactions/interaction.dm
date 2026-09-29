@@ -37,6 +37,9 @@
 	var/default_action
 	/// The predicate spec (REQ_* clauses, code/__defines/predicates.dm). `tool` adds its clause in front.
 	var/list/requires
+	/// Extra clauses on top of the inherited `requires` (a subtype's lifted guards, systems.md section 6): set this
+	/// instead of restating the parent's `requires`. Checked after `requires`, so reach fails first.
+	var/list/also_requires
 	/// Cost, tool part: the TOOL_* quality the held item needs (use_tool(), tools.dm).
 	var/tool
 	/// The tier of `tool` needed (dq_tool_tier()).
@@ -115,6 +118,8 @@
 	var/list/spec = selector_spec()
 	if(length(requires))
 		spec += requires
+	if(length(also_requires))
+		spec += also_requires
 	return spec
 
 /// The shared compiled selector, or null when anything selects it.

@@ -109,8 +109,7 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 /datum/interaction/machine_hand/ungated/floor_light_use
 	id = "floor_light_use"
 	name = "Use"
-	requires = list(
-		REQ_INTERACTION_REACH,
+	also_requires = list(
 		REQ_BECAUSE(REQ_ANCHORED, "it must be screwed down first"),
 		REQ_TARGET_STATE(/obj/machinery/floor_light/proc/can_switch),
 	)
