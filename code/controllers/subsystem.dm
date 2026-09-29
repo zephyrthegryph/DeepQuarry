@@ -316,7 +316,7 @@
 
 /// Telemetry (kernel/system.dm metrics()): the counters the profiler and the stat panel read.
 /datum/controller/subsystem/proc/metrics()
-	return alist("name" = name, "cost" = cost, "tick_usage" = tick_usage, "tick_overrun" = tick_overrun, "times_fired" = times_fired, "state" = state)
+	return alist("name" = name, "cost" = cost, "tick_usage" = tick_usage, "overran" = tick_overrun, "times_fired" = times_fired, "state" = state)
 
 /datum/controller/subsystem/proc/state_letter()
 	switch (state)

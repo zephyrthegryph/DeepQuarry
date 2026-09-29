@@ -4,6 +4,9 @@
 	var/awaited_result
 	var/awaited_done = FALSE
 
+/datum/unit_test/kernel_await/proc/finished()
+	return awaited_done
+
 /datum/unit_test/kernel_await/proc/wait_on(datum/waiter/W)
 	set waitfor = FALSE
 	awaited_result = await(W)
@@ -17,8 +20,7 @@
 	TEST_ASSERT(W in kernel_waiters(), "an open waiter is on the kernel's list")
 	TEST_ASSERT(waiter_resolve(W, "answer"), "the first resolve wins")
 	TEST_ASSERT(!waiter_resolve(W, "late"), "a second resolve is ignored")
-	sleep(world.tick_lag * 3)
-	TEST_ASSERT(awaited_done, "await returned after the resolve")
+	TEST_ASSERT(run_until(CALLBACK(src, PROC_REF(finished))), "await returned after the resolve")
 	TEST_ASSERT_EQUAL(awaited_result, "answer", "with the first result")
 	TEST_ASSERT(!(W in kernel_waiters()), "a resolved waiter leaves the list")
 
@@ -27,8 +29,7 @@
 	awaited_result = "unset"
 	var/datum/waiter/T = new(world.tick_lag * 2)
 	wait_on(T)
-	sleep(world.tick_lag * 6)
-	TEST_ASSERT(awaited_done, "a timed-out await returned")
+	TEST_ASSERT(run_until(CALLBACK(src, PROC_REF(finished))), "a timed-out await returned")
 	TEST_ASSERT(T.timed_out, "and says it timed out")
 	TEST_ASSERT_NULL(awaited_result, "with no result")
 
@@ -38,8 +39,7 @@
 	var/datum/waiter/C = new
 	wait_on(C)
 	TEST_ASSERT(waiter_cancel(C), "cancel resolves an open waiter")
-	sleep(world.tick_lag * 3)
-	TEST_ASSERT(awaited_done, "a cancelled await returned")
+	TEST_ASSERT(run_until(CALLBACK(src, PROC_REF(finished))), "a cancelled await returned")
 	TEST_ASSERT(C.cancelled && !C.timed_out, "cancelled, not timed out")
 	TEST_ASSERT(!waiter_cancel(C), "cancelling twice is a no-op")
 

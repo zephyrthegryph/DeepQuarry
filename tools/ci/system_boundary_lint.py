@@ -1,4 +1,4 @@
-r"""System boundary lint (systems design sec 2.5). A subsystem, a world service or a /datum/system is a
+r"""System boundary lint (doc/rewrite/kernel.md sec 2.5). A subsystem, a world service or a /datum/system is a
 module: its folder is the boundary. Counts are ratcheted per (rule, file, owner) in
 tools/ci/system_boundary_baseline.txt and only shrink; a justified keep takes
 `// ALLOW(system_boundary): <reason>` (tools/ci/allow_annotations.py).

@@ -122,3 +122,5 @@
 #define CADENCE_SECOND /datum/om/pipeline/periodic/second
 /// Every 0.2 seconds (continuous lanes need a reason).
 #define CADENCE_FAST /datum/om/pipeline/periodic/fast
+/// Every minute.
+#define CADENCE_MINUTE /datum/om/pipeline/periodic/minute

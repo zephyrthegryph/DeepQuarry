@@ -3,7 +3,11 @@ SUBSYSTEM_DEF(atoms)
 	dependencies = list(
 		/datum/controller/subsystem/garbage,
 		/datum/controller/subsystem/mapping,
-		/datum/controller/subsystem/job
+		/datum/controller/subsystem/job,
+		// Mapload resleeving machines register with the transcore databases (was a SStranscore dependency).
+		/datum/world_service/transcore,
+		// Planets register their floors and walls as turfs initialize (fold wave F4; was SSplanets).
+		/datum/world_service/planets,
 	)
 	flags = SS_NO_FIRE
 
@@ -45,10 +49,6 @@ SUBSYSTEM_DEF(atoms)
 
 /datum/controller/subsystem/atoms/Initialize()
 	EXPIRY_STAMP(src, init_start_time, CLOCK_WORLD)
-	// Mapload resleeving machines register with the transcore databases (was a SStranscore dependency).
-	boot_world_service(GLOB.transcore_service)
-	// Planets register their floors and walls as turfs initialize (fold wave F4; was SSplanets).
-	boot_world_service(GLOB.planet_service)
 
 	atom_initialized = INITIALIZATION_INNEW_MAPLOAD
 	InitializeAtoms()

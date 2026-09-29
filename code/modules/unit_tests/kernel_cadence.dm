@@ -1,4 +1,4 @@
-/// The cadence vocabulary (code/controllers/kernel/cadence.dm).
+/// The cadence vocabulary on systems: CADENCE_* are the periodic pipelines, periodic_interval overrides.
 
 /datum/system/test_cadence_default
 	abstract_type = /datum/system/test_cadence_default
@@ -16,26 +16,19 @@
 
 /datum/unit_test/kernel_cadence/Run()
 	var/list/expected = list(
-		CADENCE_FAST = 0.2 SECONDS, CADENCE_SECOND = 1 SECONDS, CADENCE_SLOW = 2 SECONDS,
-		CADENCE_LIFE = LIFE_CYCLE, CADENCE_MINUTE = 1 MINUTES,
+		CADENCE_FAST = 2, CADENCE_SECOND = 10, CADENCE_SLOW = 20, CADENCE_MINUTE = 600,
 	)
 	for(var/path in expected)
-		var/datum/cadence/C = cadence(path)
-		TEST_ASSERT_NOTNULL(C, "[path] is a cadence")
-		TEST_ASSERT_EQUAL(C.interval_ds(), expected[path], "[path] interval")
-		TEST_ASSERT_EQUAL(cadence(path), C, "a cadence is a singleton")
-		TEST_ASSERT_EQUAL(C.max_interval_ds(), expected[path] * 4, "[path] may run four intervals late by default")
-	var/datum/cadence/tick = cadence(CADENCE_TICK)
-	TEST_ASSERT_EQUAL(tick.interval_ds(), world.tick_lag, "the tick cadence is one tick")
-	var/datum/cadence/life = cadence(CADENCE_LIFE)
-	TEST_ASSERT_EQUAL(life.clock, CLOCK_BIO, "life counts on the bio clock")
-	TEST_ASSERT_NULL(cadence(/datum/cadence), "the abstract base is not a cadence")
-	TEST_ASSERT_NULL(cadence(/datum/system), "a non-cadence path is refused")
+		var/datum/om/pipeline/periodic/P = path
+		TEST_ASSERT(ispath(path, /datum/om/pipeline/periodic), "[path] is a periodic pipeline")
+		TEST_ASSERT_EQUAL(initial(P.delta), expected[path], "[path] step in deciseconds")
+	var/datum/om/pipeline/periodic/minute/M = CADENCE_MINUTE
+	TEST_ASSERT_EQUAL(initial(M.every), 1 MINUTES, "the minute cadence runs once a minute")
 
 	var/datum/system/plain = new /datum/system/test_cadence_default
-	TEST_ASSERT_EQUAL(plain.step_interval(), 1 SECONDS, "a system runs at its cadence's interval")
+	TEST_ASSERT_EQUAL(plain.step_interval(), 10, "a system runs at its cadence's step")
 	var/datum/system/custom = new /datum/system/test_cadence_override
 	TEST_ASSERT_EQUAL(custom.step_interval(), 7, "periodic_interval overrides the cadence")
 	var/datum/system/reactive = new /datum/system/test_cadence_reactive
-	TEST_ASSERT_NULL(reactive.system_cadence(), "a reactive system has no cadence")
-	TEST_ASSERT_EQUAL(reactive.step_interval(), 0, "and no interval")
+	TEST_ASSERT_EQUAL(reactive.step_interval(), 0, "a reactive system has no interval")
+	TEST_ASSERT_NULL(reactive.periodic_cadence, "and no cadence")

@@ -89,6 +89,13 @@
 	delta = 10
 	stages = list(/datum/om/stage/periodic/second)
 
+/// Every minute: slow housekeeping that has no reason to run more often.
+/datum/om/pipeline/periodic/minute
+	name = "periodic (1 min)"
+	every = 1 MINUTES
+	delta = 600
+	stages = list(/datum/om/stage/periodic/minute)
+
 /// Spreading plants (was SSplants' loop): one growth step every 7.5 s while a vine can grow.
 /datum/om/pipeline/periodic/plants
 	name = "periodic (plants, 7.5 s)"
@@ -175,7 +182,10 @@
 	if(E.periodic_pipe != pipeline)
 		return STAGE_IDLE
 	var/datum/om/pipeline/periodic/P = F.pipeline
-	if(E.periodic_step(P.delta) == PROCESS_KILL && E.periodic_pipe == pipeline)
+	// A yielded step resumes on its own next tick (periodic_step_result()); this frame waits for it.
+	if(om_timer_slot_pending(E, "step_yield"))
+		return
+	if(periodic_step_result(E, E.periodic_step(P.delta), P.delta) && E.periodic_pipe == pipeline)
 		_om_periodic_stop(E)
 	// A step on a should_run() type is a dispatched call (dx_conventions.md §1): its derived procs re-run.
 	if(E.periodic_cadence)
@@ -194,6 +204,9 @@
 
 /datum/om/stage/periodic/fast
 	pipeline = /datum/om/pipeline/periodic/fast
+
+/datum/om/stage/periodic/minute
+	pipeline = /datum/om/pipeline/periodic/minute
 
 /datum/om/stage/periodic/plants
 	pipeline = /datum/om/pipeline/periodic/plants

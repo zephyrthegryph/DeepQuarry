@@ -48,19 +48,6 @@
 /datum/world_service/boots_in_dag()
 	return length(needs) > 0
 
-/// Hand boot (a subsystem that needs a service early): initializes `S` after every service it needs
-/// (depth first; initialized guards cycles).
-/proc/boot_world_service(datum/world_service/S)
-	if(S.initialized)
-		return
-	for(var/datum/world_service/other as anything in world_services())
-		if(other.type in S.needs)
-			boot_world_service(other)
-	var/started = REALTIMEOFDAY
-	S.initialize()
-	S.initialized = TRUE
-	log_world("World service [S.name] initialized in [(REALTIMEOFDAY - started) / 10]s.")
-
 /// MC shutdown hook.
 /proc/shutdown_world_services()
 	for(var/datum/world_service/S as anything in world_services())
@@ -100,7 +87,7 @@
 
 /// Telemetry (kernel/system.dm metrics()): the cost counters the profiler and the stat panel read.
 /datum/world_service/metrics()
-	return alist("name" = name, "total_ms" = total_ms, "steps" = steps, "cost" = cost, "resuming" = resuming, "initialized" = initialized)
+	return alist("name" = name, "members" = length(members), "initialized" = initialized, "total_ms" = total_ms, "steps" = steps, "cost" = cost, "tick_usage" = current_ms, "overran" = resuming)
 
 /// One line for the admin status/profiler readouts (was the subsystem's stat_entry()).
 /datum/world_service/proc/stat_line()

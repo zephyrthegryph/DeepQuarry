@@ -1,4 +1,4 @@
-/// A system: one self-contained part of the game (systems design sec 2.1). Plain DM: configuration is
+/// A system: one self-contained part of the game (doc/rewrite/kernel.md sec 2.1). Plain DM: configuration is
 /// type vars, behaviour is overrides. The kernel registers every non-abstract subtype once; a
 /// /datum/world_service is a system whose singleton the GLOB machinery creates, and it registers itself.
 /datum/system
@@ -14,11 +14,14 @@
 	var/initialized = FALSE
 
 	// ---- time
-	/// The system-level cadence, or null for a purely reactive system.
-	var/periodic_cadence = null
-	/// Deciseconds between periodic steps, overriding the cadence's interval. 0: the cadence's.
-	var/periodic_interval = 0
-	/// LATENCY_L0..L3.
+	// periodic_cadence (a CADENCE_* pipeline) and periodic_interval are /datum vars (capabilities/refresh.dm).
+	/// RUNLEVEL_* bits the periodic step runs in, or 0 for the cadence's own runlevels.
+	var/periodic_runlevels = 0
+	/// The cadence (a CADENCE_* pipeline) for per-member work (member_step), or null for none.
+	var/member_cadence = null
+	/// The driver that steps the members on member_cadence (kernel-owned).
+	var/datum/system_member_driver/member_driver
+	/// The one place a system's latency class lives (LATENCY_L0..L3): what sheds its work under overload.
 	var/latency_class = LATENCY_L1
 
 	// ---- contract
@@ -116,22 +119,122 @@
 
 // ---- time
 
-/// The system-level gate: FALSE parks the system's periodic_step().
-/datum/system/proc/should_run()
-	return TRUE
+// should_run() and periodic_step(dt) are the /datum procs (capabilities/refresh.dm, om/periodic.dm): a
+// system overrides them like any datum on a cadence. periodic_step returns STEP_DONE (stay on the cadence),
+// STEP_YIELD (resume next tick) or STEP_PARK / PROCESS_KILL (leave until wake_periodic()).
 
-/// One system-level step, dt in deciseconds.
-/datum/system/periodic_step(dt)
-	return PROCESS_KILL
+/// A system with a cadence runs while the current runlevel is one it accepts. Override and call ..().
+/datum/system/should_run()
+	return periodic_runlevel_ok()
 
-/// Per-member gate.
+/// TRUE when the current runlevel is in periodic_runlevels (0: the cadence's own gate applies).
+/datum/system/proc/periodic_runlevel_ok()
+	if(!periodic_runlevels || !Master?.current_runlevel)
+		return TRUE
+	return !!(periodic_runlevels & (1 << (Master.current_runlevel - 1)))
+
+/// Puts the system (and its member driver) on its cadence when should_run() holds, and takes it off when
+/// it does not. Call after anything that changes should_run() outside a dispatched call, and to restart a
+/// system that parked itself (STEP_PARK, can_fire, an admin toggle).
+/datum/system/proc/wake_periodic()
+	if(periodic_cadence || periodic_interval)
+		refresh_periodic(src)
+	if(member_cadence)
+		if(!member_driver)
+			member_driver = new /datum/system_member_driver(src)
+		refresh_periodic(member_driver)
+
+/// Takes the system and its member driver off their cadences and drops any yielded resume. wake_periodic()
+/// undoes it.
+/datum/system/proc/park_periodic()
+	om_task_periodic_stop(src)
+	om_cancel_timer_slot(src, "step_yield")
+	if(member_driver)
+		om_task_periodic_stop(member_driver)
+		om_cancel_timer_slot(member_driver, "step_yield")
+
+/// Deciseconds between this system's periodic steps: its own periodic_interval, else its cadence's step
+/// (0 for a purely reactive system).
+/datum/system/proc/step_interval()
+	if(periodic_interval)
+		return periodic_interval
+	if(periodic_cadence)
+		var/datum/om/pipeline/periodic/P = periodic_cadence
+		return initial(P.delta)
+	return 0
+
+/// Per-member gate, asked by the member driver before each member_step().
 /datum/system/proc/member_should_run(atom/A)
 	return TRUE
 
-/// Per-member work.
+/// Per-member work on member_cadence. The result is ignored; a member that should stop being stepped makes
+/// member_should_run() answer FALSE.
 /datum/system/proc/member_step(atom/A, dt)
 	SHOULD_NOT_SLEEP(TRUE)
-	return TRUE
+	return STEP_DONE
+
+/// Steps a system's members on its member_cadence: every member that member_should_run() accepts gets
+/// member_step(), in join order, and a pass that runs out of budget yields and resumes where it stopped. A
+/// member leaving mid-pass (swap-remove) can be skipped once; membership never blocks the pass.
+/datum/system_member_driver
+	var/datum/system/system
+	var/cursor = 1
+
+/datum/system_member_driver/New(datum/system/S)
+	..()
+	system = S
+	periodic_cadence = S.member_cadence
+
+/datum/system_member_driver/should_run()
+	return length(system.members) && system.periodic_runlevel_ok()
+
+/datum/system_member_driver/periodic_step(delta)
+	while(cursor <= length(system.members))
+		var/atom/A = system.members[cursor]
+		cursor++
+		if(!QDELETED(A) && system.member_should_run(A))
+			system.member_step(A, delta)
+		if(TICK_USAGE > Master.current_ticklimit && cursor <= length(system.members))
+			return STEP_YIELD
+	cursor = 1
+	return STEP_DONE
+
+// ---- the step protocol (om/periodic.dm calls these for every periodic step)
+
+// Only systems and their member drivers yield; the slot is declared on those types.
+OWN_TIMER(/datum/system, step_yield)
+OWN_TIMER(/datum/system_member_driver, step_yield)
+
+/// Reads one periodic_step() result. TRUE: the step asked to leave the cadence. A yield schedules its own
+/// resume on the next tick.
+/proc/periodic_step_result(datum/E, result, delta)
+	switch(result)
+		if(PROCESS_KILL, STEP_PARK)
+			return TRUE
+		if(STEP_YIELD)
+			after_slot(E, "step_yield", world.tick_lag, GLOBAL_PROC_REF(periodic_step_resume), E, delta)
+	return FALSE
+
+/// Resumes a yielded step next tick, unless the datum left the cadence meanwhile.
+/proc/periodic_step_resume(datum/E, delta)
+	if(QDELETED(E) || !E.periodic_pipe)
+		return
+	if(periodic_step_result(E, E.periodic_step(delta), delta))
+		_om_periodic_stop(E)
+
+/// Runlevel changed: every started system re-evaluates should_run() (its runlevels may now exclude it).
+/proc/kernel_runlevel_changed()
+	var/list/table = system_table()
+	for(var/path in table)
+		var/datum/system/S = table[path]
+		if(S.initialized && (S.periodic_runlevels || S.member_cadence))
+			S.wake_periodic()
+
+/// Puts every system that has a cadence on it, after boot (the last step of the kernel's members pass).
+/proc/kernel_start_periodic()
+	for(var/datum/system/S as anything in kernel_systems())
+		if(S.periodic_cadence || S.periodic_interval || S.member_cadence)
+			S.wake_periodic()
 
 /// Event table: list(event_type = PROC_REF(handler)).
 /datum/system/proc/events()
@@ -182,4 +285,4 @@
 /// Telemetry for the profiler, the stat panel and time_track: an alist of numbers and short strings.
 /// The only channel other code reads a system's cost through.
 /datum/system/proc/metrics()
-	return alist("name" = name, "members" = length(members), "initialized" = initialized)
+	return alist("name" = name, "members" = length(members), "initialized" = initialized, "cost" = 0, "tick_usage" = 0, "overran" = 0)

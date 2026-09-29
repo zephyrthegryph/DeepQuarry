@@ -30,18 +30,20 @@
 	TEST_ASSERT_EQUAL(L.shed_events, 1, "one shed event")
 
 	// L0-L2 always run; L3 is refused except for the once-a-second floor.
-	L.last_floor_pass = world.time
+	L.floor_pass["k"] = world.time
 	TEST_ASSERT(L.admit(LATENCY_L0) && L.admit(LATENCY_L1) && L.admit(LATENCY_L2), "L0-L2 are never shed")
-	TEST_ASSERT(!L.admit(LATENCY_L3), "L3 is shed under overrun")
+	TEST_ASSERT(!L.admit(LATENCY_L3, "k"), "L3 is shed under overrun")
 	TEST_ASSERT(L.sheds_lane(LANE_PRESENTATION) && L.sheds_lane(LANE_BACKGROUND), "the L3 lanes are shed")
 	TEST_ASSERT(!L.sheds_lane(LANE_SIMULATION) && !L.sheds_lane(LANE_URGENT), "the deadline and defer lanes are not")
 	TEST_ASSERT_EQUAL(L.shed_by_class[LATENCY_L3 + 1], 1, "the refusal is counted against L3")
-	L.last_floor_pass = world.time - KERNEL_SHED_FLOOR
-	TEST_ASSERT(L.admit(LATENCY_L3), "L3 gets its floor pass after a second")
-	TEST_ASSERT(!L.admit(LATENCY_L3), "and only one")
+	L.floor_pass["k"] = world.time - KERNEL_SHED_FLOOR
+	TEST_ASSERT(L.admit(LATENCY_L3, "k"), "L3 gets its floor pass after a second")
+	TEST_ASSERT(!L.admit(LATENCY_L3, "k"), "and only one")
+	TEST_ASSERT(L.admit(LATENCY_L3, "other"), "a different L3 key has its own floor and is not starved by the first")
+	TEST_ASSERT(!L.admit(LATENCY_L3, "other"), "which is also one a second")
 	var/datum/system/test_latency_l3/S = new
-	L.last_floor_pass = world.time
-	TEST_ASSERT(!L.admit(S.latency_class), "a system's class is what gates it")
+	L.floor_pass[S.type] = world.time
+	TEST_ASSERT(!L.admit(S.latency_class, S.type), "a system's class and type are what gate it")
 
 	// Shedding ends after enough calm ticks.
 	for(var/i in 1 to KERNEL_SHED_RECOVER - 1)
@@ -81,7 +83,7 @@
 	var/list/m = Q.metrics()
 	TEST_ASSERT_EQUAL(m["input_dropped"], 3, "metrics report drops")
 	qdel(target)
-	sleep(world.tick_lag * 3)
+	wait_ticks(3)
 	TEST_ASSERT(QDELETED(target), "the target is gone before the drain")
 	var/ran = Q.drain_clicks()
 	TEST_ASSERT_EQUAL(ran, 0, "clicks on a deleted target do not run")

@@ -1,5 +1,5 @@
-/// Latency classes, overrun shedding and the kernel click queue (systems design sec 1.2 phase K, 1.6;
-/// gap_latency_profiling proposal (a)).
+/// Latency classes, overrun shedding and the kernel click queue (doc/rewrite/kernel.md sec 1.2 phase K, 1.6;
+/// see "Latency classes" in the implementation notes at the end of that document).
 ///
 ///   L0 input       runs first every tick, never deferred or shed, capped at KERNEL_INPUT_CAP and measured
 ///   L1 deadline    runs on time or counts as a breach; never shed
@@ -16,8 +16,9 @@
 	var/calm_streak = 0
 	var/shedding = FALSE
 	var/overruns_total = 0
-	/// world.time of the last L3 pass admitted while shedding (the floor).
-	var/last_floor_pass = -1e9
+	/// key (a lane number or a system type) -> world.time of that key's last L3 pass admitted while shedding
+	/// (its floor). One floor per key, so a slow L3 system is not starved by a busy one.
+	var/list/floor_pass = list()
 	/// Per class (index = LATENCY_L0 + 1): times L3 work was refused.
 	var/list/shed_by_class = list(0, 0, 0, 0)
 	var/shed_events = 0
@@ -70,12 +71,12 @@
 			log_world("Kernel: L3 shedding ended after [calm_streak] calm ticks.")
 
 /// TRUE when work of `latency_class` may run this pass. L0-L2 always run. L3 is refused while shedding,
-/// except once per KERNEL_SHED_FLOOR so it never starves and can catch up.
-/datum/kernel_latency/proc/admit(latency_class)
+/// except once per KERNEL_SHED_FLOOR for each `key` (a lane, a system) so none starves and each can catch up.
+/datum/kernel_latency/proc/admit(latency_class, key = "l3")
 	if(latency_class < LATENCY_L3 || !enabled || !shedding)
 		return TRUE
-	if(world.time - last_floor_pass >= KERNEL_SHED_FLOOR)
-		last_floor_pass = world.time
+	if(world.time - (floor_pass[key] || -1e9) >= KERNEL_SHED_FLOOR)
+		floor_pass[key] = world.time
 		return TRUE
 	shed_by_class[latency_class + 1]++
 	return FALSE
@@ -86,10 +87,11 @@
 
 /// Convenience for a scheduler lane.
 /proc/kernel_admit_lane(lane)
-	return kernel_latency().admit(kernel_lane_class(lane))
+	return kernel_latency().admit(kernel_lane_class(lane), lane)
 
+/// TRUE when this system's work may run now: its own latency class, and its own floor when shedding.
 /datum/system/proc/admitted()
-	return kernel_latency().admit(latency_class)
+	return kernel_latency().admit(latency_class, type)
 
 // ---- input
 

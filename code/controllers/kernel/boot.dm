@@ -1,4 +1,4 @@
-/// The boot DAG over mixed nodes (systems design sec 1.5). Nodes are subsystems and systems; a system's
+/// The boot DAG over mixed nodes (doc/rewrite/kernel.md sec 1.5). Nodes are subsystems and systems; a system's
 /// `needs` names other nodes by typepath. Ordering is boot_dependency_order() (boot_dependencies.dm),
 /// which keeps the MC's newest-ready tie-break, so a system that needs subsystem X boots directly after X.
 
@@ -52,3 +52,4 @@
 /proc/kernel_members_ready()
 	for(var/datum/system/S as anything in kernel_systems())
 		S.kernel_members_ready()
+	kernel_start_periodic()

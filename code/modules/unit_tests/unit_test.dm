@@ -497,6 +497,19 @@ REL_LIST(/datum/unit_test, allocated)
 
 	LAZYADD(fail_reasons, list(list(reason, file, line)))
 
+/// Lets `n` server ticks pass. The one place a test sleeps for time (doc/rewrite/kernel.md sec 1.7).
+/datum/unit_test/proc/wait_ticks(n = 1)
+	sleep(world.tick_lag * n)
+
+/// Waits, a tick at a time, until `condition` (a callback) returns true or `timeout_ticks` pass. Returns
+/// whether the condition held.
+/datum/unit_test/proc/run_until(datum/callback/condition, timeout_ticks = 100)
+	for(var/i in 1 to timeout_ticks)
+		if(condition.Invoke())
+			return TRUE
+		sleep(world.tick_lag)
+	return !!condition.Invoke()
+
 /// Allocates an instance of the provided type, and places it somewhere in an available loc
 /// Instances allocated through this proc will be destroyed when the test is over
 /datum/unit_test/proc/allocate(type, ...)

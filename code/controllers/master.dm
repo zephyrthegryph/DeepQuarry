@@ -381,35 +381,44 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 			LAZYOR(dependent.dependencies, subsystem.type)
 		subsystem.dependents = list()
 
-	// Resolves each subsystem's declared dependencies (boot_dependencies.dm).
-	var/list/deps_by_subsystem = list()
-	for(var/datum/controller/subsystem/subsystem as anything in subsystems)
-		var/list/resolved = list()
-		for(var/dependency_type in subsystem.dependencies)
-			if(!ispath(dependency_type, /datum/controller/subsystem))
-				stack_trace("ERROR: MC: subsystem `[subsystem.type]` has an invalid dependency: `[dependency_type]`. Skipping")
-				continue
-			var/datum/controller/subsystem/dependency = type_to_subsystem[dependency_type]
-			if(!dependency)
-				continue
-			// Not a foolproof failsafe, likely to only prevent any immediate issues if this is only triggered once.
-			if(subsystem.init_stage < dependency.init_stage)
-				stack_trace("ERROR: MC: subsystem `[subsystem.type]` has an init_stage before one of its dependencies (Dependency: `[dependency.type]`, [subsystem.init_stage] < [dependency.init_stage])! Setting init_stage to [dependency.init_stage]")
-				subsystem.init_stage = dependency.init_stage
-			dependency.dependents += subsystem
-			resolved += dependency
-		deps_by_subsystem[subsystem] = resolved
-
 	// Systems are nodes of the same DAG (kernel/boot.dm): a system's `needs` name subsystems or systems.
 	var/list/boot_systems = kernel_boot_systems()
 	var/list/type_to_node = type_to_subsystem.Copy()
 	for(var/datum/system/boot_system as anything in boot_systems)
 		type_to_node[boot_system.type] = boot_system
 	boot_errors = list()
-	var/list/deps_by_node = deps_by_subsystem.Copy()
+	var/list/deps_by_node = list()
 	var/list/system_deps = kernel_system_deps(boot_systems, type_to_node, boot_errors)
 	for(var/datum/system/boot_system as anything in system_deps)
 		deps_by_node[boot_system] = system_deps[boot_system]
+
+	// Resolves each subsystem's declared dependencies (boot_dependencies.dm). A dependency is a subsystem or
+	// a system, so a boot a subsystem used to do by hand is a declaration.
+	for(var/datum/controller/subsystem/subsystem as anything in subsystems)
+		var/list/resolved = list()
+		for(var/dependency_type in subsystem.dependencies)
+			if(!ispath(dependency_type, /datum/controller/subsystem) && !ispath(dependency_type, /datum/system))
+				stack_trace("ERROR: MC: subsystem `[subsystem.type]` has an invalid dependency: `[dependency_type]`. Skipping")
+				continue
+			var/datum/dependency = type_to_node[dependency_type]
+			if(!dependency)
+				if(ispath(dependency_type, /datum/system))
+					boot_errors += "[subsystem.type] depends on [dependency_type], which is not a boot node"
+				continue
+			var/dependency_stage
+			var/datum/controller/subsystem/dependency_subsystem = istype(dependency, /datum/controller/subsystem) ? dependency : null
+			if(dependency_subsystem)
+				dependency_stage = dependency_subsystem.init_stage
+			else
+				dependency_stage = kernel_system_stage(dependency, deps_by_node)
+			// Not a foolproof failsafe, likely to only prevent any immediate issues if this is only triggered once.
+			if(subsystem.init_stage < dependency_stage)
+				stack_trace("ERROR: MC: subsystem `[subsystem.type]` has an init_stage before one of its dependencies (Dependency: `[dependency.type]`, [subsystem.init_stage] < [dependency_stage])! Setting init_stage to [dependency_stage]")
+				subsystem.init_stage = dependency_stage
+			if(dependency_subsystem)
+				dependency_subsystem.dependents += subsystem
+			resolved += dependency
+		deps_by_node[subsystem] = resolved
 	for(var/boot_error in boot_errors)
 		stack_trace("ERROR: MC: boot: [boot_error]")
 		log_world("ERROR: MC: boot: [boot_error]")
@@ -604,6 +613,7 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 	if(current_runlevel < 1)
 		current_runlevel = old_runlevel
 		CRASH("Attempted to set invalid runlevel: [new_runlevel]")
+	kernel_runlevel_changed()
 
 // Starts the mc, and sticks around to restart it if the loop ever ends.
 /datum/controller/master/proc/StartProcessing(delay)

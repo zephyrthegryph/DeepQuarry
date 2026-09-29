@@ -100,6 +100,14 @@
 				TEST_ASSERT(ispath(need, /datum/system), "[S.type] needs [need], which is not a system")
 				var/datum/system/dep = system_table()[need]
 				TEST_ASSERT(dep?.initialized, "[S.type] needs [need], which never initialized")
+	// A subsystem may depend on a system: SSatoms declares the two boots it used to do by hand.
+	TEST_ASSERT(/datum/world_service/planets in SSatoms.dependencies, "SSatoms declares the planet service as a dependency")
+	TEST_ASSERT(GLOB.planet_service.initialized && GLOB.transcore_service.initialized, "the services SSatoms depends on booted")
+	for(var/datum/controller/subsystem/dependent as anything in Master.subsystems)
+		for(var/dependency in dependent.dependencies)
+			if(ispath(dependency, /datum/system))
+				var/datum/system/booted = system_table()[dependency]
+				TEST_ASSERT(booted?.initialized, "[dependent.type] depends on [dependency], which never initialized")
 	// The hand roster and the registry agree: every roster service is a registered system.
 	for(var/datum/world_service/W as anything in world_services())
 		TEST_ASSERT_EQUAL(system_table()[W.type], W, "[W.type] is in world_services() but not the registry")

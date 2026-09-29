@@ -463,7 +463,6 @@
 #include "code\controllers\hooks.dm"
 #include "code\controllers\boot_dependencies.dm"
 #include "code\controllers\kernel\boot.dm"
-#include "code\controllers\kernel\cadence.dm"
 #include "code\controllers\kernel\latency.dm"
 #include "code\controllers\kernel\system.dm"
 #include "code\controllers\kernel\waiter.dm"

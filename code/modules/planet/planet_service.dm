@@ -1,4 +1,4 @@
-// The planet world service (fold wave F4; was SSplanets). SSatoms initializes it before the map's
+// The planet world service (fold wave F4; was SSplanets). SSatoms depends on it, so it boots before the map's
 // atoms (turfs register as planet floors and walls in Initialize()). Each planet's clock, weather
 // and sun run on its own PERIODIC_SLOW lane; the lighting and wall temperature changes they queue
 // are applied here by /datum/om/behaviour/world/planets (code/datums/om/world_lanes.dm), every 2 s
@@ -9,6 +9,8 @@ GLOBAL_DATUM_INIT(planet_service, /datum/world_service/planets, new)
 	name = "Planets"
 	lane = /datum/om/behaviour/world/planets
 	on_demand = TRUE
+	// The map's z-levels exist once mapping has run; SSatoms depends on this service.
+	needs = list(/datum/controller/subsystem/mapping)
 
 	var/static/list/planets = list()
 	var/static/list/z_to_planet = list()
