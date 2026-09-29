@@ -354,6 +354,7 @@ GLOBAL_VAR(restart_counter)
 GLOBAL_VAR_INIT(world_topic_spam_protect_ip, "0.0.0.0")
 GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 
+// ALLOW(sys_topic_override): server queries from BYOND world.Export (T is a query string, not an href to a datum); TGS and the status/ping protocol own its shape.
 /world/Topic(T, addr, master, key)
 	TGS_TOPIC
 	log_topic("\"[T]\", from:[addr], master:[master], key:[key]")

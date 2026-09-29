@@ -600,34 +600,30 @@ DECLARE_REF(/atom, "wires", OWNED, null)
 			return
 
 ///Passes Stat Browser Panel clicks to the game and calls client click on an atom
-/atom/Topic(href, list/href_list)
-	. = ..()
-	if(!usr?.client)
+TOPIC_ACTION(/atom, "statpanel_item_click", PROC_REF(topic_statpanel_click), TOPIC_TEXT("statpanel_item_click", 8))
+
+/atom/proc/topic_statpanel_click(mob/user, list/args)
+	if(!user?.client)
 		return
-	var/client/usr_client = usr.client
+	var/list/href_list = args[TOPIC_HREF]
 	var/list/paramslist = list()
-
-	if(href_list["statpanel_item_click"])
-		switch(href_list["statpanel_item_click"])
-			if("left")
-				paramslist["left"] = "1"
-			if("right")
-				paramslist["right"] = "1"
-			if("middle")
-				paramslist["middle"] = "1"
-			else
-				return
-
-		if(href_list["statpanel_item_shiftclick"])
-			paramslist["shift"] = "1"
-		if(href_list["statpanel_item_ctrlclick"])
-			paramslist["ctrl"] = "1"
-		if(href_list["statpanel_item_altclick"])
-			paramslist["alt"] = "1"
-
-		var/mouseparams = list2params(paramslist)
-		usr_client.Click(src, loc, null, mouseparams)
-		return TRUE
+	switch(args["statpanel_item_click"])
+		if("left")
+			paramslist["left"] = "1"
+		if("right")
+			paramslist["right"] = "1"
+		if("middle")
+			paramslist["middle"] = "1"
+		else
+			return
+	if(href_list["statpanel_item_shiftclick"])
+		paramslist["shift"] = "1"
+	if(href_list["statpanel_item_ctrlclick"])
+		paramslist["ctrl"] = "1"
+	if(href_list["statpanel_item_altclick"])
+		paramslist["alt"] = "1"
+	user.client.Click(src, loc, null, list2params(paramslist))
+	return TRUE
 
 GLOBAL_LIST_EMPTY(icon_dimensions)
 

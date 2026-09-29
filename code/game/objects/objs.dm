@@ -85,18 +85,19 @@
 
 	..()
 
-/obj/Topic(href, href_list, datum/tgui_state/state = GLOB.tgui_default_state)
-	if(usr && ..())
-		return 1
+/// The tgui state an href action on this obj is checked against (topic_allowed()).
+/obj/proc/topic_state()
+	return GLOB.tgui_default_state
 
-	// In the far future no checks are made in an overriding Topic() beyond if(..()) return
-	// Instead any such checks are made in CanUseTopic()
-	if(CanUseTopic(usr, state, href_list) == STATUS_INTERACTIVE)
-		CouldUseTopic(usr)
-		return 0
-
-	CouldNotUseTopic(usr)
-	return 1
+// Every href action on an obj needs the user able to interact with it (CanUseTopic()).
+/obj/topic_allowed(mob/user, list/href_list)
+	if(!user)
+		return FALSE
+	if(CanUseTopic(user, topic_state(), href_list) == STATUS_INTERACTIVE)
+		CouldUseTopic(user)
+		return TRUE
+	CouldNotUseTopic(user)
+	return FALSE
 
 /obj/CanUseTopic(mob/user, datum/tgui_state/state = GLOB.tgui_default_state)
 	if(user.CanUseObjTopic(src))
