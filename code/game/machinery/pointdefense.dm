@@ -247,7 +247,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS)) == 0)
 		return
 	// We can shoot
-	if(engaging || ((world.time - last_shot) < charge_cooldown))
+	if(engaging || (ELAPSED(src, last_shot, CLOCK_WORLD) < charge_cooldown))
 		return
 
 	var/obj/machinery/pointdefense_control/PC = get_controller()

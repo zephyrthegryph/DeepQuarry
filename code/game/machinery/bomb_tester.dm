@@ -53,7 +53,7 @@
 	..()
 	if(test_canister() && !Adjacent(test_canister()))
 		test_canister_handle = null
-	if(simulating && world.time >= simulation_started + simulation_delay)
+	if(simulating && ELAPSED(src, simulation_started, CLOCK_WORLD) >= simulation_delay)
 		simulation_finish()
 
 /obj/machinery/bomb_tester/update_icon()

@@ -22,7 +22,7 @@
 	// honor flame-retardant protection (set by firefoam, extinguishers,
 	// fire-resistant tile coatings). Protection lasts FIRE_PROTECTION_DURATION
 	// after apply_fire_protection() was called.
-	if(fire_protection && (world.time - fire_protection < FIRE_PROTECTION_DURATION))
+	if(fire_protection && (ELAPSED(src, fire_protection, CLOCK_WORLD) < FIRE_PROTECTION_DURATION))
 		return
 	//If the air doesn't exist we just return false
 	if(!air)

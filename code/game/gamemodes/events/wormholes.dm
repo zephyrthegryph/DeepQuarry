@@ -51,7 +51,7 @@
 		for(var/I = 1 to number_of_selections)
 
 			//we've run into overtime. End the event
-			if( ends_at < world.time + delay )
+			if( LEFT_UNTIL(world, ends_at, CLOCK_WORLD) < delay )
 				return
 			if( !pick_turfs.len )
 				return

@@ -173,7 +173,7 @@ SUBSYSTEM_DEF(ticker)
 		if(GAME_STATE_FINISHED)
 			post_game_tick()
 
-			if (world.time - last_restart_notify >= 1 MINUTE && !delay_end)
+			if (ELAPSED(src, last_restart_notify, CLOCK_WORLD) >= 1 MINUTE && !delay_end)
 				to_chat(world, span_boldannounce("Restarting in [round(restart_timeleft/600, 1)] minute\s."))
 				last_restart_notify = world.time
 
@@ -483,7 +483,7 @@ SUBSYSTEM_DEF(ticker)
 	to_chat(world, span_boldannounce("Rebooting World in [DisplayTimeText(delay)]. [reason]"))
 
 	var/start_wait = world.time
-	UNTIL(round_end_sound_sent || (world.time - start_wait) > (delay * 2)) //don't wait forever
+	UNTIL(round_end_sound_sent || ELAPSED_SINCE(src, start_wait, CLOCK_WORLD) > (delay * 2)) //don't wait forever
 	reboot_timer = om_after(src, delay - (world.time - start_wait), PROC_REF(reboot_callback), reason, end_string)
 
 /datum/controller/subsystem/ticker/proc/announce_countdown(remaining_time)

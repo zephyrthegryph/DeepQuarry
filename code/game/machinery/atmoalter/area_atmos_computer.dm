@@ -148,7 +148,7 @@
 	var/last_scan = 0
 
 /obj/machinery/computer/area_atmos/tag/scanscrubbers()
-	if(last_scan && world.time - last_scan < 20 SECONDS)
+	if(last_scan && ELAPSED(src, last_scan, CLOCK_WORLD) < 20 SECONDS)
 		return 0
 	else
 		last_scan = world.time

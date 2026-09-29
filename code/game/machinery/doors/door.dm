@@ -116,7 +116,7 @@
 
 /// Runs every deadline that has passed. Called from the door's timer wake.
 /obj/machinery/door/proc/door_deadlines_due()
-	if(close_door_at && world.time >= close_door_at)
+	if(close_door_at && EXPIRY_EXPIRED(src, close_door_at, CLOCK_WORLD))
 		if(density && !operating)
 			close_door_at = 0
 		else if(autoclose)
@@ -173,7 +173,7 @@
 
 	if(ismob(AM))
 		var/mob/M = AM
-		if(world.time - M.last_bumped <= 10)
+		if(ELAPSED(M, last_bumped, CLOCK_WORLD) <= 1 SECOND)
 			return	//Can bump-open one airlock per second. This is to prevent shock spam.
 		M.last_bumped = world.time
 		if(M.restrained() && !check_access(null))

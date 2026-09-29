@@ -73,7 +73,7 @@
 		return PROCESS_KILL
 	if(stat & (NOPOWER|BROKEN))
 		return sleep_until_powered()
-	if(world.time - activation_time >= timer_duration)
+	if(ELAPSED(src, activation_time, CLOCK_WORLD) >= timer_duration)
 		timer_end() // open doors, reset timer, clear status screen
 	update_icon()
 	if(!timing)

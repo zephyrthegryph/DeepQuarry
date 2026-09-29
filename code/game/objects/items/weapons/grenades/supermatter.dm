@@ -25,6 +25,6 @@
 		forceMove(get_turf(src))
 	playsound(src, 'sound/effects/supermatter.ogg', 100)
 	supermatter_pull(src, world.view, STAGE_THREE)
-	if(world.time > implode_at)
+	if(EXPIRY_EXPIRED(src, implode_at, CLOCK_WORLD))
 		explosion(loc, 1, 3, 5, 4)
 		qdel(src)

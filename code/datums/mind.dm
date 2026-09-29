@@ -503,9 +503,9 @@
 		return 0
 
 	if(brigged_since == -1)
-		brigged_since = world.time
+		EXPIRY_STAMP(src, brigged_since, CLOCK_WORLD)
 
-	return (duration <= world.time - brigged_since)
+	return (duration <= ELAPSED(src, brigged_since, CLOCK_WORLD))
 
 /datum/mind/proc/reset()
 	assigned_role =   null

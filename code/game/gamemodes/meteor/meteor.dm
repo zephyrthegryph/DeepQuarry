@@ -11,7 +11,7 @@
 	var/next_wave_at = METEOR_DELAY
 
 /datum/game_mode/meteor/periodic_step()
-	if(world.time >= next_wave_at)
+	if(EXPIRY_EXPIRED(src, next_wave_at, CLOCK_WORLD))
 		next_wave_at = world.time + GLOB.meteor_wave_delay
 		spawn_meteors(6, GLOB.meteors_normal)
 

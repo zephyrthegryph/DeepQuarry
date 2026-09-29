@@ -33,7 +33,7 @@ SUBSYSTEM_DEF(behaviours)
 	var/start = TICK_USAGE
 	last_done = sched.run_pass(Master.current_ticklimit)
 	bench_ms += TICK_USAGE_TO_MS(start)
-	if(world.time >= next_audit && audit_enabled())
+	if(EXPIRY_EXPIRED(src, next_audit, CLOCK_WORLD) && audit_enabled())
 		next_audit = world.time + OM_AUDIT_INTERVAL
 		om_pipeline_audit(sched, OM_AUDIT_PARKED_SAMPLE, OM_AUDIT_AWAKE_SAMPLE)
 		om_sleeper_audit(64, TRUE)

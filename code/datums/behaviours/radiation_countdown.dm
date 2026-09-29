@@ -33,7 +33,7 @@
 	rad_countdown_minimum = min(rad_countdown_minimum, pulse_information.minimum_exposure_time)
 	om_after_replace(src, TIME_UNTIL_DELETION, TYPE_PROC_REF(/mob/living, radiation_countdown_clear))
 	// Played with fire, now you might be getting irradiated.
-	if (world.time - rad_countdown_started >= rad_countdown_minimum)
+	if (ELAPSED(src, rad_countdown_started, CLOCK_WORLD) >= rad_countdown_minimum)
 		return SKIP_MINIMUM_EXPOSURE_TIME_CHECK
 	return CANCEL_IRRADIATION
 

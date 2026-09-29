@@ -10,7 +10,7 @@
 		return
 	if(!isMotion())
 		return
-	if(detectTime > 0 && world.time - detectTime > alarm_delay)
+	if(detectTime > 0 && ELAPSED(src, detectTime, CLOCK_WORLD) > alarm_delay)
 		triggerAlarm()
 
 /obj/machinery/camera/proc/newTarget(mob/target)

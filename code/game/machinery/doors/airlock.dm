@@ -159,15 +159,15 @@
 /obj/machinery/door/airlock/door_deadlines_due()
 	if(close_door_at && !density && !operating && (locked || welded || !arePowerSystemsOn() || wires.is_cut(WIRE_OPEN_DOOR)))
 		close_door_at = 0
-	if(main_power_lost_until > 0 && world.time >= main_power_lost_until)
+	if(main_power_lost_until > 0 && EXPIRY_EXPIRED(src, main_power_lost_until, CLOCK_WORLD))
 		regainMainPower()
 		if(main_power_lost_until > 0) // Cables cut since: lost until mended (mending calls regainMainPower()).
 			main_power_lost_until = -1
-	if(backup_power_lost_until > 0 && world.time >= backup_power_lost_until)
+	if(backup_power_lost_until > 0 && EXPIRY_EXPIRED(src, backup_power_lost_until, CLOCK_WORLD))
 		regainBackupPower()
 		if(backup_power_lost_until > 0)
 			backup_power_lost_until = -1
-	else if(electrified_until > 0 && world.time >= electrified_until)
+	else if(electrified_until > 0 && EXPIRY_EXPIRED(src, electrified_until, CLOCK_WORLD))
 		electrify(0)
 	return ..()
 

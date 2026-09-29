@@ -81,7 +81,7 @@ DECLARE_REF(/obj/effect/anomaly, "stats", OWNED, null)
 /obj/effect/anomaly/proc/anomalyPulse()
 	if(!stats)
 		return FALSE
-	if(world.time < stats.next_activation)
+	if(EXPIRY_ACTIVE(stats, next_activation, CLOCK_WORLD))
 		return FALSE
 
 	stats.pulse_effect()

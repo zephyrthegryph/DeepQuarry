@@ -79,7 +79,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 		return
 	if(!(target in view(user, world.view)))
 		return
-	if(!(world.time - last_used_time >= cooldown))
+	if(!(ELAPSED(src, last_used_time, CLOCK_WORLD) >= cooldown))
 		return
 	if (!diode)
 		to_chat(user, span_notice("You point [src] at [target], but nothing happens!"))

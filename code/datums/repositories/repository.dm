@@ -16,4 +16,4 @@
 	timestamp += valid_duration
 
 /datum/cache_entry/valid_until/is_valid()
-	return world.time < timestamp
+	return EXPIRY_ACTIVE(src, timestamp, CLOCK_WORLD)

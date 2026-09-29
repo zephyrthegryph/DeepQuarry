@@ -83,7 +83,7 @@
 	if(record && record[LEDGER_E_SLOT] == CONTAINER_SLOT_STOCK)
 		return FALSE
 	var/delay = A.loc.latent_idle_delay
-	if(world.time < A.latent_touched_at + delay)
+	if(ELAPSED(A, latent_touched_at, CLOCK_WORLD) < delay)
 		return FALSE
 	return TRUE
 

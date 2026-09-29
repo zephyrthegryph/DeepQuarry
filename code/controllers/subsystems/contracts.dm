@@ -213,7 +213,7 @@ SUBSYSTEM_DEF(contracts)
 	var/ended_at = custody_last_ended_at_by_subject[identity.id] || 0
 	var/turf/current_location = get_turf(subject)
 	var/released_alive_outside_brig = subject.stat != DEAD && !istype(current_location?.loc, /area/security/brig)
-	var/recently_released = released_alive_outside_brig && ended_at && world.time - ended_at <= 2 MINUTES
+	var/recently_released = released_alive_outside_brig && ended_at && ELAPSED_SINCE(src, ended_at, CLOCK_WORLD) <= 2 MINUTES
 	return list(
 		"verified" = !!started_at || recently_released,
 		"active" = !!started_at,
@@ -645,14 +645,14 @@ SUBSYSTEM_DEF(contracts)
 		"negotiation_clauses" = negotiation_rows(contract),
 		"deadline" = contract.deadline,
 		"offer_expires_at" = contract.offer_expires_at,
-		"offer_time_remaining" = contract.offer_expires_at > world.time ? DisplayTimeText(contract.offer_expires_at - world.time, 1) : null,
+		"offer_time_remaining" = EXPIRY_ACTIVE(contract, offer_expires_at, CLOCK_WORLD) ? DisplayTimeText(EXPIRY_LEFT(contract, offer_expires_at, CLOCK_WORLD), 1) : null,
 		"accepted_at" = contract.accepted_at,
-		"deadline_remaining" = contract.deadline > world.time ? DisplayTimeText(contract.deadline - world.time, 1) : null,
+		"deadline_remaining" = EXPIRY_ACTIVE(contract, deadline, CLOCK_WORLD) ? DisplayTimeText(EXPIRY_LEFT(contract, deadline, CLOCK_WORLD), 1) : null,
 		"can_accept" = can_accept && contract.state == CONTRACT_OFFERED,
 		"can_decline" = can_accept && contract.state == CONTRACT_OFFERED,
 		"offer_kind" = contract.offer_kind,
 		"closure_code" = contract.closure_code,
-		"grace_time_remaining" = contract.grace_until > world.time ? DisplayTimeText(contract.grace_until - world.time, 1) : null,
+		"grace_time_remaining" = EXPIRY_ACTIVE(contract, grace_until, CLOCK_WORLD) ? DisplayTimeText(EXPIRY_LEFT(contract, grace_until, CLOCK_WORLD), 1) : null,
 		"requirements" = requirement_rows(contract),
 		"contributor_count" = length(contract.contributions),
 	)

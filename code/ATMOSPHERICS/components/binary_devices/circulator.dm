@@ -73,7 +73,7 @@
 	return last_stored_energy_transferred
 
 /obj/machinery/atmospherics/binary/circulator/proc/expire_transfer_display()
-	if(!recent_moles_transferred || last_worldtime_transfer > world.time - 50)
+	if(!recent_moles_transferred || ELAPSED(src, last_worldtime_transfer, CLOCK_WORLD) < 5 SECONDS)
 		return
 	recent_moles_transferred = 0
 	update_icon()

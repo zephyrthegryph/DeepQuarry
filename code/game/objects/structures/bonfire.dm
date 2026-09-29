@@ -259,7 +259,7 @@
 	if(!check_oxygen())
 		extinguish()
 		return
-	if(world.time >= next_fuel_consumption)
+	if(EXPIRY_EXPIRED(src, next_fuel_consumption, CLOCK_WORLD))
 		if(!consume_fuel(pop(contents)))
 			extinguish()
 			return
@@ -464,7 +464,7 @@
 	if(!check_oxygen())
 		extinguish()
 		return
-	if(world.time >= next_fuel_consumption)
+	if(EXPIRY_EXPIRED(src, next_fuel_consumption, CLOCK_WORLD))
 		if(!consume_fuel(pop(contents)))
 			extinguish()
 			return

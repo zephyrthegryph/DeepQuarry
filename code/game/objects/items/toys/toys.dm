@@ -866,7 +866,7 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 	if(stored_item && opened && !om_busy(src))
 		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user), claims = TRUE)
 
-	if(world.time - last_message <= 1 SECOND)
+	if(ELAPSED(src, last_message, CLOCK_WORLD) <= 1 SECOND)
 		return
 	if(interaction.stance == I_HELP)
 		user.visible_message(span_notice(span_bold("\The [user]") + " hugs [src]!"),span_notice("You hug [src]!"))

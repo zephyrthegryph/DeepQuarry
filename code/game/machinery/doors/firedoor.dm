@@ -134,7 +134,7 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 		var/obj/mecha/mecha = AM
 		if(mecha?.slot_item(MECHA_SLOT_PILOT))
 			var/mob/M = mecha?.slot_item(MECHA_SLOT_PILOT)
-			if(world.time - M.last_bumped <= 10) return //Can bump-open one airlock per second. This is to prevent popup message spam.
+			if(ELAPSED(M, last_bumped, CLOCK_WORLD) <= 1 SECOND) return //Can bump-open one airlock per second. This is to prevent popup message spam.
 			M.last_bumped = world.time
 			attack_hand(M)
 	return 0

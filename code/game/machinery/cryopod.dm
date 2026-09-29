@@ -354,7 +354,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 			go_out(TRUE)
 			return
 		//Allow a ten minute gap between entering the pod and actually despawning.
-		if(world.time - time_entered < time_till_despawn)
+		if(ELAPSED(src, time_entered, CLOCK_WORLD) < time_till_despawn)
 			return
 
 		if(!occupant.client && occupant.stat<2) //Occupant is living and has no client.

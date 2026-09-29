@@ -71,14 +71,14 @@
 	if(pathfinding_blocked < 10)
 		while(pathfinding_mutex)
 			stoplag(1) // ALLOW(scheduler): mutex held across the search's CHECK_TICK yields
-			if(world.time > started_at + PATHFINDER_TIMEOUT)
+			if(ELAPSED_SINCE(src, started_at, CLOCK_WORLD) > PATHFINDER_TIMEOUT)
 				stack_trace("pathfinder timeout; check debug logs.")
 				log_runtime("pathfinder timeout of instance with debug variables [instance.debug_log_string()]")
 				return
 	else
 		while(pathfinding_mutex)
 			stoplag(3) // ALLOW(scheduler): mutex held across the search's CHECK_TICK yields
-			if(world.time > started_at + PATHFINDER_TIMEOUT)
+			if(ELAPSED_SINCE(src, started_at, CLOCK_WORLD) > PATHFINDER_TIMEOUT)
 				stack_trace("pathfinder timeout; check debug logs.")
 				log_runtime("pathfinder timeout of instance with debug variables [instance.debug_log_string()]")
 				return
@@ -88,13 +88,13 @@
 	if(failure_key)
 		var/list/failure = LAZYACCESS(failed_searches, failure_key)
 		if(failure)
-			if(failure[1] == navigation_revision && world.time - failure[2] < PATHFINDER_FAILURE_TTL)
+			if(failure[1] == navigation_revision && ELAPSED_SINCE(src, failure[2], CLOCK_WORLD) < PATHFINDER_FAILURE_TTL)
 				failure_cache_hits++
 				return null
 			LAZYREMOVE(failed_searches, failure_key)
 	pathfinding_mutex = TRUE
 	. = instance.search()
-	if(world.time > started_at + PATHFINDER_TIMEOUT)
+	if(ELAPSED_SINCE(src, started_at, CLOCK_WORLD) > PATHFINDER_TIMEOUT)
 		stack_trace("pathfinder timeout; check debug logs.")
 		log_runtime("pathfinder timeout of instance with debug variables [instance.debug_log_string()]")
 	pathfinding_mutex = FALSE

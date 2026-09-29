@@ -317,7 +317,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 /// We get 3 attempts to pick a suitable name, within five minutes; a cancel keeps the old one.
 /mob/proc/rename_self_entered(datum/om/prompt/text/rename_self/P)
 	var/role = P.role
-	if((world.time - P.started_at) > 5 MINUTES)
+	if(ELAPSED(P, started_at, CLOCK_WORLD) > 5 MINUTES)
 		return	//took too long
 	var/newname = sanitizeName(P.text, , P.allow_numbers)	//returns null if the name doesn't meet some basic requirements. Tidies up a few other things like bad-characters.
 	for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))

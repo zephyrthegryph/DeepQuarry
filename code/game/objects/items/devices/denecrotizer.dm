@@ -142,7 +142,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	if(!istype(target))
 		to_chat(user, span_notice("[target] seems to be too complicated for [src] to interface with."))
 		return FALSE
-	if(!(world.time - last_used > cooldown))
+	if(!(ELAPSED(src, last_used, CLOCK_WORLD) > cooldown))
 		to_chat(user, span_notice("[src] doesn't seem to be ready yet."))
 		return FALSE
 	if(!charges)

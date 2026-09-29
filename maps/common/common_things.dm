@@ -65,7 +65,7 @@
 	var/last_sound = 0
 
 /obj/effect/step_trigger/lost_in_space/bluespace/Trigger(A)
-	if(world.time - last_sound > 5 SECONDS)
+	if(ELAPSED(src, last_sound, CLOCK_WORLD) > 5 SECONDS)
 		last_sound = world.time
 		playsound(src, 'sound/effects/supermatter.ogg', 75, 1)
 	if(ismob(A) && prob(5))//lucky day

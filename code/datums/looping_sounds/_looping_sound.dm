@@ -148,7 +148,7 @@
 		return
 	if(isnull(loop_started_at))
 		loop_started_at = world.time
-	if(max_loops && world.time >= loop_started_at + mid_length * max_loops)
+	if(max_loops && ELAPSED(src, loop_started_at, CLOCK_WORLD) >= mid_length * max_loops)
 		stop()
 		return
 	if(!direct && !has_listener())

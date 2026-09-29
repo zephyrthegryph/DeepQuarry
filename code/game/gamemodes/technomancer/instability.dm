@@ -60,7 +60,7 @@
 	self.last_instability = self.instability
 
 	//This should cushon against really bad luck.
-	if(self.instability && self.last_instability_event < (world.time - 5 SECONDS) && prob(50))
+	if(self.instability && ELAPSED(self, last_instability_event, CLOCK_WORLD) > 5 SECONDS && prob(50))
 		self.instability_effects()
 
 	var/instability_decayed = abs( round(self.instability * TECHNOMANCER_INSTABILITY_DECAY, TECHNOMANCER_INSTABILITY_PRECISION) - self.instability )
