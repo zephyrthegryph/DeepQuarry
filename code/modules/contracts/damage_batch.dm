@@ -78,13 +78,13 @@
 	report.integrity = source.get_integrity()
 
 /datum/controller/subsystem/contracts/proc/flush_damage_reports()
-	var/list/reports = pending_damage_reports
-	own_take_all(src, "pending_damage_reports")
+	// own_take_all() empties the owned list in place and hands back its values (the reports),
+	// so iterate what it returns, not the var.
+	var/list/reports = own_take_all(src, "pending_damage_reports")
 	// Publishing here must not re-queue: the batch is closed by now, but keep
 	// the broker batched so every window is evaluated once for all reports.
 	contract_batch_depth++
-	for(var/key in reports)
-		var/datum/contract_damage_report/report = reports[key]
+	for(var/datum/contract_damage_report/report as anything in reports)
 		publish_damage_report(report)
 		qdel(report)
 	contract_batch_depth--

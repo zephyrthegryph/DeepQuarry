@@ -26,8 +26,10 @@
 	// deliberately no `members = null`
 	..()
 
+/// Its back reference is a plain list the framework doesn't track: a relation view would be
+/// cleared when the holder dies (ownership.md 4.1), which is exactly the fix for this bug.
 /datum/dq_diag_leaked
-	var/tmp/datum/dq_diag_leaker/holder
+	var/tmp/list/holders
 
 /datum/dq_diag_clean
 	var/tmp/datum/dq_diag_leaked/other
@@ -104,7 +106,7 @@
 
 	var/datum/dq_diag_leaker/leaker = new
 	var/datum/dq_diag_leaked/leaked = new
-	rel_set(leaked, "holder", leaker)
+	leaked.holders = list(leaker)
 	leaker.members = list(leaked)
 	qdel(leaker)
 
@@ -120,12 +122,12 @@
 
 	// Break the cycle by hand so the fixtures themselves collect.
 	leaker.members = null
-	rel_clear(leaked, "holder")
+	leaked.holders = null
 	rel_clear(clean, "other")
 	qdel(bystander)
 
 	TEST_ASSERT(dq_diag_capture_has(capture, "LIFECYCLE LEAK: /datum/dq_diag_leaker.members still holds a list with deleted /datum/dq_diag_leaked"), "the leaker's list was reported: [json_encode(capture)]")
-	TEST_ASSERT(dq_diag_capture_has(capture, "LIFECYCLE LEAK: /datum/dq_diag_leaked.holder still holds deleted /datum/dq_diag_leaker"), "the member's back reference was reported: [json_encode(capture)]")
+	TEST_ASSERT(dq_diag_capture_has(capture, "LIFECYCLE LEAK: /datum/dq_diag_leaked.holders still holds a list with deleted /datum/dq_diag_leaker"), "the member's back reference was reported: [json_encode(capture)]")
 	TEST_ASSERT(!dq_diag_capture_has(capture, "/datum/dq_diag_clean"), "a clean object is not reported: [json_encode(capture)]")
 	TEST_ASSERT(length(gc_lines), "the GC report's line source finds the leak on the live deleted object")
 

@@ -338,7 +338,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 
 /obj/machinery/gear_dispenser/suit_fancy/Initialize(mapload)
 	. = ..()
-	own_set(src, "door", add_vis_overlay("closed", layer = 4, unique = TRUE))
+	rel_set(src, "door", add_vis_overlay("closed", layer = 4, unique = TRUE)) // the vis overlay service owns it
 	icon_state = "suit_storage"
 	if(special_frame)
 		add_overlay(special_frame)

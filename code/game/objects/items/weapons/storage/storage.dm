@@ -763,9 +763,11 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	// A shown item is pinned for as long as it's on someone's screen (C10):
 	// materializing it to show it is one thing, but it must not then be
 	// collapsed back out from under a viewer between layout passes.
-	for(var/obj/item/I as anything in shown - items)
+	// `shown` is a relation list view: null until the first item is linked (and after rel_clear).
+	var/list/was_shown = shown ? shown.Copy() : list()
+	for(var/obj/item/I as anything in was_shown - items)
 		I.latent_unpin(src)
-	for(var/obj/item/I as anything in items - shown)
+	for(var/obj/item/I as anything in items - was_shown)
 		I.latent_pin(src)
 	rel_clear(src, "shown")
 	for(var/obj/item/I as anything in items)

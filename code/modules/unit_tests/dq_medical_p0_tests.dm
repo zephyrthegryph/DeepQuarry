@@ -116,11 +116,9 @@
 	var/datum/surgical_step/step = surgical_step(/datum/surgical_step/treat/organ/suture)
 	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
 	LAZYADD(H.surgery_zones_in_progress, BP_L_ARM)
-	arm.droplimb(clean = TRUE, disintegrate = DROPLIMB_EDGE)
-	qdel(arm) // the work target is gone by the time the interruption lands
-	var/list/current = H.get_afflictions()
-	var/list/before = current.Copy()
 	// The continuation takes its om task (run_surgical_step() runs it through om_task_start()).
+	// It links its target while the step runs; the target dying mid-step clears those views
+	// (a link to a dying entity is refused, so the task is built before the arm goes).
 	var/datum/om/task/timed/surgical_step/task = new
 	rel_set(task, "actor", surgeon)
 	rel_set(task, "target", H)
@@ -132,6 +130,12 @@
 	rel_set(task, "part", arm)
 	rel_set(task, "work_target", arm)
 	task.chance = 0
+	arm.droplimb(clean = TRUE, disintegrate = DROPLIMB_EDGE)
+	qdel(arm) // the work target is gone by the time the interruption lands
+	TEST_ASSERT_NULL(task.part, "the task's view of the destroyed limb was cleared")
+	TEST_ASSERT_NULL(task.work_target, "the task's view of the destroyed work target was cleared")
+	var/list/current = H.get_afflictions()
+	var/list/before = current.Copy()
 	H.surgical_step_interrupted(task)
 	TEST_ASSERT(!(BP_L_ARM in H.surgery_zones_in_progress), "the zone lock is released on interruption")
 	for(var/datum/affliction/A as anything in H.get_afflictions())

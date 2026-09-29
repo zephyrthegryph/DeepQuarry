@@ -132,7 +132,7 @@ OWN(/obj/item/organ/external, tourniquet, OWN_DELETE)
 	if(tourniquet || !istype(T))
 		return FALSE
 	T.forceMove(src)
-	own_set(src, "tourniquet", T)
+	own_move(T, src, "tourniquet") // from whatever holds it now (a kit, a scenario, a hand)
 	EXPIRY_STAMP(T, applied_at, CLOCK_WORLD)
 	afflict_ischemia_below()
 	update_damages()

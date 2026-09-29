@@ -214,11 +214,19 @@
 	blockers = box.state_collapse_blockers(1)
 	TEST_ASSERT_EQUAL(length(blockers), 0, "a box of paper with no outside references should collapse: [jointext(blockers, "; ")]")
 
+	// A relation view naming the box is accounted for: collapse parks it under the box's handle
+	// slot and it re-links on materialize (ownership.md 4.4), so it does not block.
 	var/datum/dq_state_holder/holder = new
 	rel_set(holder, "held", box)
 	blockers = box.state_collapse_blockers(1)
-	TEST_ASSERT(length(blockers) == 1 && findtext(blockers[1], "outside"), "an outside var holding the box should block collapse: [jointext(blockers, "; ")]")
+	TEST_ASSERT_EQUAL(length(blockers), 0, "a relation view naming the box should not block collapse: [jointext(blockers, "; ")]")
 	qdel(holder)
+
+	// A reference the framework doesn't know about (a list the box was put in by hand) does.
+	var/list/outside = list(box)
+	blockers = box.state_collapse_blockers(1)
+	TEST_ASSERT(length(blockers) == 1 && findtext(blockers[1], "outside"), "an outside reference holding the box should block collapse: [jointext(blockers, "; ")]")
+	outside.Cut()
 	blockers = box.state_collapse_blockers(1)
 	TEST_ASSERT_EQUAL(length(blockers), 0, "releasing the outside reference should unblock: [jointext(blockers, "; ")]")
 

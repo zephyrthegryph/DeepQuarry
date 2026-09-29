@@ -310,7 +310,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 			own_dispose(holder, var_name, value, entry, policy)
 		return
 	var/list/L = value
-	var/list/copy = L.Copy()
+	var/list/copy = var_name == "contents" ? own_contents_members(holder) : L.Copy()
 	if(var_name != "contents") // built in: its members leave by moving, never by a cut
 		L.Cut() // emptied in place, not nulled (see own_take_all)
 		own_field_changed(holder, var_name)
@@ -325,6 +325,8 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 
 /// Every value holder.var_name owns (one, members, or assoc values), as a new list.
 /proc/own_values(datum/holder, var_name)
+	if(var_name == "contents")
+		return own_contents_members(holder)
 	. = list()
 	var/value = holder.vars[var_name]
 	if(isdatum(value))
@@ -342,6 +344,21 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 				var/datum/child = L[key]
 				if(isdatum(child))
 					. += child
+
+/// What an `OWN(..., contents, ...)` declaration owns: the holder's contents, less the movables
+/// another owned var of the holder names (an attached accessory, a suit's hood): those are
+/// disposed of by their own var's policy, not spilled with the rest. `contents` is a built-in
+/// list with no associated values (indexing it by an object is a "bad index" runtime), so it is
+/// only ever walked by member.
+/proc/own_contents_members(atom/holder)
+	. = list()
+	if(!isatom(holder))
+		return
+	var/holder_ref = ref(holder)
+	for(var/atom/movable/thing as anything in holder.contents)
+		if(thing.own_holder_ref == holder_ref && thing.own_slot && thing.own_slot != "contents")
+			continue
+		. += thing
 
 // ---------------------------------------------------------------- lifecycle
 

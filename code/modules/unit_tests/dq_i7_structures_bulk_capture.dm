@@ -280,7 +280,7 @@
 		"/obj/structure/largecrate|robot|none => largecrate_hand|",
 		"/obj/structure/largecrate|ai|none => |",
 		"/obj/structure/largecrate|ghost|none => |",
-		"/obj/structure/lattice|deleted in Initialize()",
+		"/obj/structure/lattice => deleted itself on creation",
 		"/obj/structure/loot_pile|human|none => loot_pile_search|",
 		"/obj/structure/loot_pile|robot|none => loot_pile_search|",
 		"/obj/structure/loot_pile|ai|none => |",
