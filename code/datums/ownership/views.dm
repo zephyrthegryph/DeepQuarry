@@ -171,11 +171,14 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 
 /// Removes `target` from source.var_name (list view), or clears a single view naming it.
 /proc/rel_remove(datum/source, var_name, datum/target)
-	var/list/entry = _rel_entry(source, var_name)
-	if(!entry || !target)
+	if(!target)
 		return FALSE
 	var/value = source.vars[var_name]
 	if(islist(value) ? !(target in value) : value != target)
+		return FALSE
+	// Learn the shape from the value (a remove before any add must not fix a list view as single).
+	var/list/entry = _rel_entry(source, var_name, islist(value))
+	if(!entry)
 		return FALSE
 	_rel_detach(source, var_name, target, entry)
 	return TRUE
