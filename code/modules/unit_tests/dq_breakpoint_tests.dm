@@ -31,7 +31,7 @@
 /datum/unit_test/dq_breakpoint_rules_declared
 
 /datum/unit_test/dq_breakpoint_rules_declared/Run()
-	var/list/rules = dq_rules()
+	var/list/rules = GLOBAL_TABLE_GET(dq_rules)
 	var/datum/rule/breaks = rules[/datum/rule/integrity_breaks]
 	var/datum/rule/destroyed = rules[/datum/rule/integrity_destroyed]
 	TEST_ASSERT(breaks, "the breaking-point rule is registered")

@@ -1339,7 +1339,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 
 /// Asks for a type (typed filter, then a pick from the matches) inside a prompt flow
 /// (flow_ask()): null until answered. `key` keeps its answers apart.
-/proc/pick_closest_path(value, list/matches = get_fancy_list_of_atom_types(), key = "path")
+/proc/pick_closest_path(value, list/matches = GLOBAL_TABLE_GET(get_fancy_list_of_atom_types), key = "path")
 	if (value == FALSE) //nothing should be calling us with a number, so this is safe
 		value = flow_ask(usr, "[key]:filter", /datum/om/prompt/text, message = "Enter type to find (blank for all, cancel to cancel)", title = "Search for type")
 		if (isnull(value))
@@ -1361,16 +1361,18 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 	chosen = matches[chosen]
 	return chosen
 
-/proc/get_fancy_list_of_atom_types()
-	var/static/list/pre_generated_list
-	if (!pre_generated_list) //init
-		pre_generated_list = make_types_fancy(typesof(/atom))
+GLOBAL_TABLE(get_fancy_list_of_atom_types, GLOBAL_PROC_REF(build_get_fancy_list_of_atom_types))
+
+/proc/build_get_fancy_list_of_atom_types()
+	var/list/pre_generated_list
+	pre_generated_list = make_types_fancy(typesof(/atom))
 	return pre_generated_list
 
-/proc/get_fancy_list_of_datum_types()
-	var/static/list/pre_generated_list
-	if (!pre_generated_list) //init
-		pre_generated_list = make_types_fancy(sortList(typesof(/datum) - typesof(/atom)))
+GLOBAL_TABLE(get_fancy_list_of_datum_types, GLOBAL_PROC_REF(build_get_fancy_list_of_datum_types))
+
+/proc/build_get_fancy_list_of_datum_types()
+	var/list/pre_generated_list
+	pre_generated_list = make_types_fancy(sortList(typesof(/datum) - typesof(/atom)))
 	return pre_generated_list
 
 /proc/filter_fancy_list(list/L, filter as text)

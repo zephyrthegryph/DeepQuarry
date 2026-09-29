@@ -67,7 +67,7 @@
 	var/static/list/found
 	if(!found)
 		found = list()
-		var/list/rules = dq_rules()
+		var/list/rules = GLOBAL_TABLE_GET(dq_rules)
 		for(var/path in subtypesof(/datum/rule/damage_flavour))
 			if(rules[path])
 				found += rules[path]

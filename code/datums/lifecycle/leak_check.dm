@@ -32,17 +32,15 @@ GLOBAL_VAR_INIT(dq_lifecycle_leak_check, 0)
 
 /// Var names never checked: BYOND built-ins and the framework's own
 /// bookkeeping (cleared or read by qdel/SSgarbage themselves).
-/proc/dq_lifecycle_leak_ignored_names()
-	var/static/list/names = list(
-		"type" = TRUE, "parent_type" = TRUE, "vars" = TRUE, "tag" = TRUE,
-		"gc_destroyed" = TRUE, "datum_flags" = TRUE, "weak_reference" = TRUE,
-		// atom / movable / mob / client built-ins
-		"loc" = TRUE, "locs" = TRUE, "contents" = TRUE, "overlays" = TRUE, "underlays" = TRUE,
-		"verbs" = TRUE, "vis_contents" = TRUE, "vis_locs" = TRUE, "filters" = TRUE,
-		"appearance" = TRUE, "icon" = TRUE, "screen_loc" = TRUE, "x" = TRUE, "y" = TRUE, "z" = TRUE,
-		"client" = TRUE, "group" = TRUE, "areas" = TRUE, "particles" = TRUE, "render_source" = TRUE,
-	)
-	return names
+GLOBAL_LIST_INIT(lifecycle_leak_ignored_names, list(
+	"type" = TRUE, "parent_type" = TRUE, "vars" = TRUE, "tag" = TRUE,
+	"gc_destroyed" = TRUE, "datum_flags" = TRUE, "weak_reference" = TRUE,
+	// atom / movable / mob / client built-ins
+	"loc" = TRUE, "locs" = TRUE, "contents" = TRUE, "overlays" = TRUE, "underlays" = TRUE,
+	"verbs" = TRUE, "vis_contents" = TRUE, "vis_locs" = TRUE, "filters" = TRUE,
+	"appearance" = TRUE, "icon" = TRUE, "screen_loc" = TRUE, "x" = TRUE, "y" = TRUE, "z" = TRUE,
+	"client" = TRUE, "group" = TRUE, "areas" = TRUE, "particles" = TRUE, "render_source" = TRUE,
+))
 
 /// Per type: the names of D's vars worth looking at (not ignored, not
 /// DECLARE_REF(..., KEEP)), and which of them are tmp (issaved() is FALSE for tmp, const,
@@ -53,7 +51,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_leak_check, 0)
 DECLARE_SHARED_CACHE(lifecycle_leak_candidates, GLOBAL_PROC_REF(build_lifecycle_leak_candidates), SC_NEVER)
 
 /proc/build_lifecycle_leak_candidates(datum/D)
-	var/list/ignored = dq_lifecycle_leak_ignored_names()
+	var/list/ignored = GLOB.lifecycle_leak_ignored_names
 	var/list/links = dq_lifecycle_link_table(D)
 	var/list/keep = links[REFKIND_KEEP]
 	var/list/static_names = links[REFKIND_STATIC]

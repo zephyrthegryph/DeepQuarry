@@ -9,20 +9,3 @@ GLOBAL_LIST_INIT(reagent_addictive_standard,list(REAGENT_ID_AMBROSIAEXTRACT,REAG
 GLOBAL_LIST_INIT(reagent_addictive_slow,list(REAGENT_ID_TRAMADOL,REAGENT_ID_OXYCODONE,REAGENT_ID_TRICORDRAZINE,REAGENT_ID_ASUSTENANCE,REAGENT_ID_ETHANOL,REAGENT_ID_NICOTINE,REAGENT_ID_COFFEE))
 GLOBAL_LIST_INIT(reagent_addictive_fast,list(REAGENT_ID_HYPERZINE,REAGENT_ID_BLISS))
 GLOBAL_LIST_INIT(reagent_addictive_poison,list())
-
-/proc/get_addictive_reagents(addict_type)
-	RETURN_TYPE(/list)
-	switch(addict_type)
-		if(ADDICT_NORMAL)
-			return GLOB.reagent_addictive_standard // Most reagents go here
-		if(ADDICT_SLOW)
-			return GLOB.reagent_addictive_slow	// Booze, Cigs
-		if(ADDICT_FAST)
-			return GLOB.reagent_addictive_fast	// Bliss, hyperzine, hardcore drugs
-		if(ADDICT_POISON)
-			return GLOB.reagent_addictive_poison // Poisons that use handle_addiction() for unique longterm poisoning
-	// The union is built once (the tables are constant) instead of per call.
-	var/static/list/all_addictive
-	if(!all_addictive)
-		all_addictive = GLOB.reagent_addictive_standard + GLOB.reagent_addictive_fast + GLOB.reagent_addictive_slow + GLOB.reagent_addictive_poison
-	return all_addictive

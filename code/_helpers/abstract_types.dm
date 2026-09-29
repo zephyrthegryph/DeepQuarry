@@ -1,8 +1,8 @@
 /// Returns a list of all abstract typepaths for all datums
-/proc/get_abstract_types()
-	var/static/list/abstracts
-	if(abstracts)
-		return abstracts
+GLOBAL_TABLE(get_abstract_types, GLOBAL_PROC_REF(build_get_abstract_types))
+
+/proc/build_get_abstract_types()
+	var/list/abstracts
 	abstracts = list()
 	for(var/datum/sometype as anything in subtypesof(/datum))
 		if(sometype == sometype::abstract_type)
@@ -19,15 +19,15 @@
 
 /// Like subtypesof, but automatically excludes abstract typepaths
 /proc/valid_subtypesof(datum/sometype)
-	return subtypesof(sometype) - get_abstract_types()
+	return subtypesof(sometype) - GLOBAL_TABLE_GET(get_abstract_types)
 
 /// Like typesof, but automatically excludes abstract typepaths
 /proc/valid_typesof(datum/sometype)
-	return typesof(sometype) - get_abstract_types()
+	return typesof(sometype) - GLOBAL_TABLE_GET(get_abstract_types)
 
 /// Returns a list of concrete types under abstract sub-branches of `root`
 /proc/get_abstract_branch_descendants(datum/root)
-	var/list/abstracts = get_abstract_types()
+	var/list/abstracts = GLOBAL_TABLE_GET(get_abstract_types)
 	var/list/to_remove = list()
 	var/list/seen_abstract_parents = list()
 
@@ -50,7 +50,7 @@
 	var/list/result = subtypesof(root)
 
 	// Remove all abstract types
-	result -= get_abstract_types()
+	result -= GLOBAL_TABLE_GET(get_abstract_types)
 
 	// Remove concrete types under abstract sub-branches
 	result -= get_abstract_branch_descendants(root)
@@ -62,7 +62,7 @@
 	var/list/result = typesof(root)
 
 	// Remove all abstract types
-	result -= get_abstract_types()
+	result -= GLOBAL_TABLE_GET(get_abstract_types)
 
 	// Remove concrete types under abstract sub-branches
 	result -= get_abstract_branch_descendants(root)

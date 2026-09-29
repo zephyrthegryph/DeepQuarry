@@ -16,6 +16,7 @@ GLOBAL_DATUM_INIT(gear_tweak_unified_recolor, /datum/gear_tweak/recolor, new)
 /datum/gear_tweak/recolor
 
 /datum/gear_tweak/recolor/get_default()
+	// ALLOW(sys_const_list_alloc): default metadata stored into a player\'s loadout preferences, where it is saved and edited per character; each caller needs its own list
 	return list("mode" = "off")
 
 /datum/gear_tweak/recolor/get_contents(metadata)

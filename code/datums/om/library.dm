@@ -2,13 +2,6 @@
 // (doc/rewrite/object_model_core.md, "Library"). Mob Life uses the clocks,
 // the incapacitation statuses and suspension (doc/rewrite/life_on_om.md).
 
-/proc/om_library_clocks()
-	return list(
-		CLOCK_BIO = list("min" = 0, "max" = 10),
-		CLOCK_MACHINE = list("min" = 0, "max" = 10),
-		CLOCK_CHEM = list("min" = 0, "max" = 10),
-	)
-
 /// A mob status row (status.dm): timed, unit LIFE_CYCLE, raising CHANGE_MOB_STATUS on start and end,
 /// plus `fields`.
 /proc/om_mob_status_row(list/fields)
