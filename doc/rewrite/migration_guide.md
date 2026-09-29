@@ -5,7 +5,7 @@ This is the single document an agent needs to convert code to the new framework.
 - **Part B:** the catalogue of every old form, each with its new form, a real before/after, and the traps.
 - **Part C:** how to run a conversion and what to report.
 
-Nothing else is required reading. `doc/rewrite/dx_conventions.md` and the design pages are background.
+Nothing else is required reading. `doc/rewrite/dx_conventions.md` and the design pages are background. `doc/rewrite/framework_fixes.md` (§9) is binding: where it disagrees with this guide, it wins, and this guide is corrected to match.
 
 **Status markers.** Every API below is tagged with its state on `rewrite/dx-framework`:
 - **[built]:** merged and tested; use it.
@@ -113,6 +113,11 @@ Every constructor below also takes the standard gating arguments `behind`, `bloc
 
 **Capabilities may own UI actions** [built]: `/datum/capability/<x>/proc/act_<action>(mob/user, atom/holder, ...args)` plus `ui_logged()` on the capability; the dispatcher resolves it on the holder's capabilities when the holder has no `act_<action>` itself. Capability UI data arrives under `data["caps"][<key>]`.
 
+[planned] (framework_fixes.md §9.5; don't invent them):
+- **Machines:** `machine_board`/`machine_wires` type vars read by `machine_basics()`; `refine(key, ...)` to adjust one part of a bundle; `service_panel(access)`; `cap_occupant(max, types, enter_delay, eject_on)` with `occupants(src)` and derived `occupant_count`; `cap_access(req_access)`; parts: `cap_parts(list(/obj/item/stock_parts/x = n))` with `derive_part_rating()` (replaces `RefreshParts`); `look.loop(sound)`; `cap_slot(..., eject_tool = TOOL_X)`.
+- **Derived values:** `derived()` with `runs_while`/`drawn_from`/`ui_from`/`derive(...)`, and `rust_push(reads...)` replacing hand `update_rust_device()` calls (§9.2).
+- **Vore:** `cap_interior(transmit, escape_delay, on_enter, on_exit)`; `settings()` rows (`setting_choice/number/text/bool/color`) with one `act_set_setting(user, key, value)`.
+
 ## A5. Look
 
 ```dm
@@ -144,6 +149,8 @@ Every constructor below also takes the standard gating arguments `behind`, `bloc
 	return PROCESS_KILL                    // optional: park until the next change
 ```
 
+Side effects of a change (a Rust device sync, a network rebuild): override `on_state_changed(bits)` [built]. The refresh engine calls it at most once per frame after a change, with the channels raised since the last refresh. Never call it by hand; it must not write the state it reacts to (test builds report a self-mark).
+
 Verbs:
 - **Always on:** native `/verb/` declarations.
 - **Conditional:** `hidden_verbs()` returns the verbs to hide right now; it is re-evaluated on change and applied through the verb store [built].
@@ -174,7 +181,7 @@ Verbs:
 
 [built]:
 - The dispatcher finds `act_<key>` on the host or on one of its capabilities. Only procs named `act_*` are client-reachable.
-- Reserved argument names are written last, so a client can't override `user`.
+- Reserved argument names (`user`, `holder`, `src`, `usr`, `ui`, `state`) are written last, so a client can't override them; never name an `act_` argument after one.
 - Unknown argument names are logged and refused.
 - Validators: `ui_number(v, min, max, round_to)`, `ui_text(v, max_length)`, `ui_choice(v, list)`, `ui_ref(v, within, type)`, `ui_bool(v)`, plus `refuse(user, text)`. Validate before use; a lint checks it.
 - The TSX lint checks every `act()` name has an `act_` proc with matching argument names. **Literal names only:** `act(\`be_player_${x}\`)` is banned; pass it as an argument.
@@ -202,7 +209,9 @@ Verbs:
 - Prompting handlers run detached automatically.
 - Forms: `form = list(text_field(...), number_field(...), choice_field(...))`.
 
-[planned]: re-validation re-runs the entry's `needs` (plan §2.10), which deletes `ask_flags`, `ASK_*` and `PROMPT_*`.
+[built]: re-validation re-runs the entry's `needs`, or the `needs =` passed to the `ask_*`; `third_party = TRUE` checks only the answerer (a consent prompt). `ask_number` returns null on cancel, so 0 is a valid answer: test with `isnull()`.
+
+[planned] (framework_fixes.md §9.1, option A): handlers that ask or await run as kernel-tracked tasks, cancelled when the holder is deleted, the user disconnects or the target goes; `as = ASK_THIRD_PARTY`/`ASK_CONSENT`, `timeout =`, `default =`, `yes =`/`no =` labels, `validate =`, `ask_form(...)`, `task_why()`, `await_sql`/`await_http`/`await_job` returning `/datum/io_result`, `start_task()`, `await_action()`, `test_answers()`. Until then use the built `ask_*` above.
 
 ## A9. Time
 
@@ -212,8 +221,8 @@ The decision table. **Read it before writing anything with a timer.**
 |---|---|---|
 | "Not more than once per N" | `COOLDOWN_DECLARE(x)` + `COOLDOWN_START(src, x, N)` / `COOLDOWN_FINISHED(src, x)` | [built] |
 | A var that reverts after N | `timed_set(src, nameof(var), value, for_time = N)`, read the var directly, `time_left(src, nameof(var))` for a countdown, `timed_cancel(...)` | [built] |
-| A temporary condition **with behaviour** (EMP'd, failed, jammed, on fire) | a timed grant of a capability: `om_grant_for(src, GRANT_CAPABILITY, /datum/capability/condition/x, source, N)` | [built] (`condition.dm`) |
-| Do something once, later | `after(src, N, PROC_REF(x), args...)`; owned, weak, dropped if src or any datum arg is gone | [built] |
+| A temporary condition **with behaviour** (EMP'd, failed, jammed, on fire) | a timed grant of a capability: `om_grant_for(src, GRANT_CAPABILITY, /datum/capability/condition/x, source, N)` (becoming `grant_for()`, framework_fixes.md §9.3) | [built] (`condition.dm`) |
+| Do something once, later | `after(src, N, PROC_REF(x), args...)`; owned by src (dropped if src is gone). A datum argument deleted meanwhile **arrives as null** and the call still runs (counted, logged), so cleanup always happens: check your args. `after_if_alive(...)` drops the call instead, for a pure effect | [built] |
 | One pending "do later" per name (re-arming replaces it) | `after_slot(src, "name", N, PROC_REF(x))` | [built] |
 | Something repeating while a condition holds | a cadence: `should_run()` + `periodic_step(dt)`, **never** a timer that re-arms itself | [built] |
 | Delete after N | `expire(N)` (movables) | [built] |
@@ -474,13 +483,15 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/remote, "doorctrl{appearance_powered?0
 // AFTER
 /obj/machinery/button/remote/draw(datum/look/look)
 	..()
-	look.state(is_powered(src) ? "doorctrl0" : "doorctrl-p")
+	look.state(power_state == POWER_UNPOWERED ? "doorctrl-p" : "doorctrl0")   // power_state [planned], framework_fixes.md §9.3
 ```
 
 **Traps:**
 - Call `..()` first; the capabilities draw their layers.
 - Never set `icon_state` directly in gameplay code.
 - For the capability layers, use standard state names; run the rename tool for legacy ones.
+
+**Power reads:** there is no `is_powered()`. The one read is the derived `power_state` (`POWER_BROKEN`/`POWER_UNPOWERED`/`POWER_OFF`/`POWER_IDLE`/`POWER_ACTIVE`) [planned, framework_fixes.md §9.3]; until it lands, `cap_powered(src)` [built].
 
 ## B6. Manual refresh → delete
 
@@ -533,7 +544,9 @@ UI_ACT_PROC(/datum/round_status_panel, ui_act_call_shuttle)
 | `act_ask(..., "k231", ...)` keys, `rerun_ask` | the same `ask_*` inline (no keys) |
 | `prompt_flow()` / `flow_execute()` re-runs | a linear handler (plus `await_sql` [planned] for SQL) |
 | `tgui_input_text/number/list`, `tgui_alert`, native `input()`/`alert()` | `ask_text`, `ask_number`, `ask_list`, `ask_yes_no` |
-| forms of several prompts in a row | `form = list(text_field(...), number_field(...), choice_field(...))` on the entry |
+| forms of several prompts in a row | `form = list(text_field(...), number_field(...), choice_field(...))` on the entry; `ask_form(...)` inside a handler [planned, §9.1] |
+
+The re-run machinery (`om_ask`, `act_ask`/`rerun_ask`, `prompt_flow`/`flow_execute`, `/datum/om/flow`, `om_prompt_answer`/`test_prompts`) still exists in old code; framework_fixes.md §9.1 deletes all of it. Convert to the inline form, never add to it.
 
 **Traps:**
 - Code before `ask_*` runs once; there's no re-run.
@@ -564,6 +577,15 @@ UI_ACT_PROC(/datum/round_status_panel, ui_act_call_shuttle)
 | `EXPIRY_AT` + a check against it | "until time T" | `timed_set(src, nameof(flag), TRUE, for_time = N)` and read `flag` |
 | `EXPIRY_ON_LAPSE(type, var, clock, proc)` | "do X when it ends" | `timed_set(..., revert_to = ...)` for a value, or a timed grant whose capability's removal does X |
 | `LEFT_UNTIL` | countdown | `time_left(src, nameof(flag))` |
+
+**Temporary state: one form per intent** (framework_fixes.md §9.3):
+
+| The state is | Write | Not |
+|---|---|---|
+| behaviour for a while (EMP'd, jammed, failed) | a timed grant: `grant_for(GRANT_CAPABILITY, /datum/capability/condition/x, source, N)` (today `om_grant_for`) | a flag plus checks in every handler |
+| a pure value for a while | `timed_set(src, nameof(var), value, for_time = N)` | a stored end time |
+| a rate limit | `COOLDOWN_*` | `EXPIRY_*`, `world.time` stamps |
+| a body number (slowdown, pain) | a body effect with a duration | a modifier timer, a stored end time |
 
 ## B10. Fields → a plain var or `TRACKED`
 
@@ -653,7 +675,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/general_air_control/fuel_injectio
 
 | Old | Count | New |
 |---|---|---|
-| `om_after(E, d, PROC_REF(x), ...)` | 1,505 | `after(E, d, PROC_REF(x), ...)`, the same semantics (owned by E, weak args); a rename |
+| `om_after(E, d, PROC_REF(x), ...)` | 1,505 | `after(E, d, PROC_REF(x), ...)`: owned by E; a deleted datum argument arrives as null and the call runs (SStimer's semantics, so null-check your args); `after_if_alive()` to drop it instead |
 | `om_after_unique` / `om_after_replace` | 19 / 20 | `after_slot(E, "name", d, PROC_REF(x))`: a slot is unique, and re-arming replaces |
 | a proc that re-arms its own timer, `om_after_stagger`, `om_after_drift` | 4 + 7 + loops | a cadence (B12) |
 | `OWN_TIMER(type, name)` | 52 | `after_slot` (a slot is already owned and cancelled on destroy) |
@@ -685,6 +707,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/general_air_control/fuel_injectio
 	timed_set(src, nameof(perceived_danger), new_danger, for_time = TIME_WITHOUT_RADIATION_BEFORE_RESET, revert_to = RAD_LEVEL_NONE)
 ```
 
+See the temporary-state table in B9 before choosing between a timer, `timed_set` and a grant.
+
 ## B15. Temporary state → a timed grant [built]
 
 Any var or field that exists only to hold a temporary condition with behaviour becomes a capability held for a time by a source. Examples: `failure_until`, `emp_until`, `jammed_until`, `shocked_until`, `overloaded`, `on_fire_until`.
@@ -707,6 +731,8 @@ Any var or field that exists only to hold a temporary condition with behaviour b
 - **Keep:** `timed_set` for pure value reverts that have no behaviour.
 - **Mobs:** keep afflictions and modifiers for body effects (they already follow this model).
 - **Built:** `GRANT_CAPABILITY` (`code/datums/capabilities/condition.dm`) is a per-key effect: `om_grant_for(A, GRANT_CAPABILITY, path, source, duration)`, `om_grant(...)` and `om_revoke(...)`. The capability is one shared instance per path (`cap_condition_instance(path)`), attached with `add_capability()` while any source holds it and removed with the last hold (timed expiry or a deleted source). `/datum/capability/condition` has `blocks` (`ALL_ENTRIES`, or a list of capability types whose entries it refuses), `exempt` (capability types that still work), `else_say` (plain text, "it isn't responding"; override `refusal(holder)` to use the holder's name), `hides_verbs` and `draw()` (overlay `layer_name`).
+
+The full decision table (grant, `timed_set`, `COOLDOWN_*`, body effect) is in B9.
 
 ## B16. `qdel()` → lifecycle verbs
 
@@ -746,7 +772,7 @@ About 3,270 direct calls remain: 725 `qdel(src)` and about 2,500 `qdel(local)`. 
 `relations()` and the REL* migration are built (doc/rewrite/ownership.md §4.1); the typed
 `/datum/om/relation` types are not converted yet (`python tools/dx/convert_relations.py --dry-run`
 lists each with its proposed entry and what blocks it). Meanwhile:
-- Declare links in `relations()` and write them with `rel_link`, **one side only**.
+- Declare links in `relations()` and write them with `rel_link(src, nameof(x), y)` (always `nameof()`, never a string), **one side only**.
 - Don't add new `/datum/om/relation` types.
 - Never store the same link twice (a relation plus a plain var copy, like the borer's `host =`).
 
@@ -878,16 +904,18 @@ New code must **not** add a sixth path. Until the adapter lands, use the existin
 | Mob AI | behaviours stay flyweight `/datum/ai_behavior`; declaration moves to `cap_ai_behaviors()` [planned]; no new `ports/` files | §2.4 |
 | Vore | outside callers use `vore/api.dm` [planned]; no new outside `/obj/belly` references | §2.5 |
 
-## B30. Mob Life stages
+## B30. Mob Life stages [planned: framework_fixes.md §9.5 Life]
+
+The target model: one `/datum/system/life` with an ordered stage plan. Each stage declares what it reads in `derived()`, runs while `should_run(mob)` holds, and steps with `step(mob, dt)` returning `STEP_*`.
 
 | Old | New |
 |---|---|
-| `idle(self)` | `should_run(self)` (inverted) |
-| `perform()` | `periodic_step(self, ctx)` |
-| `rewake_delay()` | `return rewake_in(N)` |
-| `wake_on` mask | stays, as an optional filter type var |
+| `idle(self)` | `should_run(mob)` (positive: the old `idle()` inverted) |
+| `perform()` | `step(mob, dt)`, returning `STEP_DONE`/`STEP_YIELD`/`STEP_PARK`/`STEP_AGAIN_IN(t)` |
+| `wake_on` mask, `rewake_delay()`, `life_wake()` bits | reads declared in `derived()`: `runs_while(nameof(/mob/living::losebreath), ...)`; the stage wakes when a read changes |
+| a var a stage reads, written directly | `TRACKED`, written only through its setter (`losebreath`, `internal`, ...) |
 
-Don't override `Life()` and don't add `handle_*` procs; add a stage or a variant. Anything that changes what a stage reads goes through a producer that wakes it (`injure`/`mend`, the status setters, equip/unequip…) or through `life_wake()`.
+Gating booleans become capabilities and numbers become factors, read through `factor_dep(BF_X)`. Until this lands, don't convert Life stages; don't override `Life()` and don't add `handle_*` procs.
 
 ---
 
