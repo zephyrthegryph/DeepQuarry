@@ -19,14 +19,14 @@
 	/// The name before the label went on.
 	var/base_name
 
-/proc/label(max_length = MAX_NAME_LEN, behind = NONE, log = LOG_GAME)
+/proc/cap_label(max_length = MAX_NAME_LEN, behind = NONE, log = LOG_GAME)
 	var/datum/capability/label/C = new
 	C.max_length = max_length
 	C.behind = behind
 	C.log = log
 	return C
 
-/proc/rename(max_length = MAX_NAME_LEN, behind = NONE, log = LOG_GAME)
+/proc/cap_rename(max_length = MAX_NAME_LEN, behind = NONE, log = LOG_GAME)
 	var/datum/capability/label/rename/C = new
 	C.max_length = max_length
 	C.behind = behind
@@ -34,15 +34,15 @@
 	return C
 
 /datum/capability/label/interactions(atom/holder)
-	var/datum/capability/entry/apply = use_on("Label", /obj/item/hand_labeler, TYPE_PROC_REF(/atom, cap_label_apply), behind = behind, works_broken = TRUE, works_unpowered = TRUE, log = log)
+	var/datum/capability/entry/apply = cap_use_on("Label", /obj/item/hand_labeler, TYPE_PROC_REF(/atom, cap_label_apply), behind = behind, works_broken = TRUE, works_unpowered = TRUE, log = log)
 	return list(adopt_entry(apply), remove_entry())
 
 /datum/capability/label/rename/interactions(atom/holder)
-	var/datum/capability/entry/pen = use_on("Rename", /obj/item/pen, TYPE_PROC_REF(/atom, cap_label_rename), behind = behind, works_broken = TRUE, works_unpowered = TRUE, log = log)
+	var/datum/capability/entry/pen = cap_use_on("Rename", /obj/item/pen, TYPE_PROC_REF(/atom, cap_label_rename), behind = behind, works_broken = TRUE, works_unpowered = TRUE, log = log)
 	return list(adopt_entry(pen), remove_entry())
 
 /datum/capability/label/proc/remove_entry()
-	var/datum/capability/entry/wrapper = hand("Remove label", TYPE_PROC_REF(/atom, cap_label_remove), behind = behind, needs = TYPE_PROC_REF(/atom, cap_label_present), else_say = "it has no label", works_broken = TRUE, works_unpowered = TRUE, log = log)
+	var/datum/capability/entry/wrapper = cap_hand("Remove label", TYPE_PROC_REF(/atom, cap_label_remove), behind = behind, needs = TYPE_PROC_REF(/atom, cap_label_present), else_say = "it has no label", works_broken = TRUE, works_unpowered = TRUE, log = log)
 	var/datum/interaction/capability/E = adopt_entry(wrapper)
 	E.id = "[E.id]:[key]" // label() and rename() on one type each offer their own
 	E.default_action = null // Menu only: an empty hand keeps doing the holder's own thing

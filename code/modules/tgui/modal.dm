@@ -7,20 +7,20 @@
 GLOBAL_LIST(tgui_modals)
 
 /**
- * Modal actions: ui_<action> procs (doc/rewrite/dx_conventions.md §5). Every host has them; a host
+ * Modal actions: act_<action> procs (doc/rewrite/dx_conventions.md §5). Every host has them; a host
  * that shows modals implements
  *	ui_modal_opened(user, id, arguments, ui, state)          (switch on id: build the modal)
  *	ui_modal_answered(user, id, answer, arguments, ui, state) (switch on id: use the answer)
  * `id` is the modal's text id, `arguments` the list passed to and from JS, `answer` the
  * modal's answer text after the current modal's preprocess_answer().
  */
-/datum/proc/ui_modal_open(mob/user, id, arguments)
+/datum/proc/act_modal_open(mob/user, id, arguments)
 	id = ui_text(id, 64)
 	if(isnull(id))
 		return refuse(user, null)
 	return ui_modal_opened(user, id, islist(arguments) ? arguments : list(), GLOB.dispatch_context_now?.ui, null)
 
-/datum/proc/ui_modal_answer(mob/user, id, answer, arguments)
+/datum/proc/act_modal_answer(mob/user, id, answer, arguments)
 	id = ui_text(id, 64)
 	if(isnull(id))
 		return refuse(user, null)
@@ -32,7 +32,7 @@ GLOBAL_LIST(tgui_modals)
 		return TRUE
 	return ui_modal_answered(user, id, answer, islist(arguments) ? arguments : list(), GLOB.dispatch_context_now?.ui, null)
 
-/datum/proc/ui_modal_close(mob/user, id)
+/datum/proc/act_modal_close(mob/user, id)
 	tgui_modal_clear(src)
 	return TRUE
 

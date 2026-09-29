@@ -2,7 +2,7 @@
 
 /obj/cap_fixture/seat/capabilities()
 	. = ..()
-	. += buckle(max = 2, lying = TRUE)
+	. += cap_buckle(max = 2, lying = TRUE)
 
 /datum/unit_test/dx_cap_buckle
 

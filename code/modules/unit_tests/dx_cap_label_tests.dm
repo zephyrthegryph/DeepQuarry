@@ -2,8 +2,8 @@
 
 /obj/cap_fixture/labelled/capabilities()
 	. = ..()
-	. += label(max_length = 8)
-	. += rename()
+	. += cap_label(max_length = 8)
+	. += cap_rename()
 
 /datum/unit_test/dx_cap_label
 

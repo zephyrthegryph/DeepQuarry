@@ -2,12 +2,12 @@
 
 /obj/cap_fixture/rotatable/capabilities()
 	. = ..()
-	. += rotate()
+	. += cap_rotate()
 
 /obj/cap_fixture/rotatable/counter_only/capabilities()
 	. = ..()
 	. = without(., /datum/capability/rotate)
-	. += rotate(clockwise = FALSE, needs_unanchored = FALSE)
+	. += cap_rotate(clockwise = FALSE, needs_unanchored = FALSE)
 
 /datum/unit_test/dx_cap_rotate
 
