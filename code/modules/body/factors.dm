@@ -292,6 +292,8 @@ GLOBAL_TABLE(body_factor_rules, GLOBAL_PROC_REF(build_body_factor_rules))
 	acc = accumulate_plan_factors(acc)
 	var/list/old = factors
 	factors = body_factor_finalize(acc)
+	if(length(GLOB.derived_factor_watch))
+		derived_factors_recomputed(owner, old, factors) // entities that read a factor through factor_dep()
 	if(!factors_equal(old, factors))
 		// Pain and consciousness read analgesia, pain and sedation; the
 		// physiology reads the oxygen-transport factors.

@@ -1,16 +1,22 @@
 // changed() and the refresh engine (doc/rewrite/dx_conventions.md §1, §3, §4).
 //
 // Derived things are plain procs: draw(look), should_run(), hidden_verbs(), tgui_data(),
-// on_state_changed(). changed(E) queues E, and everything that owns it up the owner chain, for one
-// refresh at the end of the frame (the presentation lane). Dispatchers call changed() for you after
-// every handler, timer, periodic step, prompt answer and ownership transfer; TRACKED setters call
-// it; a write outside all of those calls it by hand. A background sweep re-checks entities with
-// derived procs on a per-tick budget: production corrects a missed mark within seconds, test builds
-// fail the run and name the type (REFRESH DRIFT).
+// push_to_rust(), on_state_changed(). changed(E) queues E, and everything that owns it up the owner
+// chain, for one refresh at the end of the frame (the presentation lane). Dispatchers call changed()
+// for you after every handler, timer, periodic step, prompt answer and ownership transfer; TRACKED
+// setters call it with the var they wrote; a write outside all of those calls it by hand.
+//
+// What a queued entity re-derives is a bitmask in refresh_queued (DEP_*): a plain changed(E) marks
+// everything, a tracked write on a type that declares its dependencies (derived.dm) marks only the
+// outputs that read the var. The drain runs each marked output at most once per entity per frame.
+//
+// A background sweep re-checks entities with derived procs on a per-tick budget: production corrects
+// a missed mark within seconds, test builds fail the run and name the type and, when it can, the
+// likely undeclared read (REFRESH DRIFT).
 
 /datum
-	/// Queued for a refresh this frame.
-	var/tmp/refresh_queued = FALSE
+	/// The outputs queued for a refresh this frame (DEP_* bits), 0 when not queued.
+	var/tmp/refresh_queued = 0
 	/// The channels raised since the last refresh (on_state_changed() reads them).
 	var/tmp/refresh_bits = 0
 
@@ -34,7 +40,9 @@ OWN_TIMER(/datum, periodic_interval)
 
 /// Starts or stops D's custom-interval step to match should_run().
 /proc/periodic_interval_update(datum/D)
+	DERIVED_EVAL_BEGIN
 	var/want = !!D.should_run()
+	DERIVED_EVAL_END
 	var/pending = om_timer_slot_pending(D, "periodic_interval")
 	if(want && !pending)
 		after_slot(D, "periodic_interval", D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), D)
@@ -51,7 +59,11 @@ OWN_TIMER(/datum, periodic_interval)
 
 /// Marks E changed: queues its refresh (and its owners', up the chain) and raises `channel` for OM
 /// observers. The rare direct write outside a dispatched call or a TRACKED setter calls this.
-/proc/changed(datum/E, channel = CHANGE_EXPLICIT)
+/// `var_name` is the tracked var that changed (TRACKED setters, timed_set and the ownership accessors
+/// pass it): a type that declares its dependencies (derived()) re-derives only the outputs that read
+/// it, and marks the entities that hop to it; any other type, and a call without it, re-derives
+/// everything.
+/proc/changed(datum/E, channel = CHANGE_EXPLICIT, var_name)
 	if(!E || QDELING(E))
 		return
 	om_changed(E, channel)
@@ -71,26 +83,47 @@ OWN_TIMER(/datum, periodic_interval)
 		GLOB.refresh_self_marks += msg
 		if(!GLOB.refresh_self_mark_expected)
 			stack_trace(msg)
+	// Outputs must not write state: a tracked write while should_run, draw, hidden_verbs, tgui_data or a
+	// derive_<var> runs is reported.
+	if(var_name && GLOB.derived_evaluating)
+		var/write_msg = "OUTPUT WROTE STATE: [E.type].[var_name] was written while an output (should_run, draw, hidden_verbs, tgui_data, derive_<var>) was running"
+		GLOB.derived_write_violations += write_msg
+		if(!GLOB.derived_write_expected)
+			stack_trace(write_msg)
 #endif
 	refresh_trace_note(E, channel)
 	// Sources watching E through a relation view (rel_one/rel_many(watch = ...)) re-derive too. Only on
 	// E's first mark this frame, so two entities watching each other stop after one round.
 	if(E.rel_watchers && !E.refresh_queued)
-		E.refresh_queued = TRUE
-		GLOB.refresh_queue += E
 		rel_notify_watchers(E)
+	var/mask = DEP_ALL
+	if(var_name)
+		mask = derived_mask(E, var_name)
+		if(!mask)
+			return
+	refresh_mark(E, mask, channel)
+
+/// Queues E for the outputs in `mask`, and its owner up the chain for its look when one of the owner's
+/// capabilities draws E. `channel` reaches on_state_changed() (refresh_bits) with a plain mark.
+/proc/refresh_mark(datum/E, mask, channel = 0)
 	var/datum/D = E
 	for(var/depth in 1 to 8)
-		D.refresh_bits |= channel
+		if(mask & DEP_LEGACY)
+			D.refresh_bits |= channel
 		if(!D.refresh_queued)
-			D.refresh_queued = TRUE
 			GLOB.refresh_queue += D
+		D.refresh_queued |= mask
+		// A selective mark reaches an owner only through the look (an owner never reads a child's should_run).
+		if(mask != DEP_ALL && !(mask & DEP_DRAW))
+			break
 		// H2: the owner is marked only when one of its capabilities draws this child (a slot with
 		// draws_var naming the var that holds it). Anything else stays local.
 		var/datum/owner = owner_of(D)
 		if(!owner || QDELING(owner) || !isatom(owner) || !owner_draws_child(owner, D))
 			break
 		D = owner
+		if(mask != DEP_ALL)
+			mask = DEP_DRAW
 
 GLOBAL_LIST_EMPTY(refresh_queue)
 /// Refreshes run so far (the dx_refresh benchmark reads it).
@@ -219,16 +252,19 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 		if(done[D])
 			LAZYADD(deferred, D)
 			continue
-		D.refresh_queued = FALSE
+		var/pending = D.refresh_queued
+		D.refresh_queued = 0
 		if(QDELETED(D))
 			D.refresh_bits = 0
 			continue
+		if(!pending)
+			continue // a stale duplicate: an earlier entry already ran its outputs
 		done[D] = TRUE
 		var/bits = D.refresh_bits
 		D.refresh_bits = 0
 		GLOB.refresh_bench_drained++
 		try
-			refresh_one(D, bits)
+			refresh_one(D, bits, pending)
 		catch(var/exception/e)
 			if(sched)
 				sched.report_caught(e, "refresh of [D.type]: [e] ([e.file]:[e.line])")
@@ -254,27 +290,39 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 		if(++passes > 20)
 			stack_trace("refresh_flush: still queued after 20 passes (a reactive proc re-marks its entity?): [jointext(GLOB.refresh_queue, ", ")]")
 			for(var/datum/D as anything in GLOB.refresh_queue)
-				D.refresh_queued = FALSE
+				D.refresh_queued = 0
 				D.refresh_bits = 0
 			GLOB.refresh_queue.Cut()
 			return
 
-/// One entity's refresh: periodic gate, look, hidden verbs, open windows, then on_state_changed.
-/proc/refresh_one(datum/D, bits)
+/// One entity's refresh of the outputs in `mask` (DEP_*; everything by default): derive values, periodic
+/// gate, look and hidden verbs, open windows, the Rust push, then on_state_changed.
+/proc/refresh_one(datum/D, bits, mask = DEP_ALL)
 	var/datum/outer = GLOB.refresh_running
 	GLOB.refresh_running = D
 	try
-		refresh_one_inner(D, bits)
+		refresh_one_inner(D, bits, mask)
 	catch(var/exception/e)
 		// Restore before the drain reports it: a stale refresh_running would flag every later mark of
 		// D as a self-mark.
 		GLOB.refresh_running = outer
+		GLOB.derived_evaluating = 0
 		throw e
 	GLOB.refresh_running = outer
+#if defined(UNIT_TESTS)
+	// A full pass re-derived everything: the ignored changes it may have hidden are answered for.
+	if(mask == DEP_ALL && length(GLOB.derived_ignored))
+		GLOB.derived_ignored -= REF(D)
+#endif
 
-/proc/refresh_one_inner(datum/D, bits)
-	refresh_periodic(D)
-	if(isatom(D))
+/proc/refresh_one_inner(datum/D, bits, mask)
+	if(mask & DEP_VALUES)
+		var/datum/derived_table/T = derived_table_of(D)
+		if(T?.derived_vars)
+			mask = derived_recompute(D, T, mask)
+	if(mask & DEP_RUN)
+		refresh_periodic(D)
+	if(isatom(D) && (mask & DEP_DRAW))
 		var/atom/A = D
 		// A type known to draw nothing and hide nothing skips both (review 2 H3): capabilities can
 		// draw and hide, and a type not seen yet is tried once and recorded.
@@ -297,9 +345,26 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 			// this instance's state drew or hid (review: never record a negative from one result).
 			type_derive_record(A, GLOB.derive_probe_found & TYPE_DERIVES_LOOK, GLOB.derive_probe_found & TYPE_DERIVES_VERBS)
 		refresh_sweep_track(A)
-	if(LAZYLEN(D.open_tguis))
-		SStgui.update_uis(D)
-	D.on_state_changed(bits)
+	if(mask & DEP_UI)
+		refresh_ui(D)
+	if(mask & DEP_PUSH)
+		DERIVED_EVAL_BEGIN
+		D.push_to_rust()
+		DERIVED_EVAL_END
+	if(mask & DEP_LEGACY)
+		D.on_state_changed(bits)
+
+/// Pushes D's open tgui windows (tgui_data() runs inside the push).
+/proc/refresh_ui(datum/D)
+#if defined(UNIT_TESTS)
+	if(derived_is_exact(D))
+		GLOB.derived_ui_flushes[REF(D)] += 1
+#endif
+	if(!LAZYLEN(D.open_tguis))
+		return
+	DERIVED_EVAL_BEGIN
+	SStgui.update_uis(D)
+	DERIVED_EVAL_END
 
 /proc/refresh_periodic(datum/D)
 	if(D.periodic_interval)
@@ -307,7 +372,9 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 		return
 	if(!D.periodic_cadence)
 		return
+	DERIVED_EVAL_BEGIN
 	var/want = !!D.should_run()
+	DERIVED_EVAL_END
 	var/running = om_task_periodic_running(D)
 	if(want && !running)
 		om_task_periodic(D, D.periodic_cadence)
@@ -318,7 +385,9 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 /proc/refresh_look(atom/A, apply = TRUE)
 	var/datum/look/L = GLOB.look_builder
 	L.reset()
+	DERIVED_EVAL_BEGIN
 	A.draw(L)
+	DERIVED_EVAL_END
 	// Transient flashes (look_flash()) sit on top of whatever draw() described.
 	if(A.look_flash_state)
 		L.state(A.look_flash_state)
@@ -344,7 +413,9 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 /// verbs list: a hidden verb is one more reason verb_store_wants() says no, and only the keys whose
 /// hidden state flipped are re-synced.
 /proc/refresh_verbs(atom/A, apply = TRUE)
+	DERIVED_EVAL_BEGIN
 	var/list/hidden = A.hidden_verbs() || list()
+	DERIVED_EVAL_END
 	if(!length(hidden) && !length(A.refresh_hidden_verbs))
 		return hidden
 	if(!apply)
@@ -386,7 +457,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 /proc/refresh_sweep_track(atom/A)
 	if(A.refresh_swept)
 		return
-	if(isnull(A.look_key) && !A.refresh_hidden_verbs && !A.refresh_granted_verbs && !A.periodic_cadence)
+	if(isnull(A.look_key) && !A.refresh_hidden_verbs && !A.refresh_granted_verbs && !A.periodic_cadence && !derived_is_exact(A))
 		return
 	A.refresh_swept = TRUE
 	GLOB.refresh_sweep_list[REF(A)] = TRUE
@@ -452,7 +523,9 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 	var/key = refresh_look(A, apply = FALSE)
 	if(key != A.look_key)
 		drift += "draw()"
+	DERIVED_EVAL_BEGIN
 	var/list/hidden = A.hidden_verbs() || list()
+	DERIVED_EVAL_END
 	var/list/was = A.refresh_hidden_verbs || list()
 	if(length(hidden ^ was))
 		drift += "hidden_verbs()"
@@ -460,11 +533,23 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 	var/list/was_granted = A.refresh_granted_verbs || list()
 	if(length(granted ^ was_granted))
 		drift += "granted_verbs()"
-	if(A.periodic_cadence && (!!A.should_run() != om_task_periodic_running(A)))
-		drift += "should_run()"
+	if(A.periodic_cadence)
+		DERIVED_EVAL_BEGIN
+		var/wants = !!A.should_run()
+		DERIVED_EVAL_END
+		if(wants != om_task_periodic_running(A))
+			drift += "should_run()"
+	// A derive() value that no longer matches what its reads give.
+	var/datum/derived_table/T = derived_table_of(A)
+	for(var/datum/derived_var/V as anything in T?.derived_vars)
+		DERIVED_EVAL_BEGIN
+		var/value = call(A, V.proc_name)()
+		DERIVED_EVAL_END
+		if(value != A.vars[V.name])
+			drift += "derive([V.name])"
 	if(!length(drift))
 		return FALSE
-	var/msg = "REFRESH DRIFT: [A.type] [jointext(drift, ", ")] changed with no changed() mark"
+	var/msg = "REFRESH DRIFT: [A.type] [jointext(drift, ", ")] changed with no changed() mark[derived_drift_hint(A)]"
 	GLOB.refresh_drift += msg
 #if defined(UNIT_TESTS)
 	if(!GLOB.refresh_drift_expected)

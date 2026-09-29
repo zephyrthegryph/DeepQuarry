@@ -112,6 +112,12 @@
 /datum/capability/slot/draw(atom/holder, datum/look/look)
 	draw_layer(look, when = !!holder.vars[slot_var])
 
+/// The overlay while filled and the UI item both read the slot's var.
+/datum/capability/slot/derived_reads(atom/holder)
+	. = list(drawn_from(slot_var))
+	if(ui_key_name)
+		. += ui_from(slot_var)
+
 /datum/capability/slot/ui_key()
 	return ui_key_name
 

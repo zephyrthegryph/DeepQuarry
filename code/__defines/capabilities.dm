@@ -63,15 +63,17 @@
 
 /**
  * Declares a tracked var: generates `set_<V>(value)`, which compares, writes, calls
- * changed(src, CHANNEL) and returns TRUE when the value changed. Declare the var normally next to
- * it. A hand-written `proc/set_<V>()` (for side effects) replaces this line. tools/ci/tracked_lint.py
- * rejects every write to V outside its setter.
+ * changed(src, CHANNEL, "V") and returns TRUE when the value changed. Declare the var normally next
+ * to it. A hand-written `proc/set_<V>()` (for side effects) replaces this line and passes the var
+ * name too: changed(src, CHANNEL, nameof(V)). tools/ci/tracked_lint.py rejects every write to V
+ * outside its setter. A type that declares its dependencies (derived()) re-derives only the outputs
+ * that read V when it changes.
  *
  *	/obj/machinery/pump
  *		var/target_pressure = ONE_ATMOSPHERE
  *	TRACKED(/obj/machinery/pump, target_pressure, CHANGE_MACHINE_SETTINGS)
  */
-#define TRACKED(T, V, CHANNEL) ##T/proc/set_##V(value) { if(V == value) { return FALSE }; V = value; changed(src, CHANNEL); return TRUE };SETTER(T, V)
+#define TRACKED(T, V, CHANNEL) ##T/proc/set_##V(value) { if(V == value) { return FALSE }; V = value; changed(src, CHANNEL, #V); return TRUE };SETTER(T, V)
 
 /**
  * Registers a hand-written `T/proc/set_<V>(value)` as V's setter (a setter with side effects):
@@ -114,6 +116,8 @@
 #define TYPE_DERIVES_PENDING (1<<3)
 /// type_verbs() lists something.
 #define TYPE_DERIVES_TYPE_VERBS (1<<4)
+/// The type declares its dependencies (derived()): its instances join the relation index at init.
+#define TYPE_DERIVES_DEPS (1<<5)
 
 // ---- periodic cadences (periodic_cadence = CADENCE_*; periodic_step(delta) gets the interval in ds) ----
 /// Every 2 seconds.

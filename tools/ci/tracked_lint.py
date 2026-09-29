@@ -12,6 +12,8 @@ Counted, for every tracked var V of type T, outside a setter body of V:
     inside a proc of T or a subtype (a proc-local `var/V` shadows it and is skipped);
   * `X.V = x` (and the same ops) anywhere, when X resolves to T or a subtype: a proc argument or a
     local declared `var/<type>/X` / `<type>/X` in the same proc.
+A derive() value (`. += derive(nameof(var), ...)` in a derived() proc, code/datums/capabilities/derived.dm)
+is tracked with no setter at all: the framework is its only writer, so every write in DM is counted.
 Not counted: type-level var defaults and declarations, `==` compares, #define lines, comments and
 strings, and lines carrying `// ALLOW(tracked): <reason>` (tools/ci/allow_annotations.py).
 
@@ -34,6 +36,7 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 LINT = "tracked"
 
 TRACKED_LINE = re.compile(r"^\s*(?:TRACKED\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,|SETTER\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\))")
+DERIVE_VAR = re.compile(r"\bderive\(\s*nameof\(\s*(?:/[\w/]+::)?(\w+)\s*\)")
 # A top-level proc definition: /type/proc/name(, /type/verb/name( or /type/name( (an override).
 PROC_DEF = re.compile(r"^(/[\w/]*?)/(?:(?:proc|verb)/)?(\w+)\s*\((.*)$")
 TYPE_DEF = re.compile(r"^/[\w/]+\s*$")
@@ -79,22 +82,32 @@ def parse_procs(code_text):
         yield current
 
 
-def collect(files):
-    """{var: [types]} from TRACKED lines; the raw texts."""
-    tracked = {}
-    texts = {}
-    for path, rel in files:
-        with open(path, encoding="utf-8", errors="replace") as handle:
-            raw = handle.read()
-        texts[rel] = raw
-        if "TRACKED(" not in raw and "SETTER(" not in raw:
-            continue
+def tracked_from_text(raw, tracked):
+    """Adds the vars `raw` declares tracked (TRACKED lines, derive() values) to {var: {types}}."""
+    if "TRACKED(" in raw or "SETTER(" in raw:
         for line in raw.split("\n"):
             if line.lstrip().startswith("#define"):
                 continue
             m = TRACKED_LINE.match(line)
             if m:
                 add_tracked(tracked, m)
+    if "derive(" in raw:
+        for owner, proc_name, _args, body in parse_procs(code_only(raw)):
+            if proc_name != "derived" or owner == "/":
+                continue
+            for m in DERIVE_VAR.finditer("\n".join(text for _, text in body)):
+                tracked.setdefault(m.group(1), set()).add(normalize_type(owner))
+
+
+def collect(files):
+    """{var: [types]} from TRACKED lines and derive() values; the raw texts."""
+    tracked = {}
+    texts = {}
+    for path, rel in files:
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            raw = handle.read()
+        texts[rel] = raw
+        tracked_from_text(raw, tracked)
     return tracked, texts
 
 
@@ -237,6 +250,17 @@ SETTER(/obj/machinery/valve, open)
 	if(V.open == TRUE)
 		return
 """,
+    "code/b.dm": """
+/obj/gadget
+	var/total = 0
+
+/obj/gadget/derived()
+	. = ..()
+	. += derive(nameof(total), nameof(level))
+
+/obj/gadget/proc/oops()
+	total = 5
+""",
 }
 
 SELFTEST_EXPECT = [
@@ -249,16 +273,14 @@ SELFTEST_EXPECT = [
     ("code/a.dm", 42, "B.target_pressure"),
     ("code/a.dm", 56, "open"),
     ("code/a.dm", 59, "V.open"),
+    ("code/b.dm", 10, "total"),
 ]
 
 
 def selftest():
     tracked = {}
     for text in SELFTEST.values():
-        for line in text.split("\n"):
-            m = TRACKED_LINE.match(line)
-            if m:
-                add_tracked(tracked, m)
+        tracked_from_text(text, tracked)
     hits, setters = scan(tracked, SELFTEST)
     got = [(rel, n, msg.split(" ")[0]) for rel, n, msg in hits]
     ok = got == SELFTEST_EXPECT and len(setters) == 2

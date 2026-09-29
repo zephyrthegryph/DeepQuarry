@@ -165,6 +165,8 @@ GLOBAL_LIST_EMPTY(caps_interned)
 			C.on_holder_init(src, mapload)
 			cap_join_systems(src, C)
 		refresh_granted_verbs(src) // capability verbs are there from init, not a frame later
+	if(flags & TYPE_DERIVES_DEPS)
+		derived_attach(src)
 	if(flags || periodic_cadence || periodic_interval)
 		changed(src)
 
@@ -179,6 +181,8 @@ GLOBAL_LIST_EMPTY(caps_interned)
 		. |= TYPE_DERIVES_CAPS
 	if(length(type_list(A, TYPE_PROC_REF(/atom, type_verbs))))
 		. |= TYPE_DERIVES_TYPE_VERBS
+	if(derived_table_of(A))
+		. |= TYPE_DERIVES_DEPS
 	GLOB.type_derives_cache[A.type] = .
 
 /// A refresh of A just ran draw() and hidden_verbs(): record what its type derives (first time only).

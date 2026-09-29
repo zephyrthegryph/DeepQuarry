@@ -70,6 +70,10 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		target.om_refs_in = null
 
 /proc/_rel_index(datum/target, datum/source, var_name)
+	// A relation var some type's derived() hops over: join the dependency index (derived.dm). Before the
+	// rel_tracked() check: a hop follows an area or a registry singleton as well.
+	if(GLOB?.derived_link_vars?[var_name])
+		derived_linked(source, var_name, target)
 	if(!rel_tracked(target))
 		return
 	var/list/index = _rel_index_of(target, TRUE)
@@ -118,6 +122,8 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 /proc/_rel_unindex(datum/target, datum/source, var_name)
 	if(!isdatum(target))
 		return
+	if(GLOB?.derived_link_vars?[var_name])
+		derived_unlinked(source, var_name, target)
 	var/list/index = _rel_index_of(target)
 	if(!index)
 		return
@@ -418,6 +424,9 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 /proc/rel_teardown(datum/D)
 	var/list/doomed
 	D.rel_watchers = null // its watchers' views are cleared below with the rest of the index
+	// D is a target no hop can follow any more (its sources are cleared below).
+	if(D.own_key_text && GLOB?.derived_watch?[D.own_key_text])
+		GLOB.derived_watch -= D.own_key_text
 	var/list/index = D.om_refs_in
 	if(index)
 		D.om_refs_in = null

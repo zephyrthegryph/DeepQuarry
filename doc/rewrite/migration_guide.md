@@ -26,7 +26,7 @@ Where a design page uses an older name, this guide wins.
 ## A1. The rules
 
 1. **A feature is a capability.** Never add a base-type var plus conditionals for a feature some objects have. Examples: emagged, panel open, locked, has a cell.
-2. **State is plain vars.** A dispatched call marks its target changed, and everything that depends on the target refreshes automatically: look, verbs, UI, `should_run()`.
+2. **State is plain vars.** A dispatched call marks its target changed, and everything that depends on the target refreshes automatically: look, verbs, UI, `should_run()`. What a derived proc reads is declared in `derived()` (A2a), so a change re-derives only what reads it.
 3. **Behaviour is an override of a well-known proc:** `capabilities()`, `draw()`, `tgui_data()`, `act_<x>()`, `should_run()`, `periodic_step()`, `examine_lines()`, `hidden_verbs()`.
 4. **Tables are procs returning lists.** No string mini-languages, no positional nulls, no `{x?a:b}` templates.
 5. **Lifetime is ownership.** Owned things move and die with their owner. Delete with an intent verb, not `qdel()`.
@@ -41,12 +41,46 @@ Where a design page uses an older name, this guide wins.
 | plain `var/x` | state. After any dispatched call on an object, the framework marks it changed | [built] |
 | `TRACKED(type, var, channel)` | next to a var: generates `set_<var>(value)`, which compares, writes, calls `changed()` and returns TRUE if changed. CI rejects writes to that var outside its setter | [built] |
 | `SETTER(type, var)` | registers a hand-written `set_<var>()` with side effects as the setter (also used by VV) | [built] |
-| `changed(E, channel = CHANGE_EXPLICIT)` | for the rare write outside a dispatched call (an unowned callback, raw FFI data) | [built] |
+| `changed(E, channel = CHANGE_EXPLICIT, var)` | for the rare write outside a dispatched call (an unowned callback, raw FFI data). Without `var` everything is re-derived. `TRACKED` setters, `timed_set` and the ownership accessors pass the var, so a type that declares its reads (A2a) re-derives only what reads it. A hand-written `SETTER` passes `nameof(var)` too | [built] |
 | `cap_set(A, bits, on)` / `cap_has(A, bits)` | capability state bits (`cap_state`). Bits are allocated by a registry with a uniqueness lint; never hand-number them | [built] |
 | `cap_data(A, capability)` | a capability's lazily created per-holder datum, for state that isn't a bit | [built] |
 | Accessors | `cover_is_open(A)`, `panel_is_open(A)`, `is_locked(A)`, `is_emagged(A)`, `is_broken(A)`, `wires_exposed(A)`, `is_bolted(A)`, `is_welded(A)`. Accessors never return null | [built] |
 
-**Dispatched calls** (these mark their target automatically): capability entries, `act_*` UI actions, timers, `timed_set` reverts, periodic steps, prompt answers, construction steps, ownership transfers, reagent and integrity changes, and verbs. The background sweep catches missed marks: in test builds it **fails** with the type and var; in production it corrects within seconds.
+**Dispatched calls** (these mark their target automatically, and re-derive everything): capability entries, `act_*` UI actions, timers, `timed_set` reverts, periodic steps, prompt answers, construction steps, ownership transfers, reagent and integrity changes, and verbs. The background sweep catches missed marks: in test builds it **fails** with the type and var; in production it corrects within seconds.
+
+## A2a. Declared dependencies [built: rewrite/dx-deps]
+
+`should_run()`, `draw()` (with `hidden_verbs()`), `tgui_data()` and `push_to_rust()` are derived from state. A type says what each reads in `derived()`, a per-type block built once and cached like `capabilities()` (`SHOULD_CALL_PARENT`, pure: read no instance state):
+
+```dm
+/obj/item/laser_pointer/derived()
+	. = ..()
+	. += runs_while(nameof(energy))          // should_run(): re-checked when energy changes; wakes or parks the cadence
+	. += drawn_from(nameof(pointing))        // draw() and hidden_verbs()
+	. += ui_from(nameof(energy))             // tgui_data(): the open windows are pushed
+	. += derive(nameof(power_state), nameof(stat), rel(nameof(power_area), nameof(/area::equip_on)))  // cached var, computed by derive_power_state()
+	. += rust_push(nameof(target_pressure), nameof(on))   // push_to_rust() runs, once per frame, when any of these change
+TRACKED(/obj/item/laser_pointer, energy, CHANGE_ITEM_CHARGE)     // a declared var must be able to notify
+```
+
+| Read | Means |
+|---|---|
+| `nameof(var)` | a var of the type. It must be `TRACKED` / `SETTER`, a `derive()` value, or a declared relation (`OWN` / `REL`); the lint refuses anything else |
+| `rel(nameof(link), nameof(/type::var))` | `var` on what the declared relation `link` names (a `REL` / `OWN` view) |
+| `rel_each(nameof(list_link), nameof(/type::var))` | the same for every member of a `REL_LIST` / `OWN` list |
+| `factor_dep(BF_X)` | a body factor, fired when the body's cached factors change that factor |
+
+**How it runs.** A tracked write calls `changed(E, channel, var)`. A type that declares anything is **exact**: only the outputs that read `var` are queued (`refresh_queued` is a bitmask of `DEP_RUN` / `DEP_DRAW` / `DEP_UI` / `DEP_PUSH` and one bit per `derive()` value), the entities that hop to it are marked, and a var nobody reads does nothing. A type that declares nothing keeps the old rule (any change re-derives everything), and a plain `changed(E)` always re-derives everything. The drain flushes each output at most once per entity per frame, in the order derive values, run, draw, UI, push. An exact type's periodic step no longer marks the entity blindly: the vars it writes are tracked.
+
+**`derive(var, reads...)`** keeps a cached var, recomputed by `derive_<var>()` only when a read changed, in dependency order (a value that reads another runs after it; a cycle is reported). The body must be pure. The framework is the only writer of the var (the tracked lint counts every other write). It is tracked, so other entries can read it, and a value that comes out unchanged re-runs nothing. Read it at or after the first refresh; before that it holds its declared default. Keep it a scalar or an interned value: a list rebuilt each time never compares equal.
+
+**Hops go only through relations.** The link var must be a declared `REL` / `REL_LIST` / `OWN...` var. The relation layer already calls one place when a view is linked or unlinked (`_rel_index()` / `_rel_unindex()`), and that is where a hop joins or leaves the reverse index (`GLOB.derived_watch`, weak keys). Linking, unlinking and replacing the view also re-derive what reads through it. A hop through a plain var is refused when the type's table is compiled, with a clear error. A non-atom datum calls `derived_attach(src)` in `New()`, like an atom does at init.
+
+**Capabilities carry their own reads.** `/datum/capability/proc/derived_reads(holder)` returns the entries for the holder vars its `draw()` / `ui_data()` / `cap_should_run()` read (the slot contributes `drawn_from` and `ui_from` of its var, the charger `runs_while` of its cell slot). They are merged into the holder's table, so it declares only what its own code reads. They add reads but never make a holder exact; `. += runs_while()` (no reads) is the opt-in for a holder that reads nothing of its own.
+
+**Rules.** Outputs must not write state: in test builds a tracked write while `should_run`, `draw`, `hidden_verbs`, `tgui_data` or a `derive_<var>` runs is reported (`OUTPUT WROTE STATE`). An exact type does not override `on_state_changed()`: use `push_to_rust()` with `rust_push(...)`.
+
+**Lint and audit.** `tools/ci/derived_reads_lint.py` parses each derived proc body and fails when it reads a var of the type that the matching declaration doesn't list (`src.x`, or a bare `x` the type declares). `--fix` adds the missing reads to the source `derived()` block (a dev tool; it doesn't generate anything at build). It also flags a declared var that isn't tracked, derived or a relation, and a hop through a non-relation. Legacy code is in `tools/ci/derived_reads_baseline.txt` (shrink-only). `tracked_lint.py` counts every write to a tracked or derived var outside its setter. The sampled `REFRESH DRIFT` audit is the one audit: it re-derives the look, hidden verbs, `should_run()` and every `derive()` value, compares them with what is applied, and names the likely undeclared read (in test builds: the tracked vars whose change was dropped since the last full refresh).
 
 ## A3. Capabilities
 
@@ -142,7 +176,10 @@ Every constructor below also takes the standard gating arguments `behind`, `bloc
 ```dm
 /obj/machinery/thing
 	periodic_cadence = CADENCE_SLOW        // CADENCE_SLOW (2 s) / CADENCE_SECOND / CADENCE_FAST, or periodic_interval = N for a custom interval
-/obj/machinery/thing/should_run()      // re-evaluated automatically on change; FALSE parks at zero cost
+/obj/machinery/thing/derived()
+	. = ..()
+	. += runs_while(nameof(on))            // A2a: what should_run() reads
+/obj/machinery/thing/should_run()      // re-evaluated when a declared read changes; FALSE parks at zero cost
 	return on && !is_broken(src)
 /obj/machinery/thing/periodic_step(delta)   // delta = the cadence's interval in deciseconds; scale by it
 	...
@@ -153,7 +190,7 @@ Side effects of a change (a Rust device sync, a network rebuild): override `on_s
 
 Verbs:
 - **Always on:** native `/verb/` declarations.
-- **Conditional:** `hidden_verbs()` returns the verbs to hide right now; it is re-evaluated on change and applied through the verb store [built].
+- **Conditional:** `hidden_verbs()` returns the verbs to hide right now; it is re-evaluated when a `drawn_from` read changes and applied through the verb store [built].
 - **Per subtype:** `type_verbs()` [built].
 - **Species, traits and capabilities:** `granted_verbs()` [built]: per instance, derived; default returns every capability's `verbs()`, and a human adds `/datum/trait/proc/granted_verbs()` of its species' traits (example: `xenomorph_hunter`). `hidden_verbs()` still wins.
 - **Admin:** `ADMIN_VERB(...)` (unchanged).
@@ -1017,6 +1054,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/laser_pointer, PERIODIC_SLOW, "recharging")
 /obj/item/laser_pointer/ownership()
 	. = ..()
 	. += owns(nameof(diode), policy = OWN_CONTAINED)
+TRACKED(/obj/item/laser_pointer, energy, CHANGE_ITEM_CHARGE)   // laser_act() and the step write it through set_energy()
+TRACKED(/obj/item/laser_pointer, pointing, CHANGE_EFFECTS)
 
 /obj/item/laser_pointer/capabilities()
 	. = ..()
@@ -1028,7 +1067,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/laser_pointer, PERIODIC_SLOW, "recharging")
 		return
 	...                                                     // the effect code is unchanged
 	COOLDOWN_START(src, point_cooldown, cooldown)
-	energy -= 1
+	set_energy(energy - 1)
 	if(energy <= 0)
 		to_chat(user, span_warning("You've overused the battery of [src], now it needs time to recharge!"))
 		recharge_locked = TRUE
@@ -1040,12 +1079,17 @@ DECLARE_PERIODIC_WHILE(/obj/item/laser_pointer, PERIODIC_SLOW, "recharging")
 	if(pointing)
 		look.state("pointer_[pointer_icon_state]")
 
+/obj/item/laser_pointer/derived()
+	. = ..()
+	. += runs_while(nameof(energy), nameof(max_energy))    // energy dropping in laser_act() wakes the recharge
+	. += drawn_from(nameof(pointing))
+
 /obj/item/laser_pointer/should_run()                       // recharges only while not full
 	return energy < max_energy
 
 /obj/item/laser_pointer/periodic_step(dt)
 	if(prob(20 - recharge_locked * 5))
-		energy = min(energy + 1, max_energy)
+		set_energy(min(energy + 1, max_energy))
 		if(energy == max_energy)
 			recharge_locked = FALSE
 ```

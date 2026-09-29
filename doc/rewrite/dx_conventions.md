@@ -73,8 +73,16 @@ Write it the way DM already works:
 ## Derived procs
 
 - **The procs:** `draw(look)`, `should_run()`, `hidden_verbs()`, `tgui_data()` and
-  `on_state_changed(bits)` are plain overrides. The refresh engine re-runs them at the end of the frame
-  after a change.
+  `push_to_rust()` are plain overrides (`on_state_changed(bits)` is the old, channel-based form). The
+  refresh engine re-runs them at the end of the frame after a change.
+- **Declared dependencies.** `derived()` says what each one reads: `runs_while(nameof(v))`,
+  `drawn_from(...)` (draw and hidden verbs), `ui_from(...)`, `rust_push(...)`,
+  `derive(nameof(v), reads...)` for a cached value computed by `derive_<v>()`. A read is a var name
+  (`TRACKED`, derived or a declared relation), `rel(link, nameof(/type::var))`,
+  `rel_each(list_link, nameof(/type::var))` or `factor_dep(BF_X)`. A type that declares anything is
+  exact: a tracked write re-derives only the outputs that read it, once per frame. Capabilities
+  contribute their own reads. Outputs must not write state. `derived_reads_lint.py` checks the bodies
+  (`--fix` edits the block), and the drift audit names a missing read. See `migration_guide.md` A2a.
 - **Only children the owner draws propagate.** An owned child's change marks its owner only when one of
   the owner's capabilities draws it (`draws_var`).
 - **Drift.** The sweep reports `REFRESH DRIFT` and fails test builds.
@@ -119,6 +127,7 @@ shrink-only; new code is held to 0. `// ALLOW(<lint>): <reason>` keeps a justifi
   with declared keys. C1 `ui_unsent_param`: every `act_` parameter is sent by some `act()`. C2
   `ui_unvalidated_param`: each parameter's first use is a `ui_*` validator, `!!x`, `switch(x)`,
   `islist(x)` or a compare with a constant.
+- **`derived_reads_lint.py`**: each derived output reads only what `derived()` declares.
 - **`tracked_lint.py`**: writes to a `TRACKED` / `SETTER` var outside its setter.
 - **`cap_bits_lint.py`**: `CAP_*` bits outside `cap_bits.dm`, shared or out of range, and raw
   `cap_state` writes.

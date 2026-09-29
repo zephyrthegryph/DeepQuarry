@@ -204,7 +204,7 @@
 		return null
 	holder.vars[var_name] = value // ALLOW(api, ownership): the accessor
 	own_field_changed(holder, var_name)
-	own_mark_changed(holder) // review 2 M8: every accessor write marks the holder
+	own_mark_changed(holder, var_name) // review 2 M8: every accessor write marks the holder
 	if(entry && isdatum(old))
 		own_dispose(holder, var_name, old, entry)
 	if(user && !isnull(value))
@@ -219,7 +219,7 @@
 		return null
 	holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
 	own_field_changed(holder, var_name)
-	own_mark_changed(holder)
+	own_mark_changed(holder, var_name)
 	holder.on_owned_release(var_name, value)
 	own_unstamp(value)
 	return value
@@ -243,7 +243,7 @@
 		holder.vars[var_name] = L // ALLOW(api, ownership): the accessor
 		own_field_changed(holder, var_name)
 	L |= value
-	own_mark_changed(holder)
+	own_mark_changed(holder, var_name)
 	if(user)
 		own_transfer_record(holder, value, user, log)
 	return value
@@ -255,7 +255,7 @@
 	if(!islist(L) || !(value in L))
 		return FALSE
 	L -= value
-	own_mark_changed(holder)
+	own_mark_changed(holder, var_name)
 	if(!length(L))
 		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
 		own_field_changed(holder, var_name)
@@ -287,7 +287,7 @@
 		L -= key
 	else
 		L[key] = value
-	own_mark_changed(holder)
+	own_mark_changed(holder, var_name)
 	if(entry && isdatum(old))
 		own_dispose(holder, var_name, old, entry)
 	if(user && !isnull(value))
@@ -310,7 +310,7 @@
 		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
 		own_field_changed(holder, var_name)
 	if(value)
-		own_mark_changed(holder)
+		own_mark_changed(holder, var_name)
 		holder.on_owned_release(var_name, value)
 	own_unstamp(value)
 	return value
