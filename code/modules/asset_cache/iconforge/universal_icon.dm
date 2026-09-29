@@ -274,7 +274,9 @@
 	if(!isnum(y))
 		CRASH("Invalid y offset provided to blend_icon: [y]")
 	#endif
-	transforms += list(list("type" = RUSTG_ICONFORGE_BLEND_ICON, "icon" = icon_object, "blend_mode" = blend_mode, "x" = x, "y" = y))
+	// A transform step is plain data (serialized by to_list); the embedded icon is a value, not a roster member.
+	var/list/blend_step = list("type" = RUSTG_ICONFORGE_BLEND_ICON, "icon" = icon_object, "blend_mode" = blend_mode, "x" = x, "y" = y)
+	transforms += list(blend_step)
 
 /datum/icon_transformer/proc/scale(width, height)
 	#ifdef UNIT_TESTS

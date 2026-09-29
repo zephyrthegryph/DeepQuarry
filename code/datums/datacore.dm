@@ -6,15 +6,15 @@
 /datum/datacore
 	var/name = "datacore"
 	//For general station crew
-	var/static/list/medical = list()
-	var/static/list/general = list()
-	var/static/list/security = list()
+	var/list/medical = list() // ALLOW(instance_list): owned records of the one data core; not static so the ownership accessors reach it through vars
+	var/list/general = list() // ALLOW(instance_list): owned records of the one data core; not static so the ownership accessors reach it through vars
+	var/list/security = list() // ALLOW(instance_list): owned records of the one data core; not static so the ownership accessors reach it through vars
 	//For offmap spawns so they can have records accessible by certain things
-	var/static/list/hidden_medical = list()
-	var/static/list/hidden_general = list()
-	var/static/list/hidden_security = list()
+	var/list/hidden_medical = list() // ALLOW(instance_list): owned records of the one data core; not static so the ownership accessors reach it through vars
+	var/list/hidden_general = list() // ALLOW(instance_list): owned records of the one data core; not static so the ownership accessors reach it through vars
+	var/list/hidden_security = list() // ALLOW(instance_list): owned records of the one data core; not static so the ownership accessors reach it through vars
 	//This list tracks characters spawned in the world and cannot be modified in-game. Currently referenced by respawn_character().
-	var/static/list/locked = list()
+	var/list/locked = list() // ALLOW(instance_list): owned records of the one data core; not static so the ownership accessors reach it through vars
 
 
 /datum/datacore/proc/get_manifest(monochrome, OOC,snowflake = FALSE)
@@ -40,7 +40,7 @@
 		.manifest tr.alt td {[monochrome?"border-top-width: 2px":"background-color: [OOC?"#373737; color:white":"#DEF"]"]}
 	</style></head>
 	<table class="manifest" width='350px'>
-	[snowflake?"<tr><th colspan=3 style = \"background-color: #026e6a\"><b>Online players:</b> [TGS_CLIENT_COUNT]</th></tr><tr><th colspan=3 style = \"background-color: #027a76\"><b>Crew members:</b> [GLOB.data_core.general.len]</th></tr><tr class='head'>":""]
+	[snowflake?"<tr><th colspan=3 style = \"background-color: #026e6a\"><b>Online players:</b> [TGS_CLIENT_COUNT]</th></tr><tr><th colspan=3 style = \"background-color: #027a76\"><b>Crew members:</b> [length(GLOB.data_core.general)]</th></tr><tr class='head'>":""]
 	<tr class='head'><th>Name</th><th>Rank</th><th>Activity</th></tr>
 	"} //Also a chompstation edit with the snowflake stuff on line 43
 	var/even = 0
@@ -421,7 +421,8 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 		L.fields["citizenship"]	= H.citizenship
 		L.fields["faction"]		= H.personal_faction
 		L.fields["religion"]	= H.religion
-		L.fields["image"]		= icon(cached_character_icon(H), dir = SOUTH)
+		var/icon/record_image = icon(cached_character_icon(H), dir = SOUTH)
+		L.fields["image"]		= record_image
 		L.fields["antagfac"]	= H.antag_faction
 		L.fields["antagvis"]	= H.antag_vis
 		L.fields["offmap"]      = hidden
@@ -429,7 +430,7 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 			L.fields["exploit_record"] = H.exploit_record
 		else
 			L.fields["exploit_record"] = "No additional information acquired."
-		rel_add(src, "locked", L)
+		own_add(src, "locked", L) // the data core made this record and holds it
 	return
 
 /proc/generate_record_id()

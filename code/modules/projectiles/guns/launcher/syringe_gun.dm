@@ -97,6 +97,9 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 
 	special_handling = TRUE
 
+// Loaded cartridges sit in the gun's contents; next is a view of the one on the bolt.
+OWN(/obj/item/gun/launcher/syringe, darts, OWN_CONTAINED)
+
 /obj/item/gun/launcher/syringe/consume_next_projectile()
 	if(next())
 		next().prime()
@@ -105,7 +108,7 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 
 /obj/item/gun/launcher/syringe/handle_post_fire()
 	..()
-	rel_remove(src, "darts", next())
+	own_take_member(src, "darts", next()) // fired: it flies off on its own
 	rel_clear(src, "next")
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
@@ -134,7 +137,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_RE
 			to_chat(user, span_warning("[src]'s cover is locked shut."))
 			return TRUE
 		var/obj/item/syringe_cartridge/C = LAZYACCESS(darts, 1)
-		rel_remove(src, "darts", C)
+		own_take_member(src, "darts", C)
 		user.put_in_hands(C)
 		user.visible_message("[user] removes \a [C] from [src].", span_notice("You remove \a [C] from [src]."))
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
@@ -151,7 +154,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_RE
 			return INTERACTION_HANDLED_PASS
 		user.remove_from_mob(C)
 		C.forceMove(src)
-		rel_add(src, "darts", C) //add to the end
+		own_add(src, "darts", C) //add to the end
 		user.visible_message("[user] inserts \a [C] into [src].", span_notice("You insert \a [C] into [src]."))
 		return INTERACTION_HANDLED_PASS
 	return ..()

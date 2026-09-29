@@ -429,7 +429,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 	var/list/listed_products = list()
 
 	data["chargesMoney"] = has_prices ? TRUE : FALSE
-	for(var/key = 1 to product_records.len)
+	for(var/key = 1 to length(product_records))
 		var/datum/stored_item/vending_product/I = product_records[key]
 
 		if(!(I.category & categories))

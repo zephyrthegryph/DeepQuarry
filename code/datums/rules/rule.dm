@@ -94,11 +94,13 @@
 	predicate.spec = condition
 	if(!predicate.compile())
 		errors += predicate.errors
-		own_take(src, "predicate")
+		own_clear(src, "predicate", OWN_DELETE)
 	else
 		var/datum/rule_compiler/compiler = new(src)
 		compiler.visit(predicate.root)
-		triggers = compiler.triggers
+		// The rule takes the triggers the (transient) compiler built.
+		for(var/datum/rule_trigger/trigger as anything in compiler.triggers?.Copy())
+			own_add(src, "triggers", own_take_member(compiler, "triggers", trigger))
 		errors += compiler.errors
 		if(!length(triggers))
 			errors += "has no trigger: no clause reads a channel-backed or DM-owned property"

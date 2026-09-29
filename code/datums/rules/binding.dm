@@ -322,7 +322,7 @@
 			return
 		model = dq_rx_rate_linear(0, 1, 0, null)
 		hold_models[i] = model
-		hold_tokens[i] = dq_rx_on_rate(src, model, TRUE, rule.hold_for / 10)
+		hold_tokens[i] = dq_rx_on_rate(src, model, TRUE, rule.hold_for / 10) // ALLOW(ownership): positional slot aligned with table.rules (null gaps); the watch itself is linked through the world_watches relation, and this slot is cleared on cancel/spend
 		return
 	// Within a tick of the hold time counts: the model reads at step ticks.
 	if(now && dq_rx_rate_read(model) >= (rule.hold_for - world.tick_lag) / 10)
@@ -336,7 +336,7 @@
 		// Re-arm the crossing watch from the resumed rate.
 		if(!isnull(hold_tokens[i]))
 			dq_rx_cancel(src, hold_tokens[i])
-		hold_tokens[i] = dq_rx_on_rate(src, model, TRUE, rule.hold_for / 10)
+		hold_tokens[i] = dq_rx_on_rate(src, model, TRUE, rule.hold_for / 10) // ALLOW(ownership): positional slot aligned with table.rules (null gaps); the watch itself is linked through the world_watches relation, and this slot is cleared on cancel/spend
 
 /datum/rule_binding/proc/fire(i)
 	var/list/rules = table.rules

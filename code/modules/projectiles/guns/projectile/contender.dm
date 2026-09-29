@@ -39,7 +39,7 @@
 		icon_state = icon_retracted
 		retracted_bolt = 1
 		return 1
-	else if(retracted_bolt && loaded.len)
+	else if(retracted_bolt && length(loaded))
 		to_chat(user, span_notice("You cycle the loaded round into the chamber, allowing you to fire."))
 	else
 		to_chat(user, span_notice("You cycle the boly back into position, leaving the gun empty."))

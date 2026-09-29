@@ -139,7 +139,7 @@
 				if(wornrig.chest)
 					var/obj/item/clothing/suit/space/rig/rigchest = wornrig.chest
 					if(weld_rate && rigchest.damage && cell.checked_use(weld_power_use * weld_rate * CELLRATE))
-						own_take_all(rigchest, "breaches")
+						own_clear(rigchest, "breaches", OWN_DELETE)
 						rigchest.calc_breach_damage()
 						to_chat(H, span_notice("[rigchest] is repaired!"))
 				if(wornrig.cell)

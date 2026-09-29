@@ -57,7 +57,7 @@
 	stack_type = /obj/item/stack/material/fur/wool
 
 /datum/material/fur/generate_recipes()
-	recipes = list(
+	var/list/recipes = list(
 		new /datum/stack_recipe("duster", /obj/item/clothing/suit/storage/duster/craftable, 10, time = 15 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
 		new /datum/stack_recipe("bedsheet", /obj/item/bedsheet/craftable, 10, time = 30 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
 		new /datum/stack_recipe("jumpsuit", /obj/item/clothing/under/color/white/craftable, 8, time = 15 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
@@ -92,6 +92,7 @@
 		new /datum/stack_recipe("collar", /obj/item/clothing/accessory/collar/craftable, 2, time = 5 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
 		new /datum/stack_recipe("blindfold", /obj/item/clothing/glasses/sunglasses/blindfold/whiteblindfold/craftable, 2, time = 5 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]")
 	)
+	return recipes
 /obj/item/stack/material/fur
 	name = MAT_FUR
 	icon_state = "sheet-fabric"

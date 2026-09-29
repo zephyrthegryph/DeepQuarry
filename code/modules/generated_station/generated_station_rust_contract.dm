@@ -366,7 +366,7 @@
 			return generated_station_rust_decode_failure(spec, errors, "Department section contains a non-record value.")
 		var/id = row["id"]
 		var/definition_id = row["definition_id"]
-		if(!istext(id) || !length(id) || !istext(definition_id) || !length(definition_id) || departments[id] || !definitions[definition_id] || !generated_station_rust_integer(row["desired_area"], 1, width * height) || !istext(row["node_id"]) || !length(row["node_id"]))
+		if(!istext(id) || !length(id) || !istext(definition_id) || !length(definition_id) || departments?[id] || !definitions[definition_id] || !generated_station_rust_integer(row["desired_area"], 1, width * height) || !istext(row["node_id"]) || !length(row["node_id"]))
 			return generated_station_rust_decode_failure(spec, errors, "Invalid or duplicate department record.")
 		var/datum/generated_station_department_instance/department = new
 		department.id = id
@@ -380,7 +380,7 @@
 		if(!islist(row))
 			return generated_station_rust_decode_failure(spec, errors, "Node section contains a non-record value.")
 		var/id = row["id"]
-		if(!istext(id) || !length(id) || nodes[id] || !departments[row["department_id"]] || !generated_station_rust_integer(row["desired_area"], 1, width * height) || !generated_station_rust_integer(row["x"], 1, width) || !generated_station_rust_integer(row["y"], 1, height) || !generated_station_rust_integer(row["width"], 1, width) || !generated_station_rust_integer(row["height"], 1, height) || row["x"] + row["width"] - 1 > width || row["y"] + row["height"] - 1 > height || !generated_station_rust_integer(row["frontage_x"], 1, width) || !generated_station_rust_integer(row["frontage_y"], 1, height) || !generated_station_rust_integer(row["frontage_spine_coordinate"], 1, max(width, height)))
+		if(!istext(id) || !length(id) || nodes[id] || !departments?[row["department_id"]] || !generated_station_rust_integer(row["desired_area"], 1, width * height) || !generated_station_rust_integer(row["x"], 1, width) || !generated_station_rust_integer(row["y"], 1, height) || !generated_station_rust_integer(row["width"], 1, width) || !generated_station_rust_integer(row["height"], 1, height) || row["x"] + row["width"] - 1 > width || row["y"] + row["height"] - 1 > height || !generated_station_rust_integer(row["frontage_x"], 1, width) || !generated_station_rust_integer(row["frontage_y"], 1, height) || !generated_station_rust_integer(row["frontage_spine_coordinate"], 1, max(width, height)))
 			return generated_station_rust_decode_failure(spec, errors, "Invalid or duplicate node record.")
 		var/datum/generated_station_layout_node/node = new
 		node.id = id
@@ -400,7 +400,7 @@
 		var/datum/generated_station_layout_node/node = nodes[row["node_id"]]
 		var/datum/generated_station_department_instance/room_department
 		if(node)
-			room_department = departments[node.department_instance_id]
+			room_department = departments?[node.department_instance_id]
 		var/datum/generated_room_definition/room_definition
 		if(room_department && istext(row["role"]) && length(row["role"]))
 			var/datum/generated_room_definition/full_definition = generated_room_definition_for(room_department.definition().id, row["role"])

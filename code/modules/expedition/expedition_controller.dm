@@ -163,7 +163,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		to_chat(user, span_warning("The assignment cannot be abandoned while crew remain at the site."))
 		return FALSE
 	rel_clear(vessel, "active_expedition")
-	if(site.z_level > 0 && sites["[site.z_level]"] == site)
+	if(site.z_level > 0 && sites?["[site.z_level]"] == site)
 		release_site(site, "assignment abandoned")
 	else
 		if(site.flight_destination_id)
@@ -261,7 +261,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 
 /datum/world_service/expedition/service_step(resumed)
 	for(var/key in sites.Copy())
-		var/datum/expedition_site/site = sites[key]
+		var/datum/expedition_site/site = sites?[key]
 		if(!istype(site))
 			own_take_member(src, "sites", key)
 			continue
@@ -355,8 +355,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		APC.set_dir(WEST)
 		rel_set(emergency_area, "apc", APC)
 		own_add(materialization, "infrastructure", APC)
-		if(APC.terminal)
-			own_add(materialization, "infrastructure", APC.terminal)
+		// The APC owns its terminal (deleted with it); it is not adopted separately.
 	var/list/light_sockets = list(
 		list(materialization.world_turf(mid_x, spec.grid_height - 1), NORTH, 0, 26),
 		list(materialization.world_turf(mid_x, 2), SOUTH, 0, -26),

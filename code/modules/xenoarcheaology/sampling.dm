@@ -95,7 +95,7 @@
 						artifact_distance = cur_dist + rand() * 2 - 1
 						artifact_id = T.artifact_find.artifact_id
 				else
-					GLOB.xenoarch_service.artifact_spawning_turfs.Remove(T)
+					rel_remove(GLOB.xenoarch_service, "artifact_spawning_turfs", T)
 
 /obj/item/core_sampler
 	name = "core sampler"

@@ -306,7 +306,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 					R.fields["cdi"] = "None"
 					R.fields["cdi_d"] = "No diseases have been diagnosed at the moment."
 					R.fields["notes"] = "No notes."
-					GLOB.data_core.medical += R
+					own_add(GLOB.data_core, "medical", R)
 					rel_set(src, "active2", R)
 					screen = MED_DATA_RECORD
 					set_temp("Medical record created.", "success")

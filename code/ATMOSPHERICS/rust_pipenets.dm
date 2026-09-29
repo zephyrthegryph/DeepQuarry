@@ -123,7 +123,8 @@
 	for(var/index = 1 to port_count)
 		if(index <= length(rust_pipe_port_ids) && rust_pipe_port_ids[index])
 			continue
-		rust_pipe_port_ids[index] = rust_new_pipe_port(src, index)
+		var/port_id = rust_new_pipe_port(src, index) // a numeric Rust port id, not an entity
+		rust_pipe_port_ids[index] = port_id
 
 /obj/machinery/atmospherics/proc/rust_register_pipe_topology(commit = TRUE)
 	rust_allocate_pipe_ports()
@@ -368,7 +369,8 @@
 /obj/machinery/atmospherics/proc/rust_ensure_device_id_n(slot)
 	LAZYINITLIST(rust_device_ids)
 	if(!rust_device_ids[slot])
-		rust_device_ids[slot] = rust_new_pipe_device(src)
+		var/device_id = rust_new_pipe_device(src) // a numeric Rust device id, not an entity
+		rust_device_ids[slot] = device_id
 	return rust_device_ids[slot]
 
 /// `rust_set_device()`'s N-edge counterpart: registers (or replaces)

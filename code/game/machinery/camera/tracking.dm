@@ -100,8 +100,9 @@
 /datum/trackable
 	var/list/names = list() // ALLOW(instance_list): d: tracking scratch state rebuilt on every search
 	var/list/namecounts
-	var/list/humans
-	var/list/others
+	var/list/humans // name -> REF(mob) text; resolve through `tracked`
+	var/list/others // name -> REF(mob) text; resolve through `tracked`
+	var/list/tracked // relation: every mob listed above (cleared by the framework when one dies)
 	var/list/cameras = list() // ALLOW(instance_list): d: tracking scratch state rebuilt on every search
 
 /mob/living/silicon/ai/proc/trackable_mobs()
@@ -122,10 +123,12 @@
 		else
 			TB.names.Add(name)
 			LAZYSET(TB.namecounts, name, 1)
+		rel_add(TB, "tracked", M)
+		var/mob_ref = REF(M)
 		if(ishuman(M))
-			LAZYSET(TB.humans, name, M)
+			LAZYSET(TB.humans, name, mob_ref)
 		else
-			LAZYSET(TB.others, name, M)
+			LAZYSET(TB.others, name, mob_ref)
 
 	var/list/targets = sortList(TB.humans || list()) + sortList(TB.others || list())
 	own_set(src, "track", TB)
@@ -142,7 +145,8 @@
 	if(!target_name)
 		rel_clear(src, "cameraFollow")
 
-	var/mob/target = (isnull(LAZYACCESS(track.humans, target_name)) ? LAZYACCESS(track.others, target_name) : LAZYACCESS(track.humans, target_name))
+	var/target_ref = LAZYACCESS(track?.humans, target_name) || LAZYACCESS(track?.others, target_name)
+	var/mob/target = target_ref ? locate(target_ref) in track.tracked : null
 	own_clear(src, "track", OWN_DELETE)
 	ai_actual_track(target)
 

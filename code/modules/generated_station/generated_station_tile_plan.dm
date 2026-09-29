@@ -98,7 +98,7 @@
 /datum/generated_station_tile_plan/proc/tile(local_x, local_y) as /datum/generated_station_tile_intent
 	if(local_x < 1 || local_y < 1 || local_x > grid_width || local_y > grid_height)
 		return null
-	return tiles[coordinate_key(local_x, local_y)]
+	return tiles?[coordinate_key(local_x, local_y)]
 
 /// Builds the utility candidate index once. Utility planning previously scanned
 /// the complete grid independently for every fixture in every room.
@@ -106,7 +106,7 @@
 	utility_floors_by_owner.Cut()
 	utility_floors_by_zone.Cut()
 	for(var/key in tiles)
-		var/datum/generated_station_tile_intent/intent = tiles[key]
+		var/datum/generated_station_tile_intent/intent = tiles?[key]
 		if(intent.structure_kind != GENERATED_STATION_TILE_FLOOR)
 			continue
 		if(!utility_floors_by_owner[intent.owner_id])
@@ -234,7 +234,7 @@
 	var/count = length(tiles)
 	if(stage == 1)
 		for(var/n in i to count)
-			var/datum/generated_station_tile_intent/door_intent = tiles[tiles[n]]
+			var/datum/generated_station_tile_intent/door_intent = tiles?[tiles?[n]]
 			if(door_intent.door_type && ispath(door_intent.door_type, /obj/machinery/door/airlock/generated_station_exterior))
 				var/open_x = door_intent.local_x + (door_intent.door_direction == EAST) - (door_intent.door_direction == WEST)
 				var/open_y = door_intent.local_y + (door_intent.door_direction == NORTH) - (door_intent.door_direction == SOUTH)
@@ -245,26 +245,27 @@
 		i = 1
 	if(stage == 2)
 		for(var/n in i to count)
-			var/datum/generated_station_tile_intent/intent = tiles[tiles[n]]
+			var/datum/generated_station_tile_intent/intent = tiles?[tiles?[n]]
 			if(intent.structure_kind == GENERATED_STATION_TILE_FLOOR)
 				for(var/list/offset in list(list(1, 0), list(-1, 0), list(0, 1), list(0, -1)))
 					var/datum/generated_station_tile_intent/neighbor = tile(intent.local_x + offset[1], intent.local_y + offset[2])
 					if(neighbor && hull_openings[coordinate_key(neighbor.local_x, neighbor.local_y)])
 						continue
 					if(neighbor && neighbor.structure_kind == GENERATED_STATION_TILE_EXTERIOR)
-						hull_coordinates[coordinate_key(neighbor.local_x, neighbor.local_y)] = neighbor
+						var/list/hull_cell = list(neighbor.local_x, neighbor.local_y) // coordinates, not the intent (plain data)
+						hull_coordinates[coordinate_key(neighbor.local_x, neighbor.local_y)] = hull_cell
 			if(n < count && generation_owner()?.generation_checkpoint("Deriving station hull", 29))
 				return list(2, n + 1)
 		for(var/key in hull_coordinates)
-			var/datum/generated_station_tile_intent/intent = hull_coordinates[key]
-			claim(intent.local_x, intent.local_y, wall_owner_id, "hull", GENERATED_STATION_TILE_HULL, null, null)
+			var/list/hull_xy = hull_coordinates[key]
+			claim(hull_xy[1], hull_xy[2], wall_owner_id, "hull", GENERATED_STATION_TILE_HULL, null, null)
 		stage = 3
 		i = 1
 	// Close convex corners with the one exterior cell shared by their two
 	// perpendicular wall runs. Arbitrarily extending isolated walls creates thick
 	// blocks and buried wall cells; a geometric corner claim is deterministic.
 	for(var/n in i to count)
-		var/datum/generated_station_tile_intent/intent = tiles[tiles[n]]
+		var/datum/generated_station_tile_intent/intent = tiles?[tiles?[n]]
 		if(intent.structure_kind == GENERATED_STATION_TILE_EXTERIOR)
 			var/north = tile(intent.local_x, intent.local_y + 1)?.structure_kind == GENERATED_STATION_TILE_HULL
 			var/south = tile(intent.local_x, intent.local_y - 1)?.structure_kind == GENERATED_STATION_TILE_HULL
@@ -308,9 +309,11 @@
 	var/list/open = seal_open
 	var/list/visited = seal_visited
 	while(seal_open_count)
-		var/datum/generated_station_tile_intent/current = open[seal_open_count]
+		var/key = open[seal_open_count]
 		open[seal_open_count--] = null
-		var/key = (current.local_y - 1) * grid_width + current.local_x
+		var/datum/generated_station_tile_intent/current = tile(((key - 1) % grid_width) + 1, round((key - 1) / grid_width) + 1)
+		if(!current)
+			continue
 		if(visited[key] || current.structure_kind == GENERATED_STATION_TILE_HULL || (current.door_type && ispath(current.door_type, /obj/machinery/door/airlock/generated_station_exterior)))
 			continue
 		visited[key] = TRUE
@@ -335,7 +338,7 @@
 	if(seal_queued[key])
 		return
 	seal_queued[key] = TRUE
-	seal_open[++seal_open_count] = intent
+	seal_open[++seal_open_count] = key // the cell index (plain data): validate_seal_step() looks the tile up
 
 
 /// Accessor for the generation_owner var.

@@ -66,7 +66,7 @@
 		"red"=/obj/item/clothing/head/soft/red,
 		"yellow"=/obj/item/clothing/head/soft/yellow
 	)
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/head/cap/mailman
 	display_name = "cap, blue station"
@@ -110,7 +110,7 @@
 		"Bandit's"=/obj/item/clothing/head/cowboy/bandit,
 		"Wide"=/obj/item/clothing/head/cowboy/wide
 	)
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/head/fedora/grey
 	display_name = "fedora selector"
@@ -126,7 +126,7 @@
 		"Panama"=/obj/item/clothing/head/fedora/panama,
 		"Grey"=/obj/item/clothing/head/fedora
 	)
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/head/hairflower
 	display_name = "hair flower pin (colorable)"
@@ -145,7 +145,7 @@
 	var/list/pins = list()
 	for(var/obj/item/clothing/head/pin/pin_type as anything in typesof(/obj/item/clothing/head/pin))
 		pins[initial(pin_type.name)] = pin_type
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(pins)))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(pins)))
 
 /datum/gear/head/hardhat
 	display_name = "hardhat selection"
@@ -157,7 +157,7 @@
 	var/list/hardhats = list()
 	for(var/obj/item/clothing/head/hardhat/hardhat_type as anything in typesof(/obj/item/clothing/head/hardhat))
 		hardhats[initial(hardhat_type.name)] = hardhat_type
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(hardhats)))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(hardhats)))
 
 /datum/gear/head/boater
 	display_name = "hat, boatsman"
@@ -197,7 +197,7 @@
 	var/list/santahats = list()
 	for(var/obj/item/clothing/head/santa/santahat_type as anything in typesof(/obj/item/clothing/head/santa))
 		santahats[initial(santahat_type.name)] = santahat_type
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(santahats)))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(santahats)))
 
 /datum/gear/head/hijab
 	display_name = "hijab"
@@ -306,7 +306,7 @@
 		"demonic"=/obj/item/clothing/head/welding/demon,
 		"knightly"=/obj/item/clothing/head/welding/knight
 	)
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/head/beret/solgov
 	display_name = "beret government, selection"
@@ -318,7 +318,7 @@
 	for(var/sol_style in typesof(/obj/item/clothing/head/beret/solgov))
 		var/obj/item/clothing/head/beret/solgov/sol = sol_style
 		sols[initial(sol.name)] = sol
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(sols)))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(sols)))
 
 /datum/gear/head/surgery
 	display_name = "surgical cap selection"
@@ -333,7 +333,7 @@
 	cap_type["Green cap"] = /obj/item/clothing/head/surgery/green
 	cap_type["Black cap"] = /obj/item/clothing/head/surgery/black
 	cap_type["Navy cap"] = /obj/item/clothing/head/surgery/navyblue
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(cap_type))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(cap_type))
 
 /datum/gear/head/circuitry
 	display_name = "headwear, circuitry (empty)"
@@ -395,7 +395,7 @@
 		"Security Softcap"=/obj/item/clothing/head/soft/sec,
 		"Proxima Centauri Contractor Beret"=/obj/item/clothing/head/beret/corp/pcrc
 	)
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/head/med_hat_selector
 	display_name = "Medical - Basic Headwear"
@@ -412,7 +412,7 @@
 		"chemist's beret"=/obj/item/clothing/head/beret/medical/chem,
 		"virologist's beret"=/obj/item/clothing/head/beret/medical/viro
 	)
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/head/giantbow/New()
 	..()
@@ -430,7 +430,7 @@
 	"back bow"=/obj/item/clothing/head/bow/back,
 	"sweet bow"=/obj/item/clothing/head/bow/sweet
 	)
-	own_add(src, "gear_tweaks", list(new/datum/gear_tweak/path(bows), GLOB.gear_tweak_free_color_choice))
+	LAZYADD(gear_tweaks, list(new/datum/gear_tweak/path(bows), GLOB.gear_tweak_free_color_choice))
 
 /datum/gear/head/pilot
 	display_name = "pilot helmets selection"
@@ -446,7 +446,7 @@
 		"pilot helmet, ITV Talon"=/obj/item/clothing/head/pilot_vr/talon,
 		"pilot helmet, major bill's transport"=/obj/item/clothing/head/pilot_vr/mbill
 	)
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/head/headbando
 	display_name = "basic headband"
@@ -465,7 +465,7 @@
 	var/list/headbands_list = list()
 	for(var/obj/item/clothing/head/bands as anything in typesof(/obj/item/clothing/head/headband/maid))
 		headbands_list[initial(bands.name)] = bands
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(headbands_list)))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(headbands_list)))
 
 //Detective alternative
 /datum/gear/head/detective_alt
@@ -488,7 +488,7 @@
 		"tiger, white"=/obj/item/clothing/head/pelt/tigerpeltsnow,
 		"tiger, pink"=/obj/item/clothing/head/pelt/tigerpeltpink
 	)
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/head/magic_hat
 	display_name = "wizard hat, colorable"

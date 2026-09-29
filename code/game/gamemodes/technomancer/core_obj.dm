@@ -109,21 +109,19 @@
 		return
 	for(var/A in summoned_mobs)
 		// First, a null check.
+		// Owned members are unstamped/dropped by the ownership framework when they die, so nulls need no manual removal.
 		if(isnull(A))
-			LAZYREMOVE(summoned_mobs, A)
 			continue
 		// Now check for dead mobs who shouldn't be on the list.
 		if(isliving(A))
 			var/mob/living/L = A
 			if(L.stat == DEAD)
-				LAZYREMOVE(summoned_mobs, L)
+				own_take_member(src, "summoned_mobs", L) // detached; fade_away deletes it
 				om_after(L, 1, TYPE_PROC_REF(/mob/living, fade_away))
 
 // Deletes all the summons and wards from the core, so that Destroy() won't have issues.
 /obj/item/technomancer_core/proc/dismiss_all_summons()
-	for(var/mob/living/L in summoned_mobs)
-		LAZYREMOVE(summoned_mobs, L)
-		qdel(L)
+	own_clear(src, "summoned_mobs", OWN_DELETE)
 	for(var/mob/living/ward in wards_in_use)
 		LAZYREMOVE(wards_in_use, ward)
 		qdel(ward)

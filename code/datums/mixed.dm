@@ -26,18 +26,13 @@
 // TODO - Some machines/computers might be holding references to us.  Lets look into that, but at least for now lets make sure that the manifest is cleaned up.
 // Locked records refuse deletion unless forced.
 /datum/data/record/lifecycle_keep(force)
-	if(force || !GLOB.data_core.locked.Find(src))
+	if(force || !(src in GLOB.data_core.locked))
 		return FALSE
 	stack_trace("Someone tried to qdel a record that was in GLOB.data_core.locked [log_info_line(src)]")
 	return TRUE
 
-// Records leave the data core.
-/datum/data/record/lifecycle_dematerialize()
-	..()
-	GLOB.data_core.locked -= src
-	GLOB.data_core.medical -= src
-	GLOB.data_core.general -= src
-	GLOB.data_core.security -= src
+// Records leave the data core by ownership: GLOB.data_core owns its general/medical/security/locked
+// lists, and a dying record leaves its owner's var in phase 2.
 
 /datum/data/text
 	name = "text"

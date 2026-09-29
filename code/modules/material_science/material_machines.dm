@@ -60,6 +60,10 @@
 	var/firing_timer
 	var/datum/gas_mixture/chamber_air
 
+// The unfired charge sits in the furnace's contents until it is fired or unloaded.
+OWN(/obj/machinery/material_furnace, feedstock, OWN_CONTAINED)
+OWN(/obj/machinery/material_furnace, carbon_feed, OWN_CONTAINED)
+
 DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 
@@ -111,7 +115,7 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 		to_chat(user, span_warning("You cannot let go of [stock]."))
 		return TRUE
 	stock.forceMove(src)
-	rel_add(src, "feedstock", stock)
+	own_add(src, "feedstock", stock)
 	visible_message(span_notice("[user] loads [stock] into [src]."))
 	return TRUE
 
@@ -130,7 +134,7 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 		to_chat(user, span_warning("You cannot let go of [item]."))
 		return TRUE
 	item.forceMove(src)
-	rel_add(src, "carbon_feed", item)
+	own_add(src, "carbon_feed", item)
 	visible_message(span_notice("[user] adds carbon to [src]'s charge."))
 	return TRUE
 
@@ -266,11 +270,11 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 				break
 		if(!QDELETED(stock) && stock.get_amount())
 			stock.forceMove(get_turf(src))
-	rel_clear(src, "feedstock")
+	own_take_all(src, "feedstock")
 	for(var/obj/item/ore/coal in carbon_feed)
 		batch.add_additive("carbon", 4, 0.5, MATERIAL_COST_CHEMICALS)
 		qdel(coal)
-	rel_clear(src, "carbon_feed")
+	own_take_all(src, "carbon_feed")
 	if(!batch.amount)
 		qdel(batch)
 		return
@@ -349,10 +353,10 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 		return FALSE
 	for(var/obj/item/stack/material/stock as anything in feedstock)
 		stock.forceMove(user.drop_location())
-	rel_clear(src, "feedstock")
+	own_take_all(src, "feedstock")
 	for(var/obj/item/ore/coal as anything in carbon_feed)
 		coal.forceMove(user.drop_location())
-	rel_clear(src, "carbon_feed")
+	own_take_all(src, "carbon_feed")
 	visible_message(span_notice("[user] unloads the unfired charge from [src]."))
 	return TRUE
 

@@ -64,13 +64,16 @@
 	var/list/starting_chems = null
 	special_weapon_handling = TRUE
 
+// Slotted beakers sit in the gun's contents; mixing is a subset of them.
+OWN(/obj/item/gun/projectile/dartgun, beakers, OWN_CONTAINED)
+
 /obj/item/gun/projectile/dartgun/Initialize(mapload)
 	. = ..()
 	if(starting_chems)
 		for(var/chem in starting_chems)
 			var/obj/B = new container_type(src)
 			B.reagents.add_reagent(chem, 60)
-			rel_add(src, "beakers", B)
+			own_add(src, "beakers", B)
 	update_icon()
 
 /obj/item/gun/projectile/dartgun/update_icon()
@@ -78,12 +81,12 @@
 		icon_state = "[base_state]-empty"
 		return 1
 	if(track_magazine)
-		if(!ammo_magazine.stored_ammo || ammo_magazine.stored_ammo.len == 0)
+		if(!ammo_magazine.stored_ammo || length(ammo_magazine.stored_ammo) == 0)
 			icon_state = "[base_state]-0"
-		else if(ammo_magazine.stored_ammo.len > default_magazine_casing_count)
+		else if(length(ammo_magazine.stored_ammo) > default_magazine_casing_count)
 			icon_state = "[base_state]-[default_magazine_casing_count]"
 		else
-			icon_state = "[base_state]-[ammo_magazine.stored_ammo.len]"
+			icon_state = "[base_state]-[length(ammo_magazine.stored_ammo)]"
 		return 1
 	else
 		icon_state = "[base_state]"
@@ -115,7 +118,7 @@
 		var/obj/item/reagent_containers/glass/beaker/B = I
 		user.drop_item()
 		B.forceMove(src)
-		rel_add(src, "beakers", B)
+		own_add(src, "beakers", B)
 		to_chat(user, span_blue("You slot [B] into [src]."))
 		updateUsrDialog(user)
 		return 1
@@ -167,7 +170,7 @@
 				var/obj/item/reagent_containers/glass/beaker/B = LAZYACCESS(beakers, index)
 				to_chat(usr, "You remove [B] from [src].")
 				LAZYREMOVE(mixing, B)
-				rel_remove(src, "beakers", B)
+				own_take_member(src, "beakers", B)
 				B.forceMove(get_turf(src))
 	else if (href_list["eject_cart"])
 		unload_ammo(usr)

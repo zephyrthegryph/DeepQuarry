@@ -34,7 +34,7 @@
 	var/used = FALSE
 	var/dirtiness = 0
 	var/list/targets
-	/// Target hash -> detached contagion copies picked up from that target. Lazy.
+	/// Owned list of /datum/syringe_contamination: the contagion copies picked up from each target. Lazy.
 	var/list/viruses
 	drop_sound = 'sound/items/drop/glass.ogg'
 	pickup_sound = 'sound/items/pickup/glass.ogg'
@@ -100,8 +100,25 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 /// Every contagion copy on the syringe, flattened.
 /obj/item/reagent_containers/syringe/proc/carried_contagions()
 	. = list()
-	for(var/key in viruses)
-		. += viruses[key]
+	for(var/datum/syringe_contamination/C as anything in viruses)
+		. += C.contagions
+
+/// Replaces the contamination recorded for `hash` with `contagions` (unowned copies it adopts).
+/obj/item/reagent_containers/syringe/proc/set_contamination(hash, list/contagions)
+	for(var/datum/syringe_contamination/old as anything in viruses?.Copy())
+		if(old.hash == hash)
+			own_remove(src, "viruses", old)
+	var/datum/syringe_contamination/C = new
+	C.hash = hash
+	for(var/datum/affliction/contagion/D as anything in contagions)
+		own_add(C, "contagions", D)
+	own_add(src, "viruses", C)
+
+/// The contagion copies a syringe carries from one target (keyed by that target's hash).
+/datum/syringe_contamination
+	var/hash
+	/// Owned contagion copies.
+	var/list/contagions
 
 /// Drawing `amount` of blood from the target.
 /datum/om/task/timed/syringe_draw
@@ -454,7 +471,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/steroid, null, list(REAGEN
 
 	//Grab any viruses they have
 	if(iscarbon(target) && target.has_contagions())
-		LAZYSET(viruses, hash, contagion_copies(target.get_spreadable_contagions()))
+		set_contamination(hash, contagion_copies(target.get_spreadable_contagions()))
 
 	//Dirtiness should be very low if you're the first injectee. If you're spam-injecting 4 people in a row around you though,
 	//This gives the last one a 30% chance of infection.
@@ -468,10 +485,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/steroid, null, list(REAGEN
 
 	//75% chance to spread a virus if we have one
 	if(LAZYLEN(viruses) && prob(75))
-		var/old_hash = pick(viruses)
-		if(hash != old_hash) //Same virus you already had?
-			var/list/carried = viruses[old_hash]
-			for(var/datum/affliction/contagion/virus as anything in carried)
+		var/datum/syringe_contamination/old = pick(viruses)
+		if(hash != old.hash) //Same virus you already had?
+			for(var/datum/affliction/contagion/virus as anything in old.contagions)
 				target.force_contagion(virus)
 
 	if(!used)
@@ -527,7 +543,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/steroid, null, list(REAGEN
 	. = ..()
 	if(prob(75))
 		var/datum/affliction/contagion/engineered/new_disease = new /datum/affliction/contagion/engineered/random(rand(1, 3), rand(7, 9), 2, infected = src)
-		own_put(src, "viruses", "old", list(new_disease))
+		set_contamination("old", list(new_disease))
 
 #undef SYRINGE_DRAW
 #undef SYRINGE_INJECT

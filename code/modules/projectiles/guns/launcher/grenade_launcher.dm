@@ -19,6 +19,9 @@
 	special_handling = TRUE
 	var/underslung = FALSE
 
+// Loaded grenades sit in the launcher's contents; the chambered one is a view (chambered).
+OWN(/obj/item/gun/launcher/grenade, grenades, OWN_CONTAINED)
+
 //revolves the magazine, allowing players to choose between multiple grenade types
 /obj/item/gun/launcher/grenade/proc/pump(mob/user)
 	playsound(user, 'sound/weapons/shotgunpump.ogg', 60, 1)
@@ -27,10 +30,10 @@
 	if(length(grenades))
 		next = LAZYACCESS(grenades, 1) //get this first, so that the chambered grenade can still be removed if the grenades list is empty
 	if(chambered())
-		LAZYADD(grenades, chambered()) //rotate the revolving magazine
+		own_add(src, "grenades", chambered()) //rotate the revolving magazine
 		rel_clear(src, "chambered")
 	if(next)
-		LAZYREMOVE(grenades, next) //Remove grenade from loaded list.
+		own_take_member(src, "grenades", next) //Remove grenade from loaded list (it stays in our contents, chambered).
 		rel_set(src, "chambered", next)
 		to_chat(user, span_warning("You pump [src], loading \a [next] into the chamber."))
 	else
@@ -52,15 +55,15 @@
 			return
 		user.remove_from_mob(G)
 		G.forceMove(src)
-		LAZYINITLIST(grenades); grenades.Insert(1, G) //add to the head of the list, so that it is loaded on the next pump
+		own_add(src, "grenades", G)
+		moveElement(grenades, length(grenades), 1) //to the head of the list, so that it is loaded on the next pump
 		user.visible_message("[user] inserts \a [G] into [src].", span_notice("You insert \a [G] into [src]."))
 		return
 	to_chat(user, span_warning("[G] doesn't seem to fit in the [src]!"))
 
 /obj/item/gun/launcher/grenade/proc/unload(mob/user)
 	if(length(grenades))
-		var/obj/item/grenade/G = grenades[grenades.len]
-		grenades.len--
+		var/obj/item/grenade/G = own_take_member(src, "grenades", grenades[length(grenades)])
 		user.put_in_hands(G)
 		user.visible_message("[user] removes \a [G] from [src].", span_notice("You remove \a [G] from [src]."))
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)

@@ -44,7 +44,9 @@
 	var/datum/predicate_compiler/compiler = new(registry || dq_property_registry(), name || "[type]")
 	own_set(src, "root", compiler.compile_spec(spec))
 	errors = length(compiler.errors) ? compiler.errors : null
-	watchable = length(compiler.watchable) ? compiler.watchable : null
+	rel_clear(src, "watchable")
+	for(var/datum/pred_node/node as anything in compiler.watchable)
+		rel_add(src, "watchable", node) // nodes are owned by the tree under root
 	if(errors)
 		own_set(src, "root", new /datum/pred_node/invalid)
 	return !errors
@@ -326,7 +328,7 @@ DECLARE_SHARED_CACHE(inline_predicate, GLOBAL_PROC_REF(build_inline_predicate), 
 	node.value = clause[5]
 	if(node.op != PRED_CMP_EQ && node.op != PRED_CMP_NE && channel_backed(def.id))
 		node.watch_kind = PRED_WATCH_THRESHOLD
-		own_add(src, "watchable", node)
+		rel_add(src, "watchable", node) // the node belongs to the tree under root
 	return node
 
 /datum/predicate_compiler/proc/compile_band(list/clause, negate)
@@ -348,7 +350,7 @@ DECLARE_SHARED_CACHE(inline_predicate, GLOBAL_PROC_REF(build_inline_predicate), 
 	node.outside = negate
 	if(channel_backed(def.id))
 		node.watch_kind = PRED_WATCH_BAND
-		own_add(src, "watchable", node)
+		rel_add(src, "watchable", node) // the node belongs to the tree under root
 	return node
 
 /datum/predicate_compiler/proc/compile_rel(list/clause, negate)
@@ -375,7 +377,7 @@ DECLARE_SHARED_CACHE(inline_predicate, GLOBAL_PROC_REF(build_inline_predicate), 
 	node.property_b = def_b.id
 	if(node.op != PRED_CMP_EQ && node.op != PRED_CMP_NE && channel_backed(def_a.id) && channel_backed(def_b.id))
 		node.watch_kind = PRED_WATCH_DIFFERENCE
-		own_add(src, "watchable", node)
+		rel_add(src, "watchable", node) // the node belongs to the tree under root
 	return node
 
 /proc/dq_pred_valid_cmp(op)

@@ -42,6 +42,8 @@
 	var/list/borrows
 	var/list/events = list() // ALLOW(instance_list): d: stock market singleton state
 	var/list/articles
+	/// Account -> world.time that account last read this stock's news (plain data).
+	var/list/last_read
 	var/fluctuation_rate = 15
 	var/fluctuation_counter = 0
 	var/datum/industry/industry = null
@@ -51,7 +53,7 @@
 
 /datum/stock/proc/addArticle(datum/article/A)
 	if (!(A in articles))
-		LAZYINITLIST(articles); articles.Insert(1, A)
+		own_add(src, "articles", A) // appended: newest article is last
 	A.ticks = world.time
 
 /datum/stock/proc/generateEvents()
@@ -185,7 +187,7 @@
 		var/datum/borrow/borrow = B
 		if (world.time > borrow.grace_expires)
 			modifyAccount(borrow.borrower, -max(current_value * borrow.share_debt, 0), 1)
-			rel_remove(src, "borrows", borrow)
+			own_take_member(src, "borrows", borrow)
 			if (borrow.borrower in GLOB.FrozenAccounts)
 				GLOB.FrozenAccounts[borrow.borrower] -= borrow
 				if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
@@ -196,7 +198,7 @@
 				var/amt = LAZYACCESS(shareholders, borrow.borrower)
 				if (amt > borrow.share_debt)
 					shareholders[borrow.borrower] -= borrow.share_debt
-					rel_remove(src, "borrows", borrow)
+					own_take_member(src, "borrows", borrow)
 					if (borrow.borrower in GLOB.FrozenAccounts)
 						GLOB.FrozenAccounts[borrow.borrower] -= borrow
 					if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
@@ -263,8 +265,7 @@
 		LAZYSET(shareholders, who, B.share_amount)
 	else
 		LAZYADDASSOC(shareholders, who, B.share_amount)
-	own_take_member(src, "borrow_brokers", B)
-	rel_add(src, "borrows", B)
+	own_transfer(src, "borrow_brokers", src, "borrows", B) // an accepted offer: still the stock's to delete
 	B.borrower = who
 	B.grace_expires = B.lease_expires + B.grace_time
 	if (!(who in GLOB.FrozenAccounts))

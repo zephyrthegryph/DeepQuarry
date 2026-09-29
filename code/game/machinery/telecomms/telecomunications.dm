@@ -86,9 +86,9 @@
 
 			// Keep the "original" signal constant
 			if(!signal.data["original"])
-				copy.data["original"] = signal
+				copy.data["original"] = signal // ALLOW(ownership): signal payload data, transient message dict
 			else
-				copy.data["original"] = signal.data["original"]
+				copy.data["original"] = signal.data["original"] // ALLOW(ownership): signal payload data, transient message dict
 
 		send_count++
 		if(machine.is_freq_listening(signal))
@@ -619,7 +619,7 @@ REL_SET(/obj/machinery/telecomms, links)
 				if(!(signal.data["name"] in stored_names))
 					LAZYADD(stored_names, signal.data["name"])
 				logs++
-				signal.data["server"] = src
+				signal.data["server"] = src // ALLOW(ownership): signal payload data, transient message dict
 
 				// Give the log a name
 				var/identifier = num2text( rand(-1000,1000) + world.time )

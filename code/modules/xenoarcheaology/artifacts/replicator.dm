@@ -137,7 +137,7 @@
 			spawn_progress_time = 0
 			max_spawn_time = rand(30,100)
 
-			if(!spawning_types.len || !stored_materials.len)
+			if(!spawning_types.len || !length(stored_materials))
 				update_use_power(USE_POWER_IDLE)
 				icon_state = "borgcharger0(old)"
 
@@ -320,7 +320,7 @@
 			spawn_progress_time = 0
 			max_spawn_time = rand(30,100)
 
-			if(!spawning_types.len || !stored_materials.len)
+			if(!spawning_types.len || !length(stored_materials))
 				update_use_power(USE_POWER_IDLE)
 				icon_state = "borgcharger0(old)"
 
@@ -586,7 +586,7 @@
 			spawn_progress_time = 0
 			max_spawn_time = rand(30,100)
 
-			if(!spawning_types.len || !stored_materials.len)
+			if(!spawning_types.len || !length(stored_materials))
 				update_use_power(USE_POWER_IDLE)
 				icon_state = "borgcharger0(old)"
 

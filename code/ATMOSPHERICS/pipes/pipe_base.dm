@@ -52,9 +52,9 @@
 			rel_remove(parent, "leaks", src)
 		if(parent.network)
 			if(leaking)
-				parent.network.leaks |= src
+				rel_add(parent.network, "leaks", src)
 			else
-				parent.network.leaks -= src
+				rel_remove(parent.network, "leaks", src)
 			parent.network.mark_leak_dirty()
 	// Without a network yet, network construction (rust_pipenets.dm) collects leaking pipes itself.
 

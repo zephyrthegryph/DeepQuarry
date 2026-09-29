@@ -343,7 +343,8 @@ GLOBAL_LIST_INIT(dq_linda_only_molar_masses, list(
 		name[id] = initial(g.name)
 		specific_heat[id] = initial(g.specific_heat)
 		molar_mass[id] = GLOB.dq_linda_only_molar_masses[id] || initial(g.specific_heat) * 0.05
-		gases[id] = g
+		var/gas_type = g // a type path, not an instance
+		gases[id] = gas_type
 		molar_specific_volume[id] = 0.001
 		// LINDA-only flammables → XGM_GAS_FUEL so combustion checks see them.
 		if(id == "tritium" || id == "hydrogen" || id == "methane" || id == "miasma")

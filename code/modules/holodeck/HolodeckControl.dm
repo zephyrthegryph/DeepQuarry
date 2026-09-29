@@ -180,7 +180,8 @@
 	for(var/mob/living/simple_mob/animal/space/carp/holodeck/C in holographic_mobs)
 		C.set_safety(!safety_disabled)
 		if (last_to_emag())
-			C.friends = list(last_to_emag())
+			rel_clear(C, "friends")
+			rel_add(C, "friends", last_to_emag())
 
 /obj/machinery/computer/HolodeckControl/Initialize(mapload)
 	. = ..()

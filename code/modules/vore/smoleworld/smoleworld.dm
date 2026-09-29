@@ -11,15 +11,17 @@
 //Used to make smole objects be able to be built from menu
 
 /datum/material/smolebricks/generate_recipes()
-	own_take_all(src, "recipes")
-	own_add(src, "recipes", new/datum/stack_recipe("road straight", /obj/structure/smoletrack/roadS, 1, time = 5))
-	own_add(src, "recipes", new/datum/stack_recipe("road threeway", /obj/structure/smoletrack/roadT, 1, time = 5))
-	own_add(src, "recipes", new/datum/stack_recipe("road turn ", /obj/structure/smoletrack/roadturn, 1, time = 5))
-	own_add(src, "recipes", new/datum/stack_recipe("road fourway", /obj/structure/smoletrack/roadF, 1, time = 5))
-	own_add(src, "recipes", new/datum/stack_recipe("smole houses", /obj/structure/smolebuilding/houses, 2, time = 10))
-	own_add(src, "recipes", new/datum/stack_recipe("smole business", /obj/structure/smolebuilding/business, 2, time = 10))
-	own_add(src, "recipes", new/datum/stack_recipe("smole warehouses", /obj/structure/smolebuilding/warehouses, 2, time = 10))
-	own_add(src, "recipes", new/datum/stack_recipe("smole museum", /obj/structure/smolebuilding/museum, 2, time = 10))
+	var/list/recipes = list(
+		new/datum/stack_recipe("road straight", /obj/structure/smoletrack/roadS, 1, time = 5),
+		new/datum/stack_recipe("road threeway", /obj/structure/smoletrack/roadT, 1, time = 5),
+		new/datum/stack_recipe("road turn ", /obj/structure/smoletrack/roadturn, 1, time = 5),
+		new/datum/stack_recipe("road fourway", /obj/structure/smoletrack/roadF, 1, time = 5),
+		new/datum/stack_recipe("smole houses", /obj/structure/smolebuilding/houses, 2, time = 10),
+		new/datum/stack_recipe("smole business", /obj/structure/smolebuilding/business, 2, time = 10),
+		new/datum/stack_recipe("smole warehouses", /obj/structure/smolebuilding/warehouses, 2, time = 10),
+		new/datum/stack_recipe("smole museum", /obj/structure/smolebuilding/museum, 2, time = 10)
+	)
+	return recipes
 
 /datum/material/smolebricks
 	name = MAT_SMOLEBRICKS

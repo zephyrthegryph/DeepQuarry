@@ -17,8 +17,8 @@
 // Parameters: 	None
 // Description: Sets up basic abilities for AI Malfunction gamemode.
 /datum/malf_research/proc/setup_abilities()
-	own_take_all(src, "available_abilities")
-	unlocked_abilities = list()
+	own_clear(src, "available_abilities", OWN_DELETE)
+	own_clear(src, "unlocked_abilities", OWN_DELETE)
 
 	own_add(src, "available_abilities", new/datum/malf_research_ability/networking/basic_hack())
 	own_add(src, "available_abilities", new/datum/malf_research_ability/interdiction/recall_shuttle())
@@ -33,10 +33,10 @@
 		return
 	to_chat(owner_ref(), span_bold("Research Completed") + ": [get_focus().name]")
 	add_verb(owner_ref(), get_focus().ability)
-	own_take_member(src, "available_abilities", get_focus())
-	if(get_focus().next)
-		own_add(src, "available_abilities", get_focus().next)
-	unlocked_abilities += get_focus()
+	var/datum/malf_research_ability/done = get_focus()
+	own_transfer(src, "available_abilities", src, "unlocked_abilities", done)
+	if(done.next)
+		own_move(done.next, src, "available_abilities")
 	rel_clear(src, "focus_static")
 
 

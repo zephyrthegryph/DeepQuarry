@@ -228,9 +228,13 @@
 			return
 		if(_answer_k212 != "Yes")
 			return
-		new_event.severity = selected_event_container().severity
-		selected_event_container().available_events += new_event
-		log_and_message_admins("has added \a [GLOB.severity_to_string[new_event.severity]] event '[new_event.name]' of type [new_event.event_type] with weight [new_event.weight].")
+		var/datum/event_container/target_container = selected_event_container()
+		var/datum/event_meta/added_event = new_event
+		added_event.severity = target_container.severity
+		// The container adopts the drafted meta; the manager starts a fresh draft below.
+		own_transfer(src, "new_event", target_container, "event_pool")
+		rel_add(target_container, "available_events", added_event)
+		log_and_message_admins("has added \a [GLOB.severity_to_string[added_event.severity]] event '[added_event.name]' of type [added_event.event_type] with weight [added_event.weight].")
 		own_set(src, "new_event", new /datum/event_meta)
 	else if(href_list["clear"])
 		var/datum/event_container/EC = locate(href_list["clear"])

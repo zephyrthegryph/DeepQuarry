@@ -315,7 +315,7 @@
 					R.fields["ma_crim_d"]	= "No major crime convictions."
 					R.fields["notes"]		= "No notes."
 					R.fields["notes"]		= "No notes."
-					GLOB.data_core.security += R
+					own_add(GLOB.data_core, "security", R)
 					rel_set(src, "active2", R)
 					screen = SEC_DATA_RECORD
 					set_temp("Security record created.", "success")

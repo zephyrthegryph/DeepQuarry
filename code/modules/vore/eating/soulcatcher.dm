@@ -175,7 +175,7 @@
 	to_chat(brainmob, message)
 
 	//Reminder on how this works to host
-	if(brainmobs.len == 1) //Only spam this on the first one
+	if(length(brainmobs) == 1) //Only spam this on the first one
 		to_chat(owner(), span_notice("Your occupant's messages/actions can only be seen by you, and you can \
 		send messages that only they can hear/see by using the NSay and NMe verbs (or the *nsay and *nme emotes)."))
 
@@ -261,7 +261,7 @@
 
 // Updates the selected soul after an interaction which rleased, deleted or transferred the previous one
 /obj/soulgem/proc/update_selected_soul()
-	if(brainmobs.len > 1)
+	if(length(brainmobs) > 1)
 		rel_set(src, "selected_soul", brainmobs[1])
 	else
 		rel_clear(src, "selected_soul")
@@ -510,7 +510,7 @@
 // Release all captured souls as ghosts
 /obj/soulgem/proc/release_mobs()
 	rel_clear(src, "selected_soul")
-	if(!brainmobs.len) return
+	if(!length(brainmobs)) return
 	for(var/mob/M in brainmobs)
 		release_mob(M)
 
@@ -533,7 +533,7 @@
 
 // Delete all captured mobs
 /obj/soulgem/proc/erase_mobs()
-	if(!brainmobs.len) return
+	if(!length(brainmobs)) return
 	for(var/mob/M in brainmobs)
 		delete_mob(M)
 

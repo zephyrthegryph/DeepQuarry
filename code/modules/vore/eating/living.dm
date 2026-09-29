@@ -1432,13 +1432,15 @@
 		own_set(owner, "vorePanel", new /datum/vore_look(owner))
 
 // takes the panel verb and panel back from its owner. Hooks, the screen icon
-// (owned; it leaves client screens in its own teardown) and the owner <->
+// (owned by the HUD; it leaves client screens in its own teardown) and the owner <->
 // vore_panel_button pair are core work.
 /datum/vore_panel_button/on_destroy(force)
 	var/mob/living/M = owner
 	if(screen_icon)
-		var/datum/hud/HUD = M?.hud_used
-		LAZYREMOVE(HUD?.other_important, screen_icon)
+		// The HUD owns the icon (other_important); take it off and dispose of it.
+		var/datum/hud/HUD = owner_of(screen_icon)
+		if(HUD)
+			own_remove(HUD, "other_important", screen_icon)
 	if(M)
 		remove_verb(M, /mob/proc/insidePanel)
 		own_clear(M, "vorePanel", OWN_DELETE)
@@ -1457,7 +1459,8 @@
 /datum/vore_panel_button/proc/create_mob_button(mob/user)
 	var/datum/hud/HUD = user.hud_used
 	if(!screen_icon)
-		own_set(src, "screen_icon", new /atom/movable/screen/vore_panel())
+		// The HUD owns the icon (other_important, below); the button keeps a relation to it.
+		rel_set(src, "screen_icon", new /atom/movable/screen/vore_panel())
 		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(vore_panel_click))
 	if(ispAI(user))
 		screen_icon.icon = 'icons/mob/pai_hud.dmi'
@@ -1468,7 +1471,8 @@
 		screen_icon.alpha = HUD.ui_alpha
 	if(isAI(user))
 		screen_icon.screen_loc = ui_ai_pda_send
-	own_add(HUD, "other_important", screen_icon)
+	if(owner_of(screen_icon) != HUD)
+		own_move(screen_icon, HUD, "other_important")
 	user.client?.screen += screen_icon
 
 /datum/vore_panel_button/proc/vore_panel_click(datum/source, datum/om/event/click/event)

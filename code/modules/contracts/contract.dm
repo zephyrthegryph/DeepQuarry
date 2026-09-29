@@ -68,7 +68,7 @@
 
 
 /datum/contract_negotiation_clause/proc/add_option(datum/contract_clause_option/option, make_default = FALSE)
-	if(!option?.id || options[option.id])
+	if(!option?.id || options?[option.id])
 		return FALSE
 	own_put(src, "options", option.id, option)
 	if(make_default || !default_option_id)
@@ -295,7 +295,7 @@
 	return TRUE
 
 /datum/contract/proc/add_negotiation_clause(datum/contract_negotiation_clause/clause)
-	if(!clause?.id || state != CONTRACT_OFFERED || negotiation_clauses[clause.id] || !length(clause.options))
+	if(!clause?.id || state != CONTRACT_OFFERED || negotiation_clauses?[clause.id] || !length(clause.options))
 		return FALSE
 	own_put(src, "negotiation_clauses", clause.id, clause)
 	negotiation_selections[clause.id] = clause.default_option_id
@@ -314,8 +314,8 @@
 /datum/contract/proc/select_negotiation_option(clause_id, option_id, actor_name)
 	if(state != CONTRACT_OFFERED || negotiation_locked)
 		return FALSE
-	var/datum/contract_negotiation_clause/clause = negotiation_clauses[clause_id]
-	var/datum/contract_clause_option/option = clause?.options[option_id]
+	var/datum/contract_negotiation_clause/clause = negotiation_clauses?[clause_id]
+	var/datum/contract_clause_option/option = clause?.options?[option_id]
 	if(!option)
 		return FALSE
 	capture_base_terms()
@@ -337,8 +337,8 @@
 	negotiated_effects.Cut()
 	secondary_faction_reputation_rewards.Cut()
 	for(var/clause_id in negotiation_clauses)
-		var/datum/contract_negotiation_clause/clause = negotiation_clauses[clause_id]
-		var/datum/contract_clause_option/option = clause.options[negotiation_selections[clause_id]]
+		var/datum/contract_negotiation_clause/clause = negotiation_clauses?[clause_id]
+		var/datum/contract_clause_option/option = clause.options?[negotiation_selections[clause_id]]
 		if(!option)
 			continue
 		negotiated_station_bonus += option.station_reward_delta
@@ -386,8 +386,8 @@
 
 /datum/contract/proc/negotiation_complete()
 	for(var/clause_id in negotiation_clauses)
-		var/datum/contract_negotiation_clause/clause = negotiation_clauses[clause_id]
-		if(!clause.options[negotiation_selections[clause_id]])
+		var/datum/contract_negotiation_clause/clause = negotiation_clauses?[clause_id]
+		if(!clause.options?[negotiation_selections[clause_id]])
 			return FALSE
 	return TRUE
 

@@ -184,7 +184,7 @@
 	// Minimum output: 1 effect (the first pass is always unconditional).
 	// Hard ceiling: ARTIFACT_MAX_EFFECTS prevents degenerate artifacts with 10+ simultaneous
 	// effects that would saturate SSobj tick budgets when all fire at once in process().
-	while(effect_generation_chance > 0 && my_effects.len < ARTIFACT_MAX_EFFECTS)
+	while(effect_generation_chance > 0 && length(my_effects) < ARTIFACT_MAX_EFFECTS)
 		var/chosen_path = pick(effect_registry)
 		if(effect_generation_chance >= 100)	// Unconditional pass: always adds an effect.
 			var/datum/artifact_effect/AE = new chosen_path(src)

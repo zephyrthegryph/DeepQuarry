@@ -27,8 +27,7 @@
 		om_after(src, proj_trail_lifespan, PROC_REF(expire_trail), trail) // our Destroy() takes the trails with us
 
 /obj/item/projectile/spell_projectile/proc/expire_trail(obj/effect/trail)
-	own_take_member(src, "trails", trail)
-	qdel(trail)
+	own_remove(src, "trails", trail) // disposes of it
 
 /obj/item/projectile/spell_projectile/proc/prox_cast(list/targets)
 	if(loc)

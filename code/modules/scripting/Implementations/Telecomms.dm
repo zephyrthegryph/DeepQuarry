@@ -315,7 +315,7 @@
 	newsign.frequency = freq
 
 	var/datum/radio_frequency/connection = GLOB.radio_service.return_frequency(freq)
-	newsign.data["connection"] = connection
+	newsign.data["connection"] = connection // ALLOW(ownership): a transient signal payload naming the frequency datum; the signal is dropped after transmission
 
 
 	newsign.data["radio"] = hradio // ALLOW(ownership): a transient signal payload naming the sending radio; the signal is dropped after transmission

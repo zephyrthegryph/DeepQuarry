@@ -64,7 +64,10 @@ GLOBAL_LIST_EMPTY(current_pending_diseases)
 //Creates a virus with a harmful effect, guaranteed to be spreadable by contact or airborne
 /datum/event/disease_outbreak/proc/create_virus(max_severity = 6)
 	var/datum/affliction/contagion/engineered/A = new /datum/affliction/contagion/engineered
-	A.symptoms = A.GenerateSymptomsBySeverity(max_severity - 1, max_severity, 2) //Choose "Payload" symptoms
+	var/list/payload_symptoms = A.GenerateSymptomsBySeverity(max_severity - 1, max_severity, 2) //Choose "Payload" symptoms
+	own_clear(A, "symptoms", OWN_DELETE)
+	for(var/datum/viral_trait/payload_symptom as anything in payload_symptoms)
+		own_add(A, "symptoms", payload_symptom)
 	A.AssignProperties(A.GenerateProperties())
 	var/list/symptoms_to_try = transmissable_symptoms.Copy()
 	while(length(symptoms_to_try))

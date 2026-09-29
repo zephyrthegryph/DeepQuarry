@@ -62,7 +62,7 @@
 	if(!istext(name))
 		return
 	if(!object)
-		globalScope.functions[name] = path
+		own_put(globalScope, "functions", name, path) // a proc path: plain data in the owned lookup
 		return
 	var/datum/node/statement/FunctionDefinition/S = new()
 	S.func_name		= name
@@ -83,14 +83,14 @@
 	Checks whether a global variable with the specified name exists.
 */
 /datum/n_Interpreter/proc/VarExists(name)
-	return globalScope.variables.Find(name) //convert to 1/0 first?
+	return (name in globalScope.variables) //convert to 1/0 first?
 
 /*
 	Proc: ProcExists
 	Checks whether a global function with the specified name exists.
 */
 /datum/n_Interpreter/proc/ProcExists(name)
-	return globalScope.functions.Find(name)
+	return globalScope.has_function(name)
 
 /*
 	Proc: GetVar
@@ -102,7 +102,7 @@
 /datum/n_Interpreter/proc/GetVar(name)
 	if(!VarExists(name))
 		return
-	var/x = globalScope.variables[name]
+	var/x = LAZYACCESS(globalScope.variables, name)
 	return Eval(x)
 
 /*
@@ -116,11 +116,13 @@
 /datum/n_Interpreter/proc/CallProc(name, params[]=null)
 	if(!ProcExists(name))
 		return
-	var/datum/node/statement/FunctionDefinition/func = globalScope.functions[name]
+	var/datum/node/statement/FunctionDefinition/func = globalScope.find_function(name)
 	if(istype(func))
 		var/datum/node/statement/FunctionCall/stmt = new
 		stmt.func_name  = func.func_name
-		stmt.parameters = params
+		// The call owns its argument nodes: wrap each raw value (Eval() unwraps them again).
+		for(var/p in params)
+			own_add(stmt, "parameters", script_value_node(p))
 		return RunFunction(stmt)
 	else
 		return call(func)(arglist(params))

@@ -243,7 +243,7 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 	)
 
 /datum/station_faction_relations/proc/get_department_ledger(department, create = TRUE)
-	var/datum/faction_reputation_ledger/ledger = department_ledgers[department]
+	var/datum/faction_reputation_ledger/ledger = department_ledgers?[department]
 	if(!ledger && create && istext(department) && length(department))
 		ledger = new(reputations)
 		own_put(src, "department_ledgers", department, ledger)
@@ -253,7 +253,7 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 	if(!account_number)
 		return null
 	var/key = "[account_number]"
-	var/datum/faction_reputation_ledger/ledger = personal_ledgers[key]
+	var/datum/faction_reputation_ledger/ledger = personal_ledgers?[key]
 	if(!ledger && create)
 		ledger = new(initial_values)
 		own_put(src, "personal_ledgers", key, ledger)

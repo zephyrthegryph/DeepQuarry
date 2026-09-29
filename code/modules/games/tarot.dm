@@ -27,15 +27,14 @@
 /obj/item/deck/tarot/shuffle()
 	var/mob/living/user = usr
 	if (COOLDOWN_FINISHED(src, shuffle_cooldown))
-		var/list/newcards = list()
-		while(cards.len)
-			var/datum/playingcard/P = pick(cards)
+		var/list/unshuffled = own_take_all(src, "cards")
+		while(length(unshuffled))
+			var/datum/playingcard/P = pick(unshuffled)
+			unshuffled -= P
 			P.name = replacetext(P.name," reversed","")
 			if(prob(50))
 				P.name += " reversed"
-			newcards += P
-			own_take_member(src, "cards", P)
-		cards = newcards
+			own_add(src, "cards", P)
 		playsound(src, 'sound/items/cardshuffle.ogg', 50, 1)
 		user.visible_message("\The [user] shuffles [src].")
 		COOLDOWN_START(src, shuffle_cooldown, 1 SECOND)
@@ -82,15 +81,14 @@
 
 /obj/item/deck/dark_tarot/shuffle(mob/user)
 	if (COOLDOWN_FINISHED(src, shuffle_cooldown))
-		var/list/newcards = list()
-		while(cards.len)
-			var/datum/playingcard/P = pick(cards)
+		var/list/unshuffled = own_take_all(src, "cards")
+		while(length(unshuffled))
+			var/datum/playingcard/P = pick(unshuffled)
+			unshuffled -= P
 			P.name = replacetext(P.name," reversed","")
 			if(prob(50))
 				P.name += " reversed"
-			newcards += P
-			own_take_member(src, "cards", P)
-		cards = newcards
+			own_add(src, "cards", P)
 		playsound(src, 'sound/items/cardshuffle.ogg', 50, 1)
 		user.visible_message("\The [user] shuffles [src].")
 		COOLDOWN_START(src, shuffle_cooldown, 1 SECOND)

@@ -3,9 +3,6 @@
 
 	HUD.ui_style = 'icons/mob/screen_ai.dmi'
 
-	HUD.adding = list()
-	HUD.other = list()
-
 	var/atom/movable/screen/using
 
 //AI core
@@ -163,5 +160,8 @@
 
 	if(client && apply_to_client)
 		client.screen = list()
-		client.screen += HUD.adding + HUD.other
+		if(length(HUD.adding))
+			client.screen += HUD.adding
+		if(length(HUD.other))
+			client.screen += HUD.other
 		client.screen += client.void

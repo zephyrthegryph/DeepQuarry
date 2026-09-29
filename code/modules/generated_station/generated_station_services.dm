@@ -289,8 +289,10 @@
 		var/room_height = room_bounds[4] - room_bounds[2] + 1
 		if(!definition?.accepts_dimensions(room_width, room_height))
 			qdel(definition)
-			result.modules -= department_modules
-			QDEL_LIST(department_modules)
+			for(var/datum/generated_station_module/failed_module as anything in department_modules)
+				if(!own_remove(result, "modules", failed_module))
+					qdel(failed_module)
+			department_modules.Cut()
 			return FALSE
 		var/has_authored_fragment = length(definition.fragment_options)
 		qdel(definition)
@@ -423,8 +425,8 @@
 /datum/generated_station_materializer/proc/service_for_utility_edge(datum/generated_station_layout_edge/edge)
 	if(edge.service_id)
 		return edge.service_id
-	var/datum/generated_station_layout_node/from_node = nodes_by_id[edge.from_node_id]
-	var/datum/generated_station_layout_node/to_node = nodes_by_id[edge.to_node_id]
+	var/datum/generated_station_layout_node/from_node = node_by_id(edge.from_node_id)
+	var/datum/generated_station_layout_node/to_node = node_by_id(edge.to_node_id)
 	var/datum/generated_station_department_instance/provider = department_for_node(from_node)
 	var/datum/generated_station_department_instance/consumer = department_for_node(to_node)
 	for(var/datum/generated_station_capability_provision/provision in provider?.definition()?.provisions)
@@ -495,7 +497,7 @@
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "maintenance-turf-mismatch", "Planned maintenance is not physical maintenance flooring.", key)
 			continue
 		maintenance_floors[T] = TRUE
-		if(spec.maintenance_doors[key] && !(locate_on(T, /obj/machinery/door/airlock/maintenance)))
+		if(spec.maintenance_doors?[key] && !(locate_on(T, /obj/machinery/door/airlock/maintenance)))
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "maintenance-door-missing", "Planned maintenance access has no maintenance airlock.", key)
 		materializer?.generation_checkpoint("Validating maintenance services", 56)
 	if(length(maintenance_floors))

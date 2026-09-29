@@ -7,11 +7,9 @@
 	else
 		HUD.ui_style = 'icons/mob/screen1_robot.dmi'
 
-	var/list/adding = list()
-	var/list/other = list()
-
-	HUD.adding = adding
-	HUD.other = other
+	// HUD.adding / HUD.other own their screen elements; named vars pointing at listed elements
+	// (inv1-3, move_intent, autowhisper_display) are relations back. The mob-owned singles
+	// (healths, hands, throw_icon, pullin) and HUD.combat_mode_button go on screen explicitly below.
 
 	var/atom/movable/screen/using
 	var/atom/movable/screen/robot_inventory
@@ -26,7 +24,7 @@
 	using.icon_state = "radio"
 	using.screen_loc = ui_borg_radio
 	using.layer = HUD_LAYER
-	adding += using
+	own_add(HUD, "adding", using)
 
 //Module select
 
@@ -39,8 +37,8 @@
 	using.icon_state = "inv1"
 	using.screen_loc = ui_inv1
 	using.layer = HUD_LAYER
-	adding += using
-	own_set(src, "inv1", using)
+	own_add(HUD, "adding", using)
+	rel_set(src, "inv1", using)
 
 	using = new /atom/movable/screen()
 	using.name = "module2"
@@ -51,8 +49,8 @@
 	using.icon_state = "inv2"
 	using.screen_loc = ui_inv2
 	using.layer = HUD_LAYER
-	adding += using
-	own_set(src, "inv2", using)
+	own_add(HUD, "adding", using)
+	rel_set(src, "inv2", using)
 
 	using = new /atom/movable/screen()
 	using.name = "module3"
@@ -63,8 +61,8 @@
 	using.icon_state = "inv3"
 	using.screen_loc = ui_inv3
 	using.layer = HUD_LAYER
-	adding += using
-	own_set(src, "inv3", using)
+	own_add(HUD, "adding", using)
+	rel_set(src, "inv3", using)
 
 //End of module select
 
@@ -74,7 +72,6 @@
 	using.icon = HUD.ui_style
 	using.alpha = HUD.ui_alpha
 	using.layer = HUD_LAYER
-	adding += using
 
 	//Move intent (walk/run)
 	using = new /atom/movable/screen()
@@ -85,7 +82,7 @@
 	using.color = HUD.ui_color
 	using.alpha = HUD.ui_alpha
 	own_add(HUD, "adding", using)
-	own_set(HUD, "move_intent", using)
+	rel_set(HUD, "move_intent", using)
 
 //Health
 	own_set(src, "healths", new /atom/movable/screen())
@@ -94,49 +91,47 @@
 	healths.alpha = HUD.ui_alpha
 	healths.name = "health"
 	healths.screen_loc = ui_borg_health
-	other += healths
 
-	own_set(src, "autowhisper_display", new /atom/movable/screen())
+	rel_set(src, "autowhisper_display", own_add(HUD, "other", new /atom/movable/screen()))
 	autowhisper_display.icon = 'icons/mob/screen/minimalist.dmi'
 	autowhisper_display.icon_state = "autowhisper"
 	autowhisper_display.name = "autowhisper"
 	autowhisper_display.screen_loc = ui_borg_under_health
-	other |= autowhisper_display
 
 	var/atom/movable/screen/aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
 	aw.icon_state = "aw-select"
 	aw.name = "autowhisper mode"
 	aw.screen_loc = ui_borg_under_health
-	other |= aw
+	own_add(HUD, "other", aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
 	aw.icon_state = "lang"
 	aw.name = "check known languages"
 	aw.screen_loc = ui_borg_under_health
-	other |= aw
+	own_add(HUD, "other", aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
 	aw.icon_state = "pose"
 	aw.name = "set pose"
 	aw.screen_loc = ui_borg_under_health
-	other |= aw
+	own_add(HUD, "other", aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
 	aw.icon_state = "up"
 	aw.name = "move upwards"
 	aw.screen_loc = ui_borg_under_health
-	other |= aw
+	own_add(HUD, "other", aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
 	aw.icon_state = "down"
 	aw.name = "move downwards"
 	aw.screen_loc = ui_borg_under_health
-	other |= aw
+	own_add(HUD, "other", aw)
 
 //Installed Module
 	own_set(src, "hands", new /atom/movable/screen())
@@ -145,7 +140,6 @@
 	hands.alpha = HUD.ui_alpha
 	hands.name = "module"
 	hands.screen_loc = ui_borg_module
-	other += hands
 
 //Module Panel
 	using = new /atom/movable/screen()
@@ -155,7 +149,7 @@
 	using.alpha = HUD.ui_alpha
 	using.screen_loc = ui_borg_panel
 	using.layer = HUD_LAYER-0.01
-	adding += using
+	own_add(HUD, "adding", using)
 
 //Store
 	own_set(src, "throw_icon", new /atom/movable/screen())
@@ -165,7 +159,6 @@
 	throw_icon.color = HUD.ui_color
 	throw_icon.name = "store"
 	throw_icon.screen_loc = ui_borg_store
-	other += throw_icon
 
 //Inventory
 	robot_inventory = new /atom/movable/screen()
@@ -175,7 +168,7 @@
 	robot_inventory.alpha = HUD.ui_alpha
 	robot_inventory.color = HUD.ui_color
 	robot_inventory.screen_loc = ui_borg_inventory
-	other += robot_inventory
+	own_add(HUD, "other", robot_inventory)
 
 	own_set(src, "pullin", new /atom/movable/screen())
 	pullin.icon = HUD.ui_style
@@ -184,7 +177,6 @@
 	pullin.color = HUD.ui_color
 	pullin.name = "pull"
 	pullin.screen_loc = ui_borg_pull
-	other += pullin
 
 	own_set(src, "zone_sel", new /atom/movable/screen/zone_sel())
 	zone_sel.icon = HUD.ui_style
@@ -209,7 +201,12 @@
 	if(client && apply_to_client)
 		client.screen = list()
 		client.screen += list( throw_icon, zone_sel, hands, healths, pullin, robot_inventory, gun_setting_icon)
-		client.screen += HUD.adding + HUD.other
+		if(HUD.combat_mode_button)
+			client.screen += HUD.combat_mode_button
+		if(length(HUD.adding))
+			client.screen += HUD.adding
+		if(length(HUD.other))
+			client.screen += HUD.other
 		client.screen += client.void
 		if(vtec_active)
 			using = new /atom/movable/screen()

@@ -94,9 +94,9 @@
 /datum/generated_station_director/proc/engineering_repair(department_id, amount)
 	if(amount <= 0 || simulation().department_state("engineering-1") == GENERATED_DEPARTMENT_OFFLINE)
 		return FALSE
-	var/datum/generated_station_department_runtime/target = simulation().departments[department_id]
-	var/datum/generated_station_department_runtime/engineering = simulation().departments["engineering-1"]
-	var/datum/generated_station_department_runtime/logistics = simulation().departments["logistics-1"]
+	var/datum/generated_station_department_runtime/target = simulation().departments?[department_id]
+	var/datum/generated_station_department_runtime/engineering = simulation().departments?["engineering-1"]
+	var/datum/generated_station_department_runtime/logistics = simulation().departments?["logistics-1"]
 	var/cost = max(1, CEILING(amount / 10, 1))
 	if(!target || (engineering.stockpiles["fuel"] || 0) < cost || (logistics.stockpiles["supplies"] || 0) < cost)
 		return FALSE
@@ -109,8 +109,8 @@
 /datum/generated_station_director/proc/logistics_resupply(department_id, resource_id, amount)
 	if(amount <= 0 || simulation().department_state("logistics-1") == GENERATED_DEPARTMENT_OFFLINE)
 		return FALSE
-	var/datum/generated_station_department_runtime/logistics = simulation().departments["logistics-1"]
-	if(!simulation().departments[department_id] || (logistics.stockpiles["supplies"] || 0) < amount)
+	var/datum/generated_station_department_runtime/logistics = simulation().departments?["logistics-1"]
+	if(!simulation().departments?[department_id] || (logistics.stockpiles["supplies"] || 0) < amount)
 		return FALSE
 	simulation().consume_stockpile("logistics-1", "supplies", amount)
 	simulation().add_stockpile(department_id, resource_id, amount)

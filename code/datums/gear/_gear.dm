@@ -124,6 +124,10 @@ GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 		return GLOB.tail_styles_list[tail_style]
 	return null
 
+// The loadout catalog is built once at boot and never torn down: its tweak list is boot-time data
+// mixing the shared GLOB.gear_tweak_* singletons with per-entry variant tweaks, owned by nobody.
+SHARED(/datum/gear, gear_tweaks)
+
 /datum/gear/New()
 	..()
 	if(!description)

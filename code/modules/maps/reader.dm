@@ -124,7 +124,14 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 	newfriend.key_len = key_len
 	newfriend.line_len = line_len
 	newfriend.grid_models = grid_models.Copy()
-	newfriend.gridSets = gridSets.Copy()
+	own_take_all(newfriend, "gridSets")
+	for(var/datum/grid_set/source_set as anything in gridSets) // each map owns its own grid sets
+		var/datum/grid_set/set_copy = new
+		set_copy.xcrd = source_set.xcrd
+		set_copy.ycrd = source_set.ycrd
+		set_copy.zcrd = source_set.zcrd
+		set_copy.gridLines = source_set.gridLines
+		own_add(newfriend, "gridSets", set_copy)
 	newfriend.modelCache = modelCache.Copy()
 	newfriend.parsed_bounds = parsed_bounds.Copy()
 	// Copy parsed bounds to reset to initial values

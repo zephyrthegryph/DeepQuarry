@@ -189,5 +189,5 @@
 	LV.attack_target(M)
 	rel_add(LV, "dq_ignored_machines", M)
 	if(LAZYLEN(LV.dq_ignored_machines) > 3)
-		LV.dq_ignored_machines.Cut(1, 2)
+		rel_remove(LV, "dq_ignored_machines", LV.dq_ignored_machines[1])
 	return DQ_BEHAVIOR_DONE

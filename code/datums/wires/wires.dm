@@ -64,7 +64,7 @@
 	..()
 	if(!holder)
 		return
-	for(var/color in assemblies)
+	for(var/color in assemblies?.Copy())
 		detach_assembly(color)
 
 /**
@@ -470,8 +470,8 @@
  */
 /datum/wires/proc/attach_assembly(color, obj/item/assembly/signaler/S)
 	if(S && istype(S) && !is_attached(color))
-		LAZYSET(assemblies, color, S)
 		S.forceMove(holder)
+		own_put(src, "assemblies", color, S) // we hold it (dropped by detach_assembly()); S.connected is the back view
 		rel_set(S, "connected", src)
 		return S
 
@@ -486,7 +486,7 @@
 /datum/wires/proc/detach_assembly(color)
 	var/obj/item/assembly/signaler/S = get_attached(color)
 	if(S && istype(S))
-		LAZYREMOVE(assemblies, color)
+		own_take_member(src, "assemblies", color)
 		rel_clear(S, "connected")
 		S.forceMove(holder.drop_location())
 		return S

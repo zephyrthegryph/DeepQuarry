@@ -265,7 +265,7 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 	user.visible_message(span_notice("[user] slots [target] into [src], which begins to whir and beep!"), span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[chosen.name]") + " from [target]..."),)
 	var/datum/affliction/contagion/engineered/symptom_holder = new
 	symptom_holder.name = chosen.name
-	own_add(symptom_holder, "symptoms", chosen)
+	own_add(symptom_holder, "symptoms", chosen.Copy()) // the target disease owns `chosen`; the isolate gets its own copy
 	symptom_holder.Finalize()
 	symptom_holder.Refresh()
 	om_task_start(/datum/om/task/timed/extrapolator_isolate_symptom, user, target, receiver = src, duration = extract_time, symptom_holder = symptom_holder)

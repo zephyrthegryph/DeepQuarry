@@ -25,7 +25,7 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 			to_chat(user, span_filter_notice("You wipe the disk data."))
 			name = initial(name)
 			desc = initial(name)
-			genes = list()
+			own_clear(src, "genes", OWN_DELETE)
 			genesource = "unknown"
 	return TRUE
 
@@ -293,7 +293,7 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 			var/datum/plantgene/P = genetics().get_gene(params["get_gene"])
 			if(!P)
 				return
-			rel_add(loaded_disk, "genes", P)
+			own_add(loaded_disk, "genes", P) // get_gene() makes a fresh copy: the disk owns it
 
 			loaded_disk.genesource = "[genetics().display_name]"
 			if(!genetics().roundstart)

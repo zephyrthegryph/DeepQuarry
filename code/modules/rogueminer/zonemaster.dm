@@ -202,7 +202,7 @@
 	if(!farEnough)
 		return
 
-	GLOB.xenoarch_service.digsite_spawning_turfs.Add(M)
+	rel_add(GLOB.xenoarch_service, "digsite_spawning_turfs", M)
 
 	var/digsite = get_random_digsite_type()
 	var/target_digsite_size = rand(DIGSITESIZE_LOWER, DIGSITESIZE_UPPER)
@@ -231,16 +231,15 @@
 		GLOB.rm_controller.dbg("ZM(par): Adding archeo find to [M.x],[M.y].")
 		processed_turfs.Add(archeo_turf)
 		if(isnull(archeo_turf.finds))
-			archeo_turf.finds = list()
 			if(prob(50))
-				archeo_turf.finds.Add(new /datum/find(digsite, rand(10, 190)))
+				own_add(archeo_turf, "finds", new /datum/find(digsite, rand(10, 190)))
 			else if(prob(75))
-				archeo_turf.finds.Add(new /datum/find(digsite, rand(10, 90)))
-				archeo_turf.finds.Add(new /datum/find(digsite, rand(110, 190)))
+				own_add(archeo_turf, "finds", new /datum/find(digsite, rand(10, 90)))
+				own_add(archeo_turf, "finds", new /datum/find(digsite, rand(110, 190)))
 			else
-				archeo_turf.finds.Add(new /datum/find(digsite, rand(10, 50)))
-				archeo_turf.finds.Add(new /datum/find(digsite, rand(60, 140)))
-				archeo_turf.finds.Add(new /datum/find(digsite, rand(150, 190)))
+				own_add(archeo_turf, "finds", new /datum/find(digsite, rand(10, 50)))
+				own_add(archeo_turf, "finds", new /datum/find(digsite, rand(60, 140)))
+				own_add(archeo_turf, "finds", new /datum/find(digsite, rand(150, 190)))
 
 			//sometimes a find will be close enough to the surface to show
 			var/datum/find/F = archeo_turf.finds[1]
@@ -250,14 +249,14 @@
 
 		//have a chance for an artifact to spawn here, but not in plant digsites
 		if(isnull(M.artifact_find) && digsite != DIGSITE_GARDEN)
-			GLOB.xenoarch_service.artifact_spawning_turfs.Add(archeo_turf)
+			rel_add(GLOB.xenoarch_service, "artifact_spawning_turfs", archeo_turf)
 
 	//create artifact machinery
 	var/num_artifacts_spawn = rand(ARTIFACTSPAWNNUM_LOWER, ARTIFACTSPAWNNUM_UPPER)
-	while(GLOB.xenoarch_service.artifact_spawning_turfs.len > num_artifacts_spawn)
-		pick_n_take(GLOB.xenoarch_service.artifact_spawning_turfs)
+	while(length(GLOB.xenoarch_service.artifact_spawning_turfs) > num_artifacts_spawn)
+		rel_remove(GLOB.xenoarch_service, "artifact_spawning_turfs", pick(GLOB.xenoarch_service.artifact_spawning_turfs))
 
-	var/list/artifacts_spawnturf_temp = GLOB.xenoarch_service.artifact_spawning_turfs.Copy()
+	var/list/artifacts_spawnturf_temp = length(GLOB.xenoarch_service.artifact_spawning_turfs) ? GLOB.xenoarch_service.artifact_spawning_turfs.Copy() : list()
 	while(artifacts_spawnturf_temp.len > 0)
 		var/turf/simulated/mineral/artifact_turf = pop(artifacts_spawnturf_temp)
 		own_set(artifact_turf, "artifact_find", new /datum/artifact_find())

@@ -69,7 +69,7 @@
 		qdel(my_hose)
 	if(carrier)
 		carrier.verbs -= /atom/proc/disconnect_hose
-		LAZYREMOVE(carrier.hose_connectors, src)
+		// carrier.hose_connectors owns us: a dying connector leaves it in phase 2.
 
 /datum/hose_connector/proc/get_carrier()
 	RETURN_TYPE(/atom)

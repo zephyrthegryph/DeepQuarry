@@ -30,17 +30,12 @@
 // 					statpanel(S.panel,"[S.holder_var_type] [S.holder_var_amount]",S.connected_button)
 
 /mob/proc/add_spell(datum/spell/spell_to_add, spell_base = "wiz_spell_ready", master_type = /atom/movable/screen/movable/spell_master)
-	if(!spell_masters)
-		own_set(src, "spell_masters", list())
-
-	if(spell_masters.len)
+	if(length(spell_masters))
 		for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters)
 			if(spell_master.type == master_type)
 				rel_add(src, "spell_list", spell_to_add)
 				spell_master.add_spell(spell_to_add)
 				if(mind)
-					if(!mind.learned_spells)
-						mind.learned_spells = list()
 					rel_add(mind, "learned_spells", spell_to_add)
 				return 1
 
@@ -54,8 +49,6 @@
 	own_add(src, "spell_masters", new_spell_master)
 	rel_add(src, "spell_list", spell_to_add)
 	if(mind)
-		if(!mind.learned_spells)
-			mind.learned_spells = list()
 		rel_add(mind, "learned_spells", spell_to_add)
 
 	return 1
@@ -67,11 +60,11 @@
 	if(!(spell_to_remove in spell_list))
 		return
 
-	if(!spell_masters || !spell_masters.len)
+	if(!length(spell_masters))
 		return
 
-	if(mind && mind.learned_spells)
-		mind.learned_spells.Remove(spell_to_remove)
+	if(mind)
+		rel_remove(mind, "learned_spells", spell_to_remove)
 	rel_remove(src, "spell_list", spell_to_remove)
 	for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters)
 		spell_master.remove_spell(spell_to_remove)
@@ -81,7 +74,7 @@
 	if(!(amount >= 0))
 		return
 
-	if(!spell_masters || !spell_masters.len)
+	if(!length(spell_masters))
 		return
 
 	for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters)

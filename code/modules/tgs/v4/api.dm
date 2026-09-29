@@ -269,11 +269,11 @@
 	if (!length(channels))
 		return
 
-	message = list("message" = message.text, "channelIds" = ids)
+	var/list/payload = list("message" = message.text, "channelIds" = ids)
 	if(intercepted_message_queue)
-		intercepted_message_queue += list(message)
+		intercepted_message_queue += list(payload)
 	else
-		Export(TGS4_COMM_CHAT, message)
+		Export(TGS4_COMM_CHAT, payload)
 
 /datum/tgs_api/v4/ChatTargetedBroadcast(datum/tgs_message_content/message, admin_only)
 	var/list/channels = list()
@@ -287,19 +287,19 @@
 	if (!length(channels))
 		return
 
-	message = list("message" = message.text, "channelIds" = channels)
+	var/list/payload = list("message" = message.text, "channelIds" = channels)
 	if(intercepted_message_queue)
-		intercepted_message_queue += list(message)
+		intercepted_message_queue += list(payload)
 	else
-		Export(TGS4_COMM_CHAT, message)
+		Export(TGS4_COMM_CHAT, payload)
 
 /datum/tgs_api/v4/ChatPrivateMessage(datum/tgs_message_content/message, datum/tgs_chat_user/user)
 	message = UpgradeDeprecatedChatMessage(message)
-	message = list("message" = message.text, "channelIds" = list(user.channel.id))
+	var/list/payload = list("message" = message.text, "channelIds" = list(user.channel.id))
 	if(intercepted_message_queue)
-		intercepted_message_queue += list(message)
+		intercepted_message_queue += list(payload)
 	else
-		Export(TGS4_COMM_CHAT, message)
+		Export(TGS4_COMM_CHAT, payload)
 
 /datum/tgs_api/v4/ChatChannelInfo()
 	. = list()

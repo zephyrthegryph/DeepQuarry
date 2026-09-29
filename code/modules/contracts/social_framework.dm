@@ -135,7 +135,7 @@
 	return TRUE
 
 /datum/contract/social/proc/add_stakeholder_role(datum/contract_stakeholder_role/role)
-	if(!role?.id || stakeholder_roles[role.id])
+	if(!role?.id || stakeholder_roles?[role.id])
 		return FALSE
 	own_put(src, "stakeholder_roles", role.id, role)
 	return TRUE
@@ -172,7 +172,7 @@
 	var/list/eligible_counts = list()
 	var/highest_minimum = 0
 	for(var/role_id in stakeholder_roles)
-		var/datum/contract_stakeholder_role/role = stakeholder_roles[role_id]
+		var/datum/contract_stakeholder_role/role = stakeholder_roles?[role_id]
 		plan[role_id] = 0
 		var/eligible_count = 0
 		for(var/datum/money_account/account in accounts)
@@ -191,7 +191,7 @@
 		highest_minimum = max(highest_minimum, authored_required)
 	for(var/slot_round in 1 to highest_minimum)
 		for(var/role_id in role_order)
-			var/datum/contract_stakeholder_role/role = stakeholder_roles[role_id]
+			var/datum/contract_stakeholder_role/role = stakeholder_roles?[role_id]
 			var/authored_required = role.maximum_approved > 0 ? min(role.minimum_approved, role.maximum_approved) : role.minimum_approved
 			if(authored_required < slot_round)
 				continue
@@ -209,14 +209,14 @@
 		return
 	var/list/plan = stakeholder_minimum_plan(supplied_accounts)
 	for(var/role_id in stakeholder_roles)
-		var/datum/contract_stakeholder_role/role = stakeholder_roles[role_id]
+		var/datum/contract_stakeholder_role/role = stakeholder_roles?[role_id]
 		role.required_minimum = plan[role_id] || 0
 		audit(CONTRACT_AUDIT_ACCEPTED, "[role.title] requires [role.required_minimum] qualified participant[role.required_minimum == 1 ? "" : "s"]; [max(0, role.minimum_approved - role.required_minimum)] authored slot[role.minimum_approved - role.required_minimum == 1 ? "" : "s"] became optional for the available crew.")
 	stakeholder_requirements_locked = TRUE
 
 /datum/contract/social/proc/account_has_stakeholder_role(account_number, except_role_id)
 	for(var/key in stakeholder_proposals)
-		var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals[key]
+		var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals?[key]
 		if(proposal.account_number != account_number || proposal.role_id == except_role_id)
 			continue
 		if(proposal.status in list(CONTRACT_STAKEHOLDER_PENDING, CONTRACT_STAKEHOLDER_COUNTERED, CONTRACT_STAKEHOLDER_APPROVED))
@@ -234,13 +234,13 @@
 	if(!account)
 		return FALSE
 	for(var/proposal_key in stakeholder_proposals)
-		var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals[proposal_key]
+		var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals?[proposal_key]
 		if(proposal.account_number == account.account_number)
 			return TRUE
 	if(!(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)))
 		return FALSE
 	for(var/role_id in stakeholder_roles)
-		var/datum/contract_stakeholder_role/role = stakeholder_roles[role_id]
+		var/datum/contract_stakeholder_role/role = stakeholder_roles?[role_id]
 		if(role.account_is_eligible(account))
 			return TRUE
 	return FALSE
@@ -248,7 +248,7 @@
 /datum/contract/social/proc/propose_stakeholder(datum/money_account/account, role_id, requested_weight = 1)
 	if(!(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)) || !account)
 		return FALSE
-	var/datum/contract_stakeholder_role/role = stakeholder_roles[role_id]
+	var/datum/contract_stakeholder_role/role = stakeholder_roles?[role_id]
 	if(!role?.account_is_eligible(account))
 		return FALSE
 	if(account_has_stakeholder_role(account.account_number, role_id))
@@ -256,7 +256,7 @@
 	if(role.maximum_approved > 0 && approved_stakeholder_count(role_id) >= role.maximum_approved)
 		return FALSE
 	var/key = proposal_key(account.account_number, role_id)
-	var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals[key]
+	var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals?[key]
 	if(proposal?.status == CONTRACT_STAKEHOLDER_APPROVED)
 		return FALSE
 	if(!proposal)
@@ -284,10 +284,10 @@
 	if(!(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)) || !account)
 		return FALSE
 	var/key = proposal_key(account.account_number, role_id)
-	var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals[key]
+	var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals?[key]
 	if(!proposal || proposal.status != CONTRACT_STAKEHOLDER_APPROVED)
 		return FALSE
-	var/datum/contract_stakeholder_role/role = stakeholder_roles[role_id]
+	var/datum/contract_stakeholder_role/role = stakeholder_roles?[role_id]
 	proposal.status = CONTRACT_STAKEHOLDER_WITHDRAWN
 	proposal.approved_weight = 0
 	audit(CONTRACT_AUDIT_PROGRESS, "[proposal.account_name] withdrew from [role?.title || "a stakeholder role"].")
@@ -297,23 +297,23 @@
 /datum/contract/social/proc/approved_stakeholder_count(role_id)
 	. = 0
 	for(var/proposal_key in stakeholder_proposals)
-		var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals[proposal_key]
+		var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals?[proposal_key]
 		if(proposal.role_id == role_id && proposal.status == CONTRACT_STAKEHOLDER_APPROVED)
 			.++
 
 /datum/contract/social/proc/qualified_stakeholder_count(role_id)
 	. = 0
-	var/datum/contract_stakeholder_role/role = stakeholder_roles[role_id]
+	var/datum/contract_stakeholder_role/role = stakeholder_roles?[role_id]
 	if(!role)
 		return
 	for(var/key in stakeholder_proposals)
-		var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals[key]
+		var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals?[key]
 		if(proposal.role_id == role_id && proposal.status == CONTRACT_STAKEHOLDER_APPROVED && proposal.contribution >= role.minimum_contribution)
 			.++
 
 /datum/contract/social/proc/stakeholders_ready()
 	for(var/role_id in stakeholder_roles)
-		var/datum/contract_stakeholder_role/role = stakeholder_roles[role_id]
+		var/datum/contract_stakeholder_role/role = stakeholder_roles?[role_id]
 		var/required = role.required_minimum >= 0 ? role.required_minimum : role.minimum_approved
 		if(qualified_stakeholder_count(role_id) < required)
 			return FALSE
@@ -436,7 +436,7 @@
 	if(!. || !account_number)
 		return
 	for(var/proposal_key in stakeholder_proposals)
-		var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals[proposal_key]
+		var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals?[proposal_key]
 		if(proposal.account_number == account_number && proposal.status == CONTRACT_STAKEHOLDER_APPROVED)
 			proposal.contribution += amount
 	reconcile_completion()
@@ -444,7 +444,7 @@
 /datum/contract/social/reward_recipient_weights()
 	var/list/weights = ..()
 	for(var/proposal_key in stakeholder_proposals)
-		var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals[proposal_key]
+		var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals?[proposal_key]
 		if(proposal.status != CONTRACT_STAKEHOLDER_APPROVED)
 			continue
 		var/key = "[proposal.account_number]"
@@ -474,7 +474,7 @@
 	var/qualified_total = 0
 	var/list/missing_roles = list()
 	for(var/role_id in stakeholder_roles)
-		var/datum/contract_stakeholder_role/role = stakeholder_roles[role_id]
+		var/datum/contract_stakeholder_role/role = stakeholder_roles?[role_id]
 		var/required = role.required_minimum >= 0 ? role.required_minimum : (preview_plan[role_id] || 0)
 		var/qualified = qualified_stakeholder_count(role.id)
 		required_total += required
@@ -483,7 +483,7 @@
 			missing_roles += "[role.title] [qualified]/[required]"
 		var/list/proposal_rows = list()
 		for(var/proposal_key in stakeholder_proposals)
-			var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals[proposal_key]
+			var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals?[proposal_key]
 			if(proposal.role_id != role_id)
 				continue
 			proposal_rows.Add(list(list(

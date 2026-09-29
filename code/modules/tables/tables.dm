@@ -445,13 +445,13 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 		if(carpeted)
 			add_overlay("carpet_flip[type]")
 
-/obj/structure/table/proc/get_all_connected_tables(list/connections)
-	if(!connections)
-		connections = list(src)
-	else
-		rel_add(src, "connections", src)
+/// Flood-fills the connected tables into `found` (a transient working list) and returns it.
+/obj/structure/table/proc/get_all_connected_tables(list/found)
+	if(!found)
+		found = list()
+	found |= src
 	if(istype(src, /obj/structure/table/rack))
-		return connections
+		return found
 
 	for(var/direction in GLOB.cardinal)
 		var/turf/T = get_step(src, direction)
@@ -461,10 +461,10 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 				continue
 			if(istype(nextT, /obj/structure/table/rack) || (istype(nextT, /obj/structure/table/bench) && !istype(src, /obj/structure/table/bench)) ||  (!istype(nextT, /obj/structure/table/bench) && istype(src, /obj/structure/table/bench)))
 				continue
-			if(!(nextT in connections))
-				rel_add(src, "connections", nextT.get_all_connected_tables(connections))
+			if(!(nextT in found))
+				nextT.get_all_connected_tables(found)
 
-	return connections
+	return found
 
 #define CORNER_NONE 0
 #define CORNER_COUNTERCLOCKWISE 1

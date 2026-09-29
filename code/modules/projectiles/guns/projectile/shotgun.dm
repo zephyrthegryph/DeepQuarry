@@ -60,7 +60,7 @@
 		M.hud_used?.update_ammo_hud(M, src) // TGMC Ammo HUD Port
 
 	// Load next shell
-	if(loaded.len)
+	if(length(loaded))
 		var/obj/item/ammo_casing/AC = loaded[1] // Load next casing.
 		own_take_member(src, "loaded", AC) // Remove casing from loaded list.
 		rel_set(src, "chambered", AC)
@@ -75,7 +75,7 @@
 	..()
 	if(!empty_sprite)//Just a dirty check
 		return
-	if((loaded.len) || (chambered))
+	if((length(loaded)) || (chambered))
 		icon_state = "[icon_state]"
 	else
 		icon_state = "[icon_state]-empty"
@@ -151,7 +151,7 @@
 			to_chat(user, span_warning("The [src] is already shortened!"))
 			return
 		to_chat(user, span_notice("You begin to shorten the barrel of \the [src]."))
-		if(loaded.len)
+		if(length(loaded))
 			var/burstsetting = burst
 			burst = 2
 			user.visible_message(span_danger("The shotgun goes off!"), span_danger("The shotgun goes off in your face!"))

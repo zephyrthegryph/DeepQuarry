@@ -189,20 +189,31 @@
 			/obj/item/book/bundle/custom_library/religious
 			)
 
-	if(!all_books || !all_books.len)
-		own_take_all(src, "all_books")
-
+	if(!length(all_books))
+		// A static archive of plain data rows (name -> row), read from the type defaults: no book is
+		// instantiated and no library computer holds book instances.
+		all_books = list()
 		for(var/path in subtypesof(/obj/item/book/codex/lore))
-			var/obj/item/book/C = new path(null)
-			own_put(src, "all_books", C.name, C)
+			var/obj/item/book/C = path
+			all_books[initial(C.name)] = library_archive_row(path)
 
 		for(var/path in subtypesof(/obj/item/book/custom_library) - base_genre_books)
-			var/obj/item/book/B = new path(null)
-			own_put(src, "all_books", B.title, B)
+			var/obj/item/book/B = path
+			all_books[initial(B.title)] = library_archive_row(path)
 
 		for(var/path in subtypesof(/obj/item/book/bundle/custom_library) - base_genre_books)
-			var/obj/item/book/M = new path(null)
-			own_put(src, "all_books", M.title, M)
+			var/obj/item/book/M = path
+			all_books[initial(M.title)] = library_archive_row(path)
+
+/// One internal-archive row for the UI: plain data from the book type's defaults.
+/obj/machinery/librarycomp/proc/library_archive_row(book_path)
+	var/obj/item/book/template = book_path
+	return list(
+		"path" = "[book_path]",
+		"name" = initial(template.name),
+		"author" = initial(template.author) || "",
+		"category" = initial(template.libcategory) || "",
+	)
 
 // TGUI migration. attack_hand and attack_ghost open
 // LibraryComp.tsx. The big browse-rendered switch and Topic dispatcher
@@ -325,15 +336,9 @@
 		))
 	data["checkouts"] = cos
 	var/list/internal = list()
-	if(screenstate == 4 && all_books?.len)
+	if(screenstate == 4 && length(all_books))
 		for(var/name in all_books)
-			var/obj/item/book/mb = all_books[name]
-			internal += list(list(
-				"path" = "[mb.type]",
-				"name" = mb.name,
-				"author" = mb.author || "",
-				"category" = mb.libcategory || "",
-			))
+			internal += list(all_books[name])
 	data["internal_archive"] = internal
 	var/list/external = list()
 	if(screenstate == 8 || is_admin_view)

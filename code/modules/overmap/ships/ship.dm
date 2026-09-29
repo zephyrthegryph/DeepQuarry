@@ -67,9 +67,8 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 /obj/effect/overmap/visitable/ship/lifecycle_dematerialize()
 	SSshuttles.ships -= src
 	if(GLOB.flight_service && flight_vessel_id)
-		var/datum/flight_vessel/vessel = GLOB.flight_service.vessels[flight_vessel_id]
+		var/datum/flight_vessel/vessel = own_take_member(GLOB.flight_service, "vessels", flight_vessel_id)
 		if(vessel)
-			GLOB.flight_service.vessels -= flight_vessel_id
 			GLOB.flight_service.vessel_by_ship -= REF(src)
 			qdel(vessel)
 	return ..()

@@ -18,18 +18,12 @@
 
 /obj/item/multitool/hacktool/Initialize(mapload)
 	. = ..()
-	known_targets = list()
 	max_known_targets = 5 + rand(1,3)
 	supported_types = list(/obj/machinery/door/airlock,/obj/structure/closet/crate/secure,/obj/structure/closet/secure_closet)
 
 DECLARE_DEFAULT_CHILD(/obj/item/multitool/hacktool, "hack_state", /datum/tgui_state/default/must_hack)
 
-// stops observing its known targets' destruction.
-/obj/item/multitool/hacktool/on_destroy(force)
-	for(var/atom/target as anything in known_targets)
-		target.unregister(OBSERVER_EVENT_DESTROY, src)
-	known_targets.Cut()
-	..()
+// known_targets is a relation list (newest last): the framework drops a target when it dies.
 
 /obj/item/multitool/hacktool/screwdriver_act(mob/user, obj/item/tool)
 	in_hack_mode = !in_hack_mode
@@ -95,9 +89,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/multitool/hacktool, "hack_state", /datum/tgui_st
 			to_chat(user, "[icon2html(src, user.client)] " + span_warning("Target's electronic security is too complex."))
 			return 0
 
-		var/found = known_targets.Find(D)
-		if(found)
-			known_targets.Swap(1, found)	// Move the last hacked item first
+		if(D in known_targets)
+			rel_remove(src, "known_targets", D)	// Move the last hacked item to the newest end
+			rel_add(src, "known_targets", D)
 			return 1
 		to_chat(user, span_notice("You begin hacking \the [D]..."))
 		// On average hackin takes ~15 seconds. Fairly small random span to discourage people from simply aborting and trying again
@@ -121,8 +115,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/multitool/hacktool, "hack_state", /datum/tgui_st
 		return
 	to_chat(user, span_notice("Your hacking attempt was succesful!"))
 	user.playsound_local(get_turf(src), 'sound/runtime/instruments/piano/An6.ogg', 50)
-	known_targets.Insert(1, D)	// Insert the newly hacked target first,
-	D.register(OBSERVER_EVENT_DESTROY, src, /obj/item/multitool/hacktool/proc/on_target_destroy)
+	rel_add(src, "known_targets", D)	// The newly hacked target goes at the newest end
 	afterattack(D, user)
 
 /obj/item/multitool/hacktool/proc/attempt_hack_timed_done(mob/user, obj/structure/closet/crate/secure/A)
@@ -139,14 +132,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/multitool/hacktool, "hack_state", /datum/tgui_st
 /obj/item/multitool/hacktool/proc/sanity_check()
 	if(max_known_targets < 1) max_known_targets = 1
 	// Cut away the oldest items if the capacity has been reached
-	if(known_targets.len > max_known_targets)
-		for(var/i = (max_known_targets + 1) to known_targets.len)
-			var/atom/A = known_targets[i]
-			A.unregister(OBSERVER_EVENT_DESTROY, src)
-		known_targets.Cut(max_known_targets + 1)
-
-/obj/item/multitool/hacktool/proc/on_target_destroy(target)
-	known_targets -= target
+	while(length(known_targets) > max_known_targets)
+		rel_remove(src, "known_targets", known_targets[1])
 
 /datum/tgui_state/default/must_hack
 	var/obj/item/multitool/hacktool/hacktool

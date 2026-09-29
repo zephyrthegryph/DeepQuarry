@@ -303,7 +303,8 @@
 			crate.cargo_market_router_account = contract.contact_account_number
 			crate.cargo_market_contract_key = contract.offer_key
 			document.payload["loaded_at"] = world.time
-			document.payload["shipment_ref"] = REF(crate)
+			var/shipment_ref = REF(crate) // a ref string: the payload stays plain data
+			document.payload["shipment_ref"] = shipment_ref
 			return TRUE
 	return FALSE
 

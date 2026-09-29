@@ -93,10 +93,12 @@
 
 /obj/machinery/mineral/stacking_machine/Initialize(mapload)
 	. = ..()
-	for(var/obj/item/stack/material/S as anything in (subtypesof(/obj/item/stack/material) - typesof(/obj/item/stack/material/cyborg)))
+	// stack_paths holds type paths (material id -> stack type), not instances.
+	for(var/stack_path in (subtypesof(/obj/item/stack/material) - typesof(/obj/item/stack/material/cyborg)))
+		var/obj/item/stack/material/S = stack_path
 		var/s_matname = initial(S.default_type)
 		LAZYSET(stack_storage, s_matname, 0)
-		LAZYSET(stack_paths, s_matname, S)
+		LAZYSET(stack_paths, s_matname, stack_path)
 
 	for (var/dir in GLOB.cardinal)
 		rel_set(src, "input", locate(/obj/machinery/mineral/input, get_step(src, dir)))

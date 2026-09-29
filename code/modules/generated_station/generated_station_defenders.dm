@@ -65,7 +65,8 @@
 	var/tmp/datum/generated_station_director/director
 	var/list/agents
 	var/list/squads_by_department
-	var/list/department_turfs
+	/// department id -> list(x, y, z) of its control console (coordinates, not turf refs: see department_turf()).
+	var/list/department_coords
 	var/list/active_patrols
 	var/casualties = 0
 	var/suppress_sensor_events = FALSE
@@ -89,16 +90,25 @@
 	rel_set(src, "director", new_director)
 	own_take_all(src, "agents")
 	squads_by_department = list()
-	department_turfs = list()
+	department_coords = list()
 	active_patrols = list()
 	rel_set(director(), "defense_runtime", src)
 
 // its director forgets it.
 
 
+/// The turf of a department's control console, or null when unknown.
+/datum/generated_station_defense_runtime/proc/department_turf(department_id)
+	var/list/coords = department_coords?[department_id]
+	if(length(coords) != 3)
+		return null
+	return locate(coords[1], coords[2], coords[3])
+
 /datum/generated_station_defense_runtime/proc/create_roster()
 	for(var/obj/machinery/generated_station_department_control/control in site().station_controls)
-		department_turfs[control.department_id] = get_turf(control)
+		var/turf/control_turf = get_turf(control)
+		if(control_turf)
+			department_coords[control.department_id] = list(control_turf.x, control_turf.y, control_turf.z)
 	// Relays are tracked by the materialization; never materialise a full-z
 	// block() list (and a typed for-loop over turfs would skip every relay anyway).
 	for(var/obj/machinery/generated_station_data_relay/relay in site().station_materialization?.infrastructure)
@@ -112,7 +122,7 @@
 	spawn_department("logistics-1", 1)
 
 /datum/generated_station_defense_runtime/proc/spawn_department(department_id, count)
-	var/turf/spawn_turf = generated_station_defender_spawn_turf(department_turfs[department_id])
+	var/turf/spawn_turf = generated_station_defender_spawn_turf(department_turf(department_id))
 	if(!spawn_turf)
 		return
 	var/datum/generated_station_squad/squad = director().create_squad(department_id)
@@ -196,8 +206,8 @@
 	return TRUE
 
 /datum/generated_station_defense_runtime/proc/apply_order(datum/generated_station_order/order)
-	var/datum/generated_station_squad/squad = director().squads[order.squad_id]
-	var/datum/generated_station_knowledge_report/report = director().reports[order.report_id]
+	var/datum/generated_station_squad/squad = director().squads?[order.squad_id]
+	var/datum/generated_station_knowledge_report/report = director().reports?[order.report_id]
 	for(var/datum/generated_station_defender_agent/agent in agents)
 		if(agent.squad_id == squad?.id)
 			agent.apply_order(order, report)
@@ -207,7 +217,7 @@
 	var/datum/generated_station_order/order = director()?.orders?[order_id]
 	if(!order)
 		return
-	var/datum/generated_station_squad/squad = director().squads[order.squad_id]
+	var/datum/generated_station_squad/squad = director().squads?[order.squad_id]
 	director().complete_order(order.id)
 	sleep_squad(squad?.id)
 
@@ -227,7 +237,7 @@
 	var/datum/generated_station_knowledge_report/report = director().submit_report(department_id, "patrol-[world.time]", "patrol", "Finite patrol route.", 100, GENERATED_STATION_PATROL_DURATION)
 	if(!report)
 		return FALSE
-	rel_set(report, "target", destination || department_turfs[department_id])
+	rel_set(report, "target", destination || department_turf(department_id))
 	var/datum/generated_station_order/order = director().issue_order(squad_id, report.id, GENERATED_STATION_ORDER_PATROL, FALSE)
 	if(!order)
 		return FALSE
@@ -259,9 +269,9 @@
 /datum/generated_station_defense_runtime/proc/spawn_reinforcement(department_id)
 	if(!director() || QDELETED(src))
 		return FALSE
-	var/turf/spawn_turf = generated_station_defender_spawn_turf(department_turfs[department_id])
+	var/turf/spawn_turf = generated_station_defender_spawn_turf(department_turf(department_id))
 	var/squad_id = squads_by_department[department_id]
-	var/datum/generated_station_squad/squad = director().squads[squad_id]
+	var/datum/generated_station_squad/squad = director().squads?[squad_id]
 	if(!spawn_turf || !squad || length(squad.member_ids) >= GENERATED_STATION_MAX_SQUAD_MEMBERS)
 		return FALSE
 	spawn_defender(department_id, squad, spawn_turf)
@@ -278,7 +288,7 @@
 /datum/generated_station_defense_runtime/proc/retreat_agent(datum/generated_station_defender_agent/agent)
 	if(!agent?.is_active())
 		return
-	var/turf/medical = department_turfs["medical-1"] || agent.home()
+	var/turf/medical = department_turf("medical-1") || agent.home()
 	agent.defender().ai_brain?.give_destination(medical)
 	agent.defender().ai_brain?.go_wake()
 	om_after_replace(src, 5 SECONDS, PROC_REF(heal_and_redeploy), agent)
@@ -288,7 +298,7 @@
 	if(!agent?.is_active())
 		return
 	var/obj/item/stack/medical/medicine
-	var/area/medical_area = get_area(department_turfs["medical-1"])
+	var/area/medical_area = get_area(department_turf("medical-1"))
 	for(var/obj/item/stack/medical/candidate in area_contents_of_type(medical_area, /obj/item/stack/medical))
 		if(candidate.amount > 0)
 			medicine = candidate
@@ -327,7 +337,7 @@
 	if(!target || QDELETED(target) || target.get_integrity() >= target.max_integrity)
 		return
 	var/obj/item/stack/material/materials
-	var/area/engineering_area = get_area(department_turfs["engineering-1"])
+	var/area/engineering_area = get_area(department_turf("engineering-1"))
 	for(var/obj/item/stack/material/candidate in area_contents_of_type(engineering_area, /obj/item/stack/material))
 		if(candidate.amount > 0)
 			materials = candidate

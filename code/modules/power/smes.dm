@@ -158,7 +158,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	return TRUE
 
 /obj/machinery/power/smes/disconnect_terminal(obj/machinery/power/terminal/term)
-	LAZYREMOVE(terminals, term)
+	rel_remove(src, "terminals", term)
 	rel_clear(term, "master")
 	power_sync()
 
@@ -331,7 +331,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	term.set_dir(tempDir)
 	rel_set(term, "master", src)
 	term.connect_to_network()
-	own_add(src, "terminals", term)
+	rel_add(src, "terminals", term)
 	power_sync()
 	user.visible_message(\
 			span_filter_notice(span_notice("[user.name] has added cables to the [src].")),\
@@ -474,7 +474,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 			return ITEM_INTERACT_SUCCESS
 	new /obj/item/stack/cable_coil(loc, 10)
 	user.visible_message(span_filter_notice(span_notice("[user.name] cut the cables and dismantled the power terminal.")), span_filter_notice(span_notice("You cut the cables and dismantle the power terminal.")))
-	LAZYREMOVE(terminals, term)
+	rel_remove(src, "terminals", term)
 	qdel(term)
 
 /obj/machinery/power/smes/tgui_interact(mob/user, datum/tgui/ui)

@@ -65,38 +65,34 @@
 /mob/living/carbon/brain/caught_soul/create_mob_hud(datum/hud/HUD, apply_to_client = TRUE)
 	..()
 
-	var/list/adding = list()
-	HUD.adding = adding
-
 	var/atom/movable/screen/using
 
 	using = new /atom/movable/screen/nifsc/reenter()
 	using.screen_loc = ui_nifsc_reenter
-	rel_set(using, "hud", src)
-	adding += using
+	rel_set(using, "hud", HUD)
+	own_add(HUD, "adding", using)
 
 	using = new /atom/movable/screen/nifsc/arproj()
 	using.screen_loc = ui_nifsc_arproj
-	rel_set(using, "hud", src)
-	adding += using
+	rel_set(using, "hud", HUD)
+	own_add(HUD, "adding", using)
 
 	using = new /atom/movable/screen/nifsc/jumptoowner()
 	using.screen_loc = ui_nifsc_jumptoowner
-	rel_set(using, "hud", src)
-	adding += using
+	rel_set(using, "hud", HUD)
+	own_add(HUD, "adding", using)
 
 	using = new /atom/movable/screen/nifsc/nme()
 	using.screen_loc = ui_nifsc_nme
-	rel_set(using, "hud", src)
-	adding += using
+	rel_set(using, "hud", HUD)
+	own_add(HUD, "adding", using)
 
 	using = new /atom/movable/screen/nifsc/nsay()
 	using.screen_loc = ui_nifsc_nsay
-	rel_set(using, "hud", src)
-	adding += using
-
-
+	rel_set(using, "hud", HUD)
+	own_add(HUD, "adding", using)
 	if(client && apply_to_client)
 		client.screen = list()
-		client.screen += HUD.adding
+		if(length(HUD.adding))
+			client.screen += HUD.adding
 		client.screen += client.void

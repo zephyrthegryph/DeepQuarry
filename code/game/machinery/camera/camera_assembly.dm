@@ -39,9 +39,9 @@ MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 	// Upgrades!
 	if(is_type_in_list(W, possible_upgrades) && !is_type_in_list(W, upgrades)) // Is a possible upgrade and isn't in the camera already.
 		to_chat(user, "You attach \the [W] into the assembly inner circuits.")
-		rel_add(src, "upgrades", W)
 		user.remove_from_mob(W)
 		W.forceMove(src)
+		own_move(W, src, "upgrades")
 		return INTERACTION_HANDLED_PASS
 
 	// Taking out upgrades
@@ -97,8 +97,8 @@ MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 	if(upgrade)
 		to_chat(user, span_notice("You unattach an upgrade from the assembly."))
 		playsound(src, tool.usesound, 50, TRUE)
+		own_take_member(src, "upgrades", upgrade)
 		upgrade.forceMove(get_turf(src))
-		rel_remove(src, "upgrades", upgrade)
 	return TRUE
 
 /obj/item/camera_assembly/screwdriver_act(mob/user, obj/item/tool)

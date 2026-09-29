@@ -178,11 +178,6 @@
 	..()
 	department_areas = list()
 	module_areas = list()
-	modules = list()
-	room_solutions = list()
-	control_landmarks = list()
-	service_endpoints = list()
-	service_routes = list()
 	own_take_all(src, "owned_furnishing_atoms")
 	own_take_all(src, "doors")
 	own_take_all(src, "infrastructure")
@@ -243,8 +238,8 @@
 	var/min_y
 	var/max_x
 	var/max_y
-	/// Layout nodes by id: a lookup for the job's lifetime (the spec owns the nodes and outlives it).
-	var/list/nodes_by_id
+	/// Layout node id -> its index in spec().layout_nodes (plain data; the spec owns the nodes). Read with node_by_id().
+	var/list/node_index_by_id
 	var/area/generated_station/transit/transit_area
 	var/tmp/area/generated_station/maintenance/maintenance_area
 	var/datum/generated_station_materialization/result
@@ -292,6 +287,14 @@
 	return active_job ? active_job.checkpoint(phase, progress, force_yield) : FALSE
 
 /// Everything before the phases: the target, the areas and the result. FALSE if it can't start.
+/// The layout node with `node_id`, or null.
+/datum/generated_station_materializer/proc/node_by_id(node_id)
+	var/index = node_index_by_id?[node_id]
+	var/list/nodes = spec()?.layout_nodes
+	if(!index || index > length(nodes))
+		return null
+	return nodes[index]
+
 /datum/generated_station_materializer/proc/prepare_materialization(datum/generated_station_spec/new_spec, new_z, origin_x = 1, origin_y = 1, datum/generated_station_materialization_job/job)
 	last_failure_details = null
 	if(!istype(new_spec) || !isnum(new_z) || new_z < 1 || new_z > world.maxz)
@@ -306,7 +309,7 @@
 	min_y = origin_y
 	max_x = origin_x + spec().grid_width - 1
 	max_y = origin_y + spec().grid_height - 1
-	nodes_by_id = list()
+	node_index_by_id = list()
 	transit_area = generated_station_create_area(/area/generated_station/transit)
 	transit_area().station_id = spec().id
 	transit_area().name = "[spec().name] Transit"
@@ -320,8 +323,12 @@
 	result.origin_y = min_y
 	result.transit_area = transit_area()
 	result.maintenance_area = maintenance_area()
-	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
-		nodes_by_id[node.id] = node
+	var/list/layout_nodes = spec().layout_nodes
+	for(var/node_index in 1 to length(layout_nodes))
+		var/datum/generated_station_layout_node/node = layout_nodes?[node_index]
+		if(!istype(node))
+			continue
+		node_index_by_id[node.id] = node_index
 		var/datum/generated_station_department_instance/department = department_for_node(node)
 		if(department)
 			var/area/generated_station/department_area = make_department_area(department.definition().id)
@@ -398,7 +405,7 @@
 /datum/generated_station_materializer/proc/phase_tile_nodes(cursor)
 	var/floor_type = tile_plan_floor_type()
 	for(var/i in (cursor || 1) to length(spec().layout_nodes))
-		var/datum/generated_station_layout_node/node = spec().layout_nodes[i]
+		var/datum/generated_station_layout_node/node = spec().layout_nodes?[i]
 		var/datum/generated_station_department_instance/node_department = department_for_node(node)
 		var/department_id = node_department?.definition()?.id
 		for(var/key in node.territory)
@@ -459,9 +466,9 @@
 		var/list/parts = splittext(key, ",")
 		var/x = text2num(parts[1])
 		var/y = text2num(parts[2])
-		if(tile_plan.claim(x, y, "maintenance", "maintenance", GENERATED_STATION_TILE_FLOOR, /turf/simulated/floor/tiled/eris/steel/techfloor, null) && spec().maintenance_doors[key])
-			var/datum/generated_station_maintenance_door/maintenance_door = spec().maintenance_doors[key]
-			var/datum/generated_station_layout_node/door_node = nodes_by_id[maintenance_door.owner_node_id]
+		if(tile_plan.claim(x, y, "maintenance", "maintenance", GENERATED_STATION_TILE_FLOOR, /turf/simulated/floor/tiled/eris/steel/techfloor, null) && spec().maintenance_doors?[key])
+			var/datum/generated_station_maintenance_door/maintenance_door = spec().maintenance_doors?[key]
+			var/datum/generated_station_layout_node/door_node = node_by_id(maintenance_door.owner_node_id)
 			var/access_id
 			if(maintenance_door.to_zone_id != "maintenance" && maintenance_door.to_zone_id != "public-circulation")
 				access_id = department_for_node(door_node)?.definition()?.id
@@ -516,7 +523,7 @@
 	var/wall_type = spec().architecture_style == "fortified" ? /turf/simulated/wall/r_wall : /turf/simulated/wall
 	var/list/tiles = plan.tiles
 	for(var/i in (cursor || 1) to length(tiles))
-		var/datum/generated_station_tile_intent/intent = tiles[tiles[i]]
+		var/datum/generated_station_tile_intent/intent = tiles?[tiles?[i]]
 		var/turf/T = world_turf(intent.local_x, intent.local_y)
 		if(!T)
 			return abort_structural("tile-application")
@@ -557,13 +564,13 @@
 /datum/generated_station_materializer/proc/phase_apply_doors(cursor)
 	var/list/tiles = result.tile_plan.tiles
 	for(var/i in (cursor || 1) to length(tiles))
-		var/datum/generated_station_tile_intent/intent = tiles[tiles[i]]
+		var/datum/generated_station_tile_intent/intent = tiles?[tiles?[i]]
 		if(intent.door_type)
 			var/turf/T = world_turf(intent.local_x, intent.local_y)
 			var/obj/machinery/door/airlock/airlock = new intent.door_type(T)
 			airlock.set_dir(intent.door_direction || NORTH)
 			if(intent.owner_id != "transit" && intent.owner_id != "maintenance")
-				configure_department_airlock(airlock, department_for_node(nodes_by_id[intent.owner_id]))
+				configure_department_airlock(airlock, department_for_node(node_by_id(intent.owner_id)))
 			else if(intent.access_id)
 				configure_airlock_access(airlock, intent.access_id)
 			own_add(result, "doors", airlock)
@@ -623,7 +630,7 @@
 /datum/generated_station_materializer/proc/phase_walls(cursor)
 	var/list/tiles = result.tile_plan.tiles
 	for(var/i in (cursor || 1) to length(tiles))
-		var/datum/generated_station_tile_intent/intent = tiles[tiles[i]]
+		var/datum/generated_station_tile_intent/intent = tiles?[tiles?[i]]
 		if(intent.structure_kind == GENERATED_STATION_TILE_HULL)
 			var/turf/simulated/wall/wall = result.world_turf(intent.local_x, intent.local_y)
 			if(istype(wall))
@@ -638,7 +645,7 @@
 /datum/generated_station_materializer/proc/phase_air(cursor)
 	var/list/tiles = result.tile_plan.tiles
 	for(var/i in (cursor || 1) to length(tiles))
-		var/datum/generated_station_tile_intent/intent = tiles[tiles[i]]
+		var/datum/generated_station_tile_intent/intent = tiles?[tiles?[i]]
 		if(intent.structure_kind == GENERATED_STATION_TILE_FLOOR)
 			generated_station_seed_air(world_turf(intent.local_x, intent.local_y))
 		if(i < length(tiles) && generation_checkpoint("Seeding station atmosphere", 60))
@@ -669,7 +676,7 @@
 				for(var/direction in GLOB.cardinal)
 					var/neighbor_x = local_x + (direction == EAST) - (direction == WEST)
 					var/neighbor_y = local_y + (direction == NORTH) - (direction == SOUTH)
-					if(room.tiles["[neighbor_x],[neighbor_y]"])
+					if(room.tiles?["[neighbor_x],[neighbor_y]"])
 						continue
 					// `borderfloor` is a pre-shaded dark stripe and cannot be
 					// recolored correctly. `bordercolor` is the tintable mask
@@ -909,7 +916,7 @@
 	return TRUE
 
 /datum/generated_station_materializer/proc/room_allocation_for_module(datum/generated_station_module/module)
-	var/datum/generated_station_layout_node/node = nodes_by_id[module?.department_node_id]
+	var/datum/generated_station_layout_node/node = node_by_id(module?.department_node_id)
 	for(var/datum/generated_station_room_allocation/room in node?.room_program)
 		if(room.id == module.id)
 			return room
@@ -963,7 +970,7 @@
 			return FALSE
 		var/turf/target = world_turf(fixture.x, fixture.y)
 		var/datum/generated_station_room_allocation/room = rooms_by_native_id["[fixture.room_numeric_id]"]
-		if(!target || (room && !room.tiles["[fixture.x],[fixture.y]"]))
+		if(!target || (room && !room.tiles?["[fixture.x],[fixture.y]"]))
 			last_failure_details = "Rust fixture [fixture.id] lies outside room [fixture.room_numeric_id]"
 			return FALSE
 		var/atom/movable/created = new atom_type(target)
@@ -1514,7 +1521,8 @@
 		var/obj/machinery/door/airlock/generated_station_exterior/exterior = new(outer)
 		exterior.set_dir(outward in list(EAST, WEST) ? EAST : NORTH)
 		exterior.req_access = list(ACCESS_MAINT_TUNNELS)
-		result.doors += list(inner, exterior)
+		own_add(result, "doors", inner)
+		own_add(result, "doors", exterior)
 		result.door_count += 2
 
 /datum/generated_station_materializer/proc/place_entry()

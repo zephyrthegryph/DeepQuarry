@@ -46,6 +46,7 @@
 	var/list/local_alert_levels
 	var/list/department_connected
 	var/list/reports
+	/// report id -> TRUE for reports every connected department knows (the reports themselves live in `reports`).
 	var/list/global_knowledge
 	var/list/local_knowledge
 	var/list/squads
@@ -64,7 +65,6 @@
 	local_alert_levels = list()
 	department_connected = list()
 	own_take_all(src, "reports")
-	own_take_all(src, "global_knowledge")
 	local_knowledge = list()
 	own_take_all(src, "squads")
 	own_take_all(src, "orders")
@@ -118,7 +118,7 @@
 				continue
 			var/list/knowledge = local_knowledge[department_id]
 			for(var/report_id in knowledge)
-				var/datum/generated_station_knowledge_report/report = reports[report_id]
+				var/datum/generated_station_knowledge_report/report = reports?[report_id]
 				if(report && !report.is_expired())
 					propagate_report(report)
 	dirty_departments.Cut()
@@ -129,7 +129,7 @@
 		return null
 	var/list/source_knowledge = local_knowledge[source_department_id]
 	for(var/existing_report_id in source_knowledge)
-		var/datum/generated_station_knowledge_report/existing_report = reports[existing_report_id]
+		var/datum/generated_station_knowledge_report/existing_report = reports?[existing_report_id]
 		if(existing_report && !existing_report.is_expired() && existing_report.subject_id == subject_id && existing_report.category == category)
 			return existing_report
 	var/datum/generated_station_knowledge_report/report = new
@@ -153,7 +153,7 @@
 /datum/generated_station_director/proc/propagate_report(datum/generated_station_knowledge_report/report)
 	if(!strategic_online || !report || report.is_expired() || !department_connected[report.source_department_id])
 		return FALSE
-	own_put(src, "global_knowledge", report.id, report)
+	LAZYSET(global_knowledge, report.id, TRUE)
 	for(var/department_id in local_knowledge)
 		if(department_connected[department_id])
 			var/list/knowledge = local_knowledge[department_id]
@@ -164,10 +164,10 @@
 	// The director may already be torn down when a stale timer fires.
 	if(QDELETED(src) || !reports)
 		return
-	var/datum/generated_station_knowledge_report/report = reports[report_id]
+	var/datum/generated_station_knowledge_report/report = reports?[report_id]
 	if(!report || report.expires_at != expected_expiry || !report.is_expired())
 		return
-	global_knowledge?.Remove(report_id)
+	LAZYREMOVE(global_knowledge, report_id)
 	for(var/department_id in local_knowledge)
 		var/list/knowledge = local_knowledge[department_id]
 		knowledge?.Remove(report_id)
@@ -180,7 +180,9 @@
 	return report && !report.is_expired()
 
 /datum/generated_station_director/proc/globally_knows(report_id)
-	var/datum/generated_station_knowledge_report/report = global_knowledge[report_id]
+	if(!global_knowledge?[report_id])
+		return FALSE
+	var/datum/generated_station_knowledge_report/report = reports?[report_id]
 	return report && !report.is_expired()
 
 /datum/generated_station_director/proc/set_alert(new_level, source_department_id)
@@ -206,7 +208,7 @@
 	return squad
 
 /datum/generated_station_director/proc/issue_order(squad_id, report_id, kind, global_coordination = FALSE)
-	var/datum/generated_station_squad/squad = squads[squad_id]
+	var/datum/generated_station_squad/squad = squads?[squad_id]
 	if(!squad || !kind || squad.active_order_id || length(orders) >= GENERATED_STATION_MAX_ORDERS)
 		return null
 	if(global_coordination)
@@ -229,11 +231,11 @@
 	return order
 
 /datum/generated_station_director/proc/complete_order(order_id)
-	var/datum/generated_station_order/order = orders[order_id]
+	var/datum/generated_station_order/order = orders?[order_id]
 	if(!order || order.state != GENERATED_STATION_ORDER_ACTIVE)
 		return FALSE
 	order.state = GENERATED_STATION_ORDER_COMPLETE
-	var/datum/generated_station_squad/squad = squads[order.squad_id]
+	var/datum/generated_station_squad/squad = squads?[order.squad_id]
 	if(squad?.active_order_id == order.id)
 		squad.active_order_id = null
 	own_take_member(src, "orders", order.id)

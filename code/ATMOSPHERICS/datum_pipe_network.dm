@@ -128,7 +128,7 @@
 
 	var/list/giver_normal_members = giver.normal_members?.Copy()
 	var/list/giver_line_members = giver.line_members?.Copy()
-	var/list/giver_leaks = giver.leaks
+	var/list/giver_leaks = giver.leaks?.Copy()
 	var/list/giver_external = giver.external_air_volumes
 
 	if(!air)
@@ -139,7 +139,8 @@
 	volume += giver.volume
 	air.set_volume(max(volume, 1))
 
-	rel_add(src, "leaks", giver_leaks)
+	for(var/obj/machinery/atmospherics/pipe/giver_leak as anything in giver_leaks)
+		rel_add(src, "leaks", giver_leak)
 
 	for(var/obj/machinery/atmospherics/normal_member in giver_normal_members)
 		normal_member.bind_network_air(giver, air)

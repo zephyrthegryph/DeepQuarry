@@ -26,16 +26,18 @@
 
 /datum/computer_file/data/email_account/New(glob_load)
 	if(!glob_load)
-		LAZYADD(GLOB.ntnet_global.email_accounts, src)
+		own_add(GLOB.ntnet_global, "email_accounts", src) // NTNet owns every account; a dying account leaves the list in phase 2
 	..()
 
-/// Phase 2: leaves NTNet's email accounts.
-/datum/computer_file/data/email_account/lifecycle_dematerialize()
-	. = ..()
-	LAZYREMOVE(GLOB.ntnet_global.email_accounts, src)
-
 /datum/computer_file/data/email_account/proc/all_emails()
-	return (inbox | spam | deleted)
+	// The mailbox lists are relation lists: an emptied one is null.
+	. = list()
+	if(length(inbox))
+		. |= inbox
+	if(length(spam))
+		. |= spam
+	if(length(deleted))
+		. |= deleted
 
 /datum/computer_file/data/email_account/proc/send_mail(recipient_address, datum/computer_file/data/email_message/message, relayed = 0)
 	var/datum/computer_file/data/email_account/recipient

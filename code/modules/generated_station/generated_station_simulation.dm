@@ -53,7 +53,7 @@ REGISTRY_MEMBERSHIP(/datum/generated_station_simulation, REGISTRY_GENERATED_STAT
 
 /datum/generated_station_simulation/proc/configure_default_resources()
 	for(var/id in departments)
-		var/datum/generated_station_department_runtime/runtime = departments[id]
+		var/datum/generated_station_department_runtime/runtime = departments?[id]
 		switch(runtime.department().definition().id)
 			if("engineering")
 				runtime.stockpiles["fuel"] = 100
@@ -80,7 +80,7 @@ REGISTRY_MEMBERSHIP(/datum/generated_station_simulation, REGISTRY_GENERATED_STAT
 	A.power_change()
 
 /datum/generated_station_simulation/proc/set_integrity(department_id, value)
-	var/datum/generated_station_department_runtime/runtime = departments[department_id]
+	var/datum/generated_station_department_runtime/runtime = departments?[department_id]
 	if(!runtime)
 		return FALSE
 	runtime.integrity = clamp(value, 0, 100)
@@ -88,7 +88,7 @@ REGISTRY_MEMBERSHIP(/datum/generated_station_simulation, REGISTRY_GENERATED_STAT
 	return TRUE
 
 /datum/generated_station_simulation/proc/set_stockpile(department_id, resource_id, amount)
-	var/datum/generated_station_department_runtime/runtime = departments[department_id]
+	var/datum/generated_station_department_runtime/runtime = departments?[department_id]
 	if(!runtime || !resource_id)
 		return FALSE
 	runtime.stockpiles[resource_id] = max(0, amount)
@@ -96,13 +96,13 @@ REGISTRY_MEMBERSHIP(/datum/generated_station_simulation, REGISTRY_GENERATED_STAT
 	return TRUE
 
 /datum/generated_station_simulation/proc/add_stockpile(department_id, resource_id, amount)
-	var/datum/generated_station_department_runtime/runtime = departments[department_id]
+	var/datum/generated_station_department_runtime/runtime = departments?[department_id]
 	if(!runtime || !resource_id)
 		return FALSE
 	return set_stockpile(department_id, resource_id, (runtime.stockpiles[resource_id] || 0) + amount)
 
 /datum/generated_station_simulation/proc/consume_stockpile(department_id, resource_id, amount)
-	var/datum/generated_station_department_runtime/runtime = departments[department_id]
+	var/datum/generated_station_department_runtime/runtime = departments?[department_id]
 	if(!runtime || amount < 0 || (runtime.stockpiles[resource_id] || 0) < amount)
 		return FALSE
 	runtime.stockpiles[resource_id] -= amount
@@ -114,7 +114,7 @@ REGISTRY_MEMBERSHIP(/datum/generated_station_simulation, REGISTRY_GENERATED_STAT
 		return
 	var/list/candidates = list()
 	for(var/id in departments)
-		var/datum/generated_station_department_runtime/runtime = departments[id]
+		var/datum/generated_station_department_runtime/runtime = departments?[id]
 		if(runtime.integrity > 0 && runtime.has_resources())
 			candidates[id] = TRUE
 	var/changed = TRUE
@@ -122,7 +122,7 @@ REGISTRY_MEMBERSHIP(/datum/generated_station_simulation, REGISTRY_GENERATED_STAT
 		changed = FALSE
 		var/list/available = aggregate_capabilities(candidates)
 		for(var/id in candidates.Copy())
-			var/datum/generated_station_department_runtime/runtime = departments[id]
+			var/datum/generated_station_department_runtime/runtime = departments?[id]
 			for(var/datum/generated_station_capability_requirement/requirement in runtime.department().definition().requirements)
 				if(requirement.optional)
 					continue
@@ -132,7 +132,7 @@ REGISTRY_MEMBERSHIP(/datum/generated_station_simulation, REGISTRY_GENERATED_STAT
 					break
 	capabilities = aggregate_capabilities(candidates)
 	for(var/id in departments)
-		var/datum/generated_station_department_runtime/runtime = departments[id]
+		var/datum/generated_station_department_runtime/runtime = departments?[id]
 		if(!candidates[id])
 			runtime.state = GENERATED_DEPARTMENT_OFFLINE
 		else if(runtime.integrity < 50)
@@ -144,7 +144,7 @@ REGISTRY_MEMBERSHIP(/datum/generated_station_simulation, REGISTRY_GENERATED_STAT
 /datum/generated_station_simulation/proc/aggregate_capabilities(list/candidates)
 	var/list/available = list()
 	for(var/id in candidates)
-		var/datum/generated_station_department_runtime/runtime = departments[id]
+		var/datum/generated_station_department_runtime/runtime = departments?[id]
 		var/output_scale = runtime.integrity < 50 ? 0.5 : 1
 		for(var/datum/generated_station_capability_provision/provision in runtime.department().definition().provisions)
 			available[provision.capability_id] = (available[provision.capability_id] || 0) + provision.amount * output_scale
@@ -152,7 +152,7 @@ REGISTRY_MEMBERSHIP(/datum/generated_station_simulation, REGISTRY_GENERATED_STAT
 
 /datum/generated_station_simulation/proc/department_state(department_id)
 	recompute()
-	var/datum/generated_station_department_runtime/runtime = departments[department_id]
+	var/datum/generated_station_department_runtime/runtime = departments?[department_id]
 	return runtime?.state || GENERATED_DEPARTMENT_OFFLINE
 
 /datum/generated_station_simulation/proc/capability_available(capability_id, amount = 1)

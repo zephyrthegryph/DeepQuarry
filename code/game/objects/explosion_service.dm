@@ -361,9 +361,9 @@ GLOBAL_DATUM_INIT(explosion_service, /datum/world_service/explosions, new)
 	if(prior_severity)
 		epoch_atoms_deduplicated++
 		if(severity < prior_severity)
-			resolved_atoms[AM] = severity
+			resolved_atoms[AM] = severity // ALLOW(ownership): per-epoch scratch map atom -> severity number, Cut() at the end of the same epoch
 		return
-	resolved_atoms[AM] = severity
+	resolved_atoms[AM] = severity // ALLOW(ownership): per-epoch scratch map atom -> severity number, Cut() at the end of the same epoch
 	var/list/batch = blast_batches[AM.type]
 	if(!batch)
 		batch = list(AM.type) // [1] is the batch's type; atoms follow

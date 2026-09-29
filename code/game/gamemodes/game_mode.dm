@@ -71,7 +71,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 			return
 		var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[href_list["remove_antag_type"]]
 		if(antag_templates && antag_templates.len && antag && (antag in antag_templates) && (antag.id in GLOB.additional_antag_types))
-			antag_templates -= antag
+			rel_remove(src, "antag_templates", antag)
 			GLOB.additional_antag_types -= antag.id
 			message_admins("Admin [key_name_admin(usr)] removed [antag.role_text] template from game mode.")
 	else if(href_list["add_antag_type"])
@@ -122,9 +122,8 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	var/mob/user = ask.answerer
 	var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[ask.choice]
 	if(antag)
-		if(!islist(SSticker.mode.antag_templates))
-			SSticker.mode.antag_templates = list()
-		SSticker.mode.antag_templates |= antag
+		if(!(antag in SSticker.mode.antag_templates))
+			rel_add(SSticker.mode, "antag_templates", antag)
 		message_admins("Admin [key_name_admin(user)] added [antag.role_text] template to game mode.")
 
 /datum/game_mode/proc/announce() //to be called when round starts
@@ -467,19 +466,17 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 		antag_scaling_coeff = 0
 
 	if(antag_tags && length(antag_tags))
-		antag_templates = list()
+		rel_clear(src, "antag_templates")
 		for(var/antag_tag in antag_tags)
 			var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[antag_tag]
-			if(antag)
-				antag_templates |= antag
+			if(antag && !(antag in antag_templates))
+				rel_add(src, "antag_templates", antag)
 
 	if(GLOB.additional_antag_types && GLOB.additional_antag_types.len)
-		if(!antag_templates)
-			antag_templates = list()
 		for(var/antag_type in GLOB.additional_antag_types)
 			var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[antag_type]
-			if(antag)
-				antag_templates |= antag
+			if(antag && !(antag in antag_templates))
+				rel_add(src, "antag_templates", antag)
 
 	newscaster_announcements = pick(GLOB.newscaster_standard_feeds)
 

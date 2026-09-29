@@ -4,7 +4,6 @@ GLOBAL_DATUM_INIT(crew_repository, /datum/repository/crew, new)
 	var/list/cache_data
 
 /datum/repository/crew/New()
-	own_take_all(src, "cache_data")
 	..()
 
 /datum/repository/crew/proc/health_data(zLevel)
@@ -13,7 +12,7 @@ GLOBAL_DATUM_INIT(crew_repository, /datum/repository/crew, new)
 		return crewmembers
 
 	var/z_level = "[zLevel]"
-	var/datum/cache_entry/cache_entry = cache_data[z_level]
+	var/datum/cache_entry/cache_entry = cache_data?[z_level]
 	if(!cache_entry)
 		cache_entry = new/datum/cache_entry
 		own_put(src, "cache_data", z_level, cache_entry)

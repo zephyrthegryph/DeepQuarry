@@ -97,6 +97,7 @@
 
 /datum/generated_station_utility_topology
 	var/station_id
+	/// Everything the topology placed (owned); the lists below index members of these (relations).
 	var/list/power_objects
 	var/list/atmos_objects
 	var/list/apcs
@@ -108,14 +109,6 @@
 
 /datum/generated_station_utility_topology/New()
 	..()
-	power_objects = list()
-	atmos_objects = list()
-	apcs = list()
-	supply_vents = list()
-	supply_tanks = list()
-	scrubbers = list()
-	scrub_tanks = list()
-	alarms = list()
 
 
 /datum/generated_station_utility_topology/proc/power_available()
@@ -429,7 +422,7 @@
 			var/list/component_zones = list()
 			var/list/component_doors = list()
 			for(var/visited_key in came_from)
-				var/datum/generated_station_tile_intent/visited = plan.tiles[visited_key]
+				var/datum/generated_station_tile_intent/visited = plan.tiles?[visited_key]
 				component_zones[visited?.zone_id] = (component_zones[visited?.zone_id] || 0) + 1
 				if(visited?.door_type)
 					component_doors += "[visited.local_x],[visited.local_y]"
@@ -480,7 +473,7 @@
 		// APC construction faces into its supporting wall, unlike generic wall frames.
 		APC.set_dir(apc_wall_direction)
 		own_add(result, "power_objects", APC)
-		own_add(result, "apcs", APC)
+		rel_add(result, "apcs", APC)
 		rel_set(A, "apc", APC)
 		var/turf/apc_terminal_turf = get_turf(APC.terminal)
 		if(!apc_terminal_turf)
@@ -496,7 +489,7 @@
 		var/turf/supply_connector = supply_pair["connector"]
 		var/obj/machinery/atmospherics/unary/vent_pump/on/generated_station/vent = new(supply_device, get_dir(supply_device, supply_connector))
 		own_add(result, "atmos_objects", vent)
-		own_add(result, "supply_vents", vent)
+		rel_add(result, "supply_vents", vent)
 		path_targets += supply_connector
 		add_external_connection(supply_connections, supply_connector, get_dir(supply_connector, supply_device))
 
@@ -504,7 +497,7 @@
 		var/turf/scrub_connector = scrub_pair["connector"]
 		var/obj/machinery/atmospherics/unary/vent_scrubber/on/generated_station/scrubber = new(scrub_device, get_dir(scrub_device, scrub_connector))
 		own_add(result, "atmos_objects", scrubber)
-		own_add(result, "scrubbers", scrubber)
+		rel_add(result, "scrubbers", scrubber)
 		path_targets += scrub_connector
 		add_external_connection(scrub_connections, scrub_connector, get_dir(scrub_connector, scrub_device))
 
@@ -518,7 +511,7 @@
 		alarm.set_dir(turn(alarm_wall_direction, 180))
 		alarm.offset_airalarm()
 		own_add(result, "atmos_objects", alarm)
-		own_add(result, "alarms", alarm)
+		rel_add(result, "alarms", alarm)
 
 	if(!engineering_area)
 		return fail_global_build("engineering area was not found")
@@ -549,14 +542,14 @@
 	var/turf/supply_tank_connector = supply_source_pair["connector"]
 	var/obj/machinery/atmospherics/pipe/tank/air/full/generated_station/supply_tank = new(supply_tank_turf, get_dir(supply_tank_turf, supply_tank_connector))
 	own_add(result, "atmos_objects", supply_tank)
-	own_add(result, "supply_tanks", supply_tank)
+	rel_add(result, "supply_tanks", supply_tank)
 	path_targets += supply_tank_connector
 	add_external_connection(supply_connections, supply_tank_connector, get_dir(supply_tank_connector, supply_tank_turf))
 	var/turf/scrub_tank_turf = scrub_source_pair["device"]
 	var/turf/scrub_tank_connector = scrub_source_pair["connector"]
 	var/obj/machinery/atmospherics/pipe/tank/generated_station_scrub/scrub_tank = new(scrub_tank_turf, get_dir(scrub_tank_turf, scrub_tank_connector))
 	own_add(result, "atmos_objects", scrub_tank)
-	own_add(result, "scrub_tanks", scrub_tank)
+	rel_add(result, "scrub_tanks", scrub_tank)
 	path_targets += scrub_tank_connector
 	add_external_connection(scrub_connections, scrub_tank_connector, get_dir(scrub_tank_connector, scrub_tank_turf))
 
@@ -595,14 +588,14 @@
 
 /datum/generated_station_utility_builder/proc/planned_fixture_turf(owner_id, utility_id, zone_id)
 	for(var/key in materialization().tile_plan.tiles)
-		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles[key]
+		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles?[key]
 		if(intent.owner_id == owner_id && (!zone_id || intent.zone_id == zone_id) && (utility_id in intent.utility_intents))
 			return materialization().world_turf(intent.local_x, intent.local_y)
 	return null
 
 /datum/generated_station_utility_builder/proc/planned_fixture_direction(owner_id, utility_id, zone_id)
 	for(var/key in materialization().tile_plan.tiles)
-		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles[key]
+		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles?[key]
 		if(intent.owner_id == owner_id && (!zone_id || intent.zone_id == zone_id) && (utility_id in intent.utility_intents))
 			return intent.utility_wall_directions[utility_id]
 	return 0
@@ -610,7 +603,7 @@
 /datum/generated_station_utility_builder/proc/planned_fixture_pair(owner_id, utility_id, zone_id)
 	var/datum/generated_station_tile_intent/device_intent
 	for(var/key in materialization().tile_plan.tiles)
-		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles[key]
+		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles?[key]
 		if(intent.owner_id == owner_id && (!zone_id || intent.zone_id == zone_id) && (utility_id in intent.utility_intents))
 			device_intent = intent
 			break
@@ -632,7 +625,7 @@
 /datum/generated_station_utility_builder/proc/planned_route_turfs()
 	var/list/route = list()
 	for(var/key in materialization().tile_plan.tiles)
-		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles[key]
+		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles?[key]
 		if(GENERATED_STATION_UTILITY_POWER_ROUTE in intent.utility_intents)
 			var/turf/T = materialization().world_turf(intent.local_x, intent.local_y)
 			route[REF(T)] = T
@@ -640,7 +633,7 @@
 
 /datum/generated_station_utility_builder/proc/build_planned_lights()
 	for(var/key in materialization().tile_plan.tiles)
-		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles[key]
+		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles?[key]
 		if(!(GENERATED_STATION_UTILITY_LIGHT in intent.utility_intents))
 			continue
 		var/turf/T = materialization().world_turf(intent.local_x, intent.local_y)

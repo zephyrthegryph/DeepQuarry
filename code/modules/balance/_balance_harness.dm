@@ -73,10 +73,7 @@
 
 /// Deletes everything the scenario spawned (between trials and at the end).
 /datum/balance_scenario/proc/cleanup()
-	for(var/atom/movable/thing as anything in spawned)
-		if(!QDELETED(thing))
-			qdel(thing)
-	own_take_all(src, "spawned")
+	own_clear(src, "spawned", OWN_DELETE)
 
 /// Starts a trial: fresh RNG seed, nothing left over from the previous trial.
 /datum/balance_scenario/proc/begin_trial()

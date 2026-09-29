@@ -55,7 +55,7 @@
 		return FALSE
 	var/list/pressurized_turfs = list()
 	for(var/key in station_materialization.tile_plan?.tiles)
-		var/datum/generated_station_tile_intent/intent = station_materialization.tile_plan.tiles[key]
+		var/datum/generated_station_tile_intent/intent = station_materialization.tile_plan.tiles?[key]
 		if(intent.structure_kind != GENERATED_STATION_TILE_FLOOR)
 			continue
 		var/turf/open/planned_floor = station_materialization.world_turf(intent.local_x, intent.local_y)

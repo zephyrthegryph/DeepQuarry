@@ -84,7 +84,7 @@
 	var/healthy = 0
 	var/affected = 0
 	for(var/key in participants)
-		var/datum/medical_trial_participant/participant = participants[key]
+		var/datum/medical_trial_participant/participant = participants?[key]
 		if(!participant.completed)
 			continue
 		if(participant.healthy_volunteer)
@@ -133,7 +133,7 @@
 
 /datum/contract/medical_trial/proc/enroll(mob/living/carbon/human/subject, clinician_account)
 	var/datum/contract_subject_identity/identity = SScontracts.subject_identity(subject)
-	if(!identity || state != CONTRACT_ACTIVE || participants[identity.id])
+	if(!identity || state != CONTRACT_ACTIVE || participants?[identity.id])
 		return FALSE
 	var/list/baseline = medical_trial_snapshot(subject)
 	var/burden = medical_trial_condition_burden(subject)
@@ -145,7 +145,7 @@
 	if(profile.cohort == MEDICAL_TRIAL_COHORT_MIXED)
 		var/matching_class = 0
 		for(var/key in participants)
-			var/datum/medical_trial_participant/existing = participants[key]
+			var/datum/medical_trial_participant/existing = participants?[key]
 			if(existing.healthy_volunteer == is_healthy)
 				matching_class++
 		if(matching_class >= 2)
@@ -234,7 +234,7 @@
 /datum/contract/medical_trial/ui_details(mob/living/user)
 	var/list/subjects = list()
 	for(var/key in participants)
-		var/datum/medical_trial_participant/participant = participants[key]
+		var/datum/medical_trial_participant/participant = participants?[key]
 		var/mob/living/carbon/human/current_subject = participant.current_subject()
 		var/wait_remaining = participant.exposure_time ? max(0, participant.exposure_time + MEDICAL_TRIAL_OBSERVATION_TIME - world.time) : 0
 		var/next_step = "Fax the accepted evidence packet."

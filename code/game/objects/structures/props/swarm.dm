@@ -24,7 +24,6 @@
 
 /obj/structure/cult/pylon/swarm/Initialize(mapload)
 	. = ..()
-	own_take_all(src, "active_beams")
 
 
 /obj/structure/cult/pylon/swarm/pylonhit(damage)

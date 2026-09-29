@@ -25,10 +25,11 @@
 	supply_conversion_value = 4
 
 /datum/material/titanium/generate_recipes()
-	..()
+	var/list/recipes = ..()
 	recipes += list(
 		new /datum/stack_recipe("titanium hull sheet", /obj/item/stack/material/titanium/hull, 2, 1, 5, time = 20, one_per_turf = 0, on_floor = 1, recycle_material = "[name]")
 	)
+	return recipes
 
 /datum/material/iron
 	name = MAT_IRON
@@ -259,12 +260,13 @@
 
 
 /datum/material/durasteel/generate_recipes()
-	. = ..()
+	var/list/recipes = ..()
 	recipes += list(
 		new /datum/stack_recipe("durasteel hull sheet", /obj/item/stack/material/durasteel/hull, 2, 1, 5, time = 20, one_per_turf = 0, on_floor = 1, recycle_material = "[name]"),
 		new /datum/stack_recipe("durasteel fishing rod", /obj/item/material/fishing_rod/modern/strong, 2),
 		new /datum/stack_recipe("whetstone", /obj/item/whetstone, 2, time = 30),
 	)
+	return recipes
 
 
 /datum/material/durasteel //Slightly nerfed protectivness

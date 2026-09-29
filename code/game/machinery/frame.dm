@@ -404,7 +404,7 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 					break
 				user.drop_item()
 				P.forceMove(src)
-				own_add(src, "components", P)
+				own_move(P, src, "components")
 				req_components[I]--
 				update_desc()
 				break
@@ -445,7 +445,7 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 		else
 			user.drop_item()
 			P.forceMove(src)
-		own_add(src, "components", P)
+		own_move(P, src, "components")
 		req_components[I]--
 		break
 

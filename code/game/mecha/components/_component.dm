@@ -126,7 +126,7 @@
 			else
 				mech_body_plan().roll_affliction(chassis, list(internal_damage_flag))
 
-		chassis.internal_components[component_type] = src
+		own_move(src, chassis, "internal_components", component_type) // the chassis owns its installed components; `chassis` is the one-sided relation back
 
 		if(user)
 			chassis.visible_message(span_notice("[user] installs \the [src] in \the [chassis]."))
@@ -135,7 +135,7 @@
 
 /obj/item/mecha_parts/component/proc/detach()
 	if(chassis)
-		chassis.internal_components[component_type] = null
+		chassis.release_component(component_type)
 
 		if(internal_damage_flag && mech_body_plan().has_affliction(chassis, internal_damage_flag))	// If the module has been removed, it's kind of unfair to keep it causing problems by being damaged. It's nonfunctional either way.
 			mech_body_plan().cure(chassis, internal_damage_flag)

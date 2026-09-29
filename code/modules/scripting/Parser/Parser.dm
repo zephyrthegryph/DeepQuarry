@@ -102,7 +102,7 @@
 					own_add(src, "errors", new/datum/scriptError/BadToken(ntok))
 					continue
 				if(!istype(curToken(), /datum/token/end))
-					errors+=new/datum/scriptError/ExpectedToken(";", curToken())
+					own_add(src, "errors", new/datum/scriptError/ExpectedToken(";", curToken()))
 					continue
 			if(/datum/token/symbol)
 				if(curToken().value=="}")
@@ -178,7 +178,7 @@
 			NextToken() //Skip close parenthesis
 			return
 		var/datum/node/expression/P=ParseParamExpression()
-		rel_add(stmt, "parameters", P)
+		own_add(stmt, "parameters", P) // the parser made it: the call statement owns it
 		if(istype(curToken(), /datum/token/symbol) && curToken().value==",") NextToken()
 
 

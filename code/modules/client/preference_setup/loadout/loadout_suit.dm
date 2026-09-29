@@ -19,7 +19,8 @@
 	"Alternate Navy Plate Carrier" = /obj/item/clothing/suit/armor/pcarrier/modarm/blue,
 	"Alternate Light Blue Plate Carrier" = /obj/item/clothing/suit/armor/pcarrier/modarm/lightblue
 	)
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(pcarriers))
+	var/path_tweak = new /datum/gear_tweak/path(pcarriers) // gear_tweaks is SHARED (_gear.dm): a plain tweak list, not an owned roster
+	LAZYADD(gear_tweaks, path_tweak)
 
 
 /datum/gear/suit/winterhood

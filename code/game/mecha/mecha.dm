@@ -2706,3 +2706,14 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 // (own_take); otherwise the ownership policy deletes them with the mech.
 // cabin_air may be rebound to a connected port's network mixture (set_port_network_air()): PROTO.
 PROTO(/obj/mecha, cabin_air)
+
+/// Detaches the component in `slot` (returned unowned; the caller moves or deletes it) and keeps
+/// the empty slot key, since `internal_components` keys double as the mech's slot layout.
+/obj/mecha/proc/release_component(slot)
+	var/list/slots = internal_components
+	. = own_take_member(src, "internal_components", slot)
+	if(!islist(slots))
+		return
+	if(!islist(internal_components))
+		internal_components = slots // ALLOW(ownership): restores the slot-layout list own_take_member() nulled when it emptied; holds no entity
+	internal_components[slot] = null // ALLOW(ownership): re-adds the empty slot marker (a null value, no entity)

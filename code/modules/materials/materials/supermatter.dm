@@ -21,6 +21,7 @@
 	luminescence = 3
 
 /datum/material/supermatter/generate_recipes()
-	recipes = list(
+	var/list/recipes = list(
 		new /datum/stack_recipe("supermatter shard", /obj/machinery/power/supermatter/shard, 30 , one_per_turf = 1, time = 600, on_floor = 1, recycle_material = "[name]")
 	)
+	return recipes

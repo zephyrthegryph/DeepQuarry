@@ -211,9 +211,8 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 
 		if("remove")
 			var/datum/computer_file/data/waypoint/R = locate(params["remove"])
-			if(R)
-				own_take_member(src, "known_sectors", R.fields["name"])
-				qdel(R)
+			if(istype(R) && LAZYACCESS(known_sectors, R.fields["name"]) == R) // only our own entries
+				qdel(own_take_member(src, "known_sectors", R.fields["name"]))
 			. = TRUE
 
 		if("setcoord")

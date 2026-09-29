@@ -40,7 +40,9 @@ OWN(/obj/machinery/mineral/equipment_vendor, inserted_id, OWN_SPILL)
 
 /obj/machinery/mineral/equipment_vendor/Initialize(mapload)
 	. = ..()
-	own_take_all(src, "prize_list")
+	// Plain nested data: category -> entry name -> /datum/data/mining_equipment (a name/path/cost
+	// record, freed in on_destroy()). Rebuilt per vendor type here.
+	prize_list = list()
 	prize_list["Gear"] = list(
 		EQUIPMENT("Brown Webbing",								/obj/item/clothing/accessory/storage/brown_vest,			500),
 		EQUIPMENT("Defense Equipment - Plasteel Machete",		/obj/item/material/knife/machete,							500),
@@ -416,7 +418,18 @@ OWN(/obj/machinery/mineral/equipment_vendor, inserted_id, OWN_SPILL)
 		path = /obj/item/stack/marker_beacon
 	if(!name)
 		name = "Generic Entry"
-	own_add(src, "prize_list", new /datum/data/mining_equipment(name, path, cost))
+	// Entries live in the "Extra" category (prize_list is category -> name -> entry).
+	if(!prize_list)
+		prize_list = list()
+	var/list/extra = prize_list["Extra"]
+	if(!islist(extra))
+		extra = list()
+		prize_list["Extra"] = extra
+	var/datum/data/mining_equipment/old_entry = extra[name]
+	if(old_entry)
+		qdel(old_entry)
+	extra[name] = new /datum/data/mining_equipment(name, path, cost)
+	dirty_items = TRUE
 
 /obj/machinery/mineral/equipment_vendor/ex_act(severity, target)
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread

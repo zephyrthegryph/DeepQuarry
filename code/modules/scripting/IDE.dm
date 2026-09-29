@@ -143,7 +143,7 @@
 					signal.data["name"] = ""
 					signal.data["job"] = ""
 					signal.data["reject"] = 0
-					signal.data["server"] = Server
+					signal.data["server"] = Server // ALLOW(ownership): a transient test-signal payload naming the server; dropped after the run
 
 					Server.Compiler.Run(signal)
 

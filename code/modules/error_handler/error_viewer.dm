@@ -90,7 +90,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 	var/datum/error_viewer/error_entry/error_entry = new(e, desclines, skip_count)
 	rel_set(error_entry, "error_source", error_source)
 	own_add(src, "errors", error_entry)
-	own_add(error_source, "errors", error_entry)
+	rel_add(error_source, "errors", error_entry) // the viewer owns every entry; a source only names its own
 	if (skip_count)
 		return // Skip notifying admins about skipped errors.
 

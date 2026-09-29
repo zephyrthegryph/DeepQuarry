@@ -11,7 +11,7 @@
 		if(SCRN_OBJ_IN_PALETTE)
 			palette_actions.insert_action(button)
 		else // If we don't have it as a define, this is a screen_loc, and we should be floating
-			own_add(src, "floating_actions", button)
+			rel_add(src, "floating_actions", button) // the button is owned by its action (viewers)
 			button.screen_loc = position
 			position = SCRN_OBJ_FLOATING
 
@@ -26,7 +26,7 @@
 		if(SCRN_OBJ_IN_PALETTE)
 			palette_actions.insert_action(button, palette_actions.index_of(relative_to))
 		if(SCRN_OBJ_FLOATING) // If we don't have it as a define, this is a screen_loc, and we should be floating
-			own_add(src, "floating_actions", button)
+			rel_add(src, "floating_actions", button) // the button is owned by its action (viewers)
 			var/client/our_client = mymob().client
 			if(!our_client)
 				position_action(button, button.linked_action().default_button_position)
@@ -41,7 +41,7 @@
 		if(SCRN_OBJ_DEFAULT) // Invalid
 			CRASH("We just tried to hide an action buttion that somehow has the default position as its location, you done fucked up")
 		if(SCRN_OBJ_FLOATING)
-			own_take_member(src, "floating_actions", button)
+			rel_remove(src, "floating_actions", button)
 		if(SCRN_OBJ_IN_LIST)
 			listed_actions.remove_action(button)
 		if(SCRN_OBJ_IN_PALETTE)

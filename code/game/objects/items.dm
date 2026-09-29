@@ -1091,8 +1091,6 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	//This makes it so that any object in the game can have something put in it like the cursed sword!
 	//This means the proc can also be manually called by admin commands.
 	//Handle moving the person into the object.
-	if(!possessed_voice) //Create the list for possessed_voice if it doesn't already have one.
-		own_take_all(src, "possessed_voice")
 	if(!warned_of_possession) //Creates a list of warned users.
 		warned_of_possession = list()
 	var/mob/living/voice/new_voice = new /mob/living/voice(src) 	//Make the voice mob the person is going to be.

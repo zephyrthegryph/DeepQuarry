@@ -20,7 +20,7 @@
 	var/list/allowed_projectile_typecache = list(/obj/item/projectile/beam) // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
 	var/rotation_angle = -1
 	var/can_decon = TRUE
-	var/list/has_projectiles
+	var/list/has_projectiles // Lazy: caught beam damage, angle text -> summed damage (numbers; the beams themselves are deleted on catch)
 	var/bullet_act_in_progress = FALSE
 
 DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "reflector_base")))
@@ -62,9 +62,8 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 
 /obj/structure/reflector/proc/Fire()
 	UNTIL(!bullet_act_in_progress)
-	var/list/angles = list()
-	for(var/obj/item/projectile/P in has_projectiles)
-		angles[num2text(LAZYACCESS(has_projectiles, P))] += P.damage
+	var/list/angles = has_projectiles || list()
+	has_projectiles = null
 	for(var/angle in angles)
 		var/obj/item/projectile/P = new fires_projectile(src)
 		rel_set(P, "firer", src)
@@ -72,7 +71,6 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 		P.accuracy = 350
 		P.dispersion = 0
 		P.fire(text2num(angle))
-	has_projectiles = list()
 
 /obj/structure/reflector/proc/setAngle(new_angle)
 	if(can_rotate)
@@ -83,7 +81,10 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 			add_overlay(deflector_overlay)
 
 /obj/structure/reflector/proc/redirect_projectile(obj/item/projectile/P,pangle)
-	LAZYSET(has_projectiles, P, pangle)
+	var/angle_key = num2text(pangle)
+	var/caught_damage = P.damage
+	LAZYINITLIST(has_projectiles)
+	has_projectiles[angle_key] += caught_damage
 	om_task_periodic(src, PERIODIC_REFLECTORS)
 	qdel(P)
 
@@ -306,8 +307,9 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 /obj/structure/reflector/box/Fire()	//Since they all end up at the same angle, this should save a tad bit of processing power and memory <3
 	UNTIL(!bullet_act_in_progress)
 	var/total_damage = 0
-	for(var/obj/item/projectile/P in has_projectiles)
-		total_damage += P.damage
+	for(var/angle in has_projectiles)
+		total_damage += has_projectiles[angle]
+	has_projectiles = null
 	if(total_damage)
 		var/obj/item/projectile/P = new fires_projectile(src)
 		rel_set(P, "firer", src)
@@ -315,7 +317,6 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 		P.accuracy = 350
 		P.dispersion = 0
 		P.fire(rotation_angle)
-	has_projectiles = list()
 
 /obj/structure/reflector/box/anchored
 	anchored = TRUE
@@ -340,8 +341,9 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 	can_decon = FALSE
 
 /datum/material/steel/generate_recipes()
-	..()
-	own_add(src, "recipes", new/datum/stack_recipe("reflector frame", /obj/structure/reflector, 5, time = 25, one_per_turf = TRUE, on_floor = TRUE))
+	var/list/recipes = ..()
+	recipes += new/datum/stack_recipe("reflector frame", /obj/structure/reflector, 5, time = 25, one_per_turf = TRUE, on_floor = TRUE)
+	return recipes
 
 /datum/supply_pack/eng/reflector
 	name = "Reflector crate"

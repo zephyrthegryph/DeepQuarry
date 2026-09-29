@@ -17,6 +17,8 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	idle_power_usage = 0
 	active_power_usage = 0
 	var/id = 0
+	/// Power this panel last reported to its controller (was the controller's connected_panels[panel] value).
+	var/controller_supply = 0
 	// 12 integrity with a 2-point "broken" buffer: ~10 damage cracks it (atom_break),
 	// then any further hit shatters it into shards (atom_destruction).
 	max_integrity = 12
@@ -198,8 +200,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	occlusion()//and
 	update_icon() //update it
 	var/sgen = get_power_supplied()
-	var/list/panel_list = SC.get_connected_panels()
-	panel_list[src] = sgen
+	controller_supply = sgen
 	return sgen
 
 /// Looks nice but doesn't generate power.
@@ -300,7 +301,12 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 	var/tmp/obj/machinery/power/tracker/connected_tracker
 	var/needs_panel_check	// Powernet has been updated, need to check if panels are still connected.
 	var/connected_power		// Sum of power supplied by connected panels.
-	VAR_PRIVATE/list/connected_panels = list()
+	/// Relation list of connected panels; each panel's controller_supply holds its last reported power.
+	VAR_PRIVATE/list/connected_panels
+	/// Relation list: panels still to update in the solar service's current pass.
+	var/list/solar_pending
+	/// Running power sum for the solar service's current pass.
+	var/solar_pending_sum = 0
 	var/auto_start = SOLAR_AUTO_START_NO
 
 // Used for mapping in solar arrays which automatically start itself.
@@ -337,14 +343,18 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 
 /obj/machinery/power/solar_control/proc/add_panel(obj/machinery/power/solar/P)
 	var/sgen = P.get_power_supplied()
-	connected_power -= connected_panels[P] // Just in case it was already in there
-	connected_panels[P] = sgen
+	if(P in connected_panels) // Just in case it was already in there
+		connected_power -= P.controller_supply
+	P.controller_supply = sgen
+	rel_add(src, "connected_panels", P)
 	connected_power += sgen
 
 /obj/machinery/power/solar_control/proc/remove_panel(obj/machinery/power/solar/P)
-	connected_power -= connected_panels[P]
-	connected_panels.Remove(P)
-	GLOB.solar_service.panel_run[REF(src)] -= P // clear hardref in subsystem
+	if(P in connected_panels)
+		connected_power -= P.controller_supply
+		P.controller_supply = 0
+	rel_remove(src, "connected_panels", P)
+	rel_remove(src, "solar_pending", P) // leave the solar service's current pass
 
 /obj/machinery/power/solar_control/proc/get_connected_panels()
 	RETURN_TYPE(/list)
@@ -433,7 +443,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 	var/data = list()
 
 	data["generated"] = round(connected_power)
-	data["generated_ratio"] = data["generated"] / round(max(connected_panels.len, 1) * GLOB.solar_gen_rate)
+	data["generated_ratio"] = data["generated"] / round(max(length(connected_panels), 1) * GLOB.solar_gen_rate)
 
 	data["sun_angle"] = GLOB.solar_service.get_solar_angle(get_turf(src))
 	data["array_angle"] = cdir
@@ -441,7 +451,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 	data["max_rotation_rate"] = 7200
 	data["tracking_state"] = track
 
-	data["connected_panels"] = connected_panels.len
+	data["connected_panels"] = length(connected_panels)
 	data["connected_tracker"] = (connected_tracker() ? TRUE : FALSE)
 
 	return data

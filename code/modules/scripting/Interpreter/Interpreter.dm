@@ -328,8 +328,8 @@ Finds a function in an accessible scope with the given name. Returns a <Function
 /datum/n_Interpreter/proc/GetFunction(name)
 	var/datum/scope/S = curScope()
 	while(S)
-		if(S.functions.Find(name))
-			return S.functions[name]
+		if(S.has_function(name))
+			return S.find_function(name)
 		S = S.parent()
 	RaiseError(new/datum/runtimeError/UndefinedFunction(name))
 
@@ -340,7 +340,7 @@ Finds a variable in an accessible scope and returns its value.
 /datum/n_Interpreter/proc/GetVariable(name)
 	var/datum/scope/S = curScope()
 	while(S)
-		if(S.variables.Find(name))
+		if((name in S.variables))
 			return S.variables[name]
 		S = S.parent()
 	RaiseError(new/datum/runtimeError/UndefinedVariable(name))
@@ -348,7 +348,7 @@ Finds a variable in an accessible scope and returns its value.
 /datum/n_Interpreter/proc/GetVariableScope(name) //needed for when you reassign a variable in a higher scope
 	var/datum/scope/S = curScope()
 	while(S)
-		if(S.variables.Find(name))
+		if((name in S.variables))
 			return S
 		S = S.parent()
 
@@ -356,7 +356,7 @@ Finds a variable in an accessible scope and returns its value.
 /datum/n_Interpreter/proc/IsVariableAccessible(name)
 	var/datum/scope/S = curScope()
 	while(S)
-		if(S.variables.Find(name))
+		if((name in S.variables))
 			return TRUE
 		S = S.parent()
 	return FALSE

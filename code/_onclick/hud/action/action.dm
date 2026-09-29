@@ -109,7 +109,7 @@
 			continue
 		HideFrom(viewer)
 	if(remove_from)
-		LAZYREMOVE(remove_from.actions, src) // We aren't always properly inserted into the viewers list, gotta make sure that action's cleared
+		rel_remove(remove_from, "actions", src) // We aren't always properly inserted into the viewers list, gotta make sure that action's cleared
 	own_clear(src, "viewers", OWN_DELETE) // whatever HideFrom() couldn't reach
 
 	// While the owner relation is being torn down (either end deleted) the edge is already gone.
@@ -272,7 +272,7 @@
 	if(our_hud && button_for(our_hud)) // Already have a copy of us? go away
 		return
 
-	LAZYOR(viewer.actions, src) // Move this in
+	rel_add(viewer, "actions", src) // Move this in
 	ShowTo(viewer)
 
 /// Adds our action button to the screen of the passed viewer.
@@ -296,7 +296,7 @@
 /datum/action/proc/HideFrom(mob/viewer)
 	var/datum/hud/our_hud = viewer.hud_used
 	var/atom/movable/screen/movable/action_button/button = button_for(our_hud)
-	LAZYREMOVE(viewer.actions, src)
+	rel_remove(viewer, "actions", src)
 	if(button)
 		own_remove(src, "viewers", button)
 

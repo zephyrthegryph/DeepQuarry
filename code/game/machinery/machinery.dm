@@ -576,7 +576,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 						R.insert_item(A, user, TRUE)
 						own_take_member(src, "component_parts", A)
 						B.move_into(src, CONTAINER_SLOT_INTERNALS, user)
-						own_add(src, "component_parts", B)
+						own_move(B, src, "component_parts")
 						to_chat(user, span_notice("[A.name] replaced with [B.name]."))
 						parts_replaced = TRUE
 						break

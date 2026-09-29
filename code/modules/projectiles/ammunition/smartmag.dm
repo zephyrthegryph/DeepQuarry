@@ -36,7 +36,7 @@ DECLARE_PERIODIC(/obj/item/ammo_magazine/smart, PERIODIC_SLOW)
 			rel_set(src, "holding_gun", src.loc)
 
 	if(caliber && ammo_type && attached_cell())
-		if(stored_ammo.len == max_ammo)
+		if(length(stored_ammo) == max_ammo)
 			COOLDOWN_START(src, production_cooldown, production_time)	// Otherwise the max_ammo var is basically always off by 1
 			return
 		if(holding_gun() && !COOLDOWN_FINISHED(src, gun_fired_cooldown))	// Same as recharging energy weapons.
@@ -206,7 +206,8 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 /obj/item/ammo_magazine/smart/proc/produce()
 	if(chargereduction())
 		var/obj/item/ammo_casing/W = new ammo_type(src)
-		stored_ammo.Insert(1, W) //add to the head of the list
+		own_add(src, "stored_ammo", W)
+		moveElement(stored_ammo, length(stored_ammo), 1) //to the head of the list
 		return 1
 	return 0
 

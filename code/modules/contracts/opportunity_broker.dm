@@ -106,6 +106,8 @@
 	var/last_event_at
 	var/latched = FALSE
 	var/list/facts_by_signal
+	/// The last event that revised this window during an open batch (a relation; damage_batch.dm).
+	var/datum/contract_event/batch_event
 
 /datum/contract_opportunity_window/New(_key, _bucket, datum/contract_opportunity_rule/rule)
 	. = ..()
@@ -379,7 +381,8 @@
 		if(!changed)
 			continue
 		if(batching)
-			LAZYSET(pending_opportunity_windows, window_key, event)
+			rel_set(window, "batch_event", event)
+			LAZYSET(pending_opportunity_windows, window_key, TRUE)
 			continue
 		evaluate_opportunity_window(rule, window, window_key, event)
 	return TRUE

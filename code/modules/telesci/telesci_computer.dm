@@ -31,6 +31,7 @@
 	var/overmap_range = 3
 
 OWN(/obj/machinery/computer/telescience, inserted_gps, OWN_SPILL)
+OWN(/obj/machinery/computer/telescience, crystals, OWN_SPILL)
 
 // its crystals are ejected.
 /obj/machinery/computer/telescience/on_destroy(force)
@@ -70,8 +71,8 @@ OWN(/obj/machinery/computer/telescience, inserted_gps, OWN_SPILL)
 		return TRUE
 	if(!user.unEquip(W))
 		return TRUE
-	rel_add(src, "crystals", W)
 	W.forceMove(src)
+	own_move(W, src, "crystals")
 	user.visible_message("[user] inserts [W] into \the [src]'s crystal slot.", span_notice("You insert [W] into \the [src]'s crystal slot."))
 	return TRUE
 
@@ -302,9 +303,8 @@ OWN(/obj/machinery/computer/telescience, inserted_gps, OWN_SPILL)
 	return
 
 /obj/machinery/computer/telescience/proc/eject()
-	for(var/obj/item/I in crystals)
+	for(var/obj/item/I as anything in own_take_all(src, "crystals"))
 		I.forceMove(src.loc)
-		LAZYREMOVE(crystals, I)
 	distance = 0
 
 /obj/machinery/computer/telescience/proc/recalibrate()

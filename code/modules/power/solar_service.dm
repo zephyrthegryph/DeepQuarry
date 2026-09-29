@@ -10,10 +10,9 @@ GLOBAL_DATUM_INIT(solar_service, /datum/world_service/solars, new)
 	// List of solar controllers that need to be prepared for the second half of processing
 	var/list/current_run
 
-	// Each list has a key of its controller, for each subrun of the subsystem
-	var/list/controller_run = list()
-	var/list/panel_run = list()
-	var/list/panel_sum = list()
+	// Relation list: controllers collected for the second half of this pass. Each controller
+	// carries its own pending panels (solar_pending) and running sum (solar_pending_sum).
+	var/list/controller_run
 
 /datum/world_service/solars/service_step(resumed)
 	if(!resumed)
@@ -21,9 +20,9 @@ GLOBAL_DATUM_INIT(solar_service, /datum/world_service/solars, new)
 		// Get the list of controllers we need to process
 		current_run = REGISTRY_COPY(REGISTRY_SOLAR_CONTROLS)
 		// Clear secondary process lists so they're fresh for the impending run ahead
-		controller_run.Cut()
-		panel_run.Cut()
-		panel_sum.Cut()
+		for(var/obj/machinery/power/solar_control/old_SC as anything in controller_run)
+			rel_clear(old_SC, "solar_pending")
+		rel_clear(src, "controller_run")
 
 	////////////////////////////////////////////////////////////////////////////////
 	// First processing cycle collects the controllers we'll be processing
@@ -41,9 +40,11 @@ GLOBAL_DATUM_INIT(solar_service, /datum/world_service/solars, new)
 
 		// Update the controller and prepare each of the solar array lists it needs
 		SC.update()
-		controller_run[REF(SC)] = SC // this pass's work queue (like current_run); a controller deleted mid-pass is skipped below
-		panel_run[REF(SC)] = SC.get_connected_panels().Copy()
-		panel_sum[REF(SC)] = 0
+		rel_add(src, "controller_run", SC) // this pass's work queue (like current_run); a deleted controller leaves it
+		rel_clear(SC, "solar_pending")
+		for(var/obj/machinery/power/solar/panel as anything in SC.get_connected_panels())
+			rel_add(SC, "solar_pending", panel)
+		SC.solar_pending_sum = 0
 
 		if(TICK_CHECK)
 			return FALSE
@@ -52,30 +53,22 @@ GLOBAL_DATUM_INIT(solar_service, /datum/world_service/solars, new)
 	// Second processing cycle handles all of the panels for each controller!
 	////////////////////////////////////////////////////////////////////////////////
 	while(length(controller_run))
-		var/conkey = controller_run[length(controller_run)]
-		// Check if the controller still exists
-		var/obj/machinery/power/solar_control/SC = controller_run[conkey]
-		if(QDELETED(SC))
-			controller_run -= conkey
-			if(TICK_CHECK)
-				return FALSE
-			continue
+		var/obj/machinery/power/solar_control/SC = controller_run[length(controller_run)]
 
 		// Handle all solar panels for this controller.
-		var/list/handling_panels = panel_run[conkey]
-		while(length(handling_panels))
-			var/obj/machinery/power/solar/S = handling_panels[length(handling_panels)]
-			panel_sum[conkey] += S.update_power_generation(SC)
-			handling_panels.len--
+		while(length(SC.solar_pending))
+			var/obj/machinery/power/solar/S = SC.solar_pending[length(SC.solar_pending)]
+			SC.solar_pending_sum += S.update_power_generation(SC)
+			rel_remove(SC, "solar_pending", S)
 
 			if(TICK_CHECK)
 				return FALSE
 
 		// Update the controller
-		SC.connected_power = panel_sum[conkey]
+		SC.connected_power = SC.solar_pending_sum
 		SC.set_power_supply(SC.connected_power)
 		SC.update_icon()
-		controller_run.len--
+		rel_remove(src, "controller_run", SC)
 
 		if(TICK_CHECK)
 			return FALSE

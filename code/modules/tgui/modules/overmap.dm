@@ -353,9 +353,8 @@
 
 		if("remove")
 			var/datum/computer_file/data/waypoint/R = locate(params["remove"])
-			if(R)
-				own_take_member(src, "known_sectors", R.fields["name"])
-				qdel(R)
+			if(istype(R) && known_sectors?[R.fields["name"]] == R) // only one of our own entries
+				own_put(src, "known_sectors", R.fields["name"], null) // removes and disposes of it
 			. = TRUE
 
 		if("setcoord")

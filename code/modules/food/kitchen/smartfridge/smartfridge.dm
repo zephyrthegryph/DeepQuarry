@@ -400,11 +400,20 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 		return 1
 	return 0
 
-// records shared with the upper unit must not be deleted with it (the owned
-// item_records list is deleted when the links clear, right after this).
+// The lower unit keeps no stock of its own: it stocks into the upper unit, and its
+// item_records is a read-only view of the upper unit's owned list. Drop the alias
+// (never take or dispose of it: the records belong to the upper unit).
 /obj/machinery/smartfridge/chemistry/chemvator/down/on_destroy(force)
-	own_take_all(src, "item_records") // shared with the upper unit; don't let phase 4 qdel its stored records
+	item_records = null // ALLOW(ownership): alias of the upper unit's owned list, never owned here
 	..()
+
+/obj/machinery/smartfridge/chemistry/chemvator/down/stock(obj/item/O)
+	var/obj/machinery/smartfridge/chemistry/chemvator/above = attached()
+	if(istype(above))
+		above.stock(O)
+		SStgui.update_uis(src)
+		return
+	return ..()
 
 /obj/machinery/smartfridge/chemistry/chemvator/down
 	name = "\improper Smart Chemavator - Lower"
@@ -416,7 +425,7 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 	if(istype(above))
 		rel_set(above, "attached", src)
 		rel_set(src, "attached", above)
-		item_records = attached().item_records
+		item_records = attached().item_records // ALLOW(ownership): read-only alias of the upper unit's owned list; stock() forwards writes there
 	else
 		to_chat(world,span_danger("[src] at [x],[y],[z] cannot find the unit above it!"))
 

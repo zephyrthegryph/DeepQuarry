@@ -37,7 +37,7 @@
 		cached_custom_tgs_chat_commands = list()
 		for(var/I in typesof(/datum/tgs_chat_command) - /datum/tgs_chat_command)
 			var/datum/tgs_chat_command/stc = I
-			cached_custom_tgs_chat_commands[lowertext(initial(stc.name))] = stc
+			cached_custom_tgs_chat_commands[lowertext(initial(stc.name))] = I // a typepath, not an instance
 
 	var/command_type = cached_custom_tgs_chat_commands[command]
 	if(!command_type)

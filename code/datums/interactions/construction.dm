@@ -58,7 +58,7 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 /proc/construction_edge_by_id(id)
 	for(var/path in GLOB.construction_graphs)
 		var/datum/construction_graph/graph = GLOB.construction_graphs[path]
-		var/datum/interaction/construction/edge = graph.edges_by_id[id]
+		var/datum/interaction/construction/edge = graph.edge_by_id(id)
 		if(edge)
 			return edge
 	return null
@@ -76,21 +76,19 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 	var/list/edge_requires
 	/// The target var holding the state id. Null when state_of() works it out instead.
 	var/state_var = "construction_state"
-	/// All edges, as shared singletons.
+	/// All edges, owned by the graph, in add order (never removed, so indices are stable).
 	var/tmp/list/edges
-	/// "[state]" -> the edges leaving it.
+	/// "[state]" -> indices into `edges` of the edges leaving it (plain numbers, not entities).
 	var/tmp/list/edges_by_state
-	/// Edges with from_state CONSTRUCTION_ANY_STATE: each one's leaves() decides.
+	/// Edges with from_state CONSTRUCTION_ANY_STATE (a relation view into `edges`): each one's leaves() decides.
 	var/tmp/list/wildcard_edges
-	/// Edge id -> edge.
+	/// Edge id -> index into `edges` (plain numbers, not entities). Read through edge_by_id().
 	var/tmp/list/edges_by_id
 
 /datum/construction_graph/New()
 	..()
-	own_take_all(src, "edges")
 	edges_by_state = list()
-	own_take_all(src, "wildcard_edges")
-	own_take_all(src, "edges_by_id")
+	edges_by_id = list()
 	for(var/path in edge_types)
 		add_edge(new path)
 	build()
@@ -114,12 +112,26 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 	if(!edge.name)
 		edge.name = capitalize(edge.step_text)
 	own_add(src, "edges", edge)
-	own_put(src, "edges_by_id", edge.id, edge)
+	var/edge_index = length(edges)
+	edges_by_id[edge.id] = edge_index
 	if(edge.from_state == CONSTRUCTION_ANY_STATE)
-		own_add(src, "wildcard_edges", edge)
+		rel_add(src, "wildcard_edges", edge)
 	else
-		LAZYADD(edges_by_state["[edge.from_state]"], edge)
+		var/state_key = "[edge.from_state]"
+		var/list/state_indices = edges_by_state[state_key]
+		if(!state_indices)
+			state_indices = list()
+			edges_by_state[state_key] = state_indices
+		state_indices += edge_index
 	return edge
+
+/// The edge with this id on this graph, or null.
+/datum/construction_graph/proc/edge_by_id(id)
+	RETURN_TYPE(/datum/interaction/construction)
+	var/edge_index = edges_by_id?[id]
+	if(!edge_index || edge_index > length(edges))
+		return null
+	return edges[edge_index]
 
 /// The target's current state id, or null when it is not on this graph right now.
 /datum/construction_graph/proc/state_of(atom/target)
@@ -139,9 +151,8 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 	. = list()
 	if(isnull(state))
 		return
-	var/list/fixed = edges_by_state["[state]"]
-	if(fixed)
-		. += fixed
+	for(var/edge_index in edges_by_state["[state]"])
+		. += edges[edge_index]
 	for(var/datum/interaction/construction/edge as anything in wildcard_edges)
 		if(edge.leaves(state))
 			. += edge

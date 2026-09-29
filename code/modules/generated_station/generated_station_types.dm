@@ -413,7 +413,7 @@
 			result.add(GENERATED_STATION_ISSUE_ERROR, "layout-edge-route", "Transit edge has no routed corridor path.", edge.id)
 	var/list/reachable = list()
 	if(length(layout_nodes))
-		var/datum/generated_station_layout_node/start = layout_nodes[1]
+		var/datum/generated_station_layout_node/start = layout_nodes?[1]
 		var/list/frontier = list(start.id)
 		reachable[start.id] = TRUE
 		while(length(frontier))

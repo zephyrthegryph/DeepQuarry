@@ -3,6 +3,8 @@
 	var/delayed = 0
 	var/delay_modifier = 1
 	TIMESTAMP_VAR(next_event_time)
+	/// Every event_meta this container made (owned); available_events and next_event name members of it.
+	var/list/event_pool
 	var/list/available_events
 	var/list/last_event_time
 	var/tmp/datum/event_meta/next_event
@@ -46,7 +48,7 @@
 
 
 /datum/event_container/proc/acquire_event()
-	if(available_events.len == 0)
+	if(!length(available_events))
 		return
 	var/active_with_role = number_active_with_role()
 

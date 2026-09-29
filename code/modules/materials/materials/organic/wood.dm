@@ -22,7 +22,7 @@
 	supply_conversion_value = 0.25
 
 /datum/material/wood/generate_recipes()
-	..()
+	var/list/recipes = ..()
 	recipes += list(
 		new /datum/stack_recipe("oar", /obj/item/oar, 2, time = 30, supplied_material = "[name]", pass_stack_color = TRUE),
 		new /datum/stack_recipe("boat", /obj/vehicle/boat, 20, time = 10 SECONDS, supplied_material = "[name]", pass_stack_color = TRUE),
@@ -60,6 +60,7 @@
 		new /datum/stack_recipe("sofa right", /obj/structure/bed/chair/sofa/right, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"), \
 		new /datum/stack_recipe("sofa corner", /obj/structure/bed/chair/sofa/corner, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"), \
 		))
+	return recipes
 
 /datum/material/wood/sif
 	name = MAT_SIFWOOD
@@ -67,35 +68,36 @@
 	icon_colour = "#0099cc" // Cyan-ish
 
 /datum/material/wood/sif/generate_recipes()
-	..()
-	own_add(src, "recipes", new /datum/stack_recipe("alien wood floor tile", /obj/item/stack/tile/wood/sif, 1, 4, 20, pass_stack_color = FALSE))
-	own_add(src, "recipes", new /datum/stack_recipe("large alien wood floor tile", /obj/item/stack/tile/wood/sif/panel, 1, 4, 20, pass_stack_color = FALSE))
-	own_add(src, "recipes", new /datum/stack_recipe("alien wood parquet tile", /obj/item/stack/tile/wood/sif/parquet, 1, 4, 20, pass_stack_color = FALSE))
-	own_add(src, "recipes", new /datum/stack_recipe("tiled alien wood floor tile", /obj/item/stack/tile/wood/sif/tile, 1, 4, 20, pass_stack_color = FALSE))
-	own_add(src, "recipes", new /datum/stack_recipe("vertical alien wood floor tile", /obj/item/stack/tile/wood/sif/vert, 1, 4, 20, pass_stack_color = FALSE))
-	own_add(src, "recipes", new /datum/stack_recipe("vertical large alien wood floor tile", /obj/item/stack/tile/wood/sif/vert_panel, 1, 4, 20, pass_stack_color = FALSE))
+	var/list/recipes = ..()
+	recipes += new /datum/stack_recipe("alien wood floor tile", /obj/item/stack/tile/wood/sif, 1, 4, 20, pass_stack_color = FALSE)
+	recipes += new /datum/stack_recipe("large alien wood floor tile", /obj/item/stack/tile/wood/sif/panel, 1, 4, 20, pass_stack_color = FALSE)
+	recipes += new /datum/stack_recipe("alien wood parquet tile", /obj/item/stack/tile/wood/sif/parquet, 1, 4, 20, pass_stack_color = FALSE)
+	recipes += new /datum/stack_recipe("tiled alien wood floor tile", /obj/item/stack/tile/wood/sif/tile, 1, 4, 20, pass_stack_color = FALSE)
+	recipes += new /datum/stack_recipe("vertical alien wood floor tile", /obj/item/stack/tile/wood/sif/vert, 1, 4, 20, pass_stack_color = FALSE)
+	recipes += new /datum/stack_recipe("vertical large alien wood floor tile", /obj/item/stack/tile/wood/sif/vert_panel, 1, 4, 20, pass_stack_color = FALSE)
 	for(var/datum/stack_recipe/r_recipe in recipes)
 		if(r_recipe.title == "wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "large wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "parquet wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "tiled wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "vertical wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "vertical large wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "wooden chair")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
+	return recipes
 
 /datum/material/wood/hardwood
 	name = MAT_HARDWOOD
@@ -109,38 +111,39 @@
 	density = 20	//likewise, heavier
 
 /datum/material/wood/hardwood/generate_recipes()
-	..()
-	own_add(src, "recipes", new /datum/stack_recipe("hardwood floor tile", /obj/item/stack/tile/wood/hardwood, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("large hardwood floor tile", /obj/item/stack/tile/wood/hardwood/panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("parquet hardwood floor tile", /obj/item/stack/tile/wood/hardwood/parquet, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("tiled hardwood floor tile", /obj/item/stack/tile/wood/hardwood/tile, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("vertical hardwood floor tile", /obj/item/stack/tile/wood/hardwood/vert, 1, 4, 20, pass_stack_color = FALSE))
-	own_add(src, "recipes", new /datum/stack_recipe("vertical large hardwood floor tile", /obj/item/stack/tile/wood/hardwood/vert_panel, 1, 4, 20, pass_stack_color = FALSE))
+	var/list/recipes = ..()
+	recipes += new /datum/stack_recipe("hardwood floor tile", /obj/item/stack/tile/wood/hardwood, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("large hardwood floor tile", /obj/item/stack/tile/wood/hardwood/panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("parquet hardwood floor tile", /obj/item/stack/tile/wood/hardwood/parquet, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("tiled hardwood floor tile", /obj/item/stack/tile/wood/hardwood/tile, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("vertical hardwood floor tile", /obj/item/stack/tile/wood/hardwood/vert, 1, 4, 20, pass_stack_color = FALSE)
+	recipes += new /datum/stack_recipe("vertical large hardwood floor tile", /obj/item/stack/tile/wood/hardwood/vert_panel, 1, 4, 20, pass_stack_color = FALSE)
 	for(var/datum/stack_recipe/r_recipe in recipes)
 		if(r_recipe.title == "wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "large wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "parquet wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "tiled wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "vertical wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "vertical large wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "wooden chair")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "wooden standup figure")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
+	return recipes
 
 /datum/material/wood/log
 	name = MAT_LOG
@@ -154,9 +157,10 @@
 	supply_conversion_value = 0.5
 
 /datum/material/wood/log/generate_recipes()
-	recipes = list(
+	var/list/recipes = list(
 		new /datum/stack_recipe("bonfire", /obj/structure/bonfire, 5, time = 50, supplied_material = "[name]", pass_stack_color = TRUE, recycle_material = "[name]")
 	)
+	return recipes
 
 /datum/material/wood/log/sif
 	name = MAT_SIFLOG
@@ -183,7 +187,7 @@
 	sheet_plural_name = "sticks"
 
 /datum/material/wood/stick/generate_recipes()
-	return
+	return list()
 
 /datum/material/wood/birch
 	name = MAT_BIRCHWOOD
@@ -196,38 +200,39 @@
 	density = 20
 
 /datum/material/wood/birch/generate_recipes()
-	..()
-	own_add(src, "recipes", new /datum/stack_recipe("birch floor tile", /obj/item/stack/tile/wood/birch, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("large birch floor tile", /obj/item/stack/tile/wood/birch/panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("parquet birch floor tile", /obj/item/stack/tile/wood/birch/parquet, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("tiled birch floor tile", /obj/item/stack/tile/wood/birch/tile, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("vertical birch floor tile", /obj/item/stack/tile/wood/birch/vert, 1, 4, 20, pass_stack_color = FALSE))
-	own_add(src, "recipes", new /datum/stack_recipe("vertical large birch floor tile", /obj/item/stack/tile/wood/birch/vert_panel, 1, 4, 20, pass_stack_color = FALSE))
+	var/list/recipes = ..()
+	recipes += new /datum/stack_recipe("birch floor tile", /obj/item/stack/tile/wood/birch, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("large birch floor tile", /obj/item/stack/tile/wood/birch/panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("parquet birch floor tile", /obj/item/stack/tile/wood/birch/parquet, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("tiled birch floor tile", /obj/item/stack/tile/wood/birch/tile, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("vertical birch floor tile", /obj/item/stack/tile/wood/birch/vert, 1, 4, 20, pass_stack_color = FALSE)
+	recipes += new /datum/stack_recipe("vertical large birch floor tile", /obj/item/stack/tile/wood/birch/vert_panel, 1, 4, 20, pass_stack_color = FALSE)
 	for(var/datum/stack_recipe/r_recipe in recipes)
 		if(r_recipe.title == "wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "large wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "parquet wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "tiled wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "vertical wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "vertical large wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "wooden chair")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "wooden standup figure")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
+	return recipes
 
 /datum/material/wood/pine
 	name = MAT_PINEWOOD
@@ -240,38 +245,39 @@
 	density = 20
 
 /datum/material/wood/pine/generate_recipes()
-	..()
-	own_add(src, "recipes", new /datum/stack_recipe("pine floor tile", /obj/item/stack/tile/wood/pine, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("large pine floor tile", /obj/item/stack/tile/wood/pine/panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("parquet pine floor tile", /obj/item/stack/tile/wood/pine/parquet, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("tiled pine floor tile", /obj/item/stack/tile/wood/pine/tile, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("vertical pine floor tile", /obj/item/stack/tile/wood/pine/vert, 1, 4, 20, pass_stack_color = FALSE))
-	own_add(src, "recipes", new /datum/stack_recipe("vertical large pine floor tile", /obj/item/stack/tile/wood/pine/vert_panel, 1, 4, 20, pass_stack_color = FALSE))
+	var/list/recipes = ..()
+	recipes += new /datum/stack_recipe("pine floor tile", /obj/item/stack/tile/wood/pine, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("large pine floor tile", /obj/item/stack/tile/wood/pine/panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("parquet pine floor tile", /obj/item/stack/tile/wood/pine/parquet, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("tiled pine floor tile", /obj/item/stack/tile/wood/pine/tile, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("vertical pine floor tile", /obj/item/stack/tile/wood/pine/vert, 1, 4, 20, pass_stack_color = FALSE)
+	recipes += new /datum/stack_recipe("vertical large pine floor tile", /obj/item/stack/tile/wood/pine/vert_panel, 1, 4, 20, pass_stack_color = FALSE)
 	for(var/datum/stack_recipe/r_recipe in recipes)
 		if(r_recipe.title == "wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "large wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "parquet wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "tiled wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "vertical wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "vertical large wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "wooden chair")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "wooden standup figure")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
+	return recipes
 
 /datum/material/wood/oak
 	name = MAT_OAKWOOD
@@ -284,38 +290,39 @@
 	density = 20
 
 /datum/material/wood/oak/generate_recipes()
-	..()
-	own_add(src, "recipes", new /datum/stack_recipe("oak floor tile", /obj/item/stack/tile/wood/oak, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("large oak floor tile", /obj/item/stack/tile/wood/oak/panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("parquet oak floor tile", /obj/item/stack/tile/wood/oak/parquet, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("tiled oak floor tile", /obj/item/stack/tile/wood/oak/tile, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("vertical oak floor tile", /obj/item/stack/tile/wood/oak/vert, 1, 4, 20, pass_stack_color = FALSE))
-	own_add(src, "recipes", new /datum/stack_recipe("vertical large oak floor tile", /obj/item/stack/tile/wood/oak/vert_panel, 1, 4, 20, pass_stack_color = FALSE))
+	var/list/recipes = ..()
+	recipes += new /datum/stack_recipe("oak floor tile", /obj/item/stack/tile/wood/oak, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("large oak floor tile", /obj/item/stack/tile/wood/oak/panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("parquet oak floor tile", /obj/item/stack/tile/wood/oak/parquet, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("tiled oak floor tile", /obj/item/stack/tile/wood/oak/tile, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("vertical oak floor tile", /obj/item/stack/tile/wood/oak/vert, 1, 4, 20, pass_stack_color = FALSE)
+	recipes += new /datum/stack_recipe("vertical large oak floor tile", /obj/item/stack/tile/wood/oak/vert_panel, 1, 4, 20, pass_stack_color = FALSE)
 	for(var/datum/stack_recipe/r_recipe in recipes)
 		if(r_recipe.title == "wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "large wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "parquet wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "tiled wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "vertical wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "vertical large wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "wooden chair")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "wooden standup figure")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
+	return recipes
 
 /datum/material/wood/acacia
 	name = MAT_ACACIAWOOD
@@ -328,38 +335,39 @@
 	density = 20
 
 /datum/material/wood/acacia/generate_recipes()
-	..()
-	own_add(src, "recipes", new /datum/stack_recipe("acacia floor tile", /obj/item/stack/tile/wood/acacia, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("large acacia floor tile", /obj/item/stack/tile/wood/acacia/panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("parquet acacia floor tile", /obj/item/stack/tile/wood/acacia/parquet, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("tiled acacia floor tile", /obj/item/stack/tile/wood/acacia/tile, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("vertical acacia floor tile", /obj/item/stack/tile/wood/acacia/vert, 1, 4, 20, pass_stack_color = FALSE))
-	own_add(src, "recipes", new /datum/stack_recipe("vertical large acacia floor tile", /obj/item/stack/tile/wood/acacia/vert_panel, 1, 4, 20, pass_stack_color = FALSE))
+	var/list/recipes = ..()
+	recipes += new /datum/stack_recipe("acacia floor tile", /obj/item/stack/tile/wood/acacia, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("large acacia floor tile", /obj/item/stack/tile/wood/acacia/panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("parquet acacia floor tile", /obj/item/stack/tile/wood/acacia/parquet, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("tiled acacia floor tile", /obj/item/stack/tile/wood/acacia/tile, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("vertical acacia floor tile", /obj/item/stack/tile/wood/acacia/vert, 1, 4, 20, pass_stack_color = FALSE)
+	recipes += new /datum/stack_recipe("vertical large acacia floor tile", /obj/item/stack/tile/wood/acacia/vert_panel, 1, 4, 20, pass_stack_color = FALSE)
 	for(var/datum/stack_recipe/r_recipe in recipes)
 		if(r_recipe.title == "wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "large wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "parquet wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "tiled wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "vertical wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "vertical large wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "wooden chair")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "wooden standup figure")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
+	return recipes
 
 /datum/material/wood/redwood
 	name = MAT_REDWOOD
@@ -373,35 +381,36 @@
 	density = 20
 
 /datum/material/wood/redwood/generate_recipes()
-	..()
-	own_add(src, "recipes", new /datum/stack_recipe("redwood floor tile", /obj/item/stack/tile/wood/redwood, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("large redwood floor tile", /obj/item/stack/tile/wood/redwood/panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("parquet redwood floor tile", /obj/item/stack/tile/wood/redwood/parquet, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("tiled redwood floor tile", /obj/item/stack/tile/wood/redwood/tile, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"))
-	own_add(src, "recipes", new /datum/stack_recipe("vertical redwood floor tile", /obj/item/stack/tile/wood/redwood/vert, 1, 4, 20, pass_stack_color = FALSE))
-	own_add(src, "recipes", new /datum/stack_recipe("vertical large redwood floor tile", /obj/item/stack/tile/wood/redwood/vert_panel, 1, 4, 20, pass_stack_color = FALSE))
+	var/list/recipes = ..()
+	recipes += new /datum/stack_recipe("redwood floor tile", /obj/item/stack/tile/wood/redwood, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("large redwood floor tile", /obj/item/stack/tile/wood/redwood/panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("parquet redwood floor tile", /obj/item/stack/tile/wood/redwood/parquet, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("tiled redwood floor tile", /obj/item/stack/tile/wood/redwood/tile, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
+	recipes += new /datum/stack_recipe("vertical redwood floor tile", /obj/item/stack/tile/wood/redwood/vert, 1, 4, 20, pass_stack_color = FALSE)
+	recipes += new /datum/stack_recipe("vertical large redwood floor tile", /obj/item/stack/tile/wood/redwood/vert_panel, 1, 4, 20, pass_stack_color = FALSE)
 	for(var/datum/stack_recipe/r_recipe in recipes)
 		if(r_recipe.title == "wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "large wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "parquet wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "tiled wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "vertical wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "vertical large wood floor tile")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "wooden chair")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
 		if(r_recipe.title == "wooden standup figure")
-			own_take_member(src, "recipes", r_recipe)
+			recipes -= r_recipe
 			continue
+	return recipes

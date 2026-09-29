@@ -72,7 +72,7 @@ DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interact
 							nearestTargetDist = cur_dist + rand() * 2 - 1
 							nearestTargetId = T.artifact_find.artifact_id
 				else
-					GLOB.xenoarch_service.artifact_spawning_turfs.Remove(T)
+					rel_remove(GLOB.xenoarch_service, "artifact_spawning_turfs", T)
 
 			for(var/turf/simulated/mineral/T as anything in GLOB.xenoarch_service.digsite_spawning_turfs)
 				if(T.density && T.finds && T.finds.len)
@@ -81,7 +81,7 @@ DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interact
 						if(nearestSimpleTargetDist < 0 || cur_dist < nearestSimpleTargetDist)
 							nearestSimpleTargetDist = cur_dist + rand() * 2 - 1
 				else
-					GLOB.xenoarch_service.digsite_spawning_turfs.Remove(T)
+					rel_remove(GLOB.xenoarch_service, "digsite_spawning_turfs", T)
 
 		if(GLOB.xenoarch_service && ((nearestTargetDist == -1) || (nearestSimpleTargetDist == -1)) && user.z && (world.time - last_repopulation_time >= repopulation_delay))
 			if(!(user.z in using_map.xenoarch_exempt_levels)) //We found no artifacts and our Z level is not spawn exempt. Time for random generation.

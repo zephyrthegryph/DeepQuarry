@@ -79,16 +79,15 @@ GLOBAL_DATUM_INIT(xenoarch_service, /datum/world_service/xenoarch, new)
 			//Here, we start to see how many artifacts will spawn in the selected rock. 1-3 artifacts per.
 			processed_turfs.Add(archeo_turf)
 			if(isnull(archeo_turf.finds))
-				archeo_turf.finds = list()
 				if(prob(50))
-					archeo_turf.finds.Add(new /datum/find(digsite, rand(10, 190)))	//Dictates how far one has to dig to properly excavate the artifact. From 10-190
+					own_add(archeo_turf, "finds", new /datum/find(digsite, rand(10, 190)))	//Dictates how far one has to dig to properly excavate the artifact. From 10-190
 				else if(prob(75))
-					archeo_turf.finds.Add(new /datum/find(digsite, rand(10, 90)))	//High chance of being visible, alerting xenoarch to a digsite location.
-					archeo_turf.finds.Add(new /datum/find(digsite, rand(110, 190)))
+					own_add(archeo_turf, "finds", new /datum/find(digsite, rand(10, 90)))	//High chance of being visible, alerting xenoarch to a digsite location.
+					own_add(archeo_turf, "finds", new /datum/find(digsite, rand(110, 190)))
 				else
-					archeo_turf.finds.Add(new /datum/find(digsite, rand(10, 50)))
-					archeo_turf.finds.Add(new /datum/find(digsite, rand(60, 140)))
-					archeo_turf.finds.Add(new /datum/find(digsite, rand(150, 190)))
+					own_add(archeo_turf, "finds", new /datum/find(digsite, rand(10, 50)))
+					own_add(archeo_turf, "finds", new /datum/find(digsite, rand(60, 140)))
+					own_add(archeo_turf, "finds", new /datum/find(digsite, rand(150, 190)))
 
 				//sometimes a find will be close enough to the surface to show
 				var/datum/find/F = archeo_turf.finds[1]
@@ -106,11 +105,11 @@ GLOBAL_DATUM_INIT(xenoarch_service, /datum/world_service/xenoarch, new)
 	//create artifact machinery. Colloquially known as large artifacts.
 	//Any artifact turfs except for garden & animal digsites can be selected.
 	var/num_artifacts_spawn = rand(ARTIFACTSPAWNNUM_LOWER, ARTIFACTSPAWNNUM_UPPER)
-	while(artifact_spawning_turfs.len > num_artifacts_spawn)
-		pick_n_take(artifact_spawning_turfs)
+	while(length(artifact_spawning_turfs) > num_artifacts_spawn)
+		rel_remove(src, "artifact_spawning_turfs", pick(artifact_spawning_turfs))
 
 	//Actually adds the large artifacts to the areas, now that we have our selected locations.
-	var/list/artifacts_spawnturf_temp = artifact_spawning_turfs.Copy()
+	var/list/artifacts_spawnturf_temp = artifact_spawning_turfs ? artifact_spawning_turfs.Copy() : list()
 	while(artifacts_spawnturf_temp.len > 0)
 		var/turf/simulated/mineral/artifact_turf = pop(artifacts_spawnturf_temp)
 		own_set(artifact_turf, "artifact_find", new /datum/artifact_find())
@@ -172,16 +171,15 @@ GLOBAL_DATUM_INIT(xenoarch_service, /datum/world_service/xenoarch, new)
 			//Here, we start to see how many artifacts will spawn in the selected rock. 1-3 artifacts per.
 			processed_turfs.Add(archeo_turf)
 			if(isnull(archeo_turf.finds))
-				archeo_turf.finds = list()
 				if(prob(50))
-					archeo_turf.finds.Add(new /datum/find(digsite, rand(10, 190)))	//Dictates how far one has to dig to properly excavate the artifact. From 10-190
+					own_add(archeo_turf, "finds", new /datum/find(digsite, rand(10, 190)))	//Dictates how far one has to dig to properly excavate the artifact. From 10-190
 				else if(prob(75))
-					archeo_turf.finds.Add(new /datum/find(digsite, rand(10, 90)))	//High chance of being visible, alerting xenoarch to a digsite location.
-					archeo_turf.finds.Add(new /datum/find(digsite, rand(110, 190)))
+					own_add(archeo_turf, "finds", new /datum/find(digsite, rand(10, 90)))	//High chance of being visible, alerting xenoarch to a digsite location.
+					own_add(archeo_turf, "finds", new /datum/find(digsite, rand(110, 190)))
 				else
-					archeo_turf.finds.Add(new /datum/find(digsite, rand(10, 50)))
-					archeo_turf.finds.Add(new /datum/find(digsite, rand(60, 140)))
-					archeo_turf.finds.Add(new /datum/find(digsite, rand(150, 190)))
+					own_add(archeo_turf, "finds", new /datum/find(digsite, rand(10, 50)))
+					own_add(archeo_turf, "finds", new /datum/find(digsite, rand(60, 140)))
+					own_add(archeo_turf, "finds", new /datum/find(digsite, rand(150, 190)))
 
 				//sometimes a find will be close enough to the surface to show
 				var/datum/find/F = archeo_turf.finds[1]
@@ -199,11 +197,11 @@ GLOBAL_DATUM_INIT(xenoarch_service, /datum/world_service/xenoarch, new)
 	//create artifact machinery. Colloquially known as large artifacts.
 	//Any artifact turfs except for garden & animal digsites can be selected.
 	var/num_artifacts_spawn = rand(PROCEDURAL_LOWER, PROCEDURAL_UPPER) //Our random generation will spawn fewer new large artifacts. Remember, this is for our Z level, not the whole map!
-	while(artifact_spawning_turfs.len > num_artifacts_spawn)
-		pick_n_take(artifact_spawning_turfs)
+	while(length(artifact_spawning_turfs) > num_artifacts_spawn)
+		rel_remove(src, "artifact_spawning_turfs", pick(artifact_spawning_turfs))
 
 	//Actually adds the large artifacts to the areas, now that we have our selected locations.
-	var/list/artifacts_spawnturf_temp = artifact_spawning_turfs.Copy()
+	var/list/artifacts_spawnturf_temp = artifact_spawning_turfs ? artifact_spawning_turfs.Copy() : list()
 	while(artifacts_spawnturf_temp.len > 0)
 		var/turf/simulated/mineral/artifact_turf = pop(artifacts_spawnturf_temp)
 		own_set(artifact_turf, "artifact_find", new /datum/artifact_find())

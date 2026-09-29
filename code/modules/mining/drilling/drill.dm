@@ -264,7 +264,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 			O.forceMove(src)
 			own_set(src, "cell", O)
 			materialize_parts()
-			own_add(src, "component_parts", O)
+			// The cell var owns it; it is not also a component part (one owner per entity).
 			balloon_alert(user, "you install \the [O]")
 		return TRUE
 	return FALSE

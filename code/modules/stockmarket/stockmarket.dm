@@ -1,7 +1,6 @@
 /datum/stockMarket
 	var/list/stocks = list() // ALLOW(instance_list): d: stock market singleton state
 	var/list/balances
-	var/list/last_read
 	var/list/stockBrokers
 	var/list/logs
 	var/process_timer
@@ -110,7 +109,7 @@
 		S.generateIndustry()
 		S.generateEvents()
 		own_add(src, "stocks", S)
-		LAZYSET(last_read, S, list())
+		S.last_read = list()
 
 /datum/stockMarket/proc/market_tick()
 	process_timer = null

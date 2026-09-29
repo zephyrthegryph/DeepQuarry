@@ -75,7 +75,7 @@
 	overlays = set_overlays // ???
 
 /obj/compass_holder/proc/clear_waypoint(id)
-	own_take_member(src, "compass_waypoints", id)
+	own_put(src, "compass_waypoints", id, null) // removes and disposes of it
 	rebuild_overlay_lists(TRUE)
 
 /obj/compass_holder/proc/set_waypoint(id, label, heading_x, heading_y, heading_z, label_color)

@@ -30,7 +30,7 @@
 			continue
 
 		// Preliminary marking-off...
-		LAZYSET(closedlist, next.name, next)
+		LAZYSET(closedlist, next.name, TRUE) // a visited-name set: plain data, the cell itself is dropped
 		map[get_map_cell(next.x,next.y)] = FLOOR_CHAR
 
 		// Apply the values required and fill gap between this cell and origin point.
@@ -53,7 +53,7 @@
 
 	// Cleanup. Map stays in memory for display proc.
 	LAZYCLEARLIST(checked_coord_cache)
-	own_take_all(src, "openlist")
+	own_clear(src, "openlist", OWN_DELETE)
 	LAZYCLEARLIST(closedlist)
 
 /datum/random_map/maze/proc/add_to_openlist(tx, ty, nx, ny)

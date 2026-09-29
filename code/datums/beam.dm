@@ -55,9 +55,7 @@
 	finished = TRUE
 
 /datum/beam/proc/Reset()
-	for(var/obj/effect/ebeam/B in elements)
-		qdel(B)
-	own_take_all(src, "elements")
+	own_clear(src, "elements", OWN_DELETE)
 
 
 /datum/beam/proc/Draw()

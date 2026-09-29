@@ -255,9 +255,10 @@
 	for(var/obj/item/I as anything in holder.get_all_held_items())
 		var/list/granted = I.get_dq_granted_behaviors()
 		if(granted)
+			var/source_ref = ref(I) // effective_behaviors keeps the ref text only; the source itself is behavior_sources
 			for(var/btype as anything in granted)
 				rel_add(src, "behavior_sources", I)
-				effective_behaviors[btype] = ref(I)
+				effective_behaviors[btype] = source_ref
 
 	// Modifier-granted (statuses, buffs).
 	for(var/effect_type in holder.body_effects())

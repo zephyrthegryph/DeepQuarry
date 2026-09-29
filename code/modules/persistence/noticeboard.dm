@@ -31,8 +31,8 @@
 
 /obj/structure/noticeboard/proc/add_paper(atom/movable/paper, skip_icon_update)
 	if(istype(paper))
-		own_add(src, "notices", paper)
 		paper.forceMove(src)
+		own_move(paper, src, "notices") // it may come from another holder (a bundle, a clipboard)
 		if(!skip_icon_update)
 			update_icon()
 

@@ -390,7 +390,8 @@
 		return FALSE
 	var/token = event.id
 	pending_tokens[entity_key] = token
-	pending_timers[entity_key] = om_after(src, duration, PROC_REF(complete_duration), entity_key, token, event.actor_account, event.value("detail"))
+	var/new_timer_id = om_after(src, duration, PROC_REF(complete_duration), entity_key, token, event.actor_account, event.value("detail"))
+	pending_timers[entity_key] = new_timer_id // a timer id: plain data
 	return TRUE
 
 /datum/contract_requirement/sustained_event/proc/complete_duration(entity_key, token, contributor_account, detail)
@@ -500,7 +501,8 @@
 	var/token = event.id
 	pending_tokens[stage_key] = token
 	pending_stage_indices[stage_key] = stage_index
-	pending_timers[stage_key] = om_after(src, max(1, stage["duration"]), PROC_REF(complete_stage), stage_key, stage_index, token, event.actor_account, event.value("detail"))
+	var/stage_timer_id = om_after(src, max(1, stage["duration"]), PROC_REF(complete_stage), stage_key, stage_index, token, event.actor_account, event.value("detail"))
+	pending_timers[stage_key] = stage_timer_id // a timer id: plain data
 	changed = TRUE
 	return changed
 

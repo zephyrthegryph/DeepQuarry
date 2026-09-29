@@ -170,7 +170,7 @@
 	return 0
 
 /obj/item/detective_scanner/proc/add_data(atom/A as mob|obj|turf|area)
-	var/datum/data/record/forensic/old = stored["\ref [A]"]
+	var/datum/data/record/forensic/old = stored?["\ref [A]"]
 	var/datum/data/record/forensic/fresh = new(A)
 
 	if(old)
@@ -236,7 +236,7 @@
 	if(isnull(_answer_k217))
 		return
 	if (_answer_k217 == "Yes")
-		own_take_all(src, "stored")
+		own_clear(src, "stored", OWN_DELETE)
 		to_chat(user, span_notice("Forensic data erase complete."))
 
 /obj/item/detective_scanner/advanced

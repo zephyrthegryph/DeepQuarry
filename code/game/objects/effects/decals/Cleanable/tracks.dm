@@ -85,10 +85,11 @@
 				if(track.wet==t && track.basecolor==bloodcolor)
 					continue
 				// Remove existing stack entry
-				own_take_member(src, "stack", track)
+				own_remove(src, "stack", track)
 			track=new /datum/fluidtrack(b,bloodcolor,t)
 			own_add(src, "stack", track)
-			setdirs["[b]"]=LAZYFIND(stack, track)
+			var/track_idx = LAZYFIND(stack, track)
+			setdirs["[b]"] = track_idx
 			updatedtracks |= b
 			updated=1
 
@@ -102,10 +103,11 @@
 				if(track.wet==t && track.basecolor==bloodcolor)
 					continue
 				// Remove existing stack entry
-				own_take_member(src, "stack", track)
+				own_remove(src, "stack", track)
 			track=new /datum/fluidtrack(b,bloodcolor,t)
 			own_add(src, "stack", track)
-			setdirs["[b]"]=LAZYFIND(stack, track)
+			var/track_idx = LAZYFIND(stack, track)
+			setdirs["[b]"] = track_idx
 			updatedtracks |= b
 			updated=1
 

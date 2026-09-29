@@ -369,8 +369,7 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 
 /obj/item/rcd/proc/cleanup_effect(atom/A)
 	if(A in effects)
-		qdel(LAZYACCESS(effects, A))
-		own_take_member(src, "effects", A)
+		own_put(src, "effects", A, null) // drops the key and disposes of (deletes) the owned effect
 
 /obj/item/rcd/proc/check_menu(mob/living/user)
 	if(!istype(user))

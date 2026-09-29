@@ -48,10 +48,7 @@ GLOBAL_DATUM_INIT(vis_overlays_service, /datum/world_service/vis_overlays, new)
 	if(!isatom(thing))
 		return overlay
 
-	if(!thing.managed_vis_overlays)
-		thing.managed_vis_overlays = list(overlay)
-	else
-		rel_add(thing, "managed_vis_overlays", overlay)
+	rel_add(thing, "managed_vis_overlays", overlay)
 	return overlay
 
 /datum/world_service/vis_overlays/proc/_create_new_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags)
@@ -71,9 +68,10 @@ GLOBAL_DATUM_INIT(vis_overlays_service, /datum/world_service/vis_overlays, new)
 	thing.vis_contents -= overlays
 	if(!isatom(thing))
 		return
-	rel_remove(thing, "managed_vis_overlays", overlays)
-	if(!length(thing.managed_vis_overlays))
-		rel_clear(thing, "managed_vis_overlays")
+	// `overlays` may be a single overlay, or a list (even thing.managed_vis_overlays itself).
+	var/list/removing = islist(overlays) ? overlays.Copy() : list(overlays)
+	for(var/obj/effect/overlay/vis/overlay as anything in removing)
+		rel_remove(thing, "managed_vis_overlays", overlay)
 
 /atom/proc/add_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags = VIS_INHERIT_ID, unique)
 	// The extremely minimal version where you just pass a string and nothing else

@@ -233,21 +233,14 @@
 		return PROCESS_KILL
 
 /obj/machinery/particle_smasher/proc/prepare_recipes()
-	if(!recipes)
-		own_take_all(src, "recipes")
-		for(var/D in subtypesof(/datum/particle_smasher_recipe))
-			own_add(src, "recipes", new D)
-	else
-		for(var/datum/particle_smasher_recipe/D in recipes)
-			qdel(D)
-		own_take_all(src, "recipes")
-		for(var/D in subtypesof(/datum/particle_smasher_recipe))
-			own_add(src, "recipes", new D)
+	own_clear(src, "recipes", OWN_DELETE)
+	for(var/D in subtypesof(/datum/particle_smasher_recipe))
+		own_add(src, "recipes", new D)
 
 /obj/machinery/particle_smasher/proc/TryCraft()
 
-	if(!recipes || !recipes.len)
-		recipes = typesof(/datum/particle_smasher_recipe)
+	if(!length(recipes))
+		prepare_recipes()
 
 	if(!target)	// You are just blasting an empty machine.
 		visible_message(span_infoplain(span_bold("\The [src]") + " shudders."))

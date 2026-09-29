@@ -250,16 +250,17 @@
 	..()
 
 /obj/item/gun/projectile/cyborgtoy/proc/collectammo(atom/A, user)
-	if(loaded.len >= max_shells)
+	if(length(loaded) >= max_shells)
 		to_chat(user, "The [src] is at max capacity.")
 		return
 	var/T = get_turf(A)
 	var/success = 0
 	for(var/obj/item/ammo_casing/afoam_dart/D in contents_of(T))
-		if(loaded.len >= max_shells)
+		if(length(loaded) >= max_shells)
 			break
 		D.forceMove(src)
-		loaded.Insert(1, D)
+		own_add(src, "loaded", D)
+		moveElement(loaded, length(loaded), 1)
 		success = 1
 	if(success)
 		playsound(src, 'sound/machines/hiss.ogg', 50, 0)

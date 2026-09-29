@@ -49,7 +49,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	//Hitscan
 	var/hitscan = FALSE		//Whether this is hitscan. If it is, speed is basically ignored.
-	var/list/beam_segments	//assoc list of datum/point or datum/point/vector, start = end. Used for hitscan effect generation.
+	var/list/beam_segments	//owned /datum/point list in path order (start, collisions..., end). Consecutive points are the hitscan tracer segments.
 	var/tmp/datum/point/beam_index
 	var/tmp/turf/hitscan_last	//last turf touched during hitscanning.
 	var/tracer_type
@@ -198,9 +198,9 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 /obj/item/projectile/proc/record_hitscan_start(datum/point/pcache)
 	if(pcache)
-		own_take_all(src, "beam_segments")
+		own_clear(src, "beam_segments", OWN_DELETE)
+		own_add(src, "beam_segments", pcache) //record start.
 		rel_set(src, "beam_index", pcache)
-		own_take_member(src, "beam_segments", beam_index()) //record start.
 
 /obj/item/projectile/proc/process_hitscan()
 	var/safety = range * 3
@@ -402,9 +402,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	return
 
 /obj/item/projectile/proc/store_hitscan_collision(datum/point/pcache)
-	own_put(src, "beam_segments", beam_index(), pcache)
+	own_add(src, "beam_segments", pcache)
 	rel_set(src, "beam_index", pcache)
-	own_take_member(src, "beam_segments", beam_index())
 
 //Spread is FORCED!
 /obj/item/projectile/proc/preparePixelProjectile(atom/target, atom/source, params, spread = 0)
@@ -493,9 +492,9 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 // its casing forgets it.
 
 /obj/item/projectile/proc/cleanup_beam_segments()
-	own_clear(src, "beam_segments", OWN_DELETE)
-	own_take_all(src, "beam_segments")
-	qdel(beam_index())
+	own_clear(src, "beam_segments", OWN_DELETE) // beam_index names one of these: its view clears
+	if(beam_index())
+		qdel(beam_index())
 
 /obj/item/projectile/proc/vol_by_damage()
 	if(damage || agony)
@@ -510,7 +509,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile/proc/finalize_hitscan_and_generate_tracers(impacting = TRUE)
 	if(trajectory && beam_index())
 		var/datum/point/pcache = trajectory.copy_to()
-		own_put(src, "beam_segments", beam_index(), pcache)
+		own_add(src, "beam_segments", pcache)
 	generate_hitscan_tracers(null, null, impacting)
 
 /obj/item/projectile/proc/generate_hitscan_tracers(cleanup = TRUE, duration = 5, impacting = TRUE)
@@ -519,8 +518,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	own_set(src, "beam_components", new /datum/beam_components_cache)
 	if(tracer_type)
 		var/tempref = "\ref[src]"
-		for(var/datum/point/p in beam_segments)
-			generate_tracer_between_points(p, beam_segments[p], beam_components, tracer_type, color, duration, hitscan_light_range, hitscan_light_color_override, hitscan_light_intensity, tempref)
+		for(var/i in 1 to length(beam_segments) - 1)
+			generate_tracer_between_points(beam_segments[i], beam_segments[i + 1], beam_components, tracer_type, color, duration, hitscan_light_range, hitscan_light_color_override, hitscan_light_intensity, tempref)
 	if(muzzle_type && duration > 0)
 		var/datum/point/p = beam_segments[1]
 		var/atom/movable/thing = new muzzle_type
@@ -532,7 +531,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		thing.set_light(muzzle_flash_range, muzzle_flash_intensity, muzzle_flash_color_override? muzzle_flash_color_override : color)
 		own_add(beam_components, "beam_components", thing)
 	if(impacting && impact_type && duration > 0)
-		var/datum/point/p = beam_segments[beam_segments[beam_segments.len]]
+		var/datum/point/p = beam_segments[length(beam_segments)]
 		var/atom/movable/thing = new impact_type
 		p.move_atom_to_src(thing)
 		var/matrix/M = new
@@ -948,7 +947,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile
 	speed = 1.5 // Movespeed is in Deciseconds per movement. Lower is faster. default was 0.8, but we had it at 3.0 for a while.
 
-// Tracer points (point -> next point); cleanup_beam_segments() deletes keys and values in lifecycle_prerelease().
+// Tracer points (beam_segments, in path order); cleanup_beam_segments() deletes them in lifecycle_prerelease().
 
 /// the beam_index this refers to (a relation view: null once it is deleted).
 /obj/item/projectile/proc/beam_index() as /datum/point
