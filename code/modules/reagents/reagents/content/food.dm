@@ -1,6 +1,7 @@
 /* Food */
 
 /datum/reagent/nutriment
+	treatment_tags = list(TREAT_BLOOD_RESTORE = 0.25, TREAT_TISSUE_REPAIR = 0.1)
 	factors = alist(BF_BLOOD_REGEN = 0.8)
 	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_NUTRIMENT

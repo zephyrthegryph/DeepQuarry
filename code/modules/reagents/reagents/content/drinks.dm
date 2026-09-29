@@ -183,6 +183,7 @@
 	cup_prefix = "apple"
 
 /datum/reagent/drink/juice/lime
+	treatment_tags = list(TREAT_ANTITOXIN = 0.1)
 	name = REAGENT_LIMEJUICE
 	id = REAGENT_ID_LIMEJUICE
 	description = "The sweet-sour juice of limes."
@@ -198,6 +199,7 @@
 // Lime juice's mild antitoxin action is its treatment_tags profile.
 
 /datum/reagent/drink/juice/orange
+	treatment_tags = list(TREAT_OXYGENATION = 0.1)
 	name = REAGENT_ORANGEJUICE
 	id = REAGENT_ID_ORANGEJUICE
 	description = "Both delicious AND rich in Vitamin C, what more do you need?"
@@ -254,6 +256,7 @@
 	cup_prefix = "turnip"
 
 /datum/reagent/drink/juice/tomato
+	treatment_tags = list(TREAT_BURN_CARE = 0.1)
 	name = REAGENT_TOMATOJUICE
 	id = REAGENT_ID_TOMATOJUICE
 	description = "Tomatoes made into juice. What a waste of big, juicy tomatoes, huh?"
@@ -283,6 +286,7 @@
 // Everything else
 
 /datum/reagent/drink/milk
+	treatment_tags = list(TREAT_TISSUE_REPAIR = 0.1)
 	name = REAGENT_MILK
 	id = REAGENT_ID_MILK
 	description = "An opaque white liquid produced by the mammary glands of mammals."
@@ -374,6 +378,7 @@
 
 
 /datum/reagent/drink/tea
+	treatment_tags = list(TREAT_ANTITOXIN = 0.1)
 	name = REAGENT_TEA
 	id = REAGENT_ID_TEA
 	description = "Tasty black tea, it has antioxidants, it's good for you!"
@@ -687,6 +692,7 @@
 	apply_species_chill(M, removed)
 
 /datum/reagent/drink/coffee/soy_latte
+	treatment_tags = list(TREAT_TISSUE_REPAIR = 0.1)
 	name = REAGENT_SOYLATTE
 	id = REAGENT_ID_SOYLATTE
 	description = "A nice and tasty beverage while you are reading your hippie books."
@@ -705,6 +711,7 @@
 // Soy latte's light tissue repair is its treatment_tags profile.
 
 /datum/reagent/drink/coffee/cafe_latte
+	treatment_tags = list(TREAT_TISSUE_REPAIR = 0.1)
 	name = REAGENT_CAFELATTE
 	id = REAGENT_ID_CAFELATTE
 	description = "A nice, strong and tasty beverage while you are reading."
@@ -1470,6 +1477,12 @@
 	allergen_type = ALLERGEN_FRUIT | ALLERGEN_STIMULANT //Made with lemonade and tea
 
 /datum/reagent/drink/doctor_delight
+	treatment_tags = list(
+		TREAT_TISSUE_REPAIR = 0.4,
+		TREAT_BURN_CARE = 0.4,
+		TREAT_OXYGENATION = 0.2,
+		TREAT_ANTITOXIN = 0.3,
+	)
 	name = REAGENT_DOCTORSDELIGHT
 	id = REAGENT_ID_DOCTORSDELIGHT
 	description = "A gulp a day keeps the MediBot away. That's probably for the best."

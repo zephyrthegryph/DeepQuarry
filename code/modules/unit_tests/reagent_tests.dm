@@ -275,3 +275,21 @@
 
 #undef RESULT_REACTION_FAILED
 #undef RESULT_REACTION_SUCCESS
+
+/// Every treatment_tags entry names a valid TREAT_* mechanism with a positive numeric potency,
+/// and sits on a real reagent type (a reopen of a nonexistent path would create an id-less phantom).
+/datum/unit_test/reagent_treatment_tags_shall_be_valid
+
+/datum/unit_test/reagent_treatment_tags_shall_be_valid/Run()
+	var/checked = 0
+	for(var/Rpath in subtypesof(/datum/reagent))
+		var/datum/reagent/R = new Rpath()
+		if(!length(R.treatment_tags))
+			continue
+		checked++
+		TEST_ASSERT(R.id != REAGENT_ID_DEVELOPER_WARNING && R.name != REAGENT_DEVELOPER_WARNING, "[Rpath]: treatment_tags sit on a type that is not a real reagent (no id/name); check for a misspelled path.")
+		for(var/tag in R.treatment_tags)
+			TEST_ASSERT(GLOB.dq_treatment_tag_names[tag], "[Rpath]: treatment_tags key \"[tag]\" is not a valid TREAT_* tag.")
+			var/potency = R.treatment_tags[tag]
+			TEST_ASSERT(isnum(potency) && potency > 0, "[Rpath]: treatment_tags[\"[tag]\"] must be a positive number, got [potency].")
+	TEST_ASSERT(checked > 0, "no reagent declares treatment_tags; the check found nothing to validate")

@@ -2876,6 +2876,7 @@
 					H.injure(INJURY_BLUNT, 1 * removed, E, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 
 /datum/reagent/drink/coffee/nukie/mega/heart //Heals you pretty damn well but damages your heart
+	treatment_tags = list(TREAT_TISSUE_REPAIR = 1.0, TREAT_BURN_CARE = 1.0)
 	name = REAGENT_NUKIEMEGAHEART
 	id = REAGENT_ID_NUKIEMEGAHEART
 	color = "#fc03e7"
@@ -3010,6 +3011,7 @@
 /////////////////////////////Event only nukie//////////////////////////////////////
 
 /datum/reagent/drink/coffee/nukie/mega/one //Basically macrocillin but for ingesting
+	treatment_tags = list(TREAT_TISSUE_REPAIR = 0.3, TREAT_BURN_CARE = 0.3)
 	factors = alist(BF_DARKSIGHT = 1, BF_SLOWDOWN = -1, BF_PENALTY_SCALE = 0.5)
 	name = REAGENT_NUKIEONE
 	id = REAGENT_ID_NUKIEONE
@@ -3078,6 +3080,7 @@
 	cup_desc = "A nice and refreshing beverage while you are studying."
 
 /datum/reagent/drink/tea/dyloteane
+	treatment_tags = list(TREAT_ANTITOXIN = 0.15)
 	name = REAGENT_DYLOTEANE
 	id = REAGENT_ID_DYLOTEANE
 	glass_name = "Medicinal tea cup"
@@ -3160,6 +3163,7 @@
 	glass_desc = "A glass of what can only be described as the bastard child between coolant and alcohol made by a madman."
 
 /datum/reagent/drink/lowpower
+	treatment_tags = list(TREAT_ANTITOXIN = 0.1)
 	name = REAGENT_LOWPOWER
 	id = REAGENT_ID_LOWPOWER
 	description = "Smells, and tastes like lemon.. with a hint of Ozone, for whatever reason. It glows softly."
@@ -3309,6 +3313,7 @@
 	strength = 20
 
 /datum/reagent/drink/freshtea
+	treatment_tags = list(TREAT_ANTITOXIN = 0.3)
 	name = REAGENT_FRESHTEA
 	id = REAGENT_ID_FRESHTEA //Not meant to be obtainable, this is to define effects for teas made from grown teas.
 	description = "Tasty green tea, it has antioxidants, it's good for you! Fresh means it's even healthier!"
@@ -3397,6 +3402,7 @@
 	glass_desc = "Matcha powder, waiting for brewing."
 
 /datum/reagent/drink/matcha
+	treatment_tags = list(TREAT_ANTITOXIN = 0.45)
 	name = REAGENT_MATCHA
 	id = REAGENT_ID_MATCHA
 	description = "A form of green tea where the leaf is ground and suspended in water rather than steeped. This is considered cooking grade."
@@ -3540,6 +3546,12 @@
 	industrial_use = REFINERYEXPORT_REASON_FOOD
 
 /datum/reagent/infusedarachnidslammer/enragedarachnidslammer
+	treatment_tags = list(
+		TREAT_TISSUE_REPAIR = 0.3,
+		TREAT_BURN_CARE = 0.3,
+		TREAT_OXYGENATION = 0.3,
+		TREAT_ANTITOXIN = 0.3,
+	)
 	factors = alist(BF_ANALGESIA = 80, BF_PENALTY_SCALE = 0.5)
 	name = REAGENT_ENRAGEDARACHNIDSLAMMER
 	id = REAGENT_ID_ENRAGEDARACHNIDSLAMMER

@@ -97,6 +97,7 @@
 	..()
 
 /datum/reagent/drugs/ambrosia_extract
+	treatment_tags = list(TREAT_TISSUE_REPAIR = 0.8, TREAT_ANTITOXIN = 0.3, TREAT_OXYGENATION = 0.2)
 	name = REAGENT_AMBROSIAEXTRACT
 	id = REAGENT_ID_AMBROSIAEXTRACT
 	description = "The extract from the plant family ambrosia, responsible for the more \"recreational\" effects."

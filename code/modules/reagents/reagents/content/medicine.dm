@@ -1,6 +1,9 @@
 /* General medicine */
 
 /datum/reagent/inaprovaline
+	// The station's resuscitation stabiliser (and the AllergyPen's payload):
+	// a weaker vasopressor on top of circulatory support.
+	treatment_tags = list(TREAT_CIRCULATORY = 1.0, TREAT_VASOPRESSOR = 0.5)
 	factors = alist(BF_ANALGESIA = 10, BF_STABILIZATION = 15, BF_ALLERGY = -5)
 	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_INAPROVALINE
@@ -39,6 +42,7 @@
 	M.injure(INJURY_TOXIN, 2 * removed, source = src)
 
 /datum/reagent/bicaridine
+	treatment_tags = list(TREAT_TISSUE_REPAIR = 1.0, TREAT_BONE_REPAIR = 0.3, TREAT_HEMOSTATIC = 0.2)
 	name = REAGENT_BICARIDINE
 	id = REAGENT_ID_BICARIDINE
 	description = REAGENT_BICARIDINE + " is an analgesic medication and can be used to treat blunt trauma."
@@ -91,6 +95,7 @@
 	return L.mend(TREAT_BONE_SETTING, DQ_REAGENT_KNIT_AMOUNT, O)
 
 /datum/reagent/bicaridine/topical
+	treatment_tags = list(TREAT_HEMOSTATIC = 1.0, TREAT_BONE_REPAIR = 1.0, TREAT_TISSUE_REPAIR = 0.6, TREAT_NEURAL_REPAIR = 0.3)
 	name = REAGENT_BICARIDAZE
 	id = REAGENT_ID_BICARIDAZE
 	description = REAGENT_BICARIDAZE + " is a topical variant of the chemical Bicaridine."
@@ -135,6 +140,7 @@
 	M.injure(INJURY_TOXIN, 3 * removed, source = src)
 
 /datum/reagent/kelotane
+	treatment_tags = list(TREAT_BURN_CARE = 0.6)
 	name = REAGENT_KELOTANE
 	id = REAGENT_ID_KELOTANE
 	description = REAGENT_KELOTANE + " is a drug used to treat burns."
@@ -151,6 +157,7 @@
 	species_injuries_blood = alist(IS_SLIME = alist(INJURY_BLUNT = 2))
 
 /datum/reagent/dermaline
+	treatment_tags = list(TREAT_BURN_CARE = 1.0, TREAT_THERMOREGULATION = 0.2)
 	id = REAGENT_ID_DERMALINE
 	name = REAGENT_DERMALINE
 	description = REAGENT_DERMALINE + " is the next step in burn medication. Works twice as good as kelotane and enables the body to restore even the direst heat-damaged tissue."
@@ -167,6 +174,8 @@
 
 
 /datum/reagent/dermaline/topical
+	// Dermalaze: stronger topical burn care (a distinct profile, so it treats).
+	treatment_tags = list(TREAT_BURN_CARE = 1.3, TREAT_THERMOREGULATION = 0.2)
 	name = REAGENT_DERMALAZE
 	id = REAGENT_ID_DERMALAZE
 	description = REAGENT_DERMALAZE + " is a topical variant of the chemical Dermaline."
@@ -189,6 +198,7 @@
 	M.injure(INJURY_TOXIN, 2 * removed, source = src)
 
 /datum/reagent/dylovene
+	treatment_tags = list(TREAT_ANTITOXIN = 0.6)
 	name = REAGENT_ANTITOXIN
 	id = REAGENT_ID_ANTITOXIN
 	description = REAGENT_ANTITOXIN + " is a broad-spectrum antitoxin."
@@ -212,6 +222,7 @@
 	M.status_adjust(EFFECT_HALLUCINATING, -(9 * removed * chem_effective))
 
 /datum/reagent/carthatoline
+	treatment_tags = list(TREAT_ANTITOXIN = 1.0, TREAT_HEPATORENAL = 0.4)
 	name = REAGENT_CARTHATOLINE
 	id = REAGENT_ID_CARTHATOLINE
 	description = REAGENT_CARTHATOLINE + " is strong evacuant used to treat severe poisoning."
@@ -247,6 +258,7 @@
 		H.injure(INJURY_BLUNT, removed * 2, st, src, flags = INJURE_IGNORE_RESISTANCE) // Causes stomach contractions, makes sense for an overdose to make it much worse.
 
 /datum/reagent/dexalin
+	treatment_tags = list(TREAT_OXYGENATION = 0.5)
 	// Loads the blood with oxygen: more carried per unit of saturation.
 	factors = alist(BF_O2_CARRIAGE = 1.25)
 	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 15))
@@ -276,6 +288,7 @@
 	holder.remove_reagent(REAGENT_ID_LEXORIN, 8 * removed)
 
 /datum/reagent/dexalinp
+	treatment_tags = list(TREAT_OXYGENATION = 1.0)
 	factors = alist(BF_O2_CARRIAGE = 1.5)
 	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 25))
 	name = REAGENT_DEXALINP
@@ -304,6 +317,15 @@
 	holder.remove_reagent(REAGENT_ID_LEXORIN, 3 * removed)
 
 /datum/reagent/tricordrazine
+	// The generic: weak at everything a field medic meets.
+	treatment_tags = list(
+		TREAT_HEMOSTATIC = 0.5,
+		TREAT_TISSUE_REPAIR = 0.5,
+		TREAT_BURN_CARE = 0.3,
+		TREAT_ANTITOXIN = 0.3,
+		TREAT_OXYGENATION = 0.3,
+		TREAT_ANTIMICROBIAL = 0.2,
+	)
 	name = REAGENT_TRICORDRAZINE
 	id = REAGENT_ID_TRICORDRAZINE
 	description = REAGENT_TRICORDRAZINE + " is a highly potent stimulant, originally derived from cordrazine. Can be used to treat a wide range of injuries."
@@ -325,6 +347,13 @@
 // Tricordrazine's healing (blood or touch) is its treatment_tags profile.
 
 /datum/reagent/tricorlidaze
+	treatment_tags = list(
+		TREAT_TISSUE_REPAIR = 0.3,
+		TREAT_BURN_CARE = 0.3,
+		TREAT_OXYGENATION = 0.3,
+		TREAT_ANTITOXIN = 0.4,
+		TREAT_ANTIMICROBIAL = 0.3,
+	)
 	name = REAGENT_TRICORLIDAZE
 	id = REAGENT_ID_TRICORLIDAZE
 	description = REAGENT_TRICORLIDAZE + " is a topical gel produced with tricordrazine and sterilizine."
@@ -467,6 +496,8 @@
 				H.injure(INJURY_TOXIN, rand(1,3) * removed, L, src, flags = INJURE_IGNORE_RESISTANCE)
 
 /datum/reagent/necroxadone
+	// Baseline (warm, living) action; the cryo/corpse boost mends directly.
+	treatment_tags = list(TREAT_ANTITOXIN = 0.45, TREAT_GENETIC_REPAIR = 0.3, TREAT_OXYGENATION = 0.2)
 	name = REAGENT_NECROXADONE
 	id = REAGENT_ID_NECROXADONE
 	description = "A liquid compound based upon that which is used in the cloning process. Utilized primarily in severe cases of toxic shock."
@@ -501,6 +532,7 @@
 /* Painkillers */
 
 /datum/reagent/paracetamol
+	treatment_tags = list(TREAT_ANALGESIC = 1.0)
 	factors = alist(BF_ANALGESIA = 25)
 	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 18.75))
 	name = REAGENT_PARACETAMOL
@@ -578,6 +610,7 @@
 /* Other medicine */
 
 /datum/reagent/synaptizine
+	treatment_tags = list(TREAT_NEURAL_REPAIR = 1.0)
 	factors = alist(BF_ANALGESIA = 20)
 	species_factors = alist(IS_DIONA = null, IS_SLIME = alist(BF_ANALGESIA = 10))
 	name = REAGENT_SYNAPTIZINE
@@ -616,6 +649,7 @@
 	M.injure(INJURY_TOXIN, 10 * removed * chem_effective, source = src) // It used to be incredibly deadly due to an oversight. Not anymore!
 
 /datum/reagent/hyperzine
+	treatment_tags = list(TREAT_STIMULANT = 1.0)
 	factors = alist(BF_SLOWDOWN = -1, BF_PENALTY_SCALE = 0.5)
 	name = REAGENT_HYPERZINE
 	id = REAGENT_ID_HYPERZINE
@@ -652,6 +686,7 @@
 		to_chat(M, span_warning("Huh... Is this what a heart attack feels like?"))
 
 /datum/reagent/alkysine
+	treatment_tags = list(TREAT_NEURAL_REPAIR = 0.5)
 	factors = alist(BF_ANALGESIA = 10)
 	species_factors = alist(IS_DIONA = null, IS_SLIME = alist(BF_ANALGESIA = 2.5))
 	name = REAGENT_ALKYSINE
@@ -680,6 +715,7 @@
 	// past the salvage band a swollen brain outpaces it (lesions.dm).
 
 /datum/reagent/imidazoline
+	treatment_tags = list(TREAT_OCULAR = 1.0)
 	name = REAGENT_IMIDAZOLINE
 	id = REAGENT_ID_IMIDAZOLINE
 	description = "Heals eye damage"
@@ -706,6 +742,14 @@
 				H.set_sdisabilities(H.sdisabilities & (~BLIND))
 
 /datum/reagent/peridaxon
+	// Generic organ support: weak on every organ-repair mechanism.
+	treatment_tags = list(
+		TREAT_OCULAR = 0.3,
+		TREAT_RESPIRATORY = 0.3,
+		TREAT_HEPATORENAL = 0.3,
+		TREAT_CARDIAC = 0.3,
+		TREAT_DIGESTIVE = 0.3,
+	)
 	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 20))
 	name = REAGENT_PERIDAXON
 	id = REAGENT_ID_PERIDAXON
@@ -742,6 +786,7 @@
 	M.status_at_least(EFFECT_HALLUCINATING, 10)
 
 /datum/reagent/osteodaxon
+	treatment_tags = list(TREAT_BONE_REPAIR = 1.0, TREAT_TISSUE_REPAIR = 0.3)
 	name = REAGENT_OSTEODAXON
 	id = REAGENT_ID_OSTEODAXON
 	description = "An experimental drug used to heal bone fractures."
@@ -777,6 +822,8 @@
 					H.status_adjust(EFFECT_STUNNED, 1)		//Bones being regrown will knock you over
 
 /datum/reagent/myelamine
+	// The clotting agent: runs down bleeds; its wound closure is affect_blood.
+	treatment_tags = list(TREAT_HEMOSTATIC = 1.0)
 	name = REAGENT_MYELAMINE
 	id = REAGENT_ID_MYELAMINE
 	description = "Used to rapidly clot hemorrhages by increasing the effectiveness of platelets. An ideal dosage of 10 units will fully heal any internal hemorrhages."
@@ -863,6 +910,7 @@ TYPE_TABLE_DECLARE(/datum/reagent, daxon_partners, null)
 	daxon_affect(M, removed)
 
 /datum/reagent/respirodaxon
+	treatment_tags = list(TREAT_RESPIRATORY = 1.0)
 	name = REAGENT_RESPIRODAXON
 	id = REAGENT_ID_RESPIRODAXON
 	description = "Used to repair the tissue of the lungs and similar organs."
@@ -891,6 +939,7 @@ TYPE_TABLE(/datum/reagent/respirodaxon, daxon_partners, list(REAGENT_ID_GASTIROD
 	H.losebreath = max(H.losebreath - 4, 0)
 
 /datum/reagent/gastirodaxon
+	treatment_tags = list(TREAT_DIGESTIVE = 1.0, TREAT_ANTITOXIN = 0.6)
 	name = REAGENT_GASTIRODAXON
 	id = REAGENT_ID_GASTIRODAXON
 	description = "Used to repair the tissues of the digestive system."
@@ -916,6 +965,7 @@ TYPE_TABLE(/datum/reagent/gastirodaxon, daxon_partners, list(REAGENT_ID_HEPANEPH
 		H.adjust_nutrition(-removed * 30)
 
 /datum/reagent/hepanephrodaxon
+	treatment_tags = list(TREAT_HEPATORENAL = 1.0, TREAT_ANTITOXIN = 0.7)
 	name = REAGENT_HEPANEPHRODAXON
 	id = REAGENT_ID_HEPANEPHRODAXON
 	description = "Used to repair the common tissues involved in filtration."
@@ -943,6 +993,7 @@ TYPE_TABLE(/datum/reagent/hepanephrodaxon, daxon_partners, list(REAGENT_ID_CORDR
 		H.vomit(0, 1)
 
 /datum/reagent/cordradaxon
+	treatment_tags = list(TREAT_CARDIAC = 1.0, TREAT_OXYGENATION = 0.6)
 	name = REAGENT_CORDRADAXON
 	id = REAGENT_ID_CORDRADAXON
 	description = "Used to repair the specialized tissues involved in the circulatory system."
@@ -1065,6 +1116,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 						H.injure(INJURY_TOXIN, 1, I, src, flags = INJURE_IGNORE_RESISTANCE)
 
 /datum/reagent/ryetalyn
+	treatment_tags = list(TREAT_GENETIC_REPAIR = 0.5)
 	name = REAGENT_RYETALYN
 	id = REAGENT_ID_RYETALYN
 	description = REAGENT_RYETALYN + " can cure DNA, Cloning, and genetic damage via a catalytic process."
@@ -1136,6 +1188,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 				R.remove_self(removed * 20)
 
 /datum/reagent/hyronalin
+	treatment_tags = list(TREAT_ANTIRADIATION = 0.5)
 	name = REAGENT_HYRONALIN
 	id = REAGENT_ID_HYRONALIN
 	description = REAGENT_HYRONALIN + " is a medicinal drug used to counter the effect of radiation poisoning."
@@ -1156,6 +1209,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	// B14: radiation purge is the TREAT_ANTIRADIATION tag (purge_radiation()).
 
 /datum/reagent/arithrazine
+	treatment_tags = list(TREAT_ANTIRADIATION = 1.0, TREAT_ANTITOXIN = 0.6)
 	name = REAGENT_ARITHRAZINE
 	id = REAGENT_ID_ARITHRAZINE
 	description = REAGENT_ARITHRAZINE + " is an unstable medication used for the most extreme cases of radiation poisoning."
@@ -1180,6 +1234,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 		M.injure(INJURY_BLUNT, 4 * removed, source = src)
 
 /datum/reagent/spaceacillin
+	treatment_tags = list(TREAT_ANTIMICROBIAL = 1.0)
 	factors = alist(BF_ANTIMICROBIAL = ANTIBIO_NORM)
 	name = REAGENT_SPACEACILLIN
 	id = REAGENT_ID_SPACEACILLIN
@@ -1213,6 +1268,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	affect_blood(M, alien, removed * 0.8) // Not 100% as effective as injections, though still useful.
 
 /datum/reagent/corophizine
+	treatment_tags = list(TREAT_ANTIMICROBIAL = 1.3)
 	factors = alist(BF_ANTIMICROBIAL = ANTIBIO_SUPER)
 	name = REAGENT_COROPHIZINE
 	id = REAGENT_ID_COROPHIZINE
@@ -1285,6 +1341,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 		H.injure(INJURY_BLUNT, eo.min_broken_damage, eo, source = src, affliction = /datum/affliction/untreated_fracture)
 
 /datum/reagent/spacomycaze
+	treatment_tags = list(TREAT_ANTIMICROBIAL = 0.8)
 	factors = alist(BF_ANALGESIA = 20, BF_ANTIMICROBIAL = ANTIBIO_NORM)
 	name = REAGENT_SPACOMYCAZE
 	id = REAGENT_ID_SPACOMYCAZE
@@ -1381,6 +1438,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 		remove_self(amount)
 
 /datum/reagent/leporazine
+	treatment_tags = list(TREAT_THERMOREGULATION = 1.0)
 	name = REAGENT_LEPORAZINE
 	id = REAGENT_ID_LEPORAZINE
 	description = "Leporazine can be use to stabilize an individuals body temperature."
@@ -1398,6 +1456,15 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 // applied by the thermoregulation life stage (no second, unscaled write here).
 
 /datum/reagent/rezadone
+	// "Almost magical": a strong generic on top of its genetic specialty.
+	treatment_tags = list(
+		TREAT_GENETIC_REPAIR = 1.0,
+		TREAT_TISSUE_REPAIR = 0.8,
+		TREAT_BURN_CARE = 0.8,
+		TREAT_ANTITOXIN = 0.8,
+		TREAT_ANTIRADIATION = 0.25,
+		TREAT_OXYGENATION = 0.1,
+	)
 	name = REAGENT_REZADONE
 	id = REAGENT_ID_REZADONE
 	description = "A powder with almost magical properties, this substance can effectively treat genetic damage in humanoids, though excessive consumption has side effects."
@@ -1447,6 +1514,16 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 
 // This exists to cut the number of chemicals a merc borg has to juggle on their hypo.
 /datum/reagent/healing_nanites
+	// Nanites repair organic and synthetic parts alike.
+	treatment_tags = list(
+		TREAT_TISSUE_REPAIR = 0.4,
+		TREAT_BURN_CARE = 0.4,
+		TREAT_OXYGENATION = 0.3,
+		TREAT_ANTITOXIN = 0.3,
+		TREAT_GENETIC_REPAIR = 0.3,
+		TREAT_PLATING_REPAIR = 0.4,
+		TREAT_WIRING_REPAIR = 0.4,
+	)
 	name = REAGENT_HEALINGNANITES
 	id = REAGENT_ID_HEALINGNANITES
 	description = "Miniature medical robots that swiftly restore bodily damage."
@@ -1476,6 +1553,13 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	industrial_use = REFINERYEXPORT_REASON_FOOD
 
 /datum/reagent/earthsblood
+	treatment_tags = list(
+		TREAT_TISSUE_REPAIR = 0.6,
+		TREAT_BURN_CARE = 0.6,
+		TREAT_OXYGENATION = 0.5,
+		TREAT_ANTITOXIN = 0.5,
+		TREAT_GENETIC_REPAIR = 0.3,
+	)
 	name = REAGENT_EARTHSBLOOD
 	id = REAGENT_ID_EARTHSBLOOD
 	description = "A rare plant extract with immense, almost magical healing capabilities. Induces a potent psychoactive state, damaging neurons with prolonged use."
@@ -1564,6 +1648,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 ////////////   MEDICINE   /////////
 //////////////////////////////////
 /datum/reagent/claridyl
+	treatment_tags = list(TREAT_TISSUE_REPAIR = 0.25)
 	factors = alist(BF_ANALGESIA = 40, BF_STABILIZATION = 30)
 	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_CLARIDYL
@@ -1615,6 +1700,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 			M.custom_pain("Your vision becomes blurred!",30)
 
 /datum/reagent/claridyl/bloodburn
+	treatment_tags = null
 	name = REAGENT_BLOODBURN
 	id = REAGENT_ID_BLOODBURN
 	description = "A chemical used to soak up any reagents inside someones stomach, injection is not advised, if you need to ask why please seek a new job."
@@ -1640,6 +1726,8 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 				R.remove_self(removed * 5)
 
 /datum/reagent/eden
+	// Eden/snake inherits this identical list and is therefore skipped by the tag table.
+	treatment_tags = list(TREAT_ANTITOXIN = 0.3)
 	name = REAGENT_EDEN
 	id = REAGENT_ID_EDEN
 	description = "The ultimate anti toxin unrivaled, it corrects impurities within the body but punishes those who attain them with a burning sensation"
@@ -1687,6 +1775,8 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 //This is all a direct port from aeiou.
 
 /datum/reagent/hannoa
+	// B7: "a powerful clotting agent that treats brute damage very quickly".
+	treatment_tags = list(TREAT_HEMOSTATIC = 1.0, TREAT_TISSUE_REPAIR = 1.0)
 	name = REAGENT_HANNOA
 	id = REAGENT_ID_HANNOA
 	description = "A powerful clotting agent that treats brute damage very quickly but takes a long time to be metabolised. Overdoses easily, reacts badly with other chemicals."
@@ -1731,6 +1821,12 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 
 
 /datum/reagent/bullvalene //This is for the third sap. It converts Brute Oxy and burn into slightly less toxins.
+	// Converts injury into toxin: the toxin side is injured in medicine.dm.
+	treatment_tags = list(
+		TREAT_TISSUE_REPAIR = 0.3,
+		TREAT_BURN_CARE = 0.3,
+		TREAT_OXYGENATION = 0.2,
+	)
 	name = REAGENT_BULLVALENE
 	id = REAGENT_ID_BULLVALENE
 	description = "A catalytic chemical that can treat a wide variety of ailments at the cost of toxifying the host's body."
@@ -1755,6 +1851,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 /////SERAZINE REAGENTS///////
 
 /datum/reagent/serazine
+	treatment_tags = list(TREAT_ANTITOXIN = 0.3)
 	name = REAGENT_SERAZINE
 	id = REAGENT_ID_SERAZINE
 	description = "A sweet tasting flower extract, it has very mild anti toxic properties, help with hallucinations and drowsyness, and can be used to make potent drugs."
@@ -1772,6 +1869,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	M.status_adjust(EFFECT_HALLUCINATING, -(6 * removed))
 
 /datum/reagent/alizene
+	treatment_tags = list(TREAT_TISSUE_REPAIR = 1.5)
 	name = REAGENT_ALIZENE
 	id = REAGENT_ID_ALIZENE
 	description = "A derivative from bicaridine enhanced by serazine to more effectively mend flesh, but is ineffective against internal hemorrhage."
@@ -1856,6 +1954,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 			H.status_adjust(EFFECT_STUTTERING, 20)
 
 /datum/reagent/vermicetol
+	treatment_tags = list(TREAT_TISSUE_REPAIR = 1.3)
 	name = REAGENT_VERMICETOL
 	id = REAGENT_ID_VERMICETOL
 	description = "A potent chemical that treats physical damage at an exceptional rate."
@@ -1893,6 +1992,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 
 
 /datum/reagent/prussian_blue //We don't have iodine, so prussian blue we go.
+	treatment_tags = list(TREAT_ANTITOXIN = 0.1)
 	name = REAGENT_PRUSSIANBLUE
 	id = REAGENT_ID_PRUSSIANBLUE
 	description = "Prussian Blue is a medication used to temporarily pause the effects of radiation poisoning to allow for treatment. Does not treat radiation sickness on its own."
@@ -2139,6 +2239,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 //Chemist expansion
 //deathblood
 /datum/reagent/cleansingagent
+	treatment_tags = list(TREAT_ANTITOXIN = 0.8, TREAT_ANTIRADIATION = 0.5)
 	name = REAGENT_CLEANSINGAGENT
 	id = REAGENT_ID_CLEANSINGAGENT
 	description = "An agent that purges one's body of toxins."
@@ -2159,6 +2260,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	M.status_at_least(EFFECT_DRUGGED, 5)
 
 /datum/reagent/purifyingagent
+	treatment_tags = list(TREAT_ANTITOXIN = 0.8, TREAT_ANTIRADIATION = 0.5)
 	name = REAGENT_PURIFYINGAGENT
 	id = REAGENT_ID_PURIFYINGAGENT
 	description = "An agent that purges one's body of rads and toxins."
@@ -2175,6 +2277,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 
 //liquid fire
 /datum/reagent/burncard
+	treatment_tags = list(TREAT_TISSUE_REPAIR = 1.5)
 	name = REAGENT_BURNCARD
 	id = REAGENT_ID_BURNCARD
 	description = "A more powerful variation of bicard that also burns the subject."
@@ -2233,6 +2336,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 
 //neoliquidfire
 /datum/reagent/neotane
+	treatment_tags = list(TREAT_BURN_CARE = 1.5)
 	name = REAGENT_NEOTANE
 	id = REAGENT_ID_NEOTANE
 	description = "An advancement of kelotane that scars and breaks apart the user's flesh to remove the burnt tissue."
@@ -2276,6 +2380,12 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 
 //meteroidliquid
 /datum/reagent/livingagent
+	treatment_tags = list(
+		TREAT_TISSUE_REPAIR = 0.5,
+		TREAT_BURN_CARE = 0.5,
+		TREAT_OXYGENATION = 0.4,
+		TREAT_ANTITOXIN = 0.4,
+	)
 	factors = alist(BF_ANALGESIA = -20)
 	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_LIVINGAGENT
@@ -2342,6 +2452,13 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 		M.mend(TREAT_ANTITOXIN, 3 * removed * chem_effective)
 
 /datum/reagent/quadcord
+	treatment_tags = list(
+		TREAT_TISSUE_REPAIR = 0.2,
+		TREAT_BURN_CARE = 0.2,
+		TREAT_OXYGENATION = 0.1,
+		TREAT_ANTITOXIN = 0.1,
+		TREAT_NEURAL_REPAIR = 0.3,
+	)
 	name = REAGENT_QUADCORD
 	id = REAGENT_ID_QUADCORD
 	description = "An experimental drug that is meant to further enhance tricord"
