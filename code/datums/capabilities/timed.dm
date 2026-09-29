@@ -32,7 +32,7 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 		return
 	if(D.vars[var_name] == value)
 		return
-	D.vars[var_name] = value // ALLOW(timed:direct_write): the timed-state writer for a var with no setter
+	D.vars[var_name] = value // ALLOW(api): the timed-state writer for a var with no setter
 	changed(D)
 
 /proc/timed_set(datum/D, var_name, value, for_time, clock = CLOCK_OWN, keep_longer = FALSE, revert_to)

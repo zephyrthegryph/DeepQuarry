@@ -258,8 +258,10 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	/// the entry doesn't exist for it). Cheap, no actor.
 	var/applies
 
+/// Keyed by the entry itself: two capabilities can build entries with one id (the same handler
+/// and name) but different selectors (anchor(tool = TOOL_WRENCH) vs anchor(tool = TOOL_SCREWDRIVER)).
 /datum/interaction/capability/predicate_key()
-	return "cap:[id]"
+	return "cap:[id]:[SHARED_CACHE_UID(src)]"
 
 /datum/interaction/capability/display_name(mob/actor, atom/target)
 	if(name_proc)
