@@ -33,13 +33,13 @@
 /obj/item/gun/energy/Initialize(mapload)
 	. = ..()
 	if(self_recharge)
-		own_set(src, "power_supply", new /obj/item/cell/device/weapon(src))
+		rel_set(src, "power_supply", new /obj/item/cell/device/weapon(src))
 		om_task_periodic(src, PERIODIC_SLOW)
 	else
 		if(cell_type)
-			own_set(src, "power_supply", new cell_type(src))
+			rel_set(src, "power_supply", new cell_type(src))
 		else
-			own_take(src, "power_supply")
+			rel_clear(src, "power_supply")
 	//random starting power! gives us a random number of shots in the battery between 0 and the max possible
 	if(random_start_ammo && cell_type)
 		power_supply.charge = charge_cost*rand(0,power_supply.maxcharge/charge_cost)
@@ -133,7 +133,7 @@
 	if(power_supply)
 		return
 	user.remove_from_mob(P)
-	own_set(src, "power_supply", P)
+	rel_set(src, "power_supply", P)
 	P.forceMove(src)
 	user.visible_message("[user] inserts [P] into [src].", span_notice("You insert [P] into [src]."))
 	playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
@@ -165,7 +165,7 @@
 		user.put_in_hands(power_supply)
 		power_supply.update_icon()
 		user.visible_message("[user] removes [power_supply] from [src].", span_notice("You remove [power_supply] from [src]."))
-		own_take(src, "power_supply")
+		rel_clear(src, "power_supply")
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
 		update_icon()
 		update_held_icon()
@@ -245,7 +245,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/energy, INTERACT_HAND(null, PROC_REF(interact
 
 /obj/item/gun/energy/proc/start_recharge()
 	if(power_supply == null)
-		own_set(src, "power_supply", new /obj/item/cell/device/weapon(src))
+		rel_set(src, "power_supply", new /obj/item/cell/device/weapon(src))
 	self_recharge = 1
 	om_task_periodic(src, PERIODIC_SLOW)
 	update_icon()
@@ -280,7 +280,9 @@ DECLARE_INTERACTIONS(/obj/item/gun/energy, INTERACT_HAND(null, PROC_REF(interact
 	else
 		return FLOOR(power_supply.charge / max(charge_cost, 1), 1)
 
-OWN(/obj/item/gun/energy, power_supply, OWN_CONTAINED)
+// power_supply names the cell in the gun's contents (the contents own it and it goes with the gun), or, for
+// the shield generator's gun, the generator's cell: a relation view across the hierarchy.
+REL(/obj/item/gun/energy, power_supply)
 
 /obj/item/gun/energy/note_shot()
 	..()

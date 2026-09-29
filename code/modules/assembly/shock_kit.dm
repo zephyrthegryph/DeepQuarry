@@ -16,10 +16,8 @@
 			T = T.loc
 		part1.forceMove(T)
 		part2.forceMove(T)
-		// /obj/item.master is declared OWN_CONTAINED in items.dm (it should be a relation view: the item
-		// this one is attached to); detach it the way it is declared until that changes.
-		own_take(part1, "master")
-		own_take(part2, "master")
+		rel_clear(part1, "master")
+		rel_clear(part2, "master")
 		own_take(src, "part1")
 		own_take(src, "part2")
 		qdel(src)
