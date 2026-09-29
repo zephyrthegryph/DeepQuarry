@@ -108,8 +108,15 @@ SUBSYSTEM_DEF(profiler)
 		"sequence" = ++diagnostic_sequence,
 		"world_time_ds" = world.time,
 		"players" = length(GLOB.clients),
-		"map_cpu" = world.cpu,
-		"map_tick_usage" = world.tick_usage,
+		// world.cpu / world.tick_usage are the whole server tick (DM code). The map
+		// send cost (appearance/turf/obj changes pushed to clients) is world.map_cpu
+		// only; with no clients it is ~0. Earlier profiles logged world.cpu and
+		// world.tick_usage under the map_* names, which read as idle map churn.
+		"cpu" = world.cpu,
+		"tick_usage" = world.tick_usage,
+		"map_cpu" = world.map_cpu,
+		"initialized" = Master.initializations_seconds > 0,
+		"sleep_offline" = world.sleep_offline,
 		"subsystems" = subsystems,
 		"atmos_arena" = atmos_arena,
 		"rust_allocator" = rust_allocator,

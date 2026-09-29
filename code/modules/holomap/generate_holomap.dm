@@ -26,11 +26,38 @@
 /// Where rendered holomaps are kept between boots.
 #define HOLOMAP_CACHE_DIRECTORY "data/holomaps/cache"
 
-/// The identity of what the holomaps are rendered from: the build (the maps
-/// are compiled into the .dmb, see asset_cache_build_key()) and the loaded
-/// map's size and station levels. Rendered holomaps with another key are stale.
+/// Bump when the renderer's output changes for the same map.
+#define HOLOMAP_CACHE_VERSION 2
+
+/// The identity of what the holomaps are rendered from, keyed by the map rather
+/// than the build so ordinary code rebuilds reuse the render: the map's .dmm
+/// files, the templates loaded at boot, every area type's holomap colour, the
+/// canvas icon and the map's size and station levels. Without the .dmm sources
+/// on disk (a deployed .dmb) it falls back to the build key.
 /datum/controller/subsystem/holomaps/proc/holomap_cache_key()
-	return md5("[asset_cache_build_key()]|[world.maxx]x[world.maxy]x[world.maxz]|[json_encode(using_map.station_levels)]|[json_encode(using_map.holomap_smoosh)]")
+	var/list/parts = list("v[HOLOMAP_CACHE_VERSION]", "[world.maxx]x[world.maxy]x[world.maxz]", json_encode(using_map.station_levels), json_encode(using_map.holomap_smoosh))
+	var/map_dir = "maps/[using_map.path]/"
+	var/map_files = 0
+	if(fexists(map_dir))
+		for(var/file in sortList(flist(map_dir)))
+			if(lowertext(copytext(file, -4)) != ".dmm")
+				continue
+			parts += "[file]=[rustg_hash_file(RUSTG_HASH_XXH64, "[map_dir][file]")]"
+			map_files++
+	if(!map_files)
+		parts += asset_cache_build_key()
+	var/list/templates = list()
+	for(var/name in GLOB.map_templates_loaded)
+		templates += "[name]"
+	parts += jointext(sortList(templates), ",")
+	var/list/colors = list()
+	for(var/area/area_type as anything in subtypesof(/area))
+		var/color = initial(area_type.holomap_color)
+		if(color)
+			colors += "[area_type]=[color]"
+	parts += md5(jointext(colors, ";"))
+	parts += "[md5(HOLOMAP_ICON)]"
+	return md5(jointext(parts, "|"))
 
 /// Loads the holomaps rendered by an earlier boot of the same build and map.
 /// Returns FALSE (and loads nothing) if there is no matching cache.
@@ -262,3 +289,4 @@
 #undef HOLOMAP_PNG_BASE
 #undef HOLOMAP_PNG_AREAS
 #undef HOLOMAP_CACHE_DIRECTORY
+#undef HOLOMAP_CACHE_VERSION

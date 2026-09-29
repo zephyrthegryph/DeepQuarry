@@ -20,7 +20,7 @@
 /// often creates and initializes other atoms, so each frame subtracts its
 /// children to report self time.
 /datum/benchmark_init_stats
-	/// type -> list(count, init_self_us, materialize_self_us, late_count, late_self_us, inclusive_us)
+	/// type -> list(count, init_self_us, materialize_self_us, late_count, late_self_us, inclusive_us, max_self_us)
 	var/list/by_type = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
 	var/depth = 0
 	/// child microseconds accumulated per depth
@@ -111,11 +111,13 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	var/post_self = (total - mark[1]) - (children - mark[2])
 	var/list/row = S.by_type[type]
 	if(!row)
-		row = S.by_type[type] = list(0, 0, 0, 0, 0, 0)
+		row = S.by_type[type] = list(0, 0, 0, 0, 0, 0, 0)
 	row[1]++
 	row[2] += init_self
 	row[3] += post_self
 	row[6] += total
+	if(init_self + post_self > row[7])
+		row[7] = init_self + post_self
 	S.depth = d - 1
 	if(d > 1)
 		S.child_us[d - 1] += total
@@ -127,10 +129,12 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	var/total = rustg_time_microseconds("bench_init_[d]")
 	var/list/row = S.by_type[type]
 	if(!row)
-		row = S.by_type[type] = list(0, 0, 0, 0, 0, 0)
+		row = S.by_type[type] = list(0, 0, 0, 0, 0, 0, 0)
 	row[4]++
 	row[5] += total - S.child_us[d]
 	row[6] += total
+	if(total - S.child_us[d] > row[7])
+		row[7] = total - S.child_us[d]
 	S.depth = d - 1
 	if(d > 1)
 		S.child_us[d - 1] += total
@@ -247,6 +251,8 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	var/list/subsystems = benchmark_subsystem_init_times()
 	for(var/name in subsystems)
 		metric("init_ms_[name]", subsystems[name], "ms")
+	for(var/phase in SSair.init_phase_ms)
+		metric("air_init_ms_[phase]", SSair.init_phase_ms[phase], "ms")
 	benchmark_rust_mark("booted")
 	detail("rust_memory_marks", GLOB.benchmark_rust_marks)
 	detail("early_notes", benchmark_early_notes())
@@ -294,7 +300,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	for(var/path in table)
 		var/list/row = table[path]
 		var/self = row[2] + row[3] + row[5]
-		snapshot[path] = list(row[1], row[2], row[3], row[4], row[5], self)
+		snapshot[path] = list(row[1], row[2], row[3], row[4], row[5], self, row[7], row[6])
 		totals["count"] += row[1]
 		totals["init_us"] += row[2]
 		totals["materialize_us"] += row[3]
@@ -313,7 +319,14 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	metric("atoms_materialize_self_ms", totals["materialize_us"] / 1000, "ms")
 	metric("atoms_late_self_ms", totals["late_us"] / 1000, "ms")
 	detail("init_by_root", by_root)
+	// Self time (children subtracted) ranks the types whose own Initialize is hot.
 	detail("init_types_by_total", format_rows(snapshot, benchmark_top_rows(snapshot, 6, 60)))
+	detail("init_types_by_max", format_rows(snapshot, benchmark_top_rows(snapshot, 7, 20)))
+	var/list/top_init = list()
+	for(var/path in benchmark_top_rows(snapshot, 6, 20))
+		var/list/row = snapshot[path]
+		top_init["[path]"] = round(row[6] / 1000, 0.01)
+	detail("top_init_types_ms", top_init)
 	detail("init_types_by_count", format_rows(snapshot, benchmark_top_rows(snapshot, 1, 60)))
 
 /datum/benchmark/boot_profile/proc/format_rows(list/snapshot, list/keys)
@@ -328,6 +341,8 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 			"late_count" = row[4],
 			"late_ms" = round(row[5] / 1000, 0.01),
 			"total_ms" = round(row[6] / 1000, 0.01),
+			"max_ms" = round(row[7] / 1000, 0.01),
+			"inclusive_ms" = round(row[8] / 1000, 0.01),
 		))
 	return out
 

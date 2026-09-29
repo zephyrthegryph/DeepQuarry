@@ -49,15 +49,17 @@
 	else if(x == world.maxx || forced_dirs & EAST)
 		edge |= EAST
 
+	// ~310 k space turfs run this at boot: one service lookup per turf.
+	var/datum/world_service/skybox/sky = skybox_service()
 	if(edge) //Magic edges
-		appearance = skybox_service().mapedge_cache["[edge]"]
+		appearance = sky.mapedge_cache["[edge]"]
 	else //Dust
 		var/dust = ((x + y) ^ ~(x * y) + z) % 25
-		var/list/dust_by_index = skybox_service().dust_by_index
+		var/list/dust_by_index = sky.dust_by_index
 		if(dust >= 0 && dust < length(dust_by_index))
 			appearance = dust_by_index[dust + 1]
 		else
-			appearance = skybox_service().dust_cache["[dust]"]
+			appearance = sky.dust_cache["[dust]"]
 
 /turf/space/proc/toggle_transit(direction)
 	if(edge) //Not a great way to do this yet. Maybe we'll come up with one. We could pre-make sprites... or tile the overlay over it?

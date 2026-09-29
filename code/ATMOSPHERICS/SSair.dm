@@ -107,11 +107,21 @@ SUBSYSTEM_DEF(air)
 	return ..()
 
 
+/// Milliseconds per Initialize() phase (name -> ms), for the boot profile.
+/datum/controller/subsystem/air/var/list/init_phase_ms
+
+/datum/controller/subsystem/air/proc/init_phase_mark(name)
+	init_phase_ms[name] = rustg_time_milliseconds("ssair_init_phase")
+	rustg_time_reset("ssair_init_phase")
+
 /datum/controller/subsystem/air/Initialize()
+	init_phase_ms = list()
+	rustg_time_reset("ssair_init_phase")
 	map_loading = FALSE
 	// The machine world service's boot step (power, gas wakes, pump commit), where SSmachines
 	// used to initialize: before any atmos machinery setup below.
 	GLOB.machine_service.initialize()
+	init_phase_mark("machine_service")
 
 	// Register the gas roster in the Rust arena FIRST — reaction setup
 	// (init_gas_reactions -> build_min_requirements) and everything else that
@@ -122,33 +132,41 @@ SUBSYSTEM_DEF(air)
 	// Idempotent: in practice the very first turf air (created during mapload,
 	// before this runs) already triggered registration via gas_mixture/New().
 	ensure_auxmos_gas_registry()
+	init_phase_mark("gas_registry")
 
 	// The gas field was sized at world start (vg_configure_world); make sure it
 	// covers the map as loaded before registering turfs.
 	vg_configure_world(world.maxx, world.maxy, world.maxz)
+	init_phase_mark("configure_world")
 
 	// Fill GLOB.gas_data.overlays now that meta_gas_info's overlay objects exist,
 	// so the Rust turf-processing visuals path can render gas clouds.
 	build_gas_data_overlays()
+	init_phase_mark("gas_overlays")
 
 	gas_reactions = init_gas_reactions()
 	hotspot_reactions = init_hotspot_reactions()
+	init_phase_mark("reactions")
 
 	build_multiz_atmos_levels()
+	init_phase_mark("multiz")
 #ifdef BENCHMARK
 	benchmark_rust_mark("air: before turfs")
 #endif
 	setup_allturfs()
+	init_phase_mark("turfs")
 #ifdef BENCHMARK
 	benchmark_rust_mark("air: turfs registered")
 #endif
 	setup_atmos_machinery()
+	init_phase_mark("machinery")
 #ifdef BENCHMARK
 	benchmark_rust_mark("air: pipenets")
 #endif
 	// Rust setup is the sole pipenet topology build. Compatibility wrappers are
 	// materialized from its connected-region publication.
 	setup_turf_visuals()
+	init_phase_mark("turf_visuals")
 #ifdef BENCHMARK
 	benchmark_rust_mark("air: turf visuals")
 #endif
