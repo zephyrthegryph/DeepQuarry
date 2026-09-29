@@ -1046,7 +1046,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 	if(!is_impostor)
 		to_chat(src, span_notice("You are not an impostor! You can't kill like that!"))
 		return
-	if((world.time - kill_cooldown) < 1 MINUTE)
+	if(ELAPSED_SINCE(src, kill_cooldown, CLOCK_WORLD) < 1 MINUTE)
 		to_chat(src, span_notice("You cannot kill so soon after previous kill!"))
 		return
 

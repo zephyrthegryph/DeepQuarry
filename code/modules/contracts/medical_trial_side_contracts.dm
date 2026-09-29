@@ -496,7 +496,7 @@ DECLARE_REF(/datum/contract_document, "holder", BACK, "contract_document")
 		if(evidence["subject_id"] != subject_id)
 			continue
 		var/scanned_at = evidence["scan_time"]
-		if(!isnum(scanned_at) || scanned_at > world.time)
+		if(!isnum(scanned_at) || BEFORE(null, scanned_at, CLOCK_WORLD))
 			continue
 		if(scanned_at >= signature_time && scanned_at <= participant.exposure_time)
 			if(!baseline || scanned_at > baseline["scan_time"])

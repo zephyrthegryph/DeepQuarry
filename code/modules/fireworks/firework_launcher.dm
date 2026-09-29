@@ -101,7 +101,7 @@
 		to_chat(user, span_notice("There is no firework star loaded in \the [src]."))
 		return TRUE
 
-	if((world.time - last_launch) <= launch_cooldown)
+	if(ELAPSED_SINCE(src, last_launch, CLOCK_WORLD) <= launch_cooldown)
 		to_chat(user, span_notice("\The [src] is still re-priming for launch."))
 		return TRUE
 

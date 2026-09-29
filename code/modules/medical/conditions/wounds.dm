@@ -154,7 +154,7 @@
 	if(is_treated())
 		return TRUE
 	if(wound_damage() <= autoheal_cutoff)
-		if(created + 10 MINUTES > world.time) // Wounds don't autoheal for ten minutes if not bandaged.
+		if(BEFORE(src, created + 10 MINUTES, CLOCK_WORLD)) // Wounds don't autoheal for ten minutes if not bandaged.
 			return FALSE
 		return TRUE
 	return FALSE

@@ -26,7 +26,7 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 
 
 /datum/event/money_hacker/tick()
-	if(world.time >= end_time)
+	if(!BEFORE(src, end_time, CLOCK_WORLD))
 		endWhen = activeFor
 	else
 		endWhen = activeFor + 10

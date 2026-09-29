@@ -159,7 +159,7 @@
 	if(!brain.model || !length(brain.model.visible_friendlies))
 		return null
 	// Only worth rallying once we're actually in a fight (recently swung).
-	if(world.time > brain.last_attack_at + 5 SECONDS)
+	if(ELAPSED_SINCE(src, brain.last_attack_at + 5 SECONDS, CLOCK_WORLD) > 0)
 		return null
 	return DQAI_RESULT(48, threat)
 

@@ -96,7 +96,7 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 			return TRUE
 
 /datum/player_log_viwer/proc/refresh_cooldown()
-	return ((world.time - last_refresh) < 5 SECONDS)
+	return (ELAPSED_SINCE(src, last_refresh, CLOCK_WORLD) < 5 SECONDS)
 
 /// Adds the player's logged dialog from the database (om_io: the rows arrive later and the
 /// window's static data is resent then).

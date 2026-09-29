@@ -103,7 +103,7 @@
 	if(!.)
 		return
 	last_switch_time = world.time
-	if(previous_switch && world.time - previous_switch < NANITE_FORM_SWITCH_GRACE)
+	if(previous_switch && ELAPSED_SINCE(src, previous_switch, CLOCK_WORLD) < NANITE_FORM_SWITCH_GRACE)
 		var/mob/living/carbon/human/H = owner
 		H.body?.afflict(/datum/affliction/nanite/form_strain, null, NANITE_STRAIN_PER_FAST_SWITCH)
 		log_game("FORMS: [key_name(H)] changed form again within [NANITE_FORM_SWITCH_GRACE / 10] seconds; form strain.")
@@ -115,7 +115,7 @@
 		return
 	rig?.recharge_from(source)
 	var/shapeless = !is_form(/datum/form/human) || in_rig()
-	if(shapeless && world.time - last_switch_time > NANITE_FORM_HOLD_LIMIT)
+	if(shapeless && ELAPSED_SINCE(src, last_switch_time, CLOCK_WORLD) > NANITE_FORM_HOLD_LIMIT)
 		source.body?.afflict(/datum/affliction/nanite/form_strain, null, NANITE_STRAIN_PER_HELD_TICK)
 
 /// The orchestrator coordinates a change of shape. A damaged one may fail to:

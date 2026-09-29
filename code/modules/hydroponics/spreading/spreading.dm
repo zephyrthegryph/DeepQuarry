@@ -316,7 +316,7 @@ EXTEND_INTERACTIONS(/obj/effect/plant, \
 		die_off()
 
 /obj/effect/plant/proc/is_mature()
-	return (health >= (max_health/3) && world.time > mature_time)
+	return (health >= (max_health/3) && ELAPSED_SINCE(src, mature_time, CLOCK_WORLD) > 0)
 
 #undef DEFAULT_SEED
 #undef VINE_GROWTH_STAGES

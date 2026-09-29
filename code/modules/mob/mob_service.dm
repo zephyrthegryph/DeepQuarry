@@ -28,7 +28,7 @@ GLOBAL_DATUM_INIT(mob_service, /datum/world_service/mobs, new)
 		insert_deaths(batch)
 	if(!profile_next_dump)
 		profile_next_dump = world.time + 2 MINUTES
-	else if(world.time >= profile_next_dump)
+	else if(!BEFORE(src, profile_next_dump, CLOCK_WORLD))
 		dump_profile()
 	return TRUE
 

@@ -1011,7 +1011,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
 			H.visible_message(span_warning("The space around [H] compresses for a moment but then nothing happens."),span_notice("The space around you distorts but nothing happens to you."))
 			return
 		if(applied_ratio == null)
-			if(!(world.time - last_activated > 10 SECONDS))
+			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
 			last_activated = world.time
@@ -1108,7 +1108,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/modified
 			H.visible_message(span_warning("The collar on [H] flickers, but fizzles out."),span_notice("Your collar flickers, but is not powerful enough to shrink you that small."))
 			return
 		if(applied_ratio == null)
-			if(!(world.time - last_activated > 10 SECONDS))
+			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
 			last_activated = world.time
@@ -1179,7 +1179,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunct
 			H.visible_message(span_warning("The collar on [H] flickers, but fizzles out."),span_notice("Your collar flickers, but is not powerful enough to shrink you that small."))
 			return
 		if(currently_shrinking == 0)
-			if(!(world.time - last_activated > 10 SECONDS))
+			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
 			last_activated = world.time

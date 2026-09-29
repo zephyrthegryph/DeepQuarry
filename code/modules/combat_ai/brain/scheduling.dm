@@ -37,7 +37,7 @@
 	var/datum/ai_brain/A = brain_of(L)
 	if(!A || A.is_busy() || !L.loc)
 		return
-	if(A.next_strategic_at > world.time)
+	if(BEFORE(src, A.next_strategic_at, CLOCK_WORLD))
 		return
 	A.handle_strategicals()
 

@@ -106,7 +106,7 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 	if(!playing)
 		return
 	// If the current track isn't finished playing, let it keep going
-	if(current_track() && world.time < media_start_time + current_track().duration)
+	if(current_track() && BEFORE(src, media_start_time + current_track().duration, CLOCK_WORLD))
 		return
 	// Oh... nothing in queue? Well then pick next according to our rules
 	var/list/tracks = getTracksList()

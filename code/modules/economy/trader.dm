@@ -104,7 +104,7 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 		trader.trading = FALSE
 		return
 	if(length(trader.interact_sound) > 0)
-		if((world.time - trader.sound_lastplayed) > trader.sound_cooldown)
+		if(ELAPSED_SINCE(src, trader.sound_lastplayed, CLOCK_WORLD) > trader.sound_cooldown)
 			var/sound = DEFAULTPICK(trader.interact_sound, null)
 			playsound(trader, sound, 25, FALSE, ignore_walls = FALSE)
 			trader.sound_lastplayed = world.time

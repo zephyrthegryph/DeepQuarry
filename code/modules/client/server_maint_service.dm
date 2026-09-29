@@ -81,7 +81,7 @@ GLOBAL_DATUM_INIT(server_maint_service, /datum/world_service/server_maint, new)
 		var/client/C = I
 		//handle kicking inactive players
 
-		if (!(!C || world.time - C.connection_time < PING_BUFFER_TIME || C.inactivity >= (SERVER_MAINT_INTERVAL - 1)))
+		if (!(!C || ELAPSED_SINCE(src, C.connection_time, CLOCK_WORLD) < PING_BUFFER_TIME || C.inactivity >= (SERVER_MAINT_INTERVAL - 1)))
 			winset(C, null, "command=.update_ping+[num2text(world.time+world.tick_lag*TICK_USAGE_REAL/100, 32)]")
 
 		if(TICK_CHECK) //one day, when ss13 has 1000 people per server, you guys are gonna be glad I added this tick check

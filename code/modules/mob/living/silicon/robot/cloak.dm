@@ -141,7 +141,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 	if(L.stat == DEAD || !state)
 		L.end_body_effect(type, TRUE)
 		return
-	if(state.times_hit && (world.time - state.last_hit_time) > hit_dissipation) //If we have been hit, but the time has passed, reset the hit counter.
+	if(state.times_hit && ELAPSED_SINCE(src, state.last_hit_time, CLOCK_WORLD) > hit_dissipation) //If we have been hit, but the time has passed, reset the hit counter.
 		if(!state.cloaked)
 			to_chat(L, span_warning("Your cloak whirrs back to life!"))
 		reset_cloak(L, state)

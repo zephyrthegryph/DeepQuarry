@@ -80,9 +80,9 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 	overmind.blob_type.on_emp(src, severity)
 
 /obj/structure/blob/proc/pulsed()
-	if(pulse_timestamp <= world.time)
+	if(!BEFORE(src, pulse_timestamp, CLOCK_WORLD))
 		consume_tile()
-		if(heal_timestamp <= world.time)
+		if(!BEFORE(src, heal_timestamp, CLOCK_WORLD))
 			adjust_integrity(health_regen)
 			heal_timestamp = world.time + 2 SECONDS
 		update_icon()
@@ -122,9 +122,9 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 
 		if(distance <= expand_range)
 			var/can_expand = TRUE
-			if(blobs_to_affect.len >= 120 && B.heal_timestamp > world.time)
+			if(blobs_to_affect.len >= 120 && BEFORE(src, B.heal_timestamp, CLOCK_WORLD))
 				can_expand = FALSE
-			if(!expanded && can_expand && B.pulse_timestamp <= world.time && prob(expand_probablity))
+			if(!expanded && can_expand && !BEFORE(src, B.pulse_timestamp, CLOCK_WORLD) && prob(expand_probablity))
 				var/obj/structure/blob/newB = B.expand(null, null, !expanded) //expansion falls off with range but is faster near the blob causing the expansion
 				if(newB)
 					if(expanded)

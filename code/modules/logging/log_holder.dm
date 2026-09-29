@@ -72,7 +72,7 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 	return data
 
 /datum/log_holder/tgui_data(mob/user)
-	if(!last_data_update || (world.time - last_data_update) > LOG_UPDATE_TIMEOUT)
+	if(!last_data_update || ELAPSED_SINCE(src, last_data_update, CLOCK_WORLD) > LOG_UPDATE_TIMEOUT)
 		cache_ui_data()
 	return data_cache || list()
 

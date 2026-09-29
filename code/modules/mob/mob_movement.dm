@@ -317,7 +317,7 @@
 		total_delay *= SQRT_2
 
 	//total_delay = DS2NEARESTTICK(total_delay) //Rounded to the next tick in equivalent ds
-	if(mob.last_move_time > (world.time - total_delay * 1.25))
+	if(ELAPSED_SINCE(src, mob.last_move_time, CLOCK_WORLD) < total_delay * 1.25)
 		mob.next_move = DS2NEARESTTICK(old_delay + total_delay)
 	else
 		mob.next_move = DS2NEARESTTICK(world.time + total_delay)

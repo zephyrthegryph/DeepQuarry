@@ -80,7 +80,7 @@
 			var/list/limb_wounds = E.get_wounds() // one walk per limb per cycle (audit D24)
 			self.number_wounds += length(limb_wounds)
 
-			if (!self.lying && !self?.buckled_to() && world.time - self.l_move_time < 15)
+			if (!self.lying && !self?.buckled_to() && ELAPSED_SINCE(src, self.l_move_time, CLOCK_WORLD) < 15)
 			//Moving around with fractured ribs won't do you any good
 				if (prob(10) && !self.stat && self.can_feel_pain() && self.factor(BF_ANALGESIA) < 50 && E.is_broken() && length(E.held_organs()))
 					self.custom_pain("Pain jolts through your broken [E.encased ? E.encased : E.name], staggering you!", 50)

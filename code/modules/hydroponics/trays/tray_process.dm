@@ -18,7 +18,7 @@
 	// Update values every cycle rather than every process() tick.
 	if(force_update)
 		force_update = 0
-	else if(world.time < (lastcycle + cycledelay))
+	else if(BEFORE(src, (lastcycle + cycledelay), CLOCK_WORLD))
 		if(!nearby_chemical_smoke && (!reagents || reagents.total_volume <= 0))
 			schedule_growth_wake()
 			return PROCESS_KILL

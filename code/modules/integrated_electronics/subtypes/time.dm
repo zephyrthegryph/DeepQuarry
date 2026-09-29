@@ -67,7 +67,7 @@
 /obj/item/integrated_circuit/time/ticker/proc/tick()
 	if(is_running && check_power())
 		om_after(src, delay, PROC_REF(tick))
-		if(world.time > next_fire)
+		if(ELAPSED_SINCE(src, next_fire, CLOCK_WORLD) > 0)
 			next_fire = world.time + delay
 			activate_pin(1)
 

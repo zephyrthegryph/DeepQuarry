@@ -105,7 +105,7 @@ DECLARE_REF(/mob/new_player, "poll_browser_dialog", OWNED, null)
 	if(respawn_at == -1)
 		return -1
 	// Timer expired
-	if(respawn_at <= world.time)
+	if(!BEFORE(src, respawn_at, CLOCK_WORLD))
 		GLOB.respawn_timers -= ckey
 		return 0
 	// Timer still going

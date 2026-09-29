@@ -424,7 +424,7 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 	var/datum/contract_definition/definition = SScontracts?.definitions[definition_id]
 	if(state != CONTRACT_OFFERED || (definition && !definition.prepare_accept(src, accepting_account, user, source)) || validate())
 		return FALSE
-	if(offer_expires_at && world.time >= offer_expires_at)
+	if(offer_expires_at && !BEFORE(src, offer_expires_at, CLOCK_WORLD))
 		expire_offer()
 		return FALSE
 	if(scope == CONTRACT_SCOPE_PERSONAL && accepting_account?.account_number != owner_account_number)
@@ -446,7 +446,7 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 	accepted_by_account = accepting_account?.account_number || contract_account_for_mob(user)?.account_number
 	if(deadline_duration > 0)
 		deadline = world.time + deadline_duration
-	if(deadline > world.time)
+	if(BEFORE(src, deadline, CLOCK_WORLD))
 		deadline_timer = om_after(src, deadline - world.time, PROC_REF(check_deadline))
 	SScontracts.set_contract_state(src, old_state, state)
 	subscribe_events()
@@ -473,12 +473,12 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 
 /datum/contract/proc/check_deadline()
 	deadline_timer = null
-	if(state == CONTRACT_ACTIVE && deadline && world.time >= deadline)
+	if(state == CONTRACT_ACTIVE && deadline && !BEFORE(src, deadline, CLOCK_WORLD))
 		if(deadline_grace_duration > 0)
 			enter_grace()
 		else
 			fail("The deadline expired.")
-	else if(state == CONTRACT_GRACE && grace_until && world.time >= grace_until)
+	else if(state == CONTRACT_GRACE && grace_until && !BEFORE(src, grace_until, CLOCK_WORLD))
 		fail("The evidence grace period expired.")
 
 /datum/contract/proc/enter_grace()
@@ -507,7 +507,7 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 /datum/contract/proc/receive_event(datum/contract_event/event)
 	if(!(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)))
 		return FALSE
-	if(state == CONTRACT_ACTIVE && deadline && world.time > deadline)
+	if(state == CONTRACT_ACTIVE && deadline && ELAPSED_SINCE(src, deadline, CLOCK_WORLD) > 0)
 		check_deadline()
 	if(!(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)))
 		return FALSE
