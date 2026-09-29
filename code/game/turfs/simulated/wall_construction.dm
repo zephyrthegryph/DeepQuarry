@@ -294,11 +294,15 @@
 	var/turf/simulated/wall/wall = target
 	return tool_delay(actor, held, max(5, (wall.max_integrity - wall.get_integrity()) / 5), tool)
 
+/// The wall repair's feedback (self, others). Shared; interaction code only reads them.
+GLOBAL_LIST_INIT(wall_repair_start_messages, list("You start repairing the damage to %TARGET%.", null))
+GLOBAL_LIST_INIT(wall_repair_messages, list("You finish repairing the damage to %TARGET%.", null))
+
 /datum/interaction/wall_repair/start_messages(mob/actor, atom/target, obj/item/held)
-	return list("You start repairing the damage to %TARGET%.", null)
+	return GLOB.wall_repair_start_messages
 
 /datum/interaction/wall_repair/messages(mob/actor, atom/target, obj/item/held)
-	return list("You finish repairing the damage to %TARGET%.", null)
+	return GLOB.wall_repair_messages
 
 /turf/simulated/wall/proc/finish_weld_repair(mob/actor, obj/item/held, datum/interaction/interaction)
 	touched_by_tool(held)
