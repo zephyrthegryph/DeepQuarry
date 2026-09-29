@@ -372,8 +372,8 @@ TYPE_TABLE(/obj/item/storage/belt/detective, hold_spec, list(HOLD_ONLY(list( \
 		/obj/item/flash, \
 		/obj/item/flame/lighter, \
 		/obj/item/reagent_containers/food/snacks/donut/, \
-/* /obj/item/ammo_magazine,	//Detectives don't get projectile weapons as standard here */ \
-/* /obj/item/gun/projectile/colt/detective,	//Detectives don't get projectile weapons as standard here */ \
+/* /obj/item/ammo_magazine, - Detectives don't get projectile weapons as standard here */ \
+/* /obj/item/gun/projectile/colt/detective, - Detectives don't get projectile weapons as standard here */ \
 		/obj/item/gun/energy/stunrevolver/detective, /* In keeping with the same vein as above, they can store their special one */ \
 		/obj/item/holowarrant, \
 		/obj/item/reagent_containers/food/drinks/flask, \
