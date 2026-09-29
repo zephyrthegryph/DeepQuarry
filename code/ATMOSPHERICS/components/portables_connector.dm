@@ -25,6 +25,8 @@
 	use_power = USE_POWER_OFF
 	level = 1
 
+DECLARE_PERIODIC_WHILE(/obj/machinery/atmospherics/portables_connector, MACHINE_PIPELINE, "on")
+
 /obj/machinery/atmospherics/portables_connector/fuel
 	icon_state = "map_connector-fuel"
 	pipe_state = "connector-fuel"
@@ -76,8 +78,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/portables_connector, TYPE_PR
 
 /obj/machinery/atmospherics/portables_connector/machine_step()
 	..()
-	if(!on)
-		return PROCESS_KILL
 	if(!connected_device)
 		set_on(0)
 		return PROCESS_KILL
@@ -195,7 +195,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/portables_connector, TYPE_PR
 		rel_clear(src, "node")
 	if(reference == connected_device || !connected_device)
 		set_on(0)
-		MACHINE_SLEEP(src)
 
 	update_underlays()
 

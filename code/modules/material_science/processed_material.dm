@@ -301,6 +301,10 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		own_set(src, "batch_state", processed.batch_template.copy_for_amount(amount))
 
 
+/// Hot stock glowing and cooling towards ambient (update_thermal_processing(), periodic_step()).
+OM_FIELD(/obj/item/stack/material/processed_alloy, hot, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, "hot")
+
 /obj/item/stack/material/processed_alloy/proc/physical_batch() as /datum/material_batch
 	if(batch_state)
 		return batch_state
@@ -312,15 +316,16 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	var/datum/material_batch/batch = physical_batch()
 	if(batch?.temperature > T20C + 40)
 		set_light(2, 1, "#ff7b22")
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_hot(TRUE)
 	else
 		set_light(0)
-		om_task_periodic_stop(src)
+		set_hot(FALSE)
 
 /obj/item/stack/material/processed_alloy/periodic_step()
 	var/datum/material_batch/batch = physical_batch()
 	if(!batch)
-		return PROCESS_KILL
+		set_hot(FALSE)
+		return
 	var/ambient_temperature = T20C
 	var/turf/open/turf = get_turf(src)
 	if(istype(turf) && turf.air)
@@ -329,7 +334,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	if(abs(batch.temperature - ambient_temperature) < 5)
 		batch.temperature = ambient_temperature
 		set_light(0)
-		return PROCESS_KILL
+		set_hot(FALSE)
 	return
 
 /obj/item/stack/material/processed_alloy/split(tamount)

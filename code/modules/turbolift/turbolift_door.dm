@@ -37,7 +37,7 @@
 					LM.gib()
 			else // the mob is too big to just move, so we need to give up what we're doing
 				audible_message("\The [src]'s motors grind as they quickly reverse direction, unable to safely close.", runemessage = "WRRRRR")
-				cur_command = null // the door will just keep trying otherwise
+				set_cur_command(null) // the door will just keep trying otherwise
 				return 0
 	return ..()
 

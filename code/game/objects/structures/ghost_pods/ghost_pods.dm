@@ -39,8 +39,7 @@
 		create_occupant(D)
 		return
 
-	if(delay_to_try_again)
-		om_after(src, delay_to_try_again, PROC_REF(trigger))
+	// No volunteer: an automatic pod's auto_trigger() repeat tries again after delay_to_try_again.
 	om_unhook(Q, /datum/om/event/ghost_query_complete, src)
 	own_clear(src, "Q", OWN_DELETE) //get rid of the query
 
@@ -86,14 +85,23 @@
 /obj/structure/ghost_pod/automatic
 	delay_to_self_open = 10 MINUTES
 	delay_to_try_again = 20 MINUTES
+	/// How long until auto_trigger() next runs: delay_to_self_open first, then delay_to_try_again.
+	var/next_auto_delay = 0
 
-DECLARE_START_TIMER(/obj/structure/ghost_pod/automatic, "delay_to_self_open", PROC_REF(trigger))
+DECLARE_REPEAT(/obj/structure/ghost_pod/automatic, "auto_delay", auto_trigger, null)
 
-/obj/structure/ghost_pod/automatic/trigger(mob/user)
-	. = ..()
-	if(. == FALSE) // If we failed to get a volunteer, try again later if allowed to.
-		if(delay_to_try_again)
-			om_after(src, delay_to_try_again, PROC_REF(trigger))
+/// The repeat's delay: delay_to_self_open until the first try, then delay_to_try_again.
+/obj/structure/ghost_pod/automatic/proc/auto_delay()
+	return next_auto_delay || delay_to_self_open
+
+/// Opens itself on a timer; if that fails to get a volunteer, tries again later if allowed to.
+/obj/structure/ghost_pod/automatic/proc/auto_trigger()
+	if(used)
+		return REPEAT_STOP
+	trigger() // FALSE while a query is still out; the next run tries again
+	if(!delay_to_try_again)
+		return REPEAT_STOP
+	next_auto_delay = delay_to_try_again
 
 // This type is triggered by a ghost clicking on it, as opposed to a living player.  A ghost query type isn't needed.
 /obj/structure/ghost_pod/ghost_activated

@@ -400,7 +400,7 @@ MAP_RESOLVER_VARS(/obj/random, "drop_get_turf")
 			to_chat(L, span_danger("You cut your hand on something in the trash!"))
 			L.injure(INJURY_CUT, 2, pick(BP_L_HAND, BP_R_HAND), source)
 			var/datum/affliction/contagion/engineered/random/random_disease = new /datum/affliction/contagion/engineered/random()
-			random_disease.spread_flags |= DISEASE_SPREAD_NON_CONTAGIOUS
+			random_disease.set_spread_flags(random_disease.spread_flags | DISEASE_SPREAD_NON_CONTAGIOUS)
 			L.force_contagion(random_disease)
 	else if(decl.uncommon && prob(decl.uncommon_chance))
 		tier = decl.uncommon

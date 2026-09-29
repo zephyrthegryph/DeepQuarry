@@ -21,8 +21,6 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 	var/points_per_slip = 2
 	var/points_per_money = 0.02 // Legacy export values convert at 1 point = 50 Thalers.
 	EXPIRY_DECLARE(next_payroll)
-	/// om_after() timer for the next payroll_cycle(), or 0 until the first service step arms it.
-	var/tmp/payroll_timer = 0
 	/// NanoTrasen's default contribution toward the station's projected gross payroll.
 	var/nt_salary_support = 0.75
 	/// Command-selected rule for dividing the projected station payroll pool.
@@ -56,8 +54,19 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 	var/movetime = 1200
 	var/datum/shuttle/autodock/ferry/supply/shuttle
 
+/// The 15-minute payroll cycle runs once the first service step has started it.
+OM_FIELD(/datum/world_service/supply, payroll_running, FALSE, CHANGE_DATUM_A)
+DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "payroll_running")
+
+/// Delay until the next payroll_cycle(): whatever is left of next_payroll.
+/datum/world_service/supply/proc/payroll_delay()
+	return LEFT_UNTIL(src, next_payroll, CLOCK_WORLD)
+
 /datum/world_service/supply/initialize()
 	initialized = TRUE
+	// Starts the declarations (DECLARE_REPEAT above). Here rather than New(): the service is a
+	// GLOBAL_DATUM_INIT, created before the object model exists.
+	lifecycle_decls_init(src)
 	reset_shift_economy_tracking()
 	// build master supply list
 	for(var/typepath in subtypesof(/datum/supply_pack))
@@ -86,15 +95,13 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 
 /datum/world_service/supply/service_step(resumed)
 	process_cargo_market()
-	if(!payroll_timer)
-		payroll_timer = om_after(src, LEFT_UNTIL(src, next_payroll, CLOCK_WORLD), PROC_REF(payroll_cycle))
+	set_payroll_running(TRUE)
 	return TRUE
 
-/// om_after() callback every 15 minutes: the department budget cycle and payroll.
-/// next_payroll is only the displayed time of the next cycle.
+/// Every 15 minutes while payroll_running (DECLARE_REPEAT): the department budget cycle and
+/// payroll. next_payroll is the time of the next cycle; payroll_delay() re-arms from it.
 /datum/world_service/supply/proc/payroll_cycle()
 	EXPIRY_SET(src, next_payroll, 15 MINUTES, CLOCK_WORLD)
-	payroll_timer = om_after(src, 15 MINUTES, PROC_REF(payroll_cycle))
 	var/completed_service_period = service_accounting_period
 	var/list/funded_allocations = run_department_budget_cycle()
 	run_department_payroll()

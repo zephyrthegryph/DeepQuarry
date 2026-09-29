@@ -12,6 +12,14 @@
 	var/datum/reagents/reagents = null
 	var/makes_gurgles = TRUE
 
+/// The hose plugged into this socket. It pumps every 2 s while one is (DECLARE_PERIODIC_WHILE).
+OM_FIELD_VIEW_OF(/datum/hose_connector, my_hose, CHANGE_DATUM_A)
+DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
+
+/datum/hose_connector/New()
+	..()
+	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
+
 /// Carrier's hose sockets (/datum/hose_connector), owned: deleted with the carrier.
 /atom/movable/var/list/hose_connectors
 
@@ -53,10 +61,6 @@
 	om_hook(carrier, /datum/om/event/moved, src, PROC_REF(move_react))
 	om_hook(carrier, /datum/om/event/hose_forcepump, src, PROC_REF(on_force_pump))
 	om_grant(carrier, GRANT_VERB, /atom/proc/disconnect_hose, src)
-
-	// A disconnected, empty connector has no time-based work. connect() wakes it.
-	if(my_hose || reagents.total_volume)
-		om_task_periodic(src, PERIODIC_SLOW)
 	return TRUE
 
 // A hose is shared by its two connectors, so neither owns it: it lives while both
@@ -89,12 +93,6 @@
 	return carrier.reagents
 
 /datum/hose_connector/periodic_step()
-	// Return reagents to source if no hose, lossy to avoid exploits
-	if(!my_hose)
-		if(reagents.total_volume)
-			reagents.trans_to_holder(connected_reagents(), reagents.maximum_volume)
-			reagents.clear_reagents() // Wipe it to avoid exploits
-		return PROCESS_KILL
 	var/datum/reagents/connected_to = connected_reagents()
 	if(!connected_to) // Emergency. the vorebelly was deleted or something. Lets just hard lock that out from maintaining state by disconnecting the tube.
 		reagents.clear_reagents()
@@ -138,8 +136,6 @@
 
 /datum/hose_connector/proc/connect(datum/hose/H = null)
 	rel_set(src, "my_hose", H)
-	if(my_hose)
-		om_task_periodic(src, PERIODIC_SLOW)
 
 /// Connects a hose to `target`, using `distancetonode` of `tubing` when done. An inflation end
 /// is a timed action first (inflation_setup()); either way setup_hoses_finish() connects.
@@ -192,10 +188,10 @@
 
 /datum/hose_connector/proc/remove_hose()
 	rel_clear(src, "my_hose")
-	// Flush the connector immediately, then leave the object subsystem. There is
-	// no reason to wait up to one SSobj period merely to discover disconnection.
-	periodic_step()
-	om_task_periodic_stop(src)
+	// Return reagents to source now that there is no hose, lossy to avoid exploits.
+	if(reagents.total_volume)
+		reagents.trans_to_holder(connected_reagents(), reagents.maximum_volume)
+		reagents.clear_reagents() // Wipe it to avoid exploits
 
 /datum/hose_connector/proc/on_examine(datum/source, datum/om/event/examine/event)
 	EVENT_HANDLER

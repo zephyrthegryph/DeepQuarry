@@ -117,6 +117,13 @@ UI_ACT_FORWARD(/obj/machinery/sleep_console, ui_forward_to_sleeper)
 	active_power_usage = 200 //builtin health analyzer, dialysis machine, injectors.
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/sleeper, "beaker", /obj/item/reagent_containers/glass/beaker/large)
+OM_DERIVE_FIELD(/obj/machinery/sleeper, sleeper_occupied, list(CHANGE_RELATION_ADDED, CHANGE_RELATION_REMOVED))
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/sleeper, MACHINE_PIPELINE, list("operable", "sleeper_occupied"))
+
+/// Derived field: the sleeper holds someone. Entering or leaving the occupant slot links or unlinks
+/// its slot relation, which raises CHANGE_RELATION_ADDED/REMOVED on the sleeper (om_link/om_unlink).
+/obj/machinery/sleeper/proc/sleeper_occupied()
+	return slot_item(OCCUPANT_SLOT_SLEEPER) ? TRUE : FALSE
 
 /obj/machinery/sleeper/Initialize(mapload)
 	. = ..()
@@ -374,10 +381,6 @@ UI_ACT_PROC(/obj/machinery/sleeper, ui_act_auto_eject_dead_off)
 
 /obj/machinery/sleeper/machine_step()
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
-	if(!operable())
-		return PROCESS_KILL
-	if(!occupant)
-		return PROCESS_KILL
 	if(occupant)
 		if(auto_eject_dead && occupant.stat == DEAD)
 			play_sfx(loc, SFX_MACHINES_BUZZ_SIGH, 0.8)
@@ -538,7 +541,6 @@ DAMAGE_REACTION(/obj/machinery/sleeper, DAMAGE_EMP, PROC_REF(sleeper_emp))
 		return
 	occupant = M
 	set_use_power(USE_POWER_ACTIVE)
-	MACHINE_WAKE(src)
 	occupant.cozyloop.start() // Cozy Music
 	update_icon()
 
@@ -558,13 +560,6 @@ DAMAGE_REACTION(/obj/machinery/sleeper, DAMAGE_EMP, PROC_REF(sleeper_emp))
 	set_use_power(USE_POWER_IDLE)
 	toggle_filter()
 	toggle_pump()
-	MACHINE_SLEEP(src)
-
-/obj/machinery/sleeper/power_change()
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
-	. = ..()
-	if(. && occupant)
-		MACHINE_WAKE(src)
 
 /obj/machinery/sleeper/proc/remove_beaker()
 	if(beaker)

@@ -19,7 +19,6 @@
 	var/datum/transhuman/body_record/loaded_BR
 	var/obj/item/disk/body_record/diskette = null // Traitgenes - Storing the entire body record
 	var/loading = 0 // Nice loading text
-	var/autoprocess = 0
 	var/obj/machinery/clonepod/selected_pod
 	// 0: Standard body scan
 	// 1: The "Best" scan available
@@ -35,6 +34,8 @@ REL_PAIR_LIST(/obj/machinery/computer/cloning, pods, connected)
 	set_scan_temp("Scanner ready.", "good")
 	updatemodules()
 
+OM_FIELD(/obj/machinery/computer/cloning, autoprocess, 0, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/computer/cloning, MACHINE_PIPELINE, "autoprocess")
 
 // its linked cloners are released.
 /obj/machinery/computer/cloning/on_destroy(force)
@@ -42,8 +43,6 @@ REL_PAIR_LIST(/obj/machinery/computer/cloning, pods, connected)
 	..()
 
 /obj/machinery/computer/cloning/machine_step()
-	if(!autoprocess)
-		return PROCESS_KILL
 	if(!scanner() || !length(pods) || has_stat(NOPOWER))
 		return
 
@@ -238,11 +237,7 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_scan)
 UI_ACT(/obj/machinery/computer/cloning, "autoprocess", ui_act_autoprocess, UI_ARG_NUM("on"))
 UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_autoprocess)
 	. = TRUE
-	autoprocess = params["on"] > 0
-	if(autoprocess)
-		MACHINE_WAKE(src)
-	else
-		MACHINE_SLEEP(src)
+	set_autoprocess(params["on"] > 0)
 	add_fingerprint(ui.user)
 
 UI_ACT(/obj/machinery/computer/cloning, "lock", ui_act_lock)

@@ -93,7 +93,15 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 
 	setup_tgui_camera()
 
-DECLARE_PERIODIC(/obj/item/communicator, PERIODIC_SLOW)
+/// The open connections (communicating is a relation list, voice_mobs an owned list): fields, so the
+/// accessors and the framework's auto-clears (a partner or voice destroyed) re-evaluate the watchdog.
+OM_FIELD_VIEW_OF(/obj/item/communicator, communicating, CHANGE_EXPLICIT)
+OM_FIELD_VIEW_OF(/obj/item/communicator, voice_mobs, CHANGE_EXPLICIT)
+/// The connection watchdog runs while a connection is open.
+OM_DERIVE_FIELD(/obj/item/communicator, has_connections, list("communicating", "voice_mobs"))
+/obj/item/communicator/proc/has_connections()
+	return length(voice_mobs) || length(communicating)
+DECLARE_PERIODIC_WHILE(/obj/item/communicator, PERIODIC_SLOW, "has_connections")
 //This is a pretty terrible way of doing this.
 DECLARE_START_TIMER(/obj/item/communicator, 5 SECONDS, PROC_REF(register_to_holder))
 
@@ -284,9 +292,7 @@ DAMAGE_REACTION(/obj/item/communicator, DAMAGE_EMP, PROC_REF(communicator_emp))
 // Parameters: None
 // Description: Ticks the update_ticks variable, and checks to see if it needs to disconnect communicators every five ticks..
 /obj/item/communicator/periodic_step()
-	// The watchdog only guards open connections; with none it sleeps until one opens.
-	if(!length(voice_mobs) && !length(communicating))
-		return PROCESS_KILL
+	// The watchdog only guards open connections (declared on has_connections).
 	update_ticks++
 	// Connection maintenance is the five-tick watchdog, not four of every five
 	// ticks. State-changing exonet paths update immediately.

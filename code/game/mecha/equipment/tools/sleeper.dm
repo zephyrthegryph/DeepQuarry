@@ -12,6 +12,10 @@
 	salvageable = 0
 	allow_duplicate = TRUE
 
+/// Life support is engaged on a loaded occupant.
+OM_FIELD(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, sustaining, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, PERIODIC_SECOND, "sustaining")
+
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
 /datum/om/relation/slot/occupant/mecha_sleeper
 	holder = /obj/item/mecha_parts/mecha_equipment/tool/sleeper
@@ -51,7 +55,7 @@
 			return
 		occupant.set_stasis(/datum/body_effect/stasis/moderate, src)
 		set_ready_state(FALSE)
-		om_task_periodic(src, PERIODIC_SECOND)
+		set_sustaining(TRUE)
 		occupant_message(span_notice("[target] successfully loaded into [src]. Life support functions engaged."))
 		chassis.visible_message(span_infoplain("[chassis] loads [target] into [src]."))
 		src.mecha_log_message("[target] loaded. Life support functions engaged.")
@@ -65,7 +69,7 @@
 	src.mecha_log_message("[occupant] ejected. Life support functions disabled.")
 	occupant.set_stasis(null, src)
 	slot_remove(occupant, get_turf(src))
-	om_task_periodic_stop(src)
+	set_sustaining(FALSE)
 	set_ready_state(TRUE)
 	return
 
@@ -74,7 +78,6 @@
 	if(occupant)
 		occupant_message(span_infoplain("Unable to detach [src] - equipment occupied."))
 		return
-	om_task_periodic_stop(src)
 	return ..()
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/get_equip_info()

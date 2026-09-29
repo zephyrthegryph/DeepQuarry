@@ -62,7 +62,6 @@
 	var/datum/data/record/securityActive1		// Could probably just combine all these into one
 	var/datum/data/record/securityActive2
 
-	var/obj/machinery/door/hackdoor		// The airlock being hacked
 	var/hackprogress = 0				// Possible values: 0 - 1000, >= 1000 means the hack is complete and will be reset upon next check
 	var/hack_aborted = 0
 
@@ -190,6 +189,9 @@ DECLARE_VERB_HIDE(/mob/living/silicon/pai, /mob/verb/toggle_gun_mode) // no gun 
 
 // `card` is the card we live in and `radio` is the card's radio: both relations (the card owns
 // the radio). The cable is ours (implicit OWN, deleted with us); records belong to the datacore.
+/// The airlock being hacked. A relation view: the brute-force runs every second while it is set.
+OM_FIELD_VIEW(/mob/living/silicon/pai, obj/machinery/door, hackdoor, CHANGE_MOB_CONDITIONS)
+DECLARE_REPEAT(/mob/living/silicon/pai, 1 SECOND, hack_tick, "hackdoor")
 
 // releases its prey and retracts its cable.
 /mob/living/silicon/pai/on_destroy(force)

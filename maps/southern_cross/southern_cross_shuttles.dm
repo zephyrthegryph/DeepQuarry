@@ -7,7 +7,7 @@
 	landmark_offsite_tag = "supply_offsite"
 	landmark_station_tag = "supply_station"
 	docking_controller_tag = "supply_shuttle"
-	flags = SHUTTLE_FLAGS_PROCESS|SHUTTLE_FLAGS_SUPPLY
+	shuttle_flags = SHUTTLE_FLAGS_PROCESS|SHUTTLE_FLAGS_SUPPLY
 
 /obj/effect/shuttle_landmark/southern_cross/supply_offsite
 	name = "Centcom Supply Depot"

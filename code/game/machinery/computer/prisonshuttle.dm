@@ -22,6 +22,10 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 	var/allowedtocall = 0
 	var/prison_break = 0
 
+/// The shuttle this console sent is in flight: prison_process() counts it down every half second.
+OM_FIELD(/obj/machinery/computer/prison_shuttle, in_flight, FALSE, CHANGE_MACHINE_SETTINGS)
+DECLARE_REPEAT(/obj/machinery/computer/prison_shuttle, 0.5 SECONDS, prison_process, "in_flight")
+
 // TGUI migration. Replaces the browse() + Topic dispatch
 // UI with PrisonShuttleConsole.tsx. Drops the `temp` "Shuttle sent"
 // notification state — the to_chat() notice already covers that flow.
@@ -80,7 +84,7 @@ UI_ACT_PROC(/obj/machinery/computer/prison_shuttle, ui_act_send_to_dock)
 	to_chat(usr, span_notice("The prison shuttle has been called and will arrive in [(PRISON_MOVETIME/10)] seconds."))
 	GLOB.prison_shuttle_moving_to_prison = 1
 	GLOB.prison_shuttle_time = world.timeofday + PRISON_MOVETIME
-	prison_process()
+	set_in_flight(TRUE)
 	add_fingerprint(usr)
 	return TRUE
 
@@ -95,7 +99,7 @@ UI_ACT_PROC(/obj/machinery/computer/prison_shuttle, ui_act_send_to_station)
 	to_chat(usr, span_notice("The prison shuttle has been called and will arrive in [(PRISON_MOVETIME/10)] seconds."))
 	GLOB.prison_shuttle_moving_to_station = 1
 	GLOB.prison_shuttle_time = world.timeofday + PRISON_MOVETIME
-	prison_process()
+	set_in_flight(TRUE)
 	add_fingerprint(usr)
 	return TRUE
 
@@ -115,7 +119,7 @@ UI_ACT_PROC(/obj/machinery/computer/prison_shuttle, ui_act_send_to_station)
 
 			if (!GLOB.prison_shuttle_moving_to_prison || !GLOB.prison_shuttle_moving_to_station)
 				GLOB.prison_shuttle_time = world.timeofday + PRISON_MOVETIME
-			prison_process()
+			set_in_flight(TRUE)
 			prison_break = 1
 		if(1)
 			prison_break = 0
@@ -140,8 +144,8 @@ UI_ACT_PROC(/obj/machinery/computer/prison_shuttle, ui_act_send_to_station)
 		if(ticksleft > 1e5)
 			GLOB.prison_shuttle_time = world.timeofday + 10	// midnight rollover
 		GLOB.prison_shuttle_timeleft = (ticksleft / 10)
-		om_after(src, 5, PROC_REF(prison_process))
 		return
+	set_in_flight(FALSE)
 	GLOB.prison_shuttle_moving_to_station = 0
 	GLOB.prison_shuttle_moving_to_prison = 0
 

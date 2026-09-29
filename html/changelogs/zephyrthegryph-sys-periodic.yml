@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Periodic work (lights, machines, timers, loops) now starts and stops from the state it depends on instead of hand-written start/stop calls."
+  - balance: "Service and event borg lighters now start unlit."
+  - bugfix: "Idle, intact gas tanks lying about no longer tick; tanks are watched while held, worn, damaged or leaking."

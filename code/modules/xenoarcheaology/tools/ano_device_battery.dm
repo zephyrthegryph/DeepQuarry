@@ -49,7 +49,6 @@
 	name = "Anomaly power utilizer"
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "anodev"
-	var/activated = 0
 	var/duration = 0
 	var/interval = 0
 	EXPIRY_DECLARE(time_end)
@@ -65,6 +64,10 @@
 /obj/item/anodevice/equipped(mob/user, slot)
 	rel_set(src, "last_user_touched", user)
 	..()
+
+OM_FIELD(/obj/item/anodevice, activated, FALSE, CHANGE_EXPLICIT)
+/// Runs its battery effect while activated.
+DECLARE_PERIODIC_WHILE(/obj/item/anodevice, PERIODIC_SLOW, "activated")
 
 DECLARE_INTERACTIONS(/obj/item/anodevice, \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
@@ -134,8 +137,7 @@ UI_ACT_PROC(/obj/item/anodevice, ui_act_changeinterval)
 UI_ACT(/obj/item/anodevice, "startup", ui_act_startup)
 UI_ACT_PROC(/obj/item/anodevice, ui_act_startup)
 	if(inserted_battery() && inserted_battery().battery_effect && (inserted_battery().stored_charge > 0))
-		activated = TRUE
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_activated(TRUE)
 		visible_message(span_blue("[icon2html(src,viewers(src))] [src] whirrs."), span_blue("[icon2html(src,viewers(src))]You hear something whirr."))
 		if(!inserted_battery().battery_effect.activated)
 			inserted_battery().battery_effect.ToggleActivate(1)
@@ -147,7 +149,7 @@ UI_ACT_PROC(/obj/item/anodevice, ui_act_startup)
 
 UI_ACT(/obj/item/anodevice, "shutdown", ui_act_shutdown)
 UI_ACT_PROC(/obj/item/anodevice, ui_act_shutdown)
-	activated = FALSE
+	set_activated(FALSE)
 	return TRUE
 
 UI_ACT(/obj/item/anodevice, "ejectbattery", ui_act_ejectbattery)
@@ -159,10 +161,8 @@ UI_ACT_PROC(/obj/item/anodevice, ui_act_ejectbattery)
 	shutdown_emission()
 	return TRUE
 
-/// Runs its battery effect every 2 s while activated (its "startup" starts it); off, it sleeps.
+/// Runs its battery effect every 2 s; declared: while activated (its "startup" sets it).
 /obj/item/anodevice/periodic_step()
-	if(!activated)
-		return PROCESS_KILL
 	if(activated)
 		if(inserted_battery() && inserted_battery().battery_effect && (inserted_battery().stored_charge > 0) )
 			//make sure the effect is active
@@ -242,7 +242,7 @@ UI_ACT_PROC(/obj/item/anodevice, ui_act_ejectbattery)
 		om_cancel_timer(src, emission_timer)
 		emission_timer = 0
 	if(activated)
-		activated = 0
+		set_activated(0)
 		if(inserted_battery()?.battery_effect?.activated)
 			inserted_battery().battery_effect.ToggleActivate(1)
 

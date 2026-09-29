@@ -263,7 +263,7 @@
 	TEST_ASSERT(H.check_vital_organs(), "the vital organ check agrees")
 
 	dq_test_set_organ_damage(brain, 0)
-	brain.status |= ORGAN_DEAD
+	brain.set_status(brain.status | ORGAN_DEAD)
 	TEST_ASSERT(brain.is_brain_dead(), "a dead brain organ is brain dead at any damage")
 	TEST_ASSERT_NOTNULL(paddles.can_revive(H), "the defibrillator refuses a dead brain organ")
 

@@ -19,7 +19,6 @@
 
 	circuit = /obj/item/circuitboard/fusion_core
 
-	var/obj/effect/fusion_em_field/owned_field
 	var/field_strength = 1//0.01
 	var/target_field_strength = 1
 	var/id_tag
@@ -35,6 +34,10 @@
 REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 
 DECLARE_REAGENTS(/obj/machinery/power/fusion_core, 10000, null)
+
+/// Its running field (Startup()/Shutdown()); the core ticks it while it has one.
+OM_FIELD_VIEW(/obj/machinery/power/fusion_core, obj/effect/fusion_em_field, owned_field, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/power/fusion_core, MACHINE_PIPELINE, "owned_field")
 
 /obj/machinery/power/fusion_core/Initialize(mapload)
 	. = ..()
@@ -53,21 +56,21 @@ OWN(/obj/machinery/power/fusion_core, material_sample, OWN_SPILL)
 		return
 	. = 1
 
-/// Runs its field while it has one; shut down, it sleeps until Startup().
+/// Runs its field while it has one; shut down, it sleeps until Startup(). The field is owned: when
+/// it is destroyed the ownership framework clears owned_field and raises its channel, so the
+/// declaration stops the work with no guard here.
 /obj/machinery/power/fusion_core/machine_step()
-	if((has_stat(BROKEN)) || !power_region || !owned_field)
-		Shutdown()
-		return PROCESS_KILL
+	if((has_stat(BROKEN)) || !power_region)
+		Shutdown() // clears owned_field through own_clear(): the declaration stops the work
+		return
 
 	OM_EMIT(src, /datum/om/event/hose_forcepump)
 
-	if(owned_field)
+	set_strength(target_field_strength)
+	process_material_sample()
 
-		set_strength(target_field_strength)
-		process_material_sample()
-
-		if(!QDELETED(owned_field))
-			om_after(owned_field, 1, TYPE_PROC_REF(/obj/effect/fusion_em_field, core_tick))
+	if(!QDELETED(owned_field))
+		om_after(owned_field, 1, TYPE_PROC_REF(/obj/effect/fusion_em_field, core_tick))
 
 TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC_NUM("str"))
 
@@ -86,7 +89,6 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 		return
 	own_set(src, "owned_field", new /obj/effect/fusion_em_field(loc, src))
 	owned_field.ChangeFieldStrength(field_strength)
-	MACHINE_WAKE(src)
 	icon_state = "core1"
 	set_use_power(USE_POWER_ACTIVE)
 	. = 1

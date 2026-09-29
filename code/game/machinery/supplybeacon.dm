@@ -39,8 +39,12 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 	/// om_after() timer that sends the drop once the beacon has stayed powered for drop_delay, or 0.
 	var/tmp/drop_timer = 0
 	var/drop_delay = 450
-	var/expended
 	var/drop_type
+
+/// Spent: the drop was sent, the beacon never works again.
+OM_FIELD(/obj/machinery/power/supply_beacon, expended, FALSE, CHANGE_MACHINE_SETTINGS)
+/// Draws power (and arms the drop) while switched on and not yet spent.
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/supply_beacon, MACHINE_PIPELINE, list("use_power", "!expended"))
 
 /obj/machinery/power/supply_beacon/Initialize(mapload)
 	. = ..()
@@ -101,7 +105,7 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 
 /obj/machinery/power/supply_beacon/proc/deactivate(mob/user, permanent)
 	if(permanent)
-		expended = 1
+		set_expended(TRUE)
 		icon_state = "beacon_depleted"
 	else
 		icon_state = "beacon"
@@ -119,10 +123,6 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 	..()
 
 /obj/machinery/power/supply_beacon/machine_step()
-	if(expended)
-		return PROCESS_KILL
-	if(!use_power)
-		return
 	if(draw_power(500) < 500)
 		deactivate()
 		return

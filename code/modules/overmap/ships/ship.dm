@@ -83,6 +83,17 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 /obj/effect/overmap/visitable/ship/proc/is_still()
 	return !MOVING(speed[1]) && !MOVING(speed[2])
 
+/// Mirror of "not still": speed is a list mutated in place, so adjust_speed() (its only writer)
+/// publishes the start/stop transition through this field.
+OM_FIELD_TYPED(/obj/effect/overmap/visitable/ship, tmp, under_way, FALSE, CHANGE_EXPLICIT)
+
+/// Under way (not still).
+OM_DERIVE_FIELD(/obj/effect/overmap/visitable/ship, is_moving, list("under_way"))
+DECLARE_PERIODIC_WHILE(/obj/effect/overmap/visitable/ship, PERIODIC_SECOND, "is_moving")
+
+/obj/effect/overmap/visitable/ship/proc/is_moving()
+	return under_way
+
 /obj/effect/overmap/visitable/ship/get_scan_data(mob/user)
 	. = ..()
 
@@ -143,9 +154,9 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 	// If nothing changed
 	if(still == old_still)
 		return
+	set_under_way(!still) // is_moving() changed: its declaration starts or stops the work
 	// If it is now still, stopped moving
-	else if(still)
-		om_task_periodic_stop(src)
+	if(still)
 		for(var/zz in map_z)
 			GLOB.starmover_service.toggle_move_stars(zz)
 		if(!COOLDOWN_FINISHED(src, sound_cooldown_until))
@@ -157,7 +168,6 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 
 	// If it started moving
 	else
-		om_task_periodic(src, PERIODIC_SECOND)
 		glide_size = WORLD_ICON_SIZE/max(DS2TICKS(1 SECOND), 1) //Down to whatever decimal
 		for(var/zz in map_z)
 			GLOB.starmover_service.toggle_move_stars(zz, fore_dir)
@@ -189,7 +199,6 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 
 /obj/effect/overmap/visitable/ship/periodic_step(wait)
 	adjust_speed(-speed[1], -speed[2])
-	return PROCESS_KILL
 
 // If we get moved, update our internal tracking to account for it
 /obj/effect/overmap/visitable/ship/Moved(atom/old_loc, direction, forced = FALSE)

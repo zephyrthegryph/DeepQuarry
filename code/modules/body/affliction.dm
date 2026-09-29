@@ -19,10 +19,11 @@
 //   update_symptoms()
 //   fire_progression_triggers()
 // Subtypes customise ONLY receive_tagged_treatment() and progress().
+/// Owning body. Null while detached (organ in a tray) or unattached.
+OM_FIELD_VIEW(/datum/affliction, datum/body, body, CHANGE_DATUM_A)
+
 /datum/affliction
 	var/name = "affliction"
-	/// Owning body. Null while detached (organ in a tray) or unattached.
-	var/datum/body/body
 	/// Convenience: body.owner. Null when detached.
 	var/mob/living/owner
 	/// The part this affliction sits on: an organ for humanoids, a robot

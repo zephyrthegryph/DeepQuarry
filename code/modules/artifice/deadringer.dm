@@ -5,12 +5,21 @@
 	icon_state = "deadringer"
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_ID | SLOT_BELT | SLOT_TIE
-	var/activated = 0
-	var/timer = 0
 	var/bruteloss_prev = 999999
 	var/fireloss_prev = 999999
 	var/tmp/mob/living/carbon/human/corpse
 	var/tmp/mob/living/carbon/human/watchowner
+
+/// Armed: watching the holder for injury.
+OM_FIELD(/obj/item/deadringer, activated, FALSE, CHANGE_EXPLICIT)
+/// Cooldown steps left after triggering.
+OM_FIELD(/obj/item/deadringer, timer, 0, CHANGE_EXPLICIT)
+/// Armed or cooling down: periodic_step() runs (DECLARE_PERIODIC_WHILE).
+OM_DERIVE_FIELD(/obj/item/deadringer, ringer_busy, list("activated", "timer"))
+DECLARE_PERIODIC_WHILE(/obj/item/deadringer, PERIODIC_SLOW, "ringer_busy")
+
+/obj/item/deadringer/proc/ringer_busy()
+	return activated || timer
 
 // an invisible wearer is revealed.
 /obj/item/deadringer/on_destroy(force) //just in case some smartass tries to stay invisible by destroying the watch
@@ -41,15 +50,14 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 			to_chat(H, span_blue("You press a small button on [src]'s side. It starts to hum quietly."))
 			bruteloss_prev = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 			fireloss_prev = H.injury_load(INJURY_CATEGORY_THERMAL)
-			activated = 1
-			om_task_periodic(src, PERIODIC_SLOW)
+			set_activated(TRUE)
 			return TRUE
 		else
 			to_chat(H, span_blue("You press a small button on [src]'s side. It buzzes a little."))
 			return TRUE
 	if(activated)
 		to_chat(H, span_blue("You press a small button on [src]'s side. It stops humming."))
-		activated = 0
+		set_activated(FALSE)
 		return TRUE
 	return TRUE
 
@@ -155,8 +163,6 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 // === merged from deadringer_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /// Watches its holder while armed and counts its cooldown; idle, it sleeps.
 /obj/item/deadringer/periodic_step()
-	if(!activated && !timer)
-		return PROCESS_KILL
 	if(activated)
 		if (ismob(src.loc))
 			var/mob/living/carbon/human/H = src.loc
@@ -165,16 +171,16 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 				return
 			if(H.injury_load(INJURY_CATEGORY_PHYSICAL) > bruteloss_prev || H.injury_load(INJURY_CATEGORY_THERMAL) > fireloss_prev)
 				deathprevent()
-				activated = 0
+				set_activated(FALSE)
 				if(HAS_SYNTHETIC_BIOLOGY(watchowner()))
 					to_chat(watchowner(), span_blue("You fade into nothingness! [src]'s screen blinks, being unable to copy your synthetic body!"))
 				else
 					to_chat(watchowner(), span_blue("You fade into nothingness, leaving behind a fake body!"))
 				icon_state = "deadringer_cd"
-				timer = 5
+				set_timer(5)
 				return
 	if(timer > 0)
-		timer--
+		set_timer(timer - 1)
 	if(timer == 2)
 		reveal()
 		if(corpse())

@@ -8,7 +8,6 @@
 	anchored = TRUE
 	use_power = USE_POWER_OFF
 
-	var/in_transit = 0
 
 	var/xc = list(137, 209, 163, 110, 95, 60, 129, 201) // List of x values on the map to go to.
 	var/yc = list(134, 99, 169, 120, 96, 122, 189, 219) // List of y values on the map to go to.
@@ -16,25 +15,27 @@
 	var/limit_x = 3
 	var/limit_y = 3
 
+/// TRUE from the occupant's confirmation until the pod launches.
+OM_FIELD(/obj/machinery/transportpod, in_transit, FALSE, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/transportpod, MACHINE_PIPELINE, "in_transit")
+
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
 /datum/om/relation/slot/occupant/transportpod
 	holder = /obj/machinery/transportpod
 	slot_id = OCCUPANT_SLOT_TRANSPORTPOD
 	name = "transport pod"
 
-/// Launches once an occupant confirms; until then it sleeps.
+/// Launches once an occupant confirms (in_transit, the declaration above).
 /obj/machinery/transportpod/machine_step()
-	if(!in_transit || !src?.slot_item(OCCUPANT_SLOT_TRANSPORTPOD))
-		return PROCESS_KILL
-	if(src?.slot_item(OCCUPANT_SLOT_TRANSPORTPOD))
-		if(in_transit)
-			var/locNum = rand(1, 8) //pick a random location
-			var/turf/L = locate(xc[locNum], yc[locNum], 1) // Pairs the X and Y to get an actual location.
-			limit_x = xc[locNum]+1
-			limit_y = yc[locNum]+1
-			build()
-			in_transit = 0
-			om_after(src, 2 SECONDS, PROC_REF(arrive), L) //Give explosion time so the pod itself doesn't go boom
+	set_in_transit(FALSE)
+	if(!src?.slot_item(OCCUPANT_SLOT_TRANSPORTPOD)) // they got out before launch
+		return
+	var/locNum = rand(1, 8) //pick a random location
+	var/turf/L = locate(xc[locNum], yc[locNum], 1) // Pairs the X and Y to get an actual location.
+	limit_x = xc[locNum]+1
+	limit_y = yc[locNum]+1
+	build()
+	om_after(src, 2 SECONDS, PROC_REF(arrive), L) //Give explosion time so the pod itself doesn't go boom
 
 /obj/machinery/transportpod/proc/arrive(turf/L)
 	src.forceMove(L)
@@ -75,8 +76,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/transportpod, "borg_pod_{appearance_occupied?
 
 /obj/machinery/transportpod/proc/launch_answered(datum/om/prompt/confirm/ask)
 	if(ask.yes)
-		in_transit = 1
-		MACHINE_WAKE(src)
+		set_in_transit(TRUE)
 		playsound(src, HYPERSPACE_WARMUP)
 	else
 		go_out()

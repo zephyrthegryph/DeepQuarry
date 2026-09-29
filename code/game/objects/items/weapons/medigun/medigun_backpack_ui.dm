@@ -106,7 +106,6 @@ UI_ACT_PROC(/obj/item/medigun_backpack, ui_act_rem_mani)
 	. = TRUE
 	if(!smanipulator || !maintenance)
 		return FALSE
-	om_task_periodic_stop(src)
 	smanipulator.forceMove(get_turf(loc))
 	to_chat(ui.user, span_notice("You remove the [smanipulator] from \the [src]."))
 	own_take(src, "smanipulator")
@@ -130,7 +129,6 @@ UI_ACT_PROC(/obj/item/medigun_backpack, ui_act_rem_cap)
 	. = TRUE
 	if(!scapacitor || !maintenance)
 		return FALSE
-	om_task_periodic_stop(src)
 	scapacitor.forceMove(get_turf(loc))
 	to_chat(ui.user, span_notice("You remove the [scapacitor] from \the [src]."))
 	own_take(src, "scapacitor")
@@ -142,7 +140,6 @@ UI_ACT_PROC(/obj/item/medigun_backpack, ui_act_rem_bin)
 	. = TRUE
 	if(!sbin || !maintenance)
 		return FALSE
-	om_task_periodic_stop(src)
 	sbin.forceMove(get_turf(loc))
 	to_chat(ui.user, span_notice("You remove the [sbin] from \the [src]."))
 	own_take(src, "sbin")

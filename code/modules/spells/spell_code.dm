@@ -57,26 +57,27 @@
 ///SETUP AND PROCESS///
 ///////////////////////
 
+/// TRUE while recharging: recharge_tick() adds a second's worth every second (DECLARE_REPEAT).
+OM_FIELD(/datum/spell, recharging, FALSE, CHANGE_DATUM_A)
+DECLARE_REPEAT(/datum/spell, 1 SECOND, recharge_tick, "recharging")
+
 /datum/spell/New()
 	..()
+	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
 
 	//still_recharging_msg = span_notice("[name] is still recharging.")
 	charge_counter = charge_max
 
 /// Starts recharging: a second's worth (10 charge) every second until full.
 /datum/spell/proc/start_recharge()
-	if(charge_counter < charge_max && !recharging)
-		recharging = TRUE
-		om_after(src, 1 SECOND, PROC_REF(recharge_tick))
-
-/datum/spell/var/recharging = FALSE
+	if(charge_counter < charge_max)
+		set_recharging(TRUE)
 
 /datum/spell/proc/recharge_tick()
 	charge_counter = min(charge_counter + 10, charge_max)
-	if(charge_counter < charge_max)
-		om_after(src, 1 SECOND, PROC_REF(recharge_tick))
-	else
-		recharging = FALSE
+	if(charge_counter >= charge_max)
+		set_recharging(FALSE)
+		return REPEAT_STOP
 
 /////////////////
 /////CASTING/////

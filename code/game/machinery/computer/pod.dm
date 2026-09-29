@@ -8,13 +8,15 @@
 	circuit = /obj/item/circuitboard/pod
 	var/id = 1.0
 	var/obj/machinery/mass_driver/connected
-	var/timing = FALSE
 	var/time = 30.0
 	var/title = "Mass Driver Controls"
 
 /// Blast doors and mass drivers sharing our id.
 /obj/machinery/computer/pod/var/list/obj/machinery/door/blast/pod_doors
 /obj/machinery/computer/pod/var/list/obj/machinery/mass_driver/pod_drivers
+
+OM_FIELD(/obj/machinery/computer/pod, timing, FALSE, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/computer/pod, MACHINE_PIPELINE, list("timing", "operable"))
 
 // Keyed by id: linked when either end materializes (replaces the LateInitialize and per-use scans).
 REL_KEYED(/obj/machinery/computer/pod, connected, id, /obj/machinery/mass_driver)
@@ -90,9 +92,7 @@ UI_ACT_PROC(/obj/machinery/computer/pod, ui_act_toggle_door)
 
 UI_ACT(/obj/machinery/computer/pod, "start_stop", ui_act_start_stop)
 UI_ACT_PROC(/obj/machinery/computer/pod, ui_act_start_stop)
-	timing = !timing
-	if(timing)
-		MACHINE_WAKE(src)
+	set_timing(!timing)
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/pod, "test_alarm", ui_act_test_alarm)
@@ -120,23 +120,12 @@ UI_ACT_PROC(/obj/machinery/computer/pod, ui_act_adjust_time)
 	return TRUE
 
 /obj/machinery/computer/pod/machine_step()
-	if(!operable())
-		return PROCESS_KILL
-	if(!timing)
-		return PROCESS_KILL
 	if(time > 0)
 		time = round(time) - 1
 	else
 		alarm()
 		time = 0
-		timing = FALSE
-		return PROCESS_KILL
-
-/obj/machinery/computer/pod/power_change()
-	. = ..()
-	// machine_step() sleeps on NOPOWER; resume the countdown when power returns.
-	if(timing && operable())
-		MACHINE_WAKE(src)
+		set_timing(FALSE)
 
 /obj/machinery/computer/pod/old
 	icon_state = "oldcomp"

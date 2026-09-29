@@ -29,10 +29,6 @@
 
 /// Runs its programs while on; off, it sleeps until enable_computer().
 /obj/item/modular_computer/periodic_step()
-	if(!enabled) // The computer is turned off
-		last_power_usage = 0
-		return PROCESS_KILL
-
 	if(computer_broken())
 		shutdown_computer()
 		return 0
@@ -67,7 +63,6 @@
 /obj/item/modular_computer/proc/install_default_programs()
 	return 1
 
-DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 
 /obj/item/modular_computer/Initialize(mapload)
 	if(!overlay_icon)
@@ -198,12 +193,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/modular_computer, TYPE_PROC_REF(/atom, appeara
 		rel_remove(src, "idle_threads", P)
 	if(loud)
 		visible_message("\The [src] shuts down.")
-	enabled = 0
+	set_enabled(FALSE)
+	last_power_usage = 0
 	update_icon()
 
 /obj/item/modular_computer/proc/enable_computer(mob/user = null)
-	enabled = 1
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_enabled(TRUE)
 	update_icon()
 
 	// Autorun feature

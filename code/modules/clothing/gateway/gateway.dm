@@ -79,15 +79,26 @@ TYPE_TABLE(/obj/item/clothing/suit/darkvrwizard, suit_storage_spec, list(HOLD_ON
 	siemens_coefficient = 0
 	armor_spec = "melee=70;bullet=60;laser=50;energy=50"
 
+/// Worn in the gloves slot (equipped()/dropped()). With the wearer view (a field, so its automatic
+/// clear when the wearer is destroyed counts too) it declares the feeding work.
+OM_FIELD(/obj/item/clothing/gloves/stamina, worn_on_hands, FALSE, CHANGE_EXPLICIT)
+OM_FIELD_VIEW_OF(/obj/item/clothing/gloves/stamina, wearer, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/item/clothing/gloves/stamina, feeding_wearer, list("wearer", "worn_on_hands"))
+/obj/item/clothing/gloves/stamina/proc/feeding_wearer()
+	return wearer && worn_on_hands
+DECLARE_PERIODIC_WHILE(/obj/item/clothing/gloves/stamina, PERIODIC_SLOW, "feeding_wearer")
+
 /obj/item/clothing/gloves/stamina/equipped(mob/user, slot)
 	..()
 	var/mob/living/carbon/human/H = wearer
-	if(H && H.get_equipped_item(SLOT_ID_GLOVES) == src)
+	set_worn_on_hands(H && H.get_equipped_item(SLOT_ID_GLOVES) == src)
+	if(worn_on_hands)
 		if(H.can_feel_pain())
 			to_chat(H, span_danger("You feel strange as hunger vanishes!"))
 			H.custom_pain("Your hands feel strange!",1)
 
 /obj/item/clothing/gloves/stamina/dropped(mob/user, equipping, slot)
+	set_worn_on_hands(FALSE)
 	var/mob/living/carbon/human/H = wearer
 	if(H)
 		if(H.can_feel_pain())
@@ -95,12 +106,10 @@ TYPE_TABLE(/obj/item/clothing/suit/darkvrwizard, suit_storage_spec, list(HOLD_ON
 			H.custom_pain("Your hands feel strange",1)
 	..()
 
-/// Works every 2 s while worn (equipped() starts it); taken off, it sleeps.
+/// Works every 2 s while worn on the hands (declared on feeding_wearer); taken off, it sleeps.
 /obj/item/clothing/gloves/stamina/periodic_step()
 	var/mob/living/carbon/human/H = wearer
-	if(!H || H.get_equipped_item(SLOT_ID_GLOVES) != src)
-		return PROCESS_KILL
-	if(!H || HAS_SYNTHETIC_BIOLOGY(H) || H.stat == DEAD)
+	if(!istype(H) || HAS_SYNTHETIC_BIOLOGY(H) || H.stat == DEAD)
 		return // Robots and dead people don't have a metabolism.
 	H.set_nutrition(max(H.nutrition + 8, 0))
 
@@ -119,6 +128,10 @@ TYPE_TABLE(/obj/item/clothing/suit/darkvrwizard, suit_storage_spec, list(HOLD_ON
 	var/flavor_activate = null // Ditto, for but activating.
 	var/brainloss_cost = 0
 
+/// TRUE while worn in the suit slot by a sentient mob.
+OM_FIELD(/obj/item/clothing/suit/armor/buffvest, worn_by_sentient, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/clothing/suit/armor/buffvest, PERIODIC_SLOW, "worn_by_sentient")
+
 /obj/item/clothing/suit/armor/buffvest/proc/activate_ability(mob/living/wearer)
 	COOLDOWN_START(src, cooldown, cooldown_duration)
 	to_chat(wearer, flavor_activate)
@@ -129,13 +142,13 @@ TYPE_TABLE(/obj/item/clothing/suit/darkvrwizard, suit_storage_spec, list(HOLD_ON
 /obj/item/clothing/suit/armor/buffvest/equipped(mob/living/carbon/human/H, slot)
 	..()
 	if(istype(H) && H.get_equipped_item(SLOT_ID_SUIT) == src && H.is_sentient())
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_worn_by_sentient(TRUE)
 		if(flavor_equip)
 			to_chat(H, span_info(flavor_equip))
 
 /obj/item/clothing/suit/armor/buffvest/dropped(mob/living/carbon/human/H, equipping, slot)
 	..()
-	om_task_periodic_stop(src)
+	set_worn_by_sentient(FALSE)
 	if(H.is_sentient())
 		if(loc == H) // Still inhand.
 			if(flavor_unequip)
@@ -191,7 +204,3 @@ TYPE_TABLE(/obj/item/clothing/suit/darkvrwizard, suit_storage_spec, list(HOLD_ON
 
 //scrap section which is on hold till I get foes
 
-/obj/item/clothing/gloves/stamina/equipped(mob/user, slot)
-	. = ..()
-	if(wearer)
-		om_task_periodic(src, PERIODIC_SLOW)

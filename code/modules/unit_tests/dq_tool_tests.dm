@@ -99,7 +99,7 @@
 
 	TEST_ASSERT(!welder.isOn(), "the welder starts unlit")
 	TEST_ASSERT(!use_tool(H, welder, target, quality = TOOL_WELDER, silent = TRUE), "an unlit welder is refused")
-	welder.welding = TRUE
+	welder.set_welding(TRUE)
 	var/start = welder.get_fuel()
 	TEST_ASSERT(use_tool(H, welder, target, quality = TOOL_WELDER, amount = 5), "a lit welder with fuel works")
 	TEST_ASSERT_EQUAL(welder.get_fuel(), start - 5, "exactly the asked fuel is burned")
@@ -134,7 +134,7 @@
 
 	TEST_ASSERT(!weld.perform(H, target, welder), "an unlit welder can't pay")
 	TEST_ASSERT(!("dq_tool_weld" in target.done), "the effect did not run")
-	welder.welding = TRUE
+	welder.set_welding(TRUE)
 	var/start = welder.get_fuel()
 	TEST_ASSERT(weld.perform(H, target, welder), "a lit welder pays")
 	TEST_ASSERT(("dq_tool_weld" in target.done), "the effect ran")
@@ -201,7 +201,7 @@
 
 	assembly.welder_act(H, welder)
 	TEST_ASSERT(!QDELETED(assembly), "an unlit welder does not take it apart")
-	welder.welding = TRUE
+	welder.set_welding(TRUE)
 	var/start = welder.get_fuel()
 	assembly.welder_act(H, welder)
 	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 4 SECONDS, "welding it apart takes 4 s")

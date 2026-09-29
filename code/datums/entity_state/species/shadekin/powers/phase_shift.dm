@@ -231,7 +231,7 @@
 				for(var/obj/item/flashlight/held_lights in contents_of(our_prey))
 					if(istype(held_lights,/obj/item/flashlight/glowstick) ||istype(held_lights,/obj/item/flashlight/flare) ) //No affecting glowsticks or flares...As funny as that is
 						continue
-					held_lights.on = 0
+					held_lights.set_on(0)
 					held_lights.update_brightness()
 
 	SK.doing_phase = FALSE

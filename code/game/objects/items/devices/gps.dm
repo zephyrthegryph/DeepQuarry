@@ -11,14 +11,11 @@
 	var/gps_tag = "GEN0"
 	/// Until when an EMP keeps the unit busted (EMP_DISABLE).
 	EXPIRY_DECLARE(emp_until)
-	var/tracking = FALSE		// Will not show other signals or emit its own signal if false.
 	var/long_range = FALSE		// If true, can see farther, depending on get_map_levels().
 	var/local_mode = FALSE		// If true, only GPS signals of the same Z level are shown.
 	var/hide_signal = FALSE		// If true, signal is not visible to other GPS devices.
 	var/can_hide_signal = FALSE	// If it can toggle the above var.
 
-	var/mob/holder
-	var/is_in_processing_list = FALSE
 	var/list/tracking_devices
 	var/list/showing_tracked_names
 	var/obj/compass_holder/compass
@@ -30,6 +27,12 @@
 	var/special_handling = FALSE
 
 REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
+/// Will not show other signals or emit its own signal if false.
+OM_FIELD(/obj/item/gps, tracking, FALSE, CHANGE_EXPLICIT)
+/// The mob carrying it (a relation view).
+OM_FIELD_VIEW(/obj/item/gps, mob, holder, CHANGE_EXPLICIT)
+// The compass refreshes while a carried GPS is tracking.
+DECLARE_PERIODIC_WHILE_ALL(/obj/item/gps, PERIODIC_SLOW, list("tracking", "holder"))
 
 /obj/item/gps/Initialize(mapload)
 	. = ..()
@@ -53,17 +56,12 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 		dq_add_recursive_move(holder_ref())
 
 	if(holder_ref() && tracking)
-		if(!is_in_processing_list)
-			om_task_periodic(src, PERIODIC_SLOW)
-			is_in_processing_list = TRUE
 		if(holder_ref().client)
 			if(check_visible_to_holder())
 				holder_ref().client.screen |= compass
 			else
 				holder_ref().client.screen -= compass
 	else
-		om_task_periodic_stop(src)
-		is_in_processing_list = FALSE
 		if(holder_ref()?.client)
 			holder_ref().client.screen -= compass
 
@@ -84,9 +82,6 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 	update_holder()
 
 /obj/item/gps/periodic_step()
-	if(!tracking)
-		is_in_processing_list = FALSE
-		return PROCESS_KILL
 	update_holder()
 	if(holder_ref())
 		update_compass(src, TRUE)
@@ -95,7 +90,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/gps, "compass", /obj/compass_holder)
 
 // the GPS leaves its holder's tracking.
 /obj/item/gps/on_destroy(force)
-	is_in_processing_list = FALSE
 	update_holder()
 	..()
 
@@ -156,15 +150,10 @@ DECLARE_DEFAULT_CHILD(/obj/item/gps, "compass", /obj/compass_holder)
 		to_chat(user, "[src] is no longer tracking, or visible to other GPS devices.") // purdev Fixed an issue where the if/else argument was written backwards
 
 /obj/item/gps/proc/toggle_tracking()
-	tracking = !tracking
+	set_tracking(!tracking)
 	if(tracking)
-		if(!is_in_processing_list)
-			is_in_processing_list = TRUE
-			om_task_periodic(src, PERIODIC_SLOW)
-			update_compass(src, TRUE)
+		update_compass(src, TRUE)
 	else
-		is_in_processing_list = FALSE
-		om_task_periodic_stop(src)
 		update_compass(src)
 	update_holder()
 	update_icon()

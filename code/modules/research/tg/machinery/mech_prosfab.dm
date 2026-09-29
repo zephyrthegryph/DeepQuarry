@@ -31,7 +31,7 @@ DECLARE_APPEARANCE(/obj/machinery/mecha_part_fabricator_tg/prosthetics, "panel_o
 	// Don't call parent
 	set_use_power(USE_POWER_IDLE)
 	desc = initial(desc)
-	process_queue = FALSE
+	set_process_queue(FALSE)
 	print_sound.stop()
 	update_icon()
 

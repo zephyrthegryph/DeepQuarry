@@ -10,13 +10,15 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	anchored = TRUE
 	idle_power_usage = 5
 	active_power_usage = 100
-	var/operating = FALSE
 	var/tmp/obj/machinery/recycling/crusher/crusher	//Connects to regular crusher
 	var/tmp/obj/machinery/button/garbosystem/button
 	var/list/affecting
 	var/voracity = 5 //How much stuff is swallowed at once.
 
 DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
+OM_FIELD(/obj/machinery/v_garbosystem, operating, FALSE, CHANGE_MACHINE_SETTINGS)
+/// Grinds what sits on it every frame while operating and operable.
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/v_garbosystem, MACHINE_PIPELINE, list("operating", "operable"))
 
 /obj/machinery/v_garbosystem/Initialize(mapload)
 	. = ..()
@@ -54,7 +56,7 @@ DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
 	effect = /obj/machinery/v_garbosystem/proc/interaction_toggle
 
 /obj/machinery/v_garbosystem/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	operating = !operating
+	set_operating(!operating)
 	update()
 	return TRUE
 
@@ -64,21 +66,19 @@ DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
 
 /obj/machinery/v_garbosystem/proc/update()
 	if(!operable())
-		operating = FALSE
+		set_operating(FALSE)
+		icon_state = "cronchy_off"
 		set_use_power(USE_POWER_OFF)
 		return
 	if(!operating)
+		icon_state = "cronchy_off"
 		set_use_power(USE_POWER_OFF)
 		return
 	icon_state = "cronchy_active"
-	MACHINE_WAKE(src)
 	set_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/v_garbosystem/machine_step()
-	if(!operating || !crusher() || crusher().stat & (NOPOWER|BROKEN))
-		icon_state = "cronchy_off"
-		return PROCESS_KILL
-	if(!operable())
+	if(!crusher() || crusher().stat & (NOPOWER|BROKEN))
 		icon_state = "cronchy_off"
 		return PROCESS_KILL
 	icon_state = "cronchy_active"
@@ -171,7 +171,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
 						play_sfx(src, SFX_MACHINES_WARNING_BUZZER)
 						visible_message(span_warning("POSSIBLE CREW MEMBER DETECTED! EMERGENCY STOP ENGAGED!"))
 						GLOB.global_announcer.autosay("Possible crew member detected in grinder feed. Emergency Stop Protocols engaged!", "Recycling Grinder Alert", "Supply")
-						operating = FALSE
+						set_operating(FALSE)
 						update()
 						break
 					if(L.stat == DEAD)
@@ -234,10 +234,6 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
 		if(istype(A, /obj/structure/closet))
 			new /obj/item/stack/material/steel(loc, 2)
 		qdel(A)
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/v_garbosystem/step_start_condition()
-	return operating
 
 /// Connects to regular crusher (a relation view: it reads null once the target is deleted).
 /obj/machinery/v_garbosystem/proc/crusher() as /obj/machinery/recycling/crusher

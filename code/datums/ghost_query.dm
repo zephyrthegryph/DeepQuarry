@@ -20,18 +20,16 @@
 
 	// Then wait awhile.
 	if(wait_time)
-		our_timer(wait_time)
+		om_after(src, wait_time, PROC_REF(finish_query))
 		return
 
-/datum/ghost_query/proc/our_timer(current_wait_time)
-	if(current_wait_time)
-		om_after(src, current_wait_time, PROC_REF(our_timer), FALSE)
-	else
-		for(var/mob/observer/dead/D as anything in candidates)
-			if(!evaluate_candidate(D))
-				rel_remove(src, "candidates", D)
-		finished = TRUE
-		OM_EMIT(src, /datum/om/event/ghost_query_complete)
+/// Once, `wait_time` after query(): drop candidates that no longer qualify and report.
+/datum/ghost_query/proc/finish_query()
+	for(var/mob/observer/dead/D as anything in candidates.Copy())
+		if(!evaluate_candidate(D))
+			rel_remove(src, "candidates", D)
+	finished = TRUE
+	OM_EMIT(src, /datum/om/event/ghost_query_complete)
 
 /// Test a candidate for allowance to join as this
 /datum/ghost_query/proc/evaluate_candidate(mob/observer/dead/candidate)

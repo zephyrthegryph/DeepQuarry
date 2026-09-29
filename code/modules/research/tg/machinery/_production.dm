@@ -27,6 +27,17 @@
 	var/techweb_updating = FALSE
 	/// Personal account credited for the current print run's production bonus.
 	var/current_producer_account = 0
+	/// The current print run (start_making()): design, items left, time and power per item,
+	/// material cost coefficient and the chosen materials.
+	var/datum/design_techweb/build_design
+	var/build_remaining = 0
+	var/build_time_per_item = 1 SECOND
+	var/build_charge_per_item = 0
+	var/build_coefficient = 1
+	var/tmp/list/build_chosen_materials
+
+/// One item every build_time_per_item while busy printing.
+DECLARE_REPEAT(/obj/machinery/rnd/production, "build_time_per_item", do_make_item, "busy")
 
 
 /obj/machinery/rnd/production/Initialize(mapload)
@@ -380,44 +391,50 @@ UI_ACT_PROC(/obj/machinery/rnd/production, ui_act_build)
 	//start production
 	var/obj/item/card/id/producer_id = ui.user.GetIdCard()
 	current_producer_account = producer_id?.associated_account_number || 0
-	busy = TRUE
+	shared_set(src, "build_design", design)
+	build_remaining = print_quantity
+	src.build_time_per_item = build_time_per_item
+	build_coefficient = coefficient
+	build_charge_per_item = charge_per_item
+	build_chosen_materials = chosen_materials
+	set_busy(TRUE)
 	SStgui.update_uis(src)
 	print_sound.start()
 	if(production_animation)
 		icon_state = production_animation
-	var/turf/target_location
-	if(drop_direction)
-		target_location = get_step(src, drop_direction)
-		if(iswall(target_location))
-			target_location = get_turf(src)
-	else
-		target_location = get_turf(src)
-	om_after(src, build_time_per_item, PROC_REF(do_make_item), design, print_quantity, build_time_per_item, coefficient, charge_per_item, target_location, chosen_materials)
 
 	return TRUE
 
-/**
- * Callback for start_making, actually makes the item
- * Arguments
- *
- * * datum/design/design - the design we are trying to print
- * * items_remaining - the number of designs left out to print
- * * build_time_per_item - the time taken to print 1 item
- * * material_cost_coefficient - the cost efficiency to print 1 design
- * * charge_per_item - the amount of power to print 1 item
- * * turf/target - the location to drop the printed item on
-*/
-/obj/machinery/rnd/production/proc/do_make_item(datum/design_techweb/design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, turf/target, list/chosen_materials)
-	PROTECTED_PROC(TRUE)
+/// Where printed items drop: the tile in drop_direction (unless it is a wall), else our own.
+/obj/machinery/rnd/production/proc/production_drop_target()
+	if(drop_direction)
+		var/turf/target_location = get_step(src, drop_direction)
+		if(!iswall(target_location))
+			return target_location
+	return get_turf(src)
 
-	if(!items_remaining) // how
+/**
+ * One step of the print run (DECLARE_REPEAT while busy): makes the next item of build_design
+ * (build_remaining left, build_time_per_item apart, build_charge_per_item power each, cost
+ * scaled by build_coefficient) and drops it on production_drop_target().
+*/
+/obj/machinery/rnd/production/proc/do_make_item()
+	PROTECTED_PROC(TRUE)
+	var/datum/design_techweb/design = build_design
+	var/items_remaining = build_remaining
+	var/material_cost_coefficient = build_coefficient
+	var/charge_per_item = build_charge_per_item
+	var/list/chosen_materials = build_chosen_materials
+	var/turf/target = production_drop_target()
+
+	if(!items_remaining || !design) // how
 		finalize_build()
-		return
+		return REPEAT_STOP
 
 	if(has_stat(NOPOWER))
 		atom_say("Unable to continue production, power failure.")
 		finalize_build()
-		return
+		return REPEAT_STOP
 
 	if(!use_power_oneoff(charge_per_item)) // provide the wait time until lathe is ready
 		var/area/my_area = get_area(src)
@@ -427,19 +444,19 @@ UI_ACT_PROC(/obj/machinery/rnd/production, ui_act_build)
 		else
 			atom_say("Unable to continue production, no APC in area.")
 		finalize_build()
-		return
+		return REPEAT_STOP
 
 	if(!materials.can_use_resource())
 		atom_say("Unable to continue production, materials on hold.")
 		finalize_build()
-		return
+		return REPEAT_STOP
 
 	var/is_stack = ispath(design.build_path, /obj/item/stack)
 	var/list/design_materials = design.effective_materials(chosen_materials)
 	if(!materials.mat_container().has_materials(design_materials, material_cost_coefficient, is_stack ? items_remaining : 1))
 		atom_say("Unable to continue production, missing materials.")
 		finalize_build()
-		return
+		return REPEAT_STOP
 	materials.use_materials(design_materials, material_cost_coefficient, is_stack ? items_remaining : 1, "built", "[design.name]")
 
 	var/atom/movable/created
@@ -474,17 +491,19 @@ UI_ACT_PROC(/obj/machinery/rnd/production, ui_act_build)
 	else
 		items_remaining -= 1
 
+	build_remaining = items_remaining
 	if(!items_remaining)
 		finalize_build()
-		return
-	om_after(src, build_time_per_item, PROC_REF(do_make_item), design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, target, chosen_materials)
+		return REPEAT_STOP
 
 /// Resets the busy flag
 /// Called at the end of do_make_item's timer loop
 /obj/machinery/rnd/production/proc/finalize_build()
 	PROTECTED_PROC(TRUE)
 	print_sound.stop()
-	busy = FALSE
+	set_busy(FALSE)
+	shared_set(src, "build_design", null)
+	build_chosen_materials = null
 	current_producer_account = 0
 	SStgui.update_uis(src)
 	icon_state = initial(icon_state)

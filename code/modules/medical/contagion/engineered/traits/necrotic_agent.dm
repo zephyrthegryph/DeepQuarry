@@ -26,7 +26,7 @@ Bonus
 	threat = 3
 
 /datum/viral_trait/necrotic_agent/OnAdd(datum/affliction/contagion/engineered/A)
-	A.virus_modifiers |= SPREAD_DEAD
+	A.set_virus_modifiers(A.virus_modifiers | SPREAD_DEAD)
 
 /datum/viral_trait/necrotic_agent/OnRemove(datum/affliction/contagion/engineered/A)
-	A.virus_modifiers &= ~SPREAD_DEAD
+	A.set_virus_modifiers(A.virus_modifiers & ~SPREAD_DEAD)

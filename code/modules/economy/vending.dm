@@ -61,7 +61,6 @@
 
 	// Stuff relating vocalizations
 	var/list/slogan_list // Lazy
-	var/shut_up = 1 //Stop spouting those godawful pitches!
 	var/vend_reply //Thank you for shopping!
 	COOLDOWN_DECLARE(reply_cooldown)
 	COOLDOWN_DECLARE(slogan_cooldown) //When did we last pitch?
@@ -69,8 +68,6 @@
 
 	// Things that can go wrong
 	emagged = 0 //Ignores if somebody doesn't have card access to that machine.
-	var/seconds_electrified = 0 //Shock customers like an airlock.
-	var/shoot_inventory = 0 //Fire items at customers! We're broken!
 	var/shoot_inventory_chance = 1
 
 	var/scan_id = 1
@@ -80,6 +77,20 @@
 	var/req_log_access = ACCESS_CARGO //default access for checking logs is cargo
 	var/has_logs = 0 //defaults to 0, set to anything else for vendor to have logs
 	var/can_rotate = 1 //Defaults to yes, can be set to 0 for vendors without or with unwanted directionals.
+
+/// Stop spouting those godawful pitches!
+OM_FIELD(/obj/machinery/vending, shut_up, TRUE, CHANGE_MACHINE_SETTINGS)
+/// Shock customers like an airlock: steps left (-1 for permanently, from a cut wire).
+OM_FIELD(/obj/machinery/vending, seconds_electrified, 0, CHANGE_MACHINE_SETTINGS)
+/// Fire items at customers! We're broken!
+OM_FIELD(/obj/machinery/vending, shoot_inventory, 0, CHANGE_MACHINE_SETTINGS)
+/// Active with something time-dependent to do: electrified, shooting inventory, or advertising.
+/// slogan_list is filled once in Initialize() and never changes afterwards, so it is not an input.
+OM_DERIVE_FIELD(/obj/machinery/vending, vend_has_timed_work, list("active", "seconds_electrified", "shoot_inventory", "shut_up"))
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/vending, MACHINE_PIPELINE, list("operable", "vend_has_timed_work"))
+
+/obj/machinery/vending/proc/vend_has_timed_work()
+	return active && (seconds_electrified > 0 || shoot_inventory || (!shut_up && length(slogan_list)))
 
 /obj/machinery/vending/Initialize(mapload)
 	. = ..()
@@ -307,7 +318,7 @@ DECLARE_EMAG(/obj/machinery/vending, PROC_REF(on_emag), null, null)
 
 /obj/machinery/vending/screwdriver_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)
-	panel_open = !panel_open
+	set_panel_open(!panel_open)
 	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the maintenance panel."))
 	if(panel_open)
 		wires.Interact(user)
@@ -597,9 +608,7 @@ UI_ACT_PROC(/obj/machinery/vending, ui_act_togglevoice)
 	. = TRUE
 	if(!panel_open)
 		return FALSE
-	shut_up = !shut_up
-	if(!shut_up)
-		MACHINE_WAKE(src)
+	set_shut_up(!shut_up)
 
 /obj/machinery/vending/proc/can_buy(datum/stored_item/vending_product/R, mob/user)
 	if(!allowed(user) && !emagged && scan_id)
@@ -726,19 +735,13 @@ UI_ACT_PROC(/obj/machinery/vending, ui_act_togglevoice)
 	SStgui.update_uis(src)
 
 /obj/machinery/vending/machine_step()
-	if(!operable())
-		return PROCESS_KILL
-
-	if(!active)
-		return PROCESS_KILL
-
 	// Normal silent vendors have no time-dependent state. Hacked vendors and
 	// explicitly enabled advertisers wake through their mutation paths below.
 	if(seconds_electrified <= 0 && !shoot_inventory && (shut_up || !length(slogan_list)))
 		return PROCESS_KILL
 
 	if(seconds_electrified > 0)
-		seconds_electrified--
+		set_seconds_electrified(seconds_electrified - 1)
 
 	//Pitch to the people!  Really sell it!
 	if((COOLDOWN_FINISHED(src, slogan_cooldown)) && length(slogan_list) && (!shut_up) && prob(5))
@@ -811,10 +814,6 @@ UI_ACT_PROC(/obj/machinery/vending, ui_act_togglevoice)
 	return 1
 
 //Actual machines are in vending_machines.dm
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/vending/step_start_condition()
-	return active && !shut_up && length(slogan_list)
 
 /// What we're requesting payment for right now (a relation view: null once it is deleted).
 /obj/machinery/vending/proc/currently_vending() as /datum/stored_item/vending_product

@@ -4,22 +4,27 @@
 	icon = 'icons/obj/kitchen.dmi'
 	icon_state = "spike"
 
-	var/tmp/obj/item/stack/wetleather/drying
 
-DECLARE_PERIODIC(/obj/structure/tanning_rack, PERIODIC_SLOW) // SSObj fires ~every 2s , starting from wetness 30 takes ~1m
+/// The leather hung on the rack.
+OM_FIELD_VIEW(/obj/structure/tanning_rack, obj/item/stack/wetleather, drying, CHANGE_EXPLICIT)
+/// Holds wet leather: periodic_step() dries it (DECLARE_PERIODIC_WHILE). Adding wet leather raises
+/// its view (and the leather's wetness, a cross-entity input) re-evaluates it.
+OM_DERIVE_FIELD(/obj/structure/tanning_rack, has_wet_leather, list("drying", "drying.wetness"))
+DECLARE_PERIODIC_WHILE(/obj/structure/tanning_rack, PERIODIC_SLOW, "has_wet_leather") // SSObj fires ~every 2s , starting from wetness 30 takes ~1m
+
+/obj/structure/tanning_rack/proc/has_wet_leather()
+	var/obj/item/stack/wetleather/W = drying()
+	return !QDELETED(W) && W.wetness
 
 /// Dries its leather while it holds wet leather; otherwise it sleeps until some is hung on it.
 /obj/structure/tanning_rack/periodic_step()
 	if(QDELETED(drying()))
 		rel_clear(src, "drying")
-		return PROCESS_KILL
+		return
+	drying().set_wetness(max(drying().wetness - 1, 0))
 	if(!drying().wetness)
-		return PROCESS_KILL
-	if(drying() && drying().wetness)
-		drying().wetness = max(drying().wetness - 1, 0)
-		if(!drying().wetness)
-			visible_message("The [drying()] is dry!")
-			update_icon()
+		visible_message("The [drying()] is dry!")
+		update_icon()
 
 /obj/structure/tanning_rack/examine(mob/user)
 	. = ..()
@@ -41,11 +46,9 @@ DECLARE_APPEARANCE_PROC(/obj/structure/tanning_rack, TYPE_PROC_REF(/atom, appear
 		if(!drying()) // If not drying anything, start drying the thing
 			if(user.unEquip(A, target = src))
 				rel_set(src, "drying", A)
-				om_task_periodic(src, PERIODIC_SLOW)
 		else // Drying something, add if possible
 			var/obj/item/stack/wetleather/W = A
 			W.transfer_to(drying(), W.get_amount(), TRUE)
-			om_task_periodic(src, PERIODIC_SLOW)
 		update_icon()
 		return TRUE
 	return FALSE

@@ -8,13 +8,16 @@
 	desc = "This leather has been cleaned but still needs to be dried."
 	singular_name = "wet leather piece"
 	icon_state = "sheet-wetleather"
-	var/wetness = 30 //Reduced when exposed to high temperautres
 	var/drying_threshold_temperature = 500 //Kelvin to start drying
 	no_variants = FALSE
 	max_amount = 20
 	stacktype = "wetleather"
 
 	var/dry_type = /obj/item/stack/material/leather
+
+/// Reduced when exposed to high temperatures; 0 is dry. A tanning rack reads it through its
+/// "drying.wetness" derived input.
+OM_FIELD(/obj/item/stack/wetleather, wetness, 30, CHANGE_EXPLICIT)
 
 /obj/item/stack/wetleather/examine(mob/user)
 	. = ..()
@@ -43,4 +46,4 @@
 	if(.) // If it transfers any, do a weighted average of the wetness
 		var/obj/item/stack/wetleather/W = S
 		var/oldamt = W.amount - .
-		W.wetness = round(((oldamt * W.wetness) + (. * wetness)) / W.amount)
+		W.set_wetness(round(((oldamt * W.wetness) + (. * wetness)) / W.amount))

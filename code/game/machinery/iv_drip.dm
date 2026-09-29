@@ -6,7 +6,9 @@
 	density = FALSE
 
 
-/obj/machinery/iv_drip/var/mob/living/carbon/human/attached
+OM_FIELD_VIEW(/obj/machinery/iv_drip, mob/living/carbon/human, attached, CHANGE_MACHINE_OCCUPANT)
+/// Drips (or draws) while hooked up to a patient.
+DECLARE_PERIODIC_WHILE(/obj/machinery/iv_drip, MACHINE_PIPELINE, "attached")
 /obj/machinery/iv_drip/mode = 1 // 1 is injecting, 0 is taking blood.
 /obj/machinery/iv_drip/var/obj/item/reagent_containers/beaker = null
 
@@ -45,14 +47,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/iv_drip, TYPE_PROC_REF(/atom, appearance_
 	if(attached())
 		visible_message("[attached()] is detached from \the [src]")
 		rel_clear(src, "attached")
-		MACHINE_SLEEP(src)
 		update_icon()
 		return
 
 	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
-		act_message(usr, src, others = "%U% attaches %T% to 	he [over_object].")
+		act_message(usr, src, others = "%U% attaches %T% to \the [over_object].")
 		rel_set(src, "attached", over_object)
-		MACHINE_WAKE(src)
 		update_icon()
 
 
@@ -90,9 +90,6 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 
 /obj/machinery/iv_drip/machine_step()
 	set background = 1
-	if(!attached())
-		return PROCESS_KILL
-
 	if(attached())
 
 		if(!(get_dist(src, attached()) <= 1 && isturf(attached().loc)))

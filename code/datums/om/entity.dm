@@ -42,6 +42,11 @@
 	/// Stride 3: owner entity, mask, behaviour id.
 	var/list/watches_in
 	var/list/watching
+	/// Cross-entity derived inputs (fields.dm, "rel.field"): stride 2, holder entity, mask. A raise of
+	/// `mask` here raises CHANGE_RELATED on the holder (its derived field's channel includes it).
+	var/list/relay_in
+	/// The entities this one relays from (their relay_in lists name it), for relink and teardown.
+	var/list/relay_out
 	/// Stride 4: origin entity, mask, behaviour id (negative: derived idx), structural (1 when an intermediate hop).
 	var/list/fwd_in
 	var/list/fwd_out
@@ -108,8 +113,10 @@
 	if(!rec.table.appearance_scanned)
 		rec.table.appearance_scanned = TRUE
 		rec.table.appearance_mask = appearance_mask_of(E)
-	if(rec.table.service_mask | rec.table.cache_mask | rec.table.appearance_mask)
-		E.om_listen |= rec.table.service_mask | rec.table.cache_mask | rec.table.appearance_mask
+	if(rec.table.service_mask | rec.table.cache_mask | rec.table.appearance_mask | rec.table.sys_periodic_mask | rec.table.relay_mask)
+		E.om_listen |= rec.table.service_mask | rec.table.cache_mask | rec.table.appearance_mask | rec.table.sys_periodic_mask | rec.table.relay_mask
+	if(rec.table.derived_relays)
+		om_derived_relink(E, rec)
 	return rec
 
 // ---------------------------------------------------------------- declared caches
@@ -319,13 +326,16 @@
 
 /// Recomputed only when attachments, watches, forwards or derived storage change.
 /proc/om_recompute_listen(datum/om/rec/rec)
-	var/slow = rec.table?.service_mask
+	var/slow = rec.table?.service_mask | rec.table?.sys_periodic_mask
 	var/mask = slow
 	for(var/datum/om/behaviour/B as anything in rec.att)
 		mask |= B.interest
 		slow |= B.requires_mask | B.related_added_mask
 	for(var/i in 1 to length(rec.watches_in) step 3)
 		slow |= rec.watches_in[i + 1]
+	for(var/i in 1 to length(rec.relay_in) step 2)
+		slow |= rec.relay_in[i + 1]
+	slow |= rec.table?.relay_mask
 	for(var/i in 1 to length(rec.fwd_in) step 4)
 		slow |= rec.fwd_in[i + 1]
 	if(rec.dv)
@@ -370,6 +380,9 @@
 	// so it runs before the repeat and bulk short cuts below).
 	if(rec.table.cache_mask & bits)
 		om_cache_clear(E, rec.table.cache_change, null, bits)
+	// A declared periodic field changed: start or stop the declared work now (code/datums/sys/periodic.dm).
+	if(rec.table.sys_periodic_mask & bits)
+		sys_periodic_evaluate(E)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	// Tests count raises (a status change must raise its channel once, not twice).
 	if(sched.test_raises)
@@ -401,6 +414,15 @@
 				rec.pend_union |= B.wake_on & bits
 				sched.enqueue(rec, B.lane)
 		i++
+	// A field a cross-entity derived input reads changed here: relay it to the holders.
+	if(rec.relay_in)
+		var/list/R = rec.relay_in
+		for(var/j in 1 to length(R) step 2)
+			if(R[j + 1] & bits)
+				om_changed(R[j], CHANGE_RELATED)
+	// A relation var a cross-entity derived input follows changed: resubscribe.
+	if(rec.table.relay_mask & bits)
+		om_derived_relink(E, rec)
 	if(rec.watches_in)
 		var/list/W = rec.watches_in
 		for(var/j in 1 to length(W) step 3)
@@ -531,6 +553,7 @@
 			if(wrec)
 				LAZYREMOVE(wrec.watching, E)
 		rec.watches_in = null
+	om_relay_clear(E, rec)
 	om_teardown_hooks(rec)
 	om_clear_fwd_out(rec)
 	for(var/i in 1 to length(rec.fwd_in) step 4)

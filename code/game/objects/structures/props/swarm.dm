@@ -30,9 +30,8 @@
 	if(!isbroken)
 		if(prob(1 + damage * 3))
 			visible_message(span_danger("[shatter_message]"))
-			om_task_periodic_stop(src)
 			playsound(src,shatter_sound, 75, 1)
-			isbroken = 1
+			set_isbroken(TRUE)
 			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
 			set_light(0)
@@ -43,10 +42,9 @@
 			act_message(user, src, MSG_SELF(span_warning("You hit %T%, and its crystal breaks apart!")), \
 				MSG_OTHERS(span_danger("%U% smashed %T%!")), \
 				MSG_BLIND("You hear a tinkle of crystalline shards."))
-			om_task_periodic_stop(src)
 			user.do_attack_animation(src)
 			playsound(src,shatter_sound, 75, 1)
-			isbroken = 1
+			set_isbroken(TRUE)
 			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
 			set_light(0)
@@ -106,9 +104,8 @@
 	if(!isbroken)
 		if(prob(1 + damage * 3) && damage >= 25)
 			visible_message(span_danger("[shatter_message]"))
-			om_task_periodic_stop(src)
 			playsound(src,shatter_sound, 75, 1)
-			isbroken = 1
+			set_isbroken(TRUE)
 			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
 			set_light(0)
@@ -119,10 +116,9 @@
 			act_message(user, src, MSG_SELF(span_warning("You hit %T%, and its crystal breaks apart!")), \
 				MSG_OTHERS(span_danger("%U% smashed %T%!")), \
 				MSG_BLIND("You hear a tinkle of crystalline shards."))
-			om_task_periodic_stop(src)
 			user.do_attack_animation(src)
 			playsound(src,shatter_sound, 75, 1)
-			isbroken = 1
+			set_isbroken(TRUE)
 			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
 			set_light(0)

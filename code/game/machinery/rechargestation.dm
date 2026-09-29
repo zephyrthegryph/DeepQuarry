@@ -11,7 +11,6 @@
 	circuit = /obj/item/circuitboard/recharge_station
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 50
-	var/obj/item/cell/cell = null
 	var/icon_update_tick = 0	// Used to rebuild the overlay only once every 10 ticks
 	var/charging = 0
 
@@ -23,6 +22,16 @@
 
 	var/weld_power_use = 2300	// power used per point of brute damage repaired. 2.3 kW ~ about the same power usage of a handheld arc welder
 	var/wire_power_use = 500	// power used per point of burn damage repaired.
+
+/// The internal buffer cell (the station steps only while it has one).
+OM_FIELD_VIEW(/obj/machinery/recharge_station, obj/item/cell, cell, CHANGE_MACHINE_SETTINGS)
+
+/// Not BROKEN (an unpowered station still runs off its cell, so operable() is too strict).
+OM_DERIVE_FIELD(/obj/machinery/recharge_station, unbroken, list("stat"))
+/obj/machinery/recharge_station/proc/unbroken()
+	return !has_stat(BROKEN)
+
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/recharge_station, MACHINE_PIPELINE, list("unbroken", "cell"))
 
 /obj/machinery/recharge_station/Initialize(mapload)
 	. = ..()
@@ -43,11 +52,6 @@
 
 /obj/machinery/recharge_station/machine_step()
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
-	if(has_stat(BROKEN))
-		return PROCESS_KILL
-	if(!cell) // Shouldn't be possible, but sanity check
-		return PROCESS_KILL
-
 	if((has_stat(NOPOWER)) && !has_cell_power()) // No power and cell is dead.
 		if(icon_update_tick)
 			icon_update_tick = 0 //just rebuild the overlay once more only

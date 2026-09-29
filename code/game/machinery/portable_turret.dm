@@ -513,7 +513,6 @@ UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_authdown)
 	check_down = !check_down
 
 /obj/machinery/porta_turret/power_change()
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	if(powered())
 		stat_remove(NOPOWER)
 	else
@@ -788,17 +787,9 @@ DAMAGE_REACTION(/obj/machinery/porta_turret, DAMAGE_EMP, PROC_REF(turret_emp))
 /obj/machinery/porta_turret/proc/set_processing_speed(fast)
 	if(fast == speed_process)
 		return
+	// High gear runs machine_step() on the fast lane (the /obj/machinery speed_process declaration);
+	// low gear hands it back to the machine pipeline, whose step stage hears the settings change.
 	set_speed_process(fast)
-
-	// high gear
-	if(speed_process)
-		MACHINE_SLEEP(src)
-		om_task_periodic(src, PERIODIC_FAST)
-		return
-
-	// low gear
-	om_task_periodic_stop(src)
-	MACHINE_WAKE(src)
 
 /obj/machinery/porta_turret/proc/assess_and_assign(mob/living/L, list/targets, list/secondarytargets)
 	switch(assess_living(L))

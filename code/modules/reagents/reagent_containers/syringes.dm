@@ -31,13 +31,16 @@
 	var/visible_name = "a syringe"
 	var/time = 30
 	var/drawing = FALSE
-	var/used = FALSE
 	var/dirtiness = 0
 	var/list/targets
 	/// Owned list of /datum/syringe_contamination: the contagion copies picked up from each target. Lazy.
 	var/list/viruses
 	drop_sound = SFX_ITEMS_DROP_GLASS
 	pickup_sound = SFX_ITEMS_PICKUP_GLASS
+
+/// Set once it has been injected into someone: from then on it gets dirtier over time.
+OM_FIELD(/obj/item/reagent_containers/syringe, used, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/reagent_containers/syringe, PERIODIC_SLOW, "used")
 
 /obj/item/reagent_containers/syringe/Initialize(mapload)
 	. = ..()
@@ -47,7 +50,7 @@
 /obj/item/reagent_containers/syringe/periodic_step()
 	dirtiness = min(dirtiness + targets.len,75)
 	if(dirtiness >= 75)
-		om_task_periodic_stop(src)
+		return PROCESS_KILL // as dirty as it gets
 	return 1
 
 /obj/item/reagent_containers/syringe/on_reagent_change()
@@ -492,8 +495,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/steroid, null, list(REAGEN
 			for(var/datum/affliction/contagion/virus as anything in old.contagions)
 				target.force_contagion(virus)
 
-	if(!used)
-		om_task_periodic(src, PERIODIC_SLOW)
+	set_used(TRUE)
 
 /obj/item/reagent_containers/syringe/proc/infect_limb(obj/item/organ/external/eo)
 	om_after(eo, rand(5 MINUTES,10 MINUTES), TYPE_PROC_REF(/obj/item/organ/external, syringe_infection))

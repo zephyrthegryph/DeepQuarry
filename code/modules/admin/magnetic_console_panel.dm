@@ -19,7 +19,7 @@ UI_DATA_REPLACE(/obj/machinery/magnetic_controller, "frequency:num", "code", "sp
 /obj/machinery/magnetic_controller/proc/ui_data_obj_machinery_magnetic_controller(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["autolink"] = !!autolink
-	data["moving"] = !!moving
+	data["moving"] = !!path_moving
 
 	var/list/magnet_rows = list()
 	var/i = 0

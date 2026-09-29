@@ -80,7 +80,7 @@
 	var/turf/test_turf = run_loc_floor_bottom_left || locate(1, 1, 1)
 	// autolathe's board declares 1 manipulator, so its rating starts at 1.
 	var/obj/machinery/autolathe/machine = new(test_turf)
-	machine.panel_open = TRUE
+	machine.set_panel_open(TRUE)
 	TEST_ASSERT_EQUAL(machine.get_part_rating(/obj/item/stock_parts/manipulator), 1, "Precondition: the mapped autolathe starts with a rating-1 manipulator.")
 
 	var/obj/item/storage/part_replacer/R = new(test_turf)

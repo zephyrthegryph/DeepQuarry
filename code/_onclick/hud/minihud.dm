@@ -2,12 +2,15 @@
 	var/datum/hud/main_hud
 	/// Our screen elements (owned)
 	var/list/screenobjs
-	var/needs_processing = FALSE
+
+/// Subtypes that update every second set this: periodic_step() runs while it is (DECLARE_PERIODIC_WHILE).
+OM_FIELD(/datum/mini_hud, needs_processing, FALSE, CHANGE_DATUM_A)
+DECLARE_PERIODIC_WHILE(/datum/mini_hud, PERIODIC_SECOND, "needs_processing")
 
 /datum/mini_hud/New(datum/hud/other)
+	..()
 	apply_to_hud(other)
-	if(needs_processing)
-		om_task_periodic(src, PERIODIC_SECOND)
+	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
 
 
 // takes itself off the hud it was applied to.

@@ -19,6 +19,9 @@
 	var/tmp/turf/source
 	var/movetotarget = 1
 
+/// Flies one step every 0.1 s for as long as it exists; move() deletes it when its range runs out.
+DECLARE_REPEAT(/obj/effect/accelerated_particle, 0.1 SECONDS, move, null)
+
 /obj/effect/accelerated_particle/weak
 	icon_state = "particle0"
 	movement_range = 8
@@ -37,7 +40,7 @@
 /obj/effect/accelerated_particle/Initialize(mapload, dir = 2)
 	. = ..()
 	set_dir(dir)
-	move(0.1 SECONDS)
+	move()
 
 /obj/effect/accelerated_particle/Bump(atom/A)
 	if (A)
@@ -52,8 +55,7 @@
 			G.energy += energy
 		else if(istype(A, /obj/machinery/particle_smasher))
 			var/obj/machinery/particle_smasher/G = A
-			G.energy += energy
-			MACHINE_WAKE(G)
+			G.set_energy(G.energy + energy)
 		// R-UST fusion core and particle catcher deleted with the fusion
 		// subsystem (depended on /obj/effect/fusion_em_field in core_field.dm).
 		// Particles passing through where a fusion core used to be just continue
@@ -74,7 +76,7 @@
 	M.apply_effect((radiation*3),IRRADIATE,0)
 
 
-/obj/effect/accelerated_particle/proc/move(lag)
+/obj/effect/accelerated_particle/proc/move()
 	if(target())
 		if(movetotarget)
 			if(!step_towards(src,target()) && !particle_force_step(get_step(src, get_dir(src,target()))))
@@ -92,9 +94,7 @@
 	movement_range--
 	if(movement_range <= 0)
 		qdel(src)
-		return
-
-	om_after(src, lag, PROC_REF(move), lag)
+		return REPEAT_STOP
 
 /// Pushes the particle onto `dest` when a normal step was blocked. At the map edge there is no
 /// turf to push onto: the particle leaves the map (FALSE) and move() deletes it.

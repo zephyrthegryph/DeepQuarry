@@ -81,8 +81,8 @@
 		I.rejuvenate()
 	var/obj/item/organ/internal/brain/brain = organ_in(O_BRAIN)
 	if(istype(brain))
-		brain.status &= ~ORGAN_DEAD
-		brain.damage = 0
+		brain.set_status(brain.status & ~ORGAN_DEAD)
+		brain.set_damage(0)
 		brain.reset_defib_window()
 	remove_mutation(HUSK)
 	status_flags &= ~DISFIGURED

@@ -25,8 +25,6 @@
 
 /obj/machinery/vr_sleeper/alien/machine_step()
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
-	if(!occupant)
-		return PROCESS_KILL
 	if(has_stat(BROKEN))
 		if(occupant)
 			perform_exit()

@@ -121,7 +121,7 @@
 	TEST_ASSERT_NOTNULL(R, "a protean should have a refactory")
 	R.add_stored_material(MAT_STEEL, 1000)
 	var/obj/item/organ/internal/orchestrator = H.organ_in(O_ORCH)
-	orchestrator.status |= ORGAN_DEAD
+	orchestrator.set_status(orchestrator.status | ORGAN_DEAD)
 
 	H.injure(INJURY_BLUNT, 10, BP_L_ARM, flags = INJURE_SILENT)
 	TEST_ASSERT_EQUAL(B.regenerate(), 0, "the human form doesn't regenerate")

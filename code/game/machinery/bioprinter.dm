@@ -258,7 +258,7 @@ DECLARE_APPEARANCE(/obj/machinery/organ_printer, "printing", list("1" = list(APP
 /obj/machinery/organ_printer/proc/print_organ(choice)
 	var/new_organ = choice
 	var/obj/item/organ/O = new new_organ(get_turf(src))
-	O.status |= ORGAN_CUT_AWAY
+	O.set_status(O.status | ORGAN_CUT_AWAY)
 	var/mob/living/carbon/human/C = loaded_dna["donor"]
 	O.set_dna(C.dna)
 	O.data.setup_from_species(C.species)

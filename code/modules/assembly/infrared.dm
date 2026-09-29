@@ -10,9 +10,11 @@ MATERIAL_MIX(/obj/item/assembly/infra, list(MAT_STEEL = 1000, MAT_GLASS = 500))
 
 	secured = 0
 
-	var/on = 0
 	var/visible = 0
 	var/list/i_beams = null
+
+OM_FIELD(/obj/item/assembly/infra, on, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE_ALL(/obj/item/assembly/infra, PERIODIC_SLOW, list("secured", "on"))
 
 /obj/item/assembly/infra/Initialize(mapload)
 	. = ..()
@@ -21,12 +23,14 @@ MATERIAL_MIX(/obj/item/assembly/infra, list(MAT_STEEL = 1000, MAT_GLASS = 500))
 /obj/item/assembly/infra/activate()
 	if(!..())
 		return FALSE
-	on = !on
+	set_on(!on)
+	if(!on)
+		QDEL_LIST_NULL(i_beams)
 	update_icon()
 	return TRUE
 
 /obj/item/assembly/infra/toggle_secure()
-	secured = !secured
+	set_secured(!secured)
 	if(!secured)
 		toggle_state(FALSE)
 	update_icon()
@@ -34,14 +38,11 @@ MATERIAL_MIX(/obj/item/assembly/infra, list(MAT_STEEL = 1000, MAT_GLASS = 500))
 
 /obj/item/assembly/infra/proc/toggle_state(picked)
 	if(!isnull(picked))
-		on = picked
+		set_on(picked)
 	else
-		on = !on
+		set_on(!on)
 
-	if(secured && on)
-		om_task_periodic(src, PERIODIC_SLOW)
-	else
-		om_task_periodic_stop(src)
+	if(!secured || !on)
 		QDEL_LIST_NULL(i_beams)
 	return on
 
@@ -57,11 +58,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/infra, TYPE_PROC_REF(/atom, appearanc
 		holder().update_icon()
 
 /obj/item/assembly/infra/periodic_step()
-	if(!on && i_beams)
-		QDEL_LIST_NULL(i_beams)
-		return
-
-	if(!i_beams && secured && (istype(loc, /turf) || (holder() && istype(holder().loc, /turf))))
+	if(!i_beams && (istype(loc, /turf) || (holder() && istype(holder().loc, /turf))))
 		create_beams()
 
 /obj/item/assembly/infra/proc/create_beams(limit = 8)

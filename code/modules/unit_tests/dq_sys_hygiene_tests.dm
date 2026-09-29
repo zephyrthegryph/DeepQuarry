@@ -31,7 +31,7 @@
 /datum/unit_test/dq_sys_hygiene_anodevice_timer/Run()
 	var/obj/item/anodevice/device = allocate(/obj/item/anodevice, run_loc_floor_bottom_left)
 	device.duration = 1
-	device.activated = TRUE
+	device.set_activated(TRUE)
 	device.arm_emission_timer()
 	TEST_ASSERT(device.emission_timer, "arm_emission_timer() did not schedule the end of the run")
 	for(var/i in 1 to 40)
@@ -43,7 +43,7 @@
 
 	// Shutting down early cancels the timer.
 	device.duration = 100
-	device.activated = TRUE
+	device.set_activated(TRUE)
 	device.arm_emission_timer()
 	device.shutdown_emission()
 	TEST_ASSERT(!device.emission_timer, "shutdown_emission() left the timer armed")

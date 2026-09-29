@@ -37,7 +37,7 @@ EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
 	opened = !opened
 	EA.opened = opened
 	to_chat(user, span_notice("You [opened ? "opened" : "closed"] \the [src]."))
-	secured = 1
+	set_secured(TRUE)
 	update_icon()
 
 APPEARANCE_TEMPLATE(/obj/item/assembly/electronic_assembly, "{initial(icon_state)}{EA?:0}{opened?-open:}")

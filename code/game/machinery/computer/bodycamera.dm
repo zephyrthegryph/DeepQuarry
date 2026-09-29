@@ -12,12 +12,17 @@
 
 	var/obj/item/radio/bradio = null
 	var/obj/effect/overlay/vis/bpinboard
-	var/atom/showing
-	var/obj/item/clothing/accessory/bodycam/the_camera
 
 	var/enabled = TRUE // on or off
 
 REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGISTRY_BODYCAMERA_SCREENS)
+
+/// What it shows (the wearer, or whatever holds them) and the bodycam feeding it; it follows them while both are set.
+OM_FIELD_VIEW(/obj/machinery/computer/security/telescreen/bodycamera, atom, showing, CHANGE_MACHINE_SETTINGS)
+OM_FIELD_VIEW(/obj/machinery/computer/security/telescreen/bodycamera, obj/item/clothing/accessory/bodycam, the_camera, CHANGE_MACHINE_SETTINGS)
+/// Runs while it shows something. The camera view clearing alone (its bodycam destroyed) is handled
+/// in the step, which then stops showing, so the pinboard and `showing` are cleaned up too.
+DECLARE_PERIODIC_WHILE(/obj/machinery/computer/security/telescreen/bodycamera, MACHINE_PIPELINE, "showing")
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/bodycamera, "bradio", /obj/item/radio)
 
@@ -70,14 +75,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/bodycamera, "b
 APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/bodycamera)
 /// Follows the camera while it shows one; otherwise it sleeps until it is shown one.
 /obj/machinery/computer/security/telescreen/bodycamera/machine_step()
-	if(!showing || !the_camera)
-		stop_showing()
-		return PROCESS_KILL
 	var/atom/them = showing
 	var/obj/item/clothing/accessory/bodycam/bo_cam = the_camera
-	var/turf/here = get_turf(them)
-	var/turf/there = get_turf(bo_cam)
-	if(here != there)
+	if(!bo_cam || get_turf(them) != get_turf(bo_cam))
 		stop_showing()
 
 /obj/machinery/computer/security/telescreen/bodycamera/proc/show_thing(atom/thing, obj/item/clothing/accessory/bodycam/other_thing)
@@ -98,7 +98,6 @@ APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/bodycamera)
 			break
 	thing = recursive_loc // should get the topmost atom, which *should* be a mob, or a locker, or something that isnt just ~clothes~
 	rel_set(src, "showing", thing)
-	MACHINE_WAKE(src)
 	if(bpinboard)
 		bpinboard.vis_contents = list(thing)
 

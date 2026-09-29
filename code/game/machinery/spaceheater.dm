@@ -46,6 +46,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/space_heater, "cell", "cell_type")
 // Rows by state: SHEATER_OFF, SHEATER_STANDBY, SHEATER_HEAT, SHEATER_COOL.
 DECLARE_APPEARANCE(/obj/machinery/space_heater, "state", list( 	"0" = list(APPEARANCE_ICON_STATE = "sheater0"), 	"1" = list(APPEARANCE_ICON_STATE = "sheater1"), 	"2" = list(APPEARANCE_ICON_STATE = "sheater2"), 	"3" = list(APPEARANCE_ICON_STATE = "sheater3") ))
 DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("sheater-open"))))
+// Regulates the air while switched on (any state but SHEATER_OFF).
+DECLARE_PERIODIC_WHILE(/obj/machinery/space_heater, MACHINE_PIPELINE, "state")
 
 /obj/machinery/space_heater/Initialize(mapload)
 	. = ..()
@@ -150,7 +152,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 	return TRUE
 
 /obj/machinery/space_heater/screwdriver_act(mob/user, obj/item/tool)
-	panel_open = !panel_open
+	set_panel_open(!panel_open)
 	playsound(src, tool.usesound, 50, TRUE)
 	act_message(user, src, MSG_SELF(span_notice("You [panel_open ? "open" : "close"] the hatch on %T%.")), \
 		MSG_OTHERS(span_notice("%U% [panel_open ? "opens" : "closes"] the hatch on %T%.")))
@@ -165,8 +167,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 		tgui_interact(user)
 	else
 		set_state(state ? SHEATER_OFF : SHEATER_STANDBY)
-		if(state)
-			MACHINE_WAKE(src)
 		act_message(user, src, MSG_SELF(span_notice("You switch [state ? "on" : "off"] %T%.")),
 			MSG_OTHERS(span_notice("%U% switches [state ? "on" : "off"] %T%.")))
 	return
@@ -202,8 +202,6 @@ UI_ACT(/obj/machinery/space_heater, "temp", ui_act_temp, UI_ARG_NUM("newtemp"))
 UI_ACT_PROC(/obj/machinery/space_heater, ui_act_temp)
 	// limit to 0-90 degC
 	set_temperature = clamp(params["newtemp"], min_temperature, max_temperature)
-	if(state)
-		MACHINE_WAKE(src)
 	. = TRUE
 
 UI_ACT(/obj/machinery/space_heater, "cellremove", ui_act_cellremove)
@@ -227,17 +225,12 @@ UI_ACT_PROC(/obj/machinery/space_heater, ui_act_cellinstall)
 			own_set(src, "cell", C) // CONTAINED: in contents first
 			C.add_fingerprint(ui.user)
 			power_change()
-			if(state)
-				MACHINE_WAKE(src)
 			act_message(ui.user, src, MSG_SELF(span_notice("You insert %I% into %T%.")), \
 				MSG_OTHERS(span_notice("%U% inserts %I% into %T%.")), \
 				item = C)
 		. = TRUE
 
 /obj/machinery/space_heater/machine_step()
-	if(!state)
-		return PROCESS_KILL
-
 	if(cell && cell.charge)
 		var/datum/gas_mixture/env = loc.return_air()
 		if(env && abs(env.return_temperature() - set_temperature) > 0.1)
@@ -285,9 +278,5 @@ UI_ACT_PROC(/obj/machinery/space_heater, ui_act_cellinstall)
 #undef DEFAULT_MAX_TEMP
 #undef DEFAULT_HEATING_POWER
 
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/space_heater/step_start_condition()
-	return state
 
 OWN(/obj/machinery/space_heater, cell, OWN_CONTAINED)

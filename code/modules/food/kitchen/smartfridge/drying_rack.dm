@@ -8,6 +8,8 @@
 	// dry() works on each real item in turn.
 	collapse_stock = FALSE
 
+DECLARE_PERIODIC_WHILE(/obj/machinery/smartfridge/drying_rack, MACHINE_PIPELINE, "operable")
+
 /obj/machinery/smartfridge/drying_rack/Initialize(mapload)
 	. = ..()
 	make_climbable()
@@ -25,8 +27,6 @@
 
 /obj/machinery/smartfridge/drying_rack/machine_step()
 	..()
-	if(!operable())
-		return PROCESS_KILL
 	if(stored_count())
 		dry()
 		update_icon()
@@ -80,6 +80,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge/drying_rack, TYPE_PROC_REF(/a
 				rel_remove(I, "instances", WL)
 				break
 
-			WL.wetness = max(0, WL.wetness - rand(1, 3))
+			WL.set_wetness(max(0, WL.wetness - rand(1, 3)))
 
 	return

@@ -27,7 +27,6 @@
 	sharp = TRUE
 	injury_kind = INJURY_CUT
 	embed_chance = 0
-	var/tmp/mob/living/carbon/human/last_touched	//The last human that touched us
 	var/stored_blood = 0 //How much energy we have!
 	COOLDOWN_DECLARE(special_cooldown) //When our powers may next be used. Can be admin-set to a high number to keep the mode from being changed.
 	var/static/list/abilities = list("Consecrate", "Summon")
@@ -35,6 +34,10 @@
 	var/consecrating = FALSE //If we are consecrating or not!
 	var/consecration_cost = 10 //Ten stored_blood per use!
 	var/empowered = FALSE //If our next atack is empowered (2x damage)
+
+//The last human that touched us (an OM handle): the blade works on them while it has one.
+OM_FIELD_VIEW(/obj/item/melee/artifact_blade, tmp/mob/living/carbon/human, last_touched, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/melee/artifact_blade, PERIODIC_SLOW, "last_touched")
 
 /obj/item/melee/artifact_blade/examine(mob/user)
 	. = ..()
@@ -45,7 +48,6 @@
 	if(!last_touched() || !stored_blood) //Nobody has touched us yet or we have no energy...For now.
 		return
 	if(!last_touched() || last_touched().stat == DEAD) //If our user doesn't exist or is dead, stop processing until the next unlucky sod touches us.
-		om_task_periodic_stop(src)
 		rel_clear(src, "last_touched")
 		return
 	if(loc == last_touched() && (last_touched().life_tick % 30 == 0)) //We are currently being wielded by our owner. One proc every minute.
@@ -150,7 +152,6 @@
 	if((user != last_touched()) && !iscultist(user) && ishuman(user))
 		to_chat(user, span_cult("An overwhelming feeling of dread comes over you as you pick up the sword. You feel as though it has become attached to you."))
 		rel_set(src, "last_touched", user)
-		om_task_periodic(src, PERIODIC_SLOW)
 
 DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/melee/artifact_blade/proc/cooled_down)))
 

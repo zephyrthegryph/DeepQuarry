@@ -5,7 +5,17 @@
 	var/our_color = "#FFFFFF"
 	var/our_brightness = 1.0
 
+/// world.time the running rainbow() ends; rainbow_step() runs every 0.3 s while set (DECLARE_REPEAT).
+OM_FIELD_TYPED(/datum/sun_holder, tmp, rainbow_ends_at, 0, CHANGE_DATUM_A)
+DECLARE_REPEAT(/datum/sun_holder, 0.3 SECONDS, rainbow_step, "rainbow_ends_at")
+/// The running rainbow's next colour, and the light to restore when it ends.
+/datum/sun_holder/var/tmp/rainbow_index = 1
+/datum/sun_holder/var/tmp/rainbow_original_brightness
+/datum/sun_holder/var/tmp/rainbow_original_color
+
 /datum/sun_holder/New(source)
+	..()
+	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
 	own_set(src, "sun", new /atom/movable/sun_visuals(null))
 	our_planet_static = source
 
@@ -48,26 +58,24 @@
 	sun.remove_from_turf(T)
 
 /datum/sun_holder/proc/rainbow()
-	var/ends_at = world.time + 30 SECONDS
-
-
-	var/list/colors = list("#ff5d5d","#ffd17b","#ffff5e","#7eff7e","#6868ff","#b753ff","#d08fff","#ffffff")
-	var/original_brightness = sun.alpha/255
-	var/original_color = sun.color
-
+	if(!rainbow_ends_at)
+		rainbow_original_brightness = sun.alpha/255
+		rainbow_original_color = sun.color
+		rainbow_index = 1
 	update_brightness(0.8)
-	rainbow_step(ends_at, colors, 1, original_brightness, original_color)
+	set_rainbow_ends_at(world.time + 30 SECONDS)
 
-/// One colour of the rainbow every 0.3 s until `ends_at`, then the original light.
-/datum/sun_holder/proc/rainbow_step(ends_at, list/colors, col_index, original_brightness, original_color)
-	if(!BEFORE(src, ends_at, CLOCK_WORLD))
-		update_brightness(original_brightness)
-		update_color(original_color)
-		return
-	update_color(colors[col_index])
-	if(++col_index > colors.len)
-		col_index = 1
-	om_after(src, 0.3 SECONDS, PROC_REF(rainbow_step), ends_at, colors, col_index, original_brightness, original_color)
+/// One colour of the rainbow every 0.3 s until `rainbow_ends_at`, then the original light (DECLARE_REPEAT).
+/datum/sun_holder/proc/rainbow_step()
+	var/static/list/colors = list("#ff5d5d","#ffd17b","#ffff5e","#7eff7e","#6868ff","#b753ff","#d08fff","#ffffff")
+	if(!BEFORE(src, rainbow_ends_at, CLOCK_WORLD))
+		set_rainbow_ends_at(0)
+		update_brightness(rainbow_original_brightness)
+		update_color(rainbow_original_color)
+		return REPEAT_STOP
+	update_color(colors[rainbow_index])
+	if(++rainbow_index > colors.len)
+		rainbow_index = 1
 
 // Holds a full white icon that can be mutated to make sun on the O_LIGHTING plane
 /atom/movable/sun_visuals

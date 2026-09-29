@@ -5,8 +5,15 @@
 	drop_sound = SFX_ITEMS_DROP_SODA
 	pickup_sound = SFX_ITEMS_PICKUP_SODA
 	cant_chance = 1 //arbitrarily high for april fools; if it's not reverted in its entirety I suggest rolling it down to 2% or something
-	var/shaken = 0 // How many times this can has been shaken.
 	is_can = TRUE
+
+/// How many times this can has been shaken; it settles back down over time.
+OM_FIELD(/obj/item/reagent_containers/food/drinks/cans, shaken, 0, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/item/reagent_containers/food/drinks/cans, is_shaken, list("shaken"))
+DECLARE_PERIODIC_WHILE(/obj/item/reagent_containers/food/drinks/cans, PERIODIC_SLOW, "is_shaken")
+
+/obj/item/reagent_containers/food/drinks/cans/proc/is_shaken()
+	return shaken > 0
 
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF_AS(I_HURT, "Shake", PROC_REF(cans_self)), INTERACT_SELF(null, PROC_REF(cans_self)))
 
@@ -15,14 +22,10 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	drinks_self(user, held, interaction)
 	if(interaction.stance == I_HURT && !is_open_container())
 		to_chat(user, span_warning("You shake [src]."))
-		if(!shaken)
-			om_task_periodic(src, PERIODIC_SLOW)
-		shaken += 3
+		set_shaken(shaken + 3)
 		return TRUE
 	if(has_trait(user, TRAIT_UNLUCKY) && prob(10)) // Because it's always funny
-		if(!shaken)
-			om_task_periodic(src, PERIODIC_SLOW)
-		shaken += 10
+		set_shaken(shaken + 10)
 	return TRUE
 
 /obj/item/reagent_containers/food/drinks/cans/open(mob/user)
@@ -42,9 +45,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 			consume(src, user)
 
 /obj/item/reagent_containers/food/drinks/cans/periodic_step(delta)
-	if(shaken <= 0)
-		return PROCESS_KILL
-	shaken -= delta / (1 SECONDS) // the periodic lane passes deciseconds
+	set_shaken(max(0, shaken - delta / (1 SECONDS))) // the periodic lane passes deciseconds
 
 //DRINKS
 

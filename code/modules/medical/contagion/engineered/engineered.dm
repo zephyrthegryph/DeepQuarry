@@ -111,8 +111,8 @@ GLOBAL_LIST_INIT(advance_cures, list(
 	own_clear(A, "symptoms", OWN_DELETE)
 	for(var/datum/viral_trait/S as anything in symptoms)
 		own_add(A, "symptoms", S.Copy())
-	A.virus_modifiers = virus_modifiers & ~(PROCESSING | HAS_TIMER)
-	A.spread_flags = spread_flags
+	A.set_virus_modifiers(virus_modifiers & ~(PROCESSING | HAS_TIMER))
+	A.set_spread_flags(spread_flags)
 	A.disease_flags = disease_flags
 	A.resistance = resistance
 	A.stealth = stealth
@@ -218,9 +218,6 @@ GLOBAL_LIST_INIT(advance_cures, list(
 		var/actual_name = A.name
 		if(actual_name != DEVELOPER_WARNING_NAME)
 			name = actual_name
-	// Spread routes may have changed: start or park the airborne lane.
-	if(body)
-		update_spread_lane()
 
 
 /datum/affliction/contagion/engineered/proc/GenerateProperties()
@@ -279,21 +276,21 @@ GLOBAL_LIST_INIT(advance_cures, list(
 
 /datum/affliction/contagion/engineered/proc/SetSpread()
 	if(global_flag_check(virus_modifiers, FALTERED))
-		spread_flags = DISEASE_SPREAD_FALTERED
+		set_spread_flags(DISEASE_SPREAD_FALTERED)
 		spread_text = "Intentional Injection"
 	if(global_flag_check(virus_modifiers, DORMANT))
-		spread_flags = DISEASE_SPREAD_NON_CONTAGIOUS
+		set_spread_flags(DISEASE_SPREAD_NON_CONTAGIOUS)
 		spread_text = "None"
 	else
 		switch(transmission)
 			if(-INFINITY to 5)
-				spread_flags = DISEASE_SPREAD_BLOOD
+				set_spread_flags(DISEASE_SPREAD_BLOOD)
 				spread_text = "Blood"
 			if(6 to 10)
-				spread_flags = DISEASE_SPREAD_BLOOD | DISEASE_SPREAD_FLUIDS
+				set_spread_flags(DISEASE_SPREAD_BLOOD | DISEASE_SPREAD_FLUIDS)
 				spread_text = "Fluids"
 			if(11 to INFINITY)
-				spread_flags = DISEASE_SPREAD_BLOOD | DISEASE_SPREAD_FLUIDS | DISEASE_SPREAD_CONTACT
+				set_spread_flags(DISEASE_SPREAD_BLOOD | DISEASE_SPREAD_FLUIDS | DISEASE_SPREAD_CONTACT)
 				spread_text = "On Contact"
 
 /datum/affliction/contagion/engineered/proc/SetDanger(level_sev)
@@ -381,8 +378,8 @@ GLOBAL_LIST_INIT(advance_cures, list(
 	if(global_flag_check(virus_modifiers, FALTERED))
 		return
 	else
-		virus_modifiers |= FALTERED
-		spread_flags = DISEASE_SPREAD_BLOOD
+		set_virus_modifiers(virus_modifiers | FALTERED)
+		set_spread_flags(DISEASE_SPREAD_BLOOD)
 		spread_text = "Intentional Injection"
 
 // Name the disease.

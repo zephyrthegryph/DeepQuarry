@@ -64,6 +64,11 @@
 	icon = 'icons/obj/Shadekin_powers.dmi'
 	icon_state = "dark_maw_waiting"
 
+/// TRUE while the maw lies in wait (placed, not yet triggered): it checks the light every 2 s and
+/// dispels in the light.
+OM_FIELD(/obj/effect/abstract/dark_maw, armed, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/effect/abstract/dark_maw, PERIODIC_SLOW, "armed")
+
 /obj/effect/abstract/dark_maw/Initialize(mapload, mob/user, trigger_now = FALSE)
 	. = ..()
 	if(!isturf(loc))
@@ -101,7 +106,7 @@
 		if(SK)
 			rel_add(SK, "active_dark_maws", src)
 		flick("dark_maw", src)
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_armed(TRUE)
 
 ///Called when we get a signal that our owner is being qdel'd
 /obj/effect/abstract/dark_maw/proc/drop_everything_and_delete(datum/source, datum/om/event/qdeleting/event)
@@ -132,7 +137,7 @@
 	qdel(src)
 
 /obj/effect/abstract/dark_maw/proc/triggered_by(mob/living/L, triggered_instantly = 0)
-	om_task_periodic_stop(src)
+	set_armed(FALSE)
 	icon_state = "dark_maw_used"
 	flick("dark_maw_tr", src)
 	L.status_adjust(EFFECT_STUNNED, 4)

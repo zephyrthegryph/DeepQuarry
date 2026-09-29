@@ -6,7 +6,6 @@
 	icon_state = "syringegun"
 	var/list/syringes
 	var/list/known_reagents
-	var/list/processed_reagents
 	var/max_syringes = 10
 	var/max_volume = 75 //max reagent volume
 	var/synth_speed = 5 //[num] reagent units per cycle
@@ -17,17 +16,21 @@
 	required_type = list(/obj/mecha/medical)
 
 DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_volume", null)
+/// Reagent ids selected for synthesis. Replaced whole (never mutated in place) so the setter raises.
+OM_FIELD_TYPED(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, list, processed_reagents, null, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, synthesizing, list("chassis", "processed_reagents"))
+DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, PERIODIC_FAST, "synthesizing")
+
+/// Derived field: mounted with reagents selected for synthesis.
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/synthesizing()
+	return chassis && length(processed_reagents)
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/Initialize(mapload)
 	. = ..()
 	flags |= NOREACT
 	own_take_all(src, "syringes")
 	known_reagents = list(REAGENT_ID_INAPROVALINE=REAGENT_INAPROVALINE,REAGENT_ID_ANTITOXIN=REAGENT_ANTITOXIN)
-	processed_reagents = new
-
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/detach()
-	om_task_periodic_stop(src)
-	return ..()
+	set_processed_reagents(list())
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/critfail()
 	..()
@@ -132,16 +135,16 @@ UI_DATA_REPLACE(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "synth_s
 UI_ACT(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "select_reagents", ui_act_select_reagents, UI_ARG_LIST("reagents"))
 UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, ui_act_select_reagents)
 	var/list/picks = params["reagents"]
-	processed_reagents.Cut()
+	var/list/selected = list()
 	var/m = 0
 	for(var/reagent_id in picks)
 		if(m >= synth_speed)
 			break
 		if(reagent_id in known_reagents)
-			processed_reagents += reagent_id
+			selected += reagent_id
 			m++
+	set_processed_reagents(selected)
 	if(processed_reagents.len)
-		om_task_periodic(src, PERIODIC_FAST)
 		occupant_message("Reagent processing started.")
 		src.mecha_log_message("Reagent processing started.")
 	return TRUE
@@ -282,8 +285,6 @@ UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, ui_act_purge
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/periodic_step()
-	if(!chassis)
-		return PROCESS_KILL
 	if(!processed_reagents.len || reagents.total_volume >= reagents.maximum_volume || !chassis.has_charge(energy_drain))
 		occupant_message(span_warning("Reagent processing stopped."))
 		src.mecha_log_message("Reagent processing stopped.")
@@ -324,23 +325,22 @@ UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, ui_act_purge
 
 	equip_type = EQUIP_HULL
 
+/// Jammed by a critical failure: the drone stays down until it is detached (and so reset).
+OM_FIELD(/obj/item/mecha_parts/mecha_equipment/crisis_drone, jammed, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE_ALL(/obj/item/mecha_parts/mecha_equipment/crisis_drone, PERIODIC_SLOW, list("chassis", "!jammed"))
+
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/Initialize(mapload)
 	. = ..()
 	drone_overlay = new(src.icon, icon_state = droid_state)
 
-/obj/item/mecha_parts/mecha_equipment/crisis_drone/attach(obj/mecha/M as obj)
-	. = ..(M)
-	if(chassis)
-		om_task_periodic(src, PERIODIC_SLOW)
-
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/detach(atom/moveto=null)
 	shut_down()
 	. = ..(moveto)
-	om_task_periodic_stop(src)
+	set_jammed(FALSE)
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/critfail()
 	. = ..()
-	om_task_periodic_stop(src)
+	set_jammed(TRUE)
 	shut_down()
 	if(chassis && chassis?.slot_item(MECHA_SLOT_PILOT))
 		to_chat(chassis?.slot_item(MECHA_SLOT_PILOT), span_notice("\The [chassis] shudders as something jams!"))

@@ -265,7 +265,7 @@ DAMAGE_REACTION(/obj/machinery/camera, DAMAGE_EMP, PROC_REF(camera_emp))
 
 /obj/machinery/camera/screwdriver_act(mob/user, obj/item/tool)
 	update_coverage()
-	panel_open = !panel_open
+	set_panel_open(!panel_open)
 	act_message(user, null, MSG_SELF(span_notice("You screw the camera's panel [panel_open ? "open" : "closed"].")), \
 		MSG_OTHERS(span_warning("%U% screws the camera's panel [panel_open ? "open" : "closed"]!")))
 	playsound(src, tool.usesound, 50, TRUE)

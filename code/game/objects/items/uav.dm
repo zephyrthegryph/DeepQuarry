@@ -22,7 +22,6 @@
 	light_range = 4
 	light_power = 4
 	var/power_per_process = 50 // About 6.5 minutes of use on a high-cell (10,000)
-	var/state = UAV_OFF
 
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail
 
@@ -203,6 +202,14 @@ DECLARE_APPEARANCE(/obj/item/uav, "state", list( \
 	"2" = list(APPEARANCE_OVERLAYS = list("uav_pairing")) \
 ))
 
+OM_FIELD(/obj/item/uav, state, UAV_OFF, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/item/uav, is_flying, list("state"))
+/// Drains its cell and watches for masters every 2 s while flying.
+DECLARE_PERIODIC_WHILE(/obj/item/uav, PERIODIC_SLOW, "is_flying")
+
+/obj/item/uav/proc/is_flying()
+	return state == UAV_ON
+
 /obj/item/uav/periodic_step()
 	if(cell?.use(power_per_process) != power_per_process)
 		visible_message(span_warning("[src] sputters and thuds to the ground, inert."))
@@ -218,11 +225,11 @@ DECLARE_APPEARANCE(/obj/item/uav, "state", list( \
 /obj/item/uav/proc/toggle_pairing()
 	switch(state)
 		if(UAV_PAIRING)
-			state = UAV_OFF
+			set_state(UAV_OFF)
 			update_icon()
 			return TRUE
 		if(UAV_OFF)
-			state = UAV_PAIRING
+			set_state(UAV_PAIRING)
 			update_icon()
 			return TRUE
 	return FALSE
@@ -242,14 +249,14 @@ DECLARE_APPEARANCE(/obj/item/uav, "state", list( \
 		power_down()
 	switch(state)
 		if(UAV_OFF) //Packing
-			state = UAV_PACKED
+			set_state(UAV_PACKED)
 			w_class = ITEMSIZE_LARGE
 			slowdown = 0.5
 			set_density(FALSE)
 			update_icon()
 			return TRUE
 		if(UAV_PACKED) //Unpacking
-			state = UAV_OFF
+			set_state(UAV_OFF)
 			w_class = ITEMSIZE_HUGE
 			slowdown = 1.5
 			set_density(TRUE)
@@ -264,11 +271,10 @@ DECLARE_APPEARANCE(/obj/item/uav, "state", list( \
 		visible_message(span_warning("[src] sputters and chugs as it tries, and fails, to power up."))
 		return
 
-	state = UAV_ON
+	set_state(UAV_ON)
 	update_icon()
 	start_hover()
 	set_light_on(TRUE)
-	om_task_periodic(src, PERIODIC_SLOW)
 	no_masters_time = 0
 	visible_message(span_notice("[nickname] buzzes and lifts into the air."))
 
@@ -276,12 +282,11 @@ DECLARE_APPEARANCE(/obj/item/uav, "state", list( \
 	if(state != UAV_ON)
 		return
 
-	state = UAV_OFF
+	set_state(UAV_OFF)
 	update_icon()
 	stop_hover()
 	set_light_on(FALSE)
 	clear_masters()
-	om_task_periodic_stop(src)
 	visible_message(span_notice("[nickname] gracefully settles onto the ground."))
 
 //////////////// Helpers

@@ -113,7 +113,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/tvalve, TYPE_PROC_REF(/atom,
 	return get_node_connect_dirs_trinary(dir, mirrored)
 
 /obj/machinery/atmospherics/tvalve/atmos_init()
-	MACHINE_SLEEP(src)
 	if(node1 && node2 && node3)
 		return
 

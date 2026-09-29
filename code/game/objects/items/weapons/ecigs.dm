@@ -2,7 +2,6 @@
 	name = DEVELOPER_WARNING_NAME // "electronic cigarette"
 	desc = "For the modern approach to smoking."
 	icon = 'icons/obj/ecig.dmi'
-	var/active = 0
 	var/cartridge_type = /obj/item/reagent_containers/ecig_cartridge/med_nicotine
 	var/obj/item/reagent_containers/ecig_cartridge/ec_cartridge // owned: the loaded cartridge, kept in the e-cig's contents
 	w_class = ITEMSIZE_TINY
@@ -21,6 +20,10 @@
 	. = ..()
 
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/mask/smokable/ecig, "ec_cartridge", "cartridge_type")
+
+/// Vapes (periodic_step) every 2 s while switched on (replaces the smokable's "lit").
+OM_FIELD(/obj/item/clothing/mask/smokable/ecig, active, 0, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/clothing/mask/smokable/ecig, PERIODIC_SLOW, "active")
 
 /obj/item/clothing/mask/smokable/ecig/examine(mob/user)
 	. = ..()
@@ -79,10 +82,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/mask/smokable/ecig, "ec_cartridge", "ca
 	if(ishuman(loc))
 		var/mob/living/carbon/human/C = loc
 		if (src == C.get_equipped_item(SLOT_ID_MASK) && C.check_has_mouth()) // if it's in the human/monkey mouth, transfer reagents to the mob
-			if (!active || !ec_cartridge || !ec_cartridge.reagents.total_volume)//no cartridge
+			if (!ec_cartridge || !ec_cartridge.reagents.total_volume)//no cartridge
 				to_chat(C, span_notice("[src] turns off."))
-				active=0//autodisable the cigarette
-				om_task_periodic_stop(src)
+				set_active(0)//autodisable the cigarette
 				update_icon()
 				return
 			ec_cartridge.reagents.trans_to_mob(C, REM, CHEM_INGEST, 0.4) // Most of it is not inhaled... balance reasons.
@@ -130,16 +132,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/ecig, \
 /// Old attack_self. Returns FALSE so the clothing self-use still follows, as the old ..() did.
 /obj/item/clothing/mask/smokable/ecig/proc/ecig_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(active)
-		active = FALSE
-		om_task_periodic_stop(src)
+		set_active(FALSE)
 		to_chat(user, span_notice("You turn off \the [src]. "))
 		update_icon()
 	else
 		if(!ec_cartridge)
 			to_chat(user, span_notice("You can't use it with no cartridge installed!."))
 			return FALSE
-		active = TRUE
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_active(TRUE)
 		to_chat(user, span_notice("You turn on \the [src]. "))
 		update_icon()
 	return FALSE
@@ -149,7 +149,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/ecig, \
 	if(user.get_inactive_hand() != src)//if being hold
 		return FALSE
 	if (ec_cartridge)
-		active=0
+		set_active(0)
 		user.put_in_hands(ec_cartridge)
 		to_chat(user, span_notice("You eject [ec_cartridge] from \the [src]."))
 		own_take(src, "ec_cartridge")

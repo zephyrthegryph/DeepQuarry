@@ -333,6 +333,7 @@
 	poll.state = list(generation, jobs, ready, scale_x, scale_y, had_client, list(), world.time + DQ_PREVIEW_JOB_TIMEOUT)
 	rel_set(poll, "prefs", src)
 	own_add(GLOB.character_setup_service, "preview_polls", poll)
+	poll.set_polling(TRUE) // the declared repeat polls once a tick while this holds
 	poll.poll_step()
 
 /// One in-flight character preview render: owned by the character setup service.
@@ -341,6 +342,17 @@
 	var/datum/preferences/prefs
 	/// generation, jobs, ready, scale_x, scale_y, had_client, outputs, deadline.
 	var/list/state
+
+/// Jobs still outstanding: poll_step() runs once a tick while set.
+OM_FIELD(/datum/dq_preview_poll, polling, FALSE, CHANGE_DATUM_A)
+DECLARE_REPEAT(/datum/dq_preview_poll, "poll_delay", poll_step, "polling")
+
+/datum/dq_preview_poll/New()
+	..()
+	lifecycle_decls_init(src) // a non-atom has no materialize
+
+/datum/dq_preview_poll/proc/poll_delay()
+	return world.tick_lag
 
 /// One poll of a render's iconforge jobs.
 /datum/dq_preview_poll/proc/poll_step()
@@ -353,8 +365,8 @@
 		if(output != RUSTG_JOB_NO_RESULTS_YET)
 			outputs[dir_key] = output
 	if(length(outputs) < length(jobs) && ELAPSED_SINCE(null, state[8], CLOCK_WORLD) <= 0)
-		om_after(src, world.tick_lag, PROC_REF(poll_step))
-		return
+		return // the declared repeat polls again next tick
+	set_polling(FALSE)
 	if(prefs)
 		prefs.dq_finish_preview_jobs(state)
 		own_remove(GLOB.character_setup_service, "preview_polls", src)

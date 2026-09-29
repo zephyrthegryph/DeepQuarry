@@ -100,15 +100,19 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/lasertag, \
 	else
 		user.visible_message(span_notice("[src]'s healing function has been turned off!"))
 
+/// TRUE from equipped() until dropped(): it heals over time while worn.
+OM_FIELD(/obj/item/clothing/suit/lasertag, tag_worn, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/clothing/suit/lasertag, PERIODIC_SLOW, "tag_worn")
+
 /obj/item/clothing/suit/lasertag/dropped(mob/user, equipping, slot)
 	..()
-	om_task_periodic_stop(src)
+	set_tag_worn(FALSE)
 	visible_message(span_notice("[src] is unequipped, its health going back to full!"))
 	lasertag_health = lasertag_max_health
 
 /obj/item/clothing/suit/lasertag/equipped()
 	..()
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_tag_worn(TRUE)
 
 /obj/item/clothing/suit/lasertag/periodic_step()
 	if(lasertag_health >= lasertag_max_health) //If we're at or above max health(due to admemes), no need to process.

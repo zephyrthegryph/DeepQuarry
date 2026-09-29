@@ -1,5 +1,4 @@
 /obj/machinery/paradoxrift
-	step_on_power_change = TRUE
 	name = "Paradoxical Rift Generator"
 	idle_power_usage = 2500000
 	use_power = USE_POWER_OFF
@@ -9,6 +8,13 @@
 	var/build_eff = 1
 	var/loot_eff = 1
 	var/chaos_eff = 1
+
+/// Unpowered: the rift spills loot only while it has no power.
+OM_DERIVE_FIELD(/obj/machinery/paradoxrift, unpowered, list("stat"))
+/obj/machinery/paradoxrift/proc/unpowered()
+	return has_stat(NOPOWER)
+
+DECLARE_PERIODIC_WHILE(/obj/machinery/paradoxrift, MACHINE_PIPELINE, "unpowered")
 
 /obj/item/circuitboard/paradoxrift
 	name = "paradox rift generator circuit"
@@ -32,26 +38,17 @@
 	chaos_eff = cap_rating
 
 
-/// Spills loot only while unpowered: every power change runs a step, and powered it sleeps.
+/// Spills loot while unpowered (the declaration above runs it only then).
 /obj/machinery/paradoxrift/machine_step()
-	if(!has_stat(NOPOWER))
-		return PROCESS_KILL
-	else
-		if(prob(0.5*build_eff))
-			if(prob(3*loot_eff))
-				new /obj/random/greaterportalloot (src.loc)
-				if(prob(30/chaos_eff))
-					new /obj/random/mob/interspace (src.loc)
-				else
-					return
-			else
-				new /obj/random/portalloot (src.loc)
-				if(prob(15/chaos_eff))
-					new /obj/random/mob/interspace (src.loc)
-				else
-					return
+	if(prob(0.5*build_eff))
+		if(prob(3*loot_eff))
+			new /obj/random/greaterportalloot (src.loc)
+			if(prob(30/chaos_eff))
+				new /obj/random/mob/interspace (src.loc)
 		else
-			return
+			new /obj/random/portalloot (src.loc)
+			if(prob(15/chaos_eff))
+				new /obj/random/mob/interspace (src.loc)
 
 
 /obj/random/portalloot

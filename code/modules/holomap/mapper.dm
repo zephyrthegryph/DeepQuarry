@@ -25,7 +25,6 @@
 	var/list/icon_image_cache
 
 	var/pinging = FALSE
-	var/updating = FALSE
 	var/global/icon/mask_icon
 	var/atom/movable/screen/mapper/extras_holder/extras_holder
 	var/hud_frame_hint
@@ -184,16 +183,18 @@ DECLARE_INTERACTIONS(/obj/item/mapping_unit, \
 
 REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 
+/// Showing and refreshing its map (start_updates()/stop_updates()).
+OM_FIELD(/obj/item/mapping_unit, updating, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/mapping_unit, PERIODIC_SLOW, "updating")
+
 /obj/item/mapping_unit/proc/start_updates()
 	registry_join(REGISTRY_MAPPING_UNITS, src)
-	updating = TRUE
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_updating(TRUE)
 	periodic_step()
 
 /obj/item/mapping_unit/proc/stop_updates()
 	registry_leave(REGISTRY_MAPPING_UNITS, src)
-	om_task_periodic_stop(src)
-	updating = FALSE
+	set_updating(FALSE)
 	if(hud_item)
 		hud_item.off(FALSE)
 
@@ -206,7 +207,7 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 	own_clear(src, "hud_datum", OWN_DELETE) // its holder screen object goes with it
 
 /obj/item/mapping_unit/periodic_step()
-	if(!updating || (uses_power && !cell))
+	if(uses_power && !cell)
 		stop_updates()
 		return
 

@@ -95,14 +95,21 @@ REL_PAIR(/obj/machinery/clonepod, connected, pods)
 	if(target.get_occupant() == source)
 		target.set_occupant(null)
 
+/// The occupant slot view is a field: rel_set/rel_clear (and the framework clearing it) raise CHANGE_MACHINE_OCCUPANT.
+OM_FIELD_VIEW_OF(/obj/machinery/clonepod, occupant_mob, CHANGE_MACHINE_OCCUPANT)
+OM_DERIVE_FIELD(/obj/machinery/clonepod, clonepod_occupied, list("occupant_mob"))
+DECLARE_PERIODIC_WHILE(/obj/machinery/clonepod, MACHINE_PIPELINE, "clonepod_occupied")
+
+/// Derived field: the pod holds a clone (writing occupant_mob raises CHANGE_MACHINE_OCCUPANT).
+/obj/machinery/clonepod/proc/clonepod_occupied()
+	return occupant_mob ? TRUE : FALSE
+
 /obj/machinery/clonepod/proc/set_occupant(mob/living/L)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!L)
 		rel_clear(src, "occupant_mob")
-		MACHINE_SLEEP(src)
 		return
 	rel_set(src, "occupant_mob", L)
-	MACHINE_WAKE(src)
 
 /obj/machinery/clonepod/proc/get_occupant()
 	RETURN_TYPE(/mob/living)

@@ -82,8 +82,6 @@
 	var/float_direction = 0
 	// Process() iterator count.
 	var/process_ticks = 0
-	// These control what toggleable processes are executed within process().
-	var/current_processes = MECHA_PROC_INT_TEMP
 
 //mechaequipt2 stuffs
 	var/list/hull_equipment
@@ -202,7 +200,6 @@ DECLARE_DEFAULT_CHILD(/obj/mecha, "phasing_action", /datum/action/innate/mecha/m
 DECLARE_DEFAULT_CHILD(/obj/mecha, "cloak_action", /datum/action/innate/mecha/mech_toggle_cloaking)
 DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/smoke_spread)
 
-DECLARE_PERIODIC(/obj/mecha, PERIODIC_SLOW)
 
 /obj/mecha/Initialize(mapload)
 	. = ..()
@@ -387,16 +384,22 @@ DECLARE_PERIODIC(/obj/mecha, PERIODIC_SLOW)
 
 	..()
 
+/// These control what toggleable processes are executed within periodic_step() (MECHA_PROC_*).
+OM_FLAG_FIELD(/obj/mecha, current_processes, MECHA_PROC_INT_TEMP, CHANGE_EXPLICIT)
+/// Derived field: the cabin simulation has something to advance -- a pilot, or inertial movement /
+/// internal damage. An empty parked mech with neither does not tick. Pilot entry/exit raise the
+/// relation channels (the pilot slot's om_link/om_unlink).
+OM_DERIVE_FIELD(/obj/mecha, cabin_active, list("current_processes", CHANGE_RELATION_ADDED, CHANGE_RELATION_REMOVED))
+DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
+
+/obj/mecha/proc/cabin_active()
+	return slot_item(MECHA_SLOT_PILOT) || (current_processes & (MECHA_PROC_MOVEMENT | MECHA_PROC_DAMAGE))
+
 // The main process loop to replace the ancient global iterators.
 // It's a bit hardcoded but I don't see anyone else adding stuff to
 // mechas, and it's easy enough to modify.
 /obj/mecha/periodic_step()
-	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	var/static/max_ticks = 16
-	// An empty parked mech has no player-visible cabin simulation to advance.
-	// Entry and every active-process transition wake it explicitly.
-	if(!occupant && !(current_processes & (MECHA_PROC_MOVEMENT | MECHA_PROC_DAMAGE)))
-		return PROCESS_KILL
 
 	if (current_processes & MECHA_PROC_MOVEMENT)
 		process_inertial_movement()
@@ -1638,7 +1641,6 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 		H.stop_pulling()
 		if(!H.move_into(src, MECHA_SLOT_PILOT))
 			return
-		om_task_periodic(src, PERIODIC_SLOW)
 		src.add_fingerprint(H)
 		src.log_append_to_last("[H] moved in as pilot.")
 		update_icon()
@@ -2637,11 +2639,10 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 //////// Mecha process() helpers ////////
 /////////////////////////////////////////
 /obj/mecha/proc/stop_process(process)
-	current_processes &= ~process
+	current_processes_remove(process)
 
 /obj/mecha/proc/start_process(process)
-	current_processes |= process
-	om_task_periodic(src, PERIODIC_SLOW)
+	current_processes_add(process)
 
 /////////////
 /obj/mecha/cloak()

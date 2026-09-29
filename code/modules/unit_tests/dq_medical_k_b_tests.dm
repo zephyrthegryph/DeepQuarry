@@ -46,16 +46,16 @@
 
 /datum/unit_test/dq_k_b_s2_organ_predicates/Run()
 	var/obj/item/organ/internal/heart/O = allocate(/obj/item/organ/internal/heart)
-	O.robotic = ORGAN_FLESH
+	O.set_robotic(ORGAN_FLESH)
 	TEST_ASSERT(O.is_organic() && !O.is_assisted() && !O.is_robotic(), "flesh is organic")
 	TEST_ASSERT_EQUAL(O.biology(), BIOLOGY_ORGANIC, "flesh has organic biology")
-	O.robotic = ORGAN_ASSISTED
+	O.set_robotic(ORGAN_ASSISTED)
 	TEST_ASSERT(O.is_assisted() && !O.is_robotic() && !O.is_organic(), "assisted is assisted, not robotic")
 	TEST_ASSERT_EQUAL(O.biology(), BIOLOGY_ORGANIC, "assisted tissue is still organic")
-	O.robotic = ORGAN_LIFELIKE
+	O.set_robotic(ORGAN_LIFELIKE)
 	TEST_ASSERT(O.is_robotic() && O.is_assisted(), "lifelike is robotic")
 	TEST_ASSERT_EQUAL(O.biology(), BIOLOGY_SYNTHETIC, "lifelike has synthetic biology")
-	O.robotic = ORGAN_NANOFORM
+	O.set_robotic(ORGAN_NANOFORM)
 	TEST_ASSERT(O.is_nanoform() && O.is_robotic(), "nanoform is robotic and nanoform")
 	TEST_ASSERT_EQUAL(O.biology(), BIOLOGY_NANOFORM, "nanoform has nanoform biology")
 
@@ -66,7 +66,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/internal/heart/O = H.organ_in(O_HEART)
 	TEST_ASSERT_NOTNULL(O, "setup: the human has a heart")
-	O.robotic = ORGAN_ROBOT
+	O.set_robotic(ORGAN_ROBOT)
 	O.meat_type = null
 	O.set_initial_meat()
 	TEST_ASSERT_EQUAL(O.meat_type, /obj/item/stack/material/steel, "a robotic organ in an organic body yields steel")

@@ -332,23 +332,23 @@ UI_ACT_PROC(/datum/pai_software/door_jack, ui_act_cable)
 		rel_clear(cable, "machine")
 		rel_clear(src, "hackdoor")
 		return
-	hack_tick(D)
+	hack_tick()
 
-/// One second of brute-forcing the door.
-/mob/living/silicon/pai/proc/hack_tick(obj/machinery/door/D)
-	if(cable && cable.machine() == D && cable.machine() == hackdoor && get_dist(src, hackdoor) <= 1)
+/// DECLARE_REPEAT while hackdoor is set: one second of brute-forcing the door.
+/mob/living/silicon/pai/proc/hack_tick()
+	if(cable && cable.machine() == hackdoor && get_dist(src, hackdoor) <= 1)
 		hackprogress = min(hackprogress+rand(1, 20), 1000)
 	else
 		hack_aborted = 1
 		hackprogress = 0
 		rel_clear(src, "hackdoor")
-		return
+		return REPEAT_STOP
 	if(hackprogress >= 1000)
 		hackprogress = 0
-		D.open()
+		hackdoor.open()
 		rel_clear(cable, "machine")
-		return
-	om_after(src, 1 SECOND, PROC_REF(hack_tick), D)			// Update every second
+		rel_clear(src, "hackdoor")
+		return REPEAT_STOP
 
 /datum/pai_software/atmosphere_sensor
 	name = "Atmosphere Sensor"

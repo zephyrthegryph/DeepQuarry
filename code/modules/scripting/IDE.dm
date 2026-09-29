@@ -172,7 +172,7 @@
 			var/obj/machinery/computer/telecomms/traffic/Machine = machine
 			if(Machine.editingcode() == mob)
 				Machine.storedcode = "[code]"
-				rel_clear(Machine, "editingcode")
+				Machine.pass_editor()
 			else
 				if(mob in Machine.viewingcode)
 					LAZYREMOVE(Machine.viewingcode, mob)

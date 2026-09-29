@@ -141,14 +141,14 @@
 	U.add_master(H2)
 	TEST_ASSERT(H in U?.uav_masters(), "add_master() makes the mob a master")
 	TEST_ASSERT_EQUAL(length(U?.uav_masters()), 2, "a UAV can have several masters")
-	U.state = 1 // UAV_ON (undefined outside uav.dm)
+	U.set_state(1) // UAV_ON (undefined outside uav.dm)
 	TEST_ASSERT(U.relaymove(H, NORTH), "a master's movement is taken by the UAV")
 	TEST_ASSERT(!U.relaymove(allocate(/mob/living/carbon/human), NORTH), "a stranger's is not")
 	qdel(H)
 	TEST_ASSERT_EQUAL(length(U?.uav_masters()), 1, "a deleted master is dropped")
 	U.clear_masters()
 	TEST_ASSERT_EQUAL(length(U?.uav_masters()), 0, "clear_masters() drops every master")
-	U.state = 0 // UAV_OFF
+	U.set_state(0) // UAV_OFF
 
 // ---------------------------------------------------------------- stasis source
 

@@ -18,8 +18,6 @@
 	var/list/queue_producer_accounts = list() // ALLOW(instance_list): d: kept index-parallel with queue (Cut() by index)
 	var/current_producer_account = 0
 
-	/// Whether or not the machine is building the entire queue automagically.
-	var/process_queue = FALSE
 
 	/// World time when the build will finish.
 	EXPIRY_DECLARE(build_finish)
@@ -30,8 +28,6 @@
 	/// The job ID of the part currently being processed. This is used for ordering list items for the client UI.
 	var/top_job_id = 0
 
-	/// Part currently stored in the Exofab.
-	var/obj/item/stored_part
 
 	/// Coefficient for the speed of item building. Based on the installed parts.
 	var/time_coeff = 1
@@ -58,6 +54,17 @@
 	var/drop_direction = SOUTH
 
 /// The current design datum that the machine is building.
+/// Whether or not the machine is building the entire queue automagically.
+OM_FIELD(/obj/machinery/mecha_part_fabricator_tg, process_queue, FALSE, CHANGE_MACHINE_SETTINGS)
+/// Part currently stored in the Exofab (its exit was obstructed when it finished).
+OM_FIELD_VIEW(/obj/machinery/mecha_part_fabricator_tg, obj/item, stored_part, CHANGE_MACHINE_SETTINGS)
+/// Building the queue, or holding a finished part to dispense once the exit clears.
+OM_DERIVE_FIELD(/obj/machinery/mecha_part_fabricator_tg, fab_has_work, list("process_queue", "stored_part"))
+DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "fab_has_work")
+
+/obj/machinery/mecha_part_fabricator_tg/proc/fab_has_work()
+	return process_queue || stored_part
+
 /obj/machinery/mecha_part_fabricator_tg/var/datum/design_techweb/being_built
 
 /obj/machinery/mecha_part_fabricator_tg/Initialize(mapload)
@@ -189,7 +196,7 @@
 	cut_overlay("fab-active")
 	set_use_power(USE_POWER_IDLE)
 	desc = initial(desc)
-	process_queue = FALSE
+	set_process_queue(FALSE)
 	print_sound.stop()
 
 /**
@@ -265,14 +272,14 @@
 		own_take(src, "stored_part")
 
 	if(!process_queue)
-		return PROCESS_KILL
+		return
 
 	// If there's nothing being built, try to build something
 	if(!being_built())
 		// First, check if it's safe to actually print anything; if not, abort now!
 		if(exit.density)
 			atom_say("Warning. Exit port obstructed. Please clear obstructions or reorient machine, then retry.")
-			process_queue = FALSE
+			set_process_queue(FALSE)
 			return
 		// If we're not processing the queue anymore or there's nothing to build, end processing.
 		if(!process_queue || !build_next_in_queue())
@@ -475,8 +482,7 @@ UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_build)
 		if(process_queue)
 			return
 
-		process_queue = TRUE
-		om_task_periodic(src, PERIODIC_FAST)
+		set_process_queue(TRUE)
 	return
 
 UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "del_queue_part", ui_act_del_queue_part, UI_ARG_NUM("index"))
@@ -504,15 +510,14 @@ UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_build_queue)
 	if(process_queue)
 		return
 
-	process_queue = TRUE
-	om_task_periodic(src, PERIODIC_FAST)
+	set_process_queue(TRUE)
 	return
 
 UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "stop_queue", ui_act_stop_queue)
 UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_stop_queue)
 	. = TRUE
 	// Pause queue building. Also known as stop.
-	process_queue = FALSE
+	set_process_queue(FALSE)
 	return
 
 UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "remove_mat", ui_act_remove_mat, UI_ARG_NUM("amount"), UI_ARG_TEXT("id"))
@@ -560,10 +565,6 @@ DECLARE_APPEARANCE(/obj/machinery/mecha_part_fabricator_tg, "panel_open", list("
 	category = INTERACTION_CAT_MAINTAIN
 	held_type = /obj/item/storage/part_replacer
 	effect = /obj/machinery/proc/interaction_part_replacement
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/mecha_part_fabricator_tg/step_start_condition()
-	return process_queue
 
 /// A shared definition/flyweight (never cleared).
 /obj/machinery/mecha_part_fabricator_tg/proc/stored_research() as /datum/techweb

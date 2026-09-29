@@ -28,8 +28,7 @@
 		if(WIRE_SAFETY)
 			S.safeties = !S.safeties
 		if(WIRE_ELECTRIFY)
-			S.electrified = 30
-			MACHINE_WAKE(S)
+			S.set_electrified(30)
 		if(WIRE_IDSCAN)
 			S.set_locked(!S.locked)
 
@@ -42,6 +41,6 @@
 			S.set_locked(mend)
 		if(WIRE_ELECTRIFY)
 			if(mend)
-				S.electrified = 0
+				S.set_electrified(0)
 			else
-				S.electrified = -1
+				S.set_electrified(-1)

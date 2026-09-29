@@ -204,14 +204,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/fryer, TYPE_PROC_REF(/at
 	om_task_timed(user, 2 SECONDS, victim, src, PROC_REF(cook_mob_done), list(victim, user), on_fail = PROC_REF(cook_mob_stopped))
 
 /obj/machinery/appliance/cooker/fryer/proc/cook_mob_stopped()
-	cooking = FALSE
+	set_cooking(FALSE)
 	icon_state = off_icon
 	fry_loop.stop(src)
 
 /obj/machinery/appliance/cooker/fryer/proc/cook_mob_done(mob/living/victim, mob/user)
 	if(!victim || !victim.Adjacent(user))
 		to_chat(user, span_danger("Your victim slipped free!"))
-		cooking = FALSE
+		set_cooking(FALSE)
 		icon_state = off_icon
 		fry_loop.stop(src)
 		return

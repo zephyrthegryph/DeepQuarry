@@ -68,13 +68,16 @@
 			/obj/item/reagent_containers/chem_disp_cartridge/calcium
 		)
 
-	var/_recharge_reagents = TRUE
 	var/process_tick = 0
 	var/list/dispense_reagents = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
 		REAGENT_ID_HYDROGEN, REAGENT_ID_LITHIUM, REAGENT_ID_CARBON, REAGENT_ID_NITROGEN, REAGENT_ID_OXYGEN, REAGENT_ID_FLUORINE, REAGENT_ID_SODIUM,
 		REAGENT_ID_ALUMINIUM, REAGENT_ID_SILICON, REAGENT_ID_PHOSPHORUS, REAGENT_ID_SULFUR, REAGENT_ID_CHLORINE, REAGENT_ID_POTASSIUM, REAGENT_ID_IRON,
 		REAGENT_ID_COPPER, REAGENT_ID_MERCURY, REAGENT_ID_RADIUM, REAGENT_ID_WATER, REAGENT_ID_ETHANOL, REAGENT_ID_SUGAR, REAGENT_ID_SACID, REAGENT_ID_TUNGSTEN, REAGENT_ID_CALCIUM
 		)
+
+OM_FIELD(/obj/machinery/chemical_synthesizer, _recharge_reagents, TRUE, CHANGE_MACHINE_SETTINGS)
+/// Refills its cartridges while it recharges at all (full, it sleeps until a cartridge is drawn or added).
+DECLARE_PERIODIC_WHILE(/obj/machinery/chemical_synthesizer, MACHINE_PIPELINE, "_recharge_reagents")
 
 // The reagents datum acts as the machine's reaction vessel.
 DECLARE_REAGENTS(/obj/machinery/chemical_synthesizer, 600, null)
@@ -86,7 +89,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 	if(spawn_cartridges)
 		for(var/type in spawn_cartridges)
 			add_cartridge(new type(src))
-		panel_open = FALSE
+		set_panel_open(FALSE)
 
 	var/obj/item/paper/P = new /obj/item/paper(get_turf(src))
 	P.name = "Synthesizer Instructions"
@@ -264,8 +267,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom
 /// Refills its cartridges every 15 frames while any is short; full (or not recharging) it sleeps
 /// until a cartridge is drawn from or added.
 /obj/machinery/chemical_synthesizer/machine_step()
-	if(!_recharge_reagents)
-		return PROCESS_KILL
 	if(!operable())
 		return sleep_until_powered()
 	var/short = FALSE
@@ -422,7 +423,7 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_panel_toggle)
 	. = TRUE
 	// Opens/closes the panel.
 	if(!busy)
-		panel_open = !panel_open
+		set_panel_open(!panel_open)
 
 UI_ACT(/obj/machinery/chemical_synthesizer, "mode_toggle", ui_act_mode_toggle)
 UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_mode_toggle)
@@ -727,6 +728,7 @@ DECLARE_UI_MODAL(/obj/machinery/chemical_synthesizer)
 	var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
 	if(quantity > C.reagents.total_volume)
 		visible_message(span_notice("The [src] flashes an 'insufficient reagents' warning."))
+		// ALLOW(sys_om_after_rearm): a one-minute retry of the current step of a finite recipe sequence (step advances further down this proc), not periodic work over a state
 		om_after(src, 1 MINUTE, PROC_REF(perform_reaction), r_id, step)
 		return
 

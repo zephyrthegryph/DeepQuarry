@@ -10,10 +10,7 @@
 	var/parent_organ = BP_TORSO			// Organ holding this object.
 
 	// Status tracking.
-	var/status = 0						// Various status flags
 	var/vital							// Lose a vital limb, die immediately.
-	var/damage = 0						// Current damage to the organ
-	var/robotic = 0
 	var/stapled_nerves = FALSE
 
 	// Reference data.
@@ -26,7 +23,6 @@
 	// Damage vars.
 	var/min_bruised_damage = 10			// Damage before considered bruised
 	var/min_broken_damage = 60 // Damage before becoming broken Flat doubling of all min_broken_damage
-	var/max_damage						// Damage cap
 	var/can_reject = 1					// Can this organ reject?
 	var/rejecting						// Is this organ already being rejected?
 	var/decays = TRUE					// Can this organ decay at all?
@@ -46,6 +42,15 @@
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
+
+/// Organ condition bits (ORGAN_DEAD, ORGAN_BROKEN, ...). Plain OM_FIELD: OM_FLAG_FIELD would generate has_status(), which /datum already owns (status effects).
+OM_FIELD(/obj/item/organ, status, 0, CHANGE_EXPLICIT)
+/// Current damage to the organ.
+OM_FIELD(/obj/item/organ, damage, 0, CHANGE_EXPLICIT)
+/// Damage cap.
+OM_FIELD(/obj/item/organ, max_damage, null, CHANGE_EXPLICIT)
+/// ORGAN_FLESH / ORGAN_ASSISTED / ORGAN_ROBOT / ...
+OM_FIELD(/obj/item/organ, robotic, 0, CHANGE_EXPLICIT)
 
 
 // afflictions on the organ are cured; organ mods removed.
@@ -71,7 +76,7 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 		place_in_body(born_in)
 
 	if(!max_damage)
-		max_damage = min_broken_damage * 2
+		set_max_damage(min_broken_damage * 2)
 	if(iscarbon(owner))
 		var/mob/living/carbon/C = owner
 		if(!C.species)
@@ -143,9 +148,8 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 
 /obj/item/organ/proc/die()
 	if(!is_robotic())
-		status |= ORGAN_DEAD
+		set_status(status | ORGAN_DEAD)
 	saturate_damage()
-	om_task_periodic_stop(src)
 	handle_organ_mod_special(TRUE)
 	if(owner && vital)
 		owner.can_defib = FALSE
@@ -154,7 +158,7 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 /// Bring the organ's integrity to max_damage (death). Internal organs do it
 /// with a necrosis lesion (see organ_integrity.dm).
 /obj/item/organ/proc/saturate_damage()
-	damage = max_damage
+	set_damage(max_damage)
 
 /obj/item/organ/adjust_germ_level(amount)		// Unless you're setting germ level directly to 0, use this proc instead
 	germ_level = CLAMP(germ_level + amount, 0, INFECTION_LEVEL_MAX)
@@ -325,8 +329,8 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 	qdel(src)
 
 /obj/item/organ/proc/rejuvenate(ignore_prosthetic_prefs)
-	damage = 0
-	status = 0
+	set_damage(0)
+	set_status(0)
 	germ_level = 0
 	if(owner)
 		handle_organ_mod_special()
@@ -399,15 +403,15 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 	apply_wound_damage(amount, 0)
 
 /obj/item/organ/proc/bruise()
-	damage = max(damage, min_bruised_damage)
+	set_damage(max(damage, min_bruised_damage))
 
 /obj/item/organ/proc/break_organ() //can't name this break because it's a reserved word
-	damage = max(damage, min_broken_damage)
+	set_damage(max(damage, min_broken_damage))
 
 /obj/item/organ/proc/robotize() //Being used to make robutt hearts, etc
-	robotic = ORGAN_ROBOT
-	src.status &= ~ORGAN_BLEEDING
-	src.status &= ~ORGAN_CUT_AWAY
+	set_robotic(ORGAN_ROBOT)
+	src.set_status(src.status & ~ORGAN_BLEEDING)
+	src.set_status(src.status & ~ORGAN_CUT_AWAY)
 	shed_mismatched_afflictions()
 
 /// After a biology change, cure the afflictions on this organ that can no
@@ -423,7 +427,7 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 
 /obj/item/organ/proc/mechassist() //Used to add things like pacemakers, etc
 	robotize()
-	robotic = ORGAN_ASSISTED
+	set_robotic(ORGAN_ASSISTED)
 	min_bruised_damage = 15
 	min_broken_damage = 60 // Flat doubling of all min_broken_damage
 	butcherable = FALSE
@@ -585,14 +589,13 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 			if(is_beyond_repair())
 				to_chat(user, span_warning("\The [src] is dead beyond any revival."))
 				return INTERACTION_HANDLED_PASS
-			status &= ~ORGAN_DEAD
+			set_status(status & ~ORGAN_DEAD)
 			var/obj/item/organ/internal/internal_organ = src
 			if(istype(internal_organ))
 				internal_organ.restore_lesions(1)
 			else
-				damage--
+				set_damage(damage - 1)
 			//Fix JUST enough damage so it doesn't immediately die again. For full repair, use denec removal surgery.
-			om_task_periodic(src, PERIODIC_SLOW) //When an organ dies, it stops processing. This restarts it.
 			container.reagents.remove_reagent(REAGENT_ID_PERIDAXON, 5)
 			to_chat(user, "You use the [container] to revive \the [src]")
 			return INTERACTION_HANDLED_PASS

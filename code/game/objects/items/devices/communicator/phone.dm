@@ -5,7 +5,6 @@
 	if(!comm || !istype(comm)) return
 
 	rel_add(src, "communicating", comm)
-	om_task_periodic(src, PERIODIC_SLOW) // the connection watchdog
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	update_icon()
 
@@ -85,7 +84,6 @@
 	rel_set(new_voice, "mind", candidate.mind) //Transfer the mind, if any.
 	new_voice.ckey = candidate.ckey			//Finally, bring the client over.
 	own_add(src, "voice_mobs", new_voice)
-	om_task_periodic(src, PERIODIC_SLOW) // the connection watchdog
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 
 	var/atom/movable/screen/blackness = new() 	//Makes a black screen, so the candidate can't see what's going on before actually 'connecting' to the communicator.

@@ -125,15 +125,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/welding, \
 	name = "cake-hat"
 	desc = "It's tasty looking!"
 	icon_state = "cake0"
-	var/onfire = 0
 	body_parts_covered = HEAD
 	special_handling = TRUE
 
-/obj/item/clothing/head/cakehat/periodic_step()
-	if(!onfire)
-		om_task_periodic_stop(src)
-		return
+OM_FIELD(/obj/item/clothing/head/cakehat, onfire, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/clothing/head/cakehat, PERIODIC_SLOW, "onfire")
 
+/obj/item/clothing/head/cakehat/periodic_step()
 	var/turf/location = src.loc
 	if(istype(location, /mob/))
 		var/mob/living/carbon/human/M = location
@@ -147,12 +145,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/cakehat, INTERACT_USE("Light", PROC_
 
 /// Old attack_self.
 /obj/item/clothing/head/cakehat/proc/cakehat_light_self(mob/user, obj/item/held, datum/interaction/interaction)
-	onfire = !(onfire)
+	set_onfire(!onfire)
 	if (onfire)
 		force = 3
 		injury_kind = INJURY_BURN
 		icon_state = "cake1"
-		om_task_periodic(src, PERIODIC_SLOW)
 	else
 		force = null
 		injury_kind = INJURY_BLUNT
@@ -272,6 +269,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/head/kitty, TYPE_PROC_REF(/atom, appe
 	var/flavor_activate = null // Ditto, for but activating.
 	var/brainloss_cost = 3 // Whenever it activates, inflict this much brainloss on the wearer, as its not good for the mind to wear things that manipulate it.
 
+/// Put on a sentient wearer's head (and not yet dropped): it watches the wearer's tension.
+OM_FIELD(/obj/item/clothing/head/psy_crown, crown_worn, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/clothing/head/psy_crown, PERIODIC_SLOW, "crown_worn")
+
 /obj/item/clothing/head/psy_crown/proc/activate_ability(mob/living/wearer)
 	COOLDOWN_START(src, cooldown, cooldown_duration)
 	if(flavor_activate)
@@ -282,7 +283,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/head/kitty, TYPE_PROC_REF(/atom, appe
 /obj/item/clothing/head/psy_crown/equipped(mob/living/carbon/human/user)
 	..()
 	if(istype(user) && user.get_equipped_item(SLOT_ID_HEAD) == src && user.is_sentient())
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_crown_worn(TRUE)
 		if(flavor_equip)
 			to_chat(user, flavor_equip)
 
@@ -290,7 +291,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/head/kitty, TYPE_PROC_REF(/atom, appe
 	if(equipping || loc == user)
 		return ..()
 	..()
-	om_task_periodic_stop(src)
+	set_crown_worn(FALSE)
 	if(user.is_sentient())
 		if(loc == user) // Still inhand.
 			if(flavor_unequip)

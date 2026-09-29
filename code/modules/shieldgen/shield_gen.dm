@@ -49,6 +49,9 @@ REL_PAIR_LIST(/obj/machinery/shield_gen, capacitors, owned_gen)
 	make_climbable()
 
 
+/// Maintains its field while on (toggle() raises it and drops the whole field when switched off).
+DECLARE_PERIODIC_WHILE(/obj/machinery/shield_gen, MACHINE_PIPELINE, "active")
+
 DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
 /obj/machinery/shield_gen/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(prob(75))
@@ -153,10 +156,9 @@ UI_DATA_REPLACE(/obj/machinery/shield_gen, "merge:ui_data_obj_machinery_shield_g
 	return list("locked" = locked, "lockedData" = lockedData)
 
 /obj/machinery/shield_gen/machine_step()
-	if (!anchored && active)
+	if (!anchored)
 		toggle()
-	if(!active && !length(field))
-		return PROCESS_KILL
+		return
 
 	average_field_strength = max(average_field_strength, 0)
 
@@ -250,8 +252,6 @@ DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen
 /obj/machinery/shield_gen/proc/toggle()
 	set background = 1
 	set_active(!active)
-	if(active)
-		MACHINE_WAKE(src)
 	if(active)
 		var/list/covered_turfs = get_shielded_turfs()
 		var/turf/T = get_turf(src)
@@ -354,10 +354,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/shield_gen, TYPE_PROC_REF(/atom, appearan
 // === merged from shield_gen_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/shield_gen
 	icon = 'icons/obj/machines/shielding.dmi'
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/shield_gen/step_start_condition()
-	return active
 
 // Remote shield buttons find generators by id (REL_KEYED sources).
 KEYED_TARGET(/obj/machinery/shield_gen, id)

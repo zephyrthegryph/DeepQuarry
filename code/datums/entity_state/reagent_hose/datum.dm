@@ -13,6 +13,14 @@
 	VAR_PRIVATE/initial_distance = HOSE_MAX_DISTANCE
 	VAR_PRIVATE/datum/beam/current_beam = null
 
+/// Set once both ends are attached and the hose formed; periodic_step() moves reagents while it is (DECLARE_PERIODIC_WHILE).
+OM_FIELD_TYPED(/datum/hose, tmp, hose_formed, FALSE, CHANGE_DATUM_A)
+DECLARE_PERIODIC_WHILE(/datum/hose, PERIODIC_FAST, "hose_formed")
+
+/datum/hose/New()
+	..()
+	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
+
 /datum/hose/proc/get_pairing(datum/hose_connector/target)
 	RETURN_TYPE(/datum/hose_connector)
 	if(target)
@@ -32,7 +40,7 @@
 
 /datum/hose/proc/disconnect(mob/user = null)
 	// Stop processing, we're disconnecting anyway
-	om_task_periodic_stop(src)
+	set_hose_formed(FALSE)
 	var/list/drop_locs = list()
 	if(node1)
 		var/atom/A = node1.get_carrier()
@@ -69,7 +77,7 @@
 
 	initial_distance = distancetonode
 	if(update_beam()) // Somehow you screwed this up from the start?
-		om_task_periodic(src, PERIODIC_FAST)
+		set_hose_formed(TRUE)
 
 		// Poip!~
 		var/atom/A = node1.get_carrier()

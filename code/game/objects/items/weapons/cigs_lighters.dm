@@ -13,7 +13,10 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 
 //For anything that can light stuff on fire
 /obj/item/flame
-	var/lit = 0
+
+/// Burns (periodic_step) every 2 s while lit.
+OM_FIELD(/obj/item/flame, lit, 0, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/flame, PERIODIC_SLOW, "lit")
 
 /obj/item/flame/is_hot()
 	return lit
@@ -58,22 +61,20 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 
 /obj/item/flame/match/proc/light(mob/user)
 	play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_MATCHSTICK_LIT)
-	lit = 1
+	set_lit(1)
 	injury_kind = INJURY_BURN
 	icon_state = "match_lit"
 	name = "burning match"
 	desc = "A match. This one is presently on fire."
-	om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/flame/match/proc/burn_out()
-	lit = 0
+	set_lit(0)
 	burnt = 1
 	injury_kind = INJURY_BLUNT
 	icon_state = "match_burnt"
 	item_state = "cigoff"
 	name = "burnt match"
 	desc = "A match. This one has seen better days."
-	om_task_periodic_stop(src)
 
 //////////////////
 //FINE SMOKABLES//
@@ -82,7 +83,6 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	name = DEVELOPER_WARNING_NAME // "smokable item"
 	desc = "You're not sure what this is. You should probably ahelp it."
 	body_parts_covered = 0
-	var/lit = 0
 	var/icon_on
 	var/type_butt = null
 	var/chem_volume = 0
@@ -99,6 +99,10 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	drop_sound = SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF
 
 DECLARE_REAGENTS(/obj/item/clothing/mask/smokable, "chem_volume", null)
+
+/// Smokes (periodic_step) every 2 s while lit.
+OM_FIELD(/obj/item/clothing/mask/smokable, lit, 0, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/clothing/mask/smokable, PERIODIC_SLOW, "lit")
 
 /obj/item/clothing/mask/smokable/Initialize(mapload)
 	. = ..()
@@ -166,7 +170,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/smokable, TYPE_PROC_REF(/atom, a
 
 /obj/item/clothing/mask/smokable/proc/light(flavor_text = "[usr] lights the [name].")
 	if(!src.lit)
-		src.lit = 1
+		set_lit(1)
 		play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_LIGHT)
 		injury_kind = INJURY_BURN
 		if(reagents.get_reagent_amount(REAGENT_ID_PHORON)) // the phoron explodes when exposed to fire
@@ -187,13 +191,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/smokable, TYPE_PROC_REF(/atom, a
 		T.visible_message(flavor_text)
 		update_icon()
 		set_light(2, 0.25, "#E38F46")
-		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/clothing/mask/smokable/proc/die(nomessage = 0)
 	var/turf/T = get_turf(src)
 	set_light(0)
 	play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF)
-	om_task_periodic_stop(src)
+	set_lit(0)
 	if (type_butt)
 		var/obj/item/butt = new type_butt(T)
 		transfer_fingerprints_to(butt)
@@ -218,7 +221,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/smokable, TYPE_PROC_REF(/atom, a
 			if (!nomessage)
 				to_chat(M, span_notice("Your [name] goes out, and you empty the ash."))
 				play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF)
-			lit = 0
+			set_lit(0)
 			icon_state = initial(icon_state)
 			item_state = initial(item_state)
 			M.update_inv_wear_mask(0)
@@ -227,8 +230,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/smokable, TYPE_PROC_REF(/atom, a
 			name = "empty [initial(name)]"
 
 /obj/item/clothing/mask/smokable/proc/quench()
-	lit = 0
-	om_task_periodic_stop(src)
+	set_lit(0)
 	update_icon()
 
 /obj/item/clothing/mask/smokable/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -643,7 +645,9 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/rollingpaper, \
 	/// If we are a special variant (see: override attack_self)
 	var/special_variant = FALSE
 	/// Var used for detonator zippos
-	var/detonator_mode = 0
+
+/// Var used for detonator zippos
+OM_FIELD(/obj/item/flame/lighter, detonator_mode, 0, CHANGE_EXPLICIT)
 
 // TODO: Remove this path from POIs and loose maps (it's no longer needed)
 /obj/item/flame/lighter/random
@@ -664,22 +668,20 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter, INTERACT_SELF(null, PROC_REF(lighte
 	if(detonator_mode)
 		return FALSE
 	if(!lit)
-		lit = TRUE
+		set_lit(TRUE)
 		icon_state = "lighteron"
 		playsound(src, activation_sound, 75, 1)
 		act_message(user, src, others = span_notice("After a few attempts, %U% manages to light %T%."))
 
 		set_light(2, 0.5, "#FF9933")
-		om_task_periodic(src, PERIODIC_SLOW)
 		update_icon()
 	else
-		lit = FALSE
+		set_lit(FALSE)
 		icon_state = "lighter"
 		playsound(src, deactivation_sound, 75, 1)
 		act_message(user, src, others = span_notice("%U% quietly shuts off %T%."))
 
 		set_light(0)
-		om_task_periodic_stop(src)
 		update_icon()
 	return TRUE
 
@@ -730,23 +732,21 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo, INTERACT_SELF(null, PROC_REF(
 	if(!base_state)
 		base_state = icon_state
 	if(!lit)
-		lit = TRUE
+		set_lit(TRUE)
 		icon_state = "[base_state]on"
 		item_state = "[base_state]on"
 		playsound(src, activation_sound, 75, 1)
 		act_message(user, src, others = span_notice(span_rose("Without even breaking stride, %U% flips open and lights %T% in one smooth movement.")))
 
 		set_light(2, 0.5, "#FF9933")
-		om_task_periodic(src, PERIODIC_SLOW)
 	else
-		lit = FALSE
+		set_lit(FALSE)
 		icon_state = "[base_state]"
 		item_state = "[base_state]"
 		playsound(src, deactivation_sound, 75, 1)
 		act_message(user, src, others = span_notice(span_rose("You hear a quiet click, as %U% shuts off %T% without even looking at what they're doing.")))
 
 		set_light(0)
-		om_task_periodic_stop(src)
 	return TRUE
 
 //Here we add Zippo skins.
@@ -854,7 +854,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter, INTERACT_SELF(null, PRO
 	if(!base_state)
 		base_state = icon_state
 	if(!lit)
-		lit = 1
+		set_lit(1)
 		icon_state = "[base_state]on"
 		item_state = "[base_state]on"
 		playsound(src, activation_sound, 75, 1)
@@ -880,9 +880,8 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter, INTERACT_SELF(null, PRO
 				act_message(user, src, others = span_notice("After a few attempts, %U% manages to activate %T%, they however sting themselves on the shielding!"))
 
 		set_light(2)
-		om_task_periodic(src, PERIODIC_SLOW)
 	else
-		lit = 0
+		set_lit(0)
 		icon_state = "[base_state]"
 		item_state = "[base_state]"
 		playsound(src, deactivation_sound, 75, 1)
@@ -892,7 +891,6 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter, INTERACT_SELF(null, PRO
 			act_message(user, src, others = span_notice("%U% quietly shuts %T%."))
 
 		set_light(0)
-		om_task_periodic_stop(src)
 	return ITEM_INTERACT_SUCCESS
 
 
@@ -929,7 +927,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/syndismzippo, INTERACT_S
 	if(!base_state)
 		base_state = icon_state
 	if(!lit)
-		lit = 1
+		set_lit(1)
 		icon_state = "[base_state]on"
 		item_state = "[base_state]on"
 		playsound(src, activation_sound, 75, 1)
@@ -953,9 +951,8 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/syndismzippo, INTERACT_S
 				act_message(user, src, others = span_notice("After a few attempts, %U% manages to activate %T%, they however burn themselves with the heated phoron field!"))
 
 		set_light(2)
-		om_task_periodic(src, PERIODIC_SLOW)
 	else
-		lit = 0
+		set_lit(0)
 		icon_state = "[base_state]"
 		item_state = "[base_state]"
 		playsound(src, deactivation_sound, 75, 1)
@@ -965,7 +962,6 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/syndismzippo, INTERACT_S
 			act_message(user, src, others = span_notice("%U% quietly shuts %T%."))
 
 		set_light(0)
-		om_task_periodic_stop(src)
 	return ITEM_INTERACT_SUCCESS
 
 
@@ -1003,7 +999,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/expsmzippo, INTERACT_SEL
 	if (!base_state)
 		base_state = icon_state
 	if (!lit)
-		lit = 1
+		set_lit(1)
 		icon_state = "[base_state]on"
 		item_state = "[base_state]on"
 		playsound(src, activation_sound, 75, 1)
@@ -1121,9 +1117,8 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/expsmzippo, INTERACT_SEL
 					strength = 300
 				)
 		set_light(5)
-		om_task_periodic(src, PERIODIC_SLOW)
 	else
-		lit = 0
+		set_lit(0)
 		icon_state = "[base_state]"
 		item_state = "[base_state]"
 		playsound(src, deactivation_sound, 75, 1)
@@ -1133,7 +1128,6 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/expsmzippo, INTERACT_SEL
 			act_message(user, src, others = span_notice("%U% quietly shuts %T%."))
 
 		set_light(0)
-		om_task_periodic_stop(src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/flame/lighter/supermatter/expsmzippo/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

@@ -57,6 +57,19 @@
 	var/lastgen
 	var/productivity = 1
 
+/// Started by its control computer: set_starter() is the setter.
+OM_FIELD_SETTER(/obj/machinery/compressor, starter, CHANGE_MACHINE_SETTINGS)
+/// Not BROKEN (BROKEN also marks "no partner connected"; see locate_machinery()).
+OM_DERIVE_FIELD(/obj/machinery/compressor, unbroken, list("stat"))
+/obj/machinery/compressor/proc/unbroken()
+	return !has_stat(BROKEN)
+OM_DERIVE_FIELD(/obj/machinery/power/turbine, unbroken, list("stat"))
+/obj/machinery/power/turbine/proc/unbroken()
+	return !has_stat(BROKEN)
+
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/compressor, MACHINE_PIPELINE, list("starter", "unbroken"))
+DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken")
+
 /obj/machinery/computer/turbine_computer
 	name = "gas turbine control computer"
 	desc = "A computer to remotely control a gas turbine."
@@ -161,20 +174,20 @@
 				stat_add(BROKEN)
 
 /// Starts or stops the compressor; the compressor and its turbine run only while it is started.
+/// The compressor's own work is declared on `starter`; its turbine reads it, so it is woken here.
 /obj/machinery/compressor/proc/set_starter(value)
+	if(starter == value)
+		return FALSE
 	starter = value
-	if(starter)
-		MACHINE_WAKE(src)
-		if(turbine())
-			MACHINE_WAKE(turbine())
+	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	if(starter && turbine())
+		MACHINE_WAKE(turbine())
+	return TRUE
 
 /obj/machinery/compressor/machine_step()
 	if(!turbine())
 		set_stat(BROKEN)
-	if(has_stat(BROKEN))
-		return PROCESS_KILL
-	if(!starter)
-		return PROCESS_KILL
+		return
 	if(panel_open)
 		return
 	cut_overlays()
@@ -263,8 +276,7 @@
 /obj/machinery/power/turbine/machine_step()
 	if(!compressor())
 		set_stat(BROKEN)
-	if(has_stat(BROKEN))
-		return PROCESS_KILL
+		return
 	if(!compressor().starter)
 		return PROCESS_KILL
 	if(panel_open)

@@ -11,13 +11,15 @@
 	density = FALSE
 	anchored = TRUE
 	buckle_lying = FALSE
-	var/burning = FALSE
 	EXPIRY_DECLARE(next_fuel_consumption) // world.time of when next item in fuel list gets eatten to sustain the fire.
 	var/grill = FALSE
 	var/datum/material/material
 	var/set_temperature = T0C + 30	//K
 	var/heating_power = 80000
 	resistance_flags = FIRE_PROOF
+
+OM_FIELD(/obj/structure/bonfire, burning, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/structure/bonfire, PERIODIC_SLOW, "burning")
 
 /obj/structure/bonfire/Initialize(mapload, material_name)
 	. = ..()
@@ -197,16 +199,14 @@
 /obj/structure/bonfire/extinguish()
 	. = ..()
 	if(burning)
-		burning = FALSE
+		set_burning(FALSE)
 		update_icon()
-		om_task_periodic_stop(src)
 		visible_message(span_infoplain(span_bold("\The [src]") + " stops burning."))
 
 /obj/structure/bonfire/proc/ignite()
 	if(!burning && get_fuel_amount())
-		burning = TRUE
+		set_burning(TRUE)
 		update_icon()
-		om_task_periodic(src, PERIODIC_SLOW)
 		visible_message(span_warning("\The [src] starts burning!"))
 
 /obj/structure/bonfire/proc/burn_bonfire()
@@ -290,7 +290,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, TYPE_PROC_REF(/atom, appearance_
 						WL.dry()
 						continue
 
-					WL.wetness = max(0, WL.wetness - rand(1, 4))
+					WL.set_wetness(max(0, WL.wetness - rand(1, 4)))
 
 				env.merge(removed)
 
@@ -316,11 +316,13 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, TYPE_PROC_REF(/atom, appearance_
 	icon_state = "fireplace"
 	density = TRUE
 	anchored = TRUE
-	var/burning = FALSE
 	EXPIRY_DECLARE(next_fuel_consumption)
 	var/set_temperature = T0C + 20	//K
 	var/heating_power = 40000
 	resistance_flags = FIRE_PROOF
+
+OM_FIELD(/obj/structure/fireplace, burning, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/structure/fireplace, PERIODIC_SLOW, "burning")
 
 /obj/structure/fireplace/declare_interactions(list/into)
 	into += list(
@@ -414,16 +416,14 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, TYPE_PROC_REF(/atom, appearance_
 /obj/structure/fireplace/extinguish()
 	. = ..()
 	if(burning)
-		burning = FALSE
+		set_burning(FALSE)
 		update_icon()
-		om_task_periodic_stop(src)
 		visible_message(span_infoplain(span_bold("\The [src]") + " stops burning."))
 
 /obj/structure/fireplace/proc/ignite()
 	if(!burning && get_fuel_amount())
-		burning = TRUE
+		set_burning(TRUE)
 		update_icon()
-		om_task_periodic(src, PERIODIC_SLOW)
 		visible_message(span_warning("\The [src] starts burning!"))
 
 /obj/structure/fireplace/proc/burn_bonfire()

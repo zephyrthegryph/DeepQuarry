@@ -65,7 +65,7 @@ DECLARE_INTERACTIONS(/obj/item/emergency_beacon, \
 	icon_state = "e_beacon_active"
 	user.drop_item()
 	set_anchored(TRUE)
-	gps.tracking = TRUE
+	gps.set_tracking(TRUE)
 	admin_chat_message(message = "'[user?.ckey || "Unknown"]' activated a personal emergency beacon", color = "#FF2222")
 	var/message = "This is an automated distress signal from a MIL-DTL-93352-compliant personal emergency beacon transmitting on [PUB_FREQ*0.1]kHz. \
 	This beacon was activated in '\the [get_area(src)]' at X[src.loc.x], Y[src.loc.y]. Due to the limited signal strength, no further information can be provided at this time. \
@@ -82,7 +82,7 @@ DECLARE_INTERACTIONS(/obj/item/emergency_beacon, \
 /// Old attackby: wrench it apart once active.
 /obj/item/emergency_beacon/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(W.has_tool_quality(TOOL_WRENCH) && beacon_active)
-		gps.tracking = FALSE
+		gps.set_tracking(FALSE)
 		act_message(user, src, others = "%U% disassembles %T%.")
 		consume(src, user)
 		return TRUE

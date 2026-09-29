@@ -178,9 +178,9 @@
 	if(!..())
 		return FALSE
 	if(species?.virus_immune && !global_flag_check(D.virus_modifiers, BYPASSES_IMMUNITY))
-		D.virus_modifiers |= CARRIER
+		D.set_virus_modifiers(D.virus_modifiers | CARRIER)
 	else
-		D.virus_modifiers &= ~CARRIER
+		D.set_virus_modifiers(D.virus_modifiers & ~CARRIER)
 	return TRUE
 
 /// Exposure through the environment (contact, a splash, a sneeze): clothing

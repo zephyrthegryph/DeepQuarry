@@ -17,7 +17,6 @@
 	reload_time = 5		//Energy weapons are slower to reload than ballistics by default, but this is no change from current values
 
 	//self-recharging
-	var/self_recharge = 0	//if set, the weapon will recharge itself
 	var/use_external_power = 0 //if set, the weapon will look for an external power source to draw from, otherwise it recharges magically
 	var/use_organic_power = 0 // If set, the weapon will draw from nutrition or blood.
 	var/recharge_time = 4
@@ -30,11 +29,15 @@
 	var/battery_lock = 0	//If set, weapon cannot switch batteries
 	var/random_start_ammo = FALSE	//if TRUE, the weapon will spawn with randomly-determined ammo
 
+//if set, the weapon will recharge itself
+OM_FIELD(/obj/item/gun/energy, self_recharge, 0, CHANGE_EXPLICIT)
+/// Self-recharge (declared on self_recharge). Full, it parks; firing wakes it after a discharge.
+DECLARE_PERIODIC_WHILE(/obj/item/gun/energy, PERIODIC_SLOW, "self_recharge")
+
 /obj/item/gun/energy/Initialize(mapload)
 	. = ..()
 	if(self_recharge)
 		rel_set(src, "power_supply", new /obj/item/cell/device/weapon(src))
-		om_task_periodic(src, PERIODIC_SLOW)
 	else
 		if(cell_type)
 			rel_set(src, "power_supply", new cell_type(src))
@@ -117,8 +120,8 @@ DAMAGE_REACTION(/obj/item/gun/energy, DAMAGE_EMP, PROC_REF(energy_gun_emp_refres
 	var/enhanced_cost = charge_cost * output_envelope
 	if(!power_supply.checked_use(enhanced_cost)) return null
 	power_supply.material_record_enhanced_output(charge_cost, output_envelope)
-	if(self_recharge)
-		om_task_periodic(src, PERIODIC_SLOW)
+	// Charge was drawn: wake the recharge (the self_recharge declaration refuses it on other guns).
+	om_task_periodic(src, PERIODIC_SLOW)
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
 		M?.hud_used?.update_ammo_hud(M, src)
@@ -248,8 +251,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy, TYPE_PROC_REF(/atom, appearance_ov
 /obj/item/gun/energy/proc/start_recharge()
 	if(power_supply == null)
 		rel_set(src, "power_supply", new /obj/item/cell/device/weapon(src))
-	self_recharge = 1
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_self_recharge(1)
 	update_icon()
 
 /obj/item/gun/energy/get_description_interaction()

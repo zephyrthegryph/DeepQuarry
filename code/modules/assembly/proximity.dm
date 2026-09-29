@@ -8,26 +8,26 @@ MATERIAL_MIX(/obj/item/assembly/prox_sensor, list(MAT_STEEL = 800, MAT_GLASS = 2
 	secured = 0
 
 	var/scanning = 0
-	var/timing = 0
 	var/time = 10
 
 	var/range = 2
 
+OM_FIELD(/obj/item/assembly/prox_sensor, timing, FALSE, CHANGE_EXPLICIT)
+/// Scans and counts down only while secured.
+DECLARE_PERIODIC_WHILE(/obj/item/assembly/prox_sensor, PERIODIC_SLOW, "secured")
+
 /obj/item/assembly/prox_sensor/activate()
 	if(!..())
 		return FALSE
-	timing = !timing
+	set_timing(!timing)
 	update_icon()
 	return FALSE
 
 /obj/item/assembly/prox_sensor/toggle_secure()
-	secured = !secured
-	if(secured)
-		om_task_periodic(src, PERIODIC_SLOW)
-	else
+	set_secured(!secured)
+	if(!secured)
 		scanning = 0
-		timing = 0
-		om_task_periodic_stop(src)
+		set_timing(FALSE)
 	update_icon()
 	return secured
 
@@ -61,7 +61,7 @@ MATERIAL_MIX(/obj/item/assembly/prox_sensor, list(MAT_STEEL = 800, MAT_GLASS = 2
 	if(timing && (time >= 0))
 		time--
 	if(timing && time <= 0)
-		timing = 0
+		set_timing(FALSE)
 		toggle_scan()
 		time = initial(time)
 
@@ -124,7 +124,7 @@ UI_ACT_PROC(/obj/item/assembly/prox_sensor, ui_act_scanning)
 
 UI_ACT(/obj/item/assembly/prox_sensor, "timing", ui_act_timing)
 UI_ACT_PROC(/obj/item/assembly/prox_sensor, ui_act_timing)
-	timing = !timing
+	set_timing(!timing)
 	update_icon()
 	return TRUE
 

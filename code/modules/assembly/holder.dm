@@ -200,12 +200,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 	. = ..()
 
 	var/obj/item/assembly/igniter/ign = new(src)
-	ign.secured = 1
+	ign.set_secured(TRUE)
 	rel_set(ign, "holder", src)
 
 	var/obj/item/assembly/timer/tmr = new(src)
 	tmr.time = 5
-	tmr.secured = 1
+	tmr.set_secured(TRUE)
 	rel_set(tmr, "holder", src)
 
 	own_set(src, "a_left", tmr)

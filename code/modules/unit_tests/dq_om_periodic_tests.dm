@@ -171,60 +171,60 @@
 
 	var/obj/machinery/igniter/igniter = allocate(/obj/machinery/igniter, T)
 	igniter.set_on(FALSE)
-	TEST_ASSERT_EQUAL(igniter.machine_step(), PROCESS_KILL, "a switched-off igniter kept stepping")
+	TEST_ASSERT(!sys_periodic_allows(igniter, MACHINE_PIPELINE), "a switched-off igniter may still step")
 	MACHINE_SLEEP(igniter)
 	igniter.interaction_toggle(null, null, null)
 	TEST_ASSERT(igniter.on && machine_stepping(igniter), "switching an igniter on did not wake it")
 	igniter.set_on(FALSE)
 
 	var/obj/machinery/feeder/feeder = allocate(/obj/machinery/feeder, T)
-	TEST_ASSERT_EQUAL(feeder.machine_step(), PROCESS_KILL, "an unattached feeder kept stepping")
+	TEST_ASSERT(!sys_periodic_allows(feeder, MACHINE_PIPELINE), "an unattached feeder may still step")
 
 	var/obj/machinery/pump/pump = allocate(/obj/machinery/pump, T)
 	pump.set_on(FALSE)
-	TEST_ASSERT_EQUAL(pump.machine_step(), PROCESS_KILL, "a switched-off reagent pump kept stepping")
+	TEST_ASSERT(!sys_periodic_allows(pump, MACHINE_PIPELINE), "a switched-off reagent pump may still step")
 
 	var/obj/machinery/bunsen_burner/bunsen = allocate(/obj/machinery/bunsen_burner, T)
-	TEST_ASSERT_EQUAL(bunsen.machine_step(), PROCESS_KILL, "a cold bunsen burner kept stepping")
+	TEST_ASSERT(!sys_periodic_allows(bunsen, MACHINE_PIPELINE), "a cold bunsen burner may still step")
 
 	var/obj/machinery/vitals_monitor/vitals = allocate(/obj/machinery/vitals_monitor, T)
-	TEST_ASSERT_EQUAL(vitals.machine_step(), PROCESS_KILL, "an unattached vitals monitor kept stepping")
+	TEST_ASSERT(test_machine_idle(vitals), "an unattached vitals monitor kept stepping")
 
 	var/obj/machinery/door_timer/brig = allocate(/obj/machinery/door_timer, T)
-	TEST_ASSERT_EQUAL(brig.machine_step(), PROCESS_KILL, "an idle brig timer kept stepping")
+	TEST_ASSERT(test_machine_idle(brig), "an idle brig timer kept stepping")
 
 	var/obj/machinery/particle_accelerator/control_box/pa = allocate(/obj/machinery/particle_accelerator/control_box, T)
-	TEST_ASSERT_EQUAL(pa.machine_step(), PROCESS_KILL, "an inactive particle accelerator kept stepping")
+	TEST_ASSERT(test_machine_idle(pa), "an inactive particle accelerator kept stepping")
 
 	var/obj/machinery/suspension_gen/suspension = allocate(/obj/machinery/suspension_gen, T)
-	TEST_ASSERT_EQUAL(suspension.machine_step(), PROCESS_KILL, "an inactive suspension generator kept stepping")
+	TEST_ASSERT(!sys_periodic_allows(suspension, MACHINE_PIPELINE), "an inactive suspension generator may still step")
 
 	var/obj/machinery/radiocarbon_spectrometer/spectrometer = allocate(/obj/machinery/radiocarbon_spectrometer, T)
-	TEST_ASSERT_EQUAL(spectrometer.machine_step(), PROCESS_KILL, "an idle spectrometer kept stepping")
+	TEST_ASSERT(!sys_periodic_allows(spectrometer, MACHINE_PIPELINE), "an idle spectrometer may still step")
 
 	var/obj/machinery/dnaforensics/dna = allocate(/obj/machinery/dnaforensics, T)
-	TEST_ASSERT_EQUAL(dna.machine_step(), PROCESS_KILL, "an idle DNA scanner kept stepping")
+	TEST_ASSERT(test_machine_idle(dna), "an idle DNA scanner kept stepping")
 
 	var/obj/machinery/casino_prize_dispenser/casino = allocate(/obj/machinery/casino_prize_dispenser, T)
-	TEST_ASSERT_EQUAL(casino.machine_step(), PROCESS_KILL, "a prize dispenser kept stepping")
+	TEST_ASSERT(test_machine_idle(casino), "a prize dispenser kept stepping")
 
 	// A refinery pipe steps only while reagents move through it.
 	var/obj/machinery/reagent_refinery/pipe/pipe = allocate(/obj/machinery/reagent_refinery/pipe, T)
-	TEST_ASSERT_EQUAL(pipe.machine_step(), PROCESS_KILL, "an empty refinery pipe kept stepping")
+	TEST_ASSERT(test_machine_idle(pipe), "an empty refinery pipe kept stepping")
 	MACHINE_SLEEP(pipe)
 	pipe.reagents.add_reagent(REAGENT_ID_WATER, 10)
 	TEST_ASSERT(machine_stepping(pipe), "reagents arriving did not wake a refinery pipe")
-	TEST_ASSERT_EQUAL(pipe.machine_step(), PROCESS_KILL, "a refinery pipe with nowhere to send its reagents kept stepping")
+	TEST_ASSERT(test_machine_idle(pipe), "a refinery pipe with nowhere to send its reagents kept stepping")
 
 	// A door timer counts down only while timing, and wakes when started.
 	MACHINE_SLEEP(brig)
 	brig.stat_remove(NOPOWER|BROKEN)
 	brig.set_timer(1 MINUTE)
 	brig.timer_start()
-	TEST_ASSERT(machine_stepping(brig), "starting a brig timer did not wake it")
+	TEST_ASSERT(sys_periodic_allows(brig, MACHINE_PIPELINE), "starting a brig timer did not declare it stepping")
 	TEST_ASSERT_NOTEQUAL(brig.machine_step(), PROCESS_KILL, "a timing brig timer stopped counting")
 	brig.timer_end()
-	TEST_ASSERT_EQUAL(brig.machine_step(), PROCESS_KILL, "a finished brig timer kept stepping")
+	TEST_ASSERT(!sys_periodic_allows(brig, MACHINE_PIPELINE), "a finished brig timer kept stepping")
 
 /// A machine that ended its work for lack of power resumes when power returns, and the audit
 /// sees it as idle only while it is unpowered.
@@ -291,14 +291,14 @@
 
 /datum/unit_test/dq_om_idle_items_sleep/Run()
 	var/obj/structure/tanning_rack/rack = allocate(/obj/structure/tanning_rack, test_floor())
-	TEST_ASSERT_EQUAL(rack.periodic_step(20), PROCESS_KILL, "an empty tanning rack kept stepping")
+	TEST_ASSERT_NULL(rack.periodic_pipe, "an empty tanning rack kept stepping")
 	var/obj/item/modular_computer/tablet/T = allocate(/obj/item/modular_computer/tablet, test_floor())
-	T.enabled = FALSE
-	TEST_ASSERT_EQUAL(T.periodic_step(20), PROCESS_KILL, "a switched-off computer kept stepping")
-	om_task_periodic_stop(T)
+	T.set_enabled(FALSE)
+	TEST_ASSERT_NULL(T.periodic_pipe, "a switched-off computer kept stepping")
+	TEST_ASSERT(!om_task_periodic(T, PERIODIC_SLOW), "a switched-off computer could be started by hand")
 	T.enable_computer()
 	TEST_ASSERT(T.periodic_pipe == PERIODIC_SLOW, "switching a computer on did not start it")
-	T.enabled = FALSE
+	T.set_enabled(FALSE)
 
 #endif
 
@@ -344,7 +344,7 @@
 /datum/unit_test/dq_om_shuttles_on_lanes/Run()
 	for(var/name in SSshuttles.shuttles)
 		var/datum/shuttle/S = SSshuttles.shuttles[name]
-		if(!(S.flags & SHUTTLE_FLAGS_PROCESS))
+		if(!(S.shuttle_flags & SHUTTLE_FLAGS_PROCESS))
 			continue
 		var/working = S.always_process || S.process_state != IDLE_STATE
 		TEST_ASSERT_EQUAL(!!S.periodic_pipe, working, "shuttle [name]: lane [S.periodic_pipe] but working [working]")
@@ -444,7 +444,7 @@
 	// Start and stop conditions.
 	var/obj/item/chainsaw/saw = allocate(/obj/item/chainsaw, test_floor())
 	TEST_ASSERT(!saw.periodic_pipe, "a chainsaw that is off runs")
-	TEST_ASSERT_EQUAL(saw.periodic_step(20), PROCESS_KILL, "a chainsaw that is off kept stepping")
+	TEST_ASSERT(!om_task_periodic(saw, PERIODIC_SLOW), "a chainsaw that is off could be started")
 	var/obj/item/gun/launcher/spikethrower/spikes = allocate(/obj/item/gun/launcher/spikethrower, test_floor())
 	TEST_ASSERT(!spikes.periodic_pipe, "a full spikethrower runs")
 	var/obj/item/ghost_trap/trap = allocate(/obj/item/ghost_trap, test_floor())

@@ -13,6 +13,9 @@
 
 	equip_type = EQUIP_HULL
 
+OM_FIELD(/obj/item/mecha_parts/mecha_equipment/repair_droid, repairing, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE_ALL(/obj/item/mecha_parts/mecha_equipment/repair_droid, PERIODIC_SLOW, list("repairing", "chassis"))
+
 /obj/item/mecha_parts/mecha_equipment/repair_droid/add_equip_overlay(obj/mecha/M as obj)
 	..()
 	if(!droid_overlay)
@@ -27,36 +30,33 @@
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid/detach()
 	chassis.cut_overlay(droid_overlay)
-	om_task_periodic_stop(src)
+	set_repairing(FALSE)
 	..()
 	return
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid/get_equip_info()
 	if(!chassis) return
-	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_repairs=1'>[(datum_flags & DF_ISPROCESSING)?"Dea":"A"]ctivate</a>"
+	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_repairs=1'>[repairing?"Dea":"A"]ctivate</a>"
 
 
 TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/repair_droid, "toggle_repairs", PROC_REF(topic_toggle_repairs))
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid/proc/topic_toggle_repairs(mob/user, list/args)
 	chassis.cut_overlay(droid_overlay)
-	if(datum_flags & DF_ISPROCESSING)
+	if(repairing)
 		droid_overlay = new(src.icon, icon_state = "repair_droid")
-		om_task_periodic_stop(src)
+		set_repairing(FALSE)
 		src.mecha_log_message("Deactivated.")
 		set_ready_state(TRUE)
 	else
 		droid_overlay = new(src.icon, icon_state = "repair_droid_a")
 		src.mecha_log_message("Activated.")
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_repairing(TRUE)
 	chassis.add_overlay(droid_overlay)
 	send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 	return
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid/periodic_step()
-	if(!chassis)
-		set_ready_state(TRUE)
-		return PROCESS_KILL
 	var/repaired = 0
 	var/effective_boost = health_boost
 	if(mech_body_plan().has_affliction(chassis, MECHA_INT_SHORT_CIRCUIT))
@@ -95,6 +95,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/repair_droid, "toggle_repairs
 			set_ready_state(FALSE)
 		else
 			set_ready_state(TRUE)
+			set_repairing(FALSE)
 			return PROCESS_KILL
 	else
 		set_ready_state(TRUE)

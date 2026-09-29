@@ -6,6 +6,9 @@
 	range = 0
 	equip_type = EQUIP_SPECIAL
 
+OM_FIELD(/obj/item/mecha_parts/mecha_equipment/cloak, cloaking, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/cloak, PERIODIC_SLOW, "cloaking")
+
 /obj/item/mecha_parts/mecha_equipment/cloak/periodic_step()
 	..()
 	//Removed from chassis or ran out of power
@@ -36,7 +39,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/cloak, "toggle_cloak", PROC_R
 	if(chassis)
 		chassis.cloak()
 	src.mecha_log_message("Activated.")
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_cloaking(TRUE)
 	set_ready_state(FALSE)
 	play_sfx(src, SFX_EFFECTS_EMPULSE)
 
@@ -44,6 +47,6 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/cloak, "toggle_cloak", PROC_R
 	if(chassis)
 		chassis.uncloak()
 	src.mecha_log_message("Deactivated.")
-	om_task_periodic_stop(src)
+	set_cloaking(FALSE)
 	set_ready_state(TRUE)
 	play_sfx(src, SFX_EFFECTS_EMPULSE)

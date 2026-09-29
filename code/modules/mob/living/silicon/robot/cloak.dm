@@ -4,8 +4,13 @@
 	desc = "A powerful experimental module that allows one to adjust their visiblity."
 	icon = 'icons/obj/decals.dmi'
 	icon_state = "shock"
-	var/cloak_strength = 0.5		//Percent of visibility, 0 is visible, 1 is fully invisible
-	var/active = FALSE				//If the shield is on
+
+/// Percent of visibility, 0 is visible, 1 is fully invisible.
+OM_FIELD(/obj/item/borg/cloak, cloak_strength, 0.5, CHANGE_EXPLICIT)
+/// If the cloak is on.
+OM_FIELD(/obj/item/borg/cloak, active, FALSE, CHANGE_EXPLICIT)
+/// Draws power while cloaked at a non-zero strength.
+DECLARE_PERIODIC_WHILE_ALL(/obj/item/borg/cloak, PERIODIC_SLOW, list("active", "cloak_strength"))
 
 DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
@@ -23,10 +28,8 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 	return
 
 /obj/item/borg/cloak/periodic_step()
-	if(!active || !cloak_strength) //We are not active or cloak strength is set to 0
-		return PROCESS_KILL
 	if(!isliving(src.loc)) //It's not currently in our active modules.
-		active = FALSE
+		set_active(FALSE)
 		if(isrobot(loc.loc)) //The robot
 			var/mob/living/silicon/robot/R = src.loc.loc
 			update_cloak(R)
@@ -36,7 +39,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 		//So 250W = 1 charge. Syndi battery has 25000 charge.
 		//Let's make it so that 20 charge is used per 2 seconds if we are 100% dq_get_cloaked(src). We subtract 100 since that's the idle power used for a module being selected.
 		if(!R.draw_power(((cloak_strength * 5000) - 100) * CYBORG_POWER_USAGE_MULTIPLIER, src))
-			active = FALSE
+			set_active(FALSE)
 			update_cloak(R) //Update the cloak strength on the robot.
 			return //We ran out of power. RIP.
 
@@ -48,7 +51,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 		robot.apply_body_effect(/datum/body_effect/robot_cloak)
 	else
 		robot.remove_body_effect(/datum/body_effect/robot_cloak)
-		active = FALSE
+		set_active(FALSE)
 
 /// Old Toggle Cloak Strength verb.
 /obj/item/borg/cloak/proc/cloak_verb_set_level(mob/user, obj/item/held, datum/interaction/interaction)
@@ -64,7 +67,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 	var/mob/living/silicon/robot/R = ask.answerer
 	var/N = ask.number
 	if(!isnull(N) && N >= 0 && N <= 100)
-		cloak_strength = N/100
+		set_cloak_strength(N/100)
 		to_chat(R, span_warning("You will now be [N]% obscured when the cloak is active."))
 		update_cloak(R)
 	else if(!N)
@@ -81,9 +84,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 	if(!isrobot(R)) //sod off
 		return
 
-	active = !active
-	if(active)
-		om_task_periodic(src, PERIODIC_SLOW) // draws power while cloaked
+	set_active(!active)
 	to_chat(R, span_notice("You [active ? "re" : "de"]activate your personal cloaking device."))
 	update_cloak(R)
 

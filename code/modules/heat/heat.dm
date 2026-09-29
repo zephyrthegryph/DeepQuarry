@@ -19,6 +19,19 @@
 /// cleared lazily.
 /atom/var/heat_body
 
+/// A declared field (set_heat_body() is the one writer). A machine hears CHANGE_MACHINE_SETTINGS
+/// (a cooker steps while it holds a heat body: cooker_needs_step()).
+OM_FIELD_SETTER(/atom, heat_body, 0)
+OM_FIELD_SETTER(/obj/machinery, heat_body, CHANGE_MACHINE_SETTINGS)
+
+/atom/proc/set_heat_body(value)
+	if(heat_body == value)
+		return FALSE
+	heat_body = value
+	if(istype(src, /obj/machinery))
+		om_changed(src, CHANGE_MACHINE_SETTINGS) // the declared field's machine channel
+	return TRUE
+
 // ---------------------------------------------------------------- the API
 
 /// This atom's temperature in kelvin: its heat body's, or, with none, the
@@ -29,7 +42,7 @@
 		var/temperature = vg_heat_body_temperature(heat_body)
 		if(!isnull(temperature))
 			return temperature
-		heat_body = null
+		set_heat_body(null)
 	return get_ambient_temperature()
 
 /// The temperature this atom's surroundings impose on it.
@@ -51,7 +64,7 @@
 	if(!isnull(heat_body))
 		if(vg_heat_body_add(heat_body, joules))
 			return joules
-		heat_body = null
+		set_heat_body(null)
 	if(!create_heat_body())
 		return 0
 	return vg_heat_body_add(heat_body, joules) ? joules : 0
@@ -91,10 +104,10 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 	// Inside a bind scope (heat_bind_batch.dm) the handle is a pre-reserved body, usable at
 	// once; its configuration goes to Rust with the rest of the scope's in one call.
 	if(GLOB.dq_heat_bind_depth)
-		heat_body = dq_heat_body_reserve_for(src, capacity, temperature, coupling[1], coupling[2], conductance, keep)
+		set_heat_body(dq_heat_body_reserve_for(src, capacity, temperature, coupling[1], coupling[2], conductance, keep))
 		if(!isnull(heat_body))
 			return TRUE
-	heat_body = vg_heat_body_create(capacity, temperature, coupling[1], coupling[2], conductance, keep)
+	set_heat_body(vg_heat_body_create(capacity, temperature, coupling[1], coupling[2], conductance, keep))
 	if(isnull(heat_body))
 		return FALSE
 	heat_body_created()
@@ -132,7 +145,7 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 	var/list/coupling = heat_coupling()
 	var/list/properties = thermal_properties()
 	if(!vg_heat_body_couple(heat_body, 0, coupling[1], coupling[2], heat_path_conductance(properties[THERMAL_CONDUCTANCE])))
-		heat_body = null
+		set_heat_body(null)
 		return
 	// Moving off a burning tile ends the fire coupling.
 	var/atom/movable/self = src
@@ -146,7 +159,7 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 		return
 	dq_heat_bind_forget(src)
 	dq_heat_body_release(src, heat_body)
-	heat_body = null
+	set_heat_body(null)
 
 // ------------------------------------------------------------------ turfs
 
@@ -276,7 +289,7 @@ REL_PAIR_LIST(/atom, heat_watches, target)
 				return FALSE
 			vg_heat_body_keep(target.heat_body, TRUE)
 		else if(!isnull(target.heat_body) && isnull(vg_heat_body_temperature(target.heat_body)))
-			target.heat_body = null
+			target.set_heat_body(null)
 		body = target.heat_body
 		if(isnull(body))
 			return TRUE // at rest: relinked when the target gets a body

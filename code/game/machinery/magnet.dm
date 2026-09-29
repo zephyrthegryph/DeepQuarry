@@ -21,12 +21,14 @@
 	var/code = 0 // frequency code, they should be different unless you have a group of magnets working together or something
 	var/turf/center // the center of magnetic attraction
 	on = 0
-	var/magnet_active = 0
 
 	// x, y modifiers to the center turf; (0, 0) is centered on the magnet, whereas (1, -1) is one tile right, one tile down
 	var/center_x = 0
 	var/center_y = 0
 	var/max_dist = 20 // absolute value of center_x,y cannot exceed this integer
+
+/// Pulls things toward its center every magnet_delay() while switched on.
+DECLARE_REPEAT(/obj/machinery/magnetic_module, "magnet_delay", magnetic_process, "on")
 
 /obj/machinery/magnetic_module/Initialize(mapload)
 	. = ..()
@@ -36,8 +38,6 @@
 
 	if(GLOB.radio_service)
 		GLOB.radio_service.add_object(src, freq, RADIO_MAGNETS)
-
-	magnetic_process()
 
 // update the invisibility and icon
 /obj/machinery/magnetic_module/hide(intact)
@@ -104,9 +104,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/magnetic_module, "floor_magnet{on?:0}{invisib
 				if(modifier)	code = modifier
 			if("toggle-power")
 				set_on(!on)
-
-				if(on)
-					magnetic_process()
 	MACHINE_WAKE(src)
 
 /// Clamps its settings and reconciles its power draw and icon: after every command, and on
@@ -141,29 +138,21 @@ APPEARANCE_TEMPLATE(/obj/machinery/magnetic_module, "floor_magnet{on?:0}{invisib
 	update_icon()
 	return PROCESS_KILL
 
-/obj/machinery/magnetic_module/proc/magnetic_process(called_back) // proc that actually does the pulling
-	if(called_back)
-		magnet_active = 0
+/// The pull's period: stronger fields pull faster.
+/obj/machinery/magnetic_module/proc/magnet_delay()
+	return (13 - electricity_level) DECISECONDS
 
-	if(magnet_active)
-		return
+/obj/machinery/magnetic_module/proc/magnetic_process() // proc that actually does the pulling
+	rel_set(src, "center", locate(x+center_x, y+center_y, z))
+	if(get_center())
+		for(var/obj/M in orange(magnetic_field, get_center()))
+			if(!M.anchored && !(M.flags & NOCONDUCT))
+				step_towards(M, get_center())
+		for(var/mob/living/silicon/S in orange(magnetic_field, get_center()))
+			if(isAI(S)) continue
+			step_towards(S, get_center())
 
-	if(on)
-		magnet_active = 1
-		rel_set(src, "center", locate(x+center_x, y+center_y, z))
-		if(get_center())
-			for(var/obj/M in orange(magnetic_field, get_center()))
-				if(!M.anchored && !(M.flags & NOCONDUCT))
-					step_towards(M, get_center())
-
-			for(var/mob/living/silicon/S in orange(magnetic_field, get_center()))
-				if(isAI(S)) continue
-				step_towards(S, get_center())
-
-		use_power(electricity_level * 5)
-		om_after(src, 13 - electricity_level, PROC_REF(magnetic_process), TRUE)
-
-	magnet_active = 0
+	use_power(electricity_level * 5)
 
 /obj/machinery/magnetic_controller
 	name = "Magnetic Control Console"
@@ -184,10 +173,12 @@ APPEARANCE_TEMPLATE(/obj/machinery/magnetic_module, "floor_magnet{on?:0}{invisib
 	var/speed = 1 // lowest = 1, highest = 10
 	var/list/rpath // real path of the magnet, used in iterator
 
-	var/moving = 0 // 1 if scheduled to loop
-	var/looping = 0 // 1 if looping
-
 	var/datum/radio_frequency/radio_connection
+
+/// TRUE while the magnets are walked along the path.
+OM_FIELD(/obj/machinery/magnetic_controller, path_moving, FALSE, CHANGE_MACHINE_SETTINGS)
+/// Walks the magnets one path step every magnet_delay() while moving.
+DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_step, "path_moving")
 
 /obj/machinery/magnetic_controller/Initialize(mapload)
 	. = ..()
@@ -278,9 +269,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/magnetic_module, "floor_magnet{on?:0}{invisib
 			om_ask(user, /datum/om/prompt/text, PROC_REF(magnet_path_entered), message = "Please define a new path!", default = path, max_length = MAX_MESSAGE_LEN, requires = PROMPT_USABLE)
 
 		if("togglemoving")
-			moving = !moving
-			if(moving)
-				MagnetMove()
+			set_path_moving(!path_moving)
 
 	updateUsrDialog(user)
 
@@ -289,21 +278,19 @@ APPEARANCE_TEMPLATE(/obj/machinery/magnetic_module, "floor_magnet{on?:0}{invisib
 	var/newpath = ask.text
 	updateUsrDialog(user)
 	if(newpath && newpath != "")
-		moving = 0 // stop moving
+		set_path_moving(FALSE) // stop moving
 		path = newpath
 		pathpos = 1 // reset position
 		filter_path() // renders rpath
 
-/obj/machinery/magnetic_controller/proc/MagnetMove()
-	if(looping) return
-	looping = 1
-	magnet_move_step()
+/// The wait between path steps, by `speed`.
+/obj/machinery/magnetic_controller/proc/magnet_delay()
+	return (speed == 10 ? 1 : 12 - speed) DECISECONDS
 
-/// One step of the magnet path: signal the next move, then wait by `speed`.
+/// One step of the magnet path: signal the next move.
 /obj/machinery/magnetic_controller/proc/magnet_move_step()
-	if(!moving || length(rpath) < 1 || (!operable()))
-		looping = 0
-		return
+	if(length(rpath) < 1 || (!operable()))
+		return REPEAT_STOP
 
 	if(pathpos > length(rpath)) // if the position is greater than the length, we just loop through the list!
 		pathpos = 1
@@ -314,8 +301,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/magnetic_module, "floor_magnet{on?:0}{invisib
 		// N, S, E, W are directional
 		// C is center
 		// R is random (in magnetic field's bounds)
-		looping = 0
-		return // stop if the character located is invalid
+		return REPEAT_STOP // stop if the character located is invalid
 
 	// Prepare the radio signal
 	var/datum/signal/signal = new
@@ -329,8 +315,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/magnetic_module, "floor_magnet{on?:0}{invisib
 
 	// Broadcast the signal
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_MAGNETS)
-
-	om_after(src, speed == 10 ? 1 : 12 - speed, PROC_REF(magnet_move_step))
 
 /obj/machinery/magnetic_controller/proc/filter_path()
 	// Generates the rpath variable using the path string, think of this as "string2list"

@@ -27,10 +27,15 @@
 // ---------------------------------------------------------------------------
 
 /mob/living
-	var/tmp/autofire_on = FALSE
+	/// Wait before the next autofire_tick(), set by each tick from the gun's cadence.
+	var/tmp/autofire_delay = 0
 	var/tmp/obj/item/gun/autofire_gun
 	var/tmp/atom/autofire_target
 	var/tmp/autofire_params = null
+
+/// TRUE while a hold-to-fire session runs: autofire_tick() repeats every autofire_delay.
+OM_FIELD_TYPED(/mob/living, tmp, autofire_on, FALSE, CHANGE_MOB_CONDITIONS)
+DECLARE_REPEAT(/mob/living, "autofire_delay", autofire_tick, "autofire_on")
 
 /// Begin (or retarget) a held-trigger autofire session with gun G at target.
 /mob/living/proc/start_autofire(obj/item/gun/G, atom/target, params)
@@ -40,8 +45,8 @@
 	rel_set(src, "autofire_target", target)
 	autofire_params = params
 	if(!autofire_on)
-		autofire_on = TRUE
-		autofire_tick()
+		autofire_delay = 0 // the first trigger pull comes right away
+		set_autofire_on(TRUE)
 
 /// Update the target/params of an in-progress session (mouse dragged onto a new
 /// tile while the button is still held).  No-op if not autofiring.
@@ -52,16 +57,14 @@
 
 /// End any autofire session and clear all held state.  Safe to call when idle.
 /mob/living/proc/stop_autofire()
-	autofire_on     = FALSE
+	set_autofire_on(FALSE)
 	rel_clear(src, "autofire_gun")
 	rel_clear(src, "autofire_target")
 	autofire_params = null
 
-/// One iteration of the hold-to-fire loop.  Fires if the gun is ready, then
-/// reschedules itself until a stop condition is met.
+/// One iteration of the hold-to-fire loop (declared: while autofire_on).  Fires if the gun is
+/// ready and sets the wait before the next one; a stop condition ends the session.
 /mob/living/proc/autofire_tick()
-	if(!autofire_on)
-		return
 	var/obj/item/gun/G = autofire_gun()
 	var/atom/target = autofire_target()
 	// Stop conditions: gun gone / not in hand / no longer automatic / KO'd or
@@ -69,7 +72,7 @@
 	if(QDELETED(src) || stat || QDELETED(G) || !G.automatic \
 			|| get_active_hand() != G || QDELETED(target))
 		stop_autofire()
-		return
+		return REPEAT_STOP
 
 	var/delay
 	if(COOLDOWN_FINISHED(G, next_fire_time))
@@ -77,13 +80,13 @@
 		// Re-check: Fire()/handle_click_empty may have ended the session
 		// (dropped gun, ran dry) this tick.
 		if(!autofire_on)
-			return
+			return REPEAT_STOP
 		delay = max(1, G.fire_delay)
 	else
 		// Not ready yet (mid-burst or cooling down): wait exactly until it is.
 		delay = max(1, G.next_fire_time - world.time)
 
-	om_after(src, delay, PROC_REF(autofire_tick))
+	autofire_delay = delay
 
 // ---------------------------------------------------------------------------
 // Client mouse capture

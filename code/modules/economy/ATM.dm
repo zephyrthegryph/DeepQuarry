@@ -41,10 +41,14 @@ log transactions
 	. = ..()
 
 
-/obj/machinery/atm/machine_step()
-	if(has_stat(NOPOWER))
-		return PROCESS_KILL
+/// Has mains power (NOPOWER clear); the timers and cash dispensing only run while it does.
+OM_DERIVE_FIELD(/obj/machinery/atm, has_mains_power, list("stat"))
+DECLARE_PERIODIC_WHILE(/obj/machinery/atm, MACHINE_PIPELINE, "has_mains_power")
 
+/obj/machinery/atm/proc/has_mains_power()
+	return !has_stat(NOPOWER)
+
+/obj/machinery/atm/machine_step()
 	if(ticks_left_timeout > 0)
 		ticks_left_timeout--
 		if(ticks_left_timeout <= 0)
@@ -64,11 +68,6 @@ log transactions
 		break
 	if(ticks_left_timeout <= 0 && ticks_left_locked_down <= 0 && !(locate_within(src, /obj/item/spacecash))) // ALLOW(latent): materialized above
 		return PROCESS_KILL
-
-/obj/machinery/atm/power_change()
-	. = ..()
-	if(. && !has_stat(NOPOWER) && (ticks_left_timeout > 0 || ticks_left_locked_down > 0))
-		MACHINE_WAKE(src)
 
 DECLARE_EMAG(/obj/machinery/atm, PROC_REF(on_emag), null, null)
 /obj/machinery/atm/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)

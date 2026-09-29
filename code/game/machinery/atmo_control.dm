@@ -707,16 +707,18 @@ UI_ACT_PROC(/obj/machinery/computer/general_air_control/supermatter_core, ui_act
 	icon_screen = "alert:0"
 	var/device_tag
 	var/list/device_info
-	var/automation = 0
 	var/cutoff_temperature = 2000
 	var/on_temperature = 1200
 	circuit = /obj/item/circuitboard/air_management/injector_control
+
+OM_FIELD(/obj/machinery/computer/general_air_control/fuel_injection, automation, 0, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/computer/general_air_control/fuel_injection, MACHINE_PIPELINE, "automation")
 
 /// Machine pipeline (machine_pipeline.dm, step/fuel_injection): a timed stage while automation is
 /// on -- each frame re-reads the latest sensor broadcasts and commands the injectors -- and parked
 /// otherwise; toggling automation wakes it.
 /obj/machinery/computer/general_air_control/fuel_injection/machine_step()
-	if(!automation || !radio_connection())
+	if(!radio_connection())
 		return PROCESS_KILL
 	if(automation)
 
@@ -785,8 +787,7 @@ UI_ACT_PROC(/obj/machinery/computer/general_air_control/fuel_injection, ui_act_r
 
 UI_ACT(/obj/machinery/computer/general_air_control/fuel_injection, "toggle_automation", ui_act_toggle_automation)
 UI_ACT_PROC(/obj/machinery/computer/general_air_control/fuel_injection, ui_act_toggle_automation)
-	automation = !automation
-	MACHINE_WAKE(src)
+	set_automation(!automation)
 	. = TRUE
 
 UI_ACT(/obj/machinery/computer/general_air_control/fuel_injection, "toggle_injector", ui_act_toggle_injector)

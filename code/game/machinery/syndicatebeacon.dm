@@ -108,6 +108,9 @@
 	active = 0
 	var/icontype = "beacon"
 
+/// Draws its (stealth) power while active.
+DECLARE_PERIODIC_WHILE(/obj/machinery/power/singularity_beacon, MACHINE_PIPELINE, "active")
+
 /obj/machinery/power/singularity_beacon/proc/Activate(mob/user = null)
 	if(surplus() < 1500)
 		if(user)
@@ -118,7 +121,6 @@
 			singulo.target = src
 	icon_state = "[icontype]1"
 	set_active(1)
-	MACHINE_WAKE(src)
 	if(user)
 		to_chat(user, span_notice("You activate the beacon."))
 
@@ -180,11 +182,8 @@
 
 //stealth direct power usage
 /obj/machinery/power/singularity_beacon/machine_step()
-	if(!active)
-		return PROCESS_KILL
-	else
-		if(draw_power(1500) < 1500)
-			Deactivate()
+	if(draw_power(1500) < 1500)
+		Deactivate()
 
 /obj/machinery/power/singularity_beacon/syndicate
 	icontype = "beaconsynd"

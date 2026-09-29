@@ -1,3 +1,71 @@
+// Counted volleys (random, quad random, gattling, cutoff): the entry procs below keep their old
+// signatures (callers om_after() them) and start the volley; the declared repeat fires the rest
+// every volley_fire_delay while shots remain, then moves on to the volley's next attack cycle.
+#define ECLIPSE_VOLLEY_RANDOM 1
+#define ECLIPSE_VOLLEY_QUAD_RANDOM 2
+#define ECLIPSE_VOLLEY_GATTLING 3
+#define ECLIPSE_VOLLEY_CUTOFF 4
+#define ECLIPSE_VOLLEY_CUTOFF_ULTI 5
+
+/// Shots left in the current counted volley. A field: the volley repeats while it is non-zero.
+OM_FIELD(/mob/living/simple_mob/mechanical/mecha/eclipse, volley_shots_left, 0, CHANGE_MOB_CONDITIONS)
+/mob/living/simple_mob/mechanical/mecha/eclipse/var/volley_kind
+/// What the current volley is fired at (a relation view).
+/mob/living/simple_mob/mechanical/mecha/eclipse/var/atom/volley_target
+/mob/living/simple_mob/mechanical/mecha/eclipse/var/volley_next_cycle
+/mob/living/simple_mob/mechanical/mecha/eclipse/var/volley_fire_delay = 0
+DECLARE_REPEAT(/mob/living/simple_mob/mechanical/mecha/eclipse, "volley_fire_delay", volley_step, "volley_shots_left")
+
+/// Starts a counted volley: the first shot now, the rest on the declared repeat.
+/mob/living/simple_mob/mechanical/mecha/eclipse/proc/start_volley(kind, atom/target, amount, next_cycle, fire_delay)
+	volley_kind = kind
+	rel_set(src, "volley_target", target)
+	volley_next_cycle = next_cycle
+	volley_fire_delay = fire_delay
+	set_volley_shots_left(amount)
+	volley_step()
+
+/// DECLARE_REPEAT while shots remain: one shot of the current volley.
+/mob/living/simple_mob/mechanical/mecha/eclipse/proc/volley_step()
+	var/atom/target = volley_target
+	if(!target)
+		set_volley_shots_left(0)
+		return REPEAT_STOP
+	switch(volley_kind)
+		if(ECLIPSE_VOLLEY_RANDOM)
+			bullet_heck(target, rand(-7,7), rand(-7,7))
+		if(ECLIPSE_VOLLEY_QUAD_RANDOM)
+			var/rngx = rand(-7,7)
+			var/rngy = rand(-7,7)
+			var/rngxx = rand(-7,7)
+			var/rngyy = rand(-7,7)
+			bullet_heck(target, rngx, rngy)
+			bullet_heck(target, rngxx, rngyy)
+			bullet_heck(target, rngxx, rngy)
+			bullet_heck(target, rngx, rngyy)
+		if(ECLIPSE_VOLLEY_GATTLING)
+			var/obj/item/projectile/P = new specialattackprojectile(get_turf(src))
+			P.launch_projectile(target, BP_TORSO, src)
+		if(ECLIPSE_VOLLEY_CUTOFF)
+			bullet_heck(target, 7, 0)
+			bullet_heck(target, -7, 0)
+			bullet_heck(target, 0, 7)
+			bullet_heck(target, 0, -7)
+		if(ECLIPSE_VOLLEY_CUTOFF_ULTI)
+			bullet_heck(target, 7, 0)
+			bullet_heck(target, -7, 0)
+			bullet_heck(target, 0, 7)
+			bullet_heck(target, 0, -7)
+			bullet_heck(target, 7, 7)
+			bullet_heck(target, -7, -7)
+			bullet_heck(target, -7, 7)
+			bullet_heck(target, 7, -7)
+	set_volley_shots_left(volley_shots_left - 1)
+	if(volley_shots_left <= 0)
+		attackcycle = volley_next_cycle
+		return REPEAT_STOP
+
+
 /mob/living/simple_mob/mechanical/mecha/eclipse/proc/singleproj(atom/target, next_cycle)
 	if(!target)
 		return
@@ -676,34 +744,10 @@
 
 //random
 /mob/living/simple_mob/mechanical/mecha/eclipse/proc/random_firing(atom/target, amount, next_cycle, fire_delay)
-	var/rngx = rand(-7,7)
-	var/rngy = rand(-7,7)
-	if(!target)
-		return
-	bullet_heck(target, rngx, rngy)
-	amount--
-	if(amount > 0)
-		om_after(src, fire_delay, PROC_REF(random_firing), target, amount, next_cycle, fire_delay)
-	else
-		attackcycle = next_cycle
-
+	start_volley(ECLIPSE_VOLLEY_RANDOM, target, amount, next_cycle, fire_delay)
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/proc/quad_random_firing(atom/target, amount, next_cycle, fire_delay)
-	var/rngx = rand(-7,7)
-	var/rngy = rand(-7,7)
-	var/rngxx = rand(-7,7)
-	var/rngyy = rand(-7,7)
-	if(!target)
-		return
-	bullet_heck(target, rngx, rngy)
-	bullet_heck(target, rngxx, rngyy)
-	bullet_heck(target, rngxx, rngy)
-	bullet_heck(target, rngx, rngyy)
-	amount--
-	if(amount > 0)
-		om_after(src, fire_delay, PROC_REF(quad_random_firing), target, amount, next_cycle, fire_delay)
-	else
-		attackcycle = next_cycle
+	start_volley(ECLIPSE_VOLLEY_QUAD_RANDOM, target, amount, next_cycle, fire_delay)
 
 //perscion
 /mob/living/simple_mob/mechanical/mecha/eclipse/proc/hole_in_wall(atom/target, next_cycle, fire_delay)
@@ -943,15 +987,7 @@
 	attackcycle = next_cycle
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/proc/gattlingfire(atom/target, next_cycle, amount, fire_delay)
-	if(!target)
-		return
-	var/obj/item/projectile/P = new specialattackprojectile(get_turf(src))
-	P.launch_projectile(target, BP_TORSO, src)
-	amount--
-	if(amount > 0)
-		om_after(src, fire_delay, PROC_REF(gattlingfire), target, next_cycle, amount, fire_delay)
-	else
-		attackcycle = next_cycle
+	start_volley(ECLIPSE_VOLLEY_GATTLING, target, amount, next_cycle, fire_delay)
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/proc/death_wall(atom/target, next_cycle, fire_delay)
 	bullet_heck(target, 7, 0)
@@ -1026,34 +1062,10 @@
 	attackcycle = next_cycle
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/proc/cutoff(atom/target, next_cycle, fire_delay, amount)
-	if(!target)
-		return
-	bullet_heck(target, 7, 0)
-	bullet_heck(target, -7, 0)
-	bullet_heck(target, 0, 7)
-	bullet_heck(target, 0, -7)
-	amount--
-	if(amount > 0)
-		om_after(src, fire_delay, PROC_REF(cutoff), target, next_cycle, fire_delay, amount)
-	else
-		attackcycle = next_cycle
+	start_volley(ECLIPSE_VOLLEY_CUTOFF, target, amount, next_cycle, fire_delay)
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/proc/cutoff_ulti(atom/target, next_cycle, fire_delay, amount)
-	if(!target)
-		return
-	bullet_heck(target, 7, 0)
-	bullet_heck(target, -7, 0)
-	bullet_heck(target, 0, 7)
-	bullet_heck(target, 0, -7)
-	bullet_heck(target, 7, 7)
-	bullet_heck(target, -7, -7)
-	bullet_heck(target, -7, 7)
-	bullet_heck(target, 7, -7)
-	amount--
-	if(amount > 0)
-		om_after(src, fire_delay, PROC_REF(cutoff_ulti), target, next_cycle, fire_delay, amount)
-	else
-		attackcycle = next_cycle
+	start_volley(ECLIPSE_VOLLEY_CUTOFF_ULTI, target, amount, next_cycle, fire_delay)
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/proc/bullet_blossom(atom/target, next_cycle, fire_delay)
 	bullet_heck(target, 7, 7)
@@ -1478,3 +1490,9 @@
 	bullet_heck(target, -1, 7)
 	bullet_heck(target, 0, 7)
 	attackcycle = next_cycle
+
+#undef ECLIPSE_VOLLEY_RANDOM
+#undef ECLIPSE_VOLLEY_QUAD_RANDOM
+#undef ECLIPSE_VOLLEY_GATTLING
+#undef ECLIPSE_VOLLEY_CUTOFF
+#undef ECLIPSE_VOLLEY_CUTOFF_ULTI

@@ -140,12 +140,20 @@ APPEARANCE_TEMPLATE(/obj/machinery/gravity_generator, "{get_status}_{sprite_numb
 	/// The eight part objects around it (owned: created here, destroyed with it).
 	var/list/obj/machinery/gravity_generator/part/parts
 	var/tmp/obj/middle
-	var/charging_state = POWER_IDLE
 	var/charge_count = 100
 	var/current_overlay = null
 	var/broken_state = 0
 	var/list/levels
 	var/list/areas
+
+/// POWER_IDLE (0), POWER_UP or POWER_DOWN; non-idle means it is spinning up or down (machine_step()).
+OM_FIELD(/obj/machinery/gravity_generator/main, charging_state, POWER_IDLE, CHANGE_MACHINE_SETTINGS)
+/// Not BROKEN (a broken generator doesn't spin; operable() would also stop the spin-down on power loss).
+OM_DERIVE_FIELD(/obj/machinery/gravity_generator/main, unbroken, list("stat"))
+/obj/machinery/gravity_generator/main/proc/unbroken()
+	return !has_stat(BROKEN)
+
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/gravity_generator/main, MACHINE_PIPELINE, list("charging_state", "unbroken"))
 
 /obj/machinery/gravity_generator/main/Initialize(mapload)
 	..()
@@ -318,24 +326,22 @@ UI_ACT_PROC(/obj/machinery/gravity_generator/main, ui_act_gentoggle)
 	switch(charging_state)
 		if(POWER_UP)
 			if(!new_state) // Can start spin down during spin up
-				charging_state = POWER_DOWN
+				set_charging_state(POWER_DOWN)
 		if(POWER_DOWN)
 			if(new_state) // Can start spin up during spin down
-				charging_state = POWER_UP
+				set_charging_state(POWER_UP)
 		if(POWER_IDLE)
 			if(!new_state && use_power == USE_POWER_ACTIVE) // Can start spin down during running
-				charging_state = POWER_DOWN
+				set_charging_state(POWER_DOWN)
 			else if(new_state && use_power == USE_POWER_IDLE) // Can start spin up during stopped
-				charging_state = POWER_UP
+				set_charging_state(POWER_UP)
 
 	investigate_log("is now [charging_state == POWER_UP ? "charging" : "discharging"].", "gravity")
 	update_icon()
-	if(charging_state != POWER_IDLE)
-		MACHINE_WAKE(src)
 
 // Set the state of the gravity.
 /obj/machinery/gravity_generator/main/proc/set_gravity_state(new_state)
-	charging_state = POWER_IDLE
+	set_charging_state(POWER_IDLE)
 	set_use_power(new_state ? USE_POWER_ACTIVE : USE_POWER_IDLE)
 
 	// Sound the alert if gravity was just enabled or disabled.
@@ -364,10 +370,6 @@ UI_ACT_PROC(/obj/machinery/gravity_generator/main, ui_act_gentoggle)
 /// Spins up or down while charging; settled (or broken) it sleeps until set_power() starts a
 /// charge again.
 /obj/machinery/gravity_generator/main/machine_step()
-	if(has_stat(BROKEN))
-		return PROCESS_KILL
-	if(charging_state == POWER_IDLE)
-		return PROCESS_KILL
 	if(charging_state != POWER_IDLE)
 		if(charging_state == POWER_UP && charge_count >= 100)
 			set_gravity_state(1)
@@ -492,10 +494,6 @@ UI_ACT_PROC(/obj/machinery/gravity_generator/main, ui_act_gentoggle)
 #undef GRAV_NEEDS_WELDING
 #undef GRAV_NEEDS_PLASTEEL
 #undef GRAV_NEEDS_WRENCH
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/gravity_generator/main/step_start_condition()
-	return charging_state != 0 // POWER_IDLE (undefined past this file end)
 
 /// the main_part this refers to: a relation view, null once that is deleted.
 /obj/machinery/gravity_generator/part/proc/main_part() as /obj/machinery/gravity_generator/main

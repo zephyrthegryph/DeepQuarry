@@ -10,8 +10,8 @@
 //
 // Order (also in the define file's header and the doc, keep all three in step):
 //   init:          children, gas, reagents, appearance
-//   materialize:   registries, service members, binds, behaviours, periodic, timers
-//   dematerialize: periodic stop, service leave, bind release
+//   materialize:   registries, service members, binds, behaviours, periodic, timers, declared periodic work (sys_periodic)
+//   dematerialize: periodic stop, declared periodic stop, service leave, bind release
 //   destroy:       phase 1 bind release; phase 4 children (their DECLARE_REF kind);
 //                  phase 6 destroy effects
 
@@ -84,6 +84,9 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	var/list/verbs_if
 	/// DECLARE_VERB_HIDE: verb paths no instance has.
 	var/list/verbs_hidden
+	/// DECLARE_PERIODIC_WHILE / DECLARE_REPEAT: TRUE while declaring, then finish() resolves the
+	/// type's /datum/sys_periodic_table (code/datums/sys/periodic.dm), or null.
+	var/sys_periodic
 
 /datum/lifecycle_decls/New(owner_type)
 	src.owner_type = owner_type
@@ -104,6 +107,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	verbs_login = null
 	verbs_if = null
 	verbs_hidden = null
+	sys_periodic = null
 	return src
 
 /datum/lifecycle_decls/proc/add_child(var_name, default)
@@ -178,6 +182,9 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		if(VERB_DECL_HIDE)
 			LAZYADD(verbs_hidden, verb_path)
 
+/datum/lifecycle_decls/proc/add_sys_periodic()
+	sys_periodic = TRUE
+
 /// `skip_unset`: an unset (0) value is not armed at materialize (nothing to lapse; EMP_DISABLE).
 /datum/lifecycle_decls/proc/add_expiry_hook(var_name, clock, proc_ref, skip_unset = FALSE)
 	LAZYSET(expiry_hooks, var_name, list(clock, proc_ref, skip_unset))
@@ -247,7 +254,15 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 			expiry_hooks -= hook_var
 	if(!length(expiry_hooks))
 		expiry_hooks = null
-	if(registries || services || binders || behaviours || periodic || timers || expiry_hooks)
+	if(sys_periodic)
+		sys_periodic = sys_periodic_validated(D, sys_periodic_table_for(owner_type))
+		var/datum/sys_periodic_table/table = sys_periodic
+		if(table?.while_def && periodic)
+			stack_trace("DECLARE_PERIODIC([owner_type]) and DECLARE_PERIODIC_WHILE on one type: the while-declaration wins; DECLARE_PERIODIC dropped")
+			periodic = null
+		if(sys_periodic && !isatom(D))
+			work |= DECL_WORK_INIT // a non-atom starts it from New() (lifecycle_decls_init())
+	if(registries || services || binders || behaviours || periodic || timers || expiry_hooks || (sys_periodic && isatom(D)))
 		work |= DECL_WORK_MATERIALIZE
 	if(binders)
 		work |= DECL_WORK_UNBIND
@@ -267,6 +282,8 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	var/datum/lifecycle_decls/decls = lifecycle_decls_of(D)
 	if(!decls || !(decls.work & DECL_WORK_INIT))
 		return
+	if(decls.sys_periodic && !isatom(D))
+		sys_periodic_start(D, decls.sys_periodic)
 	if(decls.children)
 		decls.create_children(D)
 	if(decls.gas)
@@ -390,12 +407,16 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		om_after(A, lifecycle_decl_value(A, timer[1]), timer[2])
 	for(var/hook_var in decls.expiry_hooks)
 		expiry_arm(A, hook_var, A.vars[hook_var], TRUE)
+	if(decls.sys_periodic)
+		sys_periodic_start(A, decls.sys_periodic)
 
 /// The inverse, from /atom/on_dematerialize(). Registries, behaviours and timers are left by
 /// the core (leave_registries(), om_teardown_rest()).
 /proc/lifecycle_decls_dematerialize(atom/A, datum/lifecycle_decls/decls)
 	if(decls.periodic)
 		om_task_periodic_stop(A)
+	if(decls.sys_periodic)
+		sys_periodic_stop(A, decls.sys_periodic)
 	for(var/list/service in decls.services)
 		var/datum/target = GLOB.vars[service[1]]
 		if(target && service[3])

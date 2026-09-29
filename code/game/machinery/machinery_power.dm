@@ -146,15 +146,16 @@
 /obj/machinery/proc/set_use_power(new_use_power)
 	if(use_power == new_use_power)
 		return
-	// A power-mode change is a settings change for a machine on a pipeline (machine_pipeline.dm).
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	if(!power_init_complete)
 		use_power = new_use_power
-		return TRUE // We'll be retallying anyway.
-	var/old_power = POWER_CONSUMPTION
-	use_power = new_use_power
-	var/new_power = POWER_CONSUMPTION
-	REPORT_POWER_CONSUMPTION_CHANGE(old_power, new_power)
+	else
+		var/old_power = POWER_CONSUMPTION
+		use_power = new_use_power
+		var/new_power = POWER_CONSUMPTION
+		REPORT_POWER_CONSUMPTION_CHANGE(old_power, new_power)
+	// A power-mode change is a settings change for a machine on a pipeline (machine_pipeline.dm).
+	// Raised after the write: watchers (declared periodic work) read the new value.
+	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	return TRUE
 
 // Sets the power_channel var and then forces an area power update.

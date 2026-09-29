@@ -17,8 +17,12 @@
 	idle_power_usage = 10
 	active_power_usage = 100
 
-	var/mob/living/carbon/human/victim
 	var/beep = TRUE
+
+/// The patient on the monitor (a relation view), or null.
+OM_FIELD_VIEW(/obj/machinery/vitals_monitor, mob/living/carbon/human, victim, CHANGE_MACHINE_OCCUPANT)
+/// Tracks its patient while connected to someone.
+DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim")
 
 /obj/machinery/vitals_monitor/Initialize(mapload)
 	. = ..()
@@ -60,11 +64,9 @@
 		. += span_notice("Brain activity: [brain_activity]")
 		. += span_notice("Breathing: [breathing]")
 
-/// Tracks its patient while it has one; otherwise it sleeps until connected to someone.
+/// Tracks its patient while it has one (the declaration above).
 /obj/machinery/vitals_monitor/machine_step()
-	if(!victim())
-		return PROCESS_KILL
-	if(QDELETED(victim()))
+	if(!victim() || QDELETED(victim()))
 		rel_clear(src, "victim")
 		update_icon()
 		set_use_power(USE_POWER_IDLE)
@@ -86,7 +88,6 @@
 	else if(ishuman(over_object))
 		rel_set(src, "victim", over_object)
 		set_use_power(USE_POWER_ACTIVE)
-		MACHINE_WAKE(src)
 		visible_message(span_notice("\The [src] is now showing data for [victim()]."))
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/vitals_monitor, TYPE_PROC_REF(/atom, appearance_overlays), list())

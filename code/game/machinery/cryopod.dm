@@ -157,6 +157,14 @@ UI_DATA(/obj/machinery/computer/cryopod, "allow_items:num", "merge:ui_data_obj_m
 	density = TRUE
 
 //Cryopods themselves.
+OM_DERIVE_FIELD(/obj/machinery/cryopod, cryopod_occupied, list(CHANGE_RELATION_ADDED, CHANGE_RELATION_REMOVED))
+DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupied")
+
+/// Derived field: the pod holds someone. The occupant slot's link/unlink raises
+/// CHANGE_RELATION_ADDED/REMOVED on the pod (om_link/om_unlink).
+/obj/machinery/cryopod/proc/cryopod_occupied()
+	return slot_item(OCCUPANT_SLOT_CRYOPOD) ? TRUE : FALSE
+
 /obj/machinery/cryopod
 	name = "cryogenic freezer"
 	desc = "A man-sized pod for entering suspended animation."
@@ -309,8 +317,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 //Lifted from Unity stasis.dm and refactored. ~Zuhayr
 /obj/machinery/cryopod/machine_step()
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
-	if(!occupant)
-		return PROCESS_KILL
 	if(occupant)
 		if(occupant.loc != src)
 			go_out(TRUE)
@@ -687,8 +693,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 
 /obj/machinery/cryopod/proc/set_occupant(mob/new_occupant)
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
-	if(new_occupant)
-		MACHINE_WAKE(src)
 	name = initial(name)
 	if(occupant)
 		name = "[name] ([occupant])"
