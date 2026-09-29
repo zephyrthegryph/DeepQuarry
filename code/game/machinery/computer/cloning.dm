@@ -8,19 +8,19 @@
 	icon_screen = "dna"
 	circuit = /obj/item/circuitboard/cloning
 	req_access = list(ACCESS_HEADS) //Only used for record deletion right now.
-	var/scanner_handle //Linked scanner. For scanning.
+	var/obj/machinery/dna_scannernew/scanner //Linked scanner. For scanning.
 	var/list/pods = null //Linked cloning pods.
 	var/list/temp = null
 	var/list/scantemp = null
 	var/menu = MENU_MAIN //Which menu screen to display
 	var/list/records = null
-	var/active_BR_handle
+	var/datum/transhuman/body_record/active_BR
 	/// A record loaded from a disk: the console is its only holder, so it owns it (active_BR is a handle).
 	var/datum/transhuman/body_record/loaded_BR
 	var/obj/item/disk/body_record/diskette = null // Traitgenes - Storing the entire body record
 	var/loading = 0 // Nice loading text
 	var/autoprocess = 0
-	var/selected_pod_handle
+	var/obj/machinery/clonepod/selected_pod
 	// 0: Standard body scan
 	// 1: The "Best" scan available
 	var/scan_mode = 1
@@ -60,11 +60,11 @@
 						records.Remove(BR)
 
 /obj/machinery/computer/cloning/proc/updatemodules()
-	scanner_handle = om_handle(findscanner())
+	rel_set(src, "scanner", findscanner())
 	releasecloner()
 	findcloner()
 	if(!selected_pod() && pods.len)
-		selected_pod_handle = om_handle(pods[1])
+		rel_set(src, "selected_pod", pods[1])
 
 /obj/machinery/computer/cloning/proc/findscanner()
 	var/obj/machinery/dna_scannernew/scannerf = null
@@ -84,7 +84,7 @@
 
 /obj/machinery/computer/cloning/proc/releasecloner()
 	for(var/obj/machinery/clonepod/P in pods)
-		P.connected_handle = null
+		rel_clear(P, "connected")
 		P.name = initial(P.name)
 	pods.Cut()
 
@@ -94,7 +94,7 @@
 		if(!P.connected())
 			// ALLOW(object_keyed_lists): linked pods; each pod removes itself on disconnect/destroy (clonepod connected().pods -= src)
 			pods += P
-			P.connected_handle = om_handle(src)
+			rel_set(P, "connected", src)
 			P.name = "[initial(P.name)] #[num++]"
 
 EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
@@ -122,7 +122,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 	if(pod && !(pod in pods))
 		// ALLOW(object_keyed_lists): linked pods; each pod removes itself on disconnect/destroy (clonepod connected().pods -= src)
 		pods += pod
-		pod.connected_handle = om_handle(src)
+		rel_set(pod, "connected", src)
 		pod.name = "[initial(pod.name)] #[length(pods)]"
 		to_chat(user, span_notice("You connect [pod] to [src]."))
 	return ITEM_INTERACT_SUCCESS
@@ -257,7 +257,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 			var/ref = params["ref"]
 			if(!length(ref))
 				return
-			active_BR_handle = om_handle(locate(ref))
+			rel_set(src, "active_BR", locate(ref))
 			if(istype(active_BR(), /datum/transhuman/body_record))
 				if(isnull(active_BR().ckey))
 					qdel(active_BR())
@@ -275,7 +275,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 					)
 					tgui_modal_message(src, action, "", null, payload)
 			else
-				active_BR_handle = null
+				rel_clear(src, "active_BR")
 				set_temp("Error: Record missing.", "danger")
 		if("del_rec")
 			if(!active_BR())
@@ -295,7 +295,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 						return
 
 					own_set(src, "loaded_BR", new /datum/transhuman/body_record(diskette.stored))
-					active_BR_handle = om_handle(loaded_BR) // Traitgenes Storing the entire body record
+					rel_set(src, "active_BR", loaded_BR) // Traitgenes Storing the entire body record
 					set_temp("Successfully loaded from disk.", "success")
 				if("save")
 					if(isnull(diskette) || isnull(active_BR())) // Traitgenes Removed readonly
@@ -317,7 +317,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 				return
 			var/obj/machinery/clonepod/selected = locate(ref)
 			if(istype(selected) && (selected in pods))
-				selected_pod_handle = om_handle(selected)
+				rel_set(src, "selected_pod", selected)
 		if("clone")
 			var/ref = params["ref"]
 			if(!length(ref))
@@ -503,13 +503,13 @@ OWN(/obj/machinery/computer/cloning, diskette, OWN_CONTAINED)
 
 /// LC-refs: scanner -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/cloning/proc/scanner() as /obj/machinery/dna_scannernew
-	return om_resolve(scanner_handle)
+	return scanner
 
 /// LC-refs: active BR -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/cloning/proc/active_BR() as /datum/transhuman/body_record
-	return om_resolve(active_BR_handle)
+	return active_BR
 
 /// LC-refs: selected pod -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/cloning/proc/selected_pod() as /obj/machinery/clonepod
-	return om_resolve(selected_pod_handle)
+	return selected_pod
 

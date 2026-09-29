@@ -16,7 +16,7 @@
 	var/hide_signal = FALSE		// If true, signal is not visible to other GPS devices.
 	var/can_hide_signal = FALSE	// If it can toggle the above var.
 
-	var/holder_handle
+	var/mob/holder
 	var/is_in_processing_list = FALSE
 	var/list/tracking_devices
 	var/list/showing_tracked_names
@@ -44,10 +44,10 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 	if(holder_ref() && loc != holder_ref())
 		om_unhook(holder_ref(), /datum/om/event/movable_attempted_move, src)
 		holder_ref().client?.screen -= compass
-		holder_handle = null
+		rel_clear(src, "holder")
 
 	if(istype(loc, /mob))
-		holder_handle = om_handle(loc)
+		rel_set(src, "holder", loc)
 		om_hook(holder_ref(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_holder_moved))
 		dq_add_recursive_move(holder_ref())
 
@@ -466,4 +466,4 @@ DECLARE_INTERACTIONS(/obj/item/gps, \
 
 /// LC-refs: holder -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/gps/proc/holder_ref() as /mob
-	return om_resolve(holder_handle)
+	return holder

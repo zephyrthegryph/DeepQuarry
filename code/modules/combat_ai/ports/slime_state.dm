@@ -10,7 +10,7 @@
 	var/datum/slime_state/slime_state = null
 
 /datum/slime_state
-	var/tmp/holder_handle
+	var/tmp/mob/living/simple_mob/slime/xenobio/holder
 	var/rabid = FALSE
 	var/discipline = 0
 	var/resentment = 0
@@ -26,7 +26,7 @@
 		stack_trace("slime_state instantiated with no owner")
 		qdel(src)
 		return
-	holder_handle = om_handle(owner)
+	rel_set(src, "holder", owner)
 	..()
 
 // ---------------------------------------------------------------------------
@@ -180,4 +180,4 @@
 
 /// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/slime_state/proc/holder() as /mob/living/simple_mob/slime/xenobio
-	return om_resolve(holder_handle)
+	return holder

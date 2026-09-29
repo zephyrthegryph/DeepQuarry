@@ -38,12 +38,12 @@
 	desc = "An internal communicator, basically."
 	occupation = "\[Commlink\]"
 	var/obj/item/nif/nif
-	var/tmp/nifsoft_handle
+	var/tmp/datum/nifsoft/commlink/nifsoft
 
 /obj/item/communicator/commlink/Initialize(mapload, soft)
 	. = ..()
 	rel_set(src, "nif", loc)
-	nifsoft_handle = om_handle(soft)
+	rel_set(src, "nifsoft", soft)
 
 REL_PAIR(/obj/item/communicator/commlink, nif, comm)
 REL_PAIR(/obj/item/nif, comm, nif)
@@ -129,4 +129,4 @@ REL_PAIR(/obj/item/nif, comm, nif)
 
 /// LC-refs: the nifsoft this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/communicator/commlink/proc/nifsoft() as /datum/nifsoft/commlink
-	return om_resolve(nifsoft_handle)
+	return nifsoft

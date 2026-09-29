@@ -219,7 +219,7 @@ EXTEND_INTERACTIONS(/obj/item/integrated_circuit, INTERACT_VERB("Rename Circuit"
 	disconnect_all()
 	var/turf/T = get_turf(src)
 	forceMove(T)
-	assembly_handle = null
+	rel_clear(src, "assembly")
 	playsound(T, 'sound/items/Crowbar.ogg', 50, 1)
 	to_chat(user, span_notice("You pop \the [src] out of the case, and slide it out."))
 

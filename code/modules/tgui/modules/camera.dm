@@ -64,7 +64,7 @@
 	var/list/network = list() // ALLOW(instance_list): d: camera console network filter; many call sites
 	var/list/additional_networks
 
-	var/tmp/active_camera_handle
+	var/tmp/obj/machinery/camera/active_camera
 	var/list/concurrent_users
 
 	// Stuff needed to render the map
@@ -73,7 +73,7 @@
 	var/atom/movable/screen/map_view_tg/camera/cam_screen_tg
 
 	// Stuff for moving cameras
-	var/tmp/last_camera_turf_handle
+	var/tmp/turf/last_camera_turf
 
 /datum/tgui_module/camera/New(host, list/network_computer)
 	. = ..()
@@ -153,7 +153,7 @@
 		if(active_camera())
 			om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
 		if(C)
-			active_camera_handle = om_handle(C)
+			rel_set(src, "active_camera", C)
 			dq_add_recursive_move(active_camera())
 			om_hook(active_camera(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_active_camera_moved_event))
 		playsound(tgui_host(), get_sfx("terminal_type"), 25, FALSE)
@@ -181,7 +181,7 @@
 			if(target)
 				if(active_camera())
 					om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
-				active_camera_handle = om_handle(target)
+				rel_set(src, "active_camera", target)
 				dq_add_recursive_move(active_camera())
 				om_hook(active_camera(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_active_camera_moved_event))
 				playsound(tgui_host(), get_sfx("terminal_type"), 25, FALSE)
@@ -212,7 +212,7 @@
 		return
 
 	// Cameras that get here are moving, and are likely attached to some moving atom such as cyborgs.
-	last_camera_turf_handle = om_handle(newturf)
+	rel_set(src, "last_camera_turf", newturf)
 
 	var/list/visible_turfs = list()
 	for(var/turf/T in (active_camera().isXRay() \
@@ -282,8 +282,8 @@
 	if(length(concurrent_users) == 0 && is_living)
 		if(active_camera())
 			om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
-		active_camera_handle = null
-		last_camera_turf_handle = null
+		rel_clear(src, "active_camera")
+		rel_clear(src, "last_camera_turf")
 		playsound(tgui_host(), 'sound/machines/terminal_off.ogg', 25, FALSE)
 
 // NTOS Version
@@ -315,8 +315,8 @@
 
 /// LC-refs: the active_camera this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_module/camera/proc/active_camera() as /obj/machinery/camera
-	return om_resolve(active_camera_handle)
+	return active_camera
 
 /// LC-refs: the last_camera_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_module/camera/proc/last_camera_turf() as /turf
-	return om_resolve(last_camera_turf_handle)
+	return last_camera_turf

@@ -21,7 +21,7 @@
 
 /datum/board_game/vore_sweeper/New(atom/holder)
 	. = ..()
-	parent_handle = om_handle(holder)
+	rel_set(src, "parent", holder)
 
 /datum/board_game/vore_sweeper/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

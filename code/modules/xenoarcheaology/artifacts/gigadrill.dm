@@ -5,7 +5,7 @@
 	icon_state = "gigadrill"
 	var/active = 0
 	var/drill_time = 10
-	var/tmp/drilling_turf_handle
+	var/tmp/turf/drilling_turf
 	density = TRUE
 	layer = ABOVE_JUNK_LAYER
 
@@ -37,7 +37,7 @@
 	if(active && !drilling_turf())
 		if(ismineralturf(A))
 			var/turf/simulated/mineral/M = A
-			drilling_turf_handle = om_handle(get_turf(src))
+			rel_set(src, "drilling_turf", get_turf(src))
 			src.visible_message(span_bold("\The [src]") + " begins to drill into \the [M].")
 			anchored = TRUE
 			om_after(src, drill_time, PROC_REF(finish_drilling), M)
@@ -46,9 +46,9 @@
 	if(get_turf(src) == drilling_turf() && active)
 		M.GetDrilled()
 		src.forceMove(M)
-	drilling_turf_handle = null
+	rel_clear(src, "drilling_turf")
 	anchored = FALSE
 
 /// LC-refs: the drilling_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/giga_drill/proc/drilling_turf() as /turf
-	return om_resolve(drilling_turf_handle)
+	return drilling_turf

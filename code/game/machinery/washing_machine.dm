@@ -23,7 +23,7 @@
 	var/state = EMPTY_OPEN
 	var/hacked = TRUE //Bleh, screw hacking, let's have it hacked by default.
 	var/gibs_ready = FALSE
-	var/crayon_handle
+	var/obj/crayon
 	var/list/washing
 	var/static/list/disallowed_types = list(
 		/obj/item/clothing/suit/space,
@@ -172,7 +172,7 @@ OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
 		if(state in list (EMPTY_OPEN, FULL_OPEN, BLOODY_OPEN))
 			if(!crayon())
 				user.drop_item()
-				crayon_handle = om_handle(W)
+				rel_set(src, "crayon", W)
 				crayon().forceMove(src)
 			//else: old fell through to a bare ..() (approximated as a no-op)
 
@@ -246,7 +246,7 @@ OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
 		if(FULL_CLOSED)
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
-			crayon_handle = null
+			rel_clear(src, "crayon")
 			own_take_all(src, "washing")
 			state = EMPTY_OPEN
 		if(RUNNING)
@@ -263,7 +263,7 @@ OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
 					mobs.gib()
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
-			crayon_handle = null
+			rel_clear(src, "crayon")
 			state = EMPTY_OPEN
 			own_take_all(src, "washing")
 
@@ -281,4 +281,4 @@ OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
 
 /// LC-refs: crayon -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/washing_machine/proc/crayon() as /obj
-	return om_resolve(crayon_handle)
+	return crayon

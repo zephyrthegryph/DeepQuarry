@@ -7,13 +7,13 @@
 	layer = ABOVE_WINDOW_LAYER
 	density = TRUE
 	anchored = TRUE
-	var/tmp/machine_handle
+	var/tmp/obj/machinery/mineral/stacking_machine/machine
 
 /obj/machinery/mineral/stacking_unit_console/Initialize(mapload)
 	. = ..()
-	src.machine_handle = om_handle(locate_in_list(range(5,src), /obj/machinery/mineral/stacking_machine))
+	rel_set(src, "machine", locate_in_list(range(5,src), /obj/machinery/mineral/stacking_machine))
 	if (machine())
-		machine().console_handle = om_handle(src)
+		rel_set(machine(), "console", src)
 	else
 		//Silently failing and causing mappers to scratch their heads while runtiming isn't ideal.
 		stack_trace(span_danger("Warning: Stacking machine console at [src.x], [src.y], [src.z] could not find its machine!"))
@@ -83,9 +83,9 @@
 	icon_state = "stacker"
 	density = TRUE
 	anchored = TRUE
-	var/tmp/console_handle
-	var/tmp/input_handle
-	var/tmp/output_handle
+	var/tmp/obj/machinery/mineral/stacking_unit_console/console
+	var/tmp/obj/machinery/mineral/input
+	var/tmp/obj/machinery/mineral/output
 	var/list/stack_storage
 	var/list/stack_paths
 	var/stack_amt = 50; // Amount to stack before releassing
@@ -98,10 +98,10 @@
 		LAZYSET(stack_paths, s_matname, S)
 
 	for (var/dir in GLOB.cardinal)
-		src.input_handle = om_handle(locate(/obj/machinery/mineral/input, get_step(src, dir)))
+		rel_set(src, "input", locate(/obj/machinery/mineral/input, get_step(src, dir)))
 		if(src.input_marker()) break
 	for (var/dir in GLOB.cardinal)
-		src.output_handle = om_handle(locate(/obj/machinery/mineral/output, get_step(src, dir)))
+		rel_set(src, "output", locate(/obj/machinery/mineral/output, get_step(src, dir)))
 		if(src.output_marker()) break
 	watch_input(input_marker())
 
@@ -153,16 +153,16 @@
 
 /// LC-refs: the input this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/mineral/stacking_machine/proc/input_marker() as /obj/machinery/mineral
-	return om_resolve(input_handle)
+	return input
 
 /// LC-refs: the output this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/mineral/stacking_machine/proc/output_marker() as /obj/machinery/mineral
-	return om_resolve(output_handle)
+	return output
 
 /// LC-refs: the console this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/mineral/stacking_machine/proc/console() as /obj/machinery/mineral/stacking_unit_console
-	return om_resolve(console_handle)
+	return console
 
 /// LC-refs: the machine this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/mineral/stacking_unit_console/proc/machine() as /obj/machinery/mineral/stacking_machine
-	return om_resolve(machine_handle)
+	return machine

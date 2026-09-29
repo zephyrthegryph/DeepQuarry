@@ -23,7 +23,7 @@
 	var/range = 7					//the range of the spell; outer radius for aoe spells
 	var/message = ""				//whatever it says to the guy affected by it
 	var/selection_type = "view"		//can be "range" or "view"
-	var/tmp/holder_handle	//where the spell is. Normally the user, can be an item
+	var/tmp/atom/movable/holder	//where the spell is. Normally the user, can be an item
 	var/duration = 0 //how long the spell lasts
 
 	// ALLOW(instance_list): d: edited in place per instance (1 writers)
@@ -87,7 +87,7 @@
 
 /datum/spell/proc/perform(mob/user = usr, skipcharge = 0) //if recharge is started is important for the trigger spells
 	if(!holder())
-		holder_handle = om_handle(user) //just in case
+		rel_set(src, "holder", user) //just in case
 	if(!cast_check(skipcharge, user))
 		return
 	if(cast_delay)
@@ -361,4 +361,4 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 
 /// LC-refs: where the spell is. Normally the user, can be an item -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/spell/proc/holder() as /atom/movable
-	return om_resolve(holder_handle)
+	return holder

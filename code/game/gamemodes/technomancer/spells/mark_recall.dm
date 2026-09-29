@@ -11,11 +11,11 @@
 /datum/technomancer_marker
 	var/U
 	var/image/I
-	var/T_handle
+	var/turf/T
 
 /datum/technomancer_marker/New(mob/user)
 	U = om_handle(user)
-	T_handle = om_handle(get_turf(user))
+	rel_set(src, "T", get_turf(user))
 	I = image('icons/goonstation/featherzone.dmi', T(), "spawn-wall")
 	I.plane = TURF_PLANE
 	I.layer = ABOVE_TURF_LAYER
@@ -131,4 +131,4 @@ GLOBAL_LIST_INIT(mark_spells, list())
 
 /// LC-refs: T -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/technomancer_marker/proc/T() as /turf
-	return om_resolve(T_handle)
+	return T

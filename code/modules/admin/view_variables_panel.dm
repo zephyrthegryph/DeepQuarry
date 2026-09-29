@@ -18,7 +18,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 	var/datum/view_variables_panel/dq_vv_panel
 
 /datum/view_variables_panel
-	var/tmp/owner_handle
+	var/tmp/client/owner
 	/// The datum or list currently being viewed.
 	var/thing
 	/// Saved ref string so refresh actions land on the same target.
@@ -26,7 +26,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 
 /datum/view_variables_panel/New(client/owner_client)
 	..()
-	owner_handle = om_handle(owner_client)
+	rel_set(src, "owner", owner_client)
 
 // clears the client's cached panel (clients aren't datums).
 
@@ -214,4 +214,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 
 /// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/view_variables_panel/proc/owner() as /client
-	return om_resolve(owner_handle)
+	return owner
+
+REL_PAIR(/client, dq_vv_panel, owner)
+REL_PAIR(/datum/view_variables_panel, owner, dq_vv_panel)

@@ -1,6 +1,6 @@
 ///Antag datum that is held on /datum/mind. Holds all the antag data.
 /datum/antag_holder
-	var/changeling_handle
+	var/datum/changeling/changeling
 	var/is_antag = FALSE
 
 /datum/antag_holder/proc/apply_antags(mob/M)
@@ -15,4 +15,4 @@
 
 /// LC-refs: the mob's changeling state -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/antag_holder/proc/changeling() as /datum/changeling
-	return om_resolve(changeling_handle)
+	return changeling

@@ -1,7 +1,7 @@
 //Beam Datum and effect
 /datum/beam
-	var/origin_handle
-	var/target_handle
+	var/atom/origin
+	var/atom/target
 	var/list/elements
 	var/icon/base_icon = null
 	var/icon
@@ -18,9 +18,9 @@
 
 /datum/beam/New(beam_origin,beam_target,beam_icon='icons/effects/beam.dmi',beam_icon_state="b_beam",time=50,maxdistance=10,btype = /obj/effect/ebeam,beam_sleep_time=3,new_beam_color = null)
 	endtime = world.time+time
-	origin_handle = om_handle(beam_origin)
+	rel_set(src, "origin", beam_origin)
 	origin_oldloc =	get_turf(origin())
-	target_handle = om_handle(beam_target)
+	rel_set(src, "target", beam_target)
 	target_oldloc = get_turf(target())
 	sleep_time = beam_sleep_time
 	if(origin_oldloc == origin() && target_oldloc == target())
@@ -87,7 +87,7 @@
 		if(beam_color)
 			X.color = beam_color
 
-		X.owner_handle = om_handle(src)
+		rel_set(X, "owner", src)
 		LAZYOR(elements, X)
 
 		//Assign icon, for main segments it's base_icon, for the end, it's icon+icon_state
@@ -131,7 +131,7 @@
 /obj/effect/ebeam
 	mouse_opacity = 0
 	anchored = TRUE
-	var/owner_handle
+	var/datum/beam/owner
 
 /obj/effect/ebeam/singularity_pull()
 	return
@@ -187,13 +187,13 @@ DECLARE_PERIODIC(/obj/effect/ebeam/reactive, PERIODIC_SLOW)
 
 /// LC-refs: the atom the beam starts at -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/beam/proc/origin() as /atom
-	return om_resolve(origin_handle)
+	return origin
 
 /// LC-refs: the atom the beam ends at -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/beam/proc/target() as /atom
-	return om_resolve(target_handle)
+	return target
 
 /// LC-refs: the beam this segment belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/ebeam/proc/owner() as /datum/beam
-	return om_resolve(owner_handle)
+	return owner
 

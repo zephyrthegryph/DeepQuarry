@@ -8,7 +8,7 @@ GLOBAL_VAR_INIT(file_uid, 0)
 	/// File size in GQ. Integers only!
 	var/size = 1
 	/// Holder that contains this file.
-	var/tmp/holder_handle
+	var/tmp/obj/item/computer_hardware/hard_drive/holder
 	//// Whether the file may be sent to someone via NTNet transfer, email or other means.
 	var/unsendable = FALSE
 	/// Whether the file may be deleted. Setting to TRUE prevents deletion/renaming/etc.
@@ -37,8 +37,8 @@ GLOBAL_VAR_INIT(file_uid, 0)
 		holder().remove_file(src)
 		// holder.holder is the computer that has drive installed. If we are deleting the program that's currently running kill it.
 		var/obj/item/modular_computer/computer = holder().holder2()
-		if(computer && om_handle_is(computer.active_program_handle, src))
-			computer.active_program_handle = null // active_program() no longer resolves us
+		if(computer && (computer.active_program == src))
+			rel_clear(computer, "active_program") // active_program() no longer resolves us
 			computer.kill_program(1)
 	..()
 
@@ -60,4 +60,4 @@ GLOBAL_VAR_INIT(file_uid, 0)
 
 /// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/computer_file/proc/holder() as /obj/item/computer_hardware/hard_drive
-	return om_resolve(holder_handle)
+	return holder

@@ -26,7 +26,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	var/adir = SOUTH // actual dir
 	var/ndir = SOUTH // target dir
 	var/turn_angle = 0
-	var/tmp/control_handle
+	var/tmp/obj/machinery/power/solar_control/control
 	var/glass_type = /obj/item/stack/material/glass
 	var/SOLAR_MAX_DIST = 60 // ours are >40 away
 
@@ -58,14 +58,14 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	ASSERT(!control())
 	if(SC && (get_dist(src, SC) > SOLAR_MAX_DIST))
 		return 0
-	control_handle = om_handle(SC)
+	rel_set(src, "control", SC)
 	return 1
 
 //set the control of the panel to null and removes it from the control list of the previous control computer if needed
 /obj/machinery/power/solar/proc/unset_control()
 	if(control())
 		control().remove_panel(src)
-	control_handle = null
+	rel_clear(src, "control")
 
 /obj/machinery/power/solar/declare_interactions(list/into)
 	into += list(
@@ -297,7 +297,7 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 	var/track = 0			// 0= off  1=timed  2=auto (tracker)
 	var/trackrate = 600		// 300-900 seconds
 	TIMESTAMP_VAR(nexttime) // time for a panel to rotate of 1° in manual tracking
-	var/tmp/connected_tracker_handle
+	var/tmp/obj/machinery/power/tracker/connected_tracker
 	var/needs_panel_check	// Powernet has been updated, need to check if panels are still connected.
 	var/connected_power		// Sum of power supplied by connected panels.
 	VAR_PRIVATE/list/connected_panels = list()
@@ -386,7 +386,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 				if(!connected_tracker()) //if there's already a tracker connected to the computer don't add another
 					var/obj/machinery/power/tracker/T = M
 					if(!T.control()) //i.e unconnected
-						connected_tracker_handle = om_handle(T)
+						rel_set(src, "connected_tracker", T)
 						T.set_control(src)
 
 //called by the sun controller, update the facing angle (either manually or via tracking) and rotates the panels accordingly
@@ -573,8 +573,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 
 /// LC-refs: the control this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/power/solar/proc/control() as /obj/machinery/power/solar_control
-	return om_resolve(control_handle)
+	return control
 
 /// LC-refs: the connected_tracker this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/power/solar_control/proc/connected_tracker() as /obj/machinery/power/tracker
-	return om_resolve(connected_tracker_handle)
+	return connected_tracker

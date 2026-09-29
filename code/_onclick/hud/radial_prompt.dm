@@ -59,7 +59,7 @@
 	menu.entry_animation = entry_animation
 	if(radius)
 		menu.radius = radius
-	menu.anchor_handle = om_handle(user_space ? user : where)
+	rel_set(menu, "anchor", user_space ? user : where)
 	menu.radial_slice_icon = radial_slice_icon
 	menu.check_screen_border(user)
 	menu.set_choices(choices, tooltips, click_on_hover)

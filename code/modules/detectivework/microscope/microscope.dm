@@ -7,7 +7,7 @@
 	anchored = TRUE
 	density = TRUE
 
-	var/tmp/sample_handle
+	var/tmp/obj/item/sample
 	var/report_num = 0
 
 /obj/machinery/microscope/declare_interactions(list/into)
@@ -35,7 +35,7 @@
 	to_chat(user, span_notice("You insert \the [held] into the microscope."))
 	user.unEquip(held)
 	held.forceMove(src)
-	sample_handle = om_handle(held)
+	rel_set(src, "sample", held)
 	update_icon()
 	return TRUE
 
@@ -137,7 +137,7 @@
 	to_chat(remover, span_notice("You remove \the [sample()] from \the [src]."))
 	sample().forceMove(get_turf(src))
 	remover.put_in_hands(sample())
-	sample_handle = null
+	rel_clear(src, "sample")
 	update_icon()
 
 /obj/machinery/microscope/MouseDrop(atom/other)
@@ -153,4 +153,4 @@
 
 /// LC-refs: the sample this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/microscope/proc/sample() as /obj/item
-	return om_resolve(sample_handle)
+	return sample

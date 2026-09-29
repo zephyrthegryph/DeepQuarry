@@ -329,7 +329,7 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 		to_chat(user, span_warning("You link [src] to [body_scanner]!"))
 	else
 		to_chat(user, span_warning("You store [src] in [multitool]'s buffer!"))
-		multitool.connectable_handle = om_handle(src)
+		rel_set(multitool, "connectable", src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/body_scanconsole/power_change()

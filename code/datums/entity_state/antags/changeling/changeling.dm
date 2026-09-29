@@ -148,7 +148,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		var/mob/living/living_self = src
 		comp = new /datum/changeling(living_self)
 		own_set(living_self, "changeling_state", comp)
-	mind.antag_holder.changeling_handle = om_handle(comp)
+	rel_set(mind.antag_holder, "changeling", comp)
 	var/lesser_form = !ishuman(src)
 
 	if(!GLOB.powerinstances.len)
@@ -361,7 +361,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 			GLOB.powerinstances += new changeling_power()
 	if(!comp.power_panel)
 		own_set(comp, "power_panel", new /datum/changeling_panel())
-		comp.power_panel.comp_handle = om_handle(comp)
+		rel_set(comp.power_panel, "comp", comp)
 
 	comp.power_panel.tgui_interact(src)
 
@@ -437,7 +437,7 @@ DECLARE_INTERACTIONS(/obj/item/changeling_debug, INTERACT_USE(null, PROC_REF(int
 
 ///Changeling Panel
 /datum/changeling_panel
-	var/comp_handle
+	var/datum/changeling/comp
 
 /datum/changeling_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state
@@ -483,7 +483,7 @@ DECLARE_INTERACTIONS(/obj/item/changeling_debug, INTERACT_USE(null, PROC_REF(int
 
 /// LC-refs: the changeling this panel shows -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/changeling_panel/proc/comp() as /datum/changeling
-	return om_resolve(comp_handle)
+	return comp
 
 /// The mob's changeling state, if any (only living mobs can hold it).
 /mob/proc/get_changeling_state() as /datum/changeling

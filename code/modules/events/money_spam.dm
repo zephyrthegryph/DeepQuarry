@@ -1,8 +1,8 @@
 /datum/event/pda_spam
 	endWhen = 36000
 	COOLDOWN_DECLARE(spam_cooldown)
-	var/tmp/useMS_handle
-	var/tmp/node_handle
+	var/tmp/obj/machinery/message_server/useMS
+	var/tmp/obj/machinery/exonet_node/node
 
 /datum/event/pda_spam/setup()
 	COOLDOWN_START(src, spam_cooldown, 3000)
@@ -11,7 +11,7 @@
 /datum/event/pda_spam/proc/pick_message_server()
 	for(var/obj/machinery/message_server/MS in REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS))
 		if(MS.active)
-			useMS_handle = om_handle(MS)
+			rel_set(src, "useMS", MS)
 			break
 
 /datum/event/pda_spam/tick()
@@ -20,13 +20,13 @@
 		kill()
 		return
 	if(!node())
-		node_handle = om_handle(get_exonet_node())
+		rel_set(src, "node", get_exonet_node())
 
 	if(!node() || !node().on || !node().allow_external_PDAs)
 		return
 
 	if(!useMS() || !useMS().active)
-		useMS_handle = null
+		rel_clear(src, "useMS")
 		pick_message_server()
 
 	if(useMS())
@@ -111,8 +111,8 @@
 
 /// LC-refs: the useMS this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event/pda_spam/proc/useMS() as /obj/machinery/message_server
-	return om_resolve(useMS_handle)
+	return useMS
 
 /// LC-refs: the node this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event/pda_spam/proc/node() as /obj/machinery/exonet_node
-	return om_resolve(node_handle)
+	return node

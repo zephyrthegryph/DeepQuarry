@@ -25,7 +25,7 @@ BLIND     // can't see anything
 	var/off_state = "degoggles"
 	var/active = 1
 	var/activation_sound = 'sound/items/goggles_charge.ogg'
-	var/tmp/overlay_handle
+	var/tmp/atom/movable/screen/overlay
 	var/list/away_planes //Holder for disabled planes
 	drop_sound = 'sound/items/drop/accessory.ogg'
 	pickup_sound = 'sound/items/pickup/accessory.ogg'
@@ -116,7 +116,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(gla
 
 /obj/item/clothing/glasses/meson/Initialize(mapload)
 	. = ..()
-	overlay_handle = om_handle(GLOB.global_hud.meson)
+	rel_set(src, "overlay", GLOB.global_hud.meson)
 
 /obj/item/clothing/glasses/meson/prescription
 	name = "prescription mesons"
@@ -161,7 +161,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(gla
 
 /obj/item/clothing/glasses/science/Initialize(mapload)
 	. = ..()
-	overlay_handle = om_handle(GLOB.global_hud.science)
+	rel_set(src, "overlay", GLOB.global_hud.science)
 
 /obj/item/clothing/glasses/goggles
 	name = "goggles"
@@ -193,7 +193,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(gla
 
 /obj/item/clothing/glasses/night/Initialize(mapload)
 	. = ..()
-	overlay_handle = om_handle(GLOB.global_hud.nvg)
+	rel_set(src, "overlay", GLOB.global_hud.nvg)
 
 /obj/item/clothing/glasses/eyepatch
 	name = "eyepatch"
@@ -266,7 +266,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatchwhite, \
 
 /obj/item/clothing/glasses/material/Initialize(mapload)
 	. = ..()
-	overlay_handle = om_handle(GLOB.global_hud.material)
+	rel_set(src, "overlay", GLOB.global_hud.material)
 
 /obj/item/clothing/glasses/material/prescription
 	name = "prescription optical material scanner"
@@ -287,7 +287,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatchwhite, \
 
 /obj/item/clothing/glasses/graviton/Initialize(mapload)
 	. = ..()
-	overlay_handle = om_handle(GLOB.global_hud.material)
+	rel_set(src, "overlay", GLOB.global_hud.material)
 
 /obj/item/clothing/glasses/regular
 	name = "prescription glasses"
@@ -580,7 +580,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/aviator, INTERA
 
 /obj/item/clothing/glasses/thermal/Initialize(mapload)
 	. = ..()
-	overlay_handle = om_handle(GLOB.global_hud.thermal)
+	rel_set(src, "overlay", GLOB.global_hud.thermal)
 
 /obj/item/clothing/glasses/thermal/syndi	//These are now a traitor item, concealed as mesons.	-Pete
 	name = "optical meson scanner"
@@ -870,4 +870,4 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vi
 
 /// LC-refs: the overlay this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/clothing/glasses/proc/overlay() as /atom/movable/screen
-	return om_resolve(overlay_handle)
+	return overlay

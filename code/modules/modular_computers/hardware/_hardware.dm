@@ -2,7 +2,7 @@
 	name = "Hardware"
 	desc = "Unknown Hardware."
 	icon = 'icons/obj/modular_components.dmi'
-	var/tmp/holder2_handle
+	var/tmp/obj/item/modular_computer/holder2
 
 	/// If the hardware uses extra power, change this.
 	var/power_usage = 0
@@ -80,7 +80,7 @@ DECLARE_INTERACTIONS(/obj/item/computer_hardware, INTERACT_ITEM(null, PROC_REF(i
 	. = ..()
 	w_class = hardware_size
 	if(istype(loc, /obj/item/modular_computer))
-		holder2_handle = om_handle(loc)
+		rel_set(src, "holder2", loc)
 
 /// Handles damage checks
 /obj/item/computer_hardware/proc/check_functionality()
@@ -118,4 +118,4 @@ DECLARE_INTERACTIONS(/obj/item/computer_hardware, INTERACT_ITEM(null, PROC_REF(i
 
 /// LC-refs: the holder2 this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/computer_hardware/proc/holder2() as /obj/item/modular_computer
-	return om_resolve(holder2_handle)
+	return holder2

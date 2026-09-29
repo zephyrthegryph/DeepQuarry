@@ -208,10 +208,10 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/input/video_camera_input, INTE
 	tgui_id = "ICCameraConsole"
 	access_based = FALSE
 
-	var/tmp/owner_circuit_handle
+	var/tmp/obj/item/integrated_circuit/input/video_camera_input/owner_circuit
 
 /datum/tgui_module/camera/intcircuit/New(host)
-	owner_circuit_handle = om_handle(host)
+	rel_set(src, "owner_circuit", host)
 	// Pass an empty network list - we override get_available_cameras
 	..(host, list("intcircuit_dummy"))
 	access_based = FALSE
@@ -238,9 +238,9 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/input/video_camera_input, INTE
 
 /datum/tgui_module/camera/intcircuit/tgui_act(action, params, datum/tgui/ui)
 	if(action == "switch_camera")
-		last_camera_turf_handle = null
+		rel_clear(src, "last_camera_turf")
 	. = ..()
 
 /// LC-refs: the owner_circuit this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_module/camera/intcircuit/proc/owner_circuit() as /obj/item/integrated_circuit/input/video_camera_input
-	return om_resolve(owner_circuit_handle)
+	return owner_circuit

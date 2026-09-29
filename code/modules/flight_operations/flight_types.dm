@@ -50,8 +50,8 @@
 	var/surface_latitude
 	var/surface_longitude
 	var/required_capabilities = 0
-	var/tmp/target_handle
-	var/tmp/expedition_handle
+	var/tmp/atom/target
+	var/tmp/datum/expedition_site/expedition
 	var/discovered = TRUE
 	var/list/active_plans
 
@@ -66,10 +66,10 @@
 	var/id
 	var/name = "Unregistered Vessel"
 	var/capabilities = 0
-	var/tmp/ship_handle
-	var/tmp/shuttle_handle
+	var/tmp/obj/effect/overmap/visitable/ship/ship
+	var/tmp/datum/shuttle/autodock/overmap/shuttle
 	var/datum/flight_plan/active_plan
-	var/tmp/active_expedition_handle
+	var/tmp/datum/expedition_site/active_expedition
 	/// Authoritative celestial context; replaces hidden overmap tile coordinates.
 	var/orbit_parent_id
 	/// Reserved port occupied by the vessel, if physically docked.
@@ -94,9 +94,9 @@
 	/// Logical destinations whose routes may terminate at this port. The physical
 	/// host remains authoritative for rendering and occupancy.
 	var/list/serves_destination_ids
-	var/tmp/landmark_handle
-	var/tmp/occupied_by_handle
-	var/tmp/reserved_by_handle
+	var/tmp/obj/effect/shuttle_landmark/landmark
+	var/tmp/datum/flight_vessel/occupied_by
+	var/tmp/datum/flight_plan/reserved_by
 	/// Ports in the same physical bay exclude one another even when their alignment landmarks differ.
 	var/berth_group
 
@@ -122,9 +122,9 @@
 /datum/flight_plan
 	var/id
 	var/datum/flight_vessel/vessel
-	var/tmp/origin_handle
-	var/tmp/destination_handle
-	var/tmp/arrival_port_handle
+	var/tmp/datum/flight_destination/origin
+	var/tmp/datum/flight_destination/destination
+	var/tmp/datum/flight_port/arrival_port
 	var/state = FLIGHT_PLAN_DRAFT
 	var/failure_reason
 	var/created_at
@@ -141,8 +141,8 @@
 /datum/flight_plan/New(datum/flight_vessel/new_vessel, datum/flight_destination/new_origin, datum/flight_destination/new_destination)
 	..()
 	rel_set(src, "vessel", new_vessel)
-	origin_handle = om_handle(new_origin)
-	destination_handle = om_handle(new_destination)
+	rel_set(src, "origin", new_origin)
+	rel_set(src, "destination", new_destination)
 	LAZYADD(destination().active_plans, src)
 	created_at = world.time
 	id = "flight-[REF(src)]"
@@ -158,13 +158,13 @@
 /datum/flight_plan/proc/release_leases(release_assignment = FALSE)
 	if(destination())
 		LAZYREMOVE(destination().active_plans, src)
-	if(om_handle_is(arrival_port()?.reserved_by_handle, src))
-		arrival_port().reserved_by_handle = null
+	if(om_handle_is(arrival_port()?.reserved_by, src))
+		rel_clear(arrival_port(), "reserved_by")
 	if(release_assignment && destination()?.expedition()?.assigned_flight_vessel() == vessel)
-		destination().expedition().assigned_flight_vessel_handle = null
-		destination().expedition().assigned_shuttle_handle = null
+		rel_clear(destination().expedition(), "assigned_flight_vessel")
+		rel_clear(destination().expedition(), "assigned_shuttle")
 		if(vessel?.active_expedition() == destination().expedition())
-			vessel.active_expedition_handle = null
+			rel_clear(vessel, "active_expedition")
 
 /datum/flight_plan/proc/state_name()
 	switch(state)
@@ -187,12 +187,12 @@
 		fail("Vessel lacks the capabilities required for this destination.")
 		return FALSE
 	if(destination().kind == FLIGHT_DEST_STATION)
-		arrival_port_handle = om_handle(GLOB.flight_service.reserve_arrival_port(src))
+		rel_set(src, "arrival_port", GLOB.flight_service.reserve_arrival_port(src))
 		if(!arrival_port())
 			fail("No compatible station berth is available.")
 			return FALSE
 	if(destination().kind == FLIGHT_DEST_VESSEL)
-		arrival_port_handle = om_handle(GLOB.flight_service.reserve_arrival_port(src))
+		rel_set(src, "arrival_port", GLOB.flight_service.reserve_arrival_port(src))
 		if(!arrival_port())
 			fail("No compatible arrival port is available.")
 			return FALSE
@@ -221,45 +221,45 @@
 
 /// LC-refs: the landmark this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/flight_port/proc/landmark() as /obj/effect/shuttle_landmark
-	return om_resolve(landmark_handle)
+	return landmark
 
 /// LC-refs: the origin this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/flight_plan/proc/origin() as /datum/flight_destination
-	return om_resolve(origin_handle)
+	return origin
 
 /// LC-refs: the ship this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/flight_vessel/proc/ship() as /obj/effect/overmap/visitable/ship
-	return om_resolve(ship_handle)
+	return ship
 
 /// LC-refs: the occupied_by this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/flight_port/proc/occupied_by() as /datum/flight_vessel
-	return om_resolve(occupied_by_handle)
+	return occupied_by
 
 /// LC-refs: the reserved_by this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/flight_port/proc/reserved_by() as /datum/flight_plan
-	return om_resolve(reserved_by_handle)
+	return reserved_by
 
 /// LC-refs: the expedition this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/flight_destination/proc/expedition() as /datum/expedition_site
-	return om_resolve(expedition_handle)
+	return expedition
 
 /// LC-refs: the destination this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/flight_plan/proc/destination() as /datum/flight_destination
-	return om_resolve(destination_handle)
+	return destination
 
 /// LC-refs: the arrival_port this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/flight_plan/proc/arrival_port() as /datum/flight_port
-	return om_resolve(arrival_port_handle)
+	return arrival_port
 
 /// LC-refs: the shuttle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/flight_vessel/proc/shuttle() as /datum/shuttle/autodock/overmap
-	return om_resolve(shuttle_handle)
+	return shuttle
 
 /// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/flight_destination/proc/target() as /atom
-	return om_resolve(target_handle)
+	return target
 
 /// LC-refs: the active_expedition this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/flight_vessel/proc/active_expedition() as /datum/expedition_site
-	return om_resolve(active_expedition_handle)
+	return active_expedition
 

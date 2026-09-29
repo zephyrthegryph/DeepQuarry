@@ -9,7 +9,7 @@
 	var/id_tag = ""
 	var/scan_range = 25
 	var/list/connected_devices
-	var/tmp/cur_viewed_device_handle
+	var/tmp/obj/machinery/power/fusion_core/cur_viewed_device
 	var/datum/tgui_module/rustcore_monitor/monitor
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/computer/fusion_core_control, "monitor", /datum/tgui_module/rustcore_monitor)
@@ -65,4 +65,4 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/fusion_core_control, "monitor", /d
 
 /// LC-refs: the cur_viewed_device this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/fusion_core_control/proc/cur_viewed_device() as /obj/machinery/power/fusion_core
-	return om_resolve(cur_viewed_device_handle)
+	return cur_viewed_device

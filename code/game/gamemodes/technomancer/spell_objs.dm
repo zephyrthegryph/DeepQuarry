@@ -11,7 +11,7 @@
 	throwforce = 0
 	force = 0
 	show_examine = FALSE
-	var/owner_handle
+	var/mob/living/owner
 	var/obj/item/technomancer_core/core = null
 	var/cast_methods = null			// Controls how the spell is casted.
 	var/aspect = null				// Used for combining spells.
@@ -113,7 +113,7 @@
 /obj/item/spell/Initialize(mapload, coreless)
 	. = ..()
 	if(isliving(loc))
-		owner_handle = om_handle(loc)
+		rel_set(src, "owner", loc)
 	if(owner_ref() && !coreless)
 		own_set(src, "core", owner_ref().get_technomancer_core())
 		if(!core)
@@ -295,6 +295,6 @@ DECLARE_INTERACTIONS(/obj/item/spell, \
 
 /// LC-refs: owner -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/spell/proc/owner_ref() as /mob/living
-	return om_resolve(owner_handle)
+	return owner
 
 OWN(/obj/item/spell, core, OWN_CONTAINED)

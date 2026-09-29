@@ -6,7 +6,7 @@
 	var/class = 0                           // Size. Lower is smaller. Uses floating point values!
 	var/descriptor                          // 'gaping hole' etc.
 	var/breach_type = BURN                      // Punctured or melted
-	var/tmp/holder_handle	// Suit containing the list of breaches holding this instance.
+	var/tmp/obj/item/clothing/suit/space/holder	// Suit containing the list of breaches holding this instance.
 
 /obj/item/clothing/suit/space
 	armor_spec = "cold=60"
@@ -113,7 +113,7 @@
 
 		B.breach_type = breach_type
 		B.update_descriptor()
-		B.holder_handle = om_handle(src)
+		rel_set(B, "holder", src)
 
 		if(B.breach_type == BRUTE)
 			T.visible_message(span_warning("\A [B.descriptor] opens up on [src]!"))
@@ -214,4 +214,4 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space, INTERACT_ITEM(null, PROC_REF(
 
 /// LC-refs: Suit containing the list of breaches holding this instance. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/breach/proc/holder() as /obj/item/clothing/suit/space
-	return om_resolve(holder_handle)
+	return holder

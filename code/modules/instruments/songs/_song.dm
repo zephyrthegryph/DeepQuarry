@@ -12,7 +12,7 @@
 	var/id = ""
 
 	/// The atom we're attached to/playing from
-	var/tmp/parent_handle
+	var/tmp/atom/parent
 
 	/// Our song lines
 	var/list/lines
@@ -73,7 +73,7 @@
 	/// List of channels that aren't being used, as text. This is to prevent unnecessary freeing and reallocations from the sound and instrument services.
 	var/list/channels_idle
 	/// Who or what's playing us
-	var/tmp/music_player_handle
+	var/tmp/atom/music_player
 	//////////////////////////////////////////////////////
 
 	/// Last world.time we checked for who can hear us
@@ -124,7 +124,7 @@
 	join_registries() // REGISTRY_SONGS; the destroy transaction leaves it
 	lines = list()
 	tempo = sanitize_tempo(tempo, TRUE)
-	src.parent_handle = om_handle(parent)
+	rel_set(src, "parent", parent)
 	if(instrument_ids)
 		allowed_instrument_ids = islist(instrument_ids) ? instrument_ids : list(instrument_ids)
 	if(length(allowed_instrument_ids))
@@ -210,7 +210,7 @@
 	elapsed_delay = 0
 	delay_by = 0
 	current_chord = 1
-	music_player_handle = om_handle(user)
+	rel_set(src, "music_player", user)
 	om_task_periodic(src, PERIODIC_INSTRUMENTS)
 	if(id)
 		sync_play()
@@ -257,7 +257,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 	OM_EMIT(parent(), /datum/om/event/instrument_end, finished)
 	terminate_all_sounds(TRUE)
 	hearing_mobs.len = 0
-	music_player_handle = null
+	rel_clear(src, "music_player")
 
 /**
  * Processes our song.
@@ -441,7 +441,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 
 /// LC-refs: the parent this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/song/proc/parent() as /atom
-	return om_resolve(parent_handle)
+	return parent
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/song/proc/using_instrument() as /datum/instrument
@@ -449,4 +449,4 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 
 /// LC-refs: the music_player this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/song/proc/music_player() as /atom
-	return om_resolve(music_player_handle)
+	return music_player

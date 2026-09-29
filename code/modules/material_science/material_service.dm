@@ -171,14 +171,14 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	return MATERIAL_TANK_REFERENCE_THICKNESS
 
 /datum/material_service
-	var/tmp/owner_handle
+	var/tmp/obj/owner
 	var/list/mixture_ids
 	/// Last pressure published for each watched mixture. Stable, harmless
 	/// pressure jitter updates this cache without waking the physical model.
 	var/list/mixture_pressures
 	var/list/mixture_corrosion
 	var/list/movement_sources
-	var/tmp/watched_turf_handle
+	var/tmp/turf/watched_turf
 	var/timer
 	var/next_update = 0
 	var/last_update
@@ -211,7 +211,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 
 /datum/material_service/New(obj/assembly)
 	..()
-	owner_handle = om_handle(assembly)
+	rel_set(src, "owner", assembly)
 	if(!owner().material_assembly_id)
 		owner().material_assembly_id = "ME-[++GLOB.next_material_assembly_id]"
 	last_update = world.time
@@ -232,7 +232,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		monitor_tool = null
 		monitor_user = null
 		last_reading = null
-		watched_turf_handle = null
+		rel_clear(src, "watched_turf")
 		mixture_ids = null
 		mixture_pressures = null
 		mixture_corrosion = null
@@ -259,7 +259,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 /datum/material_service/proc/clear_watches()
 	if(watched_turf())
 		om_unhook(watched_turf(), /datum/om/event/turf_change, src)
-		watched_turf_handle = null
+		rel_clear(src, "watched_turf")
 	// om_watch_disarm() keys off this datum's own ref string (code/datums/om/watch.dm), not a
 	// handle, so unlike the old subscribe_gas_dependency() transport there's no QDELETED race
 	// to work around here.
@@ -281,7 +281,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	EVENT_HANDLER
 	var/list/post_change_callbacks = event.post_change_callbacks
 	om_unhook(source, /datum/om/event/turf_change, src)
-	watched_turf_handle = null
+	rel_clear(src, "watched_turf")
 	watches_dirty = TRUE
 	post_change_callbacks += CALLBACK(src, PROC_REF(environment_changed))
 
@@ -353,7 +353,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	if(location != watched_turf())
 		if(watched_turf())
 			om_unhook(watched_turf(), /datum/om/event/turf_change, src)
-		watched_turf_handle = om_handle(location)
+		rel_set(src, "watched_turf", location)
 		if(watched_turf())
 			om_hook(watched_turf(), /datum/om/event/turf_change, src, PROC_REF(changing_turf))
 	var/datum/gas_mixture/ambient = location?.return_air()
@@ -631,7 +631,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 
 /// LC-refs: the watched_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/material_service/proc/watched_turf() as /turf
-	return om_resolve(watched_turf_handle)
+	return watched_turf
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/material_service/proc/thermal_stock() as /datum/material
@@ -643,4 +643,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 
 /// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/material_service/proc/owner() as /obj
-	return om_resolve(owner_handle)
+	return owner
+
+REL_PAIR(/datum/material_service, owner, material_service)
+REL_PAIR(/obj, material_service, owner)

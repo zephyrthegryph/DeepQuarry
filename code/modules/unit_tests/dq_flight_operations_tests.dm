@@ -5,7 +5,7 @@
 	var/datum/flight_destination/destination = new
 	destination.id = "unit-test-destination"
 	destination.name = "Unit Test Destination"
-	destination.target_handle = om_handle(target)
+	rel_set(destination, "target", target)
 	destination.required_capabilities = FLIGHT_CAP_STRATEGIC
 	var/datum/flight_vessel/vessel = new
 	vessel.name = "Unit Test Vessel"
@@ -42,7 +42,7 @@
 	var/obj/effect/target = new(null)
 	var/datum/flight_destination/destination = new
 	destination.name = "Surface Site"
-	destination.target_handle = om_handle(target)
+	rel_set(destination, "target", target)
 	destination.required_capabilities = FLIGHT_CAP_LAND
 	var/datum/flight_vessel/vessel = new
 	vessel.capabilities = FLIGHT_CAP_STRATEGIC
@@ -237,17 +237,17 @@
 	var/datum/flight_destination/station = new
 	station.id = "unit-station-orbit"
 	station.kind = FLIGHT_DEST_STATION
-	station.target_handle = om_handle(target)
+	rel_set(station, "target", target)
 	var/datum/flight_vessel/vessel = new
-	vessel.ship_handle = om_handle(ship)
+	rel_set(vessel, "ship", ship)
 	vessel.capabilities = FLIGHT_CAP_STRATEGIC
 	var/datum/flight_plan/plan = new(vessel, null, station)
 	TEST_ASSERT(!plan.start(), "A station flight without a berth launched despite having nowhere to land")
 	TEST_ASSERT_NULL(plan.arrival_port(), "A station flight reserved an unrelated physical berth")
 	TEST_ASSERT_EQUAL(plan.state, FLIGHT_PLAN_FAILED, "A berthless station flight did not fail during preflight")
 	qdel(plan)
-	vessel.ship_handle = null
-	station.target_handle = null
+	rel_clear(vessel, "ship")
+	rel_clear(station, "target")
 	qdel(vessel)
 	qdel(station)
 	qdel(target)
@@ -262,8 +262,8 @@
 	var/datum/flight_port/port = new
 	var/datum/flight_plan/plan = new(vessel, null, destination)
 	own_set(vessel, "active_plan", plan)
-	plan.arrival_port_handle = om_handle(port)
-	port.reserved_by_handle = om_handle(plan)
+	rel_set(plan, "arrival_port", port)
+	rel_set(port, "reserved_by", plan)
 	plan.fail("Intentional unit-test failure")
 	TEST_ASSERT_NULL(port.reserved_by(), "A failed flight retained its arrival-port reservation")
 	TEST_ASSERT(!LAZYLEN(destination.active_plans), "A failed flight retained its destination lease")
@@ -278,7 +278,7 @@
 	var/datum/expedition_site/site = new
 	var/datum/flight_destination/destination = new
 	destination.id = "unit-expedition-destination"
-	destination.expedition_handle = om_handle(site)
+	rel_set(destination, "expedition", site)
 	var/datum/flight_vessel/vessel = new
 	var/datum/flight_plan/plan = new(vessel, null, destination)
 	TEST_ASSERT_EQUAL(plan.generation_state, FLIGHT_GENERATION_QUEUED, "An ungenerated expedition was not queued")
@@ -286,7 +286,7 @@
 	TEST_ASSERT_EQUAL(plan.generation_state, FLIGHT_GENERATION_RUNNING, "Engaging an expedition did not arm generation")
 	TEST_ASSERT_EQUAL(plan.generation_stage, "Reserving destination", "Expedition generation began before transit")
 	qdel(plan)
-	destination.expedition_handle = null
+	rel_clear(destination, "expedition")
 	qdel(vessel)
 	qdel(destination)
 	qdel(site)

@@ -7,7 +7,7 @@
 	var/row_options1 = " width='85px'"
 	var/row_options2 = " width='260px'"
 	var/row_options3 = " width='150px'"
-	var/tmp/selected_event_container_handle
+	var/tmp/datum/event_container/selected_event_container
 
 /datum/world_service/events/proc/Interact(mob/living/user)
 	// structured TGUI Event Manager panel (see
@@ -175,9 +175,9 @@
 		log_and_message_admins("has stopped the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.")
 		E.kill()
 	else if(href_list["view_events"])
-		selected_event_container_handle = om_handle(locate(href_list["view_events"]))
+		rel_set(src, "selected_event_container", locate(href_list["view_events"]))
 	else if(href_list["back"])
-		selected_event_container_handle = null
+		rel_clear(src, "selected_event_container")
 	else if(href_list["set_name"])
 		var/name = topic_ask(usr, href_list, "k177", /datum/om/prompt/text, message = "Enter event name.", title = "Set Name", max_length = MAX_LNAME_LEN)
 		if(isnull(name))
@@ -236,7 +236,7 @@
 		var/datum/event_container/EC = locate(href_list["clear"])
 		if(EC.next_event())
 			log_and_message_admins("has dequeued the [GLOB.severity_to_string[EC.severity]] event '[EC.next_event().name]'.")
-			EC.next_event_handle = null
+			rel_clear(EC, "next_event")
 
 	Interact(usr)
 
@@ -252,4 +252,4 @@ ADMIN_VERB(event_manager_panel, R_ADMIN|R_EVENT, "Event Manager Panel", "Opens t
 
 /// LC-refs: the selected_event_container this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/world_service/events/proc/selected_event_container() as /datum/event_container
-	return om_resolve(selected_event_container_handle)
+	return selected_event_container

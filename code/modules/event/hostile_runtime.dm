@@ -1,7 +1,7 @@
 /datum/event/hostile_runtime
-	var/tmp/picked_area_handle
+	var/tmp/area/picked_area
 	var/list/target_airlocks	// OM handles
-	var/tmp/apc_handle
+	var/tmp/obj/machinery/power/apc/apc
 
 	var/static/list/excluded = list(
 		/area/shuttle,
@@ -23,7 +23,7 @@
 /datum/event/hostile_runtime/setup()
 	var/list/area/affected_areas = get_station_areas(excluded)
 
-	picked_area_handle = om_handle(pick(affected_areas))
+	rel_set(src, "picked_area", pick(affected_areas))
 	for(var/obj/machinery/door/airlock/airlock in picked_area())
 		if(airlock.isElectrified() && !airlock.arePowerSystemsOn())
 			continue
@@ -68,8 +68,8 @@
 
 /// LC-refs: the picked_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event/hostile_runtime/proc/picked_area() as /area
-	return om_resolve(picked_area_handle)
+	return picked_area
 
 /// LC-refs: the apc this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event/hostile_runtime/proc/apc() as /obj/machinery/power/apc
-	return om_resolve(apc_handle)
+	return apc

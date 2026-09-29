@@ -57,7 +57,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 	dq_permissions_panel.refresh_db()
 
 /datum/permissions_panel
-	var/tmp/holder_handle
+	var/tmp/datum/admins/holder
 	/// The database rows the pages show, by query key (om_sql_view); a missing key is loading.
 	var/list/db_rows
 
@@ -111,7 +111,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 
 /datum/permissions_panel/New(datum/admins/owner_holder)
 	..()
-	holder_handle = om_handle(owner_holder)
+	rel_set(src, "holder", owner_holder)
 
 // clears its holder's cached panel.
 
@@ -411,4 +411,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 
 /// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/permissions_panel/proc/holder() as /datum/admins
-	return om_resolve(holder_handle)
+	return holder
+
+REL_PAIR(/datum/admins, dq_permissions_panel, holder)
+REL_PAIR(/datum/permissions_panel, holder, dq_permissions_panel)

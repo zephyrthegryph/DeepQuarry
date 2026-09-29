@@ -17,7 +17,7 @@
 	if(!owner)
 		return null
 	if(get_dist(owner, dest) == 0)
-		brain.destination_handle = null
+		rel_clear(brain, "destination")
 		return null
 	// Score above idle_wander/return_home but below combat.
 	return DQAI_RESULT(20, dest)
@@ -26,7 +26,7 @@
 	if(!target || !brain.holder)
 		return DQ_BEHAVIOR_FAILED
 	if(get_dist(brain.holder, target) == 0)
-		brain.destination_handle = null
+		rel_clear(brain, "destination")
 		return DQ_BEHAVIOR_DONE
 	if(!brain.smart_step_toward(target, 0))
 		// Fall back to direct step if A* can't find a path.
@@ -40,10 +40,10 @@
 /datum/ai_brain/proc/give_destination(turf/T)
 	if(!T)
 		return
-	destination_handle = om_handle(T)
+	rel_set(src, "destination", T)
 	invalidate_selection()
 
 /datum/ai_brain/proc/clear_destination()
-	destination_handle = null
+	rel_clear(src, "destination")
 	clear_path()
 	invalidate_selection()

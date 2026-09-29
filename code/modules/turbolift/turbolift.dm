@@ -1,7 +1,7 @@
 // Lift master datum. One per turbolift.
 /datum/turbolift
-	var/tmp/target_floor_handle	// Where are we going?
-	var/tmp/current_floor_handle	// Where is the lift currently?
+	var/tmp/datum/turbolift_floor/target_floor	// Where are we going?
+	var/tmp/datum/turbolift_floor/current_floor	// Where is the lift currently?
 	// ALLOW(instance_list): d: every lift has doors
 	var/list/doors = list()                             // Doors inside the lift structure.
 	var/list/queued_floors                     // Where are we moving to next?
@@ -21,7 +21,7 @@
 
 /datum/turbolift/proc/emergency_stop()
 	cancel_pending_floors()
-	target_floor_handle = null
+	rel_clear(src, "target_floor")
 	if(!fire_mode)
 		open_doors()
 
@@ -112,7 +112,7 @@
 				if(target_floor())
 					// TODO - This logic copied from old processor.  Would be better to have error states.
 					target_floor().ext_panel.reset()
-					target_floor_handle = null
+					rel_clear(src, "target_floor")
 				return PROCESS_KILL
 			else if(!next_process)
 				log_runtime("Turbolift [src] do_move() returned 1 but next_process = null; busy_state=[busy_state]")
@@ -141,7 +141,7 @@
 	if(!target_floor())
 		if(!queued_floors || !length(queued_floors))
 			return 0
-		target_floor_handle = om_handle(LAZYACCESS(queued_floors, 1))
+		rel_set(src, "target_floor", LAZYACCESS(queued_floors, 1))
 		LAZYREMOVE(queued_floors, target_floor())
 		if(current_floor_index < floors.Find(target_floor()))
 			moving_upwards = 1
@@ -172,7 +172,7 @@
 
 		playsound(control_panel_interior, origin.arrival_sound, 50, 1)
 		target_floor().arrived(src)
-		target_floor_handle = null
+		rel_clear(src, "target_floor")
 
 		next_process = world.time + 15
 		busy_state = LIFT_WAITING_A
@@ -203,7 +203,7 @@
 	if((locate_in_area(destination, /obj/machinery/power)) || (locate_in_area(destination, /obj/structure/cable)))
 		GLOB.machine_service.power_reregister(get_area_turfs(destination))
 
-	current_floor_handle = om_handle(next_floor)
+	rel_set(src, "current_floor", next_floor)
 	control_panel_interior.visible_message("The elevator [moving_upwards ? "rises" : "descends"] smoothly.")
 
 	next_process = world.time + (next_floor.delay_time || move_delay)
@@ -232,8 +232,8 @@
 
 /// LC-refs: Where are we going? -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/turbolift/proc/target_floor() as /datum/turbolift_floor
-	return om_resolve(target_floor_handle)
+	return target_floor
 
 /// LC-refs: Where is the lift currently? -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/turbolift/proc/current_floor() as /datum/turbolift_floor
-	return om_resolve(current_floor_handle)
+	return current_floor

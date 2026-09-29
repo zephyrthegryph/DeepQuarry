@@ -168,7 +168,7 @@
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/multitool/M = tool
-	M.connectable_handle = om_handle(src)
+	rel_set(M, "connectable", src)
 	to_chat(user, span_notice("You save the data in \the [M]'s buffer."))
 	return ITEM_INTERACT_SUCCESS
 

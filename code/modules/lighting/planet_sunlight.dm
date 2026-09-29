@@ -20,7 +20,7 @@
 	var/cache_b_shade = 0.0
 	var/maxlum = 0.0
 	var/maxlumshade = 0.0
-	var/sun_handle
+	var/datum/simple_sun/sun
 	/// The planetary sun this handler made for itself (a fake sun hands in its own).
 	var/datum/simple_sun/owned_sun
 	var/atom/movable/sun_vis_simple/vis_overhead
@@ -33,10 +33,10 @@
 	var/datum/simple_sun/S = planet
 	if(istype(P))
 		own_set(src, "owned_sun", new /datum/simple_sun/planetary(P))
-		sun_handle = om_handle(owned_sun)
+		rel_set(src, "sun", owned_sun)
 
 	if(istype(S))
-		sun_handle = om_handle(S)
+		rel_set(src, "sun", S)
 
 	own_set(src, "vis_overhead", new /atom/movable/sun_vis_simple(null))
 	own_set(src, "vis_shade", new /atom/movable/sun_vis_simple(null))
@@ -120,10 +120,10 @@
 	return //Do nothing. This is meant to be overridden.
 
 /datum/simple_sun/planetary
-	var/tmp/sun_handle
+	var/tmp/datum/sun_holder/sun
 
 /datum/simple_sun/planetary/New(datum/planet/planet)
-	sun_handle = om_handle(planet.sun_holder)
+	rel_set(src, "sun", planet.sun_holder)
 
 /datum/simple_sun/planetary/update()
 	. = ..()
@@ -133,8 +133,8 @@
 
 /// LC-refs: the sun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/simple_sun/planetary/proc/sun() as /datum/sun_holder
-	return om_resolve(sun_handle)
+	return sun
 
 /// LC-refs: the sun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/planet_sunlight_handler/proc/sun() as /datum/simple_sun
-	return om_resolve(sun_handle)
+	return sun

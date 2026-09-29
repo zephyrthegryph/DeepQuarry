@@ -6,12 +6,12 @@
 	var/keytype = null					// Can give this a type to require the rider to hold the item type inhand to move the ridden atom.
 	var/nonhuman_key_exemption = FALSE	// If true, nonhumans who can't hold keys don't need them, like borgs and simplemobs.
 	var/key_name = "the keys"			// What the 'keys' for the thing being rided on would be called.
-	var/ridden_handle	// The thing that the datum is attached to.
+	var/atom/movable/ridden	// The thing that the datum is attached to.
 	var/only_one_driver = FALSE			// If true, only the person in 'front' (first on list of riding mobs) can drive.
 	var/rider_size = 1 // to figure out offsets for rider.
 
 /datum/riding/New(atom/movable/_ridden)
-	ridden_handle = om_handle(_ridden)
+	rel_set(src, "ridden", _ridden)
 
 /datum/riding/proc/handle_vehicle_layer()
 	if(ridden().dir != NORTH)
@@ -249,7 +249,7 @@
 
 /// LC-refs: the atom being ridden -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/riding/proc/ridden() as /atom/movable
-	return om_resolve(ridden_handle)
+	return ridden
 
 /// Puts the atom back on its type's layer (riding datums read their ridden atom through a handle).
 /atom/proc/restore_initial_layer()

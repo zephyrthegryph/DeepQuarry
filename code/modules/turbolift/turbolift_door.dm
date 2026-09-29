@@ -8,8 +8,8 @@
 	glass = 1
 	icon = 'icons/obj/doors/doorlift.dmi'
 
-	var/tmp/lift_handle
-	var/tmp/floor_handle
+	var/tmp/datum/turbolift/lift
+	var/tmp/datum/turbolift_floor/floor
 
 // Leaves its lift's and floor's door lists.
 
@@ -49,8 +49,13 @@
 
 /// LC-refs: the lift this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/door/airlock/lift/proc/lift() as /datum/turbolift
-	return om_resolve(lift_handle)
+	return lift
 
 /// LC-refs: the floor this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/door/airlock/lift/proc/lift_floor() as /datum/turbolift_floor
-	return om_resolve(floor_handle)
+	return floor
+
+REL_PAIR(/obj/machinery/door/airlock/lift, floor, doors)
+REL_PAIR(/obj/machinery/door/airlock/lift, lift, doors)
+REL_PAIR_LIST(/datum/turbolift, doors, lift)
+REL_PAIR_LIST(/datum/turbolift_floor, doors, floor)

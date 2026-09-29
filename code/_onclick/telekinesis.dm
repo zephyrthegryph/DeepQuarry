@@ -31,8 +31,8 @@
 	layer = HUD_LAYER
 
 	COOLDOWN_DECLARE(throw_cooldown)
-	var/focus_handle
-	var/host_handle
+	var/atom/movable/focus
+	var/mob/living/host
 	item_flags = DROPDEL | NOSTRIP
 
 /obj/item/tk_grab/dropped(mob/user, equipping, slot)
@@ -115,7 +115,7 @@ DECLARE_INTERACTIONS(/obj/item/tk_grab, INTERACT_USE(null, PROC_REF(interaction_
 	if(target.anchored || !isturf(target.loc))
 		consume(src, user)
 		return
-	focus_handle = om_handle(target)
+	rel_set(src, "focus", target)
 	update_icon()
 	apply_focus_overlay()
 	return
@@ -142,8 +142,8 @@ DECLARE_INTERACTIONS(/obj/item/tk_grab, INTERACT_USE(null, PROC_REF(interaction_
 
 /// LC-refs: the thing held by telekinesis -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/tk_grab/proc/focus() as /atom/movable
-	return om_resolve(focus_handle)
+	return focus
 
 /// LC-refs: the mob using telekinesis -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/tk_grab/proc/host() as /mob/living
-	return om_resolve(host_handle)
+	return host

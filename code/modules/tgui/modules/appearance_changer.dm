@@ -19,7 +19,7 @@
 	name = "Appearance Editor"
 	tgui_id = "AppearanceChanger"
 	var/flags = APPEARANCE_ALL_HAIR
-	var/tmp/owner_handle
+	var/tmp/mob/living/carbon/human/owner
 	/// A body the designer builds for itself (owned); owner_handle then names it.
 	var/mob/living/carbon/human/mannequin
 	var/list/valid_species
@@ -39,7 +39,7 @@
 	var/atom/movable/screen/background/cam_background
 	var/atom/movable/screen/skybox/local_skybox
 	// Stuff for moving cameras
-	var/tmp/last_camera_turf_handle
+	var/tmp/turf/last_camera_turf
 
 	var/list/valid_earstyles
 	var/list/valid_tailstyles
@@ -78,7 +78,7 @@
 	local_skybox.screen_loc = "[map_name]:CENTER,CENTER"
 	cam_plane_masters += local_skybox
 
-	owner_handle = om_handle(H)
+	rel_set(src, "owner", H)
 	own_set(src, "cam_background", new /atom/movable/screen/background)
 	cam_background.assigned_map = map_name
 	cam_background.del_on_map_removal = FALSE
@@ -103,8 +103,8 @@
 		close_ui()
 		om_unhook(owner(), /datum/om/event/movable_attempted_move, src)
 		OM_EMIT(owner(), /datum/om/event/human_dna_finalized) // Update any components using our saved appearance
-		owner_handle = null
-		last_camera_turf_handle = null
+		rel_clear(src, "owner")
+		rel_clear(src, "last_camera_turf")
 		cut_data()
 
 
@@ -516,7 +516,7 @@
 				// Generate body record from species!
 				own_clear(src, "mannequin", OWN_DELETE)
 				own_set(src, "mannequin", new /mob/living/carbon/human(null, S.name))
-				owner_handle = om_handle(mannequin)
+				rel_set(src, "owner", mannequin)
 				owner().real_name = "Stock [S.name] Body"
 				owner().name = owner().real_name
 				owner().dna.real_name = owner().real_name
@@ -580,7 +580,7 @@
 	if(customize_usr && !owner())
 		if(!ishuman(user))
 			return TRUE
-		owner_handle = om_handle(user)
+		rel_set(src, "owner", user)
 
 	if(!owner() || !owner().species)
 		return
@@ -1058,9 +1058,9 @@
 	if(owner())
 		om_unhook(owner(), /datum/om/event/movable_attempted_move, src)
 		own_clear(src, "mannequin", OWN_DELETE)
-		owner_handle = null
+		rel_clear(src, "owner")
 	own_set(src, "mannequin", new /mob/living/carbon/human(src))
-	owner_handle = om_handle(mannequin)
+	rel_set(src, "owner", mannequin)
 	owner().set_species(SPECIES_LLEILL)
 	owner().species.produceCopy(owner().species.traits.Copy(),owner(),null,FALSE)
 	owner().invisibility = INVISIBILITY_ABSTRACT
@@ -1072,9 +1072,9 @@
 	if(owner())
 		om_unhook(owner(), /datum/om/event/movable_attempted_move, src)
 		own_clear(src, "mannequin", OWN_DELETE)
-		owner_handle = null
+		rel_clear(src, "owner")
 	own_set(src, "mannequin", current_project.produce_human_mob(src,FALSE,FALSE,"Designer [rand(999)]"))
-	owner_handle = om_handle(mannequin)
+	rel_set(src, "owner", mannequin)
 	// Update some specifics from the current record
 	owner().dna.blood_reagents = current_project.mydna.dna.blood_reagents
 	owner().dna.blood_color = current_project.mydna.dna.blood_color
@@ -1095,11 +1095,11 @@
 
 /// LC-refs: the last_camera_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_module/appearance_changer/proc/last_camera_turf() as /turf
-	return om_resolve(last_camera_turf_handle)
+	return last_camera_turf
 
 /// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_module/appearance_changer/proc/owner() as /mob/living/carbon/human
-	return om_resolve(owner_handle)
+	return owner
 
 /// A colour the appearance changer asks for; `field` is the tgui action it answers. Re-checked
 /// on the answer: the user can still work the changer.

@@ -705,7 +705,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	desc = "A headset with numerous toolkits appended to it, applying a wide variety of effects to its wearer set as per its manufacturer."
 	icon_state = "cent_headset_alt"
 	item_state = "headset"
-	var/wearer_handle
+	var/mob/living/carbon/human/wearer
 	var/effect_icon = 'icons/effects/effects.dmi'	//Cosmetic Effect that will be applied to the mob as an overlay
 	var/effect_icon_state = "arrow2"
 	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
@@ -728,7 +728,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	worn_factors = slowdown_to_set ? alist(BF_SLOWDOWN = slowdown_to_set) : null
 	. = ..()
 	if(H && ((H.get_equipped_item(SLOT_ID_EAR_L) == src) || (H.get_equipped_item(SLOT_ID_EAR_R) == src)))
-		wearer_handle = om_handle(H)
+		rel_set(src, "wearer", H)
 		if(light_power)
 			set_light(light_range,light_power,light_color,1)
 		if(effect_icon)
@@ -746,7 +746,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 /obj/item/radio/headset/event/dropped(mob/living/carbon/human/H, equipping, slot)
 	..()
 	if(wearer())
-		wearer_handle = null
+		rel_clear(src, "wearer")
 		if(light_power)
 			light_on = 0
 		if(effect_icon)
@@ -814,6 +814,6 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 
 /// LC-refs: wearer -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/radio/headset/event/proc/wearer() as /mob/living/carbon/human
-	return om_resolve(wearer_handle)
+	return wearer
 
 // The AI owns this radio through common_radio; myAi is the back reference.

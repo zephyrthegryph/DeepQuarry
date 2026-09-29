@@ -251,7 +251,7 @@ DECLARE_INTERACTIONS(/obj/item/camera_bug, INTERACT_USE(null, PROC_REF(interacti
 	icon = 'icons/obj/power.dmi'
 	icon_state = "wire1"
 
-	var/machine_handle
+	var/obj/machinery/machine
 
 ///////////////////////////////////////Stock Parts /////////////////////////////////
 
@@ -482,5 +482,5 @@ MATERIAL_MIX(/obj/item/stock_parts/motor, list(MAT_STEEL = 60, MAT_GLASS = 10))
 
 /// LC-refs: the machine this cable is jacked into -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/pai_cable/proc/machine() as /obj/machinery
-	return om_resolve(machine_handle)
+	return machine
 

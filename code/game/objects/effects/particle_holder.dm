@@ -12,7 +12,7 @@
 	/// See \code\__DEFINES\particles.dm
 	var/particle_flags = NONE
 
-	var/parent_handle
+	var/atom/parent
 
 /obj/effect/abstract/particle_holder/Initialize(mapload, particle_path = /particles/smoke, particle_flags = NONE)
 	. = ..()
@@ -24,7 +24,7 @@
 		vis_flags &= ~VIS_INHERIT_PLANE // don't yoink the floor plane. we'll just sit on game plane, it's fine
 
 	// We nullspace ourselves because some objects use their contents (e.g. storage) and some items may drop everything in their contents on deconstruct.
-	parent_handle = om_handle(loc)
+	rel_set(src, "parent", loc)
 	moveToNullspace()
 
 	// Mouse opacity can get set to opaque by some objects when placed into the object's contents (storage containers).
@@ -75,4 +75,4 @@
 
 /// LC-refs: parent -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/abstract/particle_holder/proc/get_parent() as /atom
-	return om_resolve(parent_handle)
+	return parent

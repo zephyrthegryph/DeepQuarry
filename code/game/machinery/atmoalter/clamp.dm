@@ -7,18 +7,18 @@
 	icon = 'icons/atmos/clamp.dmi'
 	icon_state = "pclamp0"
 	anchored = TRUE
-	var/target_handle
+	var/obj/machinery/atmospherics/pipe/simple/target
 	var/open = 1
 
-	var/network_node1_handle
-	var/network_node2_handle
+	var/datum/pipe_network/network_node1
+	var/datum/pipe_network/network_node2
 
 /obj/machinery/clamp/Initialize(mapload, obj/machinery/atmospherics/pipe/simple/to_attach = null)
 	. = ..()
 	if(istype(to_attach))
-		target_handle = om_handle(to_attach)
+		rel_set(src, "target", to_attach)
 	else
-		target_handle = om_handle(locate_within(loc, /obj/machinery/atmospherics/pipe/simple))
+		rel_set(src, "target", locate_within(loc, /obj/machinery/atmospherics/pipe/simple))
 	if(target_ref())
 		update_networks()
 		dir = target_ref().dir
@@ -54,10 +54,10 @@
 		var/obj/machinery/atmospherics/pipe/node2 = target_ref().node2
 		if(istype(node1))
 			var/datum/pipeline/P1 = node1.parent
-			network_node1_handle = om_handle(P1.network)
+			rel_set(src, "network_node1", P1.network)
 		if(istype(node2))
 			var/datum/pipeline/P2 = node2.parent
-			network_node2_handle = om_handle(P2.network)
+			rel_set(src, "network_node2", P2.network)
 
 // a closed clamp reopens its pipe.
 /obj/machinery/clamp/on_destroy(force)
@@ -146,12 +146,12 @@
 
 /// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/clamp/proc/target_ref() as /obj/machinery/atmospherics/pipe/simple
-	return om_resolve(target_handle)
+	return target
 
 /// LC-refs: network node1 -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/clamp/proc/network_node1() as /datum/pipe_network
-	return om_resolve(network_node1_handle)
+	return network_node1
 
 /// LC-refs: network node2 -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/clamp/proc/network_node2() as /datum/pipe_network
-	return om_resolve(network_node2_handle)
+	return network_node2

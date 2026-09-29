@@ -64,7 +64,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	plane = PLATING_PLANE
 	layer = WIRES_LAYER
 	color = COLOR_RED
-	var/tmp/breaker_box_handle
+	var/tmp/obj/machinery/power/breakerbox/breaker_box
 	/// Optional registered composite. Ordinary mapped cable retains baseline behavior.
 	var/engineered_material_id
 	var/material_current = 0
@@ -944,4 +944,4 @@ REL_PAIR_LIST(/datum/material_power_overlay, cables, material_overlay)
 
 /// LC-refs: the breaker_box this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/cable/proc/breaker_box() as /obj/machinery/power/breakerbox
-	return om_resolve(breaker_box_handle)
+	return breaker_box

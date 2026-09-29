@@ -10,7 +10,7 @@
 	active_power_usage = 1000
 
 	/// Variable containing transferred AI
-	var/occupier_handle
+	var/mob/living/silicon/ai/occupier
 	/// Variable dictating if we are in the process of restoring the occupier AI
 	var/restoring = FALSE
 
@@ -39,7 +39,7 @@
 /obj/machinery/computer/aifixer/proc/interaction_use_card(mob/user, obj/item/aicard/card, datum/interaction/interaction)
 	if(occupier())
 		if(card.grab_ai(occupier(), user))
-			occupier_handle = null
+			rel_clear(src, "occupier")
 	else if(card.carded_ai())
 		var/mob/living/silicon/ai/new_occupant = card.carded_ai()
 		to_chat(new_occupant, span_notice("You have been transferred into a stationary terminal. Sadly there is no remote access from here."))
@@ -47,7 +47,7 @@
 		new_occupant.forceMove(src)
 		new_occupant.cancel_camera()
 		new_occupant.control_disabled = TRUE
-		occupier_handle = om_handle(new_occupant)
+		rel_set(src, "occupier", new_occupant)
 		card.clear()
 		update_icon()
 	else
@@ -166,4 +166,4 @@
 
 /// LC-refs: occupier -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/aifixer/proc/occupier() as /mob/living/silicon/ai
-	return om_resolve(occupier_handle)
+	return occupier

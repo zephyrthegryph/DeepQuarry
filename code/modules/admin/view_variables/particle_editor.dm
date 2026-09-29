@@ -1,9 +1,9 @@
 /datum/particle_editor
 	/// movable whose particles we want to be editing
-	var/tmp/target_handle
+	var/tmp/atom/movable/target
 
 /datum/particle_editor/New(atom/target)
-	src.target_handle = om_handle(target)
+	rel_set(src, "target", target)
 
 /datum/particle_editor/tgui_state(mob/user)
 	return ADMIN_STATE(R_VAREDIT)
@@ -122,7 +122,7 @@
 		if("delete_and_close")
 			ui.close()
 			target().particles = null
-			target_handle = null
+			rel_clear(src, "target")
 			. = FALSE
 		if("new_type")
 			var/list/types = make_types_fancy(typesof(/particles))
@@ -217,4 +217,4 @@
 
 /// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/particle_editor/proc/target() as /atom/movable
-	return om_resolve(target_handle)
+	return target

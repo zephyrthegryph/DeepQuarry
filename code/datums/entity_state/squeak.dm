@@ -5,7 +5,7 @@
 /datum/squeak
 	var/static/list/default_squeak_sounds = list('sound/items/bikehorn.ogg'=1, 'sound/voice/quack.ogg'=1)
 	var/list/override_squeak_sounds
-	var/holder_handle
+	var/mob/holder
 
 	var/squeak_chance = 100
 	var/volume = 30
@@ -117,11 +117,11 @@
 /datum/squeak/proc/on_equip(datum/source, datum/om/event/item_equipped/event)
 	EVENT_HANDLER
 	// An OM handle reads null once the holder is deleted, so no deletion hook is needed.
-	holder_handle = om_handle(event.equipper)
+	rel_set(src, "holder", event.equipper)
 
 /datum/squeak/proc/on_drop(datum/source, datum/om/event/item_dropped/event)
 	EVENT_HANDLER
-	holder_handle = null
+	rel_clear(src, "holder")
 
 /*	We don't have events set up for these
 // Disposal pipes related shits
@@ -137,4 +137,4 @@
 
 /// LC-refs: the mob wearing the squeaky thing -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/squeak/proc/holder() as /mob
-	return om_resolve(holder_handle)
+	return holder

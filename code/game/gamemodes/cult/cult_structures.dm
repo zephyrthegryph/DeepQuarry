@@ -23,7 +23,7 @@
 	var/isbroken = 0
 	light_range = 5
 	light_color = "#3e0000"
-	var/wepon_handle
+	var/obj/item/wepon
 
 	var/shatter_message = "The pylon shatters!"
 	var/impact_sound = 'sound/effects/Glasshit.ogg'
@@ -177,4 +177,4 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 
 /// LC-refs: wepon -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/cult/pylon/proc/wepon() as /obj/item
-	return om_resolve(wepon_handle)
+	return wepon

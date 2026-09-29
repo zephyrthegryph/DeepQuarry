@@ -444,7 +444,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/sword/charge/loaded, "bcell", /obj/
 	w_class = ITEMSIZE_HUGE//So you can't hide it in your pocket or some such. //CHOMP Edit
 	flags = NOBLOODY
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	var/creator_handle
+	var/mob/living/creator
 	var/datum/effect/effect/system/spark_spread/spark_system
 	projectile_parry_chance = 60
 	lcolor = "#00FF00"
@@ -599,4 +599,4 @@ DECLARE_START_TIMER(/obj/item/melee/energy/blade, 0, PROC_REF(check_held))
 
 /// LC-refs: creator -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/melee/energy/blade/proc/creator() as /mob/living
-	return om_resolve(creator_handle)
+	return creator

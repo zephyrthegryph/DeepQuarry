@@ -179,5 +179,5 @@
 		do_logging(R, user, 1)
 
 	vend_ready = 1
-	currently_vending_handle = null
+	rel_clear(src, "currently_vending")
 	SStgui.update_uis(src)

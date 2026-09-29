@@ -97,9 +97,9 @@
 /datum/effect/effect/system/foam_spread/set_up(amt=5, loca, datum/reagents/carry = null, metalfoam = 0)
 	amount = round(sqrt(amt / 3), 1)
 	if(istype(loca, /turf/))
-		location_handle = om_handle(loca)
+		rel_set(src, "location", loca)
 	else
-		location_handle = om_handle(get_turf(loca))
+		rel_set(src, "location", get_turf(loca))
 
 	carried_reagents = list()
 	metal = metalfoam

@@ -9,7 +9,7 @@
 	icon_state = "synth_facemask"
 	var/lstat
 	var/visor_state = "Neutral" //Separating this from lstat so that it could potentially be used for an override system or something
-	var/maskmaster_handle
+	var/mob/living/carbon/maskmaster
 	resistance_flags = FIRE_PROOF | ACID_PROOF | INDESTRUCTIBLE | BOMB_PROOF |FREEZE_PROOF
 
 /obj/item/clothing/mask/synthfacemask/equipped()
@@ -17,12 +17,12 @@
 	var/mob/living/carbon/human/H = loc
 	if(istype(H) && H.get_equipped_item(SLOT_ID_MASK) == src)
 		canremove = FALSE
-		maskmaster_handle = om_handle(H)
+		rel_set(src, "maskmaster", H)
 		om_task_periodic(src, PERIODIC_SECOND)
 
 /obj/item/clothing/mask/synthfacemask/dropped(mob/user, equipping, slot)
 	canremove = TRUE
-	maskmaster_handle = null
+	rel_clear(src, "maskmaster")
 	om_task_periodic_stop(src)
 	..()
 
@@ -67,4 +67,4 @@
 
 /// LC-refs: the maskmaster this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/clothing/mask/synthfacemask/proc/maskmaster() as /mob/living/carbon
-	return om_resolve(maskmaster_handle)
+	return maskmaster

@@ -33,7 +33,7 @@
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 
 /datum/artifact_master
-	var/tmp/holder_handle
+	var/tmp/atom/holder
 	var/list/my_effects
 
 	var/effect_generation_chance = 100
@@ -52,7 +52,7 @@
 	if(!istype(new_holder) || new_holder.artifact_master)
 		qdel(src)
 		return
-	holder_handle = om_handle(new_holder)
+	rel_set(src, "holder", new_holder)
 	rel_set(new_holder, "artifact_master", src)
 
 	my_effects = list()
@@ -137,9 +137,9 @@
 	var/atom/H = holder()
 	if(H?.artifact_master == src)
 		H.artifact_master = null
-	holder_handle = null
+	rel_clear(src, "holder")
 	for(var/datum/artifact_effect/AE in my_effects)
-		AE.master_handle = null
+		rel_clear(AE, "master")
 		my_effects -= AE
 		qdel(AE)
 
@@ -192,7 +192,7 @@
 				my_effects += AE
 				effect_generation_chance -= 30
 			else
-				AE.master_handle = om_handle(src)
+				rel_set(AE, "master", src)
 				qdel(AE)
 			continue
 
@@ -483,5 +483,5 @@
 
 /// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/artifact_master/proc/holder() as /atom
-	return om_resolve(holder_handle)
+	return holder
 

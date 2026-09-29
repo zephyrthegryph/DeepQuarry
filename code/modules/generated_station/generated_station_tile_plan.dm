@@ -60,7 +60,7 @@
 	var/list/errors
 	/// Exclusive fixture ownership keyed by structural wall coordinate and room-facing side.
 	var/list/wall_fixture_edges
-	var/tmp/generation_owner_handle
+	var/tmp/datum/generated_station_materializer/generation_owner
 	var/list/utility_floors_by_owner
 	var/list/utility_floors_by_zone
 	/// Working state of derive_hull_step() and validate_seal_step() between slices.
@@ -82,7 +82,7 @@
 	wall_fixture_edges = list()
 	utility_floors_by_owner = list()
 	utility_floors_by_zone = list()
-	generation_owner_handle = om_handle(new_generation_owner)
+	rel_set(src, "generation_owner", new_generation_owner)
 	if(!deferred)
 		for(var/x in 1 to grid_width)
 			fill_column(x)
@@ -340,7 +340,7 @@
 
 /// LC-refs: the generation_owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_tile_plan/proc/generation_owner() as /datum/generated_station_materializer
-	return om_resolve(generation_owner_handle)
+	return generation_owner
 
 /datum/generated_station_tile_plan/declared_cache_vars()
 	var/list/L = ..()

@@ -11,7 +11,7 @@
 	var/slot = ACCESSORY_SLOT_DECOR
 	var/can_remove = TRUE						// Can it be taken off once attached?
 	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/tmp/has_suit_handle	// The suit the tie may be attached to
+	var/tmp/obj/item/clothing/has_suit	// The suit the tie may be attached to
 	var/tmp/image/inv_overlay = null				// Overlay used when attached to clothing.
 	var/image/mob_overlay = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/overlay_state = null
@@ -54,7 +54,7 @@
 /obj/item/clothing/accessory/proc/on_attached(obj/item/clothing/S, mob/user)
 	if(!istype(S))
 		return
-	has_suit_handle = om_handle(S)
+	rel_set(src, "has_suit", S)
 	src.forceMove(S)
 	has_suit().add_overlay(get_inv_overlay())
 
@@ -80,7 +80,7 @@
 	// directly rather than going through clothing.remove_accessory().
 	GLOB.accessory_slot_registry.remove_modifiers(src, old_suit)
 	LAZYREMOVE(old_suit.accessories, src)
-	has_suit_handle = null
+	rel_clear(src, "has_suit")
 	if(QDELETED(src))
 		return
 	if(user && !issilicon(user))
@@ -471,7 +471,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory, INTERACT_HAND_UNGATED(null, PR
 	slot = ACCESSORY_SLOT_INSIGNIA // snowflakey, i know, shut up
 	item_flags = FLEXIBLEMATERIAL
 	var/breath_masked = FALSE
-	var/breathmask_handle
+	var/obj/item/clothing/mask/breath/breathmask
 	actions_types = list(/datum/action/item_action/pull_on_gaiter)
 	special_handling = TRUE
 
@@ -491,7 +491,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/gaiter, \
 /obj/item/clothing/accessory/gaiter/proc/gaiter_tuck_mask_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/clothing/mask/breath))
 		to_chat(user, span_notice("You tuck [I] behind [src]."))
-		breathmask_handle = om_handle(I)
+		rel_set(src, "breathmask", I)
 		breath_masked = TRUE
 		user.drop_from_inventory(I, drop_location())
 		I.forceMove(src)
@@ -503,7 +503,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/gaiter, \
 	if(breath_masked && breathmask())
 		to_chat(user, span_notice("You pull [breathmask()] out from behind [src], and it drops to your feet."))
 		breathmask().forceMove(drop_location())
-		breathmask_handle = null
+		rel_clear(src, "breathmask")
 		breath_masked = FALSE
 		item_flags &= ~AIRTIGHT
 		item_flags |= FLEXIBLEMATERIAL
@@ -631,7 +631,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/gaiter, \
 /obj/item/clothing/accessory/choker/on_attached(obj/item/clothing/S, mob/user)
 	if(!istype(S))
 		return
-	has_suit_handle = om_handle(S)
+	rel_set(src, "has_suit", S)
 	setUniqueSpeciesSprite()
 	..(S, user)
 
@@ -669,7 +669,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/gaiter, \
 /obj/item/clothing/accessory/collar/on_attached(obj/item/clothing/S, mob/user)
 	if(!istype(S))
 		return
-	has_suit_handle = om_handle(S)
+	rel_set(src, "has_suit", S)
 	setUniqueSpeciesSprite()
 	..(S, user)
 
@@ -727,17 +727,17 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/bell, \
 	var/on = FALSE // 0 for off, 1 for on, starts off to encourage people to set non-default frequencies and codes.
 	var/frequency = AMAG_ELE_FREQ
 	var/code = 2
-	var/tmp/radio_connection_handle
+	var/tmp/datum/radio_frequency/radio_connection
 	special_collar = TRUE
 
 /obj/item/clothing/accessory/collar/shock/Initialize(mapload)
 	. = ..()
-	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_CHAT)) // Makes it so you don't need to change the frequency off of default for it to work.
+	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_CHAT)) // Makes it so you don't need to change the frequency off of default for it to work.
 
 /obj/item/clothing/accessory/collar/shock/proc/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
+	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
 
 EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock, INTERACT_USE(null, PROC_REF(shock_collar_ui_self)))
 
@@ -1506,12 +1506,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/poncho/roles/neo_ranger, INTERA
 
 /// LC-refs: The suit the tie may be attached to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/clothing/accessory/proc/has_suit() as /obj/item/clothing
-	return om_resolve(has_suit_handle)
+	return has_suit
 
 /// LC-refs: the breathmask this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/clothing/accessory/gaiter/proc/breathmask() as /obj/item/clothing/mask/breath
-	return om_resolve(breathmask_handle)
+	return breathmask
 
 /// LC-refs: the radio_connection this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/clothing/accessory/collar/shock/proc/radio_connection() as /datum/radio_frequency
-	return om_resolve(radio_connection_handle)
+	return radio_connection

@@ -5,7 +5,7 @@
 	TIMESTAMP_VAR(media_start_time) // world.time when it started playing
 	var/volume = 1				// 0 - 1 for ease of coding.
 
-	var/tmp/master_area_handle	// My area
+	var/tmp/area/master_area	// My area
 
 	// ~Leshana - Transmitters unimplemented
 
@@ -28,29 +28,29 @@
 	// Check if there's a media source already.
 	if(A.media_source() && A.media_source() != src) // If it does, the new media source replaces it. basically, the last media source arrived gets played on top.
 		A.media_source().disconnect_media_source() // You can turn a media source off and on for it to come back on top.
-		A.media_source_handle = om_handle(src)
-		master_area_handle = om_handle(A)
+		rel_set(A, "media_source", src)
+		rel_set(src, "master_area", A)
 		return
 	else
-		A.media_source_handle = om_handle(src)
-	master_area_handle = om_handle(A)
+		rel_set(A, "media_source", src)
+	rel_set(src, "master_area", A)
 
 /obj/machinery/media/proc/disconnect_media_source()
 	var/area/A = get_area(src)
 	// Sanity
 	if(!A)
-		master_area_handle = null
+		rel_clear(src, "master_area")
 		return
 	// Check if there's a media source already.
 	if(A && A.media_source() && A.media_source() != src)
-		master_area_handle = null
+		rel_clear(src, "master_area")
 		return
 	// Update Media Source.
-	A.media_source_handle = null
+	rel_clear(A, "media_source")
 	// Clients
 	for(var/mob/M as anything in mobs_in_area(A))
 		M.update_music()
-	master_area_handle = null
+	rel_clear(src, "master_area")
 
 /obj/machinery/media/Move()
 	disconnect_media_source()
@@ -75,4 +75,4 @@
 
 /// LC-refs: My area -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/media/proc/master_area() as /area
-	return om_resolve(master_area_handle)
+	return master_area

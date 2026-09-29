@@ -37,7 +37,7 @@
 	var/delete_me
 
 	max_integrity = 15
-	var/linked_node_handle
+	var/obj/effect/alien/weeds/node/linked_node
 	var/static/list/weedImageCache // ALLOW(cache): constant table of four edge images
 
 /obj/effect/alien/weeds/Initialize(mapload, node, newcolor)
@@ -45,7 +45,7 @@
 	if(isspace(loc) || delete_me)
 		return INITIALIZE_HINT_QDEL
 
-	linked_node_handle = om_handle(node)
+	rel_set(src, "linked_node", node)
 //	if(newcolor)
 // color = newcolor // No coloration.
 
@@ -63,7 +63,7 @@
 	for (var/obj/effect/alien/weeds/W in range(1,T))
 		W.updateWeedOverlays()
 
-	linked_node_handle = null
+	rel_clear(src, "linked_node")
 	..()
 
 /obj/effect/alien/weeds/node
@@ -89,7 +89,7 @@
 				continue
 			qdel(existing)
 
-	linked_node_handle = om_handle(src)
+	rel_set(src, "linked_node", src)
 
 // Only the node processes in a subsystem, the rest are process()'d by the node
 DECLARE_PERIODIC(/obj/effect/alien/weeds/node, PERIODIC_SLOW)
@@ -161,7 +161,7 @@ DECLARE_PERIODIC(/obj/effect/alien/weeds/node, PERIODIC_SLOW)
 	for(var/obj/effect/alien/weeds/W as anything in nearby_weeds)
 
 		if(!W.linked_node())
-			W.linked_node_handle = om_handle(src)
+			rel_set(W, "linked_node", src)
 
 // W.color = W.linked_node.set_color // No coloration.
 
@@ -294,4 +294,4 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 
 /// LC-refs: linked node -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/alien/weeds/proc/linked_node() as /obj/effect/alien/weeds/node
-	return om_resolve(linked_node_handle)
+	return linked_node

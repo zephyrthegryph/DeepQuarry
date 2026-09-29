@@ -1,10 +1,10 @@
 /datum/ship_engine/ion
 	name = "ion thruster"
-	var/tmp/thruster_handle
+	var/tmp/obj/machinery/ion_engine/thruster
 
 /datum/ship_engine/ion/New(obj/machinery/_holder)
 	..()
-	thruster_handle = om_handle(_holder)
+	rel_set(src, "thruster", _holder)
 
 /datum/ship_engine/ion/get_status()
 	return thruster().get_status()
@@ -83,4 +83,4 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/ion_engine, "controller", /datum/ship_engin
 
 /// LC-refs: the thruster this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/ship_engine/ion/proc/thruster() as /obj/machinery/ion_engine
-	return om_resolve(thruster_handle)
+	return thruster

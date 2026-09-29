@@ -857,7 +857,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 	var/cookwork
 	var/overcook_mult = 6 // How long it takes to overcook. This is max_cookwork x overcook mult. If you're changing this, mind that at 3x, a max_cookwork of 30 becomes 90 ticks for the purpose of burning, and a max_cookwork of 4 only has 12 before burning! // doubled to 6
 	var/result_type = 0
-	var/tmp/container_handle
+	var/tmp/obj/item/reagent_containers/cooking_container/container
 	var/combine_target = null
 
 	//Result type is one of the following:
@@ -873,7 +873,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 	var/max_oil = 0//Used for fryers.
 
 /datum/cooking_item/New(obj/item/I)
-	container_handle = om_handle(I)
+	rel_set(src, "container", I)
 
 //This is called for containers whose contents are ejected without removing the container
 /datum/cooking_item/proc/reset()
@@ -907,4 +907,4 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 
 /// LC-refs: the container this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/cooking_item/proc/container() as /obj/item/reagent_containers/cooking_container
-	return om_resolve(container_handle)
+	return container

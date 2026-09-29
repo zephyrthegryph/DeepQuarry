@@ -4,13 +4,13 @@
 	equip_cooldown = 15
 	energy_drain = 10
 	var/dam_force = 20
-	var/cargo_holder_handle
+	var/obj/mecha/working/ripley/cargo_holder
 	required_type = list(/obj/mecha/working)
 	ready_sound = 'sound/mecha/gasdisconnected.ogg'
 
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/attach(obj/mecha/M as obj)
 	..()
-	cargo_holder_handle = om_handle(M)
+	rel_set(src, "cargo_holder", M)
 
 	return
 
@@ -187,4 +187,4 @@
 
 /// LC-refs: cargo holder -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/cargo_holder() as /obj/mecha/working/ripley
-	return om_resolve(cargo_holder_handle)
+	return cargo_holder

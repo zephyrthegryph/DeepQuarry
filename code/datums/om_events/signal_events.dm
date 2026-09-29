@@ -1122,11 +1122,11 @@
 
 /datum/om/event/observer_turf_entered
 	sync = TRUE
-	var/arrived_handle
+	var/datum/arrived
 	var/old_loc
 
 /datum/om/event/observer_turf_entered/New(arrived_handle, old_loc)
-	src.arrived_handle = arrived_handle
+	rel_set(src, "arrived", arrived_handle)
 	src.old_loc = old_loc
 
 /// From /client/proc/handle_popup_close() : (window_id)

@@ -339,7 +339,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		return TRUE
 	var/obj/item/tk_grab/grab = new(O)
 	user.put_in_active_hand(grab)
-	grab.host_handle = om_handle(user)
+	rel_set(grab, "host", user)
 	grab.focus_object(O)
 	return TRUE
 

@@ -4,7 +4,7 @@
 	desc = "This is a feeder. Put in a reagent container, then click and drag the feeder to someone!"
 	anchored = FALSE
 	density = FALSE
-	var/attached_handle
+	var/mob/living/carbon/human/attached
 	var/obj/item/reagent_containers/beaker = null
 
 /obj/machinery/feeder/update_icon()
@@ -41,13 +41,13 @@
 
 	if(attached())
 		visible_message("The feeding tube is pulled out of [attached()].")
-		attached_handle = null
+		rel_clear(src, "attached")
 		update_icon()
 		return
 
 	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
 		visible_message("[usr] inserts the feeding tube into \the [over_object].")
-		attached_handle = om_handle(over_object)
+		rel_set(src, "attached", over_object)
 		update_icon()
 		MACHINE_WAKE(src)
 
@@ -112,7 +112,7 @@
 	if(attached())
 		if(!(get_dist(src, attached()) <= 1 && isturf(attached().loc)))
 			visible_message("The tube is pulled out of [attached()].")
-			attached_handle = null
+			rel_clear(src, "attached")
 			update_icon()
 			return PROCESS_KILL
 
@@ -162,4 +162,4 @@ OWN(/obj/machinery/feeder, beaker, OWN_CONTAINED)
 
 /// LC-refs: attached -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/feeder/proc/attached() as /mob/living/carbon/human
-	return om_resolve(attached_handle)
+	return attached

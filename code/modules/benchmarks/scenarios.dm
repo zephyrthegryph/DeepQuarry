@@ -202,7 +202,7 @@
 /datum/benchmark/major_events
 	id = "major_events"
 	description = "Tick cost of explosions, supermatter, mass fire and decompression"
-	var/tmp/event_center_handle
+	var/tmp/turf/open/event_center
 	var/list/turf/open/event_turfs
 
 /datum/benchmark/major_events/Run()
@@ -211,7 +211,7 @@
 	for(var/event_name in events)
 		event_turfs = build_floor_fixture(64)
 		var/turf/corner = event_turfs[1]
-		event_center_handle = om_handle(locate(33, 33, corner.z))
+		rel_set(src, "event_center", locate(33, 33, corner.z))
 		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
 		switch(event_name)
 			if("large_explosion")
@@ -266,12 +266,12 @@
 /datum/benchmark/generation
 	id = "generation"
 	description = "Expedition station generation and release (bench_cycles, default 1)"
-	var/tmp/generated_site_handle
+	var/tmp/datum/expedition_site/generated_site
 	var/generation_done = FALSE
 
 /datum/benchmark/generation/proc/generate(seed, list/diagnostics)
 	try
-		generated_site_handle = om_handle(GLOB.expedition_service.generate_debug_station(seed, diagnostics))
+		rel_set(src, "generated_site", GLOB.expedition_service.generate_debug_station(seed, diagnostics))
 	catch(var/exception/error) // ALLOW(silent_catch): the failure is recorded in the benchmark diagnostics
 		diagnostics["error"] = "[error]"
 	generation_done = TRUE
@@ -283,7 +283,7 @@
 	for(var/cycle in 1 to cycles)
 		mark("cycle[cycle]_begin")
 		var/list/diagnostics = list()
-		generated_site_handle = null
+		rel_clear(src, "generated_site")
 		generation_done = FALSE
 		begin_window()
 		INVOKE_ASYNC(src, PROC_REF(generate), seed, diagnostics) // ALLOW(scheduler): expedition generation yields; harness polls a deadline
@@ -298,7 +298,7 @@
 			fail("generation returned no site on cycle [cycle]: [diagnostics["error"] || "no error"]")
 		mark("cycle[cycle]_generated")
 		GLOB.expedition_service.release_site(generated_site(), "generation benchmark")
-		generated_site_handle = null
+		rel_clear(src, "generated_site")
 		var/waited = 0
 		while((length(GLOB.expedition_service.teardown_z) || !length(GLOB.expedition_service.free_z)) && waited++ < world.fps * 180)
 			stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
@@ -757,11 +757,11 @@
 
 /// LC-refs: the event_center this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/benchmark/major_events/proc/event_center() as /turf/open
-	return om_resolve(event_center_handle)
+	return event_center
 
 /// LC-refs: the generated_site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/benchmark/generation/proc/generated_site() as /datum/expedition_site
-	return om_resolve(generated_site_handle)
+	return generated_site
 
 /// The fixture floor, rebuilt per event by Run().
 // turfs, never freed

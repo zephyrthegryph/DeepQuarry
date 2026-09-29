@@ -17,7 +17,7 @@ D [1]/  ||
 */
 /datum/integrated_io
 	var/name = "input/output"
-	var/tmp/holder_handle
+	var/tmp/obj/item/integrated_circuit/holder
 	var/data = null // A reference is an IC ref (ic_ref(), an OM handle in a text wrapper), to reduce typecasts.  Note that oftentimes numbers and text may also occupy this.
 	var/list/linked // Lazy: most pins are never wired.
 	var/io_type = DATA_CHANNEL
@@ -27,7 +27,7 @@ D [1]/  ||
 	src.name = name
 	if(!isnull(new_data))
 		src.data = new_data
-	holder_handle = om_handle(newloc)
+	rel_set(src, "holder", newloc)
 	if(!istype(holder(), /obj/item/integrated_circuit))
 		message_admins("ERROR: An integrated_io ([src.name]) spawned without a valid holder!  This is a bug.")
 
@@ -239,4 +239,4 @@ list[](
 
 /// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/integrated_io/proc/holder() as /obj/item/integrated_circuit
-	return om_resolve(holder_handle)
+	return holder

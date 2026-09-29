@@ -2,12 +2,12 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	if(!target)
 		return
 	var/datum/eventkit/modify_robot/modify_robot = new()
-	modify_robot.target_handle = om_handle(target)
+	rel_set(modify_robot, "target", target)
 	modify_robot.selected_ai = target.is_slaved()
 	modify_robot.tgui_interact(user.mob)
 
 /datum/eventkit/modify_robot
-	var/tmp/target_handle
+	var/tmp/mob/living/silicon/robot/target
 	var/mob/living/silicon/robot/source
 	var/selected_ai
 	var/ion_law	= "IonLaw"
@@ -16,7 +16,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	var/supplied_law = "SuppliedLaw"
 	var/supplied_law_position = MIN_SUPPLIED_LAW_NUMBER
 	var/list/datum/ai_laws/law_list
-	var/tmp/multibelt_holder_handle	//Currently selected multibelt.
+	var/tmp/obj/item/robotic_multibelt/multibelt_holder	//Currently selected multibelt.
 
 /datum/eventkit/modify_robot/New()
 	. = ..()
@@ -26,7 +26,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	own_set(src, "law_list", dd_sortedObjectList(law_list))
 
 /datum/eventkit/modify_robot/tgui_close()
-	target_handle = null
+	rel_clear(src, "target")
 	if(source)
 		qdel(source)
 
@@ -168,7 +168,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 		if("select_target")
 			var/new_target = locate(params["new_target"])
 			if(new_target != target())
-				target_handle = om_handle(locate(params["new_target"]))
+				rel_set(src, "target", locate(params["new_target"]))
 				log_and_message_admins("changed robot modifictation target to [target()]")
 			return TRUE
 		if("toggle_crisis")
@@ -302,7 +302,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 			qdel(rem_kit)
 			return TRUE
 		if("select_multibelt")
-			multibelt_holder_handle = om_handle(locate(params["multibelt"]))
+			rel_set(src, "multibelt_holder", locate(params["multibelt"]))
 			return TRUE
 		if("install_tool")
 			if(!istype(multibelt_holder(), /obj/item/robotic_multibelt))
@@ -793,9 +793,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 
 /// LC-refs: Currently selected multibelt. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/eventkit/modify_robot/proc/multibelt_holder() as /obj/item/robotic_multibelt
-	return om_resolve(multibelt_holder_handle)
+	return multibelt_holder
 
 /// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/eventkit/modify_robot/proc/target() as /mob/living/silicon/robot
-	return om_resolve(target_handle)
+	return target
 

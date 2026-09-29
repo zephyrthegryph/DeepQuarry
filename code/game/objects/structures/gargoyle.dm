@@ -36,7 +36,7 @@
 	var/tint = "#FFFFFF"
 	if(comp)
 		comp.cooldown = world.time + (15 SECONDS)
-		comp.statue_handle = om_handle(src)
+		rel_set(comp, "statue", src)
 		comp.transformed = TRUE
 		comp.paused = FALSE
 		identifier = length(comp.identifier) > 0 ? comp.identifier : initial(identifier)
@@ -186,7 +186,7 @@
 	var/datum/trait_state/gargoyle/comp = gargoyle.get_trait_state(/datum/trait_state/gargoyle)
 	if(comp)
 		comp.cooldown = world.time + (15 SECONDS)
-		comp.statue_handle = null
+		rel_clear(comp, "statue")
 		comp.transformed = FALSE
 	else
 		if(was_rayed)

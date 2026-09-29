@@ -9,7 +9,7 @@
 	density = TRUE
 	circuit = /obj/item/circuitboard/dna_analyzer
 
-	var/tmp/bloodsamp_handle
+	var/tmp/obj/item/forensics/swab/bloodsamp
 	var/scanning = 0
 	var/scanner_progress = 0
 	var/scanner_rate = 5
@@ -46,7 +46,7 @@
 	var/obj/item/forensics/swab/swab = W
 	if(istype(swab) && swab.is_used())
 		user.unEquip(W)
-		bloodsamp_handle = om_handle(swab)
+		rel_set(src, "bloodsamp", swab)
 		swab.forceMove(src)
 		to_chat(user, span_notice("You insert [W] into [src]."))
 		update_icon()
@@ -104,7 +104,7 @@
 		if("ejectItem")
 			if(bloodsamp())
 				bloodsamp().forceMove(loc)
-				bloodsamp_handle = null
+				rel_clear(src, "bloodsamp")
 				scanning = FALSE
 				update_icon()
 
@@ -114,7 +114,7 @@
 		return PROCESS_KILL
 	if(scanning)
 		if(!bloodsamp() || bloodsamp().loc != src)
-			bloodsamp_handle = null
+			rel_clear(src, "bloodsamp")
 			scanning = 0
 		else if(scanner_progress >= 100)
 			complete_scan()
@@ -164,4 +164,4 @@
 
 /// LC-refs: the bloodsamp this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/dnaforensics/proc/bloodsamp() as /obj/item/forensics/swab
-	return om_resolve(bloodsamp_handle)
+	return bloodsamp

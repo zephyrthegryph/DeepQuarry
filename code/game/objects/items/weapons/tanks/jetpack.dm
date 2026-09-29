@@ -113,7 +113,7 @@ DECLARE_GAS(/obj/item/tank/jetpack/breaker, "air_contents", "volume", T20C, list
 DECLARE_GAS(/obj/item/tank/jetpack/carbondioxide, "air_contents", "volume", T20C, list(GAS_CO2 = 6*ONE_ATMOSPHERE))
 /obj/item/tank/jetpack/rig
 	name = "jetpack"
-	var/holder_handle
+	var/obj/item/rig/holder
 
 /obj/item/tank/jetpack/rig/examine()
 	. = ..()
@@ -124,7 +124,7 @@ DECLARE_GAS(/obj/item/tank/jetpack/carbondioxide, "air_contents", "volume", T20C
 
 /// LC-refs: holder -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/tank/jetpack/rig/proc/holder_ref() as /obj/item/rig
-	return om_resolve(holder_handle)
+	return holder
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/tank/jetpack, \
 	INTERACT_VERB("Toggle Jetpack Stabilization", PROC_REF(toggle_rockets_effect), REQ_IN_INVENTORY), \

@@ -1,11 +1,11 @@
 /datum/flight_operations_ui
-	var/tmp/host_handle
-	var/tmp/forced_vessel_handle
+	var/tmp/datum/host
+	var/tmp/datum/flight_vessel/forced_vessel
 
 /datum/flight_operations_ui/New(new_host, datum/flight_vessel/new_forced_vessel = null)
 	..()
-	host_handle = om_handle(new_host)
-	forced_vessel_handle = om_handle(new_forced_vessel)
+	rel_set(src, "host", new_host)
+	rel_set(src, "forced_vessel", new_forced_vessel)
 
 /datum/flight_operations_ui/tgui_host()
 	return host()
@@ -223,8 +223,8 @@
 
 /// LC-refs: the host this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/flight_operations_ui/proc/host() as /datum
-	return om_resolve(host_handle)
+	return host
 
 /// LC-refs: the forced_vessel this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/flight_operations_ui/proc/forced_vessel() as /datum/flight_vessel
-	return om_resolve(forced_vessel_handle)
+	return forced_vessel

@@ -9,7 +9,7 @@ MATERIAL_MIX(/obj/item/syringe_cartridge, list(MAT_STEEL = 125, MAT_GLASS = 375)
 	throwforce = 3
 	force = 3
 	w_class = ITEMSIZE_TINY
-	var/tmp/syringe_handle
+	var/tmp/obj/item/reagent_containers/syringe/syringe
 
 /obj/item/syringe_cartridge/update_icon()
 	underlays.Cut()
@@ -23,7 +23,7 @@ MATERIAL_MIX(/obj/item/syringe_cartridge, list(MAT_STEEL = 125, MAT_GLASS = 375)
 		if(syringe())
 			to_chat(user, span_warning("[src] already has a syringe loaded!"))
 			return INTERACTION_HANDLED_PASS
-		syringe_handle = om_handle(I)
+		rel_set(src, "syringe", I)
 		to_chat(user, span_notice("You carefully insert [syringe()] into [src]."))
 		user.remove_from_mob(syringe())
 		syringe().forceMove(src)
@@ -43,7 +43,7 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 		to_chat(user, span_notice("You remove [syringe()] from [src]."))
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
 		user.put_in_hands(syringe())
-		syringe_handle = null
+		rel_clear(src, "syringe")
 		sharp = initial(sharp)
 		name = initial(name)
 		update_icon()
@@ -93,7 +93,7 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 
 	var/list/darts
 	var/max_darts = 1
-	var/tmp/next_handle
+	var/tmp/obj/item/syringe_cartridge/next
 
 	special_handling = TRUE
 
@@ -106,7 +106,7 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 /obj/item/gun/launcher/syringe/handle_post_fire()
 	..()
 	LAZYREMOVE(darts, next())
-	next_handle = null
+	rel_clear(src, "next")
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
 /obj/item/gun/launcher/syringe/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
@@ -115,11 +115,11 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 		return TRUE
 	if(next())
 		user.visible_message("[user] unlatches and carefully relaxes the bolt on [src].", span_warning("You unlatch and carefully relax the bolt on [src], unloading the spring."))
-		next_handle = null
+		rel_clear(src, "next")
 	else if(length(darts))
 		playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
 		user.visible_message("[user] draws back the bolt on [src], clicking it into place.", span_warning("You draw back the bolt on the [src], loading the spring!"))
-		next_handle = om_handle(LAZYACCESS(darts, 1))
+		rel_set(src, "next", LAZYACCESS(darts, 1))
 	add_fingerprint(user)
 
 DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_REF(interaction_hand)))
@@ -165,8 +165,8 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_RE
 
 /// LC-refs: the syringe this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/syringe_cartridge/proc/syringe() as /obj/item/reagent_containers/syringe
-	return om_resolve(syringe_handle)
+	return syringe
 
 /// LC-refs: the next this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/gun/launcher/syringe/proc/next() as /obj/item/syringe_cartridge
-	return om_resolve(next_handle)
+	return next

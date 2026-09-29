@@ -8,7 +8,7 @@
 	COOLDOWN_DECLARE(progress_sound_cooldown)
 
 	var/list/shuttle_area // Initial value can be either a single area type or a list of area types
-	var/tmp/current_location_handle	//Set current_location_tag, not this: New() resolves the tag into the landmark.
+	var/tmp/obj/effect/shuttle_landmark/current_location	//Set current_location_tag, not this: New() resolves the tag into the landmark.
 	var/current_location_tag	// the tag it starts as; resolved into current_location at init
 
 	TIMESTAMP_TMP_VAR(arrive_time) //the time at which the shuttle arrives when long jumping
@@ -54,9 +54,9 @@
 	shuttle_area = areas
 
 	if(initial_location)
-		current_location_handle = om_handle(initial_location)
+		rel_set(src, "current_location", initial_location)
 	else
-		current_location_handle = om_handle(SSshuttles.get_landmark(current_location_tag))
+		rel_set(src, "current_location", SSshuttles.get_landmark(current_location_tag))
 	if(!istype(current_location(), /obj/effect/shuttle_landmark))
 		// landmark missing usually means the shuttle's home map
 		// was removed. Log once and skip registration so subtype New()s
@@ -386,7 +386,7 @@
 
 	// Actually do the movement of everything - This replaces origin.move_contents_to(destination)
 	translate_turfs(turf_translation, current_location().landing_area(), current_location().base_turf)
-	current_location_handle = om_handle(destination)
+	rel_set(src, "current_location", destination)
 
 	// If there's a zlevel above our destination, paint in a ceiling on it so we retain our air
 	if(ceiling_type && HasAbove(current_location().z))
@@ -467,4 +467,4 @@
 
 /// LC-refs: Set current_location_tag, not this: New() resolves the tag into the landmark. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/shuttle/proc/current_location() as /obj/effect/shuttle_landmark
-	return om_resolve(current_location_handle)
+	return current_location

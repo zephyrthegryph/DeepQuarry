@@ -16,7 +16,7 @@
 
 /datum/rig_power_system
 	/// The rig this datum belongs to.  Nulled on Destroy().
-	var/tmp/holder_handle
+	var/tmp/obj/item/rig/holder
 
 	// ---- Cooling system ----
 	/// Whether the active cooling system is running.
@@ -37,7 +37,7 @@
 	var/offline_vision_restriction = 1
 
 /datum/rig_power_system/New(obj/item/rig/new_holder)
-	holder_handle = om_handle(new_holder)
+	rel_set(src, "holder", new_holder)
 
 /*
  * proc/get_environment_temperature()
@@ -163,4 +163,4 @@
 
 /// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/rig_power_system/proc/holder() as /obj/item/rig
-	return om_resolve(holder_handle)
+	return holder

@@ -148,7 +148,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		for(var/obj/machinery/power/terminal/smes_input/term in turf_contents_of_type(T, /obj/machinery/power/terminal/smes_input))
 			if(term && term.dir == turn(d, 180) && !term.master())
 				LAZYOR(terminals, term)
-				term.master_handle = om_handle(src)
+				rel_set(term, "master", src)
 				term.connect_to_network(FALSE)
 	power_sync()
 
@@ -159,7 +159,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 
 /obj/machinery/power/smes/disconnect_terminal(obj/machinery/power/terminal/term)
 	LAZYREMOVE(terminals, term)
-	term.master_handle = null
+	rel_clear(term, "master")
 	power_sync()
 
 /obj/machinery/power/smes/power_registered()
@@ -329,7 +329,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		return
 	var/obj/machinery/power/terminal/smes_input/term = new(tempLoc)
 	term.set_dir(tempDir)
-	term.master_handle = om_handle(src)
+	rel_set(term, "master", src)
 	term.connect_to_network()
 	LAZYOR(terminals, term)
 	power_sync()

@@ -6,7 +6,7 @@
 	var/name = "Prototype"
 	var/desc = "Contact a dev!"
 
-	var/tmp/nif_handle	//The NIF that the software is stored in
+	var/tmp/obj/item/nif/nif	//The NIF that the software is stored in
 
 	var/list_pos				// List position in the nifsoft list
 
@@ -50,7 +50,7 @@
 /datum/nifsoft/New(obj/item/nif/nif_load)
 	ASSERT(nif_load)
 
-	nif_handle = om_handle(nif_load)
+	rel_set(src, "nif", nif_load)
 	if(!install(nif()))
 		qdel(src)
 
@@ -75,7 +75,7 @@
 		if(active)
 			deactivate()
 		. = nif().uninstall(src)
-		nif_handle = null
+		rel_clear(src, "nif")
 	if(!QDESTROYING(src))
 		qdel(src)
 
@@ -434,4 +434,4 @@ DECLARE_INTERACTIONS(/obj/item/disk/nifsoft/compliance, INTERACT_USE(null, PROC_
 
 /// LC-refs: The NIF that the software is stored in -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/nifsoft/proc/nif() as /obj/item/nif
-	return om_resolve(nif_handle)
+	return nif

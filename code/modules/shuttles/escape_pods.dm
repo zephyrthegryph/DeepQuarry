@@ -1,5 +1,5 @@
 /datum/shuttle/autodock/ferry/escape_pod
-	var/tmp/arming_controller_handle
+	var/tmp/datum/embedded_program/docking/simple/escape_pod_berth/arming_controller
 	category = /datum/shuttle/autodock/ferry/escape_pod
 
 /datum/shuttle/autodock/ferry/escape_pod/New()
@@ -20,7 +20,7 @@
 	var/arming_controller_tag = arming_controller()
 	if(!arming_controller() && active_docking_controller())
 		arming_controller_tag = active_docking_controller().id_tag
-	arming_controller_handle = om_handle(SSshuttles.docking_registry[arming_controller_tag])
+	rel_set(src, "arming_controller", SSshuttles.docking_registry[arming_controller_tag])
 	if(!istype(arming_controller(), /datum/embedded_program/docking/simple/escape_pod_berth))
 		CRASH("Could not find arming controller for escape pod \"[name]\", tag was '[arming_controller_tag]'.")
 	// Every pod references the shared berth program through an OM handle, which reads null once
@@ -31,7 +31,7 @@
 	var/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/controller_master = prog.master
 	if(!istype(controller_master))
 		CRASH("Escape pod \"[name]\" could not find it's controller master! docking_controller_tag=[docking_controller_tag]")
-	controller_master.pod_handle = om_handle(src)
+	rel_set(controller_master, "pod", src)
 
 /datum/shuttle/autodock/ferry/escape_pod/can_launch()
 	if(arming_controller() && !arming_controller().armed)	//must be armed
@@ -53,7 +53,7 @@
 	name = "escape pod controller"
 	unacidable = TRUE
 	program = /datum/embedded_program/docking/simple
-	var/tmp/pod_handle
+	var/tmp/datum/shuttle/autodock/ferry/escape_pod/pod
 	valid_actions = list("toggle_override", "force_door")
 
 /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/tgui_data(mob/user)
@@ -152,8 +152,8 @@
 
 /// LC-refs: the arming_controller this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/shuttle/autodock/ferry/escape_pod/proc/arming_controller() as /datum/embedded_program/docking/simple/escape_pod_berth
-	return om_resolve(arming_controller_handle)
+	return arming_controller
 
 /// LC-refs: the pod this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/proc/pod() as /datum/shuttle/autodock/ferry/escape_pod
-	return om_resolve(pod_handle)
+	return pod

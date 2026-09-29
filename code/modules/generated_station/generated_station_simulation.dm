@@ -1,7 +1,7 @@
 /// Runtime state for one department instance. Stockpiles are finite quantities
 /// consumed transactionally by concrete work such as healing and repairs.
 /datum/generated_station_department_runtime
-	var/tmp/department_handle
+	var/tmp/datum/generated_station_department_instance/department
 	var/state = GENERATED_DEPARTMENT_OFFLINE
 	var/integrity = 100
 	var/list/stockpiles
@@ -9,7 +9,7 @@
 
 /datum/generated_station_department_runtime/New(datum/generated_station_department_instance/new_department)
 	..()
-	department_handle = om_handle(new_department)
+	rel_set(src, "department", new_department)
 	stockpiles = list()
 	minimum_stockpiles = list()
 
@@ -26,7 +26,7 @@ GLOBAL_LIST_EMPTY(generated_station_runtimes)
 
 /// Authoritative dependency simulation for one generated station.
 /datum/generated_station_simulation
-	var/tmp/spec_handle
+	var/tmp/datum/generated_station_spec/spec
 	var/list/departments
 	var/list/capabilities
 	var/list/power_areas
@@ -35,7 +35,7 @@ GLOBAL_LIST_EMPTY(generated_station_runtimes)
 
 /datum/generated_station_simulation/New(datum/generated_station_spec/new_spec)
 	..()
-	spec_handle = om_handle(new_spec)
+	rel_set(src, "spec", new_spec)
 	departments = list()
 	capabilities = list()
 	power_areas = list()
@@ -167,10 +167,10 @@ GLOBAL_LIST_EMPTY(generated_station_runtimes)
 
 /// LC-refs: the department this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_department_runtime/proc/department() as /datum/generated_station_department_instance
-	return om_resolve(department_handle)
+	return department
 
 /// LC-refs: the spec this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_simulation/proc/spec() as /datum/generated_station_spec
-	return om_resolve(spec_handle)
+	return spec
 
 // areas the station materialization owns; the simulation is its child

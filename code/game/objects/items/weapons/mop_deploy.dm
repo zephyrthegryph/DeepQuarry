@@ -11,7 +11,7 @@
 	throw_range = 1
 	w_class = ITEMSIZE_LARGE//So you can't hide it in your pocket or some such.
 	attack_verb = list("mopped", "bashed", "bludgeoned", "whacked")
-	var/creator_handle
+	var/mob/living/creator
 	var/mopping = 0
 	var/mopcount = 0
 
@@ -86,4 +86,4 @@ DECLARE_INTERACTIONS(/obj/item/mop_deploy, INTERACT_USE(null, PROC_REF(interacti
 
 /// LC-refs: creator -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/mop_deploy/proc/creator() as /mob/living
-	return om_resolve(creator_handle)
+	return creator

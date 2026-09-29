@@ -5,7 +5,7 @@
 	icon_keyboard = "teleport_key"
 	circuit = /obj/item/circuitboard/telesci_console
 	var/sending = 1
-	var/tmp/telepad_handle
+	var/tmp/obj/machinery/telepad/telepad
 	var/temp_msg = "Telescience control console initialized. Welcome."
 
 	// VARIABLES //
@@ -14,7 +14,7 @@
 	var/z_co = 1
 	var/distance_off
 	var/rotation_off
-	var/tmp/last_target_handle
+	var/tmp/turf/last_target
 
 	var/rotation = 0
 	var/distance = 5
@@ -95,8 +95,8 @@ OWN(/obj/machinery/computer/telescience, inserted_gps, OWN_SPILL)
 	var/obj/item/multitool/multitool = tool
 	if(!istype(multitool.connectable(), /obj/machinery/telepad))
 		return ITEM_INTERACT_BLOCKING
-	telepad_handle = om_handle(multitool.connectable())
-	multitool.connectable_handle = null
+	rel_set(src, "telepad", multitool.connectable())
+	rel_clear(multitool, "connectable")
 	to_chat(user, span_warning("You upload the data from the [tool.name]'s buffer."))
 	return ITEM_INTERACT_SUCCESS
 
@@ -263,7 +263,7 @@ OWN(/obj/machinery/computer/telescience, inserted_gps, OWN_SPILL)
 		var/spawn_time = round(proj_data.time) * 10
 
 		var/turf/target = locate(trueX, trueY, z_co)
-		last_target_handle = om_handle(target)
+		rel_set(src, "last_target", target)
 		flick("pad-beam", telepad())
 
 		if(spawn_time > 15) // 1.5 seconds
@@ -412,8 +412,8 @@ OWN(/obj/machinery/computer/telescience, inserted_gps, OWN_SPILL)
 
 /// LC-refs: the telepad this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/telescience/proc/telepad() as /obj/machinery/telepad
-	return om_resolve(telepad_handle)
+	return telepad
 
 /// LC-refs: the last_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/telescience/proc/last_target() as /turf
-	return om_resolve(last_target_handle)
+	return last_target

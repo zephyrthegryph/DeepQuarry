@@ -3,7 +3,7 @@
 	name = "Supermatter monitor"
 	tgui_id = "SupermatterMonitor"
 	var/list/supermatters
-	var/tmp/active_handle	// Currently selected supermatter crystal.
+	var/tmp/obj/machinery/power/supermatter/active	// Currently selected supermatter crystal.
 
 /datum/tgui_module/supermatter_monitor/New()
 	..()
@@ -23,7 +23,7 @@
 		supermatters.Add(S)
 
 	if(!(active() in supermatters))
-		active_handle = null
+		rel_clear(src, "active")
 
 /datum/tgui_module/supermatter_monitor/proc/get_status()
 	. = SUPERMATTER_INACTIVE
@@ -36,11 +36,11 @@
 	if(istype(active(), /obj/machinery/power/supermatter))
 		var/turf/T = get_turf(active())
 		if(!T)
-			active_handle = null
+			rel_clear(src, "active")
 			return
 		var/datum/gas_mixture/air = T.return_air()
 		if(!istype(air))
-			active_handle = null
+			rel_clear(src, "active")
 			return
 
 		data["active"] = 1
@@ -89,7 +89,7 @@
 
 	switch(action)
 		if("clear")
-			active_handle = null
+			rel_clear(src, "active")
 			. = TRUE
 		if("refresh")
 			refresh()
@@ -98,7 +98,7 @@
 			var/newuid = text2num(params["set"])
 			for(var/obj/machinery/power/supermatter/S in supermatters)
 				if(S.uid == newuid)
-					active_handle = om_handle(S)
+					rel_set(src, "active", S)
 			. = TRUE
 
 /datum/tgui_module/supermatter_monitor/ntos
@@ -106,4 +106,4 @@
 
 /// LC-refs: Currently selected supermatter crystal. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_module/supermatter_monitor/proc/active() as /obj/machinery/power/supermatter
-	return om_resolve(active_handle)
+	return active

@@ -149,7 +149,7 @@
 /// Hooked on the turfs sense_proximity() watches: something entered one of them.
 /atom/proc/on_proximity_turf_entered(turf/source, datum/om/event/observer_turf_entered/event)
 	EVENT_HANDLER
-	HasProximity(source, event.arrived_handle, event.old_loc)
+	HasProximity(source, event.arrived, event.old_loc)
 
 //Register listeners on turfs in a certain range. Entries call HasProximity(turf, arrived_handle, old_loc);
 // `callback` is kept for the callers' readability and must be HasProximity.

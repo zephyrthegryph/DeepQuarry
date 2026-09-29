@@ -1257,10 +1257,10 @@
 		var/obj/item/paper/admin/P = new /obj/item/paper/admin( null ) //hopefully the null loc won't cause trouble for us
 		faxreply = P
 
-		P.admindatum_handle = om_handle(src)
+		rel_set(P, "admindatum", src)
 		P.origin = replyorigin
-		P.destination_handle = om_handle(fax)
-		P.sender_handle = om_handle(sender)
+		rel_set(P, "destination", fax)
+		rel_set(P, "sender", sender)
 
 		P.adminbrowse()
 
@@ -1543,7 +1543,7 @@
 
 	else if(href_list["ac_pick_d_notice"])
 		var/datum/feed_channel/FC = locate(href_list["ac_pick_d_notice"])
-		src.admincaster_feed_channel_handle = om_handle(FC)
+		rel_set(src, "admincaster_feed_channel", FC)
 		src.admincaster_screen=13
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
@@ -1560,7 +1560,7 @@
 		src.admincaster_screen = text2num(href_list["ac_setScreen"])
 		if (src.admincaster_screen == 0)
 			if(src.admincaster_feed_channel())
-				src.admincaster_feed_channel_handle = null
+				rel_clear(src, "admincaster_feed_channel")
 				src.admincaster_scratch_channel = new /datum/feed_channel
 			if(src.admincaster_feed_message)
 				src.admincaster_feed_message = new /datum/feed_message
@@ -1568,13 +1568,13 @@
 
 	else if(href_list["ac_show_channel"])
 		var/datum/feed_channel/FC = locate(href_list["ac_show_channel"])
-		src.admincaster_feed_channel_handle = om_handle(FC)
+		rel_set(src, "admincaster_feed_channel", FC)
 		src.admincaster_screen = 9
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_pick_censor_channel"])
 		var/datum/feed_channel/FC = locate(href_list["ac_pick_censor_channel"])
-		src.admincaster_feed_channel_handle = om_handle(FC)
+		rel_set(src, "admincaster_feed_channel", FC)
 		src.admincaster_screen = 12
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 

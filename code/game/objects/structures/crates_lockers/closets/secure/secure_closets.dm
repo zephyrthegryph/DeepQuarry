@@ -172,7 +172,7 @@
 
 /obj/structure/closet/secure_closet/mind
 	name = "mind secured locker"
-	var/owner_handle
+	var/datum/mind/owner
 	var/self_del = 1
 	anchored = 0
 
@@ -180,7 +180,7 @@
 	. = ..()
 	self_del = del_self
 	if(mind_target)
-		owner_handle = om_handle(mind_target)
+		rel_set(src, "owner", mind_target)
 		name = "Owned by [owner_ref().name]"
 		if(owner_ref().current)
 			var/icon/I = get_flat_icon(owner_ref().current, dir=SOUTH, no_anim=TRUE)
@@ -209,4 +209,4 @@
 
 /// LC-refs: owner -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/closet/secure_closet/mind/proc/owner_ref() as /datum/mind
-	return om_resolve(owner_handle)
+	return owner

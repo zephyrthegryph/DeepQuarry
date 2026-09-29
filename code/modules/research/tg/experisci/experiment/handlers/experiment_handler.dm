@@ -12,7 +12,7 @@
 	/// Holds the currently linked techweb to get experiments from
 	var/tmp/datum/techweb/linked_web_static
 	/// Holds the currently selected experiment
-	var/tmp/selected_experiment_handle
+	var/tmp/datum/experiment/selected_experiment
 	/// Holds the list of types of experiments that this experiment_handler can interact with
 	var/list/allowed_experiments
 	/// Holds the list of types of experiments that this experimennt_handler should NOT interact with
@@ -294,7 +294,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 	if (new_web == linked_web())
 		return
 	selected_experiment()?.on_unselected(src)
-	selected_experiment_handle = null
+	rel_clear(src, "selected_experiment")
 	linked_web_static = new_web
 
 /**
@@ -302,7 +302,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
  */
 /datum/experiment_handler/proc/unlink_techweb()
 	selected_experiment()?.on_unselected(src)
-	selected_experiment_handle = null
+	rel_clear(src, "selected_experiment")
 	linked_web_static = null
 
 /**
@@ -314,7 +314,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 /datum/experiment_handler/proc/link_experiment(datum/experiment/experiment)
 	if (can_select_experiment(experiment))
 		unlink_experiment()
-		selected_experiment_handle = om_handle(experiment)
+		rel_set(src, "selected_experiment", experiment)
 		selected_experiment().on_selected(src)
 
 /**
@@ -322,7 +322,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
  */
 /datum/experiment_handler/proc/unlink_experiment()
 	selected_experiment()?.on_unselected(src)
-	selected_experiment_handle = null
+	rel_clear(src, "selected_experiment")
 
 /**
  * Checks if an experiment is valid to be selected by this handler
@@ -432,7 +432,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 
 /// LC-refs: the selected_experiment this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/experiment_handler/proc/selected_experiment() as /datum/experiment
-	return om_resolve(selected_experiment_handle)
+	return selected_experiment
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/experiment_handler/proc/linked_web() as /datum/techweb

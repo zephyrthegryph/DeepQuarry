@@ -12,8 +12,8 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 	var/frequency = RSD_FREQ
 	var/delay = 0
 	var/airlock_wire = null
-	var/tmp/connected_handle
-	var/tmp/radio_connection_handle
+	var/tmp/datum/wires/connected
+	var/tmp/datum/radio_frequency/radio_connection
 	var/deadman = FALSE
 
 /obj/item/assembly/signaler/Initialize(mapload)
@@ -98,7 +98,7 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 		return
 
 	var/datum/signal/signal = new
-	signal.source_handle = om_handle(src)
+	rel_set(signal, "source", src)
 	signal.encryption = code
 	signal.data["message"] = "ACTIVATE"
 	radio_connection().post_signal(src, signal)
@@ -149,7 +149,7 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 	SHOULD_NOT_OVERRIDE(TRUE)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
+	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
 // BEGIN re-adds stealth removal
 /obj/item/assembly/signaler/periodic_step()
 	if(!deadman)
@@ -173,8 +173,8 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 
 /// LC-refs: the connected this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/assembly/signaler/proc/connected() as /datum/wires
-	return om_resolve(connected_handle)
+	return connected
 
 /// LC-refs: the radio_connection this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/assembly/signaler/proc/radio_connection() as /datum/radio_frequency
-	return om_resolve(radio_connection_handle)
+	return radio_connection

@@ -136,7 +136,7 @@
 	var/kind
 	var/property
 	/// The domain provider, for channel-backed triggers.
-	var/provider_handle
+	var/datum/property_provider/domain/provider
 	/// Thresholds: PRED_CMP_* with NOT applied.
 	var/op
 	/// Literal level, or null when it comes from value_property.
@@ -148,7 +148,7 @@
 	var/hi
 	/// Difference: the second side.
 	var/property_b
-	var/provider_b_handle
+	var/datum/property_provider/domain/provider_b
 	/// Key triggers.
 	var/key_kind
 
@@ -224,7 +224,7 @@
 			var/datum/rule_trigger/trigger = new
 			trigger.kind = RULE_TRIGGER_BAND
 			trigger.property = band.property
-			trigger.provider_handle = om_handle(provider)
+			rel_set(trigger, "provider", provider)
 			trigger.lo = band.lo
 			trigger.hi = band.hi
 			triggers += trigger
@@ -241,9 +241,9 @@
 			var/datum/rule_trigger/trigger = new
 			trigger.kind = RULE_TRIGGER_DIFFERENCE
 			trigger.property = rel.property
-			trigger.provider_handle = om_handle(a)
+			rel_set(trigger, "provider", a)
 			trigger.property_b = rel.property_b
-			trigger.provider_b_handle = om_handle(b)
+			rel_set(trigger, "provider_b", b)
 			triggers += trigger
 			return
 		if(b || dm_key(rel.property_b))
@@ -273,7 +273,7 @@
 	var/datum/rule_trigger/trigger = new
 	trigger.kind = provider ? RULE_TRIGGER_THRESHOLD : RULE_TRIGGER_KEY
 	trigger.property = property
-	trigger.provider_handle = om_handle(provider)
+	rel_set(trigger, "provider", provider)
 	trigger.op = op
 	trigger.value = value
 	trigger.value_property = value_property
@@ -423,11 +423,11 @@ GLOBAL_VAR_INIT(dq_rule_recording, FALSE)
 
 /// LC-refs: the domain provider for channel-backed triggers -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/rule_trigger/proc/provider() as /datum/property_provider/domain
-	return om_resolve(provider_handle)
+	return provider
 
 /// LC-refs: the second domain provider -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/rule_trigger/proc/provider_b() as /datum/property_provider/domain
-	return om_resolve(provider_b_handle)
+	return provider_b
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/rule_compiler/proc/rule() as /datum/rule

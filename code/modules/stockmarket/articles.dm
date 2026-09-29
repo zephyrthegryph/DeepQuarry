@@ -28,7 +28,7 @@ GLOBAL_LIST_EMPTY(FrozenAccounts)
 	var/spacetime = ""
 	var/opinion = 0
 	var/ticks = 0
-	var/tmp/about_handle
+	var/tmp/datum/stock/about
 	var/outlet = ""
 	var/static/list/outlets = list()
 	var/static/list/default_tokens = list( \
@@ -126,4 +126,4 @@ GLOBAL_LIST_EMPTY(FrozenAccounts)
 
 /// LC-refs: the about this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/article/proc/about() as /datum/stock
-	return om_resolve(about_handle)
+	return about

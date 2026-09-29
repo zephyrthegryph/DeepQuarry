@@ -5,8 +5,8 @@
 
 /datum/rogue/zonemaster
 	//our area
-	var/tmp/myarea_handle
-	var/tmp/myshuttle_landmark_handle
+	var/tmp/area/asteroid/rogue/myarea
+	var/tmp/obj/effect/shuttle_landmark/myshuttle_landmark
 
 	//world.time
 	var/prepared_at = 0
@@ -31,8 +31,8 @@
 
 /datum/rogue/zonemaster/New(area/A)
 	ASSERT(A)
-	myarea_handle = om_handle(A)
-	myshuttle_landmark_handle = om_handle(locate_within(myarea(), /obj/effect/shuttle_landmark))
+	rel_set(src, "myarea", A)
+	rel_set(src, "myshuttle_landmark", locate_within(myarea(), /obj/effect/shuttle_landmark))
 	if(!istype(myshuttle_landmark(), /obj/effect/shuttle_landmark))
 		WARNING("Zonemaster cannot find a shuttle landmark in its area '[A]'")
 	om_after(src, 1 SECOND, PROC_REF(report_clean)) //This is called from controller New() and freaks out if this calls back too fast.
@@ -116,7 +116,7 @@
 	ASSERT(SP && A)
 
 	GLOB.rm_controller.dbg("ZM(pa): Placing at point [SP.x],[SP.y],[SP.z].")
-	SP.myasteroid_handle = om_handle(A)
+	rel_set(SP, "myasteroid", A)
 
 	//Bottom-left corner of our bounding box
 	var/BLx = SP.x - (A.width/2)
@@ -442,9 +442,9 @@
 
 /// LC-refs: the myarea this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/rogue/zonemaster/proc/myarea() as /area/asteroid/rogue
-	return om_resolve(myarea_handle)
+	return myarea
 
 /// LC-refs: the myshuttle_landmark this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/rogue/zonemaster/proc/myshuttle_landmark() as /obj/effect/shuttle_landmark
-	return om_resolve(myshuttle_landmark_handle)
+	return myshuttle_landmark
 

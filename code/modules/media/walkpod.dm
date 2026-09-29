@@ -13,8 +13,8 @@
 	icon_state = "podzu" // podzu_o, headpod, zuman
 
 	var/loop_mode = JUKEMODE_PLAY_ONCE	// Behavior when finished playing a song
-	var/tmp/current_track_handle	// Current track playing
-	var/tmp/listener_handle	// Person whomst is listening to us
+	var/tmp/datum/track/current_track	// Current track playing
+	var/tmp/mob/living/listener	// Person whomst is listening to us
 
 	var/playing = 0
 	var/volume = 1
@@ -58,13 +58,13 @@
 	if(deployed_headpods)
 		restore_headpods()
 	to_chat(listener(), span_notice("You are no longer wearing the [src]'s headphones."))
-	listener_handle = null
+	rel_clear(src, "listener")
 	update_icon()
 
 /obj/item/walkpod/proc/set_listener(mob/living/L)
 	if(listener())
 		remove_listener()
-	listener_handle = om_handle(L)
+	rel_set(src, "listener", L)
 	om_task_periodic(src, PERIODIC_SLOW)
 	to_chat(L, span_notice("You put the [src]'s headphones on and power it up, preparing to listen to some <b>sick tunes</b>."))
 	update_icon()
@@ -114,16 +114,16 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 		if(JUKEMODE_NEXT)
 			var/curTrackIndex = max(1, tracks.Find(current_track()))
 			var/newTrackIndex = (curTrackIndex % tracks.len) + 1  // Loop back around if past end
-			current_track_handle = om_handle(tracks[newTrackIndex])
+			rel_set(src, "current_track", tracks[newTrackIndex])
 		if(JUKEMODE_RANDOM)
 			var/previous_track = current_track()
 			do
-				current_track_handle = om_handle(pick(tracks))
+				rel_set(src, "current_track", pick(tracks))
 			while(current_track() == previous_track && tracks.len > 1)
 		if(JUKEMODE_REPEAT_SONG)
-			current_track_handle = om_handle(current_track())
+			rel_set(src, "current_track", current_track())
 		if(JUKEMODE_PLAY_ONCE)
-			current_track_handle = null
+			rel_clear(src, "current_track")
 			playing = 0
 			update_icon()
 	start_stop_song()
@@ -155,7 +155,7 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 	if(!tracks.len) return
 	var/curTrackIndex = max(1, tracks.Find(current_track()))
 	var/newTrackIndex = (curTrackIndex % tracks.len) + 1  // Loop back around if past end
-	current_track_handle = om_handle(tracks[newTrackIndex])
+	rel_set(src, "current_track", tracks[newTrackIndex])
 	if(playing)
 		start_stop_song()
 
@@ -165,7 +165,7 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 	if(!tracks.len) return
 	var/curTrackIndex = max(1, tracks.Find(current_track()))
 	var/newTrackIndex = curTrackIndex == 1 ? tracks.len : curTrackIndex - 1
-	current_track_handle = om_handle(tracks[newTrackIndex])
+	rel_set(src, "current_track", tracks[newTrackIndex])
 	if(playing)
 		start_stop_song()
 
@@ -209,7 +209,7 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 		if("change_track")
 			var/datum/track/T = locate_in_list(getTracksList(), params["change_track"])
 			if(istype(T))
-				current_track_handle = om_handle(T)
+				rel_set(src, "current_track", T)
 				StartPlaying()
 			return TRUE
 		if("loopmode")
@@ -280,8 +280,8 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 
 /// LC-refs: Current track playing -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/walkpod/proc/current_track() as /datum/track
-	return om_resolve(current_track_handle)
+	return current_track
 
 /// LC-refs: Person whomst is listening to us -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/walkpod/proc/listener() as /mob/living
-	return om_resolve(listener_handle)
+	return listener

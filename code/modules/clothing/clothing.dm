@@ -65,14 +65,14 @@
 // itself if the control module is removed, destroyed, or its owner dies, so a
 // deployed component is never left locked onto the wearer. See rig_self_detach().
 /obj/item/clothing
-	var/master_rig_handle
+	var/obj/item/rig/master_rig
 
 // The self-detach primitive. Gets a deployed rig piece off its wearer and somewhere
 // safe: retracted back into the control module if it still exists, otherwise dropped
 // to the floor as a normal item. After this runs the piece is never "stuck".
 /obj/item/clothing/proc/rig_self_detach()
 	var/obj/item/rig/owner_rig = master_rig()
-	master_rig_handle = null
+	rel_clear(src, "master_rig")
 	canremove = TRUE
 	if(ismob(loc))
 		var/mob/M = loc
@@ -1563,7 +1563,7 @@ OWN(/obj/item/clothing/gloves, cell, OWN_CONTAINED)
 
 /// LC-refs: the master_rig this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/clothing/proc/master_rig() as /obj/item/rig
-	return om_resolve(master_rig_handle)
+	return master_rig
 
 /obj/item/clothing/shoes/muffles_death_of(mob/occupant)
 	return TRUE

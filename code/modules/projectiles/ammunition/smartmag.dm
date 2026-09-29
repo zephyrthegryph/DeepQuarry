@@ -22,9 +22,9 @@
 	/// Started by the holding gun's note_shot() for production_delay.
 	COOLDOWN_DECLARE(gun_fired_cooldown)
 
-	var/tmp/holding_gun_handle	// What gun are we in, if any?
+	var/tmp/obj/item/gun/holding_gun	// What gun are we in, if any?
 
-	var/tmp/attached_cell_handle	// What cell are we using, if any?
+	var/tmp/obj/item/cell/device/attached_cell	// What cell are we using, if any?
 
 	var/emagged = 0		// If you emag the smart mag, you can get the bullets out by clicking it
 
@@ -33,7 +33,7 @@ DECLARE_PERIODIC(/obj/item/ammo_magazine/smart, PERIODIC_SLOW)
 /obj/item/ammo_magazine/smart/periodic_step()
 	if(!holding_gun())	// Yes, this is awful, sorry. Don't know a better way to figure out if we've been moved into or out of a gun.
 		if(istype(src.loc, /obj/item/gun))
-			holding_gun_handle = om_handle(src.loc)
+			rel_set(src, "holding_gun", src.loc)
 
 	if(caliber && ammo_type && attached_cell())
 		if(stored_ammo.len == max_ammo)
@@ -102,7 +102,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 /obj/item/ammo_magazine/smart/proc/screwdriver_act_tool_done(mob/user, obj/item/cell/device/removed_cell)
 	removed_cell.update_icon()
 	removed_cell.forceMove(get_turf(src))
-	attached_cell_handle = null
+	rel_clear(src, "attached_cell")
 	user.visible_message("[user] removes a cell from \the [src].", "You remove \the [removed_cell] from \the [src].")
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
@@ -128,7 +128,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 		return
 	user.drop_item()
 	I.forceMove(src)
-	attached_cell_handle = om_handle(I)
+	rel_set(src, "attached_cell", I)
 	user.visible_message("[user] installs a cell in \the [src].", "You install \the [I] into \the [src].")
 	update_icon()
 
@@ -138,7 +138,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 	attached_cell().update_icon()
 	user.put_in_hands(attached_cell())
 	user.visible_message("[user] removes a cell from \the [src].", "You remove \the [attached_cell()] from \the [src].")
-	attached_cell_handle = null
+	rel_clear(src, "attached_cell")
 	update_icon()
 
 // Finds the cell for the magazine, used by rechargers
@@ -236,8 +236,8 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 
 /// LC-refs: What gun are we in, if any? -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/ammo_magazine/smart/proc/holding_gun() as /obj/item/gun
-	return om_resolve(holding_gun_handle)
+	return holding_gun
 
 /// LC-refs: What cell are we using, if any? -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/ammo_magazine/smart/proc/attached_cell() as /obj/item/cell/device
-	return om_resolve(attached_cell_handle)
+	return attached_cell

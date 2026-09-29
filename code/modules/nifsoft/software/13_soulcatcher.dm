@@ -231,8 +231,8 @@
 
 	//Create a new brain mob
 	var/mob/living/carbon/brain/caught_soul/brainmob = new(nif())
-	brainmob.nif_handle = om_handle(nif())
-	brainmob.soulcatcher_handle = om_handle(src)
+	rel_set(brainmob, "nif", nif())
+	rel_set(brainmob, "soulcatcher", src)
 	own_set(brainmob, "container", src)
 	brainmob.status_set(EFFECT_MUTED, 0)
 	brainmob.add_language(LANGUAGE_GALCOM)
@@ -287,8 +287,8 @@
 	var/client_missing = 0		//How long the client has been missing
 	universal_understand = TRUE
 
-	var/tmp/nif_handle
-	var/tmp/soulcatcher_handle
+	var/tmp/obj/item/nif/nif
+	var/tmp/datum/nifsoft/soulcatcher/soulcatcher
 	var/identifying_gender
 
 /mob/living/carbon/brain/caught_soul/Login()
@@ -303,11 +303,11 @@
 	if(soulcatcher())
 		soulcatcher().notify_into("Mind unloaded: [name]")
 		soulcatcher().brainmobs -= src
-		soulcatcher_handle = null
+		rel_clear(src, "soulcatcher")
 	if(eyeobj)
 		reenter_soulcatcher()
 	own_take(src, "container")
-	nif_handle = null
+	rel_clear(src, "nif")
 	..()
 
 /datum/om/stage/life/type_pre/carbon/brain/caught_soul
@@ -432,7 +432,7 @@
 	plane = PLANE_AUGMENTED
 	icon = 'icons/obj/machines/ar_elements.dmi'
 	icon_state = "beacon"
-	var/tmp/parent_human_handle
+	var/tmp/mob/living/parent_human
 
 /mob/observer/eye/ar_soul/Initialize(mapload, human)
 	. = ..()
@@ -441,7 +441,7 @@
 		return INITIALIZE_HINT_QDEL
 
 	brainmob.take_eye(src)			//Look through us
-	parent_human_handle = om_handle(human)			//E-z reference to human
+	rel_set(src, "parent_human", human)			//E-z reference to human
 	sight |= SEE_SELF				//Always see yourself
 
 	name = "[brainmob.name] (AR)"	//Set the name
@@ -673,12 +673,12 @@
 
 /// LC-refs: the soulcatcher this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /mob/living/carbon/brain/caught_soul/proc/soulcatcher() as /datum/nifsoft/soulcatcher
-	return om_resolve(soulcatcher_handle)
+	return soulcatcher
 
 /// LC-refs: the parent_human this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /mob/observer/eye/ar_soul/proc/parent_human() as /mob/living
-	return om_resolve(parent_human_handle)
+	return parent_human
 
 /// LC-refs: the nif this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /mob/living/carbon/brain/caught_soul/proc/nif() as /obj/item/nif
-	return om_resolve(nif_handle)
+	return nif

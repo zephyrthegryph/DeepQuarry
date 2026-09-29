@@ -17,11 +17,11 @@
 /datum/event2/event/money_hacker
 	length_lower_bound = 8 MINUTES
 	length_upper_bound = 12 MINUTES
-	var/tmp/targeted_account_handle
+	var/tmp/datum/money_account/targeted_account
 
 /datum/event2/event/money_hacker/set_up()
 	if(REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
-		targeted_account_handle = om_handle(pick(REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)))
+		rel_set(src, "targeted_account", pick(REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)))
 
 	if(!targeted_account())
 		log_game("Money hacker event could not find an account to hack. Aborting.")
@@ -111,4 +111,4 @@
 
 /// LC-refs: the targeted_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event2/event/money_hacker/proc/targeted_account() as /datum/money_account
-	return om_resolve(targeted_account_handle)
+	return targeted_account

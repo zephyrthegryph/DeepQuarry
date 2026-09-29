@@ -108,7 +108,7 @@
 
 	for(var/turf/T in shielded_turfs)
 		var/obj/effect/shield/S = new(T)
-		S.gen_handle = om_handle(src)
+		rel_set(S, "gen", src)
 		S.flags_updated()
 		LAZYOR(field_segments, S)
 

@@ -12,7 +12,7 @@
 
 
 /datum/event2/event/surprise_carp
-	var/tmp/victim_handle
+	var/tmp/mob/living/victim
 
 /datum/event2/event/surprise_carp/set_up()
 	var/list/potential_victims = list()
@@ -25,7 +25,7 @@
 			potential_victims += L
 
 	if(potential_victims.len)
-		victim_handle = om_handle(pick(potential_victims))
+		rel_set(src, "victim", pick(potential_victims))
 
 /datum/event2/event/surprise_carp/start()
 	if(!victim())
@@ -72,4 +72,4 @@
 
 /// LC-refs: the victim this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event2/event/surprise_carp/proc/victim() as /mob/living
-	return om_resolve(victim_handle)
+	return victim

@@ -5,14 +5,14 @@
 	name = "landed turf holder"
 	desc = "holds all the info about the turf this turf 'landed on'"
 	var/turf_type
-	var/my_turf_handle
+	var/turf/simulated/shuttle/my_turf
 	var/image/turf_image
 	var/list/decals
 
 /obj/landed_holder/Initialize(mapload)
 	. = ..()
 	if(loc)
-		my_turf_handle = om_handle(get_turf(src))
+		rel_set(src, "my_turf", get_turf(src))
 		moveToNullspace()
 
 /obj/landed_holder/proc/land_on(turf/T)
@@ -45,7 +45,7 @@
 	new_dest.lighting_build_overlay()
 
 	// Associate the holder with the new turf.
-	new_holder.my_turf_handle = om_handle(new_dest)
+	rel_set(new_holder, "my_turf", new_dest)
 	own_set(new_dest, "landed_holder_ref", new_holder)
 
 	//Update underlays if necessary (interior corners won't have changed).
@@ -452,7 +452,7 @@ EXTEND_INTERACTIONS(/turf/simulated/shuttle/plating/airless/carry, INTERACT_ITEM
 
 /// LC-refs: my turf -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/landed_holder/proc/my_turf() as /turf/simulated/shuttle
-	return om_resolve(my_turf_handle)
+	return my_turf
 
 
 /// The landed holder this floor owns (landed_holder_ref), or null.

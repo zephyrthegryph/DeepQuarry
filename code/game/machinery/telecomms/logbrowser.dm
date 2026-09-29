@@ -9,7 +9,7 @@
 	icon_screen = "comm_logs"
 
 	var/list/servers	// the servers located by the computer
-	var/SelectedServer_handle
+	var/obj/machinery/telecomms/server/SelectedServer
 	circuit = /obj/item/circuitboard/comm_server
 
 	var/network = "NULL"		// the network to probe
@@ -98,17 +98,17 @@
 		if("view")
 			for(var/obj/machinery/telecomms/T in servers)
 				if(T.id == params["id"])
-					SelectedServer_handle = om_handle(T)
+					rel_set(src, "SelectedServer", T)
 					break
 			. = TRUE
 
 		if("mainmenu")
-			SelectedServer_handle = null
+			rel_clear(src, "SelectedServer")
 			. = TRUE
 
 		if("release")
 			servers = list()
-			SelectedServer_handle = null
+			rel_clear(src, "SelectedServer")
 			. = TRUE
 
 		if("scan")
@@ -177,4 +177,4 @@
 
 /// LC-refs: SelectedServer -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/telecomms/server/proc/SelectedServer() as /obj/machinery/telecomms/server
-	return om_resolve(SelectedServer_handle)
+	return SelectedServer

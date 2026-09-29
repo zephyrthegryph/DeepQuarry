@@ -21,7 +21,7 @@
 	var/energy = 0				// How many 'energy' units does this have? Acquired by a Particle Accelerator like a Singularity.
 	var/max_energy = 600
 	var/obj/item/target	// The material or persistent workpiece being bombarded.
-	var/tmp/reagent_container_handle	// Holds the beaker. The process will consume ALL reagents inside it.
+	var/tmp/obj/item/reagent_containers/reagent_container	// Holds the beaker. The process will consume ALL reagents inside it.
 	var/beaker_type = /obj/item/reagent_containers/glass/beaker
 	var/list/storage		// Holds references to items allowed to be used in the fabrication phase.
 	var/max_storage = 3	// How many items can be jammed into it?
@@ -99,7 +99,7 @@
 		G.drop_item()
 	else
 		user.drop_from_inventory(W)
-	reagent_container_handle = om_handle(W)
+	rel_set(src, "reagent_container", W)
 	reagent_container().forceMove(src)
 	to_chat(user, span_notice("You add \the [reagent_container()] to \the [src]."))
 	update_icon()
@@ -341,7 +341,7 @@
 
 /obj/machinery/particle_smasher/proc/DumpContents()
 	own_take(src, "target")
-	reagent_container_handle = null
+	rel_clear(src, "reagent_container")
 	successful_craft = FALSE
 	var/turf/T = get_turf(src)
 	latent_materialize_all() // a walk needs real things (C5)
@@ -706,7 +706,7 @@ OWN(/obj/machinery/particle_smasher, target, OWN_CONTAINED)
 
 /// LC-refs: Holds the beaker. The process will consume ALL reagents inside it. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/particle_smasher/proc/reagent_container() as /obj/item/reagent_containers
-	return om_resolve(reagent_container_handle)
+	return reagent_container
 
 // Items jammed in for the fabrication phase go back to the floor if the smasher is destroyed.
 OWN(/obj/machinery/particle_smasher, storage, OWN_SPILL)

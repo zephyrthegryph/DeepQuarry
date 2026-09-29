@@ -357,7 +357,7 @@ This device records all warnings given and teleport events for admin review in c
 		return
 
 	else
-		destination_handle = om_handle(LAZYACCESS(beacons, choice))
+		rel_set(src, "destination", LAZYACCESS(beacons, choice))
 		rebuild_radial_images()
 
 /obj/item/perfect_tele/magic/proc/page_named(datum/om/prompt/text/ask)
@@ -378,7 +378,7 @@ This device records all warnings given and teleport events for admin review in c
 
 	var/obj/item/perfect_tele_beacon/magic/nb = new(get_turf(src))
 	nb.tele_name = new_name
-	nb.tele_hand_handle = om_handle(src)
+	rel_set(nb, "tele_hand", src)
 	nb.creator = user.ckey
 	LAZYSET(beacons, new_name, nb)
 	beacons_left--

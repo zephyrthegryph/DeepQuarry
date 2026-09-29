@@ -19,7 +19,7 @@ MATERIAL_MIX(/obj/item/debugger, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-	var/buffer_handle // simple machine buffer for device linkage
+	var/obj/machinery/telecomms/buffer // simple machine buffer for device linkage
 
 /obj/item/debugger/is_used_on(obj/O, mob/user)
 	if(istype(O, /obj/machinery/power/apc))
@@ -46,4 +46,4 @@ MATERIAL_MIX(/obj/item/debugger, list(MAT_STEEL = 50,MAT_GLASS = 20))
 
 /// LC-refs: buffer -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/debugger/proc/buffer() as /obj/machinery/telecomms
-	return om_resolve(buffer_handle)
+	return buffer

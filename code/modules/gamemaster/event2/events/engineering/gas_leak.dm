@@ -22,7 +22,7 @@
 /datum/event2/event/gas_leak
 	var/potential_gas_choices = list(GAS_CO2, GAS_N2O, GAS_PHORON, GAS_VOLATILE_FUEL, GAS_CH4)
 	var/chosen_gas = null
-	var/tmp/chosen_turf_handle
+	var/tmp/turf/chosen_turf
 
 /datum/event2/event/gas_leak/set_up()
 	chosen_gas = pick(potential_gas_choices)
@@ -32,7 +32,7 @@
 		log_game("Gas Leak event failed to find any available turfs to leak into. Aborting.")
 		abort()
 		return
-	chosen_turf_handle = om_handle(pick(turfs))
+	rel_set(src, "chosen_turf", pick(turfs))
 
 /datum/event2/event/gas_leak/announce()
 	if(chosen_turf())
@@ -53,4 +53,4 @@
 
 /// LC-refs: the chosen_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event2/event/gas_leak/proc/chosen_turf() as /turf
-	return om_resolve(chosen_turf_handle)
+	return chosen_turf

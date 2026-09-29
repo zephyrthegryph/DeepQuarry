@@ -31,7 +31,7 @@
 	anchored = TRUE
 	density = TRUE
 
-	var/active_user_handle
+	var/mob/living/active_user
 	var/db_key
 
 	//These are the variables that control 'When we were
@@ -72,12 +72,12 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 	return default_part_replacement(user, O) ? TRUE : FALSE
 
 /obj/machinery/medical_kiosk/proc/wake_lock(mob/living/user)
-	active_user_handle = om_handle(user)
+	rel_set(src, "active_user", user)
 	update_icon()
 	update_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/medical_kiosk/proc/suspend()
-	active_user_handle = null
+	rel_clear(src, "active_user")
 	update_icon()
 	update_use_power(USE_POWER_IDLE)
 
@@ -403,4 +403,4 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 
 /// LC-refs: active user -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/medical_kiosk/proc/active_user() as /mob/living
-	return om_resolve(active_user_handle)
+	return active_user

@@ -21,7 +21,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/gauntlets, "stored_gauntlets", /obj/i
 
 /obj/item/rig_module/gauntlets/Initialize(mapload)
 	. = ..()
-	stored_gauntlets.storing_module_handle = om_handle(src)
+	rel_set(stored_gauntlets, "storing_module", src)
 
 /obj/item/rig_module/gauntlets/activate()
 	if(!..())

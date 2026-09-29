@@ -19,7 +19,7 @@
 	var/ready = 1
 	var/beacons_left = 3
 	var/failure_chance = 5 //Percent
-	var/destination_handle
+	var/obj/item/perfect_tele_beacon/destination
 	var/datum/effect/effect/system/spark_spread/spk
 	var/list/warned_users
 	var/list/logged_events
@@ -152,7 +152,7 @@ This device records all warnings given and teleport events for admin review in c
 		return
 
 	else
-		destination_handle = om_handle(LAZYACCESS(beacons, choice))
+		rel_set(src, "destination", LAZYACCESS(beacons, choice))
 		rebuild_radial_images()
 
 /obj/item/perfect_tele/proc/beacon_named(datum/om/prompt/text/ask)
@@ -173,7 +173,7 @@ This device records all warnings given and teleport events for admin review in c
 
 	var/obj/item/perfect_tele_beacon/nb = new(get_turf(src))
 	nb.tele_name = new_name
-	nb.tele_hand_handle = om_handle(src)
+	rel_set(nb, "tele_hand", src)
 	nb.creator = user.ckey
 	LAZYSET(beacons, new_name, nb)
 	beacons_left--
@@ -313,7 +313,7 @@ This device records all warnings given and teleport events for admin review in c
 		if(prob(failure_chance) && length(beacons) >= 2)
 			var/list/wrong_choices = beacons - destination().tele_name
 			var/wrong_name = pick(wrong_choices)
-			destination_handle = om_handle(LAZYACCESS(beacons, wrong_name))
+			rel_set(src, "destination", LAZYACCESS(beacons, wrong_name))
 			to_chat(user,span_warning("\The [src] malfunctions and sends you to the wrong beacon!"))
 
 	//Destination beacon vore checking
@@ -405,7 +405,7 @@ This device records all warnings given and teleport events for admin review in c
 	w_class = ITEMSIZE_TINY
 
 	var/tele_name
-	var/tele_hand_handle
+	var/obj/item/perfect_tele/tele_hand
 	var/creator
 	var/warned_users = list()
 	var/tele_network = null
@@ -571,8 +571,8 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 
 /// LC-refs: destination -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/perfect_tele/proc/destination() as /obj/item/perfect_tele_beacon
-	return om_resolve(destination_handle)
+	return destination
 
 /// LC-refs: tele hand -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/perfect_tele_beacon/proc/tele_hand() as /obj/item/perfect_tele
-	return om_resolve(tele_hand_handle)
+	return tele_hand

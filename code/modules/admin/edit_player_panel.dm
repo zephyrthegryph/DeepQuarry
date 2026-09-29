@@ -18,13 +18,13 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 	panel.tgui_interact(owner().mob)
 
 /datum/edit_player_panel
-	var/tmp/holder_handle
-	var/tmp/target_handle
+	var/tmp/datum/admins/holder
+	var/tmp/mob/target
 
 /datum/edit_player_panel/New(datum/admins/owner_holder, mob/target_mob)
 	..()
-	holder_handle = om_handle(owner_holder)
-	target_handle = om_handle(target_mob)
+	rel_set(src, "holder", owner_holder)
+	rel_set(src, "target", target_mob)
 
 // leaves the per-admin panel index.
 /datum/edit_player_panel/lifecycle_dematerialize()
@@ -302,8 +302,8 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 
 /// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/edit_player_panel/proc/holder() as /datum/admins
-	return om_resolve(holder_handle)
+	return holder
 
 /// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/edit_player_panel/proc/target() as /mob
-	return om_resolve(target_handle)
+	return target

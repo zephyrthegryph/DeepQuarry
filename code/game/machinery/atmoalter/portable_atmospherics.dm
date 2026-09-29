@@ -6,7 +6,7 @@
 	layer = OBJ_LAYER // These are mobile, best not be under everything.
 	var/datum/gas_mixture/air_contents
 
-	var/connected_port_handle
+	var/obj/machinery/atmospherics/portables_connector/connected_port
 	var/obj/item/tank/holding
 
 	var/volume = 0
@@ -93,7 +93,7 @@
 		return 0
 
 	//Perform the connection
-	connected_port_handle = om_handle(new_port)
+	rel_set(src, "connected_port", new_port)
 	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	connected_port().connected_device = src
 	connected_port().on = 1 //Activate port updates
@@ -118,7 +118,7 @@
 	rel_clear(old_port, "connected_device")
 	old_port.on = 0
 	MACHINE_SLEEP(old_port)
-	connected_port_handle = null
+	rel_clear(src, "connected_port")
 	om_changed(src, CHANGE_MACHINE_SETTINGS)
 
 	return 1
@@ -264,4 +264,4 @@ OWN(/obj/machinery/portable_atmospherics/powered, cell, OWN_CONTAINED)
 
 /// LC-refs: connected port -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/portable_atmospherics/proc/connected_port() as /obj/machinery/atmospherics/portables_connector
-	return om_resolve(connected_port_handle)
+	return connected_port

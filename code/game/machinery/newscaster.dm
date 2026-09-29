@@ -7,7 +7,7 @@
 	var/title
 	var/body =""
 	var/message_type ="Story"
-	var/parent_channel_handle
+	var/datum/feed_channel/parent_channel
 	var/is_admin_message = 0
 	var/img = null
 	var/caption = ""
@@ -94,7 +94,7 @@
 
 /datum/feed_network/proc/insert_message_in_channel(datum/feed_channel/FC, datum/feed_message/newMsg)
 	own_add(FC, "messages", newMsg)
-	newMsg.parent_channel_handle = om_handle(FC)
+	rel_set(newMsg, "parent_channel", FC)
 	FC.update()
 	alert_readers(FC.announcement)
 
@@ -143,10 +143,10 @@
 	var/channel_name = ""; //the feed channel which will be receiving the feed, or being created
 	var/c_locked=0;        //Will our new channel be locked to public submissions?
 	var/hitstaken = 0      //Death at 3 hits from an item with force>=15
-	var/viewing_channel_handle
+	var/datum/feed_channel/viewing_channel
 	light_range = 0
 	anchored = TRUE
-	var/node_handle
+	var/obj/machinery/exonet_node/node
 	circuit = /obj/item/circuitboard/newscaster
 	// TGUI
 	var/list/temp = null
@@ -165,7 +165,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/machinery/newscaster/LateInitialize()
-	node_handle = om_handle(get_exonet_node())
+	rel_set(src, "node", get_exonet_node())
 	update_icon()
 
 /obj/machinery/newscaster/update_icon()
@@ -232,7 +232,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 		return TRUE
 
 	if(!node())
-		node_handle = om_handle(get_exonet_node())
+		rel_set(src, "node", get_exonet_node())
 
 	if(!node() || !node().on || !node().allow_external_newscasters)
 		to_chat(user, span_danger("Error: Cannot connect to external content.  Please try again in a few minutes.  If this error persists, please \
@@ -549,7 +549,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 
 		if("show_channel")
 			var/datum/feed_channel/FC = locate(params["show_channel"])
-			viewing_channel_handle = om_handle(FC)
+			rel_set(src, "viewing_channel", FC)
 			return TRUE
 
 /datum/om/prompt/confirm/news_channel_create
@@ -626,11 +626,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 
 /datum/news_photo
 	var/is_synth = 0
-	var/photo_handle
+	var/obj/item/photo/photo
 
 /datum/news_photo/New(obj/item/photo/p, synth)
 	is_synth = synth
-	photo_handle = om_handle(p)
+	rel_set(src, "photo", p)
 
 /obj/machinery/newscaster/proc/AttachPhoto(mob/user)
 	if(photo_data)
@@ -685,7 +685,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	for(var/datum/feed_channel/FC in GLOB.news_network.network_channels)
 		LAZYADD(NEWSPAPER.news_content, FC)
 	if(GLOB.news_network.wanted_issue())
-		NEWSPAPER.important_message_handle = om_handle(GLOB.news_network.wanted_issue())
+		rel_set(NEWSPAPER, "important_message", GLOB.news_network.wanted_issue())
 	NEWSPAPER.forceMove(get_turf(src))
 	paper_remaining--
 	return
@@ -718,7 +718,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 
 /// LC-refs: parent channel -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/feed_message/proc/parent_channel() as /datum/feed_channel
-	return om_resolve(parent_channel_handle)
+	return parent_channel
 
 /// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
 /datum/feed_network/proc/wanted_issue() as /datum/feed_message
@@ -726,13 +726,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 
 /// LC-refs: viewing channel -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/newscaster/proc/viewing_channel() as /datum/feed_channel
-	return om_resolve(viewing_channel_handle)
+	return viewing_channel
 
 /// LC-refs: node -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/newscaster/proc/node() as /obj/machinery/exonet_node
-	return om_resolve(node_handle)
+	return node
 
 /// LC-refs: photo -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/news_photo/proc/photo() as /obj/item/photo
-	return om_resolve(photo_handle)
+	return photo
 

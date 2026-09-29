@@ -8,7 +8,7 @@
 // natively, so we don't ship per-frame URLs or any animation timing.
 
 /datum/belly_overlay_tgui
-	var/tmp/owner_handle
+	var/tmp/mob/owner
 	var/datum/tgui/active_ui
 	var/list/state = list() // ALLOW(instance_list): d: UI state (generic name, too many ambiguous call sites)
 	/// Signature of the last computed overlay state. show() recomputes it cheaply
@@ -17,7 +17,7 @@
 	var/last_show_sig
 
 /datum/belly_overlay_tgui/New(mob/M)
-	owner_handle = om_handle(M)
+	rel_set(src, "owner", M)
 
 // hides the owner's belly overlay window.
 /datum/belly_overlay_tgui/on_destroy(force)
@@ -190,4 +190,4 @@
 
 /// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/belly_overlay_tgui/proc/owner() as /mob
-	return om_resolve(owner_handle)
+	return owner

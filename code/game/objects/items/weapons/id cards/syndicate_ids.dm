@@ -3,7 +3,7 @@
 	icon_state = "generic-s"
 	assignment = "Agent"
 	var/electronic_warfare = 1
-	var/registered_user_handle
+	var/mob/registered_user
 
 	var/datum/tgui_module/agentcard/agentcard_module // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 
@@ -73,7 +73,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/syndicate, INTERACT_USE("Edit or show", PR
 	if(!istype(user) || user == registered_user())
 		return FALSE
 	unset_registered_user()
-	registered_user_handle = om_handle(user)
+	rel_set(src, "registered_user", user)
 	user.set_id_info(src)
 	user.register(OBSERVER_EVENT_DESTROY, src, /obj/item/card/id/syndicate/proc/unset_registered_user)
 	return TRUE
@@ -82,7 +82,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/syndicate, INTERACT_USE("Edit or show", PR
 	if(!registered_user() || (user && user != registered_user()))
 		return
 	registered_user().unregister(OBSERVER_EVENT_DESTROY, src)
-	registered_user_handle = null
+	rel_clear(src, "registered_user")
 
 /proc/id_card_states()
 	if(!GLOB.id_card_states)
@@ -118,4 +118,4 @@ EXTEND_INTERACTIONS(/obj/item/card/id/syndicate, INTERACT_USE("Edit or show", PR
 
 /// LC-refs: registered user -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/card/id/syndicate/proc/registered_user() as /mob
-	return om_resolve(registered_user_handle)
+	return registered_user

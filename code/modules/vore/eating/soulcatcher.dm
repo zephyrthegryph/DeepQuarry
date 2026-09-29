@@ -1,13 +1,13 @@
 /obj/soulgem
 	name = "Mind imprintation matrix"
 	desc = "A mind storage and processing system capable of capturing and supporting human-level minds in a small VR space."
-	var/tmp/owner_handle
-	var/tmp/own_mind_handle
-	var/linked_belly_handle
+	var/tmp/mob/living/owner
+	var/tmp/datum/own_mind
+	var/obj/belly/linked_belly
 	var/tmp/taken_over_name
 
 	var/setting_flags = (NIF_SC_ALLOW_EARS|NIF_SC_ALLOW_EYES|NIF_SC_BACKUPS|NIF_SC_PROJECTING)
-	var/tmp/selected_soul_handle
+	var/tmp/mob/selected_soul
 	var/tmp/list/brainmobs = list() // ALLOW(instance_list): d: soulgem occupants, edited in place through many paths
 	var/inside_flavor = "A small completely white room with a couch, and a window to what seems to be the outside world. A small sign in the corner says 'Configure Me'."
 	var/capture_message = "Your vision fades in a haze of static, before returning.\nAround you, you see...\n"
@@ -19,9 +19,9 @@
 // The soulgem's saved state is its saved vars (see code/datums/state/schema.dm);
 // the linked belly (an OM handle) is saved as the belly's name.
 /obj/soulgem/state_codecs()
-	return ..() + list("linked_belly_handle" = /datum/state_codec/soulgem_belly)
+	return ..() + list("linked_belly" = /datum/state_codec/soulgem_belly)
 
-// v2: the linked belly var became linked_belly_handle (LC-refs); saves before
+// v2: the linked belly var became linked_belly (LC-refs); saves before
 // that (v1, and pre-L1 legacy blobs) carry it as "linked_belly".
 /obj/soulgem
 	state_version = 2
@@ -29,13 +29,13 @@
 /obj/soulgem/state_migrate(list/vars, from_version)
 	..()
 	if(from_version < 2 && ("linked_belly" in vars))
-		vars["linked_belly_handle"] = vars["linked_belly"]
+		vars["linked_belly"] = vars["linked_belly"]
 		vars -= "linked_belly"
 
 /obj/soulgem/Initialize(mapload)
 	. = ..()
 	if(ismob(loc))
-		owner_handle = om_handle(loc)
+		rel_set(src, "owner", loc)
 
 /// Saves the linked belly by name, and relinks it to the owner's belly of that name.
 /datum/state_codec/soulgem_belly
@@ -48,7 +48,7 @@
 	var/obj/soulgem/gem = owner
 	if(gem.apply_stored_belly(encoded, TRUE))
 		return
-	gem.linked_belly_handle = null
+	rel_clear(gem, "linked_belly")
 	gem.owner()?.recalculate_vis()
 
 /obj/soulgem/proc/apply_stored_belly(belly_string, skip_unreg = FALSE)
@@ -63,7 +63,7 @@
 	own_clear(target, "soulgem", OWN_DELETE)
 	owner().soulgem = null
 	forceMove(target)
-	owner_handle = om_handle(target)
+	rel_set(src, "owner", target)
 	rel_set(target, "soulgem", src)
 
 // Cleaning up our refs before deletion
@@ -134,7 +134,7 @@
 	if(isbrain(owner())) return
 	//Create a new brain mob
 	var/mob/living/carbon/brain/caught_soul/vore/brainmob = new(src)
-	brainmob.gem_handle = om_handle(src)
+	rel_set(brainmob, "gem", src)
 	own_set(brainmob, "container", src)
 	brainmob.status_set(EFFECT_MUTED, 0)
 	brainmob.ext_deaf = !flag_check(NIF_SC_ALLOW_EARS)
@@ -152,7 +152,7 @@
 		brainmob.ext_deaf = FALSE
 		brainmob.ext_blind = FALSE
 		brainmob.parent_mob = TRUE
-		own_mind_handle = om_handle(brainmob.mind)
+		rel_set(src, "own_mind", brainmob.mind)
 		remove_verb(brainmob, /mob/proc/enter_soulcatcher) //No recursive self capturing...
 		add_verb(brainmob, /mob/living/carbon/brain/caught_soul/vore/proc/transfer_self)
 		add_verb(brainmob, /mob/living/carbon/brain/caught_soul/vore/proc/reenter_body)
@@ -205,7 +205,7 @@
 	if(owner().mind)
 		catch_mob(owner(), taken_over_name)
 	self.mind.transfer_to(owner())
-	own_mind_handle = null
+	rel_clear(src, "own_mind")
 	taken_over_name = null
 	qdel(self)
 
@@ -259,9 +259,9 @@
 // Updates the selected soul after an interaction which rleased, deleted or transferred the previous one
 /obj/soulgem/proc/update_selected_soul()
 	if(brainmobs.len > 1)
-		selected_soul_handle = om_handle(brainmobs[1])
+		rel_set(src, "selected_soul", brainmobs[1])
 	else
-		selected_soul_handle = null
+		rel_clear(src, "selected_soul")
 
 // Backup toggling
 /obj/soulgem/proc/soulgem_backup()
@@ -301,18 +301,18 @@
 /obj/soulgem/proc/update_linked_belly(obj/belly, skip_unreg = FALSE)
 	if(!belly && linked_belly())
 		om_unhook(linked_belly(), /datum/om/event/before/belly_update_vore_fx, src)
-		linked_belly_handle = null
+		rel_clear(src, "linked_belly")
 		return
 	if(!isbelly(belly))
 		return
 	if(!linked_belly())
-		linked_belly_handle = om_handle(belly)
+		rel_set(src, "linked_belly", belly)
 		om_hook(linked_belly(), /datum/om/event/before/belly_update_vore_fx, src, PROC_REF(on_belly_vore_fx_event))
 		return
 	if(belly != linked_belly())
 		if(!skip_unreg)
 			om_unhook(linked_belly(), /datum/om/event/before/belly_update_vore_fx, src)
-		linked_belly_handle = om_handle(belly)
+		rel_set(src, "linked_belly", belly)
 		om_hook(linked_belly(), /datum/om/event/before/belly_update_vore_fx, src, PROC_REF(on_belly_vore_fx_event))
 
 // Handles the vore fx updates for the captured souls
@@ -358,7 +358,7 @@
 	if(!selected_soul()) return
 	take_control(selected_soul())
 	if(owner().mind == own_mind())
-		own_mind_handle = null
+		rel_clear(src, "own_mind")
 		taken_over_name = null
 
 // Give back control of the body to the owner
@@ -371,7 +371,7 @@
 	if(!self)
 		return
 	take_control(self)
-	own_mind_handle = null
+	rel_clear(src, "own_mind")
 	taken_over_name = null
 
 /obj/soulgem/proc/take_control(mob/M)
@@ -456,13 +456,13 @@
 			to_chat(owner(), span_notice("You scan yourself to transfer the soul into the [target]!"))
 			to_chat(M, span_notice("[transfer_message]"))
 			if(M.mind == own_mind())
-				own_mind_handle = null
+				rel_clear(src, "own_mind")
 			mate.get_mind(M)
 	else if(istype(target, /obj/item/mmi))
 		var/obj/item/mmi/mm = target
 		if(!mm.get_occupant()?.mind)
 			if(M.mind == own_mind())
-				own_mind_handle = null
+				rel_clear(src, "own_mind")
 			to_chat(owner(), span_notice("You transfer the soul into the [target]!"))
 			to_chat(M, span_notice("[transfer_message]"))
 			mm.take_identity(M, TRUE)
@@ -488,9 +488,9 @@
 	if(!(gem.owner().soulcatcher_pref_flags & SOULCATCHER_ALLOW_TRANSFER))
 		return
 	if(M.mind == own_mind())
-		own_mind_handle = null
+		rel_clear(src, "own_mind")
 	brainmobs -= M
-	M.gem_handle = om_handle(gem)
+	rel_set(M, "gem", gem)
 	own_set(M, "container", gem)
 	gem.brainmobs += M
 	if(M == selected_soul())
@@ -506,7 +506,7 @@
 
 // Release all captured souls as ghosts
 /obj/soulgem/proc/release_mobs()
-	selected_soul_handle = null
+	rel_clear(src, "selected_soul")
 	if(!brainmobs.len) return
 	for(var/mob/M in brainmobs)
 		release_mob(M)
@@ -554,16 +554,16 @@
 
 /// LC-refs: the own_mind this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/soulgem/proc/own_mind() as /datum
-	return om_resolve(own_mind_handle)
+	return own_mind
 
 /// LC-refs: the linked_belly this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/soulgem/proc/linked_belly() as /obj/belly
-	return om_resolve(linked_belly_handle)
+	return linked_belly
 
 /// LC-refs: the selected_soul this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/soulgem/proc/selected_soul() as /mob
-	return om_resolve(selected_soul_handle)
+	return selected_soul
 
 /// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/soulgem/proc/owner() as /mob/living
-	return om_resolve(owner_handle)
+	return owner

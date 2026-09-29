@@ -8,14 +8,14 @@ Code is pretty much ripped verbatim from nano modules, but with un-needed stuff 
 */
 /datum/tgui_module
 	var/name
-	var/tmp/host_handle
+	var/tmp/datum/host
 	var/list/using_access
 
 	var/tgui_id
 	var/ntos = FALSE
 
 /datum/tgui_module/New(host)
-	src.host_handle = om_handle(host)
+	rel_set(src, "host", host)
 	if(ntos)
 		tgui_id = "Ntos" + tgui_id
 
@@ -96,4 +96,4 @@ Code is pretty much ripped verbatim from nano modules, but with un-needed stuff 
 
 /// LC-refs: the host this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_module/proc/host() as /datum
-	return om_resolve(host_handle)
+	return host

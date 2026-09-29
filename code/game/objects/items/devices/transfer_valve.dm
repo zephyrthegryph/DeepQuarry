@@ -6,7 +6,7 @@
 	var/obj/item/tank/tank_one
 	var/obj/item/tank/tank_two
 	var/obj/item/assembly/attached_device
-	var/attacher_handle
+	var/mob/attacher
 	var/valve_open = 0
 	COOLDOWN_DECLARE(toggle)
 
@@ -50,13 +50,13 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 		own_set(src, "attached_device", A)
 		A.forceMove(src)
 		to_chat(user, span_notice("You attach the [item] to the valve controls and secure it."))
-		A.holder_handle = om_handle(src)
+		rel_set(A, "holder", src)
 		A.toggle_secure()	//this calls update_icon(), which calls update_icon() on the holder (i.e. the bomb).
 
 		GLOB.bombers += "[key_name(user)] attached a [item] to a transfer valve."
 		message_admins("[key_name_admin(user)] attached a [item] to a transfer valve. [ADMIN_JMP(location)]")
 		log_game("[key_name_admin(user)] attached a [item] to a transfer valve.")
-		attacher_handle = om_handle(user)
+		rel_set(src, "attacher", user)
 		SStgui.update_uis(src) // update all UIs attached to src
 	return TRUE
 
@@ -112,7 +112,7 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 		if("remove_device")
 			if(attached_device)
 				attached_device.forceMove(get_turf(src))
-				attached_device.holder_handle = null
+				rel_clear(attached_device, "holder")
 				own_take(src, "attached_device")
 				update_icon()
 		else
@@ -234,4 +234,4 @@ OWN(/obj/item/transfer_valve, attached_device, OWN_CONTAINED)
 
 /// LC-refs: attacher -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/transfer_valve/proc/attacher() as /mob
-	return om_resolve(attacher_handle)
+	return attacher

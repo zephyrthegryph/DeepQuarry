@@ -10,7 +10,7 @@
 	invisibility = INVISIBILITY_OBSERVER
 
 	faction = FACTION_BLOB
-	var/tmp/blob_core_handle	// The blob overmind's core
+	var/tmp/obj/structure/blob/core/blob_core	// The blob overmind's core
 	var/blob_points = 0
 	var/max_blob_points = 200
 	var/last_attack = 0
@@ -165,7 +165,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 
 /// LC-refs: The blob overmind's core -- an OM handle (om_handle()), so it reads null once that is deleted.
 /mob/observer/blob/proc/blob_core() as /obj/structure/blob/core
-	return om_resolve(blob_core_handle)
+	return blob_core
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /mob/observer/blob/proc/default_language() as /datum/language

@@ -185,7 +185,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 
 /obj/item/multitool
 	var/accepting_refs
-	var/tmp/selected_io_handle
+	var/tmp/datum/integrated_io/selected_io
 	var/mode = 0
 
 /obj/item/multitool/update_icon()
@@ -225,10 +225,10 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 
 		to_chat(user, span_notice("You connect \the [selected_io().holder()]'s [selected_io().name] to \the [io.holder()]'s [io.name]."))
 		selected_io().holder().interact(user) // This is to update the UI.
-		selected_io_handle = null
+		rel_clear(src, "selected_io")
 
 	else
-		selected_io_handle = om_handle(io)
+		rel_set(src, "selected_io", io)
 		to_chat(user, span_notice("You link \the multitool to \the [selected_io().holder()]'s [selected_io().name] data channel."))
 
 	update_icon()
@@ -573,4 +573,4 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 
 /// LC-refs: the selected_io this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/multitool/proc/selected_io() as /datum/integrated_io
-	return om_resolve(selected_io_handle)
+	return selected_io

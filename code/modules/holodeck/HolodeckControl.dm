@@ -8,14 +8,14 @@
 	active_power_usage = 8000 //8kW for the scenery + 500W per holoitem
 	var/item_power_usage = 500
 
-	var/tmp/linkedholodeck_handle
-	var/tmp/target_handle
+	var/tmp/area/linkedholodeck
+	var/tmp/area/target
 	var/active = 0
 	var/list/holographic_objs
 	var/list/holographic_mobs
 	var/damaged = 0
 	var/safety_disabled = 0
-	var/tmp/last_to_emag_handle
+	var/tmp/mob/last_to_emag
 	/// Program-change spam throttle: inside the short window clicks are ignored, inside the long one they warn.
 	COOLDOWN_DECLARE(change_short_cooldown)
 	COOLDOWN_DECLARE(change_long_cooldown)
@@ -154,7 +154,7 @@
 
 /obj/machinery/computer/HolodeckControl/emag_act(remaining_charges, mob/user as mob)
 	playsound(src, 'sound/effects/sparks4.ogg', 75, 1)
-	last_to_emag_handle = om_handle(user) //emag again to change the owner
+	rel_set(src, "last_to_emag", user) //emag again to change the owner
 	if (!emagged)
 		emagged = 1
 		safety_disabled = 1
@@ -183,7 +183,7 @@
 /obj/machinery/computer/HolodeckControl/Initialize(mapload)
 	. = ..()
 	current_program = powerdown_program
-	linkedholodeck_handle = om_handle(locate(projection_area))
+	rel_set(src, "linkedholodeck", locate(projection_area))
 	if(!linkedholodeck())
 		to_chat(world, span_danger("Holodeck computer at [x],[y],[z] failed to locate projection area."))
 
@@ -397,12 +397,12 @@
 
 /// LC-refs: the linkedholodeck this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/HolodeckControl/proc/linkedholodeck() as /area
-	return om_resolve(linkedholodeck_handle)
+	return linkedholodeck
 
 /// LC-refs: the last_to_emag this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/HolodeckControl/proc/last_to_emag() as /mob
-	return om_resolve(last_to_emag_handle)
+	return last_to_emag
 
 /// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/HolodeckControl/proc/target() as /area
-	return om_resolve(target_handle)
+	return target

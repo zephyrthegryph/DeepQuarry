@@ -47,7 +47,7 @@
 	var/atom/movable/screen/movable/spell_master/new_spell_master = new master_type //we're here because either we didn't find our type, or we have no spell masters to attach to
 	if(client)
 		src.client.screen += new_spell_master
-	new_spell_master.spell_holder_handle = om_handle(src)
+	rel_set(new_spell_master, "spell_holder", src)
 	new_spell_master.add_spell(spell_to_add)
 	if(spell_base)
 		new_spell_master.icon_state = spell_base
@@ -123,7 +123,6 @@
 	throwforce = 0
 	force = 0
 	show_examine = FALSE
-	owner_handle = null
 	core = null
 	cast_methods = null			// Controls how the spell is casted.
 	aspect = ASPECT_UNHOLY		// Not used for everything we do
@@ -135,7 +134,7 @@
 /obj/item/spell/unrestricted/Initialize(mapload, coreless)
 	. = ..()
 	if(isliving(loc))
-		owner_handle = om_handle(loc)
+		rel_set(src, "owner", loc)
 	if(!owner_ref())
 		return INITIALIZE_HINT_QDEL
 	update_icon()

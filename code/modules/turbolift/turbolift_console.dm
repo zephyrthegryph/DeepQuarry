@@ -7,7 +7,7 @@
 	density = FALSE
 	plane = MOB_PLANE
 
-	var/tmp/lift_handle
+	var/tmp/datum/turbolift/lift
 
 /obj/structure/lift/set_dir(newdir)
 	. = ..()
@@ -32,7 +32,7 @@
 
 /obj/structure/lift/Initialize(mapload, datum/turbolift/_lift)
 	. = ..()
-	lift_handle = om_handle(_lift)
+	rel_set(src, "lift", _lift)
 
 /obj/structure/lift
 	silicon_use = SILICON_USE_HAND
@@ -218,4 +218,4 @@ EXTEND_INTERACTIONS(/obj/structure/lift/panel, \
 
 /// LC-refs: the lift this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/lift/proc/lift() as /datum/turbolift
-	return om_resolve(lift_handle)
+	return lift

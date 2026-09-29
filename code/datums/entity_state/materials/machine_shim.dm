@@ -8,7 +8,7 @@
  * All this does is ensure that the mob releases the machine when they leave it.
  */
 /datum/using_machine_shim
-	var/linked_machine_handle
+	var/obj/machinery/linked_machine
 	/// The mob using the machine.
 	var/mob/owner
 
@@ -24,7 +24,7 @@
 	om_hook(host_mob(), /datum/om/event/mob_logout, src, PROC_REF(on_mob_logout))
 
 	// Machine
-	linked_machine_handle = om_handle(machine)
+	rel_set(src, "linked_machine", machine)
 	om_hook(linked_machine(), /datum/om/event/qdeleting, src, PROC_REF(on_machine_qdelete))
 	linked_machine().in_use = TRUE
 
@@ -151,4 +151,4 @@
 
 /// LC-refs: the machine being used -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/using_machine_shim/proc/linked_machine() as /obj/machinery
-	return om_resolve(linked_machine_handle)
+	return linked_machine

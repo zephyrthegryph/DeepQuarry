@@ -457,7 +457,7 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 	icon_state = "auth_off"
 	layer = ABOVE_WINDOW_LAYER
 	var/ready = 0
-	var/tmp/currentarea_handle
+	var/tmp/area/currentarea
 	var/eventstarted = 0
 
 	unacidable = TRUE
@@ -509,7 +509,7 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 	if(!user.IsAdvancedToolUser())
 		return TRUE
 
-	currentarea_handle = om_handle(get_area(src.loc))
+	rel_set(src, "currentarea", get_area(src.loc))
 	if(!currentarea())
 		qdel(src)
 		return TRUE
@@ -593,4 +593,4 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 
 /// LC-refs: the currentarea this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/readybutton/proc/currentarea() as /area
-	return om_resolve(currentarea_handle)
+	return currentarea

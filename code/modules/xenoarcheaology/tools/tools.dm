@@ -108,7 +108,7 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_BELT
 	var/list/positive_locations
-	var/tmp/current_handle
+	var/tmp/datum/depth_scan/current
 
 /datum/depth_scan
 	var/time = ""
@@ -215,7 +215,7 @@ DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(intera
 		if("select")
 			var/index = text2num(params["select"])
 			if(index && index <= LAZYLEN(positive_locations))
-				current_handle = om_handle(LAZYACCESS(positive_locations, index))
+				rel_set(src, "current", LAZYACCESS(positive_locations, index))
 			return TRUE
 		if("clear")
 			var/index = text2num(params["clear"])
@@ -224,11 +224,11 @@ DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(intera
 					var/datum/depth_scan/D = LAZYACCESS(positive_locations, index)
 					LAZYREMOVE(positive_locations, D)
 					qdel(D)
-					current_handle = null
+					rel_clear(src, "current")
 			else
 				QDEL_LIST_NULL(positive_locations)
 				positive_locations = list()
-				qdel_handle(current_handle); current_handle = null
+				qdel_handle(current); current = null
 			return TRUE
 
 MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
@@ -240,7 +240,7 @@ MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
 	item_state = "electronic"
 	var/frequency = PUB_FREQ
 	var/scan_ticks = 0
-	var/tmp/target_radio_handle
+	var/tmp/obj/item/radio/target_radio
 
 /// Points at its target (or counts a reset) every 2 s while tracking; idle, it sleeps.
 /obj/item/beacon_locator/periodic_step()
@@ -270,7 +270,7 @@ MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
 						var/check_dist = get_dist(T,R)
 						if(check_dist < cur_dist)
 							cur_dist = check_dist
-							target_radio_handle = om_handle(R)
+							rel_set(src, "target_radio", R)
 
 				scan_ticks = 0
 				if(target_radio())
@@ -319,7 +319,7 @@ DECLARE_INTERACTIONS(/obj/item/beacon_locator, INTERACT_USE("Open", PROC_REF(int
 	switch(action)
 		if("reset_tracking")
 			scan_ticks = 1
-			target_radio_handle = null
+			rel_clear(src, "target_radio")
 			om_task_periodic(src, PERIODIC_SLOW)
 			return TRUE
 		if("setFrequency")
@@ -370,8 +370,8 @@ DECLARE_INTERACTIONS(/obj/item/xenoarch_multi_tool, \
 
 /// LC-refs: the target_radio this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/beacon_locator/proc/target_radio() as /obj/item/radio
-	return om_resolve(target_radio_handle)
+	return target_radio
 
 /// LC-refs: the current this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/depth_scanner/proc/current() as /datum/depth_scan
-	return om_resolve(current_handle)
+	return current

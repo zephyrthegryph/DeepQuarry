@@ -99,7 +99,7 @@
 /area
 	// For now, only one media source per area allowed
 	// Possible Future: turn into a list, then only play the first one that's playing.
-	var/tmp/media_source_handle
+	var/tmp/obj/machinery/media/media_source
 
 //
 // ### Media Manager Datum
@@ -111,7 +111,7 @@
 	var/source_volume = 1		// Volume as set by source. Actual volume = "volume * source_volume"
 	var/rate = 1				// Playback speed.  For Fun(tm)
 	var/volume = 0.5			// Client's volume modifier. Actual volume = "volume * source_volume"
-	var/tmp/owner_handle	// Client this is actually running in
+	var/tmp/client/owner	// Client this is actually running in
 	var/forced=0				// If true, current url overrides area media sources
 	// media playback via TGUI MediaPlayer hosted in the
 	// hidden rpane.mediapanel skin element. The skin element stays
@@ -124,7 +124,7 @@
 
 /datum/media_manager/New(client/C)
 	ASSERT(istype(C))
-	src.owner_handle = om_handle(C)
+	rel_set(src, "owner", C)
 
 // ALLOW(lifecycle): closes its media window before phase 4 deletes it (DECLARE_REF(..., OWNED)).
 /datum/media_manager/lifecycle_unbind()
@@ -216,8 +216,8 @@
 
 /// LC-refs: the media_source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /area/proc/media_source() as /obj/machinery/media
-	return om_resolve(media_source_handle)
+	return media_source
 
 /// LC-refs: Client this is actually running in -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/media_manager/proc/owner() as /client
-	return om_resolve(owner_handle)
+	return owner

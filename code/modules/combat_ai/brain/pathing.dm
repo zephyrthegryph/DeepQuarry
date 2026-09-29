@@ -18,7 +18,7 @@
 	/// Cached A* path. List of turfs from current position to path_goal.
 	var/list/cached_path = null
 	/// Turf the cached path was computed to. Recomputed when target moves far.
-	var/tmp/path_goal_handle
+	var/tmp/turf/path_goal
 	/// Consecutive failed step attempts. After 3 we recompute.
 	var/failed_steps = 0
 	/// How far the goal can drift before recompute. Keeps us from recomputing
@@ -33,7 +33,7 @@
 
 /datum/ai_brain/proc/clear_path()
 	cached_path = null
-	path_goal_handle = null
+	rel_clear(src, "path_goal")
 	failed_steps = 0
 
 /proc/dq_pathfind(mob/living/actor, turf/goal, min_dist = 1, max_path = 128)
@@ -74,7 +74,7 @@
 			&& path_navigation_revision == GLOB.ai_navigation_revision)
 			return FALSE
 		cached_path = dq_pathfind(holder, target_turf, get_to)
-		path_goal_handle = om_handle(target_turf)
+		rel_set(src, "path_goal", target_turf)
 		path_navigation_revision = GLOB.ai_navigation_revision
 		failed_steps = 0
 		if(!length(cached_path))
@@ -109,4 +109,4 @@
 
 /// LC-refs: the path_goal this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/ai_brain/proc/path_goal() as /turf
-	return om_resolve(path_goal_handle)
+	return path_goal

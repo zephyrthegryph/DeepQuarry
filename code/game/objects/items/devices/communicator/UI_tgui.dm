@@ -1,7 +1,7 @@
 // Etc UI-only vars
 /obj/item/communicator
 	// Stuff for moving cameras
-	var/last_camera_turf_handle
+	var/turf/last_camera_turf
 	// Stuff needed to render the map
 	var/map_name
 	var/atom/movable/screen/map_view/cam_screen
@@ -73,7 +73,7 @@
 		return
 
 	// We get a new turf in case they've moved in the last half decisecond (it's BYOND, it might happen)
-	last_camera_turf_handle = om_handle(get_turf(video_source))
+	rel_set(src, "last_camera_turf", get_turf(video_source))
 
 	if(!is_on_same_plane_or_station(get_z(last_camera_turf()), get_z(src)))
 		show_static()
@@ -482,4 +482,4 @@
 
 /// LC-refs: last camera turf -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/communicator/proc/last_camera_turf() as /turf
-	return om_resolve(last_camera_turf_handle)
+	return last_camera_turf

@@ -1,5 +1,5 @@
-/client/var/tmp/current_ticket_handle	//the current ticket the (usually) not-admin client is dealing with
-/client/var/tmp/selected_ticket_handle	//the current ticket being viewed in the Tickets Panel (usually) admin/mentor client
+/client/var/tmp/datum/ticket/current_ticket	//the current ticket the (usually) not-admin client is dealing with
+/client/var/tmp/datum/ticket/selected_ticket	//the current ticket being viewed in the Tickets Panel (usually) admin/mentor client
 
 /proc/get_ahelp_channel()
 	var/datum/tgs_api/v5/api = TGS_READ_GLOBAL(tgs)
@@ -152,11 +152,11 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 
 //Reassociate still open ticket if one exists
 /datum/tickets/proc/ClientLogin(client/C, only_alert = FALSE)
-	C.current_ticket_handle = om_handle(CKey2ActiveTicket(C.ckey))
+	rel_set(C, "current_ticket", CKey2ActiveTicket(C.ckey))
 	if(C.current_ticket())
 		if(!only_alert)
 			C.current_ticket().AddInteraction("Client reconnected.")
-		C.current_ticket().initiator_handle = om_handle(C)
+		rel_set(C.current_ticket(), "initiator", C)
 		C.current_ticket().initiator().mob?.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
 
 //Dissasociate ticket
@@ -165,7 +165,7 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 		var/datum/ticket/T = C.current_ticket()
 		T.AddInteraction("Client disconnected.")
 		T.initiator()?.mob?.clear_alert("open ticket")
-		T.initiator_handle = null
+		rel_clear(T, "initiator")
 		T = null
 
 //Get a ticket given a ckey
@@ -221,7 +221,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	var/opened_at
 	var/closed_at
 
-	var/tmp/initiator_handle	//semi-misnomer, it's the person who ahelped/was bwoinked
+	var/tmp/client/initiator	//semi-misnomer, it's the person who ahelped/was bwoinked
 	var/handler_ref
 	var/handler = "/Unassigned\\" // The admin handling the ticket
 	var/initiator_ckey
@@ -258,14 +258,14 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 	level = ticket_level
 
-	initiator_handle = om_handle(C)
+	rel_set(src, "initiator", C)
 	initiator_ckey = initiator().ckey
 	initiator_key_name = key_name(initiator(), FALSE, TRUE)
 	if(initiator().current_ticket())	//This is a bug
 		log_admin("Ticket erroneously left open by code, closing...")
 		initiator().current_ticket().AddInteraction("Ticket erroneously left open by code")
 		initiator().current_ticket().Close(usr)
-	initiator().current_ticket_handle = om_handle(src)
+	rel_set(initiator(), "current_ticket", src)
 
 	var/parsed_message = keywords_lookup(msg)
 
@@ -410,7 +410,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	state = AHELP_ACTIVE
 	closed_at = null
 	if(initiator())
-		initiator().current_ticket_handle = om_handle(src)
+		rel_set(initiator(), "current_ticket", src)
 
 	var/admin_reopener_name = ismob(user) ? key_name_admin(user) : user
 	AddInteraction(span_purple("Reopened by [admin_reopener_name]"))
@@ -431,7 +431,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	own_clear(src, "statclick", OWN_DELETE)
 	GLOB.tickets.active_tickets -= src
 	if(initiator() && initiator().current_ticket() == src)
-		initiator().current_ticket_handle = null
+		rel_clear(initiator(), "current_ticket")
 
 //Mark open ticket as closed/meme
 /datum/ticket/proc/Close(user, silent = FALSE)
@@ -623,11 +623,11 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 //
 
 /obj/effect/statclick/ticket
-	var/tmp/ticket_datum_handle
+	var/tmp/datum/ticket/ticket_datum
 
 INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 /obj/effect/statclick/ticket/Initialize(mapload, datum/ticket/T)
-	ticket_datum_handle = om_handle(T)
+	rel_set(src, "ticket_datum", T)
 	. = ..()
 
 /obj/effect/statclick/ticket/update()
@@ -755,16 +755,16 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 
 /// LC-refs: the ticket_datum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/statclick/ticket/proc/ticket_datum() as /datum/ticket
-	return om_resolve(ticket_datum_handle)
+	return ticket_datum
 
 /// LC-refs: the current ticket being viewed in the Tickets Panel (usually) admin/mentor client -- an OM handle (om_handle()), so it reads null once that is deleted.
 /client/proc/selected_ticket() as /datum/ticket
-	return om_resolve(selected_ticket_handle)
+	return selected_ticket
 
 /// LC-refs: the current ticket the (usually) not-admin client is dealing with -- an OM handle (om_handle()), so it reads null once that is deleted.
 /client/proc/current_ticket() as /datum/ticket
-	return om_resolve(current_ticket_handle)
+	return current_ticket
 
 /// LC-refs: semi-misnomer, it's the person who ahelped/was bwoinked -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/ticket/proc/initiator() as /client
-	return om_resolve(initiator_handle)
+	return initiator

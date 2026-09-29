@@ -7,9 +7,9 @@
  * examine and screentips all read this one list.
  */
 /datum/interaction_resolution
-	var/actor_handle
-	var/target_handle
-	var/held_handle
+	var/mob/actor
+	var/atom/target
+	var/obj/item/held
 	/// Available interactions, highest priority first.
 	var/list/available = list() // ALLOW(instance_list): interaction area (I3/I4/I6): resolver result lists; listed in memory_lists_audit.md, not edited here
 	/// Blocked interactions -> reason, highest priority first.
@@ -18,9 +18,9 @@
 	var/list/priorities = list() // ALLOW(instance_list): interaction area (I3/I4/I6): resolver result lists; not edited here
 
 /datum/interaction_resolution/New(mob/actor, atom/target, obj/item/held)
-	src.actor_handle = om_handle(actor)
-	src.target_handle = om_handle(target)
-	src.held_handle = om_handle(held)
+	rel_set(src, "actor", actor)
+	rel_set(src, "target", target)
+	rel_set(src, "held", held)
 
 /// The available interactions that answer `action` at the best priority. Several means a tie.
 /datum/interaction_resolution/proc/best_for_action(action)
@@ -404,15 +404,15 @@ GLOBAL_LIST_EMPTY(interaction_entry_click_params)
 
 /// LC-refs: the mob acting -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/interaction_resolution/proc/actor() as /mob
-	return om_resolve(actor_handle)
+	return actor
 
 /// LC-refs: the atom acted on -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/interaction_resolution/proc/target() as /atom
-	return om_resolve(target_handle)
+	return target
 
 /// LC-refs: the item in hand -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/interaction_resolution/proc/held() as /obj/item
-	return om_resolve(held_handle)
+	return held
 
 /// Requirement clause REQ_SELF_USE_REACH: the item is in one of the actor's hands, or attack_self()
 /// already dispatched it (its callers decided that themselves: action buttons, anchored items).

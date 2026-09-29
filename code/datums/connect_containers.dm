@@ -11,7 +11,7 @@
 	 * The atom being tracked. The datum deletes itself if the tracked is deleted.
 	 * Hooks are also updated whenever it moves.
 	 */
-	var/tracked_handle
+	var/atom/movable/tracked
 
 
 /datum/connect_containers/New(datum/listener, atom/movable/tracked, list/connections)
@@ -45,7 +45,7 @@
 	if(tracked())
 		om_unhook(tracked(), list(/datum/om/event/moved, /datum/om/event/qdeleting), src)
 		unregister_hooks(tracked())
-	tracked_handle = om_handle(new_tracked)
+	rel_set(src, "tracked", new_tracked)
 	if(!tracked())
 		return
 	om_hook(tracked(), /datum/om/event/moved, src, PROC_REF(on_moved))
@@ -84,4 +84,4 @@
 
 /// LC-refs: the movable being tracked -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/connect_containers/proc/tracked() as /atom/movable
-	return om_resolve(tracked_handle)
+	return tracked

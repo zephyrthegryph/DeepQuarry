@@ -13,14 +13,14 @@
 	desc = "Now you can toy with the minds of the whole colony."
 	aspect = ASPECT_LIGHT
 	cast_methods = CAST_RANGED | CAST_USE
-	var/copied_handle
+	var/atom/movable/copied
 	var/mob/living/simple_mob/illusion/illusion = null
 
 /obj/item/spell/illusion/on_ranged_cast(atom/hit_atom, mob/user)
 	if(istype(hit_atom, /atom/movable))
 		var/atom/movable/AM = hit_atom
 		if(pay_energy(100))
-			copied_handle = om_handle(AM)
+			rel_set(src, "copied", AM)
 			update_icon()
 			to_chat(user, span_notice("You've copied \the [AM]'s appearance."))
 			user << 'sound/weapons/flash.ogg'
@@ -29,7 +29,7 @@
 		var/turf/T = hit_atom
 		if(!illusion)
 			if(!copied())
-				copied_handle = om_handle(user)
+				rel_set(src, "copied", user)
 			if(pay_energy(500))
 				own_set(src, "illusion", new /mob/living/simple_mob/illusion(T))
 				illusion.copy_appearance(copied())
@@ -73,4 +73,4 @@
 
 /// LC-refs: copied -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/spell/illusion/proc/copied() as /atom/movable
-	return om_resolve(copied_handle)
+	return copied

@@ -82,7 +82,7 @@
 		to_chat(user, "You have already selected your hardware.")
 		return
 	var/datum/malf_hardware/C = ask.hardware
-	C.owner_handle = om_handle(user)
+	rel_set(C, "owner", user)
 	C.install()
 
 // Verb: ai_help()

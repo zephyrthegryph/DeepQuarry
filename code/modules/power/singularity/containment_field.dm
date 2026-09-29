@@ -15,8 +15,8 @@
 	light_range = 2
 	light_power = 0.5
 	light_color = "#5BA8FF"
-	var/tmp/FG1_handle
-	var/tmp/FG2_handle
+	var/tmp/obj/machinery/field_generator/FG1
+	var/tmp/obj/machinery/field_generator/FG2
 	var/list/shockdirs
 	COOLDOWN_DECLARE(hasShocked) //Used to add a delay between shocks. In some cases this used to crash servers by spawning hundreds of sparks every second.
 
@@ -105,14 +105,14 @@
 /obj/machinery/containment_field/proc/set_master(master1,master2)
 	if(!master1 || !master2)
 		return 0
-	FG1_handle = om_handle(master1)
-	FG2_handle = om_handle(master2)
+	rel_set(src, "FG1", master1)
+	rel_set(src, "FG2", master2)
 	return 1
 
 /// LC-refs: the FG1 this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/containment_field/proc/FG1() as /obj/machinery/field_generator
-	return om_resolve(FG1_handle)
+	return FG1
 
 /// LC-refs: the FG2 this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/containment_field/proc/FG2() as /obj/machinery/field_generator
-	return om_resolve(FG2_handle)
+	return FG2

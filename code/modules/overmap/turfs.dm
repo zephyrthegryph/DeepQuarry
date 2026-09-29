@@ -19,7 +19,7 @@ GLOBAL_LIST_EMPTY(map_sectors)
 	density = TRUE
 	alpha = 255
 	var/map_is_to_my
-	var/tmp/wrap_buddy_handle
+	var/tmp/turf/unsimulated/map/edge/wrap_buddy
 
 /turf/unsimulated/map/edge/Initialize(mapload)
 	..()
@@ -39,7 +39,7 @@ GLOBAL_LIST_EMPTY(map_sectors)
 		while(istype(T, /turf/unsimulated/map))
 			T = get_step(T, map_is_to_my) //Could be a wall if the map is only 1 turf big
 			if(istype(T, /turf/unsimulated/map/edge))
-				wrap_buddy_handle = om_handle(T)
+				rel_set(src, "wrap_buddy", T)
 				break
 
 /turf/unsimulated/map/edge/Bumped(atom/movable/AM)
@@ -89,4 +89,4 @@ GLOBAL_LIST_EMPTY(map_sectors)
 
 /// LC-refs: the wrap_buddy this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /turf/unsimulated/map/edge/proc/wrap_buddy() as /turf/unsimulated/map/edge
-	return om_resolve(wrap_buddy_handle)
+	return wrap_buddy

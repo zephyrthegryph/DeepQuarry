@@ -5,7 +5,7 @@
 	var/notify_silent = 0
 	var/hidden = 0				// program not displayed in main menu
 	var/category = "General"	// the category to list it in on the main menu
-	var/tmp/pda_handle	// if this is null, and the app is running code, something's gone wrong
+	var/tmp/obj/item/pda/pda	// if this is null, and the app is running code, something's gone wrong
 
 
 /datum/data/pda/proc/start()
@@ -66,7 +66,7 @@
 /datum/data/pda/app/start()
 	if(pda().current_app())
 		pda().current_app().stop()
-	pda().current_app_handle = om_handle(src)
+	rel_set(pda(), "current_app", src)
 	return 1
 
 /datum/data/pda/app/proc/update_ui(mob/user, list/data)
@@ -91,9 +91,9 @@
 		pda().scanmode().name = "Enable [pda().scanmode().base_name]"
 
 	if(pda().scanmode() == src)
-		pda().scanmode_handle = null
+		rel_clear(pda(), "scanmode")
 	else
-		pda().scanmode_handle = om_handle(src)
+		rel_set(pda(), "scanmode", src)
 		name = "Disable [base_name]"
 
 	pda().update_shortcuts()
@@ -105,4 +105,4 @@
 
 /// LC-refs: if this is null, and the app is running code, something's gone wrong -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/data/pda/proc/pda() as /obj/item/pda
-	return om_resolve(pda_handle)
+	return pda

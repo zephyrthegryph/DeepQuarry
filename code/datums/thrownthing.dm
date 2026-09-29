@@ -251,4 +251,4 @@
 
 /// LC-refs: throw source -- an OM handle (om_handle()); a global helper keeps the proc off the base type.
 /proc/movable_throw_source(atom/movable/AM) as /turf
-	return om_resolve(AM?.throw_source_handle)
+	return AM?.throw_source

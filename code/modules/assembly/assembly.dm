@@ -13,7 +13,7 @@
 
 	var/secured = 1
 	var/list/attached_overlays = null
-	var/tmp/holder_handle
+	var/tmp/obj/item/assembly_holder/holder
 	var/cooldown = FALSE //To prevent spam
 	var/wires_type = WIRE_RECEIVE | WIRE_PULSE
 
@@ -58,7 +58,7 @@
 	return secured
 
 /obj/item/assembly/proc/attach_assembly(obj/item/assembly/A, mob/user)
-	holder_handle = om_handle(new/obj/item/assembly_holder(get_turf(src)))
+	rel_set(src, "holder", new/obj/item/assembly_holder(get_turf(src)))
 	if(holder().attach(A,src,user))
 		to_chat(user, span_notice("You attach \the [A] to \the [src]!"))
 		return TRUE
@@ -121,4 +121,4 @@ DECLARE_INTERACTIONS(/obj/item/assembly, \
 
 /// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/assembly/proc/holder() as /obj/item/assembly_holder
-	return om_resolve(holder_handle)
+	return holder

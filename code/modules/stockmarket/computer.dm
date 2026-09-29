@@ -10,7 +10,7 @@
 	var/vmode = 1
 
 	var/screen = "stocks"
-	var/tmp/current_stock_handle
+	var/tmp/datum/stock/current_stock
 
 	light_color = LIGHT_COLOR_GREEN
 
@@ -83,7 +83,7 @@
 		if("stocks_archive")
 			var/datum/stock/S = locate(params["share"])
 			if(S)
-				current_stock_handle = om_handle(S)
+				rel_set(src, "current_stock", S)
 				screen = "archive"
 
 		if("stocks_history")
@@ -92,7 +92,7 @@
 				S.displayValues(ui.user)
 
 		if("stocks_backbutton")
-			current_stock_handle = null
+			rel_clear(src, "current_stock")
 			screen = "stocks"
 
 		if("stocks_cycle_view")
@@ -352,4 +352,4 @@
 
 /// LC-refs: the current_stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/stockexchange/proc/current_stock() as /datum/stock
-	return om_resolve(current_stock_handle)
+	return current_stock

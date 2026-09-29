@@ -26,12 +26,12 @@
 
 
 /datum/event2/event/grid_check
-	var/tmp/engine_handle	// The turbine that will send a power spike.
+	var/tmp/obj/machinery/power/generator/engine	// The turbine that will send a power spike.
 
 /datum/event2/event/grid_check/set_up()
 	// no turbines under LINDA (see get_overpower); engine stays null
 	// and start() will no-op the power_spike branch.
-	engine_handle = null
+	rel_clear(src, "engine")
 
 /datum/event2/event/grid_check/start()
 	// This sets off a chain of events that lead to the actual grid check (or perhaps worse).
@@ -43,4 +43,4 @@
 
 /// LC-refs: The turbine that will send a power spike. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event2/event/grid_check/proc/engine() as /obj/machinery/power/generator
-	return om_resolve(engine_handle)
+	return engine

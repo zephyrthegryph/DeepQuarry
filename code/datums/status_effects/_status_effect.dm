@@ -64,7 +64,7 @@
 
 	if(alert_type)
 		var/atom/movable/screen/alert/status_effect/new_alert = owner.throw_alert(id, alert_type)
-		new_alert.attached_effect_handle = om_handle(src) //so the alert can reference us, if it needs to
+		rel_set(new_alert, "attached_effect", src) //so the alert can reference us, if it needs to
 		linked_alert = new_alert //so we can reference the alert, if we need to
 		update_shown_duration()
 
@@ -239,9 +239,9 @@ REL_PAIR(/datum/status_effect, owner, status_effects)
 	name = "Curse of Mundanity"
 	desc = "You don't feel any different..."
 	/// The status effect we're linked to
-	var/attached_effect_handle
+	var/datum/status_effect/attached_effect
 
 
 /// LC-refs: the status effect this alert shows -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/alert/status_effect/proc/attached_effect() as /datum/status_effect
-	return om_resolve(attached_effect_handle)
+	return attached_effect

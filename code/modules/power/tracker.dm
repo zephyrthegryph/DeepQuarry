@@ -15,7 +15,7 @@
 
 	var/id = 0
 	var/sun_angle = 0		// sun angle as set by sun datum
-	var/tmp/control_handle
+	var/tmp/obj/machinery/power/solar_control/control
 	var/SOLAR_MAX_DIST = 60 // ition // ours are >40 away
 
 /obj/machinery/power/tracker/Initialize(mapload, glass_type)
@@ -38,14 +38,14 @@
 /obj/machinery/power/tracker/proc/set_control(obj/machinery/power/solar_control/SC)
 	if(SC && (get_dist(src, SC) > SOLAR_MAX_DIST))
 		return 0
-	control_handle = om_handle(SC)
+	rel_set(src, "control", SC)
 	return 1
 
 //set the control of the tracker to null and removes it from the previous control computer if needed
 /obj/machinery/power/tracker/proc/unset_control()
 	if(control())
-		control().connected_tracker_handle = null
-	control_handle = null
+		rel_clear(control(), "connected_tracker")
+	rel_clear(src, "control")
 
 //updates the tracker icon and the facing angle for the control computer
 /obj/machinery/power/tracker/proc/set_angle(angle)
@@ -82,4 +82,4 @@
 
 /// LC-refs: the control this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/power/tracker/proc/control() as /obj/machinery/power/solar_control
-	return om_resolve(control_handle)
+	return control

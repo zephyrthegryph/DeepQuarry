@@ -1,6 +1,6 @@
 /atom/movable/screen/movable/action_button
-	var/linked_action_handle
-	var/our_hud_handle
+	var/datum/action/linked_action
+	var/datum/hud/our_hud
 	var/actiontooltipstyle = ""
 	screen_loc = null
 	icon = null // we don't use the base icon at all, just underlays and overlays
@@ -29,8 +29,8 @@
 		viewer?.client?.screen -= src
 		viewer?.update_action_buttons()
 	var/datum/action/action = linked_action()
-	if(action && our_hud_handle)
-		action.viewers -= our_hud_handle
+	if(action && our_hud)
+		action.viewers -= our_hud
 	..()
 
 /atom/movable/screen/movable/action_button/proc/can_use(mob/user)
@@ -251,7 +251,7 @@
 	icon = 'icons/hud/64x16_actions.dmi'
 	icon_state = "screen_gen_palette"
 	screen_loc = ui_action_palette
-	var/our_hud_handle
+	var/datum/hud/our_hud
 	var/expanded = FALSE
 	/// Id of any currently running timers that set our color matrix
 	var/color_timer_id
@@ -263,7 +263,7 @@
 	update_name()
 
 /atom/movable/screen/button_palette/proc/set_hud(datum/hud/our_hud)
-	src.our_hud_handle = om_handle(our_hud)
+	rel_set(src, "our_hud", our_hud)
 	refresh_owner()
 
 /atom/movable/screen/button_palette/proc/update_name()
@@ -370,7 +370,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	/// How should we move the palette's actions?
 	/// Positive scrolls down the list, negative scrolls back
 	var/scroll_direction = 0
-	var/our_hud_handle
+	var/datum/hud/our_hud
 
 /atom/movable/screen/palette_scroll/proc/can_use(mob/user)
 	if(isobserver(user))
@@ -380,7 +380,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	return TRUE
 
 /atom/movable/screen/palette_scroll/proc/set_hud(datum/hud/our_hud)
-	src.our_hud_handle = om_handle(our_hud)
+	rel_set(src, "our_hud", our_hud)
 	refresh_owner()
 
 /atom/movable/screen/palette_scroll/proc/refresh_owner()
@@ -428,7 +428,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	icon_state = "reserved"
 	// We want our whole 32x32 space to be clickable, so dropping's forgiving
 	mouse_opacity = MOUSE_OPACITY_OPAQUE
-	var/owner_handle
+	var/datum/action_group/owner
 
 // its palette re-lays its actions without the landing spot.
 // the group owns us as its landing; one deleted on its own clears it and re-lays the group.
@@ -441,7 +441,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	..()
 
 /atom/movable/screen/action_landing/proc/set_owner(datum/action_group/owner)
-	src.owner_handle = om_handle(owner)
+	rel_set(src, "owner", owner)
 	refresh_owner()
 
 /atom/movable/screen/action_landing/proc/refresh_owner()
@@ -458,21 +458,23 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 
 /// LC-refs: the action this button triggers -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/movable/action_button/proc/linked_action() as /datum/action
-	return om_resolve(linked_action_handle)
+	return linked_action
 
 /// LC-refs: the hud this is shown on -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/movable/action_button/proc/our_hud() as /datum/hud
-	return om_resolve(our_hud_handle)
+	return our_hud
 
 /// LC-refs: the hud this is shown on -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/button_palette/proc/our_hud() as /datum/hud
-	return om_resolve(our_hud_handle)
+	return our_hud
 
 /// LC-refs: the hud this is shown on -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/palette_scroll/proc/our_hud() as /datum/hud
-	return om_resolve(our_hud_handle)
+	return our_hud
 
 /// LC-refs: the action group this landing belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/action_landing/proc/owner() as /datum/action_group
-	return om_resolve(owner_handle)
+	return owner
 
+REL_PAIR(/atom/movable/screen/button_palette, our_hud, toggle_palette)
+REL_PAIR(/datum/hud, toggle_palette, our_hud)

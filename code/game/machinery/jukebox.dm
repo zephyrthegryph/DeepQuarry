@@ -26,7 +26,7 @@
 	var/loop_mode = JUKEMODE_PLAY_ONCE			// Behavior when finished playing a song
 	// ALLOW(object_keyed_lists): paired remotes add and remove themselves (juke_remote pair/unpair)
 	var/list/obj/item/juke_remote/remotes
-	var/current_track_handle
+	var/datum/track/current_track
 
 /obj/machinery/media/jukebox/Initialize(mapload)
 	. = ..()
@@ -56,16 +56,16 @@
 		if(JUKEMODE_NEXT)
 			var/curTrackIndex = max(1, tracks.Find(current_track()))
 			var/newTrackIndex = (curTrackIndex % tracks.len) + 1  // Loop back around if past end
-			current_track_handle = om_handle(tracks[newTrackIndex])
+			rel_set(src, "current_track", tracks[newTrackIndex])
 		if(JUKEMODE_RANDOM)
 			var/previous_track = current_track()
 			do
-				current_track_handle = om_handle(pick(tracks))
+				rel_set(src, "current_track", pick(tracks))
 			while(current_track() == previous_track && tracks.len > 1)
 		if(JUKEMODE_REPEAT_SONG)
-			current_track_handle = om_handle(current_track())
+			rel_set(src, "current_track", current_track())
 		if(JUKEMODE_PLAY_ONCE)
-			current_track_handle = null
+			rel_clear(src, "current_track")
 			playing = 0
 			update_icon()
 	start_stop_song()
@@ -206,7 +206,7 @@
 		if("change_track")
 			var/datum/track/T = locate_in_list(getTracksList(), params["change_track"])
 			if(istype(T))
-				current_track_handle = om_handle(T)
+				rel_set(src, "current_track", T)
 				StartPlaying()
 			return TRUE
 		if("loopmode")
@@ -302,7 +302,7 @@
 	if(!tracks.len) return
 	var/curTrackIndex = max(1, tracks.Find(current_track()))
 	var/newTrackIndex = (curTrackIndex % tracks.len) + 1  // Loop back around if past end
-	current_track_handle = om_handle(tracks[newTrackIndex])
+	rel_set(src, "current_track", tracks[newTrackIndex])
 	if(playing)
 		start_stop_song()
 
@@ -312,7 +312,7 @@
 	if(!tracks.len) return
 	var/curTrackIndex = max(1, tracks.Find(current_track()))
 	var/newTrackIndex = curTrackIndex == 1 ? tracks.len : curTrackIndex - 1
-	current_track_handle = om_handle(tracks[newTrackIndex])
+	rel_set(src, "current_track", tracks[newTrackIndex])
 	if(playing)
 		start_stop_song()
 
@@ -479,5 +479,5 @@
 
 /// LC-refs: current track -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/media/jukebox/proc/current_track() as /datum/track
-	return om_resolve(current_track_handle)
+	return current_track
 

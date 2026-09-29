@@ -11,7 +11,7 @@
 
 	var/flush = null
 
-	var/carded_ai_handle
+	var/mob/living/silicon/ai/carded_ai
 
 /obj/item/aicard/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!istype(M, /mob/living/silicon/decoy))
@@ -138,7 +138,7 @@ DECLARE_INTERACTIONS(/obj/item/aicard, INTERACT_USE(null, PROC_REF(interaction_s
 	ai.cancel_camera()
 	ai.control_disabled = 1
 	ai.aiRestorePowerRoutine = 0
-	carded_ai_handle = om_handle(ai)
+	rel_set(src, "carded_ai", ai)
 	ai.disconnect_shell("Disconnected from remote shell due to core intelligence transfer.") //If the AI is controlling a borg, force the player back to core!
 
 	if(ai.client)
@@ -154,7 +154,7 @@ DECLARE_INTERACTIONS(/obj/item/aicard, INTERACT_USE(null, PROC_REF(interaction_s
 		carded_ai().canmove = 0
 		carded_ai().carded = 0
 	name = initial(name)
-	carded_ai_handle = null
+	rel_clear(src, "carded_ai")
 	update_icon()
 
 /obj/item/aicard/see_emote(mob/living/M, text)
@@ -196,4 +196,4 @@ DECLARE_INTERACTIONS(/obj/item/aicard, INTERACT_USE(null, PROC_REF(interaction_s
 
 /// LC-refs: carded ai -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/aicard/proc/carded_ai() as /mob/living/silicon/ai
-	return om_resolve(carded_ai_handle)
+	return carded_ai

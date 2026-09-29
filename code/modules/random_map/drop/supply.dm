@@ -39,7 +39,7 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 /// per category (cancel ends a category), then the drop is confirmed and lands on the admin.
 /datum/supply_drop_order
 	/// The ordering admin's mob, as an om_handle() (read with admin()).
-	var/tmp/admin_handle
+	var/tmp/mob/admin
 	/// The categories offered in order: question = root type. Shared by every order.
 	var/static/list/categories = list(
 		"Do you wish to add mobs?" = /mob/living,
@@ -57,12 +57,12 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 	var/static/list/open_orders = list()
 
 /datum/supply_drop_order/New(mob/admin)
-	admin_handle = om_handle(admin)
+	rel_set(src, "admin", admin)
 	open_orders += src
 
 /// LC-refs: the ordering admin -- an OM handle, so it reads null once that mob is deleted.
 /datum/supply_drop_order/proc/admin() as /mob
-	return om_resolve(admin_handle)
+	return admin
 
 /datum/supply_drop_order/lifecycle_dematerialize()
 	..()

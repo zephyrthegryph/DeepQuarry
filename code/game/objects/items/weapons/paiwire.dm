@@ -9,7 +9,7 @@
 		playsound(src, 'sound/machines/click.ogg', 50, 1)
 		user.drop_item()
 		src.forceMove(M)
-		src.machine_handle = om_handle(M)
+		rel_set(src, "machine", M)
 	else
 		user.visible_message("[user] fumbles to find a place on [M] to plug in [src].", "There aren't any ports on [M] that match the jack belonging to [src].")
 

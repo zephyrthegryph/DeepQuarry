@@ -16,7 +16,7 @@
 	icon_state = "energy_siphon"
 	cast_methods = CAST_RANGED
 	aspect = ASPECT_SHOCK
-	var/siphoning_handle // What the spell is currently draining.  Does nothing if null.
+	var/atom/movable/siphoning // What the spell is currently draining.  Does nothing if null.
 	// ALLOW(instance_list): d: rebuilt in place every cast and passed to recursive_content_check() to fill
 	var/list/things_to_siphon = list() //Things which are actually drained as a result of the above not being null.
 	var/flow_rate = 1000 // Limits how much electricity can be drained per second.  Measured by default in god knows what.
@@ -51,7 +51,7 @@
 		if(!things_to_siphon.len)
 			to_chat(user, span_warning("You cannot steal energy from \a [AM]."))
 			return 0
-		siphoning_handle = om_handle(AM)
+		rel_set(src, "siphoning", AM)
 		om_task_periodic(src, PERIODIC_SLOW)
 		update_icon()
 		add_attack_logs(user,AM,"Siphoned energy from [src]")
@@ -73,7 +73,7 @@
 			things_to_siphon.Remove(AM)
 
 /obj/item/spell/energy_siphon/proc/stop_siphoning()
-	siphoning_handle = null
+	rel_clear(src, "siphoning")
 	things_to_siphon.Cut()
 	update_icon()
 
@@ -205,4 +205,4 @@
 
 /// LC-refs: siphoning -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/spell/energy_siphon/proc/siphoning() as /atom/movable
-	return om_resolve(siphoning_handle)
+	return siphoning

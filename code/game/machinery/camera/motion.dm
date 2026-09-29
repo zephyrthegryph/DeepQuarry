@@ -1,7 +1,7 @@
 /obj/machinery/camera
 	var/list/motionTargets = null
 	var/detectTime = 0
-	var/area_motion_handle
+	var/area/ai_monitored/area_motion
 	var/alarm_delay = 100 // Don't forget, there's another 10 seconds in queueAlarm()
 
 /// The motion alarm fires once a target has been seen for alarm_delay (the camera's timer).
@@ -73,4 +73,4 @@
 
 /// LC-refs: area motion -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/camera/proc/area_motion() as /area/ai_monitored
-	return om_resolve(area_motion_handle)
+	return area_motion

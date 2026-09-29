@@ -19,14 +19,14 @@ REGISTRY_MEMBERSHIP(/obj, REGISTRY_TECHNOMANCER_BELONGINGS)
 	desc = "Never lose your stuff again!"
 	cast_methods = CAST_USE
 	aspect = ASPECT_TELE
-	var/tracked_handle // The thing to point towards.
+	var/atom/movable/tracked // The thing to point towards.
 	var/tracking = 0 // If one, points towards tracked.
 
 /obj/item/spell/track/on_use_cast(mob/user)
 	if(tracking)
 		tracking = 0
 		to_chat(user, span_notice("You stop tracking for \the [tracked()]'s whereabouts."))
-		tracked_handle = null
+		rel_clear(src, "tracked")
 		return
 
 	var/can_track_non_allies = 0
@@ -44,7 +44,7 @@ REGISTRY_MEMBERSHIP(/obj, REGISTRY_TECHNOMANCER_BELONGINGS)
 
 /obj/item/spell/track/proc/track_target_chosen(datum/om/prompt/choice/carried_item/ask)
 	if(ask.choice)
-		tracked_handle = om_handle(ask.choice)
+		rel_set(src, "tracked", ask.choice)
 		tracking = 1
 		track()
 
@@ -76,4 +76,4 @@ REGISTRY_MEMBERSHIP(/obj, REGISTRY_TECHNOMANCER_BELONGINGS)
 
 /// LC-refs: tracked -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/spell/track/proc/tracked() as /atom/movable
-	return om_resolve(tracked_handle)
+	return tracked

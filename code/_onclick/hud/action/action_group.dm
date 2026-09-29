@@ -1,6 +1,6 @@
 /datum/action_group
 	/// The hud we're owned by
-	var/owner_handle
+	var/datum/hud/owner
 	/// The actions we're managing
 	var/list/atom/movable/screen/movable/action_button/actions
 	/// The initial vertical offset of our action buttons
@@ -24,7 +24,7 @@
 /datum/action_group/New(datum/hud/owner)
 	..()
 	own_set(src, "actions", list())
-	src.owner_handle = om_handle(owner)
+	rel_set(src, "owner", owner)
 
 
 /datum/action_group/proc/insert_action(atom/movable/screen/action, index)
@@ -207,4 +207,4 @@
 
 /// LC-refs: the hud that owns this group -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/action_group/proc/owner() as /datum/hud
-	return om_resolve(owner_handle)
+	return owner

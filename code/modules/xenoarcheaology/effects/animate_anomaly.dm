@@ -2,7 +2,7 @@
 /datum/artifact_effect/animate_anomaly
 	name = "Animation"
 	effect_type = EFFECT_ANIMATE
-	var/tmp/target_handle
+	var/tmp/mob/living/target
 
 	effect_state = "pulsing"
 	effect_color = "#00c3ff"
@@ -19,7 +19,7 @@
 	var/atom/masterholder = get_master_holder()
 	if(utilizer) //We are in an artifact utilizer! Just run from whoever touched us last!
 		masterholder = utilizer
-		target_handle = om_handle(utilizer.last_user_touched())
+		rel_set(src, "target", utilizer.last_user_touched())
 		return
 
 	if(!target() || target().z != masterholder.z || get_dist(target(), masterholder) > effectrange)
@@ -34,7 +34,7 @@
 				if(get_dist(masterholder, L) < get_dist(masterholder, ClosestMob))
 					ClosestMob = L
 
-		target_handle = om_handle(ClosestMob)
+		rel_set(src, "target", ClosestMob)
 
 /datum/artifact_effect/animate_anomaly/DoEffectTouch(mob/living/user)
 	var/atom/holder = get_master_holder()
@@ -99,4 +99,4 @@
 
 /// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/artifact_effect/animate_anomaly/proc/target() as /mob/living
-	return om_resolve(target_handle)
+	return target

@@ -13,7 +13,7 @@
 	flags = NOREACT
 	var/max_n_of_items = 999 // Sorry but the BYOND infinite loop detector doesn't look things over 1000.
 	var/list/item_records = list() // ALLOW(instance_list): d: the fridge's live stock records
-	var/tmp/currently_vending_handle	//What we're putting out of the machine.
+	var/tmp/datum/stored_item/currently_vending	//What we're putting out of the machine.
 	var/stored_datum_type = /datum/stored_item
 	/// Whether inserted items with identical state fold into counts (C9).
 	var/collapse_stock = TRUE
@@ -392,7 +392,7 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 	name = "\improper Smart Chemavator - Upper"
 	desc = "A refrigerated storage unit for medicine and chemical storage. Now sporting a fancy system of pulleys to lift bottles up and down."
 	expert_job = JOB_CHEMIST
-	var/tmp/attached_handle
+	var/tmp/obj/machinery/smartfridge/chemistry/chemvator/attached
 	circuit = /obj/item/circuitboard/smartfridge/chemvator
 
 /obj/machinery/smartfridge/chemistry/chemvator/accept_check(obj/item/O as obj)
@@ -414,8 +414,8 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 	. = ..()
 	var/obj/machinery/smartfridge/chemistry/chemvator/above = locate(/obj/machinery/smartfridge/chemistry/chemvator,get_zstep(src,UP))
 	if(istype(above))
-		above.attached_handle = om_handle(src)
-		attached_handle = om_handle(above)
+		rel_set(above, "attached", src)
+		rel_set(src, "attached", above)
 		item_records = attached().item_records
 	else
 		to_chat(world,span_danger("[src] at [x],[y],[z] cannot find the unit above it!"))
@@ -426,8 +426,8 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 
 /// LC-refs: What we're putting out of the machine. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/smartfridge/proc/currently_vending() as /datum/stored_item
-	return om_resolve(currently_vending_handle)
+	return currently_vending
 
 /// LC-refs: the attached this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/smartfridge/chemistry/chemvator/proc/attached() as /obj/machinery/smartfridge/chemistry/chemvator
-	return om_resolve(attached_handle)
+	return attached

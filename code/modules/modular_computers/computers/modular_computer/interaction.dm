@@ -67,7 +67,7 @@
 	broadcast_event(COMPUTER_EVENT_IDREMOVED)
 
 	card_slot.stored_card().forceMove(get_turf(src))
-	card_slot.stored_card_handle = null
+	rel_clear(card_slot, "stored_card")
 	update_uis()
 	to_chat(user, "You remove the card from \the [src]")
 
@@ -149,7 +149,7 @@ DECLARE_INTERACTIONS(/obj/item/modular_computer, \
 			to_chat(user, "You try to insert \the [I] into \the [src], but it's ID card slot is occupied.")
 			return INTERACTION_HANDLED_PASS
 		user.drop_from_inventory(I)
-		card_slot.stored_card_handle = om_handle(I)
+		rel_set(card_slot, "stored_card", I)
 		I.forceMove(src)
 		update_uis()
 		to_chat(user, "You insert \the [I] into \the [src].")

@@ -126,7 +126,7 @@
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	signal.source_handle = om_handle(src)
+	rel_set(signal, "source", src)
 
 	signal.data = list(
 		"tag" = id,
@@ -216,7 +216,7 @@
 
 		if("-SAVE TO BUFFER-")
 			var/obj/item/multitool/tool = W
-			tool.connectable_handle = om_handle(src)
+			rel_set(tool, "connectable", src)
 			to_chat(user, span_notice("You copied the [src] into the [tool]'s buffer!"))
 
 	return ITEM_INTERACT_SUCCESS

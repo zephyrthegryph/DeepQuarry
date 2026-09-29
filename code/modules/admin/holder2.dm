@@ -11,16 +11,16 @@ GLOBAL_PROTECT(href_token)
 
 	var/target
 	var/name = "nobody's admin datum (no rank)" //Makes for better runtimes
-	var/tmp/owner_handle
+	var/tmp/client/owner
 	var/fakekey = null
 
-	var/tmp/marked_datum_handle
+	var/tmp/datum/marked_datum
 
 	var/admincaster_screen = 0	//See newscaster.dm under machinery for a full description
 	var/datum/feed_message/admincaster_feed_message = new /datum/feed_message   //These two will act as holders.
 	/// The admin newscaster's working channel: a network channel picked into admincaster_feed_channel_handle,
 	/// or while none is picked its own scratch channel (admincaster_feed_channel() reads either).
-	var/tmp/admincaster_feed_channel_handle
+	var/tmp/datum/admincaster_feed_channel
 	var/datum/feed_channel/admincaster_scratch_channel = new /datum/feed_channel
 	var/admincaster_signature	//What you'll sign the newsfeeds as
 
@@ -117,7 +117,7 @@ GLOBAL_PROTECT(href_token)
 	if (deadmined)
 		activate()
 
-	owner_handle = om_handle(client)
+	rel_set(src, "owner", client)
 	owner().holder = src
 	owner().add_admin_verbs()
 	remove_verb(owner(), /client/proc/readmin)
@@ -135,7 +135,7 @@ GLOBAL_PROTECT(href_token)
 		owner().remove_admin_verbs()
 		// owner.init_verbs() //re-initialize the verb list
 		owner().holder = null
-		owner_handle = null
+		rel_clear(src, "owner")
 
 /// Returns the feedback forum thread for the admin holder's owner, as according to DB.
 /datum/admins/proc/feedback_link()
@@ -288,12 +288,12 @@ you will have to do something like if(client.rights & R_ADMIN) yourself.
 
 /// LC-refs: the marked_datum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/admins/proc/marked_datum() as /datum
-	return om_resolve(marked_datum_handle)
+	return marked_datum
 
 /// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/admins/proc/owner() as /client
-	return om_resolve(owner_handle)
+	return owner
 
 /// LC-refs: the channel the admin newscaster is working on -- a picked network channel (an OM handle) or the scratch one.
 /datum/admins/proc/admincaster_feed_channel() as /datum/feed_channel
-	return om_resolve(admincaster_feed_channel_handle) || admincaster_scratch_channel
+	return admincaster_feed_channel || admincaster_scratch_channel

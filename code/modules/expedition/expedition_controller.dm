@@ -16,7 +16,7 @@
 
 /datum/expedition_teardown_job
 	var/tmp/datum/world_service/expedition/controller_static
-	var/tmp/site_handle
+	var/tmp/datum/expedition_site/site
 	var/z_level
 	var/reason
 	var/yield_count = 0
@@ -27,7 +27,7 @@
 /datum/expedition_teardown_job/New(datum/world_service/expedition/new_controller, datum/expedition_site/new_site, new_reason)
 	..()
 	controller_static = new_controller
-	site_handle = om_handle(new_site)
+	rel_set(src, "site", new_site)
 	z_level = new_site?.z_level
 	reason = new_reason
 
@@ -142,9 +142,9 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		qdel(mission)
 		to_chat(user, span_warning("Flight Operations could not survey a viable destination."))
 		return null
-	site.assigned_flight_vessel_handle = om_handle(vessel)
-	site.payout_turf_handle = om_handle(get_turf(payout_source))
-	vessel.active_expedition_handle = om_handle(site)
+	rel_set(site, "assigned_flight_vessel", vessel)
+	rel_set(site, "payout_turf", get_turf(payout_source))
+	rel_set(vessel, "active_expedition", site)
 	to_chat(user, span_notice("[site.name] has been surveyed. Select it in Flight Operations to begin the jump and generate its landing zone."))
 	return site
 
@@ -159,7 +159,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	if(site.z_level > 0 && players_on_z(site.z_level))
 		to_chat(user, span_warning("The assignment cannot be abandoned while crew remain at the site."))
 		return FALSE
-	vessel.active_expedition_handle = null
+	rel_clear(vessel, "active_expedition")
 	if(site.z_level > 0 && sites["[site.z_level]"] == site)
 		release_site(site, "assignment abandoned")
 	else
@@ -177,14 +177,14 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	site.faction = mission?.faction_type || expedition_pick_faction(difficulty)
 	site.name += " — [expedition_faction_name(site.faction)]"
 	own_set(site, "mission", mission)
-	site.assigned_shuttle_handle = om_handle(assigned_shuttle)
-	site.origin_console_handle = om_handle(origin_console)
+	rel_set(site, "assigned_shuttle", assigned_shuttle)
+	rel_set(site, "origin_console", origin_console)
 	site.parent_destination_id = parent_destination_id
-	site.payout_turf_handle = om_handle(get_turf(origin_console))
+	rel_set(site, "payout_turf", get_turf(origin_console))
 	var/datum/flight_vessel/assigned_vessel = GLOB.flight_service?.vessel_for_ship(assigned_shuttle?.myship())
-	site.assigned_flight_vessel_handle = om_handle(assigned_vessel)
+	rel_set(site, "assigned_flight_vessel", assigned_vessel)
 	if(assigned_vessel)
-		assigned_vessel.active_expedition_handle = om_handle(site)
+		rel_set(assigned_vessel, "active_expedition", site)
 	site.status = EXP_STATUS_GENERATING
 	LAZYADD(descriptors, site)
 	GLOB.flight_service?.register_expedition(site)
@@ -228,26 +228,26 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	if(site.landing_waypoint)
 		site.landing_waypoint.name = "[descriptor_name] - Expedition Landing Zone"
 	if(descriptor.origin_console()?.active_expedition() == descriptor)
-		descriptor.origin_console().active_expedition_handle = om_handle(site)
+		rel_set(descriptor.origin_console(), "active_expedition", site)
 	if(descriptor.assigned_flight_vessel()?.active_expedition() == descriptor)
-		descriptor.assigned_flight_vessel().active_expedition_handle = om_handle(site)
-	site.assigned_flight_vessel_handle = om_handle(descriptor.assigned_flight_vessel())
-	site.payout_turf_handle = om_handle(descriptor.payout_turf())
+		rel_set(descriptor.assigned_flight_vessel(), "active_expedition", site)
+	rel_set(site, "assigned_flight_vessel", descriptor.assigned_flight_vessel())
+	rel_set(site, "payout_turf", descriptor.payout_turf())
 	var/datum/flight_destination/destination = GLOB.flight_service?.destinations[old_destination_id]
 	if(destination)
 		var/generated_destination_id = site.flight_destination_id
 		if(generated_destination_id && generated_destination_id != old_destination_id)
 			GLOB.flight_service.unregister_destination(generated_destination_id)
 		destination.name = descriptor_name
-		destination.expedition_handle = om_handle(site)
-		destination.target_handle = om_handle(site.overmap_sector())
+		rel_set(destination, "expedition", site)
+		rel_set(destination, "target", site.overmap_sector())
 		if(site.overmap_sector())
 			GLOB.flight_service.destination_by_target[REF(site.overmap_sector())] = destination.id
 		site.flight_destination_id = destination.id
-	descriptor.origin_console_handle = null
-	descriptor.assigned_shuttle_handle = null
-	descriptor.assigned_flight_vessel_handle = null
-	descriptor.payout_turf_handle = null
+	rel_clear(descriptor, "origin_console")
+	rel_clear(descriptor, "assigned_shuttle")
+	rel_clear(descriptor, "assigned_flight_vessel")
+	rel_clear(descriptor, "payout_turf")
 	qdel(descriptor)
 	if(!plan || QDELETED(plan))
 		return
@@ -320,7 +320,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	emergency_area.station_id = spec.id
 	emergency_area.department_id = "emergency"
 	emergency_area.name = "[spec.name] Habitable Annex"
-	materialization.transit_area_handle = om_handle(emergency_area)
+	rel_set(materialization, "transit_area", emergency_area)
 	for(var/local_x in 1 to spec.grid_width)
 		for(var/local_y in 1 to spec.grid_height)
 			var/turf/T = materialization.world_turf(local_x, local_y)
@@ -333,7 +333,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 				materialization.floor_count++
 			ChangeArea(T, emergency_area)
 	var/turf/arrival = materialization.world_turf(round(spec.grid_width / 2), round(spec.grid_height / 2))
-	materialization.entry_handle = om_handle(new /obj/effect/landmark/generated_station_entry(arrival))
+	rel_set(materialization, "entry", new /obj/effect/landmark/generated_station_entry(arrival))
 	materialization.entry().station_id = spec.id
 	generated_station_emergency_utilities(spec, materialization, emergency_area)
 	materialization.degradation_events += "rich station generation exhausted; published sealed emergency annex"
@@ -578,21 +578,21 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		generated_station_seed_air(fallback_floor)
 		site.floors += fallback_floor
 		station_materialization.degradation_events += "no planned floor survived; installed an emergency landing floor"
-	site.landing_handle = om_handle(get_turf(station_materialization.entry()))
+	rel_set(site, "landing", get_turf(station_materialization.entry()))
 	if(!site.landing() || site.landing().density)
-		site.landing_handle = om_handle(site.floors[1])
-		qdel_handle(station_materialization.entry_handle); station_materialization.entry_handle = null
-		station_materialization.entry_handle = om_handle(new /obj/effect/landmark/generated_station_entry(site.landing()))
+		rel_set(site, "landing", site.floors[1])
+		qdel_handle(station_materialization.entry); station_materialization.entry = null
+		rel_set(station_materialization, "entry", new /obj/effect/landmark/generated_station_entry(site.landing()))
 		station_materialization.entry().station_id = station_spec.id
 		station_materialization.degradation_events += "planned docking entry was unusable; moved arrival to the first walkable floor"
 	site.name = station_spec.name
 	site.name += " — [expedition_faction_name(site.faction)]"
-	site.assigned_shuttle_handle = om_handle(assigned_shuttle)
-	site.origin_console_handle = om_handle(origin_console)
-	site.payout_turf_handle = om_handle(get_turf(origin_console))
+	rel_set(site, "assigned_shuttle", assigned_shuttle)
+	rel_set(site, "origin_console", origin_console)
+	rel_set(site, "payout_turf", get_turf(origin_console))
 
 	var/obj/effect/shuttle_landmark/automatic/clearing/expedition/waypoint = new(site.landing())
-	waypoint.site_handle = om_handle(site)
+	rel_set(waypoint, "site", site)
 	own_set(site, "landing_waypoint", waypoint)
 
 	// Let the mission lay down its objective content.
@@ -697,11 +697,11 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	if(site.flight_destination_id)
 		GLOB.flight_service?.unregister_destination(site.flight_destination_id)
 	if(site.origin_console() && site.origin_console().active_expedition() == site)
-		site.origin_console().active_expedition_handle = null
+		rel_clear(site.origin_console(), "active_expedition")
 	if(site.assigned_flight_vessel()?.active_expedition() == site)
-		site.assigned_flight_vessel().active_expedition_handle = null
+		rel_clear(site.assigned_flight_vessel(), "active_expedition")
 	own_clear(site, "landing_waypoint", OWN_DELETE)
-	qdel_handle(site.overmap_sector_handle); site.overmap_sector_handle = null
+	qdel_handle(site.overmap_sector); site.overmap_sector = null
 	teardown_z["[z]"] = TRUE
 	var/datum/expedition_teardown_job/job = new(src, site, reason)
 	job.execute()
@@ -793,7 +793,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 
 /// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/expedition_teardown_job/proc/site() as /datum/expedition_site
-	return om_resolve(site_handle)
+	return site
 
 /// Work while any site is live.
 /datum/world_service/expedition/has_work()

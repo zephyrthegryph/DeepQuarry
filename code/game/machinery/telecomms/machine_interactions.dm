@@ -339,14 +339,14 @@
 
 		if("buffer")
 			if(P)
-				P.buffer_handle = om_handle(src)
+				rel_set(P, "buffer", src)
 				set_temp("-% Successfully stored \ref[P.buffer()] [P.buffer().name] in buffer %-", "average")
 			. = TRUE
 
 		if("flush")
 			if(P)
 				set_temp("-% Buffer successfully flushed. %-", "average")
-				P.buffer_handle = null
+				rel_clear(P, "buffer")
 			. = TRUE
 
 		if("cleartemp")

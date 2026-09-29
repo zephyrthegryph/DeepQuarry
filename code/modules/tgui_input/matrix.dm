@@ -65,7 +65,7 @@
 	/// The prompt's body, if any, of the TGUI window.
 	var/message
 	/// The target for our display
-	var/tmp/target_handle
+	var/tmp/atom/movable/target
 	/// The base color matrix
 	var/list/default
 	/// static mode users can't change
@@ -102,7 +102,7 @@
 /datum/tgui_input_colormatrix/New(mob/user, message, title, atom/movable/target, list/default, matrix_only, timeout, ui_state, was_path)
 	src.default = default
 	src.message = message
-	src.target_handle = om_handle(target)
+	rel_set(src, "target", target)
 	src.title = title
 	src.state_static = ui_state
 	src.was_path = was_path
@@ -342,4 +342,4 @@
 
 /// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_input_colormatrix/proc/target() as /atom/movable
-	return om_resolve(target_handle)
+	return target

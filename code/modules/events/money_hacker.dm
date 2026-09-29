@@ -1,14 +1,14 @@
 GLOBAL_VAR_INIT(account_hack_attempted, 0)
 
 /datum/event/money_hacker
-	var/tmp/affected_account_handle
+	var/tmp/datum/money_account/affected_account
 	endWhen = 100
 	TIMESTAMP_VAR(end_time)
 
 /datum/event/money_hacker/setup()
 	end_time = world.time + 6000
 	if(REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
-		affected_account_handle = om_handle(pick(REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)))
+		rel_set(src, "affected_account", pick(REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)))
 
 		GLOB.account_hack_attempted = 1
 	else
@@ -68,4 +68,4 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 
 /// LC-refs: the affected_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event/money_hacker/proc/affected_account() as /datum/money_account
-	return om_resolve(affected_account_handle)
+	return affected_account

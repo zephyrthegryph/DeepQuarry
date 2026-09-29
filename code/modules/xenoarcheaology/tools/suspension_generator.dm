@@ -7,7 +7,7 @@
 	density = 1
 	req_access = list(ACCESS_RESEARCH)
 	var/obj/item/cell/cell
-	var/tmp/auth_card_handle
+	var/tmp/obj/item/card/id/auth_card
 	var/locked = 1
 	var/power_use = 15
 	var/obj/effect/suspension_field/suspension_field
@@ -263,4 +263,4 @@ OWN(/obj/machinery/suspension_gen, cell, OWN_CONTAINED)
 
 /// LC-refs: the auth_card this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/suspension_gen/proc/auth_card() as /obj/item/card/id
-	return om_resolve(auth_card_handle)
+	return auth_card

@@ -641,7 +641,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 	desc = "You can secure yourself inside the shelter here."
 	specialfunctions = 4 // 4 is bolts
 	id = "placeholder_id_do_not_use" //This has to be this way, otherwise it will control ALL doors if left blank.
-	var/tmp/door_handle
+	var/tmp/obj/machinery/door/airlock/voidcraft/survival_pod/door
 
 /obj/machinery/button/remote/airlock/survival_pod/declare_interactions(list/into)
 	into += list(
@@ -657,7 +657,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 /obj/machinery/button/remote/airlock/survival_pod/proc/interaction_glass(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!door())
 		var/turf/dT = get_step(src,dir)
-		door_handle = om_handle(locate_within(dT, /obj/machinery/door/airlock/voidcraft/survival_pod))
+		rel_set(src, "door", locate_within(dT, /obj/machinery/door/airlock/voidcraft/survival_pod))
 	if(door())
 		door().glass = !door().glass
 		door().opacity = !door().opacity
@@ -696,7 +696,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 // Turns off only one light in a given direction from its source turf.
 /obj/machinery/light_switch/survival_pod
 	name = "shelter light switch"
-	var/tmp/target_light_handle
+	var/tmp/obj/machinery/light/target_light
 
 // Deliberately override base light switch behavior because we don't want to toggle ALL lights in the area - just one!
 /obj/machinery/light_switch/survival_pod/declare_interactions(list/into)
@@ -716,7 +716,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 	playsound(src, 'sound/machines/button.ogg', 100, 1, 0)
 	if(!target_light())
 		var/turf/dT = get_step(src, dir)
-		target_light_handle = om_handle(locate_within(dT, /obj/machinery/light))
+		rel_set(src, "target_light", locate_within(dT, /obj/machinery/light))
 	if(target_light())
 		target_light().on = on
 		target_light().update()
@@ -948,8 +948,8 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 
 /// LC-refs: the door this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/button/remote/airlock/survival_pod/proc/door() as /obj/machinery/door/airlock/voidcraft/survival_pod
-	return om_resolve(door_handle)
+	return door
 
 /// LC-refs: the target_light this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/light_switch/survival_pod/proc/target_light() as /obj/machinery/light
-	return om_resolve(target_light_handle)
+	return target_light

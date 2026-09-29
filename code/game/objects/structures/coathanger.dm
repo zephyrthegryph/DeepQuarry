@@ -3,7 +3,7 @@
 	desc = "Rack that holds coats."
 	icon = 'icons/obj/coatrack.dmi'
 	icon_state = "coatrack0"
-	var/coat_handle
+	var/obj/item/clothing/suit/coat
 	var/list/allowed = list(/obj/item/clothing/suit/storage/toggle/labcoat, /obj/item/clothing/suit/storage/det_trench) // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
 
 /obj/structure/coatrack/declare_interactions(list/into)
@@ -27,7 +27,7 @@
 	user.visible_message("[user] takes [coat()] off \the [src].", "You take [coat()] off the \the [src]")
 	if(!user.put_in_active_hand(coat()))
 		coat().forceMove(get_turf(user))
-	coat_handle = null
+	rel_clear(src, "coat")
 	update_icon()
 	return TRUE
 
@@ -44,7 +44,7 @@
 			can_hang = 1
 	if (can_hang && !coat())
 		user.visible_message("[user] hangs [W] on \the [src].", "You hang [W] on the \the [src]")
-		coat_handle = om_handle(W)
+		rel_set(src, "coat", W)
 		user.drop_from_inventory(coat(), src)
 		update_icon()
 	else
@@ -59,7 +59,7 @@
 
 	if (can_hang && !coat())
 		src.visible_message("[mover] lands on \the [src].")
-		coat_handle = om_handle(mover)
+		rel_set(src, "coat", mover)
 		coat().forceMove(src)
 		update_icon()
 		return 0
@@ -77,4 +77,4 @@
 
 /// LC-refs: coat -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/coatrack/proc/coat() as /obj/item/clothing/suit
-	return om_resolve(coat_handle)
+	return coat

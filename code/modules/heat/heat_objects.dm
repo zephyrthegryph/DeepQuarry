@@ -15,7 +15,7 @@
 /atom/movable
 	/// The burning tile whose gas this object's body is coupled to (slot 1),
 	/// while a hotspot is on it.
-	var/tmp/heat_fire_turf_handle
+	var/tmp/datum/heat_fire_turf
 
 // ------------------------------------------------------ thermal properties
 
@@ -62,22 +62,22 @@
 /// (slot 1), creating and keeping the body while the tile burns. The heat
 /// domain then moves the heat both ways, conserving it. Returns TRUE if coupled.
 /atom/movable/proc/couple_to_fire(turf/location)
-	if(om_resolve(heat_fire_turf_handle) == location && !isnull(heat_body))
+	if(heat_fire_turf == location && !isnull(heat_body))
 		return TRUE
 	// Resting on the floor it was at the floor's temperature, not the flame's.
 	if(!create_heat_body(TRUE, min(location.get_temperature(), get_ambient_temperature())))
 		return FALSE
 	vg_heat_body_keep(heat_body, TRUE)
 	vg_heat_body_couple(heat_body, 1, HEAT_TARGET_TURF_AIR, location, fire_conductance())
-	heat_fire_turf_handle = om_handle(location)
+	rel_set(src, "heat_fire_turf", location)
 	return TRUE
 
 /// Ends the fire coupling: the body relaxes to its surroundings and is
 /// released at equilibrium again.
 /atom/movable/proc/decouple_from_fire()
-	if(isnull(om_resolve(heat_fire_turf_handle)))
+	if(isnull(heat_fire_turf))
 		return
-	heat_fire_turf_handle = null
+	rel_clear(src, "heat_fire_turf")
 	if(isnull(heat_body))
 		return
 	vg_heat_body_couple(heat_body, 1, HEAT_TARGET_NONE, 0, 0)
@@ -95,7 +95,7 @@
 		if(isliving(thing))
 			thing.fire_act(temperature, volume)
 			continue
-		if(om_resolve(thing.heat_fire_turf_handle) == location && !isnull(thing.heat_body))
+		if(thing.heat_fire_turf == location && !isnull(thing.heat_body))
 			continue
 		if(!thing.heats_in_fire())
 			continue
@@ -114,7 +114,7 @@
 /// The tile stopped burning: uncouple what it heated.
 /obj/effect/hotspot/proc/cool_tile(turf/location)
 	for(var/atom/movable/thing as anything in location)
-		if(om_resolve(thing.heat_fire_turf_handle) == location)
+		if(thing.heat_fire_turf == location)
 			thing.decouple_from_fire()
 
 // ---------------------------------------------------------- overheating

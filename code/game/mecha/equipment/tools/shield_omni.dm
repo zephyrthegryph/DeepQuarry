@@ -66,11 +66,11 @@
 	var/shift_x = 0
 	var/shift_y = 0
 
-	var/my_mech_handle
+	var/obj/mecha/my_mech
 
 /obj/item/shield_projector/rectangle/mecha/Initialize(mapload)
 	. = ..()
-	my_mech_handle = om_handle(loc)
+	rel_set(src, "my_mech", loc)
 	om_hook(my_mech(), /datum/om/event/movable_attempted_move, src, TYPE_PROC_REF(/obj/item/shield_projector, update_shield_positions))
 	dq_add_recursive_move(my_mech())
 	update_shift(my_mech())
@@ -99,4 +99,4 @@
 
 /// LC-refs: my mech -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/shield_projector/rectangle/mecha/proc/my_mech() as /obj/mecha
-	return om_resolve(my_mech_handle)
+	return my_mech

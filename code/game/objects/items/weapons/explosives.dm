@@ -8,7 +8,7 @@
 	flags = NOBLUDGEON
 	w_class = ITEMSIZE_SMALL
 	var/timer = 10
-	var/target_handle
+	var/atom/target
 	var/open_panel = 0
 	var/image_overlay = null
 	var/blast_dev = 0
@@ -72,7 +72,7 @@ DECLARE_INTERACTIONS(/obj/item/plastique, \
 	if(!(in_range(user, target)))
 		return
 	user.drop_item()
-	src.target_handle = om_handle(target_ref())
+	rel_set(src, "target", target_ref())
 	moveToNullspace()
 
 	if (ismob(target))
@@ -88,9 +88,9 @@ DECLARE_INTERACTIONS(/obj/item/plastique, \
 
 /obj/item/plastique/proc/explode(location)
 	if(!target_ref())
-		target_handle = om_handle(get_atom_on_turf(src))
+		rel_set(src, "target", get_atom_on_turf(src))
 	if(!target_ref())
-		target_handle = om_handle(src)
+		rel_set(src, "target", src)
 	if(location)
 		explosion(location, blast_dev, blast_heavy, blast_light, blast_flash)
 
@@ -142,9 +142,9 @@ EXTEND_INTERACTIONS(/obj/item/plastique/seismic, INTERACT_ITEM(null, PROC_REF(se
 
 /obj/item/plastique/seismic/locked/explode(location)
 	if(!target_ref())
-		target_handle = om_handle(get_atom_on_turf(src))
+		rel_set(src, "target", get_atom_on_turf(src))
 	if(!target_ref())
-		target_handle = om_handle(src)
+		rel_set(src, "target", src)
 
 	var/turf/T = get_turf(target_ref())
 	if((T.z in using_map.station_levels) || (T.z in using_map.admin_levels))
@@ -157,4 +157,4 @@ EXTEND_INTERACTIONS(/obj/item/plastique/seismic, INTERACT_ITEM(null, PROC_REF(se
 
 /// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/plastique/proc/target_ref() as /atom
-	return om_resolve(target_handle)
+	return target

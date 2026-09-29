@@ -41,7 +41,7 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	var/const/FREQ_LISTENING = 1
 	var/list/internal_channels
 
-	var/radio_connection_handle
+	var/datum/radio_frequency/radio_connection
 	var/list/datum/radio_frequency/secure_radio_connections // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 	///If we're a syndicate beacon or not.
@@ -52,7 +52,7 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 /obj/item/radio/proc/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
+	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
 
 /obj/item/radio/Initialize(mapload)
 	. = ..()
@@ -83,7 +83,7 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 		GLOB.radio_service.remove_object(src, frequency)
 		for (var/ch_name in channels)
 			GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
-	radio_connection_handle = null
+	rel_clear(src, "radio_connection")
 	return ..()
 
 /obj/item/radio/LateInitialize()
@@ -626,7 +626,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 //Giving borgs their own radio to have some more room to work with -Sieve
 
 /obj/item/radio/borg
-	var/myborg_handle // Cyborg which owns this radio. Used for power checks
+	var/mob/living/silicon/robot/myborg // Cyborg which owns this radio. Used for power checks
 	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/obj/item/encryptionkey/keyslot = null//Borg radios can handle a single encryption key
 	icon = 'icons/obj/robot_component.dmi' // Cyborgs radio icons should look like the component.
@@ -872,8 +872,8 @@ OWN(/obj/item/radio/borg, keyslot, OWN_CONTAINED)
 
 /// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/radio/proc/radio_connection() as /datum/radio_frequency
-	return om_resolve(radio_connection_handle)
+	return radio_connection
 
 /// LC-refs: myborg -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/radio/borg/proc/myborg() as /mob/living/silicon/robot
-	return om_resolve(myborg_handle)
+	return myborg

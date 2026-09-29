@@ -41,7 +41,7 @@
 				continue
 			if(get_dir(cap, src) == cap.dir)
 				LAZYOR(capacitors, cap)
-				cap.owned_gen_handle = om_handle(src)
+				rel_set(cap, "owned_gen", src)
 	own_set(src, "shield_hum", new /datum/looping_sound/shield_generator(list(src), FALSE))
 	. = ..()
 	make_climbable()
@@ -85,10 +85,10 @@
 				continue
 			if(get_dir(cap, src) == cap.dir && src.anchored)
 				LAZYOR(capacitors, cap)
-				cap.owned_gen_handle = om_handle(src)
+				rel_set(cap, "owned_gen", src)
 	else
 		for(var/obj/machinery/shield_capacitor/capacitor in capacitors)
-			capacitor.owned_gen_handle = null
+			rel_clear(capacitor, "owned_gen")
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/shield_gen/declare_interactions(list/into)

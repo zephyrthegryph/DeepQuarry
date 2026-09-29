@@ -8,7 +8,7 @@
 	light_range = 3
 
 	var/obj/item/assembly/signaler/anomaly/anomaly_core = /obj/item/assembly/signaler/anomaly
-	var/impact_area_handle
+	var/area/impact_area
 
 	var/lifespan = ANOMALY_COUNTDOWN_TIMER
 	var/death_time
@@ -26,7 +26,7 @@
 /obj/effect/anomaly/Initialize(mapload, new_lifespan, drops_core = TRUE)
 	. = ..()
 
-	impact_area_handle = om_handle(get_area(src))
+	rel_set(src, "impact_area", get_area(src))
 
 	if(!impact_area())
 		return INITIALIZE_HINT_QDEL
@@ -188,4 +188,4 @@ EXTEND_INTERACTIONS(/obj/effect/anomaly, \
 
 /// LC-refs: impact area -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/anomaly/proc/impact_area() as /area
-	return om_resolve(impact_area_handle)
+	return impact_area

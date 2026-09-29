@@ -86,13 +86,13 @@
 
 /datum/tgui_module/atmos_control/proc/generate_state(air_alarm)
 	var/datum/tgui_state/air_alarm_remote/state = new()
-	state.atmos_control_handle = om_handle(src)
-	state.air_alarm_handle = om_handle(air_alarm)
+	rel_set(state, "atmos_control", src)
+	rel_set(state, "air_alarm", air_alarm)
 	return state
 
 /datum/tgui_state/air_alarm_remote
-	var/tmp/atmos_control_handle
-	var/tmp/air_alarm_handle
+	var/tmp/datum/tgui_module/atmos_control/atmos_control
+	var/tmp/obj/machinery/alarm/air_alarm
 
 /datum/tgui_state/air_alarm_remote/can_use_topic(src_object, mob/user)
 	if(!atmos_control().ui_ref)
@@ -115,10 +115,10 @@
 
 /// LC-refs: the atmos_control this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_state/air_alarm_remote/proc/atmos_control() as /datum/tgui_module/atmos_control
-	return om_resolve(atmos_control_handle)
+	return atmos_control
 
 /// LC-refs: the air_alarm this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_state/air_alarm_remote/proc/air_alarm() as /obj/machinery/alarm
-	return om_resolve(air_alarm_handle)
+	return air_alarm
 
 /// Alarms shown by this UI, rebuilt when it opens.

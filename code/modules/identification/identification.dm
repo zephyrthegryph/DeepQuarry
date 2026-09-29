@@ -4,7 +4,7 @@
 // Despite this, unlike a roguelike, objects that do the same thing DO NOT have the same name/appearance/etc.
 
 /datum/identification
-	var/tmp/holder_handle	// The thing the datum is 'attached' to.
+	var/tmp/obj/holder	// The thing the datum is 'attached' to.
 	// Holds the true information.
 	var/true_name = null				// The real name of the object. It is copied automatically from holder, on the datum being instantiated.
 	var/true_desc = null				// Ditto, for desc.
@@ -24,7 +24,7 @@
 
 /datum/identification/New(obj/new_holder)
 	ASSERT(new_holder)
-	holder_handle = om_handle(new_holder)
+	rel_set(src, "holder", new_holder)
 	record_true_identity() // Get all the identifying features from the holder.
 	update_name() // Then hide them for awhile if needed.
 
@@ -116,4 +116,4 @@
 
 /// LC-refs: The thing the datum is 'attached' to. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/identification/proc/holder() as /obj
-	return om_resolve(holder_handle)
+	return holder

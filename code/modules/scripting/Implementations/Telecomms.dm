@@ -5,14 +5,14 @@
 	// NanoTrasen TCS Language - Made by Doohl
 
 /datum/n_Interpreter/TCS_Interpreter
-	var/tmp/Compiler_handle
+	var/tmp/datum/TCS_Compiler/Compiler
 
 /datum/n_Interpreter/TCS_Interpreter/HandleError(datum/runtimeError/e)
 	Compiler().Holder().add_entry(e.ToString(), "Execution Error")
 
 /datum/TCS_Compiler
 	var/datum/n_Interpreter/TCS_Interpreter/interpreter
-	var/tmp/Holder_handle	// the server that is running the code
+	var/tmp/obj/machinery/telecomms/server/Holder	// the server that is running the code
 	var/ready = 1 // 1 if ready to run code
 
 	/** Proc: Compile
@@ -37,7 +37,7 @@
 
 	own_set(src, "interpreter", new /datum/n_Interpreter/TCS_Interpreter(program))
 	interpreter.persist	= 1
-	interpreter.Compiler_handle= om_handle(src)
+	rel_set(interpreter, "Compiler", src)
 
 	return returnerrors
 
@@ -62,7 +62,7 @@
 	if(om_busy(src))
 		return TRUE
 
-	interpreter.container_handle = om_handle(src)
+	rel_set(interpreter, "container", src)
 
 	interpreter.SetVar("PI"		, 	3.141592653)	// value of pi
 	interpreter.SetVar("E" 		, 	2.718281828)	// value of e
@@ -331,8 +331,8 @@
 
 /// LC-refs: the Compiler this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/n_Interpreter/TCS_Interpreter/proc/Compiler() as /datum/TCS_Compiler
-	return om_resolve(Compiler_handle)
+	return Compiler
 
 /// LC-refs: the server that is running the code -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/TCS_Compiler/proc/Holder() as /obj/machinery/telecomms/server
-	return om_resolve(Holder_handle)
+	return Holder

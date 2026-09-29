@@ -7,7 +7,7 @@
 	anchored = FALSE
 	density = TRUE
 	req_access = list(ACCESS_ENGINE_EQUIP)
-	var/tmp/P_handle
+	var/tmp/obj/item/tank/phoron/P
 	var/last_power = 0
 	var/last_power_new = 0
 	var/active = 0
@@ -85,7 +85,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 		to_chat(user, span_red("There's already a phoron tank loaded."))
 		return TRUE
 	user.drop_item()
-	src.P_handle = om_handle(W)
+	rel_set(src, "P", W)
 	W.forceMove(src)
 	update_icons()
 	return TRUE
@@ -147,7 +147,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 		return
 	Z.forceMove(get_turf(src))
 	Z.layer = initial(Z.layer)
-	src.P_handle = null
+	rel_clear(src, "P")
 	if(active)
 		toggle_power()
 	else
@@ -187,4 +187,4 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 
 /// LC-refs: the P this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/power/rad_collector/proc/P() as /obj/item/tank/phoron
-	return om_resolve(P_handle)
+	return P

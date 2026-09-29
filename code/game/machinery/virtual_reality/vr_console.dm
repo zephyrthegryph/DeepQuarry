@@ -14,8 +14,8 @@
 	// No view fields (OM relations step 3): `occupant` is still an ordinary
 	// var every reader here uses, but this slot's own on_link()/on_unlink()
 	// (below) are its only writer now.
-	var/avatar_handle
-	var/vr_mind_handle
+	var/mob/living/carbon/human/avatar
+	var/datum/mind/vr_mind
 	var/datum/effect/effect/system/smoke_spread/bad/smoke
 
 	var/eject_dead = TRUE
@@ -127,7 +127,7 @@
 		return ITEM_INTERACT_BLOCKING
 	if(occupant && avatar())
 		avatar().exit_vr()
-		avatar_handle = null
+		rel_clear(src, "avatar")
 		perform_exit()
 	return ..()
 
@@ -265,7 +265,7 @@
 	if(!occupant)
 		return
 
-	avatar_handle = null
+	rel_clear(src, "avatar")
 
 	if(occupant.vr_link)
 		occupant.vr_link.exit_vr(FALSE)
@@ -297,7 +297,7 @@
 	if(QDELETED(occupant.vr_link)) //Hardrefs...
 		rel_clear(occupant, "vr_link")
 
-	avatar_handle = om_handle(occupant.vr_link)
+	rel_set(src, "avatar", occupant.vr_link)
 	// If they've already enterred VR, and are reconnecting, prompt if they want a new body
 	if(avatar())
 		om_ask(occupant, /datum/om/prompt/confirm, PROC_REF(vr_reuse_answered), message = "You already have a [avatar().stat == DEAD ? "" : "deceased "]Virtual Reality avatar. Would you like to use it?", title = "New avatar", answer_on_no = TRUE, requires = list(/datum/om/check/inside_target))
@@ -311,7 +311,7 @@
 		return
 	// Delink the mob
 	rel_clear(occupant, "vr_link")
-	avatar_handle = null
+	rel_clear(src, "avatar")
 	vr_choose_avatar(occupant)
 
 /// Asks where the new avatar spawns and whether it is a creature; vr_avatar_chosen() makes it.
@@ -354,9 +354,9 @@
 			break
 
 	if(!perfect_replica)
-		avatar_handle = om_handle(new /mob/living/carbon/human(S, "Virtual Reality Avatar"))
+		rel_set(src, "avatar", new /mob/living/carbon/human(S, "Virtual Reality Avatar"))
 	else
-		avatar_handle = om_handle(new /mob/living/carbon/human(src, occupant.species.name))
+		rel_set(src, "avatar", new /mob/living/carbon/human(src, occupant.species.name))
 
 	// If the user has a non-default (Human) bodyshape, make it match theirs.
 	if(occupant.species.name != "Promethean" && occupant.species.name != "Human" && mirror_first_occupant)
@@ -421,8 +421,8 @@
 
 /// LC-refs: avatar -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/vr_sleeper/proc/avatar() as /mob/living/carbon/human
-	return om_resolve(avatar_handle)
+	return avatar
 
 /// LC-refs: vr mind -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/vr_sleeper/proc/vr_mind() as /datum/mind
-	return om_resolve(vr_mind_handle)
+	return vr_mind

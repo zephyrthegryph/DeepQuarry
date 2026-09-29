@@ -59,9 +59,9 @@
 	///Lazy list to track the turfs being affected by our light, to determine their visibility.
 	var/list/turf/affected_turfs
 	///Movable atom currently holding the light. Parent might be a flashlight, for example, but that might be held by a mob or something else.
-	var/current_holder_handle
+	var/atom/movable/current_holder
 	///Movable atom the parent is attached to. For example, a flashlight into a helmet or gun. We'll need to track the thing the parent is attached to as if it were the parent itself.
-	var/parent_attached_to_handle
+	var/atom/movable/parent_attached_to
 	///Whether we're a directional light
 	var/directional
 	///Abstractional atom for directional light, we move this around to make the directional effect
@@ -229,7 +229,7 @@
 		return
 
 	. = parent_attached_to()
-	parent_attached_to_handle = om_handle(new_parent_attached_to)
+	rel_set(src, "parent_attached_to", new_parent_attached_to)
 	if(.)
 		var/atom/movable/old_parent_attached_to = .
 		om_unhook(old_parent_attached_to, list(/datum/om/event/qdeleting, /datum/om/event/moved), src)
@@ -256,7 +256,7 @@
 				om_unhook(current_holder(), /datum/om/event/atom_dir_change, src)
 		if(overlay_lighting_flags & LIGHTING_ON)
 			remove_dynamic_lumi()
-	current_holder_handle = om_handle(new_holder)
+	rel_set(src, "current_holder", new_holder)
 	if(new_holder == null)
 		clean_old_turfs()
 		return
@@ -564,11 +564,11 @@
 
 /// LC-refs: the atom the light is currently drawn on -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/overlay_lighting/proc/current_holder() as /atom/movable
-	return om_resolve(current_holder_handle)
+	return current_holder
 
 /// LC-refs: the atom our parent is attached to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/overlay_lighting/proc/parent_attached_to() as /atom/movable
-	return om_resolve(parent_attached_to_handle)
+	return parent_attached_to
 
 
 /atom/movable

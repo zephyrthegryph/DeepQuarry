@@ -15,17 +15,17 @@
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
 	var/on = 1
-	var/area_handle
+	var/area/area
 	var/otherarea = null
 	var/image/overlay
 
 /obj/machinery/light_switch/Initialize(mapload)
 	. = ..()
 
-	area_handle = om_handle(get_area(src))
+	rel_set(src, "area", get_area(src))
 
 	if(otherarea)
-		area_handle = om_handle(locate(text2path("/area/[otherarea]")))
+		rel_set(src, "area", locate(text2path("/area/[otherarea]")))
 
 	if(!name)
 		name = "light switch ([area().name])"
@@ -111,4 +111,4 @@
 
 /// LC-refs: area -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/light_switch/proc/area() as /area
-	return om_resolve(area_handle)
+	return area

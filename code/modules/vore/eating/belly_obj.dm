@@ -55,7 +55,7 @@
 	var/fancy_vore = FALSE					// Using the new sounds?
 	var/is_wet = TRUE						// Is this belly's insides made of slimy parts?
 	var/wet_loop = TRUE						// Does the belly have a fleshy loop playing?
-	var/tmp/ownegg_handle	// Is this belly creating an egg?
+	var/tmp/obj/item/storage/vore_egg/ownegg	// Is this belly creating an egg?
 	var/egg_type = "Egg"					// Default egg type and path.
 	var/tmp/egg_path = /obj/item/storage/vore_egg
 	var/egg_name = null						// Custom egg name
@@ -1260,7 +1260,7 @@ REL_PAIR_LIST(/mob/living, vore_organs, owner)
 
 /// LC-refs: Is this belly creating an egg? -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/belly/proc/ownegg() as /obj/item/storage/vore_egg
-	return om_resolve(ownegg_handle)
+	return ownegg
 
 /// om_after() target: a temporary digest mode wears off.
 /obj/belly/proc/reset_digest_mode(mode)

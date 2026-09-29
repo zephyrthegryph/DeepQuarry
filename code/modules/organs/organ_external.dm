@@ -155,7 +155,7 @@ OWN(/obj/item/organ/external, splinted, OWN_CONTAINED)
 	if(istype(source) && istype(target))
 		own_set(source, "part", target)
 		LAZYADD(target.implants, source)
-		source.imp_in_handle = om_handle(target.owner)
+		rel_set(source, "imp_in", target.owner)
 
 /datum/om/relation/slot/implant_site/on_unlink(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
 	if(istype(source) && source.part == target)
@@ -168,7 +168,7 @@ OWN(/obj/item/organ/external, splinted, OWN_CONTAINED)
 	// leaving `imp_in` stale until then would fail a "no dangling refs" check
 	// that inspects it before GC.
 	if(istype(source))
-		source.imp_in_handle = null
+		rel_clear(source, "imp_in")
 
 /obj/item/organ/external/emp_act(severity, recursive)
 	. = ..()

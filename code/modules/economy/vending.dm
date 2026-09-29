@@ -28,7 +28,7 @@
 	var/vend_ready = 1 //Are we ready to vend?? Is it time??
 	var/vend_delay = 10 //How long does it take to vend?
 	var/categories = CAT_NORMAL // Bitmask of cats we're currently showing
-	var/tmp/currently_vending_handle	// What we're requesting payment for right now
+	var/tmp/datum/stored_item/vending_product/currently_vending	// What we're requesting payment for right now
 	var/vending_sound = "machines/vending/vending_drop.ogg"
 
 	/*
@@ -569,7 +569,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 				vend_ready = TRUE
 				return
 
-			currently_vending_handle = om_handle(R)
+			rel_set(src, "currently_vending", R)
 
 			var/paid = FALSE
 
@@ -661,7 +661,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 		visible_message(span_infoplain(span_bold("\The [src]") + " clunks and fails to dispense any item."))
 		playsound(src, "sound/[vending_sound]", 100, TRUE, 1)
 		vend_ready = 1
-		currently_vending_handle = null
+		rel_clear(src, "currently_vending")
 		SStgui.update_uis(src)
 		return
 	R.get_product(get_turf(src))
@@ -674,7 +674,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 	GLOB.items_sold_shift_roundstat++
 
 	vend_ready = 1
-	currently_vending_handle = null
+	rel_clear(src, "currently_vending")
 	SStgui.update_uis(src)
 
 /obj/machinery/vending/proc/do_logging(datum/stored_item/vending_product/R, mob/user, vending = 0)
@@ -820,4 +820,4 @@ GLOBAL_LIST_EMPTY(vending_products)
 
 /// LC-refs: What we're requesting payment for right now -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/vending/proc/currently_vending() as /datum/stored_item/vending_product
-	return om_resolve(currently_vending_handle)
+	return currently_vending

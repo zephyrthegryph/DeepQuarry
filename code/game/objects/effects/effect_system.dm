@@ -21,7 +21,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 /datum/effect/effect/system
 	var/number = 3
 	var/cardinals = 0
-	var/location_handle
+	var/turf/location
 	var/atom/holder
 	var/setup = 0
 
@@ -30,7 +30,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		n = 10
 	number = n
 	cardinals = c
-	location_handle = om_handle(loc)
+	rel_set(src, "location", loc)
 	setup = 1
 
 /datum/effect/effect/system/proc/attach(atom/atom)
@@ -64,11 +64,11 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		n = 10
 	number = n
 	cardinals = c
-	location_handle = om_handle(loc)
+	rel_set(src, "location", loc)
 
 /datum/effect/effect/system/steam_spread/proc/emit_one_steam()
 	if(holder)
-		src.location_handle = om_handle(get_turf(holder))
+		rel_set(src, "location", get_turf(holder))
 	var/obj/effect/effect/steam/steam = new /obj/effect/effect/steam(src.get_location())
 	var/direction
 	if(src.cardinals)
@@ -128,13 +128,13 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	number = n
 	cardinals = c
 	if(istype(loca, /turf/))
-		location_handle = om_handle(loca)
+		rel_set(src, "location", loca)
 	else
-		location_handle = om_handle(get_turf(loca))
+		rel_set(src, "location", get_turf(loca))
 
 /datum/effect/effect/system/spark_spread/proc/emit_one_spark()
 	if(holder)
-		src.location_handle = om_handle(get_turf(holder))
+		rel_set(src, "location", get_turf(holder))
 	var/obj/effect/effect/sparks/sparks = new /obj/effect/effect/sparks(src.get_location())
 	src.total_sparks++
 	var/direction
@@ -354,15 +354,15 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 	number = n
 	cardinals = c
 	if(istype(loca, /turf/))
-		location_handle = om_handle(loca)
+		rel_set(src, "location", loca)
 	else
-		location_handle = om_handle(get_turf(loca))
+		rel_set(src, "location", get_turf(loca))
 	if(direct)
 		direction = direct
 
 /datum/effect/effect/system/smoke_spread/proc/emit_one_smoke(color_override)
 	if(holder)
-		src.location_handle = om_handle(get_turf(holder))
+		rel_set(src, "location", get_turf(holder))
 	var/obj/effect/effect/smoke/smoke = new smoke_type(src.get_location())
 	src.total_smoke++
 	if(color_override)
@@ -423,13 +423,13 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 	anchored = TRUE
 
 /datum/effect/effect/system/ion_trail_follow
-	var/oldposition_handle
+	var/turf/oldposition
 	var/processing = 1
 	var/on = 1
 
 /datum/effect/effect/system/ion_trail_follow/set_up(atom/atom)
 	attach(atom)
-	oldposition_handle = om_handle(get_turf(atom))
+	rel_set(src, "oldposition", get_turf(atom))
 
 /datum/effect/effect/system/ion_trail_follow/proc/trail_step()
 	var/turf/T
@@ -444,7 +444,7 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 	if(T != src.oldposition())
 		if(isturf(T))
 			var/obj/effect/effect/ion_trails/I = new /obj/effect/effect/ion_trails(src.oldposition())
-			src.oldposition_handle = om_handle(T)
+			rel_set(src, "oldposition", T)
 			I.set_dir(src.holder.dir)
 			flick("ion_fade", I)
 			I.icon_state = "blank"
@@ -474,19 +474,19 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 /////////////////////////////////////////////
 
 /datum/effect/effect/system/steam_trail_follow
-	var/oldposition_handle
+	var/turf/oldposition
 	var/processing = 1
 	var/on = 1
 
 /datum/effect/effect/system/steam_trail_follow/set_up(atom/atom)
 	attach(atom)
-	oldposition_handle = om_handle(get_turf(atom))
+	rel_set(src, "oldposition", get_turf(atom))
 
 /datum/effect/effect/system/steam_trail_follow/proc/steam_step()
 	if(src.number < 3)
 		var/obj/effect/effect/steam/I = new /obj/effect/effect/steam(src.oldposition())
 		src.number++
-		src.oldposition_handle = om_handle(get_turf(holder))
+		rel_set(src, "oldposition", get_turf(holder))
 		I.set_dir(src.holder.dir)
 		om_after(src, 10, PROC_REF(expire_steam_trail), I)
 	om_after(src, 2, PROC_REF(reschedule_steam))
@@ -520,9 +520,9 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 /datum/effect/effect/system/reagents_explosion/set_up(amt, loc, flash = 0, flash_fact = 0)
 	amount = amt
 	if(istype(loc, /turf/))
-		location_handle = om_handle(loc)
+		rel_set(src, "location", loc)
 	else
-		location_handle = om_handle(get_turf(loc))
+		rel_set(src, "location", get_turf(loc))
 
 	flashing = flash
 	flashing_factor = flash_fact
@@ -590,9 +590,9 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 
 /datum/effect/effect/system/teleport_greyscale/set_up(cl, loca)
 	if(istype(loca, /turf/))
-		location_handle = om_handle(loca)
+		rel_set(src, "location", loca)
 	else
-		location_handle = om_handle(get_turf(loca))
+		rel_set(src, "location", get_turf(loca))
 	color = cl
 
 /datum/effect/effect/system/teleport_greyscale/start()
@@ -633,15 +633,15 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 	number = n
 	cardinals = c
 	if(istype(loca, /turf/))
-		location_handle = om_handle(loca)
+		rel_set(src, "location", loca)
 	else
-		location_handle = om_handle(get_turf(loca))
+		rel_set(src, "location", get_turf(loca))
 	if(direct)
 		direction = direct
 
 /datum/effect/effect/system/confetti_spread/proc/emit_one_confetti(color_override)
 	if(holder)
-		src.location_handle = om_handle(get_turf(holder))
+		rel_set(src, "location", get_turf(holder))
 	var/obj/effect/effect/confetti/confetti = new confetti_type(src.get_location())
 	src.total_confetti++
 	if(color_override)
@@ -693,13 +693,13 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 
 /// LC-refs: location -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/effect/effect/system/proc/get_location() as /turf
-	return om_resolve(location_handle)
+	return location
 
 /// LC-refs: oldposition -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/effect/effect/system/ion_trail_follow/proc/oldposition() as /turf
-	return om_resolve(oldposition_handle)
+	return oldposition
 
 /// LC-refs: oldposition -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/effect/effect/system/steam_trail_follow/proc/oldposition() as /turf
-	return om_resolve(oldposition_handle)
+	return oldposition
 

@@ -226,7 +226,7 @@
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	signal.source_handle = om_handle(src)
+	rel_set(signal, "source", src)
 
 	signal.data = list(
 		"tag" = id,

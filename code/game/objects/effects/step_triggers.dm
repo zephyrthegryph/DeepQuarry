@@ -163,14 +163,14 @@ GLOBAL_LIST_EMPTY(mapped_autostrips_mob)
 /* Teleporter that sends objects stepping on it to a specific landmark. */
 
 /obj/effect/step_trigger/teleporter/landmark
-	var/the_landmark_handle
+	var/obj/effect/landmark/the_landmark
 	var/landmark_id = null
 
 /obj/effect/step_trigger/teleporter/landmark/Initialize(mapload)
 	. = ..()
 	for(var/obj/effect/landmark/teleport_mark/mark in REGISTRY_MEMBERS(REGISTRY_TELE_LANDMARKS))
 		if(mark.landmark_id == landmark_id)
-			the_landmark_handle = om_handle(mark)
+			rel_set(src, "the_landmark", mark)
 			return
 
 /obj/effect/step_trigger/teleporter/landmark/Trigger(atom/movable/A)
@@ -249,8 +249,8 @@ But for now, for what it's been used for, it works.
 /obj/effect/step_trigger/autostrip
 	name = "Autostrip trigger. Set the targetid to match the effect/autostriptarget"
 	var/targetid = "Default"
-	var/target_handle
-	var/Mtarget_handle
+	var/obj/effect/autostriptarget/target
+	var/obj/effect/autostriptarget/mob/Mtarget
 	var/remove_implants = 0	//Havn't bothered to implement this yet
 	var/remove_mutations = 0
 
@@ -298,8 +298,8 @@ But for now, for what it's been used for, it works.
 
 /obj/effect/step_trigger/autostrip/proc/initMappedLink()
 	. = FALSE
-	target_handle = om_handle(GLOB.mapped_autostrips[targetid])
-	Mtarget_handle = om_handle(GLOB.mapped_autostrips_mob[targetid])
+	rel_set(src, "target", GLOB.mapped_autostrips[targetid])
+	rel_set(src, "Mtarget", GLOB.mapped_autostrips_mob[targetid])
 	if(target_ref())
 		. = TRUE
 
@@ -381,7 +381,7 @@ But for now, for what it's been used for, it works.
 
 /// LC-refs: the landmark -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/step_trigger/teleporter/landmark/proc/the_landmark() as /obj/effect/landmark
-	return om_resolve(the_landmark_handle)
+	return the_landmark
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/effect/step_trigger/teleporter/planetary_fall/proc/planet() as /datum/planet
@@ -389,8 +389,8 @@ But for now, for what it's been used for, it works.
 
 /// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/step_trigger/autostrip/proc/target_ref() as /obj/effect/autostriptarget
-	return om_resolve(target_handle)
+	return target
 
 /// LC-refs: Mtarget -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/step_trigger/autostrip/proc/Mtarget() as /obj/effect/autostriptarget/mob
-	return om_resolve(Mtarget_handle)
+	return Mtarget

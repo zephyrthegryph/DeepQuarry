@@ -7,7 +7,7 @@
 	light_color = "#00b000"
 	circuit = /obj/item/circuitboard/pod
 	var/id = 1.0
-	var/connected_handle
+	var/obj/machinery/mass_driver/connected
 	var/timing = FALSE
 	var/time = 30.0
 	var/title = "Mass Driver Controls"
@@ -19,7 +19,7 @@
 /obj/machinery/computer/pod/LateInitialize()
 	for(var/obj/machinery/mass_driver/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
-			connected_handle = om_handle(M)
+			rel_set(src, "connected", M)
 			break
 
 /obj/machinery/computer/pod/proc/alarm()
@@ -173,4 +173,4 @@
 
 /// LC-refs: connected -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/pod/proc/connected() as /obj/machinery/mass_driver
-	return om_resolve(connected_handle)
+	return connected

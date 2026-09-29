@@ -655,7 +655,7 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 	use_external_power = 1
 
 /obj/item/weldingtool/electric/mounted/exosuit
-	var/equip_mount_handle
+	var/obj/item/mecha_parts/mecha_equipment/equip_mount
 	flame_intensity = 1
 	eye_safety_modifier = 2
 	always_process = TRUE
@@ -664,7 +664,7 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 	. = ..()
 
 	if(istype(loc, /obj/item/mecha_parts/mecha_equipment))
-		equip_mount_handle = om_handle(loc)
+		rel_set(src, "equip_mount", loc)
 
 /obj/item/weldingtool/electric/mounted/exosuit/periodic_step()
 	..()
@@ -700,4 +700,4 @@ DECLARE_DEFAULT_CHILD(/obj/item/weldingtool/electric, "power_supply", "cell_type
 
 /// LC-refs: equip mount -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/weldingtool/electric/mounted/exosuit/proc/equip_mount() as /obj/item/mecha_parts/mecha_equipment
-	return om_resolve(equip_mount_handle)
+	return equip_mount

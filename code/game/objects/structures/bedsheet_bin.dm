@@ -211,7 +211,7 @@ DECLARE_INTERACTIONS(/obj/item/bedsheet, \
 	anchored = TRUE
 	var/amount = 20
 	var/list/sheets = list() // ALLOW(instance_list): d: the bin's live stock
-	var/hidden_handle
+	var/obj/item/hidden
 
 
 /obj/structure/bedsheetbin/examine(mob/user)
@@ -257,7 +257,7 @@ DECLARE_INTERACTIONS(/obj/item/bedsheet, \
 	else if(amount && !hidden() && I.w_class < ITEMSIZE_LARGE)	//make sure there's sheets to hide it among, make sure nothing else is hidden in there.
 		user.drop_item()
 		I.forceMove(src)
-		hidden_handle = om_handle(I)
+		rel_set(src, "hidden", I)
 		to_chat(user, span_notice("You hide [I] among the sheets."))
 	return TRUE
 
@@ -286,7 +286,7 @@ DECLARE_INTERACTIONS(/obj/item/bedsheet, \
 		if(hidden())
 			hidden().forceMove(user.loc)
 			to_chat(user, span_notice("[hidden()] falls out of [B]!"))
-			hidden_handle = null
+			rel_clear(src, "hidden")
 
 
 	add_fingerprint(user)
@@ -311,7 +311,7 @@ DECLARE_INTERACTIONS(/obj/item/bedsheet, \
 
 		if(hidden())
 			hidden().forceMove(loc)
-			hidden_handle = null
+			rel_clear(src, "hidden")
 
 
 	add_fingerprint(user)
@@ -335,4 +335,4 @@ DECLARE_INTERACTIONS(/obj/item/bedsheet, \
 
 /// LC-refs: hidden -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/bedsheetbin/proc/hidden() as /obj/item
-	return om_resolve(hidden_handle)
+	return hidden

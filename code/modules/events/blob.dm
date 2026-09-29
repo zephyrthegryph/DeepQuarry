@@ -2,7 +2,7 @@
 	announceWhen	= 12
 	endWhen			= 120
 
-	var/tmp/Blob_handle
+	var/tmp/obj/structure/blob/core/Blob
 
 
 /datum/event/blob/start()
@@ -11,15 +11,15 @@
 		kill()
 		return
 
-	Blob_handle = om_handle(new /obj/structure/blob/core/random_medium(T))
+	rel_set(src, "Blob", new /obj/structure/blob/core/random_medium(T))
 
 
 /datum/event/blob/tick()
 	if(!Blob() || !Blob().loc)
-		Blob_handle = null
+		rel_clear(src, "Blob")
 		kill()
 		return
 
 /// LC-refs: the Blob this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event/blob/proc/Blob() as /obj/structure/blob/core
-	return om_resolve(Blob_handle)
+	return Blob

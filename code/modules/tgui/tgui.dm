@@ -10,11 +10,11 @@
 	/// The mob who opened/is using the UI.
 	var/mob/user
 	/// The object which owns the UI.
-	var/tmp/src_object_handle
+	var/tmp/datum/src_object
 	/// The title of the UI.
 	var/title
 	/// The window_id for browse() and onclose().
-	var/tmp/window_handle
+	var/tmp/datum/tgui_window/window
 	/// Key that is used for remembering the window geometry.
 	var/window_key
 	/// Deprecated: Window size.
@@ -44,7 +44,7 @@
 	/// The map z-level to display.
 	var/map_z_level = 1
 	/// The Parent UI
-	var/tmp/parent_ui_handle
+	var/tmp/datum/tgui/parent_ui
 	/// Children of this UI
 	var/list/children = list() // ALLOW(instance_list): d: tgui window tree; many call sites
 	/// Any partial packets that we have received from TGUI, waiting to be sent
@@ -70,12 +70,12 @@
  */
 /datum/tgui/New(mob/user, datum/src_object, interface, title, datum/tgui/parent_ui, ui_x, ui_y, datum/tgui_window/window)
 	rel_set(src, "user", user)
-	src.src_object_handle = om_handle(src_object)
+	rel_set(src, "src_object", src_object)
 	src.interface = interface
 	if(title)
 		src.title = title
 	src.state_static = src_object.tgui_state()
-	src.parent_ui_handle = om_handle(parent_ui)
+	rel_set(src, "parent_ui", parent_ui)
 	if(parent_ui)
 		parent_ui.children += src
 	// Deprecated
@@ -83,7 +83,7 @@
 		src.window_size = list(ui_x, ui_y)
 
 	if(window)
-		src.window_handle = om_handle(window)
+		rel_set(src, "window", window)
 		src.window_key = window.id
 	else
 		src.window_key = "[REF(src_object)]-main"
@@ -117,7 +117,7 @@
 	if(status < STATUS_UPDATE)
 		return FALSE
 	if(!window())
-		window_handle = om_handle(SStgui.request_pooled_window(user))
+		rel_set(src, "window", SStgui.request_pooled_window(user))
 	#ifdef TGUI_DEV_DIAGNOSTICS
 	startup_profile["pool_acquired_ms"] = rustg_time_milliseconds(startup_timer)
 	#endif
@@ -152,7 +152,7 @@
 	startup_profile["native_shell"] = window().native_shell ? TRUE : FALSE
 	startup_profile["generation"] = window().generation
 	startup_profile["browser_profiling"] = client_profiling_enabled() ? TRUE : FALSE
-	log_tgui(user, "Automatic TGUI server startup telemetry: [json_encode(startup_profile)]", window_handle = om_handle(window()))
+	log_tgui(user, "Automatic TGUI server startup telemetry: [json_encode(startup_profile)]", window = om_handle(window()))
 	#else
 	send_assets()
 	window().send_message("update", get_payload(
@@ -250,7 +250,7 @@
 	state_static = null
 	if(parent_ui())
 		parent_ui().children -= src
-	parent_ui_handle = null
+	rel_clear(src, "parent_ui")
 	qdel(src)
 
 /**
@@ -533,11 +533,11 @@
 
 /// LC-refs: the src_object this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui/proc/src_object() as /datum
-	return om_resolve(src_object_handle)
+	return src_object
 
 /// LC-refs: the window this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui/proc/window() as /datum/tgui_window
-	return om_resolve(window_handle)
+	return window
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/tgui/proc/state() as /datum/tgui_state
@@ -545,7 +545,7 @@
 
 /// LC-refs: the parent_ui this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui/proc/parent_ui() as /datum/tgui
-	return om_resolve(parent_ui_handle)
+	return parent_ui
 
 REL_PAIR(/datum/tgui, user, tgui_open_uis)
 REL_PAIR_LIST(/mob, tgui_open_uis, user)

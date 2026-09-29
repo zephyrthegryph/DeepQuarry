@@ -20,10 +20,10 @@
 	var/can_sleeve_active = FALSE
 	var/organic_capable = 1
 	var/synthetic_capable = 1
-	var/tmp/disk_handle
-	var/tmp/selected_pod_handle
-	var/tmp/selected_printer_handle
-	var/tmp/selected_sleever_handle
+	var/tmp/obj/item/disk/transcore/disk
+	var/tmp/obj/machinery/clonepod/transhuman/selected_pod
+	var/tmp/obj/machinery/transhuman/synthprinter/selected_printer
+	var/tmp/obj/machinery/transhuman/resleever/selected_sleever
 
 	var/current_br
 	var/current_mr
@@ -52,7 +52,7 @@
 
 /obj/machinery/computer/transhuman/resleeving/proc/releasepods()
 	for(var/obj/machinery/clonepod/transhuman/P in pods)
-		P.connected_handle = null
+		rel_clear(P, "connected")
 		P.name = initial(P.name)
 	pods.Cut()
 	for(var/obj/machinery/transhuman/synthprinter/P in spods)
@@ -70,7 +70,7 @@
 	for(var/obj/machinery/clonepod/transhuman/P in A.get_contents())
 		if(!P.connected())
 			pods += P // ALLOW(object_keyed_lists): link to an independent pod machine; the pod side (connected) is declared in its own file, releasepods() unlinks
-			P.connected_handle = om_handle(src)
+			rel_set(P, "connected", src)
 			P.name = "[initial(P.name)] #[num++]"
 	for(var/obj/machinery/transhuman/synthprinter/P in A.get_contents())
 		if(!P.connected)
@@ -92,7 +92,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 /obj/machinery/computer/transhuman/resleeving/proc/resleeving_console_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/disk/transcore) && !our_db().core_dumped)
 		user.unEquip(W)
-		disk_handle = om_handle(W)
+		rel_set(src, "disk", W)
 		disk().forceMove(src)
 		to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	if(istype(W, /obj/item/disk/body_record))
@@ -115,7 +115,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 	if(!istype(pod) || (pod in pods))
 		return ITEM_INTERACT_BLOCKING
 	pods += pod // ALLOW(object_keyed_lists): link to an independent pod machine; the pod side (connected) is declared in its own file, releasepods() unlinks
-	pod.connected_handle = om_handle(src)
+	rel_set(pod, "connected", src)
 	pod.name = "[initial(pod.name)] #[pods.len]"
 	to_chat(user, span_notice("You connect [pod] to [src]."))
 	return ITEM_INTERACT_SUCCESS
@@ -246,7 +246,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 	visible_message(span_warning("\The [src] spits out \the [disk()]."))
 	current_br = null
 	disk().forceMove(get_turf(src))
-	disk_handle = null
+	rel_clear(src, "disk")
 
 /obj/machinery/computer/transhuman/resleeving/tgui_act(action, params, datum/tgui/ui)
 	. = ..()
@@ -275,7 +275,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 			current_br = null
 			if(disk())
 				disk().forceMove(get_turf(src))
-				disk_handle = null
+				rel_clear(src, "disk")
 			. = TRUE
 		if("create")
 			act_create_body()
@@ -289,7 +289,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 				return
 			var/obj/machinery/clonepod/selected = locate(ref)
 			if(istype(selected) && (selected in pods))
-				selected_pod_handle = om_handle(selected)
+				rel_set(src, "selected_pod", selected)
 			. = TRUE
 		if("selectprinter")
 			var/ref = params["ref"]
@@ -297,7 +297,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 				return
 			var/obj/machinery/transhuman/synthprinter/selected = locate(ref)
 			if(istype(selected) && (selected in spods))
-				selected_printer_handle = om_handle(selected)
+				rel_set(src, "selected_printer", selected)
 			. = TRUE
 		if("selectsleever")
 			var/ref = params["ref"]
@@ -305,7 +305,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 				return
 			var/obj/machinery/transhuman/resleever/selected = locate(ref)
 			if(istype(selected) && (selected in sleevers))
-				selected_sleever_handle = om_handle(selected)
+				rel_set(src, "selected_sleever", selected)
 			. = TRUE
 		if("menu")
 			menu = clamp(text2num(params["num"]), MENU_MAIN, MENU_MIND)
@@ -602,16 +602,16 @@ EXTEND_INTERACTIONS(/obj/item/cmo_disk_holder, INTERACT_USE("Tear open", PROC_RE
 
 /// LC-refs: the disk this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/transhuman/resleeving/proc/disk() as /obj/item/disk/transcore
-	return om_resolve(disk_handle)
+	return disk
 
 /// LC-refs: the selected_pod this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/transhuman/resleeving/proc/selected_pod() as /obj/machinery/clonepod/transhuman
-	return om_resolve(selected_pod_handle)
+	return selected_pod
 
 /// LC-refs: the selected_printer this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/transhuman/resleeving/proc/selected_printer() as /obj/machinery/transhuman/synthprinter
-	return om_resolve(selected_printer_handle)
+	return selected_printer
 
 /// LC-refs: the selected_sleever this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/transhuman/resleeving/proc/selected_sleever() as /obj/machinery/transhuman/resleever
-	return om_resolve(selected_sleever_handle)
+	return selected_sleever

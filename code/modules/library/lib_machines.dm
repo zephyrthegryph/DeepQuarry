@@ -157,7 +157,7 @@
 	var/list/checkouts
 	var/list/inventory
 	var/checkoutperiod = 5 // In minutes
-	var/tmp/scanner_handle	// Book scanner that will be used when uploading books to the Archive
+	var/tmp/obj/machinery/libraryscanner/scanner	// Book scanner that will be used when uploading books to the Archive
 
 	/// Printing a bible or a book: at most one per few seconds.
 	COOLDOWN_DECLARE(print_cooldown)
@@ -225,7 +225,7 @@
 
 /obj/machinery/librarycomp/proc/interaction_link_scanner(mob/user, obj/item/held, datum/interaction/interaction)
 	var/obj/item/barcodescanner/scanner = held
-	scanner.computer_handle = om_handle(src)
+	rel_set(scanner, "computer", src)
 	to_chat(user, "[scanner]'s associated machine has been set to [src].")
 	for(var/mob/V in hearers(src))
 		V.show_message("[src] lets out a low, short blip.", 2)
@@ -294,7 +294,7 @@
 	// Ensure a connected scanner is auto-discovered like the legacy UI did.
 	if(!scanner())
 		for(var/obj/machinery/libraryscanner/S in range(9))
-			scanner_handle = om_handle(S)
+			rel_set(src, "scanner", S)
 			break
 	data["has_scanner"] = !!scanner()
 	if(scanner()?.cache())
@@ -555,7 +555,7 @@
 	icon_state = "bigscanner"
 	anchored = TRUE
 	density = TRUE
-	var/tmp/cache_handle	// Last scanned book
+	var/tmp/obj/item/book/cache	// Last scanned book
 
 /obj/machinery/libraryscanner/declare_interactions(list/into)
 	into += list(
@@ -614,12 +614,12 @@
 		if("scan")
 			latent_materialize_all() // a walk needs real things (C5)
 			for(var/obj/item/book/B in contents) // ALLOW(latent): materialized above
-				cache_handle = om_handle(B)
+				rel_set(src, "cache", B)
 				break
 			add_fingerprint(usr)
 			return TRUE
 		if("clear")
-			cache_handle = null
+			rel_clear(src, "cache")
 			return TRUE
 		if("eject")
 			latent_materialize_all() // a walk needs real things (C5)
@@ -692,8 +692,8 @@
 
 /// LC-refs: Book scanner that will be used when uploading books to the Archive -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/librarycomp/proc/scanner() as /obj/machinery/libraryscanner
-	return om_resolve(scanner_handle)
+	return scanner
 
 /// LC-refs: Last scanned book -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/libraryscanner/proc/cache() as /obj/item/book
-	return om_resolve(cache_handle)
+	return cache

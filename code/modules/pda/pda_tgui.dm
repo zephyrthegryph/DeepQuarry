@@ -87,11 +87,11 @@
 				var/obj/item/cartridge/C = cartridge
 				C.forceMove(T)
 				if(scanmode() in C.programs)
-					scanmode_handle = null
+					rel_clear(src, "scanmode")
 				if(current_app() in C.programs)
 					start_program(find_program(/datum/data/pda/app/main_menu))
 				if(C.radio)
-					C.radio.hostpda_handle = null
+					rel_clear(C.radio, "hostpda")
 				for(var/datum/data/pda/P in notifying_programs)
 					if(P in C.programs)
 						P.unnotify()

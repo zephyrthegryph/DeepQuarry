@@ -254,7 +254,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 		if(!B.ownegg())
 			if(B.egg_type in GLOB.tf_vore_egg_types)
 				B.egg_path = GLOB.tf_vore_egg_types[B.egg_type]
-			B.ownegg_handle = om_handle(new B.egg_path(B))
+			rel_set(B, "ownegg", new B.egg_path(B))
 			if(B.ownegg() && B.egg_name)
 				B.ownegg().egg_name = B.egg_name
 				B.ownegg().name = B.egg_name
@@ -273,7 +273,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 					B.ownegg().icon_scale_y = 0.2 * B.ownegg().w_class
 				B.ownegg().update_transform()
 				egg_contents -= I
-				B.ownegg_handle = null
+				rel_clear(B, "ownegg")
 				return list("to_update" = TRUE)
 			if(isitem(C))
 				var/obj/item/I = C
@@ -300,7 +300,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 		B.ownegg().update_transform()
 		if(B.ownegg().w_class > 4)
 			B.ownegg().slowdown = 4
-		B.ownegg_handle = null
+		rel_clear(B, "ownegg")
 		return list("to_update" = TRUE)
 	return
 

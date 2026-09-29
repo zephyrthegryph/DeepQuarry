@@ -6,7 +6,7 @@
 	// Setup Variables
 	malfunctioning = 1
 	own_set(src, "research", new/datum/malf_research())
-	research.owner_handle = om_handle(src)
+	rel_set(research, "owner", src)
 	rel_set(src, "hacked_apcs", list())
 	recalc_cpu()
 

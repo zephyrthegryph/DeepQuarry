@@ -456,7 +456,7 @@
 		return
 
 	var/datum/signal/signal = new()
-	signal.source_handle = om_handle(src)
+	rel_set(signal, "source", src)
 	signal.encryption = code
 	signal.data["message"] = "ACTIVATE"
 	radio_connection.post_signal(src, signal)

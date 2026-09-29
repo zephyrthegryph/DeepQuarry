@@ -15,7 +15,7 @@
 
 	var/list/vending_machines // List of venders that can potentially be infected.
 	var/list/infected_vending_machines // List of venders that have been infected.
-	var/tmp/vender_zero_handle	// The first vending machine infected. If that one gets fixed, all other infected machines will be cured.
+	var/tmp/obj/machinery/vending/vender_zero	// The first vending machine infected. If that one gets fixed, all other infected machines will be cured.
 	COOLDOWN_DECLARE(malware_spread_cooldown_until)
 
 /datum/event2/event/brand_intelligence/set_up()
@@ -29,7 +29,7 @@
 		abort()
 		return
 
-	vender_zero_handle = om_handle(DEFAULTPICK(vending_machines, null))
+	rel_set(src, "vender_zero", DEFAULTPICK(vending_machines, null))
 
 /datum/event2/event/brand_intelligence/announce()
 	if(prob(90))
@@ -91,4 +91,4 @@
 
 /// LC-refs: The first vending machine infected. If that one gets fixed, all other infected machines will be cured. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event2/event/brand_intelligence/proc/vender_zero() as /obj/machinery/vending
-	return om_resolve(vender_zero_handle)
+	return vender_zero

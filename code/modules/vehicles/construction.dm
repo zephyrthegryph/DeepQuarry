@@ -19,7 +19,7 @@
 	w_class = ITEMSIZE_HUGE
 
 	var/build_stage = 0
-	var/tmp/cell_handle
+	var/tmp/obj/item/cell/cell
 
 /obj/item/vehicle_assembly/Initialize(mapload)
 	. = ..()
@@ -162,7 +162,7 @@
 
 /datum/interaction/construction/vehicle/quadbike/power/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/quadbike/assembly = target
-	assembly.cell_handle = om_handle(held)
+	rel_set(assembly, "cell", held)
 	assembly.set_build_visuals(after, "powered [initial(assembly.name)]")
 	to_chat(actor, span_notice("You add the power supply to \the [assembly]."))
 	return TRUE
@@ -213,7 +213,7 @@
 	product.forceMove(get_turf(assembly))
 	own_set(product, "cell", assembly.cell())
 	assembly.cell().forceMove(product)
-	assembly.cell_handle = null
+	rel_clear(assembly, "cell")
 	consume(assembly, actor)
 	return TRUE
 
@@ -398,7 +398,7 @@
 
 /datum/interaction/construction/vehicle/spacebike/power/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/spacebike/assembly = target
-	assembly.cell_handle = om_handle(held)
+	rel_set(assembly, "cell", held)
 	assembly.set_build_visuals(after, "powered [initial(assembly.name)]")
 	to_chat(actor, span_notice("You add the power supply to \the [assembly]."))
 	return TRUE
@@ -419,7 +419,7 @@
 	product.forceMove(get_turf(assembly))
 	own_set(product, "cell", assembly.cell())
 	assembly.cell().forceMove(product)
-	assembly.cell_handle = null
+	rel_clear(assembly, "cell")
 	consume(assembly, actor)
 	return TRUE
 
@@ -527,7 +527,7 @@
 
 /datum/interaction/construction/vehicle/snowmobile/power/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/snowmobile/assembly = target
-	assembly.cell_handle = om_handle(held)
+	rel_set(assembly, "cell", held)
 	assembly.set_build_visuals(after, "powered [initial(assembly.name)]")
 	to_chat(actor, span_notice("You add the power supply to \the [assembly]."))
 	return TRUE
@@ -578,7 +578,7 @@
 	product.forceMove(get_turf(assembly))
 	own_set(product, "cell", assembly.cell())
 	assembly.cell().forceMove(product)
-	assembly.cell_handle = null
+	rel_clear(assembly, "cell")
 	consume(assembly, actor)
 	return TRUE
 
@@ -592,4 +592,4 @@
 
 /// LC-refs: the cell this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/vehicle_assembly/proc/cell() as /obj/item/cell
-	return om_resolve(cell_handle)
+	return cell

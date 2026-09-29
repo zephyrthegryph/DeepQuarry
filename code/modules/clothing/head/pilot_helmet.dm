@@ -15,7 +15,7 @@
 	max_heat_protection_temperature = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
 	w_class = ITEMSIZE_NORMAL
 
-	var/tmp/shuttle_comp_handle
+	var/tmp/obj/machinery/computer/shuttle_control/web/shuttle_comp
 	var/atom/movable/screen/pilot_hud
 	var/list/images
 	var/list/raw_images
@@ -255,6 +255,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/pilot_vr, INTERACT_USE("Toggle visor
 
 /// LC-refs: the shuttle_comp this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/clothing/head/pilot/proc/shuttle_comp() as /obj/machinery/computer/shuttle_control/web
-	return om_resolve(shuttle_comp_handle)
+	return shuttle_comp
 
 

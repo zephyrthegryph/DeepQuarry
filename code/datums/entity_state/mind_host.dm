@@ -30,7 +30,7 @@
 	var/mob/living/carbon/brain/view
 	/// Brain organ whose state decides the view's status. Null for synthetic
 	/// hosts (posibrain, robot intelligence circuit).
-	var/tissue_handle
+	var/obj/item/organ/internal/brain/tissue
 	/// Type of view mob to create.
 	var/view_type = /mob/living/carbon/brain
 
@@ -74,11 +74,11 @@
 	// null (QDELETED), so on_tissue_deleted()'s set_tissue(null) would look like
 	// a no-op and the view would never learn its brain is gone.
 	var/new_handle = om_handle(new_tissue)
-	if(tissue_handle == new_handle)
+	if(tissue == new_handle)
 		return
 	if(tissue())
 		om_unhook(tissue(), /datum/om/event/qdeleting, src)
-	tissue_handle = new_handle
+	rel_set(src, "tissue", new_handle)
 	if(tissue())
 		om_hook(tissue(), /datum/om/event/qdeleting, src, PROC_REF(on_tissue_deleted))
 	view?.refresh_host_status()
@@ -158,4 +158,4 @@
 
 /// LC-refs: the brain organ backing the view -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/mind_host/proc/tissue() as /obj/item/organ/internal/brain
-	return om_resolve(tissue_handle)
+	return tissue

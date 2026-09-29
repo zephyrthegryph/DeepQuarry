@@ -6,7 +6,7 @@
 	show_messages = TRUE
 
 	var/implanted = null
-	var/imp_in_handle
+	var/mob/imp_in
 	var/obj/item/organ/external/part = null
 	var/implant_color = "b"
 	var/allow_reagents = 0
@@ -44,7 +44,7 @@
 		// No organ to embed in (a non-human host, or no matching limb):
 		// imp_in has no relation to keep it in sync with, since there's no
 		// reverse list on a bare mob the way an organ's `implants` is one.
-		imp_in_handle = om_handle(source)
+		rel_set(src, "imp_in", source)
 		forceMove(source)
 
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
@@ -586,7 +586,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	desc = "Based on compressed matter technology, can store a single item."
 	icon_state = "implant_evil"
 	var/activation_emote = "sigh"
-	var/scanned_handle
+	var/obj/item/scanned
 
 /obj/item/implant/compressed/get_data()
 	var/dat = {"
@@ -874,10 +874,10 @@ EXTEND_INTERACTIONS(/obj/item/implanter/compliance, INTERACT_USE("Set laws", PRO
 
 /// LC-refs: imp in -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/implant/proc/imp_in() as /mob
-	return om_resolve(imp_in_handle)
+	return imp_in
 
 /// LC-refs: scanned -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/implant/compressed/proc/scanned() as /obj/item
-	return om_resolve(scanned_handle)
+	return scanned
 
 OWN(/obj/item/implant, part, OWN_CONTAINED)

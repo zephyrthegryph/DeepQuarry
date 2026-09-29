@@ -15,7 +15,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	MATERIAL_BULK(MAT_STEEL, 200)
 
 	/// The stored mind. Its identity (OOC notes and all) is carried with it.
-	var/stored_mind_handle
+	var/datum/mind/stored_mind
 	var/soulcatcher_pref_flags = NONE
 
 	// Resleeving database this machine interacts with. Blank for default database
@@ -26,12 +26,12 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 
 //These don't perform any checks and need to be wrapped by checks
 /obj/item/sleevemate/proc/clear_mind()
-	stored_mind_handle = null
+	rel_clear(src, "stored_mind")
 	update_icon()
 
 /obj/item/sleevemate/proc/get_mind(mob/living/M)
 	ASSERT(M.mind)
-	stored_mind_handle = om_handle(M.mind)
+	rel_set(src, "stored_mind", M.mind)
 	stored_mind().get_identity() // make sure the identity rides the stored mind
 	log_game("MIND: [stored_mind().key] ([stored_mind().name]) stored in [src] from [M]")
 	soulcatcher_pref_flags = M.soulcatcher_pref_flags
@@ -419,4 +419,4 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 
 /// LC-refs: stored mind -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/sleevemate/proc/stored_mind() as /datum/mind
-	return om_resolve(stored_mind_handle)
+	return stored_mind

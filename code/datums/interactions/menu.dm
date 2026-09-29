@@ -6,11 +6,11 @@
  * used to offer (examine, pull, point).
  */
 /datum/interaction_menu
-	var/owner_handle
+	var/client/owner
 	var/target_ref
 
 /datum/interaction_menu/New(client/owner)
-	src.owner_handle = om_handle(owner)
+	rel_set(src, "owner", owner)
 
 // clears the client's back-reference (clients aren't datums).
 
@@ -149,5 +149,7 @@
 
 /// LC-refs: the client using the menu -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/interaction_menu/proc/owner() as /client
-	return om_resolve(owner_handle)
+	return owner
 
+REL_PAIR(/client, interaction_menu, owner)
+REL_PAIR(/datum/interaction_menu, owner, interaction_menu)

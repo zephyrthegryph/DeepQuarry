@@ -1244,14 +1244,14 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 	anchored = TRUE
 	density = TRUE
 	var/muffin_mode = FALSE
-	var/muffinmonster_handle
-	var/crusher_handle //Bluespace connection for recyclables
+	var/mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster
+	var/obj/machinery/recycling/crusher/crusher //Bluespace connection for recyclables
 
 /obj/structure/biowaste_tank/Initialize(mapload)
-	muffinmonster_handle = om_handle(new /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster(src))
+	rel_set(src, "muffinmonster", new /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster(src))
 	muffinmonster().name = "Activate Muffin Monster"
 	muffinmonster().init_vore(TRUE)
-	crusher_handle = om_handle(locate(/obj/machinery/recycling/crusher))
+	rel_set(src, "crusher", locate(/obj/machinery/recycling/crusher))
 	return ..()
 
 /obj/structure/biowaste_tank/AllowDrop()
@@ -1322,7 +1322,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 	if(muffinmonster() && muffin_mode)
 		muffinmonster().name = "Muffin Monster"
 		muffinmonster().forceMove(get_turf(src))
-		muffinmonster_handle = null
+		rel_clear(src, "muffinmonster")
 		muffin_mode = FALSE
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster
@@ -1351,8 +1351,8 @@ DECLARE_DEFAULT_CHILD(/obj/structure/toilet, "bin", null)
 
 /// LC-refs: muffinmonster -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/biowaste_tank/proc/muffinmonster() as /mob/living/simple_mob/vore/aggressive/corrupthound
-	return om_resolve(muffinmonster_handle)
+	return muffinmonster
 
 /// LC-refs: crusher -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/biowaste_tank/proc/crusher() as /obj/machinery/recycling/crusher
-	return om_resolve(crusher_handle)
+	return crusher

@@ -8,7 +8,7 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 	var/pointer_icon_state
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL //Increased to 2, because diodes are w_class 2. Conservation of matter.
-	var/pointer_loc_handle
+	var/turf/pointer_loc
 	var/energy = 8
 	var/max_energy = 8
 	var/effectchance = 20
@@ -233,4 +233,4 @@ OWN(/obj/item/laser_pointer, diode, OWN_CONTAINED)
 
 /// LC-refs: pointer loc -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/laser_pointer/proc/pointer_loc() as /turf
-	return om_resolve(pointer_loc_handle)
+	return pointer_loc

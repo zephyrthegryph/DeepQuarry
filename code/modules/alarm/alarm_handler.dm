@@ -63,7 +63,7 @@
 	for(var/datum/alarm/alarm as anything in check_alarms)
 		if(alarm.origin() == departing)
 			own_take_member(src, "alarms_assoc", alarm.origin())
-			alarm.origin_handle = null
+			rel_clear(alarm, "origin")
 		alarm.clear(departing)
 		if(alarm.cameras)
 			alarm.cameras -= departing

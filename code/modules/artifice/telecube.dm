@@ -30,7 +30,7 @@
 
 	throw_range = 2
 
-	var/tmp/mate_handle
+	var/tmp/obj/item/telecube/mate
 
 	var/start_paired = FALSE
 	var/mirror_colors = FALSE
@@ -62,7 +62,7 @@
 		color = rgb(rand(30, 255),rand(30, 255),rand(30, 255))
 
 	if(start_paired)
-		mate_handle = om_handle(new /obj/item/telecube(src.loc))
+		rel_set(src, "mate", new /obj/item/telecube(src.loc))
 		if(mirror_colors)
 			mate().glow_color = color
 			mate().color = glow_color
@@ -99,7 +99,7 @@
 	if(mate())
 		var/turf/T = get_turf(mate())
 		mate().visible_message(span_critical("\The [mate()] collapses into itself!"))
-		mate().mate_handle = null
+		mate().mate = null
 		explosion(T,1,3,7)
 
 	..()
@@ -116,7 +116,7 @@
 	if(mate())
 		return 0
 	else
-		mate_handle = om_handle(M)
+		rel_set(src, "mate", M)
 		update_icon()
 		return 1
 
@@ -277,4 +277,4 @@ DECLARE_INTERACTIONS(/obj/item/telecube, INTERACT_ALT(null, PROC_REF(interaction
 
 /// LC-refs: the mate this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/telecube/proc/mate() as /obj/item/telecube
-	return om_resolve(mate_handle)
+	return mate

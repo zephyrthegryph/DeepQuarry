@@ -28,12 +28,12 @@
 	var/can_taste = 0						// If this belly prints the flavor of prey when it eats someone.
 	var/bulge_size = 0.25					// The minimum size the prey has to be in order to show up on examine.
 	var/shrink_grow_size = 1				// This horribly named variable determines the minimum/maximum size it will shrink/grow prey to.
-	var/tmp/transferlocation_handle	// Location that the prey is released if they struggle and get dropped off.
+	var/tmp/datum/belly/transferlocation	// Location that the prey is released if they struggle and get dropped off.
 
 	var/tmp/digest_mode = DM_HOLD				// Whether or not to digest. Default to not digest.
 	// ALLOW(instance_list): never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
 	var/tmp/list/digest_modes = list(DM_HOLD,DM_DIGEST,DM_HEAL,DM_ABSORB,DM_DRAIN,DM_UNABSORB,DM_SHRINK,DM_GROW,DM_SIZE_STEAL,DM_EGG)	// Possible digest modes
-	var/tmp/owner_handle	// The mob whose belly this is.
+	var/tmp/mob/living/owner	// The mob whose belly this is.
 	// ALLOW(instance_list): never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
 	var/tmp/list/internal_contents = list()		// People/Things you've eaten into this belly!
 	var/tmp/emotePend = FALSE					// If there's already a spawned thing counting for the next emote
@@ -156,8 +156,8 @@
 
 /// LC-refs: Location that the prey is released if they struggle and get dropped off. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/belly/proc/transferlocation() as /datum/belly
-	return om_resolve(transferlocation_handle)
+	return transferlocation
 
 /// LC-refs: The mob whose belly this is. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/belly/proc/owner() as /mob/living
-	return om_resolve(owner_handle)
+	return owner

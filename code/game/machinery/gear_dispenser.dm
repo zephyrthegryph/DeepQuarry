@@ -332,7 +332,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	desc = "An industrial U-Tak-It Dispenser unit designed to fetch all kinds of space suits. A newer model."
 	icon_state = "suit_storage_map"
 	var/obj/effect/overlay/vis/door
-	var/held_gear_disp_handle
+	var/datum/gear_disp/held_gear_disp
 	var/special_frame
 
 /obj/machinery/gear_dispenser/suit_fancy/Initialize(mapload)
@@ -383,7 +383,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 		for(var/obj/item/I in spawned)
 			user.put_in_hands(I)
 		to_chat(user, span_notice("You remove the equipment from [src]."))
-		held_gear_disp_handle = null
+		rel_clear(src, "held_gear_disp")
 		animate_close()
 		return TRUE
 	return FALSE
@@ -400,7 +400,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	if((dispenser_flags & GD_UNIQUE) && !emagged)
 		unique_dispense_list |= user.ckey
 
-	held_gear_disp_handle = om_handle(S)
+	rel_set(src, "held_gear_disp", S)
 
 	animate_dispensing()
 	om_after(src, dispense_anim_time, PROC_REF(dispense_finish), S, user, greet)
@@ -983,4 +983,4 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 
 /// LC-refs: held gear disp -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/gear_dispenser/suit_fancy/proc/held_gear_disp() as /datum/gear_disp
-	return om_resolve(held_gear_disp_handle)
+	return held_gear_disp

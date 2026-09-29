@@ -278,7 +278,7 @@
 	SetId(button, viewer)
 
 	var/hud_handle = om_handle(our_hud)
-	button.our_hud_handle = hud_handle
+	rel_set(button, "our_hud", hud_handle)
 	viewers[hud_handle] = button
 	if(viewer.client)
 		viewer.client.screen += button
@@ -297,7 +297,7 @@
 /// Creates an action button movable for the passed mob, and returns it.
 /datum/action/proc/create_button()
 	var/atom/movable/screen/movable/action_button/button = new()
-	button.linked_action_handle = om_handle(src)
+	rel_set(button, "linked_action", src)
 	build_button_icon(button, ALL, TRUE)
 	return button
 

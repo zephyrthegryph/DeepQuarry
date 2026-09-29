@@ -26,7 +26,7 @@
 	var/throw_amount = THROWER_MIN
 	var/lit = FALSE	//on or off
 	COOLDOWN_DECLARE(operating)
-	var/previousturf_handle
+	var/turf/previousturf
 	var/obj/item/weldingtool/weldtool = null
 	var/obj/item/assembly/igniter/igniter = null
 	var/obj/item/tank/phoron/ptank = null
@@ -239,4 +239,4 @@ DECLARE_INTERACTIONS(/obj/item/flamethrower, \
 
 /// LC-refs: previousturf -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/flamethrower/proc/previousturf() as /turf
-	return om_resolve(previousturf_handle)
+	return previousturf

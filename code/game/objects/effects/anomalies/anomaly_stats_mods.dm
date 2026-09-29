@@ -2,7 +2,7 @@
 	var/name
 	var/description
 	var/value
-	var/attached_anomaly_handle
+	var/obj/effect/anomaly/attached_anomaly
 
 /datum/anomaly_modifiers/proc/get_description()
 	return description
@@ -11,13 +11,13 @@
 	return value
 
 /datum/anomaly_modifiers/proc/on_add(anomaly)
-	attached_anomaly_handle = om_handle(om_resolve(anomaly))
+	rel_set(src, "attached_anomaly", om_resolve(anomaly))
 	if(!istype(attached_anomaly(), /obj/effect/anomaly))
 		return FALSE
 	return TRUE
 
 /datum/anomaly_modifiers/proc/on_remove(anomaly)
-	attached_anomaly_handle = om_handle(om_resolve(anomaly))
+	rel_set(src, "attached_anomaly", om_resolve(anomaly))
 	if(!istype(attached_anomaly(), /obj/effect/anomaly))
 		return FALSE
 	return TRUE
@@ -81,4 +81,4 @@
 
 /// LC-refs: attached anomaly -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/anomaly_modifiers/proc/attached_anomaly() as /obj/effect/anomaly
-	return om_resolve(attached_anomaly_handle)
+	return attached_anomaly

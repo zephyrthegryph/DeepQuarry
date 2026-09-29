@@ -26,7 +26,7 @@
 
 	if(found)
 		to_chat(user, "You install \the [H] into \the [src]")
-		H.holder2_handle = om_handle(src)
+		rel_set(H, "holder2", src)
 		user.drop_from_inventory(H)
 		H.forceMove(src)
 		update_verbs()
@@ -42,7 +42,7 @@
 	if(!slot)
 		return
 	vars[slot] = H // ALLOW(api): hardware slots named by the part's slot var
-	H.holder2_handle = om_handle(src)
+	rel_set(H, "holder2", src)
 
 // Uninstalls a component. Found and Critical vars may be passed by parent types
 // when they carry additional hardware slots beyond the base set.
@@ -61,7 +61,7 @@
 		if(user)
 			to_chat(user, "You remove \the [H] from \the [src].")
 		H.forceMove(get_turf(src))
-		H.holder2_handle = null
+		rel_clear(H, "holder2")
 		update_verbs()
 	if(critical && enabled)
 		if(user)

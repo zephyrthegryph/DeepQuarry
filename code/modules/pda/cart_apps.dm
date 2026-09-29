@@ -42,7 +42,7 @@
 		return
 
 	var/datum/signal/status_signal = new
-	status_signal.source_handle = om_handle(src)
+	rel_set(status_signal, "source", src)
 	status_signal.transmission_method = 1
 	status_signal.data["command"] = command
 
@@ -126,7 +126,7 @@
 			return TRUE
 
 /datum/data/pda/app/crew_records
-	var/tmp/general_records_handle
+	var/tmp/datum/data/record/general_records
 
 /datum/data/pda/app/crew_records/update_ui(mob/user, list/data)
 	var/list/records[0]
@@ -153,12 +153,12 @@
 				load_records(R)
 			return TRUE
 		if("Back")
-			general_records_handle = null
+			rel_clear(src, "general_records")
 			has_back = 0
 			return TRUE
 
 /datum/data/pda/app/crew_records/proc/load_records(datum/data/record/R)
-	general_records_handle = om_handle(R)
+	rel_set(src, "general_records", R)
 	has_back = 1
 
 /datum/data/pda/app/crew_records/medical
@@ -167,7 +167,7 @@
 	template = "pda_medical"
 	category = "Medical"
 
-	var/tmp/medical_records_handle
+	var/tmp/datum/data/record/medical_records
 
 /datum/data/pda/app/crew_records/medical/update_ui(mob/user, list/data)
 	var/list/records = ..()
@@ -183,7 +183,7 @@
 	..(R)
 	for(var/datum/data/record/E as anything in GLOB.data_core.medical)
 		if(E && (E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
-			medical_records_handle = om_handle(E)
+			rel_set(src, "medical_records", E)
 			break
 
 /datum/data/pda/app/crew_records/security
@@ -192,7 +192,7 @@
 	template = "pda_security"
 	category = "Security"
 
-	var/tmp/security_records_handle
+	var/tmp/datum/data/record/security_records
 
 /datum/data/pda/app/crew_records/security/update_ui(mob/user, list/data)
 	var/list/records = ..()
@@ -208,7 +208,7 @@
 	..(R)
 	for(var/datum/data/record/E as anything in GLOB.data_core.security)
 		if(E && (E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
-			security_records_handle = om_handle(E)
+			rel_set(src, "security_records", E)
 			break
 
 /datum/data/pda/app/supply
@@ -307,12 +307,12 @@
 
 /// LC-refs: the general_records this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/data/pda/app/crew_records/proc/general_records() as /datum/data/record
-	return om_resolve(general_records_handle)
+	return general_records
 
 /// LC-refs: the medical_records this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/data/pda/app/crew_records/medical/proc/medical_records() as /datum/data/record
-	return om_resolve(medical_records_handle)
+	return medical_records
 
 /// LC-refs: the security_records this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/data/pda/app/crew_records/security/proc/security_records() as /datum/data/record
-	return om_resolve(security_records_handle)
+	return security_records

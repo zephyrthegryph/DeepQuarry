@@ -1,5 +1,5 @@
 /datum/event/disease_outbreak/floor
-	var/tmp/target_area_handle
+	var/tmp/area/target_area
 	var/area/target_turfs = list()
 	var/infected_tiles
 
@@ -43,7 +43,7 @@
 		if(turfs.len == 0)
 			log_game("infectedroom event: Rejected [A] because it has no clear turfs.")
 			continue
-		target_area_handle = om_handle(A)
+		rel_set(src, "target_area", A)
 		target_turfs = turfs
 
 	if(!target_area())
@@ -80,5 +80,5 @@
 
 /// LC-refs: the target_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event/disease_outbreak/floor/proc/target_area() as /area
-	return om_resolve(target_area_handle)
+	return target_area
 

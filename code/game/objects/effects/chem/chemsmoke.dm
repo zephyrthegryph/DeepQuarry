@@ -66,9 +66,9 @@ DECLARE_REAGENTS(/obj/effect/effect/smoke/chem, 500, null)
 	carry.trans_to_obj(chemholder, carry.total_volume, copy = 1)
 
 	if(istype(loca, /turf/))
-		location_handle = om_handle(loca)
+		rel_set(src, "location", loca)
 	else
-		location_handle = om_handle(get_turf(loca))
+		rel_set(src, "location", get_turf(loca))
 	if(!get_location())
 		return
 

@@ -222,7 +222,7 @@
 	var/time_entered = 0          // Used to keep track of the safe period.
 	var/obj/item/radio/intercom/announce //
 
-	var/control_computer_handle
+	var/obj/machinery/computer/cryopod/control_computer
 	COOLDOWN_DECLARE(no_computer_message_cooldown)
 	var/applies_stasis = 0 // allow people to change their mind
 
@@ -314,12 +314,12 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	find_control_computer()
 
 /obj/machinery/cryopod/proc/find_control_computer(urgent=0)
-	control_computer_handle = null
+	rel_clear(src, "control_computer")
 
 	var/area/my_area = get_area(src)
-	control_computer_handle = om_handle(locate_in_area(my_area, /obj/machinery/computer/cryopod))
+	rel_set(src, "control_computer", locate_in_area(my_area, /obj/machinery/computer/cryopod))
 	if(!control_computer()) //Fallback to old method.
-		control_computer_handle = om_handle(locate_in_list(range(6,src), /obj/machinery/computer/cryopod))
+		rel_set(src, "control_computer", locate_in_list(range(6,src), /obj/machinery/computer/cryopod))
 
 	// Don't send messages unless we *need* the computer, and less than five minutes have passed since last time we messaged
 	if(!control_computer() && urgent && COOLDOWN_FINISHED(src, no_computer_message_cooldown))
@@ -885,4 +885,4 @@ OWN(/obj/machinery/cryopod, announce, OWN_CONTAINED)
 
 /// LC-refs: control computer -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/cryopod/proc/control_computer() as /obj/machinery/computer/cryopod
-	return om_resolve(control_computer_handle)
+	return control_computer

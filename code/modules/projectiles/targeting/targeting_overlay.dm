@@ -11,8 +11,8 @@
 	mouse_opacity = 0
 
 	var/mob/living/aiming_at   // Who are we currently targeting, if anyone?
-	var/tmp/aiming_with_handle	// What are we targeting with?
-	var/tmp/owner_handle	// Who do we belong to?
+	var/tmp/obj/item/aiming_with	// What are we targeting with?
+	var/tmp/mob/owner	// Who do we belong to?
 	var/locked =    0          // Have we locked on?
 	TIMESTAMP_VAR(lock_time) // When -will- we lock on?
 	var/active =    0          // Is our owner intending to take hostages?
@@ -20,7 +20,7 @@
 
 /obj/aiming_overlay/Initialize(mapload)
 	. = ..()
-	owner_handle = om_handle(loc)
+	rel_set(src, "owner", loc)
 	if(!istype(owner(), /mob))
 		return INITIALIZE_HINT_QDEL
 	moveToNullspace()
@@ -165,7 +165,7 @@ REL_PAIR_LIST(/mob/living, aimed, aiming_at)
 		owner().client.add_gun_icons()
 	to_chat(target, span_danger("You now have a gun pointed at you. No sudden moves!"))
 	to_chat(target, span_critical("If you fail to comply with your assailant, you accept the consequences of your actions."))
-	aiming_with_handle = om_handle(thing)
+	rel_set(src, "aiming_with", thing)
 	rel_set(src, "aiming_at", target)
 	if(istype(aiming_with(), /obj/item/gun))
 		playsound(owner(), 'sound/weapons/targeton.ogg', 50,1)
@@ -212,7 +212,7 @@ REL_PAIR_LIST(/mob/living, aimed, aiming_at)
 	if(!no_message)
 		owner().visible_message(span_infoplain(span_bold("\The [owner()]") + " lowers \the [aiming_with()]."))
 
-	aiming_with_handle = null
+	rel_clear(src, "aiming_with")
 	rel_remove(aiming_at, "aimed", src)
 	rel_clear(src, "aiming_at")
 	moveToNullspace()
@@ -220,8 +220,8 @@ REL_PAIR_LIST(/mob/living, aimed, aiming_at)
 
 /// LC-refs: What are we targeting with? -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/aiming_overlay/proc/aiming_with() as /obj/item
-	return om_resolve(aiming_with_handle)
+	return aiming_with
 
 /// LC-refs: Who do we belong to? -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/aiming_overlay/proc/owner() as /mob
-	return om_resolve(owner_handle)
+	return owner

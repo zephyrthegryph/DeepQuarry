@@ -19,7 +19,7 @@
 
 	//Secondary variables
 	var/model_name = "Thinktronic 5230 Personal Data Assistant"
-	var/tmp/scanmode_handle
+	var/tmp/datum/data/pda/utility/scanmode/scanmode
 
 	var/lock_code = "" // Lockcode to unlock uplink
 
@@ -38,8 +38,8 @@
 
 	var/spam_proof = FALSE // If true, it can't be spammed by random events.
 
-	var/tmp/current_app_handle
-	var/tmp/lastapp_handle
+	var/tmp/datum/data/pda/app/current_app
+	var/tmp/datum/data/pda/app/lastapp
 	var/list/programs = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
 		new/datum/data/pda/app/main_menu,
 		new/datum/data/pda/app/notekeeper,
@@ -226,7 +226,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 
 /obj/item/pda/proc/update_programs()
 	for(var/datum/data/pda/P as anything in programs)
-		P.pda_handle = om_handle(src)
+		rel_set(P, "pda", src)
 
 /obj/item/pda/proc/detonate_act(obj/item/pda/P)
 	//TODO: sometimes these attacks show up on the message server
@@ -371,7 +371,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 		var/mob/M = loc
 		M.put_in_hands(cartridge)
 	if (cartridge.radio)
-		cartridge.radio.hostpda_handle = null
+		rel_clear(cartridge.radio, "hostpda")
 	to_chat(user, span_notice("You remove \the [cartridge] from the [name]."))
 	playsound(src, 'sound/machines/id_swipe.ogg', 100, 1)
 	own_take(src, "cartridge")
@@ -421,7 +421,7 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 		update_shortcuts()
 		to_chat(user, span_notice("You insert [cartridge] into [src]."))
 		if(cartridge.radio)
-			cartridge.radio.hostpda_handle = om_handle(src)
+			rel_set(cartridge.radio, "hostpda", src)
 
 	else if(istype(C, /obj/item/card/id))
 		var/obj/item/card/id/idcard = C
@@ -538,12 +538,12 @@ OWN(/obj/item/pda, id, OWN_CONTAINED)
 
 /// LC-refs: the scanmode this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/pda/proc/scanmode() as /datum/data/pda/utility/scanmode
-	return om_resolve(scanmode_handle)
+	return scanmode
 
 /// LC-refs: the current_app this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/pda/proc/current_app() as /datum/data/pda/app
-	return om_resolve(current_app_handle)
+	return current_app
 
 /// LC-refs: the lastapp this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/pda/proc/lastapp() as /datum/data/pda/app
-	return om_resolve(lastapp_handle)
+	return lastapp

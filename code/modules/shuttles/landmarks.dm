@@ -12,7 +12,7 @@
 	//ID of the landmark
 	var/landmark_tag
 	//ID of the controller on the dock side (intialize to id_tag, becomes reference)
-	var/tmp/docking_controller_handle
+	var/tmp/datum/embedded_program/docking/docking_controller
 	var/docking_controller_tag	// the tag it starts as; resolved into docking_controller at init
 	//Map of shuttle names to ID of controller used for this landmark for shuttles with multiple ones.
 	var/list/special_dock_targets
@@ -53,7 +53,7 @@
 	if(!docking_controller_tag)
 		return
 	var/docking_tag = docking_controller_tag
-	docking_controller_handle = om_handle(SSshuttles.docking_registry[docking_tag])
+	rel_set(src, "docking_controller", SSshuttles.docking_registry[docking_tag])
 	if(!istype(docking_controller(), /datum/embedded_program/docking))
 		log_mapping("Could not find docking controller for shuttle waypoint '[name]', docking tag was '[docking_tag]'.")
 	// No QDELETING registration: the controller is an OM handle, which reads null once it is deleted.
@@ -196,7 +196,7 @@ DECLARE_INTERACTIONS(/obj/item/spaceflare, INTERACT_USE(null, PROC_REF(interacti
 
 /// LC-refs: the docking_controller this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/shuttle_landmark/proc/docking_controller() as /datum/embedded_program/docking
-	return om_resolve(docking_controller_handle)
+	return docking_controller
 
 /// LC-refs: the area this landmark leaves behind when a shuttle departs -- an OM handle resolved from base_area at Initialize().
 /obj/effect/shuttle_landmark/proc/landing_area() as /area

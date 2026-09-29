@@ -13,7 +13,7 @@
 	var/key = ""
 	var/image/img
 	var/list/viewers = list() // ALLOW(instance_list): d: every alternate appearance is shown to someone
-	var/tmp/owner_handle
+	var/tmp/atom/owner
 
 /datum/alternate_appearance/proc/display_to(list/displayTo)
 	if(!displayTo || !displayTo.len)
@@ -62,7 +62,7 @@
 	var/datum/alternate_appearance/AA = new()
 	AA.img = img
 	AA.key = key
-	AA.owner_handle = om_handle(src)
+	rel_set(AA, "owner", src)
 
 	if(owned[key])
 		qdel(owned[key])
@@ -106,4 +106,4 @@
 
 /// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/alternate_appearance/proc/owner() as /atom
-	return om_resolve(owner_handle)
+	return owner

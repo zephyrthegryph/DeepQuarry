@@ -14,7 +14,7 @@
 
 	var/obj/item/card/id/inserted_id	// Inserted ID card, for points
 
-	var/tmp/machine_handle
+	var/tmp/obj/machinery/mineral/processing_unit/machine
 	var/show_all_ores = FALSE
 
 /// Settings changed from the console (ore modes, power): the processing unit re-evaluates.
@@ -24,9 +24,9 @@
 
 /obj/machinery/mineral/processing_unit_console/Initialize(mapload)
 	. = ..()
-	src.machine_handle = om_handle(locate_in_list(range(5, src), /obj/machinery/mineral/processing_unit))
+	rel_set(src, "machine", locate_in_list(range(5, src), /obj/machinery/mineral/processing_unit))
 	if (machine())
-		machine().console_handle = om_handle(src)
+		rel_set(machine(), "console", src)
 	else
 		log_mapping("Ore processing machine console at [src.x], [src.y], [src.z] could not find its machine!")
 		qdel(src)
@@ -176,9 +176,9 @@ OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
 	density = TRUE
 	anchored = TRUE
 	light_range = 3
-	var/tmp/input_handle
-	var/tmp/output_handle
-	var/tmp/console_handle
+	var/tmp/obj/machinery/mineral/input
+	var/tmp/obj/machinery/mineral/output
+	var/tmp/obj/machinery/mineral/console
 	var/sheets_per_tick = 10
 	var/list/ores_processing
 	var/list/ores_stored = list() // ALLOW(instance_list): d: filled in New() with an entry per ore
@@ -218,10 +218,10 @@ OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
 	// TODO - Eschew input/output machinery and just use dirs ~Leshana
 	//Locate our output and input machinery.
 	for (var/dir in GLOB.cardinal)
-		src.input_handle = om_handle(locate(/obj/machinery/mineral/input, get_step(src, dir)))
+		rel_set(src, "input", locate(/obj/machinery/mineral/input, get_step(src, dir)))
 		if(src.input_marker()) break
 	for (var/dir in GLOB.cardinal)
-		src.output_handle = om_handle(locate(/obj/machinery/mineral/output, get_step(src, dir)))
+		rel_set(src, "output", locate(/obj/machinery/mineral/output, get_step(src, dir)))
 		if(src.output_marker()) break
 	watch_input(input_marker())
 
@@ -378,16 +378,16 @@ OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
 
 /// LC-refs: the input this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/mineral/processing_unit/proc/input_marker() as /obj/machinery/mineral
-	return om_resolve(input_handle)
+	return input
 
 /// LC-refs: the output this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/mineral/processing_unit/proc/output_marker() as /obj/machinery/mineral
-	return om_resolve(output_handle)
+	return output
 
 /// LC-refs: the console this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/mineral/processing_unit/proc/console() as /obj/machinery/mineral
-	return om_resolve(console_handle)
+	return console
 
 /// LC-refs: the machine this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/mineral/processing_unit_console/proc/machine() as /obj/machinery/mineral/processing_unit
-	return om_resolve(machine_handle)
+	return machine

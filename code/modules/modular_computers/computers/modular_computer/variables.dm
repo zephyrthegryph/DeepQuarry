@@ -7,7 +7,7 @@
 	var/enabled = 0											// Whether the computer is turned on.
 	var/screen_on = 1										// Whether the computer is active/opened/it's screen is on.
 	var/device_theme = "ntos"								// Sets the theme for the main menu, hardware config, and file browser apps. Overridden by certain non-NT devices.
-	var/tmp/active_program_handle	// A currently active program running on the computer.
+	var/tmp/datum/computer_file/program/active_program	// A currently active program running on the computer.
 	var/hardware_flag = 0									// A flag that describes this device type
 	var/last_power_usage = 0								// Last tick power usage of this computer
 	var/last_battery_percent = 0							// Used for deciding if battery percentage has chandged
@@ -53,13 +53,13 @@
 	var/obj/item/computer_hardware/card_slot/card_slot						// ID Card slot component of this computer. Mostly for HoP modification console that needs ID slot for modification.
 	var/obj/item/computer_hardware/nano_printer/nano_printer					// Nano Printer component of this computer, for your everyday paperwork needs.
 	var/obj/item/computer_hardware/hard_drive/portable/portable_drive	// Portable data storage
-	var/tmp/ai_slot_handle	// AI slot, an intellicard housing that allows modifications of AIs.
+	var/tmp/datum/ai_slot	// AI slot, an intellicard housing that allows modifications of AIs.
 	var/obj/item/computer_hardware/tesla_link/tesla_link						// Tesla Link, Allows remote charging from nearest APC.
 
 	var/modifiable = TRUE	// can't be modified or damaged if false
 
 	var/stores_pen = FALSE
-	var/tmp/stored_pen_handle
+	var/tmp/obj/item/pen/stored_pen
 
 	var/interact_sounds
 	var/interact_sound_volume = 40
@@ -67,12 +67,12 @@
 
 /// LC-refs: A currently active program running on the computer. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/modular_computer/proc/active_program() as /datum/computer_file/program
-	return om_resolve(active_program_handle)
+	return active_program
 
 /// LC-refs: AI slot, an intellicard housing that allows modifications of AIs. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/modular_computer/proc/ai_slot()
-	return om_resolve(ai_slot_handle)
+	return ai_slot
 
 /// LC-refs: the stored_pen this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/modular_computer/proc/stored_pen() as /obj/item/pen
-	return om_resolve(stored_pen_handle)
+	return stored_pen

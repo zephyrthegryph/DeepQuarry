@@ -11,7 +11,7 @@
 	screen_loc = ui_spell_master
 
 	/// OM handle of the mob whose spells these are; read with spell_holder().
-	var/spell_holder_handle
+	var/mob/spell_holder
 
 /// A spell button -> the spell master it is listed on. The master reads its buttons with
 /// spell_buttons(), a button its master with spell_master_of(). Either end going drops the edge;
@@ -25,7 +25,7 @@
 
 /// LC-refs: the mob whose spells these are -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/movable/spell_master/proc/spell_holder() as /mob
-	return om_resolve(spell_holder_handle)
+	return spell_holder
 
 /atom/movable/screen/movable/spell_master/MouseDrop()
 	if(showing)
@@ -98,7 +98,7 @@
 		return
 
 	var/atom/movable/screen/spell/newscreen = new /atom/movable/screen/spell()
-	newscreen.spell_handle = om_handle(spell)
+	rel_set(newscreen, "spell", spell)
 
 	own_set(spell, "connected_button", newscreen)
 
@@ -165,7 +165,7 @@
 	var/last_charge = 0 //not a time, but the last remembered charge value
 
 	/// OM handle of the spell this button casts; read with spell().
-	var/spell_handle
+	var/datum/spell/spell
 	var/handle_icon_updates = 0
 	// The master we are listed on is the spell_button_on relation: spell_master_of().
 
@@ -174,7 +174,7 @@
 
 /// LC-refs: the spell this button casts -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/spell/proc/spell() as /datum/spell
-	return om_resolve(spell_handle)
+	return spell
 
 /atom/movable/screen/spell/proc/update_charge(forced_update = 0)
 	var/datum/spell/spell = spell()

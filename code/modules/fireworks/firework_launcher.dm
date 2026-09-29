@@ -9,7 +9,7 @@
 	maintenance_wrench_time = 2 SECONDS
 
 	circuit = /obj/item/circuitboard/firework_launcher
-	var/tmp/loaded_star_handle
+	var/tmp/obj/item/firework_star/loaded_star
 	var/last_launch
 	var/launch_cooldown = 5 MINUTES
 
@@ -51,7 +51,7 @@
 		to_chat(user, span_notice("\The [src] already has \a [loaded_star()] inside, unload it first!"))
 		return TRUE
 	if(user.unEquip(O, 0, src))
-		loaded_star_handle = om_handle(O)
+		rel_set(src, "loaded_star", O)
 		to_chat(user, span_notice("You insert the firework star into \the [src]."))
 		add_fingerprint(user)
 		update_icon()
@@ -81,7 +81,7 @@
 		return TRUE
 	else
 		loaded_star().forceMove(get_turf(src))
-		loaded_star_handle = null
+		rel_clear(src, "loaded_star")
 		add_fingerprint(user)
 		update_icon()
 	return TRUE
@@ -123,7 +123,7 @@
 	playsound(get_turf(src), 'sound/weapons/rpg.ogg', 75, 1)
 	loaded_star().trigger_firework(WH)
 	qdel(loaded_star())
-	loaded_star_handle = null
+	rel_clear(src, "loaded_star")
 	last_launch = world.time
 	add_fingerprint(user)
 	update_icon()
@@ -145,4 +145,4 @@
 
 /// LC-refs: the loaded_star this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/firework_launcher/proc/loaded_star() as /obj/item/firework_star
-	return om_resolve(loaded_star_handle)
+	return loaded_star

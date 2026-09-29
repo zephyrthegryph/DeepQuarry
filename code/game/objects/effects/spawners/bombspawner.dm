@@ -84,7 +84,7 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 	var/obj/item/assembly/S = new assembly_type(V)
 	own_set(V, "attached_device", S)
 
-	S.holder_handle = om_handle(V)
+	rel_set(S, "holder", V)
 	S.toggle_secure()
 
 	V.update_icon()

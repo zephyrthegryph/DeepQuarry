@@ -21,7 +21,7 @@
 	var/datum/stack/scopes	= new()
 	var/datum/stack/functions	= new()
 
-	var/tmp/container_handle	// associated container for interpeter
+	var/tmp/datum/container	// associated container for interpeter
 /*
 	Var: status
 	A variable indicating that the rest of the current block should be skipped. This may be set to any combination of <Status Macros>.
@@ -392,7 +392,7 @@ S     - The scope the variable resides in. If it is null, a scope with the varia
 
 /// LC-refs: associated container for interpeter -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/n_Interpreter/proc/container() as /datum
-	return om_resolve(container_handle)
+	return container
 
 /// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/n_Interpreter/proc/curScope() as /datum/scope

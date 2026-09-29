@@ -22,7 +22,7 @@
 
 //auto-gibs anything that bumps into it
 /obj/machinery/gibber/autogibber
-	var/tmp/input_plate_handle
+	var/tmp/turf/input_plate
 
 /obj/machinery/gibber/autogibber/Initialize(mapload)
 	. = ..()
@@ -30,7 +30,7 @@
 		var/obj/machinery/mineral/input/input_obj = locate( /obj/machinery/mineral/input, get_step(src.loc, i) )
 		if(input_obj)
 			if(isturf(input_obj.loc))
-				input_plate_handle = om_handle(input_obj.loc)
+				rel_set(src, "input_plate", input_obj.loc)
 				gib_throw_dir = i
 				qdel(input_obj)
 				break
@@ -261,4 +261,4 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 
 /// LC-refs: the input_plate this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/gibber/autogibber/proc/input_plate() as /turf
-	return om_resolve(input_plate_handle)
+	return input_plate

@@ -10,10 +10,10 @@
 	var/datum/embedded_program/docking/shuttle_docking_controller // Controller on the shuttle (the one in use)
 	var/docking_codes
 
-	var/tmp/next_location_handle	//This is only used internally.
-	var/tmp/active_docking_controller_handle	// Controller we are docked with (or trying to)
+	var/tmp/obj/effect/shuttle_landmark/next_location	//This is only used internally.
+	var/tmp/datum/embedded_program/docking/active_docking_controller	// Controller we are docked with (or trying to)
 
-	var/tmp/landmark_transition_handle	// the landmark (set the _tag var, New() resolves it)
+	var/tmp/obj/effect/shuttle_landmark/landmark_transition	// the landmark (set the _tag var, New() resolves it)
 	var/landmark_transition_tag	// the tag it starts as; resolved into landmark_transition at init
 	var/move_time = 240		//the time spent in the transition area
 
@@ -41,7 +41,7 @@
 
 	//Optional transition area
 	if(landmark_transition_tag)
-		landmark_transition_handle = om_handle(SSshuttles.get_landmark(landmark_transition_tag))
+		rel_set(src, "landmark_transition", SSshuttles.get_landmark(landmark_transition_tag))
 
 // Its docking controllers are released: shuttle_docking_controller is DECLARE_REF(..., HELD) and its
 // qdeleting hook goes with the OM teardown; the active controller is a handle.
@@ -78,7 +78,7 @@
 /// The active controller is an OM handle: it reads null once the controller is deleted, so it
 /// needs no qdeleting hook.
 /datum/shuttle/autodock/proc/set_active_docking_controller(datum/embedded_program/docking/controller)
-	active_docking_controller_handle = om_handle(controller)
+	rel_set(src, "active_docking_controller", controller)
 
 /datum/shuttle/autodock/proc/docking_controller_deleted(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
@@ -154,7 +154,7 @@
 	update_docking_target(next_location())
 	dock()
 
-	next_location_handle = null
+	rel_clear(src, "next_location")
 	in_use = null	//release lock
 
 /datum/shuttle/autodock/proc/get_travel_time()
@@ -237,14 +237,14 @@
 
 /// LC-refs: This is only used internally. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/shuttle/autodock/proc/next_location() as /obj/effect/shuttle_landmark
-	return om_resolve(next_location_handle)
+	return next_location
 
 /// LC-refs: Controller we are docked with (or trying to) -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/shuttle/autodock/proc/active_docking_controller() as /datum/embedded_program/docking
-	return om_resolve(active_docking_controller_handle)
+	return active_docking_controller
 
 /// LC-refs: the landmark resolved from the _tag var -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/shuttle/autodock/proc/landmark_transition() as /obj/effect/shuttle_landmark
-	return om_resolve(landmark_transition_handle)
+	return landmark_transition
 
 // Owned by its docking console elsewhere; set_shuttle_docking_controller() tracks its deletion.

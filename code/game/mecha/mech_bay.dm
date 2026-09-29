@@ -9,7 +9,7 @@
 	layer = TURF_LAYER + 0.1
 	circuit = /obj/item/circuitboard/mech_recharger
 
-	var/charging_handle
+	var/atom/movable/charging
 	var/charge = 45
 	var/repair = 0
 	var/static/list/chargable_types = list(
@@ -35,7 +35,7 @@
 /obj/machinery/mech_recharger/Uncrossed(atom/movable/M)
 	. = ..()
 	if(M == charging())
-		charging_handle = null
+		rel_clear(src, "charging")
 
 /obj/machinery/mech_recharger/RefreshParts()
 	..()
@@ -51,7 +51,7 @@
 	if(!charging())
 		return PROCESS_KILL
 	if(charging().loc != src.loc) // Could be qdel or teleport or something
-		charging_handle = null
+		rel_clear(src, "charging")
 		return
 
 	var/done = FALSE
@@ -77,7 +77,7 @@
 		else
 			done = FALSE
 	if(done)
-		charging_handle = null
+		rel_clear(src, "charging")
 		return PROCESS_KILL
 
 /obj/machinery/mech_recharger/declare_interactions(list/into)
@@ -100,7 +100,7 @@
 			mech.occupant_message(span_notice("Now charging..."))
 		else
 			to_chat(M, span_notice("Now charging..."))
-		charging_handle = om_handle(M)
+		rel_set(src, "charging", M)
 		MACHINE_WAKE(src)
 	return
 
@@ -111,4 +111,4 @@
 
 /// LC-refs: charging -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/mech_recharger/proc/charging() as /atom/movable
-	return om_resolve(charging_handle)
+	return charging

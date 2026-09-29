@@ -1,11 +1,11 @@
 /// The tgui page where a player edits their keybindings. One per client, made on demand.
 /datum/keybind_editor
-	var/tmp/owner_handle
+	var/tmp/client/owner
 	/// The profile being edited in the UI.
 	var/profile = KEYBIND_PROFILE_DEFAULT
 
 /datum/keybind_editor/New(client/owner)
-	src.owner_handle = om_handle(owner)
+	rel_set(src, "owner", owner)
 	profile = owner?.mob?.keybind_profile() || KEYBIND_PROFILE_DEFAULT
 
 // clears the client's cached editor (clients aren't datums).
@@ -182,4 +182,7 @@
 
 /// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/keybind_editor/proc/owner() as /client
-	return om_resolve(owner_handle)
+	return owner
+
+REL_PAIR(/client, keybind_editor, owner)
+REL_PAIR(/datum/keybind_editor, owner, keybind_editor)

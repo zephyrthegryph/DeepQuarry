@@ -32,7 +32,7 @@
 	var/list/equipment_vertices
 	/// Large station meshes solve away from the BYOND thread. Results carry this
 	/// generation so a topology rebuild can never publish stale voltages.
-	var/rust_handle = 0
+	var/datum/rust = 0
 	var/solve_generation = 0
 	var/solve_pending = FALSE
 	var/list/pending_reduced
@@ -43,9 +43,9 @@
 /// Phase 1 (unbind): the Rust material power graph is dropped.
 /datum/material_power_graph/lifecycle_unbind()
 	. = ..()
-	if(rust_handle)
-		vg_drop_material_power_graph(rust_handle)
-		rust_handle = 0
+	if(rust)
+		vg_drop_material_power_graph(rust)
+		rel_set(src, "rust", 0)
 
 /// `region_id`: the power region the cables are on (0 for a detached test overlay).
 /datum/material_power_graph/proc/build(list/cables, region_id = 0)
@@ -283,10 +283,10 @@
 			numeric_topology += list(edge[MATERIAL_POWER_EDGE_A], edge[MATERIAL_POWER_EDGE_B], edge[MATERIAL_POWER_EDGE_R])
 		topology = numeric_topology
 	solve_generation++
-	var/handle = vg_submit_material_power_graph(rust_handle, topology, core_loads, voltages, solve_generation)
+	var/handle = vg_submit_material_power_graph(rust, topology, core_loads, voltages, solve_generation)
 	if(!handle)
 		return FALSE
-	rust_handle = handle
+	rel_set(src, "rust", handle)
 	solve_pending = TRUE
 	pending_reduced = reduced
 	pending_sources = sources?.Copy()
@@ -298,9 +298,9 @@
 /// worker; all edge currents, heat accounting, and equipment efficiency remain
 /// authoritative here on the main thread.
 /datum/material_power_graph/proc/poll_async_solve()
-	if(!solve_pending || !rust_handle)
+	if(!solve_pending || !rust)
 		return FALSE
-	var/list/solution = vg_poll_material_power_graph(rust_handle)
+	var/list/solution = vg_poll_material_power_graph(rust)
 	if(!islist(solution) || !length(solution))
 		return null
 	solve_pending = FALSE

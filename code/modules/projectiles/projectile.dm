@@ -50,8 +50,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	//Hitscan
 	var/hitscan = FALSE		//Whether this is hitscan. If it is, speed is basically ignored.
 	var/list/beam_segments	//assoc list of datum/point or datum/point/vector, start = end. Used for hitscan effect generation.
-	var/tmp/beam_index_handle
-	var/tmp/hitscan_last_handle	//last turf touched during hitscanning.
+	var/tmp/datum/point/beam_index
+	var/tmp/turf/hitscan_last	//last turf touched during hitscanning.
 	var/tracer_type
 	var/muzzle_type
 	var/impact_type
@@ -71,7 +71,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	//Homing
 	var/homing = FALSE
-	var/tmp/homing_target_handle
+	var/tmp/atom/homing_target
 	var/homing_turn_speed = 10		//Angle per tick.
 	var/homing_inaccuracy_min = 0		//in pixels for these. offsets are set once when setting target.
 	var/homing_inaccuracy_max = 0
@@ -81,7 +81,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	//Targetting
 	var/yo = null
 	var/xo = null
-	var/tmp/original_handle	// the original target clicked
+	var/tmp/atom/original	// the original target clicked
 	var/turf/starting = null // the projectile's starting turf
 	// ALLOW(instance_list): d: filled as the projectile crosses atoms; projectiles are short-lived
 	var/list/permutated = list() // we've passed through these atoms, don't try to hit them again
@@ -156,14 +156,14 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	///If the rounds hit phased entities or not.
 	var/hits_phased = FALSE
 
-	var/tmp/my_case_handle
+	var/tmp/obj/item/ammo_casing/my_case
 
 	var/crawl_destroy = FALSE //chompADD: Making bullet hell lite mobs, need something to add to their projectiles to destroy laying folks
 
 /obj/item/projectile/Initialize(mapload)
 	. = ..()
 	if(istype(loc, /obj/item/ammo_casing))
-		my_case_handle = om_handle(loc)
+		rel_set(src, "my_case", loc)
 
 /obj/item/projectile/proc/Range()
 	range--
@@ -199,7 +199,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile/proc/record_hitscan_start(datum/point/pcache)
 	if(pcache)
 		beam_segments = list()
-		beam_index_handle = om_handle(pcache)
+		rel_set(src, "beam_index", pcache)
 		beam_segments[beam_index()] = null	//record start.
 
 /obj/item/projectile/proc/process_hitscan()
@@ -240,11 +240,11 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 				pixel_x = trajectory.return_px()
 				pixel_y = trajectory.return_py()
 			forcemoved = TRUE
-			hitscan_last_handle = om_handle(loc)
+			rel_set(src, "hitscan_last", loc)
 		else if(T != loc)
 			before_move()
 			step_towards(src, T)
-			hitscan_last_handle = om_handle(loc)
+			rel_set(src, "hitscan_last", loc)
 			after_move()
 		if(can_hit_target(original(), permutated))
 			Bump(original())
@@ -278,7 +278,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	if(!A || (!isturf(A) && !isturf(A.loc)))
 		return FALSE
 	homing = TRUE
-	homing_target_handle = om_handle(A)
+	rel_set(src, "homing_target", A)
 	homing_offset_x = rand(homing_inaccuracy_min, homing_inaccuracy_max)
 	homing_offset_y = rand(homing_inaccuracy_min, homing_inaccuracy_max)
 	if(prob(50))
@@ -403,7 +403,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 /obj/item/projectile/proc/store_hitscan_collision(datum/point/pcache)
 	beam_segments[beam_index()] = pcache
-	beam_index_handle = om_handle(pcache)
+	rel_set(src, "beam_index", pcache)
 	beam_segments[beam_index()] = null
 
 //Spread is FORCED!
@@ -422,7 +422,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	forceMove(get_turf(source))
 	trajectory_ignore_forcemove = FALSE
 	rel_set(src, "starting", curloc)
-	original_handle = om_handle(target)
+	rel_set(src, "original", target)
 	if(targloc)
 		yo = targloc.y - curloc.y
 		xo = targloc.x - curloc.x
@@ -480,7 +480,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	if(!source)
 		source = get_turf(src)
 	rel_set(src, "starting", get_turf(source))
-	original_handle = om_handle(target)
+	rel_set(src, "original", target)
 	setAngle(Get_Angle(source, target))
 
 /// A hitscan draws its tracers from its trajectory and beam points before phase 4 deletes them.
@@ -812,7 +812,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		om_qdel_after(src, 1)
 		return //fire returns nothing, so neither do we need to
 
-	original_handle = om_handle(target)
+	rel_set(src, "original", target)
 	def_zone = check_zone(target_zone)
 	rel_set(src, "firer", user)
 	var/direct_target
@@ -864,7 +864,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	return launch_projectile(target, target_zone, user, params, angle_override, forced_spread)
 
 /obj/item/projectile/proc/launch_projectile_from_turf(atom/target, target_zone, mob/user, params, angle_override, forced_spread = 0)
-	original_handle = om_handle(target)
+	rel_set(src, "original", target)
 	def_zone = check_zone(target_zone)
 	rel_set(src, "firer", user)
 	var/direct_target
@@ -952,21 +952,23 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 /// LC-refs: the beam_index this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/projectile/proc/beam_index() as /datum/point
-	return om_resolve(beam_index_handle)
+	return beam_index
 
 /// LC-refs: last turf touched during hitscanning. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/projectile/proc/hitscan_last() as /turf
-	return om_resolve(hitscan_last_handle)
+	return hitscan_last
 
 /// LC-refs: the homing_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/projectile/proc/homing_target() as /atom
-	return om_resolve(homing_target_handle)
+	return homing_target
 
 /// LC-refs: the my_case this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/projectile/proc/my_case() as /obj/item/ammo_casing
-	return om_resolve(my_case_handle)
+	return my_case
 
 /// LC-refs: the original target clicked -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/projectile/proc/original() as /atom
-	return om_resolve(original_handle)
+	return original
 
+REL_PAIR(/obj/item/ammo_casing, BB, my_case)
+REL_PAIR(/obj/item/projectile, my_case, BB)

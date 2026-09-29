@@ -26,8 +26,8 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	var/stage = 1
 	var/fixture_type = /obj/machinery/light
 	var/sheets_refunded = 2
-	var/tmp/newlight_handle
-	var/tmp/cell_handle
+	var/tmp/obj/machinery/light/newlight
+	var/tmp/obj/item/cell/cell
 
 	var/cell_connectors = TRUE
 
@@ -88,7 +88,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 		user.visible_message("[user] removes [cell()] from [src]!",span_notice("You remove [cell()]."))
 		user.put_in_hands(cell())
 		cell().update_icon()
-		cell_handle = null
+		rel_clear(src, "cell")
 	return TRUE
 
 /datum/interaction/machine_item/light_construct_insert_cell
@@ -112,7 +112,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 		span_notice("You add [W] to [src]."))
 		playsound(src, 'sound/machines/click.ogg', 50, TRUE)
 		W.forceMove(src)
-		cell_handle = om_handle(W)
+		rel_set(src, "cell", W)
 		add_fingerprint(user)
 	return TRUE
 
@@ -174,7 +174,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 		finished_light.latent_cell_charge = null
 		own_set(finished_light, "cell", cell())
 		cell().forceMove(finished_light)
-		cell_handle = null
+		rel_clear(src, "cell")
 	replace_with(src, finished_light)
 	return ITEM_INTERACT_SUCCESS
 
@@ -265,7 +265,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	var/emergency_discharge_started
 	/// Wake state: the area whose power it watches, the one om_after() timer on
 	/// next_light_deadline(), and the auto-flicker chunk watches and recheck.
-	var/tmp/area_power_token_handle
+	var/tmp/area/area_power_token
 	var/tmp/last_area_power = null
 	var/tmp/light_timer_token
 	var/tmp/light_timer_at = 0
@@ -974,7 +974,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	B.forceMove(src.loc)
 	var/obj/item/tk_grab/O = new(src)
 	user.put_in_active_hand(O)
-	O.host_handle = om_handle(user)
+	rel_set(O, "host", user)
 	O.focus_object(B)
 	B.update_icon()
 	remove_bulb()
@@ -1029,11 +1029,11 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 		return
 	if(area_power_token())
 		om_unwatch(src, area_power_token(), /datum/om/behaviour/sleeper/light)
-		area_power_token_handle = null
+		rel_clear(src, "area_power_token")
 	if(A)
 		om_attach(src, /datum/om/behaviour/sleeper/light)
 		om_watch(src, A, CHANGE_AREA_POWER, /datum/om/behaviour/sleeper/light)
-		area_power_token_handle = om_handle(A)
+		rel_set(src, "area_power_token", A)
 
 /// Area power changes and players moving near a waiting auto-flicker light.
 /datum/om/behaviour/sleeper/light
@@ -1758,15 +1758,15 @@ OWN(/obj/machinery/light, installed_light, OWN_CONTAINED)
 
 /// LC-refs: the newlight this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/light_construct/proc/newlight() as /obj/machinery/light
-	return om_resolve(newlight_handle)
+	return newlight
 
 /// LC-refs: the area_power_token this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/light/proc/area_power_token() as /area
-	return om_resolve(area_power_token_handle)
+	return area_power_token
 
 /// LC-refs: the cell this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/light_construct/proc/cell() as /obj/item/cell
-	return om_resolve(cell_handle)
+	return cell
 
 /// A multitool recolouring a bulb (normal or nightshift colour).
 /datum/om/prompt/color/light_bulb

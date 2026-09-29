@@ -275,14 +275,13 @@ EXTEND_INTERACTIONS(/obj/item/storage/belt/chameleon/changeling, \
 	icon_state = "changeling"
 	assignment = "Harvester"
 	electronic_warfare = 1 //The lack of RFID stuff makes it hard for AIs to track, I guess. *handwaves*
-	registered_user_handle = null
 	access = null
 	canremove = FALSE
 
 /obj/item/card/id/syndicate/changeling/Initialize(mapload)
 	. = ..()
 	if(ismob(loc))
-		registered_user_handle = om_handle(loc)
+		rel_set(src, "registered_user", loc)
 	access = null
 
 EXTEND_INTERACTIONS(/obj/item/card/id/syndicate/changeling, \
@@ -300,7 +299,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/syndicate/changeling, \
 
 /obj/item/card/id/syndicate/changeling/Click() //Since we can't hold it in our hands, and attack_hand() doesn't work if it in inventory...
 	if(!registered_user())
-		registered_user_handle = om_handle(usr)
+		rel_set(src, "registered_user", usr)
 		usr.set_id_info(src)
 	tgui_interact(registered_user())
 	..()

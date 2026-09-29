@@ -53,7 +53,7 @@
 	var/brigged_since = -1
 
 	//put this here for easier tracking ingame
-	var/initial_account_handle
+	var/datum/money_account/initial_account
 
 	//used for antag tcrystal trading, more info in code\game\objects\items\telecrystals.dm
 	var/accept_tcrystals = 0
@@ -512,7 +512,7 @@
 	special_role =    null
 	role_alt_title =  null
 	//changeling =    null //TODO: Figure out where this is all used and move it from mind to mob.
-	initial_account_handle = null
+	rel_clear(src, "initial_account")
 	own_set(src, "objectives", list())
 	special_verbs =   list()
 	has_been_rev =    0
@@ -652,7 +652,7 @@
 
 /// LC-refs: the character's bank account -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/mind/proc/initial_account() as /datum/money_account
-	return om_resolve(initial_account_handle)
+	return initial_account
 
 
 

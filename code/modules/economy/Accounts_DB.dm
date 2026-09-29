@@ -10,7 +10,7 @@
 	var/receipt_num
 	var/machine_id = ""
 	var/obj/item/card/id/held_card
-	var/tmp/detailed_account_view_handle
+	var/tmp/datum/money_account/detailed_account_view
 	var/creating_new_account = 0
 	var/const/fund_cap = 1000000
 	circuit = /obj/item/circuitboard/account_console
@@ -212,10 +212,10 @@
 		if("view_account_detail")
 			var/index = text2num(params["account_index"])
 			if(index && index <= REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
-				detailed_account_view_handle = om_handle(REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)[index])
+				rel_set(src, "detailed_account_view", REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)[index])
 
 		if("view_accounts_list")
-			detailed_account_view_handle = null
+			rel_clear(src, "detailed_account_view")
 			creating_new_account = 0
 
 		if("revoke_payroll")
@@ -312,4 +312,4 @@ OWN(/obj/machinery/account_database, held_card, OWN_CONTAINED)
 
 /// LC-refs: the detailed_account_view this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/account_database/proc/detailed_account_view() as /datum/money_account
-	return om_resolve(detailed_account_view_handle)
+	return detailed_account_view

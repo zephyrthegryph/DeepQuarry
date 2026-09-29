@@ -13,7 +13,7 @@
 	var/id_tag = null
 
 	var/frequency = AIRLOCK_FREQ
-	var/radio_connection_handle
+	var/datum/radio_frequency/radio_connection
 	/// Without it the feedback becomes horribly spammy.
 	COOLDOWN_DECLARE(feedback_cooldown)
 
@@ -77,7 +77,7 @@
 		GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency))
+		rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency))
 
 /obj/machinery/mech_sensor/receive_signal(datum/signal/signal)
 	if(stat & NOPOWER)
@@ -95,4 +95,4 @@
 
 /// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/mech_sensor/proc/radio_connection() as /datum/radio_frequency
-	return om_resolve(radio_connection_handle)
+	return radio_connection

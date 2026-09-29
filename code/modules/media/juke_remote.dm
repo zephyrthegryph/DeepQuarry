@@ -10,15 +10,15 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "bspeaker"
 
-	var/tmp/paired_juke_handle
-	var/tmp/our_area_handle
+	var/tmp/obj/machinery/media/jukebox/paired_juke
+	var/tmp/area/our_area
 
 // Pairing
 /obj/item/juke_remote/proc/pair_juke(obj/machinery/media/jukebox/juke, mob/user)
 	if(paired_juke())
 		to_chat(user, span_warning("The [src] is already paired to [paired_juke() == juke ? "that" : "a different"] jukebox."))
 		return
-	paired_juke_handle = om_handle(juke)
+	rel_set(src, "paired_juke", juke)
 	LAZYDISTINCTADD(paired_juke().remotes, src)
 	to_chat(user, span_notice("You pair the [src] to the [juke]."))
 	icon_state = "[initial(icon_state)]_ready"
@@ -28,7 +28,7 @@
 		to_chat(user, span_warning("The [src] isn't paired to anything."))
 		return
 	LAZYREMOVE(paired_juke().remotes, src)
-	paired_juke_handle = null
+	rel_clear(src, "paired_juke")
 	icon_state = initial(icon_state)
 	unanchor()
 	detach_area()
@@ -90,17 +90,17 @@ DECLARE_INTERACTIONS(/obj/item/juke_remote, \
 		return FALSE
 	if(A.media_source())
 		return FALSE // Already has a media source, won't overpower it with porta speaker
-	our_area_handle = om_handle(A)
-	A.media_source_handle = om_handle(paired_juke())
+	rel_set(src, "our_area", A)
+	rel_set(A, "media_source", paired_juke())
 	update_music()
 	return TRUE
 
 /obj/item/juke_remote/proc/detach_area()
 	if(!our_area() || (paired_juke() && our_area().media_source() != paired_juke()))
 		return
-	our_area().media_source_handle = null
+	rel_clear(our_area(), "media_source")
 	update_music()
-	our_area_handle = null
+	rel_clear(src, "our_area")
 
 // Music handling
 /obj/item/juke_remote/proc/update_music()
@@ -113,8 +113,8 @@ DECLARE_INTERACTIONS(/obj/item/juke_remote, \
 
 /// LC-refs: the our_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/juke_remote/proc/our_area() as /area
-	return om_resolve(our_area_handle)
+	return our_area
 
 /// LC-refs: the paired_juke this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/juke_remote/proc/paired_juke() as /obj/machinery/media/jukebox
-	return om_resolve(paired_juke_handle)
+	return paired_juke

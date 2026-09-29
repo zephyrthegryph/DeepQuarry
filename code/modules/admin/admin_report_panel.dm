@@ -25,12 +25,12 @@
 	/// Optional fully-formatted HTML body (rendered after lines/table).
 	var/body_html = ""
 	/// Optional datum receiving forwarded byond:// link clicks. May be null.
-	var/tmp/forward_host_handle
+	var/tmp/datum/forward_host
 
 /datum/admin_report/New(report_title, mob/viewer, datum/host)
 	..()
 	title = report_title
-	forward_host_handle = om_handle(host)
+	rel_set(src, "forward_host", host)
 
 /datum/admin_report/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_MOD|R_DEBUG|R_SERVER|R_EVENT)
@@ -129,4 +129,4 @@
 
 /// LC-refs: the forward_host this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/admin_report/proc/forward_host() as /datum
-	return om_resolve(forward_host_handle)
+	return forward_host

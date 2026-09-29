@@ -1,11 +1,11 @@
 
 ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a player character with various 'special treatments' from a list.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/target in get_mob_with_client_list())
 	var/datum/eventkit/player_effects/spawner = new()
-	spawner.target_handle = om_handle(target)
+	rel_set(spawner, "target", target)
 	spawner.tgui_interact(user.mob)
 
 /datum/eventkit/player_effects
-	var/tmp/target_handle	//The target of the effects
+	var/tmp/mob/target	//The target of the effects
 
 /datum/eventkit/player_effects/New()
 	. = ..()
@@ -924,4 +924,4 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 
 /// LC-refs: The target of the effects -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/eventkit/player_effects/proc/target() as /mob
-	return om_resolve(target_handle)
+	return target

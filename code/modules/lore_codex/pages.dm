@@ -2,15 +2,15 @@
 /datum/lore/codex
 	var/name = null // Title displayed
 	var/data = null // The actual words.
-	var/tmp/parent_handle	// Category above us
+	var/tmp/datum/lore/codex/parent	// Category above us
 	// ALLOW(instance_list): d: codex page keywords, filled at init
 	var/list/keywords = list() // Used for searching.
-	var/tmp/holder_handle
+	var/tmp/datum/codex_tree/holder
 
 /datum/lore/codex/New(new_holder, new_parent)
 	..()
-	holder_handle = om_handle(new_holder)
-	parent_handle = om_handle(new_parent)
+	rel_set(src, "holder", new_holder)
+	rel_set(src, "parent", new_parent)
 	add_content()
 	if(name)
 		keywords.Add(name)
@@ -69,8 +69,8 @@
 
 /// LC-refs: Category above us -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/lore/codex/proc/parent() as /datum/lore/codex
-	return om_resolve(parent_handle)
+	return parent
 
 /// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/lore/codex/proc/holder() as /datum/codex_tree
-	return om_resolve(holder_handle)
+	return holder

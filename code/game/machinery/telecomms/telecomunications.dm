@@ -548,7 +548,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 
 /obj/machinery/telecomms/server/Initialize(mapload)
 	own_set(src, "Compiler", new /datum/TCS_Compiler())
-	Compiler.Holder_handle = om_handle(src)
+	rel_set(Compiler, "Holder", src)
 	own_set(src, "server_radio", new /obj/item/radio/headset())
 	. = ..()
 

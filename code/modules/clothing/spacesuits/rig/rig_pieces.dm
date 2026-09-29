@@ -79,7 +79,7 @@
 		SPECIES_ALTEVIAN 		= 'icons/inventory/suit/mob_altevian.dmi'
 		)
 	supporting_limbs = list()
-	var/tacknife_handle
+	var/obj/item/material/knife/tacknife
 	max_pressure_protection = null
 	min_pressure_protection = null
 	resistance_flags = FIRE_PROOF | ACID_PROOF
@@ -104,7 +104,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/rig, \
 		if(M.put_in_active_hand(tacknife()))
 			to_chat(M, span_notice("You slide \the [tacknife()] out of [src]."))
 			playsound(src, 'sound/weapons/flipblade.ogg', 40, 1)
-			tacknife_handle = null
+			rel_clear(src, "tacknife")
 			update_icon()
 		return TRUE
 	return FALSE
@@ -115,7 +115,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/rig, \
 		if(tacknife())
 			return INTERACTION_HANDLED_PASS
 		M.drop_item()
-		tacknife_handle = om_handle(I)
+		rel_set(src, "tacknife", I)
 		I.forceMove(src)
 		to_chat(M, span_notice("You slide the [I] into [src]."))
 		playsound(src, 'sound/weapons/flipblade.ogg', 40, 1)
@@ -174,4 +174,4 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/rig, \
 
 /// LC-refs: the tacknife this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/clothing/suit/space/rig/proc/tacknife() as /obj/item/material/knife
-	return om_resolve(tacknife_handle)
+	return tacknife

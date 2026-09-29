@@ -15,7 +15,7 @@
 	 * The atom being tracked. The datum deletes itself if the tracked is deleted.
 	 * Hooks are also updated whenever it moves (if it's a movable).
 	 */
-	var/tracked_handle
+	var/atom/tracked
 
 	/// Hooks are made only on turfs not farther from tracked than this.
 	var/range
@@ -64,7 +64,7 @@
 	if(tracked()) //Unhook the old tracked and its surroundings
 		unregister_hooks(isturf(tracked()) ? tracked() : tracked().loc, turfs)
 		om_unhook(tracked(), list(/datum/om/event/moved, /datum/om/event/qdeleting), src)
-	tracked_handle = om_handle(new_tracked)
+	rel_set(src, "tracked", new_tracked)
 	if(!tracked())
 		return
 	//Hook the new tracked atom and its surroundings.
@@ -131,4 +131,4 @@
 
 /// LC-refs: the atom being tracked -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/connect_range/proc/tracked() as /atom
-	return om_resolve(tracked_handle)
+	return tracked

@@ -87,11 +87,11 @@
 	var/reappearing = 0
 	density = FALSE
 	anchored = TRUE
-	var/tmp/last_valid_turf_handle
+	var/tmp/turf/last_valid_turf
 
 /obj/effect/dummy/spell_jaunt/Initialize(mapload)
 	. = ..()
-	last_valid_turf_handle = om_handle(get_turf(loc))
+	rel_set(src, "last_valid_turf", get_turf(loc))
 
 OWN(/obj/effect/dummy/spell_jaunt, contents, OWN_SPILL)
 
@@ -102,7 +102,7 @@ OWN(/obj/effect/dummy/spell_jaunt, contents, OWN_SPILL)
 		loc = newLoc // ALLOW(containment): jaunt holder abstract move: must not trigger Entered/Crossed
 		var/turf/T = get_turf(loc)
 		if(!T.contains_dense_objects())
-			last_valid_turf_handle = om_handle(T)
+			rel_set(src, "last_valid_turf", T)
 	else
 		to_chat(user, span_warning("Some strange aura is blocking the way!"))
 	src.canmove = 0
@@ -116,4 +116,4 @@ OWN(/obj/effect/dummy/spell_jaunt, contents, OWN_SPILL)
 
 /// LC-refs: the last_valid_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/dummy/spell_jaunt/proc/last_valid_turf() as /turf
-	return om_resolve(last_valid_turf_handle)
+	return last_valid_turf

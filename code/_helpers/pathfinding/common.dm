@@ -22,11 +22,11 @@ GLOBAL_DATUM_INIT(generic_pathfinding_actor, /atom/movable/pathfinding_predicate
 /datum/pathfinding
 	//* basics
 	/// thing trying to get a path: an OM handle, read with search_actor()
-	var/actor_handle
+	var/atom/movable/actor
 	/// start turf: an OM handle, read with search_start()
-	var/start_handle
+	var/turf/start
 	/// goal turf: an OM handle, read with search_goal()
-	var/goal_handle
+	var/turf/goal
 
 	//* options
 	/// how far away to the end we want to get; 0 = get ontop of the tile, 1 = get adjacent to the tile
@@ -45,7 +45,7 @@ GLOBAL_DATUM_INIT(generic_pathfinding_actor, /atom/movable/pathfinding_predicate
 	var/max_path_length
 	/// context to call adjacency/distance call on
 	/// null = global proc. An OM handle, read with search_context().
-	var/context_handle
+	var/datum/context
 	/// checks if we can go to a turf
 	/// defaults to default density / canpass / etc checks
 	/// called with (turf/A, turf/B, atom/movable/actor, datum/pathfinding/pathfinding)
@@ -63,25 +63,25 @@ GLOBAL_DATUM_INIT(generic_pathfinding_actor, /atom/movable/pathfinding_predicate
 	var/list/ss13_with_access
 
 /datum/pathfinding/New(atom/movable/actor, turf/start, turf/goal, target_distance, max_path_length)
-	actor_handle = om_handle(actor)
-	start_handle = om_handle(start)
-	goal_handle = om_handle(goal)
+	rel_set(src, "actor", actor)
+	rel_set(src, "start", start)
+	rel_set(src, "goal", goal)
 	//legacy .target reference removed (no equivalent on /datum/ai_brain).
 	src.max_path_length = max_path_length
 
 // LC-refs: the search's inputs are OM handles, so a search that yields (CHECK_TICK) never
 // holds its actor, turfs or context alive; each search() reads them once into locals.
 /datum/pathfinding/proc/search_actor() as /atom/movable
-	return om_resolve(actor_handle)
+	return actor
 
 /datum/pathfinding/proc/search_start() as /turf
-	return om_resolve(start_handle)
+	return start
 
 /datum/pathfinding/proc/search_goal() as /turf
-	return om_resolve(goal_handle)
+	return goal
 
 /datum/pathfinding/proc/search_context() as /datum
-	return om_resolve(context_handle)
+	return context
 
 /**
  * returns raw list of nodes returned by algorithm
@@ -95,7 +95,7 @@ GLOBAL_DATUM_INIT(generic_pathfinding_actor, /atom/movable/pathfinding_predicate
 /datum/pathfinding/proc/failure_cache_key()
 	var/turf/start = search_start()
 	var/turf/goal = search_goal()
-	if(context_handle || !start || !goal)
+	if(context || !start || !goal)
 		return null
 	var/access_key = length(ss13_with_access) ? jointext(ss13_with_access, ",") : ""
 	return "[type]|[search_actor()?.type]|[text_ref(start)]|[text_ref(goal)]|[target_distance]|[require_adjacency_when_going_adjacent]|[max_path_length]|[adjacency_call]|[heuristic_call]|[turf_path_danger_ignore]|[access_key]"

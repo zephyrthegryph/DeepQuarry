@@ -256,7 +256,7 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 	spellname = "mindswap"
 	icon_state ="bookmindswap"
 	desc = "This book's cover is pristine, though its pages look ragged and torn."
-	var/tmp/stored_swap_handle	//Used in used book recoils to store an identity for mindswaps
+	var/tmp/mob/stored_swap	//Used in used book recoils to store an identity for mindswaps
 
 /obj/item/spellbook/oneuse/mindswap/onlearned()
 	spellname = pick("fireball","smoke","blind","forcewall","knock","horses","charge")
@@ -267,9 +267,9 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 /obj/item/spellbook/oneuse/mindswap/recoil(mob/user as mob)
 	..()
 	if(stored_swap() in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS))
-		stored_swap_handle = null
+		rel_clear(src, "stored_swap")
 	if(!stored_swap())
-		stored_swap_handle = om_handle(user)
+		rel_set(src, "stored_swap", user)
 		to_chat(user, span_warning("For a moment you feel like you don't even know who you are anymore."))
 		return
 	if(stored_swap() == user)
@@ -303,7 +303,7 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 
 	to_chat(stored_swap(), span_warning("You're suddenly somewhere else... and someone else?!"))
 	to_chat(user, span_warning("Suddenly you're staring at [src] again... where are you, who are you?!"))
-	stored_swap_handle = null
+	rel_clear(src, "stored_swap")
 
 /obj/item/spellbook/oneuse/forcewall
 	spell = /datum/spell/aoe_turf/conjure/forcewall
@@ -363,4 +363,4 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 
 /// LC-refs: Used in used book recoils to store an identity for mindswaps -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/spellbook/oneuse/mindswap/proc/stored_swap() as /mob
-	return om_resolve(stored_swap_handle)
+	return stored_swap

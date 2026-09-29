@@ -27,7 +27,7 @@
 	usage_flags = PROGRAM_ALL
 	category = PROG_UTIL
 
-	var/tmp/my_computer_handle
+	var/tmp/obj/item/modular_computer/my_computer
 
 /datum/computer_file/program/ntnetdownload/kill_program()
 	..()
@@ -135,7 +135,7 @@
 	return FALSE
 
 /datum/computer_file/program/ntnetdownload/tgui_data(mob/user)
-	my_computer_handle = om_handle(computer())
+	rel_set(src, "my_computer", computer())
 	if(!istype(my_computer(), /obj/item/modular_computer))
 		return
 
@@ -199,4 +199,4 @@
 
 /// LC-refs: the my_computer this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/computer_file/program/ntnetdownload/proc/my_computer() as /obj/item/modular_computer
-	return om_resolve(my_computer_handle)
+	return my_computer

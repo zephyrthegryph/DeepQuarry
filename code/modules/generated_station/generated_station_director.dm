@@ -40,7 +40,7 @@
 /// Event-driven strategic state for one station. Producers submit observations
 /// and capability changes directly; this layer never discovers state by polling mobs.
 /datum/generated_station_director
-	var/tmp/simulation_handle
+	var/tmp/datum/generated_station_simulation/simulation
 	var/alert_level = GENERATED_STATION_ALERT_GREEN
 	var/list/local_alert_levels
 	var/list/department_connected
@@ -55,11 +55,11 @@
 	var/next_report_id = 1
 	var/next_squad_id = 1
 	var/next_order_id = 1
-	var/tmp/defense_runtime_handle
+	var/tmp/datum/generated_station_defense_runtime/defense_runtime
 
 /datum/generated_station_director/New(datum/generated_station_simulation/new_simulation)
 	..()
-	simulation_handle = om_handle(new_simulation)
+	rel_set(src, "simulation", new_simulation)
 	local_alert_levels = list()
 	department_connected = list()
 	reports = list()
@@ -241,8 +241,8 @@
 
 /// LC-refs: the simulation this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_director/proc/simulation() as /datum/generated_station_simulation
-	return om_resolve(simulation_handle)
+	return simulation
 
 /// LC-refs: the defense_runtime this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_director/proc/defense_runtime() as /datum/generated_station_defense_runtime
-	return om_resolve(defense_runtime_handle)
+	return defense_runtime

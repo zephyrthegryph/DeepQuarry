@@ -149,10 +149,10 @@ DECLARE_DEFAULT_CHILD(/obj/item/multitool/hacktool, "hack_state", /datum/tgui_st
 	known_targets -= target
 
 /datum/tgui_state/default/must_hack
-	var/hacktool_handle
+	var/obj/item/multitool/hacktool/hacktool
 
 /datum/tgui_state/default/must_hack/New(hacktool)
-	src.hacktool_handle = om_handle(hacktool)
+	rel_set(src, "hacktool", hacktool)
 	..()
 
 /datum/tgui_state/default/must_hack/can_use_topic(src_object, mob/user)
@@ -173,4 +173,4 @@ DECLARE_DEFAULT_CHILD(/obj/item/multitool/hacktool, "hack_state", /datum/tgui_st
 
 /// LC-refs: hacktool -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_state/default/must_hack/proc/hacktool() as /obj/item/multitool/hacktool
-	return om_resolve(hacktool_handle)
+	return hacktool

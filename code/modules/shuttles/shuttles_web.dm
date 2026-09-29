@@ -119,7 +119,7 @@
 			helmets -= h
 			continue
 		if(!H.shuttle_comp() || !(get_area(H) in shuttle_area))
-			H.shuttle_comp_handle = null
+			rel_clear(H, "shuttle_comp")
 			H.audible_message(span_warning("\The [H] pings as it loses it's connection with the ship."), runemessage = "ping")
 			H.update_hud("discon")
 			helmets -= h
@@ -220,7 +220,7 @@
 
 /obj/machinery/computer/shuttle_control/web/proc/interaction_register_helmet(mob/user, obj/item/clothing/head/pilot/H, datum/interaction/interaction)
 	var/datum/shuttle/autodock/web_shuttle/shuttle = SSshuttles.shuttles[shuttle_tag]
-	H.shuttle_comp_handle = om_handle(src)
+	rel_set(H, "shuttle_comp", src)
 	shuttle.helmets |= om_handle(H)
 	to_chat(user, span_notice("You register the helmet with the ship's console."))
 	shuttle.update_helmets()
@@ -373,11 +373,11 @@
 				message_admins("ERROR: Shuttle computer was asked to travel to a nonexistant destination.")
 				return
 
-			WS.next_location_handle = om_handle(target_destination.my_landmark())
+			rel_set(WS, "next_location", target_destination.my_landmark())
 			if(!can_move(WS, ui.user))
 				return
 
-			WS.web_master.future_destination_handle = om_handle(target_destination)
+			rel_set(WS.web_master, "future_destination", target_destination)
 			to_chat(ui.user, span_notice("[WS.visible_name] flight computer received command."))
 			WS.web_master.reset_autopath() // Deviating from the path will almost certainly confuse the autopilot, so lets just reset its memory.
 

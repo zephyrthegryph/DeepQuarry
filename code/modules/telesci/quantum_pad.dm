@@ -15,7 +15,7 @@
 	var/teleporting = 0 //if it's in the process of teleporting
 	var/power_efficiency = 1
 	var/boosted = 0 // do we teleport mecha?
-	var/tmp/linked_pad_handle
+	var/tmp/obj/machinery/power/quantumpad/linked_pad
 
 	//mapping
 	var/static/list/mapped_quantum_pads = list()
@@ -92,12 +92,12 @@
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/multitool/multitool = tool
 	if(panel_open)
-		multitool.connectable_handle = om_handle(src)
+		rel_set(multitool, "connectable", src)
 		to_chat(user, span_notice("You save the data in [tool]'s buffer."))
 		return ITEM_INTERACT_SUCCESS
 	if(!istype(multitool.connectable(), /obj/machinery/power/quantumpad))
 		return ITEM_INTERACT_BLOCKING
-	linked_pad_handle = om_handle(multitool.connectable())
+	rel_set(src, "linked_pad", multitool.connectable())
 	to_chat(user, span_notice("You link [src] to the one in [tool]'s buffer."))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
@@ -143,7 +143,7 @@
 		to_chat(user, span_warning("This is too unstable a platform for \the [src] to operate on!"))
 		// ition Start
 		if(linked_pad())
-			linked_pad().linked_pad_handle = null
+			linked_pad().linked_pad = null
 		// ition End
 		return TRUE
 
@@ -203,7 +203,7 @@
 	. = FALSE
 	var/obj/machinery/power/quantumpad/link = mapped_quantum_pads[map_pad_link_id]
 	if(link)
-		linked_pad_handle = om_handle(link)
+		rel_set(src, "linked_pad", link)
 		update_icon()
 		. = TRUE
 
@@ -299,4 +299,4 @@
 
 /// LC-refs: the linked_pad this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/power/quantumpad/proc/linked_pad() as /obj/machinery/power/quantumpad
-	return om_resolve(linked_pad_handle)
+	return linked_pad

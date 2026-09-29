@@ -20,7 +20,7 @@
 	var/survivalfood = FALSE
 	var/nutriment_amt = 0
 	var/list/nutriment_desc = list("food" = 1) // ALLOW(instance_list): d: add_reagent() stores it by reference as the nutriment data, and nutriment mix_data() edits that list; sharing it gains nothing (see memory_lists_audit.md)
-	var/tmp/coating_handle
+	var/tmp/datum/reagent/nutriment/coating/coating
 	var/icon/flat_icon = null //Used to cache a flat icon generated from dipping in batter. This is used again to make the cooked-batter-overlay
 	var/do_coating_prefix = 1 //If 0, we wont do "battered thing" or similar prefixes. Mainly for recipes that include batter but have a special name
 
@@ -4805,7 +4805,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bageleverything, null,
 	if (!C)
 		return
 
-	coating_handle = om_handle(C)
+	rel_set(src, "coating", C)
 	//Now we have to do the witchcraft with masking images
 	//var/icon/I = new /icon(icon, icon_state)
 
@@ -4951,7 +4951,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch
 
 /obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch/Initialize(mapload)
 	. = ..()
-	coating_handle = om_handle(reagents.get_reagent(REAGENT_ID_BATTER))
+	rel_set(src, "coating", reagents.get_reagent(REAGENT_ID_BATTER))
 	reagents.add_reagent(REAGENT_ID_OIL, 4)
 
 /obj/item/reagent_containers/food/snacks/funnelcake
@@ -8533,4 +8533,4 @@ OWN(/obj/item/pizzabox, pizza, OWN_CONTAINED)
 
 /// LC-refs: the coating this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/reagent_containers/food/snacks/proc/coating() as /datum/reagent/nutriment/coating
-	return om_resolve(coating_handle)
+	return coating

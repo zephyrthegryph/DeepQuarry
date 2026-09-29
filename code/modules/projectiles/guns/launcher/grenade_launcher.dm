@@ -12,7 +12,7 @@
 	throw_distance = 7
 	release_force = 5
 
-	var/tmp/chambered_handle
+	var/tmp/obj/item/grenade/chambered
 	var/list/grenades
 	var/max_grenades = 5 //holds this + one in the chamber
 	MATERIAL_BULK(MAT_STEEL, 2000)
@@ -28,10 +28,10 @@
 		next = LAZYACCESS(grenades, 1) //get this first, so that the chambered grenade can still be removed if the grenades list is empty
 	if(chambered())
 		LAZYADD(grenades, chambered()) //rotate the revolving magazine
-		chambered_handle = null
+		rel_clear(src, "chambered")
 	if(next)
 		LAZYREMOVE(grenades, next) //Remove grenade from loaded list.
-		chambered_handle = om_handle(next)
+		rel_set(src, "chambered", next)
 		to_chat(user, span_warning("You pump [src], loading \a [next] into the chamber."))
 	else
 		to_chat(user, span_warning("You pump [src], but the magazine is empty."))
@@ -102,7 +102,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/grenade, INTERACT_HAND(null, PROC_RE
 /obj/item/gun/launcher/grenade/handle_post_fire(mob/user)
 	message_admins("[key_name_admin(user)] fired a grenade ([chambered().name]) from a grenade launcher ([src.name]).")
 	log_game("[key_name_admin(user)] used a grenade ([chambered().name]).")
-	chambered_handle = null
+	rel_clear(src, "chambered")
 
 //Underslung grenade launcher to be used with the Z8
 /obj/item/gun/launcher/grenade/underslung
@@ -121,7 +121,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/grenade, INTERACT_HAND(null, PROC_RE
 			return
 		user.remove_from_mob(G)
 		G.forceMove(src)
-		chambered_handle = om_handle(G)
+		rel_set(src, "chambered", G)
 		user.visible_message("[user] load \a [G] into [src].", span_notice("You load \a [G] into [src]."))
 		return
 	to_chat(user, span_warning("[G] doesn't seem to fit in the [src]!"))
@@ -131,10 +131,10 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/grenade, INTERACT_HAND(null, PROC_RE
 		user.put_in_hands(chambered())
 		user.visible_message("[user] removes \a [chambered()] from [src].", span_notice("You remove \a [chambered()] from [src]."))
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
-		chambered_handle = null
+		rel_clear(src, "chambered")
 	else
 		to_chat(user, span_warning("[src] is empty."))
 
 /// LC-refs: the chambered this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/gun/launcher/grenade/proc/chambered() as /obj/item/grenade
-	return om_resolve(chambered_handle)
+	return chambered

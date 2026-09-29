@@ -1,16 +1,16 @@
 /datum/event/anomaly
 	startWhen = 15
 	announceWhen = 1
-	var/tmp/impact_area_handle
+	var/tmp/area/impact_area
 	var/datum/anomaly_placer/placer = new()
 	var/anomaly_path = /obj/effect/anomaly/flux
 
 /datum/event/anomaly/setup()
-	impact_area_handle = om_handle(placer.find_valid_area())
+	rel_set(src, "impact_area", placer.find_valid_area())
 
 /datum/event/anomaly/announce()
 	if(isnull(impact_area()))
-		impact_area_handle = om_handle(placer.find_valid_area())
+		rel_set(src, "impact_area", placer.find_valid_area())
 	GLOB.command_announcement.Announce("Energetic flux wave detected on [ANOMALY_ANNOUNCE_DANGEROUS_TEXT] [impact_area().name].", "Anomaly Alert")
 
 /datum/event/anomaly/start()
@@ -34,7 +34,7 @@
 
 /datum/event/anomaly/bioscrambler/announce()
 	if(isnull(impact_area()))
-		impact_area_handle = om_handle(placer.find_valid_area())
+		rel_set(src, "impact_area", placer.find_valid_area())
 	GLOB.command_announcement.Announce("Biologic trait swapping agent detected on [ANOMALY_ANNOUNCE_MEDIUM_TEXT] [impact_area().name].", "Anomaly Alert")
 
 // Bluespace
@@ -45,7 +45,7 @@
 
 /datum/event/anomaly/bluespace/announce()
 	if(isnull(impact_area()))
-		impact_area_handle = om_handle(placer.find_valid_area())
+		rel_set(src, "impact_area", placer.find_valid_area())
 	GLOB.command_announcement.Announce("Bluespace instability detected on [ANOMALY_ANNOUNCE_MEDIUM_TEXT] [impact_area().name].", "Anomaly Alert")
 
 // Dimensional
@@ -63,7 +63,7 @@
 
 /datum/event/anomaly/dimensional/announce()
 	if(isnull(impact_area()))
-		impact_area_handle = om_handle(placer.find_valid_area())
+		rel_set(src, "impact_area", placer.find_valid_area())
 	GLOB.command_announcement.Announce("Dimensional instability detected on [ANOMALY_ANNOUNCE_MEDIUM_TEXT] [impact_area().name].", "Anomaly Alert")
 
 // Flux
@@ -75,7 +75,7 @@
 
 /datum/event/anomaly/flux/announce()
 	if(isnull(impact_area()))
-		impact_area_handle = om_handle(placer.find_valid_area())
+		rel_set(src, "impact_area", placer.find_valid_area())
 	GLOB.command_announcement.Announce("Hyper-energetic flux wave detected on [ANOMALY_ANNOUNCE_DANGEROUS_TEXT] [impact_area().name].", "Anomaly Alert")
 
 // Gravitational
@@ -86,7 +86,7 @@
 
 /datum/event/anomaly/grav/announce()
 	if(isnull(impact_area()))
-		impact_area_handle = om_handle(placer.find_valid_area())
+		rel_set(src, "impact_area", placer.find_valid_area())
 	GLOB.command_announcement.Announce("Gravitational anomaly detected on [ANOMALY_ANNOUNCE_HARMFUL_TEXT] [impact_area().name].", "Anomaly Alert")
 
 // Hallucination
@@ -97,7 +97,7 @@
 
 /datum/event/anomaly/hallucination/announce()
 	if(isnull(impact_area()))
-		impact_area_handle = om_handle(placer.find_valid_area())
+		rel_set(src, "impact_area", placer.find_valid_area())
 	GLOB.command_announcement.Announce("Hallucinatory event detected on [ANOMALY_ANNOUNCE_MEDIUM_TEXT] [impact_area().name].", "Anomaly Alert")
 
 // Pyroclastic
@@ -108,7 +108,7 @@
 
 /datum/event/anomaly/pyro/announce()
 	if(isnull(impact_area()))
-		impact_area_handle = om_handle(placer.find_valid_area())
+		rel_set(src, "impact_area", placer.find_valid_area())
 	GLOB.command_announcement.Announce("Pyroclastic anomaly detected on [ANOMALY_ANNOUNCE_HARMFUL_TEXT] [impact_area().name].", "Anomaly Alert")
 
 // Weather
@@ -119,7 +119,7 @@
 
 /datum/event/anomaly/weather/announce()
 	if(isnull(impact_area()))
-		impact_area_handle = om_handle(placer.find_valid_area())
+		rel_set(src, "impact_area", placer.find_valid_area())
 	GLOB.command_announcement.Announce("Metereologic anomaly detected on [ANOMALY_ANNOUNCE_MEDIUM_TEXT] [impact_area().name].", "Anomaly Alert")
 
 // Dust
@@ -130,10 +130,10 @@
 
 /datum/event/anomaly/dust/announce()
 	if(isnull(impact_area()))
-		impact_area_handle = om_handle(placer.find_valid_area())
+		rel_set(src, "impact_area", placer.find_valid_area())
 	GLOB.command_announcement.Announce("Anomalous dust particles detected on [ANOMALY_ANNOUNCE_MEDIUM_TEXT] [impact_area().name].", "Anomaly Alert")
 
 
 /// LC-refs: the impact_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event/anomaly/proc/impact_area() as /area
-	return om_resolve(impact_area_handle)
+	return impact_area

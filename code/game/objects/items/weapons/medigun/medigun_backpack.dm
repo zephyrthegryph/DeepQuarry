@@ -283,7 +283,7 @@
 	. = ..()
 
 	var/obj/item/bork_medigun/linked/medigun = get_medigun()
-	medigun.medigun_base_unit_handle = om_handle(src)
+	rel_set(medigun, "medigun_base_unit", src)
 
 	if(!is_twohanded())
 		medigun.beam_range = 4

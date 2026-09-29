@@ -241,7 +241,7 @@
 	to_chat(user, span_notice("You pull \the [removed] out of [target]'s [part.name]."))
 	if(istype(removed, /obj/item/implant))
 		var/obj/item/implant/imp = removed
-		imp.imp_in_handle = null
+		rel_clear(imp, "imp_in")
 		imp.implanted = FALSE
 	else if(istype(removed, /obj/item/nif))
 		var/obj/item/nif/N = removed

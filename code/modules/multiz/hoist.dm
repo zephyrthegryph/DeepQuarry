@@ -24,7 +24,7 @@ DECLARE_INTERACTIONS(/obj/item/hoist_kit, INTERACT_USE(null, PROC_REF(interactio
 	desc = "A clamp used to lift people or things."
 	icon = 'icons/obj/hoists.dmi'
 	icon_state = "hoist_hook"
-	var/tmp/source_hoist_handle
+	var/tmp/obj/structure/hoist/source_hoist
 	can_buckle = TRUE
 	anchored = TRUE
 	plane = ABOVE_MOB_PLANE
@@ -52,7 +52,7 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 /obj/structure/hoist/proc/attach_hoistee(atom/movable/AM)
 	if (get_turf(AM) != get_turf(source_hook))
 		AM.forceMove(get_turf(source_hook))
-	hoistee_handle = om_handle(AM)
+	rel_set(src, "hoistee", AM)
 	if(ismob(AM))
 		source_hook.buckle_mob(AM)
 	AM.anchored = TRUE // why isn't this being set by buckle_mob for silicons?
@@ -92,7 +92,7 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	. = ..()
 	if (. && !QDELETED(source_hoist()))
 		var/mob/M = .
-		source_hoist().hoistee_handle = null
+		rel_clear(source_hoist(), "hoistee")
 		M.fall()
 
 /obj/structure/hoist
@@ -103,7 +103,7 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	anchored = TRUE
 	name = "hoist"
 	desc = "A manual hoist, uses a clamp and pulley to hoist things."
-	var/tmp/hoistee_handle
+	var/tmp/atom/movable/hoistee
 	var/movedir = UP
 	var/obj/effect/hoist_hook/source_hook
 
@@ -112,7 +112,7 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	dir = ndir
 	var/turf/newloc = get_step(src, dir)
 	own_set(src, "source_hook", new /obj/effect/hoist_hook(newloc))
-	source_hook.source_hoist_handle = om_handle(src)
+	rel_set(source_hook, "source_hoist", src)
 
 
 // whatever hangs from the hoist is released.
@@ -133,7 +133,7 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 		source_hook.unbuckle_mob(hoistee())
 	else
 		hoistee().anchored = FALSE
-	hoistee_handle = null
+	rel_clear(src, "hoistee")
 	layer = NORMAL_LAYER
 
 /obj/structure/hoist/proc/break_hoist()
@@ -258,8 +258,8 @@ DECLARE_INTERACTIONS(/obj/structure/hoist, \
 
 /// LC-refs: the hoistee this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/hoist/proc/hoistee() as /atom/movable
-	return om_resolve(hoistee_handle)
+	return hoistee
 
 /// LC-refs: the source_hoist this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/hoist_hook/proc/source_hoist() as /obj/structure/hoist
-	return om_resolve(source_hoist_handle)
+	return source_hoist

@@ -45,7 +45,7 @@
 	var/sound_cooldown = 10 SECONDS // add
 
 	/// Vis contents overlay holding the ship's vector when in motion
-	var/tmp/vector_handle
+	var/tmp/obj/effect/overlay/vis/vector
 	/// Stable registry key used by the unified flight-operations system.
 	var/flight_vessel_id
 	render_map = TRUE
@@ -59,7 +59,7 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 	SSshuttles.ships += src
 	position_x = 0
 	position_y = 0
-	vector_handle = om_handle(add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE))
+	rel_set(src, "vector", add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE))
 	vector_overlay().vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
 	GLOB.flight_service?.register_vessel(src)
 
@@ -330,4 +330,4 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 
 /// LC-refs: the vector this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/overmap/visitable/ship/proc/vector_overlay() as /obj/effect/overlay/vis
-	return om_resolve(vector_handle)
+	return vector

@@ -1,19 +1,19 @@
 /// Event-driven binding between one physical defender and its strategic squad.
 /datum/generated_station_defender_agent
-	var/tmp/defender_handle
-	var/tmp/runtime_handle
+	var/tmp/mob/living/simple_mob/defender
+	var/tmp/datum/generated_station_defense_runtime/runtime
 	var/department_id
 	var/squad_id
-	var/tmp/home_handle
+	var/tmp/turf/home
 	var/last_contact
 
 /datum/generated_station_defender_agent/New(mob/living/simple_mob/new_defender, datum/generated_station_defense_runtime/new_runtime, new_department_id, new_squad_id, turf/new_home)
 	..()
-	defender_handle = om_handle(new_defender)
-	runtime_handle = om_handle(new_runtime)
+	rel_set(src, "defender", new_defender)
+	rel_set(src, "runtime", new_runtime)
 	department_id = new_department_id
 	squad_id = new_squad_id
-	home_handle = om_handle(new_home)
+	rel_set(src, "home", new_home)
 	om_hook(defender(), /datum/om/event/dqai_damage_taken, src, PROC_REF(on_damage))
 	om_hook(defender(), /datum/om/event/mob_death, src, PROC_REF(on_death))
 
@@ -60,8 +60,8 @@
 
 /// Owns the finite generated-station roster. It performs no periodic scans.
 /datum/generated_station_defense_runtime
-	var/tmp/site_handle
-	var/tmp/director_handle
+	var/tmp/datum/expedition_site/site
+	var/tmp/datum/generated_station_director/director
 	var/list/agents
 	var/list/squads_by_department
 	var/list/department_turfs
@@ -84,13 +84,13 @@
 
 /datum/generated_station_defense_runtime/New(datum/expedition_site/new_site, datum/generated_station_director/new_director)
 	..()
-	site_handle = om_handle(new_site)
-	director_handle = om_handle(new_director)
+	rel_set(src, "site", new_site)
+	rel_set(src, "director", new_director)
 	agents = list()
 	squads_by_department = list()
 	department_turfs = list()
 	active_patrols = list()
-	director().defense_runtime_handle = om_handle(src)
+	rel_set(director(), "defense_runtime", src)
 
 // its director forgets it.
 
@@ -371,23 +371,23 @@
 
 /// LC-refs: the defender this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_defender_agent/proc/defender() as /mob/living/simple_mob
-	return om_resolve(defender_handle)
+	return defender
 
 /// LC-refs: the runtime this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_defender_agent/proc/runtime() as /datum/generated_station_defense_runtime
-	return om_resolve(runtime_handle)
+	return runtime
 
 /// LC-refs: the home this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_defender_agent/proc/home() as /turf
-	return om_resolve(home_handle)
+	return home
 
 /// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_defense_runtime/proc/site() as /datum/expedition_site
-	return om_resolve(site_handle)
+	return site
 
 /// LC-refs: the director this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_defense_runtime/proc/director() as /datum/generated_station_director
-	return om_resolve(director_handle)
+	return director
 
 
 
@@ -399,3 +399,6 @@
 		if(defender && !QDELETED(defender))
 			qdel(defender)
 	return ..()
+
+REL_PAIR(/datum/generated_station_defense_runtime, director, defense_runtime)
+REL_PAIR(/datum/generated_station_director, defense_runtime, director)

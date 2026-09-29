@@ -4,7 +4,7 @@ with an /obj/effect/overmap/visitable/ship present elsewhere on that z level, or
 somewhere on that shuttle. Subtypes of these can be then used to perform ship overmap movement functions.
 */
 /obj/machinery/computer/ship
-	var/tmp/linked_handle
+	var/tmp/obj/effect/overmap/visitable/ship/linked
 	var/list/viewers // OM handles of mobs in direct-view mode.
 	var/extra_view = 0 // how much the view is increased by when the mob is in overmap mode.
 	/// Whether AI/silicon mobs are permitted to interact with this console. Subtypes may override to FALSE.
@@ -16,7 +16,7 @@ somewhere on that shuttle. Subtypes of these can be then used to perform ship ov
 	if(!istype(sector))
 		return
 	if(sector.check_ownership(src))
-		linked_handle = om_handle(sector)
+		rel_set(src, "linked", sector)
 		return 1
 
 /obj/machinery/computer/ship/proc/sync_linked(user = null)
@@ -154,4 +154,4 @@ Ships can now be hijacked!
 
 /// LC-refs: the linked this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/ship/proc/linked() as /obj/effect/overmap/visitable/ship
-	return om_resolve(linked_handle)
+	return linked

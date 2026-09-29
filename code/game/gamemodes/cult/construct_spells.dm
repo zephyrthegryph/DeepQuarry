@@ -429,7 +429,6 @@
 	throwforce = 0
 	force = 0
 	show_examine = FALSE
-	owner_handle = null
 	core = null
 	cast_methods = null			// Controls how the spell is casted.
 	aspect = ASPECT_UNHOLY		// Used for combining spells. Pretty much any cult spell is unholy.

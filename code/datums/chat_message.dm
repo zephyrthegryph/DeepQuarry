@@ -40,9 +40,9 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	/// The visual element of the chat messsage
 	var/image/message
 	/// The location in which the message is appearing
-	var/message_loc_handle
+	var/atom/message_loc
 	/// The client who heard this message
-	var/owned_by_handle
+	var/client/owned_by
 	/// Contains the scheduled destruction time
 	var/scheduled_destruction
 	/// Contains the approximate amount of lines for height decay
@@ -82,7 +82,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	var/client/owner = owned_by()
 	if(owner)
 		if(owner.seen_messages)
-			LAZYREMOVEASSOC(owner.seen_messages, message_loc_handle, src)
+			LAZYREMOVEASSOC(owner.seen_messages, message_loc, src)
 		owner.images.Remove(message)
 	if (finish_callback)
 		GLOB.runechat_service.message_queue -= finish_callback
@@ -105,7 +105,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 		return
 
 	// Register client who owns this message
-	owned_by_handle = om_handle(owner.client)
+	rel_set(src, "owned_by", owner.client)
 	// Clients cannot be hooked: a vanished client leaves owned_by() null and the
 	// message is dropped by its om_qdel_after() lifespan timer.
 
@@ -206,7 +206,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	var/starting_height = target.runechat_y_offset()
 
 	// Translate any existing messages upwards, apply exponential decay factors to timers
-	message_loc_handle = om_handle(target.runechat_holder(src))
+	rel_set(src, "message_loc", target.runechat_holder(src))
 	if(!owned_by())
 		qdel(src)
 		return
@@ -214,7 +214,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	if(owned_by().seen_messages)
 		var/idx = 1
 		var/combined_height = approx_lines
-		for(var/datum/chatmessage/m as anything in owned_by().seen_messages[message_loc_handle])
+		for(var/datum/chatmessage/m as anything in owned_by().seen_messages[message_loc])
 			combined_height += m.approx_lines
 
 			var/time_spent = rough_time - m.animate_start
@@ -285,7 +285,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 		message.plane = PLANE_PLAYER_HUD_ABOVE
 
 	// View the message
-	LAZYADDASSOCLIST(owned_by().seen_messages, message_loc_handle, src)
+	LAZYADDASSOCLIST(owned_by().seen_messages, message_loc, src)
 	owned_by().images |= message
 
 	// Fade in
@@ -491,8 +491,8 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 
 /// LC-refs: the atom the message floats over -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/chatmessage/proc/message_loc() as /atom
-	return om_resolve(message_loc_handle)
+	return message_loc
 
 /// LC-refs: the client who heard the message -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/chatmessage/proc/owned_by() as /client
-	return om_resolve(owned_by_handle)
+	return owned_by

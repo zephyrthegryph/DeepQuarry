@@ -5,7 +5,7 @@
  */
 /datum/lootpanel
 	/// The owner of the panel
-	var/tmp/owner_handle
+	var/tmp/client/owner
 	/// The list of all search objects indexed.
 	var/list/datum/search_object/searchables = list() // ALLOW(instance_list): d: loot panel state
 	/// The list of search_objects needing processed
@@ -13,12 +13,12 @@
 	/// We've been notified about client version
 	var/notified = FALSE
 	/// The turf being searched
-	var/tmp/source_turf_handle
+	var/tmp/turf/source_turf
 
 /datum/lootpanel/New(client/owner)
 	. = ..()
 
-	src.owner_handle = om_handle(owner)
+	rel_set(src, "owner", owner)
 
 // its searched contents are reset.
 /datum/lootpanel/on_destroy(force)
@@ -35,7 +35,7 @@
 /datum/lootpanel/tgui_close(mob/user)
 	. = ..()
 
-	source_turf_handle = null
+	rel_clear(src, "source_turf")
 	reset_contents()
 
 /datum/lootpanel/tgui_data(mob/user)
@@ -72,9 +72,9 @@
 
 /// LC-refs: the source_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/lootpanel/proc/source_turf() as /turf
-	return om_resolve(source_turf_handle)
+	return source_turf
 
 /// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/lootpanel/proc/owner() as /client
-	return om_resolve(owner_handle)
+	return owner
 

@@ -1,6 +1,6 @@
 /datum/tgui_ban_panel
-	var/tmp/holder_handle	//client of whoever is using this datum
-	var/tmp/admin_datum_handle
+	var/tmp/client/holder	//client of whoever is using this datum
+	var/tmp/datum/admins/admin_datum
 	var/playerckey
 	var/adminckey
 	var/playerip
@@ -13,20 +13,20 @@
 /datum/tgui_ban_panel/New(user, pckey, datum/admins/admind)//user can either be a client or a mob due to byondcode(tm)
 	if (istype(user, /client))
 		var/client/user_client = user
-		holder_handle = om_handle(user_client) //if its a client, assign it to holder
+		rel_set(src, "holder", user_client) //if its a client, assign it to holder
 	else
 		var/mob/user_mob = user
-		holder_handle = om_handle(user_mob.client) //if its a mob, assign the mob's client to holder
+		rel_set(src, "holder", user_mob.client) //if its a mob, assign the mob's client to holder
 	playerckey = pckey
-	admin_datum_handle = om_handle(admind)
+	rel_set(src, "admin_datum", admind)
 	database_lookup()
 
 /datum/tgui_ban_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_BAN)
 
 /datum/tgui_ban_panel/tgui_close()
-	holder_handle = null
-	admin_datum_handle = null
+	rel_clear(src, "holder")
+	rel_clear(src, "admin_datum")
 	qdel(src)
 
 /datum/tgui_ban_panel/tgui_interact(mob/user, datum/tgui/ui)
@@ -209,8 +209,8 @@
 
 /// LC-refs: the admin_datum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_ban_panel/proc/admin_datum() as /datum/admins
-	return om_resolve(admin_datum_handle)
+	return admin_datum
 
 /// LC-refs: client of whoever is using this datum -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_ban_panel/proc/holder() as /client
-	return om_resolve(holder_handle)
+	return holder

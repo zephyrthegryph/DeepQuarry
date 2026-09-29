@@ -99,7 +99,7 @@
 
 	var/frequency = AIRLOCK_FREQ
 	var/radio_filter = null
-	var/radio_connection_handle
+	var/datum/radio_frequency/radio_connection
 
 /obj/machinery/embedded_controller/radio/Initialize(mapload)
 	set_frequency(frequency) // Set it before parent instantiates program
@@ -125,8 +125,8 @@
 /obj/machinery/embedded_controller/radio/proc/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, radio_filter))
+	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, radio_filter))
 
 /// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/embedded_controller/radio/proc/radio_connection() as /datum/radio_frequency
-	return om_resolve(radio_connection_handle)
+	return radio_connection

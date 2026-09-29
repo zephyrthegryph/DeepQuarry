@@ -75,7 +75,7 @@
 
 /obj/machinery/ore_silo/multitool_act(mob/user, obj/item/tool)
 	var/obj/item/multitool/multitool = tool
-	multitool.buffer_handle = om_handle(src)
+	rel_set(multitool, "buffer", src)
 	balloon_alert(user, "saved to multitool buffer")
 	return ITEM_INTERACT_SUCCESS
 

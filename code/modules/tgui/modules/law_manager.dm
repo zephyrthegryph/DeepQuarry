@@ -6,12 +6,12 @@
 	var/inherent_law = "InherentLaw"
 	var/supplied_law = "SuppliedLaw"
 	var/supplied_law_position = MIN_SUPPLIED_LAW_NUMBER
-	var/tmp/owner_handle
+	var/tmp/mob/living/silicon/owner
 
 /datum/tgui_module/law_manager/New(mob/living/silicon/S)
 	. = ..()
 
-	owner_handle = om_handle(S)
+	rel_set(src, "owner", S)
 
 /datum/tgui_module/law_manager/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
@@ -218,4 +218,4 @@
 
 /// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_module/law_manager/proc/owner() as /mob/living/silicon
-	return om_resolve(owner_handle)
+	return owner

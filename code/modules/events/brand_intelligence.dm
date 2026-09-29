@@ -4,7 +4,7 @@
 
 	var/list/vendingMachines	// OM handles
 	var/list/infectedVendingMachines	// OM handles
-	var/tmp/originMachine_handle
+	var/tmp/obj/machinery/vending/originMachine
 
 	var/static/list/rampant_speeches = list("try our aggressive new marketing strategies!", \
 										"you should buy products to feed your lifestyle obession!", \
@@ -28,8 +28,8 @@
 		kill()
 		return
 
-	originMachine_handle = DEFAULTPICK(vendingMachines, null)
-	LAZYREMOVE(vendingMachines, originMachine_handle)
+	rel_set(src, "originMachine", DEFAULTPICK(vendingMachines, null))
+	LAZYREMOVE(vendingMachines, originMachine)
 	originMachine().shut_up = 0
 	originMachine().shoot_inventory = 1
 
@@ -66,4 +66,4 @@
 
 /// LC-refs: the originMachine this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event/brand_intelligence/proc/originMachine() as /obj/machinery/vending
-	return om_resolve(originMachine_handle)
+	return originMachine

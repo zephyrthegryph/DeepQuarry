@@ -12,7 +12,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/assembly/electronic_assembly, "EA", /obj/item/el
 
 /obj/item/assembly/electronic_assembly/Initialize(mapload)
 	. = ..()
-	EA.holder_handle = om_handle(src)
+	rel_set(EA, "holder", src)
 
 
 EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
@@ -77,7 +77,7 @@ EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
 	name = "electronic device"
 	icon_state = "setup_device"
 	desc = "It's a tiny electronic device with specific use for attaching to other devices."
-	var/tmp/holder_handle
+	var/tmp/obj/item/assembly/electronic_assembly/holder
 	w_class = ITEMSIZE_TINY
 	max_components = IC_COMPONENTS_BASE * 3/4
 	max_complexity = IC_COMPLEXITY_BASE * 3/4
@@ -86,8 +86,8 @@ EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
 	. = ..()
 	var/obj/item/integrated_circuit/built_in/device_input/input = new(src)
 	var/obj/item/integrated_circuit/built_in/device_output/output = new(src)
-	input.assembly_handle = om_handle(src)
-	output.assembly_handle = om_handle(src)
+	rel_set(input, "assembly", src)
+	rel_set(output, "assembly", src)
 
 // its holder device forgets the assembly.
 
@@ -98,4 +98,7 @@ EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
 
 /// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/electronic_assembly/device/proc/holder() as /obj/item/assembly/electronic_assembly
-	return om_resolve(holder_handle)
+	return holder
+
+REL_PAIR(/obj/item/assembly/electronic_assembly, EA, holder)
+REL_PAIR(/obj/item/electronic_assembly/device, holder, EA)

@@ -477,7 +477,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 	icon_state = "mining_brace"
 	circuit = /obj/item/circuitboard/miningdrillbrace
 	var/brace_tier = 1
-	var/tmp/connected_handle
+	var/tmp/obj/machinery/mining/drill/connected
 
 /obj/machinery/mining/brace/examine(mob/user)
 	. = ..()
@@ -547,7 +547,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 
 	for(var/thing in contents_of(T))
 		if(istype(thing, /obj/machinery/mining/drill))
-			connected_handle = om_handle(thing)
+			rel_set(src, "connected", thing)
 			break
 
 	if(!connected())
@@ -571,8 +571,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 
 	LAZYREMOVE(connected().supports, om_handle_of(src))
 	connected().check_supports()
-	connected_handle = null
+	rel_clear(src, "connected")
 
 /// LC-refs: the connected this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/mining/brace/proc/connected() as /obj/machinery/mining/drill
-	return om_resolve(connected_handle)
+	return connected

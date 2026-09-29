@@ -3,7 +3,7 @@
 	desc = "It measures something."
 	icon = 'icons/obj/meter.dmi'
 	icon_state = "meterX"
-	var/target_handle
+	var/obj/machinery/atmospherics/pipe/target
 	var/list/pipes_on_turf
 	anchored = TRUE
 	power_channel = ENVIRON
@@ -22,13 +22,13 @@
 /obj/machinery/meter/proc/set_target(new_target)
 	if(istype(target_ref(), /obj/machinery/atmospherics/pipe))
 		om_unhook(target_ref(), /datum/om/event/qdeleting, src)
-	target_handle = om_handle(new_target)
+	rel_set(src, "target", new_target)
 	if(istype(target_ref(), /obj/machinery/atmospherics/pipe))
 		om_hook(target_ref(), /datum/om/event/qdeleting, src, PROC_REF(on_target_deleted))
 
 /obj/machinery/meter/proc/on_target_deleted(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
-	target_handle = null
+	rel_clear(src, "target")
 	if(QDELETED(src))
 		return
 	var/obj/item/pipe_meter/PM = new /obj/item/pipe_meter(loc)
@@ -110,7 +110,7 @@
 			return PROCESS_KILL
 
 		var/datum/signal/signal = new
-		signal.source_handle = om_handle(src)
+		rel_set(signal, "source", src)
 		signal.transmission_method = TRANSMISSION_RADIO
 		signal.data = list(
 			"tag" = id,
@@ -193,7 +193,7 @@
 	id = ask.text
 	var/obj/item/multitool/multitool = ask.tool.get_multitool()
 	if(multitool)
-		multitool.connectable_handle = om_handle(src)
+		rel_set(multitool, "connectable", src)
 	return ITEM_INTERACT_SUCCESS
 
 // TURF METER - REPORTS A TILE'S AIR CONTENTS
@@ -211,4 +211,4 @@
 
 /// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/meter/proc/target_ref() as /obj/machinery/atmospherics/pipe
-	return om_resolve(target_handle)
+	return target

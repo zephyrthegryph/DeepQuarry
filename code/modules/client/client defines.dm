@@ -41,7 +41,7 @@
 	///Contains admin info. Null if client is not an admin.
 	var/datum/admins/holder = null
 	///Needs to implement InterceptClickOn(user,params,atom) proc
-	var/tmp/click_intercept_handle
+	var/tmp/datum/click_intercept
 	var/buildmode		= 0
 
 	///Contains the last message sent by this client - used to protect against copy-paste spamming.
@@ -136,11 +136,11 @@
 	///A lazy list of atoms we've examined in the last RECENT_EXAMINE_MAX_WINDOW (default 2) seconds, so that we will call [/atom/proc/examine_more] instead of [/atom/proc/examine] on them when examining
 	var/list/recent_examines
 	///Our object window datum. It stores info about and handles behavior for the object tab
-	var/tmp/obj_window_handle
+	var/tmp/datum/obj_window
 
 	var/list/misc_cache = list() // ALLOW(instance_list): d: one per connected client; protean code indexes it directly
 
-	var/tmp/examine_icon_handle	//Holder for examine icon, useful for statpanel
+	var/tmp/atom/examine_icon	//Holder for examine icon, useful for statpanel
 
 	//Hide top bars
 	var/fullscreen = FALSE
@@ -194,12 +194,12 @@
 
 /// LC-refs: the click_intercept this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /client/proc/click_intercept() as /datum
-	return om_resolve(click_intercept_handle)
+	return click_intercept
 
 /// LC-refs: the obj_window this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /client/proc/obj_window()
-	return om_resolve(obj_window_handle)
+	return obj_window
 
 /// LC-refs: Holder for examine icon, useful for statpanel -- an OM handle (om_handle()), so it reads null once that is deleted.
 /client/proc/examine_icon() as /atom
-	return om_resolve(examine_icon_handle)
+	return examine_icon

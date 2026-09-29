@@ -1,7 +1,7 @@
 // Holds the various pages and implementations for codex books, so they can be used in more than just books.
 
 /datum/codex_tree
-	var/tmp/holder_handle
+	var/tmp/atom/movable/holder
 	var/root_type = null
 	var/datum/lore/codex/home = null // Top-most page.
 	// ALLOW(instance_list): d: codex browser page stack, always non-empty while open
@@ -11,7 +11,7 @@
 	var/list/history = list() // List of pages we previously visited. // now a 2D list
 
 /datum/codex_tree/New(new_holder, new_root_type)
-	holder_handle = om_handle(new_holder)
+	rel_set(src, "holder", new_holder)
 	root_type = new_root_type
 	generate_pages()
 	..()
@@ -169,4 +169,4 @@
 
 /// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/codex_tree/proc/holder() as /atom/movable
-	return om_resolve(holder_handle)
+	return holder

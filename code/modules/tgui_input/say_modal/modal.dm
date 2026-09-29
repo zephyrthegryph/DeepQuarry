@@ -22,7 +22,7 @@
  */
 /datum/tgui_say
 	/// The user who opened the window
-	var/tmp/client_handle
+	var/tmp/client/client
 	/// Injury phrases to blurt out
 	var/static/list/hurt_phrases = list("GACK!", "GLORF!", "OOF!", "AUGH!", "OW!", "URGH!", "HRNK!")
 	/// Max message length
@@ -36,7 +36,7 @@
 
 /** Creates the new input window to exist in the background. */
 /datum/tgui_say/New(client/client, id)
-	src.client_handle = om_handle(client)
+	rel_set(src, "client", client)
 	own_set(src, "window", new /datum/tgui_window(client, id))
 	winset(client, "tgui_say", "size=1,1;is-visible=0;")
 	window.subscribe(src, PROC_REF(on_message))
@@ -150,4 +150,4 @@
 
 /// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_say/proc/client() as /client
-	return om_resolve(client_handle)
+	return client

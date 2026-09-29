@@ -107,11 +107,11 @@
 	Class: reference
 */
 /datum/node/expression/value/reference
-	var/tmp/value_handle
+	var/tmp/datum/value
 
 /datum/node/expression/value/reference/New(value)
 	.=..()
-	src.value_handle=om_handle(value)
+	rel_set(src, "value", value)
 
 /datum/node/expression/value/reference/ToString()
 	return "ref: [src.value()] ([src.value().type])"
@@ -121,4 +121,4 @@
 
 /// LC-refs: the value this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/node/expression/value/reference/proc/value() as /datum
-	return om_resolve(value_handle)
+	return value

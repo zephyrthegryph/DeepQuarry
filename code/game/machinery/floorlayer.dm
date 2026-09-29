@@ -3,7 +3,7 @@
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "pipe_d"
 	density = TRUE
-	var/old_turf_handle
+	var/turf/old_turf
 	var/on = 0
 	var/obj/item/stack/tile/T
 	var/list/mode = list("dismantle"=0,"laying"=0,"collect"=0) // ALLOW(instance_list): d: edited in place per instance (3 writers)
@@ -24,7 +24,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 			CollectTiles(old_turf())
 
 
-	old_turf_handle = om_handle(loc)
+	rel_set(src, "old_turf", loc)
 
 /obj/machinery/floorlayer/declare_interactions(list/into)
 	into += list(
@@ -149,4 +149,4 @@ OWN(/obj/machinery/floorlayer, T, OWN_CONTAINED)
 
 /// LC-refs: old turf -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/floorlayer/proc/old_turf() as /turf
-	return om_resolve(old_turf_handle)
+	return old_turf

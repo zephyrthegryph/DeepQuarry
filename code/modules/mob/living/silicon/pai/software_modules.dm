@@ -314,7 +314,7 @@
 	if(!istype(D))
 		hack_aborted = 1
 		hackprogress = 0
-		cable.machine_handle = null
+		rel_clear(cable, "machine")
 		rel_clear(src, "hackdoor")
 		return
 	hack_tick(D)
@@ -331,7 +331,7 @@
 	if(hackprogress >= 1000)
 		hackprogress = 0
 		D.open()
-		cable.machine_handle = null
+		rel_clear(cable, "machine")
 		return
 	om_after(src, 1 SECOND, PROC_REF(hack_tick), D)			// Update every second
 

@@ -34,7 +34,7 @@
 	interface_name = "integrated intelligence system"
 	interface_desc = "A socket that supports a range of artificial intelligence systems."
 
-	var/tmp/integrated_ai_handle	// Direct reference to the actual mob held in the suit.
+	var/tmp/mob/integrated_ai	// Direct reference to the actual mob held in the suit.
 	var/obj/item/aicard/ai_card  // Reference to the MMI, posibrain, intellicard or pAI card previously holding the AI.
 	var/obj/item/ai_verbs/verb_holder
 
@@ -82,7 +82,7 @@
 		// If the transfer failed we can delete the card.
 		if(locate_in_list(card, /mob/living/silicon/ai))
 			own_set(src, "ai_card", card)
-			integrated_ai_handle = om_handle(locate_in_list(card, /mob/living/silicon/ai))
+			rel_set(src, "integrated_ai", locate_in_list(card, /mob/living/silicon/ai))
 		else
 			eject_ai()
 		update_verb_holder()
@@ -94,7 +94,7 @@
 			integrated_ai().attackby(input_device,user)
 			// If the transfer was successful, we can clear out our vars.
 			if(integrated_ai().loc != src)
-				integrated_ai_handle = null
+				rel_clear(src, "integrated_ai")
 				eject_ai()
 		else
 			// You're using an empty card on an empty suit, idiot.
@@ -109,7 +109,7 @@
 			integrated_ai().attackby(input_device,user)
 			// If the transfer was successful, we can clear out our vars.
 			if(integrated_ai().loc != src)
-				integrated_ai_handle = null
+				rel_clear(src, "integrated_ai")
 				eject_ai()
 		else
 			integrate_ai(input_device,user)
@@ -154,7 +154,7 @@
 			if(integrated_ai())
 				integrated_ai().ghostize()
 				qdel(integrated_ai())
-				integrated_ai_handle = null
+				rel_clear(src, "integrated_ai")
 			if(ai_card)
 				qdel(ai_card)
 				own_take(src, "ai_card")
@@ -163,7 +163,7 @@
 		else
 			ai_card.forceMove(get_turf(src))
 	own_take(src, "ai_card")
-	integrated_ai_handle = null
+	rel_clear(src, "integrated_ai")
 	update_verb_holder()
 
 /obj/item/rig_module/ai_container/proc/integrate_ai(obj/item/ai,mob/user)
@@ -196,10 +196,10 @@
 				to_chat(ai_mob, span_blue("You have been transferred to \the [holder]'s [src]."))
 				to_chat(user, span_blue("You load [ai_mob] into \the [holder]'s [src]."))
 
-			integrated_ai_handle = om_handle(ai_mob)
+			rel_set(src, "integrated_ai", ai_mob)
 
 			if(!(locate(integrated_ai()) in ai_card))
-				integrated_ai_handle = null
+				rel_clear(src, "integrated_ai")
 				eject_ai()
 		else
 			to_chat(user, span_warning("There is no active AI within \the [ai]."))
@@ -213,4 +213,4 @@ OWN(/obj/item/rig_module/ai_container, ai_card, OWN_CONTAINED)
 
 /// LC-refs: Direct reference to the actual mob held in the suit. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/rig_module/ai_container/proc/integrated_ai() as /mob
-	return om_resolve(integrated_ai_handle)
+	return integrated_ai

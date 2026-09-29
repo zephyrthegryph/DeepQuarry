@@ -118,7 +118,7 @@
 	var/datum/mind/employee_mind = new("budget_plan_employee")
 	var/datum/money_account/employee_account = new
 	employee_account.account_number = 812345
-	employee_mind.initial_account_handle = om_handle(employee_account)
+	rel_set(employee_mind, "initial_account", employee_account)
 	employee_mind.transfer_to(employee)
 	registry_join(REGISTRY_PLAYERS, employee)
 	GLOB.supply_service.allocation_policy = "equal"
@@ -172,7 +172,7 @@
 		var/datum/money_account/account = new
 		account.owner_name = "Employee [index]"
 		account.account_number = 810000 + index
-		employee_mind.initial_account_handle = om_handle(account)
+		rel_set(employee_mind, "initial_account", account)
 		employee_mind.transfer_to(employee)
 		registry_join(REGISTRY_PLAYERS, employee)
 		employees += employee
@@ -304,7 +304,7 @@
 	account.account_number = 812345
 	account.money = GLOB.supply_service.pack_price(pack) + 10
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
-	requester_mind.initial_account_handle = om_handle(account)
+	rel_set(requester_mind, "initial_account", account)
 	requester_mind.transfer_to(requester)
 	var/starting_balance = account.money
 	var/datum/supply_order/order = GLOB.supply_service.create_order(pack, requester, "Personal test order", TRUE)
@@ -597,7 +597,7 @@
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer_account)
 	var/mob/living/carbon/human/customer = new(test_turf)
 	var/datum/mind/customer_mind = new("service_lifecycle")
-	customer_mind.initial_account_handle = om_handle(customer_account)
+	rel_set(customer_mind, "initial_account", customer_account)
 	customer_mind.transfer_to(customer)
 	var/obj/item/card/id/customer_id = new(customer)
 	customer_id.registered_name = customer_account.owner_name
@@ -884,7 +884,7 @@
 	account.owner_name = "Market Order Tester"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("market_order_tester")
-	test_mind.initial_account_handle = om_handle(account)
+	rel_set(test_mind, "initial_account", account)
 	var/mob/living/carbon/human/test_buyer = new(test_turf)
 	test_mind.transfer_to(test_buyer)
 	var/stock_before = test_listing.stock
@@ -928,7 +928,7 @@
 	owner_account.money = 10000
 	registry_join(REGISTRY_MONEY_ACCOUNTS, owner_account)
 	var/datum/mind/owner_mind = new("covert_principal_tester")
-	owner_mind.initial_account_handle = om_handle(owner_account)
+	rel_set(owner_mind, "initial_account", owner_account)
 	var/mob/living/carbon/human/owner = new(test_turf)
 	owner_mind.transfer_to(owner)
 
@@ -938,7 +938,7 @@
 	collaborator_account.department_id = DEPARTMENT_CARGO
 	registry_join(REGISTRY_MONEY_ACCOUNTS, collaborator_account)
 	var/datum/mind/collaborator_mind = new("covert_cargo_tester")
-	collaborator_mind.initial_account_handle = om_handle(collaborator_account)
+	rel_set(collaborator_mind, "initial_account", collaborator_account)
 	var/mob/living/carbon/human/collaborator = new(test_turf)
 	collaborator_mind.transfer_to(collaborator)
 	var/obj/item/card/id/collaborator_id = new(collaborator)
@@ -1032,7 +1032,7 @@
 	auditor_account.owner_name = "Market Auditor"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, auditor_account)
 	var/datum/mind/auditor_mind = new("market_auditor")
-	auditor_mind.initial_account_handle = om_handle(auditor_account)
+	rel_set(auditor_mind, "initial_account", auditor_account)
 	var/mob/living/carbon/human/auditor = new(test_turf)
 	auditor_mind.transfer_to(auditor)
 	var/obj/item/card/id/auditor_id = new(auditor)
@@ -1089,7 +1089,7 @@
 	contact_account.department_id = DEPARTMENT_CARGO
 	registry_join(REGISTRY_MONEY_ACCOUNTS, contact_account)
 	var/datum/mind/contact_mind = new("physical_cargo_tester")
-	contact_mind.initial_account_handle = om_handle(contact_account)
+	rel_set(contact_mind, "initial_account", contact_account)
 	var/mob/living/carbon/human/contact = new(test_turf)
 	contact_mind.transfer_to(contact)
 	var/obj/item/card/id/contact_id = new(contact)
@@ -1122,7 +1122,7 @@
 
 	var/obj/item/paper/charter = create_contract_document(test_turf, "test operation charter", "<span class=\"paper_field\"></span>", contract.id, CONTRACT_DOCUMENT_AGENT_CHARTER, contract.issuer_name, list("agent_contract_id" = contract.id, "principal_account" = principal_account.account_number, "faction_id" = contract.agent_faction))
 	var/datum/mind/principal_mind = new("physical_principal_tester")
-	principal_mind.initial_account_handle = om_handle(principal_account)
+	rel_set(principal_mind, "initial_account", principal_account)
 	var/mob/living/carbon/human/principal = new(test_turf)
 	principal_mind.transfer_to(principal)
 	var/datum/contract_document/charter_document = charter.contract_document
@@ -1150,7 +1150,7 @@
 	auditor_account.owner_name = "Physical Evidence Tester"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, auditor_account)
 	var/datum/mind/auditor_mind = new("physical_evidence_tester")
-	auditor_mind.initial_account_handle = om_handle(auditor_account)
+	rel_set(auditor_mind, "initial_account", auditor_account)
 	var/mob/living/carbon/human/auditor = new(test_turf)
 	auditor_mind.transfer_to(auditor)
 	var/obj/item/card/id/auditor_id = new(auditor)
@@ -1226,7 +1226,7 @@
 	customer.money = 500
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
 	var/datum/mind/customer_mind = new("storefront_unit_customer")
-	customer_mind.initial_account_handle = om_handle(customer)
+	rel_set(customer_mind, "initial_account", customer)
 	var/turf/customer_turf = test_turf
 	var/mob/living/carbon/human/customer_mob = new(customer_turf)
 	customer_mind.transfer_to(customer_mob)

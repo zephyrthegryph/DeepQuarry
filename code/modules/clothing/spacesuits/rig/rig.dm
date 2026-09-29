@@ -56,7 +56,7 @@
 	var/obj/item/rig_module/selected_module = null            // Primary system (used with middle-click)
 	var/obj/item/rig_module/vision/visor                      // Kinda shitty to have a var for a module, but saves time.
 	var/obj/item/rig_module/voice/speech                      // As above.
-	var/tmp/wearer_handle	// The person currently wearing the rig.
+	var/tmp/mob/living/carbon/human/wearer	// The person currently wearing the rig.
 	var/image/mob_icon                                        // Holder for on-mob icon.
 	var/list/installed_modules                       // Power consumption/use bookkeeping.
 
@@ -485,7 +485,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 	if(!ismob(loc))
 		if(wearer()?.wearing_rig == src)
 			wearer().wearing_rig = null
-		wearer_handle = null
+		rel_clear(src, "wearer")
 		return PROCESS_KILL
 
 	// Run through cooling.
@@ -662,7 +662,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 /obj/item/rig/proc/put_on_done(mob/living/carbon/human/M)
 	if(istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 		M.visible_message(span_boldnotice("[M] struggles into \the [src]."), span_boldnotice("You struggle into \the [src]."))
-		wearer_handle = om_handle(M)
+		rel_set(src, "wearer", M)
 		wearer().wearing_rig = src
 		update_icon()
 
@@ -713,7 +713,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 					if(use_obj && check_slot == use_obj)
 						balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "retract" : "retracts"] swiftly.")
 						playsound(src, 'sound/machines/rig/rigservo.ogg', 10, FALSE)
-						use_obj.master_rig_handle = null   // intentional retract: silence the dropped() safety net
+						rel_clear(use_obj, "master_rig")   // intentional retract: silence the dropped() safety net
 						use_obj.canremove = TRUE
 						holder.drop_from_inventory(use_obj)
 						use_obj.forceMove(get_turf(src))
@@ -731,7 +731,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 					to_chat(H, span_danger("You are unable to deploy \the [piece] as \the [check_slot] [check_slot.gender == PLURAL ? "are" : "is"] in the way."))
 					return
 			else
-				use_obj.master_rig_handle = om_handle(src)   // the piece now knows its controller, so it can free itself
+				rel_set(use_obj, "master_rig", src)   // the piece now knows its controller, so it can free itself
 				balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "deploy" : "deploys"] swiftly.")
 				playsound(src, 'sound/machines/rig/rigservo.ogg', 10, FALSE)
 
@@ -775,7 +775,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 	// that also catches forceMove); here we just drop the wearer back-references.
 	if(wearer() && wearer().wearing_rig == src)
 		wearer().wearing_rig = null
-	wearer_handle = null
+	rel_clear(src, "wearer")
 
 //Todo
 /obj/item/rig/proc/malfunction()
@@ -1037,4 +1037,4 @@ OWN(/obj/item/rig, rig_storage, OWN_CONTAINED)
 
 /// LC-refs: The person currently wearing the rig. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/rig/proc/wearer() as /mob/living/carbon/human
-	return om_resolve(wearer_handle)
+	return wearer

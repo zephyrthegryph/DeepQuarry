@@ -47,7 +47,7 @@
 	var/heal_level = 20				// Growth quality: the clone is released once its genetic damage falls to clone_release_load().
 	var/heal_rate = 1
 	var/locked = 0
-	var/connected_handle //So we remember the connected clone machine.
+	var/obj/machinery/computer/cloning/connected //So we remember the connected clone machine.
 	var/mess = 0					// Need to clean out it if it's full of exploded clone.
 	var/attempting = 0				// One clone attempt at a time thanks
 	var/eject_wait = 0				// Don't eject them as soon as they are created fuckkk
@@ -305,7 +305,7 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 		anchored = FALSE
 		if(connected())
 			connected().pods -= src
-			connected_handle = null
+			rel_clear(src, "connected")
 	else
 		anchored = TRUE
 	playsound(src, tool.usesound, 100, TRUE)
@@ -316,7 +316,7 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 	if(!istype(tool, /obj/item/multitool))
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/multitool/multitool = tool
-	multitool.connecting_handle = om_handle(src)
+	rel_set(multitool, "connecting", src)
 	to_chat(user, span_notice("You load connection data from [src] to [multitool]."))
 	multitool.update_icon()
 	return ITEM_INTERACT_SUCCESS
@@ -575,4 +575,4 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 
 /// LC-refs: connected -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/clonepod/proc/connected() as /obj/machinery/computer/cloning
-	return om_resolve(connected_handle)
+	return connected

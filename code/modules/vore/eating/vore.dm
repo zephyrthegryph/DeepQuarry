@@ -133,12 +133,12 @@
 	//Mechanically required
 	var/path
 	var/slot
-	var/tmp/client_handle
+	var/tmp/client/client
 	var/client_ckey
 
 /datum/vore_preferences/New(client/C)
 	if(istype(C))
-		client_handle = om_handle(C)
+		rel_set(src, "client", C)
 		client_ckey = C.ckey
 		load_vore()
 
@@ -504,4 +504,4 @@
 
 /// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/vore_preferences/proc/client() as /client
-	return om_resolve(client_handle)
+	return client

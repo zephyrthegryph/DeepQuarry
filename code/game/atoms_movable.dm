@@ -9,7 +9,7 @@
 	var/tmp/move_speed = 10
 	var/tmp/l_move_time = 1
 	var/datum/thrownthing/throwing // ALLOW(state_ref): running: set only mid-throw
-	var/tmp/throw_source_handle
+	var/tmp/datum/throw_source
 	var/throw_speed = 2
 	var/throw_range = 7
 	// moved_recently lives in code/datums/sparse_vars/movable_misc.dm
@@ -165,7 +165,7 @@
 		pulledby.stop_pulling()
 
 	stop_orbit()
-	throw_source_handle = null
+	rel_clear(src, "throw_source")
 	own_clear(src, "riding_datum", OWN_DELETE)
 	set_listening(NON_LISTENING_ATOM)
 

@@ -9,7 +9,7 @@
 	throwforce = 5.0
 	throw_range = 15
 	throw_speed = 3
-	var/linkedmonitor_handle
+	var/obj/item/bug_monitor/linkedmonitor
 	var/brokentype = /obj/item/brokenbug
 
 	var/obj/machinery/camera/bug/camera
@@ -27,7 +27,7 @@
 /obj/item/camerabug/proc/camerabug_reset_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	if(linkedmonitor())
 		linkedmonitor().unpair(src)
-	linkedmonitor_handle = null
+	rel_clear(src, "linkedmonitor")
 	qdel(camera)
 	own_set(src, "camera", new camtype(src))
 	to_chat(user, span_notice("You turn the [src] off and on again, delinking it from any monitors."))
@@ -98,11 +98,11 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 	if(!linkedmonitor())
 		to_chat(user, span_notice("\The [src] has been paired with \the [SM]."))
 		SM.pair(src)
-		linkedmonitor_handle = om_handle(SM)
+		rel_set(src, "linkedmonitor", SM)
 	else if (linkedmonitor() == SM)
 		to_chat(user, span_notice("\The [src] has been unpaired from \the [SM]."))
 		linkedmonitor().unpair(src)
-		linkedmonitor_handle = null
+		rel_clear(src, "linkedmonitor")
 	else
 		to_chat(user, "Error: The device is linked to another monitor.")
 	return TRUE
@@ -114,7 +114,7 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 		new brokentype(get_turf(src))
 		if(linkedmonitor())
 			linkedmonitor().unpair(src)
-		linkedmonitor_handle = null
+		rel_clear(src, "linkedmonitor")
 		consume(src, user)
 	return FALSE
 
@@ -132,7 +132,7 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 	visible_message("The [src] lens shatters!")
 	if(linkedmonitor())
 		linkedmonitor().unpair(src)
-	linkedmonitor_handle = null
+	rel_clear(src, "linkedmonitor")
 	replace_with(src, brokentype)
 
 // its monitor unpairs it.
@@ -149,7 +149,7 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 	item_state = "electronic"
 	w_class  = ITEMSIZE_SMALL
 
-	var/selected_camera_handle
+	var/obj/machinery/camera/bug/selected_camera
 	/// om_handle()s of the paired bugs' cameras (each camera is owned by its bug); read with paired_cameras().
 	var/list/camera_handles
 
@@ -202,7 +202,7 @@ DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
 		return
 
 	if(cameras.len == 1)
-		selected_camera_handle = om_handle(cameras[1])
+		rel_set(src, "selected_camera", cameras[1])
 	else
 		if(in_use) // Don't allow spamming tgui menus
 			return
@@ -231,7 +231,7 @@ DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
 
 /obj/item/bug_monitor/proc/camera_chosen(datum/om/prompt/choice/bug_camera/ask)
 	in_use = FALSE
-	selected_camera_handle = om_handle(ask.choice)
+	rel_set(src, "selected_camera", ask.choice)
 	view_camera(ask.answerer)
 
 /obj/item/bug_monitor/proc/view_camera(mob/user)
@@ -240,8 +240,8 @@ DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
 	var/turf/T = get_turf(selected_camera())
 	if(!T || !is_on_same_plane_or_station(T.z, user.z) || !selected_camera().can_use())
 		to_chat(user, span_notice("Link to [selected_camera()] has been lost."))
-		LAZYREMOVE(camera_handles, selected_camera_handle)
-		selected_camera_handle = null
+		LAZYREMOVE(camera_handles, selected_camera)
+		rel_clear(src, "selected_camera")
 		return
 	user.begin_remote_view(/datum/remote_view/item_zoom, selected_camera(), null, /datum/remote_view_config/camera_standard, src, 0, TRUE)
 
@@ -285,11 +285,11 @@ DECLARE_DEFAULT_CHILD(/obj/item/camerabug, "camera", "camtype")
 
 /// LC-refs: linkedmonitor -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/camerabug/proc/linkedmonitor() as /obj/item/bug_monitor
-	return om_resolve(linkedmonitor_handle)
+	return linkedmonitor
 
 /// LC-refs: selected camera -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/bug_monitor/proc/selected_camera() as /obj/machinery/camera/bug
-	return om_resolve(selected_camera_handle)
+	return selected_camera
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/camerabug, \
 	INTERACT_VERB("Reset camera bug", PROC_REF(camerabug_reset_effect), REQ_IN_INVENTORY), \

@@ -52,7 +52,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 
 /datum/board_game
 	var/name
-	var/tmp/parent_handle
+	var/tmp/atom/parent
 	var/game_state = GAME_SETUP
 	var/table_icon = "gamble_preview"
 
@@ -61,7 +61,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 
 /datum/board_game/New(atom/holder)
 	. = ..()
-	parent_handle = om_handle(holder)
+	rel_set(src, "parent", holder)
 
 /datum/board_game/tgui_host(mob/user)
 	return parent()
@@ -89,4 +89,4 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 
 /// LC-refs: the parent this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/board_game/proc/parent() as /atom
-	return om_resolve(parent_handle)
+	return parent

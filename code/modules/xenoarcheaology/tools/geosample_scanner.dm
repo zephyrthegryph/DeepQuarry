@@ -32,7 +32,7 @@
 
 	var/scanning = 0
 	var/report_num = 0
-	var/tmp/scanned_item_handle
+	var/tmp/obj/item/scanned_item
 	var/last_scan_data = "No scans on record."
 	var/scan_progress = 0
 
@@ -95,7 +95,7 @@ DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 	if(!user.unEquip(I, target = src))
 		return TRUE
 
-	scanned_item_handle = om_handle(I)
+	rel_set(src, "scanned_item", I)
 	to_chat(user, span_notice("You put [I] into [src]."))
 	return TRUE
 
@@ -170,7 +170,7 @@ DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 		if("ejectItem")
 			if(scanned_item())
 				scanned_item().forceMove(loc)
-				scanned_item_handle = null
+				rel_clear(src, "scanned_item")
 			return TRUE
 
 		if("set_scanner_rpm_delta")
@@ -190,7 +190,7 @@ DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 		return PROCESS_KILL
 
 	if(!scanned_item() || scanned_item().loc != src)
-		scanned_item_handle = null
+		rel_clear(src, "scanned_item")
 		stop_scanning()
 		return
 
@@ -313,7 +313,7 @@ DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 
 	P.forceMove(loc)
 	scanned_item().forceMove(loc)
-	scanned_item_handle = null
+	rel_clear(src, "scanned_item")
 
 #undef RPM_FRICTION
 #undef IDEAL_RPM
@@ -335,4 +335,4 @@ DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 
 /// LC-refs: the scanned_item this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/radiocarbon_spectrometer/proc/scanned_item() as /obj/item
-	return om_resolve(scanned_item_handle)
+	return scanned_item

@@ -3,11 +3,11 @@
 	desc = "An electronic radio system."
 	icon = 'icons/obj/module.dmi'
 	icon_state = "power_mod"
-	var/hostpda_handle
+	var/obj/item/pda/hostpda
 
 	var/list/botlist = null		// list of bots
 	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/tmp/active_handle	// the active bot; if null, show bot list
+	var/tmp/mob/living/bot/active	// the active bot; if null, show bot list
 	var/list/botstatus			// the status signal sent by the bot
 
 	var/bot_type				//The type of bot it is.
@@ -21,7 +21,7 @@
 /obj/item/radio/integrated/Initialize(mapload)
 	..()
 	if(istype(loc?.loc, /obj/item/pda))
-		hostpda_handle = om_handle(loc.loc)
+		rel_set(src, "hostpda", loc.loc)
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/item/radio/integrated/LateInitialize()
@@ -36,7 +36,7 @@
 		return
 
 	var/datum/signal/signal = new()
-	signal.source_handle = om_handle(src)
+	rel_set(signal, "source", src)
 	signal.transmission_method = TRANSMISSION_RADIO
 	signal.data[key] = value
 	if(key2)
@@ -50,7 +50,7 @@
 	..()
 	switch(href_list["op"])
 		if("control")
-			active_handle = om_handle(locate(href_list["bot"]))
+			rel_set(src, "active", locate(href_list["bot"]))
 			post_signal(control_freq, "command", "bot_status", "active", active(), s_filter = bot_filter)
 
 		if("scanbots")		// find all bots
@@ -58,7 +58,7 @@
 			post_signal(control_freq, "command", "bot_status", s_filter = bot_filter)
 
 		if("botlist")
-			active_handle = null
+			rel_clear(src, "active")
 
 		if("stop", "go", "home")
 			post_signal(control_freq, "command", href_list["op"], "active", active(), s_filter = bot_filter)
@@ -99,7 +99,7 @@
 /obj/item/radio/integrated/signal/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency))
+	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency))
 
 /obj/item/radio/integrated/signal/proc/send_signal(message="ACTIVATE")
 	if(!COOLDOWN_FINISHED(src, transmission_cooldown))
@@ -111,7 +111,7 @@
 	GLOB.lastsignalers.Add("[time] <B>:</B> [usr.key] used [src] @ location ([T.x],[T.y],[T.z]) <B>:</B> [format_frequency(frequency)]/[code]")
 
 	var/datum/signal/signal = new
-	signal.source_handle = om_handle(src)
+	rel_set(signal, "source", src)
 	signal.encryption = code
 	signal.data["message"] = message
 
@@ -119,8 +119,8 @@
 
 /// LC-refs: the hostpda this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/radio/integrated/proc/hostpda() as /obj/item/pda
-	return om_resolve(hostpda_handle)
+	return hostpda
 
 /// LC-refs: the active bot; if null, show bot list -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/radio/integrated/proc/active() as /mob/living/bot
-	return om_resolve(active_handle)
+	return active

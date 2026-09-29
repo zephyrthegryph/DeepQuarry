@@ -35,7 +35,7 @@
 	if(get_ability_by_proc_ref(verb_given))
 		return // Duplicate
 	var/atom/movable/screen/ability/verb_based/lleill/A = new /atom/movable/screen/ability/verb_based/lleill()
-	A.ability_master_handle = om_handle(src)
+	rel_set(A, "ability_master", src)
 	A.object_used = object_given
 	A.verb_to_call = verb_given
 	A.ability_icon_state = ability_icon_given

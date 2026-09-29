@@ -201,7 +201,7 @@ DECLARE_GAS(/obj/item/tank, "air_contents", "volume", T20C, null)
 	else
 		if(!src.proxyassembly.assembly.a_left)
 			assy.a_right.dropInto(user.loc)
-			assy.a_right.holder_handle = null
+			rel_clear(assy.a_right, "holder")
 			own_take(assy, "a_right")
 			rel_clear(src.proxyassembly, "assembly")
 			qdel(assy)

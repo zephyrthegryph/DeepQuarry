@@ -7,14 +7,14 @@
 	icon_state = "hpad"
 	density = 0
 	anchored = 1
-	var/tmp/primary_handle
+	var/tmp/obj/machinery/hyperpad/centre/primary
 
 /obj/machinery/hyperpad/centre
 	var/teleport_cooldown = 400 //30 seconds
 	var/teleport_speed = 60
 	COOLDOWN_DECLARE(teleport_cooldown_until) //to handle the cooldown
 	var/teleporting = 0 //if it's in the process of teleporting
-	var/tmp/linked_pad_handle
+	var/tmp/obj/machinery/hyperpad/centre/linked_pad
 	icon_state = "hpad_centre"
 	var/newcolor = "#00FFFF" //used for colouring the overlays
 
@@ -122,7 +122,7 @@
 	. = FALSE
 	var/obj/machinery/hyperpad/centre/link = mapped_hyper_pads[map_pad_link_id]
 	if(link)
-		linked_pad_handle = om_handle(link)
+		rel_set(src, "linked_pad", link)
 		. = TRUE
 
 /obj/machinery/hyperpad/centre/proc/detect(mob/user)
@@ -133,7 +133,7 @@
 		for(var/turf/T in turfs)
 			var/obj/machinery/hyperpad/new_pad = new /obj/machinery/hyperpad(T)
 			LAZYADD(linked, new_pad)
-			new_pad.primary_handle = om_handle(src)
+			rel_set(new_pad, "primary", src)
 			new_pad.dir = dirs[iterate]
 			iterate += 1
 		if(length(linked) == 8)
@@ -218,8 +218,8 @@
 
 /// LC-refs: the primary this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/hyperpad/proc/primary() as /obj/machinery/hyperpad/centre
-	return om_resolve(primary_handle)
+	return primary
 
 /// LC-refs: the linked_pad this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/hyperpad/centre/proc/linked_pad() as /obj/machinery/hyperpad/centre
-	return om_resolve(linked_pad_handle)
+	return linked_pad

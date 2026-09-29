@@ -2,7 +2,7 @@
 	name = "Picture-in-picture"
 	screen_loc = "CENTER"
 	plane = PLANE_WORLD
-	var/center_handle
+	var/atom/center
 	var/width = 0
 	var/height = 0
 	var/list/shown_to
@@ -136,7 +136,7 @@
 		refresh_view()
 
 /atom/movable/screen/movable/pic_in_pic/proc/set_view_center(atom/target, do_refresh = TRUE)
-	center_handle = om_handle(target)
+	rel_set(src, "center", target)
 	if(do_refresh)
 		refresh_view()
 
@@ -183,5 +183,5 @@
 
 /// LC-refs: the atom this view is centred on -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/movable/pic_in_pic/proc/center() as /atom
-	return om_resolve(center_handle)
+	return center
 

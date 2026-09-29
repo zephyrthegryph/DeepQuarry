@@ -5,7 +5,7 @@
 	icon_state = "anomaly_container"
 	density = TRUE
 
-	var/tmp/contained_handle
+	var/tmp/obj/machinery/artifact/contained
 
 /obj/structure/anomaly_container/Initialize(mapload)
 	. = ..()
@@ -42,7 +42,7 @@ DECLARE_INTERACTIONS(/obj/structure/anomaly_container, \
 /obj/structure/anomaly_container/proc/contain(obj/machinery/artifact/artifact)
 	if(contained())
 		return
-	contained_handle = om_handle(artifact)
+	rel_set(src, "contained", artifact)
 	artifact.forceMove(src)
 	underlays += image(artifact)
 	desc = "Used to safely contain and move anomalies. \The [contained()] is kept inside."
@@ -51,7 +51,7 @@ DECLARE_INTERACTIONS(/obj/structure/anomaly_container, \
 	if(!contained())
 		return
 	contained().dropInto(src)
-	contained_handle = null
+	rel_clear(src, "contained")
 	underlays.Cut()
 	desc = initial(desc)
 
@@ -65,4 +65,4 @@ DECLARE_INTERACTIONS(/obj/structure/anomaly_container, \
 
 /// LC-refs: the contained this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/anomaly_container/proc/contained() as /obj/machinery/artifact
-	return om_resolve(contained_handle)
+	return contained

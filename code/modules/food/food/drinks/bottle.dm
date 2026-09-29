@@ -31,7 +31,7 @@ OWN(/obj/item/reagent_containers/food/drinks/bottle, rag, OWN_SPILL)
 	. = ..()
 	if(istype(thrower) && thrower.combat_mode)
 		violent_throw = TRUE
-		throw_source_handle = om_handle(get_turf(thrower))
+		rel_set(src, "throw_source", get_turf(thrower))
 
 /obj/item/reagent_containers/food/drinks/bottle/throw_impact(atom/hit_atom)
 	..()
@@ -45,7 +45,7 @@ OWN(/obj/item/reagent_containers/food/drinks/bottle, rag, OWN_SPILL)
 			src.smash(loc, hit_atom)
 
 	violent_throw = FALSE
-	throw_source_handle = null
+	rel_clear(src, "throw_source")
 
 /obj/item/reagent_containers/food/drinks/bottle/proc/smash_check(distance)
 	if(!isGlass || !smash_duration)

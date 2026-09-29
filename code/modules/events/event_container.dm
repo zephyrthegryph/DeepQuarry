@@ -5,7 +5,7 @@
 	TIMESTAMP_VAR(next_event_time)
 	var/list/available_events
 	var/list/last_event_time
-	var/tmp/next_event_handle
+	var/tmp/datum/event_meta/next_event
 
 	var/last_world_time = 0
 
@@ -26,7 +26,7 @@
 
 /datum/event_container/proc/start_event()
 	if(!next_event())	// If non-one has explicitly set an event, randomly pick one
-		next_event_handle = om_handle(acquire_event())
+		rel_set(src, "next_event", acquire_event())
 
 	// Has an event been acquired?
 	if(next_event())
@@ -39,7 +39,7 @@
 		new new_event_type_path(next_event())	// Events are added and removed from the processing queue in their New/kill procs
 
 		log_game("Starting event '[next_event().name]' of severity [GLOB.severity_to_string[severity]].")
-		next_event_handle = null						// When set to null, a random event will be selected next time
+		rel_clear(src, "next_event")						// When set to null, a random event will be selected next time
 	else
 		// If not, wait for one minute, instead of one tick, before checking again.
 		next_event_time += (60 * 10)
@@ -136,7 +136,7 @@
 	if(next_event())
 		available_events += next_event()
 	available_events -= EM
-	next_event_handle = om_handle(EM)
+	rel_set(src, "next_event", EM)
 	log_and_message_admins("has queued the [GLOB.severity_to_string[severity]] event '[EM.name]'.", user)
 
 /datum/event_container/mundane
@@ -196,4 +196,4 @@
 
 /// LC-refs: the next_event this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event_container/proc/next_event() as /datum/event_meta
-	return om_resolve(next_event_handle)
+	return next_event

@@ -1,5 +1,5 @@
 /datum/data/pda/messenger_plugin
-	var/tmp/messenger_handle
+	var/tmp/datum/data/pda/app/messenger/messenger
 
 /datum/data/pda/messenger_plugin/proc/user_act(mob/user, obj/item/pda/P)
 
@@ -89,4 +89,4 @@
 
 /// LC-refs: the messenger this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/data/pda/messenger_plugin/proc/messenger() as /datum/data/pda/app/messenger
-	return om_resolve(messenger_handle)
+	return messenger

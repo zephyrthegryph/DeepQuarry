@@ -9,8 +9,8 @@
 	var/timer = 0
 	var/bruteloss_prev = 999999
 	var/fireloss_prev = 999999
-	var/tmp/corpse_handle
-	var/tmp/watchowner_handle
+	var/tmp/mob/living/carbon/human/corpse
+	var/tmp/mob/living/carbon/human/watchowner
 
 // an invisible wearer is revealed.
 /obj/item/deadringer/on_destroy(force) //just in case some smartass tries to stay invisible by destroying the watch
@@ -23,7 +23,7 @@
 	..()
 	if(timer > 20)
 		reveal()
-		watchowner_handle = null
+		rel_clear(src, "watchowner")
 
 DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interaction_self)))
 
@@ -68,7 +68,7 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 /obj/item/deadringer/proc/makeacorpse(mob/living/carbon/human/H)
 	if(HAS_SYNTHETIC_BIOLOGY(H))
 		return
-	corpse_handle = om_handle(new /mob/living/carbon/human(H.loc))
+	rel_set(src, "corpse", new /mob/living/carbon/human(H.loc))
 	QDEL_SWAP(corpse().dna,H.dna.Clone())
 	var/obj/item/clothing/temp = null
 	if(H.get_equipped_item(SLOT_ID_UNIFORM))
@@ -157,7 +157,7 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 	if(activated)
 		if (ismob(src.loc))
 			var/mob/living/carbon/human/H = src.loc
-			watchowner_handle = om_handle(H)
+			rel_set(src, "watchowner", H)
 			if(isbelly(watchowner().loc)) //No spawning people in bellies.
 				return
 			if(H.injury_load(INJURY_CATEGORY_PHYSICAL) > bruteloss_prev || H.injury_load(INJURY_CATEGORY_THERMAL) > fireloss_prev)
@@ -182,8 +182,8 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 
 /// LC-refs: the watchowner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/deadringer/proc/watchowner() as /mob/living/carbon/human
-	return om_resolve(watchowner_handle)
+	return watchowner
 
 /// LC-refs: the corpse this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/deadringer/proc/corpse() as /mob/living/carbon/human
-	return om_resolve(corpse_handle)
+	return corpse

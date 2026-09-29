@@ -132,7 +132,7 @@
 		. += A
 
 /obj/item/gun/energy/kinetic_accelerator/proc/modify_projectile(obj/item/projectile/kinetic/K)
-	K.kinetic_gun_handle = om_handle(src) //do something special on-hit, easy!
+	rel_set(K, "kinetic_gun", src) //do something special on-hit, easy!
 	for(var/A in get_modkits())
 		var/obj/item/borg/upgrade/modkit/M = A
 		M.modify_projectile(K)
@@ -229,7 +229,7 @@
 	var/pressure_decrease_active = FALSE
 	var/pressure_decrease = 1/3
 	var/environment = KA_ENVIRO_TYPE_COLD
-	var/tmp/kinetic_gun_handle
+	var/tmp/obj/item/gun/energy/kinetic_accelerator/kinetic_gun
 
 /obj/item/projectile/kinetic/premium
 	damage = 40
@@ -715,4 +715,4 @@ EXTEND_INTERACTIONS(/obj/item/borg/upgrade/modkit/tracer/adjustable, INTERACT_US
 
 /// LC-refs: the kinetic_gun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/projectile/kinetic/proc/kinetic_gun() as /obj/item/gun/energy/kinetic_accelerator
-	return om_resolve(kinetic_gun_handle)
+	return kinetic_gun

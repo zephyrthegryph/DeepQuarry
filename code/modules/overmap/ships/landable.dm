@@ -30,7 +30,7 @@
 // We autobuild our z levels.
 /obj/effect/overmap/visitable/ship/landable/find_z_levels()
 	own_set(src, "landmark", new /obj/effect/shuttle_landmark/ship(null, shuttle)) // Create in nullspace since we lazy-create overmap z
-	landmark.ship_handle = om_handle(src)
+	rel_set(landmark, "ship", src)
 	add_landmark(landmark, shuttle)
 
 /obj/effect/overmap/visitable/ship/landable/proc/setup_overmap_location()
@@ -66,7 +66,7 @@
 	var/datum/shuttle/shuttle_datum = SSshuttles.shuttles[shuttle]
 	if(istype(shuttle_datum,/datum/shuttle/autodock/overmap))
 		var/datum/shuttle/autodock/overmap/oms = shuttle_datum
-		oms.myship_handle = om_handle(src)
+		rel_set(oms, "myship", src)
 	om_hook(shuttle_datum, /datum/om/event/observer_shuttle_pre_move, src, PROC_REF(pre_shuttle_jump))
 	om_hook(shuttle_datum, /datum/om/event/observer_shuttle_moved, src, PROC_REF(on_shuttle_jump))
 	on_landing(landmark, shuttle_datum.current_location()) // We "land" at round start to properly place ourselves on the overmap.
@@ -82,7 +82,7 @@
 	var/shuttle_name
 	var/list/visitors // landmark -> visiting shuttle stationed there
 	/// OM handle of the landable ship that made this landmark (its `landmark`).
-	var/tmp/ship_handle
+	var/tmp/obj/effect/overmap/visitable/ship/landable/ship
 
 /obj/effect/shuttle_landmark/ship/Initialize(mapload, shuttle_name)
 	landmark_tag += "_[shuttle_name]"
@@ -190,10 +190,10 @@ REL_PAIR_LIST(/obj/effect/shuttle_landmark/ship, visitors, core_landmark)
 		if(vessel.docked_port_id && vessel.docked_port_id != port?.id)
 			var/datum/flight_port/old_port = GLOB.flight_service.ports[vessel.docked_port_id]
 			if(old_port?.occupied_by() == vessel)
-				old_port.occupied_by_handle = null
+				rel_clear(old_port, "occupied_by")
 		vessel.docked_port_id = port?.id
 		if(port)
-			port.occupied_by_handle = om_handle(vessel)
+			rel_set(port, "occupied_by", vessel)
 		// A delegated port inherits the physical host's celestial context, while
 		// the active flight plan retains the logical route destination.
 		var/datum/flight_destination/physical_host = GLOB.flight_service.destinations[port?.host_destination_id]
@@ -204,7 +204,7 @@ REL_PAIR_LIST(/obj/effect/shuttle_landmark/ship, visitors, core_landmark)
 	if(vessel)
 		var/datum/flight_port/port = GLOB.flight_service.ports[vessel.docked_port_id]
 		if(port?.occupied_by() == vessel)
-			port.occupied_by_handle = null
+			rel_clear(port, "occupied_by")
 		vessel.docked_port_id = null
 
 /obj/effect/overmap/visitable/ship/landable/get_landed_info()

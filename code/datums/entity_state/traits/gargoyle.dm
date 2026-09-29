@@ -5,7 +5,7 @@
 	var/paused = FALSE
 	var/cooldown
 
-	var/statue_handle	//another easy ref
+	var/obj/structure/gargoyle/statue	//another easy ref
 
 	//Adjustable mod
 	var/identifier = "statue"
@@ -119,4 +119,4 @@
 
 /// LC-refs: the statue the gargoyle is standing as -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/trait_state/gargoyle/proc/statue() as /obj/structure/gargoyle
-	return om_resolve(statue_handle)
+	return statue

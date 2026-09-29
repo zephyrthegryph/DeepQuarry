@@ -31,7 +31,7 @@
 		remove_verb(ling_mob, /mob/proc/EvolutionMenu)
 		own_take(ling_mob, "changeling_state")
 		if(ling_mob.mind)
-			ling_mob.mind.antag_holder.changeling_handle = null
+			rel_clear(ling_mob.mind.antag_holder, "changeling")
 		qdel(comp)
 
 /datum/antagonist/changeling/create_objectives(datum/mind/changeling)

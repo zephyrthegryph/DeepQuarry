@@ -2,12 +2,12 @@
 //Types that use this should consider overriding emp_act() and hear_talk(), unless they shield their contents somehow.
 /obj/item/storage/internal
 	preserve_item = 1
-	var/master_item_handle
+	var/obj/item/master_item
 	item_flags = ABSTRACT
 
 /obj/item/storage/internal/Initialize(mapload)
 	. = ..()
-	master_item_handle = om_handle(loc)
+	rel_set(src, "master_item", loc)
 	if(!istype(master_item(), /obj/item))
 		return INITIALIZE_HINT_QDEL
 	name = master_item().name
@@ -87,4 +87,4 @@ EXTEND_INTERACTIONS(/obj/item/storage/internal, INTERACT_HAND_UNGATED(null, TYPE
 
 /// LC-refs: master item -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/storage/internal/proc/master_item() as /obj/item
-	return om_resolve(master_item_handle)
+	return master_item

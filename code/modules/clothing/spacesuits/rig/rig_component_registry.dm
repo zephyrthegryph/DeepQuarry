@@ -16,10 +16,10 @@
 
 /datum/rig_component_registry
 	/// The rig this datum belongs to.  Nulled on Destroy().
-	var/tmp/holder_handle
+	var/tmp/obj/item/rig/holder
 
 /datum/rig_component_registry/New(obj/item/rig/new_holder)
-	holder_handle = om_handle(new_holder)
+	rel_set(src, "holder", new_holder)
 
 /*
  * proc/initialize_pieces()
@@ -110,7 +110,7 @@
 		// safety net stays inert while we deliberately drop and delete it.
 		if(istype(piece, /obj/item/clothing))
 			var/obj/item/clothing/deployed = piece
-			deployed.master_rig_handle = null
+			rel_clear(deployed, "master_rig")
 		var/mob/living/M = piece.loc
 		if(istype(M))
 			M.drop_from_inventory(piece)
@@ -164,4 +164,4 @@
 
 /// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/rig_component_registry/proc/holder() as /obj/item/rig
-	return om_resolve(holder_handle)
+	return holder

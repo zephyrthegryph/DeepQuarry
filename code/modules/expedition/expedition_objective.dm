@@ -22,7 +22,7 @@
 	var/bonus_points = 0
 	var/bonus_cash = 0
 	/// Back-reference to the site.
-	var/tmp/site_handle
+	var/tmp/datum/expedition_site/site
 	/// Atoms this objective spawned / tracks, as om_handle()s (they live on the site; read with om_resolve_all()).
 	var/list/tracked
 	/// Progress / target for the console readout.
@@ -34,7 +34,7 @@
 	tracked = list()
 
 /datum/expedition_objective/proc/populate(datum/expedition_site/S)
-	site_handle = om_handle(S)
+	rel_set(src, "site", S)
 
 /datum/expedition_objective/proc/check()
 	return state
@@ -469,4 +469,4 @@
 
 /// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/expedition_objective/proc/site() as /datum/expedition_site
-	return om_resolve(site_handle)
+	return site

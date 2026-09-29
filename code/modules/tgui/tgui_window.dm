@@ -5,7 +5,7 @@
 
 /datum/tgui_window
 	var/id
-	var/tmp/client_handle
+	var/tmp/client/client
 	var/pooled
 	var/pool_index
 	var/is_browser = FALSE
@@ -17,7 +17,7 @@
 	/// Monotonic token identifying the current use of this reusable shell.
 	var/generation = 0
 	/// Immutable shell/manifest/chunk publication loaded by this browser window.
-	var/tmp/asset_generation_handle
+	var/tmp/datum/tgui_asset_generation/asset_generation
 	/// TRUE when this pooled shell was cloned from the hidden native skin template.
 	var/native_shell = FALSE
 	/// TRUE when acquire_lock applied a generated or previously observed size while hidden.
@@ -39,8 +39,8 @@
 	COOLDOWN_DECLARE(payload_chunk_window_cooldown)
 	/// payloadChunk topics accepted during the current accounting window.
 	var/payload_chunks_this_window = 0
-	var/tmp/locked_by_handle
-	var/tmp/subscriber_object_handle
+	var/tmp/datum/tgui/locked_by
+	var/tmp/datum/subscriber_object
 	var/subscriber_delegate
 	var/fatally_errored = FALSE
 	var/message_queue
@@ -65,7 +65,7 @@
  */
 /datum/tgui_window/New(client/client, id, pooled = FALSE)
 	src.id = id
-	src.client_handle = om_handle(client)
+	rel_set(src, "client", client)
 	src.client().tgui_windows[id] = src
 	src.pooled = pooled
 	if(pooled)
@@ -97,7 +97,7 @@
 	#endif
 	if(!client())
 		return
-	asset_generation_handle = om_handle(SStgui.get_current_asset_generation())
+	rel_set(src, "asset_generation", SStgui.get_current_asset_generation())
 	var/list/resolved_assets = list()
 	var/include_tgui_shell = FALSE
 	for(var/datum/asset/asset in assets)
@@ -284,7 +284,7 @@
 		#endif
 	generation++
 	locked = TRUE
-	locked_by_handle = om_handle(ui)
+	rel_set(src, "locked_by", ui)
 	visible = FALSE
 
 /**
@@ -297,7 +297,7 @@
 	if(locked)
 		sent_assets = list()
 	locked = FALSE
-	locked_by_handle = null
+	rel_clear(src, "locked_by")
 
 /**
  * public
@@ -309,7 +309,7 @@
  * to support multiple subscribers.
  */
 /datum/tgui_window/proc/subscribe(datum/object, delegate)
-	subscriber_object_handle = om_handle(object)
+	rel_set(src, "subscriber_object", object)
 	subscriber_delegate = delegate
 
 /**
@@ -318,7 +318,7 @@
  * Unsubscribes the datum. Do not forget to call this when cleaning up.
  */
 /datum/tgui_window/proc/unsubscribe(datum/object)
-	subscriber_object_handle = null
+	rel_clear(src, "subscriber_object")
 	subscriber_delegate = null
 
 /**
@@ -665,16 +665,16 @@
 
 /// LC-refs: the asset_generation this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_window/proc/asset_generation() as /datum/tgui_asset_generation
-	return om_resolve(asset_generation_handle)
+	return asset_generation
 
 /// LC-refs: the subscriber_object this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_window/proc/subscriber_object() as /datum
-	return om_resolve(subscriber_object_handle)
+	return subscriber_object
 
 /// LC-refs: the locked_by this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_window/proc/locked_by() as /datum/tgui
-	return om_resolve(locked_by_handle)
+	return locked_by
 
 /// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_window/proc/client() as /client
-	return om_resolve(client_handle)
+	return client

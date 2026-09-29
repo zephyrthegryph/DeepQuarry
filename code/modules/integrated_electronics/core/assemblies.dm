@@ -16,8 +16,8 @@
 	var/net_power = 0 // Set every tick, to display how much power is being drawn in total.
 	var/detail_color = COLOR_ASSEMBLY_BLACK
 	var/locked = FALSE // If true, the assembly cannot be opened with a crowbar
-	var/tmp/locked_by_handle	// The ID that locked this assembly
-	var/tmp/access_card_handle	// ID card for door access
+	var/tmp/obj/item/card/id/locked_by	// The ID that locked this assembly
+	var/tmp/obj/item/card/id/access_card	// ID card for door access
 	var/list/component_positions // Stores circuit positions as list of lists: list("ref" = ref, "x" = x, "y" = y)
 	/// Cached flag: TRUE when this assembly has at least one circuit that draws or
 	/// makes power (so handle_idle_power() actually has work to do). Invalidated to
@@ -328,14 +328,14 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 	if(!IC.forceMove(src))
 		return FALSE
 
-	IC.assembly_handle = om_handle(src)
+	rel_set(IC, "assembly", src)
 
 	return TRUE
 
 // Non-interactive version of above that always succeeds, intended for build-in circuits that get added on assembly initialization.
 /obj/item/electronic_assembly/proc/force_add_circuit(obj/item/integrated_circuit/IC)
 	IC.forceMove(src)
-	IC.assembly_handle = om_handle(src)
+	rel_set(IC, "assembly", src)
 
 /obj/item/electronic_assembly/afterattack(atom/target, mob/user, proximity)
 	var/scanned = FALSE
@@ -379,7 +379,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 			// Trying to unlock
 			if(locked_by() && id_card.registered_name == locked_by().registered_name)
 				locked = FALSE
-				locked_by_handle = null
+				rel_clear(src, "locked_by")
 				to_chat(user, span_notice("You unlock \the [src]."))
 				update_icon()
 			else
@@ -388,7 +388,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 		else
 			// Trying to lock
 			locked = TRUE
-			locked_by_handle = om_handle(id_card)
+			rel_set(src, "locked_by", id_card)
 			to_chat(user, span_notice("You lock \the [src]. Now only your ID card can unlock it."))
 			update_icon()
 			return TRUE
@@ -552,8 +552,8 @@ OWN(/obj/item/electronic_assembly, battery, OWN_CONTAINED)
 
 /// LC-refs: ID card for door access -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/electronic_assembly/proc/access_card() as /obj/item/card/id
-	return om_resolve(access_card_handle)
+	return access_card
 
 /// LC-refs: The ID that locked this assembly -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/electronic_assembly/proc/locked_by() as /obj/item/card/id
-	return om_resolve(locked_by_handle)
+	return locked_by

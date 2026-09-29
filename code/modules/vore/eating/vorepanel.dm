@@ -37,7 +37,7 @@
 // Callback Handler for the Inside form
 //
 /datum/vore_look
-	var/tmp/host_handle	// Note, we do this in case we ever want to allow people to view others vore panels
+	var/tmp/mob/host	// Note, we do this in case we ever want to allow people to view others vore panels
 	var/unsaved_changes = FALSE
 	var/show_pictures = TRUE
 	var/icon_overflow = FALSE
@@ -53,7 +53,7 @@
 
 /datum/vore_look/New(mob/new_host)
 	if(istype(new_host))
-		host_handle = om_handle(new_host)
+		rel_set(src, "host", new_host)
 	. = ..()
 
 /datum/vore_look/tgui_close(mob/user)
@@ -823,7 +823,7 @@
 			host().soulgem.take_control_owner()
 			return TRUE
 		if("soulcatcher_select")
-			host().soulgem.selected_soul_handle = om_handle(locate(params["selected_soul"]))
+			host().soulgem.selected_soul = om_handle(locate(params["selected_soul"]))
 			return TRUE
 		//Soulcatcher settings
 		if("soulcatcher_toggle")
@@ -1491,4 +1491,4 @@
 
 /// LC-refs: Note, we do this in case we ever want to allow people to view others vore panels -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/vore_look/proc/host() as /mob
-	return om_resolve(host_handle)
+	return host

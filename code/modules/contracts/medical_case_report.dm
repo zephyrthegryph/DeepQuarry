@@ -44,7 +44,7 @@
 	var/target_condition_type
 	var/target_condition_name
 	var/consent_time = 0
-	var/tmp/consent_record_handle
+	var/tmp/obj/item/paper/consent_record
 	var/consent_evidence_id
 	var/datum/contract_requirement/event_count/evidence_requirement
 
@@ -88,7 +88,7 @@
 	if(state != CONTRACT_ACTIVE || consent_time || SScontracts.subject_identity(subject)?.id != target_ref || !target_condition())
 		return FALSE
 	consent_time = world.time
-	consent_record_handle = om_handle(paper)
+	rel_set(src, "consent_record", paper)
 	return TRUE
 
 /datum/contract/medical_case_report/proc/print_consent_revocation(turf/location, issuer_account)
@@ -302,4 +302,4 @@
 
 /// LC-refs: the consent_record this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/contract/medical_case_report/proc/consent_record() as /obj/item/paper
-	return om_resolve(consent_record_handle)
+	return consent_record

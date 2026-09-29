@@ -833,9 +833,9 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 			var/obj/item/paper/admin/P = new /obj/item/paper/admin(null) //hopefully the null loc won't cause trouble for us
 			user.holder.faxreply = P
 
-			P.admindatum_handle = om_handle(user.holder)
+			rel_set(P, "admindatum", user.holder)
 			P.origin = replyorigin
-			P.destination_handle = om_handle(sendto)
+			rel_set(P, "destination", sendto)
 
 			P.adminbrowse()
 

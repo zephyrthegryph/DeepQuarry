@@ -8,7 +8,7 @@
 	var/hack_icon = "error"
 	circuit = /obj/item/circuitboard/message_monitor
 	//Server linked to.
-	var/linkedServer_handle
+	var/obj/machinery/message_server/linkedServer
 	//Sparks effect - For emag
 	var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread
 	//Messages - Saves me time if I want to change something.
@@ -23,7 +23,7 @@
 	var/optioncount = 8
 	// Custom temp Properties
 	var/customsender = "System Administrator"
-	var/customrecepient_handle
+	var/obj/item/pda/customrecepient
 	var/customjob		= "Admin"
 	var/custommessage 	= "This is a test, please ignore."
 	var/list/temp = null
@@ -73,7 +73,7 @@
 	//Is the server isn't linked to a server, and there's a server available, default it to the first one in the list.
 	if(!linkedServer())
 		if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
-			linkedServer_handle = om_handle(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
+			rel_set(src, "linkedServer", REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 
 /obj/machinery/computer/message_monitor/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -182,7 +182,7 @@
 
 /obj/machinery/computer/message_monitor/proc/ResetMessage()
 	customsender 	= "System Administrator"
-	customrecepient_handle = null
+	rel_clear(src, "customrecepient")
 	custommessage 	= "This is a test, please ignore."
 	customjob 		= "Admin"
 
@@ -211,7 +211,7 @@
 			if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 1)
 				om_ask(ui.user, /datum/om/prompt/choice, PROC_REF(server_selected), title = "Select a server.", message = "Please select a server.", choices = REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS), requires = PROMPT_USABLE, ui_refresh = src)
 			else if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
-				linkedServer_handle = om_handle(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
+				rel_set(src, "linkedServer", REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 				set_temp("NOTICE: Only Single Server Detected - Server selected.", "average")
 			else
 				temp = noserver
@@ -274,7 +274,7 @@
 			var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
 			if(!M || M.toff)
 				return FALSE
-			customrecepient_handle = om_handle(P)
+			rel_set(src, "customrecepient", P)
 			. = TRUE
 		if("set_message")
 			custommessage = sanitize(params["val"])
@@ -327,7 +327,7 @@
 			. = TRUE
 
 /obj/machinery/computer/message_monitor/proc/server_selected(datum/om/prompt/choice/ask)
-	linkedServer_handle = om_handle(ask.choice)
+	rel_set(src, "linkedServer", ask.choice)
 	set_temp("NOTICE: Server selected.", "alert")
 
 /obj/machinery/computer/message_monitor/proc/current_key_entered(datum/om/prompt/text/ask)
@@ -384,8 +384,8 @@
 
 /// LC-refs: linkedServer -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/message_monitor/proc/linkedServer() as /obj/machinery/message_server
-	return om_resolve(linkedServer_handle)
+	return linkedServer
 
 /// LC-refs: customrecepient -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/message_monitor/proc/customrecepient() as /obj/item/pda
-	return om_resolve(customrecepient_handle)
+	return customrecepient

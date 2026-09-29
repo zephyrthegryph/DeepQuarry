@@ -176,7 +176,7 @@
 			. = TRUE
 		if("pick_ticket")
 			var/datum/ticket/T = ID2Ticket(params["ticket_id"])
-			ui.user.client.selected_ticket_handle = om_handle(T)
+			rel_set(ui.user.client, "selected_ticket", T)
 			. = TRUE
 		if("retitle_ticket")
 			ui.user.client.selected_ticket().Retitle()
@@ -186,7 +186,7 @@
 			. = TRUE
 		if("undock_ticket")
 			ui.user.client.selected_ticket().tgui_interact(ui.user)
-			ui.user.client.selected_ticket_handle = null
+			rel_clear(ui.user.client, "selected_ticket")
 			. = TRUE
 		if("send_msg")
 			if(!params["msg"])

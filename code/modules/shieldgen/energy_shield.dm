@@ -11,7 +11,7 @@
 	layer = ABOVE_MOB_LAYER
 	density = TRUE
 	invisibility = INVISIBILITY_NONE
-	var/tmp/gen_handle	// Owning generator
+	var/tmp/obj/machinery/power/shield_generator/gen	// Owning generator
 	var/disabled_for = 0
 	var/diffused_for = 0
 	can_atmos_pass = ATMOS_PASS_YES
@@ -376,4 +376,4 @@ EXTEND_INTERACTIONS(/obj/effect/shield, \
 
 /// LC-refs: Owning generator -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/shield/proc/gen() as /obj/machinery/power/shield_generator
-	return om_resolve(gen_handle)
+	return gen

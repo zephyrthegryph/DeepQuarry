@@ -4,14 +4,14 @@
 	icon = 'icons/obj/kitchen.dmi'
 	icon_state = "spike"
 
-	var/tmp/drying_handle
+	var/tmp/obj/item/stack/wetleather/drying
 
 DECLARE_PERIODIC(/obj/structure/tanning_rack, PERIODIC_SLOW) // SSObj fires ~every 2s , starting from wetness 30 takes ~1m
 
 /// Dries its leather while it holds wet leather; otherwise it sleeps until some is hung on it.
 /obj/structure/tanning_rack/periodic_step()
 	if(QDELETED(drying()))
-		drying_handle = null
+		rel_clear(src, "drying")
 		return PROCESS_KILL
 	if(!drying().wetness)
 		return PROCESS_KILL
@@ -39,7 +39,7 @@ DECLARE_PERIODIC(/obj/structure/tanning_rack, PERIODIC_SLOW) // SSObj fires ~eve
 	if(istype(A, /obj/item/stack/wetleather))
 		if(!drying()) // If not drying anything, start drying the thing
 			if(user.unEquip(A, target = src))
-				drying_handle = om_handle(A)
+				rel_set(src, "drying", A)
 				om_task_periodic(src, PERIODIC_SLOW)
 		else // Drying something, add if possible
 			var/obj/item/stack/wetleather/W = A
@@ -69,7 +69,7 @@ DECLARE_INTERACTIONS(/obj/structure/tanning_rack, \
 				S.forceMove(get_turf(src))
 		else
 			S.forceMove(get_turf(src))
-		drying_handle = null
+		rel_clear(src, "drying")
 		update_icon()
 	return TRUE
 
@@ -78,4 +78,4 @@ DECLARE_INTERACTIONS(/obj/structure/tanning_rack, \
 
 /// LC-refs: the drying this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/tanning_rack/proc/drying() as /obj/item/stack/wetleather
-	return om_resolve(drying_handle)
+	return drying

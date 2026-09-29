@@ -10,7 +10,7 @@ GLOBAL_LIST_EMPTY(dq_decl_kinds_queue)
 /datum/dq_decl_kinds_owner
 	var/list/members
 	var/list/scratch
-	var/hub_handle
+	var/datum/hub
 	var/queued = FALSE
 
 
@@ -23,7 +23,7 @@ GLOBAL_LIST_EMPTY(dq_decl_kinds_queue)
 /// Reached through the owner's hub_handle; names the owner in `slot`.
 /datum/dq_decl_kinds_hub
 	var/slot
-	var/inner_handle
+	var/datum/inner
 
 /// Two hops away; holds the owner (by handle) in a list.
 /datum/dq_decl_kinds_inner
@@ -46,8 +46,8 @@ GLOBAL_LIST_EMPTY(dq_decl_kinds_queue)
 	owner.members = list(by_ref, om_handle(by_handle)) // ALLOW(object_keyed_lists): test fixture for DECLARE_REF(..., LIST_BACK)
 	owner.scratch = shared
 	hub.slot = owner
-	hub.inner_handle = om_handle(inner)
-	owner.hub_handle = om_handle(hub)
+	rel_set(hub, "inner", inner)
+	rel_set(owner, "hub", hub)
 	inner.owners = list(owner_h, "someone") // ALLOW(object_keyed_lists): test fixture for DECLARE_REF(..., BACK_VIA)
 	owner.queued = TRUE
 	GLOB.dq_decl_kinds_queue += owner // ALLOW(object_keyed_lists): test fixture for DECLARE_REF(..., QUEUE)

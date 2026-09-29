@@ -12,9 +12,9 @@ handles linking back and forth.
 	// 3. silo is null, materials is null
 
 	///The silo machine this container is connected to
-	var/silo_handle
+	var/obj/machinery/ore_silo/silo
 	///Material container. the value is either the silo or local
-	var/mat_container_handle
+	var/datum/material_container/mat_container
 	///Should we create a local storage if we can't connect to silo
 	var/allow_standalone
 	///Local size of container when silo = null
@@ -70,10 +70,10 @@ handles linking back and forth.
 	PRIVATE_PROC(TRUE)
 
 	if (connect_to_silo)
-		silo_handle = om_handle(GLOB.ore_silo_default)
+		rel_set(src, "silo", GLOB.ore_silo_default)
 		if (silo())
 			LAZYADD(silo().ore_connected_machines, src)
-			mat_container_handle = om_handle(silo().materials)
+			rel_set(src, "mat_container", silo().materials)
 
 	if(!mat_container() && allow_standalone)
 		_MakeLocal()
@@ -88,7 +88,7 @@ handles linking back and forth.
 /datum/remote_materials/proc/_MakeLocal()
 	PRIVATE_PROC(TRUE)
 
-	silo_handle = null
+	rel_clear(src, "silo")
 
 	if(local_container)
 		own_clear(src, "local_container", OWN_DELETE)
@@ -100,7 +100,7 @@ handles linking back and forth.
 		container_events = mat_container_events, \
 		allowed_items = /obj/item/stack \
 	)
-	mat_container_handle = om_handle(local_container)
+	rel_set(src, "mat_container", local_container)
 
 /// Adds/Removes this connection from the silo
 /datum/remote_materials/proc/toggle_holding()
@@ -129,8 +129,8 @@ handles linking back and forth.
 		return
 
 	LAZYREMOVE(silo().ore_connected_machines, src)
-	silo_handle = null
-	mat_container_handle = null
+	rel_clear(src, "silo")
+	rel_clear(src, "mat_container")
 
 	if (allow_standalone)
 		_MakeLocal()
@@ -164,9 +164,9 @@ handles linking back and forth.
 			if(mat_container() == local_container)
 				own_take(src, "local_container")
 			qdel(mat_container())
-		silo_handle = om_handle(new_silo)
+		rel_set(src, "silo", new_silo)
 		LAZYADD(silo().ore_connected_machines, src)
-		mat_container_handle = om_handle(new_container)
+		rel_set(src, "mat_container", new_container)
 		to_chat(user, span_notice("You connect [owner] to [silo()] from the multitool's buffer."))
 		return TRUE
 
@@ -306,8 +306,8 @@ handles linking back and forth.
 
 /// LC-refs: the silo we are connected to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/remote_materials/proc/silo() as /obj/machinery/ore_silo
-	return om_resolve(silo_handle)
+	return silo
 
 /// LC-refs: the material container in use (the silo's or our local one) -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/remote_materials/proc/mat_container() as /datum/material_container
-	return om_resolve(mat_container_handle)
+	return mat_container

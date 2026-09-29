@@ -1,6 +1,6 @@
 /area/ai_monitored
 	name = "AI Monitored Area"
-	var/motioncamera_handle
+	var/obj/machinery/camera/motioncamera
 
 
 /area/ai_monitored/Initialize(mapload)
@@ -8,8 +8,8 @@
 	// locate and store the motioncamera
 	for (var/obj/machinery/camera/M in area_contents_of_type(src, /obj/machinery/camera))
 		if(M.isMotion())
-			motioncamera_handle = om_handle(M)
-			M.area_motion_handle = om_handle(src)
+			rel_set(src, "motioncamera", M)
+			rel_set(M, "area_motion", src)
 
 /area/ai_monitored/Entered(atom/movable/O)
 	..()
@@ -23,4 +23,4 @@
 
 /// LC-refs: motioncamera -- an OM handle (om_handle()), so it reads null once that is deleted.
 /area/ai_monitored/proc/motioncamera() as /obj/machinery/camera
-	return om_resolve(motioncamera_handle)
+	return motioncamera

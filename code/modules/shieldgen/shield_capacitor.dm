@@ -17,7 +17,7 @@
 	var/locked = 0
 	use_power = USE_POWER_OFF //doesn't use APC power
 	var/charge_rate = 100000	//100 kW
-	var/tmp/owned_gen_handle
+	var/tmp/obj/machinery/shield_gen/owned_gen
 	interact_offline = TRUE
 
 /obj/machinery/shield_capacitor/Initialize(mapload)
@@ -63,12 +63,12 @@
 		MACHINE_WAKE(src)
 		for(var/obj/machinery/shield_gen/gen in range(1, src))
 			if(get_dir(src, gen) == src.dir)
-				owned_gen_handle = om_handle(gen)
+				rel_set(src, "owned_gen", gen)
 				LAZYOR(owned_gen().capacitors, src)
 	else
 		if(owned_gen() && (src in owned_gen().capacitors))
 			LAZYREMOVE(owned_gen().capacitors, src)
-		owned_gen_handle = null
+		rel_clear(src, "owned_gen")
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/shield_capacitor/declare_interactions(list/into)
@@ -193,4 +193,4 @@
 
 /// LC-refs: the owned_gen this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/shield_capacitor/proc/owned_gen() as /obj/machinery/shield_gen
-	return om_resolve(owned_gen_handle)
+	return owned_gen

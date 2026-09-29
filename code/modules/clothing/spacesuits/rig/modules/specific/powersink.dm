@@ -12,7 +12,7 @@
 	interface_name = "niling d-sink"
 	interface_desc = "Colloquially known as a power siphon, this module drains power through the suit hands into the suit battery."
 
-	var/tmp/interfaced_with_handle	// Currently draining power from this device.
+	var/tmp/atom/interfaced_with	// Currently draining power from this device.
 	var/total_power_drained = 0
 	var/drain_loc
 
@@ -22,12 +22,12 @@
 		if(holder && holder.wearer())
 			to_chat(holder.wearer(), span_warning("Your power sink retracts as the module deactivates."))
 		drain_complete()
-	interfaced_with_handle = null
+	rel_clear(src, "interfaced_with")
 	total_power_drained = 0
 	return ..()
 
 /obj/item/rig_module/power_sink/activate()
-	interfaced_with_handle = null
+	rel_clear(src, "interfaced_with")
 	total_power_drained = 0
 	return ..()
 
@@ -53,7 +53,7 @@
 		return 0
 
 	to_chat(H, span_danger("You begin draining power from [target]!"))
-	interfaced_with_handle = om_handle(target)
+	rel_set(src, "interfaced_with", target)
 	drain_loc = interfaced_with().loc
 
 	holder.spark_system.start()
@@ -125,9 +125,9 @@
 		interfaced_with().drain_power(0,1,0) // Damage the victim.
 
 	drain_loc = null
-	interfaced_with_handle = null
+	rel_clear(src, "interfaced_with")
 	total_power_drained = 0
 
 /// LC-refs: Currently draining power from this device. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/rig_module/power_sink/proc/interfaced_with() as /atom
-	return om_resolve(interfaced_with_handle)
+	return interfaced_with

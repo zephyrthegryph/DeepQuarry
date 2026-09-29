@@ -4,7 +4,7 @@
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "vehicle_cage"
 	density = TRUE
-	var/my_vehicle_handle
+	var/obj/vehicle/my_vehicle
 	var/my_vehicle_type
 	var/paint_color = "#666666"
 
@@ -27,7 +27,7 @@
 /obj/structure/vehiclecage/Initialize(mapload)
 	. = ..()
 	if(my_vehicle_type)
-		my_vehicle_handle = om_handle(new my_vehicle_type(src))
+		rel_set(src, "my_vehicle", new my_vehicle_type(src))
 		for(var/obj/I in get_turf(src))
 			if(I.density || I.anchored || I == src || !I.simulated || !istype(I, my_vehicle_type))
 				continue
@@ -125,7 +125,7 @@
 		if(AM.simulated)
 			AM.forceMove(T)
 
-	my_vehicle_handle = null
+	rel_clear(src, "my_vehicle")
 	user.visible_message(span_notice("[user] release \the [src]."), \
 							span_notice("You finally release \the [src]."), \
 							span_notice("You hear creaking metal."))
@@ -142,4 +142,4 @@
 
 /// LC-refs: my vehicle -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/vehiclecage/proc/my_vehicle() as /obj/vehicle
-	return om_resolve(my_vehicle_handle)
+	return my_vehicle

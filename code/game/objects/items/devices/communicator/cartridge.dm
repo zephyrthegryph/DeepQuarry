@@ -406,7 +406,7 @@
 		return
 
 	var/datum/signal/status_signal = new
-	status_signal.source_handle = om_handle(src)
+	rel_set(status_signal, "source", src)
 	status_signal.transmission_method = TRANSMISSION_RADIO
 	status_signal.data["command"] = command
 

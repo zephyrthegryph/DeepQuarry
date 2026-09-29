@@ -4,13 +4,13 @@
 	var/admin_signature
 	name = "administrative paper"
 	desc = "If you see this, something has gone horribly wrong."
-	var/tmp/admindatum_handle
+	var/tmp/datum/admins/admindatum
 
 	var/admin_fax_links = null
 	var/isCrayon = 0
 	var/origin = null
-	var/tmp/sender_handle
-	var/tmp/destination_handle
+	var/tmp/mob/sender
+	var/tmp/obj/machinery/photocopier/faxmachine/destination
 
 	var/header = null
 	var/headerOn = TRUE
@@ -182,12 +182,12 @@
 
 /// LC-refs: the admindatum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/paper/admin/proc/admindatum() as /datum/admins
-	return om_resolve(admindatum_handle)
+	return admindatum
 
 /// LC-refs: the sender this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/paper/admin/proc/sender() as /mob
-	return om_resolve(sender_handle)
+	return sender
 
 /// LC-refs: the destination this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/paper/admin/proc/destination() as /obj/machinery/photocopier/faxmachine
-	return om_resolve(destination_handle)
+	return destination

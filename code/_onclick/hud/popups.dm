@@ -11,7 +11,7 @@
 	var/close_button_y_start
 	var/close_button_y_end
 
-	var/holder_handle
+	var/client/holder
 
 /atom/movable/screen/popup/Click(location, control,params)
 	var/list/PL = params2list(params)
@@ -48,7 +48,7 @@
 	var/atom/movable/screen/popup/ad = new popup_type()
 	ad.screen_loc = ad.get_random_screen_location()
 	src.screen |= ad
-	ad.holder_handle = om_handle(src)
+	rel_set(ad, "holder", src)
 
 /client/proc/create_fake_ad_popup_multiple(popup_type, popup_amount)
 	if(!src)
@@ -72,4 +72,4 @@
 
 /// LC-refs: the client this popup is shown to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/popup/proc/holder() as /client
-	return om_resolve(holder_handle)
+	return holder

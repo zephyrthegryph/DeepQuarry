@@ -34,12 +34,12 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 			break
 
 	if(istype(station))
-		station.com_handle = om_handle(hub)
-		teleport_control.hub_handle = om_handle(hub)
+		rel_set(station, "com", hub)
+		rel_set(teleport_control, "hub", hub)
 
 	if(istype(hub))
-		hub.com_handle = om_handle(src)
-		teleport_control.station_handle = om_handle(station)
+		rel_set(hub, "com", src)
+		rel_set(teleport_control, "station", station)
 
 
 /obj/machinery/computer/teleporter/declare_interactions(list/into)
@@ -91,7 +91,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 		else
 			for(var/mob/O in hearers(src, null))
 				O.show_message(span_notice("Locked In"), 2)
-			teleport_control.locked_handle = om_handle(L)
+			rel_set(teleport_control, "locked", L)
 			one_time_use = 1
 
 		add_fingerprint(user)
@@ -153,7 +153,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 	idle_power_usage = 10
 	active_power_usage = 2000
 	circuit = /obj/item/circuitboard/teleporter_hub
-	var/com_handle
+	var/obj/machinery/computer/teleporter/com
 
 /obj/machinery/teleport/hub/Initialize(mapload)
 	. = ..()
@@ -191,7 +191,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 
 		if(com().one_time_use) //Make one-time-use cards only usable one time!
 			com().one_time_use = 0
-			com().teleport_control.locked_handle = null
+			com().teleport_control.locked = null
 	else
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		s.set_up(5, 1, src)
@@ -216,7 +216,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 	idle_power_usage = 10
 	active_power_usage = 2000
 	circuit = /obj/item/circuitboard/teleporter_station
-	var/com_handle
+	var/obj/machinery/teleport/hub/com
 
 /obj/machinery/teleport/station/Initialize(mapload)
 	. = ..()
@@ -292,8 +292,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 
 /// LC-refs: com -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/teleport/hub/proc/com() as /obj/machinery/computer/teleporter
-	return om_resolve(com_handle)
+	return com
 
 /// LC-refs: com -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/teleport/station/proc/com() as /obj/machinery/teleport/hub
-	return om_resolve(com_handle)
+	return com

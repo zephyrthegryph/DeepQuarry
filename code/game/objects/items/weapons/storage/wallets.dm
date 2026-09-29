@@ -7,7 +7,7 @@
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_ID
 
-	var/front_id_handle
+	var/obj/item/card/id/front_id
 
 	drop_sound = 'sound/items/drop/leather.ogg'
 	pickup_sound = 'sound/items/pickup/leather.ogg'
@@ -56,7 +56,7 @@
 	. = ..()
 	if(.)
 		if(W == front_id())
-			front_id_handle = null
+			rel_clear(src, "front_id")
 			name = original_name || initial(name)
 			update_icon()
 
@@ -64,7 +64,7 @@
 	. = ..()
 	if(.)
 		if(!front_id() && istype(W, /obj/item/card/id))
-			front_id_handle = om_handle(W)
+			rel_set(src, "front_id", W)
 			if(!original_name)
 				original_name = name
 			name = "[original_name] ([front_id()])"
@@ -152,4 +152,4 @@
 
 /// LC-refs: front id -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/storage/wallet/proc/front_id() as /obj/item/card/id
-	return om_resolve(front_id_handle)
+	return front_id

@@ -6,9 +6,9 @@ GLOBAL_LIST_EMPTY_TYPED(persistent_clients_by_ckey, /datum/persistent_client)
 /// Tracks information about a client between log in and log outs
 /datum/persistent_client
 	/// The true client
-	var/tmp/client_handle
+	var/tmp/client/client
 	/// The mob this persistent client is currently bound to.
-	var/tmp/mob_handle
+	var/tmp/mob/mob
 
 	/// Major version of BYOND this client was last using.
 	var/byond_version
@@ -55,7 +55,7 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 
 	if(client())
 		client().persistent_client = null
-	client_handle = om_handle(new_client)
+	rel_set(src, "client", new_client)
 	if(client())
 		client().persistent_client = src
 		byond_build = client().byond_build
@@ -69,7 +69,7 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 	mob()?.persistent_client = null
 	new_mob?.persistent_client?.set_mob(null)
 
-	mob_handle = om_handle(new_mob)
+	rel_set(src, "mob", new_mob)
 	new_mob?.persistent_client = src
 
 /// Writes all of the `played_names` into an HTML-escaped string.
@@ -107,10 +107,10 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 
 /// LC-refs: the mob this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/persistent_client/proc/mob() as /mob
-	return om_resolve(mob_handle)
+	return mob
 
 /// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/persistent_client/proc/client() as /client
-	return om_resolve(client_handle)
+	return client
 
 /// LC-refs: the actions granted to this player on each login are theirs.

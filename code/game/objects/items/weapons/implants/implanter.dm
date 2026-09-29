@@ -152,10 +152,10 @@ DECLARE_DEFAULT_CHILD(/obj/item/implanter/compressed, "imp", /obj/item/implant/c
 		if (c.scanned())
 			to_chat(user, span_warning("Something is already scanned inside the implant!"))
 			return
-		c.scanned_handle = om_handle(A)
+		rel_set(c, "scanned", A)
 		if(istype(A, /obj/item/storage))
 			to_chat(user, span_warning("You can't store \the [A.name] in this!"))
-			c.scanned_handle = null
+			rel_clear(c, "scanned")
 			return
 		if(ishuman(A.loc))
 			var/mob/living/carbon/human/H = A.loc

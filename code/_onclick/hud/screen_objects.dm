@@ -16,7 +16,7 @@
 	var/master_ref = null
 	/// A reference to the owner HUD, if any.
 	//VAR_PRIVATE/datum/hud/hud = null //This SHOULD be converted to private eventually, but we're not there yet.
-	var/hud_handle	// A reference to the owner HUD, if any.
+	var/datum/hud/hud	// A reference to the owner HUD, if any.
 
 // L1 (doc/rewrite/lifecycle.md §2 phase 5, "release screens"): whichever
 // client(s) it's shown on -- almost always exactly one, but this doesn't
@@ -63,7 +63,7 @@
 	return 1
 
 /atom/movable/screen/item_action
-	var/owner_handle
+	var/obj/item/owner
 
 /atom/movable/screen/item_action/Click()
 	if(!usr || !owner())
@@ -710,11 +710,11 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 
 // PIP stuff
 /atom/movable/screen/component_button
-	var/parent_handle
+	var/atom/movable/screen/parent
 
 /atom/movable/screen/component_button/Initialize(mapload, atom/movable/screen/new_parent)
 	. = ..()
-	parent_handle = om_handle(new_parent)
+	rel_set(src, "parent", new_parent)
 
 /atom/movable/screen/component_button/Click(params)
 	if(parent())
@@ -723,7 +723,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 // Character setup stuff
 /atom/movable/screen/setup_preview
 
-	var/pref_handle
+	var/datum/preferences/pref
 
 // Background 'floor'
 /atom/movable/screen/setup_preview/pm_helper
@@ -776,8 +776,8 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 	var/atom/movable/screen/mapper/powbutton/powbutton
 	var/atom/movable/screen/mapper/mapbutton/mapbutton
 
-	var/owner_handle
-	var/extras_holder_handle
+	var/obj/item/mapping_unit/owner
+	var/atom/movable/screen/mapper/extras_holder/extras_holder
 
 DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mask_full", /atom/movable/screen/mapper/mask_full)
 DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mask_ping", /atom/movable/screen/mapper/mask_ping)
@@ -788,7 +788,7 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 
 /atom/movable/screen/movable/mapper_holder/Initialize(mapload, newowner)
 	. = ..()
-	owner_handle = om_handle(newowner)
+	rel_set(src, "owner", newowner)
 
 	frame.icon_state = initial(frame.icon_state)+owner().hud_frame_hint
 
@@ -815,11 +815,11 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 	bg.vis_contents.Add(map)
 
 	if(extras && !extras_holder())
-		extras_holder_handle = om_handle(extras)
+		rel_set(src, "extras_holder", extras)
 		vis_contents += extras_holder()
 	if(!extras && extras_holder())
 		vis_contents -= extras_holder()
-		extras_holder_handle = null
+		rel_clear(src, "extras_holder")
 
 /atom/movable/screen/movable/mapper_holder/proc/powerClick()
 	if(running)
@@ -838,7 +838,7 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 	frame.cut_overlay("powlight")
 	bg.vis_contents.Cut()
 	vis_contents.Remove(mask_ping, mask_full, extras_holder())
-	extras_holder_handle = null
+	rel_clear(src, "extras_holder")
 	running = FALSE
 	if(inform)
 		owner().stop_updates()
@@ -852,11 +852,11 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 /atom/movable/screen/mapper
 	plane = PLANE_HOLOMAP
 	mouse_opacity = 0
-	var/parent_handle
+	var/atom/movable/screen/movable/mapper_holder/parent
 
 /atom/movable/screen/mapper/Initialize(mapload)
 	. = ..()
-	parent_handle = om_handle(loc)
+	rel_set(src, "parent", loc)
 
 // Holds the actual map image
 /atom/movable/screen/mapper/map
@@ -1074,30 +1074,31 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 
 /// LC-refs: the hud this screen object belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/proc/owner_hud() as /datum/hud
-	return om_resolve(hud_handle)
+	return hud
 
 /// LC-refs: the item this button acts for -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/item_action/proc/owner() as /obj/item
-	return om_resolve(owner_handle)
+	return owner
 
 /// LC-refs: the screen object this button belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/component_button/proc/parent() as /atom/movable/screen
-	return om_resolve(parent_handle)
+	return parent
 
 /// LC-refs: the preferences this preview shows -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/setup_preview/proc/pref() as /datum/preferences
-	return om_resolve(pref_handle)
+	return pref
 
 /// LC-refs: the mapping unit this holder shows -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/movable/mapper_holder/proc/owner() as /obj/item/mapping_unit
-	return om_resolve(owner_handle)
+	return owner
 
 /// LC-refs: the extras overlay the mapping unit handed us -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/movable/mapper_holder/proc/extras_holder() as /atom/movable/screen/mapper/extras_holder
-	return om_resolve(extras_holder_handle)
+	return extras_holder
 
 /// LC-refs: the mapper holder this element belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/mapper/proc/parent() as /atom/movable/screen/movable/mapper_holder
-	return om_resolve(parent_handle)
+	return parent
 
-
+REL_PAIR(/atom/movable/screen/movable/mapper_holder, owner, hud_item)
+REL_PAIR(/obj/item/mapping_unit, hud_item, owner)

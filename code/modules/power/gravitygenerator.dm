@@ -61,7 +61,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 //
 
 /obj/machinery/gravity_generator/part
-	var/tmp/main_part_handle
+	var/tmp/obj/machinery/gravity_generator/main/main_part
 
 /obj/machinery/gravity_generator/part/declare_interactions(list/into)
 	into += list(
@@ -132,7 +132,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	var/on = TRUE
 	var/breaker = TRUE
 	var/list/parts
-	var/tmp/middle_handle
+	var/tmp/obj/middle
 	var/charging_state = POWER_IDLE
 	var/charge_count = 100
 	var/current_overlay = null
@@ -171,13 +171,13 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 			continue
 		var/obj/machinery/gravity_generator/part/part = new(T)
 		if(count == 5) // Middle
-			middle_handle = om_handle(part)
+			rel_set(src, "middle", part)
 		if(count <= 3) // Their sprite is the top part of the generator
 			part.density = FALSE
 			part.plane = MOB_PLANE
 			part.layer = ABOVE_MOB_LAYER
 		part.sprite_number = count
-		part.main_part_handle = om_handle(src)
+		rel_set(part, "main_part", src)
 		LAZYADD(parts, part)
 		part.update_icon()
 
@@ -504,8 +504,8 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 
 /// LC-refs: the main_part this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/gravity_generator/part/proc/main_part() as /obj/machinery/gravity_generator/main
-	return om_resolve(main_part_handle)
+	return main_part
 
 /// LC-refs: the middle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/gravity_generator/main/proc/middle() as /obj
-	return om_resolve(middle_handle)
+	return middle

@@ -5,7 +5,7 @@
 	armor_spec = "melee=10;bullet=10;laser=10;bio=55"
 	actions_types = list(/datum/action/item_action/halt)
 	body_parts_covered = FACE
-	var/hailer_handle
+	var/obj/item/hailer/hailer
 	COOLDOWN_DECLARE(hail_cooldown)
 	var/phrase = 1
 	var/aggressiveness = 1
@@ -175,4 +175,4 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/sechailer, \
 
 /// LC-refs: the hailer this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/clothing/mask/gas/sechailer/proc/hailer() as /obj/item/hailer
-	return om_resolve(hailer_handle)
+	return hailer

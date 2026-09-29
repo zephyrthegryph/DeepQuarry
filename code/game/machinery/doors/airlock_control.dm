@@ -3,7 +3,7 @@
 	var/id_tag
 	var/frequency
 	var/shockedby = list()
-	var/radio_connection_handle
+	var/datum/radio_frequency/radio_connection
 	var/cur_command = null	//the command the door is currently attempting to complete
 	var/last_reported_density = -1
 	var/last_reported_locked = -1
@@ -148,14 +148,14 @@
 	return
 
 /obj/machinery/door/airlock/proc/set_frequency(new_frequency)
-	radio_connection_handle = null
+	rel_clear(src, "radio_connection")
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
 	last_reported_density = -1
 	last_reported_locked = -1
 
 	if(new_frequency)
-		radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, new_frequency, RADIO_AIRLOCK))
+		rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, new_frequency, RADIO_AIRLOCK))
 
 /obj/machinery/airlock_sensor
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -174,7 +174,7 @@
 	var/frequency = AIRLOCK_FREQ
 	var/command = "cycle"
 
-	var/radio_connection_handle
+	var/datum/radio_frequency/radio_connection
 
 	var/on = 1
 	var/alert = 0
@@ -259,7 +259,7 @@
 /obj/machinery/airlock_sensor/proc/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_AIRLOCK))
+	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_AIRLOCK))
 
 /obj/machinery/airlock_sensor/Initialize(mapload)
 	. = ..()
@@ -323,7 +323,7 @@
 	var/frequency = AMAG_ELE_FREQ
 	var/command = "cycle"
 
-	var/radio_connection_handle
+	var/datum/radio_frequency/radio_connection
 
 	var/on = 1
 
@@ -403,7 +403,7 @@
 /obj/machinery/access_button/proc/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_AIRLOCK))
+	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_AIRLOCK))
 
 /obj/machinery/access_button/Initialize(mapload)
 	. = ..()
@@ -424,12 +424,12 @@
 
 /// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/door/airlock/proc/radio_connection() as /datum/radio_frequency
-	return om_resolve(radio_connection_handle)
+	return radio_connection
 
 /// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/airlock_sensor/proc/radio_connection() as /datum/radio_frequency
-	return om_resolve(radio_connection_handle)
+	return radio_connection
 
 /// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/access_button/proc/radio_connection() as /datum/radio_frequency
-	return om_resolve(radio_connection_handle)
+	return radio_connection

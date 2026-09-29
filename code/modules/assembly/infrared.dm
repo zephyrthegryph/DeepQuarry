@@ -67,7 +67,7 @@ MATERIAL_MIX(/obj/item/assembly/infra, list(MAT_STEEL = 1000, MAT_GLASS = 500))
 	var/current_spot = get_turf(src)
 	for(var/i = 1 to limit)
 		var/obj/effect/beam/i_beam/I = new /obj/effect/beam/i_beam(current_spot)
-		I.master_handle = om_handle(src)
+		rel_set(I, "master", src)
 		I.density = TRUE
 		I.set_dir(dir)
 		if(!step(I, I.dir)) //Try to take a step in that direction
@@ -149,7 +149,7 @@ MATERIAL_MIX(/obj/item/assembly/infra, list(MAT_STEEL = 1000, MAT_GLASS = 500))
 	name = "i beam"
 	icon = 'icons/obj/projectiles.dmi'
 	icon_state = "ibeam"
-	var/tmp/master_handle
+	var/tmp/obj/item/assembly/infra/master
 	var/visible = 0
 	anchored = TRUE
 
@@ -179,5 +179,5 @@ DECLARE_PERIODIC(/obj/effect/beam/i_beam, PERIODIC_SLOW)
 
 /// LC-refs: the master this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/beam/i_beam/proc/master() as /obj/item/assembly/infra
-	return om_resolve(master_handle)
+	return master
 

@@ -180,7 +180,7 @@
 	button.off_state = off_state
 	button.on_state = on_state
 	button.screen_loc = ui_acti
-	button.hud_handle = om_handle(src)
+	rel_set(button, "hud", src)
 	button.update_for(owner)
 	own_set(src, "combat_mode_button", button)
 	return button

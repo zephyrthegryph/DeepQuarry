@@ -49,7 +49,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 
 	// body_markings, flavor_texts, flavour_texts_robot, custom_link, exploit_record migrated to /datum/preference subtypes.
 
-	var/tmp/client_handle
+	var/tmp/client/client
 	var/client_ckey = null
 
 	// communicator_visibility/ringtone migrated to /datum/preference subtypes.
@@ -124,7 +124,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	var/dq_last_preview_render_ms = 0
 
 /datum/preferences/New(client/C)
-	client_handle = om_handle(C)
+	rel_set(src, "client", C)
 
 	for(var/middleware_type in subtypesof(/datum/preference_middleware))
 		own_add(src, "middleware", new middleware_type(src))
@@ -605,4 +605,4 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 
 /// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/preferences/proc/client() as /client
-	return om_resolve(client_handle)
+	return client

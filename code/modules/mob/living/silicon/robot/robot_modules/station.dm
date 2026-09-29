@@ -288,7 +288,7 @@
 	water.name = "Water reserves"
 	water.recharge_rate = 10
 	water.max_energy = 1000
-	robot.water_res_handle = om_handle(water)
+	rel_set(robot, "water_res", water)
 	own_add(src, "synths", water)
 	var/obj/item/robot_tongue/T = new /obj/item/robot_tongue(src)
 	rel_set(T, "water", water)

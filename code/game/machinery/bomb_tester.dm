@@ -19,7 +19,7 @@
 
 	var/obj/item/tank/tank1
 	var/obj/item/tank/tank2
-	var/test_canister_handle
+	var/obj/machinery/portable_atmospherics/canister/test_canister
 
 	var/sim_mode = MODE_SINGLE
 	var/sim_canister_output = 10*ONE_ATMOSPHERE
@@ -52,7 +52,7 @@
 /obj/machinery/bomb_tester/machine_step()
 	..()
 	if(test_canister() && !Adjacent(test_canister()))
-		test_canister_handle = null
+		rel_clear(src, "test_canister")
 	if(simulating && world.time >= simulation_started + simulation_delay)
 		simulation_finish()
 
@@ -194,10 +194,10 @@
 				if(C && C == test_canister())
 					continue
 				else if(C)
-					test_canister_handle = om_handle(C)
+					rel_set(src, "test_canister", C)
 					break
 				else
-					test_canister_handle = null
+					rel_clear(src, "test_canister")
 			return TRUE
 
 		if("set_can_pressure")
@@ -391,4 +391,4 @@ OWN(/obj/machinery/bomb_tester, tank2, OWN_CONTAINED)
 
 /// LC-refs: test canister -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/bomb_tester/proc/test_canister() as /obj/machinery/portable_atmospherics/canister
-	return om_resolve(test_canister_handle)
+	return test_canister

@@ -65,7 +65,7 @@
 	integrity_failure = 0.5
 
 	// ── area/cell wiring ────────────────────────────────────────────────────
-	var/tmp/area_handle
+	var/tmp/area/area
 	var/areastring = null
 	var/obj/item/cell/cell
 	/// Cap for how fast APC cells charge, as a percentage-per-tick.
@@ -188,7 +188,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		offset_apc()
 
 	if(building)
-		area_handle = om_handle(get_area(src))
+		rel_set(src, "area", get_area(src))
 		area().apc = src
 		opened    = 1
 		operating = 0
@@ -327,7 +327,7 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 /obj/machinery/power/apc/proc/make_terminal()
 	own_set(src, "terminal", new /obj/machinery/power/terminal(loc))
 	terminal.set_dir(dir)
-	terminal.master_handle = om_handle(src)
+	rel_set(terminal, "master", src)
 
 /obj/machinery/power/apc/proc/init()
 	has_electronics = APC_HAS_ELECTRONICS_SECURED // installed and secured
@@ -339,10 +339,10 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 	var/area/A = loc.loc
 
 	if(isarea(A) && !areastring)
-		area_handle = om_handle(A)
+		rel_set(src, "area", A)
 		name = "\improper [area().name] APC"
 	else
-		area_handle = om_handle(get_area_name(areastring))
+		rel_set(src, "area", get_area_name(areastring))
 		name = "\improper [area().name] APC"
 	area().apc = src
 
@@ -1112,7 +1112,7 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 
 /obj/machinery/power/apc/disconnect_terminal(obj/machinery/power/terminal/term)
 	if(terminal)
-		terminal.master_handle = null
+		rel_clear(terminal, "master")
 		own_take(src, "terminal")
 	wake_for_power_dependency()
 
@@ -1242,7 +1242,7 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 		if(area().apc == src)
 			area().apc = null
 		NA.apc = src
-		area_handle = om_handle(NA)
+		rel_set(src, "area", NA)
 		name = "[area().name] APC"
 	update()
 
@@ -1262,4 +1262,4 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 
 /// LC-refs: the area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/power/apc/proc/area() as /area
-	return om_resolve(area_handle)
+	return area

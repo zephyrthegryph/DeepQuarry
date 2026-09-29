@@ -21,8 +21,8 @@
 	var/download_progress = 0
 	var/download_speed = 0
 
-	var/tmp/current_account_handle
-	var/tmp/current_message_handle
+	var/tmp/datum/computer_file/data/email_account/current_account
+	var/tmp/datum/computer_file/data/email_message/current_message
 
 /datum/tgui_module/email_client/proc/log_in()
 	for(var/datum/computer_file/data/email_account/account in GLOB.ntnet_global.email_accounts)
@@ -33,7 +33,7 @@
 				if(account.suspended)
 					error = "This account has been suspended. Please contact the system administrator for assistance."
 					return 0
-				current_account_handle = om_handle(account)
+				rel_set(src, "current_account", account)
 				return 1
 			else
 				error = "Invalid Password"
@@ -61,7 +61,7 @@
 		read_message_count = allmails.len
 
 /datum/tgui_module/email_client/proc/log_out()
-	current_account_handle = null
+	rel_clear(src, "current_account")
 	own_take(src, "downloading")
 	download_progress = 0
 	last_message_count = 0
@@ -204,7 +204,7 @@
 	msg_body = ""
 	msg_recipient = ""
 	own_take(src, "msg_attachment")
-	current_message_handle = null
+	rel_clear(src, "current_message")
 
 /datum/tgui_module/email_client/proc/relayed_process(netspeed)
 	download_speed = netspeed
@@ -318,7 +318,7 @@
 				current_account().inbox.Remove(M)
 				current_account().spam.Remove(M)
 			if(current_message() == M)
-				current_message_handle = null
+				rel_clear(src, "current_message")
 			return 1
 
 		if("send")
@@ -360,7 +360,7 @@
 		if("view")
 			var/datum/computer_file/data/email_message/M = find_message_by_fuid(params["view"])
 			if(istype(M))
-				current_message_handle = om_handle(M)
+				rel_set(src, "current_message", M)
 			return 1
 
 		if("changepassword")
@@ -490,8 +490,8 @@
 
 /// LC-refs: the current_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_module/email_client/proc/current_account() as /datum/computer_file/data/email_account
-	return om_resolve(current_account_handle)
+	return current_account
 
 /// LC-refs: the current_message this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_module/email_client/proc/current_message() as /datum/computer_file/data/email_message
-	return om_resolve(current_message_handle)
+	return current_message

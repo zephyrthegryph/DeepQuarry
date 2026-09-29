@@ -3,7 +3,7 @@
 //
 
 /datum/ticket_chat
-	var/tmp/T_handle
+	var/tmp/datum/ticket/T
 
 /datum/ticket_chat/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -53,4 +53,4 @@
 
 /// LC-refs: the T this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/ticket_chat/proc/T() as /datum/ticket
-	return om_resolve(T_handle)
+	return T

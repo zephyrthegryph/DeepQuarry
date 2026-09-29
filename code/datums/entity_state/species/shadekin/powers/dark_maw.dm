@@ -58,8 +58,8 @@
 	return TRUE
 
 /obj/effect/abstract/dark_maw
-	var/owner_handle
-	var/target_handle
+	var/mob/living/owner
+	var/obj/belly/target
 	var/has_signal = FALSE
 	icon = 'icons/obj/Shadekin_powers.dmi'
 	icon_state = "dark_maw_waiting"
@@ -70,9 +70,9 @@
 		return INITIALIZE_HINT_QDEL
 	var/datum/shadekin/SK
 	if(user && isliving(user))
-		owner_handle = om_handle(user)
+		rel_set(src, "owner", user)
 		if(owner().vore_selected)
-			target_handle = om_handle(owner().vore_selected)
+			rel_set(src, "target", owner().vore_selected)
 		om_hook(owner(), /datum/om/event/qdeleting, src, PROC_REF(drop_everything_and_delete))
 		has_signal = TRUE
 		SK = owner().get_shadekin_state()
@@ -198,8 +198,8 @@
 
 /// LC-refs: the shadekin who opened the maw -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/abstract/dark_maw/proc/owner() as /mob/living
-	return om_resolve(owner_handle)
+	return owner
 
 /// LC-refs: the belly the maw feeds -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/abstract/dark_maw/proc/target() as /obj/belly
-	return om_resolve(target_handle)
+	return target

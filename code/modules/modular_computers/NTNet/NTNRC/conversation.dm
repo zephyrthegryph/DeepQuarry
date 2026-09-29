@@ -3,7 +3,7 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 /datum/ntnet_conversation/
 	var/id = null
 	var/title = "Untitled Conversation"
-	var/tmp/operator_handle	// "Administrator" of this channel. Creator starts as channel's operator,
+	var/tmp/datum/computer_file/program/chatclient/operator	// "Administrator" of this channel. Creator starts as channel's operator,
 	var/list/messages = list() // ALLOW(instance_list): d: chat channel history
 	var/list/clients
 	var/password
@@ -46,7 +46,7 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 
 	// Channel operator left, pick new operator
 	if(C == channel_operator())
-		operator_handle = null
+		rel_clear(src, "operator")
 		if(length(clients))
 			var/datum/computer_file/program/chatclient/newop = DEFAULTPICK(clients, null)
 			changeop(newop)
@@ -54,7 +54,7 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 
 /datum/ntnet_conversation/proc/changeop(datum/computer_file/program/chatclient/newop)
 	if(istype(newop))
-		operator_handle = om_handle(newop)
+		rel_set(src, "operator", newop)
 		add_status_message("Channel operator status transferred to [newop.username].")
 
 /datum/ntnet_conversation/proc/change_title(newtitle, datum/computer_file/program/chatclient/client)
@@ -66,4 +66,4 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 
 /// LC-refs: "Administrator" of this channel. Creator starts as channel's operator, -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/ntnet_conversation/proc/channel_operator() as /datum/computer_file/program/chatclient
-	return om_resolve(operator_handle)
+	return operator

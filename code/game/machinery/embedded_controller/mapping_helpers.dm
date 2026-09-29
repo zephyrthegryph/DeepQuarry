@@ -13,7 +13,7 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 	alpha = 170
 
 	//The controller we're wanting our device to use
-	var/my_controller_handle
+	var/obj/machinery/embedded_controller/radio/my_controller
 	var/my_controller_type = /obj/machinery/embedded_controller/radio/airlock
 	//The device we're setting up
 	var/my_device
@@ -23,7 +23,7 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 
 /obj/effect/map_helper/airlock/Initialize(mapload)
 	..()
-	my_controller_handle = om_handle(get_controller(get_area(src)))
+	rel_set(src, "my_controller", get_controller(get_area(src)))
 	my_device = locate_within(get_turf(src), my_device_type)
 	if(!my_device)
 		to_chat(world, span_world("[span_red("WARNING:")][span_black("Airlock helper '[name]' couldn't find what it wanted at: X:[x] Y:[y] Z:[z]")]"))
@@ -206,4 +206,4 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 
 /// LC-refs: my controller -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/map_helper/airlock/proc/my_controller() as /obj/machinery/embedded_controller/radio
-	return om_resolve(my_controller_handle)
+	return my_controller

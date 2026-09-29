@@ -1,11 +1,11 @@
 //Gas nozzle engine
 /datum/ship_engine/gas_thruster
 	name = "gas thruster"
-	var/tmp/nozzle_handle
+	var/tmp/obj/machinery/atmospherics/unary/engine/nozzle
 
 /datum/ship_engine/gas_thruster/New(obj/machinery/_holder)
 	..()
-	nozzle_handle = om_handle(_holder)
+	rel_set(src, "nozzle", _holder)
 
 /datum/ship_engine/gas_thruster/get_status()
 	return nozzle().get_status()
@@ -281,4 +281,4 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /d
 
 /// LC-refs: the nozzle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/ship_engine/gas_thruster/proc/nozzle() as /obj/machinery/atmospherics/unary/engine
-	return om_resolve(nozzle_handle)
+	return nozzle

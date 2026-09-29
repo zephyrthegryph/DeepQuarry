@@ -6,7 +6,7 @@
 	density = TRUE
 	unacidable = TRUE
 
-	var/contained_handle
+	var/mob/living/simple_mob/contained
 
 /obj/structure/stasis_cage/Initialize(mapload)
 	. = ..()
@@ -42,7 +42,7 @@
 	if(contained() || !istype(animal))
 		return
 
-	contained_handle = om_handle(animal)
+	rel_set(src, "contained", animal)
 	animal.forceMove(src)
 	animal.set_stasis(/datum/body_effect/stasis/total, src)
 	if(animal?.buckled_to() && istype(animal?.buckled_to(), /obj/effect/energy_net))
@@ -60,7 +60,7 @@
 		var/atom/movable/_tmp_buck_12 = contained()?.buckled_to()
 		_tmp_buck_12.dropInto(src)
 	contained().set_stasis(null, src)
-	contained_handle = null
+	rel_clear(src, "contained")
 	icon_state = "critteropen"
 	underlays.Cut()
 	desc = initial(desc)
@@ -93,4 +93,4 @@
 
 /// LC-refs: contained -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/stasis_cage/proc/contained() as /mob/living/simple_mob
-	return om_resolve(contained_handle)
+	return contained

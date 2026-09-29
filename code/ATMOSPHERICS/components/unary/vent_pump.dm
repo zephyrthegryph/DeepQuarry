@@ -280,7 +280,7 @@
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	signal.source_handle = om_handle(src)
+	rel_set(signal, "source", src)
 
 	signal.data = list(
 		"area" = src.area_uid,
@@ -477,7 +477,7 @@
 
 		if("-SAVE TO BUFFER-")
 			var/obj/item/multitool/tool = W
-			tool.connectable_handle = om_handle(src)
+			rel_set(tool, "connectable", src)
 
 		if("Direction")
 			pump_direction = !pump_direction

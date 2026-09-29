@@ -2,7 +2,7 @@
 	name = "UAV Control"
 	tgui_id = "UAV"
 	ntos = TRUE
-	var/tmp/current_uav_handle	//The UAV we're watching
+	var/tmp/obj/item/uav/current_uav	//The UAV we're watching
 	var/signal_strength = 0 //Our last signal strength report (cached for a few seconds)
 	var/signal_test_counter = 0 //How long until next signal strength check
 	var/list/viewers //Who's viewing a UAV through us
@@ -96,7 +96,7 @@
 	signal_strength = 0
 	if(current_uav())
 		om_unhook(current_uav(), /datum/om/event/before/movable_z_changed, src)
-	current_uav_handle = om_handle(U)
+	rel_set(src, "current_uav", U)
 	if(U)
 		om_hook(U, /datum/om/event/before/movable_z_changed, src, PROC_REF(current_uav_changed_z))
 	OM_EMIT(src, /datum/om/event/remote_view_clear)
@@ -107,7 +107,7 @@
 
 	om_unhook(current_uav(), /datum/om/event/before/movable_z_changed, src)
 	signal_strength = 0
-	current_uav_handle = null
+	rel_clear(src, "current_uav")
 	OM_EMIT(src, /datum/om/event/remote_view_clear)
 
 /datum/tgui_module/uav/proc/current_uav_changed_z(datum/source, datum/om/event/before/movable_z_changed/event)
@@ -267,4 +267,4 @@
 
 /// LC-refs: The UAV we're watching -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_module/uav/proc/current_uav() as /obj/item/uav
-	return om_resolve(current_uav_handle)
+	return current_uav

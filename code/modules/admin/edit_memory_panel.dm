@@ -11,13 +11,13 @@
 
 /datum/edit_memory_panel
 	var/datum/mind/target_mind
-	var/tmp/admin_user_handle
+	var/tmp/mob/admin_user
 	var/list/cached_antag_blocks
 
 /datum/edit_memory_panel/New(datum/mind/target_mind, mob/admin_user)
 	..()
 	rel_set(src, "target_mind", target_mind)
-	src.admin_user_handle = om_handle(admin_user)
+	rel_set(src, "admin_user", admin_user)
 
 REL_PAIR(/datum/edit_memory_panel, target_mind, tgui_edit_memory_panel)
 REL_PAIR(/datum/mind, tgui_edit_memory_panel, target_mind)
@@ -186,4 +186,4 @@ REL_PAIR(/datum/mind, tgui_edit_memory_panel, target_mind)
 
 /// LC-refs: the admin_user this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/edit_memory_panel/proc/admin_user() as /mob
-	return om_resolve(admin_user_handle)
+	return admin_user

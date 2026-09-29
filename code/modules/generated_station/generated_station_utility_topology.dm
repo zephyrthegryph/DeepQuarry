@@ -221,8 +221,8 @@
 	return null
 
 /datum/generated_station_utility_builder
-	var/tmp/spec_handle
-	var/tmp/materialization_handle
+	var/tmp/datum/generated_station_spec/spec
+	var/tmp/datum/generated_station_materialization/materialization
 	var/datum/generated_station_utility_topology/result
 
 /// Reserves fixtures and station-wide routes against local coordinates before live turfs exist.
@@ -452,8 +452,8 @@
 /datum/generated_station_utility_builder/proc/build(datum/generated_station_spec/new_spec, datum/generated_station_materialization/new_materialization)
 	if(!new_spec || !new_materialization)
 		return null
-	spec_handle = om_handle(new_spec)
-	materialization_handle = om_handle(new_materialization)
+	rel_set(src, "spec", new_spec)
+	rel_set(src, "materialization", new_materialization)
 	own_set(src, "result", new /datum/generated_station_utility_topology)
 	result.station_id = spec().id
 	var/list/path_targets = list()
@@ -814,8 +814,8 @@
 
 /// LC-refs: the spec this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_utility_builder/proc/spec() as /datum/generated_station_spec
-	return om_resolve(spec_handle)
+	return spec
 
 /// LC-refs: the materialization this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_utility_builder/proc/materialization() as /datum/generated_station_materialization
-	return om_resolve(materialization_handle)
+	return materialization

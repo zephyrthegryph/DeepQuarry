@@ -264,7 +264,7 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 	for(var/dirfind in GLOB.cardinal)
 		var/obj/machinery/computer/scan_consolenew/console = locate(/obj/machinery/computer/scan_consolenew, get_step(src, dirfind))
 		if(console && console.connected() == src)
-			console.connected_handle = null
+			rel_clear(console, "connected")
 			SStgui.close_uis(console)
 			break
 	. = ..()
@@ -327,7 +327,7 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 	var/list/datum/transhuman/body_record/buffers[3] // Traitgenes Use bodyrecords
 	var/irradiating = 0
 	var/injector_ready = 0	//Quick fix for issue 286 (screwdriver the screen twice to restore injector)	-Pete
-	var/connected_handle
+	var/obj/machinery/dna_scannernew/connected
 	// Traitgenes body record disks are used instead of a unique disk
 	var/obj/item/disk/body_record/disk = null
 	var/selected_menu_key = PAGE_SE
@@ -371,7 +371,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 		buffers[i+1]=R
 	// Traitgenes don't alter direction of computer as this scans for neighbour
 	for(var/dirfind in GLOB.cardinal)
-		connected_handle = om_handle(locate(/obj/machinery/dna_scannernew, get_step(src, dirfind)))
+		rel_set(src, "connected", locate(/obj/machinery/dna_scannernew, get_step(src, dirfind)))
 		if(connected())
 			break
 
@@ -898,4 +898,4 @@ OWN(/obj/machinery/computer/scan_consolenew, disk, OWN_CONTAINED)
 
 /// LC-refs: connected -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/scan_consolenew/proc/connected() as /obj/machinery/dna_scannernew
-	return om_resolve(connected_handle)
+	return connected

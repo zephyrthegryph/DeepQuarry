@@ -180,7 +180,7 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 			devices -= devices_filter
 
 /datum/signal
-	var/source_handle
+	var/obj/source
 
 	var/transmission_method = 0 //unused at the moment
 	//0 = wire
@@ -193,7 +193,7 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 	var/frequency = ZERO_FREQ
 
 /datum/signal/proc/copy_from(datum/signal/model)
-	source_handle = model.source_handle
+	rel_set(src, "source", model.source)
 	transmission_method = model.transmission_method
 	data = model.data
 	encryption = model.encryption
@@ -218,4 +218,4 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 
 /// LC-refs: the device that sent this signal -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/signal/proc/source() as /obj
-	return om_resolve(source_handle)
+	return source

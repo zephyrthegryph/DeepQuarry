@@ -1,5 +1,5 @@
 /datum/tgui_module/ship
-	var/tmp/linked_handle
+	var/tmp/obj/effect/overmap/visitable/ship/linked
 	var/list/viewers
 	var/extra_view = 0
 	var/map_view_used = FALSE
@@ -57,7 +57,7 @@
 	if(!istype(sector))
 		return
 	if(sector.check_ownership(tgui_host()))
-		linked_handle = om_handle(sector)
+		rel_set(src, "linked", sector)
 		return 1
 
 /datum/tgui_module/ship/look(mob/user)
@@ -156,7 +156,7 @@
 	var/speedlimit = 1/(20 SECONDS) //top speed for autopilot, 5
 	var/accellimit = 0.001 //manual limiter for acceleration
 	// SENSORS
-	var/tmp/sensors_handle
+	var/tmp/obj/machinery/shipsensors/sensors
 
 /datum/tgui_module/ship/fullmonty/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG)
@@ -170,7 +170,7 @@
 	. = ..()
 	if(!istype(new_linked))
 		CRASH("Warning, [new_linked] is not an overmap ship! Something went horribly wrong for [usr]!")
-	linked_handle = om_handle(new_linked)
+	rel_set(src, "linked", new_linked)
 	name = initial(name) + " ([linked().name])"
 	// HELM
 	// ALLOW(spatial): world search
@@ -185,7 +185,7 @@
 	// SENSORS
 	for(var/obj/machinery/shipsensors/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(linked().check_ownership(S))
-			sensors_handle = om_handle(S)
+			rel_set(src, "sensors", S)
 			break
 
 /datum/tgui_module/ship/fullmonty/relaymove(mob/user, direction)
@@ -525,8 +525,8 @@
 
 /// LC-refs: the linked this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_module/ship/proc/linked() as /obj/effect/overmap/visitable/ship
-	return om_resolve(linked_handle)
+	return linked
 
 /// LC-refs: the sensors this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_module/ship/fullmonty/proc/sensors() as /obj/machinery/shipsensors
-	return om_resolve(sensors_handle)
+	return sensors

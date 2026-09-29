@@ -10,7 +10,7 @@
 	w_class = ITEMSIZE_SMALL
 	max_components = IC_COMPONENTS_BASE
 	max_complexity = IC_COMPLEXITY_BASE
-	var/tmp/clothing_handle
+	var/tmp/obj/item/clothing/clothing
 
 /obj/item/electronic_assembly/clothing/tgui_host()
 	return clothing().tgui_host()
@@ -78,7 +78,7 @@
 /obj/item/clothing/proc/setup_integrated_circuit(new_type)
 	// Set up the internal circuit holder.
 	own_set(src, "IC", new new_type(src))
-	IC.clothing_handle = om_handle(src)
+	rel_set(IC, "clothing", src)
 	IC.name = name
 
 	// Clothing assemblies can be triggered by clicking on the HUD. This allows that to occur.
@@ -233,4 +233,4 @@
 
 /// LC-refs: the clothing this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/electronic_assembly/clothing/proc/clothing() as /obj/item/clothing
-	return om_resolve(clothing_handle)
+	return clothing

@@ -224,7 +224,7 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 			shown_icon = costly_icon2html(atom_icon, target, sourceonly=TRUE, force_south = force_south)
 		else
 			shown_icon = icon2html(atom_icon, target, sourceonly=TRUE)
-		target.examine_icon_handle = om_handle(shown_icon)
+		rel_set(target, "examine_icon", shown_icon)
 	examine_update += "<img src=\"[shown_icon]\" />&emsp;" + span_giant("[description_holders["name"]]") //The name, written in big letters.
 	examine_update += "[description_holders["desc"]]" //the default examine text.
 	if(description_holders["info"])

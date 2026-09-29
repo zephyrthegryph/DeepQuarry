@@ -6,7 +6,7 @@
 	var/range = 1	// Short-jump craft can reach sectors one overmap tile away.
 	var/fuel_consumption = 0 //Amount of moles of gas consumed per trip; If zero, then shuttle is magic and does not need fuel
 	var/list/fuel_ports //the fuel ports of the shuttle (but usually just one); the list side of the fuel ports' backlist
-	var/tmp/myship_handle	//my overmap ship object
+	var/tmp/obj/effect/overmap/visitable/ship/landable/myship	//my overmap ship object
 
 	category = /datum/shuttle/autodock/overmap
 
@@ -58,7 +58,7 @@
 
 /datum/shuttle/autodock/overmap/proc/set_destination(obj/effect/shuttle_landmark/A)
 	if(A != current_location())
-		next_location_handle = om_handle(A)
+		rel_set(src, "next_location", A)
 
 /datum/shuttle/autodock/overmap/proc/get_possible_destinations()
 	var/list/res = list()
@@ -192,7 +192,7 @@ DECLARE_INTERACTIONS(/obj/structure/fuel_port, \
 
 /// LC-refs: my overmap ship object -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/shuttle/autodock/overmap/proc/myship() as /obj/effect/overmap/visitable/ship/landable
-	return om_resolve(myship_handle)
+	return myship
 
 /// LC-refs: a fuel port sits in its shuttle's fuel_ports; deleting it leaves the list.
 REL_PAIR(/obj/structure/fuel_port, parent_shuttle, fuel_ports)

@@ -11,7 +11,7 @@
 	var/secured = 0
 	var/obj/item/assembly/a_left = null
 	var/obj/item/assembly/a_right = null
-	var/tmp/special_assembly_handle
+	var/tmp/obj/special_assembly
 
 // Its assemblies stop naming it (ones inside go with it; ones taken out stay).
 
@@ -29,8 +29,8 @@
 		user.remove_from_mob(D)
 		user.remove_from_mob(D2)
 
-	D.holder_handle = om_handle(src)
-	D2.holder_handle = om_handle(src)
+	rel_set(D, "holder", src)
+	rel_set(D2, "holder", src)
 	D.forceMove(src)
 	D2.forceMove(src)
 	own_set(src, "a_left", D)
@@ -161,10 +161,10 @@
 		if(!T)
 			return TRUE
 		if(a_left)
-			a_left.holder_handle = null
+			rel_clear(a_left, "holder")
 			a_left.forceMove(T)
 		if(a_right)
-			a_right.holder_handle = null
+			rel_clear(a_right, "holder")
 			a_right.forceMove(T)
 		consume(src, user)
 	return TRUE
@@ -197,12 +197,12 @@
 
 	var/obj/item/assembly/igniter/ign = new(src)
 	ign.secured = 1
-	ign.holder_handle = om_handle(src)
+	rel_set(ign, "holder", src)
 
 	var/obj/item/assembly/timer/tmr = new(src)
 	tmr.time = 5
 	tmr.secured = 1
-	tmr.holder_handle = om_handle(src)
+	rel_set(tmr, "holder", src)
 
 	own_set(src, "a_left", tmr)
 	own_set(src, "a_right", ign)
@@ -253,4 +253,4 @@ OWN(/obj/item/assembly_holder, a_right, OWN_CONTAINED)
 
 /// LC-refs: the special_assembly this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/assembly_holder/proc/special_assembly() as /obj
-	return om_resolve(special_assembly_handle)
+	return special_assembly

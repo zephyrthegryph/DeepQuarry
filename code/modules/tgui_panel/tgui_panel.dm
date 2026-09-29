@@ -8,7 +8,7 @@
  * Hosts tgchat and other nice features.
  */
 /datum/tgui_panel
-	var/tmp/client_handle
+	var/tmp/client/client
 	var/datum/tgui_window/window
 	var/broken = FALSE
 	var/initialized_at
@@ -17,7 +17,7 @@
 	var/static/admins_warned = 0 // COOLDOWN, shared by every panel
 
 /datum/tgui_panel/New(client/client, id)
-	src.client_handle = om_handle(client)
+	rel_set(src, "client", client)
 	own_set(src, "window", new /datum/tgui_window(client, id))
 	window.subscribe(src, PROC_REF(on_message))
 
@@ -126,4 +126,4 @@
 
 /// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_panel/proc/client() as /client
-	return om_resolve(client_handle)
+	return client

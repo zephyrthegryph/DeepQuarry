@@ -11,7 +11,7 @@
 	var/datum/tgui_module/TM = null			// If the program uses TGUIModule, put it here and it will be automagically opened. Otherwise implement tgui_interact.
 	var/tguimodule_path = null				// Path to tguimodule, make sure to set this if implementing new program.
 	var/program_state = PROGRAM_STATE_KILLED// PROGRAM_STATE_KILLED or PROGRAM_STATE_BACKGROUND or PROGRAM_STATE_ACTIVE - specifies whether this program is running.
-	var/tmp/computer_handle	// Device that runs this program.
+	var/tmp/obj/item/modular_computer/computer	// Device that runs this program.
 
 	var/filedesc = "Unknown Program"		// User-friendly name of this program.
 	var/extended_desc = "N/A"				// Short description of this program's function.
@@ -41,7 +41,7 @@
 /datum/computer_file/program/New(obj/item/modular_computer/comp = null)
 	..()
 	if(comp && istype(comp))
-		computer_handle = om_handle(comp)
+		rel_set(src, "computer", comp)
 
 /datum/computer_file/program/tgui_host()
 	return computer().tgui_host()
@@ -136,7 +136,7 @@
 // When implementing new program based device, use this to run the program.
 /datum/computer_file/program/proc/run_program(mob/living/user)
 	if(can_run(user, 1) || !requires_access_to_run)
-		computer().active_program_handle = om_handle(src)
+		rel_set(computer(), "active_program", src)
 		if(tguimodule_path)
 			own_set(src, "TM", new tguimodule_path(src))
 			// Prefer the card inserted into the computer's card slot for access checks;
@@ -215,7 +215,7 @@
 				LAZYADD(computer().idle_threads, computer().active_program())
 				program_state = PROGRAM_STATE_BACKGROUND // Should close any existing UIs
 
-				computer().active_program_handle = null
+				rel_clear(computer(), "active_program")
 				computer().update_icon()
 				ui.close()
 
@@ -225,4 +225,4 @@
 
 /// LC-refs: Device that runs this program. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/computer_file/program/proc/computer() as /obj/item/modular_computer
-	return om_resolve(computer_handle)
+	return computer

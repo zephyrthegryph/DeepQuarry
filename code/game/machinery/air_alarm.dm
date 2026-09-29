@@ -90,11 +90,11 @@
 	var/mode = AALARM_MODE_SCRUBBING
 	var/screen = AALARM_SCREEN_MAIN
 	var/area_uid
-	var/alarm_area_handle
+	var/area/alarm_area
 
 	var/target_temperature = T0C+20
 
-	var/radio_connection_handle
+	var/datum/radio_frequency/radio_connection
 
 	/// Keys are things like temperature and certain gasses. Values are lists, which contain, in order:
 	/// red warning minimum value, yellow warning minimum value, yellow warning maximum value, red warning maximum value
@@ -206,7 +206,7 @@
 
 /obj/machinery/alarm/proc/update_area()
 	invalidate_gas_dependencies()
-	alarm_area_handle = om_handle(get_area(src))
+	rel_set(src, "alarm_area", get_area(src))
 	area_uid = "\ref[alarm_area_ref()]"
 	if(name == "alarm")
 		name = "[alarm_area_ref().name] Air Alarm \[[rand(9999)]\]" // random number id to help with players locating alarms, cosmetic
@@ -575,7 +575,7 @@
 /obj/machinery/alarm/proc/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, AIRALARM_AREA_FILTER(RADIO_TO_AIRALARM, area_uid)))
+	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, AIRALARM_AREA_FILTER(RADIO_TO_AIRALARM, area_uid)))
 
 /obj/machinery/alarm/proc/send_signal(target, list/command)//sends signal 'command' to 'target'. Returns 0 if no radio connection, 1 otherwise
 	if(!radio_connection())
@@ -583,7 +583,7 @@
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	signal.source_handle = om_handle(src)
+	rel_set(signal, "source", src)
 
 	signal.data = command
 	signal.data["tag"] = target
@@ -640,7 +640,7 @@
 		return
 
 	var/datum/signal/alert_signal = new
-	alert_signal.source_handle = om_handle(src)
+	rel_set(alert_signal, "source", src)
 	alert_signal.transmission_method = TRANSMISSION_RADIO
 	alert_signal.data["zone"] = alarm_area_ref().name
 	alert_signal.data["type"] = "Atmospheric"
@@ -1130,8 +1130,8 @@
 
 /// LC-refs: alarm area -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/alarm/proc/alarm_area_ref() as /area
-	return om_resolve(alarm_area_handle)
+	return alarm_area
 
 /// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/alarm/proc/radio_connection() as /datum/radio_frequency
-	return om_resolve(radio_connection_handle)
+	return radio_connection

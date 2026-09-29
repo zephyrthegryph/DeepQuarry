@@ -5,7 +5,7 @@
 
 // Specific types
 /datum/mini_hud/rig
-	var/owner_rig_handle
+	var/obj/item/rig/owner_rig
 	var/atom/movable/screen/rig/power/power
 	var/atom/movable/screen/rig/health/health
 	var/atom/movable/screen/rig/air/air
@@ -14,7 +14,7 @@
 	needs_processing = TRUE
 
 /datum/mini_hud/rig/New(datum/hud/other, obj/item/rig/owner)
-	owner_rig_handle = om_handle(owner)
+	rel_set(src, "owner_rig", owner)
 	own_set(src, "power", new /atom/movable/screen/rig/power ())
 	own_set(src, "health", new /atom/movable/screen/rig/health ())
 	own_set(src, "air", new /atom/movable/screen/rig/air ())
@@ -48,7 +48,7 @@
 	airtoggle.icon_state = "airon[air_on]"
 
 /datum/mini_hud/mech
-	var/owner_mech_handle
+	var/obj/mecha/owner_mech
 	var/atom/movable/screen/mech/power/power
 	var/atom/movable/screen/mech/health/health
 	var/atom/movable/screen/mech/air/air
@@ -57,7 +57,7 @@
 	needs_processing = TRUE
 
 /datum/mini_hud/mech/New(datum/hud/other, obj/mecha/owner)
-	owner_mech_handle = om_handle(owner)
+	rel_set(src, "owner_mech", owner)
 	own_set(src, "power", new /atom/movable/screen/mech/power ())
 	own_set(src, "health", new /atom/movable/screen/mech/health ())
 	own_set(src, "air", new /atom/movable/screen/mech/air ())
@@ -201,10 +201,11 @@
 
 /// LC-refs: the rig this hud shows -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/mini_hud/rig/proc/owner_rig() as /obj/item/rig
-	return om_resolve(owner_rig_handle)
+	return owner_rig
 
 /// LC-refs: the mech this hud shows -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/mini_hud/mech/proc/owner_mech() as /obj/mecha
-	return om_resolve(owner_mech_handle)
+	return owner_mech
 
-
+REL_PAIR(/datum/mini_hud/mech, owner_mech, minihud)
+REL_PAIR(/obj/mecha, minihud, owner_mech)

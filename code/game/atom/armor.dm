@@ -243,7 +243,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/armor)
 	/// code/game/atom/armor.dm). Read it through get_armor().
 	var/armor_spec
 	/// This instance's armour when it differs from its type's (set_armor()).
-	var/tmp/armor_override_handle
+	var/tmp/datum/armor_override
 
 /// This atom's armour. The one accessor: never read armour any other way.
 /atom/proc/get_armor()
@@ -254,7 +254,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/armor)
 /// its type's.
 /atom/proc/set_armor(datum/armor/new_armor)
 	var/datum/armor/type_armor = dq_armor_from_spec(armor_spec)
-	armor_override_handle = om_handle((!new_armor || new_armor == type_armor) ? null : new_armor)
+	rel_set(src, "armor_override", (!new_armor || new_armor == type_armor) ? null : new_armor)
 	armor_changed()
 
 /// Set one armour key on this instance.
@@ -294,4 +294,4 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/armor)
 
 /// LC-refs: armor override -- an OM handle (om_handle()); a global helper keeps the proc off the base type.
 /proc/atom_armor_override(atom/A) as /datum/armor
-	return om_resolve(A?.armor_override_handle)
+	return A?.armor_override

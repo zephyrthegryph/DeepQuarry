@@ -17,7 +17,7 @@
 	idle_power_usage = 10
 	active_power_usage = 100
 
-	var/victim_handle
+	var/mob/living/carbon/human/victim
 	var/beep = TRUE
 
 /obj/machinery/vitals_monitor/Initialize(mapload)
@@ -65,11 +65,11 @@
 	if(!victim())
 		return PROCESS_KILL
 	if(QDELETED(victim()))
-		victim_handle = null
+		rel_clear(src, "victim")
 		update_icon()
 		update_use_power(USE_POWER_IDLE)
 	if(victim() && !Adjacent(victim()))
-		victim_handle = null
+		rel_clear(src, "victim")
 		update_icon()
 		update_use_power(USE_POWER_IDLE)
 	if(victim())
@@ -81,10 +81,10 @@
 	if(!CanMouseDrop(over_object))
 		return
 	if(victim())
-		victim_handle = null
+		rel_clear(src, "victim")
 		update_use_power(USE_POWER_IDLE)
 	else if(ishuman(over_object))
-		victim_handle = om_handle(over_object)
+		rel_set(src, "victim", over_object)
 		update_use_power(USE_POWER_ACTIVE)
 		MACHINE_WAKE(src)
 		visible_message(span_notice("\The [src] is now showing data for [victim()]."))
@@ -159,4 +159,4 @@ EXTEND_INTERACTIONS(/obj/machinery/vitals_monitor, \
 
 /// LC-refs: victim -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/vitals_monitor/proc/victim() as /mob/living/carbon/human
-	return om_resolve(victim_handle)
+	return victim

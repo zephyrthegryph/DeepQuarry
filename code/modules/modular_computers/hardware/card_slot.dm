@@ -6,7 +6,7 @@
 	icon_state = "cardreader"
 	hardware_size = 1
 
-	var/tmp/stored_card_handle
+	var/tmp/obj/item/card/id/stored_card
 
 /obj/item/computer_hardware/card_slot/get_slot_var()
 	return "card_slot"
@@ -31,4 +31,4 @@ OWN(/obj/item/modular_computer, tesla_link, OWN_CONTAINED)
 
 /// LC-refs: the stored_card this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/computer_hardware/card_slot/proc/stored_card() as /obj/item/card/id
-	return om_resolve(stored_card_handle)
+	return stored_card

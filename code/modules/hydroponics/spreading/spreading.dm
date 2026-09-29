@@ -47,7 +47,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 	var/growth_type = 0
 	var/max_growth = 0
 	var/list/neighbors
-	var/tmp/parent_handle
+	var/tmp/obj/effect/plant/parent
 	var/tmp/datum/seed/seed_static
 	var/sampled = 0
 	var/floor = 0
@@ -76,9 +76,9 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 		return INITIALIZE_HINT_QDEL
 
 	if(!newparent)
-		parent_handle = om_handle(src)
+		rel_set(src, "parent", src)
 	else
-		parent_handle = om_handle(newparent)
+		rel_set(src, "parent", newparent)
 
 	if(!GLOB.plant_service)
 		to_chat(world, span_danger("Plant controller does not exist and [src] requires it. Aborting."))
@@ -350,7 +350,7 @@ EXTEND_INTERACTIONS(/obj/effect/plant, \
 
 /// LC-refs: the parent this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/plant/proc/parent() as /obj/effect/plant
-	return om_resolve(parent_handle)
+	return parent
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/effect/plant/proc/seed() as /datum/seed

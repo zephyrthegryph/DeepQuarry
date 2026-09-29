@@ -18,8 +18,8 @@
 	var/max_power = 500000
 	var/thermal_efficiency = 0.65
 
-	var/tmp/circ1_handle
-	var/tmp/circ2_handle
+	var/tmp/obj/machinery/atmospherics/binary/circulator/circ1
+	var/tmp/obj/machinery/atmospherics/binary/circulator/circ2
 
 	var/last_circ1_gen = 0
 	var/last_circ2_gen = 0
@@ -51,25 +51,25 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 //note that the circulator's outlet dir is it's always facing dir, and it's inlet is always the reverse
 /obj/machinery/power/generator/proc/reconnect()
 	clear_gas_dependencies()
-	circ1_handle = null
-	circ2_handle = null
+	rel_clear(src, "circ1")
+	rel_clear(src, "circ2")
 	if(src.loc && anchored)
 		if(src.dir & (EAST|WEST))
-			circ1_handle = om_handle(locate_within(get_step(src,WEST), /obj/machinery/atmospherics/binary/circulator))
-			circ2_handle = om_handle(locate_within(get_step(src,EAST), /obj/machinery/atmospherics/binary/circulator))
+			rel_set(src, "circ1", locate_within(get_step(src,WEST), /obj/machinery/atmospherics/binary/circulator))
+			rel_set(src, "circ2", locate_within(get_step(src,EAST), /obj/machinery/atmospherics/binary/circulator))
 
 			if(circ1() && circ2())
 				if(circ1().dir != NORTH || circ2().dir != SOUTH)
-					circ1_handle = null
-					circ2_handle = null
+					rel_clear(src, "circ1")
+					rel_clear(src, "circ2")
 
 		else if(src.dir & (NORTH|SOUTH))
-			circ1_handle = om_handle(locate_within(get_step(src,NORTH), /obj/machinery/atmospherics/binary/circulator))
-			circ2_handle = om_handle(locate_within(get_step(src,SOUTH), /obj/machinery/atmospherics/binary/circulator))
+			rel_set(src, "circ1", locate_within(get_step(src,NORTH), /obj/machinery/atmospherics/binary/circulator))
+			rel_set(src, "circ2", locate_within(get_step(src,SOUTH), /obj/machinery/atmospherics/binary/circulator))
 
 			if(circ1() && circ2() && (circ1().dir != EAST || circ2().dir != WEST))
-				circ1_handle = null
-				circ2_handle = null
+				rel_clear(src, "circ1")
+				rel_clear(src, "circ2")
 
 /// Wakes only once either circulator loop has a pressure head worth turning -- the test the old
 /// dependency filter made.
@@ -330,8 +330,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 
 /// LC-refs: the circ1 this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/power/generator/proc/circ1() as /obj/machinery/atmospherics/binary/circulator
-	return om_resolve(circ1_handle)
+	return circ1
 
 /// LC-refs: the circ2 this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/power/generator/proc/circ2() as /obj/machinery/atmospherics/binary/circulator
-	return om_resolve(circ2_handle)
+	return circ2

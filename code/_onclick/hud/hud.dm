@@ -162,7 +162,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 */
 
 /datum/hud
-	var/mymob_handle
+	var/mob/mymob
 
 	var/hud_shown = 1			//Used for the HUD toggle (F12)
 	var/inventory_shown = 1		//the inventory
@@ -210,7 +210,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 	var/list/minihuds
 
 /datum/hud/New(mob/owner)
-	mymob_handle = om_handle(owner)
+	rel_set(src, "mymob", owner)
 	instantiate()
 	..()
 
@@ -580,5 +580,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 
 /// LC-refs: the mob this hud belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/hud/proc/mymob() as /mob
-	return om_resolve(mymob_handle)
+	return mymob
 
+REL_PAIR(/datum/hud, mymob, hud_used)
+REL_PAIR(/mob, hud_used, mymob)

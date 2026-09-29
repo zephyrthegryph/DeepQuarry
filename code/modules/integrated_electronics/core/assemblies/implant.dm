@@ -8,7 +8,7 @@
 	w_class = ITEMSIZE_TINY
 	max_components = IC_COMPONENTS_BASE / 2
 	max_complexity = IC_COMPLEXITY_BASE / 2
-	var/tmp/implant_handle
+	var/tmp/obj/item/implant/integrated_circuit/implant
 
 /obj/item/electronic_assembly/implant/tgui_host()
 	return implant().tgui_host()
@@ -19,4 +19,4 @@
 
 /// LC-refs: the implant this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/electronic_assembly/implant/proc/implant() as /obj/item/implant/integrated_circuit
-	return om_resolve(implant_handle)
+	return implant

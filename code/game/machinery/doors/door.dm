@@ -40,7 +40,7 @@
 	var/width = 1
 
 	// turf animation
-	var/c_animation_handle
+	var/atom/movable/overlay/c_animation
 
 	var/reinforcing = 0
 	var/tintable = 0
@@ -659,4 +659,4 @@
 
 /// LC-refs: c animation -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/door/proc/c_animation() as /atom/movable/overlay
-	return om_resolve(c_animation_handle)
+	return c_animation

@@ -11,13 +11,13 @@
 
 
 /datum/event2/event/wallrot
-	var/tmp/origin_handle
+	var/tmp/turf/simulated/wall/origin
 
 /datum/event2/event/wallrot/set_up()
 	for(var/i = 1 to 100)
 		var/turf/candidate = locate(rand(1, world.maxx), rand(1, world.maxy), pick(get_location_z_levels()) )
 		if(istype(candidate, /turf/simulated/wall))
-			origin_handle = om_handle(candidate)
+			rel_set(src, "origin", candidate)
 			log_game("Wall-rot event has chosen \the [origin()] ([origin().loc]) as the origin for the wallrot infestation.")
 			return
 
@@ -44,4 +44,4 @@
 
 /// LC-refs: the origin this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event2/event/wallrot/proc/origin() as /turf/simulated/wall
-	return om_resolve(origin_handle)
+	return origin

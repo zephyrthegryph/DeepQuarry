@@ -8,7 +8,7 @@
 	anchored = TRUE
 	pixel_x = -16
 
-	var/tmp/target_handle
+	var/tmp/obj/structure/redgate/target
 	var/secret = FALSE	//If either end of the redgate has this enabled, ghosts will not be able to click to teleport
 	var/static/list/exceptions = list(
 		/obj/structure/ore_box,
@@ -22,7 +22,7 @@
 // its paired gate closes.
 /obj/structure/redgate/on_destroy(force)
 	if(target())
-		target().target_handle = null
+		target().target = null
 		target().toggle_portal()
 	..()
 
@@ -159,13 +159,13 @@ DECLARE_INTERACTIONS(/obj/structure/redgate, \
 			else if(g == src)
 				continue
 			else if(g.z in using_map.station_levels)
-				target_handle = om_handle(g)
+				rel_set(src, "target", g)
 				//legacy .target reference removed (no equivalent on /datum/ai_brain).
 				toggle_portal()
 				target().toggle_portal()
 				break
 			else if(g != src)
-				target_handle = om_handle(g)
+				rel_set(src, "target", g)
 				//legacy .target reference removed (no equivalent on /datum/ai_brain).
 				toggle_portal()
 				target().toggle_portal()
@@ -559,4 +559,4 @@ DECLARE_INTERACTIONS(/obj/structure/hyperball_goal, INTERACT_ITEM(null, PROC_REF
 
 /// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/redgate/proc/target() as /obj/structure/redgate
-	return om_resolve(target_handle)
+	return target
