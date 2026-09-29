@@ -409,14 +409,16 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 /proc/cap_ai_control()
 	return new /datum/capability/ai_control
 
+/// The AiAirlock actions that are logged (cap_ai_control()'s ui_logged()).
+GLOBAL_LIST_INIT(cap_ai_control_logged, list(
+	"shock_temp" = LOG_GAME,
+	"shock_perm" = LOG_GAME,
+	"bolt_toggle" = LOG_GAME,
+	"emergency_toggle" = LOG_GAME,
+))
+
 /datum/capability/ai_control/ui_logged()
-	var/static/list/logged = list(
-		"shock_temp" = LOG_GAME,
-		"shock_perm" = LOG_GAME,
-		"bolt_toggle" = LOG_GAME,
-		"emergency_toggle" = LOG_GAME,
-	)
-	return logged
+	return GLOB.cap_ai_control_logged
 
 /datum/capability/ai_control/proc/act_disrupt_main(mob/user, obj/machinery/door/airlock/holder)
 	if(holder.main_power_lost_until)

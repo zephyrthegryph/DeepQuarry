@@ -432,6 +432,7 @@ APPEARANCE_NONE(/obj/machinery/door/airlock)
 /// Bridge while door.dm's other doors still draw through update_icon(): its shared procs (and the
 /// declared appearance watch on stat and density) call update_icon(), which marks the airlock changed
 /// so draw() runs.
+// ALLOW(sys_update_icon, sys_old_appearance): bridge only; it draws nothing, it marks the airlock so draw() runs
 /obj/machinery/door/airlock/update_icon()
 	changed(src)
 
@@ -769,6 +770,7 @@ APPEARANCE_NONE(/obj/machinery/door/airlock)
 /// A cryptographic sequencer sparks a closed, working door open for good. Declines (no use spent) on
 /// an open or dead door.
 /obj/machinery/door/airlock/proc/emag_effect(mob/user, obj/item/card/emag/card)
+	// ALLOW(sys_emag_act): cap_emag()'s effect reuses the door's shared on_emag() mechanism (door.dm)
 	if(!on_emag(1, user, card))
 		return FALSE // cap_emag(): the effect refuses first, so nothing is set or spent
 	return TRUE
