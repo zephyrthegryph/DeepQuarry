@@ -46,10 +46,10 @@
 	if(has_weapon)
 		if(ispath(active_weapon))
 			own_set(src, "active_weapon", new active_weapon(src, src)) // ALLOW(decl): constructor arguments
-			own_set(active_weapon, "power_supply", bcell)
+			rel_set(active_weapon, "power_supply", bcell)
 		else
 			own_set(src, "active_weapon", new /obj/item/gun/energy/gun/generator(src, src)) // ALLOW(decl): constructor arguments
-			own_set(active_weapon, "power_supply", bcell)
+			rel_set(active_weapon, "power_supply", bcell)
 	om_task_periodic_stop(src) //We do this so it doesn't start processing until it's first used.
 	update_icon()
 
@@ -153,7 +153,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			W.forceMove(src)
 			own_set(src, "bcell", W)
 			if(active_weapon)
-				own_set(active_weapon, "power_supply", bcell)
+				rel_set(active_weapon, "power_supply", bcell)
 			to_chat(user, span_notice("You install a cell in \the [src]."))
 			update_icon()
 
@@ -175,7 +175,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	own_take(src, "bcell")
 	if(active_weapon)
 		reattach_gun()
-		own_take(active_weapon, "power_supply")
+		rel_clear(active_weapon, "power_supply")
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
@@ -204,7 +204,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	own_take(src, "bcell")
 	if(active_weapon)
 		reattach_gun()
-		own_take(active_weapon, "power_supply")
+		rel_clear(active_weapon, "power_supply")
 	to_chat(user, span_notice("You remove the cell from \the [src], destroying the battery."))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
@@ -302,7 +302,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 
 			if(active_weapon) //Retract the gun. There's about to be no cell anymore.
 				reattach_gun()
-				own_take(active_weapon, "power_supply")
+				rel_clear(active_weapon, "power_supply")
 
 			bcell.use(generator_active_cost) //Causes it to go boom.
 			own_take(src, "bcell")
@@ -386,7 +386,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 /obj/item/gun/energy/gun/generator/Initialize(mapload, obj/item/personal_shield_generator/shield_gen)
 	. = ..()
 	rel_set(src, "linked_generator", shield_gen)
-	rel_set(src, "power_supply", shield_generator()?.bcell) // the generator owns the cell; the gun only names it
+	rel_set(src, "power_supply", shield_generator()?.bcell) // ALLOW(ownership): the generator owns the cell and this gun subtype only names it (REL below); the base energy gun owns its power_supply
 
 /obj/item/gun/energy/gun/generator/proc/can_use(mob/user, mob/M)
 	if(!check_charge(charge_cost))

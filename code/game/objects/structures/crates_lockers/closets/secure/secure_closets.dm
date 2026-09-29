@@ -207,6 +207,6 @@
 			color = null
 	update_icon()
 
-/// LC-refs: owner -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: owner (reads null once it is gone).
 /obj/structure/closet/secure_closet/mind/proc/owner_ref() as /datum/mind
 	return owner

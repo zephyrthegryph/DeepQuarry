@@ -252,6 +252,6 @@ DECLARE_START_TIMER(/obj/item/uplink, "offer_time", PROC_REF(next_offer)) //It s
 	. = ..()
 	hidden_uplink_handle = om_handle(new /obj/item/uplink/hidden(src)) // ALLOW(ownership): /obj/item.hidden_uplink_handle stays a handle until traitor.dm / pda convert
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition (registered: never owned or cleared).
 /obj/item/uplink/proc/discount_item() as /datum/uplink_item
 	return discount_item_static

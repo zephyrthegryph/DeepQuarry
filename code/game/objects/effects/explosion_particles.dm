@@ -71,10 +71,10 @@
 	P.set_up(10,get_location())
 	P.start()
 
-/// LC-refs: location -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: location (reads null once it is gone).
 /datum/effect/system/expl_particles/proc/get_location() as /turf
 	return location
 
-/// LC-refs: location -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: location (reads null once it is gone).
 /datum/effect/system/explosion/proc/get_location() as /turf
 	return location

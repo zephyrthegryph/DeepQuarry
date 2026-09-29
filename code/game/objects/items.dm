@@ -19,7 +19,7 @@
 	pass_flags = PASSTABLE
 	pressure_resistance = 5
 //	causeerrorheresoifixthis
-	var/obj/item/master = null // ALLOW(state_ref): relationship: the item this one is attached to
+	var/obj/item/master = null // the item this one is attached to
 	var/list/attack_verb //Used in attackby() to say how something was attacked "[x] has been [z.attack_verb] by [y] with [z]"
 	var/force = 0
 	var/throwforce = 0
@@ -128,7 +128,7 @@
 	var/list/tool_qualities
 	/// Used to reference the object's host organ.
 	var/my_augment_handle // ALLOW(ownership): written as a handle by code/modules/organs/internal/augment*.dm; convert with them
-	var/datum/identification/identity = null // ALLOW(state_ref): owned: identification datum, refers back to its holder
+	var/datum/identification/identity = null // owned: identification datum, refers back to its holder
 	var/identity_type = /datum/identification
 	var/init_hide_identity = FALSE // Set to true to automatically obscure the object on initialization.
 
@@ -1136,4 +1136,4 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 /proc/item_my_augment(obj/item/I) as /obj/item/organ
 	return om_resolve(I?.my_augment_handle) // ALLOW(ownership): my_augment_handle is written by code/modules/organs (out of scope)
 
-OWN(/obj/item, master, OWN_CONTAINED)
+// An item's master is the thing holding it (an assembly's valve, a chair's kit): a one-sided REL view.

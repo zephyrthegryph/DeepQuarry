@@ -361,7 +361,7 @@ KEYED_TARGET(/obj/effect/autostriptarget, targetid)
 		return FALSE
 	return ..()
 
-/// LC-refs: the landmark -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: the landmark (reads null once it is gone).
 /obj/effect/step_trigger/teleporter/landmark/proc/the_landmark() as /obj/effect/landmark
 	return the_landmark
 

@@ -186,6 +186,6 @@ EXTEND_INTERACTIONS(/obj/effect/overlay/snow, \
 	vis_flags = VIS_INHERIT_ID
 	appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PIXEL_SCALE
 
-/// LC-refs: BeamSource -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: BeamSource (reads null once it is gone).
 /obj/effect/overlay/beam/proc/BeamSource() as /atom
 	return BeamSource

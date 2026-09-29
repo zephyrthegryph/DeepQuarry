@@ -140,6 +140,6 @@
 /obj/structure/vehiclecage/quadtrailer
 	my_vehicle_type = /obj/vehicle/train/trolley/trailer/random
 
-/// LC-refs: my vehicle -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: my vehicle (reads null once it is gone).
 /obj/structure/vehiclecage/proc/my_vehicle() as /obj/vehicle
 	return my_vehicle

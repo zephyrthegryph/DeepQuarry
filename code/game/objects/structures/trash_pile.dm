@@ -233,6 +233,6 @@ DECLARE_DEFAULT_CHILD(/obj/structure/trash_pile, "mouse_nest", /obj/structure/mo
 	..()
 	COOLDOWN_START(src, spawn_cooldown, rand(0, spawn_delay))
 
-/// LC-refs: hider -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: hider (reads null once it is gone).
 /obj/structure/trash_pile/proc/hider() as /mob/living
 	return hider

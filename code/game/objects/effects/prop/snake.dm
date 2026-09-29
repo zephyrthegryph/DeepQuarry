@@ -127,10 +127,10 @@
 	if(T)
 		new /obj/effect/temporary_effect/eruption/flamestrike(T, 1.2 SECONDS, "#f75000")
 
-/// LC-refs: creator -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: creator (reads null once it is gone).
 /obj/effect/temporary_effect/pulse/snake/proc/creator() as /atom/movable
 	return creator
 
-/// LC-refs: hunting -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: hunting (reads null once it is gone).
 /obj/effect/temporary_effect/pulse/snake/proc/hunting() as /atom
 	return hunting

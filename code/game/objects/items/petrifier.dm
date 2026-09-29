@@ -30,10 +30,10 @@ DECLARE_INTERACTIONS(/obj/item/petrifier, INTERACT_USE(null, PROC_REF(interactio
 		consume(src, user)
 	return TRUE
 
-/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: target (reads null once it is gone).
 /obj/item/petrifier/proc/target_ref() as /mob/living/carbon/human
 	return target
 
-/// LC-refs: linked -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: linked (reads null once it is gone).
 /obj/item/petrifier/proc/linked() as /obj/machinery/petrification
 	return linked

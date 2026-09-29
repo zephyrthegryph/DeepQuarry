@@ -125,10 +125,10 @@ EXTEND_INTERACTIONS(/obj/effect/simple_portal, INTERACT_OBSERVER("Enter", PROC_R
 	else
 		icon_state = "portal1"
 
-/// LC-refs: destination -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: destination (reads null once it is gone).
 /obj/effect/simple_portal/proc/destination() as /atom
 	return destination
 
-/// LC-refs: linked portal -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: linked portal (reads null once it is gone).
 /obj/effect/simple_portal/linked/proc/linked_portal() as /obj/effect/simple_portal/linked
 	return linked_portal

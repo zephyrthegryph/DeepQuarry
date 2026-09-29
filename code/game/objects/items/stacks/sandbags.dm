@@ -34,7 +34,7 @@
 
 /obj/item/stack/sandbags/Initialize(mapload, amt, bag_mat)
 	. = ..(mapload, amt)
-	recipes = GLOB.sandbag_recipes
+	recipes = GLOB.sandbag_recipes // ALLOW(ownership): a shared recipe table (GLOB or the registered material holds it); stack_recipe is not a registry type yet
 	update_icon()
 	if(bag_mat)
 		bag_material = bag_mat

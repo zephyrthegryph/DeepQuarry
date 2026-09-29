@@ -301,6 +301,6 @@ DECLARE_INTERACTIONS(/obj/item/inducer, \
 
 OWN(/obj/item/inducer, cell, OWN_CONTAINED)
 
-/// LC-refs: hume -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: hume (reads null once it is gone).
 /obj/item/cell/standin/proc/hume() as /mob/living/carbon/human
 	return hume

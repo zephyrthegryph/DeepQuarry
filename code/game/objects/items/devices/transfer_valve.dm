@@ -63,7 +63,7 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 /obj/item/transfer_valve/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
 		return
-	var/atom/movable/AM = om_resolve(WF)
+	var/atom/movable/AM = om_resolve(WF) // ALLOW(ownership): HasProximity() passes a handle (proximity API outside code/game/objects)
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 	attached_device?.HasProximity(T, WF, old_loc)
@@ -232,6 +232,6 @@ OWN(/obj/item/transfer_valve, tank_one, OWN_CONTAINED)
 OWN(/obj/item/transfer_valve, tank_two, OWN_CONTAINED)
 OWN(/obj/item/transfer_valve, attached_device, OWN_CONTAINED)
 
-/// LC-refs: attacher -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: attacher (reads null once it is gone).
 /obj/item/transfer_valve/proc/attacher() as /mob
 	return attacher

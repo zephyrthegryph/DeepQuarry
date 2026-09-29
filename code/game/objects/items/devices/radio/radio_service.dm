@@ -216,6 +216,6 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 /obj/proc/receive_signal(datum/signal/signal, receive_method, receive_param)
 	return null
 
-/// LC-refs: the device that sent this signal -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: the device that sent this signal (reads null once it is gone).
 /datum/signal/proc/source() as /obj
 	return source

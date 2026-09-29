@@ -84,6 +84,6 @@ DECLARE_INTERACTIONS(/obj/item/mop_deploy, INTERACT_USE(null, PROC_REF(interacti
 	. = ..()
 	om_after(src, 0, PROC_REF(check_held))
 
-/// LC-refs: creator -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: creator (reads null once it is gone).
 /obj/item/mop_deploy/proc/creator() as /mob/living
 	return creator
