@@ -15,15 +15,15 @@
 	var/written_by
 	var/paper_type = /obj/item/paper/sticky
 
-/obj/item/sticky_pad/update_icon()
+APPEARANCE_TEMPLATE(/obj/item/sticky_pad, "[appearance_fill][written_text?_writing:]")
+
+/// The pad state for how many papers are left.
+/obj/item/sticky_pad/proc/appearance_fill()
 	if(papers <= 15)
-		icon_state = "pad_empty"
-	else if(papers <= 50)
-		icon_state = "pad_used"
-	else
-		icon_state = "pad_full"
-	if(written_text)
-		icon_state = "[icon_state]_writing"
+		return "pad_empty"
+	if(papers <= 50)
+		return "pad_used"
+	return "pad_full"
 
 /// Old attackby.
 /obj/item/sticky_pad/proc/interaction_item(mob/user, obj/item/thing, datum/interaction/interaction)
@@ -124,6 +124,7 @@ DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
 	..()
 	reset_persistence_tracking()
 
+// ALLOW(sys_update_icon): keeps a scrap's state and otherwise picks the written state (opts out of /obj/item/paper's drawing)
 /obj/item/paper/sticky/update_icon()
 	if(icon_state != "scrap")
 		icon_state = info ? "paper_words" : "paper"

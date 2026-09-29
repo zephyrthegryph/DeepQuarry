@@ -226,6 +226,7 @@
 	. = ..()
 	updateTurrets()
 
+// ALLOW(sys_update_icon): sets a mode-coloured light (kill/stun/standby) with the icon_state
 /obj/machinery/turretid/update_icon()
 	..()
 	if(has_stat(NOPOWER))

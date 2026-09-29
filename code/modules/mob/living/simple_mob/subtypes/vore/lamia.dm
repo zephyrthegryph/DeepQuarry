@@ -55,6 +55,7 @@
 
 	can_be_drop_prey = FALSE
 
+// ALLOW(sys_update_icon): per-belly fullness icon states over the procedural simple_mob state
 /mob/living/simple_mob/vore/lamia/update_icon()
 	. = ..()
 

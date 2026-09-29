@@ -320,15 +320,11 @@
 			if (prob(failure_chance))
 				A.atom_break()
 
-// Proc: update_icon()
-// Parameters: None
-// Description: Allows us to use special icon overlay for critical SMESs
-/obj/machinery/power/smes/buildable/update_icon()
-	if (failing)
-		cut_overlays()
-		add_overlay("smes-crit")
-	else
-		..()
+// Critical SMESs show only the smes-crit overlay.
+DECLARE_APPEARANCE(/obj/machinery/power/smes/buildable, "failing", list("1" = list(APPEARANCE_OVERLAYS = list("smes-crit"))))
+
+/obj/machinery/power/smes/buildable/appearance_smes_dark()
+	return failing || ..()
 
 // Proc: attackby()
 // Parameters: 2 (W - object that was used on this machine, user - person which used the object)

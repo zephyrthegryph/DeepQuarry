@@ -148,6 +148,7 @@
 	if(!restoring)
 		return PROCESS_KILL
 
+// ALLOW(sys_update_icon): screen overlays from the occupying AI's stat (another mob's state)
 /obj/machinery/computer/aifixer/update_icon()
 	. = ..()
 	if(!operable())

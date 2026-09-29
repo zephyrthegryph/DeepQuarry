@@ -283,6 +283,7 @@
 #include "dq_om_lane_isolation_tests.dm"
 #include "dq_om_io_tests.dm"
 #include "dq_om_ask_tests.dm"
+#include "dq_sys_appearance_tests.dm"
 #include "dq_sys_expiry_tests.dm"
 #include "dq_flow_io_tests.dm"
 #include "dq_refs_tests.dm"

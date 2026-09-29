@@ -19,6 +19,7 @@
 		update_icon()
 	. = ..()
 
+// ALLOW(sys_update_icon): per-direction footprint images from crossed_dirs on top of the procedural floor drawing
 /turf/simulated/floor/outdoors/snow/update_icon()
 	..()
 	for(var/d in crossed_dirs)

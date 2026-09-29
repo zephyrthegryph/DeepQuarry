@@ -140,12 +140,15 @@ DECLARE_REF(/obj/machinery/maint_vendor, "product_datums", OWNED_LIST, null)
 
 	return TRUE
 
-/obj/machinery/maint_vendor/update_icon()
-	. = ..()
-	cut_overlays()
-	if(!has_stat(NOPOWER))
-		add_overlay(mutable_appearance(src.icon, "passiveGlow")) //product display. screen is distinct.
-		add_overlay(emissive_appearance(src.icon, "passiveGlow"))
+/// Appearance reader: TRUE while the vendor has power (product display glow).
+/obj/machinery/maint_vendor/proc/appearance_powered()
+	return has_stat(NOPOWER) ? FALSE : TRUE
+
+//product display. screen is distinct.
+DECLARE_APPEARANCE(/obj/machinery/maint_vendor, "appearance_powered", list(
+	"1" = list(APPEARANCE_OVERLAYS = list("passiveGlow")),
+))
+APPEARANCE_EMISSIVE(/obj/machinery/maint_vendor, "appearance_powered", list("1" = "passiveGlow"))
 
 /obj/machinery/maint_vendor/proc/set_screen_state(state, duration = 10)
 	if(!is_on) return

@@ -98,6 +98,7 @@ GLOBAL_VAR(world_time_day)
 			desc = "Dry, seemingly dead grass! It's too cold for the grass..."
 
 
+// ALLOW(sys_update_icon): randomised seasonal overlays (prob/rand) and update_desc().
 /turf/simulated/floor/outdoors/grass/seasonal/update_icon(update_neighbors)
 	. = ..()
 	update_desc()

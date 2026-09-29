@@ -537,6 +537,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	if(myid)
 		return myid
 
+// ALLOW(sys_update_icon): vore fullness icon states, eye refresh, update_transform and per-belly fullness overlays
 /mob/living/simple_mob/update_icon()
 	. = ..()
 	if(vore_active)

@@ -64,6 +64,7 @@ DECLARE_REF(/obj/machinery/reagent_refinery/reactor, "internal_tank", OWNED, nul
 		if(target)
 			transfer_tank( reagents, target, dir)
 
+// ALLOW(sys_update_icon): dir-drawn pipe image plus intake overlays from neighbouring refinery machines
 /obj/machinery/reagent_refinery/reactor/update_icon()
 	cut_overlays()
 	// Get main dir pipe

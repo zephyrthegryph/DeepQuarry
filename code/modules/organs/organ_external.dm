@@ -1046,6 +1046,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 // new damage icon system
 // adjusted to set damage_state to brute/burn code only (without r_name0 as before)
+// ALLOW(sys_update_icon): not a redraw: caches damage_state and returns whether it changed
 /obj/item/organ/external/update_icon()
 	var/n_is = damage_state_text()
 	if (n_is != damage_state)

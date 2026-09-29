@@ -14,6 +14,7 @@
 	var/reason = "NOT SPECIFIED"
 	special_handling = TRUE
 
+// ALLOW(sys_update_icon): opts out of /obj/item/card's blended sprite-stack icon
 /obj/item/card/id/guest/update_icon()
 	return
 

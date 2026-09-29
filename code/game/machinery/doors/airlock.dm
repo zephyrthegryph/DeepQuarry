@@ -400,6 +400,8 @@ About the new airlock wires panel:
 	else
 		return FALSE
 
+APPEARANCE_NONE(/obj/machinery/door/airlock)
+// ALLOW(sys_update_icon): overlays from integrity (sparks), weld and panel, lock lights from its power systems, snow overlay while frozen
 /obj/machinery/door/airlock/update_icon()
 	cut_overlays()
 	if(density)

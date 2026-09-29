@@ -89,6 +89,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net, \
 				L.attackby(W, user)
 	return FALSE
 
+// ALLOW(sys_update_icon): underlays copied from the contained mobs' icons; rewrites name/desc from contents
 /obj/item/material/fishing_net/update_icon() // Also updates name and desc
 	underlays.Cut()
 	cut_overlays()
@@ -213,6 +214,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net/butterfly_net, INTERACT_USE("
 	else
 		to_chat(M, span_warning("You fail to escape \the [src]."))
 
+// ALLOW(sys_update_icon): state and name/desc depend on contained mobs; opts out of the parent's mob underlays
 /obj/item/material/fishing_net/butterfly_net/update_icon() // Also updates name and desc
 	underlays.Cut()
 	cut_overlays()

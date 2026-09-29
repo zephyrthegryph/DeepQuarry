@@ -75,6 +75,7 @@
 		self.mend(TREAT_WIRING_REPAIR, 2)
 	..()
 
+// ALLOW(sys_update_icon): adds repair droid overlay after the procedural simple_mob redraw
 /mob/living/simple_mob/mechanical/mecha/update_icon()
 	..() // Cuts everything else, so do that first.
 	if(has_repair_droid)

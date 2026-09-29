@@ -184,6 +184,7 @@
 	name = "joke"
 	icon_state = "joke"
 
+// ALLOW(sys_update_icon): opts out of /obj/item/paper's procedural drawing
 /obj/item/paper/cracker_joke/update_icon()
 	return
 

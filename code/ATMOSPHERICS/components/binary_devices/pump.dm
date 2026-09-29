@@ -242,11 +242,10 @@ Thus, the two variables affect pump operation are set in New():
 /obj/machinery/atmospherics/binary/pump/on_pump_target_reached()
 	update_icon()
 
-/obj/machinery/atmospherics/binary/pump/update_icon()
-	if(!powered())
-		icon_state = "[base_icon]-off"
-	else
-		icon_state = "[use_power ? "[base_icon]-on" : "[base_icon]-off"]"
+APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump, "[base_icon]-[appearance_running?on:off]")
+
+/obj/machinery/atmospherics/binary/pump/proc/appearance_running()
+	return powered() && use_power
 
 /obj/machinery/atmospherics/binary/pump/update_underlays()
 	..()
@@ -344,10 +343,6 @@ Thus, the two variables affect pump operation are set in New():
 	init_on = TRUE
 	icon_state = "map_on"
 
-/obj/machinery/atmospherics/binary/pump/high_power/update_icon()
-	if(!powered())
-		icon_state = "off"
-	else
-		icon_state = "[use_power ? "on" : "off"]"
+APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump/high_power, "[appearance_running?on:off]")
 
 DECLARE_REF(/obj/machinery/atmospherics/binary/pump, "radio_connection", STATIC, null)

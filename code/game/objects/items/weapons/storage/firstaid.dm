@@ -126,6 +126,7 @@ TYPE_TABLE(/obj/item/storage/pill_bottle, hold_spec, list(HOLD_ONLY(list(/obj/it
 	base_desc = desc
 	update_icon()
 
+// ALLOW(sys_update_icon): wrapper image coloured per instance (wrapper_color)
 /obj/item/storage/pill_bottle/update_icon()
 	cut_overlays()
 	if(wrapper_color)

@@ -135,16 +135,13 @@
 	paperamount--
 	return new /obj/item/shreddedp(get_turf(src))
 
-/obj/machinery/papershredder/update_icon()
-	cut_overlays()
-	if(operable())
-		icon_state = "shredder-on"
-	else
-		icon_state = "shredder-off"
-	// Fullness overlay
-	add_overlay("shredder-[max(0,min(5,FLOOR(paperamount/max_paper*5, 1)))]")
-	if (panel_open)
-		add_overlay("panel_open")
+APPEARANCE_TEMPLATE(/obj/machinery/papershredder, "shredder-[operable?on:off]")
+DECLARE_APPEARANCE(/obj/machinery/papershredder, "appearance_fill", list("0" = list(APPEARANCE_OVERLAYS = list("shredder-0")), "1" = list(APPEARANCE_OVERLAYS = list("shredder-1")), "2" = list(APPEARANCE_OVERLAYS = list("shredder-2")), "3" = list(APPEARANCE_OVERLAYS = list("shredder-3")), "4" = list(APPEARANCE_OVERLAYS = list("shredder-4")), "5" = list(APPEARANCE_OVERLAYS = list("shredder-5"))))
+DECLARE_APPEARANCE(/obj/machinery/papershredder, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("panel_open"))))
+
+/// Fullness, 0..5.
+/obj/machinery/papershredder/proc/appearance_fill()
+	return max(0, min(5, FLOOR(paperamount / max_paper * 5, 1)))
 
 //
 // Shredded Paper Item

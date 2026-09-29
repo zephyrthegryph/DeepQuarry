@@ -32,11 +32,11 @@
 	if(frequency)
 		set_frequency(frequency)
 
-/obj/machinery/atmospherics/unary/outlet_injector/update_icon()
-	if(!powered())
-		icon_state = "off"
-	else
-		icon_state = "[use_power ? "on" : "off"]"
+/// Appearance reader: powered and switched on.
+/obj/machinery/atmospherics/unary/outlet_injector/proc/appearance_injecting()
+	return powered() && use_power
+
+APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/outlet_injector, "[appearance_injecting?on:off]")
 
 /obj/machinery/atmospherics/unary/outlet_injector/update_underlays()
 	..()

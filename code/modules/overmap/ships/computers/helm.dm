@@ -334,6 +334,7 @@ DECLARE_REF(/obj/machinery/computer/ship/navigation, "nav_tgui", OWNED, null)
 	circuit = /obj/item/circuitboard/nav/tele
 	density = FALSE
 
+// ALLOW(sys_update_icon): sets or clears its light, then chains the procedural computer screen overlays
 /obj/machinery/computer/ship/navigation/telescreen/update_icon()
 	if(has_stat(NOPOWER) || has_stat(BROKEN))
 		icon_state = "tele_off"

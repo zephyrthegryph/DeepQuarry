@@ -32,6 +32,7 @@
 	)
 	..()
 
+// ALLOW(sys_update_icon): redraw also switches the mixer off (set_use_power) when nodes are missing; side effect must run with the redraw
 /obj/machinery/atmospherics/trinary/mixer/update_icon(safety = 0)
 	if(tee)
 		icon_state = "t"

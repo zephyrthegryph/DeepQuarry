@@ -85,11 +85,7 @@
 	recoil = 0
 	fire_sound = SFX_ITEMS_SYRINGEPROJ
 
-/obj/item/gun/projectile/pistol/toy/update_icon()
-	if(ammo_magazine)
-		icon_state = initial(icon_state)
-	else
-		icon_state = "[initial(icon_state)]-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/pistol/toy, "[initial(icon_state)][ammo_magazine?:-e]")
 
 /*
  * N99 Pistol
@@ -100,11 +96,6 @@
 	icon_state = "n99"
 	item_state = "gun"
 
-/obj/item/gun/projectile/pistol/toy/n99/update_icon()
-	if(ammo_magazine)
-		icon_state = initial(icon_state)
-	else
-		icon_state = "[initial(icon_state)]-e"
 
 /*
  * Levergun
@@ -208,11 +199,7 @@
 /obj/item/gun/projectile/automatic/toy/riot
 	magazine_type = /obj/item/ammo_magazine/mfoam_dart/smg/riot
 
-/obj/item/gun/projectile/automatic/toy/update_icon()
-	if(ammo_magazine)
-		icon_state = initial(icon_state)
-	else
-		icon_state = "[initial(icon_state)]-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/toy, "[initial(icon_state)][ammo_magazine?:-e]")
 /*
  * Cyborg
  */

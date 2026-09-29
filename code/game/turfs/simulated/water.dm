@@ -36,6 +36,7 @@
 	// soundloop = new(list(src), FALSE) // Removing soundloop for now.
 	// soundloop.start() // Removing soundloop for now.
 
+// ALLOW(sys_update_icon): handle_water_icons() side effect after procedural floor edges
 /turf/simulated/floor/water/update_icon()
 	..() // To get the edges.
 	handle_water_icons()

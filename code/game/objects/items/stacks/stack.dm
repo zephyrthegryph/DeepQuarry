@@ -54,6 +54,7 @@
 	for(var/M in .)
 		.[M] *= amount
 
+// ALLOW(sys_update_icon): also sets item_state from the icon, and subtypes replace it without ..()
 /obj/item/stack/update_icon()
 	if(no_variants)
 		icon_state = initial(icon_state)

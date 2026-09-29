@@ -14,6 +14,7 @@
 /obj/structure/table/rack/update_desc()
 	return
 
+// ALLOW(sys_update_icon): colours the rack from its material's icon_colour; opts out of /obj/structure/table's procedural connection overlays
 /obj/structure/table/rack/update_icon()
 	if(material()) // for rack colors based on materials
 		color = material().icon_colour

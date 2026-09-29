@@ -119,6 +119,7 @@ EXTEND_INTERACTIONS(/obj/effect/simple_portal, INTERACT_OBSERVER("Enter", PROC_R
 			break
 	update_icon()
 
+// ALLOW(sys_update_icon): reads whether the linked portal (another object) still exists
 /obj/effect/simple_portal/linked/update_icon()
 	if(linked_portal() && !QDELETED(linked_portal()))
 		icon_state = "portal"

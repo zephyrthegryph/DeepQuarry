@@ -12,6 +12,7 @@
 	if(armed)
 		. += "It looks like it's armed."
 
+// ALLOW(sys_update_icon): redraws its holder along with its armed state
 /obj/item/assembly/mousetrap/update_icon()
 	if(armed)
 		icon_state = "mousetraparmed"

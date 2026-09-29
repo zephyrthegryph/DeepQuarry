@@ -110,6 +110,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
 /obj/vehicle/train/engine/janicart/latch(obj/vehicle/train/T, mob/user)
 	return // nothing latchs to this!
 
+// ALLOW(sys_update_icon): a directed over-mob overlay that follows dir while closed
 /obj/vehicle/train/engine/janicart/update_icon()
 	..()
 	cut_overlays()

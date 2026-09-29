@@ -71,6 +71,7 @@
 	Whilst not entirely blind, it appears to have difficulty discerning differences between shapes and movement, but once it hears something that it interprets as prey, it attempts to swallow the creature whole and alive, lashing its head forward on the massively long neck."
 	value = CATALOGUER_REWARD_HARD
 
+// ALLOW(sys_update_icon): vore fullness states with a settle timer, eye refresh, update_transform
 /mob/living/simple_mob/vore/sonadile/update_icon()
 	. = ..()
 	if(vore_active)

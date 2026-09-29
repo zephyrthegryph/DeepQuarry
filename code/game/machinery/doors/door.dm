@@ -460,12 +460,7 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 		else
 			receive_blob(B)
 
-/obj/machinery/door/update_icon()
-	if(density)
-		icon_state = "door1"
-	else
-		icon_state = "door0"
-	return
+APPEARANCE_TEMPLATE(/obj/machinery/door, "door[density]")
 
 /obj/machinery/door/proc/do_animate(animation)
 	switch(animation)

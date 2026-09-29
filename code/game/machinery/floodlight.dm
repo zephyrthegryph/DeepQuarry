@@ -20,9 +20,10 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floodlight, "cell", /obj/item/cell)
 	make_climbable()
 	make_rotatable()
 
-/obj/machinery/floodlight/update_icon()
-	cut_overlays()
-	icon_state = "flood[open ? "o" : ""][open && cell ? "b" : ""]0[on]"
+/obj/machinery/floodlight/proc/appearance_battery()
+	return (open && cell) ? 1 : 0
+
+APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood[open?o:][appearance_battery?b:]0[on]")
 
 /obj/machinery/floodlight/machine_step()
 	if(!on)

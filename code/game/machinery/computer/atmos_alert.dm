@@ -46,6 +46,7 @@
 
 	return data
 
+// ALLOW(sys_update_icon): screen chosen from the global atmos alarm lists, with alert sounds
 /obj/machinery/computer/atmos_alert/update_icon()
 	if(operable())
 		var/list/alarms = GLOB.atmosphere_alarm.major_alarms()

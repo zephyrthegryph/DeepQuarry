@@ -71,6 +71,7 @@
 	return TRUE
 
 //Update icons from /tg/, so fancy! Use this more!
+// ALLOW(sys_update_icon): charge pips stacked with per-pip pixel offsets from the cell's charge, plus flashlight overlay offsets
 /obj/item/gun/energy/gun/protector/update_icon()
 	cut_overlays()
 	var/ratio = 0

@@ -98,6 +98,7 @@ DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 		to_chat(user, "You emag \the [src]. It's screen briefly shows a \"OVERRIDE ACCEPTED: New software downloads available.\" message.")
 		return 1
 
+// ALLOW(sys_update_icon): overlays from the active program's icon/key states with emissives, plus set_light() by enabled.
 /obj/item/modular_computer/update_icon()
 	icon_state = icon_state_unpowered
 

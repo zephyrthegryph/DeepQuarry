@@ -428,6 +428,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 
 	return ITEM_INTERACT_SUCCESS
 
+// ALLOW(sys_update_icon): draws the wrapped item as a scaled mutable_appearance overlay
 /obj/item/gripper/update_icon()
 	cut_overlays()
 	var/obj/item/wrapped = get_wrapped_item()

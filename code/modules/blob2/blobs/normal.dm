@@ -10,6 +10,7 @@
 	. = ..()
 	update_integrity(21) // Doesn't start at full health.
 
+// ALLOW(sys_update_icon): runs the blob's overmind colouring, then picks a damaged state from integrity
 /obj/structure/blob/normal/update_icon()
 	..()
 	if(get_integrity() <= 15)

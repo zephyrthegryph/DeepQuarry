@@ -65,6 +65,7 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	update_icon()
 
 
+// ALLOW(sys_update_icon): floors the charge ratio into charge_stage (read elsewhere) with the redraw
 /obj/item/rms/update_icon()
 	charge_stage = round((stored_charge/max_charge)*4)
 	if(charge_stage >= 4)

@@ -146,17 +146,12 @@
 	else
 		to_chat(user, span_warning("This mob type can't use this verb."))
 
-/obj/structure/closet/secure_closet/update_icon()
-	if(opened)
-		icon_state = "open"
-	else
-		if(broken)
-			icon_state = "closed_emagged[sealed ? "_welded" : ""]"
-		else
-			if(locked)
-				icon_state = "closed_locked[sealed ? "_welded" : ""]"
-			else
-				icon_state = "closed_unlocked[sealed ? "_welded" : ""]"
+/obj/structure/closet/secure_closet/proc/appearance_lock_state()
+	if(broken)
+		return "emagged"
+	return locked ? "locked" : "unlocked"
+
+APPEARANCE_TEMPLATE(/obj/structure/closet/secure_closet, "closed_[appearance_lock_state][sealed?_welded:]")
 
 /obj/structure/closet/secure_closet/req_breakout()
 	if(!opened && locked) return 1

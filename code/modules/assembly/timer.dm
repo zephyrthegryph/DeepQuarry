@@ -51,6 +51,7 @@ MATERIAL_MIX(/obj/item/assembly/timer, list(MAT_STEEL = 500, MAT_GLASS = 50))
 		timer_end()
 		time = 10
 
+// ALLOW(sys_update_icon): records the overlays its holder composites and redraws the holder
 /obj/item/assembly/timer/update_icon()
 	cut_overlays()
 	attached_overlays = list()

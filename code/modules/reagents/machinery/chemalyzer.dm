@@ -19,8 +19,11 @@
 	. = ..()
 	default_apply_parts()
 
-/obj/machinery/chemical_analyzer/update_icon()
-	icon_state = "chem_analyzer[om_busy(src) ? "-working":""]"
+/// Appearance reader: TRUE while an analysis task holds the analyzer.
+/obj/machinery/chemical_analyzer/proc/appearance_working()
+	return om_busy(src) ? TRUE : FALSE
+
+APPEARANCE_TEMPLATE(/obj/machinery/chemical_analyzer, "chem_analyzer[appearance_working?-working:]")
 
 /obj/machinery/chemical_analyzer/declare_interactions(list/into)
 	into += list(

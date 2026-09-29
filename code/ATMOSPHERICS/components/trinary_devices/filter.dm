@@ -67,6 +67,7 @@
 	if(frequency)
 		set_frequency(frequency)
 
+// ALLOW(sys_update_icon): redraw also switches the filter off (set_use_power) when nodes are missing; side effect must run with the redraw
 /obj/machinery/atmospherics/trinary/atmos_filter/update_icon()
 	if(mirrored)
 		icon_state = "m"

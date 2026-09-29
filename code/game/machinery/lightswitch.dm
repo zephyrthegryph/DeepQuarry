@@ -33,6 +33,7 @@
 	set_on(area().lightswitch)
 	update_icon()
 
+// ALLOW(sys_update_icon): sets an on/off-coloured light alongside the emissive overlay
 /obj/machinery/light_switch/update_icon()
 	cut_overlays()
 	if(has_stat(NOPOWER))

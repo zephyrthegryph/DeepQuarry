@@ -511,10 +511,7 @@ DECLARE_REF(/obj/machinery/power/supermatter, "soundloop", OWNED, null)
 
 	return 1
 
-/obj/machinery/power/supermatter/update_icon() // Chompers Edit Start
-	cut_overlays()
-	if(final_countdown)
-		add_overlay("causality_field")
+DECLARE_APPEARANCE(/obj/machinery/power/supermatter, "final_countdown", list("1" = list(APPEARANCE_OVERLAYS = list("causality_field"))))
 
 /obj/machinery/power/supermatter/proc/countdown()
 	if(!final_countdown)

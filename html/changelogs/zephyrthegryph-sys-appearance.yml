@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Object sprites are now declared from their state (appearance templates, levels, emissives and slot overlays) and redraw themselves when that state changes, instead of every piece of code calling update_icon() by hand."
+  - bugfix: "Machines now always redraw when their power, broken state, on/off, lock or mode changes, including machines that used to keep a stale sprite after a power change."

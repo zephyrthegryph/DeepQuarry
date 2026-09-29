@@ -36,6 +36,7 @@
 /obj/machinery/smartfridge/drying_rack/has_pending_work()
 	return ..() || stored_count()
 
+// ALLOW(sys_update_icon): icon_state depends on whether any stored item record still has an amount (contents)
 /obj/machinery/smartfridge/drying_rack/update_icon()
 	var/not_working = !operable()
 	var/hasItems

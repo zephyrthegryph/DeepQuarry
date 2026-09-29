@@ -61,6 +61,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/tesla, INTERACT_USE("Toggle", 
 	user.update_inv_wear_suit()
 	user.update_mob_action_buttons()
 
+// ALLOW(sys_update_icon): sets item_state, set_light(), and refreshes the wearer's suit icon and action buttons.
 /obj/item/clothing/suit/armor/tesla/update_icon()
 	if(active && ready)
 		icon_state = ready_icon_state

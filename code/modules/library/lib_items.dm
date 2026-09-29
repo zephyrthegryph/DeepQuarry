@@ -95,11 +95,10 @@ DECLARE_INTERACTIONS(/obj/structure/bookcase, \
 		b.forceMove(loc)
 	return ..()
 
-/obj/structure/bookcase/update_icon()
-	if(contents_count(src) < 5)
-		icon_state = "book-[contents.len]"
-	else
-		icon_state = "book-5"
+/obj/structure/bookcase/proc/appearance_books()
+	return contents_count(src) < 5 ? contents.len : 5
+
+APPEARANCE_TEMPLATE(/obj/structure/bookcase, "book-[appearance_books]")
 
 /*
 Book Cart
@@ -124,11 +123,7 @@ EXTEND_INTERACTIONS(/obj/structure/bookcase/bookcart, INTERACT_ITEM(null, PROC_R
 		return INTERACTION_HANDLED_PASS
 	return INTERACTION_HANDLED_PASS
 
-/obj/structure/bookcase/bookcart/update_icon()
-	if(contents_count(src) < 5)
-		icon_state = "bookcart-[contents.len]"
-	else
-		icon_state = "bookcart-5"
+APPEARANCE_TEMPLATE(/obj/structure/bookcase/bookcart, "bookcart-[appearance_books]")
 
 /*
 Book Cart End

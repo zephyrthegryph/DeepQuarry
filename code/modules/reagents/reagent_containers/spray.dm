@@ -224,6 +224,7 @@ DECLARE_REF(/obj/item/reagent_containers/spray/chemsprayer/hosed, "hose_overlay"
 	for(var/datum/hose_connector/HC as anything in get_hose_connectors())
 		HC.update_hose_beam()
 
+// ALLOW(sys_update_icon): hose overlay shown when any hose connector (another object) is paired
 /obj/item/reagent_containers/spray/chemsprayer/hosed/update_icon()
 	..()
 

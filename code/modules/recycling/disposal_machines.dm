@@ -547,6 +547,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	update_icon()
 
 // update the icon & overlays to reflect mode & status
+// ALLOW(sys_update_icon): broken redraw also forces mode off and clears flush; full light reads the disposal container slot contents
 /obj/machinery/disposal/update_icon()
 	cut_overlays()
 	if(has_stat(BROKEN))
@@ -777,6 +778,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 	density = FALSE
 
+// ALLOW(sys_update_icon): sets pixel_x/pixel_y from dir to sit on the wall
 /obj/machinery/disposal/wall/update_icon()
 	. = ..()
 	switch(dir)

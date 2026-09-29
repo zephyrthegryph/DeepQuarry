@@ -120,6 +120,7 @@ DECLARE_REF(/obj/machinery/reagent_refinery/grinder, "holdingitems", SPILL_LIST,
 
 	refinery_transfer()
 
+// ALLOW(sys_update_icon): pipe overlay image drawn in the machine dir; dot reflects holdingitems contents
 /obj/machinery/reagent_refinery/grinder/update_icon()
 	cut_overlays()
 	var/image/pipe = image(icon, icon_state = "grinder_cons", dir = dir)

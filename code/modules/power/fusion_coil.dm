@@ -26,6 +26,7 @@ MATERIAL_MIX(/obj/item/fusion_coil, list(MAT_STEEL = 6000, MAT_COPPER = 4000, MA
 
 	update_icon()
 
+// ALLOW(sys_update_icon): emissive mutable_appearances plus set_light() colour/range that must change with the damaged/charged sprite.
 /obj/item/fusion_coil/update_icon()
 	icon_state = "fc_spent"
 

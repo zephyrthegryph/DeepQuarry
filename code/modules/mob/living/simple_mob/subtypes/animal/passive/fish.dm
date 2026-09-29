@@ -177,6 +177,7 @@
 	belly_color = rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue))
 	update_icon()
 
+// ALLOW(sys_update_icon): per-instance coloured dorsal/belly mask images
 /mob/living/simple_mob/animal/passive/fish/icebass/update_icon()
 	cut_overlays()
 	..()
@@ -243,6 +244,7 @@
 	head_color = rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue))
 	update_icon()
 
+// ALLOW(sys_update_icon): per-instance coloured head mask image
 /mob/living/simple_mob/animal/passive/fish/rockfish/update_icon()
 	cut_overlays()
 	..()

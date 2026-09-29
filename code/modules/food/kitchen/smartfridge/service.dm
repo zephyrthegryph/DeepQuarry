@@ -31,6 +31,7 @@
 	circuit = /obj/item/circuitboard/smartfridge/drinks/showcase
 
 //Showcase needs a special icon update
+// ALLOW(sys_update_icon): fill overlay picked from stored_count() of its item records (contents)
 /obj/machinery/smartfridge/drinks/showcase/update_icon()
 	cut_overlays()
 	if(panel_open)

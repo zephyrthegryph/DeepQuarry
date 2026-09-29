@@ -198,6 +198,7 @@
 	. = ..()
 	air_contents.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 500) //meant to match air injector
 
+// ALLOW(sys_update_icon): hidden variant from its turf/node, atmos icon from the icon manager, and plays start/stop sounds
 /obj/machinery/atmospherics/unary/vent_pump/update_icon(safety = 0)
 	cut_overlays()
 

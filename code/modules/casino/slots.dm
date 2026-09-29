@@ -31,6 +31,7 @@
 	var/datum/effect/effect/system/confetti_spread
 	var/confetti_strength = 8
 
+// ALLOW(sys_update_icon): toggles its light with the powered/broken sprite
 /obj/machinery/slot_machine/update_icon()
 	cut_overlays()
 	if(!ispowered || isbroken)
@@ -176,6 +177,7 @@
 	var/datum/effect/effect/system/confetti_spread
 	var/confetti_strength = 8
 
+// ALLOW(sys_update_icon): toggles its light with the powered/broken sprite
 /obj/machinery/station_slot_machine/update_icon()
 	cut_overlays()
 	if(!ispowered || isbroken)

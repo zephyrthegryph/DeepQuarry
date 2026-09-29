@@ -97,6 +97,7 @@ DECLARE_REF(/obj/machinery/power/generator, "soundloop", OWNED, null)
 	clear_gas_dependencies()
 	MACHINE_WAKE(src)
 
+// ALLOW(sys_update_icon): writes temperature_overlay onto both circulator objects based on their last_temperature (other objects' state).
 /obj/machinery/power/generator/update_icon()
 	icon_state = anchored ? "teg-assembled" : "teg-unassembled"
 	cut_overlays()

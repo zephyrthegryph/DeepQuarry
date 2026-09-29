@@ -403,19 +403,18 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/emf, INTERACT_USE(null, PROC_REF(int
 		to_chat(user, span_notice("You update the EMF scanner and check the reading. It reads [emf]mG!"))
 		COOLDOWN_START(src, scan_cooldown, 5 SECONDS)
 
-/obj/item/entrepreneur/emf/update_icon()
-	switch(emf)
-		if(-1000 to 20)
-			icon_state = "emf-0"
-		if(20 to 40)
-			icon_state = "emf-20"
-		if(40 to 60)
-			icon_state = "emf-40"
-		if(60 to 80)
-			icon_state = "emf-60"
-		if(80 to 1000)
-			icon_state = "emf-80"
-	return
+/obj/item/entrepreneur/emf/proc/appearance_level()
+	if(emf <= 20)
+		return 0
+	if(emf <= 40)
+		return 20
+	if(emf <= 60)
+		return 40
+	if(emf <= 80)
+		return 60
+	return 80
+
+APPEARANCE_TEMPLATE(/obj/item/entrepreneur/emf, "emf-[appearance_level]")
 
 /obj/item/entrepreneur/spirit_board
 	name = "spirit board"

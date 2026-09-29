@@ -27,6 +27,7 @@ DECLARE_SHARED_CACHE(ashtray_overlays, GLOBAL_PROC_REF(build_ashtray_overlay), S
 	randpixel_xy()
 	update_icon()
 
+// ALLOW(sys_update_icon): material-coloured cached overlays from contents count; also sets desc
 /obj/item/material/ashtray/update_icon()
 	color = null
 	cut_overlays()

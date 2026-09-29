@@ -39,6 +39,7 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 	SSpersistence.forget_value(src, /datum/persistent/filth)
 	..()
 
+// ALLOW(sys_update_icon): the janitor HUD overlay, redrawn after a full overlay cut
 /obj/effect/decal/cleanable/update_icon()
 	// Overrides should not inheret from this, and instead replace it entirely to match this in some form.
 	// add_janitor_hud_overlay() does not pre-cut overlays, so cut_overlays() must be called first.

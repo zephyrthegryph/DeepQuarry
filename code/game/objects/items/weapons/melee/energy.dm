@@ -185,6 +185,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 /obj/item/melee/energy/get_cell()
 	return bcell
 
+// ALLOW(sys_update_icon): blade mutable_appearance coloured per instance (lcolor/rainbow) and refreshes the user's hands
 /obj/item/melee/energy/update_icon()
 	. = ..()
 	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
@@ -565,6 +566,7 @@ EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_R
 	colorable = FALSE
 	lcolor = "#FFFFFF"
 
+// ALLOW(sys_update_icon): chains into /obj/item/melee/energy's procedural coloured blade overlay
 /obj/item/melee/energy/sword/altevian/update_icon()
 	..()
 	if(active)

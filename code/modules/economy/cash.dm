@@ -43,6 +43,7 @@
 		consume(src, user)
 	return INTERACTION_HANDLED_PASS
 
+// ALLOW(sys_update_icon): banknote overlays built from worth with randomised offsets/rotation; also rewrites name/desc
 /obj/item/spacecash/update_icon()
 	cut_overlays()
 	name = "[worth] [initial_name]\s"
@@ -184,6 +185,7 @@ DECLARE_INTERACTIONS(/obj/item/spacecash, \
 
 EXTEND_INTERACTIONS(/obj/item/spacecash/ewallet, INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)))
 
+// ALLOW(sys_update_icon): opts out of /obj/item/spacecash's procedural randomised banknote overlays and name/desc rewrite
 /obj/item/spacecash/ewallet/update_icon() return  //space cash
 
 /obj/item/spacecash/ewallet/examine(mob/user)

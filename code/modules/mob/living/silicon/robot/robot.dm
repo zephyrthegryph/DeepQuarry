@@ -1286,6 +1286,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 // update_icon() composes the sprite from providers: base, accents, status,
 // belly, panel and hat.
 
+// ALLOW(sys_update_icon): sprite datum driven base appearance, indicators, accent/status/panel/hat overlays
 /mob/living/silicon/robot/update_icon()
 	if(!sprite_datum)
 		return

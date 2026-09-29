@@ -56,6 +56,7 @@
 	flags = OPENCONTAINER
 	var/amount_per_transfer_from_this = 5
 
+// ALLOW(sys_update_icon): icon_state from reagent fill volume thresholds
 /obj/structure/bed/bath/update_icon()
 	if(reagents.total_volume < 1)
 		icon_state = "bath"
@@ -118,6 +119,7 @@ DECLARE_REAGENTS(/obj/structure/bed/bath, 300, null)
 	icon_state = "yeoldovenopen"
 	tgui_id = "CookingOvenOld"
 
+// ALLOW(sys_update_icon): starts/stops the oven sound loop with the redraw
 /obj/machinery/appliance/cooker/oven/yeoldoven/update_icon()
 	if(!open)
 		if(!has_stat(MACHINE_STAT_ANY))
@@ -203,6 +205,7 @@ EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
 		GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water
 
 
+// ALLOW(sys_update_icon): opts out of /obj/structure/toilet's open/cistern icon_state drawing
 /obj/structure/toilet/wooden/update_icon()
 	return
 
@@ -216,6 +219,7 @@ EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
 	visible_action = "starts cooking"
 	audible_action = "fire roar"
 
+// ALLOW(sys_update_icon): replaces /obj/machinery/microwave's procedural update_icon, which never reaches the base drawing
 /obj/machinery/microwave/cookingpot/update_icon()
 	if(broken)
 		icon_state = "cookingpotb"
@@ -252,6 +256,7 @@ EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
 	icon = 'icons/obj/gun.dmi'
 	icon_state = "harpoonwand-2"
 
+// ALLOW(sys_update_icon): plays a flick() transition and clears transforming with the redraw
 /obj/item/bluespace_harpoon/wand/update_icon()
 	if(transforming)
 		switch(mode)

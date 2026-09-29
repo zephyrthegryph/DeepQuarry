@@ -36,6 +36,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/defib_kit, "bcell", null)
 /obj/item/defib_kit/proc/get_paddles()
 	return tethered_handheld()
 
+// ALLOW(sys_update_icon): reads the linked paddles' state and the cell's charge ratio (other objects' state)
 /obj/item/defib_kit/update_icon()
 	cut_overlays()
 
@@ -198,6 +199,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	update_icon()
 	..()
 
+// ALLOW(sys_update_icon): also sets item_state for the in-hand sprite with the redraw
 /obj/item/shockpaddles/update_icon()
 	icon_state = "defibpaddles[wielded]"
 	item_state = "defibpaddles[wielded]"

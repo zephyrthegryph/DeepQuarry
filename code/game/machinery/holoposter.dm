@@ -44,6 +44,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 	. = ..()
 	. += examine_addon
 
+// ALLOW(sys_update_icon): sets examine text and lights, reads global security level and re-randomises the sprite
 /obj/machinery/holoposter/update_icon()
 	if(has_stat(NOPOWER))
 		icon_state = "off"

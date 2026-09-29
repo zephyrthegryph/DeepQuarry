@@ -146,6 +146,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, \
 		qdel(removed)
 	..()
 
+// ALLOW(sys_update_icon): sets item_state and refreshes the holder's hand sprites (update_inv_*_hand) with the redraw
 /obj/item/gun/launcher/pneumatic/update_icon()
 	if(tank())
 		icon_state = "pneumatic-tank"
@@ -169,8 +170,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, \
 
 	var/buildstate = 0
 
-/obj/item/cannonframe/update_icon()
-	icon_state = "pneumatic[buildstate]"
+APPEARANCE_TEMPLATE(/obj/item/cannonframe, "pneumatic[buildstate]")
 
 /obj/item/cannonframe/examine(mob/user)
 	. = ..()

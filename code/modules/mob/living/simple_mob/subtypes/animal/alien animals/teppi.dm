@@ -656,6 +656,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 	if(vitality() <= 0.75)
 		. += span_notice("They look beat up.")
 
+// ALLOW(sys_update_icon): per-instance coloured teppi_icon()/ghostjoin overlays
 /mob/living/simple_mob/vore/alienanimals/teppi/update_icon()
 	..()
 	teppi_icon()

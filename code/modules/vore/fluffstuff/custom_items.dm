@@ -991,6 +991,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/baton/fluff/stunstaff, "bcell", /obj/item/
 		return 1
 	return 0
 
+// ALLOW(sys_update_icon): sets item_state and a coloured light from status along with icon_state
 /obj/item/melee/baton/fluff/stunstaff/update_icon()
 	icon_state = "[base_icon][wielded][status]"
 	item_state = icon_state
@@ -1305,6 +1306,7 @@ TYPE_TABLE(/obj/item/rig/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask, null, list(REAGENT_ID_TEA = 40, REAGENT_ID_MILK = 20))
 
+// ALLOW(sys_update_icon): restores name/desc after glass2's procedural reagent redraw renames it
 /obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask/update_icon()
 	..()
 	name = initial(name)
@@ -1338,6 +1340,7 @@ TYPE_TABLE(/obj/item/storage/fancy/fluff/charlotte, hold_spec, list(HOLD_ONLY(li
 		closed_state = "[initial(icon_state)]"
 	. = ..()
 
+// ALLOW(sys_update_icon): overlay counts its contents
 /obj/item/storage/fancy/fluff/charlotte/update_icon()
 	cut_overlays()
 	if(open)

@@ -63,6 +63,7 @@
 DECLARE_REF(/obj/item/spell/illusion, "illusion", OWNED, null)
 
 // Makes a tiny overlay of the thing the player has copied, so they can easily tell what they currently have.
+// ALLOW(sys_update_icon): overlay is a scaled image of the copied atom (another object's appearance).
 /obj/item/spell/illusion/update_icon()
 	cut_overlays()
 	if(copied())

@@ -69,6 +69,7 @@ DECLARE_REF(/obj/compass_holder, "compass_waypoints", OWNED_VALUES, null)
 	else
 		. = 0
 
+// ALLOW(sys_update_icon): overlay list composed from its static labels, waypoint markers and heading
 /obj/compass_holder/update_icon()
 	var/set_overlays = (compass_static_labels | compass_waypoint_markers)
 	if(show_heading)

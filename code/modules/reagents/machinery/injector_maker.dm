@@ -34,6 +34,7 @@
 	. = ..()
 	default_apply_parts()
 
+// ALLOW(sys_update_icon): plastic+injectors without a beaker matches no branch and keeps the previous icon_state (stateful), so not a pure template
 /obj/machinery/injector_maker/update_icon()
 	if(!beaker && !count_plastic && !count_small_injector && !count_large_injector) //Empty
 		icon_state = "injector"

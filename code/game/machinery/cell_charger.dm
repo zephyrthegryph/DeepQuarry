@@ -19,6 +19,7 @@
 	default_apply_parts()
 	add_overlay("ccharger1")
 
+// ALLOW(sys_update_icon): overlays the inserted cell's own icon/icon_state and its connector type plus a charge level from the cell
 /obj/machinery/cell_charger/update_icon()
 	if(!anchored)
 		cut_overlays()

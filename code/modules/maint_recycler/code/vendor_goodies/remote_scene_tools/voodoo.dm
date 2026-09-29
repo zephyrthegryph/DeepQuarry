@@ -95,6 +95,7 @@ EXTEND_INTERACTIONS(/obj/item/remote_scene_tool/voodoo_doll, INTERACT_VERB("Disa
 
 	return input
 
+// ALLOW(sys_update_icon): displacement-map and layer images generated from the linked wearer's body
 /obj/item/remote_scene_tool/voodoo_doll/update_icon()
 	. = ..()
 	//reset

@@ -41,6 +41,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/emitter/gyrotron, REGISTRY_GYROTRONS)
 	E.damage = mega_energy * 50
 	return E
 
+// ALLOW(sys_update_icon): opts out of /obj/machinery/power/emitter's procedural flick and beam/lock image overlays; reads avail() on the power region
 /obj/machinery/power/emitter/gyrotron/update_icon()
 	if (active && power_region && avail(active_power_usage))
 		icon_state = "emitter-on"

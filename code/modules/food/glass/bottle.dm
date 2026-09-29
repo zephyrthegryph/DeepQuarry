@@ -38,6 +38,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bottle, INTERACT_HAND_DEF
 	if(!icon_state)
 		icon_state = "bottle-[rand(1,4)]"
 
+// ALLOW(sys_update_icon): reagent fill overlay coloured by reagents.get_color() at the current fill level
 /obj/item/reagent_containers/glass/bottle/update_icon()
 	cut_overlays()
 

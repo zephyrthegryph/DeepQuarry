@@ -16,8 +16,7 @@
 	var/datum/integrated_io/selected_io = null
 	var/mode = WIRE
 
-/obj/item/integrated_electronics/wirer/update_icon()
-	icon_state = "wirer-[mode]"
+APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-[mode]")
 
 /obj/item/integrated_electronics/wirer/proc/wire(datum/integrated_io/io, mob/user)
 	if(!io.holder().assembly())
@@ -188,6 +187,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 	var/tmp/selected_io_handle
 	var/mode = 0
 
+// ALLOW(sys_update_icon): state from its selected IO, buffer and connection handles (other objects)
 /obj/item/multitool/update_icon()
 	if(selected_io())
 		if(buffer() || connecting() || connectable())

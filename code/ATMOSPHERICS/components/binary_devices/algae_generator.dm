@@ -116,16 +116,12 @@
 	ui_error = null // Success!
 	update_icon()
 
-/obj/machinery/atmospherics/binary/algae_farm/update_icon()
+APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/algae_farm, "algae-[appearance_mode]")
+
+/obj/machinery/atmospherics/binary/algae_farm/proc/appearance_mode()
 	if(!operable() || !anchored || use_power < USE_POWER_ACTIVE)
-		icon_state = "algae-off"
-	else if(recent_moles_transferred >= moles_per_tick)
-		icon_state = "algae-full"
-	else if(recent_moles_transferred > 0)
-		icon_state = "algae-full"
-	else
-		icon_state = "algae-on"
-	return 1
+		return "off"
+	return recent_moles_transferred > 0 ? "full" : "on"
 
 /obj/machinery/atmospherics/binary/algae_farm/declare_interactions(list/into)
 	into += list(

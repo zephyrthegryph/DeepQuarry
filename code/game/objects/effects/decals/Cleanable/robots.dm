@@ -8,6 +8,7 @@
 	generic_filth = FALSE
 	persistent = FALSE
 
+// ALLOW(sys_update_icon): resets the per-instance blood colour and redraws the janitor HUD overlay
 /obj/effect/decal/cleanable/blood/gibs/robot/update_icon()
 	color = "#FFFFFF"
 	cut_overlays()

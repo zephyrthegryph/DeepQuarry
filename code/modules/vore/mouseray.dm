@@ -58,6 +58,7 @@
 	if(tf_admin_pref_override)
 		G.tf_admin_pref_override = tf_admin_pref_override
 
+// ALLOW(sys_update_icon): charge overlay read from the power_supply cell object
 /obj/item/gun/energy/mouseray/update_icon()
 	if(charge_meter)
 		var/ratio = power_supply.charge / power_supply.maxcharge

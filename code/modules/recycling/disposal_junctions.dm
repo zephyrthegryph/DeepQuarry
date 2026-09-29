@@ -178,6 +178,7 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/sortjunction, INTERACT_ITEM(nul
 
 	return P
 
+// ALLOW(sys_update_icon): panel overlay name is built from the runtime icon_state (base_icon_state set at construction) of each junction variant
 /obj/structure/disposalpipe/sortjunction/update_icon()
 	cut_overlays()
 	. = ..()

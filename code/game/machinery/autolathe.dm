@@ -559,17 +559,11 @@ DECLARE_REF(/obj/machinery/autolathe, "materials", OWNED, null)
 	creation_efficiency = max(0.6, round(1.1 - (man_rating * 0.1), 0.1)) // creation_efficiency goes 1 -> 0.9 -> 0.8 -> 0.7 -> 0.6 per level of manipulator efficiency
 	lathe_build_rate = 0.85 - (man_rating * 0.05) // lathe_build_rate goes 0.8 -> 0.75 -> 0.7 -> 0.65 -> 0.6 per level of manipulator efficiency
 
-/obj/machinery/autolathe/update_icon()
-	cut_overlays()
+/obj/machinery/autolathe/proc/appearance_working()
+	return (!has_stat(NOPOWER) && om_busy(src)) ? 1 : 0
 
-	icon_state = initial(icon_state)
-
-	if(panel_open)
-		add_overlay("[icon_state]_panel")
-	if(has_stat(NOPOWER))
-		return
-	if(om_busy(src))
-		icon_state = "[icon_state]_work"
+APPEARANCE_TEMPLATE(/obj/machinery/autolathe, "[initial(icon_state)][appearance_working?_work:]")
+DECLARE_APPEARANCE(/obj/machinery/autolathe, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("autolathe_panel"))))
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/autolathe/proc/stored_research() as /datum/techweb/autounlocking

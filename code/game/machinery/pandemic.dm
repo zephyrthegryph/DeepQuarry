@@ -29,6 +29,7 @@
 	. = ..()
 	update_icon()
 
+// ALLOW(sys_update_icon): opts out of /obj/machinery/computer's procedural screen/keyboard/neighbour overlays
 /obj/machinery/computer/pandemic/update_icon()
 	if(has_stat(BROKEN))
 		icon_state = (beaker ? "pandemic1_b" : "pandemic0_b")

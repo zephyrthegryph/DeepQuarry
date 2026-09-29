@@ -168,6 +168,7 @@ DECLARE_INTERACTIONS(/obj/item/shovel, INTERACT_ALT(null, PROC_REF(interaction_a
 		set_bulk_material(material().name, 50)
 		update_icon()
 
+// ALLOW(sys_update_icon): colour and alpha from the per-instance material
 /obj/item/shovel/wood/update_icon()
 	. = ..()
 	color = material() ? material().icon_colour : initial(color)

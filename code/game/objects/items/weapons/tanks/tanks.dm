@@ -687,6 +687,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 
 	air_contents.add_thermal_energy(15000)
 
+// ALLOW(sys_update_icon): draws on the attached tank (another object)
 /obj/item/tankassemblyproxy/update_icon()
 	if(assembly)
 		tank.update_icon()

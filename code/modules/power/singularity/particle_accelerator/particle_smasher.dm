@@ -147,6 +147,7 @@ DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
+// ALLOW(sys_update_icon): material overlays tinted by the target material, light range from stored energy
 /obj/machinery/particle_smasher/update_icon()
 	cut_overlays()
 	if(!material_layer)

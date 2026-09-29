@@ -149,6 +149,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 	if(rag) return
 	..()
 
+// ALLOW(sys_update_icon): rag underlay reads the rag's on_fire state and copies its light via set_light().
 /obj/item/reagent_containers/food/drinks/bottle/update_icon()
 	underlays.Cut()
 	if(rag)

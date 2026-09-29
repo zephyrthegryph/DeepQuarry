@@ -96,6 +96,7 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 	unwrap()
 	return TRUE
 
+// ALLOW(sys_update_icon): label/tag images with randomised per-instance pixel offsets
 /obj/structure/bigDelivery/update_icon()
 	cut_overlays()
 	if(nameset || examtext)
@@ -243,6 +244,7 @@ DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
 	attack_self(user)
 	return TRUE
 
+// ALLOW(sys_update_icon): tag image with per-crate pixel offsets and a randomised tag_x
 /obj/item/smallDelivery/update_icon()
 	cut_overlays()
 	if((nameset || examtext) && icon_state != "deliverycrate1")

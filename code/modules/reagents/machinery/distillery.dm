@@ -366,6 +366,7 @@ DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "ov
 		if(isnull(heat_body))
 			return PROCESS_KILL
 
+// ALLOW(sys_update_icon): status overlays depend on output beaker fill and live temperature vs target, on top of procedural portable_atmospherics parent
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/update_icon()
 	..()
 	cut_overlays()

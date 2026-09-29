@@ -26,6 +26,7 @@ DECLARE_PERIODIC(/obj/structure/tanning_rack, PERIODIC_SLOW) // SSObj fires ~eve
 	if(drying() && !QDELETED(drying()))
 		. += "\The [drying()] is [drying().get_dryness_text()]."
 
+// ALLOW(sys_update_icon): overlay from the drying hide's wetness (another object)
 /obj/structure/tanning_rack/update_icon()
 	cut_overlays()
 	if(drying())

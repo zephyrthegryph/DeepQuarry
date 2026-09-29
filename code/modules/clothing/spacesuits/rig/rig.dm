@@ -583,6 +583,7 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 		return 0
 	return cell.give(joules * CELLRATE, FALSE) / CELLRATE
 
+// ALLOW(sys_update_icon): builds species mob_icon, module overlays on the chest piece and refreshes the wearer's inventory icons
 /obj/item/rig/update_icon(update_mob_icon)
 
 	cut_overlays()

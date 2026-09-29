@@ -53,6 +53,7 @@ TYPE_TABLE(/obj/item/oldtwohanded, equip_spec, dq_spec_join(..(), list(REQ_ON(PR
 			O.unwield()
 	return	unwield()
 
+// ALLOW(sys_update_icon): refreshes item_state along with icon_state
 /obj/item/oldtwohanded/update_icon()
 	icon_state = "[base_icon][wielded]"
 	item_state = icon_state
@@ -108,6 +109,7 @@ DECLARE_INTERACTIONS(/obj/item/oldtwohanded, INTERACT_USE(null, PROC_REF(interac
 /obj/item/oldtwohanded/offhand/wield()
 	qdel(src)
 
+// ALLOW(sys_update_icon): opts out of /obj/item/oldtwohanded's procedural item_state refresh
 /obj/item/oldtwohanded/offhand/update_icon()
 	return
 

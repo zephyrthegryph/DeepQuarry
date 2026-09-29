@@ -267,15 +267,21 @@
 		removed.add_thermal_energy(-min(power_avail*5*cop,actual_heat_transfer))
 	env.merge(removed)
 
-/obj/machinery/power/thermoregulator/update_icon()
-	cut_overlays()
-	if(on)
-		add_overlay("lasergen-on")
-		switch(mode)
-			if(MODE_HEATING)
-				add_overlay("lasergen-heat")
-			if(MODE_COOLING)
-				add_overlay("lasergen-cool")
+/obj/machinery/power/thermoregulator/proc/appearance_mode()
+	if(!on)
+		return "off"
+	switch(mode)
+		if(MODE_HEATING)
+			return "heat"
+		if(MODE_COOLING)
+			return "cool"
+	return "idle"
+
+DECLARE_APPEARANCE(/obj/machinery/power/thermoregulator, "appearance_mode", list(
+	"idle" = list(APPEARANCE_OVERLAYS = list("lasergen-on")),
+	"heat" = list(APPEARANCE_OVERLAYS = list("lasergen-on", "lasergen-heat")),
+	"cool" = list(APPEARANCE_OVERLAYS = list("lasergen-on", "lasergen-cool"))
+))
 
 /obj/machinery/power/thermoregulator/proc/turn_off()
 	set_on(FALSE)

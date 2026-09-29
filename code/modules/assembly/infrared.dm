@@ -45,6 +45,7 @@ MATERIAL_MIX(/obj/item/assembly/infra, list(MAT_STEEL = 1000, MAT_GLASS = 500))
 		QDEL_LIST_NULL(i_beams)
 	return on
 
+// ALLOW(sys_update_icon): records the overlays its holder composites and redraws the holder
 /obj/item/assembly/infra/update_icon()
 	cut_overlays()
 	LAZYCLEARLIST(attached_overlays)

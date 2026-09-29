@@ -422,6 +422,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/carton/flour, null,
 	. = ..()
 	randpixel_xy()
 
+// ALLOW(sys_update_icon): fill overlay computed from reagents volume.
 /obj/item/reagent_containers/food/condiment/carton/update_icon()
 	overlays.Cut()
 

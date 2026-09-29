@@ -47,11 +47,7 @@
 		if(!handleInactive())
 			return PROCESS_KILL
 
-/obj/machinery/power/port_gen/update_icon()
-	if(active)
-		icon_state = "[initial(icon_state)]on"
-	else
-		icon_state = initial(icon_state)
+APPEARANCE_TEMPLATE(/obj/machinery/power/port_gen, "[initial(icon_state)][active?on:]")
 
 /obj/machinery/power/powered()
 	return 1 //doesn't require an external power source
@@ -507,6 +503,8 @@
 
 //Port Start, RS PR #484
 
+APPEARANCE_NONE(/obj/machinery/power/port_gen/pacman/super/potato)
+// ALLOW(sys_update_icon): per-instance alpha mutable_appearance glow and set_light() range tied to active/overheating.
 /obj/machinery/power/port_gen/pacman/super/potato/update_icon()
 	cut_overlays()
 	set_light(0)
@@ -660,11 +658,7 @@
 	)
 	..()
 
-/obj/machinery/power/rtg/update_icon()
-	if(panel_open)
-		icon_state = "[initial(icon_state)]-open"
-	else
-		icon_state = initial(icon_state)
+APPEARANCE_TEMPLATE(/obj/machinery/power/rtg, "[initial(icon_state)][panel_open?-open:]")
 
 /obj/machinery/power/rtg/advanced
 	desc = "An advanced RTG capable of moderating isotope decay, increasing power output but reducing lifetime. It uses plasma-fueled radiation collectors to increase output even further."
@@ -684,8 +678,7 @@
 /// Old attackby: blocked entirely (never called ..()), so fake_gen never offers the base rtg's part replacement.
 /obj/machinery/power/rtg/fake_gen/declare_interactions(list/into)
 	return
-/obj/machinery/power/rtg/fake_gen/update_icon()
-	return
+APPEARANCE_NONE(/obj/machinery/power/rtg/fake_gen)
 
 /obj/machinery/power/rtg/fake_gen/grid
 	desc = "An array of conventional power storage units, for when the added charge longivity and cost of a SMES unit is unneded or impractical."
@@ -796,19 +789,13 @@
 	play_sfx(src, SFX_EFFECTS_METAL_CLOSE)
 	return TRUE
 
-/obj/machinery/power/rtg/abductor/update_icon()
-	if(!state_change)
-		return //Stupid cells constantly update our icon so trying to be efficient
+APPEARANCE_TEMPLATE(/obj/machinery/power/rtg/abductor, "[icon_base][appearance_core_suffix]")
 
-	if(cell)
-		if(panel_open)
-			icon_state = "[icon_base]-open"
-		else
-			icon_state = "[icon_base]"
-	else
-		icon_state = "[icon_base]-nocell"
-
-	state_change = FALSE
+/// Sprite suffix: no cell, open panel, or closed.
+/obj/machinery/power/rtg/abductor/proc/appearance_core_suffix()
+	if(!cell)
+		return "-nocell"
+	return panel_open ? "-open" : ""
 
 /obj/machinery/power/rtg/abductor/blob_act(obj/structure/blob/B)
 	asplod()
@@ -940,6 +927,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/power/rtg/abductor/hybrid/built, "cell", /o
 	pixel_x = -32
 	return FALSE
 
+APPEARANCE_NONE(/obj/machinery/power/rtg/reg)
+// ALLOW(sys_update_icon): sets pixel_x and reads buckled_mob_list() (buckled mobs) to pick the sprite.
 /obj/machinery/power/rtg/reg/update_icon()
 	pixel_x = -32
 	if(panel_open)
@@ -1122,16 +1111,17 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/power/rtg/abductor/hybrid/built, "cell", /o
 	TogglePower()
 	return TRUE
 
-/obj/machinery/power/port_gen/large_altevian/update_icon()
-	..()
+DECLARE_APPEARANCE(/obj/machinery/power/port_gen/large_altevian, "appearance_fuel_level", list("100" = list(APPEARANCE_OVERLAYS = list("alteviangen-fuel-100")), "66" = list(APPEARANCE_OVERLAYS = list("alteviangen-fuel-66")), "33" = list(APPEARANCE_OVERLAYS = list("alteviangen-fuel-33"))))
 
-	cut_overlays()
+/// Fuel gauge step for the hopper overlay ("" when empty).
+/obj/machinery/power/port_gen/large_altevian/proc/appearance_fuel_level()
 	if(sheets > 75)
-		add_overlay("alteviangen-fuel-100")
-	else if(sheets > 25)
-		add_overlay("alteviangen-fuel-66")
-	else if(sheets > 0)
-		add_overlay("alteviangen-fuel-33")
+		return "100"
+	if(sheets > 25)
+		return "66"
+	if(sheets > 0)
+		return "33"
+	return ""
 
 /obj/machinery/power/rtg/antimatter_core
 	name = "\improper Antique Anti-Matter Reactor"

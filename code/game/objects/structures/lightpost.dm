@@ -16,6 +16,7 @@
 	update_icon()
 	return ..()
 
+// ALLOW(sys_update_icon): glow overlay on the lighting plane plus set_light side effect
 /obj/structure/lightpost/update_icon()
 	cut_overlays()
 

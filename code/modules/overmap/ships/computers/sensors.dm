@@ -200,12 +200,7 @@
 			return 0
 	return 1
 
-/obj/machinery/shipsensors/update_icon()
-	if(use_power)
-		icon_state = "sensors"
-	else
-		icon_state = "sensors_off"
-	..()
+APPEARANCE_TEMPLATE(/obj/machinery/shipsensors, "[use_power?sensors:sensors_off]")
 
 /obj/machinery/shipsensors/examine(mob/user)
 	. = ..()

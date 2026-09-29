@@ -27,6 +27,7 @@ DECLARE_REF(/obj/machinery/computer/shutoff_monitor, "monitor", OWNED, null)
 	monitor.tgui_interact(user)
 	return TRUE
 
+// ALLOW(sys_update_icon): adds its screen overlay on top of /obj/machinery/computer's procedural screen compositing (which cuts every overlay)
 /obj/machinery/computer/shutoff_monitor/update_icon()
 	..()
 	if(operable())

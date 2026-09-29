@@ -89,6 +89,7 @@ DECLARE_REF(/obj/vehicle/train/engine/quadbike, "soundloop", OWNED, null)
 
 EXTEND_INTERACTIONS(/obj/vehicle/train/engine/quadbike, INTERACT_ITEM("Paint", PROC_REF(interaction_vehicle_paint)))
 
+// ALLOW(sys_update_icon): paint-coloured body and over-mob overlays per instance colour
 /obj/vehicle/train/engine/quadbike/update_icon()
 	..()
 	cut_overlays()
@@ -259,6 +260,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/quadbike, INTERACT_ITEM("Paint", P
 			to_chat(D, span_danger("You hit [M]!"))
 			add_attack_logs(D,M,"Ran over with [src.name]")
 
+// ALLOW(sys_update_icon): paint overlay in the instance colour
 /obj/vehicle/train/trolley/trailer/update_icon()
 	..()
 	cut_overlays()

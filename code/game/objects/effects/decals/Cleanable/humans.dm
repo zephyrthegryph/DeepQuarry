@@ -53,6 +53,7 @@
 					else
 						qdel(B)
 
+// ALLOW(sys_update_icon): per-instance blood colour (random for rainbow), name/desc by blood type, janitor HUD overlay
 /obj/effect/decal/cleanable/blood/update_icon()
 	if(basecolor == "rainbow") basecolor = get_random_colour(1)
 	color = basecolor
@@ -200,6 +201,7 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/blood, \
 	random_icon_states = list("gib1", "gib2", "gib3", "gib5", "gib6")
 	var/fleshcolor = "#FFFFFF"
 
+// ALLOW(sys_update_icon): generated icon: blood blended with the instance colour, flesh overlay in the instance colour
 /obj/effect/decal/cleanable/blood/gibs/update_icon()
 
 	var/image/giblets = new(base_icon, "[icon_state]_flesh", dir)

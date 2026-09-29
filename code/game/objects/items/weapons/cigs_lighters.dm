@@ -127,6 +127,7 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/smokable, "chem_volume", null)
 	if(location)
 		location.hotspot_expose(700, 5)
 
+// ALLOW(sys_update_icon): sets item_state and refreshes the wearer's mask/hand sprites
 /obj/item/clothing/mask/smokable/update_icon()
 	if(lit)
 		icon_state = "[initial(icon_state)]_on"

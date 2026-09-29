@@ -82,6 +82,7 @@ DECLARE_REF(/obj/machinery/portable_atmospherics, "holding", OWNED, null)
 	air_contents = new_air
 	return TRUE
 
+// ALLOW(sys_update_icon): opts out of the base redraw for portable atmospherics; subtypes draw procedurally.
 /obj/machinery/portable_atmospherics/update_icon()
 	return null
 

@@ -29,6 +29,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/passive/opossum, get_ai_behaviors, list
 				COOLDOWN_START(src, play_dead_until, rand(1 MINUTE, 2 MINUTES))
 		update_icon()
 
+// ALLOW(sys_update_icon): replaces simple_mob's procedural update_icon; states come from per-instance icon_living/icon_dead
 /mob/living/simple_mob/animal/passive/opossum/update_icon()
 	// Override to read the local is_angry flag instead of the deleted ai_holder.
 	if(stat == DEAD || (resting && is_angry))

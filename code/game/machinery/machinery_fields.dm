@@ -45,3 +45,7 @@ OM_FIELD_SETTER(/obj/machinery, use_power, CHANGE_MACHINE_SETTINGS)
 APPEARANCE_WATCH(/obj/machinery, list("stat", "on", "active", "state", "mode", "locked", "emagged", "use_power", "anchored", "density"))
 /// Vehicles draw their condition bits.
 APPEARANCE_WATCH(/obj/vehicle, list("stat"))
+
+/// Integrity (atom_defense.dm): update_integrity() is the only writer and raises CHANGE_INTEGRITY, so
+/// sprites drawn from damage declare "get_integrity" and redraw on hits and repairs by themselves.
+OM_DERIVE_FIELD(/atom, get_integrity, CHANGE_INTEGRITY)

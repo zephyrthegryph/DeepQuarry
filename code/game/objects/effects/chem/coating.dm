@@ -29,6 +29,7 @@ DECLARE_REAGENTS(/obj/effect/decal/cleanable/chemcoating, 100, null)
 /obj/effect/decal/cleanable/chemcoating/Crossed(AM as mob|obj)
 	Bumped(AM)
 
+// ALLOW(sys_update_icon): colour from its reagents, plus the janitor HUD overlay
 /obj/effect/decal/cleanable/chemcoating/update_icon()
 	..()
 	color = reagents.get_color()

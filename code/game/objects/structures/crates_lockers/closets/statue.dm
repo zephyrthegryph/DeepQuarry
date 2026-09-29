@@ -126,8 +126,7 @@
 /obj/structure/closet/statue/verb_toggleopen_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	return
 
-/obj/structure/closet/statue/update_icon()
-	return
+APPEARANCE_NONE(/obj/structure/closet/statue)
 
 /obj/structure/closet/statue/proc/shatter(mob/user as mob)
 	if (user)

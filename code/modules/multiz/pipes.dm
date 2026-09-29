@@ -88,6 +88,7 @@
 /obj/machinery/atmospherics/pipe/zpipe/pipeline_expansion()
 	return list(node1, node2)
 
+// ALLOW(sys_update_icon): colour from per-instance pipe_color
 /obj/machinery/atmospherics/pipe/zpipe/update_icon()
 	color = pipe_color
 	return

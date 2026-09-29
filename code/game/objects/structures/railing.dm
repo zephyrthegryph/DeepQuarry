@@ -95,6 +95,7 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 			if (UpdateNeighbors)
 				R.update_icon(0)
 
+// ALLOW(sys_update_icon): neighbour check (NeighborsCheck) and dir-dependent pixel-offset corner overlays
 /obj/structure/railing/update_icon(UpdateNeighgors = 1)
 	NeighborsCheck(UpdateNeighgors)
 	//layer = (dir == SOUTH) ? FLY_LAYER : initial(layer) // wtf does this even do

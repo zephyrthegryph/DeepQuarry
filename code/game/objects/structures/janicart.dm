@@ -327,6 +327,7 @@ DECLARE_REF(/obj/structure/janitorialcart, "mybucket", OWNED, null)
 	update_icon()
 	return TRUE
 
+// ALLOW(sys_update_icon): water overlay depends on the held bucket's reagent volume
 /obj/structure/janitorialcart/update_icon()
 	cut_overlays()
 

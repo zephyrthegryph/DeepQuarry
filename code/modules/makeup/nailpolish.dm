@@ -34,6 +34,7 @@ DECLARE_INTERACTIONS(/obj/item/nailpolish, INTERACT_USE(null, PROC_REF(interacti
 	update_icon()
 	return TRUE
 
+// ALLOW(sys_update_icon): underlays tinted with the instance's polish colour
 /obj/item/nailpolish/update_icon()
 	. = ..()
 	icon_state = "[initial(icon_state)][open ? "-open" : ""]"
@@ -127,9 +128,7 @@ DECLARE_INTERACTIONS(/obj/item/nailpolish_remover, INTERACT_USE(null, PROC_REF(i
 	update_icon()
 	return TRUE
 
-/obj/item/nailpolish_remover/update_icon()
-	. = ..()
-	icon_state = "[initial(icon_state)][open ? "-open" : ""]"
+APPEARANCE_TEMPLATE(/obj/item/nailpolish_remover, "[initial(icon_state)][open?-open:]")
 
 /obj/item/nailpolish_remover/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)
 	if(!open)

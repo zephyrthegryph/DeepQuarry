@@ -68,6 +68,7 @@ TYPE_TABLE(/obj/item/storage/wallet, hold_spec, list(HOLD_ONLY(list( \
 			name = "[original_name] ([front_id()])"
 			update_icon()
 
+// ALLOW(sys_update_icon): overlay from the front ID's icon_state (another object's state)
 /obj/item/storage/wallet/update_icon()
 	cut_overlays()
 	if(front_id())

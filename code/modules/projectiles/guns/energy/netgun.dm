@@ -15,6 +15,7 @@
 	charge_cost = 800
 	fire_delay = 50
 
+// ALLOW(sys_update_icon): reads the power cell's charge (another object) to pick the charge-meter icon_state
 /obj/item/gun/energy/netgun/update_icon()
 	if(power_supply == null)
 		if(modifystate)
@@ -69,6 +70,7 @@
 		list(mode_name="capture", projectile_type=/obj/item/projectile/beam/energy_net, fire_sound = SFX_WEAPONS_ELUGER, charge_cost=1200, fire_delay=50)
 	)
 
+// ALLOW(sys_update_icon): reads the power cell's charge (another object) for the ratio overlay
 /obj/item/gun/energy/hunter/update_icon()
 	overlays.Cut()
 

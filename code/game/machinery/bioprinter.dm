@@ -91,12 +91,8 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer, \
 /obj/machinery/organ_printer/proc/organ_printer_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	return default_part_replacement(user, O) ? TRUE : FALSE
 
-/obj/machinery/organ_printer/update_icon()
-	cut_overlays()
-	if(panel_open)
-		add_overlay("bioprinter_panel_open")
-	if(printing)
-		add_overlay("bioprinter_working")
+DECLARE_APPEARANCE(/obj/machinery/organ_printer, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("bioprinter_panel_open"))))
+DECLARE_APPEARANCE(/obj/machinery/organ_printer, "printing", list("1" = list(APPEARANCE_OVERLAYS = list("bioprinter_working"))))
 
 /obj/machinery/organ_printer/Initialize(mapload)
 	. = ..()

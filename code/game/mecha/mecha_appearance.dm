@@ -21,6 +21,7 @@
 	animate(src, transform = M, time = 10)
 	return
 
+// ALLOW(sys_update_icon): composites the pilot's compound icon blended with a cutter mask, face overlay and each equipment's overlays
 /obj/mecha/update_icon()
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(!initial_icon)

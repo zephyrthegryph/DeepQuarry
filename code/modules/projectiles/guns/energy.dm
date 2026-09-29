@@ -214,6 +214,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/energy, INTERACT_HAND(null, PROC_REF(interact
 		else
 			. += "Does not have a power cell."
 
+// ALLOW(sys_update_icon): reads the power cell's charge (another object) for the meter state and refreshes the in-hand sprite via update_held_icon()
 /obj/item/gun/energy/update_icon(ignore_inhands)
 	if(power_supply == null)
 		if(modifystate)

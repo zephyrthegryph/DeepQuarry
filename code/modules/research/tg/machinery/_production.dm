@@ -51,6 +51,7 @@ DECLARE_REF(/obj/machinery/rnd/production, "available_designs", DEF, null)
 DECLARE_REF(/obj/machinery/rnd/production, "print_sound", OWNED, null)
 DECLARE_REF(/obj/machinery/rnd/production, "materials", OWNED, null)
 
+// ALLOW(sys_update_icon): stripe overlay in the instance's stripe colour
 /obj/machinery/rnd/production/update_icon()
 	cut_overlays()
 

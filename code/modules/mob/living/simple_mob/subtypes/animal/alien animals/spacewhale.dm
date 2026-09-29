@@ -123,6 +123,7 @@
 			ai_brain.wander = TRUE
 		update_icon()
 
+// ALLOW(sys_update_icon): updates the child overmap marker's icon_state and emits messages (another object's state)
 /mob/living/simple_mob/vore/overmap/spacewhale/update_icon()
 	. = ..()
 	if(child_om_marker?.known == TRUE)

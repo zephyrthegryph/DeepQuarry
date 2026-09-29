@@ -117,5 +117,6 @@ EXTEND_INTERACTIONS(/obj/item/cell/device/weapon/gunsword, INTERACT_USE(null, PR
 	add_fingerprint(user)
 	return TRUE
 
+// ALLOW(sys_update_icon): opts out of /obj/item/cell's procedural charge overlays
 /obj/item/cell/device/weapon/gunsword/update_icon()
 	cut_overlays()

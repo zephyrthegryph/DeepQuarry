@@ -46,6 +46,8 @@ DECLARE_REF(/obj/machinery/power/smes/batteryrack, "internal_cells", OWNED_LIST,
 /obj/machinery/power/smes/batteryrack/check_terminals()
 	return TRUE // we don't necessarily need terminals
 
+APPEARANCE_NONE(/obj/machinery/power/smes/batteryrack)
+// ALLOW(sys_update_icon): one overlay per installed cell in internal_cells plus full/empty marks read from each cell's charge.
 /obj/machinery/power/smes/batteryrack/update_icon()
 	cut_overlays()
 	icon_update = 0

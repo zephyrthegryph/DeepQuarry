@@ -43,6 +43,7 @@
 		return INITIALIZE_HINT_QDEL
 	color = M.icon_colour
 
+// ALLOW(sys_update_icon): recomputes slowdown from amount (side effect run with the redraw); opts out of /obj/item/stack's drawing
 /obj/item/stack/sandbags/update_icon()
 	var/amount = get_amount()
 

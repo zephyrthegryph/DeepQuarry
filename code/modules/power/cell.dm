@@ -91,17 +91,13 @@
 #define OVERLAY_PARTIAL	1
 #define OVERLAY_EMPTY	0
 
-/obj/item/cell/update_icon()
+APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "[initial(icon_state)]_%p")
+
+/// Charge percentage for the charge overlay; null (no overlay) for cells without standard overlays.
+/obj/item/cell/proc/appearance_charge_level()
 	if(!standard_overlays)
-		return
-	var/ratio = 0
-	if(maxcharge > 0)
-		ratio = clamp(round(charge / maxcharge, 0.25) * 100, 0, 100)
-	var/new_state = "[icon_state]_[ratio]"
-	if(new_state != last_overlay_state)
-		cut_overlay(last_overlay_state)
-		add_overlay(new_state)
-		last_overlay_state = new_state
+		return null
+	return percent()
 
 #undef OVERLAY_FULL
 #undef OVERLAY_PARTIAL

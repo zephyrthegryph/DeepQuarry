@@ -13,6 +13,8 @@
 	..()
 	update_icon()
 
+APPEARANCE_NONE(/obj/structure/closet/secure_closet/guncabinet)
+// ALLOW(sys_update_icon): gun overlays counted from contents with per-index pixel offsets
 /obj/structure/closet/secure_closet/guncabinet/update_icon()
 	cut_overlays()
 	if(opened)

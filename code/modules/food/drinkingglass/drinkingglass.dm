@@ -76,6 +76,7 @@
 
 	return TRUE
 
+// ALLOW(sys_update_icon): liquid underlays from the reagents (fill level, colour, glass specials) and garnish images from its extras
 /obj/item/reagent_containers/food/drinks/glass2/update_icon()
 	underlays.Cut()
 

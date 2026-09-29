@@ -114,8 +114,4 @@ DECLARE_INTERACTIONS(/obj/item/paper_bin, \
 		else
 			. += span_notice("There are no papers in the bin.")
 
-/obj/item/paper_bin/update_icon()
-	if(amount < 1)
-		icon_state = "paper_bin0"
-	else
-		icon_state = "paper_bin1"
+APPEARANCE_TEMPLATE(/obj/item/paper_bin, "paper_bin[amount?1:0]")

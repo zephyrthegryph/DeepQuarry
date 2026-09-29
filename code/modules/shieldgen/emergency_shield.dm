@@ -355,12 +355,11 @@ DECLARE_REF(/obj/machinery/shieldgen, "deployed_shields", OWNED_LIST, null)
 		set_anchored(TRUE)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/shieldgen/update_icon()
-	if(active && !has_stat(NOPOWER))
-		src.icon_state = malfunction ? "shieldonbr":"shieldon"
-	else
-		src.icon_state = malfunction ? "shieldoffbr":"shieldoff"
-	return
+/// Appearance reader: projecting (active and powered).
+/obj/machinery/shieldgen/proc/appearance_projecting()
+	return active && !has_stat(NOPOWER)
+
+APPEARANCE_TEMPLATE(/obj/machinery/shieldgen, "shield[appearance_projecting?on:off][malfunction?br:]")
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/shieldgen/step_start_condition()

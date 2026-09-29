@@ -122,6 +122,7 @@ TYPE_TABLE(/mob/living/simple_mob/slime, ventcrawl_get_item_whitelist, list( \
 	set_glow_toggle(initial(glow_toggle))
 	refresh_glow()
 
+// ALLOW(sys_update_icon): light/shiny/mood image overlays and hat image with the hat's colour
 /mob/living/simple_mob/slime/update_icon()
 	..() // Do the regular stuff first.
 

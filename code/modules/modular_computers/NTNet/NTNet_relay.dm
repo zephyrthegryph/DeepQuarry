@@ -32,6 +32,7 @@
 		return 0
 	return 1
 
+// ALLOW(sys_update_icon): starts/stops the soundloop alongside the redraw
 /obj/machinery/ntnet_relay/update_icon()
 	if(operable())
 		icon_state = initial(icon_state)

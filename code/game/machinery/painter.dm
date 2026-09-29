@@ -44,15 +44,9 @@
 		0, 0, 0,
 	)
 
-/obj/machinery/gear_painter/update_icon()
-	if(panel_open)
-		icon_state = "colormate_open"
-	else if(!operable())
-		icon_state = "colormate_off"
-	else if(inserted)
-		icon_state = "colormate_active"
-	else
-		icon_state = "colormate"
+APPEARANCE_TEMPLATE(/obj/machinery/gear_painter, "colormate[inserted?_active:]")
+DECLARE_APPEARANCE(/obj/machinery/gear_painter, "operable", list("0" = list(APPEARANCE_ICON_STATE = "colormate_off")))
+DECLARE_APPEARANCE(/obj/machinery/gear_painter, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "colormate_open")))
 
 DECLARE_REF(/obj/machinery/gear_painter, "inserted", SPILL, null)
 

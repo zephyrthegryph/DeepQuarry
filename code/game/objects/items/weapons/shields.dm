@@ -188,6 +188,7 @@ DECLARE_INTERACTIONS(/obj/item/shield/energy, \
 	add_fingerprint(user)
 	return TRUE
 
+// ALLOW(sys_update_icon): blade mutable_appearance coloured per instance, sets light and item_state
 /obj/item/shield/energy/update_icon()
 	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
 	if(lcolor)
@@ -354,11 +355,7 @@ EXTEND_INTERACTIONS(/obj/item/shield/riot/explorer, \
 	user.update_mob_action_buttons()
 	play_sfx(src, SFX_WEAPONS_EMPTY, 0.3, extrarange = -3)
 
-/obj/item/shield/riot/explorer/update_icon()
-	if(on)
-		icon_state = "explorer_shield_lighted"
-	else
-		icon_state = "explorer_shield"
+APPEARANCE_TEMPLATE(/obj/item/shield/riot/explorer, "explorer_shield[on?_lighted:]")
 
 /obj/item/shield/riot/explorer/purple
 	name = "purple explorer shield" //CHOMP explo keep
@@ -376,11 +373,7 @@ EXTEND_INTERACTIONS(/obj/item/shield/riot/explorer, \
 		return FALSE
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/shield/riot/explorer/purple/update_icon()
-	if(on)
-		icon_state = "explorer_shield_P_lighted"
-	else
-		icon_state = "explorer_shield_P"
+APPEARANCE_TEMPLATE(/obj/item/shield/riot/explorer/purple, "explorer_shield_P[on?_lighted:]")
 
 /obj/item/shield/primitive
 	name = "primitive shield"

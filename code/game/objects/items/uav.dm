@@ -191,18 +191,19 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 			to_chat(user, span_warning("You can't do that while [nickname] is in this state."))
 		return FALSE
 
-/obj/item/uav/update_icon()
-	cut_overlays()
+/obj/item/uav/proc/appearance_uav_suffix()
 	switch(state)
-		if(UAV_PAIRING)
-			add_overlay("[initial(icon_state)]_pairing")
-			icon_state = "[initial(icon_state)]"
 		if(UAV_ON)
-			icon_state = "[initial(icon_state)]_on"
-		if(UAV_OFF)
-			icon_state = "[initial(icon_state)]"
+			return "_on"
 		if(UAV_PACKED)
-			icon_state = "[initial(icon_state)]_packed"
+			return "_packed"
+	return ""
+
+APPEARANCE_TEMPLATE(/obj/item/uav, "[initial(icon_state)][appearance_uav_suffix]")
+// "2" is UAV_PAIRING.
+DECLARE_APPEARANCE(/obj/item/uav, "state", list( \
+	"2" = list(APPEARANCE_OVERLAYS = list("uav_pairing")) \
+))
 
 /obj/item/uav/periodic_step()
 	if(cell?.use(power_per_process) != power_per_process)

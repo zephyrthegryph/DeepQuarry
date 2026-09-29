@@ -80,6 +80,7 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 	icon_state = "nest"
 	base_icon = "nest"
 
+// ALLOW(sys_update_icon): opts out of /obj/structure/bed's procedural material/padding colour overlays
 /obj/structure/bed/double/weaversilk_nest/update_icon()
 	return
 

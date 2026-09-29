@@ -35,6 +35,7 @@
 /obj/machinery/computer/blob_act()
 	ex_act(2)
 
+// ALLOW(sys_update_icon): neighbour-dependent frame (adjacent computers), keyboard/screen overlays and emissive screen, terminal sounds
 /obj/machinery/computer/update_icon()
 	cut_overlays()
 

@@ -73,6 +73,7 @@
 
 	update_icon()
 
+// ALLOW(sys_update_icon): glow/charge images get per-instance glow_color and a plane that depends on whether the cube is on a turf
 /obj/item/telecube/update_icon()
 	. = ..()
 

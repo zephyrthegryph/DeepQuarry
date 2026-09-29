@@ -359,6 +359,7 @@
 	. = ..()
 	update_icon()
 
+// ALLOW(sys_update_icon): glow overlays from per-instance light_shift, plus set_light side effect
 /obj/structure/flora/tree/sif/update_icon()
 	cut_overlays()
 	var/bulbs = (5 - light_shift)

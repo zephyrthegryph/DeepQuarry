@@ -29,6 +29,7 @@
 	charge = 240
 	maxcharge = 240
 
+// ALLOW(sys_update_icon): opts out of /obj/item/cell's charge overlay
 /obj/item/cell/device/crap/update_icon() //No visible charge indicator
 	return
 
@@ -142,6 +143,7 @@
 	var/swaps_to = /obj/item/cell/void
 	standard_overlays = FALSE
 
+// ALLOW(sys_update_icon): opts out of /obj/item/cell's charge overlay
 /obj/item/cell/device/weapon/recharge/alien/update_icon()
 	return // No overlays please.
 

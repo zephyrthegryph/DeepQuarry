@@ -25,6 +25,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PR
 		update_icon()
 	return FALSE
 
+// ALLOW(sys_update_icon): wrapper overlay derived from each subtype's initial icon_state; subtypes are many
 /obj/item/clothing/mask/chewable/update_icon()
 	cut_overlays()
 	if(wrapped)
@@ -174,6 +175,7 @@ DECLARE_REAGENTS_TINTED(/obj/item/clothing/mask/chewable/tobacco/nico, null, lis
 		closed_state = "[initial(icon_state)]"
 	. = ..()
 
+// ALLOW(sys_update_icon): overlay from stored item count (contents)
 /obj/item/storage/box/fancy/chewables/tobacco/nico/update_icon()
 	cut_overlays()
 	if(open)

@@ -85,11 +85,10 @@
 /obj/machinery/button/remote/proc/trigger()
 	return
 
-/obj/machinery/button/remote/update_icon()
-	if(has_stat(NOPOWER))
-		icon_state = "doorctrl-p"
-	else
-		icon_state = "doorctrl0"
+/obj/machinery/button/remote/proc/appearance_powered()
+	return has_stat(NOPOWER) ? 0 : 1
+
+APPEARANCE_TEMPLATE(/obj/machinery/button/remote, "doorctrl[appearance_powered?0:-p]")
 
 /*
 	Airlock remote control
@@ -181,11 +180,7 @@
 	. = ..()
 	icon_state = "stuffedbear"
 
-/obj/machinery/button/remote/blast_door/bear/update_icon()
-	if(has_stat(NOPOWER))
-		icon_state = "stuffedbear"
-	else
-		icon_state = "stuffedbear"
+APPEARANCE_TEMPLATE(/obj/machinery/button/remote/blast_door/bear, "stuffedbear")
 
 
 /*
@@ -260,11 +255,10 @@
 		id = new_id
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/button/remote/driver/update_icon()
-	if(!active || (has_stat(NOPOWER)))
-		icon_state = "launcherbtt"
-	else
-		icon_state = "launcheract"
+/obj/machinery/button/remote/driver/proc/appearance_active()
+	return (active && !has_stat(NOPOWER)) ? 1 : 0
+
+APPEARANCE_TEMPLATE(/obj/machinery/button/remote/driver, "launcher[appearance_active?act:btt]")
 
 /*
 	Shieldgen remote control
@@ -330,8 +324,7 @@
 	to_chat(user,span_notice("You hear a heavy mechanism open somewhere in the distance."))
 	icon_state = pressed_state
 
-/obj/machinery/button/remote/blast_door/single_use/slab/update_icon()
-	return
+APPEARANCE_NONE(/obj/machinery/button/remote/blast_door/single_use/slab)
 
 /obj/machinery/button/remote/blast_door/single_use/slab/slab1
 	name = "Button Slab 1"

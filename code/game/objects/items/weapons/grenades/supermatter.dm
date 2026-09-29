@@ -13,6 +13,7 @@
 	update_icon()
 	play_sfx(src, SFX_WEAPONS_WAVE, volume = 100)
 
+// ALLOW(sys_update_icon): overlay image from a different icon file (icons/rust.dmi)
 /obj/item/grenade/supermatter/update_icon()
 	cut_overlays()
 	if(implode_at)

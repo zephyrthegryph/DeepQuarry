@@ -204,6 +204,7 @@ DECLARE_INTERACTIONS(/obj/item/weldingtool, \
 /obj/item/weldingtool/proc/isOn()
 	return welding
 
+// ALLOW(sys_update_icon): fuel-ratio overlay, item_state, light and holder hand refresh
 /obj/item/weldingtool/update_icon()
 	..()
 	cut_overlays()

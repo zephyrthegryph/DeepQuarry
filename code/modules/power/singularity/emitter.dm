@@ -364,6 +364,7 @@
 	make_rotatable()
 	emp_protection_flags |= EMP_PROTECT_SELF
 
+// ALLOW(sys_update_icon): flicks the state transition and draws the beam from the power region's available power
 /obj/machinery/power/emitter/update_icon()
 	cut_overlays()
 	icon_state = "emitter[state]"
@@ -387,6 +388,7 @@
 	desc = "An old fashioned heavy duty industrial laser."
 	icon_state = "emitter"
 
+// ALLOW(sys_update_icon): firing sprite from the power region's available power
 /obj/machinery/power/emitter/antique/update_icon()
 	if(powered && power_region && avail(active_power_usage) && active)
 		icon_state = "emitter_+a"

@@ -43,6 +43,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 /obj/structure/bed/chair/post_buckle_mob()
 	update_icon()
 
+// ALLOW(sys_update_icon): armrest overlay on the mob plane tinted with padding colour while buckled
 /obj/structure/bed/chair/update_icon()
 	..()
 	if(has_buckled_mobs())
@@ -89,6 +90,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 	icon_state = "comfychair"
 	base_icon = "comfychair"
 
+// ALLOW(sys_update_icon): over-mob overlays tinted with material and padding colours
 /obj/structure/bed/chair/comfy/update_icon()
 	..()
 	var/image/I = image(icon, "[base_icon]_over")
@@ -180,6 +182,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 	anchored = FALSE
 	buckle_movable = 1
 
+// ALLOW(sys_update_icon): opts out of /obj/structure/bed/chair's procedural material overlays
 /obj/structure/bed/chair/office/update_icon()
 	return
 
@@ -249,6 +252,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 	desc = "Old is never too old to not be in fashion."
 	icon_state = "wooden_chair"
 
+// ALLOW(sys_update_icon): opts out of /obj/structure/bed/chair's procedural material overlays
 /obj/structure/bed/chair/wood/update_icon()
 	return
 
@@ -279,6 +283,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 	var/corner_piece = FALSE
 	resistance_flags = FLAMMABLE
 
+// ALLOW(sys_update_icon): sets colour from sofa_material and refreshes name
 /obj/structure/bed/chair/sofa/update_icon()
 	if(applies_material_colour && sofa_material)
 		var/datum/material/color_material = get_material_by_name(sofa_material)
@@ -310,6 +315,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 	base_icon = "sofacorner"
 	corner_piece = TRUE
 
+// ALLOW(sys_update_icon): permanent armrest overlay on the mob plane tinted with padding colour
 /obj/structure/bed/chair/sofa/corner/update_icon()
 	..()
 	var/cache_key = "[base_icon]-armrest-[padding_material ? padding_material.name : "no_material"]-permanent"
@@ -636,6 +642,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 	applies_material_colour = 0
 
 // Baystation12 chairs with their larger update_icons proc
+// ALLOW(sys_update_icon): layered overlays tinted per material/padding colour on the mob plane, and name/desc refresh
 /obj/structure/bed/chair/bay/update_icon()
 	// Strings.
 	desc = initial(desc)
@@ -792,6 +799,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 	icon_state = "capchair_preview"
 	base_icon = "capchair"
 
+// ALLOW(sys_update_icon): adds a mob-plane overlay on top of the parent's procedural overlays
 /obj/structure/bed/chair/bay/comfy/captain/update_icon()
 	..()
 	var/image/I = image(icon, "[base_icon]_special")
@@ -822,6 +830,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 		base_icon = "shuttle_chair"
 	..()
 
+// ALLOW(sys_update_icon): mob-plane overlay tinted with the material colour when unbuckled
 /obj/structure/bed/chair/bay/shuttle/update_icon()
 	..()
 	if(!has_buckled_mobs())

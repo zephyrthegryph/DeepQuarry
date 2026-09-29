@@ -29,6 +29,7 @@
 
 	req_one_access = list(ACCESS_HEADS)
 
+// ALLOW(sys_update_icon): runs /obj/machinery/computer's procedural screen/keyboard/neighbour drawing via ..() then sets icon_state
 /obj/machinery/computer/cryopod/update_icon()
 	..()
 	if((has_stat(NOPOWER)) || (has_stat(BROKEN)))

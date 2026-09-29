@@ -13,6 +13,7 @@
 /obj/item/electronic_assembly/implant/tgui_host()
 	return implant().tgui_host()
 
+// ALLOW(sys_update_icon): mirrors its icon state onto the implant it is built into (another object)
 /obj/item/electronic_assembly/implant/update_icon()
 	..()
 	implant().icon_state = icon_state

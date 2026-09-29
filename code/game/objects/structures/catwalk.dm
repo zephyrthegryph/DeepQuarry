@@ -49,6 +49,7 @@
 			L.update_connections()
 			L.update_icon() //so siding get updated properly
 
+// ALLOW(sys_update_icon): runs update_connections() and draws per-direction neighbour connection images plus a plating_color tint
 /obj/structure/catwalk/update_icon()
 	update_connections()
 	cut_overlays()

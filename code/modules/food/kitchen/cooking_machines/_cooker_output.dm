@@ -18,6 +18,7 @@
 	. = ..()
 	reagents.maximum_volume = size*8 + 10 // the holder is declared on reagent_containers
 
+// ALLOW(sys_update_icon): scales transform by reagent volume and rewrites w_class/name prefix
 /obj/item/reagent_containers/food/snacks/variable/update_icon()
 	if (reagents && reagents.total_volume)
 		var/ratio = reagents.total_volume / size

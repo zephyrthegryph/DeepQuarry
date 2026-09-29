@@ -180,12 +180,17 @@ DECLARE_DEFAULT_CHILD(/obj/item/gps, "compass", /obj/compass_holder)
 
 	om_after(src, duration, PROC_REF(emp_recovered))
 
-/obj/item/gps/update_icon()
-	cut_overlays()
+/obj/item/gps/proc/appearance_gps_state()
 	if(emped)
-		add_overlay("emp")
-	else if(tracking)
-		add_overlay("working")
+		return "emp"
+	if(tracking)
+		return "working"
+	return ""
+
+DECLARE_APPEARANCE(/obj/item/gps, "appearance_gps_state", list( \
+	"emp" = list(APPEARANCE_OVERLAYS = list("emp")), \
+	"working" = list(APPEARANCE_OVERLAYS = list("working")) \
+))
 
 DECLARE_INTERACTIONS(/obj/item/gps, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \

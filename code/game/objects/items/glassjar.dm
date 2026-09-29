@@ -154,6 +154,7 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 				M.forceMove(src)
 				to_chat(user, span_notice("You stuff \the [M] into \the [src]!"))
 	return INTERACTION_HANDLED_PASS
+// ALLOW(sys_update_icon): underlays composited from contents (cash, mobs, spiders) with random offsets; also renames
 /obj/item/glass_jar/update_icon() // Also updates name and desc
 	underlays.Cut()
 	cut_overlays()

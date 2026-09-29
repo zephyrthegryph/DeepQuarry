@@ -160,6 +160,7 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 	update_active_power_usage((light_range + light_power) * 10)
 	update_icon()
 
+// ALLOW(sys_update_icon): randomised damage frame (rand) and a per-instance light colour cached overlay
 /obj/machinery/floor_light/update_icon()
 	cut_overlays()
 	if(use_power && !broken())

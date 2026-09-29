@@ -113,6 +113,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle)
 		underlays += under_EM
 
 // Trust me, this is WAY faster than the normal wall overlays shenanigans, don't worry about performance
+// ALLOW(sys_update_icon): icon and icon_state read from the fancy_shuttle helper object and coordinates, plus underlay and damage overlays
 /turf/simulated/wall/fancy_shuttle/update_icon()
 	if(!damage_overlays[1])
 		generate_overlays()
@@ -182,6 +183,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle)
 	var/fancy_shuttle_tag
 
 // Trust me, this is WAY faster than the normal wall overlays shenanigans, don't worry about performance
+// ALLOW(sys_update_icon): icon/icon_state read from the fancy_shuttle helper object and position offsets; opts out of window smoothing
 /obj/structure/window/fancy_shuttle/update_icon()
 	if(fancy_shuttle_tag) // after a shuttle jump it won't be set anymore, but the shuttle jump proc will set our icon and state
 		var/obj/effect/fancy_shuttle/F = GLOB.fancy_shuttles[fancy_shuttle_tag]

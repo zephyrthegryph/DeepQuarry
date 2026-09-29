@@ -177,6 +177,7 @@ EXTEND_INTERACTIONS(/obj/item/mail/blank, \
 /obj/item/mail/blank/proc/attack_self_timed_failed()
 	sealed = FALSE
 
+// ALLOW(sys_update_icon): envelope in the instance colour, stamp images per stamp, randomly offset postmark
 /obj/item/mail/update_icon()
 	. = ..()
 	cut_overlays()

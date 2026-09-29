@@ -29,6 +29,7 @@
 	update_icon()
 	return ..()
 
+// ALLOW(sys_update_icon): detail overlay tinted with the selected colour
 /obj/item/integrated_electronics/detailer/update_icon()
 	cut_overlays()
 	var/mutable_appearance/detail_overlay = mutable_appearance('icons/obj/integrated_electronics/electronic_tools.dmi', "detailer-color")

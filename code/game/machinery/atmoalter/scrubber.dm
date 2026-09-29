@@ -35,6 +35,7 @@
 		if(on)
 			om_changed(src, CHANGE_MACHINE_SETTINGS)
 
+// ALLOW(sys_update_icon): reads the installed cell's charge (another object) and connected_port() lookup for the sprite and overlays.
 /obj/machinery/portable_atmospherics/powered/scrubber/update_icon()
 	cut_overlays()
 
@@ -202,6 +203,7 @@
 	to_chat(user, span_notice("You can't directly interact with this machine. Use the scrubber control console."))
 	return TRUE
 
+// ALLOW(sys_update_icon): opts out of scrubber's procedural cell/port overlays and sets the huge scrubber sprite.
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/update_icon()
 	src.overlays = 0
 

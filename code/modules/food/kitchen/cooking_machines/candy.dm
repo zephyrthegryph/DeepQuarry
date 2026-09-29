@@ -24,6 +24,7 @@
 
 DECLARE_REF(/obj/machinery/appliance/mixer/candy, "candymaker_loop", OWNED, null)
 
+// ALLOW(sys_update_icon): starts/stops the candymaker_loop sound together with the on/off redraw
 /obj/machinery/appliance/mixer/candy/update_icon()
 	. = ..()
 

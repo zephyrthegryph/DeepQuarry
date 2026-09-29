@@ -375,6 +375,7 @@
 		verbs |= /atom/movable/proc/turn_around
 
 //merges adjacent full-tile windows into one (blatant ripoff from game/smoothwall.dm)
+// ALLOW(sys_update_icon): tilt rotation for damage and neighbour-dependent full-tile smoothing overlays
 /obj/structure/window/update_icon()
 	//A little cludge here, since I don't know how it will work with slim windows. Most likely VERY wrong.
 	//this way it will only update full-tile ones
@@ -607,8 +608,7 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 	if(active && !powered(power_channel))
 		toggle_tint()
 
-/obj/machinery/button/windowtint/update_icon()
-	icon_state = "light[active]"
+APPEARANCE_TEMPLATE(/obj/machinery/button/windowtint, "light[active]")
 
 /obj/machinery/button/windowtint/multitool_act(mob/user, obj/item/tool)
 	var/obj/item/multitool/multitool = tool

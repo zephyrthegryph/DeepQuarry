@@ -15,6 +15,7 @@
 /obj/structure/gootrap/proc/can_use(mob/user)
 	return (user.IsAdvancedToolUser() && !issilicon(user) && !user.stat && !user.restrained())
 
+// ALLOW(sys_update_icon): per-instance colour from basecolor
 /obj/structure/gootrap/update_icon()
 	..()
 	color = basecolor

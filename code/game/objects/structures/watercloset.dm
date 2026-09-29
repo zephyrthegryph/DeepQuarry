@@ -66,8 +66,7 @@
 		AM.forceMove(src.loc)
 	currently_held_objects = null
 
-/obj/structure/toilet/update_icon()
-	icon_state = "[initial(icon_state)][open][cistern]"
+APPEARANCE_TEMPLATE(/obj/structure/toilet, "[initial(icon_state)][open][cistern]")
 
 /obj/structure/toilet/proc/crystal_answered(datum/om/prompt/confirm/ask)
 	var/mob/living/user = ask.answerer
@@ -611,6 +610,7 @@ DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
 	. = ..()
 	. += span_notice("You can <b>alt-click</b> to change the temperature.")
 
+// ALLOW(sys_update_icon): water overlay coloured from the reagents being sprayed, per dir
 /obj/machinery/shower/update_icon()
 	cut_overlays()
 	if(on)

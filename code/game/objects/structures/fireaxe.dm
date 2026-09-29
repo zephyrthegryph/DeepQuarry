@@ -201,11 +201,11 @@
 		to_chat(user, span_notice("Cabinet unlocked."))
 	return TRUE
 
-/obj/structure/fireaxecabinet/update_icon() //Template: fireaxe[has fireaxe][is opened][hits taken][is smashed]. If you want the opening or closing animations, add "opening" or "closing" right after the numbers
-	var/hasaxe = 0
-	if(fireaxe)
-		hasaxe = 1
-	icon_state = text("fireaxe[][][][]",hasaxe,open,hitstaken,smashed)
+//Template: fireaxe[has fireaxe][is opened][hits taken][is smashed]. If you want the opening or closing animations, add "opening" or "closing" right after the numbers
+/obj/structure/fireaxecabinet/proc/appearance_hasaxe()
+	return fireaxe ? 1 : 0
+
+APPEARANCE_TEMPLATE(/obj/structure/fireaxecabinet, "fireaxe[appearance_hasaxe][open][hitstaken][smashed]")
 
 /obj/structure/fireaxecabinet/empty
 	starts_with_axe = FALSE

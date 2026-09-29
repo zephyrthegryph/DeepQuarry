@@ -9,15 +9,8 @@
 	var/wired = 0
 	var/glass = FALSE
 
-/obj/structure/firedoor_assembly/update_icon()
-	if(glass)
-		icon = 'icons/obj/doors/DoorHazardGlass.dmi'
-	else
-		icon = 'icons/obj/doors/DoorHazard.dmi'
-	if(anchored)
-		icon_state = "door_anchored"
-	else
-		icon_state = "door_construction"
+DECLARE_APPEARANCE(/obj/structure/firedoor_assembly, "glass", list("1" = list(APPEARANCE_ICON = 'icons/obj/doors/DoorHazardGlass.dmi'), APPEARANCE_ANY = list(APPEARANCE_ICON = 'icons/obj/doors/DoorHazard.dmi')))
+DECLARE_APPEARANCE(/obj/structure/firedoor_assembly, "anchored", list("1" = list(APPEARANCE_ICON_STATE = "door_anchored"), APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "door_construction")))
 
 DECLARE_INTERACTIONS(/obj/structure/firedoor_assembly, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 

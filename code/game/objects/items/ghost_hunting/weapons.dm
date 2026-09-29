@@ -22,11 +22,10 @@
 	// Make ghosts/phased entities slow when grabbed
 	// Make it so it searches in an AOE and grabs thing.
 
-/obj/item/ghost_catcher/update_icon()
-	if(om_busy(src))
-		icon_state = "ghost_beam_active"
-	else
-		icon_state = initial(icon_state)
+/obj/item/ghost_catcher/proc/appearance_busy()
+	return om_busy(src) ? TRUE : FALSE
+
+APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "[initial(icon_state)][appearance_busy?_active:]")
 
 /obj/item/ghost_catcher/update_held_icon()
 	var/mob/living/M = loc

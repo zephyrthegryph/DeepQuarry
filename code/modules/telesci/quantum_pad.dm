@@ -101,6 +101,7 @@
 	to_chat(user, span_notice("You link [src] to the one in [tool]'s buffer."))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
+// ALLOW(sys_update_icon): state from its linked pad and power region (other objects)
 /obj/machinery/power/quantumpad/update_icon()
 	. = ..()
 

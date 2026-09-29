@@ -137,22 +137,32 @@
 		StopPlaying()
 	update_icon()
 
-/obj/machinery/media/jukebox/update_icon()
-	cut_overlays()
-	if(!operable() || !anchored)
-		if(has_stat(BROKEN))
-			icon_state = "[state_base]-broken"
-		else
-			icon_state = "[state_base]-nopower"
-		return
-	icon_state = state_base
-	if(playing)
-		if(emagged)
-			add_overlay("[state_base]-emagged")
-		else
-			add_overlay("[state_base]-running")
-	if (panel_open)
-		add_overlay("panel_open")
+/obj/machinery/media/jukebox/proc/appearance_live()
+	return (operable() && anchored) ? 1 : 0
+
+/obj/machinery/media/jukebox/proc/appearance_suffix()
+	if(appearance_live())
+		return ""
+	return has_stat(BROKEN) ? "-broken" : "-nopower"
+
+/obj/machinery/media/jukebox/proc/appearance_running()
+	if(!appearance_live() || !playing)
+		return ""
+	return emagged ? "emagged" : "running"
+
+/obj/machinery/media/jukebox/proc/appearance_panel()
+	return (appearance_live() && panel_open) ? 1 : 0
+
+APPEARANCE_TEMPLATE(/obj/machinery/media/jukebox, "[state_base][appearance_suffix]")
+DECLARE_APPEARANCE(/obj/machinery/media/jukebox, "appearance_running", list(
+	"running" = list(APPEARANCE_OVERLAYS = list("jukebox-running")),
+	"emagged" = list(APPEARANCE_OVERLAYS = list("jukebox-emagged"))
+))
+DECLARE_APPEARANCE(/obj/machinery/media/jukebox, "appearance_panel", list("1" = list(APPEARANCE_OVERLAYS = list("panel_open"))))
+DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_running", list(
+	"running" = list(APPEARANCE_OVERLAYS = list("casinojukebox-running")),
+	"emagged" = list(APPEARANCE_OVERLAYS = list("casinojukebox-emagged"))
+))
 
 /obj/machinery/media/jukebox/interact(mob/user)
 	if(!operable())
@@ -358,6 +368,7 @@
 	return
 /obj/machinery/media/jukebox/ghost/explode()
 	return
+// ALLOW(sys_update_icon): animate()s alpha while playing; opts out of the jukebox's declared drawing
 /obj/machinery/media/jukebox/ghost/update_icon()
 	if(playing)
 		animate(src, alpha = 200, time = 5, loop = -1)

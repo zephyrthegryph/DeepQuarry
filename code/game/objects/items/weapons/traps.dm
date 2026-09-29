@@ -145,6 +145,7 @@ DECLARE_INTERACTIONS(/obj/item/beartrap, \
 			log_and_message_admins("has sprung a [name] at \the [get_area(loc)], last touched by [forensic_data?.get_lastprint()]", L)
 	..()
 
+// ALLOW(sys_update_icon): sets per-instance alpha when camouflaged
 /obj/item/beartrap/update_icon()
 	..()
 
@@ -287,13 +288,7 @@ EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/material/barbedwire/update_icon()
-	..()
-
-	if(anchored)
-		icon_state = "[initial(icon_state)]-out"
-	else
-		icon_state = "[initial(icon_state)]"
+APPEARANCE_TEMPLATE(/obj/item/material/barbedwire, "[initial(icon_state)][anchored?-out:]")
 
 /obj/item/material/barbedwire/Crossed(atom/movable/AM as mob|obj)
 	if(AM.is_incorporeal())

@@ -23,6 +23,7 @@
 	open = 1
 	icon_state = "map_valve1"
 
+// ALLOW(sys_update_icon): flick() animation when switching; atmospherics base stub does not apply declarations
 /obj/machinery/atmospherics/valve/update_icon(animation)
 	if(animation)
 		flick("valve[src.open][!src.open]",src)
@@ -206,6 +207,7 @@
 	open = 1
 	icon_state = "map_valve1"
 
+// ALLOW(sys_update_icon): extends the procedural valve drawing with a powered() check
 /obj/machinery/atmospherics/valve/digital/update_icon()
 	..()
 	if(!powered())

@@ -240,13 +240,14 @@ TYPE_TABLE(/obj/item/bedsheet/ian, bedsheet_dream_messages, list("a dog", "a cor
 	else
 		. += "There are [amount] bed sheets in the bin."
 
-/obj/structure/bedsheetbin/update_icon()
+/obj/structure/bedsheetbin/proc/appearance_fill()
 	if(amount == 0)
-		icon_state = "linenbin-empty"
-	else if(amount <= (initial(amount) / 2))
-		icon_state = "linenbin-half"
-	else
-		icon_state = "linenbin-full"
+		return "empty"
+	if(amount <= (initial(amount) / 2))
+		return "half"
+	return "full"
+
+APPEARANCE_TEMPLATE(/obj/structure/bedsheetbin, "linenbin-[appearance_fill]")
 
 
 /obj/structure/bedsheetbin/declare_interactions(list/into)

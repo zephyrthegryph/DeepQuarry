@@ -166,6 +166,7 @@ DECLARE_REF(/obj/machinery/mineral/equipment_vendor, "inserted_id", SPILL, null)
 		inserted_id.forceMove(get_turf(src))
 		inserted_id = null
 
+// ALLOW(sys_update_icon): panel overlay name derives from each subtype's initial icon_state (survey vendor), which literal declaration rows cannot template.
 /obj/machinery/mineral/equipment_vendor/update_icon()
 	if(panel_open)
 		add_overlay("[initial(icon_state)]-panel")

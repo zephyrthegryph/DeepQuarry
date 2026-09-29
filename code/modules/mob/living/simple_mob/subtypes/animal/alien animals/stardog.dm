@@ -931,6 +931,7 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	name = "Use"
 	effect = /atom/proc/interaction_swallow
 
+// ALLOW(sys_update_icon): forces icon_state after the computer parent's procedural screen overlays
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye/update_icon()
 	. = ..()
 	icon_state = "screen_eye"
@@ -1514,11 +1515,7 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 			L.status_at_least(EFFECT_WEAKENED, 3)
 			act_message(L, src, MSG_SELF(span_danger("The weight of %T% closes in on you, squeezing you on all sides so tightly that you can hardly move! It throbs against you as the way is sealed, with you stuck in the middle!!!")), MSG_OTHERS(span_danger("%T% closes up on %U%!")))
 
-/obj/structure/auto_flesh_door/update_icon()
-	if(state)
-		icon_state = "flesh-open"
-	else
-		icon_state = "flesh-closed"
+APPEARANCE_TEMPLATE(/obj/structure/auto_flesh_door, "flesh-[state?open:closed]")
 
 DECLARE_REF(/obj/effect/dog_teleporter, "target", HELD, null)
 DECLARE_REF(/turf/simulated/floor/water/digestive_enzymes, "linked_mob", HELD, null)

@@ -62,6 +62,7 @@ DECLARE_REF(/obj/item/flamethrower, "ptank", OWNED, null)
 		location.hotspot_expose(700, 2)
 	return
 
+// ALLOW(sys_update_icon): also sets item_state with the redraw; overlay reads the igniter status
 /obj/item/flamethrower/update_icon()
 	cut_overlays()
 	if(igniter)

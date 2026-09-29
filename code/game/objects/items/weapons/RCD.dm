@@ -340,23 +340,15 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 	. = ..()
 	update_icon()
 
-/obj/item/rcd/update_icon()
-	var/nearest_ten = round((stored_matter/max_stored_matter)*10, 1)
+/// Stored matter as a percentage of capacity (the charge overlay level).
+/obj/item/rcd/proc/appearance_matter_percent()
+	return max_stored_matter ? (stored_matter / max_stored_matter) * 100 : 0
 
-	//Just to prevent updates every use
-	if(ammostate == nearest_ten)
-		return //No change
-	ammostate = nearest_ten
+/obj/item/rcd/proc/appearance_matter_empty()
+	return !round((stored_matter / max_stored_matter) * 10, 1)
 
-	cut_overlays()
-
-	//Main sprite update
-	if(!nearest_ten)
-		icon_state = "[initial(icon_state)]_empty"
-	else
-		icon_state = "[initial(icon_state)]"
-
-	add_overlay("[initial(icon_state)]_charge[nearest_ten]")
+APPEARANCE_TEMPLATE(/obj/item/rcd, "[initial(icon_state)][appearance_matter_empty?_empty:]")
+APPEARANCE_LEVEL(/obj/item/rcd, "appearance_matter_percent", 10, "[initial(icon_state)]_charge%d")
 
 /obj/item/rcd/proc/perform_effect(atom/A, time_taken)
 	LAZYSET(effects, A, new /obj/effect/constructing_effect(get_turf(A), time_taken, TYPE_TABLE_GET(src, rcd_modes)[mode_index]))
@@ -390,8 +382,7 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 	return TRUE
 
 //////////////////
-/obj/item/rcd/electric/update_icon()
-	return
+APPEARANCE_NONE(/obj/item/rcd/electric)
 
 /obj/item/rcd/shipwright
 	icon_state = "swrcd"
@@ -422,6 +413,7 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 	. = ..()
 	update_icon(rcd_delay, rcd_status)
 
+// ALLOW(sys_update_icon): takes delay/status arguments and schedules end_animation
 /obj/effect/constructing_effect/update_icon(delay = 30, status)
 	icon_state = "rcd"
 	if (delay < 10)

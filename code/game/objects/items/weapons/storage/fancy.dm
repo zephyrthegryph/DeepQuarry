@@ -28,6 +28,7 @@
 	var/open_state
 	var/closed_state
 
+// ALLOW(sys_update_icon): icon_state from stored item count, with an itemremoved argument
 /obj/item/storage/fancy/update_icon(itemremoved = 0)
 	var/total_contents = length(slot_contents(CONTAINER_SLOT_STORAGE)) - itemremoved
 	icon_state = "[icon_type]box[total_contents]"
@@ -71,6 +72,7 @@ TYPE_TABLE(/obj/item/storage/fancy/egg_box, hold_spec, list(HOLD_ONLY(list( \
 		closed_state = "[initial(icon_state)]"
 	. = ..()
 
+// ALLOW(sys_update_icon): overlay from stored item count (contents)
 /obj/item/storage/fancy/egg_box/update_icon()
 	cut_overlays()
 	if(open)
@@ -168,6 +170,7 @@ TYPE_TABLE(/obj/item/storage/fancy/crayons, hold_spec, list(HOLD_ONLY(list( \
 		C.name = "[C.colourName] [initial(C.name)]"
 	update_icon()
 
+// ALLOW(sys_update_icon): overlays composited from the stored crayons' colours
 /obj/item/storage/fancy/crayons/update_icon()
 	var/mutable_appearance/ma = new(src)
 	ma.cut_overlays()
@@ -211,6 +214,7 @@ TYPE_TABLE(/obj/item/storage/fancy/markers, hold_spec, list(HOLD_ONLY(list( \
 		M.name = "[M.colourName] [initial(M.name)]"
 	update_icon()
 
+// ALLOW(sys_update_icon): overlays composited from the stored markers' colours
 /obj/item/storage/fancy/markers/update_icon()
 	var/mutable_appearance/ma = new(src)
 	ma.cut_overlays()
@@ -279,6 +283,7 @@ TYPE_TABLE(/obj/item/storage/fancy/cigarettes, hold_spec, list(HOLD_ONLY(list(/o
 			C.brand = brand
 			C.desc += " This one is \a [brand]."
 
+// ALLOW(sys_update_icon): overlay from stored item count (contents)
 /obj/item/storage/fancy/cigarettes/update_icon()
 	cut_overlays()
 	if(open)
@@ -425,6 +430,7 @@ TYPE_TABLE(/obj/item/storage/fancy/cigar, hold_spec, list(HOLD_ONLY(list(/obj/it
 	reagents.trans_to_obj(C, (reagents.total_volume/length(slot_contents(CONTAINER_SLOT_STORAGE))))
 	return ..()
 
+// ALLOW(sys_update_icon): overlay from stored item count (contents)
 /obj/item/storage/fancy/cigar/update_icon()
 	cut_overlays()
 	if(open)
@@ -522,6 +528,7 @@ TYPE_TABLE(/obj/item/storage/lockbox/vials, hold_spec, list(HOLD_ONLY(list(/obj/
 	. = ..()
 	update_icon()
 
+// ALLOW(sys_update_icon): icon_state from stored item count, with an itemremoved argument
 /obj/item/storage/lockbox/vials/update_icon(itemremoved = 0)
 	var/total_contents = length(slot_contents(CONTAINER_SLOT_STORAGE)) - itemremoved
 	icon_state = "vialbox[total_contents]"
@@ -569,6 +576,7 @@ TYPE_TABLE(/obj/item/storage/fancy/heartbox, hold_spec, list(HOLD_ONLY(list( \
 	. = ..()
 	update_icon()
 
+// ALLOW(sys_update_icon): icon_state from stored item count (contents)
 /obj/item/storage/fancy/heartbox/update_icon(itemremoved = 0)
 	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "heartbox_empty"

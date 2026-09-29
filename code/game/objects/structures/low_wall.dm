@@ -217,6 +217,7 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 	return FALSE
 
 // Bay's version
+// ALLOW(sys_update_icon): per-direction neighbour connection images tinted with material and stripe colours
 /obj/structure/low_wall/bay/update_icon()
 	cut_overlays()
 
@@ -241,6 +242,7 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 			add_overlay(I)
 
 // Eris's version
+// ALLOW(sys_update_icon): per-direction neighbour connection images tinted with the material colour
 /obj/structure/low_wall/eris/update_icon()
 	cut_overlays()
 
@@ -351,6 +353,8 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 
 DESTROY_EFFECTS(/obj/structure/grille/bay, new /datum/destroy_effects_data(neighbor_type = /obj/structure/grille))
 
+APPEARANCE_NONE(/obj/structure/grille/bay)
+// ALLOW(sys_update_icon): reads the low wall on its turf and draws per-direction neighbour connection images
 /obj/structure/grille/bay/update_icon()
 	var/on_frame = locate_on(loc, /obj/structure/low_wall/bay)
 
@@ -404,6 +408,7 @@ DESTROY_EFFECTS(/obj/structure/grille/bay, new /datum/destroy_effects_data(neigh
 	icon_state = ""
 	update_icon()
 
+// ALLOW(sys_update_icon): runs update_connections() and draws per-direction connection images with colour and damage alpha
 /obj/structure/window/bay/update_icon()
 	cut_overlays()
 	if(!anchored)
@@ -493,6 +498,7 @@ DESTROY_EFFECTS(/obj/structure/grille/bay, new /datum/destroy_effects_data(neigh
 	icon_state = ""
 	update_icon()
 
+// ALLOW(sys_update_icon): runs update_connections() and draws per-direction neighbour connection images
 /obj/structure/window/eris/update_icon()
 	cut_overlays()
 	if(!anchored)

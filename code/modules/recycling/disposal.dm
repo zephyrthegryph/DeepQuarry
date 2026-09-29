@@ -66,11 +66,7 @@
 // if invisible, append "f" to icon_state to show faded version
 // this will be revealed if a T-scanner is used
 // if visible, use regular icon_state
-/obj/structure/disposalpipe/update_icon()
-	if(!(flags & ATOM_INITIALIZED)) // Do not call update_icon before init. E.g. hide might be called before
-		return
-	icon_state = base_icon_state
-	return
+APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "[base_icon_state]")
 
 // expel the held objects into a turf
 // called when there is a break in the pipe

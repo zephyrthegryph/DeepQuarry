@@ -82,6 +82,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/balloon, INTERACT_ITEM(null, PROC_REF(interac
 		expire(5)
 	return
 
+// ALLOW(sys_update_icon): icon_state from reagent fill volume
 /obj/item/toy/balloon/update_icon()
 	if(src.reagents.total_volume >= 1)
 		icon_state = "waterballoon"
@@ -185,6 +186,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/sword, \
 	add_fingerprint(user)
 	return TRUE
 
+// ALLOW(sys_update_icon): blade mutable_appearance coloured per instance (lcolor) and refreshes the user's hands
 /obj/item/toy/sword/update_icon()
 	. = ..()
 	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
@@ -1727,6 +1729,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/borgplushie/drake, INTERACT_ALT(null, 
 	update_icon()
 	return TRUE
 
+// ALLOW(sys_update_icon): emissive overlay built from the instance's current icon_state
 /obj/item/toy/plushie/borgplushie/drake/update_icon()
 	cut_overlays()
 	if (lights_glowing)
@@ -2629,11 +2632,7 @@ TYPE_TABLE(/obj/item/storage/box/timecap, hold_spec, list(HOLD_ONLY(list(/obj/it
 	var/on = FALSE
 	var/activation_sound = SFX_MACHINES_CLICK
 
-/obj/item/toy/desk/update_icon()
-	if(on)
-		icon_state = "[initial(icon_state)]-on"
-	else
-		icon_state = "[initial(icon_state)]"
+APPEARANCE_TEMPLATE(/obj/item/toy/desk, "[initial(icon_state)][on?-on:]")
 
 /obj/item/toy/desk/proc/activate(mob/user as mob)
 	on = !on

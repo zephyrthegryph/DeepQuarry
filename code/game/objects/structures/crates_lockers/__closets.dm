@@ -458,11 +458,8 @@ DECLARE_REF(/obj/structure/closet, "door_obj", OWNED, null)
 	else
 		to_chat(user, span_warning("This mob type can't use this verb."))
 
-/obj/structure/closet/update_icon()
-	if(opened)
-		icon_state = "open"
-	else
-		icon_state = "closed_unlocked[sealed ? "_welded" : ""]"
+APPEARANCE_TEMPLATE(/obj/structure/closet, "closed_unlocked[sealed?_welded:]")
+DECLARE_APPEARANCE(/obj/structure/closet, "opened", list("1" = list(APPEARANCE_ICON_STATE = "open")))
 
 /obj/structure/closet/attack_generic(mob/user, damage, attack_message = "destroys")
 	if(damage < STRUCTURE_MIN_DAMAGE_THRESHOLD)

@@ -15,6 +15,7 @@
 /obj/item/electronic_assembly/clothing/tgui_host()
 	return clothing().tgui_host()
 
+// ALLOW(sys_update_icon): mirrors its icon state onto the clothing it is built into (another object)
 /obj/item/electronic_assembly/clothing/update_icon()
 	..()
 	clothing().icon_state = icon_state

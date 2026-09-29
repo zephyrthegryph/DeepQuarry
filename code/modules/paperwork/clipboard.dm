@@ -34,6 +34,7 @@
 			add_fingerprint(usr)
 			return
 
+// ALLOW(sys_update_icon): draws its top paper's icon state and overlays (another object)
 /obj/item/clipboard/update_icon()
 	cut_overlays()
 	if(toppaper())

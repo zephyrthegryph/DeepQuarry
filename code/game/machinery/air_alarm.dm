@@ -464,6 +464,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/alarm, alarm_TLV, air_alarm_TLV_base())
 
 	return 0
 
+// ALLOW(sys_update_icon): reads the area's main air alarm (another object) and atmosalm, and sets danger-coloured lights
 /obj/machinery/alarm/update_icon()
 	// start actual update!
 	cut_overlays()

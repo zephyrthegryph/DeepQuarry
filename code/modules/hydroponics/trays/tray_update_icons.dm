@@ -13,6 +13,7 @@
 	ov_alert3.plane = PLANE_LIGHTING_ABOVE
 
 //Refreshes the icon and sets the luminosity
+// ALLOW(sys_update_icon): plant overlays from the seed's traits and growth, alert overlays, bioluminescent light and name
 /obj/machinery/portable_atmospherics/hydroponics/update_icon()
 	// Update name.
 	if(seed)

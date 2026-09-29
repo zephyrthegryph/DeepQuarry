@@ -71,6 +71,7 @@
 
 	update_icon()
 
+// ALLOW(sys_update_icon): appends to the current icon_state (not a fixed base), so the result depends on the previous state
 /obj/item/gun/projectile/shotgun/pump/update_icon()//This adds empty sprite capability for shotguns.
 	..()
 	if(!empty_sprite)//Just a dirty check
@@ -349,13 +350,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/shotgun/compact, INTERACT_VERB("Tog
 	allowed_magazines = list(/obj/item/ammo_magazine/m12gdrumjack)
 	projectile_type = /obj/item/projectile/bullet/shotgun
 
-/obj/item/gun/projectile/revolvershotgun/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "revolvshot"
-	else
-		icon_state = "revolvshot-empty"
-	return
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/revolvershotgun, "revolvshot[ammo_magazine?:-empty]")
 
 /obj/item/ammo_magazine/m12gdrumjack
 	name = "drum magazine (12 gauge slug)"

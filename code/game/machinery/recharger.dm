@@ -335,11 +335,8 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	set_use_power(USE_POWER_IDLE)
 	return
 
-/obj/machinery/recharger/update_icon()	// Immediate feedback; the power stage refines it (charged, charging) each frame.
-	if(charging)
-		icon_state = icon_state_charging
-	else
-		icon_state = icon_state_idle
+// Immediate feedback; the power stage refines it (charged, charging) each frame.
+APPEARANCE_TEMPLATE(/obj/machinery/recharger, "[charging?@icon_state_charging:@icon_state_idle]")
 
 /obj/machinery/recharger/RefreshParts()
 	var/E = get_part_rating(/obj/item/stock_parts/capacitor)

@@ -123,6 +123,7 @@
 	if(past_state != wg_state)
 		update_icon()
 
+// ALLOW(sys_update_icon): weight-gain icon_living plus vore fullness states, eye refresh, update_transform
 /mob/living/simple_mob/vore/raptor/update_icon()
 	if(wg_state == 1)
 		icon_living = "[initial_icon]_fat"

@@ -33,11 +33,10 @@
 		if(3)
 			take_damage(rand(20, 60) / brute_resist)
 
-/obj/effect/blob/update_icon()
-	if(get_integrity() > max_integrity / 2)
-		icon_state = "blob"
-	else
-		icon_state = "blob_damaged"
+/obj/effect/blob/proc/appearance_state()
+	return get_integrity() > max_integrity / 2 ? "blob" : "blob_damaged"
+
+APPEARANCE_TEMPLATE(/obj/effect/blob, "[appearance_state]")
 
 /obj/effect/blob/on_update_integrity(old_value, new_value)
 	. = ..()
@@ -164,8 +163,7 @@ EXTEND_INTERACTIONS(/obj/effect/blob, \
 
 	expandType = /obj/effect/blob/shield
 
-/obj/effect/blob/core/update_icon()
-	return
+APPEARANCE_NONE(/obj/effect/blob/core)
 
 DECLARE_PERIODIC(/obj/effect/blob/core, PERIODIC_SLOW)
 
@@ -189,13 +187,12 @@ DECLARE_PERIODIC(/obj/effect/blob/core, PERIODIC_SLOW)
 	. = ..()
 	update_nearby_tiles()
 
-/obj/effect/blob/shield/update_icon()
+/obj/effect/blob/shield/appearance_state()
 	if(get_integrity() > max_integrity * 2 / 3)
-		icon_state = "blob_idle"
-	else if(get_integrity() > max_integrity / 3)
-		icon_state = "blob"
-	else
-		icon_state = "blob_damaged"
+		return "blob_idle"
+	if(get_integrity() > max_integrity / 3)
+		return "blob"
+	return "blob_damaged"
 
 /obj/effect/blob/shield/CanPass(atom/movable/mover, turf/target)
 	return !density

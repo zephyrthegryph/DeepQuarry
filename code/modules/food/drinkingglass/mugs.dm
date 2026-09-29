@@ -46,6 +46,7 @@
 	volume = 30
 	var/fillsource = "coffeecup"
 
+// ALLOW(sys_update_icon): fill overlay from the reagent level, tinted by the reagents
 /obj/item/reagent_containers/food/drinks/glass2/coffeemug/update_icon()
 	cut_overlays()
 
@@ -222,6 +223,7 @@
 	fillsource = "coffeecup_tall"
 	volume = 60
 
+// ALLOW(sys_update_icon): fill overlay from the reagent level, tinted by the reagents
 /obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/update_icon()
 	cut_overlays()
 

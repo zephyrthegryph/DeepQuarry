@@ -112,6 +112,7 @@
 	. = ..()
 	update_rust_device()
 
+// ALLOW(sys_update_icon): overlay is an atmos icon fetched from GLOB.icon_manager and skipped off-turf
 /obj/machinery/atmospherics/unary/vent_scrubber/update_icon(safety = 0)
 	cut_overlays()
 

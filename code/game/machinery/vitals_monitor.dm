@@ -89,6 +89,7 @@
 		MACHINE_WAKE(src)
 		visible_message(span_notice("\The [src] is now showing data for [victim()]."))
 
+// ALLOW(sys_update_icon): overlays read the attached patient's pulse, brain and lung state (another mob)
 /obj/machinery/vitals_monitor/update_icon()
 	cut_overlays()
 	if(has_stat(NOPOWER))

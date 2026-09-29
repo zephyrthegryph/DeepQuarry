@@ -22,6 +22,7 @@
 	recoil = FALSE
 	fire_sound = SFX_WEAPONS_ENERGY_LASER_STRONG // New firesound, overwrites the sfx from the macrobatteries.
 
+// ALLOW(sys_update_icon): indicator overlay tinted with the chambered macrobattery's colour and charge (another object's state)
 /obj/item/gun/projectile/multi_cannon/update_icon()
 	. = ..()
 	cut_overlays()

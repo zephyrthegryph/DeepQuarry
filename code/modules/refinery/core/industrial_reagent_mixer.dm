@@ -49,6 +49,7 @@
 	update_icon()
 	got_input = FALSE
 
+// ALLOW(sys_update_icon): reagent fill tinted by reagents.get_color(), neighbour intake overlays and an arm image rotated by mixer_angle
 /obj/machinery/reagent_refinery/mixer/update_icon()
 	cut_overlays()
 	// GOOBY!

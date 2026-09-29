@@ -164,6 +164,7 @@ TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( 
 	real_name = "[initial(name)] ([serial_number])"
 	name = real_name
 
+// ALLOW(sys_update_icon): per-instance shell accessory overlays and hat overlay
 /mob/living/silicon/robot/drone/update_icon()
 	cut_overlays()
 	if(islist(shell_accessories))

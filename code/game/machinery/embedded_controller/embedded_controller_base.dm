@@ -103,6 +103,7 @@ DECLARE_REF(/obj/machinery/embedded_controller, "program", OWNED, null)
 	set_frequency(frequency) // Set it before parent instantiates program
 	. = ..()
 
+// ALLOW(sys_update_icon): state from its program's memory (another datum)
 /obj/machinery/embedded_controller/radio/update_icon()
 	if(on && program)
 		if(program.memory["processing"])

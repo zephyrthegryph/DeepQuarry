@@ -18,18 +18,17 @@
 	var/product_potion = 0
 	var/expected_base = 0
 
-/obj/machinery/alembic/update_icon()
+/// Appearance reader: the icon_state suffix for the alembic's fill/bubbling stage.
+/obj/machinery/alembic/proc/appearance_stage()
 	if(potion_reagent == 0 && base_reagent == 0) //Empty
-		icon_state = "alembic"
-	else if(potion_reagent != 0 && base_reagent == 0) //Has potion reagent but not base
-		icon_state = "alembic-base"
-	else if(potion_reagent == 0 && base_reagent != 0) //Has a base but no reagent
-		icon_state = "alembic-base"
-	else if(potion_reagent != 0 && base_reagent != 0 && !bubbling ) //Has a reagent but is not turned on
-		icon_state = "alembic-full"
-	else if(bubbling == 1) //is actively bubbling
-		icon_state = "alembic-bubble"
-	return
+		return ""
+	if(potion_reagent == 0 || base_reagent == 0) //Has only one of potion reagent / base
+		return "-base"
+	if(bubbling) //is actively bubbling
+		return "-bubble"
+	return "-full" //Has both but is not turned on
+
+APPEARANCE_TEMPLATE(/obj/machinery/alembic, "alembic[appearance_stage]")
 
 /obj/machinery/alembic/declare_interactions(list/into)
 	into += list(

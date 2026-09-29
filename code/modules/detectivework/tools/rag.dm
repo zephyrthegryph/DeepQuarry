@@ -77,6 +77,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 	else
 		name = "dry [initial(name)]"
 
+// ALLOW(sys_update_icon): redraws the bottle it is stuffed in (its loc) along with its lit state
 /obj/item/reagent_containers/glass/rag/update_icon()
 	if(on_fire)
 		icon_state = "raglit"

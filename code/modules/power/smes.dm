@@ -219,24 +219,35 @@ DECLARE_REF(/obj/machinery/power/smes, "soundloop", OWNED, null)
 		soundloop.stop()
 		noisy = FALSE
 
-/obj/machinery/power/smes/update_icon()
-	cut_overlays()
-	if(has_stat(BROKEN))	return
+DECLARE_APPEARANCE(/obj/machinery/power/smes, "appearance_smes_output", list("0" = list(APPEARANCE_OVERLAYS = list("smes-op0")), "1" = list(APPEARANCE_OVERLAYS = list("smes-op1")), "2" = list(APPEARANCE_OVERLAYS = list("smes-op2"))))
+DECLARE_APPEARANCE(/obj/machinery/power/smes, "appearance_smes_input", list("0" = list(APPEARANCE_OVERLAYS = list("smes-oc0")), "1" = list(APPEARANCE_OVERLAYS = list("smes-oc1")), "2" = list(APPEARANCE_OVERLAYS = list("smes-oc2"))))
+DECLARE_APPEARANCE(/obj/machinery/power/smes, "appearance_smes_charge", list("1" = list(APPEARANCE_OVERLAYS = list("smes-og1")), "2" = list(APPEARANCE_OVERLAYS = list("smes-og2")), "3" = list(APPEARANCE_OVERLAYS = list("smes-og3")), "4" = list(APPEARANCE_OVERLAYS = list("smes-og4")), "5" = list(APPEARANCE_OVERLAYS = list("smes-og5")), "6" = list(APPEARANCE_OVERLAYS = list("smes-og6"))))
 
-	add_overlay("smes-op[outputting]")
+/// TRUE when the status overlays are hidden (broken).
+/obj/machinery/power/smes/proc/appearance_smes_dark()
+	return has_stat(BROKEN)
 
+/// Output overlay key: "[outputting]", or "" while dark.
+/obj/machinery/power/smes/proc/appearance_smes_output()
+	if(appearance_smes_dark())
+		return ""
+	return "[outputting]"
+
+/// Input overlay key: "2"/"1" while inputting, "0" while only attempting, else "".
+/obj/machinery/power/smes/proc/appearance_smes_input()
+	if(appearance_smes_dark())
+		return ""
 	if(inputting == 2)
-		add_overlay("smes-oc2")
-	else if (inputting == 1)
-		add_overlay("smes-oc1")
-	else
-		if(input_attempt)
-			add_overlay("smes-oc0")
+		return "2"
+	if(inputting == 1)
+		return "1"
+	return input_attempt ? "0" : ""
 
-	var/clevel = chargedisplay()
-	if(clevel>0)
-		add_overlay("smes-og[clevel]")
-	return
+/// Charge gauge overlay key: chargedisplay(), or 0 (no gauge) while dark.
+/obj/machinery/power/smes/proc/appearance_smes_charge()
+	if(appearance_smes_dark())
+		return 0
+	return chargedisplay()
 
 /obj/machinery/power/smes/proc/chargedisplay()
 	return round(5.5*charge/(capacity ? capacity : 5e6))
@@ -655,6 +666,8 @@ DECLARE_REF(/obj/machinery/power/smes, "soundloop", OWNED, null)
 	to_chat(user, span_warning("\The [src] is full of weird alien technology that's best not messed with."))
 	return ITEM_INTERACT_BLOCKING
 
+APPEARANCE_NONE(/obj/machinery/power/smes/buildable/hybrid)
+// ALLOW(sys_update_icon): hybrid ignores buildable's failing/smes-crit override; kept procedural to keep that exact behaviour instead of redeclaring the smes overlay stack.
 /obj/machinery/power/smes/buildable/hybrid/update_icon()
 	cut_overlays()
 	if(has_stat(BROKEN))	return

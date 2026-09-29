@@ -65,6 +65,7 @@
 	if(size_set_to < RESIZE_MINIMUM || size_set_to > RESIZE_MAXIMUM)
 		to_chat(usr, span_notice("Note: Resizing limited to 25-200% automatically while outside dormatory areas.")) //hint that we clamp it in resize
 
+// ALLOW(sys_update_icon): charge state from its power cell (another object), refreshes the in-hand sprite
 /obj/item/gun/energy/sizegun/update_icon(ignore_inhands)
 	var/grow_mode = "shrink"
 	if(size_set_to > 1)

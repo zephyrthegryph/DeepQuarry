@@ -269,6 +269,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 /obj/item/electronic_assembly/proc/can_move()
 	return FALSE
 
+// ALLOW(sys_update_icon): detail overlay tinted with the instance's detail colour
 /obj/item/electronic_assembly/update_icon()
 	if(opened)
 		icon_state = initial(icon_state) + "-open"

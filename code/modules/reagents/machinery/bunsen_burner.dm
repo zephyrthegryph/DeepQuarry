@@ -176,6 +176,7 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/di
 	visible_message(span_notice("\The [src] clicks."))
 	update_icon()
 
+// ALLOW(sys_update_icon): overlay is the held container object itself (its current appearance)
 /obj/machinery/bunsen_burner/update_icon()
 	cut_overlays()
 	icon_state = "bunsen0"

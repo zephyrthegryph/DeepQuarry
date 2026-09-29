@@ -84,6 +84,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
+// ALLOW(sys_update_icon): chains the material item's procedural redraw, then adds a string overlay over the current icon_state
 /obj/item/material/fishing_rod/update_icon()
 	cut_overlays()
 	..()

@@ -165,6 +165,7 @@ DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
+// ALLOW(sys_update_icon): battery overlay from the inserted cell's charge percent (another object's state)
 /obj/item/suit_cooling_unit/update_icon()
 	cut_overlays()
 	if(cover_open)
@@ -222,6 +223,7 @@ DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \
 	cell = /obj/item/cell
 	w_class = ITEMSIZE_NORMAL
 
+// ALLOW(sys_update_icon): opts out of /obj/item/suit_cooling_unit's procedural cell-charge overlays
 /obj/item/suit_cooling_unit/emergency/update_icon()
 	return
 

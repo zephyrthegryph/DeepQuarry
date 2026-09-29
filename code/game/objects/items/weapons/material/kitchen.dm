@@ -28,6 +28,7 @@ DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 	if (prob(60))
 		src.pixel_y = rand(0, 4)
 
+// ALLOW(sys_update_icon): loaded-food image coloured per instance (loaded_color)
 /obj/item/material/kitchen/utensil/update_icon()
 	. = ..()
 	cut_overlays()

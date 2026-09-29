@@ -81,6 +81,7 @@ DECLARE_SHARED_CACHE_EX(wall_material_facts, GLOBAL_PROC_REF(build_wall_material
 	update_material()
 	check_radioactive()
 
+// ALLOW(sys_update_icon): material-coloured images and cached connection/damage overlay sets built per wall state
 /turf/simulated/wall/update_icon()
 	if(!material)
 		return

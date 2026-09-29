@@ -112,6 +112,7 @@ DECLARE_REF(/obj/machinery/smartfridge, "item_records", OWNED_LIST, null)
 	for(var/datum/stored_item/I as anything in item_records)
 		. += I.get_amount()
 
+// ALLOW(sys_update_icon): fill overlays picked from stored_count() of its item records (contents), per icon_base/icon_contents
 /obj/machinery/smartfridge/update_icon()
 	cut_overlays()
 	if(panel_open)

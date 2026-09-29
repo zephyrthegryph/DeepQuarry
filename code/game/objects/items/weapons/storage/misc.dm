@@ -49,6 +49,7 @@ TYPE_TABLE(/obj/item/storage/box/donut, hold_spec, list(HOLD_ONLY(list(/obj/item
 	. = ..()
 	update_icon()
 
+// ALLOW(sys_update_icon): overlays composited from each stored donut with pixel offsets
 /obj/item/storage/box/donut/update_icon()
 	cut_overlays()
 	var/x_offset = 0
@@ -79,6 +80,7 @@ TYPE_TABLE(/obj/item/storage/box/wormcan, hold_spec, list(HOLD_ONLY(list( \
 	. = ..()
 	update_icon()
 
+// ALLOW(sys_update_icon): icon_state from stored item count (contents)
 /obj/item/storage/box/wormcan/update_icon(itemremoved = 0)
 	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "wormcan_empty"
@@ -90,6 +92,7 @@ TYPE_TABLE(/obj/item/storage/box/wormcan, hold_spec, list(HOLD_ONLY(list( \
 	max_storage_space = ITEMSIZE_COST_TINY * 6
 	starts_with = list(/obj/item/reagent_containers/food/snacks/wormsickly = 6)
 
+// ALLOW(sys_update_icon): icon_state from stored item count (contents)
 /obj/item/storage/box/wormcan/sickly/update_icon(itemremoved = 0)
 	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "wormcan_empty_sickly"
@@ -101,6 +104,7 @@ TYPE_TABLE(/obj/item/storage/box/wormcan, hold_spec, list(HOLD_ONLY(list( \
 	max_storage_space = ITEMSIZE_COST_TINY * 6
 	starts_with = list(/obj/item/reagent_containers/food/snacks/wormdeluxe = 6)
 
+// ALLOW(sys_update_icon): icon_state from stored item count (contents)
 /obj/item/storage/box/wormcan/deluxe/update_icon(itemremoved = 0)
 	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "wormcan_empty_deluxe"

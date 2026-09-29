@@ -112,6 +112,7 @@
 	several TSCs have been trying to get a hold of the blueprints for half a decade."
 	var/unique_reskin
 
+// ALLOW(sys_update_icon): reads the power cell's charge (another object) for the meter state and refreshes the in-hand sprite via update_held_icon()
 /obj/item/gun/energy/stunrevolver/detective/update_icon(ignore_inhands)
 	if(power_supply == null)
 		if(unique_reskin)

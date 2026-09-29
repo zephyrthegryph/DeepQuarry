@@ -490,6 +490,7 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 		qdel(src)
 	return
 
+// ALLOW(sys_update_icon): one image per card with random/offset pixel positions and a direction matrix; also renames and qdels empty hands.
 /obj/item/hand/update_icon(direction = 0)
 
 	var/cardNumber = cards.len

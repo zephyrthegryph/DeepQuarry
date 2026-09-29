@@ -1,6 +1,7 @@
 // Special wall type for Point of Interests.
 
 
+// ALLOW(sys_update_icon): material-coloured image overlays (icon_colour per instance) and damage overlays; open vault wall tinted per material
 /turf/simulated/wall/update_icon()
 	if(!material)
 		return
@@ -48,6 +49,7 @@
 
 	return GLOB.mining_overlay_cache["[cache_id]_[direction]"]
 
+// ALLOW(sys_update_icon): neighbour-dependent smoothing masks and cached borders from adjacent turf density, plus neighbour redraws
 /turf/simulated/wall/solidrock/update_icon(update_neighbors)
 	cut_overlays()
 	if(density)
@@ -82,6 +84,7 @@ EXTEND_INTERACTIONS(/turf/simulated/wall/solidrock, INTERACT_ITEM("Nothing", TYP
 /turf/simulated/wall/solidrock/mossyrockpoi/Initialize(mapload)
 	. = ..(mapload, "mossyrock")
 
+// ALLOW(sys_update_icon): neighbour-dependent smoothing masks and cached borders from adjacent turf density, plus neighbour redraws
 /turf/simulated/wall/solidrock/mossyrockpoi/update_icon(update_neighbors)
 	if(density)
 		var/image/I

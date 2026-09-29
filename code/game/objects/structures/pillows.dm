@@ -75,9 +75,11 @@ DECLARE_REF(/obj/structure/bed/pillowpile, "front", OWNED, null)
 DECLARE_REF(/obj/structure/bed/pillowpile, "front", PAIR, "pile")
 DECLARE_REF(/obj/structure/bed/pillowpilefront, "pile", PAIR, "front")
 
+// ALLOW(sys_update_icon): opts out of /obj/structure/bed's procedural material overlays
 /obj/structure/bed/pillowpilefront/update_icon()
 	return
 
+// ALLOW(sys_update_icon): opts out of /obj/structure/bed's procedural material overlays
 /obj/structure/bed/pillowpile/update_icon()
 	return
 

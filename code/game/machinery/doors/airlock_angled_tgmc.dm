@@ -3,6 +3,7 @@
 	anim_length_before_finalize = 3
 	icon = 'icons/obj/doors/angled/tgmc/generic.dmi'
 
+// ALLOW(sys_update_icon): overlays from integrity (sparks), weld and panel, lock lights from its power systems
 /obj/machinery/door/airlock/angled_tgmc/update_icon()
 	cut_overlays()
 	if(density)

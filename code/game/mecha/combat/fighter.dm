@@ -302,6 +302,7 @@ TOPIC_ACTION(/obj/mecha/combat/fighter, "toggle_landing_gear", PROC_REF(topic_to
 	ME = new /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay(src)
 	ME.attach(src)
 
+// ALLOW(sys_update_icon): stripe overlays tinted with per-instance stripe colours
 /obj/mecha/combat/fighter/gunpod/update_icon()
 	cut_overlays()
 	..()

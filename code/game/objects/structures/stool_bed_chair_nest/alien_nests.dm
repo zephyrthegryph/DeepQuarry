@@ -9,6 +9,7 @@
 	unacidable = TRUE
 	flippable = FALSE
 
+// ALLOW(sys_update_icon): opts out of /obj/structure/bed's procedural material overlays
 /obj/structure/bed/nest/update_icon()
 	return
 

@@ -40,6 +40,7 @@
 	max_universal_equip = 1
 	max_special_equip = 1
 
+// ALLOW(sys_update_icon): paint mask images tinted with per-instance paint colours
 /obj/mecha/working/hoverpod/shuttlecraft/update_icon()
 	cut_overlays()
 	..()

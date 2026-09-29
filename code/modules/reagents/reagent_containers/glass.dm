@@ -208,6 +208,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/beaker, INTERACT_HAND_DEF
 	interaction_pick_up(user, held, interaction)
 	update_icon()
 
+// ALLOW(sys_update_icon): fill overlay tinted with reagent colour, names from current icon_state
 /obj/item/reagent_containers/glass/beaker/update_icon()
 	cut_overlays()
 
@@ -361,10 +362,16 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bucket, INTERACT_ITEM(nul
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/reagent_containers/glass/bucket/update_icon()
-	cut_overlays()
-	if (!is_open_container())
-		add_overlay("lid_[initial(icon_state)]")
+/// Appearance reader: TRUE while the bucket is closed (draws the lid).
+/obj/item/reagent_containers/glass/bucket/proc/appearance_lidded()
+	return is_open_container() ? FALSE : TRUE
+
+DECLARE_APPEARANCE(/obj/item/reagent_containers/glass/bucket, "appearance_lidded", list(
+	"1" = list(APPEARANCE_OVERLAYS = list("lid_bucket")),
+))
+DECLARE_APPEARANCE(/obj/item/reagent_containers/glass/bucket/wood, "appearance_lidded", list(
+	"1" = list(APPEARANCE_OVERLAYS = list("lid_woodbucket")),
+))
 
 /obj/item/reagent_containers/glass/bucket/wood
 	desc = "An old wooden bucket."

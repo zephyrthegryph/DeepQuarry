@@ -149,6 +149,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag, INTERACT_ITEM(null, PROC_REF
 		var/obj/structure/morgue/M = loc
 		M.update(broadcast)
 
+// ALLOW(sys_update_icon): cut_overlays() wipes the closet's other overlays, and the cryobag subtypes cut and redraw after ..()
 /obj/structure/closet/body_bag/update_icon()
 	if(opened)
 		icon_state = "open"
@@ -212,6 +213,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag, \
 	if(used)
 		replace_with(src, /obj/item/usedcryobag)
 
+// ALLOW(sys_update_icon): RESET_COLOR image indicator coloured per draw, and cuts the parent's label overlay
 /obj/structure/closet/body_bag/cryobag/update_icon()
 	..()
 	cut_overlays()

@@ -256,6 +256,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 		update_icon()
 	return INTERACTION_HANDLED_PASS
 
+// ALLOW(sys_update_icon): reads whether the trapped holder has a mob (another object)
 /obj/item/roulette_ball/hollow/update_icon()
 	if(trapped && trapped.held_mob)
 		icon_state = "roulette_ball_glass_full"

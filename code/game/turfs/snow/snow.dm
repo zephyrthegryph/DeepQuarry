@@ -23,6 +23,7 @@
 
 	. = ..()
 
+// ALLOW(sys_update_icon): one directed footprint image per recorded crossing
 /turf/snow/update_icon()
 	cut_overlays()
 	for(var/d in crossed_dirs)

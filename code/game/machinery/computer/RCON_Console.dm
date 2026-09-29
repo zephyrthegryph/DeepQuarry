@@ -30,6 +30,7 @@ DECLARE_REF(/obj/machinery/computer/rcon, "rcon", OWNED, null)
 /obj/machinery/computer/rcon/tgui_interact(mob/user, datum/tgui/ui)
 	rcon.tgui_interact(user, ui)
 
+// ALLOW(sys_update_icon): adds its screen overlay on top of /obj/machinery/computer's procedural screen compositing (which cuts every overlay)
 /obj/machinery/computer/rcon/update_icon()
 	..()
 	if(operable())

@@ -247,6 +247,7 @@ EXTEND_INTERACTIONS(/turf/simulated/wall/skipjack, INTERACT_ITEM("Nothing", TYPE
 	. = ..()
 	update_icon()
 
+// ALLOW(sys_update_icon): stripe overlay image tinted with per-instance stripe_color
 /turf/simulated/shuttle/wall/voidcraft/update_icon()
 	if(stripe_color)
 		cut_overlays()
@@ -359,6 +360,7 @@ EXTEND_INTERACTIONS(/turf/simulated/wall/skipjack, INTERACT_ITEM("Nothing", TYPE
 /turf/simulated/wall/bay/can_join_with_low_wall(obj/structure/low_wall/WF)
 	return istype(WF, /obj/structure/low_wall/bay)
 
+// ALLOW(sys_update_icon): per-connection stripe images tinted with per-instance stripe_color
 /turf/simulated/wall/bay/update_icon()
 	. = ..()
 	if(stripe_color)
@@ -406,6 +408,7 @@ EXTEND_INTERACTIONS(/turf/simulated/wall/skipjack, INTERACT_ITEM("Nothing", TYPE
 	var/diagonal_blending = FALSE
 
 // *INHALE
+// ALLOW(sys_update_icon): icon_state from smoothing connections and damage-fraction overlays
 /turf/simulated/wall/tgmc/update_icon()
 	if(!damage_overlays[1]) //list hasn't been populated
 		generate_overlays()
@@ -520,6 +523,7 @@ DECLARE_SHARED_CACHE(flesh_side_overlays, GLOBAL_PROC_REF(build_flesh_side_overl
 /proc/build_flesh_side_overlay(place_dir)
 	return image('icons/turf/stomach_vr.dmi', "flesh_side", dir = place_dir)
 
+// ALLOW(sys_update_icon): side overlays from adjacent turf density and neighbour redraws
 /turf/simulated/flesh/update_icon(update_neighbors)
 	cut_overlays()
 

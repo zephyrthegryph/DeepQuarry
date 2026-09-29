@@ -96,6 +96,7 @@
 	..()
 	self.update_body_faction()
 
+// ALLOW(sys_update_icon): state and dir from the neighbouring worm segment (set_dir)
 /mob/living/simple_mob/animal/space/space_worm/head/update_icon()
 	..()
 	if(!open_maw && !stat)
@@ -218,6 +219,7 @@
 		currentlyEating = null
 		. = ..(obstacle)
 
+// ALLOW(sys_update_icon): segment sprite from dirs to neighbouring segments, set_dir and colour copied from next segment
 /mob/living/simple_mob/animal/space/space_worm/update_icon()
 	if(previous) //midsection
 		icon_state = "spaceworm[get_dir(src,previous) | get_dir(src,next)]"

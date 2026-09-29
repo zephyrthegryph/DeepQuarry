@@ -1,3 +1,4 @@
+// ALLOW(sys_update_icon): module-coloured underlay/armour/decal/eye image overlays with per-instance colours
 /mob/living/silicon/robot/platform/update_icon()
 
 	cut_overlays()

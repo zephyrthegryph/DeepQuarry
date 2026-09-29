@@ -4,6 +4,7 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 	GLOB.no_ceiling_image = image(icon = 'icons/turf/open_space.dmi', icon_state = "no_ceiling")
 	GLOB.no_ceiling_image.plane = PLANE_MESONS
 
+// ALLOW(sys_update_icon): flooring datum icons, neighbour edge/corner links, decals, randomised base/damage states and neighbour redraws
 /turf/simulated/floor/update_icon(update_neighbors)
 	cut_overlays()
 

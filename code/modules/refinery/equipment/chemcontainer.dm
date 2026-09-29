@@ -102,6 +102,7 @@
 /obj/item/reagent_containers/chem_canister/on_reagent_change(changetype)
 	update_icon()
 
+// ALLOW(sys_update_icon): reagent fill overlay tinted with reagents.get_color()
 /obj/item/reagent_containers/chem_canister/update_icon()
 	. = ..()
 	cut_overlays()

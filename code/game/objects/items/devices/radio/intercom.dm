@@ -185,6 +185,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/intercom, \
 
 	return canhear_range
 
+// ALLOW(sys_update_icon): polls area power into on and sets lights, with per-state emissive overlays
 /obj/item/radio/intercom/update_icon()
 	var/area/A = get_area(src)
 	on = A?.powered(EQUIP)

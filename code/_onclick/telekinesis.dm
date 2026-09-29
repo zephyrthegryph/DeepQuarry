@@ -134,6 +134,7 @@ DECLARE_INTERACTIONS(/obj/item/tk_grab, INTERACT_USE(null, PROC_REF(interaction_
 	O.expire(5)
 	return
 
+// ALLOW(sys_update_icon): overlay is an icon built from the focused object's icon/icon_state
 /obj/item/tk_grab/update_icon()
 	cut_overlays()
 	if(focus() && focus().icon && focus().icon_state)

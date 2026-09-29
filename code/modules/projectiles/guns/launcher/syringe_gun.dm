@@ -11,6 +11,7 @@ MATERIAL_MIX(/obj/item/syringe_cartridge, list(MAT_STEEL = 125, MAT_GLASS = 375)
 	w_class = ITEMSIZE_TINY
 	var/tmp/syringe_handle
 
+// ALLOW(sys_update_icon): underlays copied from the held syringe's icon and reagent filling (another object's state)
 /obj/item/syringe_cartridge/update_icon()
 	underlays.Cut()
 	if(syringe())

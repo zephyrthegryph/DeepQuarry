@@ -89,6 +89,7 @@
 	A large canine found in whitespace or the Glamour, distinguished easily by a large spikey mane and lightly striped pattern. The Blaidd, named from the glamourspeak word for wolf, is known to be a ferocious hunter and predator. It is a carnivore that stalks prey from a distance silently, whilst its otherwise quite striking fur blends it well into the environment through some sort of active camouflage, a less powerful version of that seen in the local Lleill. It generally avoids attacking its prey when it feels it is being watched, but once it is able to finally pounce on a target, it will not retreat until forced."
 	value = CATALOGUER_REWARD_HARD
 
+// ALLOW(sys_update_icon): cloak and vore fullness states over the procedural simple_mob state, eye refresh, update_transform
 /mob/living/simple_mob/vore/blaidd/update_icon()
 	. = ..()
 	if(vore_active)

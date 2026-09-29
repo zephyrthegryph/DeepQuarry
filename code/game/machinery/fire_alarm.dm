@@ -79,6 +79,7 @@ DECLARE_REF(/obj/machinery/firealarm, "causality", OWNED, null)
 	pixel_x = (dir & 3) ? 0 : (dir == 4 ? 26 : -26)
 	pixel_y = (dir & 3) ? (dir == 1 ? -26 : 26) : 0
 
+// ALLOW(sys_update_icon): sets security-level-coloured lights alongside the overlays
 /obj/machinery/firealarm/update_icon()
 	cut_overlays()
 

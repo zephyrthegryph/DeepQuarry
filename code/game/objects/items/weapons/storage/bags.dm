@@ -52,6 +52,7 @@
 
 TYPE_TABLE(/obj/item/storage/bag/trash, hold_spec, list(HOLD_NOT(list(/obj/item/disk/nuclear)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
+// ALLOW(sys_update_icon): icon_state from stored item count (slot contents)
 /obj/item/storage/bag/trash/update_icon()
 	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "trashbag0"
@@ -70,6 +71,7 @@ TYPE_TABLE(/obj/item/storage/bag/trash, hold_spec, list(HOLD_NOT(list(/obj/item/
 
 TYPE_TABLE(/obj/item/storage/bag/trash/holding, hold_spec, list(HOLD_NOT(list(/obj/item/disk/nuclear)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
+// ALLOW(sys_update_icon): opts out of /obj/item/storage/bag/trash's contents-count drawing
 /obj/item/storage/bag/trash/holding/update_icon()
 	return
 
@@ -356,6 +358,7 @@ TYPE_TABLE(/obj/item/storage/bag/detective, hold_spec, list(HOLD_ONLY(list(/obj/
 
 TYPE_TABLE(/obj/item/storage/bag/santabag, hold_spec, list(HOLD_NOT(list(/obj/item/disk/nuclear)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
+// ALLOW(sys_update_icon): icon_state from stored item count (slot contents)
 /obj/item/storage/bag/santabag/update_icon()
 	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) < 10)
 		icon_state = "giftbag0"

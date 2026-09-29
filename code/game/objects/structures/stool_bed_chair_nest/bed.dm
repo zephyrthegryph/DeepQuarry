@@ -47,6 +47,7 @@
 	return material
 
 // Reuse the cache/code from stools, todo maybe unify.
+// ALLOW(sys_update_icon): overlays tinted per material/padding colour, and name/desc refresh
 /obj/structure/bed/update_icon()
 	// Prep icon.
 	icon_state = ""
@@ -246,6 +247,7 @@
 	bedtype = /obj/structure/bed/roller/adv
 	rollertype = /obj/item/roller/adv
 
+// ALLOW(sys_update_icon): opts out of /obj/structure/bed's procedural material overlays
 /obj/structure/bed/roller/update_icon()
 	return
 
@@ -394,6 +396,7 @@ DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(intera
 	icon_state = "bed_red"
 	flippable = FALSE
 
+// ALLOW(sys_update_icon): opts out of /obj/structure/bed's procedural material overlays
 /obj/structure/bed/alien/update_icon()
 	return // Doesn't care about material or anything else.
 

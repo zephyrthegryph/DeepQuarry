@@ -88,6 +88,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 			GLOB.req_console_information -= department
 	..()
 
+// ALLOW(sys_update_icon): sets the console light on/off with the priority overlays
 /obj/machinery/requests_console/update_icon()
 	cut_overlays()
 

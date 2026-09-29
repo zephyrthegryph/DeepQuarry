@@ -10,6 +10,7 @@
 	construction_type = /obj/item/pipe/binary
 	pipe_state = "universal"
 
+// ALLOW(sys_update_icon): pipe_color-tinted overlay plus universal_underlays() per node direction (neighbour-dependent).
 /obj/machinery/atmospherics/pipe/simple/visible/universal/update_icon(safety = 0)
 	alpha = 255
 
@@ -45,6 +46,7 @@
 	construction_type = /obj/item/pipe/binary
 	pipe_state = "universal"
 
+// ALLOW(sys_update_icon): pipe_color-tinted overlay plus universal_underlays() per node direction (neighbour-dependent).
 /obj/machinery/atmospherics/pipe/simple/hidden/universal/update_icon(safety = 0)	// Doesn't leak. It's a special pipe.
 	alpha = 255
 

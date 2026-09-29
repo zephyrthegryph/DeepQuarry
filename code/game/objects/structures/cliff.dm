@@ -125,6 +125,7 @@ two tiles on initialization, and which way a cliff is facing may change during m
 	..()
 	update_icon()
 
+// ALLOW(sys_update_icon): reads the neighbouring turf's icon for a blended top overlay
 /obj/structure/cliff/update_icon()
 	icon_state = "cliff-[dir][icon_variant][bottom ? "-bottom" : ""][corner ? "-corner" : ""][ramp ? "-ramp" : ""]"
 

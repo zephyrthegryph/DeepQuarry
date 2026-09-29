@@ -45,6 +45,7 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 	var/tape_dir = 0
 	var/icon_base = "tape"
 
+// ALLOW(sys_update_icon): sets dir from tape_dir with the redraw
 /obj/item/tape/update_icon()
 	//Possible directional bitflags: 0 (AIRLOCK), 1 (NORTH), 2 (SOUTH), 4 (EAST), 8 (WEST), 3 (VERTICAL), 12 (HORIZONTAL)
 	switch (tape_dir)
@@ -113,6 +114,7 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 	req_one_access = list(ACCESS_ENGINE,ACCESS_ATMOSPHERICS)
 	color = COLOR_DEEP_SKY_BLUE
 
+// ALLOW(sys_update_icon): overlay depends on being held by a mob and the stored start point
 /obj/item/taperoll/update_icon()
 	cut_overlays()
 	var/image/overlay = image(icon = src.icon)

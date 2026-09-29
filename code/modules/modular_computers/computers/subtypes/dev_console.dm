@@ -18,6 +18,7 @@
 	max_integrity = 300
 	integrity_failure = 0.5 // Stops working below 150 integrity.
 
+// ALLOW(sys_update_icon): connects to neighbouring consoles on the left/right turfs (neighbour-dependent sprite).
 /obj/item/modular_computer/console/update_icon()
 	. = ..()
 	// Connecty

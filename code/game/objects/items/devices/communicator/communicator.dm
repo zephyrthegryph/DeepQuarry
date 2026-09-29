@@ -399,20 +399,16 @@ DECLARE_REF(/obj/item/communicator, "id", SPILL, null)	// a slotted ID card drop
 // Proc: update_icon()
 // Parameters: None
 // Description: Self explanatory
-/obj/item/communicator/update_icon()
+/obj/item/communicator/proc/appearance_comm_suffix()
 	if(video_source)
-		icon_state = "communicator-video"
-		return
-
+		return "-video"
 	if(length(voice_mobs) || length(communicating))
-		icon_state = "communicator-active"
-		return
-
+		return "-active"
 	if(alert_called)
-		icon_state = "communicator-called"
-		return
+		return "-called"
+	return ""
 
-	icon_state = initial(icon_state)
+APPEARANCE_TEMPLATE(/obj/item/communicator, "[initial(icon_state)][appearance_comm_suffix]")
 
 // A camera preset for spawning in the communicator
 /obj/machinery/camera/communicator
@@ -432,20 +428,6 @@ DECLARE_REF(/obj/item/communicator, "id", SPILL, null)	// a slotted ID card drop
 	icon_state = "commwatch"
 	slot_flags = SLOT_GLOVES | SLOT_ID | SLOT_BELT // Commwatches and Wrtist PDAs can go on ID and belt slots
 
-/obj/item/communicator/watch/update_icon()
-	if(video_source)
-		icon_state = "commwatch-video"
-		return
-
-	if(length(voice_mobs) || length(communicating))
-		icon_state = "commwatch-active"
-		return
-
-	if(alert_called)
-		icon_state = "commwatch-called"
-		return
-
-	icon_state = initial(icon_state)
 
 #undef HOMETAB
 #undef PHONTAB

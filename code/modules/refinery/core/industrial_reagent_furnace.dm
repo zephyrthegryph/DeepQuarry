@@ -115,6 +115,7 @@ DECLARE_REF(/obj/machinery/reagent_refinery/furnace, "beaker", OWNED, null)
 	if(target && reagents.total_volume > 0)
 		transfer_tank( reagents, target, dir)
 
+// ALLOW(sys_update_icon): reagent overlay tinted with its own or its beaker's reagents.get_color()
 /obj/machinery/reagent_refinery/furnace/update_icon()
 	cut_overlays()
 	icon_state = "furnace_[filter_side == 1 ? "r" : "l"]"

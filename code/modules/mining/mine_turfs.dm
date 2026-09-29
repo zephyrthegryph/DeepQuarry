@@ -190,6 +190,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 	if(density && mineral())
 		MineralSpread()
 
+// ALLOW(sys_update_icon): neighbour-dependent borders, archaeology overlays, name changes and neighbour redraws
 /turf/simulated/mineral/update_icon(update_neighbors, ignore_list)
 	cut_overlays()
 

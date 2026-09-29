@@ -9,11 +9,7 @@
 	caliber = ".48"
 	load_method = MAGAZINE
 
-/obj/item/gun/projectile/altevian/update_icon()
-	if(ammo_magazine)
-		icon_state = initial(icon_state)
-	else
-		icon_state = "[initial(icon_state)]-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/altevian, "[initial(icon_state)][ammo_magazine?:-e]")
 
 /obj/item/ammo_magazine/sam48
 	name = "ammo clip (SAM .48)"

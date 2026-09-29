@@ -46,6 +46,7 @@
 /obj/item/reagent_containers/blood/on_reagent_change()
 	update_icon()
 
+// ALLOW(sys_update_icon): also sets item_state (worn/held sprite) alongside icon_state from fill percent
 /obj/item/reagent_containers/blood/update_icon()
 	var/percent = round((reagents.total_volume / volume) * 100)
 	if(percent >= 0 && percent <= 9)

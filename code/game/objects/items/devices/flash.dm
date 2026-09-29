@@ -68,6 +68,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/flash, "power_supply", "cell_type")
 /obj/item/flash/proc/screwdriver_act_tool_failed(mob/user, obj/item/tool)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " fails to repair %T%."))
 
+// ALLOW(sys_update_icon): reads the charge of the internal or external power cell (another object's state)
 /obj/item/flash/update_icon()
 	var/obj/item/cell/battery = power_supply
 

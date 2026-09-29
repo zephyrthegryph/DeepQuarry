@@ -344,6 +344,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 
 DECLARE_REF(/obj/machinery/gear_dispenser/suit_fancy, "door", OWNED, null)
 
+// ALLOW(sys_update_icon): adds the per-instance mapped special_frame overlay alongside held-gear overlays
 /obj/machinery/gear_dispenser/suit_fancy/update_icon()
 	cut_overlays()
 

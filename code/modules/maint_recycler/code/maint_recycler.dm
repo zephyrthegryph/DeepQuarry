@@ -370,6 +370,7 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 	open_door(user)
 	update_icon()
 
+// ALLOW(sys_update_icon): overlay copies the inserted item's appearance with per-instance offsets and scale
 /obj/machinery/maint_recycler/update_icon()
 	if(inserted_item != null)
 		item_overlay.appearance = inserted_item.appearance;

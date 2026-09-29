@@ -32,6 +32,7 @@ DECLARE_REF(/obj/item/gun/magnetic/matfed, "manipulator", OWNED, null)
 	else
 		. += span_notice("The \"manipulator missing\" indicator is lit. [src] consumes [mat_cost] units of [ammo_material] per shot.")
 
+// ALLOW(sys_update_icon): reads cell/capacitor charge (other objects) and replaces the whole overlay list
 /obj/item/gun/magnetic/matfed/update_icon()
 	var/list/overlays_to_add = list()
 	if(removable_components)

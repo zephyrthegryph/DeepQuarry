@@ -16,6 +16,7 @@ DECLARE_PERIODIC(/obj/structure/blob/node, PERIODIC_SLOW)
 	. = ..()
 	update_icon()
 
+// ALLOW(sys_update_icon): overlay tinted with its overmind's blob colour, name from the blob type
 /obj/structure/blob/node/update_icon()
 	cut_overlays()
 	color = null

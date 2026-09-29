@@ -581,6 +581,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 ///		Icon generation stuff
 ///
 
+// ALLOW(sys_update_icon): build_icons() per-instance composition plus per-belly fullness overlays
 /mob/living/simple_mob/animal/synx/update_icon()
 	update_fullness()
 	build_icons()

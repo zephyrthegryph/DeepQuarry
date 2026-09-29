@@ -43,6 +43,7 @@
 		if("stun") add_overlay("taser_pdw")
 		if("lethal") add_overlay("lazer_pdw")
 
+// ALLOW(sys_update_icon): update_mode() must run with the redraw (re-derives the firemode overlays)
 /obj/item/gun/energy/gun/martin/update_icon()
 	cut_overlays()
 	update_mode()
@@ -130,6 +131,7 @@
 	update_icon()
 	user?.hud_used?.update_ammo_hud(user, src) // Update one last time once we're finished!
 
+// ALLOW(sys_update_icon): refreshes the in-hand sprite via update_held_icon() and defers to the procedural energy-gun parent
 /obj/item/gun/energy/locked/frontier/update_icon()
 	if(recharging)
 		icon_state = "[initial(icon_state)]_pump"
@@ -167,6 +169,7 @@
 		list(mode_name="burst", burst=3, fire_delay=10, move_delay=4, burst_accuracy=list(0,0,0), dispersion=list(0.0, 0.2, 0.5), projectile_type=/obj/item/projectile/beam/phaser/light, charge_cost = 90), // Added this
 	)
 
+// ALLOW(sys_update_icon): refreshes the in-hand sprite via update_held_icon() and defers to the procedural energy-gun parent
 /obj/item/gun/energy/locked/frontier/carbine/update_icon()
 	if(recharging)
 		icon_state = "[modifystate]_pump"
@@ -238,6 +241,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/locked/frontier/rifle, INTERACT_VERB("U
 /obj/item/gun/energy/locked/frontier/rifle/proc/frontier_rifle_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle_scope(2.0)
 
+// ALLOW(sys_update_icon): refreshes the in-hand sprite via update_held_icon() and defers to the procedural energy-gun parent
 /obj/item/gun/energy/locked/frontier/rifle/update_icon()
 	if(recharging)
 		icon_state = "[modifystate]_pump"

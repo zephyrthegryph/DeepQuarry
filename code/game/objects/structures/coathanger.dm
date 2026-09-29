@@ -66,6 +66,7 @@
 	else
 		return 1
 
+// ALLOW(sys_update_icon): overlays chosen from the type of the held coat
 /obj/structure/coatrack/update_icon()
 	cut_overlays()
 	if (istype(coat(), /obj/item/clothing/suit/storage/toggle/labcoat))

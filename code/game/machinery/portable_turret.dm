@@ -289,26 +289,17 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 	add_overlay(turret_opened_overlay)
 	return ..()
 
-/obj/machinery/porta_turret/update_icon()
-	if(has_stat(BROKEN)) // Turret is dead.
-		icon_state = "destroyed_target_prism_[turret_type]"
-
-	else if(raised || raising)
-		// Turret is open.
+/// The icon_state prefix before turret_type.
+/obj/machinery/porta_turret/proc/appearance_prefix()
+	if(has_stat(BROKEN))
+		return "destroyed_target_prism_"
+	if(raised || raising)
 		if(powered() && enabled)
-			// Trying to shoot someone.
-			if(lethal)
-				icon_state = "[lethal_icon_color]_target_prism_[turret_type]"
-			else
-				icon_state = "[icon_color]_target_prism_[turret_type]"
+			return "[lethal ? lethal_icon_color : icon_color]_target_prism_"
+		return "grey_target_prism_"
+	return "turret_cover_"
 
-		else
-			// Disabled.
-			icon_state = "grey_target_prism_[turret_type]"
-
-	else
-		// Its closed.
-		icon_state = "turret_cover_[turret_type]"
+APPEARANCE_TEMPLATE(/obj/machinery/porta_turret, "[appearance_prefix][turret_type]")
 
 /obj/machinery/porta_turret/proc/setup()
 	var/obj/item/gun/energy/E = installation	//All energy-based weapons are applicable
@@ -1383,26 +1374,14 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 			if(timeout <= 0)
 				popDown() // no valid targets, close the cover
 
-/obj/machinery/porta_turret/rcd/update_icon()
-	if(has_stat(BROKEN)) // Turret is dead.
-		icon_state = "destroyed_target_prism_[turret_type]"
-
-	else if(raised || raising)
-		// Turret is open.
+/obj/machinery/porta_turret/rcd/appearance_prefix()
+	if(has_stat(BROKEN))
+		return "destroyed_target_prism_"
+	if(raised || raising)
 		if(enabled)
-			// Trying to shoot someone.
-			if(lethal)
-				icon_state = "[lethal_icon_color]_target_prism_[turret_type]"
-			else
-				icon_state = "[icon_color]_target_prism_[turret_type]"
-
-		else
-			// Disabled.
-			icon_state = "grey_target_prism_[turret_type]"
-
-	else
-		// Its closed.
-		icon_state = "turret_cover_[turret_type]"
+			return "[lethal ? lethal_icon_color : icon_color]_target_prism_"
+		return "grey_target_prism_"
+	return "turret_cover_"
 
 /obj/machinery/porta_turret/rcd/die()
 	fx_sparks(src, 5, FALSE)

@@ -575,6 +575,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 // Update icons
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
+// ALLOW(sys_update_icon): chassis datum lookup, holo icon swap, belly fullness states and eye overlays
 /mob/living/silicon/pai/update_icon()
 	. = ..()
 

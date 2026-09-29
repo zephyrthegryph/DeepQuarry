@@ -151,6 +151,7 @@ They're also cool, and Rykka/Nyria wrote this uwu
 
 DECLARE_REF(/mob/living/simple_mob/animal/hyena, "hat", SPILL, null)
 
+// ALLOW(sys_update_icon): hat image overlay using the worn hat's state with pixel offset
 /mob/living/simple_mob/animal/hyena/update_icon()
 	overlays.Cut()
 	..()

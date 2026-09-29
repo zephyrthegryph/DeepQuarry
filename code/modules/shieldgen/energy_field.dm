@@ -141,6 +141,7 @@ EXTEND_INTERACTIONS(/obj/effect/energy_field, \
 	SHOULD_CALL_PARENT(FALSE)
 	return
 
+// ALLOW(sys_update_icon): edge overlays per adjacent shield dir, redraws neighbours and sets coloured light
 /obj/effect/energy_field/update_icon(update_neightbors = 0)
 	cut_overlays()
 	var/list/adjacent_shields_dir = list()

@@ -219,6 +219,7 @@
 // if NOPOWER, display blank
 // if BROKEN, display blue screen of death icon AI uses
 // if timing=true, run update display function
+// ALLOW(sys_update_icon): maptext countdown and status pictures from its timer
 /obj/machinery/door_timer/update_icon()
 	if(has_stat(NOPOWER))
 		icon_state = "frame"

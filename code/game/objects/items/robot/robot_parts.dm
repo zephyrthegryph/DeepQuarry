@@ -69,6 +69,7 @@
 	. = ..()
 	update_icon()
 
+// ALLOW(sys_update_icon): overlays composited from which part objects are installed
 /obj/item/robot_parts/robot_suit/update_icon()
 	cut_overlays()
 	if(src.l_arm)

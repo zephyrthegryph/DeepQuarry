@@ -105,6 +105,7 @@ DECLARE_REF(/obj/machinery/appliance/cooker/fryer, "oil", OWNED, null)
 
 	cooking_power *= oil_efficiency
 
+// ALLOW(sys_update_icon): fry_loop sound start/stop plus a double-light image with per-instance pixel offsets
 /obj/machinery/appliance/cooker/fryer/update_icon() // We add our own version of the proc to use the special fryer double-lights.
 	if(!has_stat(MACHINE_STAT_ANY))
 		..()

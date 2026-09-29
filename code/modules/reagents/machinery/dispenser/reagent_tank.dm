@@ -469,11 +469,10 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/water_cooler, \
 		return TRUE
 	return TRUE
 
-/obj/structure/reagent_dispensers/water_cooler/update_icon()
-	icon_state = "water_cooler"
-	cut_overlays()
-	if(bottle)
-		add_overlay("water_cooler_bottle")
+DECLARE_APPEARANCE(/obj/structure/reagent_dispensers/water_cooler, "bottle", list(
+	"1" = list(APPEARANCE_ICON_STATE = "water_cooler", APPEARANCE_OVERLAYS = list("water_cooler_bottle")),
+	"*" = list(APPEARANCE_ICON_STATE = "water_cooler"),
+))
 
 /obj/structure/reagent_dispensers/beerkeg
 	name = "beer keg"

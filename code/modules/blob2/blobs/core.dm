@@ -121,6 +121,7 @@ DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
 	if(overmind)
 		qdel(overmind)
 
+// ALLOW(sys_update_icon): overlay tinted with its overmind's blob colour, name from the blob type
 /obj/structure/blob/core/update_icon()
 	cut_overlays()
 	color = null

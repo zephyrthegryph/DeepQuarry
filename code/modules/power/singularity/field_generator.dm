@@ -49,6 +49,7 @@
 		if(2)
 			. += span_notice("It has been bolted down securely and welded down into place.")
 
+// ALLOW(sys_update_icon): overlays from its live field list and a stored-power level
 /obj/machinery/field_generator/update_icon()
 	cut_overlays()
 	if(!active)

@@ -17,6 +17,7 @@
 	robot_durability = 20
 
 /* 
+// ALLOW(sys_update_icon): opts out of /obj/item/cell's charge overlay
 /obj/item/cell/crap/update_icon() //No visible charge indicator
 	return
 */// CHOMPRemve End
@@ -108,6 +109,7 @@
 	charge = 8000
 	maxcharge = 8000
 
+// ALLOW(sys_update_icon): opts out of /obj/item/cell's charge overlay
 /obj/item/cell/mech/lead/update_icon() //No visible charge indicator
 	return
 
@@ -182,6 +184,7 @@
 	connector_type = "emergency"
 	w_class = ITEMSIZE_TINY
 
+// ALLOW(sys_update_icon): opts out of /obj/item/cell's charge overlay
 /obj/item/cell/emergency_light/update_icon() //No visible charge indicator
 	return
 

@@ -40,6 +40,7 @@
 	if(node)
 		node.update_underlays()
 
+// ALLOW(sys_update_icon): overlays come from GLOB.icon_manager generated atmos icons tinted by per-instance pipe_color.
 /obj/machinery/atmospherics/pipe/cap/update_icon(safety = 0)
 	alpha = 255
 

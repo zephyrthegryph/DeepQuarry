@@ -164,6 +164,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/cooking_container, \
 			if (weights[I])
 				holder.trans_to_obj(I, weights[I] / total)
 
+// ALLOW(sys_update_icon): fill overlay derived from food_items/max_space thresholds over the current icon_state
 /obj/item/reagent_containers/cooking_container/update_icon()
 	overlays.Cut()
 

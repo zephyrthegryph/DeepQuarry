@@ -216,14 +216,15 @@ DECLARE_INTERACTIONS(/obj/item/inducer, \
 	if(opened)
 		. += span_notice("Its battery compartment is open.")
 
-/obj/item/inducer/update_icon()
-	..()
-	cut_overlays()
-	if(opened)
-		if(!cell)
-			add_overlay("inducer-nobat")
-		else
-			add_overlay("inducer-bat")
+/obj/item/inducer/proc/appearance_compartment()
+	if(!opened)
+		return ""
+	return cell ? "bat" : "nobat"
+
+DECLARE_APPEARANCE(/obj/item/inducer, "appearance_compartment", list( \
+	"nobat" = list(APPEARANCE_OVERLAYS = list("inducer-nobat")), \
+	"bat" = list(APPEARANCE_OVERLAYS = list("inducer-bat")) \
+))
 
 //////// Variants
 /obj/item/inducer/sci

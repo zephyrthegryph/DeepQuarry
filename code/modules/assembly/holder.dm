@@ -46,6 +46,7 @@ DECLARE_REF(/obj/item/assembly_holder, "a_right", BACK_VIA, "holder_handle")
 /obj/item/assembly_holder/proc/detached()
 	return
 
+// ALLOW(sys_update_icon): overlays from both attached assemblies' states and overlays, and redraws its master
 /obj/item/assembly_holder/update_icon()
 	cut_overlays()
 	if(a_left)

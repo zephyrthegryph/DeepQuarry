@@ -12,11 +12,7 @@
 	magazine_type = null // R&D builds this. Starts unloaded.
 	allowed_magazines = list(/obj/item/ammo_magazine/m5mmcaseless)
 
-/obj/item/gun/projectile/caseless/prototype/update_icon()
-	if(ammo_magazine)
-		icon_state = initial(icon_state)
-	else
-		icon_state = "[initial(icon_state)]-empty"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/caseless/prototype, "[initial(icon_state)][ammo_magazine?:-empty]")
 
 /obj/item/gun/projectile/caseless/prototype/loaded
 	magazine_type = /obj/item/ammo_magazine/m5mmcaseless

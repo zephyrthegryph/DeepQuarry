@@ -104,6 +104,7 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 		show_tvs(loc)
 		update_feed()
 
+// ALLOW(sys_update_icon): reads the internal camera's status and refreshes the holder's hand/belt sprites
 /obj/item/tvcamera/update_icon()
 	..()
 	if(camera.status)
@@ -223,6 +224,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PRO
 	if(bcamera.status)
 		OM_EMIT(bcamera, /datum/om/event/movable_attempted_move, null, null) // Forward the movement event
 
+// ALLOW(sys_update_icon): refreshes the holding human's hand/belt sprites with the redraw
 /obj/item/clothing/accessory/bodycam/update_icon()
 	..()
 	var/mob/living/carbon/human/H = loc

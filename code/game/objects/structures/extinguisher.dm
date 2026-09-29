@@ -116,17 +116,16 @@
 	opened = TRUE
 	update_icon()
 
-/obj/structure/extinguisher_cabinet/update_icon()
-	var/suffix = "empty"
-	if(has_extinguisher)
-		if(istype(has_extinguisher, /obj/item/extinguisher/mini))
-			suffix = "mini"
-		else if(istype(has_extinguisher, /obj/item/extinguisher/atmo))
-			suffix = "advanced"
-		else
-			suffix = "standard"
+/obj/structure/extinguisher_cabinet/proc/appearance_suffix()
+	if(!has_extinguisher)
+		return "empty"
+	if(istype(has_extinguisher, /obj/item/extinguisher/mini))
+		return "mini"
+	if(istype(has_extinguisher, /obj/item/extinguisher/atmo))
+		return "advanced"
+	return "standard"
 
-	icon_state = "[initial(icon_state)][opened ? "" : "_closed"]_[suffix]"
+APPEARANCE_TEMPLATE(/obj/structure/extinguisher_cabinet, "[initial(icon_state)][opened?:_closed]_[appearance_suffix]")
 
 /obj/structure/extinguisher_cabinet/old
 	name = "extinguisher cabinet"

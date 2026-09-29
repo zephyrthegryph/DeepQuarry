@@ -183,6 +183,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 	else
 		set_light(light_range_on, light_power_on)
 
+// ALLOW(sys_update_icon): generated minimap image, holomap datum initialisation and floor marking offsets
 /obj/machinery/station_map/update_icon()
 	if(!holomap_datum)
 		return //Not yet.

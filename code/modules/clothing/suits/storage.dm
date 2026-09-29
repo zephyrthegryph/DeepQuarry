@@ -95,6 +95,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/hooded/toggle, \
 		T.update_clothing_icon()
 	update_clothing_icon() //so our overlays update
 
+// ALLOW(sys_update_icon): must write icon_state after /obj/item/clothing/suit's has_hood_sprite icon_state write in the ..() chain (a declaration applies before it).
 /obj/item/clothing/suit/storage/hooded/toggle/update_icon()
 	. = ..()
 	icon_state = "[toggleicon][open ? "_open" : ""][hood_up ? "_t" : ""]"

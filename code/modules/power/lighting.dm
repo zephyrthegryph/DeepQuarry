@@ -42,14 +42,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 		set_dir(newdir)
 	update_icon()
 
-/obj/machinery/light_construct/update_icon()
-	switch(stage)
-		if(1)
-			icon_state = "tube-construct-stage1"
-		if(2)
-			icon_state = "tube-construct-stage2"
-		if(3)
-			icon_state = "tube-empty"
+DECLARE_APPEARANCE(/obj/machinery/light_construct, "stage", list("1" = list(APPEARANCE_ICON_STATE = "tube-construct-stage1"), "2" = list(APPEARANCE_ICON_STATE = "tube-construct-stage2"), "3" = list(APPEARANCE_ICON_STATE = "tube-empty")))
 
 /obj/machinery/light_construct/examine(mob/user)
 	. = ..()
@@ -188,14 +181,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	fixture_type = /obj/machinery/light/small
 	sheets_refunded = 1
 
-/obj/machinery/light_construct/small/update_icon()
-	switch(stage)
-		if(1)
-			icon_state = "bulb-construct-stage1"
-		if(2)
-			icon_state = "bulb-construct-stage2"
-		if(3)
-			icon_state = "bulb-empty"
+DECLARE_APPEARANCE(/obj/machinery/light_construct/small, "stage", list("1" = list(APPEARANCE_ICON_STATE = "bulb-construct-stage1"), "2" = list(APPEARANCE_ICON_STATE = "bulb-construct-stage2"), "3" = list(APPEARANCE_ICON_STATE = "bulb-empty")))
 
 /obj/machinery/light_construct/flamp
 	name = "floor light fixture frame"
@@ -209,14 +195,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	fixture_type = /obj/machinery/light/flamp
 	sheets_refunded = 2
 
-/obj/machinery/light_construct/flamp/update_icon()
-	switch(stage)
-		if(1)
-			icon_state = "flamp-construct-stage1"
-		if(2)
-			icon_state = "flamp-construct-stage2"
-		if(3)
-			icon_state = "flamp-empty"
+DECLARE_APPEARANCE(/obj/machinery/light_construct/flamp, "stage", list("1" = list(APPEARANCE_ICON_STATE = "flamp-construct-stage1"), "2" = list(APPEARANCE_ICON_STATE = "flamp-construct-stage2"), "3" = list(APPEARANCE_ICON_STATE = "flamp-empty")))
 
 // the standard tube light fixture
 OM_TIMER_SLOT(/obj/machinery/light, light_timer_token)
@@ -360,6 +339,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	. = ..()
 	stop_flicker_watch()
 
+// ALLOW(sys_update_icon): drives set_on() and the light overlay (add/remove_light_overlay) from status, alongside the sprite.
 /obj/machinery/light/update_icon()
 
 	switch(status)		// set icon_states
@@ -387,6 +367,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 			remove_light_overlay()
 	return
 
+// ALLOW(sys_update_icon): rewrites base_state by lamp_shade and drives set_on()/light overlays, falling back to /obj/machinery/light's procedural redraw.
 /obj/machinery/light/flamp/update_icon()
 	if(lamp_shade)
 		base_state = "flampshade"
@@ -1328,6 +1309,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	MATERIAL_BULK(MAT_GLASS, 100)
 
 // update the icon state and description of the light
+// ALLOW(sys_update_icon): rewrites desc (built from name) together with the status sprite.
 /obj/item/light/update_icon()
 	switch(status)
 		if(LIGHT_OK)
@@ -1582,14 +1564,7 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 	. = ..()
 	make_rotatable()
 
-/obj/machinery/light_construct/floortube/update_icon()
-	switch(stage)
-		if(1)
-			icon_state = "floortube-construct-stage1"
-		if(2)
-			icon_state = "floortube-construct-stage2"
-		if(3)
-			icon_state = "floortube-empty"
+DECLARE_APPEARANCE(/obj/machinery/light_construct/floortube, "stage", list("1" = list(APPEARANCE_ICON_STATE = "floortube-construct-stage1"), "2" = list(APPEARANCE_ICON_STATE = "floortube-construct-stage2"), "3" = list(APPEARANCE_ICON_STATE = "floortube-empty")))
 
 // Big Flamp
 
@@ -1619,14 +1594,7 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 	fixture_type = /obj/machinery/light/bigfloorlamp
 	sheets_refunded = 3
 
-/obj/machinery/light_construct/bigfloorlamp/update_icon()
-	switch(stage)
-		if(1)
-			icon_state = "big_flamp-construct-stage1"
-		if(2)
-			icon_state = "big_flamp-construct-stage2"
-		if(3)
-			icon_state = "big_flamp-empty"
+DECLARE_APPEARANCE(/obj/machinery/light_construct/bigfloorlamp, "stage", list("1" = list(APPEARANCE_ICON_STATE = "big_flamp-construct-stage1"), "2" = list(APPEARANCE_ICON_STATE = "big_flamp-construct-stage2"), "3" = list(APPEARANCE_ICON_STATE = "big_flamp-empty")))
 
 // Fairy lights
 

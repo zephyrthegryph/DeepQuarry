@@ -26,6 +26,7 @@
 	. = ..()
 	update_icon()
 
+// ALLOW(sys_update_icon): reagent fill overlay coloured from the beaker's reagents and tank-type overlays
 /obj/structure/medical_stand/update_icon()
 	cut_overlays()
 

@@ -339,15 +339,16 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 	else
 		taperecorder_record_effect(user)
 
-/obj/item/taperecorder/update_icon()
+/obj/item/taperecorder/proc/appearance_tape_state()
 	if(!mytape)
-		icon_state = "taperecorder_empty"
-	else if(recording)
-		icon_state = "taperecorder_recording"
-	else if(playing)
-		icon_state = "taperecorder_playing"
-	else
-		icon_state = "taperecorder_idle"
+		return "empty"
+	if(recording)
+		return "recording"
+	if(playing)
+		return "playing"
+	return "idle"
+
+APPEARANCE_TEMPLATE(/obj/item/taperecorder, "taperecorder_[appearance_tape_state]")
 
 MATERIAL_MIX(/obj/item/rectape, list(MAT_STEEL=20, MAT_GLASS=5))
 /obj/item/rectape
@@ -365,10 +366,9 @@ MATERIAL_MIX(/obj/item/rectape, list(MAT_STEEL=20, MAT_GLASS=5))
 	var/list/timestamp = new/list() // ALLOW(instance_list): d: index-parallel with storedinfo
 	var/ruined = 0
 
-/obj/item/rectape/update_icon()
-	cut_overlays()
-	if(ruined)
-		add_overlay("ribbonoverlay")
+DECLARE_APPEARANCE(/obj/item/rectape, "ruined", list( \
+	"1" = list(APPEARANCE_OVERLAYS = list("ribbonoverlay")) \
+))
 
 
 DECLARE_INTERACTIONS(/obj/item/rectape, \

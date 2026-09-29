@@ -45,17 +45,7 @@
 	update_icon()
 
 // update the icon_state
-/obj/machinery/magnetic_module/update_icon()
-	var/state="floor_magnet"
-	var/onstate=""
-	if(!on)
-		onstate="0"
-
-	if(invisibility)
-		icon_state = "[state][onstate]-f"	// if invisible, set icon to faded version
-											// in case of being revealed by T-scanner
-	else
-		icon_state = "[state][onstate]"
+APPEARANCE_TEMPLATE(/obj/machinery/magnetic_module, "floor_magnet[on?:0][invisibility?-f:]")
 
 /obj/machinery/magnetic_module/receive_signal(datum/signal/signal)
 	var/command = signal.data["command"]

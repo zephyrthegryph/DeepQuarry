@@ -396,6 +396,7 @@ DECLARE_REF(/obj/item/stack/material/processed_alloy, "batch_state", OWNED, null
 /// transfer) ends in update_icon(), so this is the one seam that keeps the
 /// export value in step with the sheets actually present: a split can no
 /// longer leave both halves carrying the whole stack's value.
+// ALLOW(sys_update_icon): refresh_export_value() side effect must run with the redraw
 /obj/item/stack/material/processed_alloy/update_icon()
 	. = ..()
 	refresh_export_value()

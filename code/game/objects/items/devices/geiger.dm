@@ -50,23 +50,31 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 	if(insulation_deficit)
 		. += span_warning("Insulation deficit: [insulation_deficit]")
 
-/obj/item/geiger/update_icon()
+/// 0 while not scanning, else 1..5 by the last perceived danger (null reads as 1).
+/obj/item/geiger/proc/appearance_geiger_level()
 	if(!scanning)
-		icon_state = "geiger_off"
-		return ..()
-
+		return 0
 	switch(last_perceived_radiation_danger)
 		if(null)
-			icon_state = "geiger_on_1"
+			return 1
 		if(PERCEIVED_RADIATION_DANGER_LOW)
-			icon_state = "geiger_on_2"
+			return 2
 		if(PERCEIVED_RADIATION_DANGER_MEDIUM)
-			icon_state = "geiger_on_3"
+			return 3
 		if(PERCEIVED_RADIATION_DANGER_HIGH)
-			icon_state = "geiger_on_4"
+			return 4
 		if(PERCEIVED_RADIATION_DANGER_EXTREME)
-			icon_state = "geiger_on_5"
-	return ..()
+			return 5
+	return -1
+
+DECLARE_APPEARANCE(/obj/item/geiger, "appearance_geiger_level", list( \
+	"0" = list(APPEARANCE_ICON_STATE = "geiger_off"), \
+	"1" = list(APPEARANCE_ICON_STATE = "geiger_on_1"), \
+	"2" = list(APPEARANCE_ICON_STATE = "geiger_on_2"), \
+	"3" = list(APPEARANCE_ICON_STATE = "geiger_on_3"), \
+	"4" = list(APPEARANCE_ICON_STATE = "geiger_on_4"), \
+	"5" = list(APPEARANCE_ICON_STATE = "geiger_on_5") \
+))
 
 DECLARE_INTERACTIONS(/obj/item/geiger, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
@@ -177,21 +185,14 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 		if(!geiger_sound)
 			geiger_sound = new /datum/geiger_sound/wall(src) // ALLOW(decl): only while scanning
 
-/obj/item/geiger/wall/update_icon()
-	if(!scanning)
-		icon_state = "geiger_wall-p"
-		return 1
-	switch(last_perceived_radiation_danger)
-		if(null)
-			icon_state = "geiger_level_1"
-		if(PERCEIVED_RADIATION_DANGER_LOW)
-			icon_state = "geiger_level_2"
-		if(PERCEIVED_RADIATION_DANGER_MEDIUM)
-			icon_state = "geiger_level_3"
-		if(PERCEIVED_RADIATION_DANGER_HIGH)
-			icon_state = "geiger_level_4"
-		if(PERCEIVED_RADIATION_DANGER_EXTREME)
-			icon_state = "geiger_level_5"
+DECLARE_APPEARANCE(/obj/item/geiger/wall, "appearance_geiger_level", list( \
+	"0" = list(APPEARANCE_ICON_STATE = "geiger_wall-p"), \
+	"1" = list(APPEARANCE_ICON_STATE = "geiger_level_1"), \
+	"2" = list(APPEARANCE_ICON_STATE = "geiger_level_2"), \
+	"3" = list(APPEARANCE_ICON_STATE = "geiger_level_3"), \
+	"4" = list(APPEARANCE_ICON_STATE = "geiger_level_4"), \
+	"5" = list(APPEARANCE_ICON_STATE = "geiger_level_5") \
+))
 
 EXTEND_INTERACTIONS(/obj/item/geiger/wall, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \

@@ -158,6 +158,7 @@
 	else
 		set_light(0)
 
+// ALLOW(sys_update_icon): overlay names built from the current icon_state of each subtype, removed selectively with cut_overlay so other overlays survive
 /obj/item/kinetic_crusher/update_icon()
 	. = ..()
 	cut_overlay("[icon_state]_uncharged")

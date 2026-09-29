@@ -126,6 +126,7 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 		COOLDOWN_START(src, toggle, 5 SECONDS)
 		toggle_valve()
 
+// ALLOW(sys_update_icon): overlays copy the attached tanks' icon_states and a shifted /icon underlay
 /obj/item/transfer_valve/update_icon()
 	cut_overlays()
 	underlays = null

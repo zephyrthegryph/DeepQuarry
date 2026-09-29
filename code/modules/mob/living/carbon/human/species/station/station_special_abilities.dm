@@ -1032,6 +1032,7 @@
 	firemodes = list(
 		list(mode_name="vore", projectile_type=/obj/item/projectile/beam/appendage, modifystate=null, fire_sound=SFX_VORE_SUNESOUND_PRED_SCHLORP, charge_cost = 0),)
 
+// ALLOW(sys_update_icon): opts out of the energy gun's procedural charge/mode overlays (parent override never reaches the declared appearance)
 /obj/item/gun/energy/gun/tongue/update_icon() //No updating the icon.
 	icon_state = "synthtongue"
 	return

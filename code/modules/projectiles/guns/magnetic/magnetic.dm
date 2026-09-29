@@ -99,6 +99,7 @@ DECLARE_REF(/obj/item/gun/magnetic, "capacitor", OWNED, null)
 	if(needs_update)
 		update_icon()
 
+// ALLOW(sys_update_icon): overlay names built from the current (subtype-changed) icon_state, and cut_overlays() clears overlays the subtypes add
 /obj/item/gun/magnetic/update_icon()
 	cut_overlays()
 	if(state & ICON_CELL)

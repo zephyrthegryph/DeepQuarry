@@ -38,8 +38,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	if(prob(20))
 		atom_break()
 
-/obj/machinery/gravity_generator/update_icon()
-	icon_state = "[get_status()]_[sprite_number]"
+APPEARANCE_TEMPLATE(/obj/machinery/gravity_generator, "[get_status]_[sprite_number]")
 
 /obj/machinery/gravity_generator/proc/get_status()
 	return "off"

@@ -113,6 +113,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	new /obj/item/material/shard(src.loc)
 	return ..()
 
+// ALLOW(sys_update_icon): re-applies set_dir(angle2dir(adir)) (tracking angle) with the panel overlay.
 /obj/machinery/power/solar/update_icon()
 	..()
 	cut_overlays()
@@ -402,6 +403,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 			if(connected_tracker())
 				connected_tracker().set_angle(GLOB.solar_service.get_solar_angle(get_turf(src)))
 
+// ALLOW(sys_update_icon): overlay image whose dir is computed from cdir (tracking angle) each redraw.
 /obj/machinery/power/solar_control/update_icon()
 	if(has_stat(BROKEN))
 		icon_state = "broken"

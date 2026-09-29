@@ -1014,6 +1014,7 @@ TYPE_TABLE(/obj/item/storage/trinketbox, hold_spec, list(HOLD_ONLY(list( \
 		/obj/item/clothing/accessory/medal \
 		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
+// ALLOW(sys_update_icon): overlay picked from the type of the first stored item
 /obj/item/storage/trinketbox/update_icon()
 	cut_overlays()
 	if(open)

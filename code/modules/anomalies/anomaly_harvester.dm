@@ -135,6 +135,7 @@
 		else
 			new /obj/item/research_sample/common(src)
 
+// ALLOW(sys_update_icon): reads the harvested anomaly's stability
 /obj/machinery/anomaly_harvester/update_icon()
 	cut_overlays()
 	if(!operable() || !anchored)

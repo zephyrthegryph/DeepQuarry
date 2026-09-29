@@ -102,6 +102,7 @@
 	if(node2)
 		node2.update_underlays()
 
+// ALLOW(sys_update_icon): pipe_color-tinted icon_manager overlay chosen by which nodes are connected.
 /obj/machinery/atmospherics/pipe/simple/update_icon(safety = 0)
 	alpha = 255
 

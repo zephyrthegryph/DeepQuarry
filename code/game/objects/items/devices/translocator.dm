@@ -49,6 +49,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/perfect_tele, "power_source", "cell_type")
 // its beacons forget it.
 DECLARE_REF(/obj/item/perfect_tele, "beacons", LIST_BACK, "tele_hand_handle")
 
+// ALLOW(sys_update_icon): reads the power cell's charge (another object's state)
 /obj/item/perfect_tele/update_icon()
 	if(!power_source)
 		icon_state = "[initial(icon_state)]_o"
@@ -527,6 +528,7 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	recharging = 0
 	update_icon()
 
+// ALLOW(sys_update_icon): calls update_held_icon() and chains into the parent's cell-reading draw
 /obj/item/perfect_tele/frontier/update_icon()
 	if(recharging)
 		icon_state = "[initial(icon_state)]_o"

@@ -55,15 +55,17 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/heater, 120, null)
 		update_icon()
 
 
-/obj/machinery/atmospherics/unary/heater/update_icon()
-	if(node)
-		if(use_power && heating)
-			icon_state = "heater_1"
-		else
-			icon_state = "heater"
-	else
-		icon_state = "heater_0"
-	return
+/// Appearance reader: 0 unconnected, 1 connected idle, 2 connected and heating.
+/obj/machinery/atmospherics/unary/heater/proc/appearance_heater_state()
+	if(!node)
+		return 0
+	return (use_power && heating) ? 2 : 1
+
+DECLARE_APPEARANCE(/obj/machinery/atmospherics/unary/heater, "appearance_heater_state", list(
+	"0" = list(APPEARANCE_ICON_STATE = "heater_0"),
+	"1" = list(APPEARANCE_ICON_STATE = "heater"),
+	"2" = list(APPEARANCE_ICON_STATE = "heater_1"),
+))
 
 
 /obj/machinery/atmospherics/unary/heater/machine_step()

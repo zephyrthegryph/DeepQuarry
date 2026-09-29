@@ -101,11 +101,6 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 		return
 	..()
 
-/obj/vehicle/train/cargo/update_icon()
-	if(open)
-		icon_state = initial(icon_state) + "_open"
-	else
-		icon_state = initial(icon_state)
 */
 
 /obj/vehicle/train/trolley/insert_cell(obj/item/cell/C, mob/living/carbon/human/H)
@@ -384,6 +379,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 	else
 		set_anchored(TRUE)
 
+// ALLOW(sys_update_icon): a directed over-mob overlay on the FLY layer that follows dir
 /obj/vehicle/train/engine/update_icon()
 	..()
 	cut_overlays()
@@ -510,6 +506,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/trolley_tank, \
 	. = ..()
 	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u."
 
+// ALLOW(sys_update_icon): reagent fill overlay tinted by the reagents, paint overlay in the instance colour
 /obj/vehicle/train/trolley_tank/update_icon()
 	. = ..()
 	cut_overlays()

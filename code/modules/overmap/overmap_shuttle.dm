@@ -157,6 +157,7 @@ DECLARE_INTERACTIONS(/obj/structure/fuel_port, \
 	update_icon()
 	return TRUE
 
+// ALLOW(sys_update_icon): filled state from its contents
 /obj/structure/fuel_port/update_icon()
 	if(opened)
 		if(contents_count(src) > 0)

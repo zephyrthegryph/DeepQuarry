@@ -1,3 +1,4 @@
+// ALLOW(sys_update_icon): living/dead/rest state from stat/incapacitation, modifier overlay, held-item sprites and eye overlays
 /mob/living/simple_mob/update_icon()
 	. = ..()
 	cut_overlays()

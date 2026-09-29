@@ -31,6 +31,7 @@
 
 	refinery_transfer()
 
+// ALLOW(sys_update_icon): reagent fill tinted by reagents.get_color() plus neighbour intake overlays
 /obj/machinery/reagent_refinery/vat/update_icon()
 	cut_overlays()
 	// GOOBY!

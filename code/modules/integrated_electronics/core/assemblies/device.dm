@@ -41,13 +41,7 @@ EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
 	secured = 1
 	update_icon()
 
-/obj/item/assembly/electronic_assembly/update_icon()
-	if(EA)
-		icon_state = initial(icon_state)
-	else
-		icon_state = initial(icon_state)+"0"
-	if(opened)
-		icon_state = icon_state + "-open"
+APPEARANCE_TEMPLATE(/obj/item/assembly/electronic_assembly, "[initial(icon_state)][EA?:0][opened?-open:]")
 
 /// Old attack_self (the assembly self-use chain: /obj/item/assembly/proc/interaction_self()): use the circuit inside.
 /obj/item/assembly/electronic_assembly/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)

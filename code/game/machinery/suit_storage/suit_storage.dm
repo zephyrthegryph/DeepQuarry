@@ -40,18 +40,16 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 	slot_id = OCCUPANT_SLOT_SUIT_STORAGE
 	name = "suit storage unit"
 
-/obj/machinery/suit_storage_unit/update_icon()
-	var/mob/living/carbon/human/OCCUPANT = src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE)
-	var/hashelmet = 0
-	var/hassuit = 0
-	var/hashuman = 0
-	if(HELMET)
-		hashelmet = 1
-	if(SUIT)
-		hassuit = 1
-	if(OCCUPANT)
-		hashuman = 1
-	icon_state = text("suitstorage[][][][][][][][][]", hashelmet, hassuit, hashuman, isopen, islocked, isUV, ispowered, isbroken, issuperUV)
+/obj/machinery/suit_storage_unit/proc/appearance_helmet()
+	return HELMET ? 1 : 0
+
+/obj/machinery/suit_storage_unit/proc/appearance_suit()
+	return SUIT ? 1 : 0
+
+/obj/machinery/suit_storage_unit/proc/appearance_human()
+	return src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE) ? 1 : 0
+
+APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage[appearance_helmet][appearance_suit][appearance_human][isopen][islocked][isUV][ispowered][isbroken][issuperUV]")
 
 /obj/machinery/suit_storage_unit/power_change()
 	. = ..()

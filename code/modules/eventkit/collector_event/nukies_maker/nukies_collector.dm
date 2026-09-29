@@ -19,6 +19,7 @@ TYPE_TABLE(/obj/structure/event_collector/nukies, event_collector_ingredients, l
 	/obj/item/collector_item/nukies_sludge \
 ))
 
+// ALLOW(sys_update_icon): steps past 3 keep the previous icon_state (stateful), so not a pure template
 /obj/structure/event_collector/nukies/update_icon()
 	. = ..()
 	if(!current_step)

@@ -64,6 +64,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/holofloor, INTERACT_ITEM("Nothing", TY
 	name = "\proper space"
 	icon_state = "white"
 
+// ALLOW(sys_update_icon): space dust overlay picked from its coordinates
 /turf/simulated/floor/holofloor/space/update_icon()
 	. = ..()
 	add_overlay(skybox_service().dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"])
@@ -380,6 +381,7 @@ DECLARE_INTERACTIONS(/obj/item/holo/esword, \
 		update_icon()
 	return FALSE
 
+// ALLOW(sys_update_icon): blade overlay in the instance's blade colour, refreshes the wielder's hand icons
 /obj/item/holo/esword/update_icon()
 	. = ..()
 	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
@@ -531,11 +533,7 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 		begin_event()
 	return TRUE
 
-/obj/machinery/readybutton/update_icon()
-	if(ready)
-		icon_state = "auth_on"
-	else
-		icon_state = "auth_off"
+DECLARE_APPEARANCE(/obj/machinery/readybutton, "ready", list("1" = list(APPEARANCE_ICON_STATE = "auth_on"), APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "auth_off")))
 
 /obj/machinery/readybutton/proc/begin_event()
 

@@ -540,6 +540,7 @@ TYPE_TABLE(/obj/item/stack/medical/splint/ghetto, splint_organs, list(BP_L_ARM, 
 	. = ..()
 	update_icon()
 
+// ALLOW(sys_update_icon): replaces /obj/item/stack's procedural update_icon, which never reaches the base drawing
 /obj/item/stack/medical/advanced/update_icon()
 	switch(amount)
 		if(1 to 2)
@@ -606,5 +607,6 @@ TYPE_TABLE(/obj/item/stack/medical/splint/ghetto, splint_organs, list(BP_L_ARM, 
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
+// ALLOW(sys_update_icon): replaces /obj/item/stack's procedural update_icon, which never reaches the base drawing
 /obj/item/stack/medical/advanced/clotting/update_icon()
 	icon_state = "[initial(icon_state)]_[amount]"

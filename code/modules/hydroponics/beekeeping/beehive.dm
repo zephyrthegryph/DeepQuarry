@@ -16,6 +16,7 @@
 	. = ..()
 	make_climbable()
 
+// ALLOW(sys_update_icon): numbered overlays computed from frame contents count, honeycomb amount and bee_count ranges
 /obj/machinery/beehive/update_icon()
 	cut_overlays()
 	icon_state = "beehive"
@@ -253,18 +254,15 @@
 	if(Adjacent(user))
 		. += "It has [honey] units of honey in its storage tank."
 
-/obj/machinery/honey_extractor/update_icon()
-	cut_overlays()
-
-	icon_state = initial(icon_state)
-
-	if(panel_open)
-		add_overlay("[icon_state]_panel")
+/obj/machinery/honey_extractor/proc/appearance_state()
 	if(has_stat(NOPOWER))
-		icon_state = "[icon_state]_off"
-		return
+		return "[initial(icon_state)]_off"
 	if(processing)
-		icon_state = "[icon_state]_moving"
+		return "[initial(icon_state)]_moving"
+	return initial(icon_state)
+
+APPEARANCE_TEMPLATE(/obj/machinery/honey_extractor, "[appearance_state]")
+DECLARE_APPEARANCE(/obj/machinery/honey_extractor, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("centrifuge_panel"))))
 
 /obj/machinery/honey_extractor/declare_interactions(list/into)
 	into += list(
@@ -340,12 +338,10 @@
 	. = ..()
 	update_icon()
 
-/obj/item/honey_frame/update_icon()
-	..()
+/obj/item/honey_frame/proc/appearance_has_honey()
+	return honey > 0
 
-	overlays.Cut()
-	if(honey > 0)
-		add_overlay("honeycomb")
+DECLARE_APPEARANCE(/obj/item/honey_frame, "appearance_has_honey", list("1" = list(APPEARANCE_OVERLAYS = list("honeycomb"))))
 
 /obj/item/honey_frame/filled
 	name = "filled beehive frame"

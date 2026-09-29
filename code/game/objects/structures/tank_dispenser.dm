@@ -28,14 +28,14 @@
 		new /obj/item/tank/phoron(src)
 	update_icon()
 
-/obj/structure/dispenser/update_icon()
-	cut_overlays()
-	switch(oxygentanks)
-		if(1 to 3)	add_overlay("oxygen-[oxygentanks]")
-		if(4 to INFINITY) add_overlay("oxygen-4")
-	switch(phorontanks)
-		if(1 to 4)	add_overlay("phoron-[phorontanks]")
-		if(5 to INFINITY) add_overlay("phoron-5")
+/obj/structure/dispenser/proc/appearance_oxygen()
+	return oxygentanks >= 1 ? min(oxygentanks, 4) : 0
+
+/obj/structure/dispenser/proc/appearance_phoron()
+	return phorontanks >= 1 ? min(phorontanks, 5) : 0
+
+DECLARE_APPEARANCE(/obj/structure/dispenser, "appearance_oxygen", list("1" = list(APPEARANCE_OVERLAYS = list("oxygen-1")), "2" = list(APPEARANCE_OVERLAYS = list("oxygen-2")), "3" = list(APPEARANCE_OVERLAYS = list("oxygen-3")), "4" = list(APPEARANCE_OVERLAYS = list("oxygen-4"))))
+DECLARE_APPEARANCE(/obj/structure/dispenser, "appearance_phoron", list("1" = list(APPEARANCE_OVERLAYS = list("phoron-1")), "2" = list(APPEARANCE_OVERLAYS = list("phoron-2")), "3" = list(APPEARANCE_OVERLAYS = list("phoron-3")), "4" = list(APPEARANCE_OVERLAYS = list("phoron-4")), "5" = list(APPEARANCE_OVERLAYS = list("phoron-5"))))
 
 /obj/structure/dispenser/declare_interactions(list/into)
 	into += list(

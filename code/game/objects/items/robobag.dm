@@ -24,6 +24,7 @@
 	if(corptag && Adjacent(user))
 		. += span_notice("[src] has a [corptag] attached to it.")
 
+// ALLOW(sys_update_icon): corptag overlay picked from the inserted badge's type and icon_state
 /obj/structure/closet/body_bag/cryobag/robobag/update_icon()
 	cut_overlays()
 	..()

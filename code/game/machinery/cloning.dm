@@ -479,13 +479,14 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 /obj/machinery/clonepod/explosion_contents_severity(severity)
 	return severity
 
-/obj/machinery/clonepod/update_icon()
-	..()
-	icon_state = "pod_0"
+/obj/machinery/clonepod/proc/appearance_state()
 	if(get_occupant() && !has_stat(NOPOWER))
-		icon_state = "pod_1"
-	else if(mess)
-		icon_state = "pod_g"
+		return "1"
+	if(mess)
+		return "g"
+	return "0"
+
+APPEARANCE_TEMPLATE(/obj/machinery/clonepod, "pod_[appearance_state]")
 
 /obj/machinery/clonepod/full/Initialize(mapload)
 	. = ..()

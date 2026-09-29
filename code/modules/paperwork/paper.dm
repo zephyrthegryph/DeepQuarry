@@ -80,6 +80,7 @@
 /obj/item/paper/card
 	plane_foldable = FALSE //No fun allowed
 
+// ALLOW(sys_update_icon): opts out of /obj/item/paper's procedural drawing
 /obj/item/paper/card/update_icon()
 	return
 
@@ -109,6 +110,7 @@
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "alienpaper"
 
+// ALLOW(sys_update_icon): replaces /obj/item/paper's procedural drawing with the alien paper states
 /obj/item/paper/alien/update_icon()
 	if(info)
 		icon_state = "alienpaper_words"
@@ -155,6 +157,7 @@
 	update_space(info)
 	updateinfolinks()
 
+// ALLOW(sys_update_icon): leaves icon states set elsewhere alone (talisman) and otherwise picks the written state
 /obj/item/paper/update_icon()
 	if(icon_state == "paper_talisman")
 		return
@@ -754,6 +757,7 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 	name = "paper scrap"
 	icon_state = "scrap"
 
+// ALLOW(sys_update_icon): opts out of /obj/item/paper's procedural drawing
 /obj/item/paper/crumpled/update_icon()
 	return
 

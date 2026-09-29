@@ -93,6 +93,7 @@
 		consume(src, user)
 	return INTERACTION_HANDLED_PASS
 
+// ALLOW(sys_update_icon): chip overlays built from worth with randomised offsets/rotation; also rewrites name/desc
 /obj/item/spacecasinocash/update_icon()
 	overlays.Cut()
 	name = "[worth] casino credit\s"
@@ -283,6 +284,7 @@ DECLARE_INTERACTIONS(/obj/item/casino_platinum_chip, INTERACT_USE(null, PROC_REF
 		consume(src, user)
 	return INTERACTION_HANDLED_PASS
 
+// ALLOW(sys_update_icon): chip overlays built from worth with randomised offsets; also rewrites name/desc
 /obj/item/spacecasinocash_fake/update_icon()
 	overlays.Cut()
 	name = "[worth] replica casino chip\s"

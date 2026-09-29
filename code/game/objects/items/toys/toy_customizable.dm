@@ -9,6 +9,7 @@
 	var/list/possible_overlays
 	var/list/added_overlays
 
+// ALLOW(sys_update_icon): mutable_appearance overlays with per-instance colour and alpha
 /obj/item/toy/plushie/customizable/update_icon()
 	cut_overlays()
 	var/mutable_appearance/B = mutable_appearance(icon, icon_state)

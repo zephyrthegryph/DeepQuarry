@@ -181,12 +181,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective45, \
 	ammo_type = /obj/item/ammo_casing/a38/emp
 
 
-/obj/item/gun/projectile/revolver/deckard/update_icon()
-	..()
-	if(loaded.len)
-		icon_state = "deckard-loaded"
-	else
-		icon_state = "deckard-empty"
+/// TRUE while any rounds are loaded.
+/obj/item/gun/projectile/revolver/deckard/proc/appearance_loaded()
+	return length(loaded) > 0
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/revolver/deckard, "deckard-[appearance_loaded?loaded:empty]")
 
 /obj/item/gun/projectile/revolver/deckard/load_ammo(obj/item/A, mob/user)
 	if(istype(A, /obj/item/ammo_magazine))
@@ -339,6 +337,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap
 	else
 		add_overlay("inspector_on")
 
+// ALLOW(sys_update_icon): update_charge() must run with the redraw
 /obj/item/gun/projectile/revolver/consul/update_icon()
 	update_charge()
 

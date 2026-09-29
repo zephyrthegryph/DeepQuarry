@@ -112,6 +112,7 @@ DECLARE_INTERACTIONS(/obj/item/radio_jammer, \
 		return TRUE
 	return FALSE
 
+// ALLOW(sys_update_icon): overlay from the power cell's charge percent (another object's state), cached in last_overlay_percent
 /obj/item/radio_jammer/update_icon()
 	if(on)
 		icon_state = active_state

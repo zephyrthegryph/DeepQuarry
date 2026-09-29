@@ -102,6 +102,7 @@
 	chambered = null
 	return ..()
 
+// ALLOW(sys_update_icon): composites mode/barrel/charge overlays tinted with the chambered battery's colour, one charge pip per pixel offset
 /obj/item/gun/projectile/cell_loaded/update_icon()
 	update_charge()
 
@@ -174,6 +175,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 		if(istype(M))
 			M?.hud_used?.update_ammo_hud(M, cell_load)
 
+// ALLOW(sys_update_icon): draws one tinted cap and charge overlay per stored battery with per-index pixel offsets
 /obj/item/ammo_magazine/cell_mag/update_icon()
 	cut_overlays()
 	if(!stored_ammo.len)
@@ -225,6 +227,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 	pixel_y = rand(-10, 10)
 	update_icon()
 
+// ALLOW(sys_update_icon): tints the ends overlay with this battery's per-instance type_color
 /obj/item/ammo_casing/microbattery/update_icon()
 	cut_overlays()
 

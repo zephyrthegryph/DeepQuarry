@@ -21,11 +21,7 @@
 	auto_eject = 1
 	auto_eject_sound = SFX_WEAPONS_GARAND_PING
 
-/obj/item/gun/projectile/garand/update_icon()
-	if(ammo_magazine)
-		icon_state = initial(icon_state)
-	else
-		icon_state = "[initial(icon_state)]-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/garand, "[initial(icon_state)][ammo_magazine?:-e]")
 
 /*
  * Revolver Rifle

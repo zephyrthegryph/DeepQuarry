@@ -16,12 +16,10 @@
 
 REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEEVERS)
 
-/obj/machinery/transhuman/autoresleever/update_icon()
-	. = ..()
-	if(has_stat(BROKEN | MAINT | EMPED))
-		icon_state = "autoresleever-o"
-	else
-		icon_state = "autoresleever"
+APPEARANCE_TEMPLATE(/obj/machinery/transhuman/autoresleever, "autoresleever[appearance_faulty?-o:]")
+
+/obj/machinery/transhuman/autoresleever/proc/appearance_faulty()
+	return has_stat(BROKEN | MAINT | EMPED)
 
 EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 	INTERACT_OBSERVER("Respawn", PROC_REF(autoresleever_interaction_ghost)), \

@@ -29,6 +29,7 @@
 
 
 
+// ALLOW(sys_update_icon): pounce icon/state swaps with icon caching, pixel offset shifts and spit warning overlay
 /mob/living/simple_mob/update_icon()
 	. = ..()
 	//use prepounce or pounce sprites, if any

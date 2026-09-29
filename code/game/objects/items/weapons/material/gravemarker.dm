@@ -62,6 +62,7 @@
 	if(epitaph && get_dist(src, user) < 2)
 		. += epitaph
 
+// ALLOW(sys_update_icon): icon_changes=FALSE leaves an icon_state set elsewhere untouched
 /obj/item/material/gravemarker/update_icon()
 	if(icon_changes)
 		if(grave_name && epitaph)

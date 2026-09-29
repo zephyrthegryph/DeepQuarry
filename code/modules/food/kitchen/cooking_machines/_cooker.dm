@@ -73,6 +73,8 @@
 
 	update_icon() // this probably won't cause issues, but Aurora used SSIcons and queue_icon_update() instead
 
+APPEARANCE_NONE(/obj/machinery/appliance/cooker)
+// ALLOW(sys_update_icon): light overlay is an image with per-instance light_x/light_y pixel offsets
 /obj/machinery/appliance/cooker/update_icon()
 	cut_overlays()
 	var/image/light

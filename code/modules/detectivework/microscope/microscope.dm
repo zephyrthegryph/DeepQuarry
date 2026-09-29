@@ -146,10 +146,7 @@
 	else
 		return ..()
 
-/obj/machinery/microscope/update_icon()
-	icon_state = "microscope"
-	if(sample())
-		icon_state += "slide"
+APPEARANCE_TEMPLATE(/obj/machinery/microscope, "microscope[sample?slide:]")
 
 /// LC-refs: the sample this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/microscope/proc/sample() as /obj/item

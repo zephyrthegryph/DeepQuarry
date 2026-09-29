@@ -94,6 +94,7 @@
 	if(atom_integrity == new_value)
 		return
 	atom_integrity = new_value
+	om_changed(src, CHANGE_INTEGRITY) // the get_integrity derived field (appearance providers watch it)
 	on_update_integrity(old_value, new_value)
 	dq_rules_publish(src, RULE_KEY_INTEGRITY)
 	return new_value

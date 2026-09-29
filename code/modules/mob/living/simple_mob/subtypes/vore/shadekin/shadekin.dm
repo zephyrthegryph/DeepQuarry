@@ -213,6 +213,7 @@
 	if(ctx.fact("alive"))
 		self.shadekin.handle_comp()
 
+// ALLOW(sys_update_icon): per-instance tail image tracking icon_state and eye overlay
 /mob/living/simple_mob/shadekin/update_icon()
 	. = ..()
 

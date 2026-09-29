@@ -124,18 +124,16 @@ DECLARE_INTERACTIONS(/obj/structure/particle_accelerator, INTERACT_INSERT(/obj/i
 		log_game("PACCEL([x],[y],[z]) Was moved while active and turned off.")
 		investigate_log("was moved whilst active; it " + span_red("powered down") + ".","singulo")
 
-/obj/structure/particle_accelerator/update_icon()
+APPEARANCE_TEMPLATE(/obj/structure/particle_accelerator, "[reference][appearance_suffix]")
+
+/// The icon_state suffix for the construction state (and strength once wired and powered).
+/obj/structure/particle_accelerator/proc/appearance_suffix()
 	switch(construction_state)
-		if(0,1)
-			icon_state="[reference]"
 		if(2)
-			icon_state="[reference]w"
+			return "w"
 		if(3)
-			if(powered)
-				icon_state="[reference]p[strength]"
-			else
-				icon_state="[reference]c"
-	return
+			return powered ? "p[strength]" : "c"
+	return ""
 
 /obj/structure/particle_accelerator/proc/update_state()
 	if(master())
@@ -232,8 +230,6 @@ DECLARE_INTERACTIONS(/obj/structure/particle_accelerator, INTERACT_INSERT(/obj/i
 	make_climbable()
 	make_rotatable()
 
-/obj/machinery/particle_accelerator/update_icon()
-	return
 
 /obj/machinery/particle_accelerator/examine(mob/user)
 	. = ..()

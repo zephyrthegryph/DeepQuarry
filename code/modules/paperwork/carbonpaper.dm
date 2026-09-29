@@ -6,6 +6,7 @@
 	var/iscopy = 0
 
 
+// ALLOW(sys_update_icon): replaces /obj/item/paper's procedural drawing (which honours icon states set elsewhere) with the carbon copy states
 /obj/item/paper/carbon/update_icon()
 	if(iscopy)
 		if(info)

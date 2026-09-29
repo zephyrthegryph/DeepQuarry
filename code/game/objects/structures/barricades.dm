@@ -137,6 +137,7 @@ DESTROY_EFFECTS(/obj/structure/barricade/sandbag, new /datum/destroy_effects_dat
 	qdel(src)
 	return
 
+// ALLOW(sys_update_icon): per-direction connection images tinted with the material's colour
 /obj/structure/barricade/sandbag/update_icon()
 	if(!material)
 		return

@@ -164,16 +164,8 @@ DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/unified_hole, REGISTRY
 	. = ..()
 	update_icon()
 
-/obj/structure/ghost_pod/ghost_activated/unified_hole/update_icon()
-	cut_overlays()
-
-	if(used)
-		return
-
-	var/list/glows = list()
-	glows += mutable_appearance(icon, "rift_glow")
-	glows += emissive_appearance(icon, "rift_glow")
-	add_overlay(glows)
+DECLARE_APPEARANCE(/obj/structure/ghost_pod/ghost_activated/unified_hole, "used", list("0" = list(APPEARANCE_OVERLAYS = list("rift_glow")), "" = list(APPEARANCE_OVERLAYS = list("rift_glow"))))
+APPEARANCE_EMISSIVE(/obj/structure/ghost_pod/ghost_activated/unified_hole, "used", list("0" = "rift_glow", "" = "rift_glow"))
 
 /obj/structure/ghost_pod/ghost_activated/unified_hole/redgate
 	name = "Redspace inhabitant hole"

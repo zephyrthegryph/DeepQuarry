@@ -122,6 +122,7 @@
 		GLOB.plant_service.product_descs["[seed().uid]"] = desc
 	desc += ". Delicious! Probably."
 
+// ALLOW(sys_update_icon): fruit image composited and tinted from its seed traits via the plant icon cache
 /obj/item/reagent_containers/food/snacks/grown/update_icon()
 	if(!seed() || !GLOB.plant_service?.plant_icon_cache)
 		return

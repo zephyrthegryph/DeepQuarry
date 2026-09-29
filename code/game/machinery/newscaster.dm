@@ -168,6 +168,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	node_handle = om_handle(get_exonet_node())
 	update_icon()
 
+// ALLOW(sys_update_icon): reads the global news network's wanted issue and sets lights with the overlays
 /obj/machinery/newscaster/update_icon()
 	cut_overlays()
 	if(!ispowered || (has_stat(BROKEN)))

@@ -72,6 +72,7 @@
 	if(node4)
 		node4.update_underlays()
 
+// ALLOW(sys_update_icon): pipe_color-tinted icon_manager overlays plus underlays per connected node (neighbour-dependent).
 /obj/machinery/atmospherics/pipe/manifold4w/update_icon(safety = 0)
 	alpha = 255
 

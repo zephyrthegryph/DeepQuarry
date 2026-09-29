@@ -211,6 +211,7 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 	return
 
 
+// ALLOW(sys_update_icon): copies its first page's appearance and draws one offset underlay per page, photo overlays
 /obj/item/paper_bundle/update_icon()
 	var/obj/item/paper/P = pages[1]
 	icon_state = P.icon_state

@@ -75,6 +75,7 @@ MATERIAL_MIX(/obj/item/assembly/prox_sensor, list(MAT_STEEL = 800, MAT_GLASS = 2
 	scanning = !scanning
 	update_icon()
 
+// ALLOW(sys_update_icon): records the overlays its holder composites, redraws the holder and primes the grenade it sits in
 /obj/item/assembly/prox_sensor/update_icon()
 	cut_overlays()
 	LAZYCLEARLIST(attached_overlays)

@@ -82,17 +82,14 @@
 	. = ..()
 	generate_field()
 
-/obj/machinery/atmospheric_field_generator/update_icon()
+/obj/machinery/atmospheric_field_generator/proc/appearance_state()
 	if(has_stat(BROKEN))
-		icon_state = "arfg_broken"
-	else if(hatch_open && wires_intact)
-		icon_state = "arfg_open_wires"
-	else if(hatch_open && !wires_intact)
-		icon_state = "arfg_open_wirescut"
-	else if(isactive)
-		icon_state = "arfg_on"
-	else
-		icon_state = "arfg_off"
+		return "broken"
+	if(hatch_open)
+		return wires_intact ? "open_wires" : "open_wirescut"
+	return isactive ? "on" : "off"
+
+APPEARANCE_TEMPLATE(/obj/machinery/atmospheric_field_generator, "arfg_[appearance_state]")
 
 /obj/machinery/atmospheric_field_generator/power_change()
 	. = ..()
@@ -193,6 +190,7 @@
 	light_on = TRUE
 	rad_insulation = RAD_LIGHT_INSULATION
 
+// ALLOW(sys_update_icon): neighbour-dependent corner smoothing: overlays built from adjacent retention fields' directions
 /obj/structure/atmospheric_retention_field/update_icon()
 	cut_overlays() //overlays.Cut()
 	var/list/dirs = list()

@@ -198,6 +198,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 		return
 	..()
 
+// ALLOW(sys_update_icon): paint-coloured body and over-mob overlays per instance colour
 /obj/vehicle/bike/update_icon()
 	cut_overlays()
 

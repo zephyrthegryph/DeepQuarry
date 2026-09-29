@@ -28,6 +28,7 @@ TYPE_TABLE(/obj/item/storage/mre, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 	. = ..()
 	. += meal_desc
 
+// ALLOW(sys_update_icon): chains into /obj/item/storage's procedural belt refresh, which never reaches the base drawing
 /obj/item/storage/mre/update_icon()
 	if(opened)
 		icon_state = "[initial(icon_state)][opened]"
@@ -233,6 +234,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/mre, INTERACT_USE("Open", PROC_REF(interac
 
 TYPE_TABLE(/obj/item/storage/mrebag, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
+// ALLOW(sys_update_icon): chains into /obj/item/storage's procedural belt refresh, which never reaches the base drawing
 /obj/item/storage/mrebag/update_icon()
 	if(opened)
 		icon_state = "[initial(icon_state)][opened]"
@@ -343,6 +345,7 @@ TYPE_TABLE(/obj/item/storage/box/tgmc_mre, hold_spec, list(HOLD_MAX_SIZE(0)))
 			new /obj/item/trash/tgmc_mre(T)
 		qdel(src)
 
+// ALLOW(sys_update_icon): latches isopened with the redraw
 /obj/item/storage/box/tgmc_mre/update_icon()
 	if(!isopened)
 		isopened = 1

@@ -205,6 +205,7 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 	position_y = ((loc.y - 1) * WORLD_ICON_SIZE) + MODULUS(position_y, WORLD_ICON_SIZE)
 	update_screen()
 
+// ALLOW(sys_update_icon): sets dir from heading and rotates the vector overlay by a transform matrix
 /obj/effect/overmap/visitable/ship/update_icon()
 	if(!is_still())
 		var/heading = get_heading_degrees()

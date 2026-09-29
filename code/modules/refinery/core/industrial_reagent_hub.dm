@@ -34,6 +34,7 @@
 			// dump reagents to next refinery machine
 			transfer_tank( tanker.reagents, target, dir)
 
+// ALLOW(sys_update_icon): intake overlay depends on the neighbouring refinery machine in its dir (reads another object)
 /obj/machinery/reagent_refinery/hub/update_icon()
 	cut_overlays()
 	var/turf/T = get_step(get_turf(src),dir)

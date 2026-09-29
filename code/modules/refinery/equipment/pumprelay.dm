@@ -31,6 +31,7 @@ DECLARE_REAGENTS(/obj/machinery/pump_relay, 200, null)
 	if(prob(2))
 		visible_message(span_infoplain("\The [src] gurgles as it pumps fluid."))
 
+// ALLOW(sys_update_icon): reagent fill overlay tinted with reagents.get_color() in the machine dir
 /obj/machinery/pump_relay/update_icon()
 	. = ..()
 	cut_overlays()

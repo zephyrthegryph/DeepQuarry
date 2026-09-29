@@ -78,6 +78,7 @@
 	recent_moles_transferred = 0
 	update_icon()
 
+// ALLOW(sys_update_icon): temperature overlay image built from the gas it moves, run speed from the last pressure delta
 /obj/machinery/atmospherics/binary/circulator/update_icon()
 	icon_state = anchored ? "circ-assembled" : "circ-unassembled"
 	cut_overlays()

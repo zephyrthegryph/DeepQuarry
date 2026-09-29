@@ -114,6 +114,7 @@
 	if(updated)
 		update_icon()
 
+// ALLOW(sys_update_icon): one coloured, directed overlay per recorded footprint track
 /obj/effect/decal/cleanable/blood/tracks/update_icon()
 	cut_overlays()
 	color = "#FFFFFF"

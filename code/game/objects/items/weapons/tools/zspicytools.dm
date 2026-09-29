@@ -28,6 +28,7 @@
 		reagents.add_reagent(REAGENT_ID_FUEL, 1)
 	..()
 
+// ALLOW(sys_update_icon): sets light and refreshes the holder's hands; opts out of the welder's overlays
 /obj/item/weldingtool/lasercannon/update_icon()
 	// Lights
 	if(welding && flame_intensity)

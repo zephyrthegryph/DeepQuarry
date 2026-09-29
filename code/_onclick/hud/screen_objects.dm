@@ -224,6 +224,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 		if(user)
 			om_changed(user, CHANGE_MOB_TARGETING)
 
+// ALLOW(sys_update_icon): mutable_appearance for the selected zone kept in selecting_appearance
 /atom/movable/screen/zone_sel/update_icon()
 	cut_overlays()
 	selecting_appearance = mutable_appearance('icons/mob/zone_sel.dmi', "[selecting]")
@@ -695,6 +696,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 /atom/movable/screen/inventory/hand
 	var/image/handcuff_overlay
 
+// ALLOW(sys_update_icon): reads the owning mob's handcuff slot through the HUD (another object's state)
 /atom/movable/screen/inventory/hand/update_icon()
 	..()
 	if(!owner_hud())

@@ -30,6 +30,7 @@
 
 DECLARE_REF(/obj/item/paperplane, "internalPaper", OWNED, null)
 
+// ALLOW(sys_update_icon): one overlay per stamp on its folded paper (another object)
 /obj/item/paperplane/update_icon()
 	cut_overlays()
 	var/list/stamped = internalPaper.stamped

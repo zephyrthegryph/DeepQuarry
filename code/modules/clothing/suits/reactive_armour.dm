@@ -53,9 +53,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive_armor_shell, INTERACT
 
 	special_handling = TRUE
 
-/obj/item/clothing/suit/armor/reactive/update_icon()
-	. = ..()
-	icon_state = "reactive[active ? null : "off"]"
+APPEARANCE_TEMPLATE(/obj/item/clothing/suit/armor/reactive, "reactive[active?:off]")
 
 EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle", PROC_REF(reactive_armor_toggle_self)))
 

@@ -53,6 +53,7 @@ DECLARE_PERIODIC(/obj/item/ammo_magazine/smart, PERIODIC_SLOW)
 	else
 		. += span_warning("\The [src] does not appear to have a power source installed.")
 
+// ALLOW(sys_update_icon): opts out of /obj/item/ammo_magazine procedural multiple_sprites state
 /obj/item/ammo_magazine/smart/update_icon()
 	if(attached_cell())
 		icon_state = "smartmag-filled"

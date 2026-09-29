@@ -38,6 +38,7 @@
 	else
 		qdel(src)
 
+// ALLOW(sys_update_icon): per-instance colour and alpha from the material
 /obj/item/material/shard/update_icon()
 	if(material)
 		color = material.icon_colour

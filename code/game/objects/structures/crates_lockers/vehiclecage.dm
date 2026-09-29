@@ -70,6 +70,7 @@
 	user.visible_message(span_notice("[user] begins cutting \the [src]'s bolts."))
 	return tool_disassemble(user, W, 7 SECONDS, TOOL_WIRECUTTER)
 
+// ALLOW(sys_update_icon): frame overlay tinted with per-instance paint_color and an underlay copied from the caged vehicle
 /obj/structure/vehiclecage/update_icon()
 	..()
 	cut_overlays()

@@ -36,6 +36,7 @@ GLOBAL_DATUM_INIT(new_pipe_networks, /datum, new)
 	var/tmp/datum/pipe_network/network1_token
 	var/tmp/datum/pipe_network/network2_token
 
+// ALLOW(sys_update_icon): opts out of the parent valve update_icon (flick animation); the atmospherics base stub does not apply declarations
 /obj/machinery/atmospherics/valve/shutoff/update_icon()
 	icon_state = "vclamp[open]"
 

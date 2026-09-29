@@ -26,6 +26,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/timeclock, "announce", /obj/item/r
 
 DECLARE_REF(/obj/machinery/computer/timeclock, "card", SPILL, null)
 
+// ALLOW(sys_update_icon): replaces /obj/machinery/computer's procedural compositing (no ..()) with its own card/power states
 /obj/machinery/computer/timeclock/update_icon()
 	if(!operable())
 		icon_state = "[initial(icon_state)]_off"

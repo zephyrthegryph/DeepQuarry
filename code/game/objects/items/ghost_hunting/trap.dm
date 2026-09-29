@@ -68,6 +68,7 @@ DECLARE_REF(/obj/item/ghost_trap, "ghost_reporter", OWNED, null)
 	to_chat(user, span_info("There appears to be nothing in the trap!"))
 	return
 
+// ALLOW(sys_update_icon): resolves the captured entity's OM handle (another object's state)
 /obj/item/ghost_trap/update_icon()
 	..()
 

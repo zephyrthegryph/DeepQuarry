@@ -27,14 +27,7 @@ DECLARE_REF(/obj/machinery/bluespace_beacon, "Beacon", OWNED, null)
 	invisibility = intact ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
 	update_icon()
 
-// update the icon_state
-/obj/machinery/bluespace_beacon/update_icon()
-	var/state="floor_beacon"
-
-	if(invisibility)
-		icon_state = "[state]f"
-	else
-		icon_state = "[state]"
+APPEARANCE_TEMPLATE(/obj/machinery/bluespace_beacon, "floor_beacon[invisibility?f:]")
 
 /obj/machinery/bluespace_beacon/machine_step()
 	if(!Beacon)

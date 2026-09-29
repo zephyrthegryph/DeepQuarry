@@ -3914,6 +3914,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpiz
 	var/list/boxes = list() // If the boxes are stacked, they come here
 	var/boxtag = ""
 
+// ALLOW(sys_update_icon): composites the contained pizza's icon, stacked box count/tag offsets, and rewrites desc.
 /obj/item/pizzabox/update_icon()
 
 	cut_overlays()
@@ -7474,6 +7475,7 @@ TYPE_TABLE(/obj/item/storage/box/wings, hold_spec, list(HOLD_ONLY(list(/obj/item
 	update_icon()
 	return
 
+// ALLOW(sys_update_icon): sprite counts snack items in contents.
 /obj/item/storage/box/wings/update_icon()
 	var/i = 0
 	for(var/obj/item/reagent_containers/food/snacks/W in contents)

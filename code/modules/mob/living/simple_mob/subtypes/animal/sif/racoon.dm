@@ -121,6 +121,7 @@
 
 DECLARE_REF(/mob/living/simple_mob/animal/sif/sakimm, "hat", SPILL, null)
 
+// ALLOW(sys_update_icon): hat image overlay using the worn hat's state with pixel offset
 /mob/living/simple_mob/animal/sif/sakimm/update_icon()
 	cut_overlays()
 	..()

@@ -221,6 +221,7 @@
 	else
 		..()
 
+// ALLOW(sys_update_icon): skips the procedural simple_mob redraw while morphed into another appearance
 /mob/living/simple_mob/vore/morph/update_icon()
 	if(morphed)
 		return

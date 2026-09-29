@@ -67,25 +67,20 @@
 		set_active(0)
 		connected_parts = list()
 
-/obj/machinery/particle_accelerator/control_box/update_icon()
+APPEARANCE_TEMPLATE(/obj/machinery/particle_accelerator/control_box, "[appearance_state]")
+
+/// The icon_state for the control box: running strength, powered (assembled or not), or construction stage.
+/obj/machinery/particle_accelerator/control_box/proc/appearance_state()
 	if(active)
-		icon_state = "[reference]p[strength]"
-	else
-		if(use_power)
-			if(assembled)
-				icon_state = "[reference]p"
-			else
-				icon_state = "u[reference]p"
-		else
-			switch(construction_state)
-				if(0)
-					icon_state = "[reference]"
-				if(1)
-					icon_state = "[reference]"
-				if(2)
-					icon_state = "[reference]w"
-				else
-					icon_state = "[reference]c"
+		return "[reference]p[strength]"
+	if(use_power)
+		return assembled ? "[reference]p" : "u[reference]p"
+	switch(construction_state)
+		if(0, 1)
+			return "[reference]"
+		if(2)
+			return "[reference]w"
+	return "[reference]c"
 
 /obj/machinery/particle_accelerator/control_box/proc/strength_change()
 	for(var/obj/structure/particle_accelerator/part in om_resolve_all(connected_parts))

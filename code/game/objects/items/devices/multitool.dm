@@ -101,6 +101,7 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 	toolspeed = 0.1
 
 // Alien multitool only has those icon states
+// ALLOW(sys_update_icon): replaces /obj/item/multitool's procedural update_icon, which never reaches the base drawing
 /obj/item/multitool/alien/update_icon()
 	if(accepting_refs)
 		icon_state = "multitool_ref_scan"

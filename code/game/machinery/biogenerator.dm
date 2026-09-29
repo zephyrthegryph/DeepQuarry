@@ -212,14 +212,12 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/biogenerator, "beaker", /obj/item/reagent_c
 /obj/machinery/biogenerator/on_reagent_change()			//When the reagents change, change the icon as well.
 	update_icon()
 
-/obj/machinery/biogenerator/update_icon()
+/obj/machinery/biogenerator/proc/appearance_state()
 	if(!beaker)
-		icon_state = "biogen-empty"
-	else if(!processing)
-		icon_state = "biogen-stand"
-	else
-		icon_state = "biogen-work"
-	return
+		return "empty"
+	return processing ? "work" : "stand"
+
+APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-[appearance_state]")
 
 /obj/machinery/biogenerator/declare_interactions(list/into)
 	into += list(

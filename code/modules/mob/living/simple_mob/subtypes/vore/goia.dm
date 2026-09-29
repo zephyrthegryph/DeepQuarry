@@ -256,6 +256,7 @@
 	goia_overlays["zorgoia_belly"] = bodycolor
 	update_icon()
 
+// ALLOW(sys_update_icon): per-instance coloured part images with pixel offsets, plane changes
 /mob/living/simple_mob/vore/zorgoia/update_icon()
 	..()
 	if(stat == DEAD)

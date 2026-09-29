@@ -413,13 +413,15 @@ DECLARE_REF(/obj/machinery/camera, "assembly", OWNED, null)
 		status = newstatus
 		update_coverage()
 
-/obj/machinery/camera/update_icon()
-	if (!status || (has_stat(BROKEN)))
-		icon_state = "[initial(icon_state)]1"
-	else if (has_stat(EMPED))
-		icon_state = "[initial(icon_state)]emp"
-	else
-		icon_state = initial(icon_state)
+APPEARANCE_TEMPLATE(/obj/machinery/camera, "[initial(icon_state)][appearance_suffix]")
+
+/// "1" when off or broken, "emp" while EMP-ed, else nothing.
+/obj/machinery/camera/proc/appearance_suffix()
+	if(!status || has_stat(BROKEN))
+		return "1"
+	if(has_stat(EMPED))
+		return "emp"
+	return ""
 
 /obj/machinery/camera/proc/triggerCameraAlarm(duration = 0)
 	alarm_on = 1

@@ -391,6 +391,7 @@
 		update_icon()
 	. = ..()
 
+// ALLOW(sys_update_icon): footprint image overlays per entry in crossed_dirs, each with its own dir.
 /turf/simulated/floor/snow/update_icon()
 	..()
 	for(var/d in crossed_dirs)

@@ -242,6 +242,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 	deactivate()
 	..()
 
+// ALLOW(sys_update_icon): cut_overlays() also clears the shield2 overlay that field activation adds to src.
 /obj/machinery/suspension_gen/update_icon()
 	cut_overlays()
 	if(panel_open)

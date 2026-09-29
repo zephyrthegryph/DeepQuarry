@@ -37,12 +37,15 @@ import field_write_lint as fwl  # noqa: E402
 RULES = {
     "update_icon_call": "delete it: a declared field's setter refreshes the appearance "
                         "(APPEARANCE_WATCH the field for a procedural update_icon(); systems.md section 1)",
+    "appearance_proc_overlays": "return the overlays from appearance_overlays(); the runtime owns cut/add (systems.md section 1)",
+    "appearance_proc_state": "a provider draws, it changes no state: move the setter to where the state changes (systems.md section 1)",
     "update_icon_override": "declare the appearance (APPEARANCE_TEMPLATE/LEVEL/EMISSIVE/SLOT, DECLARE_APPEARANCE); "
                             "genuinely procedural drawing keeps `// ALLOW(sys_update_icon): <reason>` (systems.md section 1)",
 }
 # The one ALLOW name for a kept override (the spec's `ALLOW(sys_update_icon)`).
 ALLOW_NAMES = {"update_icon": "a genuinely procedural update_icon() override"}
 
+PROVIDER_OVERLAY = re.compile(r"(?<![\w.])(?:src\.)?(?:add_overlay|cut_overlays?|copy_overlays)\s*\(|(?<![\w.])(?:src\.)?overlays\s*(?:[-+]?=(?!=)|\.Cut\()")
 RUNTIME = ("code/datums/sys/appearance.dm", "code/__defines/sys_appearance.dm")
 
 REG = re.compile(r"^\s*(OM_FIELD|OM_FIELD_TYPED|OM_FLAG_FIELD|OM_FLAG_FIELD_BITS|OM_FIELD_SETTER|OM_DERIVE_FIELD)\((.*)$")
@@ -336,6 +339,12 @@ def scan(files):
         if name == "update_icon" and rel not in RUNTIME and owner != "/atom":
             if not allowed(raw[rel], start, "sys_update_icon"):
                 out["update_icon_override"].append((rel, start))
+        if name == "appearance_overlays" and rel not in RUNTIME:
+            for no, line in body:
+                if PROVIDER_OVERLAY.search(line):
+                    out["appearance_proc_overlays"].append((rel, no))
+                if no in setter_lines or OM_SET.search(line):
+                    out["appearance_proc_state"].append((rel, no))
         if rel in RUNTIME or name in LIFECYCLE:
             continue
         # A setter-owning proc: a watched field's own setter, or an override that calls ..() (not

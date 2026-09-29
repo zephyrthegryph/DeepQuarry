@@ -48,8 +48,16 @@
 /// The declared fields a procedural update_icon() reads (a list of names): their channels join the
 /// watch mask, so a change re-runs update_icon() without a manual call.
 #define APPEARANCE_WATCH(PATH, FIELDS) _LIFECYCLE_DECL(PATH, add_appearance_watch(FIELDS))
-/// Drops every inherited appearance declaration (template, layers, levels, emissives, slots and
-/// watches): the type keeps whatever icon_state it was mapped or declared with. A later line on the
+/// A declared appearance provider: PROC (PROC_REF(appearance_overlays)) computes the overlays from
+/// state and returns them (a list of icon_state strings, images or mutable appearances, a single one,
+/// or null). It may also set icon_state/color/name, which are presentation. The runtime owns its
+/// overlays: it cuts what the provider returned last time and adds the new result, so a provider never
+/// calls add_overlay()/cut_overlays(). FIELDS names the declared fields (or raw CHANGE_* channel
+/// numbers) the provider reads; a change to any of them re-runs it on the presentation lane. A
+/// subtype refines it by overriding the proc (`. = ..()` then add). A provider changes no state.
+#define DECLARE_APPEARANCE_PROC(PATH, PROC, FIELDS) _LIFECYCLE_DECL(PATH, set_appearance_proc(PROC, FIELDS))
+/// Drops every inherited appearance declaration (template, layers, levels, emissives, slots, the
+/// provider and watches): the type keeps whatever icon_state it was mapped or declared with. A later line on the
 /// same type may declare anew.
 #define APPEARANCE_NONE(PATH) _LIFECYCLE_DECL(PATH, clear_appearance())
 

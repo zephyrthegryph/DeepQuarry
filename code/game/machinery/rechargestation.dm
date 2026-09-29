@@ -288,6 +288,7 @@
 		if(99 to 110)
 			add_overlay("statn_c100")
 
+// ALLOW(sys_update_icon): runs build_overlays() (charge/occupant overlays) on the icon_update_tick and reads has_cell_power()
 /obj/machinery/recharge_station/update_icon()
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
 	..()
@@ -377,6 +378,7 @@
 	desc = "This is a pod which used to contain a drone... Or maybe it still does?"
 	icon = 'icons/obj/structures.dmi'
 
+// ALLOW(sys_update_icon): rewrites desc with the state and runs build_overlays() on the icon_update_tick
 /obj/machinery/recharge_station/ghost_pod_recharger/update_icon()
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
 	..()

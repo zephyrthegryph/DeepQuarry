@@ -485,6 +485,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/steroid, null, list(REAGEN
 //Allow for capped syringe mode
 
 //Allow for capped syringes
+// ALLOW(sys_update_icon): transform from storage loc, reagent-coloured filling image, loc-dependent mode overlay and item_state
 /obj/item/reagent_containers/syringe/update_icon()
 	cut_overlays()
 

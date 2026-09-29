@@ -88,6 +88,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/projectile/smartgun, INTERACT_ALT(null, PROC_
 	cycling = FALSE
 	closed = !closed
 
+// ALLOW(sys_update_icon): underlays the per-instance mag_underlay image while a magazine is loaded
 /obj/item/gun/projectile/smartgun/update_icon()
 	. = ..()
 	underlays = null

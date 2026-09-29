@@ -11,6 +11,7 @@
 	. = ..()
 	update_icon()
 
+// ALLOW(sys_update_icon): replaces /obj/item/stack's procedural update_icon, which never reaches the base drawing
 /obj/item/stack/arcadeticket/update_icon()
 	var/amount = get_amount()
 	switch(amount)

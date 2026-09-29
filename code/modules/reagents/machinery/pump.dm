@@ -50,6 +50,7 @@ DECLARE_REF(/obj/machinery/pump, "cell", OWNED, null)
 
 	cell = locate_within(src, /obj/item/cell)
 
+// ALLOW(sys_update_icon): volume overlay tinted with reagent colour; overlay names derived from the current icon_state and cell charge check
 /obj/machinery/pump/update_icon()
 	..()
 	cut_overlays()

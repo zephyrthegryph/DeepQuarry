@@ -393,6 +393,7 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 
 	return incoming
 
+// ALLOW(sys_update_icon): renders the occupant as a filtered/rotated image, sets health-coloured lights and pushes h_ratio to the linked console
 /obj/machinery/bodyscanner/update_icon()
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
 	cut_overlays()
@@ -460,6 +461,7 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 		gradient.layer = layer + 0.3
 		add_overlay(gradient)
 
+// ALLOW(sys_update_icon): state comes from an h_ratio argument pushed by the linked scanner (another object's occupant) and sets coloured lights
 /obj/machinery/body_scanconsole/update_icon(h_ratio)
 	if(!operable())
 		icon_state = "scanner_terminal_off"

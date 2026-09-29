@@ -50,6 +50,7 @@
 //Hat simulator stolen from slime code.
 DECLARE_REF(/mob/living/simple_mob/animal/passive/armadillo, "hat", SPILL, null)
 
+// ALLOW(sys_update_icon): hat image overlay using the worn hat's state with pixel offset
 /mob/living/simple_mob/animal/passive/armadillo/update_icon()
 	..() // Do the regular stuff first.
 

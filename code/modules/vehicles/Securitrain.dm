@@ -105,11 +105,6 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/security/engine, \
 //cargo trains are open topped, so there is a chance the projectile will hit the mob ridding the train instead
 ///obj/vehicle/train/security/bullet_act(obj/item/projectile/Proj)
 
-/obj/vehicle/train/security/update_icon()
-	if(open)
-		icon_state = initial(icon_state) + "_open"
-	else
-		icon_state = initial(icon_state)
 
 /obj/vehicle/train/security/trolley/insert_cell(obj/item/cell/C, mob/living/carbon/human/H)
 	return

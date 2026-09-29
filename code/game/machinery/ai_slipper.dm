@@ -18,11 +18,10 @@
 	. = ..()
 	update_icon()
 
-/obj/machinery/ai_slipper/update_icon()
-	if(has_stat(NOPOWER) || has_stat(BROKEN))
-		icon_state = "liquid_dispenser"
-	else
-		icon_state = disabled ? "liquid_dispenser" : "liquid_dispenser_on"
+/obj/machinery/ai_slipper/proc/appearance_on()
+	return (!has_stat(NOPOWER) && !has_stat(BROKEN) && !disabled) ? 1 : 0
+
+APPEARANCE_TEMPLATE(/obj/machinery/ai_slipper, "liquid_dispenser[appearance_on?_on:]")
 
 /obj/machinery/ai_slipper/proc/setState(enabled, uses)
 	disabled = !enabled

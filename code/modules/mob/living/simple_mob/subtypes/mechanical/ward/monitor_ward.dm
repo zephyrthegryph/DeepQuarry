@@ -71,6 +71,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/ward/monitor/crew, INTERAC
 /datum/om/stage/life/special/mechanical/ward/monitor/perform(mob/living/simple_mob/mechanical/ward/monitor/self, datum/om/frame/life/ctx)
 	self.detect_mobs()
 
+// ALLOW(sys_update_icon): glow colour and refresh_glow() side effects keyed on seen_mobs
 /mob/living/simple_mob/mechanical/ward/monitor/update_icon()
 	if(seen_mobs.len)
 		icon_living = "[initial(icon_state)]_spotted"

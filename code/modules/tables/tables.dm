@@ -380,6 +380,7 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 		I.alpha = talpha
 	return I
 
+// ALLOW(sys_update_icon): connection/flip overlays depend on neighbouring tables and are tinted per material/reinforcement colour and opacity
 /obj/structure/table/update_icon()
 	if(flipped != 1)
 		icon_state = "blank"

@@ -336,16 +336,16 @@ DECLARE_REF(/obj/machinery/mining/drill, "cell", OWNED, null)
 	update_icon()
 	return TRUE
 
-/obj/machinery/mining/drill/update_icon()
+/obj/machinery/mining/drill/proc/appearance_state()
 	if(need_player_check)
-		icon_state = "mining_drill_error"
-	else if(active)
-		icon_state = "mining_drill_active"
-	else if(supported)
-		icon_state = "mining_drill_braced"
-	else
-		icon_state = "mining_drill"
-	return
+		return "mining_drill_error"
+	if(active)
+		return "mining_drill_active"
+	if(supported)
+		return "mining_drill_braced"
+	return "mining_drill"
+
+APPEARANCE_TEMPLATE(/obj/machinery/mining/drill, "[appearance_state]")
 
 /obj/machinery/mining/drill/RefreshParts()
 	..()

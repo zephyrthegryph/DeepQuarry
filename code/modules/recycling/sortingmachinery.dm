@@ -9,6 +9,7 @@
 /obj/machinery/disposal/deliveryChute/interact()
 	return
 
+// ALLOW(sys_update_icon): opts out of /obj/machinery/disposal's procedural overlays
 /obj/machinery/disposal/deliveryChute/update_icon()
 	return
 

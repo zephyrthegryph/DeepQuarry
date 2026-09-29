@@ -10,6 +10,7 @@
 /obj/machinery/iv_drip/mode = 1 // 1 is injecting, 0 is taking blood.
 /obj/machinery/iv_drip/var/obj/item/reagent_containers/beaker = null
 
+// ALLOW(sys_update_icon): fill overlay is an image tinted with the beaker reagents' colour at a volume-derived level
 /obj/machinery/iv_drip/update_icon()
 	if(attached())
 		icon_state = "hooked"

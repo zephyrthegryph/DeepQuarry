@@ -41,6 +41,7 @@
 		return amount_per_transfer_from_this
 	return 0
 
+// ALLOW(sys_update_icon): reagent overlay tinted with reagents.get_color() in the machine dir
 /obj/machinery/reagent_refinery/pump/update_icon()
 	cut_overlays()
 	if(reagents && reagents.total_volume >= 5)

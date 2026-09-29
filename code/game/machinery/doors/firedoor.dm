@@ -537,6 +537,8 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 			flick("door_closing", src)
 	return
 
+APPEARANCE_NONE(/obj/machinery/door/firedoor)
+// ALLOW(sys_update_icon): per-direction pressure/temperature alert overlays, prying state while busy, hatch and weld overlays
 /obj/machinery/door/firedoor/update_icon()
 	cut_overlays()
 	if(density)

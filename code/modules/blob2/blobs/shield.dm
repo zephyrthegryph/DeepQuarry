@@ -11,6 +11,7 @@
 /obj/structure/blob/shield/core
 	point_return = 0
 
+// ALLOW(sys_update_icon): runs the blob's overmind colouring, then picks a damaged state from integrity
 /obj/structure/blob/shield/update_icon()
 	..()
 	if(get_integrity() <= 75)

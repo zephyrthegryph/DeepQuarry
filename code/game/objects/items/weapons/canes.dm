@@ -56,6 +56,7 @@ DECLARE_INTERACTIONS(/obj/item/cane/concealed, \
 		return FALSE
 	return INTERACTION_HANDLED_PASS
 
+// ALLOW(sys_update_icon): also renames and sets item_state with the redraw
 /obj/item/cane/concealed/update_icon()
 	if(concealed_blade)
 		name = initial(name)

@@ -42,6 +42,7 @@
 	var/spinup_delay      = 20
 	var/spinup_counter    = 0
 
+// ALLOW(sys_update_icon): sets or clears its coloured light along with the redraw
 /obj/machinery/power/shield_generator/update_icon()
 	if(running)
 		icon_state = "generator1"

@@ -171,6 +171,7 @@
 				return
 	update_icon()
 
+// ALLOW(sys_update_icon): eye image cached per icon/state layered on the procedural simple_mob state
 /mob/living/simple_mob/vore/squirrel/update_icon()
 	. = ..()
 	var/combine_key

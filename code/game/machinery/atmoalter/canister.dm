@@ -178,6 +178,7 @@
 /obj/machinery/portable_atmospherics/canister/proc/current_update_flag()
 	return desired_update_flag()
 
+// ALLOW(sys_update_icon): overlays from update_flag bits computed from tank pressure/holding/port with a check_change() cache, plus destroyed colour state.
 /obj/machinery/portable_atmospherics/canister/update_icon()
 /*
 update_flag

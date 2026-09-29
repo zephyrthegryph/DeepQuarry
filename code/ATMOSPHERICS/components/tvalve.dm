@@ -29,6 +29,7 @@
 	icon_state = "map_tvalve1"
 	state = 1
 
+// ALLOW(sys_update_icon): flick() animation when switching; atmospherics base stub does not apply declarations
 /obj/machinery/atmospherics/tvalve/update_icon(animation)
 	if(animation)
 		flick("tvalve[mirrored ? "m" : ""][src.state][!src.state]",src)
@@ -180,6 +181,7 @@
 	icon_state = "map_tvalve1"
 	state = 1
 
+// ALLOW(sys_update_icon): extends the procedural tvalve drawing with a powered() check
 /obj/machinery/atmospherics/tvalve/digital/update_icon()
 	..()
 	if(!powered())

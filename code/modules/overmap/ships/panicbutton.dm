@@ -18,13 +18,15 @@
 		launch()
 	..()
 
-/obj/structure/panic_button/update_icon()
+/// Appearance reader: icon_state suffix for launched / glass broken / intact.
+/obj/structure/panic_button/proc/appearance_panic_suffix()
 	if(launched)
-		icon_state = "[initial(icon_state)]_launched"
-	else if(!glass)
-		icon_state = "[initial(icon_state)]_open"
-	else
-		icon_state = "[initial(icon_state)]"
+		return "_launched"
+	if(!glass)
+		return "_open"
+	return ""
+
+APPEARANCE_TEMPLATE(/obj/structure/panic_button, "[initial(icon_state)][appearance_panic_suffix]")
 
 DECLARE_INTERACTIONS(/obj/structure/panic_button, INTERACT_HAND_AS(I_HURT, "Smash the glass", PROC_REF(interaction_hand)), INTERACT_HAND(null, PROC_REF(interaction_hand)))
 

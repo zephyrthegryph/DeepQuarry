@@ -83,6 +83,7 @@
 		airlock_program.set_tag(ask.tag_name, new_tag)
 		SStgui.update_uis(src)
 
+// ALLOW(sys_update_icon): cuts every overlay and adds the open-panel one (other overlays are its program's)
 /obj/machinery/embedded_controller/radio/airlock/update_icon()
 	cut_overlays()
 	if(panel_open)
@@ -143,6 +144,7 @@
 	deconstructable = TRUE
 	circuit = /obj/item/circuitboard/airlock_cycling
 
+// ALLOW(sys_update_icon): state from its program's memory (another datum)
 /obj/machinery/embedded_controller/radio/airlock/access_controller/update_icon()
 	if(on && program)
 		if(program.memory["processing"])

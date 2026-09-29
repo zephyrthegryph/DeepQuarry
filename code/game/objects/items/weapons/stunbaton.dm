@@ -80,6 +80,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/baton/loaded, "bcell", /obj/item/cell/devi
 			status = 0
 			update_icon()
 
+// ALLOW(sys_update_icon): sets a coloured light with the redraw; reads the cell presence
 /obj/item/melee/baton/update_icon()
 	if(status)
 		icon_state = "[initial(name)]_active"

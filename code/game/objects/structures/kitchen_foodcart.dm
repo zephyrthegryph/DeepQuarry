@@ -58,6 +58,7 @@
 			choice.forceMove(get_turf(src))
 		update_icon()
 
+// ALLOW(sys_update_icon): icon_state counted from contents
 /obj/structure/foodcart/update_icon()
 	if(contents_count(src) < 5)
 		icon_state = "foodcart-[contents.len]"

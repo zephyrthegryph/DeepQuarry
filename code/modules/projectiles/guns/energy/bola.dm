@@ -9,6 +9,7 @@
 	charge_cost = 400 //Low energy cost.
 	fire_delay = 10 //Rapid fire!
 
+// ALLOW(sys_update_icon): reads the power cell's charge (another object) to pick the charge-meter icon_state
 /obj/item/gun/energy/bolagun/update_icon()
 	if(power_supply == null)
 		if(modifystate)

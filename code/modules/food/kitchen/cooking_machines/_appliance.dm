@@ -124,12 +124,11 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 	else
 		return span_danger("It is burning!")
 
-/obj/machinery/appliance/update_icon()
-	if (!has_stat(MACHINE_STAT_ANY) && length(cooking_objs))
-		icon_state = on_icon
+/// Appearance reader: powered and holding something to cook.
+/obj/machinery/appliance/proc/appearance_cooking()
+	return !has_stat(MACHINE_STAT_ANY) && length(cooking_objs)
 
-	else
-		icon_state = off_icon
+APPEARANCE_TEMPLATE(/obj/machinery/appliance, "[appearance_cooking?@on_icon:@off_icon]")
 
 /obj/machinery/appliance/proc/appliance_toggle_power_effect(mob/user, obj/item/held, datum/interaction/interaction)
 

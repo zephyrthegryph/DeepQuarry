@@ -177,11 +177,7 @@ DECLARE_REF(/obj/aiming_overlay, "aiming_at", BACKLIST, "aimed")
 	update_icon()
 	EXPIRY_SET(src, lock_time, 25, CLOCK_WORLD)
 
-/obj/aiming_overlay/update_icon()
-	if(locked)
-		icon_state = "locked"
-	else
-		icon_state = "locking"
+APPEARANCE_TEMPLATE(/obj/aiming_overlay, "[locked?locked:locking]")
 
 /obj/aiming_overlay/proc/toggle_active(force_state = null)
 	if(!isnull(force_state))

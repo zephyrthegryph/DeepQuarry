@@ -7,6 +7,7 @@
 	var/attached_handle
 	var/obj/item/reagent_containers/beaker = null
 
+// ALLOW(sys_update_icon): fill overlay is an image tinted with the beaker reagents' colour at a volume-derived level
 /obj/machinery/feeder/update_icon()
 	if(attached())
 		icon_state = "feeding"

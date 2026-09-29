@@ -225,6 +225,7 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 /obj/item/medigun_backpack/get_cell()
 	return bcell
 
+// ALLOW(sys_update_icon): overlays from the cell's charge and per-reagent charge/volume (other objects' state)
 /obj/item/medigun_backpack/update_icon()
 	. = ..()
 	cut_overlays()

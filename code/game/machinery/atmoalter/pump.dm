@@ -31,6 +31,7 @@
 
 	make_climbable()
 
+// ALLOW(sys_update_icon): reads the installed cell's charge (another object) and connected_port() lookup for the sprite and overlays.
 /obj/machinery/portable_atmospherics/powered/pump/update_icon()
 	cut_overlays()
 
@@ -247,6 +248,7 @@
 	to_chat(user, span_notice("You can't directly interact with this machine. Use the pump control console."))
 	return TRUE
 
+// ALLOW(sys_update_icon): opts out of pump's procedural cell/port overlays and sets the huge siphon sprite.
 /obj/machinery/portable_atmospherics/powered/pump/huge/update_icon()
 	cut_overlays()
 

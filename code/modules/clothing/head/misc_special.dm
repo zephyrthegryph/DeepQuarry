@@ -219,6 +219,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/ushanka, INTERACT_USE("Toggle ear fl
 	siemens_coefficient = 1.5
 	item_icons = null
 
+// ALLOW(sys_update_icon): ears icon blended with the wearer's hair colour
 /obj/item/clothing/head/kitty/update_icon(mob/living/carbon/human/user)
 	if(!istype(user)) return
 	cut_overlays()

@@ -224,6 +224,7 @@
 				L.adjust_fire_stacks(get_fuel_amount() / 4)
 				L.ignite_mob()
 
+// ALLOW(sys_update_icon): fuel-level overlays with RESET_COLOR and a pixel-offset/layered buckled-mob image, plus set_light side effect
 /obj/structure/bonfire/update_icon()
 	cut_overlays()
 	if(burning)
@@ -435,6 +436,7 @@
 			var/obj/O = A
 			O.fire_act(1000, 500)
 
+// ALLOW(sys_update_icon): fuel-level fire overlays derived from icon_state, plus set_light side effect
 /obj/structure/fireplace/update_icon()
 	cut_overlays()
 	if(burning)
@@ -502,6 +504,7 @@
 	density = TRUE
 	anchored = FALSE
 
+// ALLOW(sys_update_icon): set_light strength from fuel must run with the redraw
 /obj/structure/fireplace/barrel/update_icon()
 	if(burning)
 		icon_state = "[initial(icon_state)]1"

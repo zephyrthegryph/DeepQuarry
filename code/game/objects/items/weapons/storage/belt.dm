@@ -40,6 +40,7 @@ TYPE_TABLE(/obj/item/storage/belt, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL
 			standing.add_overlay(add_icon)
 	return standing
 
+// ALLOW(sys_update_icon): refreshes the holder's belt sprite with the redraw
 /obj/item/storage/update_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc

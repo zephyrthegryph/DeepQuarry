@@ -49,6 +49,7 @@
 	emote_hear = list("screams!","chirps.")
 	emote_see = list("pecks at the ground","looks around hungrily")
 
+// ALLOW(sys_update_icon): movement_cooldown side effect from fullness runs with the redraw
 /mob/living/simple_mob/vore/seagull/update_icon()
 	. = ..()
 

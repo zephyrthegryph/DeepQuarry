@@ -205,6 +205,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 	else
 		return FALSE
 
+// ALLOW(sys_update_icon): hat image overlay using the worn hat's state and colour
 /mob/living/simple_mob/vore/alienanimals/catslug/update_icon()
 	..()
 

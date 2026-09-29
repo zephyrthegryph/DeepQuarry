@@ -34,6 +34,7 @@
 /obj/item/stool/padded/Initialize(mapload, new_material)
 	. = ..(mapload, MAT_STEEL, MAT_CARPET)
 
+// ALLOW(sys_update_icon): overlays tinted per material/padding colour, and name/desc refresh
 /obj/item/stool/update_icon()
 	// Prep icon.
 	icon_state = ""
