@@ -74,7 +74,8 @@ TOPIC_ACTION(/datum/dq_topic_probe/child, "pick", PROC_REF(topic_child_pick), TO
 	P.last_action = null
 	TEST_ASSERT_NULL(topic_dispatch(P, null, list("pick" = REF(S))), "a wrong-type ref is rejected")
 	TEST_ASSERT_NULL(P.last_action, "the handler did not run for a wrong-type ref")
-	TEST_ASSERT_NULL(topic_dispatch(P, null, list("pick" = "\[0x21ffffff]")), "a dangling ref is rejected")
+	var/dangling = topic_dispatch(P, null, list("pick" = "\[0x21ffffff]"))
+	TEST_ASSERT_NULL(dangling, "a dangling ref is rejected")
 	TEST_ASSERT_NULL(P.last_action, "the handler did not run for a dangling ref")
 
 	// A declared source: only objects in the pool resolve.
