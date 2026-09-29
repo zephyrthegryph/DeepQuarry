@@ -29,6 +29,8 @@
 #define DAMAGE_PACKET_THROWN            (1<<4)
 /// A declared damage reaction stopped the hit (code/datums/sys/damage_reactions.dm).
 #define DAMAGE_PACKET_BLOCKED           (1<<6)
+/// The entry's BEFORE reactions already ran ahead of the entry's own effects (projectile_pre_reactions()).
+#define DAMAGE_PACKET_PRE_REACTED       (1<<7)
 
 
 /// Floor tile integrity (D-turf): a tile breaks below the failure fraction and

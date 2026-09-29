@@ -53,10 +53,13 @@
 /atom/proc/run_damage_reactions(datum/lifecycle_decls/decls, datum/damage_packet/packet, phase)
 	var/entry = packet.entry
 	var/list/amounts = packet.amounts
+	var/pre_reacted = (phase == DAMAGE_REACTION_PHASE_BEFORE) && (packet.flags & DAMAGE_PACKET_PRE_REACTED)
 	for(var/list/row as anything in decls.damage_reactions)
 		if(row[3] != phase)
 			continue
 		var/trigger = row[1]
+		if(pre_reacted && trigger == entry)
+			continue // ran already, ahead of the entry's own effects
 		if(trigger != entry && (trigger > DAMAGE_KIND_COUNT || amounts[trigger] <= 0))
 			continue
 		if(call(src, row[2])(packet) & DAMAGE_REACTION_BLOCK)
@@ -75,8 +78,32 @@
 	if(!decls?.damage_reactions)
 		return FALSE
 	var/datum/damage_packet/packet = damage_packet(source, attacker, null, null, DAMAGE_PACKET_SILENT, 0, 0, null, entry, severity)
+	if(entry == DAMAGE_ENTRY_PROJECTILE && GLOB.projectile_pre_reacted == ref(src))
+		packet.flags |= DAMAGE_PACKET_PRE_REACTED
 	. = react_to_packet(packet)
 	packet.release()
+
+/// The target (as a ref) whose DAMAGE_PROJECTILE BEFORE reactions bullet_act() has already run
+/// for the round being resolved, so the packet adapters don't run them again.
+GLOBAL_VAR_INIT(projectile_pre_reacted, null)
+
+/// Runs the DAMAGE_PROJECTILE BEFORE reactions ahead of the round's own effects (on_hit(): stun,
+/// embed, reagents ...), so a blocking reaction (a shield, an immunity) stops those too, as the old
+/// bullet_act() cancel did. Returns TRUE if one blocked. Otherwise marks the target so the damage
+/// packet the round delivers next doesn't run them a second time (end_projectile_reactions()).
+/atom/proc/projectile_pre_reactions(obj/item/projectile/P)
+	var/datum/lifecycle_decls/decls = lifecycle_decls_of(src)
+	if(!decls?.damage_reactions)
+		return FALSE
+	var/datum/damage_packet/packet = damage_packet(P, P.firer, null, null, DAMAGE_PACKET_SILENT | DAMAGE_PACKET_PROJECTILE, 0, 0, null, DAMAGE_ENTRY_PROJECTILE)
+	. = !!run_damage_reactions(decls, packet, DAMAGE_REACTION_PHASE_BEFORE)
+	packet.release()
+	if(!.)
+		GLOB.projectile_pre_reacted = ref(src)
+
+/atom/proc/end_projectile_reactions()
+	if(GLOB.projectile_pre_reacted == ref(src))
+		GLOB.projectile_pre_reacted = null
 
 /// Runs the reactions (both phases) to a packet that carries nothing, without the sink.
 /// Returns TRUE if a reaction blocked the hit.

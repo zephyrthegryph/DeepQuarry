@@ -42,6 +42,14 @@
 /mob/living/bullet_act(obj/item/projectile/P, def_zone)
 	if(reflect_projectile(P)) // REFLECTS (systems.md section 12)
 		return PROJECTILE_CONTINUE
+	// Declared projectile reactions run before the stun and on_hit(): a blocking one stops them too.
+	if(projectile_pre_reactions(P))
+		return 0
+	. = resolve_projectile_hit(P, def_zone)
+	end_projectile_reactions()
+
+/// The round's effects on a living target, after the declared reactions let it through.
+/mob/living/proc/resolve_projectile_hit(obj/item/projectile/P, def_zone)
 	// begin, re-adds stealth removed feature
 	if(istype(get_active_hand(),/obj/item/assembly/signaler))
 		var/obj/item/assembly/signaler/signaler = get_active_hand()

@@ -171,3 +171,30 @@ REFLECTS(/obj/structure/dq_reflect_probe/burn_only, list(BURN), "reflect_chance"
 	var/obj/item/projectile/beam/B = allocate(/obj/item/projectile/beam, run_loc_floor_bottom_left)
 	B.starting = run_loc_floor_bottom_left
 	TEST_ASSERT_EQUAL(slime.bullet_act(B), PROJECTILE_CONTINUE, "a silver slime reflects beams")
+
+/// A mob that blocks every projectile by declaration (a shield, an immunity).
+/mob/living/simple_mob/dq_projectile_immune
+	name = "projectile-immune probe"
+
+DAMAGE_REACTION(/mob/living/simple_mob/dq_projectile_immune, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage_reaction_block))
+
+/// A blocking DAMAGE_PROJECTILE reaction runs before the round's own effects, so a blocked stun
+/// round stuns nobody and injures nobody; the same round on an ordinary mob does stun.
+/datum/unit_test/sys_damage_reactions/blocked_stun
+
+/datum/unit_test/sys_damage_reactions/blocked_stun/Run()
+	var/mob/living/simple_mob/dq_projectile_immune/immune = allocate(/mob/living/simple_mob/dq_projectile_immune)
+	var/obj/item/projectile/P = projectile(INJURY_BLUNT, 20)
+	P.stun = 10
+	P.weaken = 10
+	var/vitality = immune.vitality()
+	immune.bullet_act(P, BP_TORSO)
+	TEST_ASSERT_EQUAL(immune.status_units(EFFECT_STUNNED), 0, "a blocked stun round applies no stun")
+	TEST_ASSERT_EQUAL(immune.status_units(EFFECT_WEAKENED), 0, "nor weaken")
+	TEST_ASSERT_EQUAL(immune.vitality(), vitality, "nor damage")
+
+	var/mob/living/simple_mob/animal/passive/cockroach/control = allocate(/mob/living/simple_mob/animal/passive/cockroach)
+	var/obj/item/projectile/Q = projectile(INJURY_BLUNT, 0)
+	Q.stun = 10
+	control.bullet_act(Q, BP_TORSO)
+	TEST_ASSERT(control.status_units(EFFECT_STUNNED) > 0, "the same round stuns a mob with no blocking reaction")

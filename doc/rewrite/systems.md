@@ -337,8 +337,10 @@ EMP_DISABLE(/obj/machinery/camera, 90 SECONDS, "emped")        // sets field, ex
 - Behaviour notes: EMP_DISABLE outages are exactly duration / severity and aren't extended by a
   second pulse (the ±2 s jitter, the ARF generator's severity-independent 5-7.5 s, the port
   generator's 30 s light-pulse outage, the R&D server's flat 60 s and vehicles' 30 s × severity
-  are gone); types that replaced bullet_act without the
-  parent now run the projectile's `on_hit()` before their blocking reaction; the laser pointer
+  are gone); DAMAGE_PROJECTILE BEFORE reactions run in
+  `bullet_act()` ahead of the round's own effects (`projectile_pre_reactions()`, atom and living),
+  so a blocking one stops stun, embed, reagents and on_hit() as the old cancel did; the packet the
+  round then delivers carries `DAMAGE_PACKET_PRE_REACTED` so they don't run twice; the laser pointer
   calls `camera_disrupt()` instead of a forced camera `emp_act`; the clonepod, flash, sleeper and
   multicaster no longer take an EMP twice (they called the parent twice).
 - Test: `code/modules/unit_tests/dq_sys_damage_reactions_tests.dm`.

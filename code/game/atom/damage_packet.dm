@@ -311,6 +311,8 @@ GLOBAL_LIST_INIT(emp_ladder, list(100, 70, 40, 10))
 		react_to_entry(DAMAGE_ENTRY_PROJECTILE, 0, P, P.firer)
 		return 0
 	var/datum/damage_packet/packet = damage_packet(P, P.firer, null, def_zone, DAMAGE_PACKET_PROJECTILE, P.armor_penetration, P.dir, null, DAMAGE_ENTRY_PROJECTILE)
+	if(GLOB.projectile_pre_reacted == ref(src))
+		packet.flags |= DAMAGE_PACKET_PRE_REACTED
 	if(P.edge)
 		packet.flags |= DAMAGE_PACKET_EDGE
 	return receive_split(packet, P.injury_kind, P.injury_kinds, P.damage * multiplier)
