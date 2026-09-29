@@ -208,7 +208,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
 		om_task_timed(user, charge_time, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	else if(status)
 		status = 0
-		user.visible_message(span_notice("[user] safely disengages \the [src]'s power field."),span_notice("\The [src] is now off."))
+		act_message(user, src, MSG_SELF(span_notice("%T% is now off.")), MSG_OTHERS(span_notice("%U% safely disengages %T%'s power field.")))
 		update_held_icon()
 		play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
 		if(!bcell)
@@ -220,7 +220,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
 
 /obj/item/melee/shock_maul/proc/attack_self_timed_done(mob/user)
 	status = 1
-	user.visible_message(span_warning("[user] charges \the [src]!"),span_warning("You charge \the [src]. <b>It's hammer time!</b>"))
+	act_message(user, src, MSG_SELF(span_warning("You charge %T%. <b>It's hammer time!</b>")), MSG_OTHERS(span_warning("%U% charges %T%!")))
 	play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
 	update_held_icon()
 

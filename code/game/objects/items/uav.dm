@@ -106,7 +106,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 		// Can disasemble or reassemble from packed or off (and this one takes time)
 		if("(Dis)Assemble")
 			if(can_transition_to(state == UAV_PACKED ? UAV_OFF : UAV_PACKED, user))
-				user.visible_message(span_infoplain(span_bold("[user]") + " starts [state == UAV_PACKED ? "unpacking" : "packing"] [src]."), span_info("You start [state == UAV_PACKED ? "unpacking" : "packing"] [src]."))
+				act_message(user, src, MSG_SELF(span_info("You start [state == UAV_PACKED ? "unpacking" : "packing"] [src].")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " starts [state == UAV_PACKED ? "unpacking" : "packing"] [src].")))
 				om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 		// Can toggle power from on and off
 		if("Toggle Power")
@@ -126,7 +126,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 		var/obj/item/modular_computer/MC = I
 		LAZYDISTINCTADD(MC.paired_uavs, om_handle(src))
 		play_sfx(src, SFX_MACHINES_BUTTONBEEP)
-		visible_message(span_notice("[user] pairs [I] to [nickname]"))
+		act_message(user, src, others = span_notice("%U% pairs [I] to [nickname]"))
 		toggle_pairing()
 
 	else if(istype(I, /obj/item/cell) && !cell)

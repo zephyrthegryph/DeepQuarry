@@ -95,7 +95,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo/c4detonator, INTERACT_SELF(nul
 		base_state = icon_state
 		lit = TRUE
 		icon_state = "[base_state]1"
-		user.visible_message(span_rose("Without even breaking stride, \the [user] flips open \the [src] in one smooth movement."))
+		act_message(user, src, others = span_rose("Without even breaking stride, %U% flips open %T% in one smooth movement."))
 
 	else if(lit && detonator_mode)
 		om_ask(user, /datum/om/prompt/choice, PROC_REF(detonator_action), title = "Lighter", message = "What would you like to do?", choices = list("Press the button.", "Close the lighter."), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
@@ -118,7 +118,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo/c4detonator, INTERACT_SELF(nul
 		if("Close the lighter.")
 			lit = FALSE
 			icon_state = "[base_state]"
-			user.visible_message(span_rose("You hear a quiet click, as \the [user] shuts off \the [src] without even looking at what they're doing."))
+			act_message(user, src, others = span_rose("You hear a quiet click, as %U% shuts off %T% without even looking at what they're doing."))
 
 
 /obj/item/flame/lighter/zippo/c4detonator/screwdriver_act(mob/user, obj/item/tool)

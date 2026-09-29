@@ -178,7 +178,7 @@ DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(inter
 			var/obj/machinery/atmospherics/pipe/P = A
 			play_sfx(src, SFX_MACHINES_CLICK)
 			P.change_color(GLOB.pipe_colors[paint_color])
-			user.visible_message(span_notice("[user] paints \the [P] [paint_color]."), span_notice("You paint \the [P] [paint_color]."))
+			act_message(user, null, MSG_SELF(span_notice("You paint \the [P] [paint_color].")), MSG_OTHERS(span_notice("%U% paints \the [P] [paint_color].")))
 			return
 
 	if(mode & BUILD_MODE) //Making pipes

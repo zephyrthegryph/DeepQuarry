@@ -127,7 +127,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag, INTERACT_ITEM(null, PROC_REF
 		if(!ishuman(usr))	return 0
 		if(opened)	return 0
 		if(contents_count(src) || has_latent())	return 0 // ALLOW(latent): latent entries checked
-		visible_message("[usr] folds up the [src.name]")
+		act_message(usr, src, others = "%U% folds up %T%")
 		var/folded = new item_path(get_turf(src))
 		expire(0)
 		return folded

@@ -43,7 +43,7 @@ DECLARE_REAGENTS(/obj/item/soap, 5, null)
 			to_chat(user, span_warning("You raise the soap to your mouth and prepare to take a bite..."))
 			om_task_timed(user, 0.5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(user))
 		else
-			user.visible_message(span_danger("\The [user] washes \the [target]'s mouth out with \the [src]!"))
+			act_message(user, src, others = span_danger("%U% washes \the [target]'s mouth out with %T%!"))
 			//Add pieface cleaning here if that ever gets ported.
 		user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 		return
@@ -54,25 +54,25 @@ DECLARE_REAGENTS(/obj/item/soap, 5, null)
 	if(user.client && (target in user.client.screen))
 		to_chat(user, span_warning("You need to take that [target] off before cleaning it."))
 	else if(istype(target,/obj/effect/decal/cleanable))
-		user.visible_message("[user] begins to scrub \the [target] out with [src].", span_warning("You begin to scrub \the [target] out with [src]..."))
+		act_message(user, src, MSG_SELF(span_warning("You begin to scrub \the [target] out with %T%...")), MSG_OTHERS("%U% begins to scrub \the [target] out with %T%."))
 		om_task_timed(user, src.cleanspeed, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done2), done_args = list(target, user))
 	else
 		if(istype(target,/turf))
 			if(reagents.has_reagent(REAGENT_ID_WATER, 1) || reagents.has_reagent(REAGENT_ID_CLEANER, 1)) //Instant floorcleaning with wetness
-				user.visible_message("[user] effortlessly scrubs \the [target] out with wet [src]", span_notice("You effortlessly scrub \the [target]"))
+				act_message(user, src, MSG_SELF(span_notice("You effortlessly scrub \the [target]")), MSG_OTHERS("%U% effortlessly scrubs \the [target] out with wet [src]"))
 				var/turf/T = target
 				T.wash(CLEAN_SCRUB)
 				reagents.trans_to_turf(T, 1, 10)
 				return
-			user.visible_message("[user] begins to scrub \the [target] out with [src].", span_warning("You begin to scrub \the [target] out with [src]..."))
+			act_message(user, src, MSG_SELF(span_warning("You begin to scrub \the [target] out with %T%...")), MSG_OTHERS("%U% begins to scrub \the [target] out with %T%."))
 			om_task_timed(user, src.cleanspeed, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done3), done_args = list(target, user))
 			return
-		user.visible_message("[user] begins to clean \the [target.name] with [src]...", span_notice("You begin to clean \the [target.name] with [src]..."))
+		act_message(user, src, MSG_SELF(span_notice("You begin to clean \the [target.name] with %T%...")), MSG_OTHERS("%U% begins to clean \the [target.name] with %T%..."))
 		om_task_timed(user, src.cleanspeed, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done4), done_args = list(target))
 	return
 
 /obj/item/soap/proc/afterattack_timed_done(mob/user)
-	user.visible_message(span_notice("[user] takes a bite out of [src]!"), span_notice("You gnaw on [src]! This can't be good for you..."))
+	act_message(user, src, MSG_SELF(span_notice("You gnaw on %T%! This can't be good for you...")), MSG_OTHERS(span_notice("%U% takes a bite out of %T%!")))
 	var/mob/living/carbon/C = user
 	play_sfx(get_turf(C), SFX_ITEMS_EATFOOD, volume = 25, vary = FALSE)
 	C.ingested.add_reagent(REAGENT_ID_TOXIN, 0.5) //normally formaldehyde, and 2 units of it. Toxin is being subsituted and is 4 times as toxic, hence a quarter of the normal amount.

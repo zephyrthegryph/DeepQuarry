@@ -34,7 +34,7 @@ DECLARE_START_TIMER(/obj/item/mop_deploy, 0, PROC_REF(check_held))
 /obj/item/mop_deploy/afterattack(atom/A, mob/user, proximity)
 	if(!proximity) return
 	if(istype(A, /turf) || istype(A, /obj/effect/decal/cleanable) || istype(A, /obj/effect/overlay) || istype(A, /obj/effect/rune))
-		user.visible_message(span_warning("[user] begins to clean \the [get_turf(A)]."))
+		act_message(user, null, others = span_warning("%U% begins to clean \the [get_turf(A)]."))
 
 		om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A, user))
 

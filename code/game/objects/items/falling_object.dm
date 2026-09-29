@@ -43,7 +43,7 @@
 		for(var/mob/living/P in contents_of(loc))
 			if(can_drop_vore(L, P))
 				L.feed_grabbed_to_self_falling_nom(L,P)
-				L.visible_message(span_vdanger("\The [L] falls right onto \the [P]!"))
+				act_message(L, null, others = span_vdanger("%U% falls right onto \the [P]!"))
 
 	if(crushing)
 		for(var/atom/movable/AM in contents_of(loc))

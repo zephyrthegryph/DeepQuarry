@@ -120,7 +120,7 @@
 	if(M != owner)
 		to_chat(M, span_notice("\The [src] is too hard for you to break."))
 	else
-		M.visible_message("\The [M] crushes \the [src] into dust...", "\The [src] cracks and disintegrates in your hand.")
+		act_message(M, src, MSG_SELF("%T% cracks and disintegrates in your hand."), MSG_OTHERS("%U% crushes %T% into dust..."))
 		qdel(src)
 
 //If you catch something/someone and want to give it to someone else though, that's fine.
@@ -132,7 +132,7 @@
 		to_chat(M, span_notice("\The [src] emits an unpleasant tone... It does not respond to your command."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else
-		M.visible_message("\The [src] flickers in \the [M]'s hand and emits a little tone.", "\The [src] flickers in your hand and emits a little tone.")
+		act_message(M, src, MSG_SELF("%T% flickers in your hand and emits a little tone."), MSG_OTHERS("%T% flickers in %U%'s hand and emits a little tone."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_OUT)
 		owner = null
 
@@ -242,14 +242,14 @@
 			return ITEM_INTERACT_FAILURE
 		if(user.zone_sel.selecting == "mouth")	//Click while targetting the mouth and you eat/feed the stored mob to whoever you clicked on
 			if(bound_mob in contents)
-				user.visible_message("\The [user] moves \the [src] to [M]'s [M.vore_selected]...")
+				act_message(user, src, others = "%U% moves %T% to [M]'s [M.vore_selected]...")
 				M.perform_the_nom(M, bound_mob, M, M.vore_selected)
 				return ITEM_INTERACT_SUCCESS
 	else if(M == user)		//You don't have a mob, you ponder the orb instead of trying to capture yourself
-		user.visible_message("\The [user] ponders \the [src]...", "You ponder \the [src]...")
+		act_message(user, src, MSG_SELF("You ponder %T%..."), MSG_OTHERS("%U% ponders %T%..."))
 		return ITEM_INTERACT_FAILURE
 	else if (cooldown_check())	//Try to capture someone without throwing
-		user.visible_message("\The [user] taps \the [M] with \the [src].")
+		act_message(user, src, others = "%U% taps \the [M] with %T%.")
 		activate(user, M)
 		return ITEM_INTERACT_SUCCESS
 	else
@@ -458,7 +458,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		spawn_mob_type = null
 		capture(bound_mob, user)
 	if(bound_mob)								//We have a mob! Let's finish setting up.
-		user.visible_message("\The [src] clicks, and then emits a small chime.", "\The [src] grows warm in your hand, something inside is awake.")
+		act_message(user, src, MSG_SELF("%T% grows warm in your hand, something inside is awake."), MSG_OTHERS("%T% clicks, and then emits a small chime."))
 		active = TRUE
 		if(!owner)								//Do we have an owner? It's pretty unlikely that this would ever happen! But it happens, let's claim the crystal.
 			owner = user
@@ -491,7 +491,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		else if(prob(capture_chance(S, user)))				//OKAY! So we have an NPC simplemob with an AI, let's calculate its capture chance! It varies based on the mob's condition.
 			capture(S, user)					//We did it! Woo! We capture it!
-			user.visible_message("\The [src] clicks, and then emits a small chime.", "Alright! \The [S] was caught!")
+			act_message(user, src, MSG_SELF("Alright! \The [S] was caught!"), MSG_OTHERS("%T% clicks, and then emits a small chime."))
 			recall(user)
 			active = TRUE
 		else									//Shoot, it didn't work and now it's mad!!!
@@ -535,7 +535,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 			M.ai_brain.go_sleep()	//AI doesn't need to think when it's in the crystal
 		bound_mob.forceMove(src)
 		COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
-		bound_mob.visible_message("\The [user]'s [src] flashes, disappearing [bound_mob] in an instant!!!", "\The [src] pulls you back into confinement in a flash of light!!!")
+		act_message(bound_mob, src, MSG_SELF("%T% pulls you back into confinement in a flash of light!!!"), MSG_OTHERS("\The [user]'s [src] flashes, disappearing %U% in an instant!!!"))
 		animate_action(turfmemory)
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_IN)
 		update_icon()
@@ -559,7 +559,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		var/mob/living/simple_mob/M = bound_mob
 		M.ai_brain.go_wake()		//Okay it's time to do work, let's wake up!
 	bound_mob.faction = owner.faction	//Let's make sure we aren't hostile to our owner or their friends
-	bound_mob.visible_message("\The [user]'s [src] flashes, \the [bound_mob] appears in an instant!!!", "The world around you rematerialize as you are unleashed from the [src] next to \the [user]. You feel a strong compulsion to enact \the [owner]'s will.")
+	act_message(bound_mob, src, MSG_SELF("The world around you rematerialize as you are unleashed from %T% next to \the [user]. You feel a strong compulsion to enact \the [owner]'s will."), MSG_OTHERS("\The [user]'s [src] flashes, %U% appears in an instant!!!"))
 	animate_action(get_turf(bound_mob))
 	play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_OUT)
 	update_icon()
@@ -1008,7 +1008,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		spawn_mob_type = null
 		capture(bound_mob, user)
 	if(bound_mob)								//We have a mob! Let's finish setting up.
-		user.visible_message("\The [src] clicks, and then emits a small chime.", "\The [src] grows warm in your hand, something inside is awake.")
+		act_message(user, src, MSG_SELF("%T% grows warm in your hand, something inside is awake."), MSG_OTHERS("%T% clicks, and then emits a small chime."))
 		active = TRUE
 		if(!owner)								//Do we have an owner? It's pretty unlikely that this would ever happen! But it happens, let's claim the crystal.
 			owner = user

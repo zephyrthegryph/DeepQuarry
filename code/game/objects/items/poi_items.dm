@@ -269,7 +269,7 @@ DECLARE_INTERACTIONS(/obj/item/poi/broken_drone_circuit, \
 /// Old attack_self.
 /obj/item/poi/broken_drone_circuit/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 
-	user.visible_message(message = "[user] is studiously examining [src]", self_message = "You take your time to analyze the circuit...")
+	act_message(user, src, MSG_SELF("You take your time to analyze the circuit..."), MSG_OTHERS("%U% is studiously examining %T%"))
 	var/message = ""
 	if(fried)
 		message += "Amidst the scorch mark, you barely make out [drone_name] stenciled on the board... \n"

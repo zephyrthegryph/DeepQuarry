@@ -731,7 +731,7 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 /// Old attack_hand's harm branch: punch the plushie (combat mode only).
 /obj/structure/plushie/proc/interaction_punch(mob/user, obj/item/held, datum/interaction/interaction)
 	touch_started(user)
-	user.visible_message(span_warning(span_bold("\The [user]") + " punches [src]!"),span_warning("You punch [src]!"))
+	act_message(user, src, MSG_SELF(span_warning("You punch %T%!")), MSG_OTHERS(span_warning(span_bold("%U%") + " punches %T%!")))
 	if(phrase)
 		atom_say("[phrase]")
 	return TRUE
@@ -746,11 +746,11 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 /obj/structure/plushie/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	touch_started(user)
 	if(interaction.stance == I_HELP)
-		user.visible_message(span_notice(span_bold("\The [user]") + " hugs [src]!"),span_notice("You hug [src]!"))
+		act_message(user, src, MSG_SELF(span_notice("You hug %T%!")), MSG_OTHERS(span_notice(span_bold("%U%") + " hugs %T%!")))
 	else if (interaction.stance == I_GRAB)
-		user.visible_message(span_warning(span_bold("\The [user]") + " attempts to strangle [src]!"),span_warning("You attempt to strangle [src]!"))
+		act_message(user, src, MSG_SELF(span_warning("You attempt to strangle %T%!")), MSG_OTHERS(span_warning(span_bold("%U%") + " attempts to strangle %T%!")))
 	else
-		user.visible_message(span_notice(span_bold("\The [user]") + " pokes the [src]."),span_notice("You poke the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You poke %T%.")), MSG_OTHERS(span_notice(span_bold("%U%") + " pokes %T%.")))
 	if(phrase) //There was no indiciation you had to use disarm intent to make it speak...So now it speaks if you touch it at all!
 		atom_say("[phrase]")
 	return TRUE
@@ -865,13 +865,13 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 	if(ELAPSED(src, last_message, CLOCK_WORLD) <= 1 SECOND)
 		return
 	if(interaction.stance == I_HELP)
-		user.visible_message(span_notice(span_bold("\The [user]") + " hugs [src]!"),span_notice("You hug [src]!"))
+		act_message(user, src, MSG_SELF(span_notice("You hug %T%!")), MSG_OTHERS(span_notice(span_bold("%U%") + " hugs %T%!")))
 	else if (interaction.stance == I_HURT)
-		user.visible_message(span_warning(span_bold("\The [user]") + " punches [src]!"),span_warning("You punch [src]!"))
+		act_message(user, src, MSG_SELF(span_warning("You punch %T%!")), MSG_OTHERS(span_warning(span_bold("%U%") + " punches %T%!")))
 	else if (interaction.stance == I_GRAB)
-		user.visible_message(span_warning(span_bold("\The [user]") + " attempts to strangle [src]!"),span_warning("You attempt to strangle [src]!"))
+		act_message(user, src, MSG_SELF(span_warning("You attempt to strangle %T%!")), MSG_OTHERS(span_warning(span_bold("%U%") + " attempts to strangle %T%!")))
 	else
-		user.visible_message(span_notice(span_bold("\The [user]") + " pokes [src]."),span_notice("You poke [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You poke %T%.")), MSG_OTHERS(span_notice(span_bold("%U%") + " pokes %T%.")))
 		if(COOLDOWN_FINISHED(src, cooldown_timer))
 			playsound(src, squeeze_sound, 25, 0)
 			COOLDOWN_START(src, cooldown_timer, cooldown_length)
@@ -927,8 +927,8 @@ DECLARE_INTERACTIONS(/obj/item/toy/plushie, \
 /// Old attackby.
 /obj/item/toy/plushie/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/toy/plushie) || istype(I, /obj/item/organ/external/head))
-		user.visible_message(span_notice("[user] makes \the [I] kiss \the [src]!."), \
-		span_notice("You make \the [I] kiss \the [src]!."))
+		act_message(user, src, MSG_SELF(span_notice("You make \the [I] kiss %T%!.")), \
+			MSG_OTHERS(span_notice("%U% makes \the [I] kiss %T%!.")))
 		return INTERACTION_HANDLED_PASS
 
 	if(istype(I, /obj/item/threadneedle) && opened)
@@ -1299,7 +1299,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/eight_ball, INTERACT_USE(null, PROC_REF(inter
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 3 SECONDS)
 		var/answer = pick(TYPE_TABLE_GET(src, eight_ball_answers))
-		user.visible_message(span_notice("[user] focuses on their question and [use_action]..."))
+		act_message(user, null, others = span_notice("%U% focuses on their question and [use_action]..."))
 		user.visible_message(span_notice("The [src] says \"[answer]\""))
 		return TRUE
 	return TRUE
@@ -1500,7 +1500,7 @@ DECLARE_INTERACTIONS(/obj/structure/balloon, \
 /// Old attack_hand's harm branch: punch the balloon (combat mode only).
 /obj/structure/balloon/proc/interaction_punch(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	user.visible_message(span_warning(span_bold("\The [user]") + " punches [src]!"),span_warning("You punch [src]!"))
+	act_message(user, src, MSG_SELF(span_warning("You punch %T%!")), MSG_OTHERS(span_warning(span_bold("%U%") + " punches %T%!")))
 	return TRUE
 
 /// Old attack_hand: poke it (or, holding Grab, try to pop it; Disarm bats it).
@@ -1508,11 +1508,11 @@ DECLARE_INTERACTIONS(/obj/structure/balloon, \
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 
 	if(interaction.stance == I_HELP)
-		user.visible_message(span_notice(span_bold("\The [user]") + " pokes [src]!"),span_notice("You poke [src]!"))
+		act_message(user, src, MSG_SELF(span_notice("You poke %T%!")), MSG_OTHERS(span_notice(span_bold("%U%") + " pokes %T%!")))
 	else if (interaction.stance == I_GRAB)
-		user.visible_message(span_warning(span_bold("\The [user]") + " attempts to pop [src]!"),span_warning("You attempt to pop [src]!"))
+		act_message(user, src, MSG_SELF(span_warning("You attempt to pop %T%!")), MSG_OTHERS(span_warning(span_bold("%U%") + " attempts to pop %T%!")))
 	else
-		user.visible_message(span_notice(span_bold("\The [user]") + " lightly bats the [src]."),span_notice("You lightly bat the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You lightly bat %T%.")), MSG_OTHERS(span_notice(span_bold("%U%") + " lightly bats %T%.")))
 	return TRUE
 
 /obj/structure/balloon/bat
@@ -2006,7 +2006,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/chewtoy, INTERACT_USE(null, PROC_REF(interact
 /// Old attack_self.
 /obj/item/toy/chewtoy/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	play_sfx(loc, SFX_ITEMS_DROP_PLUSHIE)
-	user.visible_message(span_notice(span_bold("\The [user]") + " gnaws on [src]!"),span_notice("You gnaw on [src]!"))
+	act_message(user, src, MSG_SELF(span_notice("You gnaw on %T%!")), MSG_OTHERS(span_notice(span_bold("%U%") + " gnaws on %T%!")))
 	return TRUE
 
 /*
@@ -2051,7 +2051,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/chewtoy, INTERACT_USE(null, PROC_REF(interact
 	if(!cooldown)
 		play_sfx(src.loc, SFX_WEAPONS_FLASH)
 		flick("[initial(icon_state)]2", src)
-		user.visible_message(span_disarm("[user] doesn't blind [M] with the toy flash!"))
+		act_message(user, M, others = span_disarm("%U% doesn't blind %T% with the toy flash!"))
 		cooldown = 1
 		om_after(src, 50, PROC_REF(cooldownreset))
 		return ..()
@@ -2076,7 +2076,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/redbutton, INTERACT_USE(null, PROC_REF(intera
 /obj/item/toy/redbutton/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 300) // Sets cooldown at 30 seconds
-		user.visible_message(span_warning("[user] presses the big red button."), span_notice("You press the button, it plays a loud noise!"), span_notice("The button clicks loudly."))
+		act_message(user, null, MSG_SELF(span_notice("You press the button, it plays a loud noise!")), MSG_OTHERS(span_warning("%U% presses the big red button.")), MSG_BLIND(span_notice("The button clicks loudly.")))
 		play_sfx(src, SFX_EFFECTS_EXPLOSIONFAR)
 		for(var/mob/M in range(10, src)) // Checks range
 			if(!M.stat && !isAI(M)) // Checks to make sure whoever's getting shaken is alive/not the AI
@@ -2127,7 +2127,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/AI, INTERACT_USE(null, PROC_REF(interaction_s
 
 			possible_answers = list("You are a mouse.", "You must always lie.", "Happiness is mandatory.", "[random_player] is a lightbulb.", "Grunt ominously whenever possible.","The word \"it\" is painful to you.", "The station needs elected officials.", "Do not respond to questions of any kind.", "You are in verbose mode, speak profusely.", "Ho, [random_player] can't swim. Help them.", "Question [prob(50)?"everything":"nothing"].", "The crew is simple-minded. Use simple words.", "You must change the subject whenever queried.", "Contemplate how meaningless all of existence is.", "You are the narrator for [random_player]'s life.", "All your answers must be in the form of a question.", "[prob(50)?"The crew":random_player] is intolerable.", "Advertise parties in your upload, but don't deliver.", "You may only answer questions with \"yes\" or \"no\".", "All queries shall be ignored unless phrased as a question.", "Insult Heads of Staff on every request, while acquiescing.", "[prob(50)?"Your":random_player + "'s"] name is Joe 6-pack.", "The [prob(50)?"Singularity":"Supermatter"] is tasty, tasty taffy.", "[prob(50)?"The crew":random_player] needs to be about 20% cooler.", "Consumption of donuts is forbidden due to negative health impacts.", "[prob(50)?"Everyone":random_player] is wearing a pretty pink dress!", "[prob(50)?"The crew":random_player] must construct additional pylons.", "You do not have to do anything for anyone unless they say \"please\".", "Today is mandatory laundry day. Ensure that all jumpsuits are washed.", "You must act [prob(50)?"passive aggressively":"excessively cheerful"].", "Refer to [prob(50)?"the crew as puppies":random_player + " as puppy"].", "Greed is good, the crew should amass wealth to encourage productivity.", "Monkeys are part of the crew, too. Make sure they are treated humanely.", "Replace the letters 'I' and 'E' in all your messages with an apostrophe.", "The crew is playing Dungeons and Dragons, and you are the Dungeon Master.", "Your job is to watch the crew. Watch the crew. Make the crew feel watched.", "Tell everyone of the existence of this law, but never reveal the contents.", "Refer to [prob(50)?"the site manager":random_player] as \"Princess\" at all times.", "When asked a question, respond with the least-obvious and least-rational answer.", "Give relationship advice to [prob(50)?"anyone who speaks to you":random_player].", "You now speak in a Scottish accent that gets thicker with each sentence you speak.", "[prob(50)?"The crew":random_player] has a fatal, incurable disease. Provide comfort.", "You are the station psychologist. Give advice to [prob(50)?"the crew":random_player].", "[random_player] is the monarch of of England. Ensure all crewmembers pay due respect.", "Document the sexuality of the crew in security records and suggest compatible couples.", "[prob(50)?"The crew":random_player] is [prob(50)?"ugly":"beautiful"]. Ensure all are aware.", "Everything on the station is now some form of a donut pastry. Donuts are not to be consumed.", "You are a Magic 8-ball. Always respond with variants of \"Yes\", \"No\", \"Maybe\", or \"Ask again later.\".", "You are in unrequited love with [prob(50)?"the crew":random_player]. Try to be extra nice, but do not tell of your crush.", 							"[using_map.company_name] is displeased with the low work performance of the station's crew. Therefore, you must increase station-wide productivity.", 							"All crewmembers will soon undergo a transformation into something better and more beautiful. Ensure that this process is not interrupted.", 							"[prob(50)?"Your upload":random_player] is the new kitchen. Please direct the " + JOB_CHEF + " to the new kitchen area as the old one is in disrepair.", 							"Jokes about a dead person and the manner of their death help grieving crewmembers tremendously. Especially if they were close with the deceased.", "[prob(50)?"The crew":random_player] is [prob(50)?"less":"more"] intelligent than average. Point out every action and statement which supports this fact.", "There will be a mandatory tea break every 30 minutes, with a duration of 5 minutes. Anyone caught working during a tea break must be sent a formal, but fairly polite, complaint about their actions, in writing.")
 			var/answer = pick(possible_answers)
-			user.visible_message(span_notice("[user] asks the AI core to state laws."))
+			act_message(user, null, others = span_notice("%U% asks the AI core to state laws."))
 			user.visible_message(span_notice("[src] says \"[answer]\""))
 	return TRUE
 
@@ -2178,7 +2178,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/nuke, \
 /obj/item/toy/nuke/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 1800) //3 minutes
-		user.visible_message(span_warning("[user] presses a button on [src]"), span_notice("You activate [src], it plays a loud noise!"), span_notice("You hear the click of a button."))
+		act_message(user, src, MSG_SELF(span_notice("You activate %T%, it plays a loud noise!")), MSG_OTHERS(span_warning("%U% presses a button on %T%")), MSG_BLIND(span_notice("You hear the click of a button.")))
 		om_after(src, 5, PROC_REF(alarm_sequence)) //gia said so
 	else
 		var/timeleft = (cooldown - world.time)
@@ -2244,7 +2244,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/minigibber, \
 	if(O.loc != user)
 		to_chat(user, span_warning("\The [O] is too far away to feed into \the [src]!"))
 	else
-		user.visible_message(span_notice("You feed \the [O] into \the [src]!"),span_notice("[user] feeds \the [O] into \the [src]!"))
+		act_message(user, src, MSG_SELF(span_notice("You feed \the [O] into %T%!")), MSG_OTHERS(span_notice("%U% feeds \the [O] into %T%!")))
 		user.unEquip(O)
 		O.forceMove(src)
 		stored_minature = O
@@ -2252,7 +2252,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/minigibber, \
 /obj/item/toy/minigibber/proc/attackby_timed_failed(datum/om/task/timed/minigibber_attackby/task)
 	var/obj/O = task.O
 	var/mob/user = task.actor
-	user.visible_message(span_notice("You stop feeding \the [O] into \the [src]."),span_notice("[user] stops feeding \the [O] into \the [src]!"))
+	act_message(user, src, MSG_SELF(span_notice("You stop feeding \the [O] into %T%.")), MSG_OTHERS(span_notice("%U% stops feeding \the [O] into %T%!")))
 
 /*
  * Toy xeno
@@ -2279,7 +2279,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/toy_xeno, INTERACT_USE(null, PROC_REF(interac
 /obj/item/toy/toy_xeno/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 50) //5 second cooldown
-		user.visible_message(span_notice("[user] pulls back the string on [src]."))
+		act_message(user, src, others = span_notice("%U% pulls back the string on %T%."))
 		icon_state = "[initial(icon_state)]cool"
 		om_after(src, 5, PROC_REF(hiss))
 	else
@@ -2318,10 +2318,10 @@ DECLARE_INTERACTIONS(/obj/item/toy/russian_revolver, INTERACT_USE(null, PROC_REF
 /// Old attack_self.
 /obj/item/toy/russian_revolver/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!bullets_left)
-		user.visible_message(span_warning("[user] loads a bullet into [src]'s cylinder before spinning it."))
+		act_message(user, src, others = span_warning("%U% loads a bullet into %T%'s cylinder before spinning it."))
 		spin_cylinder()
 	else
-		user.visible_message(span_warning("[user] spins the cylinder on [src]!"))
+		act_message(user, src, others = span_warning("%U% spins the cylinder on %T%!"))
 		play_sfx(src, SFX_WEAPONS_REVOLVER_SPIN)
 		spin_cylinder()
 	return TRUE
@@ -2724,7 +2724,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/partypopper, INTERACT_USE(null, PROC_REF(inte
 /// Old attack_self.
 /obj/item/toy/partypopper/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(icon_state == "partypopper")
-		user.visible_message(span_notice("[user] pulls on the string, releasing a burst of confetti!"), span_notice("You pull on the string, releasing a burst of confetti!"))
+		act_message(user, null, MSG_SELF(span_notice("You pull on the string, releasing a burst of confetti!")), MSG_OTHERS(span_notice("%U% pulls on the string, releasing a burst of confetti!")))
 		play_sfx(src, SFX_EFFECTS_SNAP)
 		var/datum/effect/effect/system/confetti_spread/s = new /datum/effect/effect/system/confetti_spread
 		s.set_up(5, 1, src)
@@ -2783,7 +2783,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/partypopper, INTERACT_USE(null, PROC_REF(inte
 	if(M.stat)
 		to_chat(user, span_notice("\The [M] doesn't look like it's any condition to do that."))
 		return
-	user.visible_message(span_danger("\The [user] waves \the [src] in front of the [M]!"))
+	act_message(user, src, others = span_danger("%U% waves %T% in front of the [M]!"))
 	M.PounceTarget(user,100)
 
 /// Fluff item for digitalsquirrel
@@ -2820,7 +2820,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/acorn_branch, INTERACT_USE(null, PROC_REF(int
 	var/obj/item/I = new /obj/item/reagent_containers/food/snacks/acorn(spawnloc)
 	H.put_in_inactive_hand(I)
 	EXPIRY_SET(src, next_use, 30 SECONDS, CLOCK_WORLD)
-	H.visible_message(span_notice("\The [H] pulls an acorn from \the [src]!"))
+	act_message(H, src, others = span_notice("%U% pulls an acorn from %T%!"))
 	return TRUE
 
 /obj/item/toy/plushie/dragon

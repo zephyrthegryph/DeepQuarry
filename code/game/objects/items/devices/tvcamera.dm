@@ -88,7 +88,7 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 		return
 	if(camera.status && !isturf(target))
 		show_tvs(target)
-		user.visible_message(span_infoplain(span_bold("[user]") + " aims [src] at [target]."), span_info("You aim [src] at [target]."))
+		act_message(user, src, MSG_SELF(span_info("You aim %T% at [target].")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " aims %T% at [target].")))
 		if(user.check_current_machine(src))
 			show_ui(user) // refresh the UI
 

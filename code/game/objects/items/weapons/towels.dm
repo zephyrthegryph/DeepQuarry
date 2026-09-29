@@ -25,7 +25,7 @@ DECLARE_INTERACTIONS(/obj/item/towel, INTERACT_USE(null, PROC_REF(interaction_se
 
 /// Old attack_self.
 /obj/item/towel/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message(span_notice("[user] uses [src] to towel themselves off."))
+	act_message(user, src, others = span_notice("%U% uses %T% to towel themselves off."))
 	play_sfx(src, SFX_WEAPONS_TOWELWIPE)
 	if(user.fire_stacks > 0)
 		user.adjust_fire_stacks(-1.5)

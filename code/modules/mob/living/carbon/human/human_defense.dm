@@ -421,7 +421,8 @@ emp_act
 
 				if(T)
 					forceMove(T)
-					act_message(src, null, MSG_SELF(span_warning("You are pinned to the wall by [thrown_object]!")), \n						MSG_OTHERS(span_warning("%U% is pinned to the wall by [thrown_object]!")))
+					act_message(src, null, MSG_SELF(span_warning("You are pinned to the wall by [thrown_object]!")), \
+						MSG_OTHERS(span_warning("%U% is pinned to the wall by [thrown_object]!")))
 					set_anchored(TRUE)
 					LAZYADD(src.pinned, thrown_object)
 

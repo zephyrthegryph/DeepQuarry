@@ -56,10 +56,10 @@
 			to_chat(M, span_danger("The power of [src] clears your mind of the cult's influence!"))
 			to_chat(user, span_danger("You wave [src] over [M]'s head and see their eyes become clear, their mind returning to normal."))
 			GLOB.cult.remove_antagonist(M.mind)
-			M.visible_message(span_danger("\The [user] waves \the [src] over \the [M]'s head."))
+			act_message(user, M, others = span_danger("%U% waves \the [src] over %T%'s head."))
 		else
 			to_chat(user, span_danger("The rod appears to do nothing."))
-			M.visible_message(span_danger("\The [user] waves \the [src] over \the [M]'s head."))
+			act_message(user, M, others = span_danger("%U% waves \the [src] over %T%'s head."))
 		return ITEM_INTERACT_SUCCESS
 
 /obj/item/nullrod/afterattack(atom/A, mob/user as mob, proximity)
@@ -131,13 +131,13 @@ DECLARE_START_TIMER(/obj/effect/energy_net, 2 SECONDS, PROC_REF(check_empty)) //
 
 /obj/effect/energy_net/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	user.setClickCooldown(user.get_attack_speed())
-	visible_message(span_danger("[user] begins to tear at \the [src]!"))
+	act_message(user, src, others = span_danger("%U% begins to tear at %T%!"))
 	om_task_timed(user, escape_time, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(user_unbuckle_mob_timed_done), done_args = list(buckled_mob, user))
 
 /obj/effect/energy_net/proc/user_unbuckle_mob_timed_done(mob/living/buckled_mob, mob/user)
 	if(!has_buckled_mobs())
 		return
-	visible_message(span_danger("[user] manages to tear \the [src] apart!"))
+	act_message(user, src, others = span_danger("%U% manages to tear %T% apart!"))
 	unbuckle_mob(buckled_mob)
 
 /obj/effect/energy_net/post_buckle_mob(mob/living/M)

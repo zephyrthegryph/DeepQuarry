@@ -793,7 +793,9 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 /mob/living/carbon/human/proc/play_xylophone()
 	if(COOLDOWN_FINISHED(src, xylophone))
-		act_message(src, null, MSG_SELF(span_notice("You begin to play a spooky refrain on your ribcage.")), \n			MSG_OTHERS(span_filter_notice("[span_red("%U% begins playing %THEIR% ribcage like a xylophone. It's quite spooky.")]")), \n			MSG_BLIND(span_filter_notice("[span_red("You hear a spooky xylophone melody.")]")))
+		act_message(src, null, MSG_SELF(span_notice("You begin to play a spooky refrain on your ribcage.")), \
+			MSG_OTHERS(span_filter_notice("[span_red("%U% begins playing %THEIR% ribcage like a xylophone. It's quite spooky.")]")), \
+			MSG_BLIND(span_filter_notice("[span_red("You hear a spooky xylophone melody.")]")))
 		var/song = SFX_EFFECTS_XYLOPHONE_MIX
 		playsound(src, song, 50, 1, -1)
 		COOLDOWN_START(src, xylophone, 2 MINUTES)

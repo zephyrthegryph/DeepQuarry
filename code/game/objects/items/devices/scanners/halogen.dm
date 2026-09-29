@@ -14,7 +14,7 @@
 	if(!iscarbon(M))
 		to_chat(user, span_warning("This device can only scan organic beings!"))
 		return ITEM_INTERACT_FAILURE
-	user.visible_message(span_warning("\The [user] has analyzed [M]'s radiation levels!"), span_notice("Analyzing Results for [M]:"))
+	act_message(user, M, MSG_SELF(span_notice("Analyzing Results for %T%:")), MSG_OTHERS(span_warning("%U% has analyzed %T%'s radiation levels!")))
 	if(M.radiation)
 		to_chat(user, span_notice("Radiation Level: [M.radiation]"))
 	else

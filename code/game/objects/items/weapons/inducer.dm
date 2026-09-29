@@ -142,7 +142,7 @@
 			to_chat(user, span_notice("[A] is fully charged ([round(C.charge)] / [C.maxcharge])!"))
 			recharging = FALSE
 			return TRUE
-		user.visible_message(span_notice("[user] starts recharging [A] with [src]."), span_notice("You start recharging [A] with [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You start recharging [A] with %T%.")), MSG_OTHERS(span_notice("%U% starts recharging [A] with %T%.")))
 
 		var/datum/beam/charge_beam = user.Beam(A, icon_state = "rped_upgrade", time = 20 SECONDS)
 		var/filter = filter(type = "outline", size = 1, color = "#22AAFF")
@@ -189,7 +189,7 @@
 	if(A)
 		A.filters -= task.filter
 	if(task.done_any && user) // Only show a message if we succeeded at least once
-		user.visible_message(span_notice("[user] recharged [A]!"), span_notice("You recharged [A]!"))
+		act_message(user, null, MSG_SELF(span_notice("You recharged [A]!")), MSG_OTHERS(span_notice("%U% recharged [A]!")))
 	recharging = FALSE
 
 DECLARE_INTERACTIONS(/obj/item/inducer, \
@@ -200,7 +200,7 @@ DECLARE_INTERACTIONS(/obj/item/inducer, \
 /// Old attack_self.
 /obj/item/inducer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(opened && cell)
-		user.visible_message(span_notice("[user] removes [cell] from [src]!"), span_notice("You remove [cell]."))
+		act_message(user, src, MSG_SELF(span_notice("You remove [cell].")), MSG_OTHERS(span_notice("%U% removes [cell] from %T%!")))
 		cell.update_icon()
 		user.put_in_hands(cell)
 		cell = null

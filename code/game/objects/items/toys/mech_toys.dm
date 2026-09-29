@@ -77,12 +77,12 @@
 
 	if(!attacker) // If there's no attacker, then attacker_controller IS the attacker.
 		if(!in_range(src, attacker_controller))
-			attacker_controller.visible_message(span_suicide("[attacker_controller] is running from [src]! The coward!"))
+			act_message(attacker_controller, src, others = span_suicide("%U% is running from %T%! The coward!"))
 			return FALSE
 	else // If there's an attacker, we can procede as normal.
 		if(!in_range(src, attacker)) // The two toys aren't next to each other, the battle ends.
-			attacker_controller.visible_message(span_notice(" [attacker] and [src] separate, ending the battle. "), \
-								span_notice(" [attacker] and [src] separate, ending the battle. "))
+			act_message(attacker_controller, src, MSG_SELF(span_notice(" [attacker] and %T% separate, ending the battle. ")), \
+				MSG_OTHERS(span_notice(" [attacker] and %T% separate, ending the battle. ")))
 			return FALSE
 
 		// Dead men tell no tales, incapacitated men fight no fights.
@@ -90,8 +90,8 @@
 			return FALSE
 		// If the attacker_controller isn't next to the attacking toy (and doesn't have telekinesis), the battle ends.
 		if(!in_range(attacker, attacker_controller))
-			attacker_controller.visible_message(span_notice("[attacker_controller.name] separates from [attacker], ending the battle."), \
-								span_notice("You separate from [attacker], ending the battle. "))
+			act_message(attacker_controller, attacker, MSG_SELF(span_notice("You separate from %T%, ending the battle. ")), \
+				MSG_OTHERS(span_notice("%U% separates from %T%, ending the battle.")))
 			return FALSE
 
 		// If it's PVP and the opponent is not next to the defending(src) toy (and doesn't have telekinesis), the battle ends.
@@ -99,14 +99,14 @@
 			if(opponent.incapacitated())
 				return FALSE
 			if(!in_range(src, opponent))
-				opponent.visible_message(span_notice(" [opponent.name] separates from [src], ending the battle."), \
-							span_notice(" You separate from [src], ending the battle. "))
+				act_message(opponent, src, MSG_SELF(span_notice(" You separate from %T%, ending the battle. ")), \
+					MSG_OTHERS(span_notice(" %U% separates from %T%, ending the battle.")))
 				return FALSE
 		// If it's not PVP and the attacker_controller isn't next to the defending toy (and doesn't have telekinesis), the battle ends.
 		else
 			if (!in_range(src, attacker_controller))
-				attacker_controller.visible_message(span_notice(" [attacker_controller.name] separates from [src] and [attacker], ending the battle."), \
-									span_notice(" You separate [attacker] and [src], ending the battle. "))
+				act_message(attacker_controller, src, MSG_SELF(span_notice(" You separate [attacker] and %T%, ending the battle. ")), \
+					MSG_OTHERS(span_notice(" %U% separates from %T% and [attacker], ending the battle.")))
 				return FALSE
 
 	// If all that is good, the battle goes on.
@@ -231,9 +231,9 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
  */
 /obj/item/toy/mecha/proc/mecha_brawl(obj/item/toy/mecha/attacker, mob/living/carbon/attacker_controller, mob/living/carbon/opponent)
 	//A GOOD DAY FOR A SWELL BATTLE!
-	attacker_controller.visible_message(span_danger(" [attacker_controller.name] collides [attacker] with [src]! Looks like they're preparing for a brawl! "), \
-						span_danger(" You collide [attacker] into [src], sparking a fierce battle! "), \
-						span_hear(" You hear hard plastic smacking into hard plastic."))
+	act_message(attacker_controller, src, MSG_SELF(span_danger(" You collide [attacker] into %T%, sparking a fierce battle! ")), \
+		MSG_OTHERS(span_danger(" %U% collides [attacker] with %T%! Looks like they're preparing for a brawl! ")), \
+		MSG_BLIND(span_hear(" You hear hard plastic smacking into hard plastic.")))
 
 	in_combat = TRUE
 	attacker.in_combat = TRUE
@@ -257,13 +257,13 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 
 	//before we do anything - deal with charged attacks
 	if(special_attack_charged)
-		src_controller.visible_message(span_danger(" [src] unleashes its special attack!! "), \
-						span_danger(" You unleash [src]'s special attack! "))
+		act_message(src_controller, src, MSG_SELF(span_danger(" You unleash %T%'s special attack! ")), \
+			MSG_OTHERS(span_danger(" %T% unleashes its special attack!! ")))
 		special_attack_move(attacker)
 	else if(attacker.special_attack_charged)
 
-		attacker_controller.visible_message(span_danger(" [attacker] unleashes its special attack!! "), \
-							span_danger(" You unleash [attacker]'s special attack! "))
+		act_message(attacker_controller, attacker, MSG_SELF(span_danger(" You unleash %T%'s special attack! ")), \
+			MSG_OTHERS(span_danger(" %T% unleashes its special attack!! ")))
 		attacker.special_attack_move(src)
 	else
 		//process the cooldowns
@@ -277,20 +277,20 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 			if(1 to 3) //attacker wins
 				if(attacker.special_attack_cooldown == 0 && attacker.combat_health <= round(attacker.max_combat_health/3)) //if health is less than 1/3 and special off CD, use it
 					attacker.special_attack_charged = TRUE
-					attacker_controller.visible_message(span_danger(" [attacker] begins charging its special attack!! "), \
-										span_danger(" You begin charging [attacker]'s special attack! "))
+					act_message(attacker_controller, attacker, MSG_SELF(span_danger(" You begin charging %T%'s special attack! ")), \
+						MSG_OTHERS(span_danger(" %T% begins charging its special attack!! ")))
 				else //just attack
 					attacker.SpinAnimation(5, 0)
 					play_sfx(attacker, SFX_MECHA_MECHSTEP, 1.5)
 					combat_health--
-					attacker_controller.visible_message(span_danger(" [attacker] devastates [src]! "), \
-										span_danger(" You ram [attacker] into [src]! "), \
-										span_hear(" You hear hard plastic smacking hard plastic."))
+					act_message(attacker_controller, src, MSG_SELF(span_danger(" You ram [attacker] into %T%! ")), \
+						MSG_OTHERS(span_danger(" [attacker] devastates %T%! ")), \
+						MSG_BLIND(span_hear(" You hear hard plastic smacking hard plastic.")))
 					if(prob(5))
 						combat_health--
 						play_sfx(src, SFX_EFFECTS_METEORIMPACT, 0.5)
-						attacker_controller.visible_message(span_boldwarning(" ...and lands a CRIPPLING BLOW! "), \
-											span_boldwarning(" ...and you land a CRIPPLING blow on [src]! "), null)
+						act_message(attacker_controller, src, MSG_SELF(span_boldwarning(" ...and you land a CRIPPLING blow on %T%! ")), \
+							MSG_OTHERS(span_boldwarning(" ...and lands a CRIPPLING BLOW! ")))
 
 			if(4) //both lose
 				attacker.SpinAnimation(5, 0)
@@ -303,44 +303,44 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 				play_sfx(attacker, SFX_SPARKS)
 				fx_sparks(attacker, 2, FALSE)
 				if(prob(50))
-					attacker_controller.visible_message(span_danger(" [attacker] and [src] clash dramatically, causing sparks to fly! "), \
-										span_danger(" [attacker] and [src] clash dramatically, causing sparks to fly! "), \
-										span_hear(" You hear hard plastic rubbing against hard plastic."))
+					act_message(attacker_controller, src, MSG_SELF(span_danger(" [attacker] and %T% clash dramatically, causing sparks to fly! ")), \
+						MSG_OTHERS(span_danger(" [attacker] and %T% clash dramatically, causing sparks to fly! ")), \
+						MSG_BLIND(span_hear(" You hear hard plastic rubbing against hard plastic.")))
 				else
-					src_controller.visible_message(span_danger(" [src] and [attacker] clash dramatically, causing sparks to fly! "), \
-									span_danger(" [src] and [attacker] clash dramatically, causing sparks to fly! "), \
-									span_hear(" You hear hard plastic rubbing against hard plastic."))
+					act_message(src_controller, src, MSG_SELF(span_danger(" %T% and [attacker] clash dramatically, causing sparks to fly! ")), \
+						MSG_OTHERS(span_danger(" %T% and [attacker] clash dramatically, causing sparks to fly! ")), \
+						MSG_BLIND(span_hear(" You hear hard plastic rubbing against hard plastic.")))
 			if(5) //both win
 				play_sfx(attacker, SFX_WEAPONS_PARRY)
 				if(prob(50))
-					attacker_controller.visible_message(span_danger(" [src]'s attack deflects off of [attacker]. "), \
-										span_danger(" [src]'s attack deflects off of [attacker]. "), \
-										span_hear(" You hear hard plastic bouncing off hard plastic."))
+					act_message(attacker_controller, src, MSG_SELF(span_danger(" %T%'s attack deflects off of [attacker]. ")), \
+						MSG_OTHERS(span_danger(" %T%'s attack deflects off of [attacker]. ")), \
+						MSG_BLIND(span_hear(" You hear hard plastic bouncing off hard plastic.")))
 				else
-					src_controller.visible_message(span_danger(" [attacker]'s attack deflects off of [src]. "), \
-									span_danger(" [attacker]'s attack deflects off of [src]. "), \
-									span_hear(" You hear hard plastic bouncing off hard plastic."))
+					act_message(src_controller, src, MSG_SELF(span_danger(" [attacker]'s attack deflects off of %T%. ")), \
+						MSG_OTHERS(span_danger(" [attacker]'s attack deflects off of %T%. ")), \
+						MSG_BLIND(span_hear(" You hear hard plastic bouncing off hard plastic.")))
 
 			if(6 to 8) //defender wins
 				if(special_attack_cooldown == 0 && combat_health <= round(max_combat_health/3)) //if health is less than 1/3 and special off CD, use it
 					special_attack_charged = TRUE
-					src_controller.visible_message(span_danger(" [src] begins charging its special attack!! "), \
-									span_danger(" You begin charging [src]'s special attack! "))
+					act_message(src_controller, src, MSG_SELF(span_danger(" You begin charging %T%'s special attack! ")), \
+						MSG_OTHERS(span_danger(" %T% begins charging its special attack!! ")))
 				else //just attack
 					SpinAnimation(5, 0)
 					play_sfx(src, SFX_MECHA_MECHSTEP, 1.5)
 					attacker.combat_health--
-					src_controller.visible_message(span_danger(" [src] smashes [attacker]! "), \
-									span_danger(" You smash [src] into [attacker]! "), \
-									span_hear(" You hear hard plastic smashing hard plastic."))
+					act_message(src_controller, src, MSG_SELF(span_danger(" You smash %T% into [attacker]! ")), \
+						MSG_OTHERS(span_danger(" %T% smashes [attacker]! ")), \
+						MSG_BLIND(span_hear(" You hear hard plastic smashing hard plastic.")))
 					if(prob(5))
 						attacker.combat_health--
 						play_sfx(attacker, SFX_EFFECTS_METEORIMPACT, 0.5)
-						src_controller.visible_message(span_boldwarning(" ...and lands a CRIPPLING BLOW! "), \
-										span_boldwarning(" ...and you land a CRIPPLING blow on [attacker]! "), null)
+						act_message(src_controller, attacker, MSG_SELF(span_boldwarning(" ...and you land a CRIPPLING blow on %T%! ")), \
+							MSG_OTHERS(span_boldwarning(" ...and lands a CRIPPLING BLOW! ")))
 			else
-				attacker_controller.visible_message(span_notice(" [src] and [attacker] stand around awkwardly."), \
-									span_notice(" You don't know what to do next."))
+				act_message(attacker_controller, src, MSG_SELF(span_notice(" You don't know what to do next.")), \
+					MSG_OTHERS(span_notice(" %T% and [attacker] stand around awkwardly.")))
 
 	om_after(src, 0.5 SECONDS, PROC_REF(brawl_round), attacker, attacker_controller, opponent, battle_length + 1)
 
@@ -352,26 +352,26 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 
 	if(attacker.combat_health <= 0 && combat_health <= 0) //both lose
 		play_sfx(src, SFX_MACHINES_WARNING_BUZZER, 0.4, vary = TRUE)
-		attacker_controller.visible_message(span_boldnotice(" MUTUALLY ASSURED DESTRUCTION!! [src] and [attacker] both end up destroyed!"), \
-							span_boldnotice(" Both [src] and [attacker] are destroyed!"))
+		act_message(attacker_controller, src, MSG_SELF(span_boldnotice(" Both %T% and [attacker] are destroyed!")), \
+			MSG_OTHERS(span_boldnotice(" MUTUALLY ASSURED DESTRUCTION!! %T% and [attacker] both end up destroyed!")))
 	else if(attacker.combat_health <= 0) //src wins
 		wins++
 		attacker.losses++
 		play_sfx(attacker, SFX_EFFECTS_LIGHT_FLICKER, 0.4)
-		attacker_controller.visible_message(span_notice(" [attacker] falls apart!"), \
-							span_notice(" [attacker] falls apart!"), null)
+		act_message(attacker_controller, attacker, MSG_SELF(span_notice(" %T% falls apart!")), \
+			MSG_OTHERS(span_notice(" %T% falls apart!")))
 		visible_message("[pick(winlines)]")
-		src_controller.visible_message(span_notice(" [src] destroys [attacker] and walks away victorious!"), \
-						span_notice(" You raise up [src] victoriously over [attacker]!"))
+		act_message(src_controller, src, MSG_SELF(span_notice(" You raise up %T% victoriously over [attacker]!")), \
+			MSG_OTHERS(span_notice(" %T% destroys [attacker] and walks away victorious!")))
 	else if (combat_health <= 0) //attacker wins
 		attacker.wins++
 		losses++
 		play_sfx(src, SFX_EFFECTS_LIGHT_FLICKER, 0.4)
-		src_controller.visible_message(span_notice(" [src] collapses!"), \
-						span_notice(" [src] collapses!"), null)
+		act_message(src_controller, src, MSG_SELF(span_notice(" %T% collapses!")), \
+			MSG_OTHERS(span_notice(" %T% collapses!")))
 		attacker.visible_message("[pick(winlines)]")
-		attacker_controller.visible_message(span_notice(" [attacker] demolishes [src] and walks away victorious!"), \
-							span_notice("You raise up [attacker] proudly over [src]") + "!")
+		act_message(attacker_controller, src, MSG_SELF(span_notice("You raise up [attacker] proudly over %T%") + "!"), \
+			MSG_OTHERS(span_notice(" [attacker] demolishes %T% and walks away victorious!")))
 	else //both win?
 		visible_message("NEXT TIME.")
 		//don't want to make this a one sided conversation

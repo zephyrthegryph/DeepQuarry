@@ -174,7 +174,7 @@
 	if(!S.open)
 		to_chat(user, span_warning("You have to cut [S] open first!"))
 		return
-	M.visible_message(span_infoplain(span_bold("\The [user]") + " scans the wounds on [M]'s [S.name] with [src]"))
+	act_message(user, M, others = span_infoplain(span_bold("%U%") + " scans the wounds on %T%'s [S.name] with [src]"))
 
 	src.add_data(S)
 	OM_EMIT(src, /datum/om/event/autopsy_performed, user, M)

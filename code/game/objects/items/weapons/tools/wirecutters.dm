@@ -49,9 +49,9 @@
 		return ..()
 	var/mob/living/carbon/C = M
 	if(istype(C) && stance == I_HELP && (C.get_equipped_item(SLOT_ID_HANDCUFFED)) && (istype(C.get_equipped_item(SLOT_ID_HANDCUFFED), /obj/item/handcuffs/cable)))
-		user.visible_message("\The [user] cuts \the [C]'s restraints with \the [src]!",\
-		"You cut \the [C]'s restraints with \the [src]!",\
-		"You hear cable being cut.")
+		act_message(user, src, MSG_SELF("You cut \the [C]'s restraints with %T%!"), \
+			MSG_OTHERS("%U% cuts \the [C]'s restraints with %T%!"), \
+			MSG_BLIND("You hear cable being cut."))
 		var/obj/item/cut = C.get_equipped_item(SLOT_ID_HANDCUFFED)
 		consume(cut, C)
 		return ITEM_INTERACT_SUCCESS

@@ -154,7 +154,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/intercom, \
 /obj/item/radio/intercom/wirecutter_act(mob/user, obj/item/tool)
 	if(!wiresexposed)
 		return ITEM_INTERACT_BLOCKING
-	user.visible_message(span_warning("[user] has cut the wires inside \the [src]!"), "You have cut the wires inside \the [src].")
+	act_message(user, src, MSG_SELF("You have cut the wires inside %T%."), MSG_OTHERS(span_warning("%U% has cut the wires inside %T%!")))
 	playsound(src, tool.usesound, 50, TRUE)
 	var/obj/structure/frame/frame = new(loc)
 	var/obj/item/circuitboard/board = circuit

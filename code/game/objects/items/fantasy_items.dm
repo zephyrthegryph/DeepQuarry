@@ -87,7 +87,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/bath, INTERACT_ITEM(null, PROC_REF(bath_i
 		if(has_buckled_mobs()) //Handles trying to buckle someone else to a chair when someone else is on it
 			to_chat(user, span_notice("\The [src] already has someone buckled to it."))
 			return INTERACTION_HANDLED_PASS
-		user.visible_message(span_notice("[user] attempts to buckle [affecting] into \the [src]!"))
+		act_message(user, src, others = span_notice("%U% attempts to buckle [affecting] into %T%!"))
 		om_task_start(/datum/om/task/timed/bath_bath_buckle, user, G?.grab_target(), receiver = src, I = I, affecting = affecting)
 	return INTERACTION_HANDLED_PASS
 
@@ -103,10 +103,9 @@ EXTEND_INTERACTIONS(/obj/structure/bed/bath, INTERACT_ITEM(null, PROC_REF(bath_i
 	var/mob/living/affecting = task.affecting
 	affecting.forceMove(loc)
 	if(buckle_mob(affecting))
-		affecting.visible_message(\
-			span_danger("[affecting.name] is buckled to [src] by [user.name]!"),\
-			span_danger("You are buckled to [src] by [user.name]!"),\
-			span_notice("You hear metal clanking."))
+		act_message(affecting, src, MSG_SELF(span_danger("You are buckled to %T% by [user.name]!")), \
+			MSG_OTHERS(span_danger("%U% is buckled to %T% by [user.name]!")), \
+			MSG_BLIND(span_notice("You hear metal clanking.")))
 	consume(I, user)
 
 DECLARE_REAGENTS(/obj/structure/bed/bath, 300, null)
@@ -168,12 +167,12 @@ EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
 					return INTERACTION_HANDLED_PASS
 				var/mob/living/swirlie = om_resolve(swirlie_mob)
 				if(open && !swirlie)
-					user.visible_message(span_danger("[user] starts to give [GM.name] a swirlie!"), span_notice("You start to give [GM.name] a swirlie!"))
+					act_message(user, null, MSG_SELF(span_notice("You start to give [GM.name] a swirlie!")), MSG_OTHERS(span_danger("%U% starts to give [GM.name] a swirlie!")))
 					swirlie_mob = om_handle(GM)
 					om_task_start(/datum/om/task/timed/wooden_wooden_swirlie, user, GM, receiver = src)
 					swirlie_mob = null
 				else
-					user.visible_message(span_danger("[user] slams [GM.name] into the [src]!"), span_notice("You slam [GM.name] into the [src]!"))
+					act_message(user, src, MSG_SELF(span_notice("You slam [GM.name] into %T%!")), MSG_OTHERS(span_danger("%U% slams [GM.name] into %T%!")))
 					GM.injure(INJURY_BLUNT, 5, source = src)
 			else
 				to_chat(user, span_notice("You need a tighter grip."))
@@ -199,7 +198,7 @@ EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
 /obj/structure/toilet/wooden/proc/wooden_swirlie_done(datum/om/task/timed/wooden_wooden_swirlie/task)
 	var/mob/living/user = task.actor
 	var/mob/living/GM = task.target
-	user.visible_message(span_danger("[user] gives [GM.name] a swirlie!"), span_notice("You give [GM.name] a swirlie!"), "You hear a toilet flushing.")
+	act_message(user, null, MSG_SELF(span_notice("You give [GM.name] a swirlie!")), MSG_OTHERS(span_danger("%U% gives [GM.name] a swirlie!")), MSG_BLIND("You hear a toilet flushing."))
 	if(!GM.internal)
 		GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water
 

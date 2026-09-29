@@ -230,7 +230,7 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 		nif = H.nif
 		persist_nif_data(H)
 
-	user.visible_message("[user] begins scanning [target]'s mind.",span_notice("You begin scanning [target]'s mind."))
+	act_message(user, null, MSG_SELF(span_notice("You begin scanning [target]'s mind.")), MSG_OTHERS("%U% begins scanning [target]'s mind."))
 	om_task_start(/datum/om/task/timed/sleevemate_topic, user, target, receiver = src, nif = nif)
 
 /obj/item/sleevemate/proc/topic_bodyscan(mob/user, list/args)
@@ -406,7 +406,7 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 /obj/item/sleevemate/proc/mindsteal_confirmed(datum/om/prompt/confirm/sleevemate_mindsteal/ask)
 	var/mob/living/user = ask.answerer
 	var/mob/living/target = ask.victim
-	user.visible_message(span_warning("[user] begins downloading [target]'s mind!"),span_notice("You begin downloading [target]'s mind!"))
+	act_message(user, null, MSG_SELF(span_notice("You begin downloading [target]'s mind!")), MSG_OTHERS(span_warning("%U% begins downloading [target]'s mind!")))
 	om_task_timed(user, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done3), done_args = list(target, user))
 
 /obj/item/sleevemate/emag_act(remaining_charges, mob/user)

@@ -99,7 +99,7 @@ DECLARE_INTERACTIONS(/obj/item/grenade/spawnergrenade/manhacks/station/locked, I
 			to_chat(user, span_warning("You [locked ? "enable" : "disable"] the safety lock on \the [src]."))
 		else
 			to_chat(user, span_warning("Access denied."))
-		user.visible_message(span_notice("[user] swipes \the [I] against \the [src]."))
+		act_message(user, src, others = span_notice("%U% swipes \the [I] against %T%."))
 	else
 		return FALSE
 	return INTERACTION_HANDLED_PASS

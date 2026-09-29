@@ -136,7 +136,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 		user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN * 1.5)//this is a mop, cart, and trash bag in one. Halving its speed should keep it somewhat more in-line with other cleaning equipment.
 	var/auto_setting = 1
 	if(isturf(target))
-		user.visible_message(span_filter_notice("[user] begins [suckverb]ing the mess off \the [target.name]..."), span_notice("You begin [suckverb]ing the mess off \the [target.name]..."))
+		act_message(user, null, MSG_SELF(span_notice("You begin [suckverb]ing the mess off \the [target.name]...")), MSG_OTHERS(span_filter_notice("%U% begins [suckverb]ing the mess off \the [target.name]...")))
 		var/list/suckables = list()
 		if(vac_power == 8)
 			play_sfx(src, SFX_MACHINES_HISS, 2, vary = TRUE, extrarange = -1)
@@ -238,7 +238,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 			else
 				auto_setting = vac_power
 			playsound(src, sucksound, auto_setting * 20, 1, -1)
-			user.visible_message(span_filter_notice("[user] [suckverb]s up \the [target.name]."), span_notice("You [suckverb] up \the [target.name]..."))
+			act_message(user, null, MSG_SELF(span_notice("You [suckverb] up \the [target.name]...")), MSG_OTHERS(span_filter_notice("%U% [suckverb]s up \the [target.name].")))
 			if(suckanim)
 				I.SpinAnimation(5,1)
 			om_after(src, 0.5 SECONDS, PROC_REF(handle_consumption), I, user, auto_setting)
@@ -246,7 +246,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 
 	if(istype(target,/obj/effect/decal/cleanable))
 		playsound(src, sucksound, auto_setting * 20, 1, -1)
-		user.visible_message(span_filter_notice("[user] [suckverb]s up \the [target.name]."), span_notice("You [suckverb] up \the [target.name]..."))
+		act_message(user, null, MSG_SELF(span_notice("You [suckverb] up \the [target.name]...")), MSG_OTHERS(span_filter_notice("%U% [suckverb]s up \the [target.name].")))
 		qdel(target)
 		return
 
@@ -264,7 +264,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 			auto_setting = 6
 		if(valid_to_suck && is_allowed_suck(target, user, output_atom))
 			playsound(src, sucksound, auto_setting * 20, 1, -1)
-			user.visible_message(span_filter_notice("[user] [suckverb]s up \the [target.name]."), span_notice("You [suckverb] up \the [target.name]..."))
+			act_message(user, null, MSG_SELF(span_notice("You [suckverb] up \the [target.name]...")), MSG_OTHERS(span_filter_notice("%U% [suckverb]s up \the [target.name].")))
 			if(suckanim)
 				L.SpinAnimation(5,1)
 			om_after(src, 0.5 SECONDS, PROC_REF(handle_consumption), L, user, auto_setting)

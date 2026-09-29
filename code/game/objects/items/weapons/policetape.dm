@@ -310,11 +310,11 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 			GLOB.tape_roll_applications[F] = 0
 
 		if(GLOB.tape_roll_applications[F] & direction) // hazard_overlay in F.overlays wouldn't work.
-			user.visible_message("\The [user] uses the adhesive of \the [src] to remove area markings from \the [F].", "You use the adhesive of \the [src] to remove area markings from \the [F].")
+			act_message(user, src, MSG_SELF("You use the adhesive of %T% to remove area markings from \the [F]."), MSG_OTHERS("%U% uses the adhesive of %T% to remove area markings from \the [F]."))
 			F.cut_overlay(hazard_overlay)
 			GLOB.tape_roll_applications[F] &= ~direction
 		else
-			user.visible_message("\The [user] applied \the [src] on \the [F] to create area markings.", "You apply \the [src] on \the [F] to create area markings.")
+			act_message(user, src, MSG_SELF("You apply %T% on \the [F] to create area markings."), MSG_OTHERS("%U% applied %T% on \the [F] to create area markings."))
 			F.add_overlay(hazard_overlay)
 			GLOB.tape_roll_applications[F] |= direction
 		return
@@ -398,7 +398,7 @@ DECLARE_INTERACTIONS(/obj/item/tape, \
 	if(stance == I_HELP)
 		to_chat(user, span_warning("You refrain from breaking \the [src]."))
 		return
-	user.visible_message(span_bold("\The [user]") + " breaks \the [src]!",span_notice("You break \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You break %T%.")), MSG_OTHERS(span_bold("%U%") + " breaks %T%!"))
 
 	for (var/obj/item/tape/T in gettapeline())
 		if(T == src)

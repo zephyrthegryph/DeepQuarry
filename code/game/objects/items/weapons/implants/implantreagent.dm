@@ -55,7 +55,7 @@ TYPE_TABLE(/obj/item/implant/reagent_generator/egg, reagent_implant_self_emotes,
 			to_chat(usr, span_notice("It seems that [src] is out of eggs!"))
 		to_chat(src, span_notice("[pick(rimplant.empty_message)]"))
 		return
-	visible_message(span_danger("[usr] starts squeezing [src]'s lower body firmly..."))
+	act_message(usr, src, others = span_danger("%U% starts squeezing %T%'s lower body firmly..."))
 	om_task_timed(usr, 120, target = src, receiver = src, on_done = PROC_REF(use_reagent_implant_egg_done), done_args = list(usr, rimplant))
 
 /mob/living/carbon/human/proc/use_reagent_implant_egg_done(mob/usr_mob, obj/item/implant/reagent_generator/egg/rimplant)
@@ -70,14 +70,14 @@ TYPE_TABLE(/obj/item/implant/reagent_generator/egg, reagent_implant_self_emotes,
 			var/emote = rimplant.emote_descriptor[index]
 			var/verb_desc = rimplant.verb_descriptor[index]
 			var/self_verb_desc = rimplant.self_verb_descriptor[index]
-			visible_message(span_notice("[usr_mob] [verb_desc] [emote]"),
-							span_notice("You [self_verb_desc] [emote]"))
+			act_message(src, usr_mob, MSG_SELF(span_notice("You [self_verb_desc] [emote]")), \
+				MSG_OTHERS(span_notice("%T% [verb_desc] [emote]")))
 		else
-			visible_message(span_notice("[src] [pick(rimplant.short_emote_descriptor)] an egg."),
-								span_notice("You [pick(TYPE_TABLE_GET(rimplant, reagent_implant_self_emotes))] an egg."))
+			act_message(src, null, MSG_SELF(span_notice("You [pick(TYPE_TABLE_GET(rimplant, reagent_implant_self_emotes))] an egg.")), \
+				MSG_OTHERS(span_notice("%U% [pick(rimplant.short_emote_descriptor)] an egg.")))
 
 		if(prob(15))
-			visible_message(span_notice("[src] [pick(rimplant.random_emote)]."))
+			act_message(src, null, others = span_notice("%U% [pick(rimplant.random_emote)]."))
 		rimplant.reagents.remove_any(rimplant.transfer_amount)
 
 		if(rimplant.cascade)
@@ -95,7 +95,7 @@ TYPE_TABLE(/obj/item/implant/reagent_generator/egg, reagent_implant_self_emotes,
 	new egg(get_turf(src))
 	rimplant.reagents.remove_any(rimplant.transfer_amount)
 	if(prob(25))
-		visible_message(span_notice("[src] [pick(rimplant.random_emote)]."))
+		act_message(src, null, others = span_notice("%U% [pick(rimplant.random_emote)]."))
 	egg_cascade_next(rimplant, egg)
 
 /mob/living/carbon/human/proc/toggle_cascade()
@@ -244,9 +244,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/implanter/reagent_generator, "imp", "implant_typ
 		if(container.reagents.total_volume < container.volume)
 			var/container_name = container.name
 			if(rimplant.reagents.trans_to(container, amount = rimplant.transfer_amount))
-				user.visible_message(span_notice("[user] [pick(rimplant.emote_descriptor)] into \the [container_name]."),
-									span_notice("You [pick(TYPE_TABLE_GET(rimplant, reagent_implant_self_emotes))] some [rimplant.reagent_name] into \the [container_name]."))
+				act_message(user, null, MSG_SELF(span_notice("You [pick(TYPE_TABLE_GET(rimplant, reagent_implant_self_emotes))] some [rimplant.reagent_name] into \the [container_name].")), \
+					MSG_OTHERS(span_notice("%U% [pick(rimplant.emote_descriptor)] into \the [container_name].")))
 				if(prob(5))
-					src.visible_message(span_notice("[src] [pick(rimplant.random_emote)].")) // M-mlem.
+					act_message(src, null, others = span_notice("%U% [pick(rimplant.random_emote)].")) // M-mlem.
 			if(rimplant.reagents.total_volume == rimplant.reagents.maximum_volume * 0.05)
 				to_chat(src, span_notice("[pick(rimplant.empty_message)]"))

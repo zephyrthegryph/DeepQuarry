@@ -108,8 +108,8 @@ DECLARE_INTERACTIONS(/obj/item/card/id, INTERACT_SELF("Show", PROC_REF(interacti
 /obj/item/card/id/proc/show_id_card(mob/user)
 	if(can_configure && !configured)
 		return FALSE
-	user.visible_message("\The [user] shows you: [icon2html(src,viewers(src))] [src.name]. The assignment on the card: [src.assignment]",\
-		"You flash your ID card: [icon2html(src, user.client)] [src.name]. The assignment on the card: [src.assignment]")
+	act_message(user, src, MSG_SELF("You flash your ID card: [icon2html(src, user.client)] [src.name]. The assignment on the card: [src.assignment]"), \
+		MSG_OTHERS("%U% shows you: [icon2html(src,viewers(src))] [src.name]. The assignment on the card: [src.assignment]"))
 
 	src.add_fingerprint(user)
 	return TRUE

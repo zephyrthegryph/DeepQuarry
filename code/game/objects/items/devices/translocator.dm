@@ -452,13 +452,13 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	var/mob/living/user = ask.answerer
 	var/obj/belly/bellychoice = ask.choice
 	if(istype(bellychoice) && bellychoice.owner == user)
-		user.visible_message(span_warning("[user] is trying to stuff \the [src] into [user.gender == MALE ? "his" : user.gender == FEMALE ? "her" : "their"] [bellychoice.name]!"),span_notice("You begin putting \the [src] into your [bellychoice.name]!"))
+		act_message(user, src, MSG_SELF(span_notice("You begin putting %T% into your [bellychoice.name]!")), MSG_OTHERS(span_warning("%U% is trying to stuff %T% into [user.gender == MALE ? "his" : user.gender == FEMALE ? "her" : "their"] [bellychoice.name]!")))
 		om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, bellychoice))
 
 /obj/item/perfect_tele_beacon/proc/attack_self_timed_done(mob/user, obj/belly/bellychoice)
 	user.unEquip(src)
 	forceMove(bellychoice)
-	user.visible_message(span_warning("[user] eats a telebeacon!"),"You eat the the beacon!")
+	act_message(user, null, MSG_SELF("You eat the the beacon!"), MSG_OTHERS(span_warning("%U% eats a telebeacon!")))
 
 // A single-beacon variant for use by miners (or whatever)
 /obj/item/perfect_tele/one_beacon
@@ -508,8 +508,8 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 		return
 	recharging = 1
 	update_icon()
-	user.visible_message(span_notice("[user] opens \the [src] and starts pumping the handle."), \
-						span_notice("You open \the [src] and start pumping the handle."))
+	act_message(user, src, MSG_SELF(span_notice("You open %T% and start pumping the handle.")), \
+		MSG_OTHERS(span_notice("%U% opens %T% and starts pumping the handle.")))
 	pump_handle(user)
 
 /// One second of pumping the handle per call, until the cell is full or the user stops.

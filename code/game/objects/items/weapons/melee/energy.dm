@@ -119,8 +119,8 @@
 
 	if (active)
 		if (CLUMSY_HARM_CHANCE(user))
-			user.visible_message(span_danger("\The [user] accidentally cuts [user.p_their()] with \the [src]."),\
-			span_danger("You accidentally cut yourself with \the [src]."))
+			act_message(user, src, MSG_SELF(span_danger("You accidentally cut yourself with %T%.")), \
+				MSG_OTHERS(span_danger("%U% accidentally cuts %THEIR% with %T%.")))
 			user.injure(INJURY_CUT, 5, source = src)
 			user.injure(INJURY_BURN, 5, source = src)
 		deactivate(user)
@@ -318,13 +318,13 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/axe/charge/loaded, "bcell", /obj/it
 
 /obj/item/melee/energy/sword/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(active && default_parry_check(user, attacker, damage_source) && prob(60))
-		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
+		act_message(user, src, others = span_danger("%U% parries [attack_text] with %T%!"))
 
 		fx_sparks(user.loc, 5, FALSE)
 		play_sfx(src, SFX_WEAPONS_BLADE1)
 		return 1
 	if(active && unique_parry_check(user, attacker, damage_source) && prob(projectile_parry_chance))
-		user.visible_message(span_danger("\The [user] deflects [attack_text] with \the [src]!"))
+		act_message(user, src, others = span_danger("%U% deflects [attack_text] with %T%!"))
 
 		fx_sparks(user.loc, 5, FALSE)
 		play_sfx(src, SFX_WEAPONS_BLADE1)
@@ -476,13 +476,13 @@ EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_R
 
 /obj/item/melee/energy/blade/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(default_parry_check(user, attacker, damage_source) && prob(60))
-		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
+		act_message(user, src, others = span_danger("%U% parries [attack_text] with %T%!"))
 
 		fx_sparks(user.loc, 5, FALSE)
 		play_sfx(src, SFX_WEAPONS_BLADE1)
 		return 1
 	if(unique_parry_check(user, attacker, damage_source) && prob(projectile_parry_chance))
-		user.visible_message(span_danger("\The [user] deflects [attack_text] with \the [src]!"))
+		act_message(user, src, others = span_danger("%U% deflects [attack_text] with %T%!"))
 
 		fx_sparks(user.loc, 5, FALSE)
 		play_sfx(src, SFX_WEAPONS_BLADE1)
@@ -539,8 +539,10 @@ EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_R
 
 /obj/item/melee/energy/spear/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(active && default_parry_check(user, attacker, damage_source) && prob(50))
-		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
-		fx_sparks(user.loc, 5, FALSE)
+		act_message(user, src, others = span_danger("%U% parries [attack_text] with %T%!"))
+		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
+		spark_system.set_up(5, 0, user.loc)
+		spark_system.start()
 		play_sfx(src, SFX_WEAPONS_BLADE1)
 		return 1
 	return 0

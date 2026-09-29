@@ -116,6 +116,6 @@ DECLARE_INTERACTIONS(/obj/item/fake_coin, INTERACT_USE(null, PROC_REF(interactio
 		comment = "tails"
 	else if(result == 2)
 		comment = "heads"
-	user.visible_message(span_notice("[user] has thrown \the [src]. It lands on [comment]!"), \
-							span_notice("You throw \the [src]. It lands on [comment]!"))
+	act_message(user, src, MSG_SELF(span_notice("You throw %T%. It lands on [comment]!")), \
+		MSG_OTHERS(span_notice("%U% has thrown %T%. It lands on [comment]!")))
 	return TRUE

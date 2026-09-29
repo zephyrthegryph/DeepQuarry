@@ -31,7 +31,7 @@ DECLARE_INTERACTIONS(/obj/item/cane/concealed, \
 /// Old attack_self.
 /obj/item/cane/concealed/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(concealed_blade)
-		user.visible_message(span_warning("[user] has unsheathed \a [concealed_blade] from [user.p_their()] [src]!"), "You unsheathe \the [concealed_blade] from \the [src].")
+		act_message(user, src, MSG_SELF("You unsheathe \the [concealed_blade] from %T%."), MSG_OTHERS(span_warning("%U% has unsheathed \a [concealed_blade] from %THEIR% %T%!")))
 		// Calling drop/put in hands to properly call item drop/pickup procs
 		play_sfx(src, SFX_WEAPONS_HOLSTER_SHEATHOUT)
 		user.drop_from_inventory(src)
@@ -46,7 +46,7 @@ DECLARE_INTERACTIONS(/obj/item/cane/concealed, \
 /// Old attackby.
 /obj/item/cane/concealed/proc/interaction_item(mob/user, obj/item/material/butterfly/W, datum/interaction/interaction)
 	if(!src.concealed_blade && istype(W))
-		user.visible_message(span_warning("[user] has sheathed \a [W] into [user.p_their()] [src]!"), "You sheathe \the [W] into \the [src].")
+		act_message(user, src, MSG_SELF("You sheathe \the [W] into %T%."), MSG_OTHERS(span_warning("%U% has sheathed \a [W] into %THEIR% %T%!")))
 		play_sfx(src, SFX_WEAPONS_HOLSTER_SHEATHIN)
 		user.drop_from_inventory(W)
 		W.forceMove(src)
@@ -73,7 +73,7 @@ DECLARE_INTERACTIONS(/obj/item/cane/concealed, \
 
 /obj/item/cane/white/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(stance == I_HELP)
-		user.visible_message(span_notice("\The [user] has lightly tapped [M] on the ankle with their white cane!"))
+		act_message(user, M, others = span_notice("%U% has lightly tapped %T% on the ankle with their white cane!"))
 		return ITEM_INTERACT_SUCCESS
 	else
 		. = ..()
@@ -100,18 +100,18 @@ DECLARE_INTERACTIONS(/obj/item/cane/white/collapsible, INTERACT_USE(null, PROC_R
 /obj/item/cane/white/collapsible/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	on = !on
 	if(on)
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " extends the white cane."),\
-				span_warning("You extend the white cane."),\
-				"You hear an ominous click.")
+		act_message(user, null, MSG_SELF(span_warning("You extend the white cane.")), \
+			MSG_OTHERS(span_infoplain(span_bold("%U%") + " extends the white cane.")), \
+			MSG_BLIND("You hear an ominous click."))
 		icon_state = "whitecane1out"
 		item_state_slots = list(slot_r_hand_str = "whitecane", slot_l_hand_str = "whitecane")
 		w_class = ITEMSIZE_NORMAL
 		force = 5
 		attack_verb = list("smacked", "struck", "cracked", "beaten")
 	else
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " collapses the white cane."),\
-		span_notice("You collapse the white cane."),\
-		"You hear a click.")
+		act_message(user, null, MSG_SELF(span_notice("You collapse the white cane.")), \
+			MSG_OTHERS(span_infoplain(span_bold("%U%") + " collapses the white cane.")), \
+			MSG_BLIND("You hear a click."))
 		icon_state = "whitecane1in"
 		item_state_slots = list(slot_r_hand_str = null, slot_l_hand_str = null)
 		w_class = ITEMSIZE_SMALL

@@ -97,7 +97,7 @@
 		user.injure(injury_kind, no_glove_d + (will_break ? break_damage : 0), active_hand, src)
 
 	if(will_break && src.loc == user) // If it's not in our hand anymore
-		user.visible_message(span_danger("[user] hit \the [target] with \the [src], shattering it!"), span_warning("You shatter \the [src] in your hand!"))
+		act_message(user, src, MSG_SELF(span_warning("You shatter %T% in your hand!")), MSG_OTHERS(span_danger("%U% hit \the [target] with %T%, shattering it!")))
 		play_sfx(src, SFX_SHATTER, volume = 30)
 		consume(src, user)
 	return

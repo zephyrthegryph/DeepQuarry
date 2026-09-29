@@ -27,7 +27,7 @@ DECLARE_REAGENTS(/obj/item/mop, 30, null)
 			user.balloon_alert(user, "your mop is dry!")
 			return
 
-		user.visible_message(span_warning("[user] begins to clean \the [get_turf(A)]."))
+		act_message(user, null, others = span_warning("%U% begins to clean \the [get_turf(A)]."))
 
 		om_task_timed(user, mop_time, target = get_turf(A), receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A, user))
 

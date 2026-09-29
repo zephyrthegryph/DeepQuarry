@@ -116,7 +116,7 @@ DECLARE_INTERACTIONS(/obj/item/aicard, INTERACT_USE(null, PROC_REF(interaction_s
 		if(!S.IsHumanoidToolUser(src))
 			return 0
 
-	user.visible_message("\The [user] starts transferring \the [ai] into \the [src]...", "You start transferring \the [ai] into \the [src]...")
+	act_message(user, src, MSG_SELF("You start transferring \the [ai] into %T%..."), MSG_OTHERS("%U% starts transferring \the [ai] into %T%..."))
 	show_message(span_critical("\The [user] is transferring you into \the [src]!"))
 
 	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(grab_ai_timed_done), done_args = list(ai, user))

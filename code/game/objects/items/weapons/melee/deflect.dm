@@ -10,10 +10,10 @@
 	if(.)
 		return .
 	if(default_parry_check(user, attacker, damage_source) && prob(defend_chance))
-		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
+		act_message(user, src, others = span_danger("%U% parries [attack_text] with %T%!"))
 		return 1
 	if(unique_parry_check(user, attacker, damage_source) && prob(projectile_parry_chance))
-		user.visible_message(span_danger("\The [user] deflects [attack_text] with \the [src]!"))
+		act_message(user, src, others = span_danger("%U% deflects [attack_text] with %T%!"))
 		return 1
 
 	return 0
