@@ -3,6 +3,10 @@
 */
 
 /datum/species
+	/// TRUE on a per-mob copy made by produceCopy() (traits / custom species). The mob that
+	/// holds it owns it (carbon `species` is OWNED) and deletes it when it adopts another; the
+	/// shared GLOB.all_species singletons are FALSE and refuse qdel (lifecycle_keep).
+	var/per_mob_copy = FALSE
 
 	// Descriptors and strings.
 	var/name												// Species name.
@@ -886,6 +890,7 @@
 	ASSERT(src)
 	ASSERT(istype(H))
 	var/datum/species/new_copy = new src.type()
+	new_copy.per_mob_copy = TRUE
 	new_copy.race_key = race_key
 	if (selects_bodytype && custom_base)
 		new_copy.base_species = custom_base
@@ -908,7 +913,7 @@
 			T.apply(new_copy, H, new_copy.traits[trait])
 
 	//Set up a mob
-	H.species = new_copy
+	var/datum/species/old_species = H.adopt_species(new_copy)
 	H.invalidate_factors()
 	H.icon_state = new_copy.get_bodytype()
 
@@ -922,6 +927,8 @@
 	if(H.species.has_vibration_sense)
 		H.motiontracker_subscribe()
 
+	// Last: old_species is often src itself.
+	H.release_species_copy(old_species)
 	return new_copy
 
 //We REALLY don't need to go through every variable. Doing so makes this lag like hell on 515
@@ -995,6 +1002,10 @@
 			allergies.Add(REAGENT_KELOTANE)
 		return allergies
 	return null
+
+/// Shared singletons are never deleted; only a mob's own produceCopy() copy is.
+/datum/species/lifecycle_keep(force)
+	return !per_mob_copy
 
 DECLARE_REF(/datum/species, "hud", OWNED, null)
 DECLARE_REF(/datum/species, "unarmed_attacks", OWNED_LIST, null)
