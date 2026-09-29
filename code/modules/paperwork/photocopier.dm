@@ -162,8 +162,8 @@
 /obj/machinery/photocopier/proc/interaction_insert(mob/user, obj/item/O, datum/interaction/interaction)
 	if(!copyitem)
 		user.drop_item()
-		own_set(src, "copyitem", O)
 		O.forceMove(src)
+		own_set(src, "copyitem", O) // CONTAINED: in our contents first
 		to_chat(user, span_notice("You insert \the [O] into \the [src]."))
 		playsound(src, "sound/machines/click.ogg", 100, 1)
 		flick(insert_anim, src)

@@ -20,11 +20,9 @@ OWN(/obj/item/modular_computer, nano_printer, OWN_CONTAINED)
 OWN(/obj/item/modular_computer, portable_drive, OWN_CONTAINED)
 OWN(/obj/item/modular_computer, tesla_link, OWN_CONTAINED)
 
-// its card drops at the computer's turf.
+// Hardware slots are one kind: owned while installed, in the computer's contents (OWN_CONTAINED).
+// A destroyed part leaves its slot in phase 2; the card slot's card drops at the computer's turf.
 /obj/item/computer_hardware/card_slot/on_destroy(force)
-	var/slot = get_slot_var()
-	if(holder2() && (holder2().vars[slot] == src))
-		holder2().vars[slot] = null // ALLOW(api): hardware slot cleared by name on removal
 	if(stored_card())
 		stored_card().forceMove(get_turf(holder2()))
 	..()

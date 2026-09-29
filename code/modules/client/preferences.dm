@@ -534,16 +534,18 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 									/datum/trait/neutral/micro_size_down,
 									/datum/trait/neutral/micro_size_up)
 	if(character.species)
-		character.species.micro_size_mod = 0
-		character.species.icon_scale_x = 1
-		character.species.icon_scale_y = 1
+		// species is PROTO: mutate the mob's private copy, never the shared prototype
+		var/datum/species/own_species = proto_private(character, "species")
+		own_species.micro_size_mod = 0
+		own_species.icon_scale_x = 1
+		own_species.icon_scale_y = 1
 		for(var/trait in read_preference(/datum/preference/typed_list/traits/neu_traits)) // typed_list pref base
 			if(trait in traits_to_copy)
 				var/datum/trait/instance = GLOB.all_traits[trait]
 				if(!instance)
 					continue
 				for(var/key, value in instance.var_changes)
-					character.species.vars[key] = value // ALLOW(api): custom species prefs copied by name
+					own_species.vars[key] = value // ALLOW(api): custom species prefs copied by name
 	character.update_transform()
 
 	// Snowflake shapeshifter bodytype derivation — this is what makes vanity_copy_to
@@ -558,10 +560,11 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	else
 		bodytype_selected = selected_species.get_bodytype(character)
 	character.dna.base_species = bodytype_selected
-	character.species.base_species = bodytype_selected
-	character.species.icobase = character.species.get_icobase()
-	character.species.deform = character.species.get_icobase(get_deform = TRUE)
-	character.species.vanity_base_fit = bodytype_selected
+	var/datum/species/private_species = proto_private(character, "species") // PROTO: private copy
+	private_species.base_species = bodytype_selected
+	private_species.icobase = private_species.get_icobase()
+	private_species.deform = private_species.get_icobase(get_deform = TRUE)
+	private_species.vanity_base_fit = bodytype_selected
 	if(istype(character.species, /datum/species/shapeshifter))
 		GLOB.wrapped_species_by_ref["\ref[character]"] = bodytype_selected
 

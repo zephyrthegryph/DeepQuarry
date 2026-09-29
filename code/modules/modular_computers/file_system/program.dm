@@ -212,7 +212,7 @@
 					return
 
 				var/mob/user = ui.user
-				LAZYADD(computer().idle_threads, computer().active_program())
+				rel_add(computer(), "idle_threads", computer().active_program())
 				program_state = PROGRAM_STATE_BACKGROUND // Should close any existing UIs
 
 				rel_clear(computer(), "active_program")

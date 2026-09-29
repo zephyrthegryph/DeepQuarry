@@ -1,6 +1,7 @@
 /datum/tgui_module/ship
 	var/tmp/obj/effect/overmap/visitable/ship/linked
-	var/list/viewers
+	var/list/viewers //The list handed to the coordinated remote view (it keeps its own entries in it)
+	var/list/watchers //Who is viewing through us (a relation list, kept by look()/unlook())
 	var/extra_view = 0
 	var/map_view_used = FALSE
 
@@ -61,17 +62,19 @@
 		return 1
 
 /datum/tgui_module/ship/look(mob/user)
+	rel_add(src, "watchers", user)
 	user.set_viewsize(world.view + extra_view)
 	if(!map_view_used)
 		map_view_used = TRUE
 
 /datum/tgui_module/ship/unlook(mob/user)
+	rel_remove(src, "watchers", user)
 	user.set_viewsize() // reset to default
 	if(map_view_used)
 		map_view_used = FALSE
 
 /datum/tgui_module/ship/proc/viewing_overmap(mob/user)
-	return (om_handle(user) in viewers)
+	return (user in watchers)
 
 // Navigation
 /datum/tgui_module/ship/nav

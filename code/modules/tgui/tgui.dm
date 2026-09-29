@@ -152,7 +152,7 @@
 	startup_profile["native_shell"] = window().native_shell ? TRUE : FALSE
 	startup_profile["generation"] = window().generation
 	startup_profile["browser_profiling"] = client_profiling_enabled() ? TRUE : FALSE
-	log_tgui(user, "Automatic TGUI server startup telemetry: [json_encode(startup_profile)]", window = om_handle(window()))
+	log_tgui(user, "Automatic TGUI server startup telemetry: [json_encode(startup_profile)]", window = window())
 	#else
 	send_assets()
 	window().send_message("update", get_payload(
@@ -500,8 +500,9 @@
 		if("setSharedState")
 			if(status != STATUS_INTERACTIVE)
 				return
-			LAZYINITLIST(src_object().tgui_shared_states)
-			src_object().tgui_shared_states[href_list["key"]] = href_list["value"]
+			var/datum/shared_state_owner = src_object()
+			LAZYINITLIST(shared_state_owner.tgui_shared_states)
+			shared_state_owner.tgui_shared_states[href_list["key"]] = href_list["value"]
 			SStgui.update_uis(src_object())
 		if("fallback")
 			#ifdef TGUI_DEBUGGING

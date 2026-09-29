@@ -20,7 +20,7 @@
 	tgui_id = "AppearanceChanger"
 	var/flags = APPEARANCE_ALL_HAIR
 	var/tmp/mob/living/carbon/human/owner
-	/// A body the designer builds for itself (owned); owner_handle then names it.
+	/// A body the designer builds for itself (owned); the owner view then names it.
 	var/mob/living/carbon/human/mannequin
 	var/list/valid_species
 	var/list/valid_hairstyles
@@ -121,7 +121,7 @@
 	var/datum/tgui_module/appearance_changer/body_designer/BD = null
 	if(istype(src,/datum/tgui_module/appearance_changer/body_designer))
 		BD = src
-		DC = om_resolve(BD.linked_body_design_console)
+		DC = BD.linked_body_design_console
 
 	switch(action)
 		if("race")
@@ -383,10 +383,12 @@
 				if(isnull(new_species))
 					return
 				if(new_species)
-					owner().species.base_species = new_species
-					owner().species.icobase = owner().species.get_icobase()
-					owner().species.deform = owner().species.get_icobase(get_deform = TRUE)
-					owner().species.vanity_base_fit = new_species
+					// species is PROTO: mutate the mob's private copy, never the shared prototype
+					var/datum/species/own_species = proto_private(owner(), "species")
+					own_species.base_species = new_species
+					own_species.icobase = own_species.get_icobase()
+					own_species.deform = own_species.get_icobase(get_deform = TRUE)
+					own_species.vanity_base_fit = new_species
 					if(istype(owner().species, /datum/species/shapeshifter)) //TODO: See if this is still needed.
 						GLOB.wrapped_species_by_ref["\ref[owner()]"] = new_species
 					owner().regenerate_icons()
@@ -459,7 +461,8 @@
 			if(isnull(choice))
 				return
 			if(choice && can_change(owner(), APPEARANCE_MISC))
-				owner().species.species_sounds = choice
+				var/datum/species/own_species = proto_private(owner(), "species") // PROTO: private copy
+				own_species.species_sounds = choice
 				return TRUE
 		if("flavor_text")
 			var/select_key = params["target"]
@@ -474,7 +477,8 @@
 							if(can_change(owner(), APPEARANCE_MISC)) // allows empty to wipe flavor
 								if(msg == "!clear")
 									msg = ""
-								LAZYSET(owner().flavor_texts, select_key, msg)
+								var/mob/living/carbon/human/flavor_owner = owner()
+								LAZYSET(flavor_owner.flavor_texts, select_key, msg)
 								return TRUE
 						else
 							var/_answer_a13 = act_ask(ui.user, action, params, ui, "a13", /datum/om/prompt/text, message = "Set the flavor text for their [select_key]. Put in \"!clear\" to make blank.", title = "Flavor Text", default = html_decode(owner().flavor_texts[select_key]), multiline = TRUE, max_length = MAX_TGUI_INPUT)
@@ -484,7 +488,8 @@
 							if(can_change(owner(), APPEARANCE_MISC)) // allows empty to wipe flavor
 								if(msg == "!clear")
 									msg = ""
-								LAZYSET(owner().flavor_texts, select_key, msg)
+								var/mob/living/carbon/human/flavor_owner = owner()
+								LAZYSET(flavor_owner.flavor_texts, select_key, msg)
 								return TRUE
 		if("load_saveslot") //saveslot_load
 			if(can_change(owner(), APPEARANCE_ALL_COSMETIC))
@@ -666,7 +671,7 @@
 	var/obj/machinery/computer/transhuman/designer/DC = null
 	if(istype(src,/datum/tgui_module/appearance_changer/body_designer))
 		var/datum/tgui_module/appearance_changer/body_designer/BD = src
-		DC = om_resolve(BD.linked_body_design_console)
+		DC = BD.linked_body_design_console
 	if(DC)
 		data["is_design_console"] = TRUE
 		data["disk"] = !isnull(DC.disk)
@@ -716,16 +721,17 @@
 	data["species_sounds_female"] = owner().species.species_sounds_female
 	data["species_sounds_male"] = owner().species.species_sounds_male
 	// flavor
-	if(!LAZYLEN(owner().flavor_texts))
-		LAZYSET(owner().flavor_texts, "general", "")
-		LAZYSET(owner().flavor_texts, "head", "")
-		LAZYSET(owner().flavor_texts, "face", "")
-		LAZYSET(owner().flavor_texts, "eyes", "")
-		LAZYSET(owner().flavor_texts, "torso", "")
-		LAZYSET(owner().flavor_texts, "arms", "")
-		LAZYSET(owner().flavor_texts, "hands", "")
-		LAZYSET(owner().flavor_texts, "legs", "")
-		LAZYSET(owner().flavor_texts, "feet", "")
+	var/mob/living/carbon/human/flavor_owner = owner()
+	if(!LAZYLEN(flavor_owner.flavor_texts))
+		LAZYSET(flavor_owner.flavor_texts, "general", "")
+		LAZYSET(flavor_owner.flavor_texts, "head", "")
+		LAZYSET(flavor_owner.flavor_texts, "face", "")
+		LAZYSET(flavor_owner.flavor_texts, "eyes", "")
+		LAZYSET(flavor_owner.flavor_texts, "torso", "")
+		LAZYSET(flavor_owner.flavor_texts, "arms", "")
+		LAZYSET(flavor_owner.flavor_texts, "hands", "")
+		LAZYSET(flavor_owner.flavor_texts, "legs", "")
+		LAZYSET(flavor_owner.flavor_texts, "feet", "")
 	data["flavor_text"] = owner().flavor_texts.Copy()
 
 	data["name"] = owner().name
@@ -1037,20 +1043,19 @@
 /datum/tgui_module/appearance_changer/body_designer
 	name ="Appearance Editor (Body Designer)"
 	flags = APPEARANCE_ALL
-	var/linked_body_design_console = null
+	/// The design console that owns us (a relation view)
+	var/obj/machinery/computer/transhuman/designer/linked_body_design_console = null
 
 /datum/tgui_module/appearance_changer/body_designer/tgui_status(mob/user, datum/tgui_state/state)
 	if(!istype(host(),/obj/machinery/computer/transhuman/designer))
 		return STATUS_CLOSE
 	return ..()
 
-// its design console drops the record and gui.
+// its design console drops the record (we leave its designer_gui in phase 2).
 /datum/tgui_module/appearance_changer/body_designer/on_destroy(force)
-	var/obj/machinery/computer/transhuman/designer/DC = om_resolve(linked_body_design_console)
+	var/obj/machinery/computer/transhuman/designer/DC = linked_body_design_console
 	if(DC)
 		DC.selected_record = FALSE
-		own_take(DC, "designer_gui") // no hardrefs
-	linked_body_design_console = null
 	..()
 
 /datum/tgui_module/appearance_changer/body_designer/proc/make_fake_owner()

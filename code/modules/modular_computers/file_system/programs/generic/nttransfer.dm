@@ -54,9 +54,9 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 	if(provided_file()) // Server mode, disconnect all clients
 		for(var/datum/computer_file/program/nttransfer/P in connected_clients)
 			P.crash_download("Connection terminated by remote server")
-		own_take(src, "downloaded_file")
+		own_clear(src, "downloaded_file", OWN_DELETE)
 		if(GLOB.ntnet_global)
-			LAZYREMOVE(GLOB.ntnet_global.fileservers, src)
+			rel_remove(GLOB.ntnet_global, "fileservers", src)
 	..(forced)
 
 // Finishes download and attempts to store the file on HDD
@@ -73,8 +73,8 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 // Cleans up variables for next use
 /datum/computer_file/program/nttransfer/proc/finalize_download()
 	if(remote())
-		LAZYREMOVE(remote().connected_clients, src)
-	own_take(src, "downloaded_file")
+		rel_remove(remote(), "connected_clients", src)
+	own_clear(src, "downloaded_file", OWN_DELETE) // null when finish_download() stored it
 	rel_clear(src, "remote")
 	download_completion = 0
 
@@ -143,14 +143,14 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 					error = "Incorrect Password"
 					return
 			own_set(src, "downloaded_file", remote().provided_file().clone())
-			LAZYADD(remote().connected_clients, src)
+			rel_add(remote(), "connected_clients", src)
 			return TRUE
 		if("PRG_reset")
 			error = ""
 			upload_menu = 0
 			finalize_download()
 			if(src in GLOB.ntnet_global.fileservers)
-				LAZYREMOVE(GLOB.ntnet_global.fileservers, src)
+				rel_remove(GLOB.ntnet_global, "fileservers", src)
 			for(var/datum/computer_file/program/nttransfer/T in connected_clients)
 				T.crash_download("Remote server has forcibly closed the connection")
 			rel_clear(src, "provided_file")
@@ -173,7 +173,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 						error = "I/O Error: File locked."
 						return
 					rel_set(src, "provided_file", F)
-					LAZYOR(GLOB.ntnet_global.fileservers, src)
+					rel_add(GLOB.ntnet_global, "fileservers", src)
 					return
 			error = "I/O Error: Unable to locate file on hard drive."
 			return TRUE

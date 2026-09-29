@@ -549,7 +549,8 @@
 						var/static/regex/safe_pos = regex(@"^-?\d+,-?\d+$")
 						if(safe_pos.Find(reported_pos))
 							safe_geometry["pos"] = reported_pos
-					LAZYSET(client().tgui_resolved_geometries, locked_by().interface, safe_geometry)
+					var/client/geometry_client = client()
+					LAZYSET(geometry_client.tgui_resolved_geometries, locked_by().interface, safe_geometry)
 			OM_EMIT(src, /datum/om/event/tgui_window_visible, client())
 		if("perf/flicker")
 			if(!accept_perf_telemetry())

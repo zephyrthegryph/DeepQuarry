@@ -224,7 +224,8 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	var/closed_at
 
 	var/tmp/client/initiator	//semi-misnomer, it's the person who ahelped/was bwoinked
-	var/handler_ref
+	/// The handling admin's ckey (a client is not a datum, so it is held by key); read with handler_client().
+	var/handler_ckey
 	var/handler = "/Unassigned\\" // The admin handling the ticket
 	var/initiator_ckey
 	var/initiator_key_name
@@ -546,7 +547,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	handler = handler_name
 	if(ismob(user))
 		var/mob/our_handler_mob = user
-		handler_ref = om_handle(our_handler_mob.client)
+		handler_ckey = our_handler_mob.client?.ckey
 
 /datum/ticket/proc/Retitle()
 	var/new_title = rerun_ask(usr, "k558", PROC_REF(Retitle), args, /datum/om/prompt/text, message = "Enter a title for the ticket", title = "Rename Ticket", default = name)
@@ -782,3 +783,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 		if(T.id == id)
 			return T
 	return null
+
+/// The handling admin's client, or null while they are disconnected.
+/datum/ticket/proc/handler_client()
+	return handler_ckey ? GLOB.directory[handler_ckey] : null

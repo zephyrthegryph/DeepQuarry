@@ -550,7 +550,8 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			if(isnull(change_sight))
 				return
 			if(change_sight)
-				Tar.species.darksight = change_sight
+				var/datum/species/own_species = proto_private(Tar, "species") // PROTO: private copy
+				own_species.darksight = change_sight
 
 		if("cocoon")
 			var/mob/living/carbon/human/Tar = target()
@@ -584,11 +585,13 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			var/energy_max = act_ask(ui.user, action, params, ui, "a23", /datum/om/prompt/number, message = "What should their max lleill energy be set to? It is currently [Tar.species.lleill_energy_max].", title = "Max energy")
 			if(isnull(energy_max))
 				return
-			Tar.species.lleill_energy_max = energy_max
+			var/datum/species/own_species = proto_private(Tar, "species") // PROTO: private copy
+			own_species.lleill_energy_max = energy_max
 			var/energy_new = act_ask(ui.user, action, params, ui, "a24", /datum/om/prompt/number, message = "What should their current lleill energy be set to? It is currently [Tar.species.lleill_energy].", title = "Max energy")
 			if(isnull(energy_new))
 				return
-			Tar.species.lleill_energy = energy_new
+			own_species = proto_private(Tar, "species")
+			own_species.lleill_energy = energy_new
 
 		if("lleill_invisibility")
 			var/mob/living/carbon/human/Tar = target()
