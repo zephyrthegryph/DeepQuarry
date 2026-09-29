@@ -137,163 +137,18 @@
 		tgui_edit_memory_panel = new(src, user)
 	tgui_edit_memory_panel.tgui_interact(user)
 
-/datum/mind/Topic(href, href_list)
-	if(!check_rights(R_ADMIN|R_FUN|R_EVENT))
-		return
+// The traitor antag panel's "set crystals" link (/datum/antagonist/traitor/get_extra_panel_options()).
+TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC_RIGHTS(R_FUN))
 
-	if(href_list["add_antagonist"])
-		var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[href_list["add_antagonist"]]
-		if(antag)
-			if(antag.add_antagonist(src, 1, 1, 0, 1, 1)) // Ignore equipment and role type for this.
-				log_admin("[key_name_admin(usr)] made [key_name(src)] into a [antag.role_text].")
-			else
-				to_chat(usr, span_warning("[src] could not be made into a [antag.role_text]!"))
+/datum/mind/proc/topic_set_crystals(mob/user, list/args)
+	om_ask(user, /datum/om/prompt/number, PROC_REF(telecrystals_set), message = "Amount of telecrystals for [key]", default = tcrystals, requires = PROMPT_ADMIN(R_FUN))
+	edit_memory(user)
+	return TRUE
 
-	else if(href_list["remove_antagonist"])
-		var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[href_list["remove_antagonist"]]
-		if(antag) antag.remove_antagonist(src)
-
-	else if(href_list["equip_antagonist"])
-		var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[href_list["equip_antagonist"]]
-		if(antag) antag.equip(src.current)
-
-	else if(href_list["unequip_antagonist"])
-		var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[href_list["unequip_antagonist"]]
-		if(antag) antag.unequip(src.current)
-
-	else if(href_list["move_antag_to_spawn"])
-		var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[href_list["move_antag_to_spawn"]]
-		if(antag) antag.place_mob(src.current)
-
-	else if (href_list["role_edit"])
-		om_ask(usr, /datum/om/prompt/choice, PROC_REF(role_edited), title = "Assigned role", message = "Select new role", default = assigned_role, choices = SSjob.occupations_by_name, requires = PROMPT_ADMIN(R_ADMIN))
-
-	else if (href_list["memory_edit"])
-		om_ask(usr, /datum/om/prompt/text/mind_edit, PROC_REF(memory_edited), message = "Write new memory", default = memory)
-
-
-	else if (href_list["amb_edit"])
-		var/datum/mind/mind = locate(href_list["amb_edit"])
-		if(!mind)
-			return
-		om_ask(usr, /datum/om/prompt/text/mind_edit, PROC_REF(ambition_edited), message = "Enter a new ambition", default = mind.ambitions, edited = mind)
-
-	else if (href_list["obj_edit"] || href_list["obj_add"])
-		var/datum/objective/objective
-		var/objective_pos
-		var/def_value
-
-		if (href_list["obj_edit"])
-			objective = locate(href_list["obj_edit"])
-			if (!objective) return
-			objective_pos = objectives.Find(objective)
-
-			//Text strings are easy to manipulate. Revised for simplicity.
-			var/temp_obj_type = "[objective.type]"//Convert path into a text string.
-			def_value = copytext(temp_obj_type, 19)//Convert last part of path into an objective keyword.
-			if(!def_value)//If it's a custom objective, it will be an empty string.
-				def_value = "custom"
-
-		var/list/choices = list("assassinate", "debrain", "protect", "prevent", "harm", "brig", "hijack", "escape", "survive", "steal", "mercenary", "capture", "absorb", "custom")
-		om_flow_start(/datum/om/flow/mind_objective_edit, usr, null, mind = src, objective = objective, pos = objective_pos, choices = choices, def_value = def_value)
-
-	else if (href_list["obj_delete"])
-		var/datum/objective/objective = locate(href_list["obj_delete"])
-		if(!istype(objective))	return
-		objectives -= objective
-
-	else if(href_list["obj_completed"])
-		var/datum/objective/objective = locate(href_list["obj_completed"])
-		if(!istype(objective))	return
-		objective.completed = !objective.completed
-
-	else if(href_list["implant"])
-		var/mob/living/carbon/human/H = current
-
-		BITSET(H.hud_updateflag, IMPLOYAL_HUD)   // updates that players HUD images so secHUD's pick up they are implanted or not.
-
-		switch(href_list["implant"])
-			if("remove")
-				for(var/obj/item/implant/loyalty/I in contents_of(H))
-					for(var/obj/item/organ/external/organs in H.organs)
-						if(I in organs.implants)
-							qdel(I)
-							break
-				to_chat(H, span_notice(span_large(span_bold("Your loyalty implant has been deactivated."))))
-				log_admin("[key_name_admin(usr)] has de-loyalty implanted [current].")
-			if("add")
-				to_chat(H, span_danger(span_large("You somehow have become the recepient of a loyalty transplant, and it just activated!")))
-				H.implant_loyalty(TRUE)
-				log_admin("[key_name_admin(usr)] has loyalty implanted [current].")
-
-	else if (href_list["silicon"])
-		BITSET(current.hud_updateflag, SPECIALROLE_HUD)
-		switch(href_list["silicon"])
-
-			if("unemag")
-				var/mob/living/silicon/robot/R = current
-				if (istype(R))
-					R.emagged = 0
-					if (R.activated(R.module.emag))
-						R.module_active = null
-					var/emag_slot = R.module_slot_of(R.module.emag)
-					if(emag_slot)
-						R.clear_module_slot(emag_slot)
-					log_admin("[key_name_admin(usr)] has unemag'ed [R].")
-
-			if("unemagcyborgs")
-				if (isAI(current))
-					var/mob/living/silicon/ai/ai = current
-					for (var/mob/living/silicon/robot/R in ai.connected_robots)
-						R.emagged = 0
-						if (R.module)
-							if (R.activated(R.module.emag))
-								R.module_active = null
-							var/emag_slot = R.module_slot_of(R.module.emag)
-							if(emag_slot)
-								R.clear_module_slot(emag_slot)
-					log_admin("[key_name_admin(usr)] has unemag'ed [ai]'s Cyborgs.")
-
-	else if (href_list["common"])
-		switch(href_list["common"])
-			if("undress")
-				for(var/obj/item/W in current)
-					current.drop_from_inventory(W)
-			if("takeuplink")
-				take_uplink()
-				memory = null//Remove any memory they may have had.
-			if("crystals")
-				if (check_rights_for(usr.client, R_FUN))
-					om_ask(usr, /datum/om/prompt/number, PROC_REF(telecrystals_set), message = "Amount of telecrystals for [key]", default = tcrystals, requires = PROMPT_ADMIN(R_FUN))
-
-	else if (href_list["obj_announce"])
-		var/obj_count = 1
-		to_chat(current, span_blue("Your current objectives:"))
-		for(var/datum/objective/objective in objectives)
-			to_chat(current, span_bold("Objective #[obj_count]") + ": [objective.explanation_text]")
-			obj_count++
-	edit_memory(usr)
-
-/datum/om/prompt/text/mind_edit
-	title = "Memory"
-	multiline = TRUE
-	requires = PROMPT_ADMIN(R_ADMIN)
-	/// The mind whose ambitions are edited.
-	var/datum/mind/edited
-
-/datum/mind/proc/role_edited(datum/om/prompt/choice/ask)
-	assigned_role = ask.choice
-	edit_memory(ask.answerer)
-
-/datum/mind/proc/memory_edited(datum/om/prompt/text/mind_edit/ask)
-	memory = ask.text
-	edit_memory(ask.answerer)
-
-/datum/mind/proc/ambition_edited(datum/om/prompt/text/mind_edit/ask)
-	var/datum/mind/mind = ask.edited
-	mind.ambitions = ask.text
-	to_chat(mind.current, span_warning("Your ambitions have been changed by higher powers, they are now: [mind.ambitions]"))
-	log_and_message_admins("made [key_name(mind.current)]'s ambitions be '[mind.ambitions]'.")
+/// Starts the admin add-objective flow for this mind (the memory panel's "add objective").
+/datum/mind/proc/begin_objective_add(mob/user)
+	var/list/choices = list("assassinate", "debrain", "protect", "prevent", "harm", "brig", "hijack", "escape", "survive", "steal", "mercenary", "capture", "absorb", "custom")
+	om_flow_start(/datum/om/flow/mind_objective_edit, user, null, mind = src, objective = null, pos = null, choices = choices, def_value = null)
 
 /// The admin objective editor: the type, then a detail that depends on it (a target, a number,
 /// a text, an item to steal; a custom steal asks its type and name too), then the edit.
