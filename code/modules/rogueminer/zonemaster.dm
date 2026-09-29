@@ -31,7 +31,7 @@
 
 /datum/rogue/zonemaster/New(area/A)
 	ASSERT(A)
-	rel_set(src, "myarea", A)
+	myarea = A
 	rel_set(src, "myshuttle_landmark", locate_within(myarea(), /obj/effect/shuttle_landmark))
 	if(!istype(myshuttle_landmark(), /obj/effect/shuttle_landmark))
 		WARNING("Zonemaster cannot find a shuttle landmark in its area '[A]'")
@@ -440,11 +440,11 @@
 /datum/rogue/zonemaster/proc/report_clean()
 	GLOB.rm_controller.mark_clean(src)
 
-/// LC-refs: the myarea this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the myarea var.
 /datum/rogue/zonemaster/proc/myarea() as /area/asteroid/rogue
 	return myarea
 
-/// LC-refs: the myshuttle_landmark this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the myshuttle_landmark var.
 /datum/rogue/zonemaster/proc/myshuttle_landmark() as /obj/effect/shuttle_landmark
 	return myshuttle_landmark
 

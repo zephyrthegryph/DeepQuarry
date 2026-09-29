@@ -178,6 +178,6 @@ DECLARE_INTERACTIONS(/obj/item/core_sampler, \
 		to_chat(user, span_warning("The core sampler is empty."))
 
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// Accessor for a shared definition.
 /obj/item/rocksliver/proc/geological_data() as /datum/geosample
 	return geological_data_static

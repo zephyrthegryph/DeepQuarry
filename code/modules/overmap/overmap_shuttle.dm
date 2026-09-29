@@ -190,7 +190,7 @@ DECLARE_INTERACTIONS(/obj/structure/fuel_port, \
 /obj/structure/fuel_port/hide()
 	return
 
-/// LC-refs: my overmap ship object -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// my overmap ship object
 /datum/shuttle/autodock/overmap/proc/myship() as /obj/effect/overmap/visitable/ship/landable
 	return myship
 

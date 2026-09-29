@@ -354,14 +354,14 @@ DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(n
 	..()
 
 
-/// LC-refs: the linked this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the linked var.
 /obj/item/offhand/crushergauntlets/proc/linked() as /obj/item/kinetic_crusher/machete/gauntlets
 	return linked
 
-/// LC-refs: the storing_module this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the storing_module var.
 /obj/item/kinetic_crusher/machete/gauntlets/rig/proc/storing_module() as /obj/item/rig_module/gauntlets
 	return storing_module
 
-/// LC-refs: the hammer_synced this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the hammer_synced var.
 /obj/item/projectile/destabilizer/proc/hammer_synced() as /obj/item/kinetic_crusher
 	return hammer_synced

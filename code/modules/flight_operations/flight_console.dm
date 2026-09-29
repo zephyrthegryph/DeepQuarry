@@ -221,10 +221,10 @@
 
 
 
-/// LC-refs: the host this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the host var.
 /datum/flight_operations_ui/proc/host() as /datum
 	return host
 
-/// LC-refs: the forced_vessel this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the forced_vessel var.
 /datum/flight_operations_ui/proc/forced_vessel() as /datum/flight_vessel
 	return forced_vessel

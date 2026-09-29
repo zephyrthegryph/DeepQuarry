@@ -59,11 +59,11 @@
 /datum/event/bluespace_locker/announce()
 	GLOB.command_announcement.Announce("Bluespace anomaly detected near [station_name()]. Possible location, [get_area(pick(entry_point(), exit_point()))].", "Anomaly Alert")
 
-/// LC-refs: the entry_point this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the entry_point var.
 /datum/event/bluespace_locker/proc/entry_point() as /obj/structure/closet
 	return entry_point
 
-/// LC-refs: the exit_point this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the exit_point var.
 /datum/event/bluespace_locker/proc/exit_point() as /obj/structure/closet
 	return exit_point
 

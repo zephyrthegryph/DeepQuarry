@@ -25,7 +25,7 @@
 	. = ..()
 	for(var/area/looking_glass/lga in world)
 		if(lga.lg_id == lg_id)
-			rel_set(src, "my_area", lga)
+			my_area = lga
 			break
 	if(!istype(my_area(), /area/looking_glass))
 		log_mapping("Looking glass console [x],[y],[x] not in a looking glass area.")
@@ -162,6 +162,6 @@
 	if (stat != oldstat && (stat & NOPOWER))
 		unload_program()
 
-/// LC-refs: the my_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the my_area var.
 /obj/machinery/computer/looking_glass/proc/my_area() as /area/looking_glass
 	return my_area

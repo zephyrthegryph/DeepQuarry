@@ -239,10 +239,10 @@
 	qdel(order)
 	return TRUE
 
-/// LC-refs: the simulation this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the simulation var.
 /datum/generated_station_director/proc/simulation() as /datum/generated_station_simulation
 	return simulation
 
-/// LC-refs: the defense_runtime this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the defense_runtime var.
 /datum/generated_station_director/proc/defense_runtime() as /datum/generated_station_defense_runtime
 	return defense_runtime

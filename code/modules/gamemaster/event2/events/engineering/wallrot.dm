@@ -42,6 +42,6 @@
 			if(rot_count >= target_rot)
 				break
 
-/// LC-refs: the origin this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the origin var.
 /datum/event2/event/wallrot/proc/origin() as /turf/simulated/wall
 	return origin

@@ -49,6 +49,6 @@
 	rel_clear(src, "drilling_turf")
 	anchored = FALSE
 
-/// LC-refs: the drilling_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the drilling_turf var.
 /obj/machinery/giga_drill/proc/drilling_turf() as /turf
 	return drilling_turf

@@ -573,6 +573,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 	connected().check_supports()
 	rel_clear(src, "connected")
 
-/// LC-refs: the connected this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the connected var.
 /obj/machinery/mining/brace/proc/connected() as /obj/machinery/mining/drill
 	return connected

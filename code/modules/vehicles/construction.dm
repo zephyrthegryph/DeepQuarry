@@ -590,6 +590,6 @@
 	parent_type = /datum/interaction/construction/vehicle/snowmobile/finish
 	tool = TOOL_SCREWDRIVER
 
-/// LC-refs: the cell this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the cell var.
 /obj/item/vehicle_assembly/proc/cell() as /obj/item/cell
 	return cell

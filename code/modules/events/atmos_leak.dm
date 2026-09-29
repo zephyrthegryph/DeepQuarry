@@ -49,7 +49,7 @@
 		if(turfs.len == 0)
 			log_game("atmos_leak event: Rejected [A] because it has no clear turfs.")
 			continue
-		rel_set(src, "target_area", A)
+		target_area = A
 		rel_set(src, "target_turf", pick(turfs))
 
 	// If we can't find a good target, give up
@@ -73,10 +73,10 @@
 	target_turf().assume_air(air_contents)
 	playsound(target_turf(), 'sound/effects/smoke.ogg', 50, 1)
 
-/// LC-refs: Chosen target area -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Chosen target area
 /datum/event/atmos_leak/proc/target_area() as /area
 	return target_area
 
-/// LC-refs: Chosen target turf in target_area -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Chosen target turf in target_area
 /datum/event/atmos_leak/proc/target_turf() as /area
 	return target_turf

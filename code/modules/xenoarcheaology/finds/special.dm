@@ -222,6 +222,6 @@ DECLARE_PERIODIC(/obj/effect/shadow_wight, PERIODIC_SLOW)
 	if(length(heard_talk))
 		om_task_periodic(src, PERIODIC_SLOW)
 
-/// LC-refs: the target_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the target_turf var.
 /obj/effect/decal/cleanable/blood/splatter/animated/proc/target_turf() as /turf
 	return target_turf

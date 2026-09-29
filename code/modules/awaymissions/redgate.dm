@@ -557,6 +557,6 @@ DECLARE_INTERACTIONS(/obj/structure/hyperball_goal, INTERACT_ITEM(null, PROC_REF
 	OR, PLAY HOWEVER MOST ENJOYED!
 	GOOD LUCK!!!"}
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the target var.
 /obj/structure/redgate/proc/target() as /obj/structure/redgate
 	return target

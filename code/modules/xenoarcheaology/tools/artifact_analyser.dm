@@ -217,14 +217,14 @@
 
 			return "[scanned_obj.name] - mundane application."
 
-/// LC-refs: the scanned_obj this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the scanned_obj var.
 /obj/machinery/artifact_analyser/proc/scanned_obj() as /obj
 	return scanned_obj
 
-/// LC-refs: the owned_scanner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the owned_scanner var.
 /obj/machinery/artifact_analyser/proc/owned_scanner() as /obj/machinery/artifact_scanpad
 	return owned_scanner
 
-/// LC-refs: the scanned_object this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the scanned_object var.
 /obj/machinery/artifact_analyser/proc/scanned_object() as /obj
 	return scanned_object

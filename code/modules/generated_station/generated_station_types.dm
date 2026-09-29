@@ -438,6 +438,6 @@
 #define GENERATED_STATION_TILE_FLOOR "floor"
 #define GENERATED_STATION_TILE_HULL "hull"
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// Accessor for a shared definition.
 /datum/generated_station_department_instance/proc/definition() as /datum/generated_station_department_definition
 	return definition_static

@@ -152,6 +152,6 @@ Ships can now be hijacked!
 		to_chat(user, "You short out the console's ID checking system. It's now available to everyone!")
 		return 1
 
-/// LC-refs: the linked this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the linked var.
 /obj/machinery/computer/ship/proc/linked() as /obj/effect/overmap/visitable/ship
 	return linked

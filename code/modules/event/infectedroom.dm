@@ -45,7 +45,7 @@
 		if(turfs.len == 0)
 			log_game("infectedroom event: Rejected [A] because it has no clear turfs.")
 			continue
-		rel_set(src, "target_area", A)
+		target_area = A
 		target_turfs = turfs
 
 	if(!target_area())
@@ -80,7 +80,7 @@
 			M = new(pick_n_take(target_turfs))
 			own_add(M, "infections", chosen_disease.Copy())
 
-/// LC-refs: the target_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the target_area var.
 /datum/event/disease_outbreak/floor/proc/target_area() as /area
 	return target_area
 

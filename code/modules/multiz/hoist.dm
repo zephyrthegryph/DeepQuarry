@@ -256,10 +256,10 @@ DECLARE_INTERACTIONS(/obj/structure/hoist, \
 
 #undef NORMAL_LAYER
 
-/// LC-refs: the hoistee this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the hoistee var.
 /obj/structure/hoist/proc/hoistee() as /atom/movable
 	return hoistee
 
-/// LC-refs: the source_hoist this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the source_hoist var.
 /obj/effect/hoist_hook/proc/source_hoist() as /obj/structure/hoist
 	return source_hoist

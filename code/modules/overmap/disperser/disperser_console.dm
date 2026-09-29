@@ -208,14 +208,14 @@
 	if(. && !issilicon(ui.user))
 		playsound(src, "terminal_type", 50, 1)
 
-/// LC-refs: the middle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the middle var.
 /obj/machinery/computer/ship/disperser/proc/middle() as /obj/machinery/disperser/middle
 	return middle
 
-/// LC-refs: the back this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the back var.
 /obj/machinery/computer/ship/disperser/proc/back() as /obj/machinery/disperser/back
 	return back
 
-/// LC-refs: the front this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the front var.
 /obj/machinery/computer/ship/disperser/proc/front() as /obj/machinery/disperser/front
 	return front

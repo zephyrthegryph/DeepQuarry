@@ -194,7 +194,7 @@ DECLARE_INTERACTIONS(/obj/item/spaceflare, INTERACT_USE(null, PROC_REF(interacti
 		icon_state = "bluflare_on"
 		set_light(0.3, 0.1, 6, 2, "85d1ff")
 
-/// LC-refs: the docking_controller this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the docking_controller var.
 /obj/effect/shuttle_landmark/proc/docking_controller() as /datum/embedded_program/docking
 	return docking_controller
 

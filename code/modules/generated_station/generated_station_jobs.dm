@@ -144,15 +144,15 @@
 #undef GENERATED_STATION_TICK_BUDGET_NORMAL
 #undef GENERATED_STATION_TICK_BUDGET_FAST
 
-/// LC-refs: the materializer this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the materializer var.
 /datum/generated_station_materialization_job/proc/materializer() as /datum/generated_station_materializer
 	return materializer
 
-/// LC-refs: the flight_plan this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the flight_plan var.
 /datum/generated_station_materialization_job/proc/flight_plan() as /datum/flight_plan
 	return flight_plan
 
-/// LC-refs: the materialization this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the materialization var.
 /datum/generated_station_materialization_job/proc/materialization() as /datum/generated_station_materialization
 	return materialization
 

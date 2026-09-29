@@ -187,6 +187,6 @@
 		do_after_cooldown()
 	return 1
 
-/// LC-refs: cargo holder -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// cargo holder
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/cargo_holder() as /obj/mecha/working/ripley
 	return cargo_holder

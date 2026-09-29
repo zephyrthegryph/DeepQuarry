@@ -150,10 +150,10 @@
 /datum/embedded_program/docking/simple/escape_pod_berth/prepare_for_undocking()
 	eject_time = world.time + eject_delay*10
 
-/// LC-refs: the arming_controller this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the arming_controller var.
 /datum/shuttle/autodock/ferry/escape_pod/proc/arming_controller() as /datum/embedded_program/docking/simple/escape_pod_berth
 	return arming_controller
 
-/// LC-refs: the pod this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the pod var.
 /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/proc/pod() as /datum/shuttle/autodock/ferry/escape_pod
 	return pod

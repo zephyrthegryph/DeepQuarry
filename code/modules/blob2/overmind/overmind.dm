@@ -164,7 +164,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 	return 1
 
 
-/// LC-refs: The blob overmind's core -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The blob overmind's core
 /mob/observer/blob/proc/blob_core() as /obj/structure/blob/core
 	return blob_core
 

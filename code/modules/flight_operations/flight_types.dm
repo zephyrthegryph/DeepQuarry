@@ -219,47 +219,47 @@
 	cancel_requested = TRUE
 	return TRUE
 
-/// LC-refs: the landmark this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the landmark var.
 /datum/flight_port/proc/landmark() as /obj/effect/shuttle_landmark
 	return landmark
 
-/// LC-refs: the origin this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the origin var.
 /datum/flight_plan/proc/origin() as /datum/flight_destination
 	return origin
 
-/// LC-refs: the ship this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the ship var.
 /datum/flight_vessel/proc/ship() as /obj/effect/overmap/visitable/ship
 	return ship
 
-/// LC-refs: the occupied_by this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the occupied_by var.
 /datum/flight_port/proc/occupied_by() as /datum/flight_vessel
 	return occupied_by
 
-/// LC-refs: the reserved_by this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the reserved_by var.
 /datum/flight_port/proc/reserved_by() as /datum/flight_plan
 	return reserved_by
 
-/// LC-refs: the expedition this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the expedition var.
 /datum/flight_destination/proc/expedition() as /datum/expedition_site
 	return expedition
 
-/// LC-refs: the destination this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the destination var.
 /datum/flight_plan/proc/destination() as /datum/flight_destination
 	return destination
 
-/// LC-refs: the arrival_port this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the arrival_port var.
 /datum/flight_plan/proc/arrival_port() as /datum/flight_port
 	return arrival_port
 
-/// LC-refs: the shuttle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the shuttle var.
 /datum/flight_vessel/proc/shuttle() as /datum/shuttle/autodock/overmap
 	return shuttle
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the target var.
 /datum/flight_destination/proc/target() as /atom
 	return target
 
-/// LC-refs: the active_expedition this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the active_expedition var.
 /datum/flight_vessel/proc/active_expedition() as /datum/expedition_site
 	return active_expedition
 

@@ -20,6 +20,6 @@
 		kill()
 		return
 
-/// LC-refs: the Blob this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the Blob var.
 /datum/event/blob/proc/Blob() as /obj/structure/blob/core
 	return Blob

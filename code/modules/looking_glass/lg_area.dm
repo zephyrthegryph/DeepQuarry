@@ -57,6 +57,6 @@
 			om_after(lgt, 3 SECONDS, TYPE_PROC_REF(/turf/simulated/floor/looking_glass, activate))
 
 
-/// LC-refs: the our_landmark this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the our_landmark var.
 /area/looking_glass/proc/our_landmark() as /obj/effect/landmark/looking_glass
 	return our_landmark

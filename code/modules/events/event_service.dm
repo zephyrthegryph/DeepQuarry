@@ -10,7 +10,8 @@ GLOBAL_DATUM_INIT(event_service, /datum/world_service/events, new)
 
 	var/list/datum/event/finished_events = list()
 
-	var/list/datum/event/allEvents
+	/// Every /datum/event subtype path (type paths, not entities).
+	var/list/allEvents
 	var/alist/event_containers
 
 	var/datum/event_meta/new_event = new

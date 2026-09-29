@@ -280,6 +280,6 @@
 /obj/machinery/computer/ship/sensors/step_start_condition()
 	return TRUE // its sensor light
 
-/// LC-refs: the sensors this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the sensors var.
 /obj/machinery/computer/ship/sensors/proc/sensors() as /obj/machinery/shipsensors
 	return sensors

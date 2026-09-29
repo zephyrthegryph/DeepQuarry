@@ -369,23 +369,23 @@
 	return TRUE
 
 
-/// LC-refs: the defender this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the defender var.
 /datum/generated_station_defender_agent/proc/defender() as /mob/living/simple_mob
 	return defender
 
-/// LC-refs: the runtime this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the runtime var.
 /datum/generated_station_defender_agent/proc/runtime() as /datum/generated_station_defense_runtime
 	return runtime
 
-/// LC-refs: the home this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the home var.
 /datum/generated_station_defender_agent/proc/home() as /turf
 	return home
 
-/// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the site var.
 /datum/generated_station_defense_runtime/proc/site() as /datum/expedition_site
 	return site
 
-/// LC-refs: the director this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the director var.
 /datum/generated_station_defense_runtime/proc/director() as /datum/generated_station_director
 	return director
 

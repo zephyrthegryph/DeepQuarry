@@ -109,10 +109,10 @@
 			var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
 			PM.notify(span_bold("Message from [sender] (Unknown / spam?), ") + "\"[message]\" (Unable to Reply)", 0)
 
-/// LC-refs: the useMS this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the useMS var.
 /datum/event/pda_spam/proc/useMS() as /obj/machinery/message_server
 	return useMS
 
-/// LC-refs: the node this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the node var.
 /datum/event/pda_spam/proc/node() as /obj/machinery/exonet_node
 	return node

@@ -368,10 +368,10 @@ DECLARE_INTERACTIONS(/obj/item/xenoarch_multi_tool, \
 	anomaly_scanner.interact(user)
 
 
-/// LC-refs: the target_radio this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the target_radio var.
 /obj/item/beacon_locator/proc/target_radio() as /obj/item/radio
 	return target_radio
 
-/// LC-refs: the current this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the current var.
 /obj/item/depth_scanner/proc/current() as /datum/depth_scan
 	return current

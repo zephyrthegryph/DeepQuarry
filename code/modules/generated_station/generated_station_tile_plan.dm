@@ -338,7 +338,7 @@
 	seal_open[++seal_open_count] = intent
 
 
-/// LC-refs: the generation_owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the generation_owner var.
 /datum/generated_station_tile_plan/proc/generation_owner() as /datum/generated_station_materializer
 	return generation_owner
 

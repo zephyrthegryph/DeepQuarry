@@ -31,6 +31,6 @@
 	new /datum/random_map/droppod/supply(null, land_target().x-2, land_target().y-2, land_target().z, supplied_drops = list(/obj/structure/ghost_pod/manual/lost_drone/dogborg))
 
 
-/// LC-refs: the land_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the land_target var.
 /datum/event/drone_pod_drop/proc/land_target() as /turf
 	return land_target

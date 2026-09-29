@@ -749,6 +749,6 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 	temperature	= TCMB
 
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// Accessor for a shared definition.
 /turf/simulated/mineral/proc/mineral() as /datum/ore
 	return mineral_static

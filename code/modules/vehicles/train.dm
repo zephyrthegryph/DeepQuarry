@@ -263,10 +263,10 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 /obj/vehicle/train/proc/update_car(train_length, active_engines)
 	return
 
-/// LC-refs: the tow this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the tow var.
 /obj/vehicle/train/proc/tow() as /obj/vehicle/train
 	return tow
 
-/// LC-refs: the lead this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the lead var.
 /obj/vehicle/train/proc/lead() as /obj/vehicle/train
 	return lead

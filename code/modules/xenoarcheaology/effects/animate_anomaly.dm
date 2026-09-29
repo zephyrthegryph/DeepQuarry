@@ -97,6 +97,6 @@
 /datum/artifact_effect/animate_anomaly/DoEffectPulse()
 	DoEffectAura()
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the target var.
 /datum/artifact_effect/animate_anomaly/proc/target() as /mob/living
 	return target

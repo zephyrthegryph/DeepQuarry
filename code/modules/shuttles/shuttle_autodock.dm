@@ -235,15 +235,15 @@
 /obj/effect/shuttle_landmark/transit
 	flags = SLANDMARK_FLAG_ZERO_G|SLANDMARK_FLAG_AUTOSET
 
-/// LC-refs: This is only used internally. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// This is only used internally.
 /datum/shuttle/autodock/proc/next_location() as /obj/effect/shuttle_landmark
 	return next_location
 
-/// LC-refs: Controller we are docked with (or trying to) -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Controller we are docked with (or trying to)
 /datum/shuttle/autodock/proc/active_docking_controller() as /datum/embedded_program/docking
 	return active_docking_controller
 
-/// LC-refs: the landmark resolved from the _tag var -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the landmark resolved from the _tag var
 /datum/shuttle/autodock/proc/landmark_transition() as /obj/effect/shuttle_landmark
 	return landmark_transition
 

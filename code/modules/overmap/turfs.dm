@@ -87,6 +87,6 @@ GLOBAL_LIST_EMPTY(map_sectors)
 	if(istype(O, /obj/effect/overmap/visitable/ship))
 		GLOB.overmap_event_handler.on_turf_exited(src, O, newloc)
 
-/// LC-refs: the wrap_buddy this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the wrap_buddy var.
 /turf/unsimulated/map/edge/proc/wrap_buddy() as /turf/unsimulated/map/edge
 	return wrap_buddy

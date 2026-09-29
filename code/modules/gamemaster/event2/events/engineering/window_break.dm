@@ -147,10 +147,10 @@
 				frontier_set += neighbor
 	return result_set
 
-/// LC-refs: the chosen_turf_with_windows this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the chosen_turf_with_windows var.
 /datum/event2/event/window_break/proc/chosen_turf_with_windows() as /turf
 	return chosen_turf_with_windows
 
-/// LC-refs: the chosen_window this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the chosen_window var.
 /datum/event2/event/window_break/proc/chosen_window() as /obj/structure/window
 	return chosen_window

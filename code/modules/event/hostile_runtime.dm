@@ -24,7 +24,7 @@
 /datum/event/hostile_runtime/setup()
 	var/list/area/affected_areas = get_station_areas(excluded)
 
-	rel_set(src, "picked_area", pick(affected_areas))
+	picked_area = pick(affected_areas)
 	for(var/obj/machinery/door/airlock/airlock in picked_area())
 		if(airlock.isElectrified() && !airlock.arePowerSystemsOn())
 			continue
@@ -67,11 +67,11 @@
 			for(var/obj/machinery/light/light in picked_area())
 				light.flicker(10)
 
-/// LC-refs: the picked_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the picked_area var.
 /datum/event/hostile_runtime/proc/picked_area() as /area
 	return picked_area
 
-/// LC-refs: the apc this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the apc var.
 /datum/event/hostile_runtime/proc/apc() as /obj/machinery/power/apc
 	return apc
 

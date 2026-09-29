@@ -103,10 +103,10 @@ DECLARE_INTERACTIONS(/obj/structure/boulder, INTERACT_ITEM(null, PROC_REF(intera
 		if(istype(M.selected,/obj/item/mecha_parts/mecha_equipment/tool/drill))
 			M.selected.action(src)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// Accessor for a shared definition.
 /obj/structure/boulder/proc/geological_data() as /datum/geosample
 	return geological_data_static
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// Accessor for a shared definition.
 /obj/structure/boulder/proc/artifact_find() as /datum/artifact_find
 	return artifact_find_static

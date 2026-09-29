@@ -260,6 +260,6 @@ OWN(/obj/effect/suspension_field, contents, OWN_SPILL)
 
 OWN(/obj/machinery/suspension_gen, cell, OWN_CONTAINED)
 
-/// LC-refs: the auth_card this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the auth_card var.
 /obj/machinery/suspension_gen/proc/auth_card() as /obj/item/card/id
 	return auth_card
