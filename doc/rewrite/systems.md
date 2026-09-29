@@ -294,13 +294,43 @@ Lint `sys_add_verb_pair`.
 ## 20. TOPIC_ACTION registry
 
 ```dm
-TOPIC_ACTION(/datum/admins, "adminplayeropts", PROC_REF(topic_player_opts), TOPIC_REF("target", /mob), TOPIC_RIGHTS(R_ADMIN))
+TOPIC_ACTION(/datum/admins, "adminplayeropts", PROC_REF(topic_player_opts), TOPIC_REF("adminplayeropts", /mob), TOPIC_RIGHTS(R_ADMIN))
 ```
 
 - `Topic()` is one core proc: it finds the action by its href key, checks rights, resolves each
   `TOPIC_REF(name, type)` with `locate(ref) in <declared source>` and type check, then calls the
   proc with typed args. The 1,352-line admin topic becomes rows.
 - Lint `sys_topic_override`.
+
+As built (`code/__defines/topic.dm`, `code/datums/topic/topic_dispatch.dm`):
+
+- `TOPIC_ACTION(type, key, PROC_REF(handler), specs...)` links onto `type/topic_actions()` (like
+  `DECLARE_REF`); `topic_table()` flattens a type's rows into `GLOB.topic_tables[type]` once, on
+  first use. Rows inherit; a subtype row with the same key replaces its parent's.
+- Keys: `"key"` matches when the href carries `key`; `"key=value"` matches that exact value and
+  is tried first, so `switch(href_list["op"])` chains become one row per value.
+- Specs: `TOPIC_REF(name, type[, source])`, `TOPIC_NUM(name)`, `TOPIC_TEXT(name[, maxlen])`,
+  `TOPIC_RIGHTS(R_*)`. Sources: `TOPIC_ANY` (istype only; the default except for clients and
+  turfs), `TOPIC_IN_WORLD`, `TOPIC_IN_CLIENTS`, `TOPIC_IN_MOBS` (mob registry),
+  `TOPIC_IN_CONTENTS`, or `PROC_REF(getter)` on the target returning the list to search. A ref
+  that fails is logged (`log_href`) and the handler never runs.
+- Handlers are `proc(mob/user, list/args)`: `args[name]` holds the validated value; the raw
+  href_list rides in `args[TOPIC_HREF]` only so `topic_ask(user, args, ...)` can re-run the href
+  (`om_topic_ask()` unwraps it and re-enters through `topic_dispatch()`).
+- Gates: `/datum/proc/topic_allowed(user, href_list)` runs before any row (`/obj` does the
+  CanUseTopic check against `topic_state()`, `/datum/admins` the owner and href-token check).
+  `/datum/proc/topic_forward()` hands unmatched hrefs to another datum (codex pages to their
+  codex, programs to their computer).
+- Entry points: `/datum/Topic` is the dispatcher; `/client/Topic` keeps BYOND's transport work
+  (rate limits, asset cache, tgui middleware, logging) then dispatches the client's own rows;
+  `/world/Topic` keeps its shape (server query strings from world.Export/TGS, not hrefs).
+  `topic_dispatch(target, user, href_list)` is callable directly; tgui panels call plain procs
+  instead of faking hrefs, or `/datum/admins/proc/topic_internal()` for admin rows.
+- Lint `tools/ci/sys_rules/topic.py`: `sys_topic_override` (Topic() overrides),
+  `sys_topic_raw_dispatch` (`if`/`switch` on `href_list[...]`, `IF_VV_OPTION`),
+  `sys_topic_raw_locate` (`locate(href_list[...])`) and `sys_topic_raw_num`
+  (`text2num(href_list[...])`). Transport-level reads in the client entry point and the tgui
+  message protocol carry `ALLOW` reasons.
 
 ## Hygiene
 
