@@ -160,9 +160,8 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		if(tank)
 			to_chat(user, span_warning("\The [src] already has a tank installed!"))
 		else
-			user.drop_item()
-			W.forceMove(src)
-			own_set(src, "tank", W)
+			if(!own_set(src, nameof(src.tank), W, user = user))
+				return TRUE
 			act_message(user, src, MSG_SELF(span_notice("You install %I% into %T%.")), \
 				MSG_OTHERS(span_infoplain(span_bold("%U%") + " installs %I% into %T%.")), \
 				item = tank)

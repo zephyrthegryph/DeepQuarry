@@ -77,9 +77,8 @@ DECLARE_DEFAULT_CHILD(/obj/structure/fireaxecabinet, "fireaxe", "fireaxe_type")
 			if(O:wielded)
 				O:wielded = 0
 				O.update_icon()
-			user.remove_from_mob(O)
-			O.forceMove(src)
-			own_set(src, "fireaxe", O)
+			if(!own_set(src, nameof(src.fireaxe), O, user = user))
+				return TRUE
 			to_chat(user, span_notice("You place the fire axe back in the [name]."))
 			update_icon()
 		else

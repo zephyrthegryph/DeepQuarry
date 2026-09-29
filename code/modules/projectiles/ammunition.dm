@@ -61,8 +61,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/ammo_casing, "BB", "projectile_type")
 	var/obj/item/ammo_casing/bullet = next_shell(box, task.floor)
 	if(!bullet)
 		return STEP_DONE
-	bullet.forceMove(box)
-	own_add(box, "stored_ammo", bullet)
+	own_add(box, nameof(box.stored_ammo), bullet, into = TRUE)
 	box.update_icon()
 	task.collected++
 	return next_shell(box, task.floor) ? STEP_REPEAT(0.5 SECONDS) : STEP_DONE
@@ -217,9 +216,8 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 		if(length(stored_ammo) >= max_ammo)
 			to_chat(user, span_warning("[src] is full!"))
 			return
-		user.remove_from_mob(C)
-		C.forceMove(src)
-		own_add(src, "stored_ammo", C)
+		if(!own_add(src, nameof(src.stored_ammo), C, user = user))
+			return
 		update_icon()
 	if(istype(W, /obj/item/ammo_magazine/clip))
 		var/obj/item/ammo_magazine/clip/L = W

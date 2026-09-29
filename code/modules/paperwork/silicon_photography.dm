@@ -17,10 +17,9 @@
 
 
 /obj/item/camera/siliconcam/proc/injectaialbum(obj/item/photo/p, sufix = "") //stores image information to a list similar to that of the datacore
-	p.forceMove(src)
+	own_add(src, nameof(src.aipictures), p, into = TRUE)
 	photos_taken++
 	p.name = "Image [photos_taken][sufix]"
-	own_add(src, "aipictures", p)
 
 /obj/item/camera/siliconcam/proc/injectmasteralbum(mob/user, obj/item/photo/p) //stores image information to a list similar to that of the datacore
 	var/mob/living/silicon/robot/C = user

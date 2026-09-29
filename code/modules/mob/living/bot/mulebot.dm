@@ -344,8 +344,7 @@ UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_safety)
 /mob/living/bot/mulebot/proc/load_finish(atom/movable/C)
 	if(C.loc != loc) //To prevent you from going onto more than one bot.
 		return
-	C.forceMove(src)
-	own_set(src, "load", C)
+	own_set(src, nameof(src.load), C, into = TRUE)
 
 	C.pixel_y += 9
 	if(C.layer < layer)

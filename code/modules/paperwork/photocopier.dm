@@ -159,9 +159,8 @@ UI_ACT_PROC(/obj/machinery/photocopier, ui_act_ai_photo)
 
 /obj/machinery/photocopier/proc/interaction_insert(mob/user, obj/item/O, datum/interaction/interaction)
 	if(!copyitem)
-		user.drop_item()
-		O.forceMove(src)
-		own_set(src, "copyitem", O) // CONTAINED: in our contents first
+		if(!own_set(src, nameof(src.copyitem), O, user = user))
+			return TRUE
 		to_chat(user, span_notice("You insert \the [O] into \the [src]."))
 		playsound(src, "sound/machines/click.ogg", 100, 1)
 		flick(insert_anim, src)

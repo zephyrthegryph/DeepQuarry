@@ -194,9 +194,8 @@ UI_ACT_PROC(/obj/machinery/atmospherics/unary/cryo_cell, ui_act_ejectoccupant)
 			to_chat(user, span_warning("A beaker is already loaded into the machine."))
 			return TRUE
 
-		user.drop_item()
-		G.forceMove(src)
-		own_set(src, "beaker", G)
+		if(!own_set(src, nameof(src.beaker), G, user = user))
+			return TRUE
 		act_message(user, src, MSG_SELF("You add \a [G] to %T%!"), MSG_OTHERS("%U% adds \a [G] to %T%!"))
 		SStgui.update_uis(src)
 		update_icon()
