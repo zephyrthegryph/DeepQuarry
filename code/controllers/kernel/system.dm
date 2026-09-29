@@ -19,6 +19,9 @@
 	var/periodic_runlevels = 0
 	/// The cadence (a CADENCE_* pipeline) for per-member work (member_step), or null for none.
 	var/member_cadence = null
+	/// TRUE while the system has parked itself (STEP_PARK, park_periodic()); wake_periodic() clears it. should_run()
+	/// answers FALSE meanwhile, so the refresh that follows every step does not put it straight back.
+	var/periodic_parked = FALSE
 	/// The driver that steps the members on member_cadence (kernel-owned).
 	var/datum/system_member_driver/member_driver
 	/// The one place a system's latency class lives (LATENCY_L0..L3): what sheds its work under overload.
@@ -125,7 +128,7 @@
 
 /// A system with a cadence runs while the current runlevel is one it accepts. Override and call ..().
 /datum/system/should_run()
-	return periodic_runlevel_ok()
+	return !periodic_parked && periodic_runlevel_ok()
 
 /// TRUE when the current runlevel is in periodic_runlevels (0: the cadence's own gate applies).
 /datum/system/proc/periodic_runlevel_ok()
@@ -137,6 +140,9 @@
 /// it does not. Call after anything that changes should_run() outside a dispatched call, and to restart a
 /// system that parked itself (STEP_PARK, can_fire, an admin toggle).
 /datum/system/proc/wake_periodic()
+	periodic_parked = FALSE
+	if(member_driver)
+		member_driver.periodic_parked = FALSE
 	if(periodic_cadence || periodic_interval)
 		refresh_periodic(src)
 	if(member_cadence)
@@ -147,9 +153,11 @@
 /// Takes the system and its member driver off their cadences and drops any yielded resume. wake_periodic()
 /// undoes it.
 /datum/system/proc/park_periodic()
+	periodic_parked = TRUE
 	om_task_periodic_stop(src)
 	om_cancel_timer_slot(src, "step_yield")
 	if(member_driver)
+		member_driver.periodic_parked = TRUE
 		om_task_periodic_stop(member_driver)
 		om_cancel_timer_slot(member_driver, "step_yield")
 
@@ -179,6 +187,8 @@
 /datum/system_member_driver
 	var/datum/system/system
 	var/cursor = 1
+	/// As /datum/system periodic_parked, for the driver's own cadence.
+	var/periodic_parked = FALSE
 
 /datum/system_member_driver/New(datum/system/S)
 	..()
@@ -186,7 +196,7 @@
 	periodic_cadence = S.member_cadence
 
 /datum/system_member_driver/should_run()
-	return length(system.members) && system.periodic_runlevel_ok()
+	return !periodic_parked && length(system.members) && system.periodic_runlevel_ok()
 
 /datum/system_member_driver/periodic_step(delta)
 	while(cursor <= length(system.members))
@@ -210,6 +220,15 @@ OWN_TIMER(/datum/system_member_driver, step_yield)
 /proc/periodic_step_result(datum/E, result, delta)
 	switch(result)
 		if(PROCESS_KILL, STEP_PARK)
+			// A system that parks itself stays parked: without the flag its should_run() would restart it
+			// with the refresh that follows this step.
+			if(result == STEP_PARK)
+				if(istype(E, /datum/system))
+					var/datum/system/S = E
+					S.periodic_parked = TRUE
+				else if(istype(E, /datum/system_member_driver))
+					var/datum/system_member_driver/D = E
+					D.periodic_parked = TRUE
 			return TRUE
 		if(STEP_YIELD)
 			after_slot(E, "step_yield", world.tick_lag, GLOBAL_PROC_REF(periodic_step_resume), E, delta)

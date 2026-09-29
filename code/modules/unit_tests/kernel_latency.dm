@@ -73,7 +73,7 @@
 	var/datum/kernel_latency/Q = new
 	Q.enabled = TRUE
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/atom/target = allocate(/obj/effect/landmark)
+	var/atom/target = allocate(/obj/item/pen)
 	TEST_ASSERT(!Q.should_queue_click(H), "a clientless mob is never queued")
 	for(var/i in 1 to KERNEL_CLICK_QUEUE_MAX + 3)
 		Q.enqueue_click(H, target, null, null, "")

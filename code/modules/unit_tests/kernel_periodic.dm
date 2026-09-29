@@ -64,12 +64,6 @@
 	S.wake_periodic()
 	TEST_ASSERT(run_until(CALLBACK(src, PROC_REF(steps_at_least), S, parked_steps + 2)), "wake_periodic() restarts a parked system")
 
-	// park_periodic() takes it off the cadence at will.
-	S.park_periodic()
-	var/held = S.steps
-	wait_ticks(12)
-	TEST_ASSERT_EQUAL(S.steps, held, "park_periodic() stops the cadence")
-
 	// The runlevel gate: a system that excludes the current runlevel does not run.
 	var/current_bit = 1 << (Master.current_runlevel - 1)
 	S.periodic_runlevels = 0
@@ -78,6 +72,14 @@
 	TEST_ASSERT(S.should_run(), "the current runlevel is accepted")
 	S.periodic_runlevels = ~current_bit & (RUNLEVEL_LOBBY | RUNLEVEL_SETUP | RUNLEVEL_GAME | RUNLEVEL_POSTGAME)
 	TEST_ASSERT(!S.should_run(), "another runlevel's system is not run")
+
+	// park_periodic() takes it off the cadence at will, and should_run() says so.
+	S.periodic_runlevels = 0
+	S.park_periodic()
+	TEST_ASSERT(!S.should_run(), "a parked system's should_run() is FALSE")
+	var/held = S.steps
+	wait_ticks(12)
+	TEST_ASSERT_EQUAL(S.steps, held, "park_periodic() stops the cadence")
 
 	// Members: the driver steps each member that member_should_run() accepts, on member_cadence.
 	var/datum/system/test_periodic_members/M = new

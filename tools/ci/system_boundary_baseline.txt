@@ -39,6 +39,7 @@ B1:code/datums/om/io.dm:SSdbcore 1
 B1:code/datums/om/watch.dm:GLOB.machine_service 3
 B1:code/datums/ownership/registry_types.dm:GLOB.transcore_service 1
 B1:code/datums/state/collapse.dm:SSgarbage 2
+B1:code/datums/sys/appearance.dm:SSatoms 1
 B1:code/defines/procs/announce.dm:SSticker 1
 B1:code/game/antagonist/antag_service.dm:SSjob 1
 B1:code/game/antagonist/antagonist.dm:SSticker 1
@@ -65,7 +66,7 @@ B1:code/game/jobs/whitelist.dm:SSjob 1
 B1:code/game/machinery/computer/security.dm:SSjob 1
 B1:code/game/machinery/computer/skills.dm:GLOB.supply_service 3
 B1:code/game/machinery/computer/skills.dm:SScontracts 13
-B1:code/game/machinery/computer/supply.dm:GLOB.supply_service 9
+B1:code/game/machinery/computer/supply.dm:GLOB.supply_service 15
 B1:code/game/machinery/computer/timeclock.dm:SSjob 4
 B1:code/game/machinery/doors/airlock.dm:GLOB.planet_service 2
 B1:code/game/machinery/embedded_controller/docking_program.dm:SSshuttles 3
@@ -95,7 +96,9 @@ B1:code/game/periodic_news.dm:SSticker 1
 B1:code/game/sound.dm:SSmedia_tracks 2
 B1:code/game/turfs/turf_changing.dm:GLOB.planet_service 3
 B1:code/game/turfs/turf_changing.dm:SSlighting 2
+B1:code/game/world.dm:SSgarbage 2
 B1:code/game/world.dm:SSjob 1
+B1:code/game/world.dm:SSlighting 1
 B1:code/game/world.dm:SSticker 2
 B1:code/modules/admin/DB%20ban/ban_panle_ui.dm:GLOB.antag_service 2
 B1:code/modules/admin/admin.dm:GLOB.antag_service 3
@@ -107,7 +110,7 @@ B1:code/modules/admin/admin_verbs.dm:SSjob 1
 B1:code/modules/admin/economy_dashboard.dm:GLOB.supply_service 22
 B1:code/modules/admin/edit_memory_panel.dm:GLOB.antag_service 8
 B1:code/modules/admin/edit_memory_panel.dm:SSjob 1
-B1:code/modules/admin/event_manager_panel.dm:GLOB.event_service 5
+B1:code/modules/admin/event_manager_panel.dm:GLOB.event_service 6
 B1:code/modules/admin/game_mode_panel.dm:SSticker 5
 B1:code/modules/admin/misc_admin_panels.dm:GLOB.antag_service 2
 B1:code/modules/admin/player_panel_tgui.dm:SSticker 1
@@ -244,7 +247,7 @@ B1:code/modules/modular_computers/NTNet/NTNet.dm:SSatoms 1
 B1:code/modules/organs/subtypes/diona.dm:GLOB.plant_service 1
 B1:code/modules/overmap/champagne.dm:SSshuttles 3
 B1:code/modules/overmap/sectors.dm:SSshuttles 2
-B1:code/modules/overmap/ships/computers/shuttle.dm:SSshuttles 1
+B1:code/modules/overmap/ships/computers/shuttle.dm:SSshuttles 3
 B1:code/modules/overmap/ships/engines/engine.dm:SSshuttles 1
 B1:code/modules/overmap/ships/engines/gas_thruster.dm:SSshuttles 1
 B1:code/modules/overmap/ships/landable.dm:GLOB.flight_service 3
@@ -252,7 +255,7 @@ B1:code/modules/overmap/ships/landable.dm:SSshuttles 9
 B1:code/modules/overmap/ships/ship.dm:GLOB.flight_service 1
 B1:code/modules/overmap/ships/ship.dm:SSshuttles 3
 B1:code/modules/pda/cart_apps.dm:GLOB.supply_service 3
-B1:code/modules/pda/contracts.dm:SScontracts 3
+B1:code/modules/pda/contracts.dm:SScontracts 6
 B1:code/modules/pda/core_apps.dm:SSjob 4
 B1:code/modules/pda/nerdle.dm:SSnerdle 1
 B1:code/modules/pda/supply_orders.dm:GLOB.supply_service 3
@@ -274,13 +277,13 @@ B1:code/modules/shuttles/emergency_shuttle_service.dm:SSticker 2
 B1:code/modules/shuttles/escape_pods.dm:SSshuttles 2
 B1:code/modules/shuttles/landmarks.dm:SSshuttles 1
 B1:code/modules/shuttles/shuttle.dm:GLOB.supply_service 4
-B1:code/modules/shuttles/shuttle.dm:SSshuttles 10
+B1:code/modules/shuttles/shuttle.dm:SSshuttles 9
 B1:code/modules/shuttles/shuttle_autodock.dm:SSshuttles 1
-B1:code/modules/shuttles/shuttle_console.dm:SSshuttles 2
-B1:code/modules/shuttles/shuttle_console_multi.dm:SSshuttles 1
+B1:code/modules/shuttles/shuttle_console.dm:SSshuttles 6
+B1:code/modules/shuttles/shuttle_console_multi.dm:SSshuttles 3
 B1:code/modules/shuttles/shuttle_supply.dm:GLOB.supply_service 2
 B1:code/modules/shuttles/shuttles_multi.dm:SSshuttles 1
-B1:code/modules/shuttles/shuttles_web.dm:SSshuttles 7
+B1:code/modules/shuttles/shuttles_web.dm:SSshuttles 13
 B1:code/modules/tables/tables.dm:SSticker 1
 B1:code/modules/tgs_commands/vorestation.dm:SSjob 1
 B1:code/modules/tgui/modules/admin_shuttle_controller.dm:SSshuttles 3
