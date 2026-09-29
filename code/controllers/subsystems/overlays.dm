@@ -95,7 +95,8 @@ SUBSYSTEM_DEF(overlays)
 			// A lone priority overlay (every movable's emissive blocker) is stored bare
 			// rather than in a one-entry list; build_appearance_list() accepts either.
 			if(!priority_overlays)
-				priority_overlays = length(add_overlays) == 1 ? add_overlays[1] : add_overlays
+				// Copied: callers pass shared lists (cached overlay sets), and this one is appended to later.
+				priority_overlays = length(add_overlays) == 1 ? add_overlays[1] : add_overlays.Copy()
 			else if(islist(priority_overlays))
 				priority_overlays += add_overlays
 			else

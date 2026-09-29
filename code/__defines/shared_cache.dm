@@ -9,8 +9,11 @@
 // hand-rolled `var/static/list/cache`. A miss calls the
 // cache datum, which builds, interns and stores the value.
 //
-// Keys: CACHED() keys must be text, a type path or a datum (never a number: a number
-// indexes a list by position). Use CACHED_INT() for small positive integers and
+// Keys: CACHED() keys must be stable: text, a type path, or a registered singleton (a fetched
+// decl, a registered material). Never a number (a number indexes a list by position) and never
+// a ref (`ref()`/`\ref` in a text key): refs are recycled after a delete, so a key built from one
+// can return another object's value. Use a registry id, a type path or SHARED_CACHE_UID(D).
+// Test builds runtime on a numeric, ref-bearing or unstable object key. Use CACHED_INT() for small positive integers and
 // CACHED2()/CACHED3() or CACHED_KEY() for several key arguments.
 //
 // Values handed out are SHARED. Never write into a returned list; Copy() it first.
@@ -44,6 +47,14 @@
 /// DECLARE_SHARED_CACHE() with a max entry count (0: unbounded; otherwise an
 /// approximate LRU in two generations) and SC_* flags.
 #define DECLARE_SHARED_CACHE_EX(N, BUILDER, POLICY, MAX, FLAGS) var/list/_scs_##N = list();var/_sch_##N = 0;var/datum/shared_cache/_sc_##N = new /datum/shared_cache(#N, BUILDER, POLICY, MAX, FLAGS)
+
+/// A stable, never-reused string id for datum D, for cache keys of datums with no registry id
+/// (a key must never embed a ref: refs are recycled). Registered materials use
+/// MATERIAL_CACHE_ID(), decls their type path.
+#define SHARED_CACHE_UID(D) (D.shared_cache_uid || shared_cache_assign_uid(D))
+
+/// A material's stable cache id (material_cache_id(): registry id, else a never-reused uid).
+#define MATERIAL_CACHE_ID(M) (M.shared_cache_uid || material_cache_id(M))
 
 /// Drops every entry of cache N (a version bump).
 #define INVALIDATE_SHARED_CACHE(N) _sc_##N.invalidate()

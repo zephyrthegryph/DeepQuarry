@@ -11,8 +11,16 @@ SHARED_CACHE_GLOBAL(list/shared_cache_registry)
 SHARED_CACHE_GLOBAL(list/shared_cache_event_types)
 /// Channel bits some active cache clears on when raised on GLOB.om_world.
 SHARED_CACHE_GLOBAL(shared_cache_change_mask = 0)
-/// Interned lists shared by every SC_INTERN cache: signature -> list.
-SHARED_CACHE_GLOBAL(list/shared_cache_interned)
+/// Counter behind SHARED_CACHE_UID(): ids are never reused, so a key built from one can never
+/// name a different (recycled) datum.
+SHARED_CACHE_GLOBAL(shared_cache_uid_counter = 0)
+
+/// A stable identity for datums with no registry id (SHARED_CACHE_UID()). Set on first use.
+/datum/var/tmp/shared_cache_uid
+
+/proc/shared_cache_assign_uid(datum/D)
+	D.shared_cache_uid = "#[++shared_cache_uid_counter]"
+	return D.shared_cache_uid
 
 /datum/shared_cache
 	/// The declared name (the store is the global `_scs_<name>`).
@@ -39,6 +47,9 @@ SHARED_CACHE_GLOBAL(list/shared_cache_interned)
 	var/guard_lookups = 0
 	/// Policy hooks registered (done on the first build, when GLOB exists).
 	var/active = FALSE
+	/// SC_INTERN caches: signature -> the one shared list with that content. Dropped with the
+	/// entries (invalidate(), and a bounded cache's generation turn), so it stays bounded too.
+	var/list/interned
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	/// key -> copy of the value as built, for the mutation guard.
 	var/list/snapshots
@@ -101,7 +112,7 @@ SHARED_CACHE_GLOBAL(list/shared_cache_interned)
 		LAZYSET(falsy, key, list(value))
 		return value
 	if((flags & SC_INTERN) && islist(value))
-		value = shared_cache_intern(value)
+		value = intern(value)
 	put(key, value)
 	return value
 
@@ -110,11 +121,13 @@ SHARED_CACHE_GLOBAL(list/shared_cache_interned)
 		evictions += length(old)
 		old = store.Copy()
 		store.Cut()
+		// Interned lists still in use stay alive in their holders; the pool only forgets them.
+		if(length(interned) > max_entries)
+			interned = null
 	store[key] = value
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	if(islist(value))
-		var/list/L = value
-		LAZYSET(snapshots, key, L.Copy())
+		LAZYSET(snapshots, key, shared_cache_snapshot(value))
 #endif
 
 /// Integer-keyed miss (SC_INT_KEYS): the store is a flat list grown to fit.
@@ -133,12 +146,11 @@ SHARED_CACHE_GLOBAL(list/shared_cache_interned)
 	if(index > length(store))
 		store.len = index
 	if((flags & SC_INTERN) && islist(value))
-		value = shared_cache_intern(value)
+		value = intern(value)
 	store[index] = value
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	if(islist(value))
-		var/list/L = value
-		LAZYSET(snapshots, "[index]", L.Copy())
+		LAZYSET(snapshots, "[index]", shared_cache_snapshot(value))
 #endif
 	return value
 
@@ -150,6 +162,7 @@ SHARED_CACHE_GLOBAL(list/shared_cache_interned)
 	store.Cut()
 	old = null
 	falsy = null
+	interned = null
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	snapshots = null
 #endif
@@ -201,8 +214,13 @@ SHARED_CACHE_GLOBAL(list/shared_cache_interned)
 /datum/shared_cache/proc/guarded(key, ...)
 	if(!store)
 		resolve_store()
-	if(isnum(key))
-		CRASH("shared cache [name]: numeric key [key] (use CACHED_INT or a text key)")
+	if(!istext(key) && !ispath(key))
+		if(isnum(key))
+			CRASH("shared cache [name]: numeric key [key] (use CACHED_INT or a text key)")
+		if(!shared_cache_stable_datum(key))
+			CRASH("shared cache [name]: key [key] is an object without a stable identity; key by its registry id, type path or SHARED_CACHE_UID() instead")
+	else if(istext(key) && findtext(key, "\[0x"))
+		CRASH("shared cache [name]: key \"[key]\" embeds a ref, which is recycled when its datum is deleted; use a registry id, type path or SHARED_CACHE_UID()")
 	guard_lookups++
 	var/value = store[key]
 	if(!value)
@@ -220,50 +238,123 @@ SHARED_CACHE_GLOBAL(list/shared_cache_interned)
 		return value
 	return miss_int(index)
 
-/// Runtimes when a caller wrote into a shared list, then restores the entry so later
-/// callers still see the built value.
+/// Runtimes when a caller wrote into a shared list (or a list nested one level inside it),
+/// then restores the entry so later callers still see the built value.
 /datum/shared_cache/proc/verify(key, value)
 	if(!islist(value))
 		return
 	var/list/snap = snapshots?[key]
-	if(!snap)
-		return
-	var/list/L = value
-	if(L ~= snap)
+	if(!snap || shared_cache_snapshot_matches(value, snap))
 		return
 	mutations++
-	L.Cut()
-	for(var/i in 1 to length(snap))
-		var/k = snap[i]
-		L += list(k)
-		if(!isnum(k) && !isnull(snap[k]))
-			L[k] = snap[k]
+	shared_cache_snapshot_restore(value, snap)
 	CRASH("shared cache [name]: a caller mutated the shared list for key [key]; Copy() a cached value before writing")
 
 /// Verifies every stored list (the unit-test sweep at the end of a run).
 /datum/shared_cache/proc/verify_all()
 	. = 0
 	for(var/key in snapshots)
-		var/list/snap = snapshots[key]
 		var/list/L = (flags & SC_INT_KEYS) ? store[text2num(key)] : store[key]
-		if(islist(L) && !(L ~= snap))
+		if(islist(L) && !shared_cache_snapshot_matches(L, snapshots[key]))
 			.++
+
+/// A snapshot of L: list(copy of L, list(nested list, its copy, ...)) for lists that are
+/// elements or assoc values of L (one level deep).
+/proc/shared_cache_snapshot(list/L)
+	var/list/nested
+	for(var/k in L)
+		if(islist(k))
+			var/list/sub_key = k
+			LAZYADD(nested, list(sub_key, sub_key.Copy()))
+		if(isnum(k))
+			continue
+		var/v = L[k]
+		if(islist(v))
+			var/list/sub_value = v
+			LAZYADD(nested, list(sub_value, sub_value.Copy()))
+	return list(L.Copy(), nested)
+
+/proc/shared_cache_snapshot_matches(list/L, list/snap)
+	if(!(L ~= snap[1]))
+		return FALSE
+	var/list/nested = snap[2]
+	for(var/i in 1 to length(nested) step 2)
+		var/list/sub = nested[i]
+		if(!(sub ~= nested[i + 1]))
+			return FALSE
+	return TRUE
+
+/proc/shared_cache_snapshot_restore(list/L, list/snap)
+	shared_cache_list_restore(L, snap[1])
+	var/list/nested = snap[2]
+	for(var/i in 1 to length(nested) step 2)
+		shared_cache_list_restore(nested[i], nested[i + 1])
+
+/proc/shared_cache_list_restore(list/L, list/copy)
+	L.Cut()
+	for(var/i in 1 to length(copy))
+		var/k = copy[i]
+		L += list(k)
+		if(!isnum(k) && !isnull(copy[k]))
+			L[k] = copy[k]
 #endif
 
-/// Returns the interned instance of list L (primitives, types and datums by ref).
-/proc/shared_cache_intern(list/L)
+/// The interned instance of list L in this cache: an earlier built list with the same content,
+/// or L itself. Nested lists are interned first and then compared by identity.
+/datum/shared_cache/proc/intern(list/L)
 	var/list/parts = list()
-	for(var/k in L)
-		var/v = isnum(k) ? null : L[k]
-		parts += "[istext(k) ? "t" : ""][isdatum(k) ? ref(k) : k]=[isdatum(v) ? ref(v) : v]"
+	for(var/i in 1 to length(L))
+		var/k = L[i]
+		var/v = null
+		if(!isnum(k) && !islist(k))
+			v = L[k]
+		if(islist(k))
+			var/list/interned_key = intern(k)
+			if(interned_key != k)
+				L[i] = interned_key
+			k = interned_key
+		if(islist(v))
+			v = intern(v)
+			L[k] = v
+		parts += "[shared_cache_intern_part(k)]=[shared_cache_intern_part(v)]"
 	var/sig = jointext(parts, ";")
-	if(!shared_cache_interned)
-		shared_cache_interned = list()
-	var/list/existing = shared_cache_interned[sig]
+	var/list/existing = interned?[sig]
 	if(existing)
 		return existing
-	shared_cache_interned[sig] = L
+	LAZYSET(interned, sig, L)
 	return L
+
+/// One element's part of an intern signature. Values are compared by content where that is
+/// safe (primitives, paths, files, plain images) and by identity otherwise; the pool holds what
+/// it interned, so an identity can't be recycled while it is in the pool.
+/proc/shared_cache_intern_part(x)
+	if(isnull(x))
+		return "n"
+	if(isnum(x))
+		return "#[x]"
+	if(istext(x))
+		return "t[x]"
+	if(ispath(x))
+		return "p[x]"
+	if(isfile(x))
+		return "f[x]"
+	if(istype(x, /image))
+		var/image/I = x
+		if(!length(I.overlays) && !length(I.underlays) && !islist(I.color) && !length(I.filters) && (isnull(I.icon) || isfile(I.icon)))
+			var/matrix/M = I.transform // reads back as a matrix even when unset
+			var/transform_part = M ? "[M.a],[M.b],[M.c],[M.d],[M.e],[M.f]" : ""
+			return "i[I.icon]:[I.icon_state]:[I.dir]:[I.layer]:[I.plane]:[I.color]:[I.alpha]:[I.pixel_x]:[I.pixel_y]:[I.pixel_w]:[I.pixel_z]:[I.blend_mode]:[I.appearance_flags]:[I.invisibility]:[transform_part]"
+	return "r[ref(x)]"
+
+/// A registered singleton key (a fetched /datum/decl, a material in the registry): stable for
+/// the life of the world.
+/proc/shared_cache_stable_datum(datum/D)
+	if(istype(D, /datum/decl))
+		return GLOB.decls_repository.fetched_decls[D.type] == D
+	if(istype(D, /datum/material))
+		var/datum/material/M = D
+		return !!M.name && GLOB.name_to_material[M.name] == M
+	return FALSE
 
 // ---- OM hooks (called from om_wants/om_emit/om_dispatch_change) ----
 

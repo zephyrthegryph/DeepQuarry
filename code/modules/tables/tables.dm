@@ -366,8 +366,11 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 	..()
 
 /proc/get_table_image(icon/ticon,ticonstate,tdir,tcolor,talpha)
-	var/icon_cache_key = "\ref[ticon]-[ticonstate]-[tdir]-[tcolor]-[talpha]"
-	return CACHED_KEY(table_icon, icon_cache_key, ticon, ticonstate, tdir, tcolor, talpha)
+	// Keyed by the icon file's path: a ref would be recycled. A runtime /icon has no stable
+	// identity, so it is built uncached.
+	if(!isfile(ticon))
+		return build_table_icon(ticon, ticonstate, tdir, tcolor, talpha)
+	return CACHED_KEY(table_icon, "[ticon]-[ticonstate]-[tdir]-[tcolor]-[talpha]", ticon, ticonstate, tdir, tcolor, talpha)
 
 /proc/build_table_icon(icon/ticon, ticonstate, tdir, tcolor, talpha)
 	var/image/I = image(icon = ticon, icon_state = ticonstate, dir = tdir)
