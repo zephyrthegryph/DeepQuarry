@@ -188,8 +188,7 @@ DECLARE_REF(/obj/item/storage, "hud", OWNED, null)
 
 /// What storage takes (constraints, rules.md section 3): pocket-sized things
 /// unless a type says otherwise. Types override this; see HOLD_ONLY and HOLD_MAX_SIZE.
-/obj/item/storage/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /// Why `W` can't go in right now, or null if it can. One ledger check: the
 /// slot's acceptance and hold constraint, the count and space limits, and
@@ -1009,13 +1008,11 @@ DECLARE_SHARED_CACHE(type_storage_costs, GLOBAL_PROC_REF(build_type_storage_cost
 	var/closed_state
 	special_handling = TRUE
 
-/obj/item/storage/trinketbox/hold_constraint()
-	var/list/holds = list(
-		/obj/item/clothing/accessory/ring,
-		/obj/item/coin,
-		/obj/item/clothing/accessory/medal
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/trinketbox, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/clothing/accessory/ring, \
+		/obj/item/coin, \
+		/obj/item/clothing/accessory/medal \
+		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/trinketbox/update_icon()
 	cut_overlays()

@@ -3,9 +3,7 @@
 	starting_accessories = list(/obj/item/clothing/accessory/storage/vox)	// Dont' start with a backback, so free webbing
 	flags = PHORONGUARD
 
-/obj/item/clothing/under/vox/fit_constraint()
-	var/list/bodytypes = list(SPECIES_VOX)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/under/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
 
 /obj/item/clothing/under/vox/vox_casual
 	name = "alien clothing"

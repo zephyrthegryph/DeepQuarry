@@ -146,8 +146,11 @@
 	effect = /obj/structure/window/proc/weld_repair
 	message_self = "You repair %TARGET%."
 
+/// The window repair's start feedback (self, others). Shared; interaction code only reads it.
+GLOBAL_LIST_INIT(window_repair_start_messages, list("You begin repairing %TARGET%...", null))
+
 /datum/interaction/window_repair/start_messages(mob/actor, atom/target, obj/item/held)
-	return list("You begin repairing %TARGET%...", null)
+	return GLOB.window_repair_start_messages
 
 /obj/structure/window/proc/is_damaged(mob/actor, atom/target, obj/item/held)
 	return get_integrity() < max_integrity

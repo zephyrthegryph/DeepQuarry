@@ -20,8 +20,7 @@
 	var/linked
 	resistance_flags = FLAMMABLE
 
-/obj/item/storage/laundry_basket/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_LARGE))
+TYPE_TABLE(/obj/item/storage/laundry_basket, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_LARGE)))
 
 
 EXTEND_INTERACTIONS(/obj/item/storage/laundry_basket, INTERACT_HAND_UNGATED("Pick up", PROC_REF(interaction_two_hands)))

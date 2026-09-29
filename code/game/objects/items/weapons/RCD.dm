@@ -21,12 +21,13 @@
 	var/ranged = FALSE
 	var/allow_concurrent_building = FALSE // If true, allows for multiple RCD builds at the same time.
 	var/mode_index = 1
-	var/list/modes = list(RCD_FLOORWALL, RCD_AIRLOCK, RCD_WINDOWGRILLE, RCD_DECONSTRUCT) // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 	var/can_remove_rwalls = FALSE
 	var/airlock_type = /obj/machinery/door/airlock
 	var/window_type = /obj/structure/window/reinforced/full
 	var/material_to_use = DEFAULT_WALL_MATERIAL // So badmins can make RCDs that print diamond walls.
 	var/make_rwalls = FALSE // If true, when building walls, they will be reinforced.
+
+TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RCD_WINDOWGRILLE, RCD_DECONSTRUCT, RCD_WINDOOR, RCD_FIRELOCK, RCD_FRAME, RCD_WALLFRAME, RCD_CONVEYOR, RCD_TURRET))
 /* Unused
 /obj/item/rcd/Initialize(mapload)
 	. = ..()
@@ -73,7 +74,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rcd, "spark_system", /datum/effect/effect/system
 		to_chat(user, span_warning("\The [src] is busy finishing its current operation, be patient."))
 		return FALSE
 
-	var/list/rcd_results = A.rcd_values(user, src, modes[mode_index])
+	var/list/rcd_results = A.rcd_values(user, src, TYPE_TABLE_GET(src, rcd_modes)[mode_index])
 	// start
 	if(rcd_results == 1)
 		return FALSE
@@ -367,7 +368,7 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 	add_overlay("[initial(icon_state)]_charge[nearest_ten]")
 
 /obj/item/rcd/proc/perform_effect(atom/A, time_taken)
-	LAZYSET(effects, A, new /obj/effect/constructing_effect(get_turf(A), time_taken, modes[mode_index]))
+	LAZYSET(effects, A, new /obj/effect/constructing_effect(get_turf(A), time_taken, TYPE_TABLE_GET(src, rcd_modes)[mode_index]))
 
 /obj/item/rcd/proc/cleanup_effect(atom/A)
 	if(A in effects)
@@ -452,3 +453,8 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 /obj/effect/constructing_effect/proc/end()
 	qdel(src)
 // end
+
+/// The index of `mode` in this RCD's modes, or 0 when it has no such mode.
+/obj/item/rcd/proc/rcd_mode_index(mode)
+	var/list/modes = TYPE_TABLE_GET(src, rcd_modes)
+	return modes.Find(mode)

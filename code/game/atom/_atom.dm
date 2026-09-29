@@ -631,9 +631,12 @@ DECLARE_REF(/atom, "wires", OWNED, null)
 
 GLOBAL_LIST_EMPTY(icon_dimensions)
 
+/// get_oversized_icon_offsets() for an unshifted atom (shared; callers only read it).
+GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
+
 /atom/proc/get_oversized_icon_offsets()
 	if (pixel_x == 0 && pixel_y == 0)
-		return list("x" = 0, "y" = 0)
+		return GLOB.zero_icon_offsets
 	var/list/icon_dimensions = get_icon_dimensions(icon)
 	var/icon_width = icon_dimensions["width"]
 	var/icon_height = icon_dimensions["height"]
@@ -676,7 +679,7 @@ GLOBAL_LIST_EMPTY(icon_dimensions)
 *	Include EXTRAPOLATOR_SPECIAL_HANDLED in the list if the extrapolation act has been handled by this proc or a signal, and should not be handled by the extrapolator itself.
 */
 /atom/proc/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run = FALSE)
-	. = list(EXTRAPOLATOR_RESULT_DISEASES = list())
+	. = list(EXTRAPOLATOR_RESULT_DISEASES = list()) // ALLOW(sys_const_list_alloc): fresh result container that overrides fill via EXTRAPOLATOR_ACT_ADD_DISEASES(., ...)
 
 /**
 *	Wash this atom

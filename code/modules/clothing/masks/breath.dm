@@ -87,6 +87,4 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/breath, \
 	pickup_sound = 'sound/items/pickup/component.ogg'
 	drop_sound = 'sound/items/drop/component.ogg'
 
-/obj/item/clothing/mask/altevian_breath/fit_constraint()
-	var/list/bodytypes = list(SPECIES_ALTEVIAN)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/mask/altevian_breath, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_ALTEVIAN))))

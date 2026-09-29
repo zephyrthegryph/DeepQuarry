@@ -178,13 +178,11 @@ DECLARE_REF(/datum/damage_packet, "armor_flag", TRANSIENT, null)
 /// The one EMP ladder (damage.md §7): the ionic amount of each severity,
 /// EMP_HEAVY .. EMP_HARMLESS. Pulses read it forwards (emp_ionic_damage) and
 /// ionic hits such as ion rounds read it backwards (emp_severity_for_ionic).
-/proc/emp_ladder()
-	var/static/list/ladder = list(100, 70, 40, 10)
-	return ladder
+GLOBAL_LIST_INIT(emp_ladder, list(100, 70, 40, 10))
 
 /// Ionic amount an EMP of `severity` delivers.
 /proc/emp_ionic_damage(severity)
-	var/list/ladder = emp_ladder()
+	var/list/ladder = GLOB.emp_ladder
 	var/band = round(severity)
 	if(band < 1 || band > length(ladder))
 		return 0
@@ -194,7 +192,7 @@ DECLARE_REF(/datum/damage_packet, "armor_flag", TRANSIENT, null)
 /// a rung it is that rung; in the 15 below that it is a coin flip between the
 /// rung and the next one down; anything weaker is harmless.
 /proc/emp_severity_for_ionic(amount)
-	var/list/ladder = emp_ladder()
+	var/list/ladder = GLOB.emp_ladder
 	amount = round(amount)
 	for(var/severity in 1 to length(ladder) - 1)
 		var/rung = ladder[severity] - 9

@@ -53,7 +53,8 @@
 	organ_to_implant = /obj/item/organ/internal/augment/armmounted/taser
 	organ_display_name = "physiological augment"
 
-	var/list/possible_targets = list(O_AUG_L_FOREARM, O_AUG_R_FOREARM) // ALLOW(instance_list): c: read-only per-subtype constant table (2 subtype overrides); a getter would share it, not worth it on a rare type
+TYPE_TABLE_DECLARE(/obj/item/implant/organ/limbaugment, limbaugment_targets, list(O_AUG_L_FOREARM, O_AUG_R_FOREARM))
+
 
 /obj/item/implant/organ/limbaugment/post_implant(mob/M)
 	if(ishuman(M))
@@ -75,8 +76,8 @@
 	install_augment(ask.patient, ask.choice)
 
 /obj/item/implant/organ/limbaugment/proc/augment_choices(mob/living/carbon/human/H)
-	. = possible_targets.Copy()
-	for(var/targ in possible_targets)
+	. = TYPE_TABLE_COPY(src, limbaugment_targets)
+	for(var/targ in TYPE_TABLE_GET(src, limbaugment_targets))
 		if(H.organ_in(targ))
 			. -= targ
 
@@ -136,13 +137,15 @@
 	organ_to_implant = /obj/item/organ/internal/augment/armmounted/shoulder/multiple
 	organ_display_name = "multi-use augment"
 
-	possible_targets = list(O_AUG_R_UPPERARM,O_AUG_L_UPPERARM)
+TYPE_TABLE(/obj/item/implant/organ/limbaugment/upperarm, limbaugment_targets, list(O_AUG_R_UPPERARM,O_AUG_L_UPPERARM))
+
 
 /obj/item/implant/organ/limbaugment/wrist
 	organ_to_implant = /obj/item/organ/internal/augment/armmounted/hand
 	organ_display_name = "wrist augment"
 
-	possible_targets = list(O_AUG_R_HAND,O_AUG_L_HAND)
+TYPE_TABLE(/obj/item/implant/organ/limbaugment/wrist, limbaugment_targets, list(O_AUG_R_HAND,O_AUG_L_HAND))
+
 
 /*
  * Limb implant general subtypes.

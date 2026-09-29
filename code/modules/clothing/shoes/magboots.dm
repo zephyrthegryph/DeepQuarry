@@ -24,8 +24,7 @@
 	pickup_sound = 'sound/items/pickup/toolbox.ogg'
 	resistance_flags = FIRE_PROOF
 
-/obj/item/clothing/shoes/magboots/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/magboots, fit_spec, null)
 
 /obj/item/clothing/shoes/magboots/proc/set_slowdown()
 	slowdown = shoes? max(SHOES_SLOWDOWN, shoes.slowdown): SHOES_SLOWDOWN	//So you can't put on magboots to make you walk faster.
@@ -67,8 +66,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/magboots, INTERACT_USE("Toggle", PR
 	user.update_inv_shoes()	//so our mob-overlays update
 	user.update_mob_action_buttons()
 
-/obj/item/clothing/shoes/magboots/equip_constraint()
-	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/shoes/magboots/proc/overshoe_clearance, null)))
+TYPE_TABLE(/obj/item/clothing/shoes/magboots, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/shoes/magboots/proc/overshoe_clearance, null))))
 
 /// Magboots go on over shoes, but not over other overshoes.
 /obj/item/clothing/shoes/magboots/proc/overshoe_clearance(mob/living/carbon/human/H)
@@ -126,9 +124,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/magboots, INTERACT_USE("Toggle", PR
 
 	actions_types = list(/datum/action/item_action/toggle_magclaws)
 
-/obj/item/clothing/shoes/magboots/vox/fit_constraint()
-	var/list/bodytypes = list(SPECIES_VOX)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/shoes/magboots/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
 
 /obj/item/clothing/shoes/magboots/vox/set_slowdown()
 	return //voxboots suffer no slowdown penalties!

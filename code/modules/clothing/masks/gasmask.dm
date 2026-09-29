@@ -100,9 +100,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/half, INTERACT_ITEM(null, PROC_R
 	helmet_handling = TRUE
 	special_handling = TRUE
 
-/obj/item/clothing/mask/gas/swat/vox/fit_constraint()
-	var/list/bodytypes = list(SPECIES_VOX)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/mask/gas/swat/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
 
 /obj/item/clothing/mask/gas/swat/vox/proc/feeding_port(mob/user)
 	if(user.canmove && !user.stat)
@@ -129,9 +127,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/swat/vox, INTERACT_USE("Feeding 
 	flags_inv = HIDEEARS //semi-transparent
 	filtered_gases = list(GAS_PHORON, GAS_N2, GAS_N2O)
 
-/obj/item/clothing/mask/gas/zaddat/fit_constraint()
-	var/list/bodytypes = list(SPECIES_ZADDAT)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/mask/gas/zaddat, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_ZADDAT))))
 
 /obj/item/clothing/mask/gas/syndicate
 	name = "tactical mask"

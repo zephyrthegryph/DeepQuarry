@@ -11,10 +11,8 @@
 	blood_overlay_type = "armor"
 	body_parts_covered = 0
 
-/obj/item/clothing/suit/storage/apron/suit_storage_constraint()
-	var/list/stores = list (/obj/item/reagent_containers/spray/plantbgone, /obj/item/analyzer/plant_analyzer, /obj/item/seeds,
-	/obj/item/reagent_containers/glass/bottle, /obj/item/material/minihoe)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/apron, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/reagent_containers/spray/plantbgone, /obj/item/analyzer/plant_analyzer, /obj/item/seeds, \
+	/obj/item/reagent_containers/glass/bottle, /obj/item/material/minihoe))))
 
 /obj/item/clothing/suit/storage/apron/white
 	name = "white apron"
@@ -61,9 +59,7 @@
 
 //Chaplain but spookier
 
-/obj/item/clothing/suit/storage/hooded/chaplain_hoodie/suit_storage_constraint()
-	var/list/stores = list (/obj/item/storage/bible)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/chaplain_hoodie, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/storage/bible))))
 /obj/item/clothing/suit/storage/hooded/chaplain_hoodie/whiteout
 	name = "white robe"
 	desc = "A long, flowing white robe. It looks comfortable, but not very warm."
@@ -92,9 +88,7 @@
 
 //Chef
 
-/obj/item/clothing/suit/chef/suit_storage_constraint()
-	var/list/stores = list (/obj/item/material/knife)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/chef, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/material/knife))))
 /obj/item/clothing/suit/chef/classic
 	name = "classic chef's apron"
 	desc = "A basic, dull, white chef's apron."
@@ -138,9 +132,7 @@
 	flags_inv = HIDEHOLSTER
 	armor_spec = "melee=10;bullet=10;laser=15;energy=10"
 
-/obj/item/clothing/suit/storage/det_trench/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/det_trench, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE))))
 
 /obj/item/clothing/suit/storage/det_trench/grey
 	name = "grey trenchcoat"
@@ -156,9 +148,7 @@
 	flags_inv = HIDEHOLSTER
 	armor_spec = "melee=10;bullet=10;laser=15;energy=10"
 
-/obj/item/clothing/suit/storage/forensics/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/forensics, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE))))
 
 /obj/item/clothing/suit/storage/forensics/red
 	name = "red jacket"
@@ -191,11 +181,9 @@
 	body_parts_covered = UPPER_TORSO
 	armor_spec = "rad=20"
 
-/obj/item/clothing/suit/storage/hazardvest/suit_storage_constraint()
-	var/list/stores = list (/obj/item/analyzer, /obj/item/flashlight, /obj/item/multitool, /obj/item/pipe_painter, /obj/item/radio, /obj/item/t_scanner,
-	/obj/item/tool/crowbar, /obj/item/tool/screwdriver, /obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tank/emergency,
-	/obj/item/clothing/mask/gas, /obj/item/taperoll/engineering, /obj/item/taperoll/atmos, /obj/item/analyzer, /obj/item/extinguisher/mini) // . Few more tools that can be put on vests
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/hazardvest, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/analyzer, /obj/item/flashlight, /obj/item/multitool, /obj/item/pipe_painter, /obj/item/radio, /obj/item/t_scanner, \
+	/obj/item/tool/crowbar, /obj/item/tool/screwdriver, /obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tank/emergency, \
+	/obj/item/clothing/mask/gas, /obj/item/taperoll/engineering, /obj/item/taperoll/atmos, /obj/item/analyzer, /obj/item/extinguisher/mini) /* . Few more tools that can be put on vests */)))
 
 /obj/item/clothing/suit/storage/hazardvest/blue
 	name = "blue hazard vest"
@@ -251,9 +239,7 @@
 	blood_overlay_type = "armor"
 	body_parts_covered = UPPER_TORSO|ARMS
 
-/obj/item/clothing/suit/storage/toggle/fr_jacket/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/fr_jacket, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL))))
 
 /obj/item/clothing/suit/storage/toggle/fr_jacket/ems
 	name = "\improper EMS jacket"
@@ -270,9 +256,7 @@
 
 //Mime
 
-/obj/item/clothing/suit/surgicalapron/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL, POCKET_SURGERY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/surgicalapron, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL, POCKET_SURGERY))))
 /obj/item/clothing/suit/suspenders
 	name = "red suspenders"
 	desc = "They suspend the illusion of the mime's play."

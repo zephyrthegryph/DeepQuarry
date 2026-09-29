@@ -15,16 +15,17 @@
 
 	encumbrance_gap = 2
 
-	starting_components = list(
-		/obj/item/mecha_parts/component/hull/durable,
-		/obj/item/mecha_parts/component/actuator,
-		/obj/item/mecha_parts/component/armor/mining,
-		/obj/item/mecha_parts/component/gas,
-		/obj/item/mecha_parts/component/electrical
-		)
 
 	icon_scale_x = 1.2
 	icon_scale_y = 1.2
+
+TYPE_TABLE(/obj/mecha/working/ripley, mecha_starting_components, list( \
+		/obj/item/mecha_parts/component/hull/durable, \
+		/obj/item/mecha_parts/component/actuator, \
+		/obj/item/mecha_parts/component/armor/mining, \
+		/obj/item/mecha_parts/component/gas, \
+		/obj/item/mecha_parts/component/electrical \
+		))
 
 /obj/mecha/working/ripley/Move()
 	. = ..()

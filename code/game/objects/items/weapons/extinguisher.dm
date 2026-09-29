@@ -80,7 +80,7 @@ DECLARE_INTERACTIONS(/obj/item/extinguisher, INTERACT_USE(null, PROC_REF(interac
 	if(O.anchored) return
 
 	// Six pushes slowing down (each sets a chair's propelled countdown), then three more.
-	var/list/move_speed = list(1, 1, 1, 2, 2, 3, 3, 3, 3)
+	var/static/list/move_speed = list(1, 1, 1, 2, 2, 3, 3, 3, 3)
 	var/delay = 0
 	for(var/i in 1 to 9)
 		om_after(O, delay, TYPE_PROC_REF(/obj, extinguisher_propel_step), user, movementdirection, i <= 6 ? 6 - i : null)

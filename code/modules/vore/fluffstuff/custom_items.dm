@@ -461,8 +461,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/centcom/station/fluff/aronai, INTERACT_SEL
 	item_state = "serdy_armor"
 	body_parts_covered = CHEST|LEGS|ARMS //It's a full body suit, minus hands and feet. Arms and legs should be protected, not just the torso. Retains normal security armor values still.
 
-/obj/item/clothing/suit/armor/vest/wolftaur/serdy/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur/serdy, fit_spec, null)
 
 /obj/item/clothing/head/serdyhelmet //SilencedMP5A5's specialty helmet.
 	name = "custom security helmet"
@@ -643,9 +642,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 	max_storage_space = ITEMSIZE_COST_SMALL * 2
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/storage/box/khcrystal/hold_constraint()
-	var/list/holds = list(/obj/item/paper/khcrystal_manual, /obj/item/clothing/accessory/collar/khcrystal)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/khcrystal, hold_spec, list(HOLD_ONLY(list(/obj/item/paper/khcrystal_manual, /obj/item/clothing/accessory/collar/khcrystal)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/box/khcrystal/Initialize(mapload)
 	. = ..()
@@ -1038,9 +1035,7 @@ EXTEND_INTERACTIONS(/obj/item/melee/baton/fluff/stunstaff, INTERACT_SELF("Toggle
 	w_class = ITEMSIZE_HUGE
 	max_storage_space = 16
 
-/obj/item/storage/backpack/fluff/stunstaff/hold_constraint()
-	var/list/holds = list(/obj/item/melee/baton/fluff/stunstaff)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_HUGE))
+TYPE_TABLE(/obj/item/storage/backpack/fluff/stunstaff, hold_spec, list(HOLD_ONLY(list(/obj/item/melee/baton/fluff/stunstaff)), HOLD_MAX_SIZE(ITEMSIZE_HUGE)))
 
 /obj/item/storage/backpack/fluff/stunstaff/Initialize(mapload)
 	. = ..()
@@ -1122,9 +1117,7 @@ EXTEND_INTERACTIONS(/obj/item/melee/fluffstuff, INTERACT_USE("Toggle", PROC_REF(
 	var/active_state = "wolfgirlsword"
 	injury_kind = INJURY_PAIN
 
-/obj/item/melee/fluffstuff/wolfgirlsword/suit_storage_constraint()
-	var/list/stores = list(/obj/item/shield/fluff/wolfgirlshield)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/melee/fluffstuff/wolfgirlsword, suit_storage_spec, list(HOLD_ONLY(list(/obj/item/shield/fluff/wolfgirlshield))))
 
 /obj/item/melee/fluffstuff/wolfgirlsword/dropped(mob/user, equipping, slot)
 	..()
@@ -1220,8 +1213,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluf
 	icon_override = 'icons/vore/custom_clothes_vr.dmi'
 	icon_state = "tiemgogs"
 
-/obj/item/clothing/glasses/welding/tiemgogs/equip_constraint()
-	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/glasses/welding/tiemgogs/proc/owner_fit, "these don't look like they were made to fit you")))
+TYPE_TABLE(/obj/item/clothing/glasses/welding/tiemgogs, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/glasses/welding/tiemgogs/proc/owner_fit, "these don't look like they were made to fit you"))))
 
 /obj/item/clothing/glasses/welding/tiemgogs/proc/owner_fit(mob/living/carbon/human/H)
 	return H?.ckey == "radiantaurora"
@@ -1250,9 +1242,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluf
 	glove_type = null
 	boot_type = null
 
-/obj/item/rig/nikki/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/rig/nikki, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE))))
 
 EXTEND_INTERACTIONS(/obj/item/rig/nikki, INTERACT_ITEM(null, PROC_REF(nikki_rig_module_item)))
 
@@ -1263,8 +1253,7 @@ EXTEND_INTERACTIONS(/obj/item/rig/nikki, INTERACT_ITEM(null, PROC_REF(nikki_rig_
 		return TRUE
 	return FALSE
 
-/obj/item/rig/nikki/equip_constraint()
-	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/rig/nikki/proc/owner_fit, "the necklace never quite gets past your head")))
+TYPE_TABLE(/obj/item/rig/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/rig/nikki/proc/owner_fit, "the necklace never quite gets past your head"))))
 
 /obj/item/rig/nikki/proc/owner_fit(mob/living/carbon/human/H)
 	return H?.ckey == "ryumi"
@@ -1340,9 +1329,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflas
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette = 7)
 
-/obj/item/storage/fancy/fluff/charlotte/hold_constraint()
-	var/list/holds = list(/obj/item/clothing/mask/smokable/cigarette, /obj/item/flame/lighter, /obj/item/trash/cigbutt)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/fancy/fluff/charlotte, hold_spec, list(HOLD_ONLY(list(/obj/item/clothing/mask/smokable/cigarette, /obj/item/flame/lighter, /obj/item/trash/cigbutt)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/fancy/fluff/charlotte/Initialize(mapload)
 	if(!open_state)
@@ -1597,8 +1584,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(
 	slot_flags = SLOT_MASK | SLOT_OCLOTHING
 	replacementType = /obj/item/remote_scene_tool/tally_doll
 
-/obj/item/remote_scene_tool/tally_necklace/equip_constraint()
-	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/remote_scene_tool/tally_necklace/proc/owner_fit, "the collar doesn't fit you")))
+TYPE_TABLE(/obj/item/remote_scene_tool/tally_necklace, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/remote_scene_tool/tally_necklace/proc/owner_fit, "the collar doesn't fit you"))))
 
 /obj/item/remote_scene_tool/tally_necklace/proc/owner_fit(mob/living/carbon/human/H)
 	return H?.ckey == "bricker98"

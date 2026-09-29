@@ -18,9 +18,7 @@
 	rigsuit_max_pressure = 5 * ONE_ATMOSPHERE			  // Max pressure the rig protects against when sealed
 	rigsuit_min_pressure = 0							  // Min pressure the rig protects against when sealed
 
-/obj/item/rig/light/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_EXPLO, POCKET_SUIT_REGULATORS, POCKET_STORAGE)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/rig/light, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_EXPLO, POCKET_SUIT_REGULATORS, POCKET_STORAGE))))
 
 /obj/item/clothing/suit/space/rig/light
 	name = DEVELOPER_WARNING_NAME // "suit"
@@ -109,9 +107,7 @@
 		/obj/item/rig_module/self_destruct
 		)
 
-/obj/item/rig/light/ninja/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY, POCKET_BAYSUIT)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/rig/light/ninja, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY, POCKET_BAYSUIT))))
 
 /obj/item/clothing/gloves/gauntlets/rig/light/ninja
 	name = "insulated gloves"

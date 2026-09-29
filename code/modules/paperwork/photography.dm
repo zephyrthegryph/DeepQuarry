@@ -119,9 +119,7 @@ DECLARE_INTERACTIONS(/obj/item/photo, \
 	icon_state = "album"
 	item_state = "briefcase"
 
-/obj/item/storage/photo_album/hold_constraint()
-	var/list/holds = list(/obj/item/photo)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/photo_album, hold_spec, list(HOLD_ONLY(list(/obj/item/photo)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/photo_album/MouseDrop(obj/over_object as obj)
 

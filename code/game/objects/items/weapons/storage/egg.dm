@@ -15,8 +15,7 @@
 	use_sound = 'sound/items/drop/flesh.ogg'
 	var/egg_name = null
 
-/obj/item/storage/vore_egg/hold_constraint()
-	return list(HOLD_MAX_SIZE(0))
+TYPE_TABLE(/obj/item/storage/vore_egg, hold_spec, list(HOLD_MAX_SIZE(0)))
 
 /obj/item/storage/vore_egg/Initialize(mapload)
 	. = ..()

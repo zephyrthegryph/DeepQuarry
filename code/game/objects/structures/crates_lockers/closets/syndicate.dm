@@ -102,7 +102,7 @@
 	desc = "It's an emergency storage closet for repairs."
 
 /obj/structure/closet/syndicate/resources/everything/Initialize(mapload)
-	var/list/resources = list(
+	var/static/list/resources = list(
 		/obj/item/stack/material/steel,
 		/obj/item/stack/material/glass,
 		/obj/item/stack/material/gold,

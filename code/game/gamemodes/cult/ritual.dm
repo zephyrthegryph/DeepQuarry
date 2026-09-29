@@ -377,38 +377,36 @@ EXTEND_INTERACTIONS(/obj/item/book/tome, INTERACT_USE("Read", PROC_REF(interacti
 	var/destination
 
 /// The words each rune needs.
-/datum/om/flow/tome_scribe/proc/dictionary()
-	var/static/list/dictionary = list(
-		"convert" = list("join","blood","self"),
-		"wall" = list("destroy","travel","self"),
-		"blood boil" = list("destroy","see","blood"),
-		"blood drain" = list("travel","blood","self"),
-		"raise dead" = list("blood","join","hell"),
-		"summon narsie" = list("hell","join","self"),
-		"communicate" = list("self","other","technology"),
-		"emp" = list("destroy","see","technology"),
-		"manifest" = list("blood","see","travel"),
-		"summon tome" = list("see","blood","hell"),
-		"see invisible" = list("see","hell","join"),
-		"hide" = list("hide","see","blood"),
-		"reveal" = list("blood","see","hide"),
-		"astral journey" = list("hell","travel","self"),
-		"imbue" = list("hell","technology","join"),
-		"sacrifice" = list("hell","blood","join"),
-		"summon cultist" = list("join","other","self"),
-		"free cultist" = list("travel","technology","other"),
-		"deafen" = list("hide","other","see"),
-		"blind" = list("destroy","see","other"),
-		"stun" = list("join","hide","technology"),
-		"armor" = list("hell","destroy","other"),
-		"teleport" = list("travel","self"),
-		"teleport other" = list("travel","other")
-	)
-	return dictionary
+GLOBAL_LIST_INIT(tome_rune_dictionary, list(
+	"convert" = list("join","blood","self"),
+	"wall" = list("destroy","travel","self"),
+	"blood boil" = list("destroy","see","blood"),
+	"blood drain" = list("travel","blood","self"),
+	"raise dead" = list("blood","join","hell"),
+	"summon narsie" = list("hell","join","self"),
+	"communicate" = list("self","other","technology"),
+	"emp" = list("destroy","see","technology"),
+	"manifest" = list("blood","see","travel"),
+	"summon tome" = list("see","blood","hell"),
+	"see invisible" = list("see","hell","join"),
+	"hide" = list("hide","see","blood"),
+	"reveal" = list("blood","see","hide"),
+	"astral journey" = list("hell","travel","self"),
+	"imbue" = list("hell","technology","join"),
+	"sacrifice" = list("hell","blood","join"),
+	"summon cultist" = list("join","other","self"),
+	"free cultist" = list("travel","technology","other"),
+	"deafen" = list("hide","other","see"),
+	"blind" = list("destroy","see","other"),
+	"stun" = list("join","hide","technology"),
+	"armor" = list("hell","destroy","other"),
+	"teleport" = list("travel","self"),
+	"teleport other" = list("travel","other")
+))
 
 /datum/om/flow/tome_scribe/start()
 	var/list/scribewords = list("none")
-	var/list/dictionary = dictionary()
+	var/list/dictionary = GLOB.tome_rune_dictionary
 	for (var/entry in dictionary)
 		var/list/required = dictionary[entry]
 		if (length(english & required) == required.len)
@@ -439,7 +437,7 @@ EXTEND_INTERACTIONS(/obj/item/book/tome, INTERACT_USE("Read", PROC_REF(interacti
 
 /datum/om/flow/tome_scribe/proc/drawn()
 	var/mob/living/user = actor
-	var/list/required = dictionary()[chosen_rune]
+	var/list/required = GLOB.tome_rune_dictionary[chosen_rune]
 	if(destination)
 		required = required + destination
 	var/area/A = get_area(user)
@@ -479,7 +477,7 @@ EXTEND_INTERACTIONS(/obj/item/book/tome/imbued, INTERACT_USE("Scribe a rune", PR
 	if(user)
 		if (!istype(user.loc,/turf))
 			to_chat(user, span_notice("You do not have enough space to write a proper rune."))
-		var/list/runes = list("teleport", "itemport", "tome", "armor", "convert", "tear in reality", "emp", "drain", "seer", "raise", "obscure", "reveal", "astral journey", "manifest", "imbue talisman", "sacrifice", "wall", "freedom", "cultsummon", "deafen", "blind", "bloodboil", "communicate", "stun")
+		var/static/list/runes = list("teleport", "itemport", "tome", "armor", "convert", "tear in reality", "emp", "drain", "seer", "raise", "obscure", "reveal", "astral journey", "manifest", "imbue talisman", "sacrifice", "wall", "freedom", "cultsummon", "deafen", "blind", "bloodboil", "communicate", "stun")
 		om_ask(user, /datum/om/prompt/choice/imbued_rune, PROC_REF(imbued_rune_picked), message = "Choose a rune to scribe", choices = runes)
 
 /// The admin tome's rune pick, then (for a teleport rune) its last word. `rune` carries the first answer.

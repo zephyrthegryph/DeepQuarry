@@ -415,9 +415,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/gloves, "special_attack", "special_atta
 ///////////////////////////////////////////////////////////////////////
 //Head
 
-/obj/item/clothing/gloves/ring/fit_constraint()
-	var/list/bodytypes = list("exclude", SPECIES_DIONA)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/gloves/ring, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude", SPECIES_DIONA))))
 /obj/item/clothing/head
 	name = DEVELOPER_WARNING_NAME // "Head"
 	icon = 'icons/inventory/head/item.dmi'
@@ -633,9 +631,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 	var/list/inside_emotes
 	COOLDOWN_DECLARE(recent_squish)
 
-/obj/item/clothing/shoes/fit_constraint()
-	var/list/bodytypes = list("exclude",SPECIES_TESHARI, SPECIES_VOX)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_TESHARI, SPECIES_VOX))))
 
 /obj/item/clothing/shoes/Initialize(mapload)
 	. = ..()
@@ -931,9 +927,7 @@ DECLARE_REF(/obj/item/clothing/shoes, "holding", OWNED, null)
 
 	update_icon_define_digi = "icons/inventory/suit/mob_digi.dmi"
 
-/obj/item/clothing/suit/suit_storage_constraint()
-	var/list/stores = list(POCKET_EMERGENCY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/Initialize(mapload)
 	MakeHood()

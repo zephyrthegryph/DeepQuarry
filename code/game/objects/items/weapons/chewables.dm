@@ -243,10 +243,8 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/candy, null, list(REAGENT_ID_S
 	foldable = null
 	trash = /obj/item/trash/gumpack
 
-/obj/item/storage/box/gum/hold_constraint()
-	var/list/holds = list(/obj/item/clothing/mask/chewable/candy/gum,
-					/obj/item/trash/spitgum)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/gum, hold_spec, list(HOLD_ONLY(list(/obj/item/clothing/mask/chewable/candy/gum, \
+					/obj/item/trash/spitgum)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/clothing/mask/chewable/candy/lolli
 	name = "lollipop"
@@ -353,9 +351,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(
 	foldable = null
 	trash = /obj/item/trash/pocky
 
-/obj/item/storage/box/pocky/hold_constraint()
-	var/list/holds = list(/obj/item/clothing/mask/chewable/candy/pocky)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/pocky, hold_spec, list(HOLD_ONLY(list(/obj/item/clothing/mask/chewable/candy/pocky)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/clothing/mask/chewable/candy/pocky
 	name = "chocolate pocky"

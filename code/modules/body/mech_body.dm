@@ -100,7 +100,7 @@ TYPE_TABLE_DECLARE(/datum/mech_body_plan, part_order, list(MECH_ARMOR, MECH_HULL
 	var/obj/item/mecha_parts/component/armor/plates = part(host, MECH_ARMOR)
 	if(plates)
 		var/efficiency = plates.get_efficiency()
-		var/absorb = plates.damage_absorption[armor_key]
+		var/absorb = TYPE_TABLE_GET(plates, mecha_armor_absorption)[armor_key]
 		if(isnull(absorb))
 			absorb = 1
 		if(efficiency > 0.25)

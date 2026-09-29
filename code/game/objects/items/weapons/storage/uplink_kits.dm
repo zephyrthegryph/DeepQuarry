@@ -338,6 +338,4 @@
 		/obj/item/tool/screwdriver
 	)
 
-/obj/item/storage/secure/briefcase/fuelrod/hold_constraint()
-	var/list/holds = list(/obj/item/cell, /obj/item/stock_parts, /obj/item/tool/screwdriver)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/secure/briefcase/fuelrod, hold_spec, list(HOLD_ONLY(list(/obj/item/cell, /obj/item/stock_parts, /obj/item/tool/screwdriver)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))

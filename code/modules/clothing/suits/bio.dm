@@ -33,9 +33,7 @@
 
 //Standard biosuit, orange stripe
 
-/obj/item/clothing/suit/bio_suit/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/bio_suit, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 /obj/item/clothing/head/bio_hood/general
 	icon_state = "bio_general"
 	item_state_slots = list(slot_r_hand_str = "bio", slot_l_hand_str = "bio")

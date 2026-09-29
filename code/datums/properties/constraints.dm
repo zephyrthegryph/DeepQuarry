@@ -9,18 +9,16 @@
 //   Slots    /datum/om/relation/slot.accepts (a predicate type) and, for holders that
 //            declare their own, slot_def.holder_constraint (a CONSTRAINT_* kind
 //            read from the holder). Equip slots: equip_slots.dm.
-//   Holders  hold_constraint() on storage and holsters: what goes inside.
-//            suit_storage_constraint() on suits: what the suit-storage slot takes.
-//   Items    fit_constraint(): whose body it fits (the old species_restricted).
-//            equip_constraint(): what it needs of its wearer, in any slot.
+//   Holders  the hold_spec table on storage and holsters: what goes inside.
+//            the suit_storage_spec table on suits: what the suit-storage slot takes.
+//   Items    the fit_spec table: whose body it fits (the old species_restricted).
+//            the equip_spec table: what it needs of its wearer, in any slot.
 //
-// Declaring. Override the proc on the type and return a spec (a list of REQ_*
-// clauses), or null for none. The proc runs once per type; the result is
-// compiled and cached, so it must depend on the type only:
+// Declaring. Set the type's table (TYPE_TABLE, systems.md section 7) to a spec
+// (a list of REQ_* clauses), or null for none. The value is built once per
+// type; the result is compiled and cached, so it must depend on the type only:
 //
-//   /obj/item/storage/pill_bottle/hold_constraint()
-//       var/list/holds = list(/obj/item/reagent_containers/pill, /obj/item/dice)
-//       return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_TINY))
+//   TYPE_TABLE(/obj/item/storage/pill_bottle, hold_spec, list( //       HOLD_ONLY(list(/obj/item/reagent_containers/pill, /obj/item/dice)), //       HOLD_MAX_SIZE(ITEMSIZE_TINY)))
 //
 // Changing one instance (a refitted suit, an exact-fit box) goes through
 // set_constraint(), which installs a compiled override on that instance only.
@@ -40,31 +38,27 @@
 /obj/item/proc/constraint_spec(kind)
 	switch(kind)
 		if(CONSTRAINT_HOLD)
-			return hold_constraint()
+			return TYPE_TABLE_GET(src, hold_spec)
 		if(CONSTRAINT_SUIT_STORAGE)
-			return suit_storage_constraint()
+			return TYPE_TABLE_GET(src, suit_storage_spec)
 		if(CONSTRAINT_FIT)
-			return fit_constraint()
+			return TYPE_TABLE_GET(src, fit_spec)
 		if(CONSTRAINT_EQUIP)
-			return equip_constraint()
+			return TYPE_TABLE_GET(src, equip_spec)
 	CRASH("unknown constraint kind [kind]")
 
 /// What this holder takes: a spec of clauses on PRED_TARGET, or null for anything.
-/obj/item/proc/hold_constraint()
-	return null
+TYPE_TABLE_DECLARE(/obj/item, hold_spec, null)
 
 /// What a worn suit's suit-storage slot takes, or null for no suit storage.
 /// PDAs and pens always fit a suit that has one.
-/obj/item/proc/suit_storage_constraint()
-	return null
+TYPE_TABLE_DECLARE(/obj/item, suit_storage_spec, null)
 
 /// Whose body this fits (PRED_ACTOR is the wearer), or null for anyone.
-/obj/item/proc/fit_constraint()
-	return null
+TYPE_TABLE_DECLARE(/obj/item, fit_spec, null)
 
 /// What this needs of its wearer (PRED_ACTOR) in any equip slot, or null.
-/obj/item/proc/equip_constraint()
-	return null
+TYPE_TABLE_DECLARE(/obj/item, equip_spec, null)
 
 /// The compiled constraint of `kind` for `I`: its instance override, else its
 /// type's declaration. Null when there is none.

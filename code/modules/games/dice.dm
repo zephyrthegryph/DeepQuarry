@@ -214,11 +214,9 @@ DECLARE_INTERACTIONS(/obj/item/dice, \
 	storage_slots = 5
 	special_handling = TRUE
 
-/obj/item/storage/dicecup/hold_constraint()
-	var/list/holds = list(
-		/obj/item/dice,
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/dicecup, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/dice, \
+		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 EXTEND_INTERACTIONS(/obj/item/storage/dicecup, \
 	INTERACT_USE("Shake", PROC_REF(interaction_shake)), \

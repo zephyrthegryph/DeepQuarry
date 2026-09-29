@@ -59,8 +59,7 @@
 	icon_state = "digiboots"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
 
-/obj/item/clothing/shoes/boots/jackboots/toeless/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/boots/jackboots/toeless, fit_spec, null)
 
 /obj/item/clothing/shoes/boots/jackboots/knee
 	name = "knee-length jackboots"
@@ -78,8 +77,7 @@
 	heat_protection = FEET|LEGS
 	cold_protection = FEET|LEGS
 
-/obj/item/clothing/shoes/boots/jackboots/toeless/knee/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/boots/jackboots/toeless/knee, fit_spec, null)
 
 /obj/item/clothing/shoes/boots/jackboots/thigh
 	name = "thigh-length jackboots"
@@ -97,8 +95,7 @@
 	heat_protection = FEET|LEGS
 	cold_protection = FEET|LEGS
 
-/obj/item/clothing/shoes/boots/jackboots/toeless/thigh/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/boots/jackboots/toeless/thigh, fit_spec, null)
 
 /obj/item/clothing/shoes/boots/jackboots/recolorable
 	icon_state = "boots_recolor"
@@ -118,8 +115,7 @@
 	icon_state = "workbootstoeless"
 	item_state_slots = list(slot_r_hand_str = "workboots", slot_l_hand_str = "workboots")
 
-/obj/item/clothing/shoes/boots/workboots/toeless/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/boots/workboots/toeless, fit_spec, null)
 
 /obj/item/clothing/shoes/boots/winter
 	name = "winter boots"

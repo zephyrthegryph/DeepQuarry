@@ -422,9 +422,7 @@
 	desc = "A brown fedora. Perfect for detectives or those trying to pilfer artifacts."
 	icon_state = "fedora_brown"
 
-/obj/item/clothing/head/fedora/brown/suit_storage_constraint()
-	var/list/stores = list(POCKET_SLEUTH)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/head/fedora/brown, suit_storage_spec, list(HOLD_ONLY(list(POCKET_SLEUTH))))
 
 /obj/item/clothing/head/fedora/white
 	desc = "A white fedora, really cool hat if you're a mobster. A really lame hat if you're not."

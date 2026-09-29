@@ -5,9 +5,7 @@
 	worn_state = "punpun"
 	has_sensor = 0
 
-/obj/item/clothing/under/punpun/fit_constraint()
-	var/list/bodytypes = list("Monkey")
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/under/punpun, fit_spec, list(REQ_FITS_BODYTYPES(list("Monkey"))))
 
 /mob/living/carbon/human/monkey/punpun/Initialize(mapload)
 	. = ..()

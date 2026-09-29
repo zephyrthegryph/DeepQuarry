@@ -465,7 +465,7 @@ DECLARE_REF(/obj/machinery/telecomms, "soundloop", OWNED, null)
 			src.receive_information(signal, src)
 
 		// Try sending it!
-		var/list/try_send = list(/obj/machinery/telecomms/server, /obj/machinery/telecomms/hub, /obj/machinery/telecomms/broadcaster, /obj/machinery/telecomms/bus)
+		var/static/list/try_send = list(/obj/machinery/telecomms/server, /obj/machinery/telecomms/hub, /obj/machinery/telecomms/broadcaster, /obj/machinery/telecomms/bus)
 		var/i = 0
 		for(var/send in try_send)
 			if(i)

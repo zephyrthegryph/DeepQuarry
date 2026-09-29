@@ -48,7 +48,7 @@
 /// declared flavour rules' levels.
 /proc/dq_damage_band_at(ratio)
 	. = DAMAGE_BAND_NONE
-	for(var/datum/rule/rule as anything in dq_damage_flavour_rules())
+	for(var/datum/rule/rule as anything in GLOBAL_TABLE_GET(damage_flavour_rules))
 		var/datum/rule_trigger/trigger = rule.triggers[1]
 		if(ratio < trigger.value && rule.band > .)
 			. = rule.band
@@ -63,12 +63,12 @@
 	return dq_damage_band_at(A.get_integrity() / A.max_integrity)
 
 /// The compiled damage-flavour rules.
-/proc/dq_damage_flavour_rules()
-	var/static/list/found
-	if(!found)
-		found = list()
-		var/list/rules = GLOBAL_TABLE_GET(dq_rules)
-		for(var/path in subtypesof(/datum/rule/damage_flavour))
-			if(rules[path])
-				found += rules[path]
+GLOBAL_TABLE(damage_flavour_rules, GLOBAL_PROC_REF(build_damage_flavour_rules))
+
+/proc/build_damage_flavour_rules()
+	var/list/found = list()
+	var/list/rules = GLOBAL_TABLE_GET(dq_rules)
+	for(var/path in subtypesof(/datum/rule/damage_flavour))
+		if(rules[path])
+			found += rules[path]
 	return found

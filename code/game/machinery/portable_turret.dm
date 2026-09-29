@@ -214,12 +214,6 @@
 	locked = FALSE
 	enabled = FALSE
 	anchored = FALSE
-	///What vests we will target.
-	var/list/vests_to_target = list( // ALLOW(instance_list): c: read-only per-subtype constant table (2 subtype overrides); a getter would share it, not worth it on a rare type
-		/obj/item/clothing/suit/lasertag/redtag,
-		/obj/item/clothing/suit/lasertag/bluetag,
-		/obj/item/clothing/suit/lasertag/omni
-	)
 	//These vars aren't used
 	check_access = FALSE
 	check_arrest = FALSE
@@ -228,23 +222,32 @@
 	check_all = FALSE
 	check_down = FALSE
 
+///What vests we will target.
+TYPE_TABLE_DECLARE(/obj/machinery/porta_turret/lasertag, turret_vests_to_target, list( \
+		/obj/item/clothing/suit/lasertag/redtag, \
+		/obj/item/clothing/suit/lasertag/bluetag, \
+		/obj/item/clothing/suit/lasertag/omni \
+	))
+
 /obj/machinery/porta_turret/lasertag/red
 	turret_type = "red"
 	installation = /obj/item/gun/energy/lasertag/red
 	projectile = /obj/item/projectile/beam/lasertag/red
-	vests_to_target = list(
-		/obj/item/clothing/suit/lasertag/bluetag,
-		/obj/item/clothing/suit/lasertag/omni
-	)
+
+TYPE_TABLE(/obj/machinery/porta_turret/lasertag/red, turret_vests_to_target, list( \
+		/obj/item/clothing/suit/lasertag/bluetag, \
+		/obj/item/clothing/suit/lasertag/omni \
+	))
 
 /obj/machinery/porta_turret/lasertag/blue
 	turret_type = "blue"
 	installation = /obj/item/gun/energy/lasertag/blue
 	projectile = /obj/item/projectile/beam/lasertag/blue
-	vests_to_target = list(
-		/obj/item/clothing/suit/lasertag/redtag,
-		/obj/item/clothing/suit/lasertag/omni
-	)
+
+TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, list( \
+		/obj/item/clothing/suit/lasertag/redtag, \
+		/obj/item/clothing/suit/lasertag/omni \
+	))
 
 /obj/machinery/porta_turret/lasertag/omni
 	turret_type = "industrial"
@@ -264,7 +267,7 @@
 
 	if(ishuman(L))
 		var/mob/living/carbon/human/M = L
-		if(is_type_in_list(M.get_equipped_item(SLOT_ID_SUIT), vests_to_target)) // Checks if they are a red player
+		if(is_type_in_list(M.get_equipped_item(SLOT_ID_SUIT), TYPE_TABLE_GET(src, turret_vests_to_target))) // Checks if they are a red player
 			var/obj/item/clothing/suit/lasertag/tag_suit = M.get_equipped_item(SLOT_ID_SUIT)
 			if(tag_suit.lasertag_health > 0)
 				return TURRET_PRIORITY_TARGET

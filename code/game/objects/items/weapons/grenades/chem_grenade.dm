@@ -15,9 +15,10 @@
 	var/sealed = FALSE
 	var/obj/item/assembly_holder/detonator = null
 	var/list/beakers
-	var/list/allowed_containers = list(/obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle) // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 	var/affected_area = 3
 	special_handling = TRUE
+
+TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list(/obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle))
 
 DECLARE_REAGENTS(/obj/item/grenade/chem_grenade, 1000, null)
 
@@ -81,7 +82,7 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 		icon_state = initial(icon_state) +"_ass"
 		name = "unsecured grenade with [length(beakers)] containers[detonator?" and detonator":""]"
 		stage = 1
-	else if(is_type_in_list(W, allowed_containers) && (!stage || stage==1) && path != 2)
+	else if(is_type_in_list(W, TYPE_TABLE_GET(src, chem_grenade_containers)) && (!stage || stage==1) && path != 2)
 		path = 1
 		if(length(beakers) == 2)
 			to_chat(user, span_warning("The grenade can not hold more containers."))
@@ -197,8 +198,9 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 	name = "large chem grenade"
 	desc = "An oversized grenade that affects a larger area."
 	icon_state = "large_grenade"
-	allowed_containers = list(/obj/item/reagent_containers/glass)
 	affected_area = 4
+
+TYPE_TABLE(/obj/item/grenade/chem_grenade/large, chem_grenade_containers, list(/obj/item/reagent_containers/glass))
 
 /obj/item/grenade/chem_grenade/metalfoam
 	name = "metal-foam grenade"

@@ -130,8 +130,11 @@
 	var/obj/machinery/machine = target
 	return tool_delay(actor, held, machine.maintenance_weld_time, tool)
 
+/// The repair interaction's feedback (self, others). Shared; interaction code only reads it.
+GLOBAL_LIST_INIT(maintenance_repair_messages, list("You repair %TARGET%.", "%ACTOR% repairs %TARGET%."))
+
 /datum/interaction/maintainable/repair/messages(mob/actor, atom/target, obj/item/held)
-	return list("You repair %TARGET%.", "%ACTOR% repairs %TARGET%.")
+	return GLOB.maintenance_repair_messages
 
 /obj/machinery/proc/maintenance_repair(mob/actor, obj/item/held, datum/interaction/interaction)
 	repair_damage(max_integrity)

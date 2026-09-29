@@ -9,13 +9,14 @@
 
 	cargo_capacity = 1
 
-	starting_components = list(
-		/obj/item/mecha_parts/component/hull,
-		/obj/item/mecha_parts/component/actuator,
-		/obj/item/mecha_parts/component/armor/lightweight,
-		/obj/item/mecha_parts/component/gas,
-		/obj/item/mecha_parts/component/electrical
-		)
+TYPE_TABLE(/obj/mecha/medical, mecha_starting_components, list( \
+		/obj/item/mecha_parts/component/hull, \
+		/obj/item/mecha_parts/component/actuator, \
+		/obj/item/mecha_parts/component/armor/lightweight, \
+		/obj/item/mecha_parts/component/gas, \
+		/obj/item/mecha_parts/component/electrical \
+		))
+
 
 /obj/mecha/medical/Initialize(mapload)
 	. = ..()

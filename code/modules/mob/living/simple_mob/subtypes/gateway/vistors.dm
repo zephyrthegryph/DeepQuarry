@@ -115,7 +115,8 @@
 /obj/item/grenade/shooter/energy/homing //This is a horrid idea
 	name = "homing grenade"
 	desc = "A horrifically dangerous rave in a can."
-	projectile_types = list(/obj/item/projectile/energy/homing_bolt)
+
+TYPE_TABLE(/obj/item/grenade/shooter/energy/homing, shooter_grenade_projectiles, list(/obj/item/projectile/energy/homing_bolt))
 
 /mob/living/simple_mob/mechanical/mecha/vistor/vistorgreen
 	name = "vistor green"

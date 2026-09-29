@@ -141,20 +141,23 @@ DECLARE_REF(/obj/effect/spider/eggcluster, "loc", BACK_VIA, list(/obj/item/organ
 	var/amount_grown = 0
 	var/entry_vent_handle
 	var/travelling_in_vent = 0
-	var/list/grow_as = list(/mob/living/simple_mob/animal/giant_spider, /mob/living/simple_mob/animal/giant_spider/hunter) // ALLOW(instance_list): c: read-only per-subtype constant table (10 subtype overrides); a getter would share it, not worth it on a rare type
 	var/faction = FACTION_SPIDERS
 
 	var/stunted = FALSE
 
+TYPE_TABLE_DECLARE(/obj/effect/spider/spiderling, spiderling_grow_as, list(/mob/living/simple_mob/animal/giant_spider, /mob/living/simple_mob/animal/giant_spider/hunter))
+
 /obj/effect/spider/spiderling/frost
-	grow_as = list(/mob/living/simple_mob/animal/giant_spider/frost)
+
+TYPE_TABLE(/obj/effect/spider/spiderling/frost, spiderling_grow_as, list(/mob/living/simple_mob/animal/giant_spider/frost))
 
 /obj/effect/spider/spiderling/varied
-	grow_as = list(/mob/living/simple_mob/animal/giant_spider, /mob/living/simple_mob/animal/giant_spider/nurse, /mob/living/simple_mob/animal/giant_spider/hunter,
-			/mob/living/simple_mob/animal/giant_spider/frost, /mob/living/simple_mob/animal/giant_spider/electric, /mob/living/simple_mob/animal/giant_spider/lurker,
-			/mob/living/simple_mob/animal/giant_spider/pepper, /mob/living/simple_mob/animal/giant_spider/thermic, /mob/living/simple_mob/animal/giant_spider/tunneler,
-			/mob/living/simple_mob/animal/giant_spider/webslinger, /mob/living/simple_mob/animal/giant_spider/phorogenic, /mob/living/simple_mob/animal/giant_spider/carrier,
-			/mob/living/simple_mob/animal/giant_spider/ion)
+
+TYPE_TABLE(/obj/effect/spider/spiderling/varied, spiderling_grow_as, list(/mob/living/simple_mob/animal/giant_spider, /mob/living/simple_mob/animal/giant_spider/nurse, /mob/living/simple_mob/animal/giant_spider/hunter, \
+			/mob/living/simple_mob/animal/giant_spider/frost, /mob/living/simple_mob/animal/giant_spider/electric, /mob/living/simple_mob/animal/giant_spider/lurker, \
+			/mob/living/simple_mob/animal/giant_spider/pepper, /mob/living/simple_mob/animal/giant_spider/thermic, /mob/living/simple_mob/animal/giant_spider/tunneler, \
+			/mob/living/simple_mob/animal/giant_spider/webslinger, /mob/living/simple_mob/animal/giant_spider/phorogenic, /mob/living/simple_mob/animal/giant_spider/carrier, \
+			/mob/living/simple_mob/animal/giant_spider/ion))
 
 /obj/effect/spider/spiderling/Initialize(mapload, atom/parent)
 	. = ..()
@@ -261,7 +264,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 					walk_to(src, entry_vent(), 5)
 					break
 		if(amount_grown >= 100)
-			var/spawn_type = pick(grow_as)
+			var/spawn_type = pick(TYPE_TABLE_GET(src, spiderling_grow_as))
 			var/mob/living/simple_mob/animal/giant_spider/GS = new spawn_type(src.loc, src)
 			GS.faction = faction
 			if(stunted)
@@ -271,7 +274,8 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 /obj/effect/spider/spiderling/stunted
 	stunted = TRUE
 
-	grow_as = list(/mob/living/simple_mob/animal/giant_spider, /mob/living/simple_mob/animal/giant_spider/hunter)
+TYPE_TABLE(/obj/effect/spider/spiderling/stunted, spiderling_grow_as, list(/mob/living/simple_mob/animal/giant_spider, /mob/living/simple_mob/animal/giant_spider/hunter))
+
 
 /obj/effect/spider/spiderling/non_growing
 	amount_grown = -1
@@ -279,7 +283,8 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 /obj/effect/spider/spiderling/princess
 	name = "royal spiderling"
 	desc = "There's a special aura about this one."
-	grow_as = list(/mob/living/simple_mob/animal/giant_spider/nurse/queen)
+
+TYPE_TABLE(/obj/effect/spider/spiderling/princess, spiderling_grow_as, list(/mob/living/simple_mob/animal/giant_spider/nurse/queen))
 
 /obj/effect/spider/spiderling/princess/Initialize(mapload, atom/parent)
 	. = ..()
@@ -323,10 +328,11 @@ DECLARE_REF(/obj/effect/spider/cocoon, "contents", SPILL_LIST, null)	// whatever
 
 // === merged from spiders_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/effect/spider/spiderling/virgo
-	grow_as = list(/mob/living/simple_mob/animal/giant_spider/event, /mob/living/simple_mob/animal/giant_spider/hunter/event)
 
 // === merged from spiders_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 //Eggs
+
+TYPE_TABLE(/obj/effect/spider/spiderling/virgo, spiderling_grow_as, list(/mob/living/simple_mob/animal/giant_spider/event, /mob/living/simple_mob/animal/giant_spider/hunter/event))
 /obj/effect/spider/eggcluster/broodling
 	spider_type = /obj/effect/spider/spiderling/broodling
 
@@ -336,15 +342,17 @@ DECLARE_REF(/obj/effect/spider/cocoon, "contents", SPILL_LIST, null)	// whatever
 //Spiderling types
 /obj/effect/spider/spiderling/broodling
 	name = "brood spiderling"
-	grow_as = list(/mob/living/simple_mob/animal/giant_spider/broodling, /mob/living/simple_mob/animal/giant_spider/nurse/broodling, /mob/living/simple_mob/animal/giant_spider/hunter/broodling)
+
+TYPE_TABLE(/obj/effect/spider/spiderling/broodling, spiderling_grow_as, list(/mob/living/simple_mob/animal/giant_spider/broodling, /mob/living/simple_mob/animal/giant_spider/nurse/broodling, /mob/living/simple_mob/animal/giant_spider/hunter/broodling))
 
 /obj/effect/spider/spiderling/varied/broodling
-	grow_as = list(/mob/living/simple_mob/animal/giant_spider/broodling, /mob/living/simple_mob/animal/giant_spider/nurse/broodling, /mob/living/simple_mob/animal/giant_spider/hunter/broodling,
-			/mob/living/simple_mob/animal/giant_spider/frost/broodling, /mob/living/simple_mob/animal/giant_spider/electric/broodling, /mob/living/simple_mob/animal/giant_spider/lurker/broodling,
-			/mob/living/simple_mob/animal/giant_spider/pepper/broodling, /mob/living/simple_mob/animal/giant_spider/thermic/broodling, /mob/living/simple_mob/animal/giant_spider/tunneler/broodling,
-			/mob/living/simple_mob/animal/giant_spider/webslinger/broodling)
 
 //Space Spiderling
+
+TYPE_TABLE(/obj/effect/spider/spiderling/varied/broodling, spiderling_grow_as, list(/mob/living/simple_mob/animal/giant_spider/broodling, /mob/living/simple_mob/animal/giant_spider/nurse/broodling, /mob/living/simple_mob/animal/giant_spider/hunter/broodling, \
+			/mob/living/simple_mob/animal/giant_spider/frost/broodling, /mob/living/simple_mob/animal/giant_spider/electric/broodling, /mob/living/simple_mob/animal/giant_spider/lurker/broodling, \
+			/mob/living/simple_mob/animal/giant_spider/pepper/broodling, /mob/living/simple_mob/animal/giant_spider/thermic/broodling, /mob/living/simple_mob/animal/giant_spider/tunneler/broodling, \
+			/mob/living/simple_mob/animal/giant_spider/webslinger/broodling))
 /obj/effect/spider/eggcluster/space
 	spider_type = /obj/effect/spider/spiderling/space
 
@@ -353,16 +361,18 @@ DECLARE_REF(/obj/effect/spider/cocoon, "contents", SPILL_LIST, null)	// whatever
 
 /obj/effect/spider/spiderling/space
 	name = "brood spiderling"
-	grow_as = list(/mob/living/simple_mob/animal/giant_spider/space, /mob/living/simple_mob/animal/giant_spider/nurse/space, /mob/living/simple_mob/animal/giant_spider/hunter/space)
+
+TYPE_TABLE(/obj/effect/spider/spiderling/space, spiderling_grow_as, list(/mob/living/simple_mob/animal/giant_spider/space, /mob/living/simple_mob/animal/giant_spider/nurse/space, /mob/living/simple_mob/animal/giant_spider/hunter/space))
 
 /obj/effect/spider/spiderling/varied/space
-	grow_as = list(/mob/living/simple_mob/animal/giant_spider/space, /mob/living/simple_mob/animal/giant_spider/nurse/space, /mob/living/simple_mob/animal/giant_spider/hunter/space,
-			/mob/living/simple_mob/animal/giant_spider/frost/space, /mob/living/simple_mob/animal/giant_spider/electric/space, /mob/living/simple_mob/animal/giant_spider/lurker/space,
-			/mob/living/simple_mob/animal/giant_spider/pepper/space, /mob/living/simple_mob/animal/giant_spider/thermic/space, /mob/living/simple_mob/animal/giant_spider/tunneler/space,
-			/mob/living/simple_mob/animal/giant_spider/webslinger/space)
 
 /// Steps (one per 2 s) a growth of rand(0, 2) a step takes to reach 100: the old growth loop's
 /// hatch time, drawn once so the egg sleeps on a single timer until it hatches.
+
+TYPE_TABLE(/obj/effect/spider/spiderling/varied/space, spiderling_grow_as, list(/mob/living/simple_mob/animal/giant_spider/space, /mob/living/simple_mob/animal/giant_spider/nurse/space, /mob/living/simple_mob/animal/giant_spider/hunter/space, \
+			/mob/living/simple_mob/animal/giant_spider/frost/space, /mob/living/simple_mob/animal/giant_spider/electric/space, /mob/living/simple_mob/animal/giant_spider/lurker/space, \
+			/mob/living/simple_mob/animal/giant_spider/pepper/space, /mob/living/simple_mob/animal/giant_spider/thermic/space, /mob/living/simple_mob/animal/giant_spider/tunneler/space, \
+			/mob/living/simple_mob/animal/giant_spider/webslinger/space))
 /proc/egg_hatch_steps()
 	var/grown = 0
 	. = 0

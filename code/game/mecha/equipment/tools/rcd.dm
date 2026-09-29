@@ -23,7 +23,7 @@ DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/tool/rcd, "my_rcd", OWNED, nul
 	..()
 	if(href_list["mode"])
 		my_rcd.mode_index = text2num(href_list["mode"])
-		occupant_message("RCD reconfigured to '[LAZYACCESS(my_rcd.modes, my_rcd.mode_index)]'.")
+		occupant_message("RCD reconfigured to '[LAZYACCESS(TYPE_TABLE_GET(my_rcd, rcd_modes), my_rcd.mode_index)]'.")
 /*
 /obj/item/mecha_parts/mecha_equipment/tool/rcd/get_equip_info()
 	return "[..()] \[<a href='byond://?src=\ref[src];mode=0'>D</a>|<a href='byond://?src=\ref[src];mode=1'>C</a>|<a href='byond://?src=\ref[src];mode=2'>A</a>\]"
@@ -32,9 +32,9 @@ DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/tool/rcd, "my_rcd", OWNED, nul
 	var/list/content = list(..()) // This is all for one line, in the interest of string tree conservation.
 	var/i = 1
 	content += "<br>"
-	for(var/mode in my_rcd.modes)
+	for(var/mode in TYPE_TABLE_GET(my_rcd, rcd_modes))
 		content += "     <a href='byond://?src=\ref[src];mode=[i]'>[mode]</a>"
-		if(i < length(my_rcd.modes))
+		if(i < length(TYPE_TABLE_GET(my_rcd, rcd_modes)))
 			content += "<br>"
 		i++
 
