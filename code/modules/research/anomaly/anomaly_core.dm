@@ -24,25 +24,29 @@
 	return FALSE
 
 
-EXTEND_INTERACTIONS(/obj/item/assembly/signaler/anomaly, INTERACT_ITEM(null, PROC_REF(anomaly_interaction_item)))
+EXTEND_INTERACTIONS(/obj/item/assembly/signaler/anomaly, \
+	INTERACT_INSERT(/obj/item/analyzer, PROC_REF(anomaly_analyze), "Analyze"), \
+	INTERACT_INSERT(/obj/item/anomaly_scanner, PROC_REF(anomaly_scan), "Scan"), \
+	INTERACT_INSERT(/obj/item/anomaly_releaser, PROC_REF(anomaly_interaction_item), "Release"), \
+)
 
-/// Old attackby.
+/// Old attackby's analyzer branch: read the field's frequency and code.
+/obj/item/assembly/signaler/anomaly/proc/anomaly_analyze(mob/user, obj/item/W, datum/interaction/interaction)
+	to_chat(user, span_notice("Analyzing... [src]'s stabilized field is fluctuating along frequency [format_frequency(frequency)], code [code]."))
+	return TRUE
+
+/// Old attackby's anomaly scanner branch.
+/obj/item/assembly/signaler/anomaly/proc/anomaly_scan(mob/user, obj/item/W, datum/interaction/interaction)
+	to_chat(user, span_notice("Sealed anomalous energies detected. Use of a releaser will unleash these energies."))
+	return TRUE
+
+/// Old attackby's releaser branch: unleash the sealed anomaly.
 /obj/item/assembly/signaler/anomaly/proc/anomaly_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/analyzer))
-		to_chat(user, span_notice("Analyzing... [src]'s stabilized field is fluctuating along frequency [format_frequency(frequency)], code [code]."))
-		return TRUE
-
-	if(istype(W, /obj/item/anomaly_scanner))
-		to_chat(user, span_notice("Sealed anomalous energies detected. Use of a releaser will unleash these energies."))
-		return TRUE
-
-	if(istype(W, /obj/item/anomaly_releaser))
-		var/obj/item/anomaly_releaser/releaser = W
-		if(releaser.used)
-			return INTERACTION_HANDLED_PASS
-		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(release_done), list(user, releaser))
-		return TRUE
-	return FALSE
+	var/obj/item/anomaly_releaser/releaser = W
+	if(releaser.used)
+		return INTERACTION_HANDLED_PASS
+	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(release_done), list(user, releaser))
+	return TRUE
 
 /obj/item/assembly/signaler/anomaly/proc/release_done(mob/user, obj/item/anomaly_releaser/releaser)
 	if(!anomaly_type || releaser.used)

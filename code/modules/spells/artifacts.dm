@@ -12,13 +12,10 @@
 	force = 10
 	hitsound = SFX_ITEMS_WELDER2
 
-DECLARE_INTERACTIONS(/obj/item/scrying, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/scrying, INTERACT_USE(null, PROC_REF(interaction_self), REQ_PROC(/proc/dq_actor_is_wizard_or_mindless, "you stare into the orb and see nothing but your own reflection")))
 
 /// Old attack_self.
 /obj/item/scrying/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if((user.mind && !GLOB.wizards.is_antagonist(user.mind)))
-		to_chat(user, span_warning("You stare into the orb and see nothing but your own reflection."))
-		return TRUE
 
 	to_chat(user, span_info("You can see... everything!"))
 	visible_message(span_danger("[user] stares into [src], [user.p_their()] eyes glazing over."))

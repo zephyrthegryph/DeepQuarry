@@ -204,5 +204,8 @@ def scan(files):
                     break
                 if only_refusal(parts) or (len(parts) == 1 and RETURN.match(parts[0]) and MESSAGE.search(parts[0])):
                     out["inline_refusal"].append((rel, stmt[0][0]))
+                elif not all(RETURN.match(p) or QUIET.match(p) for p in parts):
+                    # A branch that does work (another action of a multi-purpose effect) ends the head.
+                    break
             i = j
     return out

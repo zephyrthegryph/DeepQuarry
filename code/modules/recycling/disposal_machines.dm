@@ -434,13 +434,14 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	id = "disposal_use"
 	name = "Use"
 	effect = /obj/machinery/disposal/proc/interaction_disposal_use
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/disposal/proc/controls_reachable))
+
+/// Requirement: the controls can't be worked from inside the bin.
+/obj/machinery/disposal/proc/controls_reachable(mob/user, atom/target, obj/item/held)
+	return user?.loc == src ? "you cannot reach the controls from inside" : TRUE
 
 /obj/machinery/disposal/proc/interaction_disposal_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(has_stat(BROKEN))
-		return TRUE
-
-	if(user && user.loc == src)
-		to_chat(user, span_red("You cannot reach the controls from inside."))
 		return TRUE
 
 	// Clumsy folks can only flush it.

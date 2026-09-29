@@ -36,13 +36,13 @@ DECLARE_REF(/obj/machinery/reagent_refinery/grinder, "holdingitems", SPILL_LIST,
 	category = INTERACTION_CAT_INSERT
 	held_type = /obj/item
 	effect = /obj/machinery/reagent_refinery/grinder/proc/interaction_insert
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/reagent_refinery/grinder/proc/has_room))
+
+/// Requirement: the grinder holds at most `limit` items.
+/obj/machinery/reagent_refinery/grinder/proc/has_room(mob/user, atom/target, obj/item/held)
+	return length(holdingitems) >= limit ? "the machine cannot hold any more items" : TRUE
 
 /obj/machinery/reagent_refinery/grinder/proc/interaction_insert(mob/user, obj/item/O, datum/interaction/interaction)
-	// Insert grindables if not handled by parent proc
-	if(holdingitems && holdingitems.len >= limit)
-		to_chat(user, "The machine cannot hold anymore items.")
-		return TRUE
-
 	// Botany/Chemistry gameplay
 	if(istype(O,/obj/item/storage/bag))
 		var/obj/item/storage/bag/bag = O
