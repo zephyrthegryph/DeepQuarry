@@ -369,6 +369,22 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		)
 		return json_encode(d)
 
+	// Localhost-only census of machines with step work on the machine pipeline, by type, with how
+	// many of them the step stage's idle rule would settle (watch armed / no work).
+	if (T == "omsteps" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
+		var/list/active_by_type = list()
+		var/list/settleable_by_type = list()
+		var/active = 0
+		for(var/obj/machinery/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
+			if(!M.step_active || !om_attached(M, /datum/om/pipeline/machine))
+				continue
+			active++
+			var/type_key = "[M.type]"
+			active_by_type[type_key] = (active_by_type[type_key] || 0) + 1
+			if(om_watch_armed(M) || !M.step_has_work())
+				settleable_by_type[type_key] = (settleable_by_type[type_key] || 0) + 1
+		return json_encode(list("active" = active, "active_by_type" = active_by_type, "settleable_by_type" = settleable_by_type))
+
 	// Localhost-only census of the OM deadline wheel: entries per bucket, how many are still live
 	// (their generation matches the rec's armed deadline) and which owner types/behaviours hold them.
 	if (T == "omdeadlines" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))

@@ -43,7 +43,11 @@
 	if (top_atom != source_atom)
 		LAZYADD(top_atom.light_sources, src)
 
-	source_turf = top_atom
+	// A turf, never the top atom itself: source_turf is not a declared reference, so holding a
+	// movable here until the first update_corners() kept a top atom deleted in the meantime (an
+	// arcade that swaps itself for a random subtype in Initialize) alive -> hard delete -> a
+	// world-freezing GC_FAILURE_HARD_LOOKUP reference search.
+	source_turf = isturf(top_atom) ? top_atom : top_atom.loc
 	pixel_turf = get_turf_pixel(top_atom) || source_turf
 
 	light_power = source_atom.light_power
