@@ -194,10 +194,10 @@
 		visible_message(span_notice("The tangle of dark tendrils fades away in the light."))
 		qdel(src)
 
-/// LC-refs: the shadekin who opened the maw -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The shadekin who opened the maw (a relation view).
 /obj/effect/abstract/dark_maw/proc/owner() as /mob/living
 	return owner
 
-/// LC-refs: the belly the maw feeds -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The belly the maw feeds (a relation view).
 /obj/effect/abstract/dark_maw/proc/target() as /obj/belly
 	return target

@@ -52,7 +52,7 @@
 		return
 	owner.Crossed(crosser)
 
-/// LC-refs: the turf whose entries we watch -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The turf whose entries we watch (a relation view).
 /datum/topturfcrossed/proc/our_old_turf() as /turf
 	return our_old_turf
 

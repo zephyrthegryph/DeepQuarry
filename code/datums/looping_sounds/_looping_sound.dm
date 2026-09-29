@@ -29,7 +29,7 @@
  * moves into range (with a slow recheck timer).
  */
 /datum/looping_sound
-	/// OM handles of the atoms the sound plays from; add_output()/remove_output() change it, output_list() reads it.
+	/// The atoms the sound plays from; add_output()/remove_output() change it, output_list() reads it.
 	/// The atoms the sound plays from: a relation list view.
 	var/list/atom/output_atoms
 	var/mid_sounds

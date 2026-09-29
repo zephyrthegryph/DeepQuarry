@@ -67,6 +67,6 @@
 		T.auto_repair = 1
 		T.update_active_power_usage(round(initial(T.active_power_usage) * 5))
 
-/// LC-refs: owner -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Owner (a relation view).
 /datum/malf_hardware/proc/owner_ref() as /mob/living/silicon/ai
 	return owner

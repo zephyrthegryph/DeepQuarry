@@ -292,6 +292,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/armor)
 			return
 	return 0
 
-/// LC-refs: armor override -- an OM handle (om_handle()); a global helper keeps the proc off the base type.
+/// Armor override (a relation view). A global helper keeps the proc off the base type.
 /proc/atom_armor_override(atom/A) as /datum/armor
 	return A?.armor_override

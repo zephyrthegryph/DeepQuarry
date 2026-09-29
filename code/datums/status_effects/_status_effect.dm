@@ -242,6 +242,6 @@
 	var/datum/status_effect/attached_effect
 
 
-/// LC-refs: the status effect this alert shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The status effect this alert shows (a relation view).
 /atom/movable/screen/alert/status_effect/proc/attached_effect() as /datum/status_effect
 	return attached_effect

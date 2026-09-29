@@ -10,7 +10,7 @@
 // Packets are pooled (code/datums/lifecycle/pool.dm): acquire one with
 // damage_packet(), never new() one, and release() it as soon as
 // receive_damage() returns. Nothing may keep a reference to a packet past its
-// release; release() resets every DECLARE_REF(..., TRANSIENT) field below from the declaration.
+// release; release() resets every POOL_RESET field below from the declaration.
 
 /datum/damage_packet
 	/// Amount per kind, indexed by DAMAGE_* (flat list of DAMAGE_KIND_COUNT

@@ -502,10 +502,10 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 #undef CORNER_DIAGONAL
 #undef CORNER_CLOCKWISE
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /obj/structure/table/proc/material() as /datum/material
 	return material_static
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /obj/structure/table/proc/reinforced() as /datum/material
 	return reinforced_static

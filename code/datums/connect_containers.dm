@@ -82,6 +82,6 @@
 	unregister_hooks(event.old_loc)
 	update_hooks(moved_thing)
 
-/// LC-refs: the movable being tracked -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The movable being tracked (a relation view).
 /datum/connect_containers/proc/tracked() as /atom/movable
 	return tracked

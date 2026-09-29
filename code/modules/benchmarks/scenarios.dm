@@ -758,11 +758,11 @@
 #include "../../../tools/bisect/extra_procs.dm"
 #endif
 
-/// LC-refs: the event_center this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The event_center (a relation view).
 /datum/benchmark/major_events/proc/event_center() as /turf/open
 	return event_center
 
-/// LC-refs: the generated_site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The generated_site (a relation view).
 /datum/benchmark/generation/proc/generated_site() as /datum/expedition_site
 	return generated_site
 

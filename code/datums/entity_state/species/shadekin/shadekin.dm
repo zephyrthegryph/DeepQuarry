@@ -100,8 +100,8 @@
 	if(!isliving(new_owner) || issilicon(new_owner))
 		log_runtime("SHADEKIN: [type] created for incompatible [new_owner] ([new_owner?.type]); ignoring.")
 		return
-	owner = new_owner
-	rel_set(owner, "shadekin", src)
+	rel_set(src, "owner", new_owner) // one-sided back view: the mob owns us in its shadekin var
+	own_set(owner, "shadekin", src)
 	if(!ishuman(owner))
 		om_stage_add(owner, /datum/om/stage/life/trait/shadekin) //Happens every life tick (mobs)
 	//Humans are ticked by the species_components life stage instead.

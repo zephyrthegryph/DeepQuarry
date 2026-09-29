@@ -119,6 +119,6 @@
 
 
 
-/// LC-refs: the value this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The value (a relation view).
 /datum/node/expression/value/reference/proc/value() as /datum
 	return value

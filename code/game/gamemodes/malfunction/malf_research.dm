@@ -63,11 +63,11 @@
 		if(get_focus().unlocked)
 			finish_research()
 
-/// LC-refs: owner -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Owner (a relation view).
 /datum/malf_research/proc/owner_ref() as /mob/living/silicon/ai
 	return owner
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/malf_research/proc/get_focus() as /datum/malf_research_ability
 	return focus_static
 

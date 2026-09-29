@@ -21,6 +21,6 @@
 	if (ismob(O) && motioncamera())
 		motioncamera().lostTarget(O)
 
-/// LC-refs: motioncamera -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Motioncamera (a relation view).
 /area/ai_monitored/proc/motioncamera() as /obj/machinery/camera
 	return motioncamera

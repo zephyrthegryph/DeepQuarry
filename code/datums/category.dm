@@ -64,11 +64,11 @@
 /datum/category_item/dd_SortValue()
 	return name
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/category_group/proc/collection() as /datum/category_collection
 	return collection_static
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/category_item/proc/category() as /datum/category_group
 	return category_static
 

@@ -1194,11 +1194,11 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	last_profiled = REALTIMEOFDAY
 	SSprofiler.DumpFile(allow_yield = FALSE)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/controller/master/proc/queue_head() as /datum/controller/subsystem
 	return queue_head_static
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/controller/master/proc/queue_tail() as /datum/controller/subsystem
 	return queue_tail_static
 

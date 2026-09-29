@@ -127,6 +127,6 @@ GLOBAL_DATUM(cult, /datum/antagonist/cultist)
 			return 0
 	return 1
 
-/// LC-refs: sacrifice target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Sacrifice target (a relation view).
 /datum/antagonist/cultist/proc/sacrifice_target() as /datum/mind
 	return sacrifice_target

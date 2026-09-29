@@ -218,6 +218,6 @@
 		player.special_role = null
 	LAZYCLEARLIST(pending_antagonists)
 
-/// LC-refs: leader -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Leader (a relation view).
 /datum/antagonist/proc/leader() as /datum/mind
 	return leader

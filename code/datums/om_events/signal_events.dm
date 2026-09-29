@@ -1049,7 +1049,7 @@
 	src.hit_atom = hit_atom
 	src.throwingdatum = throwingdatum
 
-/// From /datum/controller/subsystem/motion_tracker/notice() (source_atom OM handle,/turf/echo_turf_location)
+/// From /datum/controller/subsystem/motion_tracker/notice() (source_atom,/turf/echo_turf_location)
 /datum/om/event/movable_motiontracker
 	sync = TRUE
 	var/handle
@@ -1126,7 +1126,7 @@
 	var/old_loc
 
 /datum/om/event/observer_turf_entered/New(atom/movable/arrived, old_loc)
-	src.arrived = arrived
+	src.arrived = arrived // ALLOW(ownership): a sync event payload that lives for one emit and is never destroyed; a relation index entry on every mover would outlive it
 	src.old_loc = old_loc
 
 /// From /client/proc/handle_popup_close() : (window_id)

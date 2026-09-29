@@ -137,6 +137,6 @@ GLOBAL_LIST_EMPTY_TYPED(mark_spells, /datum/technomancer_marker)
 	consume(src, user)
 
 
-/// LC-refs: T -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// T (a relation view).
 /datum/technomancer_marker/proc/T() as /turf
 	return T

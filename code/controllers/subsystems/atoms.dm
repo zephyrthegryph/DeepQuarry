@@ -55,6 +55,9 @@ SUBSYSTEM_DEF(atoms)
 	// Services that set up on the initialized map declare boot_after = SSatoms (pai, xenoarch,
 	// events, night shift, antagonists, radio, crew transfer); the MC boots them next.
 	validate_property_registry()
+	// Map load and the initial materialize batch are done: validate the ownership table of every
+	// mapped and registered type now, not on first use (doc/rewrite/ownership.md sec 8).
+	own_validate_boot()
 
 	return SS_INIT_SUCCESS
 

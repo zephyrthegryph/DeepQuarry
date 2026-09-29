@@ -185,15 +185,15 @@ DECLARE_PERIODIC(/obj/effect/ebeam/reactive, PERIODIC_SLOW)
 	newbeam.Start()
 	return newbeam
 
-/// LC-refs: the atom the beam starts at -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom the beam starts at (a relation view).
 /datum/beam/proc/origin() as /atom
 	return origin
 
-/// LC-refs: the atom the beam ends at -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom the beam ends at (a relation view).
 /datum/beam/proc/target() as /atom
 	return target
 
-/// LC-refs: the beam this segment belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The beam this segment belongs to (a relation view).
 /obj/effect/ebeam/proc/owner() as /datum/beam
 	return owner
 

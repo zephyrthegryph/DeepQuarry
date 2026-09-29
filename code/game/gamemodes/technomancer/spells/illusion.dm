@@ -71,6 +71,6 @@
 		temp_image.transform = M
 		add_overlay(temp_image)
 
-/// LC-refs: copied -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Copied (a relation view).
 /obj/item/spell/illusion/proc/copied() as /atom/movable
 	return copied

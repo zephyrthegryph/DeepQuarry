@@ -39,11 +39,11 @@
 
 /datum/remote_view/New(mob/viewer)
 	..()
-	host_mob = viewer
+	rel_set(src, "host_mob", viewer) // one-sided back view: the mob owns us in remote_view
 
 /// Drops the host without restoring its perspective: for a view that never started.
 /datum/remote_view/proc/forget_host()
-	host_mob = null
+	rel_clear(src, "host_mob")
 
 /// Begins the view (was the component's Initialize). Returns FALSE if the view cannot start.
 /datum/remote_view/proc/start(atom/focused_on, viewsize, vconfig_path)
@@ -93,7 +93,7 @@
 	if(isturf(focused_on))
 		om_hook(host_mob, /datum/om/event/movable_attempted_move, src, PROC_REF(on_recursive_moved_event))
 	// Focus on remote view
-	remote_view_target = focused_on
+	rel_set(src, "remote_view_target", focused_on)
 	if(host_mob != remote_view_target) // Some items just offset our view, so we set ourselves as the view target, don't double dip if so!
 		om_hook(remote_view_target, /datum/om/event/qdeleting, src, PROC_REF(handle_endview))
 		om_hook(remote_view_target, /datum/om/event/mob_reset_perspective, src, PROC_REF(on_remotetarget_reset_perspective))
@@ -119,8 +119,7 @@
 	if(!host_mob)
 		return
 	om_unhook_all(src)
-	if(host_mob.remote_view == src)
-		rel_clear(host_mob, "remote_view")
+	// Phase 2 then takes us out of host_mob.remote_view (the mob owns its view).
 	// Reset to default size
 	host_mob.set_viewsize()
 	if(settings?.use_zoom_hud && !host_mob.hud_used.hud_shown)
@@ -131,8 +130,8 @@
 		settings?.handle_remove_visuals(src, host_mob)
 		host_mob.refresh_vision()
 		host_mob.refresh_hud()
-	host_mob = null
-	remote_view_target = null
+	rel_clear(src, "host_mob")
+	rel_clear(src, "remote_view_target")
 
 // Event handlers
 

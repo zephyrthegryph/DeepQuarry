@@ -450,7 +450,7 @@ EXTEND_INTERACTIONS(/turf/simulated/shuttle/plating/airless/carry, INTERACT_ITEM
 	set_light(0,0,"#ffffff")
 
 
-/// LC-refs: my turf -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// My turf (a relation view).
 /obj/landed_holder/proc/my_turf() as /turf/simulated/shuttle
 	return my_turf
 

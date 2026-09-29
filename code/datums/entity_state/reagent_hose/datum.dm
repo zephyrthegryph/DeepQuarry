@@ -86,7 +86,7 @@
 /datum/hose/proc/update_beam()
 	if(!node1 && !node2) // We've already disconnected, clear beam
 		if(current_beam)
-			QDEL_NULL(current_beam)
+			own_clear(src, "current_beam", OWN_DELETE)
 		return FALSE
 	if(get_dist(get_turf(node1.get_carrier()), get_turf(node2.get_carrier())) > initial_distance)	// The hose didn't form. Something's fucky.
 		qdel(src)
@@ -105,7 +105,7 @@
 			new_col = reagent_node2.get_color()
 
 		// We are in the beam!
-		QDEL_SWAP(current_beam, A.Beam(B, icon_state = "hose", beam_color = new_col, maxdistance = (HOSE_MAX_DISTANCE + 1), beam_type = /obj/effect/ebeam/hose))
+		own_set(src, "current_beam", A.Beam(B, icon_state = "hose", beam_color = new_col, maxdistance = (HOSE_MAX_DISTANCE + 1), beam_type = /obj/effect/ebeam/hose))
 
 	return TRUE
 

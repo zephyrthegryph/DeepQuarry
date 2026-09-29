@@ -205,5 +205,5 @@
 	set_light_color(color)
 
 
-// Held, not owned: /atom/movable/Destroy() cuts the blocker overlay and unregisters from it itself.
-OWN(/atom/movable, em_block, OWN_CONTAINED)
+// em_block is owned (implicit OWN, DELETE): the blocker is made at a null loc for this movable's
+// overlay, and dies with it (Destroy() cuts the overlay first).

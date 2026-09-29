@@ -61,7 +61,7 @@
 		var/mob/living/carbon/brain/old_view = view
 		own_take(src, "view")
 		rel_clear(old_view, "host")
-		own_take(old_view, "container")
+		rel_clear(old_view, "container")
 		if(!QDELETED(old_view))
 			qdel(old_view)
 	set_tissue(null)
@@ -97,7 +97,7 @@
 /datum/mind_host/proc/attach_view(mob/living/carbon/brain/new_view)
 	own_set(src, "view", new_view)
 	rel_set(new_view, "host", src)
-	own_set(new_view, "container", owner)
+	rel_set(new_view, "container", owner) // the item holding the view (it owns us, not the view)
 	if(new_view.loc != owner)
 		new_view.forceMove(owner)
 	new_view.refresh_host_status()
@@ -128,7 +128,7 @@
 	var/mob/living/carbon/brain/old_view = view
 	own_take(src, "view")
 	rel_clear(old_view, "host")
-	own_take(old_view, "container")
+	rel_clear(old_view, "container")
 	qdel(old_view)
 
 /// Move `other`'s view (and the mind in it) into this host. Returns TRUE if a
@@ -155,6 +155,6 @@
 	var/datum/mind_host/host = get_mind_host(src)
 	return host?.view
 
-/// LC-refs: the brain organ backing the view -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The brain organ backing the view (a relation view).
 /datum/mind_host/proc/tissue() as /obj/item/organ/internal/brain
 	return tissue

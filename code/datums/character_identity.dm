@@ -175,7 +175,7 @@
 		log_game("MIND: created a mind for [key] in [src] ([type]) to move it")
 	return mind
 
-/// LC-refs: the dna of the body the character last lived in -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The dna of the body the character last lived in (a relation view).
 /datum/character_identity/proc/dna() as /datum/dna
 	return dna
 

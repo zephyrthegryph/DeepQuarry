@@ -304,10 +304,10 @@ handles linking back and forth.
 
 	return mat_container().insert_item(weapon, multiplier, owner)
 
-/// LC-refs: the silo we are connected to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The silo we are connected to (a relation view).
 /datum/remote_materials/proc/silo() as /obj/machinery/ore_silo
 	return silo
 
-/// LC-refs: the material container in use (the silo's or our local one) -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The material container in use (the silo's or our local one) (a relation view).
 /datum/remote_materials/proc/mat_container() as /datum/material_container
 	return mat_container

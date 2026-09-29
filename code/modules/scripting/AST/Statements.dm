@@ -110,34 +110,34 @@
 
 
 
-/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
+/// Created for and owned by this holder (implicit OWN); deleted with it.
 /datum/node/statement/VariableDeclaration/proc/var_name() as /datum/node/identifier
 	return var_name_owned
 
-/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
+/// Created for and owned by this holder (implicit OWN); deleted with it.
 /datum/node/statement/ForLoop/proc/test() as /datum/node/expression
 	return test_owned
 
-/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
+/// Created for and owned by this holder (implicit OWN); deleted with it.
 /datum/node/statement/ForLoop/proc/init() as /datum/node/expression
 	return init_owned
 
-/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
+/// Created for and owned by this holder (implicit OWN); deleted with it.
 /datum/node/statement/ForLoop/proc/increment() as /datum/node/expression
 	return increment_owned
 
-/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
+/// Created for and owned by this holder (implicit OWN); deleted with it.
 /datum/node/statement/FunctionCall/proc/object() as /datum/node/identifier
 	return object_owned
 
-/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
+/// Created for and owned by this holder (implicit OWN); deleted with it.
 /datum/node/statement/VariableAssignment/proc/object() as /datum/node/identifier
 	return object_owned
 
-/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
+/// Created for and owned by this holder (implicit OWN); deleted with it.
 /datum/node/statement/VariableDeclaration/proc/object() as /datum/node/identifier
 	return object_owned
 
-/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
+/// Created for and owned by this holder (implicit OWN); deleted with it.
 /datum/node/statement/ForLoop/proc/block_node() as /datum/node/BlockDefinition
 	return block_owned

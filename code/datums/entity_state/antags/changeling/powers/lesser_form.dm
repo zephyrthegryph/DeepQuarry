@@ -67,7 +67,7 @@
 	changeling.chem_charges--
 	C.remove_changeling_powers()
 	C.visible_message(span_warning("[C] transforms!"))
-	QDEL_SWAP(C.dna, chosen_dna.Clone())
+	own_set(C, "dna", chosen_dna.Clone())
 
 	var/list/implants = list()
 	for (var/obj/item/implant/I in C) //Still preserving implants
@@ -100,7 +100,7 @@
 		O.gender = FEMALE
 	else
 		O.gender = MALE
-	QDEL_SWAP(O.dna, C.dna.Clone())
+	own_set(O, "dna", C.dna.Clone())
 	own_clear(C, "dna", OWN_DELETE)
 	O.real_name = chosen_dna.real_name
 

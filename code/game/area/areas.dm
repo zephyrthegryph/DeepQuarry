@@ -55,7 +55,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 
 /area/New()
 	// Used by the maploader, this must be done in New, not init
-	GLOB.areas_by_type[type] = src
+	GLOB.areas_by_type[type] = src // ALLOW(registry): areas are immortal plain refs (never relation targets); the maploader looks them up by type in New(), before any registry join
 	return ..()
 
 /area/lifecycle_dematerialize()
@@ -674,4 +674,6 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 	if(flag_check(AREA_NO_SPOILERS))
 		set_spoiler_obfuscation(TRUE)
 
-REL_PAIR(/area, apc, area)
+/// The area's APC: a one-sided relation view (the APC's own `area` var is a plain area ref, and
+/// areas are never relation targets). A dying APC leaves it.
+REL(/area, apc)

@@ -652,7 +652,7 @@
 	var/directory_sexualitytag
 
 
-/// LC-refs: the character's bank account -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The character's bank account (a relation view).
 /datum/mind/proc/initial_account() as /datum/money_account
 	return initial_account
 

@@ -395,46 +395,46 @@
 // view. The handler moves to the replacement turf through ChangeTurf (turf_changing.dm).
 REL_LIST(/datum/planet_sunlight_handler, shandlers)
 
-/// LC-refs: the sun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The sun (a relation view).
 /datum/sunlight_handler/proc/sun() as /datum/simple_sun
 	return sun
 
-/// LC-refs: the only_sun_object this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The only_sun_object (a relation view).
 /datum/sunlight_handler/proc/only_sun_object() as /datum/lighting_object
 	return only_sun_object
 
-/// LC-refs: the affected_NE this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The affected_NE (a relation view).
 /datum/sunlight_handler/proc/affected_NE() as /datum/lighting_corner
 	return affected_NE
 
-/// LC-refs: the affected_NW this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The affected_NW (a relation view).
 /datum/sunlight_handler/proc/affected_NW() as /datum/lighting_corner
 	return affected_NW
 
-/// LC-refs: the affected_SW this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The affected_SW (a relation view).
 /datum/sunlight_handler/proc/affected_SW() as /datum/lighting_corner
 	return affected_SW
 
-/// LC-refs: the affected_SE this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The affected_SE (a relation view).
 /datum/sunlight_handler/proc/affected_SE() as /datum/lighting_corner
 	return affected_SE
 
-/// LC-refs: the only_sun_NE this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The only_sun_NE (a relation view).
 /datum/sunlight_handler/proc/only_sun_NE() as /datum/lighting_corner
 	return only_sun_NE
 
-/// LC-refs: the only_sun_NW this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The only_sun_NW (a relation view).
 /datum/sunlight_handler/proc/only_sun_NW() as /datum/lighting_corner
 	return only_sun_NW
 
-/// LC-refs: the only_sun_SW this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The only_sun_SW (a relation view).
 /datum/sunlight_handler/proc/only_sun_SW() as /datum/lighting_corner
 	return only_sun_SW
 
-/// LC-refs: the only_sun_SE this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The only_sun_SE (a relation view).
 /datum/sunlight_handler/proc/only_sun_SE() as /datum/lighting_corner
 	return only_sun_SE
 
-/// LC-refs: the pshandler this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The pshandler (a relation view).
 /datum/sunlight_handler/proc/pshandler() as /datum/planet_sunlight_handler
 	return pshandler

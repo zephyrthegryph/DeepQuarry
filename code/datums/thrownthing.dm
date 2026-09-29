@@ -247,6 +247,6 @@
 #undef MAX_THROWING_DIST
 #undef MAX_TICKS_TO_MAKE_UP
 
-/// LC-refs: throw source -- an OM handle (om_handle()); a global helper keeps the proc off the base type.
+/// Throw source (a relation view). A global helper keeps the proc off the base type.
 /proc/movable_throw_source(atom/movable/AM) as /turf
 	return AM?.throw_source

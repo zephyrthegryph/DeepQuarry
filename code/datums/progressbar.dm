@@ -168,14 +168,14 @@
 #undef PROGRESSBAR_ANIMATION_TIME
 #undef PROGRESSBAR_HEIGHT
 
-/// LC-refs: the atom the bar floats over -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom the bar floats over (a relation view).
 /datum/progressbar/proc/bar_loc() as /atom
 	return bar_loc
 
-/// LC-refs: the mob whose client sees the bar -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mob whose client sees the bar (a relation view).
 /datum/progressbar/proc/user() as /mob
 	return user
 
-/// LC-refs: the client seeing the bar -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client seeing the bar (a relation view).
 /datum/progressbar/proc/user_client() as /client
 	return user_client

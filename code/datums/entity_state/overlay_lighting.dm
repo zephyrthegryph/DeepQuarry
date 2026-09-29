@@ -157,7 +157,7 @@
 	if(overlay_lighting_flags & LIGHTING_ON)
 		turn_off()
 
-// Runs in destroy phase 1, before phase 4 nulls `owner` (DECLARE_REF(..., BACK)).
+// Runs in destroy phase 1, before phase 4 clears the `owner` relation view.
 /datum/overlay_lighting/lifecycle_unbind()
 	. = ..()
 	detach()
@@ -562,11 +562,11 @@
 #undef GET_LIGHT_SOURCE
 #undef SHORT_CAST
 
-/// LC-refs: the atom the light is currently drawn on -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom the light is currently drawn on (a relation view).
 /datum/overlay_lighting/proc/current_holder() as /atom/movable
 	return current_holder
 
-/// LC-refs: the atom our parent is attached to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom our parent is attached to (a relation view).
 /datum/overlay_lighting/proc/parent_attached_to() as /atom/movable
 	return parent_attached_to
 

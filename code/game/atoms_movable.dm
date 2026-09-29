@@ -8,7 +8,7 @@
 	var/tmp/moving_diagonally
 	var/tmp/move_speed = 10
 	var/tmp/l_move_time = 1
-	var/datum/thrownthing/throwing // ALLOW(state_ref): running: set only mid-throw
+	var/datum/thrownthing/throwing
 	var/tmp/datum/throw_source
 	var/throw_speed = 2
 	var/throw_range = 7
@@ -21,7 +21,7 @@
 	var/icon_expected_width = 32
 	var/old_x = 0
 	var/old_y = 0
-	var/datum/riding/riding_datum = null // ALLOW(state_ref): relationship: riding setup while buckled
+	var/datum/riding/riding_datum = null
 	var/does_spin = TRUE // Does the atom spin when thrown (of course it does :P)
 	var/movement_type = NONE
 
@@ -57,7 +57,7 @@
 	if (blocks_emissive)
 		if (blocks_emissive == EMISSIVE_BLOCK_UNIQUE)
 			render_target = ref(src)
-			em_block = new(null, src)
+			own_set(src, "em_block", new /atom/movable/emissive_blocker(null, src))
 			// Note, this should be refactored to drop priority overlays
 			add_overlay(list(em_block), TRUE)
 			om_hook(em_block, /datum/om/event/qdeleting, src, PROC_REF(emblocker_gc))
@@ -785,8 +785,7 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 	EVENT_HANDLER
 	om_unhook(source, /datum/om/event/qdeleting, src)
 	cut_overlay(source)
-	if(em_block == source)
-		own_take(src, "em_block")
+	// A blocker deleted from outside leaves em_block in its destroy's phase 2.
 
 /atom/movable/proc/abstract_move(atom/new_loc)
 	var/atom/old_loc = loc
