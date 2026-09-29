@@ -309,6 +309,6 @@ DECLARE_INTERACTIONS(/obj/item/eftpos, \
 
 #undef EFTPOS_MAX_TRANSACTION
 
-/// LC-refs: the linked_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the linked_account this refers to (a relation view: null once it is deleted).
 /obj/item/eftpos/proc/linked_account() as /datum/money_account
 	return linked_account

@@ -91,7 +91,7 @@
 
 			if(do_nom)
 				eater.vore_selected.nom_atom(micro)
-				food_inserted_micros -= micro
+				own_take_member(src, "food_inserted_micros", micro)
 
 	if(!reagents.total_volume)
 		eater.balloon_alert_visible("eats \the [src].","finishes eating \the [src].")
@@ -388,8 +388,6 @@
 
 		var/obj/item/holder/holder = W
 
-		if(!food_inserted_micros)
-			food_inserted_micros = list()
 
 		var/mob/living/living_mob = holder.held_mob
 
@@ -397,7 +395,7 @@
 		rel_clear(holder, "held_mob")
 		consume(holder, user)
 
-		food_inserted_micros += living_mob
+		own_add(src, "food_inserted_micros", living_mob)
 
 		to_chat(user, "Stuffed [living_mob] into \the [src].")
 		balloon_alert(user, "stuffs [living_mob] into \the [src].")
@@ -449,10 +447,7 @@
 					var/obj/item/reagent_containers/food/snacks/S = slice
 					for(var/mob/living/F in food_inserted_micros)
 						F.forceMove(S)
-						if(!S.food_inserted_micros)
-							S.food_inserted_micros = list()
-						S.food_inserted_micros += F
-						food_inserted_micros -= F
+						own_transfer(src, "food_inserted_micros", S, "food_inserted_micros", F)
 			on_slice_extra()
 
 			consume(src, user)
@@ -471,12 +466,10 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks, \
 /// Old MouseDrop_T.
 /obj/item/reagent_containers/food/snacks/proc/interaction_drag(mob/user, mob/living/M, datum/interaction/interaction)
 	if(!user.stat && istype(M) && (M == user) && Adjacent(M) && (M.get_effective_size(TRUE) <= 0.50) && food_can_insert_micro)
-		if(!food_inserted_micros)
-			food_inserted_micros = list()
 
 		M.forceMove(src)
 
-		food_inserted_micros += M
+		own_add(src, "food_inserted_micros", M)
 
 		to_chat(user, span_warning("You climb into \the [src]."))
 		return INTERACTION_HANDLED_PASS
@@ -521,7 +514,8 @@ OWN(/obj/item/reagent_containers/food/snacks, contents, OWN_SPILL)
 	bitecount++
 	if(reagents)
 		reagents.trans_to_mob(user, bitesize, CHEM_INGEST)
-	om_after(user, 5, /proc/food_finished_emote, user, om_handle(src))
+	// On_Consume() deletes the food once it is empty: the emote fires for a finished meal.
+	om_after(user, 5, /proc/food_finished_emote, user, !reagents?.total_volume)
 	On_Consume(user)
 
 //////////////////////////////////////////////////
@@ -8524,13 +8518,13 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/acorn, null, list(REAG
 		heat()
 
 /// A mindless eater who finished the food asks for more.
-/proc/food_finished_emote(mob/user, food_handle)
-	if(!om_resolve(food_handle) && !user.client)
+/proc/food_finished_emote(mob/user, finished)
+	if(finished && !user.client)
 		user.automatic_custom_emote(VISIBLE_MESSAGE,"[pick("burps", "cries for more", "burps twice", "looks at the area where the food was")]", check_stat = TRUE)
 
 
 OWN(/obj/item/pizzabox, pizza, OWN_CONTAINED)
 
-/// LC-refs: the coating this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the coating this refers to (a relation view: null once it is deleted).
 /obj/item/reagent_containers/food/snacks/proc/coating() as /datum/reagent/nutriment/coating
 	return coating

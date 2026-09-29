@@ -24,12 +24,17 @@
 	if(!stored_research)
 		var/datum/techweb/science_web = locate_in_list(GLOB.research_service.techwebs, /datum/techweb/science)
 		connect_techweb(science_web)
-	LAZYOR(stored_research.techweb_servers, src)
+	rel_add(stored_research, "techweb_servers", src)
 	name += " [num2hex(rand(1,65535), -1)]" //gives us a random four-digit hex number as part of the name. Y'know, for fluff.
 	refresh_working()
 
-REL_PAIR(/obj/machinery/rnd/server, stored_research, techweb_servers)
-REL_PAIR_LIST(/datum/techweb, techweb_servers, stored_research)
+/// A server moving to another web leaves the old web's server list.
+/obj/machinery/rnd/server/connect_techweb(datum/techweb/new_techweb)
+	if(stored_research && stored_research != new_techweb)
+		rel_remove(stored_research, "techweb_servers", src)
+	. = ..()
+	if(stored_research)
+		rel_add(stored_research, "techweb_servers", src)
 
 /obj/machinery/rnd/server/update_icon()
 	if(stat & NOPOWER)

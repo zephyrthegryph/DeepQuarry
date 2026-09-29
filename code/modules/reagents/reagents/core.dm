@@ -32,12 +32,18 @@
 /datum/reagent/blood/get_data_schema()
 	return list("donor", "viruses", "species", "blood_DNA", "blood_type", "blood_colour", "resistances", "trace_chem", REAGENT_ID_ANTIBODIES, "changeling")
 
+/// Blood owns the contagions it carries: a transfer copies them.
+/datum/reagent/blood/reagent_data_codec()
+	return list("viruses")
+
+/datum/reagent/blood/copy_data_value(key, datum/D)
+	if(key == "viruses" && istype(D, /datum/affliction/contagion))
+		var/datum/affliction/contagion/C = D
+		return C.Copy()
+	return D
+
 /datum/reagent/blood/get_data() // Just in case you have a reagent that handles data differently.
-	var/t = data.Copy()
-	if(t["viruses"])
-		var/list/v = t["viruses"]
-		t["viruses"] = v.Copy()
-	return t
+	return copy_data(data)
 
 /datum/reagent/blood/touch_turf(turf/simulated/T)
 	if(!istype(T) || volume < 3)

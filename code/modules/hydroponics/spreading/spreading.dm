@@ -86,7 +86,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 
 	if(!istype(newseed))
 		newseed = GLOB.plant_service.seeds[DEFAULT_SEED]
-	seed_static = newseed
+	proto_set(src, "seed_static", seed_shareable(newseed)) // vines share their seed
 	if(!seed())
 		return INITIALIZE_HINT_QDEL
 
@@ -348,10 +348,12 @@ EXTEND_INTERACTIONS(/obj/effect/plant, \
 	message_admins(span_notice("Event: Spacevines failed to find a viable turf."))
 
 
-/// LC-refs: the parent this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the parent this refers to (a relation view: null once it is deleted).
 /obj/effect/plant/proc/parent() as /obj/effect/plant
 	return parent
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// The seed (PROTO): a registered line, or this holder's own private copy.
 /obj/effect/plant/proc/seed() as /datum/seed
 	return seed_static
+
+PROTO(/obj/effect/plant, seed_static)

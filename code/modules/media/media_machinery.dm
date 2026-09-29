@@ -29,28 +29,28 @@
 	if(A.media_source() && A.media_source() != src) // If it does, the new media source replaces it. basically, the last media source arrived gets played on top.
 		A.media_source().disconnect_media_source() // You can turn a media source off and on for it to come back on top.
 		rel_set(A, "media_source", src)
-		rel_set(src, "master_area", A)
+		master_area = A
 		return
 	else
 		rel_set(A, "media_source", src)
-	rel_set(src, "master_area", A)
+	master_area = A
 
 /obj/machinery/media/proc/disconnect_media_source()
 	var/area/A = get_area(src)
 	// Sanity
 	if(!A)
-		rel_clear(src, "master_area")
+		master_area = null
 		return
 	// Check if there's a media source already.
 	if(A && A.media_source() && A.media_source() != src)
-		rel_clear(src, "master_area")
+		master_area = null
 		return
 	// Update Media Source.
 	rel_clear(A, "media_source")
 	// Clients
 	for(var/mob/M as anything in mobs_in_area(A))
 		M.update_music()
-	rel_clear(src, "master_area")
+	master_area = null
 
 /obj/machinery/media/Move()
 	disconnect_media_source()
@@ -73,6 +73,6 @@
 	disconnect_media_source()
 	..()
 
-/// LC-refs: My area -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// My area (a plain var: areas never die).
 /obj/machinery/media/proc/master_area() as /area
 	return master_area

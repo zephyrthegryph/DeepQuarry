@@ -135,6 +135,6 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/grenade, INTERACT_HAND(null, PROC_RE
 	else
 		to_chat(user, span_warning("[src] is empty."))
 
-/// LC-refs: the chambered this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the chambered this refers to (a relation view: null once it is deleted).
 /obj/item/gun/launcher/grenade/proc/chambered() as /obj/item/grenade
 	return chambered

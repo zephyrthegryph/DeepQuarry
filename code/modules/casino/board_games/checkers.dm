@@ -17,8 +17,8 @@
 /datum/board_game/checkers
 	name = GAME_CHECKERS
 	table_icon = "gamble_chess"
-	var/player_one
-	var/player_two
+	var/mob/player_one
+	var/mob/player_two
 	var/player_one_time = 0
 	var/player_two_time = 0
 	var/static/list/default_board = list(
@@ -48,8 +48,8 @@
 	return list("game_type" = "checkers")
 
 /datum/board_game/checkers/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/mob/player_one_mob = om_resolve(player_one)
-	var/mob/player_two_mob = om_resolve(player_two)
+	var/mob/player_one_mob = player_one
+	var/mob/player_two_mob = player_two
 
 	return list(
 		"player_one" = player_one_mob,
@@ -74,27 +74,27 @@
 		if("be_player_one")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(om_resolve(player_one) == ui.user)
-				player_one = null
+			if(player_one == ui.user)
+				rel_clear(src, "player_one")
 				return TRUE
-			player_one = om_handle(ui.user)
+			rel_set(src, "player_one", ui.user)
 			return TRUE
 		if("be_player_two")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(om_resolve(player_two) == ui.user)
-				player_two = null
+			if(player_two == ui.user)
+				rel_clear(src, "player_two")
 				return TRUE
-			player_two = om_handle(ui.user)
+			rel_set(src, "player_two", ui.user)
 			return TRUE
 		if("swap_players")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(!om_resolve(player_one) || !om_resolve(player_two))
+			if(!player_one || !player_two)
 				return FALSE
-			var/temp_player = player_one
-			player_one = player_two
-			player_two = temp_player
+			var/mob/temp_player = player_one
+			rel_set(src, "player_one", player_two)
+			rel_set(src, "player_two", temp_player)
 		if("clear_game")
 			if(game_state == GAME_SETUP)
 				return FALSE
@@ -103,7 +103,7 @@
 		if("start_game")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(!om_resolve(player_one) || !om_resolve(player_two))
+			if(!player_one || !player_two)
 				return FALSE
 			current_board = get_defaultboard()
 			game_state = GAME_PLAYER_ONE
@@ -112,7 +112,7 @@
 		if("play_again")
 			if(game_state < GAME_OVER)
 				return FALSE
-			if(!om_resolve(player_one) || !om_resolve(player_two))
+			if(!player_one || !player_two)
 				return FALSE
 			reset()
 			turn_start_time = world.time
@@ -120,23 +120,23 @@
 		if("play_again_swapped")
 			if(game_state < GAME_OVER)
 				return FALSE
-			if(!om_resolve(player_one) || !om_resolve(player_two))
+			if(!player_one || !player_two)
 				return FALSE
 			reset()
-			var/temp_player = player_one
-			player_one = player_two
-			player_two = temp_player
+			var/mob/temp_player = player_one
+			rel_set(src, "player_one", player_two)
+			rel_set(src, "player_two", temp_player)
 			turn_start_time = world.time
 			return TRUE
 		if("game_action")
-			if(ui.user == om_resolve(player_one) && game_state == GAME_PLAYER_ONE)
+			if(ui.user == player_one && game_state == GAME_PLAYER_ONE)
 				var/game_action = player_actions(params["action"], params["data"], ui.user, "w")
 				if(game_action)
 					if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
 						game_state = GAME_PLAYER_TWO
 						turn_start_time = world.time
 					return TRUE
-			if(ui.user == om_resolve(player_two) && game_state == GAME_PLAYER_TWO)
+			if(ui.user == player_two && game_state == GAME_PLAYER_TWO)
 				var/game_action = player_actions(params["action"], params["data"], ui.user, "b")
 				if(game_action)
 					if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
@@ -154,8 +154,8 @@
 	if(full)
 		current_board.Cut()
 		game_state = GAME_SETUP
-		player_one = null
-		player_two = null
+		rel_clear(src, "player_one")
+		rel_clear(src, "player_two")
 	else
 		current_board = get_defaultboard()
 		game_state = GAME_PLAYER_ONE
@@ -302,8 +302,8 @@
 			break
 
 	if(!any_opponent_pieces)
-		var/mob/player_one_mob = om_resolve(player_one)
-		var/mob/player_two_mob = om_resolve(player_two)
+		var/mob/player_one_mob = player_one
+		var/mob/player_two_mob = player_two
 		winner = active_color == "w" ? player_one_mob?.name : player_two_mob?.name
 		game_state = GAME_OVER
 		return
@@ -314,8 +314,8 @@
 			game_state = GAME_OVER_DRAW
 			return
 
-		var/mob/player_one_mob = om_resolve(player_one)
-		var/mob/player_two_mob = om_resolve(player_two)
+		var/mob/player_one_mob = player_one
+		var/mob/player_two_mob = player_two
 		winner = active_color == "w" ? player_one_mob?.name : player_two_mob?.name
 		game_state = GAME_OVER
 

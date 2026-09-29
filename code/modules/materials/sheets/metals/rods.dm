@@ -28,7 +28,7 @@
 
 /obj/item/stack/rods/Initialize(mapload)
 	. = ..()
-	recipes = GLOB.rods_recipes
+	recipes = GLOB.rods_recipes // ALLOW(ownership): a shared global recipe table (stack_recipe definitions, never owned); /obj/item/stack.recipes needs a SHARED declaration in stack.dm
 	update_icon()
 
 /obj/item/stack/rods/update_icon()

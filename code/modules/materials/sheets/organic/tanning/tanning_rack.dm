@@ -76,6 +76,6 @@ DECLARE_INTERACTIONS(/obj/structure/tanning_rack, \
 /obj/structure/tanning_rack
 	silicon_use = ROBOT_USE_HAND // attack_hand has the adjacency checks
 
-/// LC-refs: the drying this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the drying this refers to (a relation view: null once it is deleted).
 /obj/structure/tanning_rack/proc/drying() as /obj/item/stack/wetleather
 	return drying

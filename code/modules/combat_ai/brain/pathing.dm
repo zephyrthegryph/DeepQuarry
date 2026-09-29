@@ -107,6 +107,6 @@
 	failed_steps++
 	return FALSE
 
-/// LC-refs: the path_goal this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the path_goal this refers to (a relation view: null once it is deleted).
 /datum/ai_brain/proc/path_goal() as /turf
 	return path_goal

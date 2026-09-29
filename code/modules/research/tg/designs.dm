@@ -60,7 +60,7 @@ other types of metals and chemistry for reagents).
 	/// Bitflags indicating what departmental lathes should be allowed to process this design.
 	var/departmental_flags = ALL
 	/// What techwebs nodes unlock this design. Constructed by GLOB.research_service
-	var/list/datum/techweb_node/unlocked_by // Lazy; built by GLOB.research_service
+	var/list/unlocked_by // Lazy list of node ids; built by GLOB.research_service
 	/// Override for the automatic icon generation used for the research console.
 	var/research_icon
 	/// Override for the automatic icon state generation used for the research console.
@@ -290,3 +290,11 @@ other types of metals and chemistry for reagents).
 	return list()
 
 // The techweb nodes that unlock this design: frozen definitions.
+
+/// Designs are immutable round definitions in GLOB.research_service.techweb_designs: shared.
+REGISTRY_TYPE(/datum/design_techweb, GLOBAL_PROC_REF(registry_design_techweb))
+
+/// The registered design D stands for (D itself when it is the table's entry for its id).
+/proc/registry_design_techweb(datum/design_techweb/D)
+	var/datum/design_techweb/entry = GLOB.research_service?.techweb_designs[D.id]
+	return entry == D ? D : null

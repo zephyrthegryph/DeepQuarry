@@ -11,7 +11,8 @@
 
 /obj/item/rig_module/device/Initialize(mapload)
 	. = ..()
-	if(device_type) device = new device_type(src)
+	if(device_type)
+		own_set(src, "device", new device_type(src))
 
 /obj/item/rig_module/device/engage(atom/target)
 	if(!..() || !device)

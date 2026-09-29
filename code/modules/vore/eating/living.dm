@@ -62,14 +62,13 @@
 			to_chat(src,span_warning("ERROR: You seem to have saved VOREStation prefs, but they couldn't be loaded."))
 			return FALSE
 		if(LAZYLEN(vore_organs))
-			own_set(src, "vore_selected", vore_organs[1])
+			rel_set(src, "vore_selected", vore_organs[1])
 			return TRUE
 
 	//Or, we can create a basic one for them
 	if(!LAZYLEN(vore_organs) && isliving(src))
-		LAZYINITLIST(vore_organs)
 		var/obj/belly/B = new /obj/belly(src)
-		own_set(src, "vore_selected", B)
+		rel_set(src, "vore_selected", B)
 		B.immutable = TRUE
 		B.name = "Stomach"
 		B.desc = "It appears to be rather warm and wet. Makes sense, considering it's inside \the [name]."
@@ -361,20 +360,20 @@
 		if(isliving(src))
 			var/mob/living/L = src
 			L.release_vore_contents(silent = TRUE)
-		QDEL_LIST(vore_organs)
+		own_clear(src, "vore_organs", OWN_DELETE)
 		for(var/entry in P.belly_prefs)
 			var/list/errors = list()
 			if(!state_materialize(entry, src, NONE, errors))
 				log_state("copy_from_prefs_vr: a belly of [src] did not load: [jointext(errors, "; ")]")
 		if(!length(vore_organs))
 			var/obj/belly/B = new /obj/belly(src)
-			own_set(src, "vore_selected", B)
+			rel_set(src, "vore_selected", B)
 			B.immutable = TRUE
 			B.name = "Stomach"
 			B.desc = "It appears to be rather warm and wet. Makes sense, considering it's inside \the [name]."
 			B.can_taste = TRUE
 		else
-			own_set(src, "vore_selected", vore_organs[1])
+			rel_set(src, "vore_selected", vore_organs[1])
 
 		if(soulgem)
 			src.soulgem.release_mobs()
@@ -650,7 +649,7 @@
 		forceMove(get_turf(src)) //Just move me up to the turf, let's not cascade through bellies, there's been a problem, let's just leave.
 		status_set(EFFECT_SLEEPING, 0) //Wake up instantly if asleep
 		for(var/mob/living/simple_mob/SA in range(10))
-			LAZYSET(SA.prey_excludes, src, world.time)
+			rel_add(SA, "prey_excludes", src)
 		log_and_message_admins("used the OOC escape button to get out of [key_name(B.owner)] ([B.owner ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[B.owner.x];Y=[B.owner.y];Z=[B.owner.z]'>JMP</a>" : "null"])", src)
 
 		B.owner.handle_belly_update() //This is run whenever a belly's contents are changed.
@@ -674,7 +673,7 @@
 		var/obj/item/capture_crystal/crystal = loc
 		crystal.unleash()
 		rel_clear(crystal, "bound_mob")
-		rel_set(crystal, "bound_mob", capture_crystal = 0)
+		capture_crystal = 0
 		clear_fullscreen(ATOM_BELLY_FULLSCREEN)
 		log_and_message_admins("used the OOC escape button to get out of [crystal] owned by [crystal.owner]. [ADMIN_FLW(src)]", src)
 
@@ -740,13 +739,12 @@
 	else if(istype(loc, /obj/item/reagent_containers/food))
 		var/obj/item/reagent_containers/food/F = src.loc
 		if(F.food_inserted_micros)
-			F.food_inserted_micros -= src
+			own_take_member(F, "food_inserted_micros", src)
 		src.forceMove(get_turf(F))
 		log_and_message_admins("used the OOC escape button to get out of a food item.", src)
 
 	else if(alerts && alerts["leashed"])
-		var/atom/movable/screen/alert/leash_pet/pet_alert = src.alerts["leashed"]
-		var/obj/item/leash/owner = om_resolve(pet_alert.master_ref)
+		var/obj/item/leash/owner = leash_item() // the leashed_to relation names the leash
 		if(owner)
 			owner.clear_leash()
 		log_and_message_admins("used the OOC escape button to get out of a leash.", src)

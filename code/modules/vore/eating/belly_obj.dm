@@ -287,11 +287,10 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 	//If not, we're probably just in a prefs list or something.
 	if(ismob(loc))
 		rel_set(src, "owner", loc)
-		LAZYADD(owner.vore_organs, src)
+		own_add(owner, "vore_organs", src)
 		belly_reschedule()
 
-REL_PAIR(/obj/belly, owner, vore_organs)
-REL_PAIR_LIST(/mob/living, vore_organs, owner)
+// The mob owns its bellies (vore_organs); `owner` is the belly's one-sided view back.
 
 // ghosts inside are let out.
 /obj/belly/on_destroy(force)
@@ -656,8 +655,7 @@ REL_PAIR_LIST(/mob/living, vore_organs, owner)
 		om_unsuspend(M.tf_mob_holder, M.tf_mob_holder)
 		M.tf_mob_holder.forceMove(M.loc)
 		M.tf_mob_holder.forceMove(M.loc)
-		QDEL_LIST_NULL(M.tf_mob_holder.vore_organs)
-		M.tf_mob_holder.vore_organs = list()
+		own_clear(M.tf_mob_holder, "vore_organs", OWN_DELETE)
 		M.tf_mob_holder.mob_belly_transfer(M)
 
 	if(M.tf_mob_holder)
@@ -1254,11 +1252,11 @@ REL_PAIR_LIST(/mob/living, vore_organs, owner)
 #undef MAX_ENTRY_MESSAAGES
 #undef ENTRY_MESSAGE_INTERVAL
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /obj/belly/proc/tail_to_change_to() as /datum/sprite_accessory/tail
 	return tail_to_change_to_static
 
-/// LC-refs: Is this belly creating an egg? -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Is this belly creating an egg? (a relation view: null once it is deleted).
 /obj/belly/proc/ownegg() as /obj/item/storage/vore_egg
 	return ownegg
 

@@ -104,8 +104,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF
 
 /obj/item/material/fishing_rod/proc/consume_bait()
 	if(Bait)
-		qdel(Bait)
-		own_take(src, "Bait")
+		own_clear(src, "Bait", OWN_DELETE)
 		return TRUE
 	return FALSE
 

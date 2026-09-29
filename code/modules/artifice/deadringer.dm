@@ -180,10 +180,10 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 		icon_state = "deadringer"
 	return
 
-/// LC-refs: the watchowner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the watchowner this refers to (a relation view: null once it is deleted).
 /obj/item/deadringer/proc/watchowner() as /mob/living/carbon/human
 	return watchowner
 
-/// LC-refs: the corpse this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the corpse this refers to (a relation view: null once it is deleted).
 /obj/item/deadringer/proc/corpse() as /mob/living/carbon/human
 	return corpse

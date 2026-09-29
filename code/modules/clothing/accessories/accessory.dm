@@ -10,10 +10,9 @@
 	var/glove_level = 1							// What 'level' the accessory is on if equipped on the gloveslot. Lower = things can be put on top of it.
 	var/slot = ACCESSORY_SLOT_DECOR
 	var/can_remove = TRUE						// Can it be taken off once attached?
-	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/tmp/obj/item/clothing/has_suit	// The suit the tie may be attached to
 	var/tmp/image/inv_overlay = null				// Overlay used when attached to clothing.
-	var/image/mob_overlay = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/image/mob_overlay = null
 	var/overlay_state = null
 	var/punch_force	= 0							// added melee damage
 	var/punch_injury_kind						// what punches inflict (INJURY_*); null = the punch's own kind
@@ -39,12 +38,12 @@
 /obj/item/clothing/accessory/proc/get_mob_overlay()
 	if(!istype(loc, /obj/item/clothing))
 		return null
-	// Update wearer handle before delegating (existing callers expect this side-effect).
+	// Update the wearer view before delegating (existing callers expect this side-effect).
 	if(ishuman(has_suit()?.loc))
-		wearer = om_handle(has_suit().loc)
+		rel_set(src, "wearer", has_suit().loc)
 	else
-		wearer = null
-	var/mob/living/carbon/human/H = om_resolve(wearer)
+		rel_clear(src, "wearer")
+	var/mob/living/carbon/human/H = wearer
 	if(!ishuman(H))
 		return null
 	mob_overlay = GLOB.clothing_appearance_handler.build_mob_overlay(src)
@@ -1504,14 +1503,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/poncho/roles/neo_ranger, INTERA
 
 
 
-/// LC-refs: The suit the tie may be attached to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The suit the tie may be attached to (a relation view: null once it is deleted).
 /obj/item/clothing/accessory/proc/has_suit() as /obj/item/clothing
 	return has_suit
 
-/// LC-refs: the breathmask this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the breathmask this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/accessory/gaiter/proc/breathmask() as /obj/item/clothing/mask/breath
 	return breathmask
 
-/// LC-refs: the radio_connection this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the radio_connection this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/accessory/collar/shock/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection

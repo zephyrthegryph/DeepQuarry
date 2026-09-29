@@ -22,8 +22,8 @@
 /datum/board_game/nine_mens
 	name = GAME_NINE_MENS_MORRIS
 	table_icon = "gamble_ninemen"
-	var/player_one
-	var/player_two
+	var/mob/player_one
+	var/mob/player_two
 	var/player_one_time = 0
 	var/player_two_time = 0
 	var/list/current_board = list( // ALLOW(instance_list): d: edited in place per instance (6 writers)
@@ -97,8 +97,8 @@
 		ui.open()
 
 /datum/board_game/nine_mens/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/mob/player_one_mob = om_resolve(player_one)
-	var/mob/player_two_mob = om_resolve(player_two)
+	var/mob/player_one_mob = player_one
+	var/mob/player_two_mob = player_two
 
 	return list(
 		"player_one" = player_one_mob,
@@ -126,27 +126,27 @@
 		if("be_player_one")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(om_resolve(player_one) == ui.user)
-				player_one = null
+			if(player_one == ui.user)
+				rel_clear(src, "player_one")
 				return TRUE
-			player_one = om_handle(ui.user)
+			rel_set(src, "player_one", ui.user)
 			return TRUE
 		if("be_player_two")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(om_resolve(player_two) == ui.user)
-				player_two = null
+			if(player_two == ui.user)
+				rel_clear(src, "player_two")
 				return TRUE
-			player_two = om_handle(ui.user)
+			rel_set(src, "player_two", ui.user)
 			return TRUE
 		if("swap_players")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(!om_resolve(player_one) || !om_resolve(player_two))
+			if(!player_one || !player_two)
 				return FALSE
-			var/temp_player = player_one
-			player_one = player_two
-			player_two = temp_player
+			var/mob/temp_player = player_one
+			rel_set(src, "player_one", player_two)
+			rel_set(src, "player_two", temp_player)
 		if("clear_game")
 			if(game_state == GAME_SETUP)
 				return FALSE
@@ -155,7 +155,7 @@
 		if("start_game")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(!om_resolve(player_one) || !om_resolve(player_two))
+			if(!player_one || !player_two)
 				return FALSE
 			game_state = GAME_PLAYER_ONE
 			turn_start_time = world.time
@@ -163,7 +163,7 @@
 		if("play_again")
 			if(game_state < GAME_OVER)
 				return FALSE
-			if(!om_resolve(player_one) || !om_resolve(player_two))
+			if(!player_one || !player_two)
 				return FALSE
 			reset()
 			turn_start_time = world.time
@@ -171,23 +171,23 @@
 		if("play_again_swapped")
 			if(game_state < GAME_OVER)
 				return FALSE
-			if(!om_resolve(player_one) || !om_resolve(player_two))
+			if(!player_one || !player_two)
 				return FALSE
 			reset()
-			var/temp_player = player_one
-			player_one = player_two
-			player_two = temp_player
+			var/mob/temp_player = player_one
+			rel_set(src, "player_one", player_two)
+			rel_set(src, "player_two", temp_player)
 			turn_start_time = world.time
 			return TRUE
 		if("game_action")
-			if(ui.user == om_resolve(player_one) && game_state == GAME_PLAYER_ONE)
+			if(ui.user == player_one && game_state == GAME_PLAYER_ONE)
 				var/game_action = player_actions(params["action"], params["data"], ui.user, "w")
 				if(game_action)
 					if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
 						game_state = GAME_PLAYER_TWO
 						turn_start_time = world.time
 					return TRUE
-			if(ui.user == om_resolve(player_two) && game_state == GAME_PLAYER_TWO)
+			if(ui.user == player_two && game_state == GAME_PLAYER_TWO)
 				var/game_action = player_actions(params["action"], params["data"], ui.user, "b")
 				if(game_action)
 					if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
@@ -210,8 +210,8 @@
 		current_board[i] = null
 	if(full)
 		game_state = GAME_SETUP
-		player_one = null
-		player_two = null
+		rel_clear(src, "player_one")
+		rel_clear(src, "player_two")
 	else
 		game_state = GAME_PLAYER_ONE
 
@@ -351,7 +351,7 @@
 	var/opponent = (active_color == "w") ? "b" : "w"
 
 	if(count_pieces(opponent) < 3 || !has_moves(opponent))
-		var/mob/winning_player = (active_color == "w" ? om_resolve(player_one) : om_resolve(player_two))
+		var/mob/winning_player = (active_color == "w" ? player_one : player_two)
 		winner = winning_player?.name
 		game_state = GAME_OVER
 

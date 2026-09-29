@@ -207,8 +207,6 @@
 	..()
 	rel_set(holder, "visor", src)
 
-REL_PAIR(/obj/item/rig_module/vision, holder, visor)
-REL_PAIR(/obj/item/rig, visor, holder)
 
 /obj/item/rig_module/vision/engage()
 
@@ -246,14 +244,13 @@ REL_PAIR(/obj/item/rig, visor, holder)
 		return
 
 	vision_index = 1
-	var/list/processed_vision = list()
-
-	for(var/vision_mode in vision_modes)
-		var/datum/rig_vision/vision_datum = new vision_mode
-		if(!vision) vision = vision_datum
-		processed_vision += vision_datum
-
-	vision_modes = processed_vision
+	// vision_modes starts as a list of types; it becomes the module's owned instances.
+	var/list/mode_types = vision_modes.Copy()
+	own_clear(src, "vision_modes") // the type list holds no children yet: this only empties it
+	for(var/vision_mode in mode_types)
+		var/datum/rig_vision/vision_datum = own_add(src, "vision_modes", new vision_mode)
+		if(!vision)
+			rel_set(src, "vision", vision_datum)
 
 
 // vision_modes holds the module's own /datum/rig_vision instances once processed; vision points at one of them.

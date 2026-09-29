@@ -28,7 +28,7 @@
 	var/update_icon_define_orig = null	// temp storage for original update_icon_define (if it exists)
 	var/update_icon_define_digi = null	// dmi used for the digi sprites
 	var/fit_for_digi = FALSE // flag for if clothing has already been reskinned to digitigrade
-	var/wearer	//Who the person currently wearing us is.
+	var/mob/wearer	//Who the person currently wearing us is.
 
 //Updates the icons of the mob wearing the clothing item, if any.
 /obj/item/clothing/proc/update_clothing_icon()
@@ -295,11 +295,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 	siemens_coefficient = 0.9
 	blood_sprite_state = "bloodyhands"
 	var/wired = 0
-	var/obj/item/cell/cell = 0 // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/obj/item/cell/cell = 0
 	var/fingerprint_chance = 0					//How likely the glove is to let fingerprints through
-	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/obj/item/clothing/accessory/ring = null	//Covered ring
-	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/obj/item/clothing/gloves/gloves = null	//Undergloves. Used for gauntlets.
 	var/glove_level = 2							//What "layer" the glove is on
 	var/overgloves = 0							//Used by gauntlets and arm_guards
@@ -344,14 +342,14 @@ OWN(/obj/item/clothing/gloves, contents, OWN_SPILL)
 	update_icon()
 
 /obj/item/clothing/gloves/equipped(mob/user, slot)
-	wearer = om_handle(user)
+	rel_set(src, "wearer", user)
 	return ..()
 
 /obj/item/clothing/gloves/dropped(mob/user, equipping, slot)
 	..()
 
 	punch_force = initial(punch_force)
-	wearer = null
+	rel_clear(src, "wearer")
 	if(!ishuman(user))
 		return
 	var/mob/living/carbon/human/H = user
@@ -387,7 +385,6 @@ OWN(/obj/item/clothing/gloves, contents, OWN_SPILL)
 		return
 
 /obj/item/clothing/gloves
-	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/datum/unarmed_attack/special_attack = null //do the gloves have a special unarmed attack?
 	var/special_attack_type = null
 
@@ -433,7 +430,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/gloves, "special_attack", "special_atta
 	light_cone_y_offset = 11
 
 	var/light_overlay = "helmet_light"
-	var/image/helmet_light // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/image/helmet_light
 
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi',
@@ -602,7 +599,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 	blood_sprite_state = "shoeblood"
 
 	var/can_hold_knife = 0
-	var/obj/item/holding // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/obj/item/holding
 
 	var/shoes_under_pants = 0
 
@@ -610,7 +607,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 	var/snow_speed = 0		//Speed boost/decrease on snow, lower/negative values mean more speed
 
 	var/step_volume_mod = 1	//How quiet or loud footsteps in this shoe are
-	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/obj/item/clothing/shoes/shoes = null	//If we are wearing shoes in our shoes. Used primarily for magboots.
 	var/blocks_footsteps = TRUE //Does this shoe block custom footstep sounds?
 
@@ -902,7 +898,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 
 	//Hood stuff. See hooded.dm for more info. This should be expanded so all suits can have hoods if desired.
 	//Currently only used by /obj/item/clothing/suit/storage/hooded.
-	var/obj/item/clothing/head/hood // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/obj/item/clothing/head/hood
 	var/hoodtype = null //so the chaplain hoodie or other hoodies can override this
 	var/hood_up = FALSE
 	var/has_hood_sprite = FALSE
@@ -1096,8 +1092,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 		|ACCESSORY_SLOT_DEPT\
 		|ACCESSORY_SLOT_OVER)
 
-	var/icon/rolled_down_icon = 'icons/inventory/uniform/mob_rolled_down.dmi' // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/icon/rolled_down_sleeves_icon = 'icons/inventory/uniform/mob_sleeves_rolled.dmi' // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/icon/rolled_down_icon = 'icons/inventory/uniform/mob_rolled_down.dmi'
+	var/icon/rolled_down_sleeves_icon = 'icons/inventory/uniform/mob_sleeves_rolled.dmi'
 
 	update_icon_define_digi = "icons/inventory/uniform/mob_digi.dmi"
 
@@ -1561,7 +1557,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 
 OWN(/obj/item/clothing/gloves, cell, OWN_CONTAINED)
 
-/// LC-refs: the master_rig this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the master_rig this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/proc/master_rig() as /obj/item/rig
 	return master_rig
 

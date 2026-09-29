@@ -83,12 +83,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/magboots, INTERACT_USE("Toggle", PR
 	if(slot && slot != SLOT_ID_SHOES)
 		return ..()
 	set_slowdown()
-	wearer = om_handle(H)
+	rel_set(src, "wearer", H)
 	..()
 
 /obj/item/clothing/shoes/magboots/dropped(mob/user, equipping, slot)
 	..()
-	wearer = null
+	rel_clear(src, "wearer")
 
 	var/mob/living/carbon/human/H = user
 	if(!ishuman(H))

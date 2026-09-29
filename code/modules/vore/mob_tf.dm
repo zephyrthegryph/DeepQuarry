@@ -19,20 +19,16 @@
 	for(var/obj/belly/B as anything in M.vore_organs)
 		B.forceMove(src)
 		rel_set(B, "owner", src)
-		rel_remove(M, "vore_organs", B)
-		LAZYADD(src.vore_organs, B)
+		own_transfer(M, "vore_organs", src, "vore_organs", B)
 
 /mob/living/proc/transfer_mob_identity(mob/living/new_mob)
-	for(var/obj/belly/B as anything in new_mob.vore_organs)
-		rel_remove(new_mob, "vore_organs", B)
-		qdel(B)
-	rel_set(new_mob, "vore_organs", list())
+	own_clear(new_mob, "vore_organs", OWN_DELETE)
 	new_mob.name = src.name
 	new_mob.real_name = src.real_name
 	for(var/lang in src.languages)
 		new_mob.languages |= lang
 	src.copy_vore_prefs_to_mob(new_mob)
-	own_set(new_mob, "vore_selected", src.vore_selected)
+	rel_set(new_mob, "vore_selected", src.vore_selected)
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
 		if(ishuman(new_mob))
@@ -102,8 +98,8 @@
 	ourmob.forceMove(get_dat_turf)
 	ourmob.forceMove(get_dat_turf)
 	if(!tf_form_mind)
-		own_set(ourmob, "vore_selected", vore_selected)
-		own_take(src, "vore_selected")
+		rel_set(ourmob, "vore_selected", vore_selected)
+		rel_clear(src, "vore_selected")
 		ourmob.mob_belly_transfer(src)
 
 	om_run_frame_now(ourmob, /datum/om/pipeline/life)

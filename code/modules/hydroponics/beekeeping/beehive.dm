@@ -391,7 +391,7 @@ DECLARE_INTERACTIONS(/obj/item/beehive_assembly, INTERACT_USE(null, PROC_REF(int
 
 /obj/item/stack/material/wax/Initialize(mapload)
 	. = ..()
-	recipes = GLOB.wax_recipes
+	recipes = GLOB.wax_recipes // ALLOW(ownership): a shared global recipe table (stack_recipe definitions, never owned); /obj/item/stack.recipes needs a SHARED declaration in stack.dm
 
 /datum/material/wax
 	name = MAT_WAX

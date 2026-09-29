@@ -85,14 +85,14 @@
 
 /obj/item/clothing/gloves/stamina/equipped(mob/user, slot)
 	..()
-	var/mob/living/carbon/human/H = om_resolve(wearer)
+	var/mob/living/carbon/human/H = wearer
 	if(H && H.get_equipped_item(SLOT_ID_GLOVES) == src)
 		if(H.can_feel_pain())
 			to_chat(H, span_danger("You feel strange as hunger vanishes!"))
 			H.custom_pain("Your hands feel strange!",1)
 
 /obj/item/clothing/gloves/stamina/dropped(mob/user, equipping, slot)
-	var/mob/living/carbon/human/H = om_resolve(wearer)
+	var/mob/living/carbon/human/H = wearer
 	if(H)
 		if(H.can_feel_pain())
 			to_chat(H, span_danger("You feel hungry!"))
@@ -101,7 +101,7 @@
 
 /// Works every 2 s while worn (equipped() starts it); taken off, it sleeps.
 /obj/item/clothing/gloves/stamina/periodic_step()
-	var/mob/living/carbon/human/H = om_resolve(wearer)
+	var/mob/living/carbon/human/H = wearer
 	if(!H || H.get_equipped_item(SLOT_ID_GLOVES) != src)
 		return PROCESS_KILL
 	if(!H || HAS_SYNTHETIC_BIOLOGY(H) || H.stat == DEAD)
@@ -197,5 +197,5 @@
 
 /obj/item/clothing/gloves/stamina/equipped(mob/user, slot)
 	. = ..()
-	if(om_resolve(wearer))
+	if(wearer)
 		om_task_periodic(src, PERIODIC_SLOW)

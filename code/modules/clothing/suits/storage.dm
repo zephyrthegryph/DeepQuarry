@@ -1,6 +1,6 @@
 /obj/item/clothing/suit/storage
 	name = DEVELOPER_WARNING_NAME
-	var/obj/item/storage/internal/pockets // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/obj/item/storage/internal/pockets
 
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/storage, "pockets", /obj/item/storage/internal)
 

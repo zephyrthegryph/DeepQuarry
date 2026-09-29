@@ -41,7 +41,7 @@
 			to_chat(user, span_notice("You work the bolt open, ejecting [chambered]!"))
 			chambered.forceMove(get_turf(src))
 			loaded -= chambered
-			own_take(src, "chambered")
+			rel_clear(src, "chambered")
 		else
 			to_chat(user, span_notice("You work the bolt open."))
 	else

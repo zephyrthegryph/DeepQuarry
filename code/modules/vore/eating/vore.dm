@@ -502,6 +502,6 @@
 	return json_from_file
 
 
-/// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the client this refers to (a relation view: null once it is deleted).
 /datum/vore_preferences/proc/client() as /client
 	return client

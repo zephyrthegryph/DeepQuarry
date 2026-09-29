@@ -424,10 +424,10 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 /obj/machinery/smartfridge/step_start_condition()
 	return !(stat & (BROKEN|NOPOWER)) // its hum
 
-/// LC-refs: What we're putting out of the machine. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// What we're putting out of the machine. (a relation view: null once it is deleted).
 /obj/machinery/smartfridge/proc/currently_vending() as /datum/stored_item
 	return currently_vending
 
-/// LC-refs: the attached this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the attached this refers to (a relation view: null once it is deleted).
 /obj/machinery/smartfridge/chemistry/chemvator/proc/attached() as /obj/machinery/smartfridge/chemistry/chemvator
 	return attached

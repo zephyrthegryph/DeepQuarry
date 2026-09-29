@@ -350,6 +350,6 @@
 	else
 		to_chat(user, span_danger("Could not complete transaction. Check your account balance."))
 
-/// LC-refs: the current_stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the current_stock this refers to (a relation view: null once it is deleted).
 /obj/machinery/computer/stockexchange/proc/current_stock() as /datum/stock
 	return current_stock

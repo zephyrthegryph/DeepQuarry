@@ -12,7 +12,9 @@ OWN(/datum/seed_pile, seeds, OWN_SPILL)
 /datum/seed_pile/New(obj/item/seeds/O, ID)
 	name = O.name
 	amount = 1
-	seed_type_static = O.seed()
+	// The pile's own reference seed: the registered line, or a private snapshot of a packet's private copy.
+	var/datum/seed/S = O.seed()
+	proto_set(src, "seed_type_static", (!S || is_registered(S)) ? S : S.copy_line())
 	own_add(src, "seeds", O)
 	src.ID = ID
 
@@ -639,7 +641,8 @@ OWN(/datum/seed_pile, seeds, OWN_SPILL)
 		/obj/item/seeds/lustflower = 2,
 		/obj/item/seeds/pitcherseed = 3)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// The pile's seed (PROTO): a registered line, or its own snapshot.
 /datum/seed_pile/proc/seed_type() as /datum/seed
 	return seed_type_static
 
+PROTO(/datum/seed_pile, seed_type_static)

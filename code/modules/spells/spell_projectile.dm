@@ -49,6 +49,6 @@
 /obj/item/projectile/spell_projectile/seeking
 	name = "seeking spell"
 
-/// LC-refs: the carried this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the carried this refers to (a relation view: null once it is deleted).
 /obj/item/projectile/spell_projectile/proc/carried() as /datum/spell/targeted/projectile
 	return carried

@@ -119,7 +119,7 @@
 			var/obj/item/gun/projectile/NN = N
 			var/obj/item/gun/projectile/OO = O
 			NN.magazine_type = OO.magazine_type
-			own_set(NN, "ammo_magazine", OO.ammo_magazine)
+			own_transfer(OO, "ammo_magazine", NN, "ammo_magazine")
 		if(istype(N,/obj/item/gun/energy/))
 			var/obj/item/gun/energy/NE = N
 			var/obj/item/gun/energy/OE = O

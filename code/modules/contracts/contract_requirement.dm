@@ -207,10 +207,8 @@
 	second_fact_times = list()
 	event_types = list(first_event_type, second_event_type)
 
-// Contracts hold their requirements in `requirements` and again in typed vars (observation_requirement, ...);
-// `contract` must be let go or the two outlive each other.
-REL_PAIR(/datum/contract_requirement, contract, requirements)
-REL_PAIR_LIST(/datum/contract, requirements, contract)
+// A contract owns its requirements (`requirements`, own_add); the typed vars (observation_requirement, ...)
+// are relation views onto them, and `contract` is the requirement's one-sided view back.
 
 
 /datum/contract_requirement/paired_facts/handle_event(datum/contract_event/event)

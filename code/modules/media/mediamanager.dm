@@ -126,9 +126,11 @@
 	ASSERT(istype(C))
 	rel_set(src, "owner", C)
 
-// ALLOW(lifecycle): closes its media window before phase 4 deletes it (DECLARE_REF(..., OWNED)).
-/datum/media_manager/lifecycle_unbind()
-	media_window?.close()
+/// Owned-child release: the media window is closed as it leaves us (replaced, or disposed at teardown).
+/datum/media_manager/on_owned_release(var_name, datum/child)
+	if(var_name == "media_window")
+		var/datum/tgui_window/window = child
+		window.close()
 	return ..()
 
 /datum/media_manager/tgui_state(mob/user)
@@ -214,10 +216,10 @@
 
 
 
-/// LC-refs: the media_source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the media_source this refers to (a relation view: null once it is deleted).
 /area/proc/media_source() as /obj/machinery/media
 	return media_source
 
-/// LC-refs: Client this is actually running in -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Client this is actually running in (a relation view: null once it is deleted).
 /datum/media_manager/proc/owner() as /client
 	return owner

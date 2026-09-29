@@ -344,7 +344,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/clothing/accessory/dosimeter/proc/check_holder()
-	var/mob/living/carbon/human/H = om_resolve(wearer)
+	var/mob/living/carbon/human/H = wearer
 	if(H)
 		if(current_film && (H.radiation >= 25) && (current_film.state == 0))
 			update_state(1)

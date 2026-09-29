@@ -600,6 +600,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 
 OWN(/obj/item/gun/energy/floragun, emitter, OWN_CONTAINED)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /obj/item/gun/energy/floragun/proc/gene() as /datum/decl/plantgene
 	return gene_static
