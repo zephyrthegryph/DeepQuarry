@@ -29,7 +29,7 @@
 	TEST_ASSERT(om_grant_for(F, GRANT_CAPABILITY, /datum/capability/condition/dx_jam, src_a, 2 SECONDS), "granted")
 	refresh_flush()
 	TEST_ASSERT(cap_of_all(F, /datum/capability/condition/dx_jam), "the capability is attached")
-	TEST_ASSERT_EQUAL(cap_gate_reason(F, user, null, entry), "[F] isn't responding.", "entries refused with its else_say")
+	TEST_ASSERT_EQUAL(cap_gate_reason(F, user, null, entry), "it isn't responding", "entries refused with its else_say")
 	TEST_ASSERT(findtext(F.look_key, "dx_jam_layer"), "draw layer present: [F.look_key]")
 
 	scheduler_advance(1)

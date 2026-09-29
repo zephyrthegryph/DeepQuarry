@@ -698,14 +698,14 @@ Any var or field that exists only to hold a temporary condition with behaviour b
 	om_grant_for(src, GRANT_CAPABILITY, /datum/capability/condition/power_failure, source, duration)
 /datum/capability/condition/power_failure
 	blocks = ALL_ENTRIES
-	else_say = "%T% isn't responding."
+	else_say = "it isn't responding"
 /datum/capability/condition/power_failure/draw(atom/holder, datum/look/look)
 	look.state("emagged")
 ```
 
 - **Keep:** `timed_set` for pure value reverts that have no behaviour.
 - **Mobs:** keep afflictions and modifiers for body effects (they already follow this model).
-- **Built:** `GRANT_CAPABILITY` (`code/datums/capabilities/condition.dm`) is a per-key effect: `om_grant_for(A, GRANT_CAPABILITY, path, source, duration)`, `om_grant(...)` and `om_revoke(...)`. The capability is one shared instance per path (`cap_condition_instance(path)`), attached with `add_capability()` while any source holds it and removed with the last hold (timed expiry or a deleted source). `/datum/capability/condition` has `blocks` (`ALL_ENTRIES`, or a list of capability types whose entries it refuses), `exempt` (capability types that still work), `else_say` ("%T% isn't responding."), `condition_hidden_verbs` and `draw()` (overlay `layer_name`).
+- **Built:** `GRANT_CAPABILITY` (`code/datums/capabilities/condition.dm`) is a per-key effect: `om_grant_for(A, GRANT_CAPABILITY, path, source, duration)`, `om_grant(...)` and `om_revoke(...)`. The capability is one shared instance per path (`cap_condition_instance(path)`), attached with `add_capability()` while any source holds it and removed with the last hold (timed expiry or a deleted source). `/datum/capability/condition` has `blocks` (`ALL_ENTRIES`, or a list of capability types whose entries it refuses), `exempt` (capability types that still work), `else_say` (plain text, "it isn't responding"; override `refusal(holder)` to use the holder's name), `hides_verbs` and `draw()` (overlay `layer_name`).
 
 ## B16. `qdel()` → lifecycle verbs
 

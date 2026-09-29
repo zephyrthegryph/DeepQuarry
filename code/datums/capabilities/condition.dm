@@ -49,8 +49,8 @@
 	/// Capability types whose entries still work (the way a jammed machine still lets an engineer open its
 	/// panel). Entries of the condition's own type are never refused.
 	var/list/exempt
-	/// Shown to the user when an entry is refused. %T% is the holder.
-	else_say = "%T% isn't responding."
+	/// Shown to the user when an entry is refused (plain text; the refusal is prefixed by the entry's name).
+	else_say = "it isn't responding"
 	/// Verbs hidden while the condition holds (a list of verb paths), or null.
 	var/list/hides_verbs
 
@@ -71,7 +71,11 @@
 	for(var/path in exempt)
 		if(istype(E.cap, path))
 			return null
-	return replacetext(else_say, "%T%", "[holder]")
+	return refusal(holder)
+
+/// The refusal text for holder. Override when it needs the holder's name; the default is else_say.
+/datum/capability/condition/proc/refusal(atom/holder)
+	return else_say
 
 /datum/capability/condition/draw(atom/holder, datum/look/look)
 	..()
