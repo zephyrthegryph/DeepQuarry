@@ -39,7 +39,7 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 	SSatoms.batch_yield_probe = null
 	SSatoms.batch_trace = null
 
-/datum/unit_test/dq_materialize_batch/Destroy()
+/datum/unit_test/dq_materialize_batch/on_destroy(force)
 	GLOB.dq_batch_probe_log.Cut()
 	return ..()
 

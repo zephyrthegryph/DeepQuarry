@@ -195,7 +195,7 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 
 /// OM callback: a step can path (calcTargetPath/startPatrol sleep on the pathfinder), so it runs detached.
 /mob/living/bot/proc/bot_step(count, delay, step_proc)
-	INVOKE_ASYNC(src, PROC_REF(run_bot_step), count, delay, step_proc)
+	INVOKE_ASYNC(src, PROC_REF(run_bot_step), count, delay, step_proc) // ALLOW(scheduler): a bot step can sleep on the pathfinder, which scheduler callbacks must not
 
 /mob/living/bot/proc/run_bot_step(count, delay, step_proc)
 	call(src, step_proc)()
@@ -208,7 +208,7 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 	if(ai_running)
 		return
 	ai_running = TRUE
-	INVOKE_ASYNC(src, PROC_REF(run_ai))
+	INVOKE_ASYNC(src, PROC_REF(run_ai)) // ALLOW(scheduler): handleAI() sleeps on the pathfinder mutex; ai_running guards overlap
 
 /mob/living/bot/proc/run_ai()
 	try
