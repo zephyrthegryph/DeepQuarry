@@ -115,9 +115,13 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 	anchored = TRUE
 	mouse_opacity = 0
 
-/obj/effect/effect/sparks/Initialize(mapload)
+// the pool counts a spark from when it exists until on_destroy().
+/obj/effect/effect/sparks/on_materialize()
 	. = ..()
 	GLOB.fx_live_sparks++
+
+/obj/effect/effect/sparks/Initialize(mapload)
+	. = ..()
 	play_sfx(src, SFX_SPARKS, 2)
 	var/turf/T = src.loc
 	if (istype(T, /turf))
