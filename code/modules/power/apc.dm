@@ -429,7 +429,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 			if(terminal)
 				to_chat(user, span_warning("Disconnect the wires first."))
 				return ITEM_INTERACT_BLOCKING
-			use_tool(user, tool, src, delay = 5 SECONDS, volume = 50, message_self = "You begin to remove the power control board...", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
+			use_tool(user, tool, src, delay = 5 SECONDS, volume = 50, start_self = "You begin to remove the power control board...", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
 		else if(opened != 2)
 			opened = 0
 			update_icon()
@@ -491,7 +491,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 		to_chat(user, span_warning("You must remove the floor plating in front of the APC first."))
 		return ITEM_INTERACT_BLOCKING
 	playsound(src, 'sound/items/Deconstruct.ogg', 50, TRUE)
-	use_tool(user, tool, src, delay = 5 SECONDS, volume = 0, message_self = "You begin to cut the cables...", message_others = "[user.name] starts dismantling the [src]'s power terminal.", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 5 SECONDS, volume = 0, start_self = "You begin to cut the cables...", start_others = "[user.name] starts dismantling the [src]'s power terminal.", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/apc/proc/wirecutter_act_tool_done(mob/user)
@@ -512,7 +512,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 	add_fingerprint(user)
 	if(!opened || has_electronics != APC_HAS_ELECTRONICS_NONE || terminal)
 		return ..()
-	use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WELDER, amount = 3, volume = 25, message_self = "You start welding the APC frame...", message_others = "[user.name] begins cutting apart [src] with [tool].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user, tool))
+	use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WELDER, amount = 3, volume = 25, start_self = "You start welding the APC frame...", start_others = "[user.name] begins cutting apart [src] with [tool].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user, tool))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/apc/proc/welder_act_tool_done(mob/user, obj/item/tool)

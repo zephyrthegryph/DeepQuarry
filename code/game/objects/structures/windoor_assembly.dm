@@ -150,7 +150,7 @@
 	if(state != "01" || anchored)
 		update_state()
 		return NONE
-	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to disassemble the windoor assembly.", message_others = "[user] disassembles the windoor assembly.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
+	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to disassemble the windoor assembly.", start_others = "[user] disassembles the windoor assembly.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	update_state()
 	return ITEM_INTERACT_SUCCESS
 
@@ -168,10 +168,10 @@
 		return NONE
 	if(!anchored)
 		//Wrenching an unsecure assembly anchors it in place. Step 4 complete
-		use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 100, message_self = "You start to secure the windoor assembly to the floor.", message_others = "[user] secures the windoor assembly to the floor.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+		use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 100, start_self = "You start to secure the windoor assembly to the floor.", start_others = "[user] secures the windoor assembly to the floor.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	else
 		//Unwrenching an unsecure assembly un-anchors it. Step 4 undone
-		use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 100, message_self = "You start to unsecure the windoor assembly to the floor.", message_others = "[user] unsecures the windoor assembly to the floor.", receiver = src, on_done = PROC_REF(wrench_act_tool_done2), done_args = list(user))
+		use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 100, start_self = "You start to unsecure the windoor assembly to the floor.", start_others = "[user] unsecures the windoor assembly to the floor.", receiver = src, on_done = PROC_REF(wrench_act_tool_done2), done_args = list(user))
 	update_state()
 	return ITEM_INTERACT_SUCCESS
 
@@ -189,7 +189,7 @@
 		update_state()
 		return NONE
 	//Removing wire from the assembly. Step 5 undone.
-	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WIRECUTTER, volume = 100, message_self = "You start to cut the wires from airlock assembly.", message_others = "[user] cuts the wires from the airlock assembly.", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user))
+	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WIRECUTTER, volume = 100, start_self = "You start to cut the wires from airlock assembly.", start_others = "[user] cuts the wires from the airlock assembly.", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user))
 	update_state()
 	return ITEM_INTERACT_SUCCESS
 
@@ -204,7 +204,7 @@
 		update_state()
 		return NONE
 	//Screwdriver to remove airlock electronics. Step 6 undone.
-	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_SCREWDRIVER, volume = 100, message_self = "You start to uninstall electronics from the airlock assembly.", message_others = "[user] removes the electronics from the airlock assembly.", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
+	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_SCREWDRIVER, volume = 100, start_self = "You start to uninstall electronics from the airlock assembly.", start_others = "[user] removes the electronics from the airlock assembly.", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
 	update_state()
 	return ITEM_INTERACT_SUCCESS
 
@@ -229,7 +229,7 @@
 		return ITEM_INTERACT_SUCCESS
 	// close TGUI panel (legacy browse(null))
 	SStgui.close_uis(src)
-	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 100, message_self = "You start prying the windoor into the frame.", message_others = "[user] pries the windoor into the frame.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
+	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 100, start_self = "You start prying the windoor into the frame.", start_others = "[user] pries the windoor into the frame.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
 	update_state()
 	return ITEM_INTERACT_SUCCESS
 

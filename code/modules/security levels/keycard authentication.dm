@@ -28,7 +28,7 @@
 	return TRUE
 
 /obj/machinery/keycard_auth/screwdriver_act(mob/user, obj/item/tool)
-	use_tool(user, tool, src, delay = 1 SECOND, volume = 50, message_self = "You begin removing the faceplate from the [src]", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 1 SECOND, volume = 50, start_self = "You begin removing the faceplate from the [src]", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_BLOCKING
 
 /obj/machinery/keycard_auth/proc/screwdriver_act_tool_done(mob/user)

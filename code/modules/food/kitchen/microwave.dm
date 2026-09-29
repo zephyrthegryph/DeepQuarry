@@ -157,7 +157,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 	return TRUE
 
 /obj/machinery/microwave/proc/do_repair_step(mob/user, obj/item/tool, full_repair = FALSE)
-	use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, message_self = "You start to fix part of \the [src].", message_others = "\The [user] starts to fix part of \the [src].", receiver = src, on_done = PROC_REF(do_repair_step_tool_done), done_args = list(user, full_repair))
+	use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, start_self = "You start to fix part of \the [src].", start_others = "\The [user] starts to fix part of \the [src].", receiver = src, on_done = PROC_REF(do_repair_step_tool_done), done_args = list(user, full_repair))
 	return TRUE
 
 /obj/machinery/microwave/proc/do_repair_step_tool_done(mob/user, full_repair)

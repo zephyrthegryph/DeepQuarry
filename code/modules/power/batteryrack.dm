@@ -338,7 +338,7 @@ DECLARE_REF(/obj/machinery/power/smes/batteryrack, "internal_cells", OWNED_LIST,
 		insert_cell(newcell)
 
 /obj/item/module/power_control/multitool_act(mob/user, obj/item/I)
-	use_tool(user, I, src, delay = 5 SECONDS, message_self = "You begin tweaking the power control circuits to support a power cell rack.", receiver = src, on_done = PROC_REF(multitool_act_tool_done), done_args = list(user))
+	use_tool(user, I, src, delay = 5 SECONDS, start_self = "You begin tweaking the power control circuits to support a power cell rack.", receiver = src, on_done = PROC_REF(multitool_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/module/power_control/proc/multitool_act_tool_done(mob/user)

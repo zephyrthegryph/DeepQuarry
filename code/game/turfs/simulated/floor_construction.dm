@@ -102,12 +102,15 @@
 	return TRUE
 
 /datum/interaction/construction/floor/weld_dents
+	feedback = /datum/msg/interaction/construction/floor/weld_dents
 	from_state = "damaged"
 	to_state = "plating"
 	step_text = "weld the dents out of the plating"
 	tool = TOOL_WELDER
 	requires = list(REQ_REACH_ADJACENT, REQ_PROC(/proc/dq_held_welder_lit, "the welding tool must be on"))
-	message_self = "You fix some dents on the broken plating."
+
+/datum/msg/interaction/construction/floor/weld_dents
+	self = "You fix some dents on the broken plating."
 
 /datum/interaction/construction/floor/weld_dents/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/turf/simulated/floor/floor = target
@@ -118,6 +121,7 @@
 	return TRUE
 
 /datum/interaction/construction/floor/cut_plating
+	start_feedback = /datum/msg/start/interaction/construction/floor/cut_plating
 	from_state = "plating"
 	to_state = CONSTRUCTION_DONE
 	step_text = "cut through the plating"
@@ -132,9 +136,11 @@
 		REQ_PROC(/proc/dq_held_welder_lit, "the welding tool must be on"),
 		REQ_ON(PRED_TARGET, /turf/simulated/floor/proc/plating_cut_blocker, null),
 	)
-	start_self = "You begin cutting through %TARGET%."
-	start_others = "%ACTOR% begins cutting through %TARGET%."
 	tags = list(INTERACTION_TAG_CONSTRUCTION, INTERACTION_TAG_HOSTILE)
+
+/datum/msg/start/interaction/construction/floor/cut_plating
+	self = "You begin cutting through %T%."
+	others = "%U% begins cutting through %T%."
 
 /datum/interaction/construction/floor/cut_plating/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/turf/simulated/floor/floor = target

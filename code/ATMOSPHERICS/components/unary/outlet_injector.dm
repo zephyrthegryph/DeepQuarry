@@ -176,11 +176,14 @@
 
 /// The old attack_hand: never called ..(), so it stays ungated.
 /datum/interaction/machine_hand/ungated/outlet_injector_toggle
+	feedback = /datum/msg/interaction/machine_hand/ungated/outlet_injector_toggle
 	id = "outlet_injector_toggle"
 	name = "Toggle"
 	category = INTERACTION_CAT_TOGGLE
-	message_self = "You toggle %TARGET%."
 	effect = /obj/machinery/atmospherics/unary/outlet_injector/proc/interaction_toggle
+
+/datum/msg/interaction/machine_hand/ungated/outlet_injector_toggle
+	self = "You toggle %T%."
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	injecting = !injecting
@@ -222,7 +225,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/unary/outlet_injector/wrench_act(mob/user, obj/item/W)
-	use_tool(user, W, src, delay = 40, volume = 50, message_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	use_tool(user, W, src, delay = 40, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/wrench_act_tool_done(mob/user)

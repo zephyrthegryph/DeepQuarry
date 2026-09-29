@@ -77,13 +77,19 @@
 // ---- Plain wall ----
 
 /datum/interaction/construction/wall/cut_plain
+	feedback = /datum/msg/interaction/construction/wall/cut_plain
+	start_feedback = /datum/msg/start/interaction/construction/wall/cut_plain
 	from_state = "plain"
 	to_state = CONSTRUCTION_DONE
 	step_text = "cut through the outer plating"
 	tool = TOOL_WELDER
 	alt_item_types = list(/obj/item/melee/energy/blade, /obj/item/pickaxe)
-	start_self = "You begin cutting through the outer plating."
-	message_self = "You remove the outer plating."
+
+/datum/msg/interaction/construction/wall/cut_plain
+	self = "You remove the outer plating."
+
+/datum/msg/start/interaction/construction/wall/cut_plain
+	self = "You begin cutting through the outer plating."
 
 /// 60 deciseconds less the material's cut_delay, scaled by the tool.
 /datum/interaction/construction/wall/cut_plain/proc/cut_delay(atom/target)
@@ -117,100 +123,154 @@
 		return pick.drill_sound
 	return ..()
 
-/datum/interaction/construction/wall/cut_plain/start_messages(mob/actor, atom/target, obj/item/held)
+/datum/interaction/construction/wall/cut_plain/start_feedback_for(mob/actor, atom/target, obj/item/held)
 	if(istype(held, /obj/item/melee/energy/blade))
-		return list("You begin slicing through the outer plating.", null)
+		return /datum/msg/start/interaction/construction/wall/cut_plain/blade
 	if(istype(held, /obj/item/pickaxe))
-		var/obj/item/pickaxe/pick = held
-		return list("You begin [pick.drill_verb] through the outer plating.", null)
+		return /datum/msg/start/interaction/construction/wall/cut_plain/pickaxe
 	return ..()
+
+MSG_DEF_SELF(start/interaction/construction/wall/cut_plain/blade, "You begin slicing through the outer plating.")
+
+/// The pickaxe's own drilling verb.
+/datum/msg/start/interaction/construction/wall/cut_plain/pickaxe/texts(atom/user, atom/target, obj/item/item)
+	var/obj/item/pickaxe/pick = item
+	return list("You begin [istype(pick) ? pick.drill_verb : "digging"] through the outer plating.", null, null)
 
 /datum/interaction/construction/wall/cut_plain/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/turf/simulated/wall/wall = target
 	wall.dismantle_wall()
-	actor.visible_message(span_warning("The wall was torn open by [actor]!"))
+	act_message(actor, target, others = MSG_OTHERS(span_warning("The wall was torn open by %U%!")))
 	return TRUE
 
 // ---- Reinforced wall ----
 
 /datum/interaction/construction/wall/cut_grille
+	feedback = /datum/msg/interaction/construction/wall/cut_grille
 	from_state = 6
 	to_state = 5
 	step_text = "cut the outer grille"
 	tool = TOOL_WIRECUTTER
-	message_self = "You cut through the outer grille."
+
+/datum/msg/interaction/construction/wall/cut_grille
+	self = "You cut through the outer grille."
 
 /datum/interaction/construction/wall/mend_grille
+	feedback = /datum/msg/interaction/construction/wall/mend_grille
 	from_state = 5
 	to_state = 6
 	step_text = "mend the outer grille"
 	tool = TOOL_WIRECUTTER
-	message_self = "You mend the outer grille."
+
+/datum/msg/interaction/construction/wall/mend_grille
+	self = "You mend the outer grille."
 
 /datum/interaction/construction/wall/unscrew_lines
+	feedback = /datum/msg/interaction/construction/wall/unscrew_lines
+	start_feedback = /datum/msg/start/interaction/construction/wall/unscrew_lines
 	from_state = 5
 	to_state = 4
 	step_text = "unscrew the support lines"
 	tool = TOOL_SCREWDRIVER
 	duration = 4 SECONDS
-	start_self = "You begin removing the support lines."
-	message_self = "You unscrew the support lines."
+
+/datum/msg/interaction/construction/wall/unscrew_lines
+	self = "You unscrew the support lines."
+
+/datum/msg/start/interaction/construction/wall/unscrew_lines
+	self = "You begin removing the support lines."
 
 /datum/interaction/construction/wall/screw_lines
+	feedback = /datum/msg/interaction/construction/wall/screw_lines
+	start_feedback = /datum/msg/start/interaction/construction/wall/screw_lines
 	from_state = 4
 	to_state = 5
 	step_text = "screw down the support lines"
 	tool = TOOL_SCREWDRIVER
 	duration = 4 SECONDS
-	start_self = "You begin screwing down the support lines."
-	message_self = "You screw down the support lines."
+
+/datum/msg/interaction/construction/wall/screw_lines
+	self = "You screw down the support lines."
+
+/datum/msg/start/interaction/construction/wall/screw_lines
+	self = "You begin screwing down the support lines."
 
 /datum/interaction/construction/wall/slice_cover
+	feedback = /datum/msg/interaction/construction/wall/slice_cover
+	start_feedback = /datum/msg/start/interaction/construction/wall/slice_cover
 	from_state = 4
 	to_state = 3
 	step_text = "slice through the metal cover"
 	tool = TOOL_WELDER
 	alt_item_types = list(/obj/item/pickaxe/plasmacutter)
 	duration = 6 SECONDS
-	start_self = "You begin slicing through the metal cover."
-	message_self = "You press firmly on the cover, dislodging it."
+
+/datum/msg/interaction/construction/wall/slice_cover
+	self = "You press firmly on the cover, dislodging it."
+
+/datum/msg/start/interaction/construction/wall/slice_cover
+	self = "You begin slicing through the metal cover."
 
 /datum/interaction/construction/wall/pry_cover
+	feedback = /datum/msg/interaction/construction/wall/pry_cover
+	start_feedback = /datum/msg/start/interaction/construction/wall/pry_cover
 	from_state = 3
 	to_state = 2
 	step_text = "pry off the cover"
 	tool = TOOL_CROWBAR
 	duration = 10 SECONDS
-	start_self = "You struggle to pry off the cover."
-	message_self = "You pry off the cover."
+
+/datum/msg/interaction/construction/wall/pry_cover
+	self = "You pry off the cover."
+
+/datum/msg/start/interaction/construction/wall/pry_cover
+	self = "You struggle to pry off the cover."
 
 /datum/interaction/construction/wall/loosen_bolts
+	feedback = /datum/msg/interaction/construction/wall/loosen_bolts
+	start_feedback = /datum/msg/start/interaction/construction/wall/loosen_bolts
 	from_state = 2
 	to_state = 1
 	step_text = "loosen the anchoring bolts"
 	tool = TOOL_WRENCH
 	duration = 4 SECONDS
-	start_self = "You start loosening the anchoring bolts which secure the support rods to their frame."
-	message_self = "You remove the bolts anchoring the support rods."
+
+/datum/msg/interaction/construction/wall/loosen_bolts
+	self = "You remove the bolts anchoring the support rods."
+
+/datum/msg/start/interaction/construction/wall/loosen_bolts
+	self = "You start loosening the anchoring bolts which secure the support rods to their frame."
 
 /datum/interaction/construction/wall/slice_rods
+	feedback = /datum/msg/interaction/construction/wall/slice_rods
+	start_feedback = /datum/msg/start/interaction/construction/wall/slice_rods
 	from_state = 1
 	to_state = 0
 	step_text = "slice through the support rods"
 	tool = TOOL_WELDER
 	alt_item_types = list(/obj/item/pickaxe/plasmacutter)
 	duration = 7 SECONDS
-	start_self = "You begin slicing through the support rods."
-	message_self = "You slice through the support rods."
+
+/datum/msg/interaction/construction/wall/slice_rods
+	self = "You slice through the support rods."
+
+/datum/msg/start/interaction/construction/wall/slice_rods
+	self = "You begin slicing through the support rods."
 
 /datum/interaction/construction/wall/pry_sheath
+	feedback = /datum/msg/interaction/construction/wall/pry_sheath
+	start_feedback = /datum/msg/start/interaction/construction/wall/pry_sheath
 	from_state = 0
 	to_state = CONSTRUCTION_DONE
 	step_text = "pry off the outer sheath"
 	tool = TOOL_CROWBAR
 	duration = 10 SECONDS
-	start_self = "You struggle to pry off the outer sheath."
-	message_self = "You pry off the outer sheath."
+
+/datum/msg/interaction/construction/wall/pry_sheath
+	self = "You pry off the outer sheath."
+
+/datum/msg/start/interaction/construction/wall/pry_sheath
+	self = "You struggle to pry off the outer sheath."
 
 /datum/interaction/construction/wall/pry_sheath/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/turf/simulated/wall/wall = target
@@ -238,12 +298,12 @@
 	tool_volume = 10
 	requires = list(REQ_REACH_ADJACENT, REQ_PROC(/proc/dq_wall_worker_ok, "you can't work on walls"))
 	effect = /turf/simulated/wall/proc/burn_away_rot
+	feedback = /datum/msg/interaction/wall_burn_rot
 
 /datum/interaction/wall_burn_rot/applies_to(atom/target)
 	return (locate_within(target, /obj/effect/overlay/wallrot)) ? TRUE : FALSE
 
-/datum/interaction/wall_burn_rot/messages(mob/actor, atom/target, obj/item/held)
-	return list("You burn away the fungi with \the [held].", null)
+MSG_DEF_SELF(interaction/wall_burn_rot, "You burn away the fungi with %I%.")
 
 /turf/simulated/wall/proc/burn_away_rot(mob/actor, obj/item/held, datum/interaction/interaction)
 	touched_by_tool(held)
@@ -274,6 +334,8 @@
 
 /datum/interaction/wall_repair
 	id = "wall_repair"
+	feedback = /datum/msg/interaction/wall_repair
+	start_feedback = /datum/msg/start/interaction/wall_repair
 	name = "Repair the wall"
 	category = INTERACTION_CAT_REPAIR
 	priority = 20
@@ -294,11 +356,9 @@
 	var/turf/simulated/wall/wall = target
 	return tool_delay(actor, held, max(5, (wall.max_integrity - wall.get_integrity()) / 5), tool)
 
-/datum/interaction/wall_repair/start_messages(mob/actor, atom/target, obj/item/held)
-	return list("You start repairing the damage to %TARGET%.", null)
+MSG_DEF_SELF(start/interaction/wall_repair, "You start repairing the damage to %T%.")
 
-/datum/interaction/wall_repair/messages(mob/actor, atom/target, obj/item/held)
-	return list("You finish repairing the damage to %TARGET%.", null)
+MSG_DEF_SELF(interaction/wall_repair, "You finish repairing the damage to %T%.")
 
 /turf/simulated/wall/proc/finish_weld_repair(mob/actor, obj/item/held, datum/interaction/interaction)
 	touched_by_tool(held)

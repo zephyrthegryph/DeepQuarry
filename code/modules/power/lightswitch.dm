@@ -106,7 +106,7 @@ DECLARE_INTERACTIONS(/obj/structure/construction, INTERACT_ITEM(null, PROC_REF(i
 	if(stage != FRAME_UNFASTENED)
 		to_chat(user, stage == FRAME_FASTENED ? "You have to unscrew the case first." : "You have to remove the wires first.")
 		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start deconstructing \the [src].", message_others = "\The [user] begins deconstructing \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
+	use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start deconstructing \the [src].", start_others = "\The [user] begins deconstructing \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/construction/proc/welder_act_tool_done(mob/user)

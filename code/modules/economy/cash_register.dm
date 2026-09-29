@@ -600,7 +600,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 
 /obj/machinery/cash_register/proc/toggle_anchors(obj/item/W, mob/user)
 	if(om_busy(src)) return
-	use_tool(user, W, src, delay = 2 SECONDS, volume = 50, message_self = anchored ? "You begin unsecuring \the [src] from the floor." : "You begin securing \the [src] to the floor.", message_others = anchored ? "\The [user] begins unsecuring \the [src] from the floor." : "\The [user] begins securing \the [src] to the floor.", receiver = src, on_done = PROC_REF(toggle_anchors_tool_done), done_args = list(user), claims = TRUE)
+	use_tool(user, W, src, delay = 2 SECONDS, volume = 50, start_self = anchored ? "You begin unsecuring \the [src] from the floor." : "You begin securing \the [src] to the floor.", start_others = anchored ? "\The [user] begins unsecuring \the [src] from the floor." : "\The [user] begins securing \the [src] to the floor.", receiver = src, on_done = PROC_REF(toggle_anchors_tool_done), done_args = list(user), claims = TRUE)
 	return TRUE
 
 /obj/machinery/cash_register/proc/toggle_anchors_tool_done(mob/user)

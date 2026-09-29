@@ -85,9 +85,9 @@
 	var/carving_1 = sanitizeSafe(ask.carved_name, MAX_NAME_LEN)
 	var/carving_2 = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	if(carving_1)
-		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, volume = 0, message_self = "You start carving \the [src.name].", message_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, carving_1))
+		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, volume = 0, start_self = "You start carving \the [src.name].", start_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, carving_1))
 	if(carving_2)
-		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, volume = 0, message_self = "You start carving \the [src.name].", message_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done2), done_args = list(user, carving_2))
+		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, volume = 0, start_self = "You start carving \the [src.name].", start_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done2), done_args = list(user, carving_2))
 
 /obj/structure/gravemarker/proc/screwdriver_act_tool_done(mob/user, carving_1)
 	user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
@@ -99,7 +99,7 @@
 	update_icon()
 
 /obj/structure/gravemarker/wrench_act(mob/user, obj/item/W)
-	use_tool(user, W, src, delay = material.hardness, quality = TOOL_WRENCH, volume = 0, message_self = "You start taking down \the [src.name].", message_others = "[user] starts taking down \the [src.name].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	use_tool(user, W, src, delay = material.hardness, quality = TOOL_WRENCH, volume = 0, start_self = "You start taking down \the [src.name].", start_others = "[user] starts taking down \the [src.name].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return TRUE
 
 /obj/structure/gravemarker/proc/wrench_act_tool_done(mob/user)

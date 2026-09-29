@@ -305,7 +305,7 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 			return TRUE
 
 		update_icon()
-		use_tool(user, C, src, delay = 3 SECONDS, volume = 100, message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [C]!", message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [C]!", receiver = src, on_done = PROC_REF(interaction_use_item_tool_done), done_args = list(user, C), on_fail = TYPE_PROC_REF(/atom, update_icon), claims = TRUE)
+		use_tool(user, C, src, delay = 3 SECONDS, volume = 100, start_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [C]!", start_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [C]!", receiver = src, on_done = PROC_REF(interaction_use_item_tool_done), done_args = list(user, C), on_fail = TYPE_PROC_REF(/atom, update_icon), claims = TRUE)
 		update_icon()
 		return TRUE
 
@@ -359,7 +359,7 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 		to_chat(user, span_notice("Someone's already prying that [density ? "open" : "closed"]."))
 		return TRUE
 	update_icon()
-	use_tool(user, tool, src, delay = 3 SECONDS, quality = TOOL_CROWBAR, volume = 100, message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [tool]!", message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [tool]!", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user, tool), on_fail = TYPE_PROC_REF(/atom, update_icon), claims = TRUE)
+	use_tool(user, tool, src, delay = 3 SECONDS, quality = TOOL_CROWBAR, volume = 100, start_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [tool]!", start_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [tool]!", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user, tool), on_fail = TYPE_PROC_REF(/atom, update_icon), claims = TRUE)
 	update_icon()
 	return TRUE
 

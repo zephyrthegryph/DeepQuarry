@@ -417,7 +417,7 @@ DECLARE_INTERACTIONS(/obj/item/rectape, \
 /obj/item/rectape/screwdriver_act(mob/user, obj/item/tool)
 	if(!ruined)
 		return ITEM_INTERACT_BLOCKING
-	use_tool(user, tool, src, delay = 12 SECONDS, quality = TOOL_SCREWDRIVER, volume = 50, message_self = "You start winding the tape back in...", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 12 SECONDS, quality = TOOL_SCREWDRIVER, volume = 50, start_self = "You start winding the tape back in...", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/rectape/proc/screwdriver_act_tool_done(mob/user)

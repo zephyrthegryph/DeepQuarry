@@ -596,7 +596,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 /obj/machinery/proc/deconstruct_display(mob/user, obj/item/tool)
 	if(!circuit)
 		return ITEM_INTERACT_BLOCKING
-	use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, message_self = "You start disconnecting the monitor.", receiver = src, on_done = PROC_REF(deconstruct_display_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, start_self = "You start disconnecting the monitor.", receiver = src, on_done = PROC_REF(deconstruct_display_tool_done), done_args = list(user))
 	return TRUE
 
 /obj/machinery/proc/deconstruct_display_tool_done(mob/user)

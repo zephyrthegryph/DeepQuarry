@@ -559,7 +559,7 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 		return ITEM_INTERACT_SUCCESS
 
 	//This code handles moving the turret around. After all, it's a portable turret!
-	use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WRENCH, volume = 0, message_self = "You begin [anchored ? "un" : ""]securing the turret.", message_others = "[user] begins [anchored ? "un" : ""]securing the turret.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, tool), claims = TRUE)
+	use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WRENCH, volume = 0, start_self = "You begin [anchored ? "un" : ""]securing the turret.", start_others = "[user] begins [anchored ? "un" : ""]securing the turret.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, tool), claims = TRUE)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/porta_turret/proc/wrench_act_tool_done(mob/user, obj/item/tool)

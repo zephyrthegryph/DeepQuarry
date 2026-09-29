@@ -133,6 +133,7 @@
 	into += /datum/interaction/window_repair
 
 /datum/interaction/window_repair
+	feedback = /datum/msg/interaction/window_repair
 	id = "window_repair"
 	name = "Repair the window"
 	category = INTERACTION_CAT_REPAIR
@@ -144,10 +145,12 @@
 	duration = 4 SECONDS
 	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/structure/window/proc/is_damaged, "it is already in good condition"))
 	effect = /obj/structure/window/proc/weld_repair
-	message_self = "You repair %TARGET%."
+	start_feedback = /datum/msg/start/interaction/window_repair
 
-/datum/interaction/window_repair/start_messages(mob/actor, atom/target, obj/item/held)
-	return list("You begin repairing %TARGET%...", null)
+/datum/msg/interaction/window_repair
+	self = "You repair %T%."
+
+MSG_DEF_SELF(start/interaction/window_repair, "You begin repairing %T%...")
 
 /obj/structure/window/proc/is_damaged(mob/actor, atom/target, obj/item/held)
 	return get_integrity() < max_integrity

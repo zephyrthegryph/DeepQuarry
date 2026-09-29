@@ -183,9 +183,9 @@
 			if(0)
 				to_chat(user, span_warning("\The [src] needs to be wrenched to the floor."))
 			if(1)
-				use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld [src] to the floor.", message_others = "[user.name] starts to weld [src] to the floor.", receiver = src, on_done = PROC_REF(construction_tool_act_tool_done), done_args = list(user))
+				use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to weld [src] to the floor.", start_others = "[user.name] starts to weld [src] to the floor.", receiver = src, on_done = PROC_REF(construction_tool_act_tool_done), done_args = list(user))
 			if(2)
-				use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to cut [src] free from the floor.", message_others = "[user.name] starts to cut [src] free from the floor.", receiver = src, on_done = PROC_REF(construction_tool_act_tool_done2), done_args = list(user))
+				use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to cut [src] free from the floor.", start_others = "[user.name] starts to cut [src] free from the floor.", receiver = src, on_done = PROC_REF(construction_tool_act_tool_done2), done_args = list(user))
 		update_icon()
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_SUCCESS

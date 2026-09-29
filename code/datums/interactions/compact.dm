@@ -6,7 +6,7 @@
  * one-off /datum/interaction subtype for the common shapes: a plain self-use,
  * an empty-hand touch, an item used on the target (typed or not), and
  * alt-click. The full datum form (interaction.dm) stays for anything with a
- * custom display_name(), messages(), applies_to() or other override - menus,
+ * custom display_name(), feedback_for(), applies_to() or other override - menus,
  * multi-step or heavily conditional interactions.
  *
  * Each spec compiles, on first use, into a /datum/interaction/generic
