@@ -149,6 +149,11 @@ EXTEND_INTERACTIONS(/obj/machinery/flasher, INTERACT_SILICON("Flash", PROC_REF(f
 	name = "Press"
 	effect = /obj/machinery/button/flasher/proc/interaction_trigger
 
+/// Flashers sharing our id (keyed: linked when either end materializes).
+/obj/machinery/button/flasher/var/list/obj/machinery/flasher/controlled_flashers
+REL_KEYED_LIST(/obj/machinery/button/flasher, controlled_flashers, id, /obj/machinery/flasher)
+KEYED_TARGET(/obj/machinery/flasher, id)
+
 /obj/machinery/button/flasher/proc/interaction_trigger(mob/user, obj/item/held, datum/interaction/interaction)
 	use_power(5)
 
@@ -158,9 +163,8 @@ EXTEND_INTERACTIONS(/obj/machinery/flasher, INTERACT_SILICON("Flash", PROC_REF(f
 	active = TRUE
 	icon_state = "launcheract"
 
-	for(var/obj/machinery/flasher/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(M.id == id)
-			M.flash()
+	for(var/obj/machinery/flasher/M as anything in controlled_flashers)
+		M.flash()
 
 	om_after_unique(src, 5 SECONDS, PROC_REF(finish_trigger))
 	return TRUE

@@ -435,3 +435,6 @@
 	base_state = "rightsecure"
 
 OWN(/obj/machinery/door/window, electronics, OWN_CONTAINED)
+
+// Brig timers find their doors by id (REL_KEYED sources).
+KEYED_TARGET(/obj/machinery/door/window/brigdoor, id)

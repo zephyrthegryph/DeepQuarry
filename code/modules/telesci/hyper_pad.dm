@@ -18,10 +18,9 @@
 	icon_state = "hpad_centre"
 	var/newcolor = "#00FFFF" //used for colouring the overlays
 
-	//mapping
-	var/static/list/mapped_hyper_pads = list()
-	var/map_pad_id = "" as text //what's my name
-	var/map_pad_link_id = "" as text //who's my friend
+	//mapping: map_pad_link_id names the partner centre's map_pad_id (REL_KEYED below)
+	var/map_pad_id = null as text //what's my name
+	var/map_pad_link_id = null as text //who's my friend
 	var/ready = 0
 	var/list/linked
 	var/max_item_teleport = 30
@@ -29,17 +28,14 @@
 /obj/machinery/hyperpad/centre/Initialize(mapload)
 	. = ..()
 	if(map_pad_id)
-		mapped_hyper_pads[map_pad_id] = src
 		detect()
 	set_light(3, 1, newcolor)
 
 // Its linked pads go with it.
 
-// leaves the pad map.
-/obj/machinery/hyperpad/centre/lifecycle_dematerialize()
-	if(map_pad_id && mapped_hyper_pads[map_pad_id] == src)
-		mapped_hyper_pads -= map_pad_id
-	return ..()
+// Mapped links: linked_pad auto-links to the centre whose map_pad_id equals our map_pad_link_id.
+REL_KEYED(/obj/machinery/hyperpad/centre, linked_pad, map_pad_link_id, /obj/machinery/hyperpad/centre)
+KEYED_TARGET(/obj/machinery/hyperpad/centre, map_pad_id)
 
 /obj/machinery/hyperpad/operable()
 	return 1
@@ -120,9 +116,8 @@
 
 /obj/machinery/hyperpad/centre/proc/initMappedLink()
 	. = FALSE
-	var/obj/machinery/hyperpad/centre/link = mapped_hyper_pads[map_pad_link_id]
-	if(link)
-		rel_set(src, "linked_pad", link)
+	// The keyed relation links mapped centres when they materialize; this only reports it.
+	if(linked_pad())
 		. = TRUE
 
 /obj/machinery/hyperpad/centre/proc/detect(mob/user)
@@ -132,7 +127,7 @@
 		var/iterate = 1
 		for(var/turf/T in turfs)
 			var/obj/machinery/hyperpad/new_pad = new /obj/machinery/hyperpad(T)
-			LAZYADD(linked, new_pad)
+			own_add(src, "linked", new_pad) // the centre's pieces go with it
 			rel_set(new_pad, "primary", src)
 			new_pad.dir = dirs[iterate]
 			iterate += 1

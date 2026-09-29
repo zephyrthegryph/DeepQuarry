@@ -17,22 +17,19 @@
 	var/boosted = 0 // do we teleport mecha?
 	var/tmp/obj/machinery/power/quantumpad/linked_pad
 
-	//mapping
-	var/static/list/mapped_quantum_pads = list()
-	var/map_pad_id = "" as text //what's my name
-	var/map_pad_link_id = "" as text //who's my friend
+	//mapping: a pad whose map_pad_link_id names another pad's map_pad_id links to it (REL_KEYED below)
+	var/map_pad_id = null as text //what's my name
+	var/map_pad_link_id = null as text //who's my friend
 
 /obj/machinery/power/quantumpad/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	if(map_pad_id)
-		mapped_quantum_pads[map_pad_id] = src
 	update_icon()
 
-/// Phase 2: leaves the quantum pad map.
-/obj/machinery/power/quantumpad/lifecycle_dematerialize()
-	. = ..()
-	mapped_quantum_pads -= map_pad_id
+// Mapped links: linked_pad auto-links to the pad whose map_pad_id equals our map_pad_link_id,
+// whichever of the two materializes first (replaces the static id map).
+REL_KEYED(/obj/machinery/power/quantumpad, linked_pad, map_pad_link_id, /obj/machinery/power/quantumpad)
+KEYED_TARGET(/obj/machinery/power/quantumpad, map_pad_id)
 
 /obj/machinery/power/quantumpad/examine(mob/user)
 	. = ..()
@@ -143,7 +140,7 @@
 		to_chat(user, span_warning("This is too unstable a platform for \the [src] to operate on!"))
 		// ition Start
 		if(linked_pad())
-			linked_pad().linked_pad = null
+			rel_clear(linked_pad(), "linked_pad")
 		// ition End
 		return TRUE
 
@@ -201,9 +198,8 @@
 
 /obj/machinery/power/quantumpad/proc/initMappedLink()
 	. = FALSE
-	var/obj/machinery/power/quantumpad/link = mapped_quantum_pads[map_pad_link_id]
-	if(link)
-		rel_set(src, "linked_pad", link)
+	// The keyed relation links mapped pads when they materialize; this only reports it.
+	if(linked_pad())
 		update_icon()
 		. = TRUE
 

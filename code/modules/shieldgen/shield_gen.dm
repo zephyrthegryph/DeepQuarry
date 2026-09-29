@@ -353,3 +353,6 @@ REL_PAIR_LIST(/obj/machinery/shield_gen, capacitors, owned_gen)
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/shield_gen/step_start_condition()
 	return active
+
+// Remote shield buttons find generators by id (REL_KEYED sources).
+KEYED_TARGET(/obj/machinery/shield_gen, id)

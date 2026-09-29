@@ -40,7 +40,6 @@ Possible to do for anyone motivated enough:
 	var/power_per_hologram = 500 //per usage per hologram
 	idle_power_usage = 5
 	use_power = USE_POWER_IDLE
-	// ALLOW(object_keyed_lists): AI -> hologram; Destroy() runs clear_holo() per AI, which resets the AI's holo and deletes its hologram
 	var/list/mob/living/silicon/ai/masters //Lazy list of AIs that use the holopad (a relation view)
 	/// The holograms this pad projects, one per master (owned; each names its AI in `master`).
 	var/list/obj/effect/overlay/aiholo/holograms

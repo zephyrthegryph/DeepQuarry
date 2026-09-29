@@ -82,7 +82,7 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 /obj/effect/map_helper/airlock/door/setup()
 	var/obj/machinery/door/airlock/my_airlock = my_device
 	my_airlock.lock()
-	my_airlock.id_tag = my_controller().id_tag + tag_addon
+	keyed_set_id(my_airlock, "id_tag", my_controller().id_tag + tag_addon) // airlocks are keyed targets by id_tag
 	my_airlock.frequency = my_controller().frequency
 	my_airlock.set_frequency(my_controller().frequency)
 	my_airlock.req_access = my_controller().req_access

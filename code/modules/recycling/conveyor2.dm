@@ -43,11 +43,9 @@
 
 	default_apply_parts()
 
-/// Phase 2: conveyor switches drop it.
-/obj/machinery/conveyor/lifecycle_dematerialize()
-	. = ..()
-	for(var/obj/machinery/conveyor_switch/conveyor_switch in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		LAZYREMOVE(conveyor_switch.conveyors, src)
+// Switches find their conveyors (and each other) by id: keyed relations, linked when either end
+// materializes; a dying conveyor leaves every switch's list by itself.
+KEYED_TARGET(/obj/machinery/conveyor, id)
 
 /obj/machinery/conveyor/Moved(atom/old_loc, direction, forced = FALSE)
 	if(old_loc)
@@ -177,10 +175,7 @@
 	if(!input)
 		to_chat(user, "No input found. Please hang up and try your call again.")
 		return ITEM_INTERACT_BLOCKING
-	id = input
-	for(var/obj/machinery/conveyor_switch/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(C.id == id)
-			C.conveyors |= src
+	keyed_set_id(src, "id", input) // leaves the old id's switches, joins the new id's
 	return ITEM_INTERACT_SUCCESS
 
 // attack with hand, move pulled object onto conveyor. Old attack_hand never called ..(), so ungated.
@@ -264,16 +259,16 @@
 	anchored = TRUE
 	var/speed_active = FALSE // are the linked conveyors on SSfastprocess?
 
-/obj/machinery/conveyor_switch/Initialize(mapload)
-	..()
-	update()
-	return INITIALIZE_HINT_LATELOAD
+/// Other switches sharing our id (keyed; includes this one), kept in step with our position.
+/obj/machinery/conveyor_switch/var/list/obj/machinery/conveyor_switch/linked_switches
 
-/obj/machinery/conveyor_switch/LateInitialize()
-	conveyors = list()
-	for(var/obj/machinery/conveyor/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(C.id == id)
-			conveyors += C // ALLOW(object_keyed_lists): conveyors sharing our id, rebuilt on relink; each conveyor removes itself in lifecycle_dematerialize()
+REL_KEYED_LIST(/obj/machinery/conveyor_switch, conveyors, id, /obj/machinery/conveyor)
+REL_KEYED_LIST(/obj/machinery/conveyor_switch, linked_switches, id, /obj/machinery/conveyor_switch)
+KEYED_TARGET(/obj/machinery/conveyor_switch, id)
+
+/obj/machinery/conveyor_switch/Initialize(mapload)
+	. = ..()
+	update()
 
 /obj/machinery/conveyor_switch/proc/toggle_speed(forced)
 	speed_active = !speed_active // switching gears
@@ -339,10 +334,9 @@
 	update()
 
 	// find any switches with same id as this one, and set their positions to match us
-	for(var/obj/machinery/conveyor_switch/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(S.id == src.id)
-			S.position = position
-			S.update()
+	for(var/obj/machinery/conveyor_switch/S as anything in linked_switches)
+		S.position = position
+		S.update()
 	return TRUE
 
 /obj/machinery/conveyor_switch/welder_act(mob/user, obj/item/I)
@@ -366,11 +360,7 @@
 	if(!input)
 		to_chat(user, "No input found. Please hang up and try your call again.")
 		return ITEM_INTERACT_BLOCKING
-	id = input
-	conveyors = list()
-	for(var/obj/machinery/conveyor/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(C.id == id)
-			conveyors += C // ALLOW(object_keyed_lists): conveyors sharing our id, rebuilt on relink; each conveyor removes itself in lifecycle_dematerialize()
+	keyed_set_id(src, "id", input) // relinks the conveyors and switches sharing the new id
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/conveyor_switch/wrench_act(mob/user, obj/item/I)

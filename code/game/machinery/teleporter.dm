@@ -191,7 +191,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 
 		if(com().one_time_use) //Make one-time-use cards only usable one time!
 			com().one_time_use = 0
-			com().teleport_control.locked = null
+			rel_clear(com().teleport_control, "locked")
 	else
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		s.set_up(5, 1, src)
