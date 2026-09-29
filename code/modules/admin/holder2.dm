@@ -98,7 +98,7 @@ GLOBAL_PROTECT(href_token)
 
 	if (!isnull(client))
 		disassociate()
-		add_verb(client, /client/proc/readmin)
+		add_verb(client, /client/proc/readmin) // ALLOW(sys_add_verb_pair): readmin is a client verb (clients hold no grants)
 
 /datum/admins/proc/associate(client/client)
 	if(IsAdminAdvancedProcCall())
@@ -120,7 +120,7 @@ GLOBAL_PROTECT(href_token)
 	owner_handle = om_handle(client)
 	owner().holder = src
 	owner().add_admin_verbs()
-	remove_verb(owner(), /client/proc/readmin)
+	remove_verb(owner(), /client/proc/readmin) // ALLOW(sys_add_verb_pair): readmin is a client verb (clients hold no grants)
 	owner().init_verbs() //re-initialize the verb list
 	GLOB.admins |= client
 

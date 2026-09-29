@@ -883,7 +883,9 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		visible_message(span_boldwarning("[U] rips [selection] out of [src]'s body."),span_boldwarning("[U] rips [selection] out of your body."))
 	valid_objects = get_visible_implants(0)
 	if(valid_objects.len == 1) //Yanking out last object - removing verb.
-		remove_verb(src, /mob/proc/yank_out_object)
+		// Whoever granted it (embed() self-grants; limb embeds may use another source), the last object is out.
+		for(var/datum/granter as anything in om_grant_sources(src, GRANT_VERB, /mob/proc/yank_out_object))
+			om_revoke(src, GRANT_VERB, /mob/proc/yank_out_object, granter)
 		clear_alert("embeddedobject")
 
 	if(ishuman(src))
@@ -1394,10 +1396,11 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/proc/vv_verb_added(datum/om/prompt/choice/vv_debug/ask)
 	var/verb = ask.choice
 	if(verb != "Cancel")
-		add_verb(src, verb)
+		om_grant(src, GRANT_VERB, verb, src)
 
 /mob/proc/vv_verb_removed(datum/om/prompt/choice/vv_debug/ask)
-	remove_verb(src, ask.choice)
+	om_revoke(src, GRANT_VERB, ask.choice, src)
+	remove_verb(src, ask.choice) // ALLOW(sys_add_verb_pair): VV debug removal must also strip type-static and other-source verbs
 
 /mob/proc/vv_organ_added(datum/om/prompt/choice/vv_spawn/ask)
 	var/mob/user = ask.answerer

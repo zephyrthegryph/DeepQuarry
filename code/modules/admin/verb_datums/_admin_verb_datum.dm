@@ -18,8 +18,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/admin_verb)
 
 /// Assigns the verb to the admin.
 /datum/admin_verb/proc/assign_to_client(client/admin)
-	add_verb(admin, verb_path)
+	add_verb(admin, verb_path) // ALLOW(sys_add_verb_pair): admin verb datums load onto a client (clients hold no grants)
 
 /// Unassigns the verb from the admin.
 /datum/admin_verb/proc/unassign_from_client(client/admin)
-	remove_verb(admin, verb_path)
+	remove_verb(admin, verb_path) // ALLOW(sys_add_verb_pair): admin verb datums load onto a client (clients hold no grants)

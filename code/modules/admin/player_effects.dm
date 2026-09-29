@@ -534,12 +534,14 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			Tar.clear_medical_issue(ui.user)
 
 		////////ABILITIES//////////////
+		// Admin-given powers have no natural source datum: the target mob is its own source (a
+		// permanent self-grant, as if the power came with what it is).
 
 		if("vent_crawl")
 			var/mob/living/Tar = target()
 			if(!istype(Tar))
 				return
-			add_verb(Tar, /mob/living/proc/ventcrawl)
+			om_grant(Tar, GRANT_VERB, /mob/living/proc/ventcrawl, Tar)
 
 		if("darksight")
 			var/mob/living/carbon/human/Tar = target()
@@ -556,26 +558,26 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
-			add_verb(Tar, /mob/living/carbon/human/proc/enter_cocoon)
+			om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/enter_cocoon, Tar)
 
 		if("transformation")
 			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
-			add_verb(Tar, /mob/living/carbon/human/proc/shapeshifter_select_hair)
-			add_verb(Tar, /mob/living/carbon/human/proc/shapeshifter_select_hair_colors)
-			add_verb(Tar, /mob/living/carbon/human/proc/shapeshifter_select_gender)
-			add_verb(Tar, /mob/living/carbon/human/proc/shapeshifter_select_wings)
-			add_verb(Tar, /mob/living/carbon/human/proc/shapeshifter_select_tail)
-			add_verb(Tar, /mob/living/carbon/human/proc/shapeshifter_select_ears)
-			add_verb(Tar, /mob/living/carbon/human/proc/lleill_select_shape) //designed for non-shapeshifter mobs
-			add_verb(Tar, /mob/living/carbon/human/proc/lleill_select_colour)
+			om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/shapeshifter_select_hair, Tar)
+			om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/shapeshifter_select_hair_colors, Tar)
+			om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/shapeshifter_select_gender, Tar)
+			om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/shapeshifter_select_wings, Tar)
+			om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/shapeshifter_select_tail, Tar)
+			om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/shapeshifter_select_ears, Tar)
+			om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/lleill_select_shape, Tar) //designed for non-shapeshifter mobs
+			om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/lleill_select_colour, Tar)
 
 		if("set_size")
 			var/mob/living/Tar = target()
 			if(!istype(Tar))
 				return
-			add_verb(Tar, /mob/living/proc/set_size)
+			om_grant(Tar, GRANT_VERB, /mob/living/proc/set_size, Tar)
 
 		if("lleill_energy")
 			var/mob/living/carbon/human/Tar = target()
@@ -594,55 +596,55 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
-			add_verb(Tar, /mob/living/carbon/human/proc/lleill_invisibility)
+			om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/lleill_invisibility, Tar)
 
 		if("beast_form")
 			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
-			add_verb(Tar, /mob/living/carbon/human/proc/lleill_beast_form)
+			om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/lleill_beast_form, Tar)
 
 		if("lleill_transmute")
 			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
-			add_verb(Tar, /mob/living/carbon/human/proc/lleill_transmute)
+			om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/lleill_transmute, Tar)
 
 		if("lleill_alchemy")
 			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
-			add_verb(Tar, /mob/living/carbon/human/proc/lleill_alchemy)
+			om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/lleill_alchemy, Tar)
 
 		if("lleill_drain")
 			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
-			add_verb(Tar, /mob/living/carbon/human/proc/lleill_contact)
+			om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/lleill_contact, Tar)
 
 		if("brutal_pred")
 			var/mob/living/Tar = target()
 			if(!istype(Tar))
 				return
-			add_verb(Tar, /mob/living/proc/shred_limb)
+			om_grant(Tar, GRANT_VERB, /mob/living/proc/shred_limb, Tar)
 
 		if("trash_eater")
 			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
-			add_verb(Tar, /mob/living/proc/eat_trash)
-			add_verb(Tar, /mob/living/proc/toggle_trash_catching)
+			om_grant(Tar, GRANT_VERB, /mob/living/proc/eat_trash, Tar)
+			om_grant(Tar, GRANT_VERB, /mob/living/proc/toggle_trash_catching, Tar)
 
 		if("active_cloaking")
 			var/mob/living/Tar = target()
 			if(!istype(Tar))
 				return
-			add_verb(Tar, /mob/living/proc/toggle_active_cloaking)
+			om_grant(Tar, GRANT_VERB, /mob/living/proc/toggle_active_cloaking, Tar)
 
 		if("colormate")
 			if(istype(target(),/mob/living/simple_mob))
 				var/mob/living/simple_mob/Tar = target()
-				add_verb(Tar, /mob/living/simple_mob/proc/ColorMate)
+				om_grant(Tar, GRANT_VERB, /mob/living/simple_mob/proc/ColorMate, Tar)
 			if(istype(target(),/mob/living/silicon/robot))
 				var/mob/living/silicon/robot/Tar = target()
 				Tar.grant_ability(ABILITY_ID_ROBOT_RECOLOUR, Tar)

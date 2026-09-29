@@ -203,7 +203,7 @@ Works together with spawning an observer, noted above.
 		if(ghost.client)
 			ghost.client.time_died_as_mouse = ghost.timeofdeath
 		if(ghost.client && !check_rights_for(ghost.client, R_HOLDER) && !CONFIG_GET(flag/antag_hud_allowed))		// For new ghosts we remove the verb from even showing up if it's not allowed.
-			remove_verb(ghost, /mob/observer/dead/verb/toggle_antagHUD)	// Poor guys, don't know what they are missing!
+			remove_verb(ghost, /mob/observer/dead/verb/toggle_antagHUD)	// Poor guys, don't know what they are missing! // ALLOW(sys_add_verb_pair): toggle_antagHUD is a static /mob/observer/dead verb; config suppression of a type verb, not a grant
 		return ghost
 
 /*

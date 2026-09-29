@@ -8,7 +8,7 @@
 	if(owner_ref() && istype(owner_ref(), /mob/living/silicon/ai))
 		owner_ref().hardware = src
 		if(driver)
-			add_verb(owner_ref(), driver)
+			om_grant(owner_ref(), GRANT_VERB, driver, src)
 
 /datum/malf_hardware/proc/get_examine_desc()
 	return "It has some sort of hardware attached to its core"

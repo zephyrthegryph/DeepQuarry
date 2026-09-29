@@ -17,9 +17,9 @@
 		return
 
 	//remove out adminhelp verb temporarily to prevent spamming of admins.
-	remove_verb(src,/client/verb/mentorhelp)
+	remove_verb(src,/client/verb/mentorhelp) // ALLOW(sys_add_verb_pair): ticket cooldown on a client verb (clients hold no grants)
 	spawn(600) // ALLOW(scheduler): client verb cooldown (client procs)
-		add_verb(src,/client/verb/mentorhelp) // 1 minute cool-down for mentorhelps
+		add_verb(src,/client/verb/mentorhelp) // 1 minute cool-down for mentorhelps // ALLOW(sys_add_verb_pair): ticket cooldown on a client verb (clients hold no grants)
 
 	feedback_add_details("admin_verb","Mentorhelp") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	if(current_ticket())
@@ -107,9 +107,9 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 		return
 
 	//remove out adminhelp verb temporarily to prevent spamming of admins.
-	remove_verb(src,/client/verb/adminhelp)
+	remove_verb(src,/client/verb/adminhelp) // ALLOW(sys_add_verb_pair): ticket cooldown on a client verb (clients hold no grants)
 	spawn(1200) // ALLOW(scheduler): client verb cooldown (client procs)
-		add_verb(src,/client/verb/adminhelp	) // 2 minute cool-down for adminhelp
+		add_verb(src,/client/verb/adminhelp	) // 2 minute cool-down for adminhelp // ALLOW(sys_add_verb_pair): ticket cooldown on a client verb (clients hold no grants)
 
 	feedback_add_details("admin_verb","Adminhelp") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	if(current_ticket())
@@ -194,10 +194,10 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 		return
 
 	//if they requested spice, then remove spice verb temporarily to prevent spamming
-	remove_verb(src,/client/verb/adminspice)
+	remove_verb(src,/client/verb/adminspice) // ALLOW(sys_add_verb_pair): ticket cooldown on a client verb (clients hold no grants)
 	spawn(10 MINUTES) // ALLOW(scheduler): client verb cooldown (client procs)
 		if(src)		// In case we left in the 10 minute cooldown
-			add_verb(src,/client/verb/adminspice) // 10 minute cool-down for spice request
+			add_verb(src,/client/verb/adminspice) // 10 minute cool-down for spice request // ALLOW(sys_add_verb_pair): ticket cooldown on a client verb (clients hold no grants)
 
 //
 // MENTOR PROCS

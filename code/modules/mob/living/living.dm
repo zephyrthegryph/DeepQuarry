@@ -1184,7 +1184,7 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 
 /mob/living/Initialize(mapload)
 	. = ..()
-	add_verb(src,/mob/living/proc/click_self) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/proc/click_self, src) // TGPanel
 */
 
 /mob/living/proc/handle_vorefootstep(m_intent, turf/T) // Moved from living_ch.dm

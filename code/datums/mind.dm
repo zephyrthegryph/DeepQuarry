@@ -87,7 +87,7 @@
 		changeling_comp = is_changeling(current)			//remove ourself from our old body's mind variable
 		if(changeling_comp)
 			current.remove_changeling_powers()
-			remove_verb(current, /mob/proc/EvolutionMenu)
+			om_revoke(current, GRANT_VERB, /mob/proc/EvolutionMenu, changeling_comp)
 		current.mind = null
 
 	if(new_character.mind)		//remove any mind currently in our new body's mind variable
@@ -566,7 +566,7 @@
 	else
 		mind.identity = identity()
 	if(GLOB.antag_service.player_is_antag(mind))
-		add_verb(src.client, /client/proc/aooc)
+		add_verb(src.client, /client/proc/aooc) // ALLOW(sys_add_verb_pair): aooc is a client verb (clients hold no grants)
 	if (client?.prefs)
 		// directory tags migrated from legacy /datum/preferences vars
 		// to /datum/preference subtypes.

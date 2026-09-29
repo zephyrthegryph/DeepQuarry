@@ -292,7 +292,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		admin_datum.associate(src)
 		connecting_admin = TRUE
 	else if(GLOB.deadmins[ckey])
-		add_verb(src, /client/proc/readmin)
+		add_verb(src, /client/proc/readmin) // ALLOW(sys_add_verb_pair): readmin is a client verb (clients hold no grants)
 		connecting_admin = TRUE
 
 	if (byond_version >= 512)
