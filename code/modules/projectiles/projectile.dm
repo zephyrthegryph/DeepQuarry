@@ -55,7 +55,6 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	var/tracer_type
 	var/muzzle_type
 	var/impact_type
-	var/datum/beam_components_cache/beam_components
 
 	//Fancy hitscan lighting effects!
 	light_on = TRUE
@@ -507,21 +506,30 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		return 50 //if the projectile doesn't do damage or agony, play its hitsound at 50% volume.
 
 /obj/item/projectile/proc/finalize_hitscan_and_generate_tracers(impacting = TRUE)
+	var/datum/point/end_point
 	if(trajectory && beam_index())
-		var/datum/point/pcache = trajectory.copy_to()
-		own_add(src, "beam_segments", pcache)
-	generate_hitscan_tracers(null, null, impacting)
+		end_point = trajectory.copy_to()
+		// A dying projectile (lifecycle_prerelease) adopts nothing: the end point stays a local.
+		if(!QDELETED(src))
+			own_add(src, "beam_segments", end_point)
+			end_point = null
+	generate_hitscan_tracers(null, null, impacting, end_point)
 
-/obj/item/projectile/proc/generate_hitscan_tracers(cleanup = TRUE, duration = 5, impacting = TRUE)
-	if(!length(beam_segments))
+/obj/item/projectile/proc/generate_hitscan_tracers(cleanup = TRUE, duration = 5, impacting = TRUE, datum/point/end_point)
+	var/list/points = beam_segments ? beam_segments.Copy() : list()
+	if(end_point)
+		points += end_point
+	if(!length(points))
 		return
-	own_set(src, "beam_components", new /datum/beam_components_cache)
+	// The drawn tracers belong to their timer, not to us (phase 4 would delete them at once, and a
+	// dying projectile adopts nothing): the cache is made detached and handed to the timer.
+	var/datum/beam_components_cache/drawn = new
 	if(tracer_type)
 		var/tempref = "\ref[src]"
-		for(var/i in 1 to length(beam_segments) - 1)
-			generate_tracer_between_points(beam_segments[i], beam_segments[i + 1], beam_components, tracer_type, color, duration, hitscan_light_range, hitscan_light_color_override, hitscan_light_intensity, tempref)
+		for(var/i in 1 to length(points) - 1)
+			generate_tracer_between_points(points[i], points[i + 1], drawn, tracer_type, color, duration, hitscan_light_range, hitscan_light_color_override, hitscan_light_intensity, tempref)
 	if(muzzle_type && duration > 0)
-		var/datum/point/p = beam_segments[1]
+		var/datum/point/p = points[1]
 		var/atom/movable/thing = new muzzle_type
 		p.move_atom_to_src(thing)
 		var/matrix/M = new
@@ -529,9 +537,9 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		thing.transform = M
 		thing.color = color
 		thing.set_light(muzzle_flash_range, muzzle_flash_intensity, muzzle_flash_color_override? muzzle_flash_color_override : color)
-		own_add(beam_components, "beam_components", thing)
+		own_add(drawn, "beam_components", thing)
 	if(impacting && impact_type && duration > 0)
-		var/datum/point/p = beam_segments[length(beam_segments)]
+		var/datum/point/p = points[length(points)]
 		var/atom/movable/thing = new impact_type
 		p.move_atom_to_src(thing)
 		var/matrix/M = new
@@ -539,10 +547,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		thing.transform = M
 		thing.color = color
 		thing.set_light(impact_light_range, impact_light_intensity, impact_light_color_override? impact_light_color_override : color)
-		own_add(beam_components, "beam_components", thing)
-	// The drawn tracers belong to their timer now, not to us (phase 4 would delete them at once).
-	var/datum/beam_components_cache/drawn = beam_components
-	own_take(src, "beam_components")
+		own_add(drawn, "beam_components", thing)
 	om_qdel_after(drawn, duration)
 
 //Returns true if the target atom is on our current turf and above the right layer
