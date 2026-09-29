@@ -199,12 +199,7 @@
 			return 0
 	return 1
 
-/obj/machinery/shipsensors/update_icon()
-	if(use_power)
-		icon_state = "sensors"
-	else
-		icon_state = "sensors_off"
-	..()
+APPEARANCE_TEMPLATE(/obj/machinery/shipsensors, "{use_power?sensors:sensors_off}")
 
 /obj/machinery/shipsensors/examine(mob/user)
 	. = ..()
@@ -223,7 +218,6 @@
 	if(!use_power) //need some juice to kickstart
 		use_power_oneoff(idle_power_usage*5)
 	set_use_power(!use_power)
-	update_icon()
 	refresh_linked_consoles()
 	MACHINE_WAKE(src)
 

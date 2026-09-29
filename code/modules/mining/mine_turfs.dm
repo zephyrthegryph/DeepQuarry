@@ -179,7 +179,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 		make_ore()
 	if(prob(20))
 		overlay_detail = "asteroid[rand(0,9)]"
-	update_icon(!mapload)
+	update_icon()
 	if(density && mineral())
 		. = INITIALIZE_HINT_LATELOAD
 	if(random_icon)
@@ -190,8 +190,9 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 	if(density && mineral())
 		MineralSpread()
 
-/turf/simulated/mineral/update_icon(update_neighbors, ignore_list)
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/turf/simulated/mineral, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
+/turf/simulated/mineral/appearance_overlays()
+	. = list()
 
 	//We are a wall (why does this system work like this??)
 	if(density)
@@ -207,13 +208,13 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 		for(var/direction in GLOB.cardinal)
 			var/turf/T = get_step(src,direction)
 			if(T && !T.density)
-				add_overlay(get_cached_border(rock_side_icon_state,direction,icon,rock_side_icon_state))
+				. += get_cached_border(rock_side_icon_state,direction,icon,rock_side_icon_state)
 
 			if(archaeo_overlay)
-				add_overlay(archaeo_overlay)
+				. += archaeo_overlay
 
 			if(excav_overlay)
-				add_overlay(excav_overlay)
+				. += excav_overlay
 
 	//We are a sand floor
 	else
@@ -222,33 +223,23 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 		icon_state = sand_icon_state
 
 		if(sand_dug)
-			add_overlay("dug_overlay")
+			. += "dug_overlay"
 
 		//Apply overlays if there's space
 		for(var/direction in GLOB.cardinal)
 			var/turf/T = get_step(src, direction)
 			if(istype(T, /turf/space) && !istype(T, /turf/space/cracked_asteroid))
-				add_overlay(get_cached_border("asteroid_edge",direction,icon,"asteroid_edges", 0))
+				. += get_cached_border("asteroid_edge",direction,icon,"asteroid_edges", 0)
 			//Or any time
 			else
 				if(T?.density)
-					add_overlay(get_cached_border(rock_side_icon_state,direction,rock_icon_path,rock_side_icon_state))
+					. += get_cached_border(rock_side_icon_state,direction,rock_icon_path,rock_side_icon_state)
 
 		if(overlay_detail)
-			add_overlay(overlay_detail_icon_path,overlay_detail)
+			. += overlay_detail_icon_path
 
-		if(update_neighbors)
-			for(var/direction in GLOB.alldirs)
-				var/turf/T = get_step(src, direction)
-				// don't double update during cave generation
-				if(LAZYACCESS(ignore_list, T))
-					continue
-
-				if(ismineralturf(T))
-					T.update_icon()
-
-				if(istype(T, /turf/simulated/wall/solidrock))
-					T.update_icon()
+	// Neighbouring rock, sand and walls draw edges against us: tell them when we change.
+	appearance_notify_neighbours("[type]|[density]", /turf/simulated)
 
 /// Rock is drilled out by a blast rather than losing integrity.
 // ALLOW(sys_entry_override): the blast sink of rock: it is drilled out (GetDrilled) instead of losing integrity (damage.md D-turf), so this is where the hit lands, not a reaction to it
@@ -655,7 +646,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 		new /obj/structure/closet/crate/secure/loot(src)
 
 	make_floor()
-	update_icon(1)
+	update_icon()
 
 /turf/simulated/mineral/proc/excavate_find(is_clean = 0, datum/find/F)
 	//with skill and luck, players can cleanly extract finds

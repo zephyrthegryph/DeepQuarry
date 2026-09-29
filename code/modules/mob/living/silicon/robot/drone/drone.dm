@@ -165,16 +165,18 @@ DECLARE_VERB(/mob/living/silicon/robot/drone, /mob/living/proc/hide)
 	real_name = "[initial(name)] ([serial_number])"
 	name = real_name
 
-/mob/living/silicon/robot/drone/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot/drone, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/silicon/robot/drone/appearance_overlays()
+	. = list()
 	if(islist(shell_accessories))
-		add_overlay(shell_accessories)
-	add_hat_overlay()
+		. += shell_accessories
+	. += add_hat_overlay()
 
 /// Drones wear hats through the shared robot hat procs, drawn at their own offsets.
 /mob/living/silicon/robot/drone/add_hat_overlay()
+	. = list()
 	if(hat)
-		add_overlay(get_hat_icon(hat, hat_x_offset, hat_y_offset))
+		. += get_hat_icon(hat, hat_x_offset, hat_y_offset)
 
 /mob/living/silicon/robot/drone/update_worn_icons()
 	return

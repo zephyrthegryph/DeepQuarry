@@ -125,12 +125,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/hypospray/vial, \
 	else
 		return FALSE
 
-/obj/item/reagent_containers/hypospray/vial/update_icon()
-	..()
-	if(loaded_vial)
-		icon_state = "[initial(icon_state)]"
-	else
-		icon_state = "[initial(icon_state)]_empty"
+APPEARANCE_TEMPLATE(/obj/item/reagent_containers/hypospray/vial, "{initial(icon_state)}{loaded_vial?:_empty}")
 
 /obj/item/reagent_containers/hypospray/vial/proc/load_vial_done(mob/user, obj/item/reagent_containers/glass/beaker/vial/W)
 	if(loaded_vial || !(W in user))
@@ -191,11 +186,11 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/hypospray/vial, \
 		flags &= ~OPENCONTAINER
 		update_icon()
 
-/obj/item/reagent_containers/hypospray/autoinjector/update_icon()
-	if(reagents.total_volume > 0)
-		icon_state = "[initial(icon_state)]1"
-	else
-		icon_state = "[initial(icon_state)]0"
+/// Appearance reader: TRUE while the autoinjector holds reagents.
+/obj/item/reagent_containers/hypospray/autoinjector/proc/appearance_filled()
+	return reagents?.total_volume > 0 ? TRUE : FALSE
+
+APPEARANCE_TEMPLATE(/obj/item/reagent_containers/hypospray/autoinjector, "{initial(icon_state)}{appearance_filled?1:0}")
 
 /obj/item/reagent_containers/hypospray/autoinjector/examine(mob/user)
 	. = ..()

@@ -67,14 +67,15 @@
 	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 800)
 	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 800)
 
-/obj/machinery/atmospherics/binary/dp_vent_pump/update_icon(safety = 0)
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/binary/dp_vent_pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/atmospherics/binary/dp_vent_pump/appearance_overlays()
+	. = list()
 
 	var/vent_icon = "vent"
 
 	var/turf/T = get_turf(src)
 	if(!istype(T))
-		return
+		return .
 
 	if(!T.is_plating() && node1 && node2 && node1.level == 1 && node2.level == 1 && istype(node1, /obj/machinery/atmospherics/pipe) && istype(node2, /obj/machinery/atmospherics/pipe))
 		vent_icon += "h"
@@ -84,7 +85,7 @@
 	else
 		vent_icon += "[use_power ? "[pump_direction ? "out" : "in"]" : "off"]"
 
-	add_overlay(GLOB.icon_manager.get_atmos_icon("device", , , vent_icon))
+	. += GLOB.icon_manager.get_atmos_icon("device", , , vent_icon)
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/update_underlays()
 	..()
@@ -253,7 +254,6 @@
 	if(.)
 		// process() hibernates on NOPOWER; re-evaluate when power returns.
 		wake_for_state_change()
-		update_icon()
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/receive_signal(datum/signal/signal)
 	if(!signal.data["tag"] || (signal.data["tag"] != id) || (signal.data["sigtype"]!="command"))

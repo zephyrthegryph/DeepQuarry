@@ -77,20 +77,14 @@ REL_LIST(/obj/item/gun/projectile/dartgun, mixing)
 			own_add(src, "beakers", B)
 	update_icon()
 
-/obj/item/gun/projectile/dartgun/update_icon()
+/// Declared icon_state suffix: "-empty", the tracked dart count, or nothing.
+/obj/item/gun/projectile/dartgun/proc/appearance_suffix()
 	if(!ammo_magazine)
-		icon_state = "[base_state]-empty"
-		return 1
-	if(track_magazine)
-		if(!ammo_magazine.stored_ammo || length(ammo_magazine.stored_ammo) == 0)
-			icon_state = "[base_state]-0"
-		else if(length(ammo_magazine.stored_ammo) > default_magazine_casing_count)
-			icon_state = "[base_state]-[default_magazine_casing_count]"
-		else
-			icon_state = "[base_state]-[length(ammo_magazine.stored_ammo)]"
-		return 1
-	else
-		icon_state = "[base_state]"
+		return "-empty"
+	if(!track_magazine)
+		return ""
+	return "-[min(length(ammo_magazine.stored_ammo), default_magazine_casing_count)]"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/dartgun, "{base_state}{appearance_suffix}")
 
 /obj/item/gun/projectile/dartgun/consume_next_projectile()
 	. = ..()
@@ -202,13 +196,7 @@ REL_LIST(/obj/item/gun/projectile/dartgun, mixing)
 	allowed_magazines = list(/obj/item/ammo_magazine/chemdart)
 	auto_eject = 0
 
-/obj/item/gun/projectile/dartgun/tranq/update_icon()
-	if(!ammo_magazine)
-		icon_state = "tranqgun"
-		return 1
-
-	icon_state = "tranqgun"
-	return 1
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/dartgun/tranq, "tranqgun")
 
 // This is to allow xenobio to activate slime cores via remote.
 /obj/item/projectile/bullet/chemdart/on_hit(atom/target, blocked = 0, def_zone = null)

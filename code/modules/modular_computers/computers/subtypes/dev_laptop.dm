@@ -37,11 +37,12 @@ EXTEND_INTERACTIONS(/obj/item/modular_computer/laptop, INTERACT_ALT(null, PROC_R
 	update_icon()
 	return TRUE
 
-/obj/item/modular_computer/laptop/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/modular_computer/laptop, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/modular_computer/laptop/appearance_overlays()
+	. = list()
 	if(anchored)
-		..()
+		. += ..()
 	else
-		cut_overlays()
 		set_light(0)		// No glow from closed laptops
 		icon_state = icon_state_closed
 

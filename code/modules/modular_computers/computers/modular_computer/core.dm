@@ -96,23 +96,24 @@ DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 		to_chat(user, "You emag \the [src]. It's screen briefly shows a \"OVERRIDE ACCEPTED: New software downloads available.\" message.")
 		return 1
 
-/obj/item/modular_computer/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/modular_computer, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/modular_computer/appearance_overlays()
+	. = list()
 	icon_state = icon_state_unpowered
 
-	cut_overlays()
 
 	. = list()
 
 	if(bsod)
 		. += mutable_appearance(overlay_icon, "bsod")
 		. += emissive_appearance(overlay_icon, "bsod")
-		return add_overlay(.)
+		return .
 	if(!enabled)
 		if(icon_state_screensaver)
 			. += mutable_appearance(overlay_icon, icon_state_screensaver)
 			. += emissive_appearance(overlay_icon, icon_state_screensaver)
 		set_light(0)
-		return add_overlay(.)
+		return .
 
 	set_light(light_strength)
 
@@ -126,7 +127,7 @@ DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 		. += mutable_appearance(overlay_icon, icon_state_menu)
 		. += emissive_appearance(overlay_icon, icon_state_menu)
 
-	return add_overlay(.)
+	return .
 
 /obj/item/modular_computer/proc/turn_on(mob/user)
 	if(bsod)

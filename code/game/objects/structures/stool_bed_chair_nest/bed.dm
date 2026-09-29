@@ -47,10 +47,11 @@
 	return material
 
 // Reuse the cache/code from stools, todo maybe unify.
-/obj/structure/bed/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/bed, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/bed/appearance_overlays()
+	. = list()
 	// Prep icon.
 	icon_state = ""
-	cut_overlays()
 	// Base icon.
 	var/cache_key = "[base_icon]-[material.name]"
 	if(isnull(GLOB.stool_cache[cache_key]))
@@ -58,7 +59,7 @@
 		if(applies_material_colour) // Goes with added var
 			I.color = material.icon_colour
 		GLOB.stool_cache[cache_key] = I
-	add_overlay(GLOB.stool_cache[cache_key])
+	. += GLOB.stool_cache[cache_key]
 	// Padding overlay.
 	if(padding_material)
 		var/padding_cache_key = "[base_icon]-padding-[padding_material.name]"
@@ -66,7 +67,7 @@
 			var/image/I =  image(icon, "[base_icon]_padding")
 			I.color = padding_material.icon_colour
 			GLOB.stool_cache[padding_cache_key] = I
-		add_overlay(GLOB.stool_cache[padding_cache_key])
+		. += GLOB.stool_cache[padding_cache_key]
 	// Strings.
 	desc = initial(desc)
 	if(padding_material)
@@ -245,8 +246,7 @@
 	bedtype = /obj/structure/bed/roller/adv
 	rollertype = /obj/item/roller/adv
 
-/obj/structure/bed/roller/update_icon()
-	return
+APPEARANCE_NONE(/obj/structure/bed/roller)
 
 /// Overrides bed's interaction_item(): a stack does nothing, a roller holder collapses the
 /// bed, and anything else falls through to bed's own handling.
@@ -388,9 +388,7 @@ DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(intera
 	icon_state = "bed_red"
 	flippable = FALSE
 
-/obj/structure/bed/alien/update_icon()
-	return // Doesn't care about material or anything else.
-
+APPEARANCE_NONE(/obj/structure/bed/alien)
 /// Overrides bed's interaction_item(): no deconning.
 /obj/structure/bed/alien/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	return TRUE

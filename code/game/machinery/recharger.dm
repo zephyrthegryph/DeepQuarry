@@ -169,7 +169,6 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	G.forceMove(src)
 	set_charging(G)
 	om_changed(src, CHANGE_MACHINE_OCCUPANT)
-	update_icon()
 	act_message(user, src, MSG_SELF("You insert [charging] into %T%."), MSG_OTHERS("%U% inserts [charging] into %T%."))
 	return TRUE
 
@@ -179,7 +178,6 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	G.forceMove(src)
 	set_charging(G)
 	om_changed(src, CHANGE_MACHINE_OCCUPANT)
-	update_icon()
 	act_message(user, src, MSG_SELF("You insert [charging] into %T%."), MSG_OTHERS("%U% inserts [charging] into %T%."))
 	return TRUE
 
@@ -205,7 +203,6 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		user.put_in_hands(charging)
 		set_charging(null)
 		om_changed(src, CHANGE_MACHINE_OCCUPANT)
-		update_icon()
 	return TRUE
 
 /// Old attack_ai: a cyborg next to it takes out what's charging. Nothing for the AI.
@@ -217,7 +214,6 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 			charging.forceMove(src.loc)
 			set_charging(null)
 			om_changed(src, CHANGE_MACHINE_OCCUPANT)
-			update_icon()
 	return TRUE
 
 /// One frame of charging (the machine pipeline's power/recharger stage decides whether to).
@@ -272,7 +268,6 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	if(pcard.is_damage_critical())
 		pcard.forceMove(get_turf(src))
 		set_charging(null)
-		update_icon()
 		return
 	if(pcard.pai.is_injured())
 		pcard.pai.mend(TREAT_PLATING_REPAIR, 5)
@@ -281,7 +276,6 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		pcard.pai.mend(TREAT_BURN_CARE, 5)
 	else
 		set_charging(null)
-		update_icon()
 		visible_message(span_notice("\The [src] ejects the [pcard]!"))
 		pcard.forceMove(get_turf(src))
 		pcard.pai.full_restore()
@@ -335,11 +329,8 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	set_use_power(USE_POWER_IDLE)
 	return
 
-/obj/machinery/recharger/update_icon()	// Immediate feedback; the power stage refines it (charged, charging) each frame.
-	if(charging)
-		icon_state = icon_state_charging
-	else
-		icon_state = icon_state_idle
+// Immediate feedback; the power stage refines it (charged, charging) each frame.
+APPEARANCE_TEMPLATE(/obj/machinery/recharger, "{charging?@icon_state_charging:@icon_state_idle}")
 
 /obj/machinery/recharger/RefreshParts()
 	var/E = get_part_rating(/obj/item/stock_parts/capacitor)

@@ -26,9 +26,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/shutoff_monitor, "monitor", /datum
 	monitor.tgui_interact(user)
 	return TRUE
 
-/obj/machinery/computer/shutoff_monitor/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/shutoff_monitor, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/computer/shutoff_monitor/appearance_overlays()
+	. = list()
+	. += ..()
 	if(operable())
-		add_overlay("ai-fixer-empty")
-	else
-		cut_overlay("ai-fixer-empty")
+		. += "ai-fixer-empty"

@@ -211,10 +211,11 @@ OWN_TIMER(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
 	overheat = FALSE
 	update_icon()
 
-/obj/item/gun/energy/kinetic_accelerator/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/kinetic_accelerator, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/energy/kinetic_accelerator/appearance_overlays()
+	. = list()
 	if(overheat || !power_supply || (power_supply.charge == 0))
-		add_overlay(emptystate)
+		. += emptystate
 
 #define KA_ENVIRO_TYPE_COLD 0
 #define KA_ENVIRO_TYPE_HOT 1

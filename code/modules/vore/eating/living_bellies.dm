@@ -68,10 +68,11 @@
 /// Callers are responsible for setting the correct icon_state before calling
 /// this proc so the overlay names resolve correctly.
 /mob/living/proc/add_vore_fullness_overlays()
+	. = list()
 	for(var/belly_class in vore_fullness_ex)
 		var/vs_fullness = vore_fullness_ex[belly_class]
 		if(vs_fullness > 0)
-			add_overlay("[icon_state]_[belly_class]-[vs_fullness]")
+			. += "[icon_state]_[belly_class]-[vs_fullness]"
 
 // use this instead of update_fullness where you need to directly update a belly size
 /mob/proc/handle_belly_update()

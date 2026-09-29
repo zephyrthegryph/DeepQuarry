@@ -92,16 +92,19 @@
 	om_watch_disarm(src, "gas")
 	MACHINE_WAKE(src)
 
-/obj/machinery/atmospherics/pipeturbine/update_icon()
-	cut_overlays()
-	if (dP > 10)
-		add_overlay(image('icons/obj/pipeturbine.dmi', "moto-turb"))
-	if (kin_energy > 100000)
-		add_overlay(image('icons/obj/pipeturbine.dmi', "low-turb"))
-	if (kin_energy > 500000)
-		add_overlay(image('icons/obj/pipeturbine.dmi', "med-turb"))
-	if (kin_energy > 1000000)
-		add_overlay(image('icons/obj/pipeturbine.dmi', "hi-turb"))
+DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipeturbine, "appearance_moto", list("1" = list(APPEARANCE_OVERLAYS = list("moto-turb"))))
+DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipeturbine, "appearance_speed", list("1" = list(APPEARANCE_OVERLAYS = list("low-turb")), "2" = list(APPEARANCE_OVERLAYS = list("low-turb", "med-turb")), "3" = list(APPEARANCE_OVERLAYS = list("low-turb", "med-turb", "hi-turb"))))
+
+/obj/machinery/atmospherics/pipeturbine/proc/appearance_moto()
+	return dP > 10
+
+/// Speed overlays: 1 above 100 kJ, 2 above 500 kJ, 3 above 1 MJ of kinetic energy.
+/obj/machinery/atmospherics/pipeturbine/proc/appearance_speed()
+	if(kin_energy > 1000000)
+		return 3
+	if(kin_energy > 500000)
+		return 2
+	return kin_energy > 100000 ? 1 : 0
 
 /obj/machinery/atmospherics/pipeturbine/wrench_act(mob/user, obj/item/W)
 	set_anchored(!anchored)

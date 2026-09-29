@@ -999,7 +999,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/baton/fluff/stunstaff, "bcell", /obj/item/
 		return 1
 	return 0
 
-/obj/item/melee/baton/fluff/stunstaff/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/melee/baton/fluff/stunstaff, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/melee/baton/fluff/stunstaff/appearance_overlays()
+	. = list()
 	icon_state = "[base_icon][wielded][status]"
 	item_state = icon_state
 	if(status==1)
@@ -1316,8 +1318,10 @@ TYPE_TABLE(/obj/item/rig/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask, null, list(REAGENT_ID_TEA = 40, REAGENT_ID_MILK = 20))
 
-/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask/appearance_overlays()
+	. = list()
+	. += ..()
 	name = initial(name)
 	desc = initial(desc)
 
@@ -1349,12 +1353,13 @@ TYPE_TABLE(/obj/item/storage/fancy/fluff/charlotte, hold_spec, list(HOLD_ONLY(li
 		closed_state = "[initial(icon_state)]"
 	. = ..()
 
-/obj/item/storage/fancy/fluff/charlotte/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/fluff/charlotte, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/fancy/fluff/charlotte/appearance_overlays()
+	. = list()
 	if(open)
 		icon_state = open_state
 		if(contents_count(src) >= 1)
-			add_overlay("charlottebox[contents.len]")
+			. += "charlottebox[contents.len]"
 	else
 		icon_state = closed_state
 

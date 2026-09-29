@@ -38,7 +38,9 @@
 	else
 		qdel(src)
 
-/obj/item/material/shard/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/material/shard, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/material/shard/appearance_overlays()
+	. = list()
 	if(material)
 		color = material.icon_colour
 		// 1-(1-x)^2, so that glass shards with 0.3 opacity end up somewhat visible at 0.51 opacity

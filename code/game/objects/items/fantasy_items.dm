@@ -56,7 +56,9 @@
 	flags = OPENCONTAINER
 	var/amount_per_transfer_from_this = 5
 
-/obj/structure/bed/bath/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/bed/bath, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/bed/bath/appearance_overlays()
+	. = list()
 	if(reagents.total_volume < 1)
 		icon_state = "bath"
 	else if(reagents.total_volume < 50)
@@ -65,7 +67,7 @@
 		icon_state = "bath2"
 	else if(reagents.total_volume < 301)
 		icon_state = "bath3"
-	return // Doesn't care about material or anything else.
+	return .
 
 EXTEND_INTERACTIONS(/obj/structure/bed/bath, INTERACT_ITEM(null, PROC_REF(bath_interaction_item)))
 
@@ -118,7 +120,9 @@ DECLARE_REAGENTS(/obj/structure/bed/bath, 300, null)
 	icon_state = "yeoldovenopen"
 	tgui_id = "CookingOvenOld"
 
-/obj/machinery/appliance/cooker/oven/yeoldoven/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/oven/yeoldoven, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/appliance/cooker/oven/yeoldoven/appearance_overlays()
+	. = list()
 	if(!open)
 		if(!has_stat(MACHINE_STAT_ANY))
 			icon_state = "yeoldovenclosed_on"
@@ -203,8 +207,7 @@ EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
 		GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water
 
 
-/obj/structure/toilet/wooden/update_icon()
-	return
+APPEARANCE_NONE(/obj/structure/toilet/wooden)
 
 //cooking pot
 
@@ -216,21 +219,23 @@ EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
 	visible_action = "starts cooking"
 	audible_action = "fire roar"
 
-/obj/machinery/microwave/cookingpot/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/microwave/cookingpot, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/microwave/cookingpot/appearance_overlays()
+	. = list()
 	if(broken)
 		icon_state = "cookingpotb"
-		return TRUE
+		return .
 	if(dirty >= 100)
 		if(operating)
 			icon_state = "cookingpotbloody1"
 		else
 			icon_state = "cookingpotbloody0"
-		return TRUE
+		return .
 	if(operating)
 		icon_state = "cookingpot1"
 	else
 		icon_state = "cookingpot"
-	return TRUE
+	return .
 
 /obj/machinery/microwave/cookingpot/broke(spark = FALSE)
 	. = ..()
@@ -252,7 +257,9 @@ EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
 	icon = 'icons/obj/gun.dmi'
 	icon_state = "harpoonwand-2"
 
-/obj/item/bluespace_harpoon/wand/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/bluespace_harpoon/wand, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/bluespace_harpoon/wand/appearance_overlays()
+	. = list()
 	if(transforming)
 		switch(mode)
 			if(0)

@@ -89,51 +89,52 @@
 		MACHINE_WAKE(src)
 		visible_message(span_notice("\The [src] is now showing data for [victim()]."))
 
-/obj/machinery/vitals_monitor/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/vitals_monitor, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/vitals_monitor/appearance_overlays()
+	. = list()
 	if(has_stat(NOPOWER))
-		return
-	add_overlay("screen")
+		return .
+	. += "screen"
 
 	if(!victim())
-		return
+		return .
 
 	switch(victim().pulse)
 		if(PULSE_NONE)
-			add_overlay("pulse_flatline")
-			add_overlay("pulse_warning")
+			. += "pulse_flatline"
+			. += "pulse_warning"
 		if(PULSE_SLOW, PULSE_NORM,)
-			add_overlay("pulse_normal")
+			. += "pulse_normal"
 		if(PULSE_FAST, PULSE_2FAST)
-			add_overlay("pulse_veryfast")
+			. += "pulse_veryfast"
 		if(PULSE_THREADY)
-			add_overlay("pulse_thready")
-			add_overlay("pulse_warning")
+			. += "pulse_thready"
+			. += "pulse_warning"
 
 	var/obj/item/organ/internal/brain/brain = victim().organ_in(O_BRAIN)
 	if(istype(brain) && victim().stat != DEAD && !(victim().status_flags & FAKEDEATH))
 		if(victim().injury_load(INJURY_CATEGORY_NEURAL))
-			add_overlay("brain_verybad")
-			add_overlay("brain_warning")
+			. += "brain_verybad"
+			. += "brain_warning"
 		else if(victim().stat == UNCONSCIOUS)
-			add_overlay("brain_bad")
+			. += "brain_bad"
 		else
-			add_overlay("brain_ok")
+			. += "brain_ok"
 	else
-		add_overlay("brain_warning")
+		. += "brain_warning"
 
 	var/obj/item/organ/internal/lungs/lungs = victim().organ_in(O_LUNGS)
 	if(istype(lungs) && victim().stat != DEAD && !(victim().status_flags & FAKEDEATH))
 		switch(breathing_band())
 			if("erratic")
-				add_overlay("breathing_shallow")
-				add_overlay("breathing_warning")
+				. += "breathing_shallow"
+				. += "breathing_warning"
 			if("shallow")
-				add_overlay("breathing_shallow")
+				. += "breathing_shallow"
 			else
-				add_overlay("breathing_normal")
+				. += "breathing_normal"
 	else
-		add_overlay("breathing_warning")
+		. += "breathing_warning"
 
 /// Breathing quality from the patient's oxygen saturation.
 /obj/machinery/vitals_monitor/proc/breathing_band()

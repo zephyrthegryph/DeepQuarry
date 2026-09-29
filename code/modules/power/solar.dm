@@ -115,15 +115,16 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	new /obj/item/material/shard(src.loc)
 	return ..()
 
-/obj/machinery/power/solar/update_icon()
-	..()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/solar, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/power/solar/appearance_overlays()
+	. = list()
+	. += ..()
 	if(has_stat(BROKEN))
-		add_overlay("solar_panel-b")
+		. += "solar_panel-b"
 	else
-		add_overlay("solar_panel")
+		. += "solar_panel"
 		src.set_dir(angle2dir(adir))
-	return
+	return .
 
 //calculates the fraction of the sun that the panel recieves
 /obj/machinery/power/solar/proc/update_solar_exposure()
@@ -412,20 +413,19 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 			if(connected_tracker())
 				connected_tracker().set_angle(GLOB.solar_service.get_solar_angle(get_turf(src)))
 
-/obj/machinery/power/solar_control/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/solar_control, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/power/solar_control/appearance_overlays()
+	. = list()
 	if(has_stat(BROKEN))
 		icon_state = "broken"
-		cut_overlays()
-		return
+		return .
 	if(has_stat(NOPOWER))
 		icon_state = "c_unpowered"
-		cut_overlays()
-		return
+		return .
 	icon_state = "solar"
-	cut_overlays()
 	if(cdir > -1)
-		add_overlay(image('icons/obj/computer.dmi', "solcon-o", FLY_LAYER, angle2dir(cdir)))
-	return
+		. += image('icons/obj/computer.dmi', "solcon-o", FLY_LAYER, angle2dir(cdir))
+	return .
 
 /obj/machinery/power/solar_control/declare_interactions(list/into)
 	into += list(
@@ -560,10 +560,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 	connected_power = sum
 	set_power_supply(connected_power)
 	update_icon()
-
-/obj/machinery/power/solar_control/power_change()
-	if((. = ..()))
-		update_icon()
 
 //
 // MISC

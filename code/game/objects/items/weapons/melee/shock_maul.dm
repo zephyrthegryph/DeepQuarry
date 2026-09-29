@@ -127,7 +127,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/shock_maul/loaded, "bcell", /obj/item/cell
 			status = 0
 			update_held_icon()
 
-/obj/item/melee/shock_maul/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/melee/shock_maul, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/melee/shock_maul/appearance_overlays()
+	. = list()
 	if(status)
 		icon_state = "[initial(icon_state)]_active[wielded]"
 		item_state = icon_state

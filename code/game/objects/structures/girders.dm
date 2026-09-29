@@ -65,7 +65,9 @@
 /obj/structure/girder/get_material()
 	return girder_material
 
-/obj/structure/girder/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/girder, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/girder/appearance_overlays()
+	. = list()
 	if(anchored)
 		icon_state = initial(icon_state)
 	else
@@ -338,7 +340,9 @@ DAMAGE_REACTION(/obj/structure/girder, DAMAGE_BLOB, PROC_REF(girder_blob))
 	girder_material = "cult"
 	applies_material_colour = 0
 
-/obj/structure/girder/cult/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/girder/cult, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/girder/cult/appearance_overlays()
+	. = list()
 	if(anchored)
 		icon_state = "cultgirder"
 	else

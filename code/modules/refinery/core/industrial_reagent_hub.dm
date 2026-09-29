@@ -34,8 +34,9 @@
 			// dump reagents to next refinery machine
 			transfer_tank( tanker.reagents, target, dir)
 
-/obj/machinery/reagent_refinery/hub/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/hub, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/reagent_refinery/hub/appearance_overlays()
+	. = list()
 	var/turf/T = get_step(get_turf(src),dir)
 	var/obj/machinery/other = locate_on(T, /obj/machinery/reagent_refinery)
 	var/intake = FALSE
@@ -59,10 +60,10 @@
 	// Get main dir pipe
 	if(intake)
 		var/image/pipe = image(icon, icon_state = "hub_intakes", dir = dir)
-		add_overlay(pipe)
+		. += pipe
 	else
 		var/image/pipe = image(icon, icon_state = "hub_cons", dir = dir)
-		add_overlay(pipe)
+		. += pipe
 
 /obj/machinery/reagent_refinery/hub/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	if(istype(origin_machine,/obj/machinery/reagent_refinery/hub)) // Hubs cannot send into other hubs

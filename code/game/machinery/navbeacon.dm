@@ -31,14 +31,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 	update_icon()
 
 // update the icon_state
-/obj/machinery/navbeacon/update_icon()
-	var/state="navbeacon[open]"
-
-	if(invisibility)
-		icon_state = "[state]-f"	// if invisible, set icon to faded version
-									// in case revealed by T-scanner
-	else
-		icon_state = "[state]"
+APPEARANCE_TEMPLATE(/obj/machinery/navbeacon, "navbeacon{open}{invisibility?-f:}")
 
 /obj/machinery/navbeacon/declare_interactions(list/into)
 	into += list(

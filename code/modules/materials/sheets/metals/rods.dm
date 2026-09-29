@@ -31,7 +31,9 @@
 	recipes = GLOB.rods_recipes
 	update_icon()
 
-/obj/item/stack/rods/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/stack/rods, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/stack/rods/appearance_overlays()
+	. = list()
 	var/amount = get_amount()
 	if((amount <= 5) && (amount > 0))
 		icon_state = "rods-[amount]"

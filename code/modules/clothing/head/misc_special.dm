@@ -219,15 +219,18 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/ushanka, INTERACT_USE("Toggle ear fl
 	siemens_coefficient = 1.5
 	item_icons = null
 
-/obj/item/clothing/head/kitty/update_icon(mob/living/carbon/human/user)
-	if(!istype(user)) return
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/head/kitty, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/clothing/head/kitty/appearance_overlays()
+	. = list()
+	var/mob/living/carbon/human/user = loc
+	if(!istype(user))
+		return .
 	var/icon/ears = new/icon("icon" = 'icons/inventory/head/mob.dmi', "icon_state" = "kitty")
 	ears.Blend(rgb(user.r_hair, user.g_hair, user.b_hair), ICON_ADD)
 
 	var/icon/earbit = new/icon("icon" = 'icons/inventory/head/mob.dmi', "icon_state" = "kittyinner")
 	ears.Blend(earbit, ICON_OVERLAY)
-	add_overlay(ears)
+	. += ears
 
 /obj/item/clothing/head/richard
 	name = "chicken mask"

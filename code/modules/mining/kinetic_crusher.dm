@@ -158,16 +158,16 @@
 	else
 		set_light(0)
 
-/obj/item/kinetic_crusher/update_icon()
-	. = ..()
-	cut_overlay("[icon_state]_uncharged")
-	cut_overlay("[icon_state]_lit")
+DECLARE_APPEARANCE_PROC(/obj/item/kinetic_crusher, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/kinetic_crusher/appearance_overlays()
+	. = list()
+	. += ..()
 	if(charge_overlay)
 		if(!charged)
-			add_overlay("[icon_state]_uncharged")
+			. += "[icon_state]_uncharged"
 	if(integ_light_icon)
 		if(integ_light_on)
-			add_overlay("[icon_state]_lit")
+			. += "[icon_state]_lit"
 
 /obj/item/kinetic_crusher/glaive
 	name = "kinetic glaive"

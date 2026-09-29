@@ -34,7 +34,7 @@
 	make_climbable(/datum/om/behaviour/climbable/unanchored_can_break, 3.4 SECONDS, TRUE) // It's a RAILING!
 	make_rotatable()
 	if(src.anchored)
-		update_icon(0)
+		update_icon()
 
 DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor_type = /obj/structure/railing, neighbor_reconnect = FALSE))
 
@@ -67,58 +67,61 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 		if ((R.dir == Lturn) && R.anchored)
 			check |= 32
 			if (UpdateNeighbors)
-				R.update_icon(0)
+				R.update_icon()
 		if ((R.dir == Rturn) && R.anchored)
 			check |= 2
 			if (UpdateNeighbors)
-				R.update_icon(0)
+				R.update_icon()
 
 	for (var/obj/structure/railing/R in get_step(src, Lturn))
 		if ((R.dir == src.dir) && R.anchored)
 			check |= 16
 			if (UpdateNeighbors)
-				R.update_icon(0)
+				R.update_icon()
 	for (var/obj/structure/railing/R in get_step(src, Rturn))
 		if ((R.dir == src.dir) && R.anchored)
 			check |= 1
 			if (UpdateNeighbors)
-				R.update_icon(0)
+				R.update_icon()
 
 	for (var/obj/structure/railing/R in get_step(src, (Lturn + src.dir)))
 		if ((R.dir == Rturn) && R.anchored)
 			check |= 64
 			if (UpdateNeighbors)
-				R.update_icon(0)
+				R.update_icon()
 	for (var/obj/structure/railing/R in get_step(src, (Rturn + src.dir)))
 		if ((R.dir == Lturn) && R.anchored)
 			check |= 4
 			if (UpdateNeighbors)
-				R.update_icon(0)
+				R.update_icon()
 
-/obj/structure/railing/update_icon(UpdateNeighgors = 1)
-	NeighborsCheck(UpdateNeighgors)
+DECLARE_APPEARANCE_PROC(/obj/structure/railing, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
+/obj/structure/railing/appearance_overlays()
+	. = list()
+	NeighborsCheck(FALSE)
+	// Railings beside and across from us join with ours: tell them when we move, turn or anchor.
+	appearance_notify_neighbours("[anchored]|[dir]|[x],[y],[z]", /obj/structure/railing)
 	//layer = (dir == SOUTH) ? FLY_LAYER : initial(layer) // wtf does this even do
-	cut_overlays()
 	if (!check || !anchored)//|| !anchored
 		icon_state = "[icon_modifier]railing0"
 	else
 		icon_state = "[icon_modifier]railing1"
 		if (check & 32)
-			add_overlay(image(icon, src, "[icon_modifier]corneroverlay"))
+			. += image(icon, src, "[icon_modifier]corneroverlay")
 		if ((check & 16) || !(check & 32) || (check & 64))
-			add_overlay(image(icon, src, "[icon_modifier]frontoverlay_l"))
+			. += image(icon, src, "[icon_modifier]frontoverlay_l")
 		if (!(check & 2) || (check & 1) || (check & 4))
-			add_overlay(image(icon, src, "[icon_modifier]frontoverlay_r"))
+			. += image(icon, src, "[icon_modifier]frontoverlay_r")
 			if(check & 4)
 				switch (src.dir)
 					if (NORTH)
-						add_overlay(image(icon, src, "[icon_modifier]mcorneroverlay", pixel_x = 32))
+						. += image(icon, src, "[icon_modifier]mcorneroverlay", pixel_x = 32)
 					if (SOUTH)
-						add_overlay(image(icon, src, "[icon_modifier]mcorneroverlay", pixel_x = -32))
+						. += image(icon, src, "[icon_modifier]mcorneroverlay", pixel_x = -32)
 					if (EAST)
-						add_overlay(image(icon, src, "[icon_modifier]mcorneroverlay", pixel_y = -32))
+						. += image(icon, src, "[icon_modifier]mcorneroverlay", pixel_y = -32)
 					if (WEST)
-						add_overlay(image(icon, src, "[icon_modifier]mcorneroverlay", pixel_y = 32))
+						. += image(icon, src, "[icon_modifier]mcorneroverlay", pixel_y = 32)
 
 /obj/structure/railing/handle_rotation_verbs(angle, mob/user)
 	if(!can_touch(user))

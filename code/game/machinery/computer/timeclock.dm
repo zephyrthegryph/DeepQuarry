@@ -26,7 +26,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/timeclock, "announce", /obj/item/r
 
 OWN(/obj/machinery/computer/timeclock, card, OWN_SPILL)
 
-/obj/machinery/computer/timeclock/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/timeclock, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/computer/timeclock/appearance_overlays()
+	. = list()
 	if(!operable())
 		icon_state = "[initial(icon_state)]_off"
 	else if(card)
@@ -36,8 +38,6 @@ OWN(/obj/machinery/computer/timeclock, card, OWN_SPILL)
 
 /obj/machinery/computer/timeclock/power_change()
 	. = ..()
-	if(.)
-		update_icon()
 	if(has_stat(NOPOWER))
 		set_light(0)
 	else

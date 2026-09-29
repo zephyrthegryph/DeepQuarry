@@ -67,7 +67,9 @@
 		return 1
 	return 0
 
-/obj/item/material/twohanded/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/material/twohanded/appearance_overlays()
+	. = list()
 	icon_state = "[base_icon][wielded]"
 	item_state = icon_state
 
@@ -293,9 +295,11 @@
 			play_sfx(src.loc, SFX_SPARKS)
 			return
 
-/obj/item/material/twohanded/sledgehammer/mjollnir/update_icon()  //Currently only here to fuck with the on-mob icons.
+DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded/sledgehammer/mjollnir, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/material/twohanded/sledgehammer/mjollnir/appearance_overlays()  //Currently only here to fuck with the on-mob icons.
+	. = list()
 	icon_state = "mjollnir[wielded]"
-	return
+	return .
 
 
 // === merged from twohanded_vr.dm during hard-fork de-suffix (verified no override-order change) ===

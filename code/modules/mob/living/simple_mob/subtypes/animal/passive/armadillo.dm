@@ -50,8 +50,10 @@
 //Hat simulator stolen from slime code.
 OWN(/mob/living/simple_mob/animal/passive/armadillo, hat, OWN_SPILL)
 
-/mob/living/simple_mob/animal/passive/armadillo/update_icon()
-	..() // Do the regular stuff first.
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/armadillo, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/animal/passive/armadillo/appearance_overlays()
+	. = list()
+	. += ..()
 
 	// Hat simulator.
 	if(hat)
@@ -59,7 +61,7 @@ OWN(/mob/living/simple_mob/animal/passive/armadillo, hat, OWN_SPILL)
 		var/image/I = image('icons/inventory/head/mob.dmi', src, hat_state)
 		I.pixel_y = -7 // Smol
 		I.appearance_flags = RESET_COLOR
-		add_overlay(I)
+		. += I
 
 // Clicked on by empty hand.
 EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/armadillo, \

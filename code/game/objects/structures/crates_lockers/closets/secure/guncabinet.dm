@@ -13,10 +13,12 @@
 	..()
 	update_icon()
 
-/obj/structure/closet/secure_closet/guncabinet/update_icon()
-	cut_overlays()
+APPEARANCE_NONE(/obj/structure/closet/secure_closet/guncabinet)
+DECLARE_APPEARANCE_PROC(/obj/structure/closet/secure_closet/guncabinet, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/closet/secure_closet/guncabinet/appearance_overlays()
+	. = list()
 	if(opened)
-		add_overlay("door_open")
+		. += "door_open"
 	else
 		var/lazors = 0
 		var/shottas = 0
@@ -36,19 +38,19 @@
 					shottas--
 					gun.icon_state = "projectile"
 				gun.pixel_x = i*4
-				add_overlay(gun)
+				. += gun
 
-		add_overlay("door")
+		. += "door"
 
 		if(sealed)
-			add_overlay("sealed")
+			. += "sealed"
 
 		if(broken)
-			add_overlay("broken")
+			. += "broken"
 		else if (locked)
-			add_overlay("locked")
+			. += "locked"
 		else
-			add_overlay("open")
+			. += "open"
 
 /obj/structure/closet/secure_closet/guncabinet/excursion
 	name = "expedition weaponry cabinet"

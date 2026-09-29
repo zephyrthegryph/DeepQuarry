@@ -740,7 +740,9 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 /obj/structure/window/reinforced/survival_pod/is_fulltile()
 	return FALSE
 
-/obj/structure/window/reinforced/survival_pod/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/window/reinforced/survival_pod, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/window/reinforced/survival_pod/appearance_overlays()
+	. = list()
 	icon_state = basestate
 
 //Polarized windows
@@ -769,7 +771,9 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 	can_plate = FALSE
 	can_flip_verb = FALSE
 
-/obj/structure/table/survival_pod/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/table/survival_pod, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/table/survival_pod/appearance_overlays()
+	. = list()
 	icon_state = "table"
 
 /obj/structure/table/survival_pod/Initialize(mapload)
@@ -787,11 +791,12 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 	icon_state = "sleeper"
 	stasis_level = /datum/body_effect/stasis/complete //Just one setting
 
-/obj/machinery/sleeper/survival_pod/update_icon()
+APPEARANCE_NONE(/obj/machinery/sleeper/survival_pod)
+DECLARE_APPEARANCE_PROC(/obj/machinery/sleeper/survival_pod, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/sleeper/survival_pod/appearance_overlays()
+	. = list()
 	if(src?.slot_item(OCCUPANT_SLOT_SLEEPER))
-		add_overlay("sleeper_cover")
-	else
-		cut_overlays()
+		. += "sleeper_cover"
 
 //Computer
 /obj/item/gps/computer

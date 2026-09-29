@@ -294,13 +294,12 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/synthprinter, \
 
 	return
 
-/obj/machinery/transhuman/synthprinter/update_icon()
-	..()
-	icon_state = "pod_0"
+APPEARANCE_TEMPLATE(/obj/machinery/transhuman/synthprinter, "pod_{appearance_mode}")
+
+/obj/machinery/transhuman/synthprinter/proc/appearance_mode()
 	if(busy && !has_stat(NOPOWER))
-		icon_state = "pod_1"
-	else if(broken)
-		icon_state = "pod_g"
+		return "1"
+	return broken ? "g" : "0"
 
 /////// Resleever Pod ///////
 /obj/machinery/transhuman/resleever

@@ -72,23 +72,31 @@
 	paste_inefficiency = paste_rating
 	..()
 
-/obj/machinery/protean_reconstitutor/update_icon()
-	cut_overlays()
-	if(!operable() || !anchored)
-		if(has_stat(BROKEN))
-			icon_state = "[state_base]-broken"
-		else
-			icon_state = "[state_base]-nopower"
-		return
-	icon_state = state_base
-	if(protean_brain)
-		add_overlay("[state_base]-brain")
-	if(protean_orchestrator)
-		add_overlay("[state_base]-orchestrator")
-	if(protean_refactory)
-		add_overlay("[state_base]-refactory")
-	if(nanomass_reserve >= nanomass_required)
-		add_overlay("[state_base]-tank_full")
+/obj/machinery/protean_reconstitutor/proc/appearance_live()
+	return (operable() && anchored) ? 1 : 0
+
+/obj/machinery/protean_reconstitutor/proc/appearance_suffix()
+	if(appearance_live())
+		return ""
+	return has_stat(BROKEN) ? "-broken" : "-nopower"
+
+/obj/machinery/protean_reconstitutor/proc/appearance_brain()
+	return (appearance_live() && protean_brain) ? 1 : 0
+
+/obj/machinery/protean_reconstitutor/proc/appearance_orchestrator()
+	return (appearance_live() && protean_orchestrator) ? 1 : 0
+
+/obj/machinery/protean_reconstitutor/proc/appearance_refactory()
+	return (appearance_live() && protean_refactory) ? 1 : 0
+
+/obj/machinery/protean_reconstitutor/proc/appearance_tank_full()
+	return (appearance_live() && nanomass_reserve >= nanomass_required) ? 1 : 0
+
+APPEARANCE_TEMPLATE(/obj/machinery/protean_reconstitutor, "{state_base}{appearance_suffix}")
+DECLARE_APPEARANCE(/obj/machinery/protean_reconstitutor, "appearance_brain", list("1" = list(APPEARANCE_OVERLAYS = list("recon-brain"))))
+DECLARE_APPEARANCE(/obj/machinery/protean_reconstitutor, "appearance_orchestrator", list("1" = list(APPEARANCE_OVERLAYS = list("recon-orchestrator"))))
+DECLARE_APPEARANCE(/obj/machinery/protean_reconstitutor, "appearance_refactory", list("1" = list(APPEARANCE_OVERLAYS = list("recon-refactory"))))
+DECLARE_APPEARANCE(/obj/machinery/protean_reconstitutor, "appearance_tank_full", list("1" = list(APPEARANCE_OVERLAYS = list("recon-tank_full"))))
 
 /obj/machinery/protean_reconstitutor/examine()
 	. = ..()

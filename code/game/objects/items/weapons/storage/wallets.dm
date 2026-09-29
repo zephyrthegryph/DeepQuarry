@@ -68,15 +68,16 @@ TYPE_TABLE(/obj/item/storage/wallet, hold_spec, list(HOLD_ONLY(list( \
 			name = "[original_name] ([front_id()])"
 			update_icon()
 
-/obj/item/storage/wallet/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/wallet, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/wallet/appearance_overlays()
+	. = list()
 	if(front_id())
 		var/tiny_state = "id-generic"
 		if(icon_exists(icon, "id-[front_id().icon_state]"))
 			tiny_state = "id-"+front_id().icon_state
 		var/image/tiny_image = new/image(icon, icon_state = tiny_state)
 		tiny_image.appearance_flags = RESET_COLOR
-		add_overlay(tiny_image)
+		. += tiny_image
 
 /obj/item/storage/wallet/GetID()
 	return front_id()

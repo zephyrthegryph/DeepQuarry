@@ -80,8 +80,7 @@
 			if(FRAME_WIRED)
 				. += "It's wired."
 
-/obj/structure/construction/update_icon()
-	icon_state = "[base_icon][stage]"
+APPEARANCE_TEMPLATE(/obj/structure/construction, "{base_icon}{stage}")
 
 DECLARE_INTERACTIONS(/obj/structure/construction, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 

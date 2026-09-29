@@ -26,11 +26,7 @@
 		icon_state = "[icon_state]"
 		base_state = icon_state
 
-/obj/machinery/door/window/update_icon()
-	if(density)
-		icon_state = base_state
-	else
-		icon_state = "[base_state]open"
+APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
 
 /obj/machinery/door/window/proc/shatter(display_message = 1)
 	new /obj/item/material/shard(src.loc)
@@ -120,7 +116,6 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	explosion_resistance = 0
 	set_density(FALSE)
-	update_icon()
 	update_nearby_tiles()
 
 	if(operating == 1) //emag again
@@ -135,7 +130,6 @@
 	play_sfx(src, SFX_MACHINES_DOOR_WINDOWDOOR)
 
 	set_density(TRUE)
-	update_icon()
 	explosion_resistance = initial(explosion_resistance)
 	update_nearby_tiles()
 	om_after(src, 1 SECONDS, PROC_REF(finish_close))

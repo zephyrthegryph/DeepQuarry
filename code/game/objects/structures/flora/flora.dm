@@ -667,13 +667,12 @@ DECLARE_LOOT(/obj/random/pottedplant, LOOT_TABLE(\
 	variantnum = rand(1,3)
 	update_icon()
 
-/obj/structure/flora/sif/frostbelle/update_icon()
-	..()
-
+/obj/structure/flora/sif/frostbelle/proc/appearance_variant()
 	if(max_harvests > 0 && harvest_count < max_harvests)
-		icon_state = "[initial(icon_state)][variantnum]"
-	else
-		icon_state = initial(icon_state)
+		return variantnum
+	return ""
+
+APPEARANCE_TEMPLATE(/obj/structure/flora/sif/frostbelle, "{initial(icon_state)}{appearance_variant}")
 
 /obj/structure/flora/sif/frostbelle/get_harvestable_desc()
 	return span_notice("\The [src] seems to be budding.")

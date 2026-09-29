@@ -93,13 +93,14 @@
 		consume(src, user)
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/spacecasinocash/update_icon()
-	overlays.Cut()
+DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/spacecasinocash/appearance_overlays()
+	. = list()
 	name = "[worth] casino credit\s"
 	if(worth in list(1000,500,200,100,50,20,10,1))
 		icon_state = "spacecasinocash[worth]"
 		desc = "It's a stack of casino chips with a combined value of [worth] casino credits."
-		return
+		return .
 	var/sum = src.worth
 	var/num = 0
 	for(var/i in list(1000,500,200,100,50,20,10,1))
@@ -111,14 +112,14 @@
 			M.Translate(rand(-6, 6), rand(-4, 8))
 			M.Turn(pick(-45, 0, 0, 0, 0, 0, 0, 0, 45))
 			banknote.transform = M
-			src.overlays += banknote
+			. += banknote
 	if(num == 0) // Less than one credit, let's just make it look like 1 for ease
 		var/image/banknote = image('icons/obj/casino.dmi', "spacecasinocash1")
 		var/matrix/M = matrix()
 		M.Translate(rand(-6, 6), rand(-4, 8))
 		M.Turn(pick(-45, 0, 0, 0, 0, 0, 0, 0, 45))
 		banknote.transform = M
-		src.overlays += banknote
+		. += banknote
 	src.desc = "They are worth [worth] casino credits."
 
 /obj/item/spacecasinocash/proc/adjust_worth(adjust_worth = 0, update = 1)
@@ -283,13 +284,14 @@ DECLARE_INTERACTIONS(/obj/item/casino_platinum_chip, INTERACT_USE(null, PROC_REF
 		consume(src, user)
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/spacecasinocash_fake/update_icon()
-	overlays.Cut()
+DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash_fake, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/spacecasinocash_fake/appearance_overlays()
+	. = list()
 	name = "[worth] replica casino chip\s"
 	if(worth in list(1000,500,200,100,50,20,10,1))
 		icon_state = "spacecasinocash[worth]"
 		desc = "It's a stack of replica casino chips with a combined value of [worth] imaginary points."
-		return
+		return .
 	var/sum = src.worth
 	var/num = 0
 	for(var/i in list(1000,500,200,100,50,20,10,1))
@@ -300,13 +302,13 @@ DECLARE_INTERACTIONS(/obj/item/casino_platinum_chip, INTERACT_USE(null, PROC_REF
 			var/matrix/M = matrix()
 			M.Translate(rand(-6, 6), rand(-4, 8))
 			banknote.transform = M
-			src.overlays += banknote
+			. += banknote
 	if(num == 0) // Less than one credit, let's just make it look like 1 for ease
 		var/image/banknote = image('icons/obj/casino.dmi', "spacecasinocash1")
 		var/matrix/M = matrix()
 		M.Translate(rand(-6, 6), rand(-4, 8))
 		banknote.transform = M
-		src.overlays += banknote
+		. += banknote
 	src.desc = "They are worth [worth] replica casino credits."
 
 /obj/item/spacecasinocash_fake/proc/adjust_worth(adjust_worth = 0, update = 1)

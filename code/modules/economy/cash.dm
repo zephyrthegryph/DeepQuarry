@@ -1,3 +1,6 @@
+/// How many scattered banknote layouts piles share (spacecash_note_layouts()).
+#define SPACECASH_NOTE_LAYOUTS 50
+
 /obj/item/spacecash
 	name = "0 Thaler"
 	var/initial_name = "Thaler"
@@ -24,6 +27,30 @@
 /obj/item/spacecash/Initialize(mapload)
 	. = ..()
 	make_sellable(/datum/sellable/spacecash)
+	note_seed = rand(0, SPACECASH_NOTE_LAYOUTS - 1)
+
+/obj/item/spacecash
+	/// Picked once at init: where this pile starts in the shared note layouts, so a redraw keeps
+	/// every banknote where it was.
+	var/note_seed = 0
+
+/// The scattered note transforms, rolled once for the whole round and shared by every pile.
+GLOBAL_LIST_INIT(spacecash_note_layouts, build_spacecash_note_layouts())
+
+/proc/build_spacecash_note_layouts()
+	. = list()
+	for(var/i in 1 to SPACECASH_NOTE_LAYOUTS)
+		var/matrix/M = matrix()
+		M.Translate(rand(-6, 6), rand(-4, 8))
+		M.Turn(pick(-45, -27.5, 0, 0, 0, 0, 0, 0, 0, 27.5, 45))
+		. += M
+
+/// The banknote image for the `index`th note of this pile.
+/obj/item/spacecash/proc/banknote_image(denomination, index)
+	var/list/layouts = GLOB.spacecash_note_layouts
+	var/image/banknote = image('icons/obj/economy.dmi', "spacecash[denomination]")
+	banknote.transform = layouts[((note_seed + index) % SPACECASH_NOTE_LAYOUTS) + 1]
+	return banknote
 
 /// Old attackby.
 /obj/item/spacecash/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -43,32 +70,23 @@
 		consume(src, user)
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/spacecash/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/spacecash, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/spacecash/appearance_overlays()
+	. = list()
 	name = "[worth] [initial_name]\s"
 	if(worth in list(1000,500,200,100,50,20,10,5,1))
 		icon_state = "spacecash[worth]"
 		desc = "It's worth [worth] [initial_name]s."
-		return
+		return .
 	var/sum = src.worth
 	var/num = 0
 	for(var/i in list(1000,500,200,100,50,20,10,5,1))
 		while(sum >= i && num < 50)
 			sum -= i
 			num++
-			var/image/banknote = image('icons/obj/economy.dmi', "spacecash[i]")
-			var/matrix/M = matrix()
-			M.Translate(rand(-6, 6), rand(-4, 8))
-			M.Turn(pick(-45, -27.5, 0, 0, 0, 0, 0, 0, 0, 27.5, 45))
-			banknote.transform = M
-			add_overlay(banknote)
+			. += banknote_image(i, num)
 	if(num == 0) // Less than one thaler, let's just make it look like 1 for ease
-		var/image/banknote = image('icons/obj/economy.dmi', "spacecash1")
-		var/matrix/M = matrix()
-		M.Translate(rand(-6, 6), rand(-4, 8))
-		M.Turn(pick(-45, -27.5, 0, 0, 0, 0, 0, 0, 0, 27.5, 45))
-		banknote.transform = M
-		add_overlay(banknote)
+		. += banknote_image(1, 0)
 	src.desc = "They are worth [worth] [initial_name]s."
 
 /obj/item/spacecash/proc/adjust_worth(adjust_worth = 0, update = 1)
@@ -184,9 +202,11 @@ DECLARE_INTERACTIONS(/obj/item/spacecash, \
 
 EXTEND_INTERACTIONS(/obj/item/spacecash/ewallet, INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)))
 
-/obj/item/spacecash/ewallet/update_icon() return  //space cash
+APPEARANCE_NONE(/obj/item/spacecash/ewallet)
 
 /obj/item/spacecash/ewallet/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))
 		. += span_notice("Charge card's owner: [src.owner_name]. Thalers remaining: [src.worth].")
+
+#undef SPACECASH_NOTE_LAYOUTS

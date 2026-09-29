@@ -216,13 +216,14 @@
 	bolt.icon_state = "metal-rod-superheated"
 	cell().use(500)
 
-/obj/item/gun/launcher/crossbow/update_icon()
+/// Suffix for the declared icon_state: drawn, nocked or idle.
+/obj/item/gun/launcher/crossbow/proc/appearance_draw_suffix()
 	if(tension > 1)
-		icon_state = "crossbow-drawn"
-	else if(bolt)
-		icon_state = "crossbow-nocked"
-	else
-		icon_state = "crossbow"
+		return "-drawn"
+	if(bolt)
+		return "-nocked"
+	return ""
+APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow, "crossbow{appearance_draw_suffix}")
 
 
 // Crossbow construction.
@@ -234,8 +235,7 @@
 
 	var/buildstate = 0
 
-/obj/item/crossbowframe/update_icon()
-	icon_state = "crossbowframe[buildstate]"
+APPEARANCE_TEMPLATE(/obj/item/crossbowframe, "crossbowframe{buildstate}")
 
 /obj/item/crossbowframe/examine(mob/user)
 	. = ..()

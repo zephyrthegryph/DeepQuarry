@@ -108,7 +108,9 @@ EXTEND_INTERACTIONS(/obj/structure/lift/button, INTERACT_ITEM(null, PROC_REF(int
 	light_up = TRUE
 	update_icon()
 
-/obj/structure/lift/button/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/lift/button, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/lift/button/appearance_overlays()
+	. = list()
 	if(lift().fire_mode)
 		icon_state = "button_fire"
 	else if(lift().priority_mode)
@@ -208,7 +210,9 @@ EXTEND_INTERACTIONS(/obj/structure/lift/panel, \
 	if(.)
 		pressed(ui.user)
 
-/obj/structure/lift/panel/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/lift/panel, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/lift/panel/appearance_overlays()
+	. = list()
 	if(lift().fire_mode)
 		icon_state = "panel_fire"
 	else

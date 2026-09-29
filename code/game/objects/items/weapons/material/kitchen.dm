@@ -28,13 +28,14 @@ DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 	if (prob(60))
 		src.pixel_y = rand(0, 4)
 
-/obj/item/material/kitchen/utensil/update_icon()
-	. = ..()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/material/kitchen/utensil/appearance_overlays()
+	. = list()
+	. += ..()
 	if(loaded)
 		var/image/I = new(icon, "loadedfood")
 		I.color = loaded_color
-		add_overlay(I)
+		. += I
 
 /obj/item/material/kitchen/utensil/proc/load_food(mob/user, obj/item/reagent_containers/food/snacks/loading)
 	if (reagents.total_volume > 0)

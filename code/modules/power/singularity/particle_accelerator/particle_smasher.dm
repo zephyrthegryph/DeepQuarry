@@ -143,8 +143,9 @@
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/particle_smasher/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/particle_smasher/appearance_overlays()
+	. = list()
 	if(!material_layer)
 		material_layer = image(icon, "[initial(icon_state)]-material")
 	if(!material_glow)
@@ -157,12 +158,12 @@
 		if(target)
 			var/target_color = target_material_color()
 			material_layer.color = target_color
-			add_overlay(material_layer)
+			. += material_layer
 			if(successful_craft)
 				material_glow.color = target_color
-				add_overlay(material_glow)
+				. += material_glow
 		if(reagent_container())
-			add_overlay(reagent_layer)
+			. += reagent_layer
 	else
 		icon_state = initial(icon_state)
 

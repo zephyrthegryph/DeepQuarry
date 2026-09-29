@@ -69,7 +69,6 @@
 	// Relatively small chance to emag the apc as apc_damage event does.
 	if(prob(0.2 * severity))
 		T.set_emagged(1)
-		T.update_icon()
 
 // Overmap version
 /datum/event/electrical_storm/overmap/announce()

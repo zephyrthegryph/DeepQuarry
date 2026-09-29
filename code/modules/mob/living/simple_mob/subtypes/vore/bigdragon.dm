@@ -327,8 +327,10 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob
 ///		Icon generation stuff
 ///
 
-/mob/living/simple_mob/vore/bigdragon/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/vore/bigdragon/appearance_overlays()
+	. = list()
+	. += ..()
 	update_fullness()
 	build_icons()
 

@@ -33,7 +33,9 @@
 	own_set(src, "grill_loop", new /datum/looping_sound/grill(list(src), FALSE))
 
 
-/obj/machinery/appliance/cooker/grill/update_icon() // TODO: Cooking icon
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/grill, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/appliance/cooker/grill/appearance_overlays() // TODO: Cooking icon
+	. = list()
 	if(!has_stat(MACHINE_STAT_ANY))
 		icon_state = on_icon
 		if(cooking == TRUE)

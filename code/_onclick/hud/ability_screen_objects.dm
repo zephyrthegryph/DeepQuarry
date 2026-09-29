@@ -81,12 +81,14 @@
 			user.client.screen += src
 	var/i = 1
 	for(var/atom/movable/screen/ability/ability in ability_objects)
-		ability.update_icon(forced)
+		ability.update_icon()
 		ability.index = i
 		ability.maptext = "[ability.index]" // Slot number
 		i++
 
-/atom/movable/screen/movable/ability_master/update_icon()
+DECLARE_APPEARANCE_PROC(/atom/movable/screen/movable/ability_master, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/atom/movable/screen/movable/ability_master/appearance_overlays()
+	. = list()
 	if(length(ability_objects))
 		invisibility = INVISIBILITY_NONE
 	else
@@ -102,7 +104,7 @@
 
 	new_button.name = name_given
 	new_button.ability_icon_state = name_given
-	new_button.update_icon(1)
+	new_button.update_icon()
 	own_add(src, "ability_objects", new_button)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
@@ -167,14 +169,15 @@ DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/abili
 			master.update_icon()
 	..()
 
-/atom/movable/screen/ability/update_icon()
+DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/atom/movable/screen/ability/appearance_overlays()
+	. = list()
 
 
 
-	cut_overlays()
 	icon_state = "[background_base_state]_spell_base"
 
-	overlays += ability_icon_state
+	. += ability_icon_state
 
 
 /atom/movable/screen/ability/Click()

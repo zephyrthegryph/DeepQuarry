@@ -35,8 +35,7 @@
 	. = ..()
 	. += "It has [spikes] spike\s remaining."
 
-/obj/item/gun/launcher/spikethrower/update_icon()
-	icon_state = "spikethrower[spikes]"
+APPEARANCE_TEMPLATE(/obj/item/gun/launcher/spikethrower, "spikethrower{spikes}")
 
 /obj/item/gun/launcher/spikethrower/update_release_force()
 	return

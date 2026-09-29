@@ -43,7 +43,9 @@
 		return INITIALIZE_HINT_QDEL
 	color = M.icon_colour
 
-/obj/item/stack/sandbags/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/stack/sandbags, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/stack/sandbags/appearance_overlays()
+	. = list()
 	var/amount = get_amount()
 
 	slowdown = round(amount / 10, 0.1)

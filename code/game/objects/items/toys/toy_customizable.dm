@@ -9,17 +9,18 @@
 	var/list/possible_overlays
 	var/list/added_overlays
 
-/obj/item/toy/plushie/customizable/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/customizable, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/toy/plushie/customizable/appearance_overlays()
+	. = list()
 	var/mutable_appearance/B = mutable_appearance(icon, icon_state)
 	B.color = base_color
-	add_overlay(B)
+	. += B
 	if(added_overlays)
 		for(var/key, value in added_overlays)
 			var/mutable_appearance/our_image = mutable_appearance(icon, key)
 			our_image.color = value["color"]
 			our_image.alpha = value["alpha"]
-			add_overlay(our_image)
+			. += our_image
 
 /obj/item/toy/plushie/customizable/Initialize(mapload)
 	. = ..()

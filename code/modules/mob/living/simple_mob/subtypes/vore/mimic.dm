@@ -242,7 +242,11 @@ DAMAGE_REACTION(/obj/structure/closet/crate/mimic, DAMAGE_EXPLOSION, PROC_REF(bl
 	mimic_chance = 30
 	mimic_active = TRUE
 
-/obj/structure/closet/crate/mimic/closet/update_icon()
+/// Draws itself entirely: drop the parent's keyed declarations.
+APPEARANCE_NONE(/obj/structure/closet/crate/mimic/closet)
+DECLARE_APPEARANCE_PROC(/obj/structure/closet/crate/mimic/closet, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/closet/crate/mimic/closet/appearance_overlays()
+	. = list()
 	if(opened)
 		icon_state = "copen"
 	else

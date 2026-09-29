@@ -1,22 +1,23 @@
 // Special wall type for Point of Interests.
 
 
-/turf/simulated/wall/update_icon()
+DECLARE_APPEARANCE_PROC(/turf/simulated/wall, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/turf/simulated/wall/appearance_overlays()
+	. = list()
 	if(!material)
-		return
+		return .
 
 	if(!damage_overlays[1]) //list hasn't been populated
 		generate_overlays()
 
-	cut_overlays()
 	var/image/I
 
 	if(!density)
 		I = image(wall_masks, "rockvault")
 		I.color = material.icon_colour
-		add_overlay(I)
-		return
-	..()
+		. += I
+		return .
+	. += ..()
 
 /turf/simulated/wall/solidrock //for more stylish anti-cheese.
 	resistance_flags = INDESTRUCTIBLE //These things are suppose to be unbreakable
@@ -25,7 +26,7 @@
 
 /turf/simulated/wall/solidrock/Initialize(mapload)
 	. = ..(mapload, MAT_ALIEN_BEDROCK)
-	update_icon(1)
+	update_icon()
 
 /turf/simulated/wall/solidrock/update_material()
 	name = "solid rock"
@@ -48,23 +49,21 @@
 
 	return GLOB.mining_overlay_cache["[cache_id]_[direction]"]
 
-/turf/simulated/wall/solidrock/update_icon(update_neighbors)
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/turf/simulated/wall/solidrock, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
+/turf/simulated/wall/solidrock/appearance_overlays()
+	. = list()
 	if(density)
 		var/image/I
 		for(var/i = 1 to 4)
 			I = image('icons/turf/wall_masks.dmi', "rock[wall_connections[i]]", dir = 1<<(i-1))
-			add_overlay(I)
+			. += I
 		for(var/direction in GLOB.cardinal)
 			var/turf/T = get_step(src,direction)
 			if(istype(T) && !T.density)
-				add_overlay(get_cached_border(rock_side,direction,icon,rock_side))
+				. += get_cached_border(rock_side,direction,icon,rock_side)
 
-	else if(update_neighbors)
-		for(var/direction in GLOB.alldirs)
-			if(istype(get_step(src, direction), /turf/simulated/wall/solidrock))
-				var/turf/simulated/wall/solidrock/M = get_step(src, direction)
-				M.update_icon()
+	// Neighbouring rock connects to us: tell it when we appear or go.
+	appearance_notify_neighbours("[type]|[density]", /turf/simulated/wall/solidrock)
 
 // Old attackby: items do nothing here.
 EXTEND_INTERACTIONS(/turf/simulated/wall/solidrock, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
@@ -82,19 +81,17 @@ EXTEND_INTERACTIONS(/turf/simulated/wall/solidrock, INTERACT_ITEM("Nothing", TYP
 /turf/simulated/wall/solidrock/mossyrockpoi/Initialize(mapload)
 	. = ..(mapload, "mossyrock")
 
-/turf/simulated/wall/solidrock/mossyrockpoi/update_icon(update_neighbors)
+DECLARE_APPEARANCE_PROC(/turf/simulated/wall/solidrock/mossyrockpoi, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
+/turf/simulated/wall/solidrock/mossyrockpoi/appearance_overlays()
+	. = list()
 	if(density)
 		var/image/I
 		for(var/i = 1 to 4)
 			I = image('icons/turf/wall_masks.dmi', "mossyrock[wall_connections[i]]", dir = 1<<(i-1))
-			add_overlay(I)
+			. += I
 		for(var/direction in GLOB.cardinal)
 			var/turf/T = get_step(src,direction)
 			if(istype(T) && !T.density)
-				add_overlay(get_cached_border(mossyrock_side,direction,icon,mossyrock_side))
+				. += get_cached_border(mossyrock_side,direction,icon,mossyrock_side)
 
-	else if(update_neighbors)
-		for(var/direction in GLOB.alldirs)
-			if(istype(get_step(src, direction), /turf/simulated/wall/solidrock/mossyrockpoi))
-				var/turf/simulated/wall/solidrock/mossyrockpoi/M = get_step(src, direction)
-				M.update_icon()
+	appearance_notify_neighbours("[type]|[density]", /turf/simulated/wall/solidrock/mossyrockpoi)

@@ -10,14 +10,15 @@
 	var/wax = 7200 // FOUR HOUR burn time, taking into account process only calling once every two seconds or so.
 	var/icon_type = "candle"
 
-/obj/item/flame/candle/update_icon()
-	var/i
+/// 1 (fresh) to 3 (nearly gone) by remaining wax.
+/obj/item/flame/candle/proc/appearance_wax_stage()
 	if(wax > 3600) // Icon update to match 4 hour burn
-		i = 1
-	else if(wax > 800)
-		i = 2
-	else i = 3
-	icon_state = "[icon_type][i][lit ? "_lit" : ""]"
+		return 1
+	if(wax > 800)
+		return 2
+	return 3
+
+APPEARANCE_TEMPLATE(/obj/item/flame/candle, "{icon_type}{appearance_wax_stage}{lit?_lit:}")
 
 
 /// Old attackby.
@@ -109,11 +110,12 @@ DECLARE_INTERACTIONS(/obj/item/flame/candle, \
 	w_class = ITEMSIZE_SMALL
 	wax = 20000
 
-/obj/item/flame/candle/candelabra/update_icon()
+/obj/item/flame/candle/candelabra/proc/appearance_candelabra_suffix()
 	if(wax == 0)
-		icon_state = "candelabra_melted"
-	else
-		icon_state = "candelabra[lit ? "_lit" : ""]"
+		return "_melted"
+	return lit ? "_lit" : ""
+
+APPEARANCE_TEMPLATE(/obj/item/flame/candle/candelabra, "candelabra{appearance_candelabra_suffix}")
 
 /obj/item/flame/candle/everburn
 	wax = 99999

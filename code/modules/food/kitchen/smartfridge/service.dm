@@ -31,13 +31,13 @@
 	circuit = /obj/item/circuitboard/smartfridge/drinks/showcase
 
 //Showcase needs a special icon update
-/obj/machinery/smartfridge/drinks/showcase/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge/drinks/showcase, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/smartfridge/drinks/showcase/appearance_overlays()
+	. = list()
 	if(panel_open)
-		add_overlay("[icon_base]-panel")
+		. += "[icon_base]-panel"
 
 	if(has_stat(BROKEN))
-		cut_overlays()
 		icon_state = "[icon_base]-broken"
 
 	if(has_stat(NOPOWER))
@@ -46,9 +46,9 @@
 		icon_state = icon_base
 		switch(stored_count())
 			if(0)
-				add_overlay("[icon_base]")
+				. += "[icon_base]"
 			if(1 to 3)
-				add_overlay("[icon_base]-fill")
+				. += "[icon_base]-fill"
 
 /*
  * Hydroponics

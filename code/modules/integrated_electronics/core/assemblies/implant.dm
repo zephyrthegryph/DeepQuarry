@@ -13,8 +13,10 @@
 /obj/item/electronic_assembly/implant/tgui_host()
 	return implant().tgui_host()
 
-/obj/item/electronic_assembly/implant/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/implant, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/electronic_assembly/implant/appearance_overlays()
+	. = list()
+	. += ..()
 	implant().icon_state = icon_state
 
 /// The implant this refers to (a relation view: null once that is deleted).

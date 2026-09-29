@@ -168,36 +168,37 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	rel_set(src, "node", get_exonet_node())
 	update_icon()
 
-/obj/machinery/newscaster/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/newscaster/appearance_overlays()
+	. = list()
 	if(!ispowered || (has_stat(BROKEN)))
 		icon_state = "newscaster_off"
 		if(has_stat(BROKEN)) //If the thing is smashed, add crack overlay on top of the unpowered sprite.
-			add_overlay("crack3")
+			. += "crack3"
 		set_light(0)
 		set_light_on(FALSE)
-		return
+		return .
 
 	if(GLOB.news_network.wanted_issue()) //wanted icon state, there can be no overlays on it as it's a priority message
 		icon_state = "newscaster_wanted"
-		add_overlay(mutable_appearance(icon, "newscaster_wanted_ov"))
-		add_overlay(emissive_appearance(icon, "newscaster_wanted_ov"))
-		return
+		. += mutable_appearance(icon, "newscaster_wanted_ov")
+		. += emissive_appearance(icon, "newscaster_wanted_ov")
+		return .
 
 	if(alert) //new message alert overlay
-		add_overlay("newscaster_alert")
-		add_overlay(mutable_appearance(icon, "newscaster_alert"))
-		add_overlay(emissive_appearance(icon, "newscaster_alert"))
+		. += "newscaster_alert"
+		. += mutable_appearance(icon, "newscaster_alert")
+		. += emissive_appearance(icon, "newscaster_alert")
 
 	if(hitstaken > 0) //Cosmetic damage overlay
-		add_overlay("crack[hitstaken]")
+		. += "crack[hitstaken]"
 
 	icon_state = "newscaster_normal"
-	add_overlay(emissive_appearance(icon, "newscaster_normal_ov"))
-	add_overlay(mutable_appearance(icon, "newscaster_normal_ov"))
+	. += emissive_appearance(icon, "newscaster_normal_ov")
+	. += mutable_appearance(icon, "newscaster_normal_ov")
 	set_light(2)
 	set_light_on(TRUE)
-	return
+	return .
 
 /obj/machinery/newscaster/power_change()
 	if(has_stat(BROKEN)) //Broken shit can't be powered.
@@ -205,7 +206,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	. = ..()
 	if(!has_stat(NOPOWER))
 		ispowered = 1
-		update_icon()
 	else
 		om_after(src, rand(0, 15), PROC_REF(lose_power))
 

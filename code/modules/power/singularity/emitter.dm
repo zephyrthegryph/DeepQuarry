@@ -96,7 +96,6 @@
 		return PROCESS_KILL
 	if(src.state != 2 || (!power_region && active_power_usage))
 		set_active(0)
-		update_icon()
 		return PROCESS_KILL
 	if(!active)
 		return PROCESS_KILL
@@ -261,7 +260,6 @@
 	if(allowed(user))
 		set_locked(!locked)
 		to_chat(user, "The controls are now [locked ? "locked." : "unlocked."]")
-		update_icon()
 	else
 		to_chat(user, span_warning("Access denied."))
 	return TRUE
@@ -368,8 +366,9 @@
 	make_rotatable()
 	emp_protection_flags |= EMP_PROTECT_SELF
 
-/obj/machinery/power/emitter/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/emitter, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/power/emitter/appearance_overlays()
+	. = list()
 	icon_state = "emitter[state]"
 	if (state != previous_state)
 		flick("emitterflick-[previous_state][state]",src)
@@ -378,12 +377,12 @@
 	if(powered && power_region && avail(active_power_usage) && active)
 		var/image/emitterbeam = image(icon,"emitter-beam")
 		emitterbeam.plane = PLANE_LIGHTING_ABOVE
-		add_overlay(emitterbeam)
+		. += emitterbeam
 
 	if(locked)
 		var/image/emitterlock = image(icon,"emitter-lock")
 		emitterlock.plane = PLANE_LIGHTING_ABOVE
-		add_overlay(emitterlock)
+		. += emitterlock
 
 // The old emitter sprite
 /obj/machinery/power/emitter/antique
@@ -391,7 +390,9 @@
 	desc = "An old fashioned heavy duty industrial laser."
 	icon_state = "emitter"
 
-/obj/machinery/power/emitter/antique/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/emitter/antique, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/power/emitter/antique/appearance_overlays()
+	. = list()
 	if(powered && power_region && avail(active_power_usage) && active)
 		icon_state = "emitter_+a"
 	else

@@ -62,14 +62,15 @@
 
 
 // Makes a tiny overlay of the thing the player has copied, so they can easily tell what they currently have.
-/obj/item/spell/illusion/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/spell/illusion, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/spell/illusion/appearance_overlays()
+	. = list()
 	if(copied())
 		var/image/temp_image = image(copied())
 		var/matrix/M = matrix()
 		M.Scale(0.5, 0.5)
 		temp_image.transform = M
-		add_overlay(temp_image)
+		. += temp_image
 
 /// Copied (a relation view).
 /obj/item/spell/illusion/proc/copied() as /atom/movable

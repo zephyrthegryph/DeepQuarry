@@ -15,13 +15,15 @@
 	charge_cost = 800
 	fire_delay = 50
 
-/obj/item/gun/energy/netgun/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/netgun, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/energy/netgun/appearance_overlays()
+	. = list()
 	if(power_supply == null)
 		if(modifystate)
 			icon_state = "[modifystate]_open"
 		else
 			icon_state = "[initial(icon_state)]_open"
-		return
+		return .
 	else if(charge_meter)
 		var/ratio = power_supply.charge / power_supply.maxcharge
 
@@ -69,8 +71,9 @@
 		list(mode_name="capture", projectile_type=/obj/item/projectile/beam/energy_net, fire_sound = SFX_WEAPONS_ELUGER, charge_cost=1200, fire_delay=50)
 	)
 
-/obj/item/gun/energy/hunter/update_icon()
-	overlays.Cut()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/hunter, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/energy/hunter/appearance_overlays()
+	. = list()
 
 	if(power_supply)
 		var/ratio = power_supply.charge / power_supply.maxcharge
@@ -80,6 +83,6 @@
 		else
 			ratio = max(round(ratio, 0.25) * 100, 25)
 
-		overlays += "[initial(icon_state)]_cell"
-		overlays += "[initial(icon_state)]_[ratio]"
-		overlays += "[initial(icon_state)]_[mode_name]"
+		. += "[initial(icon_state)]_cell"
+		. += "[initial(icon_state)]_[ratio]"
+		. += "[initial(icon_state)]_[mode_name]"

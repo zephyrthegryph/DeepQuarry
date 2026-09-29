@@ -4,8 +4,9 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 	GLOB.no_ceiling_image = image(icon = 'icons/turf/open_space.dmi', icon_state = "no_ceiling")
 	GLOB.no_ceiling_image.plane = PLANE_MESONS
 
-/turf/simulated/floor/update_icon(update_neighbors)
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/turf/simulated/floor, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
+/turf/simulated/floor/appearance_overlays()
+	. = list()
 
 	if(flooring)
 		// Set initial icon and strings.
@@ -42,11 +43,11 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 					if((has_border & corner_dir) == 0 && !flooring.test_link(src, get_step(src, corner_dir))) //Connected on both cardinals, but not the diagonal
 						inner_corners |= (1 << (i - 1))
 			if(has_border || inner_corners)
-				add_overlay(flooring.get_edge_overlays(has_border, inner_corners))
+				. += flooring.get_edge_overlays(has_border, inner_corners)
 
 	// Re-apply floor decals
 	if(LAZYLEN(decals))
-		add_overlay(decals)
+		. += decals
 
 	if(is_plating() && !(isnull(broken) && isnull(burnt))) //temp, todo
 		icon = 'icons/turf/flooring/plating.dmi'
@@ -54,30 +55,28 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 	else if(flooring)
 		if(!isnull(broken) && (flooring.flags & TURF_CAN_BREAK))
 			if(istype(src, /turf/simulated/floor/wood))
-				add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-broken-[broken]","[flooring.icon_base]-broken[broken]"))
+				. += flooring.get_flooring_overlay("[flooring.icon_base]-broken-[broken]","[flooring.icon_base]-broken[broken]")
 			else
-				add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-broken-[broken]","broken[broken]"))
+				. += flooring.get_flooring_overlay("[flooring.icon_base]-broken-[broken]","broken[broken]")
 		if(!isnull(burnt) && (flooring.flags & TURF_CAN_BURN))
-			add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-burned-[burnt]","burned[burnt]"))
+			. += flooring.get_flooring_overlay("[flooring.icon_base]-burned-[burnt]","burned[burnt]")
 
-	if(update_neighbors)
-		for(var/turf/simulated/floor/F in range(src, 1))
-			if(F == src)
-				continue
-			F.update_icon()
+	// Neighbouring floors blend their edges with ours: tell them when our flooring changed.
+	appearance_notify_neighbours("[type]|[flooring?.type]", /turf/simulated/floor)
 
 	// Show 'ceilingless' overlay.
 	var/turf/above = GetAbove(src)
 	if(!is_outdoors() && above && isopenspace(above)) // This won't apply to outdoor turfs since its assumed they don't have a ceiling anyways.
-		add_overlay(GLOB.no_ceiling_image)
+		. += GLOB.no_ceiling_image
 
 	// Update our 'them-to-us' edges, aka edges from external turfs we feel should spill onto us
 	if(edge_blending_priority && !forbid_turf_edge())
-		update_icon_edge()
+		. += update_icon_edge()
 
 // This updates an edge from an adjacent turf onto us, not our own 'internal' edges.
 // For e.g. we might be outdoor metal plating, and we want to find sand next to us to have it 'spill onto' our turf with an overlay.
 /turf/simulated/proc/update_icon_edge()
+	. = list()
 	for(var/checkdir in GLOB.cardinal) // Check every direction
 		var/turf/simulated/T = get_step(src, checkdir) // Get the turf in that direction
 		// Our conditions:

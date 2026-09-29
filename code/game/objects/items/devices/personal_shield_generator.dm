@@ -58,11 +58,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/personal_shield_generator, "bcell", null)
 /obj/item/personal_shield_generator/loaded //starts with a cell
 	bcell = /obj/item/cell/device/shield_generator/backpack
 
-/obj/item/personal_shield_generator/update_icon()
-	if(shield_active)
-		icon_state = "shieldpack_basic_on"
-	else
-		icon_state = "shieldpack_basic"
+APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator, "shieldpack_basic{shield_active?_on:}")
 
 /obj/item/personal_shield_generator/examine(mob/user)
 	. = ..()
@@ -425,11 +421,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 /obj/item/personal_shield_generator/belt/loaded
 	bcell = /obj/item/cell/device/shield_generator
 
-/obj/item/personal_shield_generator/belt/update_icon()
-	if(shield_active)
-		icon_state = "shieldpack_basic_on"
-	else
-		icon_state = "shieldpack_basic"
+APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt, "shieldpack_basic{shield_active?_on:}")
 
 /obj/item/personal_shield_generator/belt/bruteburn //Example of a modified generator.
 	modifier_type = /datum/body_effect/shield_projection/bruteburn
@@ -453,11 +445,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 /obj/item/personal_shield_generator/belt/mining/upgraded/loaded
 	bcell = /obj/item/cell/device/shield_generator
 
-/obj/item/personal_shield_generator/belt/mining/update_icon()
-	if(shield_active)
-		icon_state = "shieldpack_mining_on"
-	else
-		icon_state = "shieldpack_mining"
+APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt/mining, "shieldpack_mining{shield_active?_on:}")
 
 /obj/item/borg/upgrade/shield_upgrade
 	name = "mining PSG upgrade disk."
@@ -491,11 +479,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 /obj/item/personal_shield_generator/belt/security/loaded
 	bcell = /obj/item/cell/device/shield_generator
 
-/obj/item/personal_shield_generator/belt/security/update_icon()
-	if(shield_active)
-		icon_state = "shieldpack_security_on"
-	else
-		icon_state = "shieldpack_security"
+APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt/security, "shieldpack_security{shield_active?_on:}")
 
 //PvE focused belt
 /obj/item/personal_shield_generator/belt/melee
@@ -561,11 +545,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 /obj/item/personal_shield_generator/security/strong/loaded
 	bcell = /obj/item/cell/device/shield_generator/backpack
 
-/obj/item/personal_shield_generator/security/update_icon()
-	if(shield_active)
-		icon_state = "shieldpack_security_on"
-	else
-		icon_state = "shieldpack_security"
+APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/security, "shieldpack_security{shield_active?_on:}")
 
 //Power cells.
 /obj/item/cell/device/shield_generator //The base power cell the shield gen comes with.

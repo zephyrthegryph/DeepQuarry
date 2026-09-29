@@ -78,8 +78,7 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 	icon_state = "nest"
 	base_icon = "nest"
 
-/obj/structure/bed/double/weaversilk_nest/update_icon()
-	return
+APPEARANCE_NONE(/obj/structure/bed/double/weaversilk_nest)
 
 EXTEND_INTERACTIONS(/obj/structure/bed/double/weaversilk_nest, \
 	INTERACT_HAND_HOSTILE("Tear down", PROC_REF(interaction_tear_down)), \

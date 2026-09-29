@@ -14,8 +14,7 @@
 	var/reason = "NOT SPECIFIED"
 	special_handling = TRUE
 
-/obj/item/card/id/guest/update_icon()
-	return
+APPEARANCE_NONE(/obj/item/card/id/guest)
 
 /obj/item/card/id/guest/GetAccess()
 	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))

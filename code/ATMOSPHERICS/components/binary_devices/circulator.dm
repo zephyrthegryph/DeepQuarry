@@ -78,22 +78,23 @@
 	recent_moles_transferred = 0
 	update_icon()
 
-/obj/machinery/atmospherics/binary/circulator/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/binary/circulator, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/atmospherics/binary/circulator/appearance_overlays()
+	. = list()
 	icon_state = anchored ? "circ-assembled" : "circ-unassembled"
-	cut_overlays()
 	if (!operable() || !anchored)
-		return 1
+		return .
 	if (last_pressure_delta > 0 && recent_moles_transferred > 0)
 		if (temperature_overlay)
-			add_overlay(temperature_overlay)
+			. += temperature_overlay
 		if (last_pressure_delta > 5*ONE_ATMOSPHERE)
-			add_overlay("circ-run")
+			. += "circ-run"
 		else
-			add_overlay("circ-slow")
+			. += "circ-slow"
 	else
-		add_overlay("circ-off")
+		. += "circ-off"
 
-	return 1
+	return .
 
 /obj/machinery/atmospherics/binary/circulator/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 75, 1)

@@ -172,7 +172,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 /obj/machinery/message_server/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_filter_notice("You toggle PDA message passing from [active ? "On" : "Off"] to [active ? "Off" : "On"]."))
 	set_active(!active)
-	update_icon()
 	MACHINE_WAKE(src)
 	return TRUE
 
@@ -196,15 +195,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 	to_chat(user, span_filter_notice("You install additional memory and processors into message server. Its filtering capabilities been enhanced."))
 	return TRUE
 
-/obj/machinery/message_server/update_icon()
-	if((!operable()))
-		icon_state = "server-nopower"
-	else if (!active)
-		icon_state = "server-off"
-	else
-		icon_state = "server-on"
+/// Appearance reader: the icon_state suffix for power/active state.
+/obj/machinery/message_server/proc/appearance_server_state()
+	if(!operable())
+		return "nopower"
+	if(!active)
+		return "off"
+	return "on"
 
-	return
+APPEARANCE_TEMPLATE(/obj/machinery/message_server, "server-{appearance_server_state}")
 
 /datum/feedback_variable
 	var/variable

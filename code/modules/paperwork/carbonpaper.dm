@@ -6,21 +6,23 @@
 	var/iscopy = 0
 
 
-/obj/item/paper/carbon/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/paper/carbon, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/paper/carbon/appearance_overlays()
+	. = list()
 	if(iscopy)
 		if(info)
 			icon_state = "cpaper_words"
-			return
+			return .
 		icon_state = "cpaper"
 	else if (copied)
 		if(info)
 			icon_state = "paper_words"
-			return
+			return .
 		icon_state = "paper"
 	else
 		if(info)
 			icon_state = "paper_stack_words"
-			return
+			return .
 		icon_state = "paper_stack"
 
 

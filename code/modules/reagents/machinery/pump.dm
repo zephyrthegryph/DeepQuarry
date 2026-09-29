@@ -48,23 +48,24 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 
 	rel_set(src, "cell", locate_in_list(component_parts, /obj/item/cell)) // component_parts owns the cell; this is a view onto it
 
-/obj/machinery/pump/update_icon()
-	..()
-	cut_overlays()
-	add_overlay("[icon_state]-tank")
+DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/pump/appearance_overlays()
+	. = list()
+	. += ..()
+	. += "[icon_state]-tank"
 	if(!(cell?.check_charge(active_power_usage)))
-		add_overlay("[icon_state]-lowpower")
+		. += "[icon_state]-lowpower"
 
 	if(reagents.total_volume >= 1)
 		var/image/I = image(icon, "[icon_state]-volume")
 		I.color = reagents.get_color()
-		add_overlay(I)
-	add_overlay("[icon_state]-glass")
+		. += I
+	. += "[icon_state]-glass"
 
 	if(open)
-		add_overlay("[icon_state]-open")
+		. += "[icon_state]-open"
 		if(istype(cell))
-			add_overlay("[icon_state]-cell")
+			. += "[icon_state]-cell"
 
 	icon_state = "[initial(icon_state)][on ? "-running" : ""]"
 
@@ -97,7 +98,6 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 		return FALSE
 
 	set_on(!on)
-	update_icon()
 	if(on)
 		MACHINE_WAKE(src)
 	if(message)

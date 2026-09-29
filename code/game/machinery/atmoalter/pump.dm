@@ -31,8 +31,9 @@
 
 	make_climbable()
 
-/obj/machinery/portable_atmospherics/powered/pump/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/portable_atmospherics/powered/pump/appearance_overlays()
+	. = list()
 
 	if(on && cell && cell.charge)
 		icon_state = "psiphon:1"
@@ -40,12 +41,12 @@
 		icon_state = "psiphon:0"
 
 	if(holding)
-		add_overlay("siphon-open")
+		. += "siphon-open"
 
 	if(connected_port())
-		add_overlay("siphon-connector")
+		. += "siphon-connector"
 
-	return
+	return .
 
 DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/pump, DAMAGE_EMP, PROC_REF(pump_emp))
 /// An EMP scrambles a working pump's settings.
@@ -248,18 +249,14 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/pump, DAMAGE_EMP, P
 	to_chat(user, span_notice("You can't directly interact with this machine. Use the pump control console."))
 	return TRUE
 
-/obj/machinery/portable_atmospherics/powered/pump/huge/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/pump/huge, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/portable_atmospherics/powered/pump/huge/appearance_overlays()
+	. = list()
 
 	if(on && operable())
 		icon_state = "siphon:1"
 	else
 		icon_state = "siphon:0"
-
-/obj/machinery/portable_atmospherics/powered/pump/huge/power_change()
-	. = ..()
-	if (.)
-		update_icon()
 
 /obj/machinery/portable_atmospherics/powered/pump/huge/machine_step()
 	if(!anchored || (!operable()))
@@ -342,7 +339,6 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/pump, DAMAGE_EMP, P
 	. = ..()
 	if(operable())
 		set_on(1)
-		update_icon()
 
 /obj/machinery/portable_atmospherics/powered/pump/huge/step_has_work()
 	return on && anchored && operable()

@@ -63,7 +63,7 @@
 
 	var/i = 0
 	for(var/turf/simulated/mineral/T as anything in turfs_changed)
-		T.update_icon(1, turfs_changed)
+		T.update_icon()
 		if(++i % 1000 == 0)
 			CHECK_TICK
 

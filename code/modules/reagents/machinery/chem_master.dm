@@ -33,8 +33,7 @@
 	own_set(src, "reagents", R)	//There should be a nano ui thingy to warn of this.
 	rel_set(R, "my_atom", src)
 
-/obj/machinery/chem_master/update_icon()
-	icon_state = "mixer[beaker ? "1" : "0"]"
+APPEARANCE_TEMPLATE(/obj/machinery/chem_master, "mixer{beaker?1:0}")
 
 /obj/machinery/chem_master/declare_interactions(list/into)
 	into += list(

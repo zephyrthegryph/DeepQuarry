@@ -82,7 +82,9 @@ DECLARE_INTERACTIONS(/obj/item/toy/balloon, INTERACT_ITEM(null, PROC_REF(interac
 		expire(5)
 	return
 
-/obj/item/toy/balloon/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/toy/balloon, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/toy/balloon/appearance_overlays()
+	. = list()
 	if(src.reagents.total_volume >= 1)
 		icon_state = "waterballoon"
 	else
@@ -185,13 +187,14 @@ DECLARE_INTERACTIONS(/obj/item/toy/sword, \
 	add_fingerprint(user)
 	return TRUE
 
-/obj/item/toy/sword/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/toy/sword, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/toy/sword/appearance_overlays()
+	. = list()
+	. += ..()
 	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
 	blade_overlay.color = lcolor
-	cut_overlays()		//So that it doesn't keep stacking overlays non-stop on top of each other
 	if(active)
-		add_overlay(blade_overlay)
+		. += blade_overlay
 	if(ishuman(usr))
 		var/mob/living/carbon/human/H = usr
 		H.update_inv_l_hand()
@@ -1731,10 +1734,11 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/borgplushie/drake, INTERACT_ALT(null, 
 	update_icon()
 	return TRUE
 
-/obj/item/toy/plushie/borgplushie/drake/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/borgplushie/drake, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/toy/plushie/borgplushie/drake/appearance_overlays()
+	. = list()
 	if (lights_glowing)
-		add_overlay(emissive_appearance(icon, "[icon_state]-lights"))
+		. += emissive_appearance(icon, "[icon_state]-lights")
 
 /obj/item/toy/plushie/borgplushie/drake/get_mechanics_info(list/additional_information)
 	return "The lights on the plushie can be toggled [lights_glowing ? "off" : "on"] by alt-clicking on it."
@@ -2631,11 +2635,7 @@ TYPE_TABLE(/obj/item/storage/box/timecap, hold_spec, list(HOLD_ONLY(list(/obj/it
 	var/on = FALSE
 	var/activation_sound = SFX_MACHINES_CLICK
 
-/obj/item/toy/desk/update_icon()
-	if(on)
-		icon_state = "[initial(icon_state)]-on"
-	else
-		icon_state = "[initial(icon_state)]"
+APPEARANCE_TEMPLATE(/obj/item/toy/desk, "{initial(icon_state)}{on?-on:}")
 
 /obj/item/toy/desk/proc/activate(mob/user as mob)
 	on = !on

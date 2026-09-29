@@ -50,7 +50,6 @@
 /obj/machinery/button/windowtint/multitint/toggle_tint()
 	use_power(5)
 	set_active(!active)
-	update_icon()
 
 	var/in_range = range(src,range)
 	for(var/obj/structure/window/reinforced/polarized/W in in_range)

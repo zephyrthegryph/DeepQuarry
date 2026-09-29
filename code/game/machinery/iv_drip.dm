@@ -10,13 +10,14 @@
 /obj/machinery/iv_drip/mode = 1 // 1 is injecting, 0 is taking blood.
 /obj/machinery/iv_drip/var/obj/item/reagent_containers/beaker = null
 
-/obj/machinery/iv_drip/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/iv_drip, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/iv_drip/appearance_overlays()
+	. = list()
 	if(attached())
 		icon_state = "hooked"
 	else
 		icon_state = ""
 
-	cut_overlays()
 
 	if(beaker)
 		var/datum/reagents/reagents = beaker.reagents
@@ -34,7 +35,7 @@
 				if(91 to INFINITY)	filling.icon_state = "reagent100"
 
 			filling.icon += reagents.get_color()
-			add_overlay(filling)
+			. += filling
 
 /obj/machinery/iv_drip/MouseDrop(over_object, src_location, over_location)
 	..()

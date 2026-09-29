@@ -76,7 +76,9 @@
 
 	return TRUE
 
-/obj/item/reagent_containers/food/drinks/glass2/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/reagent_containers/food/drinks/glass2/appearance_overlays()
+	. = list()
 	underlays.Cut()
 
 	if (reagents.reagent_list.len > 0)

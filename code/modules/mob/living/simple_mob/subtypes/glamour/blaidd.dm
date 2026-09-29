@@ -90,8 +90,10 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/blaidd, /mob/living/simple_mob/vo
 	A large canine found in whitespace or the Glamour, distinguished easily by a large spikey mane and lightly striped pattern. The Blaidd, named from the glamourspeak word for wolf, is known to be a ferocious hunter and predator. It is a carnivore that stalks prey from a distance silently, whilst its otherwise quite striking fur blends it well into the environment through some sort of active camouflage, a less powerful version of that seen in the local Lleill. It generally avoids attacking its prey when it feels it is being watched, but once it is able to finally pounce on a target, it will not retreat until forced."
 	value = CATALOGUER_REWARD_HARD
 
-/mob/living/simple_mob/vore/blaidd/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/blaidd, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/vore/blaidd/appearance_overlays()
+	. = list()
+	. += ..()
 	if(vore_active)
 		var/voremob_awake = FALSE
 		if(icon_state == icon_living)
@@ -101,7 +103,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/blaidd, /mob/living/simple_mob/vo
 		update_fullness()
 		if(!vore_fullness)
 			update_transform()
-			return 0
+			return .
 		else if((stat == CONSCIOUS) && (!icon_rest || !resting || !incapacitated(INCAPACITATION_DISABLED)) && (vore_icons & SA_ICON_LIVING))
 			if(blaidd_invisibility)
 				icon_state = "[icon_living]_cloaked-[vore_fullness]"

@@ -332,8 +332,10 @@ GLOBAL_LIST(construction_frame_floor)
 		D = "Requires [english_list(component_list)]."
 	desc = D
 
-/obj/structure/frame/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/frame/appearance_overlays()
+	. = list()
+	. += ..()
 	if(frame_type.icon_override)
 		icon = frame_type.icon_override
 	icon_state = frame_type.get_icon_state(state)

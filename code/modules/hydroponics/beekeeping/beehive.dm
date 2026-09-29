@@ -16,23 +16,24 @@
 	. = ..()
 	make_climbable()
 
-/obj/machinery/beehive/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/beehive/appearance_overlays()
+	. = list()
 	icon_state = "beehive"
 	if(closed)
-		add_overlay("lid")
+		. += "lid"
 	if(length(frames))
-		add_overlay("empty[length(frames)]")
+		. += "empty[length(frames)]"
 	if(honeycombs >= 100)
-		add_overlay("full[round(honeycombs / 100)]")
+		. += "full[round(honeycombs / 100)]"
 	if(!smoked)
 		switch(bee_count)
 			if(1 to 40)
-				add_overlay("bees1")
+				. += "bees1"
 			if(41 to 80)
-				add_overlay("bees2")
+				. += "bees2"
 			if(81 to 100)
-				add_overlay("bees3")
+				. += "bees3"
 
 /obj/machinery/beehive/examine(mob/user)
 	. = ..()
@@ -260,26 +261,15 @@
 	if(Adjacent(user))
 		. += "It has [honey] units of honey in its storage tank."
 
-/obj/machinery/honey_extractor/power_change()
-	. = ..()
-	var/delay = rand(0,15)
-	if(delay)
-		om_after(src, delay, TYPE_PROC_REF(/atom, update_icon))
-		return
-	update_icon()
-
-/obj/machinery/honey_extractor/update_icon()
-	cut_overlays()
-
-	icon_state = initial(icon_state)
-
-	if(panel_open)
-		add_overlay("[icon_state]_panel")
+/obj/machinery/honey_extractor/proc/appearance_state()
 	if(has_stat(NOPOWER))
-		icon_state = "[icon_state]_off"
-		return
+		return "[initial(icon_state)]_off"
 	if(processing)
-		icon_state = "[icon_state]_moving"
+		return "[initial(icon_state)]_moving"
+	return initial(icon_state)
+
+APPEARANCE_TEMPLATE(/obj/machinery/honey_extractor, "{appearance_state}")
+DECLARE_APPEARANCE(/obj/machinery/honey_extractor, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("centrifuge_panel"))))
 
 /obj/machinery/honey_extractor/declare_interactions(list/into)
 	into += list(
@@ -359,12 +349,10 @@
 	. = ..()
 	update_icon()
 
-/obj/item/honey_frame/update_icon()
-	..()
+/obj/item/honey_frame/proc/appearance_has_honey()
+	return honey > 0
 
-	overlays.Cut()
-	if(honey > 0)
-		add_overlay("honeycomb")
+DECLARE_APPEARANCE(/obj/item/honey_frame, "appearance_has_honey", list("1" = list(APPEARANCE_OVERLAYS = list("honeycomb"))))
 
 /obj/item/honey_frame/filled
 	name = "filled beehive frame"

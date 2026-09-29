@@ -67,11 +67,7 @@
 		return
 	..()
 
-/obj/vehicle/train/update_icon()
-	if(open)
-		icon_state = initial(icon_state) + "_open"
-	else
-		icon_state = initial(icon_state)
+APPEARANCE_TEMPLATE(/obj/vehicle/train, "{initial(icon_state)}{open?_open:}")
 
 //-------------------------------------------
 // Vehicle procs

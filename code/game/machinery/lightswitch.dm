@@ -33,8 +33,9 @@
 	set_on(area().lightswitch)
 	update_icon()
 
-/obj/machinery/light_switch/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/light_switch, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/light_switch/appearance_overlays()
+	. = list()
 	if(has_stat(NOPOWER))
 		icon_state = "light-p"
 		set_light(0)
@@ -44,7 +45,7 @@
 		. = list()
 		. += emissive_appearance(icon, "light[on]-overlay")
 
-	return add_overlay(.)
+	return .
 
 /obj/machinery/light_switch/examine(mob/user)
 	. = ..()
@@ -74,7 +75,6 @@
 
 	for(var/obj/machinery/light_switch/L in area())
 		L.set_on(on)
-		L.update_icon()
 
 	area().power_change()
 	GLOB.lights_switched_on_roundstat++
@@ -91,7 +91,6 @@
 		else
 			stat_add(NOPOWER)
 
-		update_icon()
 
 DAMAGE_REACTION(/obj/machinery/light_switch, DAMAGE_EMP, PROC_REF(light_switch_emp))
 /// An EMP makes the switch re-read its power.

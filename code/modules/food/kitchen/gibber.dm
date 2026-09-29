@@ -58,21 +58,21 @@
 
 /obj/machinery/gibber/Initialize(mapload)
 	. = ..()
-	add_overlay("grjam")
 
-/obj/machinery/gibber/update_icon()
-	var/mob/living/occupant = src?.slot_item(OCCUPANT_SLOT_GIBBER)
-	cut_overlays()
-	if (dirty)
-		add_overlay("grbloody")
+/// Appearance reader: which status light the gibber shows.
+/obj/machinery/gibber/proc/appearance_gibber_light()
 	if(!operable())
-		return
-	if (!occupant)
-		add_overlay("grjam")
-	else if (operating)
-		add_overlay("gruse")
-	else
-		add_overlay("gridle")
+		return "off"
+	if(!slot_item(OCCUPANT_SLOT_GIBBER))
+		return "jam"
+	return operating ? "use" : "idle"
+
+DECLARE_APPEARANCE(/obj/machinery/gibber, "dirty", list("1" = list(APPEARANCE_OVERLAYS = list("grbloody"))))
+DECLARE_APPEARANCE(/obj/machinery/gibber, "appearance_gibber_light", list(
+	"jam" = list(APPEARANCE_OVERLAYS = list("grjam")),
+	"use" = list(APPEARANCE_OVERLAYS = list("gruse")),
+	"idle" = list(APPEARANCE_OVERLAYS = list("gridle")),
+))
 
 /obj/machinery/gibber/relaymove(mob/user as mob)
 	src.go_out()

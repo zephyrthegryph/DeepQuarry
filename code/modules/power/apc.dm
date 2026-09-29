@@ -385,7 +385,9 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 // ─────────────────────────────────────────────────────────────────────────────
 
 // update_icon() — called by interactions; delegates to the renderer.
-/obj/machinery/power/apc/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/apc, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/power/apc/appearance_overlays()
+	. = list()
 	if(icon_renderer)
 		icon_renderer.apply(src)
 
@@ -696,7 +698,6 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 		if(allowed(user) && !wires.is_cut(WIRE_IDSCAN))
 			set_locked(!locked)
 			to_chat(user, "You [locked ? "lock" : "unlock"] the APC interface.")
-			update_icon()
 		else
 			to_chat(user, span_warning("Access denied."))
 
@@ -728,7 +729,6 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 	set_emagged(1)
 	set_locked(0)
 	to_chat(user, span_notice("You emag the APC interface."))
-	update_icon()
 
 DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wires))
 
@@ -970,7 +970,6 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 					to_chat(ui.user, "The APC does not respond to the command.")
 					return
 				set_locked(!locked)
-				update_icon()
 		if("cover")
 			coverlocked = !coverlocked
 		if("breaker")
@@ -1140,7 +1139,6 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_EXPLOSION, PROC_REF(apc_blast_w
 		return 0
 	rel_set(src, "hacker", A) // two-sided: lists us in A.hacked_apcs
 	set_locked(1)
-	update_icon()
 	return 1
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1192,7 +1190,6 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_EXPLOSION, PROC_REF(apc_blast_w
 	if(prob(25))
 		set_emagged(1)
 		set_locked(0)
-		update_icon()
 	if(prob(25))
 		if(cell)
 			cell.corrupt()

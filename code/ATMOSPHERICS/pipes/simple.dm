@@ -102,15 +102,16 @@
 	if(node2)
 		node2.update_underlays()
 
-/obj/machinery/atmospherics/pipe/simple/update_icon(safety = 0)
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/atmospherics/pipe/simple/appearance_overlays()
+	. = list()
 	alpha = 255
 
-	cut_overlays()
 
 	if(node1 && node2)
-		add_overlay(GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "[pipe_icon]intact[icon_connect_type]"))
+		. += GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "[pipe_icon]intact[icon_connect_type]")
 	else
-		add_overlay(GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "[pipe_icon]exposed[node1?1:0][node2?1:0][icon_connect_type]"))
+		. += GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "[pipe_icon]exposed[node1?1:0][node2?1:0][icon_connect_type]")
 
 /obj/machinery/atmospherics/pipe/simple/update_underlays()
 	return

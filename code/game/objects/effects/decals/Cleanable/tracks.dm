@@ -116,8 +116,9 @@
 	if(updated)
 		update_icon()
 
-/obj/effect/decal/cleanable/blood/tracks/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/tracks, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/effect/decal/cleanable/blood/tracks/appearance_overlays()
+	. = list()
 	color = "#FFFFFF"
 	var/truedir=0
 
@@ -138,9 +139,9 @@
 		track.fresh=0
 		track.overlay=I
 		own_put(src, "stack", stack_idx, track)
-		add_overlay(I)
+		. += I
 	updatedtracks=0 // Clear our memory of updated tracks.
-	add_janitor_hud_overlay()
+	. += add_janitor_hud_overlay()
 
 /obj/effect/decal/cleanable/blood/tracks/footprints
 	name = "wet footprints"

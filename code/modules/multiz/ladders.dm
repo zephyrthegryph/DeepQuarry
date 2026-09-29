@@ -165,8 +165,15 @@ DECLARE_INTERACTIONS(/obj/structure/ladder, \
 /obj/structure/ladder/CanPass(obj/mover, turf/source, height, airflow)
 	return airflow || !density
 
-/obj/structure/ladder/update_icon()
-	icon_state = "ladder[!!(allowed_directions & UP)][!!(allowed_directions & DOWN)]"
+/// Appearance reader: 1 when the ladder leads up.
+/obj/structure/ladder/proc/appearance_up()
+	return !!(allowed_directions & UP)
+
+/// Appearance reader: 1 when the ladder leads down.
+/obj/structure/ladder/proc/appearance_down()
+	return !!(allowed_directions & DOWN)
+
+APPEARANCE_TEMPLATE(/obj/structure/ladder, "ladder{appearance_up}{appearance_down}")
 
 /obj/structure/ladder/up
 	allowed_directions = UP

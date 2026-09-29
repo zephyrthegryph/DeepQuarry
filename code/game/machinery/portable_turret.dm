@@ -291,27 +291,17 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 	add_overlay(turret_opened_overlay)
 	return ..()
 
-
-/obj/machinery/porta_turret/update_icon()
-	if(has_stat(BROKEN)) // Turret is dead.
-		icon_state = "destroyed_target_prism_[turret_type]"
-
-	else if(raised || raising)
-		// Turret is open.
+/// The icon_state prefix before turret_type.
+/obj/machinery/porta_turret/proc/appearance_prefix()
+	if(has_stat(BROKEN))
+		return "destroyed_target_prism_"
+	if(raised || raising)
 		if(powered() && enabled)
-			// Trying to shoot someone.
-			if(lethal)
-				icon_state = "[lethal_icon_color]_target_prism_[turret_type]"
-			else
-				icon_state = "[icon_color]_target_prism_[turret_type]"
+			return "[lethal ? lethal_icon_color : icon_color]_target_prism_"
+		return "grey_target_prism_"
+	return "turret_cover_"
 
-		else
-			// Disabled.
-			icon_state = "grey_target_prism_[turret_type]"
-
-	else
-		// Its closed.
-		icon_state = "turret_cover_[turret_type]"
+APPEARANCE_TEMPLATE(/obj/machinery/porta_turret, "{appearance_prefix}{turret_type}")
 
 /obj/machinery/porta_turret/proc/setup()
 	var/obj/item/gun/energy/E = installation	//All energy-based weapons are applicable
@@ -479,13 +469,11 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	if(powered())
 		stat_remove(NOPOWER)
-		update_icon()
 	else
 		om_after(src, rand(0, 15), PROC_REF(power_off_delayed))
 
 /obj/machinery/porta_turret/proc/power_off_delayed()
 	stat_add(NOPOWER)
-	update_icon()
 
 /datum/interaction/machine_item/porta_turret_lock
 	id = "porta_turret_lock"
@@ -563,13 +551,11 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 	if(!anchored)
 		playsound(src, tool.usesound, 100, 1)
 		set_anchored(TRUE)
-		update_icon()
 		to_chat(user, span_notice("You secure the exterior bolts on the turret."))
 	else
 		playsound(src, tool.usesound, 100, 1)
 		set_anchored(FALSE)
 		to_chat(user, span_notice("You unsecure the exterior bolts on the turret."))
-		update_icon()
 
 /obj/machinery/porta_turret/proc/attempt_retaliate(incoming_damage)
 	if(QDELETED(src) || attacked || !enabled || emagged || incoming_damage < 1) //if the force of impact dealt at least 1 damage, the turret gets pissed off
@@ -1384,26 +1370,14 @@ DAMAGE_REACTION(/obj/machinery/porta_turret, DAMAGE_EMP, PROC_REF(turret_emp))
 			if(timeout <= 0)
 				popDown() // no valid targets, close the cover
 
-/obj/machinery/porta_turret/rcd/update_icon()
-	if(has_stat(BROKEN)) // Turret is dead.
-		icon_state = "destroyed_target_prism_[turret_type]"
-
-	else if(raised || raising)
-		// Turret is open.
+/obj/machinery/porta_turret/rcd/appearance_prefix()
+	if(has_stat(BROKEN))
+		return "destroyed_target_prism_"
+	if(raised || raising)
 		if(enabled)
-			// Trying to shoot someone.
-			if(lethal)
-				icon_state = "[lethal_icon_color]_target_prism_[turret_type]"
-			else
-				icon_state = "[icon_color]_target_prism_[turret_type]"
-
-		else
-			// Disabled.
-			icon_state = "grey_target_prism_[turret_type]"
-
-	else
-		// Its closed.
-		icon_state = "turret_cover_[turret_type]"
+			return "[lethal ? lethal_icon_color : icon_color]_target_prism_"
+		return "grey_target_prism_"
+	return "turret_cover_"
 
 /obj/machinery/porta_turret/rcd/die()
 	fx_sparks(src, 5, FALSE)

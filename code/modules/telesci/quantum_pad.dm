@@ -98,12 +98,13 @@ KEYED_TARGET(/obj/machinery/power/quantumpad, map_pad_id)
 	to_chat(user, span_notice("You link [src] to the one in [tool]'s buffer."))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
-/obj/machinery/power/quantumpad/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/quantumpad, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/power/quantumpad/appearance_overlays()
+	. = list()
+	. += ..()
 
-	cut_overlays()
 	if(panel_open)
-		add_overlay("qpad-panel")
+		. += "qpad-panel"
 
 	if(!operable() || panel_open || !power_region)
 		icon_state = "[initial(icon_state)]-o"

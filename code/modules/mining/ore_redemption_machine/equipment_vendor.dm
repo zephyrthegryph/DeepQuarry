@@ -163,18 +163,16 @@ OWN(/obj/machinery/mineral/equipment_vendor, inserted_id, OWN_SPILL)
 
 /obj/machinery/mineral/equipment_vendor/power_change()
 	. = ..()
-	if(.)
-		update_icon()
 	if(inserted_id && !powered())
 		visible_message(span_notice("The ID slot indicator light flickers on \the [src] as it spits out a card before powering down."))
 		inserted_id.forceMove(get_turf(src))
 		own_take(src, "inserted_id")
 
-/obj/machinery/mineral/equipment_vendor/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/mineral/equipment_vendor, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/mineral/equipment_vendor/appearance_overlays()
+	. = list()
 	if(panel_open)
-		add_overlay("[initial(icon_state)]-panel")
-	else
-		cut_overlay("[initial(icon_state)]-panel")
+		. += "[initial(icon_state)]-panel"
 
 	if(has_stat(BROKEN))
 		icon_state = "[initial(icon_state)]-broken"

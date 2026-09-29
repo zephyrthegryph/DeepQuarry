@@ -66,8 +66,10 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 	var/cap_over = get_part_rating(/obj/item/stock_parts/capacitor) - get_part_count(/obj/item/stock_parts/capacitor)
 	power_efficiency -= cap_over * 0.06 //Four T2 parts = 24% more efficient. Four T5 parts = 96% more efficient
 	min_temperature = max(1, min_temperature)
-/obj/machinery/space_heater/update_icon()
-	..() // declared appearance
+DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/space_heater/appearance_overlays()
+	. = list()
+	. += ..()
 	switch(state)
 		// start, fixing runtimes
 		if(SHEATER_OFF)
@@ -165,9 +167,8 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 		set_state(state ? SHEATER_OFF : SHEATER_STANDBY)
 		if(state)
 			MACHINE_WAKE(src)
-		act_message(user, src, MSG_SELF(span_notice("You switch [state ? "on" : "off"] %T%.")), \
+		act_message(user, src, MSG_SELF(span_notice("You switch [state ? "on" : "off"] %T%.")),
 			MSG_OTHERS(span_notice("%U% switches [state ? "on" : "off"] %T%.")))
-		update_icon()
 	return
 
 /obj/machinery/space_heater/tgui_state(mob/user)
@@ -251,7 +252,6 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 				if(heat_transfer > 0)	//heating air
 					if(state == SHEATER_STANDBY)
 						set_state(SHEATER_HEAT)
-						update_icon()
 					heat_transfer = min(heat_transfer , heating_power) //limit by the power rating of the heater
 
 					removed.add_thermal_energy(heat_transfer)
@@ -259,7 +259,6 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 				else	//cooling air
 					if(state == SHEATER_STANDBY)
 						set_state(SHEATER_COOL)
-						update_icon()
 					heat_transfer = abs(heat_transfer)
 
 					//Assume the heat is being pumped into the hull which is fixed at 20 C

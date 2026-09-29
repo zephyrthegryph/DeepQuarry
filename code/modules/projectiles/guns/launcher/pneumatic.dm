@@ -146,7 +146,9 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, \
 		qdel(removed)
 	..()
 
-/obj/item/gun/launcher/pneumatic/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/launcher/pneumatic, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/launcher/pneumatic/appearance_overlays()
+	. = list()
 	if(tank())
 		icon_state = "pneumatic-tank"
 		item_state = "pneumatic-tank"
@@ -169,8 +171,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, \
 
 	var/buildstate = 0
 
-/obj/item/cannonframe/update_icon()
-	icon_state = "pneumatic[buildstate]"
+APPEARANCE_TEMPLATE(/obj/item/cannonframe, "pneumatic{buildstate}")
 
 /obj/item/cannonframe/examine(mob/user)
 	. = ..()

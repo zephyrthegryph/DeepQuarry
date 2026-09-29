@@ -467,38 +467,39 @@ TYPE_TABLE_DECLARE(/obj/machinery/alarm, alarm_TLV, air_alarm_TLV_base())
 
 	return 0
 
-/obj/machinery/alarm/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/alarm, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/alarm/appearance_overlays()
+	. = list()
 	// start actual update!
-	cut_overlays()
 
 	if(panel_open)
 		icon_state = "alarmx"
 		set_light(0)
 		set_light_on(FALSE)
-		return
+		return .
 	if(!alarm_area_ref() || (!operable()) || shorted)
 		icon_state = "alarmp"
 		set_light(0)
 		set_light_on(FALSE)
-		return
+		return .
 
 	// sub light!
 	var/obj/machinery/alarm/MA = alarm_area_ref().main_air_alarm
 	if(MA == src)
 		// I am the main alarm
-		add_overlay(mutable_appearance(icon, "alarm_Mmode"))
-		add_overlay(emissive_appearance(icon, "alarm_Mmode"))
+		. += mutable_appearance(icon, "alarm_Mmode")
+		. += emissive_appearance(icon, "alarm_Mmode")
 	if(!MA || MA.shorted)
 		// main alarm is out! don't show display!
 		icon_state = "alarmp"
-		add_overlay(mutable_appearance(icon, "alarm_Xmode"))
-		add_overlay(emissive_appearance(icon, "alarm_Xmode"))
+		. += mutable_appearance(icon, "alarm_Xmode")
+		. += emissive_appearance(icon, "alarm_Xmode")
 		set_light(0)
 		set_light_on(FALSE)
-		return
+		return .
 	// passive light on
-	add_overlay(mutable_appearance(icon, "alarm_Pmode"))
-	add_overlay(emissive_appearance(icon, "alarm_Pmode"))
+	. += mutable_appearance(icon, "alarm_Pmode")
+	. += emissive_appearance(icon, "alarm_Pmode")
 
 	var/icon_level = danger_level
 	if(alarm_area_ref().atmosalm)
@@ -510,23 +511,23 @@ TYPE_TABLE_DECLARE(/obj/machinery/alarm, alarm_TLV, air_alarm_TLV_base())
 			icon_state = "alarm_0"
 			if(alarm_area_ref().main_air_alarm == src)
 				// active controller
-				add_overlay(mutable_appearance(icon, "alarm_ov0"))
-				add_overlay(emissive_appearance(icon, "alarm_ov0"))
+				. += mutable_appearance(icon, "alarm_ov0")
+				. += emissive_appearance(icon, "alarm_ov0")
 				new_color = "#03A728"
 			else
 				// passive mode
-				add_overlay(mutable_appearance(icon, "alarm_ovP"))
-				add_overlay(emissive_appearance(icon, "alarm_ovP"))
+				. += mutable_appearance(icon, "alarm_ovP")
+				. += emissive_appearance(icon, "alarm_ovP")
 				new_color = "#0033FF"
 		if(1)
 			icon_state = "alarm_2" //yes, alarm2 is yellow alarm
-			add_overlay(mutable_appearance(icon, "alarm_ov2"))
-			add_overlay(emissive_appearance(icon, "alarm_ov2"))
+			. += mutable_appearance(icon, "alarm_ov2")
+			. += emissive_appearance(icon, "alarm_ov2")
 			new_color = "#EC8B2F"
 		if(2)
 			icon_state = "alarm_1"
-			add_overlay(mutable_appearance(icon, "alarm_ov1"))
-			add_overlay(emissive_appearance(icon, "alarm_ov1"))
+			. += mutable_appearance(icon, "alarm_ov1")
+			. += emissive_appearance(icon, "alarm_ov1")
 			new_color = "#DA0205"
 
 	set_light(l_range = 2, l_power = 0.25, l_color = new_color)

@@ -122,17 +122,14 @@ Thus, the two variables affect pump operation are set in New():
 	icon_state = "map_on-aux"
 	use_power = USE_POWER_IDLE
 
-/obj/machinery/atmospherics/binary/volume_pump/update_icon()
-	if(!powered())
-		icon_state = "off"
-	else
-		icon_state = "[use_power ? "on" : "off"]"
+APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/volume_pump, "{appearance_running?on:off}")
+DECLARE_APPEARANCE(/obj/machinery/atmospherics/binary/volume_pump, "appearance_overclocked", list("1" = list(APPEARANCE_OVERLAYS = list(mutable_appearance('icons/atmos/volume_pump_overclock.dmi', "vpumpoverclock")))))
 
-	overclock_overlay = mutable_appearance('icons/atmos/volume_pump_overclock.dmi', "vpumpoverclock")
-	if(powered() && use_power && overclocked)
-		add_overlay(overclock_overlay)
-	else
-		cut_overlay(overclock_overlay)
+/obj/machinery/atmospherics/binary/volume_pump/proc/appearance_running()
+	return powered() && use_power
+
+/obj/machinery/atmospherics/binary/volume_pump/proc/appearance_overclocked()
+	return powered() && use_power && overclocked
 
 /obj/machinery/atmospherics/binary/volume_pump/update_underlays()
 	..()
@@ -277,7 +274,6 @@ Thus, the two variables affect pump operation are set in New():
 	. = ..()
 	if(.)
 		update_rust_device()
-		update_icon()
 
 /obj/machinery/atmospherics/binary/volume_pump/examine(mob/user)
 	. = ..()

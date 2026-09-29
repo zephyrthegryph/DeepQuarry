@@ -36,8 +36,10 @@
 	update_icon()
 	om_task_periodic(src, PERIODIC_SLOW)
 
-/obj/effect/decal/cleanable/blood/reagent/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/reagent, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/effect/decal/cleanable/blood/reagent/appearance_overlays()
 	if(custombasecolor == "rainbow") custombasecolor = get_random_colour(1)
+	. = list()
 
 	color = custombasecolor
 	name = custombasename

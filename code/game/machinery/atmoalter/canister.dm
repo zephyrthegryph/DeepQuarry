@@ -27,7 +27,6 @@
 	use_power = USE_POWER_OFF
 	interact_offline = 1 // Allows this to be used when not in powered area.
 	var/release_log = ""
-	var/update_flag = 0
 
 /obj/machinery/portable_atmospherics/canister/Initialize(mapload)
 	. = ..()
@@ -136,15 +135,6 @@
 	canister_color = "green"
 
 
-/obj/machinery/portable_atmospherics/canister/proc/check_change()
-	var/old_flag = update_flag
-	update_flag = desired_update_flag()
-
-	if(update_flag == old_flag)
-		return 1
-	else
-		return 0
-
 /obj/machinery/portable_atmospherics/canister/proc/desired_update_flag()
 	. = 0
 	if(holding)
@@ -178,43 +168,28 @@
 /obj/machinery/portable_atmospherics/canister/proc/current_update_flag()
 	return desired_update_flag()
 
-/obj/machinery/portable_atmospherics/canister/update_icon()
-/*
-update_flag
-1 = holding
-2 = connected_port
-4 = tank_pressure < 10
-8 = tank_pressure < ONE_ATMOS
-16 = tank_pressure < 15*ONE_ATMOS
-32 = tank_pressure go boom.
-*/
-
-	if (src.destroyed)
-		src.overlays = 0
-		src.icon_state = text("[]-1", src.canister_color)
-		return
-
-	if(icon_state != "[canister_color]")
-		icon_state = "[canister_color]"
-
-	if(check_change()) //Returns 1 if no change needed to icons.
-		return
-
-	cut_overlays()
-
-	if(update_flag & 1)
-		add_overlay("can-open")
-	if(update_flag & 2)
-		add_overlay("can-connector")
-	if(update_flag & 4)
-		add_overlay("can-o0")
-	if(update_flag & 8)
-		add_overlay("can-o1")
-	else if(update_flag & 16)
-		add_overlay("can-o2")
-	else if(update_flag & 32)
-		add_overlay("can-o3")
-	return
+/// Wreck state when destroyed; otherwise the colour state plus holding/port/pressure-band overlays
+/// (desired_update_flag(): 1 holding, 2 connected, 4/8/16/32 the pressure band).
+DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/canister, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/portable_atmospherics/canister/appearance_overlays()
+	. = list()
+	if(destroyed)
+		icon_state = "[canister_color]-1"
+		return .
+	icon_state = "[canister_color]"
+	var/flag = desired_update_flag()
+	if(flag & 1)
+		. += "can-open"
+	if(flag & 2)
+		. += "can-connector"
+	if(flag & 4)
+		. += "can-o0"
+	if(flag & 8)
+		. += "can-o1"
+	else if(flag & 16)
+		. += "can-o2"
+	else if(flag & 32)
+		. += "can-o3"
 
 
 // At zero integrity the canister ruptures: dumps its gas into the environment,
@@ -237,7 +212,6 @@ update_flag
 	src.destroyed = 1
 	play_sfx(src, SFX_EFFECTS_SPRAY)
 	set_density(FALSE)
-	update_icon()
 
 	if (src.holding)
 		src.holding.forceMove(src.loc)

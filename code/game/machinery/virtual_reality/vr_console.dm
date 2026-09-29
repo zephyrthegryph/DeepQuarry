@@ -71,9 +71,11 @@
 		visible_message(span_warning("\The [src] sounds an alarm, swinging its hatch open."))
 		occupant.exit_vr(FALSE)
 
-/obj/machinery/vr_sleeper/update_icon()
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
-	icon_state = "[base_state][occupant ? "1" : "0"]"
+APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied}")
+
+/// 1 while the pod holds an occupant, else 0.
+/obj/machinery/vr_sleeper/proc/appearance_occupied()
+	return slot_item(OCCUPANT_SLOT_VR_POD) ? 1 : 0
 
 /obj/machinery/vr_sleeper/examine(mob/user)
 	var/mob/living/carbon/human/occupant = slot_item_real(OCCUPANT_SLOT_VR_POD)
@@ -264,7 +266,6 @@ DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 	// hand-kept exclude list" loop is gone.
 	slot_remove(occupant, get_turf(src))
 	set_use_power(USE_POWER_IDLE)
-	update_icon()
 
 /obj/machinery/vr_sleeper/proc/enter_vr()
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)

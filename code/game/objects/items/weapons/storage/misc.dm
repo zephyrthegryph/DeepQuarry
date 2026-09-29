@@ -49,13 +49,14 @@ TYPE_TABLE(/obj/item/storage/box/donut, hold_spec, list(HOLD_ONLY(list(/obj/item
 	. = ..()
 	update_icon()
 
-/obj/item/storage/box/donut/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/box/donut, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/box/donut/appearance_overlays()
+	. = list()
 	var/x_offset = 0
 	for(var/obj/item/reagent_containers/food/snacks/donut/D in slot_contents(CONTAINER_SLOT_STORAGE))
 		var/mutable_appearance/ma = mutable_appearance(icon = icon, icon_state = D.overlay_state)
 		ma.pixel_x = x_offset
-		add_overlay(ma)
+		. += ma
 		x_offset += 3
 
 /obj/item/storage/box/donut/empty
@@ -79,7 +80,9 @@ TYPE_TABLE(/obj/item/storage/box/wormcan, hold_spec, list(HOLD_ONLY(list( \
 	. = ..()
 	update_icon()
 
-/obj/item/storage/box/wormcan/update_icon(itemremoved = 0)
+DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wormcan, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/box/wormcan/appearance_overlays()
+	. = list()
 	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "wormcan_empty"
 
@@ -90,7 +93,9 @@ TYPE_TABLE(/obj/item/storage/box/wormcan, hold_spec, list(HOLD_ONLY(list( \
 	max_storage_space = ITEMSIZE_COST_TINY * 6
 	starts_with = list(/obj/item/reagent_containers/food/snacks/wormsickly = 6)
 
-/obj/item/storage/box/wormcan/sickly/update_icon(itemremoved = 0)
+DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wormcan/sickly, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/box/wormcan/sickly/appearance_overlays()
+	. = list()
 	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "wormcan_empty_sickly"
 
@@ -101,6 +106,8 @@ TYPE_TABLE(/obj/item/storage/box/wormcan, hold_spec, list(HOLD_ONLY(list( \
 	max_storage_space = ITEMSIZE_COST_TINY * 6
 	starts_with = list(/obj/item/reagent_containers/food/snacks/wormdeluxe = 6)
 
-/obj/item/storage/box/wormcan/deluxe/update_icon(itemremoved = 0)
+DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wormcan/deluxe, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/box/wormcan/deluxe/appearance_overlays()
+	. = list()
 	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "wormcan_empty_deluxe"

@@ -75,10 +75,12 @@
 		self.mend(TREAT_WIRING_REPAIR, 2)
 	..()
 
-/mob/living/simple_mob/mechanical/mecha/update_icon()
-	..() // Cuts everything else, so do that first.
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/mechanical/mecha, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/mechanical/mecha/appearance_overlays()
+	. = list()
+	. += ..()
 	if(has_repair_droid)
-		add_overlay(image(icon = 'icons/mecha/mecha_equipment.dmi', icon_state = "repair_droid"))
+		. += image(icon = 'icons/mecha/mecha_equipment.dmi', icon_state = "repair_droid")
 
 /mob/living/simple_mob/mechanical/mecha/speech_bubble_appearance()
 	return pilot_type ? "" : ..()

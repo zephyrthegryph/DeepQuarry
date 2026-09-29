@@ -110,14 +110,15 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
 /obj/vehicle/train/engine/janicart/latch(obj/vehicle/train/T, mob/user)
 	return // nothing latchs to this!
 
-/obj/vehicle/train/engine/janicart/update_icon()
-	..()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine/janicart, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/vehicle/train/engine/janicart/appearance_overlays()
+	. = list()
+	. += ..()
 	if(!open)
 		var/image/O = image(icon = 'icons/obj/vehicles.dmi', icon_state = "pussywagon_overlay", dir = src.dir)
 		O.layer = FLY_LAYER
 		O.plane = MOB_PLANE
-		add_overlay(O)
+		. += O
 
 /obj/vehicle/train/engine/janicart/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()

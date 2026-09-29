@@ -58,7 +58,9 @@
 			choice.forceMove(get_turf(src))
 		update_icon()
 
-/obj/structure/foodcart/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/foodcart, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/foodcart/appearance_overlays()
+	. = list()
 	if(contents_count(src) < 5)
 		icon_state = "foodcart-[contents.len]"
 	else

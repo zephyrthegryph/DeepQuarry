@@ -144,16 +144,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	if(!id_tag)
 		. += "[desc_panel_image("multitool")]to set ident tag and connect to a mainframe."
 
-/obj/machinery/pointdefense/update_icon()
-	if(!active || !id_tag || !operable())
-		icon_state = "[initial(icon_state)]_off"
-	else
-		icon_state = initial(icon_state)
+/obj/machinery/pointdefense/proc/appearance_live()
+	return (active && id_tag && operable()) ? 1 : 0
+
+APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearance_live?:_off}")
 
 /obj/machinery/pointdefense/power_change()
 	. = ..()
 	if(.)
-		update_icon()
 		if(active && operable())
 			MACHINE_WAKE(src)
 
@@ -308,7 +306,6 @@ REL_LIST(/obj/machinery/pointdefense_control, targets)
 	play_sfx(src, SFX_WEAPONS_FLASH, vary = FALSE)
 	set_active(TRUE)
 	MACHINE_WAKE(src)
-	update_icon()
 	return TRUE
 
 /obj/machinery/pointdefense/proc/Deactivate()

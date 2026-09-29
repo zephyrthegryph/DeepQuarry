@@ -72,8 +72,10 @@
 	name = "deeper waters"
 	desc = "The watery depths seem to go even deeper here."
 
-/turf/simulated/floor/water/underwater/open/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water/underwater/open, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/turf/simulated/floor/water/underwater/open/appearance_overlays()
+	. = list()
+	. += ..()
 	icon = 'icons/turf/open_space.dmi'
 	icon_state = "black_open_lighter"
 
@@ -117,8 +119,10 @@
 	. = ..()
 	make_z_transparent(FALSE)
 
-/turf/simulated/floor/water/underwater/indoors/open/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water/underwater/indoors/open, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/turf/simulated/floor/water/underwater/indoors/open/appearance_overlays()
+	. = list()
+	. += ..()
 	icon = 'icons/turf/open_space.dmi'
 	icon_state = "black_open_lighter"
 

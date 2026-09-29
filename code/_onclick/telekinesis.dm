@@ -134,11 +134,12 @@ DECLARE_INTERACTIONS(/obj/item/tk_grab, INTERACT_USE(null, PROC_REF(interaction_
 	O.expire(5)
 	return
 
-/obj/item/tk_grab/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/tk_grab, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/tk_grab/appearance_overlays()
+	. = list()
 	if(focus() && focus().icon && focus().icon_state)
-		add_overlay(icon(focus().icon, focus().icon_state))
-	return
+		. += icon(focus().icon, focus().icon_state)
+	return .
 
 /// The thing held by telekinesis (a relation view: null once that is deleted).
 /obj/item/tk_grab/proc/focus() as /atom/movable

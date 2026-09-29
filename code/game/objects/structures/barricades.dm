@@ -137,20 +137,21 @@ DESTROY_EFFECTS(/obj/structure/barricade/sandbag, new /datum/destroy_effects_dat
 	qdel(src)
 	return
 
-/obj/structure/barricade/sandbag/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/barricade/sandbag, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/barricade/sandbag/appearance_overlays()
+	. = list()
 	if(!material)
-		return
+		return .
 
-	cut_overlays()
 	var/image/I
 
 	for(var/i = 1 to 4)
 		var/connect = connections?[i] || 0
 		I = image('icons/obj/sandbags.dmi', "sandbags[connect]", dir = 1<<(i-1))
 		I.color = material.icon_colour
-		add_overlay(I)
+		. += I
 
-	return
+	return .
 
 /obj/structure/barricade/sandbag/update_connections(propagate = 0, obj/structure/barricade/sandbag/ignore = null)
 	if(!material)

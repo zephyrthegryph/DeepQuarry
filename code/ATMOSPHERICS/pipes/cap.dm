@@ -40,11 +40,12 @@
 	if(node)
 		node.update_underlays()
 
-/obj/machinery/atmospherics/pipe/cap/update_icon(safety = 0)
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/cap, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/atmospherics/pipe/cap/appearance_overlays()
+	. = list()
 	alpha = 255
 
-	cut_overlays()
-	add_overlay(GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "cap[icon_connect_type]"))
+	. += GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "cap[icon_connect_type]")
 
 /obj/machinery/atmospherics/pipe/cap/atmos_init()
 	for(var/obj/machinery/atmospherics/target in get_step(src, dir))

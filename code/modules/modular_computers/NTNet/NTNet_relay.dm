@@ -32,7 +32,9 @@
 		return 0
 	return 1
 
-/obj/machinery/ntnet_relay/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/ntnet_relay, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/ntnet_relay/appearance_overlays()
+	. = list()
 	if(operable())
 		icon_state = initial(icon_state)
 		if(!noisy)

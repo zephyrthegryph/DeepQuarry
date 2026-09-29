@@ -14,11 +14,7 @@
 	integrity_failure = 0.375
 	var/destroyed = FALSE
 
-/obj/structure/grille/update_icon()
-	if(destroyed)
-		icon_state = "[initial(icon_state)]-b"
-	else
-		icon_state = initial(icon_state)
+APPEARANCE_TEMPLATE(/obj/structure/grille, "{initial(icon_state)}{destroyed?-b:}")
 
 /obj/structure/grille/Bumped(atom/user)
 	if(ismob(user)) shock(user, 70)

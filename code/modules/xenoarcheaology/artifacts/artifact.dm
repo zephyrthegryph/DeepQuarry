@@ -82,13 +82,10 @@
 	artifact_master.do_large_randomization()
 	. = ..()
 	update_icon()
-/obj/machinery/artifact/update_icon()
-	..()
+/obj/machinery/artifact/proc/appearance_active()
+	return LAZYLEN(artifact_master?.get_active_effects()) ? 1 : 0
 
-	if(LAZYLEN(artifact_master?.get_active_effects()))
-		icon_state = "ano[icon_num]1"
-	else
-		icon_state = "ano[icon_num]0"
+APPEARANCE_TEMPLATE(/obj/machinery/artifact, "ano{icon_num}{appearance_active}")
 
 /obj/machinery/artifact
 	icon = 'icons/obj/xenoarchaeology.dmi'

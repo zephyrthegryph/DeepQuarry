@@ -282,21 +282,18 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	return ITEM_INTERACT_SUCCESS
 
 //Icon updating
-/obj/item/nif/update_icon()
+/// Appearance reader: the icon_state suffix for the open panel or install state.
+/obj/item/nif/proc/appearance_nif_state()
 	if(open)
-		icon_state = "nif_open[open]"
-	else
-		switch(stat)
-			if(NIF_PREINSTALL)
-				icon_state = "nif_1"
-			if(NIF_INSTALLING)
-				icon_state = "nif_0"
-			if(NIF_WORKING)
-				icon_state = "nif_0"
-			if(NIF_TEMPFAIL)
-				icon_state = "nif_2"
-			else
-				icon_state = "nif_2"
+		return "open[open]"
+	switch(stat)
+		if(NIF_PREINSTALL)
+			return "1"
+		if(NIF_INSTALLING, NIF_WORKING)
+			return "0"
+	return "2"
+
+APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 
 //The (dramatic) install process
 /obj/item/nif/proc/handle_install()

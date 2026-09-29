@@ -15,8 +15,10 @@
 /obj/item/electronic_assembly/clothing/tgui_host()
 	return clothing().tgui_host()
 
-/obj/item/electronic_assembly/clothing/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/clothing, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/electronic_assembly/clothing/appearance_overlays()
+	. = list()
+	. += ..()
 	clothing().icon_state = icon_state
 	// We don't need to update the mob sprite since it won't (and shouldn't) actually get changed.
 

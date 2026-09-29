@@ -384,9 +384,10 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 			else
 				toggle_pump()
 
-/obj/machinery/sleeper/update_icon()
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
-	icon_state = "sleeper_[occupant ? "1" : "0"]"
+/obj/machinery/sleeper/proc/appearance_occupied()
+	return src?.slot_item(OCCUPANT_SLOT_SLEEPER) ? 1 : 0
+
+APPEARANCE_TEMPLATE(/obj/machinery/sleeper, "sleeper_{appearance_occupied}")
 
 /// Old attackby. It never called ..(), so every item stops here.
 /obj/machinery/sleeper/proc/sleeper_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
@@ -534,7 +535,6 @@ DAMAGE_REACTION(/obj/machinery/sleeper, DAMAGE_EMP, PROC_REF(sleeper_emp))
 	// sleeper's partial-eject bug -- is gone.
 	slot_remove(occupant, get_turf(src))
 	set_use_power(USE_POWER_IDLE)
-	update_icon()
 	toggle_filter()
 	toggle_pump()
 	MACHINE_SLEEP(src)

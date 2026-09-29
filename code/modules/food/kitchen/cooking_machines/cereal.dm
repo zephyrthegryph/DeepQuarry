@@ -20,8 +20,10 @@
 	own_set(src, "cerealmaker_loop", new /datum/looping_sound/cerealmaker(list(src), FALSE))
 
 
-/obj/machinery/appliance/mixer/cereal/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer/cereal, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/appliance/mixer/cereal/appearance_overlays()
+	. = list()
+	. += ..()
 
 	if(!has_stat(MACHINE_STAT_ANY))
 		icon_state = on_icon

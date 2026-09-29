@@ -12,7 +12,9 @@
 	if(armed)
 		. += "It looks like it's armed."
 
-/obj/item/assembly/mousetrap/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/assembly/mousetrap, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/assembly/mousetrap/appearance_overlays()
+	. = list()
 	if(armed)
 		icon_state = "mousetraparmed"
 	else

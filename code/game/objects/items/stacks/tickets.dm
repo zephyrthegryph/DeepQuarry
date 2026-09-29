@@ -11,7 +11,9 @@
 	. = ..()
 	update_icon()
 
-/obj/item/stack/arcadeticket/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/stack/arcadeticket, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/stack/arcadeticket/appearance_overlays()
+	. = list()
 	var/amount = get_amount()
 	switch(amount)
 		if(12 to INFINITY)

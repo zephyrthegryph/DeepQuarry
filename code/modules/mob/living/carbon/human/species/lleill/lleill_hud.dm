@@ -21,7 +21,7 @@
 		if(!(src in user.client.screen))
 			user.client.screen += src
 	for(var/atom/movable/screen/ability/ability in ability_objects)
-		ability.update_icon(forced)
+		ability.update_icon()
 
 /atom/movable/screen/ability/verb_based/lleill
 	icon_state = "grey_spell_base"

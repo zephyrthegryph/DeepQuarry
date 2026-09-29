@@ -122,10 +122,11 @@
 		GLOB.plant_service.product_descs["[seed().uid]"] = desc
 	desc += ". Delicious! Probably."
 
-/obj/item/reagent_containers/food/snacks/grown/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/grown, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/reagent_containers/food/snacks/grown/appearance_overlays()
+	. = list()
 	if(!seed() || !GLOB.plant_service?.plant_icon_cache)
-		return
-	cut_overlays()
+		return .
 	var/image/plant_icon
 	var/icon_key = "fruit-[seed().get_trait(TRAIT_PRODUCT_ICON)]-[seed().get_trait(TRAIT_PRODUCT_COLOUR)]-[seed().get_trait(TRAIT_PLANT_COLOUR)]"
 	if(GLOB.plant_service.plant_icon_cache[icon_key])
@@ -140,7 +141,7 @@
 			fruit_leaves.color = "[seed().get_trait(TRAIT_PLANT_COLOUR)]"
 			plant_icon.add_overlay(fruit_leaves)
 		GLOB.plant_service.plant_icon_cache[icon_key] = plant_icon
-	add_overlay(plant_icon)
+	. += plant_icon
 
 /obj/item/reagent_containers/food/snacks/grown/Crossed(mob/living/M)
 	if(M.is_incorporeal())

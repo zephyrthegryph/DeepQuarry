@@ -233,11 +233,7 @@ DAMAGE_REACTION(/obj/structure/inflatable, DAMAGE_BLOB, PROC_REF(inflatable_blob
 	update_icon()
 	isSwitchingStates = 0
 
-/obj/structure/inflatable/door/update_icon()
-	if(state)
-		icon_state = "door_open"
-	else
-		icon_state = "door_closed"
+APPEARANCE_TEMPLATE(/obj/structure/inflatable/door, "door_{state?open:closed}")
 
 /obj/structure/inflatable/door/deflate()
 	play_sfx(src, SFX_MACHINES_HISS, 1.5, vary = TRUE)

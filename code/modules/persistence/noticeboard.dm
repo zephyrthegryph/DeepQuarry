@@ -57,8 +57,10 @@ DAMAGE_REACTION(/obj/structure/noticeboard, DAMAGE_EXPLOSION, PROC_REF(noticeboa
 	dismantle()
 	return DAMAGE_REACTION_BLOCK
 
-/obj/structure/noticeboard/update_icon()
-	icon_state = "[base_icon_state][LAZYLEN(notices)]"
+/obj/structure/noticeboard/proc/appearance_count()
+	return LAZYLEN(notices)
+
+APPEARANCE_TEMPLATE(/obj/structure/noticeboard, "{base_icon_state}{appearance_count}")
 
 /// Old attackby.
 /obj/structure/noticeboard/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)

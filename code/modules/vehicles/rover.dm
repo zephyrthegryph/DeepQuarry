@@ -110,11 +110,8 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/rover/engine, \
 		return
 	..()
 
-/obj/vehicle/train/rover/update_icon()
-	if(open)
-		icon_state = initial(icon_state) + ""
-	else
-		icon_state = initial(icon_state)
+/// The rover has no open sprite: it keeps its initial icon_state.
+APPEARANCE_NONE(/obj/vehicle/train/rover)
 
 /obj/vehicle/train/rover/trolley/insert_cell(obj/item/cell/C, mob/living/carbon/human/H)
 	return

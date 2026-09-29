@@ -60,7 +60,9 @@
 			try_toggle_door(ui.user)
 			return TRUE
 
-/obj/machinery/appliance/cooker/oven/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/oven, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/appliance/cooker/oven/appearance_overlays()
+	. = list()
 	if(!open)
 		if(!has_stat(MACHINE_STAT_ANY))
 			icon_state = "ovenclosed_on"
@@ -80,7 +82,7 @@
 		icon_state = "ovenopen"
 		if(oven_loop)
 			oven_loop.stop(src)
-	..()
+	. += ..()
 
 EXTEND_INTERACTIONS(/obj/machinery/appliance/cooker/oven, \
 	INTERACT_ITEM(null, PROC_REF(appliance_interaction_part_replace)), \

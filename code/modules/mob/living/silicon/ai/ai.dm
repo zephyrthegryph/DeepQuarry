@@ -977,7 +977,9 @@ DAMAGE_REACTION(/mob/living/silicon/ai, DAMAGE_EXPLOSION, PROC_REF(core_blast))
 		qdel(src)
 		return DAMAGE_REACTION_BLOCK
 
-/mob/living/silicon/ai/update_icon()
+DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/silicon/ai/appearance_overlays()
+	. = list()
 	if(!selected_sprite)
 		proto_set(src, "selected_sprite", GLOB.default_ai_icon)
 

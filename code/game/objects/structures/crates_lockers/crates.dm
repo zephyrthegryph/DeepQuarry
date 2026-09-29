@@ -140,17 +140,12 @@
 /obj/structure/closet/crate/secure/can_open()
 	return !locked
 
-/obj/structure/closet/crate/secure/update_icon()
-	if(opened)
-		icon_state = "open"
-	else
-		if(broken)
-			icon_state = "closed_emagged[sealed ? "_welded" : ""]"
-		else
-			if(locked)
-				icon_state = "closed_locked[sealed ? "_welded" : ""]"
-			else
-				icon_state = "closed_unlocked[sealed ? "_welded" : ""]"
+/obj/structure/closet/crate/secure/proc/appearance_lock_state()
+	if(broken)
+		return "emagged"
+	return locked ? "locked" : "unlocked"
+
+APPEARANCE_TEMPLATE(/obj/structure/closet/crate/secure, "closed_{appearance_lock_state}{sealed?_welded:}")
 
 /obj/structure/closet/crate/secure/proc/togglelock(mob/user as mob)
 	if(src.opened)

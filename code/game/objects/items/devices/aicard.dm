@@ -90,11 +90,12 @@ DECLARE_INTERACTIONS(/obj/item/aicard, INTERACT_USE(null, PROC_REF(interaction_s
 
 	return TRUE
 
-/obj/item/aicard/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/aicard/appearance_overlays()
+	. = list()
 	if(carded_ai())
 		if (!carded_ai().control_disabled)
-			add_overlay("aicard-on")
+			. += "aicard-on"
 		if(carded_ai().stat)
 			icon_state = "aicard-404"
 		else

@@ -223,17 +223,18 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/spray/plantbgone, null, list(REAGE
 	for(var/datum/hose_connector/HC as anything in get_hose_connectors())
 		HC.update_hose_beam()
 
-/obj/item/reagent_containers/spray/chemsprayer/hosed/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/spray/chemsprayer/hosed, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/reagent_containers/spray/chemsprayer/hosed/appearance_overlays()
+	. = list()
+	. += ..()
 
-	cut_overlays()
 
 	if(!hose_overlay)
 		hose_overlay = new/icon(icon, "[icon_state]+hose")
 
 	for(var/datum/hose_connector/HC as anything in get_hose_connectors())
 		if(HC.get_pairing())
-			add_overlay(hose_overlay)
+			. += hose_overlay
 			break
 
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/chemsprayer/hosed, INTERACT_ALT("Turn dial", PROC_REF(hosed_alt)))

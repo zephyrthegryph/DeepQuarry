@@ -184,8 +184,7 @@
 	name = "joke"
 	icon_state = "joke"
 
-/obj/item/paper/cracker_joke/update_icon()
-	return
+APPEARANCE_NONE(/obj/item/paper/cracker_joke)
 
 #undef SHRINKING_CRACKER
 #undef GROWING_CRACKER

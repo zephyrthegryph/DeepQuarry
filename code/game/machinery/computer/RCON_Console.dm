@@ -29,9 +29,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/rcon, "rcon", /datum/tgui_module/r
 /obj/machinery/computer/rcon/tgui_interact(mob/user, datum/tgui/ui)
 	rcon.tgui_interact(user, ui)
 
-/obj/machinery/computer/rcon/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/rcon, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/computer/rcon/appearance_overlays()
+	. = list()
+	. += ..()
 	if(operable())
-		add_overlay("ai-fixer-empty")
-	else
-		cut_overlay("ai-fixer-empty")
+		. += "ai-fixer-empty"

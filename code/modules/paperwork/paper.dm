@@ -80,8 +80,7 @@
 /obj/item/paper/card
 	plane_foldable = FALSE //No fun allowed
 
-/obj/item/paper/card/update_icon()
-	return
+APPEARANCE_NONE(/obj/item/paper/card)
 
 /obj/item/paper/card/smile
 	name = "happy card"
@@ -109,7 +108,9 @@
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "alienpaper"
 
-/obj/item/paper/alien/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/paper/alien, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/paper/alien/appearance_overlays()
+	. = list()
 	if(info)
 		icon_state = "alienpaper_words"
 	else
@@ -155,12 +156,14 @@
 	update_space(info)
 	updateinfolinks()
 
-/obj/item/paper/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/paper, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/paper/appearance_overlays()
+	. = list()
 	if(icon_state == "paper_talisman")
-		return
+		return .
 	if(info)
 		icon_state = "paper_words"
-		return
+		return .
 	icon_state = "paper"
 
 /obj/item/paper/proc/update_space(new_text)
@@ -753,8 +756,7 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 	name = "paper scrap"
 	icon_state = "scrap"
 
-/obj/item/paper/crumpled/update_icon()
-	return
+APPEARANCE_NONE(/obj/item/paper/crumpled)
 
 /obj/item/paper/crumpled/bloody
 	icon_state = "scrap_bloodied"

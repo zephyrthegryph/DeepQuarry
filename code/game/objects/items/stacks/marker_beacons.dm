@@ -45,7 +45,9 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 	. += span_notice("Use in-hand to place a [singular_name].")
 	. += span_notice("Alt-click to select a color. Current color is [picked_color].")
 
-/obj/item/stack/marker_beacon/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/stack/marker_beacon, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/stack/marker_beacon/appearance_overlays()
+	. = list()
 	icon_state = "[icon_base][lowertext(picked_color)]"
 
 /// Requirement for placing: open floor with no beacon on it already.
@@ -117,7 +119,9 @@ EXTEND_INTERACTIONS(/obj/item/stack/marker_beacon, \
 	if(!perma)
 		. += span_notice("Alt-click to select a color. Current color is [picked_color].")
 
-/obj/structure/marker_beacon/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/marker_beacon, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/marker_beacon/appearance_overlays()
+	. = list()
 	if(!picked_color || !GLOB.marker_beacon_colors[picked_color])
 		picked_color = pick(GLOB.marker_beacon_colors)
 	icon_state = "[icon_base][lowertext(picked_color)]-on"

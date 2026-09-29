@@ -176,15 +176,16 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/di
 	visible_message(span_notice("\The [src] clicks."))
 	update_icon()
 
-/obj/machinery/bunsen_burner/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/bunsen_burner, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/bunsen_burner/appearance_overlays()
+	. = list()
 	icon_state = "bunsen0"
 	if(held_container)
 		var/image/I = image("icon"=held_container)
-		add_overlay(I)
+		. += I
 	if(heating)
 		var/image/I = image(icon, icon_state = "bunsen1", layer = layer+0.1)
-		add_overlay(I)
+		. += I
 
 /obj/machinery/bunsen_burner/examine(mob/user, infix, suffix)
 	. = ..()

@@ -19,8 +19,10 @@
 TYPE_TABLE(/obj/item/storage/sample_container, hold_spec, list(HOLD_ONLY(list(/obj/item/research_sample)), HOLD_MAX_SIZE(ITEMSIZE_TINY)))
 
 
-/obj/item/storage/sample_container/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/sample_container, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/sample_container/appearance_overlays()
+	. = list()
+	. += ..()
 	icon_state = "sample_container_[contents.len]"
 	if(contents_count(src) > 0)
 		set_light(1, contents_count(src), lightcolor)

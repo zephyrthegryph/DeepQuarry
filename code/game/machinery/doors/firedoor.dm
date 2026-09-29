@@ -546,31 +546,33 @@ REL(/obj/machinery/door/firedoor, turbolift_floor)
 			flick("door_closing", src)
 	return
 
-/obj/machinery/door/firedoor/update_icon()
-	cut_overlays()
+APPEARANCE_NONE(/obj/machinery/door/firedoor)
+DECLARE_APPEARANCE_PROC(/obj/machinery/door/firedoor, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/door/firedoor/appearance_overlays()
+	. = list()
 	if(density)
 		icon_state = "door_closed"
 		if(om_busy(src))
 			icon_state = "prying_closed"
 		if(hatch_open)
-			add_overlay("hatch")
+			. += "hatch"
 		if(blocked)
-			add_overlay("welded")
+			. += "welded"
 		if(pdiff_alert)
-			add_overlay("palert")
+			. += "palert"
 		if(dir_alerts)
 			for(var/d=1;d<=4;d++)
 				var/cdir = GLOB.cardinal[d]
 				for(var/i=1;i<=ALERT_STATES.len;i++)
 					if(dir_alerts[d] & (1<<(i-1)))
-						add_overlay(new/icon(icon,"alert_[ALERT_STATES[i]]", dir=cdir))
+						. += new/icon(icon,"alert_[ALERT_STATES[i]]", dir=cdir)
 	else
 		icon_state = "door_open"
 		if(om_busy(src))
 			icon_state = "prying_open"
 		if(blocked)
-			add_overlay("welded_open")
-	return
+			. += "welded_open"
+	return .
 
 //These are playing merry hell on ZAS.  Sorry fellas :(
 

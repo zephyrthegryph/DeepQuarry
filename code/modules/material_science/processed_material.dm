@@ -394,8 +394,10 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 /// transfer) ends in update_icon(), so this is the one seam that keeps the
 /// export value in step with the sheets actually present: a split can no
 /// longer leave both halves carrying the whole stack's value.
-/obj/item/stack/material/processed_alloy/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/stack/material/processed_alloy, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/stack/material/processed_alloy/appearance_overlays()
+	. = list()
+	. += ..()
 	refresh_export_value()
 
 /obj/item/stack/material/processed_alloy/proc/refresh_export_value()

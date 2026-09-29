@@ -39,12 +39,12 @@
 	is_picked_up = FALSE
 	update_transform()
 
-/obj/item/gun/projectile/automatic/serdy/update_icon()
-	. = ..()
+/// Declared icon_state suffix: "-e" when empty (magazine missing, or the bolt open for non-magazine loading).
+/obj/item/gun/projectile/automatic/serdy/proc/appearance_suffix()
 	if(load_method == MAGAZINE)
-		icon_state = ammo_magazine ? "[initial(icon_state)]" : "[initial(icon_state)]-e"
-	else
-		icon_state = bolt_open ? "[initial(icon_state)]-e" : "[initial(icon_state)]"
+		return ammo_magazine ? "" : "-e"
+	return bolt_open ? "-e" : ""
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/serdy, "{initial(icon_state)}{appearance_suffix}")
 
 /obj/item/gun/projectile/automatic/serdy/asval
 	name = "AS-VAL"
@@ -159,10 +159,12 @@
 	one_handed_penalty = 50
 	fire_sound = "sound/weapons/serdy/ak74.ogg"
 
-/obj/item/gun/projectile/automatic/serdy/ak74/update_icon()
-	. = ..()
+/obj/item/gun/projectile/automatic/serdy/ak74/appearance_suffix()
+	if(istype(ammo_magazine, /obj/item/ammo_magazine/ak74/plum))
+		return "plum"
 	if(ammo_magazine)
-		icon_state = istype(ammo_magazine,/obj/item/ammo_magazine/ak74/plum) ? "[initial(icon_state)]plum" : "[initial(icon_state)]"
+		return ""
+	return ..()
 
 /obj/item/gun/projectile/automatic/serdy/ak74/variantu
 	name = "AKS-74U"
@@ -886,10 +888,12 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 	one_handed_penalty = 90
 	fire_sound = "sound/weapons/serdy/molniyab.ogg"
 
-/obj/item/gun/projectile/automatic/serdy/rpk/update_icon()
-	. = ..()
+/obj/item/gun/projectile/automatic/serdy/rpk/appearance_suffix()
+	if(istype(ammo_magazine, /obj/item/ammo_magazine/akm/drum))
+		return "drum"
 	if(ammo_magazine)
-		icon_state = istype(ammo_magazine,/obj/item/ammo_magazine/akm/drum) ? "[initial(icon_state)]drum" : "[initial(icon_state)]"
+		return ""
+	return ..()
 
 /obj/item/gun/projectile/automatic/serdy/kord //ADMINSPAWN ONLY. This gun is-- absurd. BE CAREFUL. IT WILL HURT MICROS.
 	name = "Kord 6P50"
@@ -1124,13 +1128,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 	icon_expected_height = 32
 	icon_expected_width = 64
 
-/obj/item/gun/projectile/automatic/c20r/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "c20r-[round(ammo_magazine.stored_ammo.len,4)]"
-	else
-		icon_state = "c20r"
-	return
+/// Declared icon_state suffix: rounded magazine count, or nothing when empty.
+/obj/item/gun/projectile/automatic/c20r/proc/appearance_mag_state()
+	return ammo_magazine ? "-[round(ammo_magazine.stored_ammo.len, 4)]" : ""
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/c20r, "c20r{appearance_mag_state}")
 
 /obj/item/gun/projectile/automatic/c20r/Initialize(mapload)
 	. = ..()
@@ -1146,8 +1147,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 	icon_expected_height = 32
 	icon_expected_width = 64
 
-/obj/item/gun/projectile/automatic/sts35/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sts35, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/projectile/automatic/sts35/appearance_overlays()
+	. = list()
+	. += ..()
 	icon_state = ammo_magazine ? "[initial(icon_state)]" : "[initial(icon_state)]-e"
 
 /obj/item/gun/projectile/automatic/sts35/Initialize(mapload)
@@ -1165,8 +1168,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 	icon_expected_width = 64
 
 /* //Dont need it
-/obj/item/gun/projectile/automatic/wt550/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/wt550, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/projectile/automatic/wt550/appearance_overlays()
+	. = list()
+	. += ..()
 	icon_state = ammo_magazine ? "[initial(icon_state)]" : "[initial(icon_state)]-e"
 */
 /obj/item/gun/projectile/automatic/wt550/Initialize(mapload)
@@ -1183,13 +1188,15 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 	icon_expected_height = 32
 	icon_expected_width = 64
 
-/obj/item/gun/projectile/automatic/z8/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/projectile/automatic/z8/appearance_overlays()
+	. = list()
+	. += ..()
 	if(ammo_magazine)
 		icon_state = "carbine-[round(CLAMP(ammo_magazine.stored_ammo.len/2,0,10),2)]"
 	else
 		icon_state = "carbine-e"
-	return
+	return .
 
 /obj/item/gun/projectile/automatic/z8/Initialize(mapload)
 	. = ..()
@@ -1210,9 +1217,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 	icon_expected_height = 32
 	icon_expected_width = 64
 
-/obj/item/gun/projectile/automatic/mini_uzi/update_icon()
-	. = ..()
-	icon_state = ammo_magazine ? "[initial(icon_state)]" : "[initial(icon_state)]-empty"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/mini_uzi, "{initial(icon_state)}{ammo_magazine?:-empty}")
 
 /obj/item/gun/projectile/automatic/mini_uzi/Initialize(mapload)
 	. = ..()
@@ -1258,7 +1263,9 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 	.=..()
 	update_icon()
 
-/obj/item/gun/projectile/colt/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/colt, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/projectile/colt/appearance_overlays()
+	. = list()
 	if(ammo_magazine)
 		if(unique_reskin)
 			icon = 'icons/obj/gun.dmi'

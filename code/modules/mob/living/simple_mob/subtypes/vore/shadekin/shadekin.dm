@@ -214,15 +214,16 @@ DECLARE_VERB(/mob/living/simple_mob/shadekin, /mob/proc/adjust_hive_range)
 	if(ctx.fact("alive"))
 		self.shadekin.handle_comp()
 
-/mob/living/simple_mob/shadekin/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/shadekin, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/shadekin/appearance_overlays()
+	. = list()
+	. += ..()
 
-	cut_overlay(tailimage)
 
 	tailimage.icon_state = icon_state
 
-	add_overlay(tailimage)
-	add_overlay(eye_icon_state)
+	. += tailimage
+	. += eye_icon_state
 
 /mob/living/simple_mob/shadekin
 	death_message = "phases to somewhere far away!"

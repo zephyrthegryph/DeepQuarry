@@ -345,9 +345,9 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	if(nametag) // mailer only
 		new_bin.name = "[initial(new_bin.name)]([nametag])"
 	new_bin.set_stat(stat) // ALLOW(sys_stat_bits): copies the whole condition onto the replacement bin
-	new_bin.dir = new_dir
 	new_bin.set_mode(mode)
-	new_bin.update_icon() // sets up wall outlets
+	new_bin.dir = new_dir
+	new_bin.update_icon() // the new dir: sets up wall outlets
 	new_bin.update_icon()
 	new_bin.visible_message("\The [src] reconfigures into \a [new_bin]!")
 	// Effects
@@ -510,10 +510,8 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	switch(action)
 		if("pumpOn")
 			set_mode(DISPOSALMODE_CHARGING)
-			update_icon()
 		if("pumpOff")
 			set_mode(DISPOSALMODE_OFF)
-			update_icon()
 
 		if("engageHandle")
 			flush = TRUE
@@ -549,37 +547,39 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	update_icon()
 
 // update the icon & overlays to reflect mode & status
-/obj/machinery/disposal/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/disposal/appearance_overlays()
+	. = list()
 	if(has_stat(BROKEN))
 		icon_state = "disposal-broken"
-		set_mode(DISPOSALMODE_OFF)
-		flush = 0
-		return
+		return .
 
 	// flush handle
 	if(flush)
-		add_overlay("[controls_iconstate]-handle")
+		. += "[controls_iconstate]-handle"
 
 	// only handle is shown if no power
 	if(has_stat(NOPOWER) || mode == DISPOSALMODE_EJECTONLY)
-		return
+		return .
 
 	// 	check for items in disposal - occupied light
 	if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)) > 0)
-		add_overlay("[controls_iconstate]-full")
+		. += "[controls_iconstate]-full"
 
 	// charging and ready light
 	if(mode == DISPOSALMODE_CHARGING)
-		add_overlay("[controls_iconstate]-charge")
+		. += "[controls_iconstate]-charge"
 	else if(mode == DISPOSALMODE_CHARGED)
-		add_overlay("[controls_iconstate]-ready")
+		. += "[controls_iconstate]-ready"
 
 // timed process
 // charge the gas reservoir and perform flush if ready
 /obj/machinery/disposal/machine_step()
 	if(!air_contents || (has_stat(BROKEN)))			// nothing can happen if broken
 		set_use_power(USE_POWER_OFF)
+		if(has_stat(BROKEN)) // a broken bin stops pumping and won't flush (the redraw used to do this)
+			set_mode(DISPOSALMODE_OFF)
+			flush = 0
 		return PROCESS_KILL
 
 	if(mode != DISPOSALMODE_CHARGING && !flush && !length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
@@ -603,7 +603,6 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		set_use_power(USE_POWER_IDLE)
 	else if(air_contents.return_pressure() >= SEND_PRESSURE)
 		set_mode(DISPOSALMODE_CHARGED) //if full enough, switch to ready mode
-		update_icon()
 		if(!flush && !length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			sleep_until_keys()
 			return
@@ -680,7 +679,6 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 /obj/machinery/disposal/power_change()
 	. = ..()	// do default setting/reset of stat NOPOWER bit
 	if(.)
-		update_icon()	// update icon
 		if(flush || length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			wake_for_state_change()
 		else if(mode == DISPOSALMODE_CHARGING && !has_stat(NOPOWER) && can_pressurize_from(loc.return_air()) && !om_timer_slot_pending(src, "power_retry_timer"))
@@ -781,8 +779,10 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 	density = FALSE
 
-/obj/machinery/disposal/wall/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/disposal/wall, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/disposal/wall/appearance_overlays()
+	. = list()
+	. += ..()
 	switch(dir)
 		if(NORTH)
 			pixel_x = 0

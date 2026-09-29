@@ -64,9 +64,11 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/holofloor, INTERACT_ITEM("Nothing", TY
 	name = "\proper space"
 	icon_state = "white"
 
-/turf/simulated/floor/holofloor/space/update_icon()
-	. = ..()
-	add_overlay(skybox_service().dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"])
+DECLARE_APPEARANCE_PROC(/turf/simulated/floor/holofloor/space, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/turf/simulated/floor/holofloor/space/appearance_overlays()
+	. = list()
+	. += ..()
+	. += skybox_service().dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
 
 /turf/simulated/floor/holofloor/reinforced
 	icon = 'icons/turf/flooring/tiles.dmi'
@@ -380,13 +382,14 @@ DECLARE_INTERACTIONS(/obj/item/holo/esword, \
 		update_icon()
 	return FALSE
 
-/obj/item/holo/esword/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/holo/esword, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/holo/esword/appearance_overlays()
+	. = list()
+	. += ..()
 	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
 	blade_overlay.color = lcolor
-	cut_overlays()		//So that it doesn't keep stacking overlays non-stop on top of each other
 	if(active)
-		add_overlay(blade_overlay)
+		. += blade_overlay
 	if(ishuman(usr))
 		var/mob/living/carbon/human/H = usr
 		H.update_inv_l_hand()
@@ -534,11 +537,7 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 		begin_event()
 	return TRUE
 
-/obj/machinery/readybutton/update_icon()
-	if(ready)
-		icon_state = "auth_on"
-	else
-		icon_state = "auth_off"
+DECLARE_APPEARANCE(/obj/machinery/readybutton, "ready", list("1" = list(APPEARANCE_ICON_STATE = "auth_on"), APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "auth_off")))
 
 /obj/machinery/readybutton/proc/begin_event()
 

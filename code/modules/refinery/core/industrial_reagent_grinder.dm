@@ -120,16 +120,17 @@ OWN(/obj/machinery/reagent_refinery/grinder, holdingitems, OWN_SPILL)
 
 	refinery_transfer()
 
-/obj/machinery/reagent_refinery/grinder/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/grinder, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/reagent_refinery/grinder/appearance_overlays()
+	. = list()
 	var/image/pipe = image(icon, icon_state = "grinder_cons", dir = dir)
-	add_overlay(pipe)
+	. += pipe
 	if(!operable() || !anchored)
 		icon_state = "grinder_off"
 	else
 		icon_state = "grinder_on"
 		var/image/dot = image(icon, icon_state = "grinder_dot_[length(holdingitems) ? "on" : "off" ]")
-		add_overlay(dot)
+		. += dot
 
 /obj/machinery/reagent_refinery/grinder/proc/conveyor_load(atom/movable/AM as mob|obj)
 	if(!AM || QDELETED(AM))

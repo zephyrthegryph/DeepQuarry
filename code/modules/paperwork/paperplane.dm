@@ -29,15 +29,16 @@
 	update_icon()
 
 
-/obj/item/paperplane/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/paperplane, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/paperplane/appearance_overlays()
+	. = list()
 	var/list/stamped = internalPaper.stamped
 	if(!stamped)
 		stamped = new
 	else if(stamped)
 		for(var/obj/item/stamp/stamp as anything in stamped)
 			var/image/stampoverlay = image('icons/obj/bureaucracy.dmi', "paperplane_[initial(stamp.icon_state)]")
-			add_overlay(stampoverlay)
+			. += stampoverlay
 
 DECLARE_INTERACTIONS(/obj/item/paperplane, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \

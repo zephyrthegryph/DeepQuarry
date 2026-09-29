@@ -53,7 +53,9 @@ TYPE_TABLE(/obj/item/oldtwohanded, equip_spec, dq_spec_join(..(), list(REQ_ON(PR
 			O.unwield()
 	return	unwield()
 
-/obj/item/oldtwohanded/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/oldtwohanded, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/oldtwohanded/appearance_overlays()
+	. = list()
 	icon_state = "[base_icon][wielded]"
 	item_state = icon_state
 
@@ -108,8 +110,7 @@ DECLARE_INTERACTIONS(/obj/item/oldtwohanded, INTERACT_USE(null, PROC_REF(interac
 /obj/item/oldtwohanded/offhand/wield()
 	qdel(src)
 
-/obj/item/oldtwohanded/offhand/update_icon()
-	return
+APPEARANCE_NONE(/obj/item/oldtwohanded/offhand)
 
 //spears, bay edition
 /obj/item/oldtwohanded/spear

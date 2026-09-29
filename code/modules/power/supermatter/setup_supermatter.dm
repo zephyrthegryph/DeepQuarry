@@ -264,7 +264,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 		F.rebuild_filtering_list()
 
 	F.set_use_power(USE_POWER_IDLE)
-	F.update_icon()
 	return SETUP_OK
 
 // Closes the monitoring room shutters so the first Engi to show up doesn't get microwaved

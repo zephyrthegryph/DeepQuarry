@@ -125,18 +125,16 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 	if(panel_open)
 		. += "It has [length(cartridges)] cartridges installed, and has space for [SYNTHESIZER_MAX_CARTRIDGES - length(cartridges)] more."
 
-/obj/machinery/chemical_synthesizer/power_change()
-	. = ..()
-	update_icon()
-
-/obj/machinery/chemical_synthesizer/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/chemical_synthesizer/appearance_overlays()
+	. = list()
 	underlays.Cut()
 	if(has_stat(BROKEN))
 		icon_state = "synth_broken"
-		return
+		return .
 	if(has_stat(NOPOWER))
 		icon_state = "synth_off"
-		return
+		return .
 	if(!busy)
 		if(catalyst)
 			icon_state = "synth_idle_bottle"

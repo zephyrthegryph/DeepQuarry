@@ -28,10 +28,12 @@
 	var/open_state
 	var/closed_state
 
-/obj/item/storage/fancy/update_icon(itemremoved = 0)
-	var/total_contents = length(slot_contents(CONTAINER_SLOT_STORAGE)) - itemremoved
+DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/fancy/appearance_overlays()
+	. = list()
+	var/total_contents = length(slot_contents(CONTAINER_SLOT_STORAGE))
 	icon_state = "[icon_type]box[total_contents]"
-	return
+	return .
 
 /obj/item/storage/fancy/examine(mob/user)
 	. = ..()
@@ -71,12 +73,13 @@ TYPE_TABLE(/obj/item/storage/fancy/egg_box, hold_spec, list(HOLD_ONLY(list( \
 		closed_state = "[initial(icon_state)]"
 	. = ..()
 
-/obj/item/storage/fancy/egg_box/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/egg_box, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/fancy/egg_box/appearance_overlays()
+	. = list()
 	if(open)
 		icon_state = open_state
 		if(length(slot_contents(CONTAINER_SLOT_STORAGE)) >= 1)
-			add_overlay("eggbox[length(slot_contents(CONTAINER_SLOT_STORAGE))]")
+			. += "eggbox[length(slot_contents(CONTAINER_SLOT_STORAGE))]"
 	else
 		icon_state = closed_state
 
@@ -168,11 +171,13 @@ TYPE_TABLE(/obj/item/storage/fancy/crayons, hold_spec, list(HOLD_ONLY(list( \
 		C.name = "[C.colourName] [initial(C.name)]"
 	update_icon()
 
-/obj/item/storage/fancy/crayons/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/crayons, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/fancy/crayons/appearance_overlays()
+	. = list()
 	var/mutable_appearance/ma = new(src)
 	ma.cut_overlays()
 	for(var/obj/item/pen/crayon/crayon in slot_contents(CONTAINER_SLOT_STORAGE))
-		add_overlay(image('icons/obj/crayons.dmi',crayon.colourName))
+		. += image('icons/obj/crayons.dmi',crayon.colourName)
 	appearance = ma
 
 EXTEND_INTERACTIONS(/obj/item/storage/fancy/crayons, INTERACT_INSERT(/obj/item/pen/crayon, PROC_REF(interaction_crayon), "Put in"))
@@ -211,7 +216,9 @@ TYPE_TABLE(/obj/item/storage/fancy/markers, hold_spec, list(HOLD_ONLY(list( \
 		M.name = "[M.colourName] [initial(M.name)]"
 	update_icon()
 
-/obj/item/storage/fancy/markers/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/markers, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/fancy/markers/appearance_overlays()
+	. = list()
 	var/mutable_appearance/ma = new(src)
 	ma.cut_overlays()
 	for(var/obj/item/pen/crayon/marker/marker in slot_contents(CONTAINER_SLOT_STORAGE))
@@ -279,12 +286,13 @@ TYPE_TABLE(/obj/item/storage/fancy/cigarettes, hold_spec, list(HOLD_ONLY(list(/o
 			C.brand = brand
 			C.desc += " This one is \a [brand]."
 
-/obj/item/storage/fancy/cigarettes/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/cigarettes, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/fancy/cigarettes/appearance_overlays()
+	. = list()
 	if(open)
 		icon_state = open_state
 		if(length(slot_contents(CONTAINER_SLOT_STORAGE)) >= 1)
-			add_overlay("cig[length(slot_contents(CONTAINER_SLOT_STORAGE))]")
+			. += "cig[length(slot_contents(CONTAINER_SLOT_STORAGE))]"
 	else
 		icon_state = closed_state
 
@@ -425,12 +433,13 @@ TYPE_TABLE(/obj/item/storage/fancy/cigar, hold_spec, list(HOLD_ONLY(list(/obj/it
 	reagents.trans_to_obj(C, (reagents.total_volume/length(slot_contents(CONTAINER_SLOT_STORAGE))))
 	return ..()
 
-/obj/item/storage/fancy/cigar/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/cigar, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/fancy/cigar/appearance_overlays()
+	. = list()
 	if(open)
 		icon_state = open_state
 		if(length(slot_contents(CONTAINER_SLOT_STORAGE)) >= 1)
-			add_overlay("[initial(icon_state)][length(slot_contents(CONTAINER_SLOT_STORAGE))]")
+			. += "[initial(icon_state)][length(slot_contents(CONTAINER_SLOT_STORAGE))]"
 	else
 		icon_state = closed_state
 
@@ -522,16 +531,17 @@ TYPE_TABLE(/obj/item/storage/lockbox/vials, hold_spec, list(HOLD_ONLY(list(/obj/
 	. = ..()
 	update_icon()
 
-/obj/item/storage/lockbox/vials/update_icon(itemremoved = 0)
-	var/total_contents = length(slot_contents(CONTAINER_SLOT_STORAGE)) - itemremoved
+DECLARE_APPEARANCE_PROC(/obj/item/storage/lockbox/vials, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/lockbox/vials/appearance_overlays()
+	. = list()
+	var/total_contents = length(slot_contents(CONTAINER_SLOT_STORAGE))
 	icon_state = "vialbox[total_contents]"
-	cut_overlays()
 	if (!broken)
-		add_overlay("led[locked]")
+		. += "led[locked]"
 		if(locked)
-			add_overlay("cover")
+			. += "cover"
 	else
-		add_overlay("ledb")
+		. += "ledb"
 
 EXTEND_INTERACTIONS(/obj/item/storage/lockbox/vials, INTERACT_ITEM("Put in", PROC_REF(interaction_vials_item)))
 
@@ -569,7 +579,9 @@ TYPE_TABLE(/obj/item/storage/fancy/heartbox, hold_spec, list(HOLD_ONLY(list( \
 	. = ..()
 	update_icon()
 
-/obj/item/storage/fancy/heartbox/update_icon(itemremoved = 0)
+DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/heartbox, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/fancy/heartbox/appearance_overlays()
+	. = list()
 	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "heartbox_empty"
 

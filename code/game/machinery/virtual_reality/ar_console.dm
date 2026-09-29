@@ -99,7 +99,6 @@
 			continue
 		A.forceMove(src.loc)
 	set_use_power(USE_POWER_IDLE)
-	update_icon()
 
 /obj/machinery/vr_sleeper/alien/enter_vr()
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)

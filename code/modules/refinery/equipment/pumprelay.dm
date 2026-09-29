@@ -31,9 +31,10 @@ DECLARE_REAGENTS(/obj/machinery/pump_relay, 200, null)
 	if(prob(2))
 		visible_message(span_infoplain("\The [src] gurgles as it pumps fluid."))
 
-/obj/machinery/pump_relay/update_icon()
-	. = ..()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/pump_relay, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/pump_relay/appearance_overlays()
+	. = list()
+	. += ..()
 	// GOOBY!
 	if(reagents && reagents.total_volume >= 5)
 		var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
@@ -50,7 +51,7 @@ DECLARE_REAGENTS(/obj/machinery/pump_relay, 200, null)
 			if(90 to INFINITY)	percent = 10
 		var/image/filling = image(icon, loc, "pumprelay_r_[percent]",dir = dir)
 		filling.color = reagents.get_color()
-		add_overlay(filling)
+		. += filling
 
 /obj/machinery/pump_relay/examine(mob/user, infix, suffix)
 	. = ..()

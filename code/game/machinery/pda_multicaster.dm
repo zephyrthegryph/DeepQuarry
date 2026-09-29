@@ -47,11 +47,7 @@
 	default_apply_parts()
 
 
-/obj/machinery/pda_multicaster/update_icon()
-	if(on)
-		icon_state = initial(icon_state)
-	else
-		icon_state = "[initial(icon_state)]_off"
+APPEARANCE_TEMPLATE(/obj/machinery/pda_multicaster, "{initial(icon_state)}{on?:_off}")
 
 /obj/machinery/pda_multicaster/declare_interactions(list/into)
 	into += list(

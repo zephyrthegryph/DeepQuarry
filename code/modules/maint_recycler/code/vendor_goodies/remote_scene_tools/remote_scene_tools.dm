@@ -129,7 +129,9 @@ why aren't these accessories?
 /obj/item/remote_scene_tool/proc/linked_updated()
 	update_icon()
 
-/obj/item/remote_scene_tool/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/remote_scene_tool, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/remote_scene_tool/appearance_overlays()
+	. = list()
 	if(sanity_check())
 		icon_state = icon_root
 	else

@@ -24,12 +24,7 @@
 		play_sfx(src, SFX_SHATTER)
 		update_icon()
 
-/obj/structure/displaycase/update_icon()
-	if(src.destroyed)
-		src.icon_state = "glassboxb[src.occupied]"
-	else
-		src.icon_state = "glassbox[src.occupied]"
-	return
+APPEARANCE_TEMPLATE(/obj/structure/displaycase, "glassbox{destroyed?b:}{occupied}")
 
 
 /obj/structure/displaycase/declare_interactions(list/into)

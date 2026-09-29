@@ -55,8 +55,10 @@
 
 	can_be_drop_prey = FALSE
 
-/mob/living/simple_mob/vore/lamia/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/lamia, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/vore/lamia/appearance_overlays()
+	. = list()
+	. += ..()
 
 	if(vore_active)
 		// Icon_state for fullness is as such if they are CONSCIOUS:

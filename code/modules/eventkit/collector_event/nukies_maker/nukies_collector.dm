@@ -19,8 +19,10 @@ TYPE_TABLE(/obj/structure/event_collector/nukies, event_collector_ingredients, l
 	/obj/item/collector_item/nukies_sludge \
 ))
 
-/obj/structure/event_collector/nukies/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/structure/event_collector/nukies, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/event_collector/nukies/appearance_overlays()
+	. = list()
+	. += ..()
 	if(!current_step)
 		icon_state = "equipment_empty"
 	else if(current_step <= 3)

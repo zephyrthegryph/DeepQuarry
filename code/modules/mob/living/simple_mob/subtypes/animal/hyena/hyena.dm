@@ -152,12 +152,13 @@ They're also cool, and Rykka/Nyria wrote this uwu
 
 OWN(/mob/living/simple_mob/animal/hyena, hat, OWN_SPILL)
 
-/mob/living/simple_mob/animal/hyena/update_icon()
-	overlays.Cut()
-	..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/hyena, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/animal/hyena/appearance_overlays()
+	. = list()
+	. += ..()
 	if(hat)
 		var/hat_state = hat.item_state ? hat.item_state : hat.icon_state
 		var/image/I = image('icons/inventory/head/mob.dmi', src, hat_state)
 		I.pixel_y = -15 // Hyenas are smol! - TODO: Test this.
 		I.appearance_flags = RESET_COLOR
-		add_overlay(I)
+		. += I

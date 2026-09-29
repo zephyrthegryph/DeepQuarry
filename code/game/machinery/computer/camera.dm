@@ -160,9 +160,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/entertainment,
 	..()
 	// end
 
-/obj/machinery/computer/security/telescreen/entertainment/update_icon()
-	return // NUH
-
+APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/entertainment)
 /obj/machinery/computer/security/telescreen/entertainment/proc/show_thing(atom/thing)
 	if(!enabled)
 		return

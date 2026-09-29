@@ -51,12 +51,10 @@
 	go_out()
 	return
 
-/obj/machinery/transportpod/update_icon()
-	..()
-	if(src?.slot_item(OCCUPANT_SLOT_TRANSPORTPOD))
-		icon_state = "borg_pod_closed"
-	else
-		icon_state = "borg_pod_opened"
+/obj/machinery/transportpod/proc/appearance_occupied()
+	return src?.slot_item(OCCUPANT_SLOT_TRANSPORTPOD) ? 1 : 0
+
+APPEARANCE_TEMPLATE(/obj/machinery/transportpod, "borg_pod_{appearance_occupied?closed:opened}")
 
 /obj/machinery/transportpod/Bumped(mob/living/O)
 	go_in(O)

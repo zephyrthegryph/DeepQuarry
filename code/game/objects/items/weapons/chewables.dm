@@ -25,10 +25,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PR
 		update_icon()
 	return FALSE
 
-/obj/item/clothing/mask/chewable/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/chewable, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/clothing/mask/chewable/appearance_overlays()
+	. = list()
 	if(wrapped)
-		add_overlay("[initial(icon_state)]_wrapper")
+		. += "[initial(icon_state)]_wrapper"
 
 /obj/item/clothing/mask/chewable/Initialize(mapload)
 	. = ..()
@@ -174,12 +175,13 @@ DECLARE_REAGENTS_TINTED(/obj/item/clothing/mask/chewable/tobacco/nico, null, lis
 		closed_state = "[initial(icon_state)]"
 	. = ..()
 
-/obj/item/storage/box/fancy/chewables/tobacco/nico/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/box/fancy/chewables/tobacco/nico, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/box/fancy/chewables/tobacco/nico/appearance_overlays()
+	. = list()
 	if(open)
 		icon_state = open_state
 		if(contents_count(src) >= 1)
-			add_overlay("chew_nico[contents.len]")
+			. += "chew_nico[contents.len]"
 	else
 		icon_state = closed_state
 

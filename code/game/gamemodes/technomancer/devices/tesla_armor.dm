@@ -61,7 +61,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/tesla, INTERACT_USE("Toggle", 
 	user.update_inv_wear_suit()
 	user.update_mob_action_buttons()
 
-/obj/item/clothing/suit/armor/tesla/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit/armor/tesla, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/clothing/suit/armor/tesla/appearance_overlays()
+	. = list()
 	if(active && ready)
 		icon_state = ready_icon_state
 		item_state = ready_icon_state
@@ -75,7 +77,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/tesla, INTERACT_USE("Toggle", 
 		var/mob/living/carbon/human/H = loc
 		H.update_inv_wear_suit(0)
 		H.update_mob_action_buttons()
-	..()
+	. += ..()
 
 /obj/item/clothing/suit/armor/tesla/proc/recharge_ready(mob/user)
 	ready = 1

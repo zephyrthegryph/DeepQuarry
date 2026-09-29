@@ -33,17 +33,10 @@
 	..()
 
 // Icon
-/obj/item/walkpod/update_icon()
-	if(listener())
-		if(deployed_headpods)
-			icon_state = "zuman_on"
-		else
-			icon_state = "[initial(icon_state)]_on"
-	else
-		if(deployed_headpods)
-			icon_state = "zuman"
-		else
-			icon_state = "[initial(icon_state)]"
+/obj/item/walkpod/proc/appearance_base()
+	return deployed_headpods ? "zuman" : initial(icon_state)
+
+APPEARANCE_TEMPLATE(/obj/item/walkpod, "{appearance_base}{listener?_on:}")
 
 // Listener handling
 /obj/item/walkpod/proc/check_listener()

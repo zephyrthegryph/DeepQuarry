@@ -132,7 +132,10 @@ fundamental differences
 	CI.reset()
 	update_icon()
 
-/obj/machinery/appliance/mixer/update_icon()
+APPEARANCE_NONE(/obj/machinery/appliance/mixer)
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/appliance/mixer/appearance_overlays()
+	. = list()
 	if (!has_stat(MACHINE_STAT_ANY))
 		icon_state = on_icon
 		if(mixer_loop)

@@ -176,11 +176,7 @@ MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 		return
 	ask_camera_direction(ask.answerer, ask.camera, ask.chances - 1)
 
-/obj/item/camera_assembly/update_icon()
-	if(anchored)
-		icon_state = "camera1"
-	else
-		icon_state = "cameracase"
+DECLARE_APPEARANCE(/obj/item/camera_assembly, "anchored", list("1" = list(APPEARANCE_ICON_STATE = "camera1"), APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "cameracase")))
 
 DECLARE_INTERACTIONS(/obj/item/camera_assembly, \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \

@@ -225,10 +225,11 @@
 /obj/machinery/turretid/power_change()
 	. = ..()
 	updateTurrets()
-	update_icon()
 
-/obj/machinery/turretid/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/turretid, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/turretid/appearance_overlays()
+	. = list()
+	. += ..()
 	if(has_stat(NOPOWER))
 		icon_state = "control_off"
 		set_light(0)

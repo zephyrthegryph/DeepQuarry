@@ -104,8 +104,10 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 		show_tvs(loc)
 		update_feed()
 
-/obj/item/tvcamera/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/tvcamera, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/tvcamera/appearance_overlays()
+	. = list()
+	. += ..()
 	if(camera.status)
 		icon_state = "camcorder_on"
 		item_state = "camcorder_on"
@@ -223,8 +225,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PRO
 	if(bcamera.status)
 		OM_EMIT(bcamera, /datum/om/event/movable_attempted_move, null, null) // Forward the movement event
 
-/obj/item/clothing/accessory/bodycam/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/accessory/bodycam, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/clothing/accessory/bodycam/appearance_overlays()
+	. = list()
+	. += ..()
 	var/mob/living/carbon/human/H = loc
 	if(istype(H))
 		H.update_inv_r_hand()

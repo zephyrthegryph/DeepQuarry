@@ -45,11 +45,6 @@
 /obj/machinery/atmospherics/trinary/hide(i)
 	update_underlays()
 
-/obj/machinery/atmospherics/trinary/power_change()
-	. = ..()
-	if(.)
-		update_icon()
-
 /obj/machinery/atmospherics/trinary/wrench_act(mob/user, obj/item/W)
 	if(!can_unwrench())
 		to_chat(user, span_warning("You cannot unwrench \the [src], it too exerted due to internal pressure."))
@@ -211,7 +206,6 @@
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(allowed(user))
 		set_use_power(!use_power)
-		update_icon()
 		add_fingerprint(user)
 		if(use_power)
 			to_chat(user, span_notice("You toggle the [name] on."))

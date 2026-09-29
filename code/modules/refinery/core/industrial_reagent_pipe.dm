@@ -27,10 +27,11 @@
 
 	refinery_transfer()
 
-/obj/machinery/reagent_refinery/pipe/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/pipe, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/reagent_refinery/pipe/appearance_overlays()
+	. = list()
 	if(anchored)
-		update_input_connection_overlays("pipe_intakes")
+		. += update_input_connection_overlays("pipe_intakes")
 
 /obj/machinery/reagent_refinery/pipe/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	// no back/forth, filters don't use just their forward, they send the side too!

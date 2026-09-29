@@ -66,14 +66,15 @@
 	else
 		return 1
 
-/obj/structure/coatrack/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/structure/coatrack, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/coatrack/appearance_overlays()
+	. = list()
 	if (istype(coat(), /obj/item/clothing/suit/storage/toggle/labcoat))
-		add_overlay("coat_lab")
+		. += "coat_lab"
 	if (istype(coat(), /obj/item/clothing/suit/storage/toggle/labcoat/cmo))
-		add_overlay("coat_cmo")
+		. += "coat_cmo"
 	if (istype(coat(), /obj/item/clothing/suit/storage/det_trench))
-		add_overlay("coat_det")
+		. += "coat_det"
 
 /// Relation view: coat (reads null once it is gone).
 /obj/structure/coatrack/proc/coat() as /obj/item/clothing/suit

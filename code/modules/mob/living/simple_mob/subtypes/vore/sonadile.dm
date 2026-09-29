@@ -71,8 +71,10 @@
 	Whilst not entirely blind, it appears to have difficulty discerning differences between shapes and movement, but once it hears something that it interprets as prey, it attempts to swallow the creature whole and alive, lashing its head forward on the massively long neck."
 	value = CATALOGUER_REWARD_HARD
 
-/mob/living/simple_mob/vore/sonadile/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/sonadile, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/vore/sonadile/appearance_overlays()
+	. = list()
+	. += ..()
 	if(vore_active)
 		var/voremob_awake = FALSE
 		if(icon_state == icon_living)
@@ -80,7 +82,7 @@
 		update_fullness()
 		if(!vore_fullness)
 			update_transform()
-			return 0
+			return .
 		else if((stat == CONSCIOUS) && (!icon_rest || !resting || !incapacitated(INCAPACITATION_DISABLED)) && (vore_icons & SA_ICON_LIVING))
 			icon_state = "[icon_living]-[vore_fullness]"
 			om_after(src, 10 SECONDS, PROC_REF(settle_full_icon))

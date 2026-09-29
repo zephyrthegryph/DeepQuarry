@@ -126,23 +126,24 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 		COOLDOWN_START(src, toggle, 5 SECONDS)
 		toggle_valve()
 
-/obj/item/transfer_valve/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/transfer_valve, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/transfer_valve/appearance_overlays()
+	. = list()
 	underlays = null
 
 	if(!tank_one && !tank_two && !attached_device)
 		icon_state = "valve_1"
-		return
+		return .
 	icon_state = "valve"
 
 	if(tank_one)
-		add_overlay("[tank_one.icon_state]")
+		. += "[tank_one.icon_state]"
 	if(tank_two)
 		var/icon/J = new(icon, icon_state = "[tank_two.icon_state]")
 		J.Shift(WEST, 13)
 		underlays += J
 	if(attached_device)
-		add_overlay("device")
+		. += "device"
 
 /obj/item/transfer_valve/proc/remove_tank(obj/item/tank/T)
 	if(tank_one == T)

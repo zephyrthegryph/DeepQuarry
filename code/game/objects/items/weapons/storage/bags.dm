@@ -52,7 +52,9 @@
 
 TYPE_TABLE(/obj/item/storage/bag/trash, hold_spec, list(HOLD_NOT(list(/obj/item/disk/nuclear)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-/obj/item/storage/bag/trash/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/bag/trash, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/bag/trash/appearance_overlays()
+	. = list()
 	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "trashbag0"
 	else if(length(slot_contents(CONTAINER_SLOT_STORAGE)) < 9)
@@ -70,8 +72,7 @@ TYPE_TABLE(/obj/item/storage/bag/trash, hold_spec, list(HOLD_NOT(list(/obj/item/
 
 TYPE_TABLE(/obj/item/storage/bag/trash/holding, hold_spec, list(HOLD_NOT(list(/obj/item/disk/nuclear)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
-/obj/item/storage/bag/trash/holding/update_icon()
-	return
+APPEARANCE_NONE(/obj/item/storage/bag/trash/holding)
 
 // -----------------------------
 //        Plastic Bag
@@ -356,7 +357,9 @@ TYPE_TABLE(/obj/item/storage/bag/detective, hold_spec, list(HOLD_ONLY(list(/obj/
 
 TYPE_TABLE(/obj/item/storage/bag/santabag, hold_spec, list(HOLD_NOT(list(/obj/item/disk/nuclear)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
-/obj/item/storage/bag/santabag/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/bag/santabag, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/bag/santabag/appearance_overlays()
+	. = list()
 	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) < 10)
 		icon_state = "giftbag0"
 	else if(length(slot_contents(CONTAINER_SLOT_STORAGE)) < 25)

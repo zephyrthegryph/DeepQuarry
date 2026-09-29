@@ -11,8 +11,10 @@
 /obj/structure/blob/shield/core
 	point_return = 0
 
-/obj/structure/blob/shield/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/structure/blob/shield, TYPE_PROC_REF(/atom, appearance_overlays), list("get_integrity"))
+/obj/structure/blob/shield/appearance_overlays()
+	. = list()
+	. += ..()
 	if(get_integrity() <= 75)
 		icon_state = "blob_shield_damaged"
 		desc = "A wall of twitching tendrils."

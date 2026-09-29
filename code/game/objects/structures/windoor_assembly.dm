@@ -46,8 +46,7 @@
 	update_nearby_tiles(need_rebuild=1)
 	make_rotatable()
 
-/obj/structure/windoor_assembly/update_icon()
-	icon_state = "[facing]_[secure]windoor_assembly[state]"
+APPEARANCE_TEMPLATE(/obj/structure/windoor_assembly, "{facing}_{secure}windoor_assembly{state}")
 
 /obj/structure/windoor_assembly/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSGLASS))

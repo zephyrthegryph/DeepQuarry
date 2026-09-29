@@ -9,8 +9,7 @@
 /obj/machinery/disposal/deliveryChute/interact()
 	return
 
-/obj/machinery/disposal/deliveryChute/update_icon()
-	return
+APPEARANCE_NONE(/obj/machinery/disposal/deliveryChute)
 
 /obj/machinery/disposal/deliveryChute/declare_interactions(list/into)
 	into += list(

@@ -150,8 +150,7 @@ DECLARE_INTERACTIONS(/obj/item/lightreplacer, \
 		selected_color = ask.picked_color
 		to_chat(ask.answerer, "The light color has been changed.")
 
-/obj/item/lightreplacer/update_icon()
-	icon_state = "lightreplacer[emagged]"
+APPEARANCE_TEMPLATE(/obj/item/lightreplacer, "lightreplacer{emagged}")
 
 /obj/item/lightreplacer/proc/Use(mob/user)
 
@@ -189,7 +188,7 @@ DECLARE_INTERACTIONS(/obj/item/lightreplacer, \
 				if(new_bulbs != 0)
 					to_chat(U, span_notice("\The [src] has fabricated a new bulb from the broken bulbs it has stored. It now has [uses] uses."))
 					play_sfx(src, SFX_MACHINES_DING)
-				target.status = LIGHT_EMPTY
+				target.set_status(LIGHT_EMPTY)
 				own_clear(target, "installed_light", OWN_DELETE) //Remove the light! (its glass went into the shards)
 				target.latent_bulb = FALSE
 				target.update()

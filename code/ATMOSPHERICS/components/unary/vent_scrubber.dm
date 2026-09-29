@@ -112,14 +112,15 @@
 	. = ..()
 	update_rust_device()
 
-/obj/machinery/atmospherics/unary/vent_scrubber/update_icon(safety = 0)
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_scrubber, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/atmospherics/unary/vent_scrubber/appearance_overlays()
+	. = list()
 
 	var/scrubber_icon = "scrubber"
 
 	var/turf/T = get_turf(src)
 	if(!istype(T))
-		return
+		return .
 
 	if(welded)
 		scrubber_icon += "weld"
@@ -128,7 +129,7 @@
 	else
 		scrubber_icon += "[use_power ? "[scrubbing ? "on" : "in"]" : "off"]"
 
-	add_overlay(GLOB.icon_manager.get_atmos_icon("device", , , scrubber_icon))
+	. += GLOB.icon_manager.get_atmos_icon("device", , , scrubber_icon)
 
 /obj/machinery/atmospherics/unary/vent_scrubber/update_underlays()
 	..()
@@ -292,7 +293,6 @@
 	. = ..()
 	if(.)
 		invalidate_gas_dependencies()
-		update_icon()
 
 /obj/machinery/atmospherics/unary/vent_scrubber/welder_act(mob/user, obj/item/W)
 	use_tool(user, W, src, delay = 20, quality = TOOL_WELDER, volume = 0, start_self = "Now welding the vent.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user, W))

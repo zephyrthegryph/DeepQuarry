@@ -82,8 +82,10 @@
 		qdel(mane_overlay)
 		mane_overlay = null
 
-/mob/living/simple_mob/vore/retaliate/lion/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/retaliate/lion, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/vore/retaliate/lion/appearance_overlays()
+	. = list()
+	. += ..()
 	if(has_mane)
 		add_mane()
 	else

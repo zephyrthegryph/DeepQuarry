@@ -123,7 +123,9 @@ DECLARE_INTERACTIONS(/obj/item/ammo_casing, INTERACT_ITEM(null, PROC_REF(interac
 		BB.name = "[initial(BB.name)] (\"[label_text]\")"
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/ammo_casing/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/ammo_casing, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/ammo_casing/appearance_overlays()
+	. = list()
 	if(!BB)
 		icon_state = "[initial(icon_state)]-spent"
 
@@ -304,7 +306,9 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 	if(latent_rounds && loc && !isturf(loc) && !loc.latent_contents)
 		make_rounds_real()
 
-/obj/item/ammo_magazine/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/ammo_magazine/appearance_overlays()
+	. = list()
 	if(multiple_sprites)
 		//find the lowest key greater than or equal to length(stored_ammo)
 		var/new_state = null
