@@ -205,8 +205,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 	else
 		return FALSE
 
-/mob/living/simple_mob/vore/alienanimals/catslug/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/vore/alienanimals/catslug/appearance_overlays()
+	. = list()
+	. += ..()
 
 	if(hat)
 		var/hat_state = hat.item_state ? hat.item_state : hat.icon_state
@@ -215,7 +217,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 		I.color = hat.color
 		I.appearance_flags = RESET_COLOR | KEEP_APART
 		I.blend_mode = BLEND_OVERLAY
-		add_overlay(I)
+		. += I
 
 /mob/living/simple_mob/vore/alienanimals/catslug/proc/give_hat(obj/item/clothing/head/new_hat, mob/living/user)
 	if(!istype(new_hat))

@@ -176,19 +176,17 @@
 
 	return
 
-/obj/machinery/food_replicator/update_icon()
-	cut_overlays()
+/obj/machinery/food_replicator/proc/appearance_broken()
+	return has_stat(BROKEN) ? 1 : 0
 
-	icon_state = initial(icon_state)
+/obj/machinery/food_replicator/proc/appearance_nopower()
+	return has_stat(NOPOWER | EMPED) ? 1 : 0
 
-	if(has_stat(BROKEN))
-		icon_state = "destroyed"
-	if(panel_open)
-		add_overlay("panel_open")
-	if(has_stat(NOPOWER | EMPED))
-		add_overlay("poweroff")
-	if(printing)
-		add_overlay("printing")
+APPEARANCE_TEMPLATE(/obj/machinery/food_replicator, "{initial(icon_state)}")
+DECLARE_APPEARANCE(/obj/machinery/food_replicator, "appearance_broken", list("1" = list(APPEARANCE_ICON_STATE = "destroyed")))
+DECLARE_APPEARANCE(/obj/machinery/food_replicator, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("panel_open"))))
+DECLARE_APPEARANCE(/obj/machinery/food_replicator, "appearance_nopower", list("1" = list(APPEARANCE_OVERLAYS = list("poweroff"))))
+DECLARE_APPEARANCE(/obj/machinery/food_replicator, "printing", list("1" = list(APPEARANCE_OVERLAYS = list("printing"))))
 
 /// Reconciles its power draw with its state on every power or break change; printing sets its
 /// own draw while it runs.
@@ -253,7 +251,6 @@
 
 /obj/machinery/food_replicator/proc/self_destruct_boom()
 	set_stat(BROKEN)
-	update_icon()
 	explosion(src, 0, 0, 2)
 
 OWN(/obj/machinery/food_replicator, container, OWN_CONTAINED)

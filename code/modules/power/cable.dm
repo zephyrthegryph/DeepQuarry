@@ -274,10 +274,12 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 /obj/structure/cable/hides_under_flooring()
 	return 1
 
-/obj/structure/cable/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/cable, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/cable/appearance_overlays()
+	. = list()
 	// We rely on the icon state for the wire Initialize(), prevent any updates to the icon before init passed
 	if(!(flags & ATOM_INITIALIZED))
-		return
+		return .
 	icon_state = "[d1]-[d2]"
 	alpha = invisibility ? 127 : 255
 
@@ -521,7 +523,9 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 /obj/item/stack/cable_coil/proc/robo_repair_used(mob/living/user, use_amt)
 	use(use_amt)
 
-/obj/item/stack/cable_coil/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/stack/cable_coil, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/stack/cable_coil/appearance_overlays()
+	. = list()
 	if (!color)
 		color = pick(COLOR_RED, COLOR_BLUE, COLOR_LIME, COLOR_ORANGE, COLOR_WHITE, COLOR_PINK, COLOR_YELLOW, COLOR_CYAN)
 	if(amount == 1)
@@ -890,7 +894,9 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil, \
 			embed_chance = force/(w_class*3)
 	update_icon()
 
-/obj/item/stack/cable_coil/alien/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/stack/cable_coil/alien, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/stack/cable_coil/alien/appearance_overlays()
+	. = list()
 	icon_state = initial(icon_state)
 
 /obj/item/stack/cable_coil/alien/can_use(used)

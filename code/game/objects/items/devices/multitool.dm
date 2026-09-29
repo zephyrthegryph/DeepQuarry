@@ -101,10 +101,12 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 	toolspeed = 0.1
 
 // Alien multitool only has those icon states
-/obj/item/multitool/alien/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/multitool/alien, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/multitool/alien/appearance_overlays()
+	. = list()
 	if(accepting_refs)
 		icon_state = "multitool_ref_scan"
-		return
+		return .
 	icon_state = "multitool"
 
 /// Recalibrating a synthetic body part: actuator misalignment responds to

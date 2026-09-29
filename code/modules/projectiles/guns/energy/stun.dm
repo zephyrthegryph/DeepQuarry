@@ -112,13 +112,15 @@
 	several TSCs have been trying to get a hold of the blueprints for half a decade."
 	var/unique_reskin
 
-/obj/item/gun/energy/stunrevolver/detective/update_icon(ignore_inhands)
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/stunrevolver/detective, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/energy/stunrevolver/detective/appearance_overlays()
+	. = list()
 	if(power_supply == null)
 		if(unique_reskin)
 			icon_state = "[unique_reskin]_open"
 		else
 			icon_state = "[initial(icon_state)]_open"
-		return
+		return .
 	else if(charge_meter)
 		var/ratio = power_supply.charge / power_supply.maxcharge
 
@@ -139,7 +141,7 @@
 		else
 			icon_state = "[initial(icon_state)]"
 
-	if(!ignore_inhands) update_held_icon()
+	update_held_icon()
 
 EXTEND_INTERACTIONS(/obj/item/gun/energy/stunrevolver/detective, \
 	INTERACT_VERB("Name Gun", PROC_REF(det_stunrevolver_verb_rename), REQ_IN_INVENTORY, REQ_PROC(/proc/dq_actor_is_security_for_naming, "you don't feel cool enough to name this gun, chump")), \

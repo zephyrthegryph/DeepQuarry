@@ -32,11 +32,11 @@
 	if(frequency)
 		set_frequency(frequency)
 
-/obj/machinery/atmospherics/unary/outlet_injector/update_icon()
-	if(!powered())
-		icon_state = "off"
-	else
-		icon_state = "[use_power ? "on" : "off"]"
+/// Appearance reader: powered and switched on.
+/obj/machinery/atmospherics/unary/outlet_injector/proc/appearance_injecting()
+	return powered() && use_power
+
+APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/outlet_injector, "{appearance_injecting?on:off}")
 
 /obj/machinery/atmospherics/unary/outlet_injector/update_underlays()
 	..()
@@ -45,11 +45,6 @@
 	if(!istype(T))
 		return
 	add_underlay(T, node, dir)
-
-/obj/machinery/atmospherics/unary/outlet_injector/power_change()
-	. = ..()
-	if(.)
-		update_icon()
 
 /obj/machinery/atmospherics/unary/outlet_injector/machine_step()
 	..()
@@ -187,7 +182,6 @@
 /obj/machinery/atmospherics/unary/outlet_injector/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	injecting = !injecting
 	set_use_power(injecting ? USE_POWER_IDLE : USE_POWER_OFF)
-	update_icon()
 	return TRUE
 
 /obj/machinery/atmospherics/unary/outlet_injector/multitool_act(mob/user, obj/item/W)

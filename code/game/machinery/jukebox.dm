@@ -138,22 +138,32 @@
 		StopPlaying()
 	update_icon()
 
-/obj/machinery/media/jukebox/update_icon()
-	cut_overlays()
-	if(!operable() || !anchored)
-		if(has_stat(BROKEN))
-			icon_state = "[state_base]-broken"
-		else
-			icon_state = "[state_base]-nopower"
-		return
-	icon_state = state_base
-	if(playing)
-		if(emagged)
-			add_overlay("[state_base]-emagged")
-		else
-			add_overlay("[state_base]-running")
-	if (panel_open)
-		add_overlay("panel_open")
+/obj/machinery/media/jukebox/proc/appearance_live()
+	return (operable() && anchored) ? 1 : 0
+
+/obj/machinery/media/jukebox/proc/appearance_suffix()
+	if(appearance_live())
+		return ""
+	return has_stat(BROKEN) ? "-broken" : "-nopower"
+
+/obj/machinery/media/jukebox/proc/appearance_running()
+	if(!appearance_live() || !playing)
+		return ""
+	return emagged ? "emagged" : "running"
+
+/obj/machinery/media/jukebox/proc/appearance_panel()
+	return (appearance_live() && panel_open) ? 1 : 0
+
+APPEARANCE_TEMPLATE(/obj/machinery/media/jukebox, "{state_base}{appearance_suffix}")
+DECLARE_APPEARANCE(/obj/machinery/media/jukebox, "appearance_running", list(
+	"running" = list(APPEARANCE_OVERLAYS = list("jukebox-running")),
+	"emagged" = list(APPEARANCE_OVERLAYS = list("jukebox-emagged"))
+))
+DECLARE_APPEARANCE(/obj/machinery/media/jukebox, "appearance_panel", list("1" = list(APPEARANCE_OVERLAYS = list("panel_open"))))
+DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_running", list(
+	"running" = list(APPEARANCE_OVERLAYS = list("casinojukebox-running")),
+	"emagged" = list(APPEARANCE_OVERLAYS = list("casinojukebox-emagged"))
+))
 
 /obj/machinery/media/jukebox/interact(mob/user)
 	if(!operable())
@@ -283,7 +293,6 @@
 	playing = 0
 	MACHINE_SLEEP(src)
 	set_use_power(USE_POWER_IDLE)
-	update_icon()
 	start_stop_song()
 
 /obj/machinery/media/jukebox/proc/StartPlaying()
@@ -292,7 +301,6 @@
 	playing = 1
 	MACHINE_WAKE(src)
 	set_use_power(USE_POWER_ACTIVE)
-	update_icon()
 	start_stop_song()
 
 // Advance to the next track - Don't start playing it unless we were already playing
@@ -359,7 +367,11 @@
 	return
 /obj/machinery/media/jukebox/ghost/explode()
 	return
-/obj/machinery/media/jukebox/ghost/update_icon()
+/// Draws itself entirely: drop the parent's keyed declarations.
+APPEARANCE_NONE(/obj/machinery/media/jukebox/ghost)
+DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/media/jukebox/ghost/appearance_overlays()
+	. = list()
 	if(playing)
 		animate(src, alpha = 200, time = 5, loop = -1)
 	else

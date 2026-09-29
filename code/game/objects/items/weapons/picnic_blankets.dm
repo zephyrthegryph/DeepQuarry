@@ -87,12 +87,11 @@
 				side.layer = TABLE_LAYER + 0.01 //We should be just above tables.
 			side.update_icon()
 
-/obj/structure/picnic_blanket_deployed/update_icon()
-	if(blanket_type == SIDE)
-		icon_state = "picnic_sides" //8 directional icon
-	if(blanket_type == CENTER)
-		icon_state = "picnic_central" //Adding in case anything might call update_icon on center one. Just to be safe
-	. = ..()
+// Keys are blanket_type: "1" is CENTER, "2" is SIDE (8 directional icon).
+DECLARE_APPEARANCE(/obj/structure/picnic_blanket_deployed, "blanket_type", list( \
+	"1" = list(APPEARANCE_ICON_STATE = "picnic_central"), \
+	"2" = list(APPEARANCE_ICON_STATE = "picnic_sides") \
+))
 
 /obj/structure/picnic_blanket_deployed/examine(mob/user)
 	. = ..()

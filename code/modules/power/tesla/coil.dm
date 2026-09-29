@@ -58,11 +58,7 @@
 	input_power_multiplier = get_part_rating(/obj/item/stock_parts/capacitor)
 	zap_cooldown -= (input_power_multiplier - get_part_count(/obj/item/stock_parts/capacitor))
 
-/obj/machinery/power/tesla_coil/update_icon()
-	if(panel_open)
-		icon_state = "[icontype]_open[anchored]"
-	else
-		icon_state = "[icontype][anchored]"
+APPEARANCE_TEMPLATE(/obj/machinery/power/tesla_coil, "{icontype}{panel_open?_open:}{anchored}")
 
 /obj/machinery/power/tesla_coil/declare_interactions(list/into)
 	into += list(
@@ -143,7 +139,6 @@
 		new_coil.RefreshParts()
 
 		new_coil.set_anchored(anchored)
-		new_coil.update_icon()
 
 		to_chat(user, span_notice("You modify \the [src]. It is now a [lowertext(modification_decision)]! You close the access panel."))
 		qdel(src)
@@ -353,11 +348,7 @@
 	else
 		. += span_warning("It is not secured!")
 
-/obj/machinery/power/grounding_rod/update_icon()
-	if(panel_open)
-		icon_state = "grounding_rod_open[anchored]"
-	else
-		icon_state = "grounding_rod[anchored]"
+APPEARANCE_TEMPLATE(/obj/machinery/power/grounding_rod, "grounding_rod{panel_open?_open:}{anchored}")
 
 /obj/machinery/power/grounding_rod/declare_interactions(list/into)
 	into += list(

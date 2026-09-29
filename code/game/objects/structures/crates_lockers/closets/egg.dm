@@ -14,14 +14,14 @@
 	sealed = 0 //Don't touch this.
 	max_integrity = 100
 
-/obj/structure/closet/secure_closet/egg/update_icon()
+/obj/structure/closet/secure_closet/egg/proc/appearance_egg_state()
 	if(opened)
-		icon_state = icon_opened
-	else
-		if(sealed)
-			icon_state = icon_locked
-		else
-			icon_state = icon_closed
+		return icon_opened
+	return sealed ? icon_locked : icon_closed
+
+APPEARANCE_TEMPLATE(/obj/structure/closet/secure_closet/egg, "{appearance_egg_state}")
+// Replaces the inherited "opened" -> "open" layer: the egg's open state is icon_opened.
+DECLARE_APPEARANCE(/obj/structure/closet/secure_closet/egg, "opened", list())
 
 /obj/structure/closet/secure_closet/egg/welder_act(mob/user, obj/item/W)
 	dump_contents()

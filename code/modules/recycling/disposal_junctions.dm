@@ -178,11 +178,12 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/sortjunction, INTERACT_ITEM(nul
 
 	return P
 
-/obj/structure/disposalpipe/sortjunction/update_icon()
-	cut_overlays()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/structure/disposalpipe/sortjunction, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/disposalpipe/sortjunction/appearance_overlays()
+	. = list()
+	. += ..()
 	if(panel_open)
-		add_overlay("[icon_state]-open")
+		. += "[icon_state]-open"
 
 //a three-way junction that filters all wrapped and tagged items
 /obj/structure/disposalpipe/sortjunction/wildcard

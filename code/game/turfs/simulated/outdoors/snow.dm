@@ -19,10 +19,12 @@
 		update_icon()
 	. = ..()
 
-/turf/simulated/floor/outdoors/snow/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/turf/simulated/floor/outdoors/snow, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/turf/simulated/floor/outdoors/snow/appearance_overlays()
+	. = list()
+	. += ..()
 	for(var/d in crossed_dirs)
-		add_overlay(image(icon = 'icons/turf/outdoors.dmi', icon_state = "snow_footprints", dir = text2num(d)))
+		. += image(icon = 'icons/turf/outdoors.dmi', icon_state = "snow_footprints", dir = text2num(d))
 
 EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/snow, \
 	INTERACT_INSERT(/obj/item/shovel, PROC_REF(snow_shovel), "Dig up"), \

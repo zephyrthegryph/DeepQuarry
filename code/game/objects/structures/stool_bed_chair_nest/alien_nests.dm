@@ -9,8 +9,7 @@
 	unacidable = TRUE
 	flippable = FALSE
 
-/obj/structure/bed/nest/update_icon()
-	return
+APPEARANCE_NONE(/obj/structure/bed/nest)
 
 /obj/structure/bed/nest/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	if(buckled_mob)

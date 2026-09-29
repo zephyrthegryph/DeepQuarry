@@ -17,10 +17,11 @@
 	lid_color = pick("black", "red", "blue")
 	update_icon()
 
-/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/appearance_overlays()
+	. = list()
+	. += ..()
 	icon_state = "[base_icon]_[lid_color]"
-	cut_overlays()
 
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake
 	name = "protein shake"
@@ -35,8 +36,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/pr
 	. = ..()
 	cut_overlays()
 
-/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake/update_icon()
-	return
+APPEARANCE_NONE(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake)
 
 
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake
@@ -52,5 +52,4 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/pr
 	. = ..()
 	cut_overlays()
 
-/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake/update_icon()
-	return
+APPEARANCE_NONE(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake)

@@ -71,7 +71,6 @@ REL_LIST(/obj/machinery/computer/area_atmos, connectedscrubbers)
 				rel_remove(src, "connectedscrubbers", S)
 				return TRUE
 			S.set_on(!S.on)
-			S.update_icon()
 			MACHINE_WAKE(S)
 			. = TRUE
 		if("allon")
@@ -92,7 +91,6 @@ REL_LIST(/obj/machinery/computer/area_atmos, connectedscrubbers)
 			rel_remove(src, "connectedscrubbers", S)
 			continue
 		S.set_on(on)
-		S.update_icon()
 		MACHINE_WAKE(S)
 		CHECK_TICK
 

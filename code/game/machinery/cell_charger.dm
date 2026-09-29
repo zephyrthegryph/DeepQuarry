@@ -19,25 +19,24 @@
 	default_apply_parts()
 	add_overlay("ccharger1")
 
-/obj/machinery/cell_charger/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/cell_charger, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/cell_charger/appearance_overlays()
+	. = list()
 	if(!anchored)
-		cut_overlays()
 		icon_state = "ccharger2"
 
 	if(charging && operable())
 		var/newlevel = 	round(charging.percent() * 4.0 / 99)
 
-		cut_overlays()
-		add_overlay("ccharger-o[newlevel]")
+		. += "ccharger-o[newlevel]"
 
 		chargelevel = newlevel
-		add_overlay(image(charging.icon, charging.icon_state))
-		add_overlay("ccharger-[charging.connector_type]-on")
+		. += image(charging.icon, charging.icon_state)
+		. += "ccharger-[charging.connector_type]-on"
 
 	else if(anchored)
-		cut_overlays()
 		icon_state = "ccharger0"
-		add_overlay("ccharger1")
+		. += "ccharger1"
 
 /obj/machinery/cell_charger/examine(mob/user)
 	. = ..()
@@ -112,7 +111,6 @@
 	om_changed(src, CHANGE_MACHINE_ANCHORED)
 	to_chat(user, "You [anchored ? "attach" : "detach"] [src] [anchored ? "to" : "from"] the ground")
 	playsound(src, tool.usesound, 75, TRUE)
-	update_icon()
 	if(anchored)
 		MACHINE_WAKE(src) // machine_step() slept while unanchored; let it settle power state / resume charging.
 	return ITEM_INTERACT_SUCCESS

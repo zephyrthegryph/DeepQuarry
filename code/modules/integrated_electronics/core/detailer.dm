@@ -29,11 +29,12 @@
 	update_icon()
 	return ..()
 
-/obj/item/integrated_electronics/detailer/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/integrated_electronics/detailer, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/integrated_electronics/detailer/appearance_overlays()
+	. = list()
 	var/mutable_appearance/detail_overlay = mutable_appearance('icons/obj/integrated_electronics/electronic_tools.dmi', "detailer-color")
 	detail_overlay.color = detail_color
-	add_overlay(detail_overlay)
+	. += detail_overlay
 
 /obj/item/integrated_electronics/detailer/tgui_state(mob/user)
 	return GLOB.tgui_inventory_state

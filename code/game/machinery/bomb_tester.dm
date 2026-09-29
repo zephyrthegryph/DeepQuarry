@@ -56,20 +56,21 @@
 	if(test_canister() && !Adjacent(test_canister()))
 		rel_clear(src, "test_canister")
 
-/obj/machinery/bomb_tester/update_icon()
-	cut_overlays()
-	if(tank1)
-		add_overlay("[icon_name]-tank1")
-	if(tank2)
-		add_overlay("[icon_name]-tank2")
-	if(has_stat(NOPOWER))
-		icon_state = "[icon_name]-p"
-	else
-		icon_state = "[icon_name][simulating]"
+/obj/machinery/bomb_tester/proc/appearance_suffix()
+	return has_stat(NOPOWER) ? "-p" : "[simulating]"
+
+/obj/machinery/bomb_tester/proc/appearance_tank1()
+	return tank1 ? 1 : 0
+
+/obj/machinery/bomb_tester/proc/appearance_tank2()
+	return tank2 ? 1 : 0
+
+APPEARANCE_TEMPLATE(/obj/machinery/bomb_tester, "{icon_name}{appearance_suffix}")
+DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank1", list("1" = list(APPEARANCE_OVERLAYS = list("generic-tank1"))))
+DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = list(APPEARANCE_OVERLAYS = list("generic-tank2"))))
 
 /obj/machinery/bomb_tester/power_change()
 	. = ..()
-	update_icon()
 	if(simulating && has_stat(NOPOWER))
 		simulation_finish(1)
 
@@ -358,7 +359,6 @@
 		simulation_timer = 0
 	simulating = 0
 	set_use_power(USE_POWER_IDLE)
-	update_icon()
 	if(test_canister() && test_canister().anchored && !test_canister().connected_port())
 		test_canister().anchored = FALSE
 	if(cancelled)

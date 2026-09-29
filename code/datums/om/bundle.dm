@@ -88,6 +88,9 @@
 	/// om_cache_scan()): the change bits that clear one, and stride-2 rules
 	/// (bits, var) / (event path, var) / (relation id, var).
 	var/cache_scanned = FALSE
+	/// Declared appearance watch mask (appearance_mask_of(), code/datums/sys/appearance.dm), read once.
+	var/appearance_scanned = FALSE
+	var/appearance_mask = 0
 	var/cache_mask = 0
 	var/list/cache_change
 	var/list/cache_events

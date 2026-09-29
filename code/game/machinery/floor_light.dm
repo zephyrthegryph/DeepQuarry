@@ -156,15 +156,16 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 	update_active_power_usage((light_range + light_power) * 10)
 	update_icon()
 
-/obj/machinery/floor_light/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/floor_light, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/floor_light/appearance_overlays()
+	. = list()
 	if(use_power && !broken())
 		if(isnull(damaged))
-			add_overlay(CACHED_KEY(floor_light_overlays, "floorlight-[default_light_colour]", "on", default_light_colour, layer+0.001))
+			. += CACHED_KEY(floor_light_overlays, "floorlight-[default_light_colour]", "on", default_light_colour, layer+0.001)
 		else
 			if(damaged == 0) //Needs init.
 				damaged = rand(1,4)
-			add_overlay(CACHED_KEY(floor_light_overlays, "floorlight-broken[damaged]-[default_light_colour]", "flicker[damaged]", default_light_colour, layer+0.001))
+			. += CACHED_KEY(floor_light_overlays, "floorlight-broken[damaged]-[default_light_colour]", "flicker[damaged]", default_light_colour, layer+0.001)
 
 /obj/machinery/floor_light/proc/broken()
 	return (!operable())

@@ -49,14 +49,16 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 	SSpersistence.forget_value(src, /datum/persistent/filth)
 	..()
 
-/obj/effect/decal/cleanable/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/effect/decal/cleanable/appearance_overlays()
+	. = list()
 	// Overrides should not inheret from this, and instead replace it entirely to match this in some form.
 	// add_janitor_hud_overlay() does not pre-cut overlays, so cut_overlays() must be called first.
 	// This is so it may be used with update_icon() overrides that use overlays, while adding the janitor overlay at the end.
-	cut_overlays()
-	add_janitor_hud_overlay()
+	. += add_janitor_hud_overlay()
 
 /obj/effect/decal/cleanable/proc/add_janitor_hud_overlay()
+	. = list()
 	// This was original a seperate object that followed the grime, it got stuck in everything you can imagine!
 	// It also likely doubled the memory use of every cleanable decal on station...
 	var/image/hud = image('icons/mob/hud.dmi', src, "janhud[rand(1,9)]")
@@ -68,6 +70,6 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 	//hud.appearance_flags = RESET_ALPHA | RESET_COLOR
 	//hud.alpha = 255
 	//HUD VARIANT end
-	add_overlay(hud)
+	. += hud
 
 // Contagion datums are shared (copied lists, one disease spread across many decals), never owned here.

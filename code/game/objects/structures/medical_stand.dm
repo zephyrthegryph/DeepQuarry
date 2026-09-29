@@ -26,31 +26,32 @@
 	. = ..()
 	update_icon()
 
-/obj/structure/medical_stand/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/structure/medical_stand, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/medical_stand/appearance_overlays()
+	. = list()
 
 	if (tank)
 		if (breather())
-			add_overlay("tube_active")
+			. += "tube_active"
 		else
-			add_overlay("tube")
+			. += "tube"
 		if(istype(tank,/obj/item/tank/anesthetic))
-			add_overlay("tank_anest")
+			. += "tank_anest"
 		else if(istype(tank,/obj/item/tank/nitrogen))
-			add_overlay("tank_nitro")
+			. += "tank_nitro"
 		else if(istype(tank,/obj/item/tank/oxygen))
-			add_overlay("tank_oxyg")
+			. += "tank_oxyg"
 		else if(istype(tank,/obj/item/tank/phoron))
-			add_overlay("tank_plasma")
+			. += "tank_plasma"
 		else
-			add_overlay("tank_other")
+			. += "tank_other"
 
 	if(beaker)
-		add_overlay("beaker")
+		. += "beaker"
 		if(attached())
-			add_overlay("line_active")
+			. += "line_active"
 		else
-			add_overlay("line")
+			. += "line"
 		var/datum/reagents/reagents = beaker.reagents
 		var/percent = round((reagents.total_volume / beaker.volume) * 100)
 		if(reagents.total_volume)
@@ -65,7 +66,7 @@
 				if(91 to INFINITY)	filling.icon_state = "reagent100"
 			if (filling.icon)
 				filling.icon += reagents.get_color()
-				add_overlay(filling)
+				. += filling
 
 // the breathing mask retracts from its patient.
 /obj/structure/medical_stand/lifecycle_prerelease()

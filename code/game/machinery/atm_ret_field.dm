@@ -81,29 +81,24 @@
 	. = ..()
 	generate_field()
 
-/obj/machinery/atmospheric_field_generator/update_icon()
+/obj/machinery/atmospheric_field_generator/proc/appearance_state()
 	if(has_stat(BROKEN))
-		icon_state = "arfg_broken"
-	else if(hatch_open && wires_intact)
-		icon_state = "arfg_open_wires"
-	else if(hatch_open && !wires_intact)
-		icon_state = "arfg_open_wirescut"
-	else if(isactive)
-		icon_state = "arfg_on"
-	else
-		icon_state = "arfg_off"
+		return "broken"
+	if(hatch_open)
+		return wires_intact ? "open_wires" : "open_wirescut"
+	return isactive ? "on" : "off"
+
+APPEARANCE_TEMPLATE(/obj/machinery/atmospheric_field_generator, "arfg_{appearance_state}")
 
 /obj/machinery/atmospheric_field_generator/power_change()
 	. = ..()
 	if(operable())
 		ispowered = TRUE
-		update_icon()
 		if(alwaysactive || wasactive)	//reboot our field if we were on or are supposed to be always-on
 			generate_field()
 	if(. && isactive && (!operable()))
 		ispowered = FALSE
 		disable_field()
-		update_icon()
 
 EMP_DISABLE(/obj/machinery/atmospheric_field_generator, 7.5 SECONDS, "emp_until")
 
@@ -191,8 +186,9 @@ DAMAGE_REACTION(/obj/machinery/atmospheric_field_generator, DAMAGE_EXPLOSION, PR
 	light_on = TRUE
 	rad_insulation = RAD_LIGHT_INSULATION
 
-/obj/structure/atmospheric_retention_field/update_icon()
-	cut_overlays() //overlays.Cut()
+DECLARE_APPEARANCE_PROC(/obj/structure/atmospheric_retention_field, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/atmospheric_retention_field/appearance_overlays()
+	. = list()
 	var/list/dirs = list()
 	for(var/obj/structure/atmospheric_retention_field/F in orange(src,1))
 		dirs += get_dir(src, F)
@@ -202,9 +198,9 @@ DAMAGE_REACTION(/obj/machinery/atmospheric_field_generator, DAMAGE_EXPLOSION, PR
 	icon_state = ""
 	for(var/i = 1 to 4)
 		var/image/I = image(icon, "[basestate][connections[i]]", dir = 1<<(i-1))
-		add_overlay(I)
+		. += I
 
-	return
+	return .
 
 /obj/structure/atmospheric_retention_field/Initialize(mapload)
 	. = ..()

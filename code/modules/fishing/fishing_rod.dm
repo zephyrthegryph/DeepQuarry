@@ -84,11 +84,12 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/material/fishing_rod/update_icon()
-	cut_overlays()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_rod, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/material/fishing_rod/appearance_overlays()
+	. = list()
+	. += ..()
 	if(strung)
-		add_overlay("[icon_state]_string")
+		. += "[icon_state]_string"
 
 /obj/item/material/fishing_rod/proc/update_bait()
 	if(istype(Bait, bait_type))

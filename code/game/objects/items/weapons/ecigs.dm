@@ -87,7 +87,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/mask/smokable/ecig, "ec_cartridge", "ca
 				return
 			ec_cartridge.reagents.trans_to_mob(C, REM, CHEM_INGEST, 0.4) // Most of it is not inhaled... balance reasons.
 
-/obj/item/clothing/mask/smokable/ecig/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/smokable/ecig, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/clothing/mask/smokable/ecig/appearance_overlays()
+	. = list()
 	if (active)
 		item_state = icon_on
 		icon_state = icon_on

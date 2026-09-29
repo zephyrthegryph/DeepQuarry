@@ -88,9 +88,11 @@
 /obj/machinery/atmospherics/pipe/zpipe/pipeline_expansion()
 	return list(node1, node2)
 
-/obj/machinery/atmospherics/pipe/zpipe/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/zpipe, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/atmospherics/pipe/zpipe/appearance_overlays()
+	. = list()
 	color = pipe_color
-	return
+	return .
 
 /obj/machinery/atmospherics/pipe/zpipe/disconnect(obj/machinery/atmospherics/reference)
 	if(reference == node1)

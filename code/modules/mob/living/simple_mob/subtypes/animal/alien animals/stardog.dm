@@ -928,8 +928,10 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	name = "Use"
 	effect = /atom/proc/interaction_swallow
 
-/obj/machinery/computer/ship/navigation/telescreen/dog_eye/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen/dog_eye, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/computer/ship/navigation/telescreen/dog_eye/appearance_overlays()
+	. = list()
+	. += ..()
 	icon_state = "screen_eye"
 
 /obj/machinery/computer/ship/navigation/declare_interactions(list/into)
@@ -1509,11 +1511,7 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 			L.status_at_least(EFFECT_WEAKENED, 3)
 			act_message(L, src, MSG_SELF(span_danger("The weight of %T% closes in on you, squeezing you on all sides so tightly that you can hardly move! It throbs against you as the way is sealed, with you stuck in the middle!!!")), MSG_OTHERS(span_danger("%T% closes up on %U%!")))
 
-/obj/structure/auto_flesh_door/update_icon()
-	if(state)
-		icon_state = "flesh-open"
-	else
-		icon_state = "flesh-closed"
+APPEARANCE_TEMPLATE(/obj/structure/auto_flesh_door, "flesh-{state?open:closed}")
 
 
 /// Enzyme pools numb swimmers who opted out of digestion pain.

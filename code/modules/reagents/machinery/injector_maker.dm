@@ -34,7 +34,9 @@
 	. = ..()
 	default_apply_parts()
 
-/obj/machinery/injector_maker/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/injector_maker/appearance_overlays()
+	. = list()
 	if(!beaker && !count_plastic && !count_small_injector && !count_large_injector) //Empty
 		icon_state = "injector"
 	else if(beaker != null && !count_plastic && !count_small_injector  && !count_large_injector ) //Has just beaker
@@ -49,7 +51,7 @@
 		icon_state = "injector_pb"
 	else if(beaker != null && count_plastic > 0 && (count_large_injector > 0 || count_small_injector > 0)) //Has everything
 		icon_state = "injector_ipb"
-	return
+	return .
 
 
 /obj/machinery/injector_maker/declare_interactions(list/into)

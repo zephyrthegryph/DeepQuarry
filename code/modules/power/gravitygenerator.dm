@@ -45,8 +45,7 @@ DAMAGE_REACTION(/obj/machinery/gravity_generator, DAMAGE_BLOB, PROC_REF(gravgen_
 		atom_break()
 	return DAMAGE_REACTION_BLOCK
 
-/obj/machinery/gravity_generator/update_icon()
-	icon_state = "[get_status()]_[sprite_number]"
+APPEARANCE_TEMPLATE(/obj/machinery/gravity_generator, "{get_status}_{sprite_number}")
 
 /obj/machinery/gravity_generator/proc/get_status()
 	return "off"
@@ -209,7 +208,6 @@ DAMAGE_REACTION(/obj/machinery/gravity_generator, DAMAGE_BLOB, PROC_REF(gravgen_
 		if(M.has_stat(BROKEN))
 			M.atom_fix()
 	broken_state = FALSE
-	update_icon()
 	set_power()
 	update_list()
 	update_areas()

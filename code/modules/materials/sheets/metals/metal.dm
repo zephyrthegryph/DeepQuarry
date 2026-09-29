@@ -20,7 +20,9 @@
 	default_type = MAT_PLASTEELREBAR
 	apply_colour = 1
 
-/obj/item/stack/material/plasteel/rebar/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/stack/material/plasteel/rebar, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/stack/material/plasteel/rebar/appearance_overlays()
+	. = list()
 	var/amount = get_amount()
 	if((amount <= 5) && (amount > 0))
 		icon_state = "rods-[amount]"

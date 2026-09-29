@@ -322,23 +322,24 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 	update_icon()
 	return TRUE
 
-/obj/structure/janitorialcart/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/structure/janitorialcart, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/janitorialcart/appearance_overlays()
+	. = list()
 
 	if(mybucket)
-		add_overlay("cart_bucket")
+		. += "cart_bucket"
 		if(mybucket.reagents.total_volume >= 1)
-			add_overlay("water_cart")
+			. += "water_cart"
 	if(mybag)
-		add_overlay("cart_garbage")
+		. += "cart_garbage"
 	if(mymop)
-		add_overlay("cart_mop")
+		. += "cart_mop"
 	if(myspray)
-		add_overlay("cart_spray")
+		. += "cart_spray"
 	if(myreplacer)
-		add_overlay("cart_replacer")
+		. += "cart_replacer"
 	if(signs)
-		add_overlay("cart_sign[signs]")
+		. += "cart_sign[signs]"
 
 //This is called if the cart is caught in an explosion, or destroyed by weapon fire
 /obj/structure/janitorialcart/proc/spill(chance = 100)

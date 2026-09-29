@@ -83,8 +83,10 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/handful, \
 	// Everything else (loose casing -> handful, etc.) is handled by the parent.
 	return FALSE
 
-/obj/item/ammo_magazine/handful/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/handful, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/ammo_magazine/handful/appearance_overlays()
+	. = list()
+	. += ..()
 	// Name tracks the count so the stack reads clearly at a glance.
 	if(caliber)
 		name = "handful of [caliber] rounds"

@@ -72,11 +72,9 @@ EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow, \
 // The front piece is the pile's other half: the pile owns it (implicit OWN, deleted with the
 // pile); the front names the pile one-sided (cleared if the pile goes first).
 
-/obj/structure/bed/pillowpilefront/update_icon()
-	return
+APPEARANCE_NONE(/obj/structure/bed/pillowpilefront)
 
-/obj/structure/bed/pillowpile/update_icon()
-	return
+APPEARANCE_NONE(/obj/structure/bed/pillowpile)
 
 /obj/structure/bed/pillowpile/declare_interactions(list/into)
 	into += list(

@@ -11,10 +11,11 @@
 	random_icon_states = list("xgib1", "xgib2", "xgib3", "xgib4", "xgib5", "xgib6")
 	basecolor = "#05EE05"
 
-/obj/effect/decal/cleanable/blood/gibs/xeno/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs/xeno, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/effect/decal/cleanable/blood/gibs/xeno/appearance_overlays()
+	. = list()
 	color = "#FFFFFF"
-	cut_overlays()
-	add_janitor_hud_overlay()
+	. += add_janitor_hud_overlay()
 
 /obj/effect/decal/cleanable/blood/gibs/xeno/up
 	random_icon_states = list("xgib1", "xgib2", "xgib3", "xgib4", "xgib5", "xgib6","xgibup1","xgibup1","xgibup1")

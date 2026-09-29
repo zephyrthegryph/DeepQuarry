@@ -331,11 +331,13 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/ship/navigation, "nav_tgui", /datu
 	circuit = /obj/item/circuitboard/nav/tele
 	density = FALSE
 
-/obj/machinery/computer/ship/navigation/telescreen/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/computer/ship/navigation/telescreen/appearance_overlays()
+	. = list()
 	if(has_stat(NOPOWER) || has_stat(BROKEN))
 		icon_state = "tele_off"
 		set_light(0)
 	else
 		icon_state = "tele_nav"
 		set_light(light_range_on, light_power_on)
-	..()
+	. += ..()

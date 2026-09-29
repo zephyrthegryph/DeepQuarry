@@ -56,7 +56,7 @@
 	flooring = newflooring
 	if(!initializing)
 		restore_floor_integrity()
-		update_icon(1)
+		update_icon()
 	levelupdate()
 
 //This proc will set floor_type to null and the update_icon() proc will then change the icon_state of the turf
@@ -90,7 +90,7 @@
 	levelupdate()
 
 	if(!defer_icon_update)
-		update_icon(1)
+		update_icon()
 
 /turf/simulated/floor/levelupdate()
 	var/floored_over = !is_plating()

@@ -49,12 +49,14 @@ EXTEND_INTERACTIONS(/obj/item/storage/laundry_basket, INTERACT_HAND_UNGATED("Pic
 	linked = O
 	return
 
-/obj/item/storage/laundry_basket/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/laundry_basket, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/laundry_basket/appearance_overlays()
+	. = list()
 	if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
 		icon_state = "laundry-full"
 	else
 		icon_state = "laundry-empty"
-	return
+	return .
 
 
 /obj/item/storage/laundry_basket/MouseDrop(obj/over_object)

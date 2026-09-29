@@ -126,12 +126,13 @@ TYPE_TABLE(/obj/item/storage/pill_bottle, hold_spec, list(HOLD_ONLY(list(/obj/it
 	base_desc = desc
 	update_icon()
 
-/obj/item/storage/pill_bottle/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/pill_bottle, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/pill_bottle/appearance_overlays()
+	. = list()
 	if(wrapper_color)
 		var/image/I = image(icon, "pillbottle_wrap")
 		I.color = wrapper_color
-		add_overlay(I)
+		. += I
 
 EXTEND_INTERACTIONS(/obj/item/storage/pill_bottle, INTERACT_ITEM("Label", PROC_REF(interaction_label)))
 

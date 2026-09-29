@@ -977,7 +977,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/flannel, \
 		to_chat(user, span_notice("You unbutton your [src]."))
 	update_icon()
 
-/obj/item/clothing/suit/storage/flannel/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit/storage/flannel, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/clothing/suit/storage/flannel/appearance_overlays()
+	. = list()
 	icon_state = initial(icon_state)
 	if(rolled)
 		icon_state += "r"

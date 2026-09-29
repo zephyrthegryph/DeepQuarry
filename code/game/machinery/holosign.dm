@@ -20,9 +20,10 @@
 		return
 	lit = !lit
 	set_use_power(lit ? USE_POWER_ACTIVE : USE_POWER_IDLE)
-	update_icon()
 
-/obj/machinery/holosign/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/holosign, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/holosign/appearance_overlays()
+	. = list()
 	if(!lit)
 		icon_state = off_icon
 		set_light(0)
@@ -36,7 +37,6 @@
 		lit = 0
 		set_use_power(USE_POWER_OFF)
 
-	update_icon()
 
 /obj/machinery/holosign/surgery
 	name = "surgery holosign"

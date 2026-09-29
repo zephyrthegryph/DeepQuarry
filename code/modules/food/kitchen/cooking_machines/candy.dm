@@ -23,8 +23,10 @@
 	own_set(src, "candymaker_loop", new /datum/looping_sound/candymaker(list(src), FALSE))
 
 
-/obj/machinery/appliance/mixer/candy/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer/candy, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/appliance/mixer/candy/appearance_overlays()
+	. = list()
+	. += ..()
 
 	if(!has_stat(MACHINE_STAT_ANY))
 		icon_state = on_icon

@@ -56,7 +56,9 @@ DECLARE_INTERACTIONS(/obj/item/cane/concealed, \
 		return FALSE
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/cane/concealed/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/cane/concealed, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/cane/concealed/appearance_overlays()
+	. = list()
 	if(concealed_blade)
 		name = initial(name)
 		icon_state = initial(icon_state)

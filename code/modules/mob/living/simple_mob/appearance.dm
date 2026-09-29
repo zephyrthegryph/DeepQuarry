@@ -1,8 +1,9 @@
-/mob/living/simple_mob/update_icon()
-	. = ..()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/appearance_overlays()
+	. = list()
+	. += ..()
 
-	add_overlay(modifier_overlay)
+	. += modifier_overlay
 
 	if(!icon_living) // Prevent the mob from turning invisible if icon_living is null.
 		icon_living = initial(icon_state)
@@ -25,9 +26,9 @@
 
 	if(has_hands)
 		if(r_hand_sprite)
-			add_overlay(r_hand_sprite)
+			. += r_hand_sprite
 		if(l_hand_sprite)
-			add_overlay(l_hand_sprite)
+			. += l_hand_sprite
 
 	if(has_eye_glow)
 		if(icon_state != icon_living)

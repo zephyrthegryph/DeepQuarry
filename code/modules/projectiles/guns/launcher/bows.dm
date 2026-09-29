@@ -131,13 +131,13 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 		act_message(user, src, MSG_SELF(span_infoplain("You slide [bolt] into %T%.")), MSG_OTHERS(span_infoplain("%U% slides [bolt] into %T%.")))
 		update_icon()
 
-/obj/item/gun/launcher/crossbow/bow/update_icon()
+/obj/item/gun/launcher/crossbow/bow/appearance_draw_suffix()
 	if(drawn)
-		icon_state = "[initial(icon_state)]_firing"
-	else if(bolt)
-		icon_state = "[initial(icon_state)]_loaded"
-	else
-		icon_state = "[initial(icon_state)]"
+		return "_firing"
+	if(bolt)
+		return "_loaded"
+	return ""
+APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow/bow, "{initial(icon_state)}{appearance_draw_suffix}")
 
 
 

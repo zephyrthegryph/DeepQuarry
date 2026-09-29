@@ -80,7 +80,7 @@
 	else
 		icon_update_tick++
 
-	if(occupant || recharge_amount)
+	if((occupant || recharge_amount) && !icon_update_tick) // redraw the gauge once every 10 steps
 		update_icon()
 
 //Processes the occupant, drawing from the internal power cell if needed.
@@ -272,28 +272,30 @@
 	if(wire_rate)
 		desc += "<br>It is capable of repairing burn damage."
 
+/// The charge gauge overlay for the occupant's charge.
 /obj/machinery/recharge_station/proc/build_overlays()
-	cut_overlays()
 	switch(round(chargepercentage()))
 		if(1 to 20)
-			add_overlay("statn_c0")
+			return "statn_c0"
 		if(21 to 40)
-			add_overlay("statn_c20")
+			return "statn_c20"
 		if(41 to 60)
-			add_overlay("statn_c40")
+			return "statn_c40"
 		if(61 to 80)
-			add_overlay("statn_c60")
+			return "statn_c60"
 		if(81 to 98)
-			add_overlay("statn_c80")
+			return "statn_c80"
 		if(99 to 110)
-			add_overlay("statn_c100")
+			return "statn_c100"
 
-/obj/machinery/recharge_station/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/recharge_station/appearance_overlays()
+	. = list()
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
-	..()
+	. += ..()
 	if(has_stat(BROKEN))
 		icon_state = "borgcharger0"
-		return
+		return .
 
 	if(occupant)
 		if((has_stat(NOPOWER)) && !has_cell_power())
@@ -303,8 +305,7 @@
 	else
 		icon_state = "borgcharger0"
 
-	if(icon_update_tick == 0)
-		build_overlays()
+	. += build_overlays()
 
 /obj/machinery/recharge_station/Bumped(mob/living/L)
 	go_in(L)
@@ -377,13 +378,15 @@
 	desc = "This is a pod which used to contain a drone... Or maybe it still does?"
 	icon = 'icons/obj/structures.dmi'
 
-/obj/machinery/recharge_station/ghost_pod_recharger/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station/ghost_pod_recharger, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/recharge_station/ghost_pod_recharger/appearance_overlays()
+	. = list()
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
-	..()
+	. += ..()
 	if(has_stat(BROKEN))
 		icon_state = "borg_pod_closed"
 		desc = "It appears broken..."
-		return
+		return .
 
 	if(occupant)
 		if((has_stat(NOPOWER)) && !has_cell_power())
@@ -394,8 +397,7 @@
 	else
 		icon_state = "borg_pod_opened"
 
-	if(icon_update_tick == 0)
-		build_overlays()
+	. += build_overlays()
 
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).

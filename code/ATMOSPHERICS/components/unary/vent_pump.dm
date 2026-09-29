@@ -198,14 +198,15 @@
 	. = ..()
 	air_contents.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 500) //meant to match air injector
 
-/obj/machinery/atmospherics/unary/vent_pump/update_icon(safety = 0)
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/atmospherics/unary/vent_pump/appearance_overlays()
+	. = list()
 
 	var/vent_icon = "vent"
 
 	var/turf/T = get_turf(src)
 	if(!istype(T))
-		return
+		return .
 
 	if(!T.is_plating() && node && node.level == 1 && istype(node, /obj/machinery/atmospherics/pipe))
 		vent_icon += "h"
@@ -221,7 +222,7 @@
 		vent_icon += "[pump_direction ? "out" : "in"]"
 		playsound(src, start_sound, 25, ignore_walls = FALSE, preference = /datum/preference/toggle/air_pump_noise)
 
-	add_overlay(GLOB.icon_manager.get_atmos_icon("device", , , vent_icon))
+	. += GLOB.icon_manager.get_atmos_icon("device", , , vent_icon)
 
 /obj/machinery/atmospherics/unary/vent_pump/update_underlays()
 	..()
@@ -451,7 +452,6 @@
 	. = ..()
 	if(.)
 		invalidate_gas_dependencies()
-		update_icon()
 
 /obj/machinery/atmospherics/unary/vent_pump/multitool_act(mob/user, obj/item/W)
 	var/static/list/options = list(

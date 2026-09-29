@@ -204,7 +204,9 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 	position_y = ((loc.y - 1) * WORLD_ICON_SIZE) + MODULUS(position_y, WORLD_ICON_SIZE)
 	update_screen()
 
-/obj/effect/overmap/visitable/ship/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/effect/overmap/visitable/ship, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/effect/overmap/visitable/ship/appearance_overlays()
+	. = list()
 	if(!is_still())
 		var/heading = get_heading_degrees()
 		dir = angle2dir(round(heading, 90))
@@ -213,7 +215,7 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 	else
 		dir = NORTH
 		vector_overlay().dir = SOUTH
-	..()
+	. += ..()
 
 /obj/effect/overmap/visitable/ship/set_dir(new_dir)
 	return ..(NORTH) // NO! We always face north.

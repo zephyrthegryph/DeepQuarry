@@ -15,11 +15,11 @@
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/AfterMaterialInsert()
 	return // no call parent
 
-/obj/machinery/mecha_part_fabricator_tg/prosthetics/update_icon()
-	if(panel_open)
-		icon_state = "prosfab-o"
-	else
-		icon_state = "prosfab[use_power == USE_POWER_ACTIVE ? "-active" : ""]"
+APPEARANCE_TEMPLATE(/obj/machinery/mecha_part_fabricator_tg/prosthetics, "prosfab{appearance_active_suffix}")
+DECLARE_APPEARANCE(/obj/machinery/mecha_part_fabricator_tg/prosthetics, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "prosfab-o")))
+
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/appearance_active_suffix()
+	return use_power == USE_POWER_ACTIVE ? "-active" : ""
 
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/on_start_printing()
 	// Don't call parent

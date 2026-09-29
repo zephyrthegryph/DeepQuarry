@@ -103,11 +103,6 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/security/engine, \
 	return TRUE
 
 
-/obj/vehicle/train/security/update_icon()
-	if(open)
-		icon_state = initial(icon_state) + "_open"
-	else
-		icon_state = initial(icon_state)
 
 /obj/vehicle/train/security/trolley/insert_cell(obj/item/cell/C, mob/living/carbon/human/H)
 	return

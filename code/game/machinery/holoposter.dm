@@ -44,12 +44,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 	. = ..()
 	. += examine_addon
 
-/obj/machinery/holoposter/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/holoposter, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/holoposter/appearance_overlays()
+	. = list()
 	if(has_stat(NOPOWER))
 		icon_state = "off"
 		examine_addon = "It appears to be powered off."
 		set_light(0)
-		return
+		return .
 	var/new_color = LIGHT_COLOR_HALOGEN
 	if(has_stat(BROKEN))
 		icon_state = "glitch"
@@ -64,7 +66,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 		else if(alerting && !GLOB.security_level) // coming out of alert
 			alerting = FALSE
 			set_rand_sprite()
-			return
+			return .
 		else if(icon_state in postertypes)
 			var/list/settings = postertypes[icon_state]
 			new_color = settings[1]
@@ -104,12 +106,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 	atom_fix()
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/holoposter/power_change()
-	var/wasUnpowered = has_stat(NOPOWER)
-	. = ..()
-	if(wasUnpowered != (has_stat(NOPOWER)))
-		update_icon()
 
 DAMAGE_REACTION(/obj/machinery/holoposter, DAMAGE_EMP, PROC_REF(holoposter_emp))
 /// An EMP breaks the poster.

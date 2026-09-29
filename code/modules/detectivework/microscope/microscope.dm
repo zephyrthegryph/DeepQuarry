@@ -140,10 +140,7 @@
 	else
 		return ..()
 
-/obj/machinery/microscope/update_icon()
-	icon_state = "microscope"
-	if(sample())
-		icon_state += "slide"
+APPEARANCE_TEMPLATE(/obj/machinery/microscope, "microscope{sample?slide:}")
 
 /// the sample this refers to (a relation view: null once it is deleted).
 /obj/machinery/microscope/proc/sample() as /obj/item

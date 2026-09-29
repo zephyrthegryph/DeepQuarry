@@ -49,8 +49,10 @@
 	emote_hear = list("screams!","chirps.")
 	emote_see = list("pecks at the ground","looks around hungrily")
 
-/mob/living/simple_mob/vore/seagull/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/seagull, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/vore/seagull/appearance_overlays()
+	. = list()
+	. += ..()
 
 	if(vore_fullness >= 2)
 		movement_cooldown = 10

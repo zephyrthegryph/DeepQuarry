@@ -39,12 +39,7 @@
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=4,    burst_accuracy=list(0,-10,-10), dispersion=list(0.0, 0.3, 0.6))
 	)
 
-/obj/item/gun/projectile/automatic/advanced_smg/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "advanced_smg"
-	else
-		icon_state = "advanced_smg-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/advanced_smg, "advanced_smg{ammo_magazine?:-e}")
 
 /obj/item/gun/projectile/automatic/advanced_smg/loaded
 	magazine_type = /obj/item/ammo_magazine/m9mmAdvanced
@@ -84,13 +79,15 @@
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15,-30), dispersion=list(0.0, 0.6, 0.6))
 		)
 
-/obj/item/gun/projectile/automatic/sts35/update_icon(ignore_inhands)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sts35, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/projectile/automatic/sts35/appearance_overlays()
+	. = list()
+	. += ..()
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m545/small))
 		icon_state = "arifle-small" // If using the small magazines, use the small magazine sprite.
 	else
 		icon_state = (ammo_magazine)? "arifle" : "arifle-empty"
-	if(!ignore_inhands) update_held_icon()
+	update_held_icon()
 
 /*
  * X-9mm (PDW)
@@ -114,13 +111,7 @@
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15,-30), dispersion=list(0.0, 0.6, 0.6))
 		)
 
-/obj/item/gun/projectile/automatic/pdw/update_icon(ignore_inhands)
-	..()
-	if(ammo_magazine)
-		icon_state = "pdw"
-	else
-		icon_state = "pdw-e"
-	return
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/pdw, "pdw{ammo_magazine?:-e}")
 
 /*
  * Machine Pistol (WT550)
@@ -143,13 +134,10 @@
 	move_delay = 0 // Pistols have move_delay of 0
 	fire_sound = "sound/weapons/gunshot_pathetic.ogg"
 
-/obj/item/gun/projectile/automatic/wt550/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "wt550-[round(ammo_magazine.stored_ammo.len,4)]"
-	else
-		icon_state = "wt550"
-	return
+/// Declared icon_state suffix: rounded magazine count, or nothing when empty.
+/obj/item/gun/projectile/automatic/wt550/proc/appearance_mag_state()
+	return ammo_magazine ? "-[round(ammo_magazine.stored_ammo.len, 4)]" : ""
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/wt550, "wt550{appearance_mag_state}")
 
 /*
  * Battle Rifle (Z8)
@@ -216,14 +204,16 @@
 	else
 		..()
 
-/obj/item/gun/projectile/automatic/z8/update_icon(ignore_inhands)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/projectile/automatic/z8/appearance_overlays()
+	. = list()
+	. += ..()
 	if(ammo_magazine)
 		icon_state = "carbine-[round(ammo_magazine.stored_ammo.len,2)]"
 	else
 		icon_state = "carbine"
-	if(!ignore_inhands) update_held_icon()
-	return
+	update_held_icon()
+	return .
 
 /obj/item/gun/projectile/automatic/z8/examine(mob/user)
 	. = ..()
@@ -300,7 +290,9 @@
 		return TRUE
 	return ..() //once open, behave like normal
 
-/obj/item/gun/projectile/automatic/l6_saw/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/projectile/automatic/l6_saw/appearance_overlays()
+	. = list()
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m762))
 		icon_state = "l6[cover_open ? "open" : "closed"]mag"
 		item_state = icon_state
@@ -349,13 +341,7 @@
 		list(mode_name="3-round bursts", burst=3, move_delay=6, burst_accuracy = list(0,-15,-15,-30,-30), dispersion = list(0.0, 0.6, 0.6))
 		)
 
-/obj/item/gun/projectile/automatic/as24/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "ashot"
-	else
-		icon_state = "ashot-empty"
-	return
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/as24, "ashot{ammo_magazine?:-empty}")
 
 /*
  * Uzi
@@ -384,12 +370,6 @@
 		list(mode_name="3-round bursts", burst=3, burst_delay=1, fire_delay=4, move_delay=4, burst_accuracy = list(0,-15,-15,-30,-30), dispersion = list(0.6, 1.0, 1.0))
 		)
 
-/obj/item/gun/projectile/automatic/mini_uzi/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "mini-uzi"
-	else
-		icon_state = "mini-uzi-empty"
 
 // Uzi tilting
 /obj/item/gun/projectile/automatic/mini_uzi/Initialize(mapload)
@@ -442,7 +422,9 @@
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=4,    burst_accuracy=list(0,-15,-15), dispersion=list(0.0, 0.6, 1.0))
 		)
 
-/obj/item/gun/projectile/automatic/tommygun/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/tommygun, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/projectile/automatic/tommygun/appearance_overlays()
+	. = list()
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m45tommy))
 		icon_state = "tommygun-mag"
 	else if(istype(ammo_magazine,/obj/item/ammo_magazine/m45tommydrum))
@@ -477,16 +459,17 @@
 		list(mode_name="2-round bursts", burst=2, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15), dispersion=list(0.0, 0.6))
 		)
 
-/obj/item/gun/projectile/automatic/bullpup/update_icon(ignore_inhands)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/bullpup, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/projectile/automatic/bullpup/appearance_overlays()
+	. = list()
+	. += ..()
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m762))
 		icon_state = "bullpup-small"
 	else if(istype(ammo_magazine,/obj/item/ammo_magazine/m762/ext))
 		icon_state = "bullpup"
 	else
 		item_state = "bullpup-empty"
-	if(!ignore_inhands)
-		update_held_icon()
+	update_held_icon()
 
 /*
  * Combat SMG (PP3 Ten)
@@ -510,12 +493,7 @@
 		list(mode_name="3-round bursts", burst=3, burst_delay=1, fire_delay=4, move_delay=4, burst_accuracy=list(0,-15,-30), dispersion=list(0.0, 0.6, 0.6))
 		)
 
-/obj/item/gun/projectile/automatic/combatsmg/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "combatsmg"
-	else
-		icon_state = "combatsmg-empty"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/combatsmg, "combatsmg{ammo_magazine?:-empty}")
 
 //
 ///
@@ -563,8 +541,10 @@
 		list(mode_name="three-round burst", burst=3, fire_delay=null, burst_delay=1, move_delay=0, burst_accuracy=list(0,-15,-20), dispersion=list(0.0, 1.0, 1.5))
 		)
 
-/obj/item/gun/projectile/automatic/p90/update_icon() // Code for visually updating the item depending on current magazine capacity.
-	icon_state = "p90smgnew-[ammo_magazine ? round(ammo_magazine.stored_ammo.len, 6) : "empty"]"
+/// Declared icon_state suffix: rounded magazine count, or "empty".
+/obj/item/gun/projectile/automatic/p90/proc/appearance_mag_state()
+	return ammo_magazine ? round(ammo_magazine.stored_ammo.len, 6) : "empty"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/p90, "p90smgnew-{appearance_mag_state}")
 
 // C-20R
 
@@ -603,8 +583,6 @@
 		list(mode_name="two-shot rapidfire", burst=2, fire_delay=null, burst_delay=1, move_delay=0, burst_accuracy=list(-5,-10), dispersion=list(0.5, 1.0)),
 		)
 
-/obj/item/gun/projectile/automatic/c20r/update_icon()
-	icon_state = "c20r-[ammo_magazine ? round(ammo_magazine.stored_ammo.len,4) : "empty"]"
 
 /obj/item/gun/projectile/automatic/c20r/rubber
 	magazine_type = /obj/item/ammo_magazine/m10mm/rubber
@@ -636,12 +614,7 @@
 		list(mode_name="2-round bursts", burst=2, fire_delay=null, move_delay=6,    burst_accuracy=list(60,35), dispersion=list(0.0, 0.6))
 		)
 
-/obj/item/gun/projectile/automatic/fal/update_icon(ignore_inhands)
-	..()
-	if(ammo_magazine)
-		icon_state = initial(icon_state)
-	else
-		icon_state = "[initial(icon_state)]-empty"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/fal, "{initial(icon_state)}{ammo_magazine?:-empty}")
 
 /obj/item/gun/projectile/automatic/wt550/lethal
 	magazine_type = /obj/item/ammo_magazine/m9mmt
@@ -681,11 +654,13 @@
 	allowed_magazines = list(/obj/item/ammo_magazine/mtg)
 	load_method = MAGAZINE
 
-/obj/item/gun/projectile/automatic/stg/update_icon(ignore_inhands)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/stg, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/projectile/automatic/stg/appearance_overlays()
+	. = list()
+	. += ..()
 	icon_state = (ammo_magazine)? "stg60" : "stg60-empty"
 	item_state = (ammo_magazine)? "arifle" : "arifle-empty"
-	if(!ignore_inhands) update_held_icon()
+	update_held_icon()
 
 //////////////////// Eris Ported Guns ////////////////////
 // No idea what this is for.
@@ -716,9 +691,10 @@
 	ratio = round(ratio, 0.25) * 100
 	add_overlay("smg_[ratio]")
 
-/obj/item/gun/projectile/automatic/sol/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sol, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/projectile/automatic/sol/appearance_overlays()
+	. = list()
 	icon_state = (ammo_magazine)? "SMG-IS" : "SMG-IS-empty"
-	cut_overlays()
 	update_charge()
 
 //--------------- StG-60 ----------------
@@ -841,7 +817,9 @@
 		return TRUE
 	return ..() //once open, behave like normal
 
-/obj/item/gun/projectile/automatic/mg42/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/mg42, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/projectile/automatic/mg42/appearance_overlays()
+	. = list()
 	icon_state = "mg42[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"][cover_open && ammo_magazine && ammo_magazine.stored_ammo.len == 0 ? "0" : ""]"
 	item_state = "mg42"
 	update_held_icon()

@@ -28,10 +28,12 @@ TYPE_TABLE(/obj/item/storage/mre, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 	. = ..()
 	. += meal_desc
 
-/obj/item/storage/mre/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/mre, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/mre/appearance_overlays()
+	. = list()
 	if(opened)
 		icon_state = "[initial(icon_state)][opened]"
-	. = ..()
+	. += ..()
 
 EXTEND_INTERACTIONS(/obj/item/storage/mre, INTERACT_USE("Open", PROC_REF(interaction_tear_open)))
 
@@ -233,10 +235,12 @@ EXTEND_INTERACTIONS(/obj/item/storage/mre, INTERACT_USE("Open", PROC_REF(interac
 
 TYPE_TABLE(/obj/item/storage/mrebag, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-/obj/item/storage/mrebag/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/mrebag, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/mrebag/appearance_overlays()
+	. = list()
 	if(opened)
 		icon_state = "[initial(icon_state)][opened]"
-	. = ..()
+	. += ..()
 
 EXTEND_INTERACTIONS(/obj/item/storage/mrebag, INTERACT_USE("Open", PROC_REF(interaction_tear_open)))
 
@@ -343,7 +347,9 @@ TYPE_TABLE(/obj/item/storage/box/tgmc_mre, hold_spec, list(HOLD_MAX_SIZE(0)))
 			new /obj/item/trash/tgmc_mre(T)
 		qdel(src)
 
-/obj/item/storage/box/tgmc_mre/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/box/tgmc_mre, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/storage/box/tgmc_mre/appearance_overlays()
+	. = list()
 	if(!isopened)
 		isopened = 1
 		icon_state = "tgmc_mre_opened"

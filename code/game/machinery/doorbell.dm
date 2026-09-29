@@ -31,20 +31,8 @@
 	set_light(0)
 	update_icon()
 
-/obj/machinery/doorbell_chime/power_change()
-	. = ..()
-	update_icon()
-
-/obj/machinery/doorbell_chime/update_icon()
-	cut_overlays()
-	if(panel_open)
-		add_overlay("dbchime-open")
-	if(!operable())
-		icon_state = "dbchime-off"
-	if(!id_tag)
-		icon_state = "dbchime-red"
-	else
-		icon_state = "dbchime-standby"
+APPEARANCE_TEMPLATE(/obj/machinery/doorbell_chime, "dbchime-{id_tag?standby:red}")
+DECLARE_APPEARANCE(/obj/machinery/doorbell_chime, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("dbchime-open"))))
 
 /obj/machinery/doorbell_chime/declare_interactions(list/into)
 	into += list(
@@ -112,15 +100,7 @@
 		id = num2text(uid)
 	update_icon()
 
-/obj/machinery/button/doorbell/power_change()
-	. = ..()
-	update_icon()
-
-/obj/machinery/button/doorbell/update_icon()
-	if(!operable())
-		icon_state = "doorbell-off"
-	else
-		icon_state = "doorbell-standby"
+APPEARANCE_TEMPLATE(/obj/machinery/button/doorbell, "doorbell-{operable?standby:off}")
 
 /obj/machinery/button/doorbell/declare_interactions(list/into)
 	into += list(

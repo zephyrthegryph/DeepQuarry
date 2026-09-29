@@ -21,10 +21,7 @@
 	.=..()
 	update_icon()
 
-/obj/structure/prop/altevian_jump_drive/update_icon()
-	cut_overlays()
-	if(has_misc_overlay)
-		add_overlay("jump_drive_misc_anim_overlay")
+DECLARE_APPEARANCE(/obj/structure/prop/altevian_jump_drive, "has_misc_overlay", list("1" = list(APPEARANCE_OVERLAYS = list("jump_drive_misc_anim_overlay"))))
 
 /obj/structure/prop/altevian_jump_drive/active
 	icon_state = "altevian_jump_drive-active"

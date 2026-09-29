@@ -88,11 +88,7 @@
 /datum/random_map/automata/cave_system/apply_finished()
 	. = ..()
 
-	// update_icon() wants a turf -> TRUE lookup: build it locally from the relation list.
-	var/list/changed_lookup = list()
 	for(var/turf/simulated/mineral/T as anything in turfs_changed)
-		changed_lookup[T] = TRUE
-	for(var/turf/simulated/mineral/T as anything in turfs_changed)
-		T.update_icon(1, changed_lookup)
+		T.update_icon()
 
 	rel_clear(src, "turfs_changed")

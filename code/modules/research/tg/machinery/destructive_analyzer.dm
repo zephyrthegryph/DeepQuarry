@@ -45,7 +45,9 @@ It is used to destroy hand-held objects and advance technological research. Used
 	T *= 0.1
 	decon_mod = clamp(T, 0, 1)
 
-/obj/machinery/rnd/destructive_analyzer/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/destructive_analyzer, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/rnd/destructive_analyzer/appearance_overlays()
+	. = list()
 	var/current_item = loaded_item
 	if(panel_open)
 		icon_state = "d_analyzer_t"

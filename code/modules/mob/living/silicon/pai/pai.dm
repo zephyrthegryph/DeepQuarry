@@ -560,15 +560,17 @@ DAMAGE_REACTION(/mob/living/silicon/pai, DAMAGE_EMP, PROC_REF(emp_scramble))
 // Update icons
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-/mob/living/silicon/pai/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/silicon/pai/appearance_overlays()
+	. = list()
+	. += ..()
 
 	var/datum/pai_sprite/chassis_data = GLOB.pai_service.chassis_data(chassis_name)
 	if(chassis_data.holo_projector)
 		icon_state = null
 		icon = holo_icon_south
 		add_eyes()
-		return
+		return .
 
 	update_fullness()
 

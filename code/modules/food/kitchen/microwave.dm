@@ -97,21 +97,28 @@
 *   Item Adding
 ********************/
 
-/obj/machinery/microwave/update_icon()
+/// Appearance reader: broken, bloody or clean.
+/obj/machinery/microwave/proc/appearance_mw_condition()
 	if(broken)
-		icon_state = "mwb"
-		return TRUE
+		return "b"
 	if(dirty >= MAX_MICROWAVE_DIRTINESS)
-		if(operating)
-			icon_state = "mwbloody1"
-		else
-			icon_state = "mwbloody0"
-		return TRUE
-	if(operating)
-		icon_state = "mw1"
-	else
-		icon_state = "mw"
-	return TRUE
+		return "bloody"
+	return "clean"
+
+APPEARANCE_TEMPLATE(/obj/machinery/microwave, "mw{operating?1:}")
+DECLARE_APPEARANCE(/obj/machinery/microwave, "appearance_mw_condition", list(
+	"b" = list(APPEARANCE_ICON_STATE = "mwb"),
+	"bloody" = list(APPEARANCE_ICON_STATE = "mwbloody0"),
+))
+DECLARE_APPEARANCE(/obj/machinery/microwave, "appearance_mw_bloody_operating", list(
+	"1" = list(APPEARANCE_ICON_STATE = "mwbloody1"),
+))
+// The cooking pot keeps its own procedural icon override (fantasy_items.dm) that never calls the parent.
+APPEARANCE_NONE(/obj/machinery/microwave/cookingpot)
+
+/// Appearance reader: bloody (not broken) and running.
+/obj/machinery/microwave/proc/appearance_mw_bloody_operating()
+	return !broken && dirty >= MAX_MICROWAVE_DIRTINESS && operating ? 1 : 0
 
 /obj/machinery/microwave/proc/post_state_change()
 	update_static_data_for_all_viewers()

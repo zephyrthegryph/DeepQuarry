@@ -34,8 +34,10 @@ DECLARE_INTERACTIONS(/obj/item/nailpolish, INTERACT_USE(null, PROC_REF(interacti
 	update_icon()
 	return TRUE
 
-/obj/item/nailpolish/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/nailpolish, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/nailpolish/appearance_overlays()
+	. = list()
+	. += ..()
 	icon_state = "[initial(icon_state)][open ? "-open" : ""]"
 	top_underlay.icon_state = "top[open ? "-open" : ""]"
 	color_underlay.icon_state = "color[open ? "-open" : ""]"
@@ -129,9 +131,7 @@ DECLARE_INTERACTIONS(/obj/item/nailpolish_remover, INTERACT_USE(null, PROC_REF(i
 	update_icon()
 	return TRUE
 
-/obj/item/nailpolish_remover/update_icon()
-	. = ..()
-	icon_state = "[initial(icon_state)][open ? "-open" : ""]"
+APPEARANCE_TEMPLATE(/obj/item/nailpolish_remover, "{initial(icon_state)}{open?-open:}")
 
 /obj/item/nailpolish_remover/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)
 	if(!open)

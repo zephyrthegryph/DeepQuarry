@@ -33,22 +33,24 @@
 	sprite_stack = initial_sprite_stack
 	update_icon()
 
-/obj/item/card/update_icon()
+/// The sprite stack as layers: the first state is the base, the rest overlays on it (was a
+/// blended /icon per card; the layers draw the same without generating an icon).
+DECLARE_APPEARANCE_PROC(/obj/item/card, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/card/appearance_overlays()
+	. = list()
+	icon = base_icon
 	if(!sprite_stack || !istype(sprite_stack) || sprite_stack == list(""))
-		icon = base_icon
 		icon_state = initial(icon_state)
-
-	var/icon/I = null
+		return .
+	var/first = TRUE
 	for(var/iconstate in sprite_stack)
 		if(!iconstate)
 			iconstate = icon_state
-		if(I)
-			var/icon/IC = new(base_icon, iconstate)
-			I.Blend(IC, ICON_OVERLAY)
+		if(first)
+			icon_state = iconstate
+			first = FALSE
 		else
-			I = new/icon(base_icon, iconstate)
-	if(I)
-		icon = I
+			. += image(base_icon, iconstate)
 
 /obj/item/card/data
 	name = "data card"
@@ -184,22 +186,24 @@ DECLARE_INTERACTIONS(/obj/item/card/emag, INTERACT_ITEM(null, PROC_REF(interacti
 	sprite_stack = list("")
 	update_icon()
 
-/obj/item/card_fluff/update_icon()
+/// The sprite stack as layers: the first state is the base, the rest overlays on it (was a
+/// blended /icon per card; the layers draw the same without generating an icon).
+DECLARE_APPEARANCE_PROC(/obj/item/card_fluff, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/card_fluff/appearance_overlays()
+	. = list()
+	icon = base_icon
 	if(!sprite_stack || !istype(sprite_stack) || sprite_stack == list(""))
-		icon = base_icon
 		icon_state = initial(icon_state)
-
-	var/icon/I = null
+		return .
+	var/first = TRUE
 	for(var/iconstate in sprite_stack)
 		if(!iconstate)
 			iconstate = icon_state
-		if(I)
-			var/icon/IC = new(base_icon, iconstate)
-			I.Blend(IC, ICON_OVERLAY)
+		if(first)
+			icon_state = iconstate
+			first = FALSE
 		else
-			I = new/icon(base_icon, iconstate)
-	if(I)
-		icon = I
+			. += image(base_icon, iconstate)
 
 DECLARE_INTERACTIONS(/obj/item/card_fluff, INTERACT_USE(null, PROC_REF(interaction_self)))
 

@@ -35,10 +35,10 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/scrubber, DAMAGE_EM
 		set_on(!on)
 		if(on)
 			om_changed(src, CHANGE_MACHINE_SETTINGS)
-		update_icon()
 
-/obj/machinery/portable_atmospherics/powered/scrubber/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/portable_atmospherics/powered/scrubber/appearance_overlays()
+	. = list()
 
 	if(on && cell && cell.charge)
 		icon_state = "pscrubber:1"
@@ -46,12 +46,12 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/scrubber, DAMAGE_EM
 		icon_state = "pscrubber:0"
 
 	if(holding)
-		add_overlay("scrubber-open")
+		. += "scrubber-open"
 
 	if(connected_port())
-		add_overlay("scrubber-connector")
+		. += "scrubber-connector"
 
-	return
+	return .
 
 // Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable pumps and scrubbers"
 // section): polls = FALSE (declared with the other vars above) moves this off SSmachines'
@@ -204,18 +204,14 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/scrubber, DAMAGE_EM
 	to_chat(user, span_notice("You can't directly interact with this machine. Use the scrubber control console."))
 	return TRUE
 
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/update_icon()
-	src.overlays = 0
+DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber/huge, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/portable_atmospherics/powered/scrubber/huge/appearance_overlays()
+	. = list()
 
 	if(on && operable())
 		icon_state = "scrubber:1"
 	else
 		icon_state = "scrubber:0"
-
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/power_change()
-	. = ..()
-	if (.)
-		update_icon()
 
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/machine_step()
 	if(!anchored || (!operable()))

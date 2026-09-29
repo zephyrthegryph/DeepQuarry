@@ -15,8 +15,10 @@
 /obj/structure/gootrap/proc/can_use(mob/user)
 	return (user.IsAdvancedToolUser() && !issilicon(user) && !user.stat && !user.restrained())
 
-/obj/structure/gootrap/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/structure/gootrap, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/gootrap/appearance_overlays()
+	. = list()
+	. += ..()
 	color = basecolor
 
 /obj/structure/gootrap/Initialize(mapload)

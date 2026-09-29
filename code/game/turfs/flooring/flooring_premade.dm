@@ -391,10 +391,12 @@
 		update_icon()
 	. = ..()
 
-/turf/simulated/floor/snow/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/turf/simulated/floor/snow, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/turf/simulated/floor/snow/appearance_overlays()
+	. = list()
+	. += ..()
 	for(var/d in crossed_dirs)
-		add_overlay(image(icon = 'icons/turf/outdoors.dmi', icon_state = "snow_footprints", dir = text2num(d)))
+		. += image(icon = 'icons/turf/outdoors.dmi', icon_state = "snow_footprints", dir = text2num(d))
 
 //**** Here ends snow ****
 

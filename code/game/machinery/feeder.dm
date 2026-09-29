@@ -7,13 +7,14 @@
 	var/mob/living/carbon/human/attached
 	var/obj/item/reagent_containers/beaker = null
 
-/obj/machinery/feeder/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/feeder/appearance_overlays()
+	. = list()
 	if(attached())
 		icon_state = "feeding"
 	else
 		icon_state = ""
 
-	overlays.Cut()
 
 	if(beaker)
 		var/datum/reagents/reagents = beaker.reagents
@@ -32,7 +33,7 @@
 				if(95 to INFINITY)	filling.icon_state = "reagent100"
 
 			filling.icon += reagents.get_color()
-			overlays += filling
+			. += filling
 
 /obj/machinery/feeder/MouseDrop(over_object, src_location, over_location)
 	..()

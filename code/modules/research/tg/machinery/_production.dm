@@ -48,17 +48,18 @@
 	update_icon()
 
 
-/obj/machinery/rnd/production/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/production, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/rnd/production/appearance_overlays()
+	. = list()
 
 	icon_state = "[initial(icon_state)][panel_open ? "_t" : ""]"
 
 	if(!stripe_color)
-		return
+		return .
 
 	var/mutable_appearance/stripe = mutable_appearance('icons/obj/machines/research_vr.dmi', "protolathe_stripe[panel_open ? "_t" : ""]")
 	stripe.color = stripe_color
-	add_overlay(stripe)
+	. += stripe
 
 /obj/machinery/rnd/production/examine(mob/user, infix, suffix)
 	. = ..()

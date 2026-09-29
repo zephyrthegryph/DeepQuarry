@@ -74,4 +74,3 @@ In short:
 	for (var/obj/machinery/power/apc/APC in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if (!APC.has_stat(BROKEN) && !APC.is_critical)
 			APC.set_emagged(1)
-			APC.queue_icon_update()

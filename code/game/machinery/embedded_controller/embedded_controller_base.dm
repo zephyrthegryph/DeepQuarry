@@ -102,7 +102,9 @@
 	set_frequency(frequency) // Set it before parent instantiates program
 	. = ..()
 
-/obj/machinery/embedded_controller/radio/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/embedded_controller/radio/appearance_overlays()
+	. = list()
 	if(on && program)
 		if(program.memory["processing"])
 			icon_state = "airlock_control_process"

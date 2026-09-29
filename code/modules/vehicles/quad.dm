@@ -88,13 +88,14 @@ DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine/quadbike, "key", "key_type")
 
 EXTEND_INTERACTIONS(/obj/vehicle/train/engine/quadbike, INTERACT_ITEM("Paint", PROC_REF(interaction_vehicle_paint)))
 
-/obj/vehicle/train/engine/quadbike/update_icon()
-	..()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine/quadbike, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/vehicle/train/engine/quadbike/appearance_overlays()
+	. = list()
+	. += ..()
 	if(custom_frame)
 		var/image/Bodypaint = new(icon = 'icons/obj/custom_items_vehicle.dmi', icon_state = "[frame_state]_a", layer = src.layer)
 		Bodypaint.color = paint_color
-		add_overlay(Bodypaint)
+		. += Bodypaint
 
 		var/image/Overmob = new(icon = 'icons/obj/custom_items_vehicle.dmi', icon_state = "[frame_state]_overlay", layer = src.layer + 0.2) //over mobs
 		var/image/Overmob_color = new(icon = 'icons/obj/custom_items_vehicle.dmi', icon_state = "[frame_state]_overlay_a", layer = src.layer + 0.2) //over the over mobs, gives the color.
@@ -102,13 +103,13 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/quadbike, INTERACT_ITEM("Paint", P
 		Overmob_color.plane = MOB_PLANE
 		Overmob_color.color = paint_color
 
-		add_overlay(Overmob)
-		add_overlay(Overmob_color)
-		return
+		. += Overmob
+		. += Overmob_color
+		return .
 
 	var/image/Bodypaint = new(icon = paint_base, icon_state = "[frame_state]_a", layer = src.layer)
 	Bodypaint.color = paint_color
-	add_overlay(Bodypaint)
+	. += Bodypaint
 
 	var/image/Overmob = new(icon = paint_base, icon_state = "[frame_state]_overlay", layer = src.layer + 0.2) //over mobs
 	var/image/Overmob_color = new(icon = paint_base, icon_state = "[frame_state]_overlay_a", layer = src.layer + 0.2) //over the over mobs, gives the color.
@@ -116,8 +117,8 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/quadbike, INTERACT_ITEM("Paint", P
 	Overmob_color.plane = MOB_PLANE
 	Overmob_color.color = paint_color
 
-	add_overlay(Overmob)
-	add_overlay(Overmob_color)
+	. += Overmob
+	. += Overmob_color
 
 /obj/vehicle/train/engine/quadbike/Bump(atom/Obstacle)
 	if(!istype(Obstacle, /atom/movable))
@@ -258,12 +259,13 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/quadbike, INTERACT_ITEM("Paint", P
 			to_chat(D, span_danger("You hit [M]!"))
 			add_attack_logs(D,M,"Ran over with [src.name]")
 
-/obj/vehicle/train/trolley/trailer/update_icon()
-	..()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/vehicle/train/trolley/trailer, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/vehicle/train/trolley/trailer/appearance_overlays()
+	. = list()
+	. += ..()
 
 	var/image/Bodypaint = new(icon = 'icons/obj/vehicles_64x64.dmi', icon_state = "[initial(icon_state)]_a", layer = src.layer)
 	Bodypaint.color = paint_color
-	add_overlay(Bodypaint)
+	. += Bodypaint
 
 EXTEND_INTERACTIONS(/obj/vehicle/train/trolley/trailer, INTERACT_ITEM("Paint", PROC_REF(interaction_vehicle_paint)))

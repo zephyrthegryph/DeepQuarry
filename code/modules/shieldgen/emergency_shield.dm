@@ -141,7 +141,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/shieldgen, "cell", "cell_type")
 
 	set_active(TRUE)
 	MACHINE_WAKE(src)
-	update_icon()
 
 	create_shields()
 
@@ -196,7 +195,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/shieldgen, "cell", "cell_type")
 /obj/machinery/shieldgen/atom_break(damage_flag)
 	. = ..()
 	malfunction = TRUE
-	update_icon()
 
 // Integrity zero blows the generator apart.
 /obj/machinery/shieldgen/atom_destruction(damage_flag)
@@ -360,12 +358,11 @@ DAMAGE_REACTION(/obj/machinery/shieldgen, DAMAGE_EMP, PROC_REF(emp_scramble))
 		set_anchored(TRUE)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/shieldgen/update_icon()
-	if(active && !has_stat(NOPOWER))
-		src.icon_state = malfunction ? "shieldonbr":"shieldon"
-	else
-		src.icon_state = malfunction ? "shieldoffbr":"shieldoff"
-	return
+/// Appearance reader: projecting (active and powered).
+/obj/machinery/shieldgen/proc/appearance_projecting()
+	return active && !has_stat(NOPOWER)
+
+APPEARANCE_TEMPLATE(/obj/machinery/shieldgen, "shield{appearance_projecting?on:off}{malfunction?br:}")
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/shieldgen/step_start_condition()

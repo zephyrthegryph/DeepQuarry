@@ -256,14 +256,15 @@
 	goia_overlays["zorgoia_belly"] = bodycolor
 	update_icon()
 
-/mob/living/simple_mob/vore/zorgoia/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/zorgoia, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/vore/zorgoia/appearance_overlays()
+	. = list()
+	. += ..()
 	if(stat == DEAD)
 		plane = MOB_LAYER
-		return
+		return .
 	else
 		plane = ABOVE_MOB_PLANE
-	cut_overlays()
 	icon = 'icons/mob/zorgoia64x32.dmi'
 	vore_capacity = 3
 	//Heads up, the order of these overlays stacking on top of each other is different from the array order. So goia_overlay[1] is the belly, but rendering on top of everything at the end instead
@@ -273,7 +274,7 @@
 	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
 	I.plane = MOB_PLANE
 	I.layer = MOB_LAYER
-	add_overlay(I)
+	. += I
 	qdel(I)
 
 	I = image(icon, "[goia_overlays["ears"]][resting? "-rest" : null]", pixel_x = -16)
@@ -281,7 +282,7 @@
 	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
 	I.plane = MOB_PLANE
 	I.layer = MOB_LAYER
-	add_overlay(I)
+	. += I
 	qdel(I)
 
 	I = image(icon, "[goia_overlays["spots"]][resting? "-rest" : null]", pixel_x = -16)
@@ -289,7 +290,7 @@
 	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
 	I.plane = MOB_PLANE
 	I.layer = MOB_LAYER
-	add_overlay(I)
+	. += I
 	qdel(I)
 
 	I = image(icon, "[goia_overlays["claws"]][resting? "-rest" : null]", pixel_x = -16)
@@ -297,7 +298,7 @@
 	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
 	I.plane = MOB_PLANE
 	I.layer = MOB_LAYER
-	add_overlay(I)
+	. += I
 	qdel(I)
 
 	I = image(icon, "[goia_overlays["spines"]][resting? "-rest" : null]", pixel_x = -16)
@@ -305,7 +306,7 @@
 	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
 	I.plane = MOB_PLANE
 	I.layer = MOB_LAYER
-	add_overlay(I)
+	. += I
 	qdel(I)
 
 
@@ -314,14 +315,14 @@
 	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
 	I.plane = MOB_PLANE
 	I.layer = MOB_LAYER
-	add_overlay(I)
+	. += I
 	qdel(I)
 
 	I = image(icon, "[goia_overlays["eyes"]][resting? "-rest" : null]", pixel_x = -16)
 	I.color = goia_overlays["zorgoia_eyes"]
 	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
 	I.plane = PLANE_LIGHTING_ABOVE
-	add_overlay(I)
+	. += I
 	qdel(I)
 
 	I = image(icon, "[goia_overlays["spike"]][resting? "-rest" : null]", pixel_x = -16)
@@ -329,7 +330,7 @@
 	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
 	I.plane = MOB_PLANE
 	I.layer = MOB_LAYER
-	add_overlay(I)
+	. += I
 	qdel(I)
 
 	I = image(icon, "[goia_overlays["belly"]][resting? "-rest" : (vore_fullness? "-[vore_fullness]" : null)]", pixel_x = -16)
@@ -337,7 +338,7 @@
 	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
 	I.plane = MOB_PLANE
 	I.layer = MOB_LAYER
-	add_overlay(I)
+	. += I
 	qdel(I)
 
 	I = image(icon, "[goia_overlays["underbelly"]][resting? "-rest" : (vore_fullness? "-[vore_fullness]" : null)]", pixel_x = -16)
@@ -345,7 +346,7 @@
 	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
 	I.plane = MOB_PLANE
 	I.layer = MOB_LAYER
-	add_overlay(I)
+	. += I
 	qdel(I)
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \

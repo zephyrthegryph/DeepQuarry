@@ -177,12 +177,17 @@ EMP_DISABLE(/obj/item/gps, 5 MINUTES, "emp_until")
 	if(!disabled)
 		visible_message("\The [src] appears to be functional again.")
 
-/obj/item/gps/update_icon()
-	cut_overlays()
+/obj/item/gps/proc/appearance_gps_state()
 	if(EXPIRY_ACTIVE(src, emp_until, CLOCK_WORLD))
-		add_overlay("emp")
-	else if(tracking)
-		add_overlay("working")
+		return "emp"
+	if(tracking)
+		return "working"
+	return ""
+
+DECLARE_APPEARANCE(/obj/item/gps, "appearance_gps_state", list( \
+	"emp" = list(APPEARANCE_OVERLAYS = list("emp")), \
+	"working" = list(APPEARANCE_OVERLAYS = list("working")) \
+))
 
 DECLARE_INTERACTIONS(/obj/item/gps, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \

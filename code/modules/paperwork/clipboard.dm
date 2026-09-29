@@ -34,15 +34,16 @@
 			add_fingerprint(usr)
 			return
 
-/obj/item/clipboard/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/clipboard, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/clipboard/appearance_overlays()
+	. = list()
 	if(toppaper())
-		add_overlay(toppaper().icon_state)
-		add_overlay(toppaper().overlays)
+		. += toppaper().icon_state
+		. += toppaper().overlays
 	if(haspen())
-		add_overlay("clipboard_pen")
-	add_overlay("clipboard_over")
-	return
+		. += "clipboard_pen"
+	. += "clipboard_over"
+	return .
 
 /// Old attackby.
 /obj/item/clipboard/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

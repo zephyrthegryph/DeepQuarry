@@ -543,11 +543,7 @@
 	add_overlay("fab-load-metal")
 	om_after(src, 1 SECONDS, TYPE_PROC_REF(/atom, cut_overlay), "fab-load-metal")
 
-/obj/machinery/mecha_part_fabricator_tg/update_icon()
-	if(panel_open)
-		icon_state = "fab-o"
-	else
-		icon_state = "fab-idle"
+DECLARE_APPEARANCE(/obj/machinery/mecha_part_fabricator_tg, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "fab-o"), APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "fab-idle")))
 
 /datum/interaction/machine_item/mech_fabricator_guard
 	id = "mech_fabricator_guard"

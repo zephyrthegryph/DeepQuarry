@@ -176,11 +176,6 @@ DECLARE_INTERACTIONS(/obj/item/sniper_rifle_part, \
 				H.put_in_any_hand_if_possible(gun) || gun.dropInto(loc)
 			consume(src, user)
 
-/obj/item/gun/projectile/heavysniper/update_icon()
-	if(bolt_open)
-		icon_state = "heavysniper-open"
-	else
-		icon_state = "heavysniper"
 
 /// the barrel this refers to (a relation view: null once it is deleted).
 /obj/item/sniper_rifle_part/proc/barrel() as /obj/item/sniper_rifle_part

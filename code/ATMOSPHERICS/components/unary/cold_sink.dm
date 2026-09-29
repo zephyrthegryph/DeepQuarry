@@ -52,15 +52,17 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/freezer, 120, null)
 	if(node)
 		update_icon()
 
-/obj/machinery/atmospherics/unary/freezer/update_icon()
-	if(node)
-		if(use_power && cooling)
-			icon_state = "freezer_1"
-		else
-			icon_state = "freezer"
-	else
-		icon_state = "freezer_0"
-	return
+/// Appearance reader: 0 unconnected, 1 connected idle, 2 connected and cooling.
+/obj/machinery/atmospherics/unary/freezer/proc/appearance_freezer_state()
+	if(!node)
+		return 0
+	return (use_power && cooling) ? 2 : 1
+
+DECLARE_APPEARANCE(/obj/machinery/atmospherics/unary/freezer, "appearance_freezer_state", list(
+	"0" = list(APPEARANCE_ICON_STATE = "freezer_0"),
+	"1" = list(APPEARANCE_ICON_STATE = "freezer"),
+	"2" = list(APPEARANCE_ICON_STATE = "freezer_1"),
+))
 
 /obj/machinery/atmospherics/unary/freezer
 	silicon_use = SILICON_USE_UI
@@ -111,7 +113,6 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/freezer, 120, null)
 	switch(action)
 		if("toggleStatus")
 			set_use_power(!use_power)
-			update_icon()
 		if("setGasTemperature")
 			var/amount = text2num(params["temp"])
 			if(amount > 0)
@@ -181,7 +182,6 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/freezer, 120, null)
 	if(.)
 		// process() hibernates on NOPOWER; a power transition is a dependency change.
 		invalidate_gas_dependencies()
-		update_icon()
 
 //upgrading parts
 /obj/machinery/atmospherics/unary/freezer/RefreshParts()

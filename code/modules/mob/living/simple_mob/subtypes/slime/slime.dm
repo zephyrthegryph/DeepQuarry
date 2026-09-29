@@ -122,25 +122,27 @@ TYPE_TABLE(/mob/living/simple_mob/slime, ventcrawl_get_item_whitelist, list( \
 	set_glow_toggle(initial(glow_toggle))
 	refresh_glow()
 
-/mob/living/simple_mob/slime/update_icon()
-	..() // Do the regular stuff first.
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/slime/appearance_overlays()
+	. = list()
+	. += ..()
 
 	if(stat != DEAD)
 		// General slime shine.
 		var/image/I = image(icon, src, "slime light")
 		I.appearance_flags = RESET_COLOR
-		add_overlay(I)
+		. += I
 
 		// 'Shiny' overlay, for gemstone-slimes.
 		if(shiny)
 			I = image(icon, src, "slime shiny")
 			I.appearance_flags = RESET_COLOR
-			add_overlay(I)
+			. += I
 
 		// Mood overlay.
 		I = image(icon, src, "aslime-[mood]")
 		I.appearance_flags = RESET_COLOR
-		add_overlay(I)
+		. += I
 
 	// Hat simulator.
 	if(hat)
@@ -150,7 +152,7 @@ TYPE_TABLE(/mob/living/simple_mob/slime, ventcrawl_get_item_whitelist, list( \
 		I.color = hat.color
 		I.appearance_flags = RESET_COLOR | KEEP_APART
 		I.blend_mode = BLEND_OVERLAY
-		add_overlay(I)
+		. += I
 
 // Controls the 'mood' overlay. Overrided in subtypes for specific behaviour.
 /mob/living/simple_mob/slime/proc/update_mood()

@@ -17,8 +17,7 @@
 	robot_durability = 20
 
 /* 
-/obj/item/cell/crap/update_icon() //No visible charge indicator
-	return
+APPEARANCE_NONE(/obj/item/cell/crap)
 */// CHOMPRemve End
 
 /obj/item/cell/crap/empty
@@ -108,9 +107,7 @@
 	charge = 8000
 	maxcharge = 8000
 
-/obj/item/cell/mech/lead/update_icon() //No visible charge indicator
-	return
-
+APPEARANCE_NONE(/obj/item/cell/mech/lead)
 /obj/item/cell/mech/high
 	name = "high-capacity mecha power cell"
 	icon_state = "exs_m"
@@ -182,9 +179,7 @@
 	connector_type = "emergency"
 	w_class = ITEMSIZE_TINY
 
-/obj/item/cell/emergency_light/update_icon() //No visible charge indicator
-	return
-
+APPEARANCE_NONE(/obj/item/cell/emergency_light)
 /obj/item/cell/emergency_light/Initialize(mapload)
 	. = ..()
 	var/area/A = get_area(src)

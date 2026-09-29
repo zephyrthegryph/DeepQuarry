@@ -8,10 +8,11 @@
 	generic_filth = FALSE
 	persistent = FALSE
 
-/obj/effect/decal/cleanable/blood/gibs/robot/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs/robot, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/effect/decal/cleanable/blood/gibs/robot/appearance_overlays()
+	. = list()
 	color = "#FFFFFF"
-	cut_overlays()
-	add_janitor_hud_overlay()
+	. += add_janitor_hud_overlay()
 
 /obj/effect/decal/cleanable/blood/gibs/robot/dry()	//pieces of robots do not dry up like
 	return

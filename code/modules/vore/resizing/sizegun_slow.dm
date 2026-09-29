@@ -23,11 +23,7 @@
 	var/datum/beam/scan_beam_effect
 	var/trading = 0
 
-/obj/item/slow_sizegun/update_icon()
-	icon_state = "[base_icon_state]-[sizeshift_mode]"
-
-	if(busy)
-		icon_state = "[icon_state]-active"
+APPEARANCE_TEMPLATE(/obj/item/slow_sizegun, "{base_icon_state}-{sizeshift_mode}{busy?-active:}")
 
 /obj/item/slow_sizegun/proc/should_stop(mob/living/target, mob/living/user, active_hand)
 	if(!target || !user || !active_hand || !istype(target) || !istype(user) || !busy)

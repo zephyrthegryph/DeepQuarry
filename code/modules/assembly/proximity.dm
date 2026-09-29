@@ -75,14 +75,15 @@ MATERIAL_MIX(/obj/item/assembly/prox_sensor, list(MAT_STEEL = 800, MAT_GLASS = 2
 	scanning = !scanning
 	update_icon()
 
-/obj/item/assembly/prox_sensor/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/assembly/prox_sensor, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/assembly/prox_sensor/appearance_overlays()
+	. = list()
 	LAZYCLEARLIST(attached_overlays)
 	if(timing)
-		add_overlay("prox_timing")
+		. += "prox_timing"
 		LAZYADD(attached_overlays, "prox_timing")
 	if(scanning)
-		add_overlay("prox_scanning")
+		. += "prox_scanning"
 		LAZYADD(attached_overlays, "prox_scanning")
 	if(holder())
 		holder().update_icon()

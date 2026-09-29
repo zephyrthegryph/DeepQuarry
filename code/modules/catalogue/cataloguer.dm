@@ -54,11 +54,11 @@
 
 REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 
-/obj/item/cataloguer/update_icon()
-	if(om_busy(src))
-		icon_state = "[initial(icon_state)]_active"
-	else
-		icon_state = initial(icon_state)
+/// Appearance reader: TRUE while a scan task holds the cataloguer.
+/obj/item/cataloguer/proc/appearance_busy()
+	return om_busy(src) ? TRUE : FALSE
+
+APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy?_active:}")
 
 /obj/item/cataloguer/afterattack(atom/target, mob/user, proximity_flag)
 	// Things that invalidate the scan immediately.
@@ -307,11 +307,7 @@ DECLARE_INTERACTIONS(/obj/item/cataloguer, \
 	scan_range = 3
 	toolspeed = 1
 
-/obj/item/cataloguer/compact/update_icon()
-	if(om_busy(src))
-		icon_state = "[initial(icon_state)]_s"
-	else
-		icon_state = initial(icon_state)
+APPEARANCE_TEMPLATE(/obj/item/cataloguer/compact, "{initial(icon_state)}{appearance_busy?_s:}")
 
 /obj/item/cataloguer/compact/ui_action_click(mob/user, actiontype)
 	var/why = can_toggle_compact(user, src, null)

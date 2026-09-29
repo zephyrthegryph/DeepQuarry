@@ -344,25 +344,22 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 		add_overlay(special_frame)
 
 
-/obj/machinery/gear_dispenser/suit_fancy/power_change()
-	. = ..()
-	update_icon()
-
-/obj/machinery/gear_dispenser/suit_fancy/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/gear_dispenser/suit_fancy, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/gear_dispenser/suit_fancy/appearance_overlays()
+	. = list()
 
 	if(special_frame)
-		add_overlay(special_frame)
+		. += special_frame
 
 	if(needs_power && !operable())
-		add_overlay("nopower")
+		. += "nopower"
 	else
-		add_overlay("light1")
+		. += "light1"
 
 	if(held_gear_disp())
-		add_overlay("fullsuit")
+		. += "fullsuit"
 		if(operable())
-			add_overlay("light2")
+			. += "light2"
 
 /obj/machinery/gear_dispenser/suit_fancy/declare_interactions(list/into)
 	into += list(

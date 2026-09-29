@@ -91,15 +91,10 @@
 /obj/machinery/button/remote/proc/trigger()
 	return
 
-/obj/machinery/button/remote/power_change()
-	. = ..()
-	update_icon()
+/obj/machinery/button/remote/proc/appearance_powered()
+	return has_stat(NOPOWER) ? 0 : 1
 
-/obj/machinery/button/remote/update_icon()
-	if(has_stat(NOPOWER))
-		icon_state = "doorctrl-p"
-	else
-		icon_state = "doorctrl0"
+APPEARANCE_TEMPLATE(/obj/machinery/button/remote, "doorctrl{appearance_powered?0:-p}")
 
 /*
 	Airlock remote control
@@ -197,11 +192,7 @@ REL_KEYED_LIST(/obj/machinery/button/remote/blast_door, controlled_doors, id, /o
 	. = ..()
 	icon_state = "stuffedbear"
 
-/obj/machinery/button/remote/blast_door/bear/update_icon()
-	if(has_stat(NOPOWER))
-		icon_state = "stuffedbear"
-	else
-		icon_state = "stuffedbear"
+APPEARANCE_TEMPLATE(/obj/machinery/button/remote/blast_door/bear, "stuffedbear")
 
 
 /*
@@ -236,7 +227,6 @@ REL_KEYED_LIST(/obj/machinery/button/remote/driver, controlled_drivers, id, /obj
 	if(active)
 		return
 	set_active(TRUE)
-	update_icon()
 
 	for(var/obj/machinery/door/blast/M as anything in controlled_doors)
 		M.open()
@@ -255,7 +245,6 @@ REL_KEYED_LIST(/obj/machinery/button/remote/driver, controlled_drivers, id, /obj
 		M.close()
 
 	set_active(FALSE)
-	update_icon()
 
 /obj/machinery/button/remote/driver/declare_interactions(list/into)
 	into += list(
@@ -282,11 +271,10 @@ REL_KEYED_LIST(/obj/machinery/button/remote/driver, controlled_drivers, id, /obj
 		keyed_set_id(src, "id", new_id) // re-links the keyed doors and drivers
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/button/remote/driver/update_icon()
-	if(!active || (has_stat(NOPOWER)))
-		icon_state = "launcherbtt"
-	else
-		icon_state = "launcheract"
+/obj/machinery/button/remote/driver/proc/appearance_active()
+	return (active && !has_stat(NOPOWER)) ? 1 : 0
+
+APPEARANCE_TEMPLATE(/obj/machinery/button/remote/driver, "launcher{appearance_active?act:btt}")
 
 /*
 	Shieldgen remote control
@@ -353,8 +341,7 @@ REL_KEYED_LIST(/obj/machinery/button/remote/shields, controlled_shields, id, /ob
 	to_chat(user,span_notice("You hear a heavy mechanism open somewhere in the distance."))
 	icon_state = pressed_state
 
-/obj/machinery/button/remote/blast_door/single_use/slab/update_icon()
-	return
+APPEARANCE_NONE(/obj/machinery/button/remote/blast_door/single_use/slab)
 
 /obj/machinery/button/remote/blast_door/single_use/slab/slab1
 	name = "Button Slab 1"

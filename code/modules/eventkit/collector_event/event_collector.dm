@@ -97,8 +97,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 
 	update_icon()
 
-/obj/structure/event_collector/update_icon()
-	. = ..() //here more as a reminder than anything
 
 /obj/structure/event_collector/proc/recipe_failed() //called when reset by an admin assuming they want it to be
 	return

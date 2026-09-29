@@ -112,6 +112,65 @@ DECLARE_APPEARANCE(/obj/machinery/recharger, "panel_open", list("1" = list(APPEA
 - Lint `sys_update_icon_call` (manual `update_icon()` after a field setter or in a setter-owning
   proc) and `sys_update_icon_override` (override without ALLOW).
 
+**As built (rewrite/sys-appearance).**
+
+- Macros (`code/__defines/sys_appearance.dm`; DECLARE_APPEARANCE stays in `lifecycle_decl.dm`):
+  `APPEARANCE_TEMPLATE(T, "prefix{field}{flag?A:B}{initial(icon_state)}")`,
+  `APPEARANCE_LEVEL(T, "value", STEPS, "state_%d")` (value 0..100, nearest step; `%p` = step as a
+  percentage), `APPEARANCE_EMISSIVE(T, "field", list("1" = "state"))`, `APPEARANCE_SLOT(T, SLOT,
+  "state")`, `APPEARANCE_WATCH(T, list("field", ...))`, `APPEARANCE_NONE(T)` (drops inherited
+  drawing, keeps watches) and the provider `DECLARE_APPEARANCE_PROC(T, TYPE_PROC_REF(/atom,
+  appearance_overlays), list("field" or CHANGE_*, ...))`. **Refinement:** template tokens use
+  `{ }`, not `[ ]`: DM reads `[x]` inside a string literal as an embedded expression at the
+  declaration. Names are vars or no-argument procs (derived fields such as `operable`, or small
+  readers like `appearance_suffix()`); `{initial(x)}` resolves per concrete subtype (the
+  declaration table is built per type from an instance of it). `{x?A:B}` branches are literal text
+  or `@var`. The provider macro takes `TYPE_PROC_REF(/atom, ...)`: DM's `.proc/x` (PROC_REF) does
+  not resolve a proc inherited from /atom inside `declare_lifecycle()`.
+- Runtime (`code/datums/sys/appearance.dm`): the keyed declarations build one key per state and
+  apply the `decl_appearance` shared-cache entry (swapping only their own overlays); then the
+  provider runs and the runtime swaps what it returned last time for the new result (it owns those
+  overlays; a provider never calls add/cut_overlay and changes no state). The base
+  `/atom/update_icon()` applies both, so `update_icon()` is only an imperative "redraw now".
+  finish computes the type's **watch mask**: the channels of every declared field a declaration
+  names, the provider's field/channel list, `CHANGE_CONTENTS` for slots. Init ORs it into
+  `om_listen` (and the OM type table carries it, so `om_recompute_listen()` keeps it).
+  `om_dispatch_change()` queues an atom whose raised bits hit its mask (`appearance_queue()`, one
+  flag per atom); the scheduler's presentation lane drains the queue within its budget
+  (`appearance_drain()`), one `update_icon()` per atom per frame. Tests flush with
+  `appearance_flush()`.
+- Channels added: `CHANGE_INTEGRITY` (raised by `update_integrity()`, the `get_integrity`
+  derived field, so damage sprites redraw on hits/repairs) and `CHANGE_NEIGHBOURS` (smoothing).
+  Smoothing providers (floors, flesh, solid rock, mineral, railings, energy fields) declare
+  `CHANGE_NEIGHBOURS` and call `appearance_notify_neighbours(key, kind)`: when what neighbours see of
+  the atom (type, density, dir, anchoring) changed since its last draw, the neighbours of that kind
+  are raised; their key is unchanged, so it stops there (the old `update_icon(update_neighbors)`
+  argument is gone; a first draw during map load notifies nobody).
+- Machines: `APPEARANCE_WATCH(/obj/machinery, stat, on, active, state, mode, locked, emagged,
+  use_power, anchored, density)`, vehicles watch `stat`: every machine redraws when its core
+  fields change, which is what let the manual calls go.
+- Migration: all 774 `update_icon()` overrides are gone. 30% became keyed declarations (190
+  templates, 99 layers, levels/emissives/slots), ~490 became providers, 56 stubs became
+  `APPEARANCE_NONE`. State changes that lived in redraws moved to the state change (light bulbs
+  switch off in `set_status()`, filters/mixers power off on losing a node, broken disposal bins stop
+  in `machine_step()`); flick animations moved to `animate_toggle()`; the RCD construction effect
+  became `start_animation()`; organ damage caching became `update_damage_state()`; cash note layouts
+  are rolled once (`GLOB.spacecash_note_layouts`, per-pile seed at init); card sprite stacks draw as
+  layers instead of a blended `/icon`. 135 manual `update_icon()` calls next to watched setters and
+  17 `power_change()` overrides that only redrew were deleted.
+- Lint (`tools/ci/sys_rules/appearance.py`, all 0, empty baseline): `update_icon_call` (every
+  refresh shape: bare, `src.`, `X.`, `X?.`, args, `queue_icon_update()`, a `PROC_REF(update_icon)`
+  handed to CALLBACK/INVOKE_ASYNC/om_after/addtimer; flagged when it directly follows a watched
+  setter on the same receiver (`set_F`, `F_add/F_remove`, `om_set`) with only harmless statements
+  between, or sits in a setter-owning proc: the field's setter, or an override calling `..()` into an
+  ancestor proc that writes one, e.g. `power_change()`, `atom_break()`), `update_icon_override`
+  (any override; `ALLOW(sys_update_icon)` is read, and only the unit-test probe uses it),
+  `appearance_proc_overlays` (add/cut/overlays writes in a provider) and `appearance_proc_state`
+  (a watched setter in a provider). Init-time draws (`Initialize`/`New`) are not the pattern.
+- Mob icon caches: human body/hair/ears/wings/tail still blend `/icon` (skin-tone multiply, masks,
+  crops: pixel-level); ID card sprite stacks moved to layered overlays.
+- Test: `code/modules/unit_tests/dq_sys_appearance_tests.dm`.
+
 ## 5. Periodic work declared by state
 
 ```dm

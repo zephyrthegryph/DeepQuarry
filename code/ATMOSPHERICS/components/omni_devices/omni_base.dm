@@ -47,17 +47,19 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 
 	build_icons()
 
-/obj/machinery/atmospherics/omni/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/omni, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/atmospherics/omni/appearance_overlays()
+	. = list()
 	if(has_stat(NOPOWER))
-		overlays = overlays_off
+		. += overlays_off
 	else if(error_check())
-		overlays = overlays_error
+		. += overlays_error
 	else
-		overlays = use_power ? (overlays_on) : (overlays_off)
+		. += use_power ? (overlays_on) : (overlays_off)
 
 	underlays = underlays_current
 
-	return
+	return .
 
 /obj/machinery/atmospherics/omni/proc/error_check()
 	return
@@ -86,7 +88,6 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 	. = ..()
 	OMNI_WAKE_TRACE(src, "power_change changed=[.]")
 	if(.)
-		update_icon()
 		wake_for_state_change()
 
 /// Arms its eligibility rule (code/datums/om/watch.dm om_watch_arm_condition()) over every port

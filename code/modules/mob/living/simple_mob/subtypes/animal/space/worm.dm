@@ -96,8 +96,10 @@
 	..()
 	self.update_body_faction()
 
-/mob/living/simple_mob/animal/space/space_worm/head/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/animal/space/space_worm/head/appearance_overlays()
+	. = list()
+	. += ..()
 	if(!open_maw && !stat)
 		icon_state = "[icon_living][previous ? 1 : 0]_hunt"
 	else
@@ -216,7 +218,9 @@
 		rel_clear(src, "currentlyEating")
 		. = ..(obstacle)
 
-/mob/living/simple_mob/animal/space/space_worm/update_icon()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/animal/space/space_worm/appearance_overlays()
+	. = list()
 	if(previous) //midsection
 		icon_state = "spaceworm[get_dir(src,previous) | get_dir(src,next)]"
 		if(stat)
@@ -231,7 +235,7 @@
 	if(next)
 		color = next.color
 
-	return
+	return .
 
 /// Bump()'s deferred half: starts eating what the maw ran into.
 /mob/living/simple_mob/animal/space/space_worm/proc/bump_eat(atom/obstacle)

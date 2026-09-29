@@ -79,11 +79,10 @@ DECLARE_INTERACTIONS(/obj/item/holowarrant, \
 	M.examinate(src)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/holowarrant/update_icon()
-	if(active())
-		icon_state = "holowarrant_filled"
-	else
-		icon_state = "holowarrant"
+/obj/item/holowarrant/proc/appearance_active()
+	return active() ? TRUE : FALSE
+
+APPEARANCE_TEMPLATE(/obj/item/holowarrant, "{appearance_active?holowarrant_filled:holowarrant}")
 
 // show_content moved to code/modules/holowarrant_panel.dm (structured TGUI).
 

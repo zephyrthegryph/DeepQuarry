@@ -540,7 +540,9 @@ TYPE_TABLE(/obj/item/stack/medical/splint/ghetto, splint_organs, list(BP_L_ARM, 
 	. = ..()
 	update_icon()
 
-/obj/item/stack/medical/advanced/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/stack/medical/advanced, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/stack/medical/advanced/appearance_overlays()
+	. = list()
 	switch(amount)
 		if(1 to 2)
 			icon_state = initial(icon_state)
@@ -606,5 +608,7 @@ TYPE_TABLE(/obj/item/stack/medical/splint/ghetto, splint_organs, list(BP_L_ARM, 
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/stack/medical/advanced/clotting/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/stack/medical/advanced/clotting, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/stack/medical/advanced/clotting/appearance_overlays()
+	. = list()
 	icon_state = "[initial(icon_state)]_[amount]"

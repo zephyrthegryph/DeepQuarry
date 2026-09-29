@@ -401,6 +401,14 @@ accident or assume they work:
   subtypes add theirs with `also_requires`. `code/__defines/sys_requirements.dm`,
   doc/rewrite/systems.md Â§6; the `sys_inline_refusal` lint (baseline empty) rejects a
   message-and-return guard at the head of an effect proc.
+- **Appearance is declared (systems.md §1).** There are no `update_icon()` overrides: a type
+  declares how its state is drawn (`APPEARANCE_TEMPLATE(T, "x{field}")`, `DECLARE_APPEARANCE`,
+  `APPEARANCE_LEVEL/EMISSIVE/SLOT`) or, for computed overlays, a provider
+  `DECLARE_APPEARANCE_PROC(T, TYPE_PROC_REF(/atom, appearance_overlays), list(fields...))` whose
+  `appearance_overlays()` *returns* overlays (the runtime cuts/adds them; never add_overlay or
+  change state there). Declared fields a declaration reads refresh it automatically, once per
+  frame, on the presentation lane; machines watch their core fields. So never follow a setter with
+  `update_icon()`; `tools/ci/sys_rules/appearance.py` rejects it. Template tokens are `{ }`.
 - **Variants.** Families of subtypes that differ only in data are collapsed into one type
   plus a registry to save memory. See `code/datums/variants/README.md`.
 - **Material behaviour system — rewritten; material synergies removed.** A material's three active

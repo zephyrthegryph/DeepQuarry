@@ -153,14 +153,12 @@
 /obj/machinery/dnaforensics
 	silicon_use = SILICON_USE_UI
 
-/obj/machinery/dnaforensics/update_icon()
-	..()
+APPEARANCE_TEMPLATE(/obj/machinery/dnaforensics, "dna{appearance_mode}")
+
+/obj/machinery/dnaforensics/proc/appearance_mode()
 	if(!has_stat(NOPOWER) && scanning)
-		icon_state = "dnaworking"
-	else if(bloodsamp())
-		icon_state = "dnaclosed"
-	else
-		icon_state = "dnaopen"
+		return "working"
+	return bloodsamp() ? "closed" : "open"
 
 /// the bloodsamp this refers to (a relation view: null once it is deleted).
 /obj/machinery/dnaforensics/proc/bloodsamp() as /obj/item/forensics/swab

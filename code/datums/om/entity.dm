@@ -103,8 +103,11 @@
 	rec.table = om_registry().type_table(E.type)
 	if(!rec.table.cache_scanned)
 		om_cache_scan(rec.table, E)
-	if(rec.table.service_mask | rec.table.cache_mask)
-		E.om_listen |= rec.table.service_mask | rec.table.cache_mask
+	if(!rec.table.appearance_scanned)
+		rec.table.appearance_scanned = TRUE
+		rec.table.appearance_mask = appearance_mask_of(E)
+	if(rec.table.service_mask | rec.table.cache_mask | rec.table.appearance_mask)
+		E.om_listen |= rec.table.service_mask | rec.table.cache_mask | rec.table.appearance_mask
 	return rec
 
 // ---------------------------------------------------------------- declared caches
@@ -331,7 +334,7 @@
 	for(var/datum/om/task/T as anything in rec.tasks)
 		slow |= T.interrupt_on
 	rec.slow_mask = slow
-	rec.owner.om_listen = mask | slow | rec.table?.cache_mask | (rec.owner == GLOB.om_world ? shared_cache_change_mask : 0)
+	rec.owner.om_listen = mask | slow | rec.table?.cache_mask | rec.table?.appearance_mask | (rec.owner == GLOB.om_world ? shared_cache_change_mask : 0)
 
 /// The mask other entities and behaviours observe (decides eager derived values).
 /proc/om_observed_mask(datum/om/rec/rec)
@@ -355,6 +358,9 @@
 	if((bits & shared_cache_change_mask) && E == GLOB.om_world)
 		shared_cache_on_world_change(bits)
 	var/datum/om/rec/rec = E.om_rec
+	// A declared appearance reading these channels refreshes once this frame (code/datums/sys/appearance.dm).
+	if(bits & (rec ? rec.table.appearance_mask : appearance_mask_of(E)))
+		appearance_queue(E)
 	if(!rec || rec.torn_down)
 		return
 	var/datum/om/scheduler/sched = rec.sched

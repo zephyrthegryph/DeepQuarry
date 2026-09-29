@@ -148,10 +148,12 @@
 	if(!restoring)
 		return PROCESS_KILL
 
-/obj/machinery/computer/aifixer/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/aifixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/computer/aifixer/appearance_overlays()
+	. = list()
+	. += ..()
 	if(!operable())
-		return
+		return .
 
 	if(restoring)
 		. += "ai-fixer-on"

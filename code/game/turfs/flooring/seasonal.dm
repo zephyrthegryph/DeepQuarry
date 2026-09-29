@@ -98,23 +98,25 @@ GLOBAL_VAR(world_time_day)
 			desc = "Dry, seemingly dead grass! It's too cold for the grass..."
 
 
-/turf/simulated/floor/outdoors/grass/seasonal/update_icon(update_neighbors)
-	. = ..()
+DECLARE_APPEARANCE_PROC(/turf/simulated/floor/outdoors/grass/seasonal, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/turf/simulated/floor/outdoors/grass/seasonal/appearance_overlays()
+	. = list()
+	. += ..()
 	update_desc()
 	switch(GLOB.world_time_season)
 		if("spring")
 			if(prob(50))
 				var/cache_key = "[GLOB.world_time_season]-overlay[rand(1,19)]"
-				add_overlay(CACHED_KEY(seasonal_grass_overlays, cache_key, icon, cache_key))
+				. += CACHED_KEY(seasonal_grass_overlays, cache_key, icon, cache_key)
 		if("summer")
-			return
+			return .
 		if("autumn")
 			if(prob(33))
 				var/cache_key = "[GLOB.world_time_season]-overlay[rand(1,6)]"
-				add_overlay(CACHED_KEY(seasonal_grass_overlays, cache_key, icon, cache_key))
+				. += CACHED_KEY(seasonal_grass_overlays, cache_key, icon, cache_key)
 
 		if("winter")
-			return
+			return .
 
 /turf/simulated/floor/outdoors/grass/seasonal/notrees_nomobs_nosnow
 	tree_chance = 0

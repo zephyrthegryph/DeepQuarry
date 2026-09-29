@@ -132,7 +132,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 
 	component_registry.initialize_pieces()
 
-	update_icon(1)
+	mob_icon = null // rebuilt by the redraw
+	update_icon()
 
 
 // the suit pieces are torn down by its (owned) component registry.
@@ -239,7 +240,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 		piece.icon_state = "[suit_state]"
 		if(airtight)
 			update_airtight(piece, 0) // Unseal
-	update_icon(1)
+	mob_icon = null // rebuilt by the redraw
+	update_icon()
 
 /obj/item/rig/proc/cut_suit()
 	offline = 2
@@ -248,7 +250,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 	toggle_piece("gauntlets", loc, ONLY_RETRACT, TRUE)
 	toggle_piece("boots", loc, ONLY_RETRACT, TRUE)
 	toggle_piece("chest", loc, ONLY_RETRACT, TRUE)
-	update_icon(1)
+	mob_icon = null // rebuilt by the redraw
+	update_icon()
 
 /// Seals or unseals the suit: a sequence of timed actions (the overall check, then one per
 /// piece), each continuing in seal_piece() and ending in seal_finish().
@@ -399,7 +402,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 		canremove = !seal_target
 		if(airtight)
 			update_component_sealed()
-		update_icon(1)
+		mob_icon = null // rebuilt by the redraw
+		update_icon()
 		return 0
 
 	// Success!
@@ -421,7 +425,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 			module.deactivate()
 	if(airtight)
 		update_component_sealed()
-	update_icon(1)
+	mob_icon = null // rebuilt by the redraw
+	update_icon()
 
 /obj/item/rig/proc/update_component_sealed()
 	for(var/obj/item/piece in list(helmet,boots,gloves,chest))
@@ -577,10 +582,11 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 		return 0
 	return cell.give(joules * CELLRATE, FALSE) / CELLRATE
 
-/obj/item/rig/update_icon(update_mob_icon)
+DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/rig/appearance_overlays()
+	. = list()
 
-	cut_overlays()
-	if(!mob_icon || update_mob_icon)
+	if(!mob_icon)
 		var/species_icon = default_mob_icon
 		// Since setting mob_icon will override the species checks in
 		// update_inv_wear_suit(), handle species checks here.
@@ -601,7 +607,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 		wearer().update_inv_head()
 		wearer().update_inv_wear_suit()
 		wearer().update_inv_back()
-	return
+	return .
 
 /obj/item/rig/proc/check_suit_access(mob/living/carbon/human/user, do_message = TRUE)
 

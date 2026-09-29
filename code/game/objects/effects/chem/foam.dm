@@ -148,11 +148,7 @@
 	. = ..()
 	update_nearby_tiles(1)
 
-/obj/structure/foamedmetal/update_icon()
-	if(metal == 1)
-		icon_state = "metalfoam"
-	else
-		icon_state = "ironfoam"
+DECLARE_APPEARANCE(/obj/structure/foamedmetal, "metal", list("1" = list(APPEARANCE_ICON_STATE = "metalfoam"), APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "ironfoam")))
 
 /obj/structure/foamedmetal/bullet_act(obj/item/projectile/P)
 	if(istype(P, /obj/item/projectile/test))

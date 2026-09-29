@@ -59,18 +59,19 @@ DECLARE_DEFAULT_CHILD(/obj/item/flamethrower, "weldtool", /obj/item/weldingtool)
 		location.hotspot_expose(700, 2)
 	return
 
-/obj/item/flamethrower/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/flamethrower/appearance_overlays()
+	. = list()
 	if(igniter)
-		add_overlay("+igniter[status]")
+		. += "+igniter[status]"
 	if(ptank)
-		add_overlay("+ptank")
+		. += "+ptank"
 	if(lit)
-		add_overlay("+lit")
+		. += "+lit"
 		item_state = "flamethrower_1"
 	else
 		item_state = "flamethrower_0"
-	return
+	return .
 
 /obj/item/flamethrower/afterattack(atom/target, mob/user, proximity, click_parameters, stance = I_HURT)
 	if(!lit || !COOLDOWN_FINISHED(src, operating))

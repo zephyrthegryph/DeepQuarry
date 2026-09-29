@@ -248,7 +248,6 @@ DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen
 	set_active(!active)
 	if(active)
 		MACHINE_WAKE(src)
-	update_icon()
 	if(active)
 		var/list/covered_turfs = get_shielded_turfs()
 		var/turf/T = get_turf(src)
@@ -281,7 +280,9 @@ DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen
 				continue
 			own_add(src, "field", new /obj/effect/energy_field(O, src))
 
-/obj/machinery/shield_gen/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/shield_gen, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/shield_gen/appearance_overlays()
+	. = list()
 	if(has_stat(BROKEN))
 		icon_state = "broke"
 		set_light(0)

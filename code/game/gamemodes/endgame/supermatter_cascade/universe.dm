@@ -85,7 +85,6 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 				APC.cell.charge = 0
 			APC.wake_for_power_dependency()
 			APC.set_emagged(1)
-			APC.queue_icon_update()
 
 /datum/universal_state/supermatter_cascade/proc/PlayerSet()
 	for(var/mob/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))

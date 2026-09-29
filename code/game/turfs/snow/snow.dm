@@ -23,11 +23,12 @@
 
 	. = ..()
 
-/turf/snow/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/turf/snow, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/turf/snow/appearance_overlays()
+	. = list()
 	for(var/d in crossed_dirs)
 		var/amt = LAZYACCESS(crossed_dirs, d)
 
 		for(var/i in 1 to amt)
-			add_overlay(image(icon, "footprint[i]", text2num(d)))
+			. += image(icon, "footprint[i]", text2num(d))
 

@@ -103,9 +103,11 @@
 
 	cooking_power *= oil_efficiency
 
-/obj/machinery/appliance/cooker/fryer/update_icon() // We add our own version of the proc to use the special fryer double-lights.
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/fryer, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/appliance/cooker/fryer/appearance_overlays() // We add our own version of the proc to use the special fryer double-lights.
+	. = list()
 	if(!has_stat(MACHINE_STAT_ANY))
-		..()
+		. += ..()
 		if(cooking == TRUE)
 			icon_state = on_icon
 			if(fry_loop)
@@ -120,7 +122,6 @@
 			fry_loop.stop(src)
 
 	// Special fryer double-lights overlay.
-	cut_overlays()
 	var/image/light
 	if(use_power == 1 && !has_stat(MACHINE_STAT_ANY))
 		light = image(icon, "fryer_light_idle")
@@ -130,7 +131,7 @@
 		light = image(icon, "fryer_light_off")
 	light.pixel_x = light_x
 	light.pixel_y = light_y
-	add_overlay(light)
+	. += light
 
 //Fryer gradually infuses any cooked food with oil. Moar calories
 //This causes a slow drop in oil levels, encouraging refill after extended use

@@ -246,8 +246,7 @@
 		qdel(target)
 		to_chat(usr_mob,span_notice("Mind successfully stored!"))
 
-/obj/item/mindbinder/update_icon()
-	if((possessed_voice && length(possessed_voice) > 0) || self_bind)
-		icon_state = "[initial(icon_state)]_on"
-	else
-		icon_state = initial(icon_state)
+/obj/item/mindbinder/proc/appearance_bound()
+	return ((possessed_voice && length(possessed_voice) > 0) || self_bind) ? TRUE : FALSE
+
+APPEARANCE_TEMPLATE(/obj/item/mindbinder, "{initial(icon_state)}{appearance_bound?_on:}")

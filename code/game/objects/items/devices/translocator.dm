@@ -66,7 +66,9 @@ REL_LIST(/obj/item/perfect_tele, beacons)
 			rel_add(src, "beacons", nb)
 	loc_network = null //Consumed
 
-/obj/item/perfect_tele/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/perfect_tele, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/perfect_tele/appearance_overlays()
+	. = list()
 	if(!power_source)
 		icon_state = "[initial(icon_state)]_o"
 	else if(ready && (power_source.check_charge(charge_cost) || power_source.fully_charged()))
@@ -74,7 +76,7 @@ REL_LIST(/obj/item/perfect_tele, beacons)
 	else
 		icon_state = "[initial(icon_state)]_w"
 
-	..()
+	. += ..()
 
 /obj/item/perfect_tele/proc/rebuild_radial_images()
 	LAZYCLEARLIST(radial_images)
@@ -540,12 +542,14 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	recharging = 0
 	update_icon()
 
-/obj/item/perfect_tele/frontier/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/perfect_tele/frontier, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/perfect_tele/frontier/appearance_overlays()
+	. = list()
 	if(recharging)
 		icon_state = "[initial(icon_state)]_o"
 		update_held_icon()
-		return
-	..()
+		return .
+	. += ..()
 
 /obj/item/perfect_tele/frontier/staff
 	name = "centcom translocator"

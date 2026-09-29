@@ -56,7 +56,9 @@
 	for(var/M in .)
 		.[M] *= amount
 
-/obj/item/stack/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/stack, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/stack/appearance_overlays()
+	. = list()
 	if(no_variants)
 		icon_state = initial(icon_state)
 	else

@@ -28,7 +28,9 @@
 	. = ..()
 	connect_to_network()
 
-/obj/machinery/power/grid_checker/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/grid_checker, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/power/grid_checker/appearance_overlays()
+	. = list()
 	if(power_failing)
 		icon_state = "gridchecker_off"
 		set_light(2, 2, "#F86060")

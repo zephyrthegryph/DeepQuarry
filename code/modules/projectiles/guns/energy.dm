@@ -214,13 +214,15 @@ DECLARE_INTERACTIONS(/obj/item/gun/energy, INTERACT_HAND(null, PROC_REF(interact
 		else
 			. += "Does not have a power cell."
 
-/obj/item/gun/energy/update_icon(ignore_inhands)
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/energy/appearance_overlays()
+	. = list()
 	if(power_supply == null)
 		if(modifystate)
 			icon_state = "[modifystate]_open"
 		else
 			icon_state = "[initial(icon_state)]_open"
-		return
+		return .
 	else if(charge_meter)
 		var/ratio = power_supply.charge / power_supply.maxcharge
 
@@ -241,7 +243,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/energy, INTERACT_HAND(null, PROC_REF(interact
 		else
 			icon_state = "[initial(icon_state)]"
 
-	if(!ignore_inhands) update_held_icon()
+	update_held_icon()
 
 /obj/item/gun/energy/proc/start_recharge()
 	if(power_supply == null)

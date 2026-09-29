@@ -460,12 +460,7 @@ DAMAGE_REACTION(/obj/machinery/door, DAMAGE_EMP, PROC_REF(door_emp))
 		else
 			receive_blob(B)
 
-/obj/machinery/door/update_icon()
-	if(density)
-		icon_state = "door1"
-	else
-		icon_state = "door0"
-	return
+APPEARANCE_TEMPLATE(/obj/machinery/door, "door{density}")
 
 /obj/machinery/door/proc/do_animate(animation)
 	switch(animation)
@@ -650,7 +645,6 @@ DAMAGE_REACTION(/obj/machinery/door, DAMAGE_EMP, PROC_REF(door_emp))
 /obj/machinery/button/windowtint/doortint/toggle_tint()
 	use_power(5)
 	set_active(!active)
-	update_icon()
 
 	for(var/obj/machinery/door/D in range(src,range))
 		if(D.icon_tinted && (D.id_tint == src.id || !D.id_tint))

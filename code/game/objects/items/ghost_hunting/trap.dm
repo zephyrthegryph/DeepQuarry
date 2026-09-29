@@ -68,21 +68,23 @@
 	to_chat(user, span_info("There appears to be nothing in the trap!"))
 	return
 
-/obj/item/ghost_trap/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/ghost_trap/appearance_overlays()
+	. = list()
+	. += ..()
 
 	if(deployed)
 		icon_state = "on"
-		return
+		return .
 
 	if(captured_entity)
 		var/mob/our_entity = captured_entity
 		if(our_entity)
 			icon_state = "item_captured"
-			return
+			return .
 
 		icon_state = initial(icon_state)
-		return
+		return .
 	icon_state = initial(icon_state)
 
 /obj/item/ghost_trap/start_active

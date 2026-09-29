@@ -16,11 +16,10 @@
 /obj/machinery/recycling/machine_step()
 	return PROCESS_KILL // these are all stateful
 
-/obj/machinery/recycling/update_icon()
-	. = ..()
-	cut_overlays()
-	if(panel_open)
-		add_overlay("[initial(icon_state)]-panel")
+DECLARE_APPEARANCE(/obj/machinery/recycling, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("-panel"))))
+DECLARE_APPEARANCE(/obj/machinery/recycling/crusher, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("crusher-panel"))))
+DECLARE_APPEARANCE(/obj/machinery/recycling/sorter, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("sorter-panel"))))
+DECLARE_APPEARANCE(/obj/machinery/recycling/stamper, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("stamper-panel"))))
 
 /**
  * Generic procs common to all

@@ -41,7 +41,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/emitter/gyrotron, REGISTRY_GYROTRONS)
 	E.damage = mega_energy * 50
 	return E
 
-/obj/machinery/power/emitter/gyrotron/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/emitter/gyrotron, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/power/emitter/gyrotron/appearance_overlays()
+	. = list()
 	if (active && power_region && avail(active_power_usage))
 		icon_state = "emitter-on"
 	else

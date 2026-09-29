@@ -68,11 +68,13 @@
 	else
 		. = 0
 
-/obj/compass_holder/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/compass_holder, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/compass_holder/appearance_overlays()
+	. = list()
 	var/set_overlays = (compass_static_labels | compass_waypoint_markers)
 	if(show_heading)
 		set_overlays |= compass_heading_marker
-	overlays = set_overlays // ???
+	. += set_overlays// ???
 
 /obj/compass_holder/proc/clear_waypoint(id)
 	own_put(src, "compass_waypoints", id, null) // removes and disposes of it

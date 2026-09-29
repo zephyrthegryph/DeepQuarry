@@ -29,10 +29,12 @@
 	. = ..()
 	update_icon()
 
-/obj/machinery/computer/pandemic/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/pandemic, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/computer/pandemic/appearance_overlays()
+	. = list()
 	if(has_stat(BROKEN))
 		icon_state = (beaker ? "pandemic1_b" : "pandemic0_b")
-		return
+		return .
 	icon_state = "pandemic[(beaker)?"1":"0"][!(stat & NOPOWER) ? "" : "_nopower"]"
 
 /obj/machinery/computer/pandemic/tgui_act(action, params, datum/tgui/ui, datum/tgui_state/state)

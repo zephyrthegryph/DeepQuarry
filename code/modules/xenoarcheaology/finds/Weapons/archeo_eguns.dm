@@ -5,8 +5,7 @@
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	one_handed_penalty = FALSE
 
-/obj/item/gun/energy/laser/xenoarch/update_icon()
-		return
+APPEARANCE_NONE(/obj/item/gun/energy/laser/xenoarch)
 
 
 /obj/item/gun/energy/laser/xenoarch

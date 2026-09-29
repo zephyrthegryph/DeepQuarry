@@ -147,15 +147,18 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag, INTERACT_ITEM(null, PROC_REF
 		var/obj/structure/morgue/M = loc
 		M.update(broadcast)
 
-/obj/structure/closet/body_bag/update_icon()
+/// Draws itself entirely: drop the parent's keyed declarations.
+APPEARANCE_NONE(/obj/structure/closet/body_bag)
+DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/closet/body_bag/appearance_overlays()
+	. = list()
 	if(opened)
 		icon_state = "open"
 	else
 		icon_state = "base"
 
-	cut_overlays()
 	if(has_label)
-		add_overlay("bodybag_label")
+		. += "bodybag_label"
 
 /obj/item/bodybag/cryobag
 	name = "stasis bag"
@@ -208,13 +211,14 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag, \
 	if(used)
 		replace_with(src, /obj/item/usedcryobag)
 
-/obj/structure/closet/body_bag/cryobag/update_icon()
-	..()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/closet/body_bag/cryobag/appearance_overlays()
+	. = list()
+	. += ..()
 	var/image/I = image(icon, "indicator[opened]")
 	I.appearance_flags = RESET_COLOR
 	I.color = COLOR_LIME
-	add_overlay(I)
+	. += I
 
 /obj/structure/closet/body_bag/cryobag/MouseDrop(over_object, src_location, over_location)
 	. = ..()

@@ -270,8 +270,6 @@ REL_PAIR_LIST(/obj/machinery/atmospherics, network_memberships, normal_members)
 
 /obj/machinery/atmospherics/proc/disconnect(obj/machinery/atmospherics/reference)
 
-/obj/machinery/atmospherics/update_icon()
-	return null
 
 /obj/machinery/atmospherics/proc/can_unwrench()
 

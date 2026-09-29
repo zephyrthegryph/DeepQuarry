@@ -73,8 +73,10 @@
 
 	update_icon() // this probably won't cause issues, but Aurora used SSIcons and queue_icon_update() instead
 
-/obj/machinery/appliance/cooker/update_icon()
-	cut_overlays()
+APPEARANCE_NONE(/obj/machinery/appliance/cooker)
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/appliance/cooker/appearance_overlays()
+	. = list()
 	var/image/light
 	if(use_power == 1 && !has_stat(MACHINE_STAT_ANY))
 		light = image(icon, "light_idle")
@@ -84,7 +86,7 @@
 		light = image(icon, "light_off")
 	light.pixel_x = light_x
 	light.pixel_y = light_y
-	add_overlay(light)
+	. += light
 
 /obj/machinery/appliance/cooker/machine_step()
 	if (!has_stat(MACHINE_STAT_ANY))
@@ -108,7 +110,6 @@
 	. = ..()
 	if(.)
 		MACHINE_WAKE(src)
-	update_icon() // this probably won't cause issues, but Aurora used SSIcons and queue_icon_update() instead
 
 /obj/machinery/appliance/cooker/proc/update_cooking_power()
 	var/temp_scale = 0
@@ -131,7 +132,6 @@
 		if(use_power == 1 && ((optimal_temp - temperature) > 5))
 			play_sfx(src, SFX_MACHINES_CLICK, 0.4)
 			set_use_power(USE_POWER_ACTIVE) // If we're heating we use the active power
-			update_icon()
 		set_heating(TRUE)
 		update_cooking_power()
 		return 1
@@ -139,7 +139,6 @@
 		if(use_power == 2)
 			set_use_power(1)
 			play_sfx(src, SFX_MACHINES_CLICK, 0.4)
-			update_icon()
 		//We're holding steady: the casing loses heat to the room.
 		set_heating(FALSE)
 		equalize_temperature()

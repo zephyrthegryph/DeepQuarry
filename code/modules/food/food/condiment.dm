@@ -422,15 +422,16 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/carton/flour, null,
 	. = ..()
 	randpixel_xy()
 
-/obj/item/reagent_containers/food/condiment/carton/update_icon()
-	overlays.Cut()
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/condiment/carton, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/reagent_containers/food/condiment/carton/appearance_overlays()
+	. = list()
 
 	if(reagents.total_volume)
 		var/image/filling = image('icons/obj/food.dmi', src, "[icon_state]10")
 
 		filling.icon_state = "[icon_state]-[clamp(round(100 * reagents.total_volume / volume, 25), 0, 100)]"
 
-		overlays += filling
+		. += filling
 
 /obj/item/reagent_containers/food/condiment/carton/flour/rustic
 	name = "flour sack"

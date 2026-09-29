@@ -79,8 +79,6 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 	atmos_air_set(src, "air_contents", new_air)
 	return TRUE
 
-/obj/machinery/portable_atmospherics/update_icon()
-	return null
 
 /obj/machinery/portable_atmospherics/proc/connect(obj/machinery/atmospherics/portables_connector/new_port)
 	//Make sure not already connected to something else

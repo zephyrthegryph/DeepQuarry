@@ -127,7 +127,9 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/smokable, "chem_volume", null)
 	if(location)
 		location.hotspot_expose(700, 5)
 
-/obj/item/clothing/mask/smokable/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/smokable, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/clothing/mask/smokable/appearance_overlays()
+	. = list()
 	if(lit)
 		icon_state = "[initial(icon_state)]_on"
 		item_state = "[initial(item_state)]_on"
@@ -143,7 +145,7 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/smokable, "chem_volume", null)
 		M.update_inv_wear_mask(0)
 		M.update_inv_l_hand(0)
 		M.update_inv_r_hand(1)
-	..()
+	. += ..()
 
 /obj/item/clothing/mask/smokable/examine(mob/user)
 	. = ..()

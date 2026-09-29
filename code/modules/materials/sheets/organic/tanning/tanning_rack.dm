@@ -26,13 +26,14 @@ DECLARE_PERIODIC(/obj/structure/tanning_rack, PERIODIC_SLOW) // SSObj fires ~eve
 	if(drying() && !QDELETED(drying()))
 		. += "\The [drying()] is [drying().get_dryness_text()]."
 
-/obj/structure/tanning_rack/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/structure/tanning_rack, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/tanning_rack/appearance_overlays()
+	. = list()
 	if(drying())
 		if(drying().wetness)
-			add_overlay("leather_wet")
+			. += "leather_wet"
 		else
-			add_overlay("leather_dry")
+			. += "leather_dry"
 
 /// Old attackby.
 /obj/structure/tanning_rack/proc/interaction_item(mob/user, atom/A, datum/interaction/interaction)

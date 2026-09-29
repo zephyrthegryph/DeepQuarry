@@ -48,14 +48,7 @@
 		electronically."
 
 
-// Proc: update_icon()
-// Parameters: None
-// Description: Self explanatory.
-/obj/machinery/exonet_node/update_icon()
-	if(on)
-		icon_state = initial(icon_state)
-	else
-		icon_state = "[initial(icon_state)]_off"
+APPEARANCE_TEMPLATE(/obj/machinery/exonet_node, "{initial(icon_state)}{on?:_off}")
 
 // Proc: update_power()
 // Parameters: None

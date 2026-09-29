@@ -68,8 +68,7 @@
 		AM.forceMove(src.loc)
 	rel_clear(src, "currently_held_objects")
 
-/obj/structure/toilet/update_icon()
-	icon_state = "[initial(icon_state)][open][cistern]"
+APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}")
 
 /obj/structure/toilet/proc/crystal_answered(datum/om/prompt/confirm/ask)
 	var/mob/living/user = ask.answerer
@@ -569,7 +568,6 @@ DECLARE_REAGENT_FROM_VAR(/obj/machinery/shower, "reaction_volume", "reagent_id",
 
 /obj/machinery/shower/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	set_on(!on)
-	update_icon()
 	handle_mist()
 	add_fingerprint(user)
 	if(on)
@@ -630,15 +628,16 @@ DECLARE_REAGENT_FROM_VAR(/obj/machinery/shower, "reaction_volume", "reagent_id",
 	. = ..()
 	. += span_notice("You can <b>alt-click</b> to change the temperature.")
 
-/obj/machinery/shower/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/shower, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/shower/appearance_overlays()
+	. = list()
 	if(on)
 		if(reagent_id == REAGENT_ID_WATER)
-			add_overlay(image('icons/obj/watercloset.dmi', src, "water", MOB_LAYER + 1, dir))
+			. += image('icons/obj/watercloset.dmi', src, "water", MOB_LAYER + 1, dir)
 		else
 			var/mutable_appearance/colorful_shower = image('icons/obj/watercloset.dmi', src, "water", MOB_LAYER + 1, dir)
 			colorful_shower.color = reagents.get_color() //Whatever the fuck happens to be spewing out of here.
-			add_overlay(colorful_shower)
+			. += colorful_shower
 
 /obj/machinery/shower/proc/handle_mist()
 	// If there is no mist, and the shower was turned on (on a non-freezing temp): make mist in 5 seconds

@@ -16,20 +16,21 @@
 	update_icon()
 	return ..()
 
-/obj/structure/lightpost/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/structure/lightpost, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/lightpost/appearance_overlays()
+	. = list()
 
 	if(lit)
 		set_light(5, 1, "#E9E4AF")
 		var/image/glow = image(icon_state = "[icon_state]-glow")
 		glow.plane = PLANE_LIGHTING_ABOVE
-		add_overlay(glow)
+		. += glow
 	else
 		set_light(0)
 
 	if(festive)
 		var/image/bow = image(icon_state = "[icon_state]-festive")
-		add_overlay(bow)
+		. += bow
 
 /obj/structure/lightpost/unlit
 	lit = FALSE

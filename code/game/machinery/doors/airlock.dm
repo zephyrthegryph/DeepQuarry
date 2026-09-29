@@ -400,8 +400,10 @@ About the new airlock wires panel:
 	else
 		return FALSE
 
-/obj/machinery/door/airlock/update_icon()
-	cut_overlays()
+APPEARANCE_NONE(/obj/machinery/door/airlock)
+DECLARE_APPEARANCE_PROC(/obj/machinery/door/airlock, TYPE_PROC_REF(/atom, appearance_overlays), list("get_integrity"))
+/obj/machinery/door/airlock/appearance_overlays()
+	. = list()
 	if(density)
 		if(locked && lights && arePowerSystemsOn())
 			icon_state = "door_locked"
@@ -409,23 +411,23 @@ About the new airlock wires panel:
 			icon_state = "door_closed"
 		if(p_open || welded)
 			if(p_open)
-				add_overlay("panel_open")
+				. += "panel_open"
 			if (!has_stat(NOPOWER))
 				if(has_stat(BROKEN))
-					add_overlay("sparks_broken")
+					. += "sparks_broken"
 				else if (get_integrity() < max_integrity * 3/4)
-					add_overlay("sparks_damaged")
+					. += "sparks_damaged"
 			if(welded)
-				add_overlay("welded")
+				. += "welded"
 		else if (get_integrity() < max_integrity * 3/4 && !has_stat(NOPOWER))
-			add_overlay("sparks_damaged")
+			. += "sparks_damaged"
 	else
 		icon_state = "door_open"
 		if((has_stat(BROKEN)) && !has_stat(NOPOWER))
-			add_overlay("sparks_open")
+			. += "sparks_open"
 	if(frozen)
-		add_overlay(image(icon = 'icons/turf/overlays.dmi', icon_state = "snowairlock"))
-	return
+		. += image(icon = 'icons/turf/overlays.dmi', icon_state = "snowairlock")
+	return .
 
 /obj/machinery/door/airlock/do_animate(animation)
 	switch(animation)
@@ -1442,7 +1444,6 @@ DAMAGE_REACTION(/obj/machinery/door/airlock, DAMAGE_EMP, PROC_REF(airlock_emp))
 		// If we lost power, disable electrification
 		// Keeping door lights on, runs on internal battery or something.
 		electrified_until = 0
-	update_icon()
 	resume_autoclose_if_possible()
 
 /obj/machinery/door/airlock/proc/prison_open()

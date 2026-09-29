@@ -581,7 +581,9 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 ///		Icon generation stuff
 ///
 
-/mob/living/simple_mob/animal/synx/update_icon()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/animal/synx/appearance_overlays()
+	. = list()
 	update_fullness()
 	build_icons()
 	for(var/belly_class in vore_fullness_ex)
@@ -592,7 +594,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 				//add_overlay("[iconstate]-t_[belly_class]-[vs_fullness]")
 				pass()
 			else
-				add_overlay("[icon_state]_[belly_class]-[vs_fullness]")
+				. += "[icon_state]_[belly_class]-[vs_fullness]"
 
 
 /mob/living/simple_mob/animal/synx/proc/build_icons(random)

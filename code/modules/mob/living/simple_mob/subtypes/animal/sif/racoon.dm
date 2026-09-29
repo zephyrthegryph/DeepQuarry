@@ -122,15 +122,16 @@
 
 OWN(/mob/living/simple_mob/animal/sif/sakimm, hat, OWN_SPILL)
 
-/mob/living/simple_mob/animal/sif/sakimm/update_icon()
-	cut_overlays()
-	..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/sif/sakimm, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/animal/sif/sakimm/appearance_overlays()
+	. = list()
+	. += ..()
 	if(hat)
 		var/hat_state = hat.item_state ? hat.item_state : hat.icon_state
 		var/image/I = image('icons/inventory/head/mob.dmi', src, hat_state)
 		I.pixel_y = -15 // Sakimm are tiny!
 		I.appearance_flags = RESET_COLOR
-		add_overlay(I)
+		. += I
 
 /mob/living/simple_mob/animal/sif/sakimm/Initialize(mapload)
 	. = ..()

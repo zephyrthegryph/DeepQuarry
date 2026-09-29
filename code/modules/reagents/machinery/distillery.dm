@@ -356,31 +356,32 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_dist
 		if(isnull(heat_body))
 			return PROCESS_KILL
 
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/update_icon()
-	..()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/reagent_distillery, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/appearance_overlays()
+	. = list()
+	. += ..()
 
 	if(InputBeaker)
-		add_overlay(overlay_input_beaker)
+		. += overlay_input_beaker
 
 	if(OutputBeaker)
-		add_overlay(overlay_output_beaker)
+		. += overlay_output_beaker
 
 	if(on)
 		if(OutputBeaker && OutputBeaker.reagents.total_volume < OutputBeaker.reagents.maximum_volume)
-			add_overlay(overlay_dumping)
+			. += overlay_dumping
 		else if(abs(get_temperature() - target_temp) <= 0.5)
-			add_overlay(overlay_ready)
+			. += overlay_ready
 		else if(get_temperature() < target_temp)
-			add_overlay(overlay_heating)
+			. += overlay_heating
 		else
-			add_overlay(overlay_cooling)
+			. += overlay_cooling
 
 	else
-		add_overlay(overlay_off)
+		. += overlay_off
 
 	if(connected_port())
-		add_overlay(overlay_connected)
+		. += overlay_connected
 
 /*
  * Subtypes

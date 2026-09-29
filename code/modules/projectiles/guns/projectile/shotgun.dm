@@ -71,10 +71,12 @@
 
 	update_icon()
 
-/obj/item/gun/projectile/shotgun/pump/update_icon()//This adds empty sprite capability for shotguns.
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/shotgun/pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/projectile/shotgun/pump/appearance_overlays()//This adds empty sprite capability for shotguns.
+	. = list()
+	. += ..()
 	if(!empty_sprite)//Just a dirty check
-		return
+		return .
 	if((length(loaded)) || (chambered))
 		icon_state = "[icon_state]"
 	else
@@ -349,13 +351,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/shotgun/compact, INTERACT_VERB("Tog
 	allowed_magazines = list(/obj/item/ammo_magazine/m12gdrumjack)
 	projectile_type = /obj/item/projectile/bullet/shotgun
 
-/obj/item/gun/projectile/revolvershotgun/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "revolvshot"
-	else
-		icon_state = "revolvshot-empty"
-	return
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/revolvershotgun, "revolvshot{ammo_magazine?:-empty}")
 
 /obj/item/ammo_magazine/m12gdrumjack
 	name = "drum magazine (12 gauge slug)"

@@ -16,9 +16,7 @@
 
 DECLARE_PERIODIC(/obj/singularity/narsie/large/exit, PERIODIC_SLOW)
 
-/obj/singularity/narsie/large/exit/update_icon()
-	overlays = 0
-
+APPEARANCE_NONE(/obj/singularity/narsie/large/exit)
 /obj/singularity/narsie/large/exit/periodic_step()
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M.client)

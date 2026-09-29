@@ -185,11 +185,12 @@ EXTEND_INTERACTIONS(/obj/item/radio/intercom, \
 
 	return canhear_range
 
-/obj/item/radio/intercom/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/radio/intercom, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/radio/intercom/appearance_overlays()
+	. = list()
 	var/area/A = get_area(src)
 	on = A?.powered(EQUIP)
 
-	cut_overlays()
 
 	if(!on)
 		set_light(0)
@@ -205,8 +206,8 @@ EXTEND_INTERACTIONS(/obj/item/radio/intercom, \
 			set_light_on(FALSE)
 		else
 			icon_state = initial(icon_state)
-			add_overlay(mutable_appearance(icon, "[icon_state]_ov"))
-			add_overlay(emissive_appearance(icon, "[icon_state]_ov"))
+			. += mutable_appearance(icon, "[icon_state]_ov")
+			. += emissive_appearance(icon, "[icon_state]_ov")
 			set_light(2)
 			set_light_on(TRUE)
 

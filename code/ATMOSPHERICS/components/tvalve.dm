@@ -29,11 +29,14 @@
 	icon_state = "map_tvalve1"
 	state = 1
 
-/obj/machinery/atmospherics/tvalve/update_icon(animation)
-	if(animation)
-		flick("tvalve[mirrored ? "m" : ""][src.state][!src.state]",src)
-	else
-		icon_state = "tvalve[mirrored ? "m" : ""][state]"
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/tvalve, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/atmospherics/tvalve/appearance_overlays()
+	. = list()
+	icon_state = "tvalve[mirrored ? "m" : ""][state]"
+
+/// The wheel-turning animation, played when the toggle starts (the state follows a second later).
+/obj/machinery/atmospherics/tvalve/proc/animate_toggle()
+	flick("tvalve[mirrored ? "m" : ""][src.state][!src.state]", src)
 
 /obj/machinery/atmospherics/tvalve/update_underlays()
 	..()
@@ -61,7 +64,6 @@
 
 	var/list/old_edges = rust_pipe_internal_edges()
 	set_state(1)
-	update_icon()
 	rust_rewire_internal_ports(old_edges, rust_pipe_internal_edges())
 
 	return 1
@@ -73,7 +75,6 @@
 
 	var/list/old_edges = rust_pipe_internal_edges()
 	set_state(0)
-	update_icon()
 	rust_rewire_internal_ports(old_edges, rust_pipe_internal_edges())
 
 	return 1
@@ -93,7 +94,7 @@
 
 /obj/machinery/atmospherics/tvalve/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	update_icon(1)
+	animate_toggle()
 	om_after(src, 1 SECOND, PROC_REF(finish_toggle))
 	return TRUE
 
@@ -182,13 +183,10 @@
 	icon_state = "map_tvalve1"
 	state = 1
 
-/obj/machinery/atmospherics/tvalve/digital/power_change()
-	. = ..()
-	if(.)
-		update_icon()
-
-/obj/machinery/atmospherics/tvalve/digital/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/tvalve/digital, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/atmospherics/tvalve/digital/appearance_overlays()
+	. = list()
+	. += ..()
 	if(!powered())
 		icon_state = "tvalve[mirrored ? "m" : ""]nopower"
 

@@ -153,11 +153,8 @@ OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
 /obj/machinery/washing_machine/container_resist(mob/living/escapee)
 	user_climb_out(escapee)
 
-/obj/machinery/washing_machine/update_icon()
-	cut_overlays()
-	icon_state = "wm_[state]"
-	if(panel_open)
-		add_overlay("panel")
+APPEARANCE_TEMPLATE(/obj/machinery/washing_machine, "wm_{state}")
+DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("panel"))))
 
 /datum/interaction/machine_item/washing_machine_use_item
 	id = "washing_machine_use_item"

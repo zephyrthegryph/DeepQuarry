@@ -188,14 +188,15 @@ DECLARE_INTERACTIONS(/obj/item/shield/energy, \
 	add_fingerprint(user)
 	return TRUE
 
-/obj/item/shield/energy/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/shield/energy, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/shield/energy/appearance_overlays()
+	. = list()
 	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
 	if(lcolor)
 		blade_overlay.color = lcolor
 		color = lcolor
-	cut_overlays()		//So that it doesn't keep stacking overlays non-stop on top of each other
 	if(active)
-		add_overlay(blade_overlay)
+		. += blade_overlay
 		item_state = "[icon_state]_blade"
 		set_light(lrange, lpower, lcolor)
 	else
@@ -355,15 +356,11 @@ EXTEND_INTERACTIONS(/obj/item/shield/riot/explorer, \
 	else if(!on && light_applied)
 		set_light(0)
 		light_applied = 0
-	update_icon(user)
+	update_icon()
 	user.update_mob_action_buttons()
 	play_sfx(src, SFX_WEAPONS_EMPTY, 0.3, extrarange = -3)
 
-/obj/item/shield/riot/explorer/update_icon()
-	if(on)
-		icon_state = "explorer_shield_lighted"
-	else
-		icon_state = "explorer_shield"
+APPEARANCE_TEMPLATE(/obj/item/shield/riot/explorer, "explorer_shield{on?_lighted:}")
 
 /obj/item/shield/riot/explorer/purple
 	name = "purple explorer shield" //CHOMP explo keep
@@ -381,11 +378,7 @@ EXTEND_INTERACTIONS(/obj/item/shield/riot/explorer, \
 		return FALSE
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/shield/riot/explorer/purple/update_icon()
-	if(on)
-		icon_state = "explorer_shield_P_lighted"
-	else
-		icon_state = "explorer_shield_P"
+APPEARANCE_TEMPLATE(/obj/item/shield/riot/explorer/purple, "explorer_shield_P{on?_lighted:}")
 
 /obj/item/shield/primitive
 	name = "primitive shield"

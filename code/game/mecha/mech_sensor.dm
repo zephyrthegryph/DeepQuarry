@@ -56,16 +56,7 @@
 /obj/machinery/mech_sensor/proc/enabled()
 	return on && !has_stat(NOPOWER)
 
-/obj/machinery/mech_sensor/power_change()
-	. = ..()
-	if(.)
-		update_icon()
-
-/obj/machinery/mech_sensor/update_icon(safety = 0)
-	if (enabled())
-		icon_state = "airlock_sensor_standby"
-	else
-		icon_state = "airlock_sensor_off"
+APPEARANCE_TEMPLATE(/obj/machinery/mech_sensor, "airlock_sensor_{enabled?standby:off}")
 
 /obj/machinery/mech_sensor/Initialize(mapload)
 	. = ..()
@@ -90,7 +81,6 @@
 	else if (signal.data["command"] == "disable")
 		set_on(0)
 
-	update_icon()
 
 /// radio connection
 /obj/machinery/mech_sensor/proc/radio_connection() as /datum/radio_frequency

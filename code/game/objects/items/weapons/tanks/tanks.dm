@@ -685,7 +685,9 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 
 	air_contents.add_thermal_energy(15000)
 
-/obj/item/tankassemblyproxy/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/tankassemblyproxy, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/tankassemblyproxy/appearance_overlays()
+	. = list()
 	if(assembly)
 		tank.update_icon()
 		tank.add_overlay("bomb_assembly")

@@ -121,15 +121,16 @@ DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
 	if(overmind)
 		qdel(overmind)
 
-/obj/structure/blob/core/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/blob/core/appearance_overlays()
+	. = list()
 	color = null
 	var/mutable_appearance/blob_overlay = mutable_appearance('icons/mob/blob.dmi', "blob")
 	if(overmind)
 		blob_overlay.color = overmind.blob_type.color
 		name = "[overmind.blob_type.name] [base_name]"
-	add_overlay(blob_overlay)
-	add_overlay("blob_core_overlay")
+	. += blob_overlay
+	. += "blob_core_overlay"
 
 /obj/structure/blob/core/periodic_step()
 	if(QDELETED(src))

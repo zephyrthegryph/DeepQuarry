@@ -90,12 +90,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/hooded/toggle, \
 	if(istype(hood,/obj/item/clothing/head/hood/toggleable)) //checks if a hood (which you should use) is attached
 		var/obj/item/clothing/head/hood/toggleable/T = hood
 		T.open = open //copy the jacket's open state to the hood
-		T.update_icon(user) //user as an arg to fix a weird runtime
+		T.update_icon() //user as an arg to fix a weird runtime
 		T.update_clothing_icon()
 	update_clothing_icon() //so our overlays update
 
-/obj/item/clothing/suit/storage/hooded/toggle/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit/storage/hooded/toggle, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/clothing/suit/storage/hooded/toggle/appearance_overlays()
+	. = list()
+	. += ..()
 	icon_state = "[toggleicon][open ? "_open" : ""][hood_up ? "_t" : ""]"
 
 //New Vest 4 pocket storage and badge toggles, until suit accessories are a thing.

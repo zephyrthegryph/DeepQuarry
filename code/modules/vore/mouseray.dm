@@ -58,7 +58,9 @@
 	if(tf_admin_pref_override)
 		G.tf_admin_pref_override = tf_admin_pref_override
 
-/obj/item/gun/energy/mouseray/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/mouseray, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/energy/mouseray/appearance_overlays()
+	. = list()
 	if(charge_meter)
 		var/ratio = power_supply.charge / power_supply.maxcharge
 

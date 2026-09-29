@@ -138,13 +138,13 @@
 // Proc: update_icon()
 // Parameters: 0
 // Description: Applys an overlay if it is a passive spell.
-/obj/item/spell/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/spell, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/spell/appearance_overlays()
+	. = list()
 	if(toggled)
 		var/image/new_overlay = image('icons/obj/spells.dmi',"toggled")
-		add_overlay(new_overlay)
-	else
-		cut_overlays()
-	..()
+		. += new_overlay
+	. += ..()
 
 // Proc: run_checks()
 // Parameters: 0

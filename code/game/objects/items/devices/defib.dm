@@ -35,25 +35,26 @@ DECLARE_DEFAULT_CHILD(/obj/item/defib_kit, "bcell", null)
 /obj/item/defib_kit/proc/get_paddles()
 	return tethered_handheld()
 
-/obj/item/defib_kit/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/defib_kit, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/defib_kit/appearance_overlays()
+	. = list()
 
 	var/obj/item/shockpaddles/linked/paddles = get_paddles()
 	if(paddles && paddles.loc == src)
-		add_overlay("[initial(icon_state)]-paddles")
+		. += "[initial(icon_state)]-paddles"
 	if(bcell && paddles)
 		if(bcell.check_charge(paddles.chargecost))
 			if(paddles.combat)
-				add_overlay("[initial(icon_state)]-combat")
+				. += "[initial(icon_state)]-combat"
 			else if(!paddles.safety)
-				add_overlay("[initial(icon_state)]-emagged")
+				. += "[initial(icon_state)]-emagged"
 			else
-				add_overlay("[initial(icon_state)]-powered")
+				. += "[initial(icon_state)]-powered"
 
 		var/ratio = CEILING(bcell.percent()/25, 1) * 25
-		add_overlay("[initial(icon_state)]-charge[ratio]")
+		. += "[initial(icon_state)]-charge[ratio]"
 	else
-		add_overlay("[initial(icon_state)]-nocell")
+		. += "[initial(icon_state)]-nocell"
 
 DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
@@ -197,7 +198,9 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	update_icon()
 	..()
 
-/obj/item/shockpaddles/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/shockpaddles/appearance_overlays()
+	. = list()
 	icon_state = "defibpaddles[wielded]"
 	item_state = "defibpaddles[wielded]"
 	if(cooldown)

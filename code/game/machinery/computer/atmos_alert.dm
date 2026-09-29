@@ -46,7 +46,9 @@
 
 	return data
 
-/obj/machinery/computer/atmos_alert/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/atmos_alert, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/computer/atmos_alert/appearance_overlays()
+	. = list()
 	if(operable())
 		var/list/alarms = GLOB.atmosphere_alarm.major_alarms()
 		if(alarms.len)
@@ -62,7 +64,7 @@
 			else
 				icon_screen = initial(icon_screen)
 				play_sfx(src, SFX_EFFECTS_COMP_ALERT_CLEAR) // Alarm notifications
-	..()
+	. += ..()
 
 /obj/machinery/computer/atmos_alert/tgui_act(action, params)
 	if(..())

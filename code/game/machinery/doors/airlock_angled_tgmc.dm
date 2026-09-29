@@ -3,8 +3,9 @@
 	anim_length_before_finalize = 3
 	icon = 'icons/obj/doors/angled/tgmc/generic.dmi'
 
-/obj/machinery/door/airlock/angled_tgmc/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/door/airlock/angled_tgmc, TYPE_PROC_REF(/atom, appearance_overlays), list("get_integrity"))
+/obj/machinery/door/airlock/angled_tgmc/appearance_overlays()
+	. = list()
 	if(density)
 		if(locked && lights && src.arePowerSystemsOn())
 			icon_state = "door_locked"
@@ -12,25 +13,25 @@
 			icon_state = "door_closed"
 		if(p_open || welded)
 			if(p_open)
-				add_overlay("panel_open")
+				. += "panel_open"
 			if (!has_stat(NOPOWER))
 				if(has_stat(BROKEN))
-					add_overlay("sparks_broken")
+					. += "sparks_broken"
 				else if (get_integrity() < max_integrity * 3/4)
-					add_overlay("sparks_damaged")
+					. += "sparks_damaged"
 			if(welded)
-				add_overlay("welded")
+				. += "welded"
 		else if (get_integrity() < max_integrity * 3/4 && !has_stat(NOPOWER))
-			add_overlay("sparks_damaged")
+			. += "sparks_damaged"
 	else if (locked)
 		icon_state = "o_door_locked"
 		if((has_stat(BROKEN)) && !has_stat(NOPOWER))
-			add_overlay("sparks_open")
+			. += "sparks_open"
 	else
 		icon_state = "door_open"
 		if((has_stat(BROKEN)) && !has_stat(NOPOWER))
-			add_overlay("sparks_open")
-	return
+			. += "sparks_open"
+	return .
 
 /obj/machinery/door/airlock/angled_tgmc/cell
 	icon = 'icons/obj/doors/angled/tgmc/celldoor.dmi'

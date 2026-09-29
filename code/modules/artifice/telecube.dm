@@ -73,8 +73,10 @@
 
 	update_icon()
 
-/obj/item/telecube/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/telecube/appearance_overlays()
+	. = list()
+	. += ..()
 
 	if(isturf(loc))
 		glow.plane = PLANE_LIGHTING_ABOVE
@@ -88,11 +90,9 @@
 		charge.color = glow_color
 
 	if(!ready)
-		cut_overlays()
-		add_overlay(charge)
+		. += charge
 	else
-		cut_overlays()
-		add_overlay(glow)
+		. += glow
 
 // its mate collapses into an explosion.
 /obj/item/telecube/on_destroy(force)

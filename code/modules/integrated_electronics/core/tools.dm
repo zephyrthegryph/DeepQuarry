@@ -16,8 +16,7 @@
 	var/datum/integrated_io/selected_io = null
 	var/mode = WIRE
 
-/obj/item/integrated_electronics/wirer/update_icon()
-	icon_state = "wirer-[mode]"
+APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
 
 /obj/item/integrated_electronics/wirer/proc/wire(datum/integrated_io/io, mob/user)
 	if(!io.holder().assembly())
@@ -188,7 +187,9 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 	var/tmp/datum/integrated_io/selected_io
 	var/mode = 0
 
-/obj/item/multitool/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/multitool, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/multitool/appearance_overlays()
+	. = list()
 	if(selected_io())
 		if(buffer() || connecting() || connectable())
 			icon_state = "multitool_tracking"

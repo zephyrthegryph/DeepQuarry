@@ -501,8 +501,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/steroid, null, list(REAGEN
 //Allow for capped syringe mode
 
 //Allow for capped syringes
-/obj/item/reagent_containers/syringe/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/syringe, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/reagent_containers/syringe/appearance_overlays()
+	. = list()
 
 	var/matrix/tf = matrix()
 	if(isstorage(loc))
@@ -512,17 +513,17 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/steroid, null, list(REAGEN
 
 	if(mode == SYRINGE_BROKEN)
 		icon_state = "broken"
-		return
+		return .
 
 	if(mode == SYRINGE_CAPPED)
 		icon_state = "capped"
-		return
+		return .
 
 	var/rounded_vol = round(reagents.total_volume, round(reagents.maximum_volume / 3))
 	if(reagents.total_volume)
 		filling = image(icon, src, "filler[rounded_vol]")
 		filling.color = reagents.get_color()
-		add_overlay(filling)
+		. += filling
 
 	if(ismob(loc))
 		var/injoverlay
@@ -531,7 +532,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/steroid, null, list(REAGEN
 				injoverlay = "draw"
 			if (SYRINGE_INJECT)
 				injoverlay = "inject"
-		add_overlay(injoverlay)
+		. += injoverlay
 
 	icon_state = "[rounded_vol]"
 	item_state = "syringe_[rounded_vol]"

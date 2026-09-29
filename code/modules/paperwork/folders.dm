@@ -79,11 +79,7 @@
 	desc = "A red folder with HoS markings."
 	icon_state = "folder_hos"
 
-/obj/item/folder/update_icon()
-	cut_overlays()
-	if(length(slot_contents(CONTAINER_SLOT_PAGES)))
-		add_overlay("folder_paper")
-	return
+APPEARANCE_SLOT(/obj/item/folder, CONTAINER_SLOT_PAGES, "folder_paper")
 
 /// Old attackby.
 /obj/item/folder/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

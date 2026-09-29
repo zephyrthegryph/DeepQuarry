@@ -177,9 +177,10 @@
 	belly_color = rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue))
 	update_icon()
 
-/mob/living/simple_mob/animal/passive/fish/icebass/update_icon()
-	cut_overlays()
-	..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/fish/icebass, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/animal/passive/fish/icebass/appearance_overlays()
+	. = list()
+	. += ..()
 
 	if(!dorsal_image)
 		dorsal_image = image(icon, "[icon_state]_mask-body")
@@ -192,8 +193,8 @@
 	dorsal_image.color = dorsal_color
 	belly_image.color = belly_color
 
-	add_overlay(dorsal_image)
-	add_overlay(belly_image)
+	. += dorsal_image
+	. += belly_image
 
 /datum/category_item/catalogue/fauna/rockfish
 	name = "Sivian Fauna - Rock Puffer"
@@ -243,9 +244,10 @@
 	head_color = rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue))
 	update_icon()
 
-/mob/living/simple_mob/animal/passive/fish/rockfish/update_icon()
-	cut_overlays()
-	..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/fish/rockfish, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/animal/passive/fish/rockfish/appearance_overlays()
+	. = list()
+	. += ..()
 	if(!head_image)
 		head_image = image(icon, "[icon_state]_mask")
 
@@ -253,7 +255,7 @@
 
 	head_image.color = head_color
 
-	add_overlay(head_image)
+	. += head_image
 
 /datum/category_item/catalogue/fauna/solarfish
 	name = "Sivian Fauna - Solar Fin"

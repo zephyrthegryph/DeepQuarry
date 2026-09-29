@@ -13,17 +13,6 @@
 	load_method = MAGAZINE
 	move_delay = 0 // Pistols have move_delay of 0
 
-/obj/item/gun/projectile/colt/update_icon()
-	if(ammo_magazine)
-		if(unique_reskin)
-			icon_state = unique_reskin
-		else
-			icon_state = initial(icon_state)
-	else
-		if(unique_reskin)
-			icon_state = "[unique_reskin]-e"
-		else
-			icon_state = "[initial(icon_state)]-e"
 
 /*
  * Detective M1911
@@ -87,12 +76,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	load_method = MAGAZINE
 	move_delay = 0 // Pistols have move_delay of 0
 
-/obj/item/gun/projectile/sec/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "secguncomp"
-	else
-		icon_state = "secguncomp-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/sec, "secguncomp{ammo_magazine?:-e}")
 
 /obj/item/gun/projectile/sec/flash
 	magazine_type = /obj/item/ammo_magazine/m45/flash
@@ -103,12 +87,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	desc = "The MT Mk58 is a cheap, ubiquitous sidearm, produced by MarsTech. This one has a sweet wooden grip. Uses .45 rounds."
 	icon_state = "secgundark"
 
-/obj/item/gun/projectile/sec/wood/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "secgundark"
-	else
-		icon_state = "secgundark-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/sec/wood, "secgundark{ammo_magazine?:-e}")
 
 /*
  * Silenced Pistol
@@ -131,12 +110,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 /obj/item/gun/projectile/silenced/empty
 	magazine_type = null
 
-/obj/item/gun/projectile/silenced/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "silenced_pistol"
-	else
-		icon_state = "silenced_pistol-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/silenced, "silenced_pistol{ammo_magazine?:-e}")
 
 /*
  * Deagle
@@ -156,12 +130,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	magazine_type = /obj/item/ammo_magazine/m44
 	allowed_magazines = list(/obj/item/ammo_magazine/m44)
 
-/obj/item/gun/projectile/deagle/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "[initial(icon_state)]"
-	else
-		icon_state = "[initial(icon_state)]-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/deagle, "{initial(icon_state)}{ammo_magazine?:-e}")
 
 /obj/item/gun/projectile/deagle/gold
 	desc = "A gold plated gun folded over a million times by superior Tajaran gunsmiths. Uses .44 rounds."
@@ -191,12 +160,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	auto_eject_sound = SFX_WEAPONS_SMG_EMPTY_ALARM
 	move_delay = 0 // Pistols have move_delay of 0
 
-/obj/item/gun/projectile/gyropistol/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "gyropistolloaded"
-	else
-		icon_state = "gyropistol"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/gyropistol, "gyropistol{ammo_magazine?loaded:}")
 
 /*
  * Silencer
@@ -257,17 +221,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 		return INTERACTION_HANDLED_PASS
 	return ..()
 
-/obj/item/gun/projectile/pistol/update_icon()
-	if(ammo_magazine)
-		if(silenced)
-			icon_state = "pistol-s"
-		else
-			icon_state = "pistol"
-	else
-		if(silenced)
-			icon_state = "pistol-s-e"
-		else
-			icon_state = "pistol-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/pistol, "pistol{silenced?-s:}{ammo_magazine?:-e}")
 
 /*
  * Pistol
@@ -311,17 +265,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 		return INTERACTION_HANDLED_PASS
 	return ..()
 
-/obj/item/gun/projectile/aps/update_icon()
-	if(ammo_magazine)
-		if(silenced)
-			icon_state = "aps-s"
-		else
-			icon_state = "aps"
-	else
-		if(silenced)
-			icon_state = "aps-s-e"
-		else
-			icon_state = "aps-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/aps, "aps{silenced?-s:}{ammo_magazine?:-e}")
 
 /*
  * Zip Gun (yar har)
@@ -377,12 +321,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mm/luger)
 	projectile_type = /obj/item/projectile/bullet/pistol
 
-/obj/item/gun/projectile/luger/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "[initial(icon_state)]"
-	else
-		icon_state = "[initial(icon_state)]-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/luger, "{initial(icon_state)}{ammo_magazine?:-e}")
 
 /obj/item/gun/projectile/luger/brown
 	name = "\improper Jindal T15b \"Mäuse\""
@@ -404,12 +343,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mm) // Can accept illegal large capacity magazines, or compact magazines.
 	move_delay = 0 // Pistols have move_delay of 0
 
-/obj/item/gun/projectile/p92x/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "[initial(icon_state)]"
-	else
-		icon_state = "[initial(icon_state)]-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/p92x, "{initial(icon_state)}{ammo_magazine?:-e}")
 
 /obj/item/gun/projectile/p92x/rubber
 	magazine_type = /obj/item/ammo_magazine/m9mm/rubber
@@ -441,12 +375,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	w_class = ITEMSIZE_SMALL
 	fire_sound = SFX_WEAPONS_GUNSHOT_PATHETIC
 
-/obj/item/gun/projectile/giskard/update_icon()
-	..()
-	if(ammo_magazine && ammo_magazine.stored_ammo.len)
-		icon_state = "giskardcivil"
-	else
-		icon_state = "giskardcivil_empty"
+/// TRUE when a magazine with rounds in it is loaded.
+/obj/item/gun/projectile/giskard/proc/appearance_loaded()
+	return !!(ammo_magazine && ammo_magazine.stored_ammo.len)
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/giskard, "giskardcivil{appearance_loaded?:_empty}")
 
 /obj/item/gun/projectile/giskard/olivaw
 	name = "\improper \"Olivaw\" holdout burst-pistol"
@@ -459,12 +391,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 		list(mode_name="2-round bursts", burst=2, fire_delay=0.2, move_delay=4,    burst_accuracy=list(0,-15),       dispersion=list(1.2, 1.8)),
 		)
 
-/obj/item/gun/projectile/giskard/olivaw/update_icon()
-	..()
-	if(ammo_magazine && ammo_magazine.stored_ammo.len)
-		icon_state = "olivawcivil"
-	else
-		icon_state = "olivawcivil-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/giskard/olivaw, "olivawcivil{appearance_loaded?:-e}")
 
 /*
  * Makarov
@@ -481,11 +408,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	load_method = MAGAZINE
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/gun/projectile/makarov/update_icon()
-	if(ammo_magazine)
-		icon_state = "Makarov"
-	else
-		icon_state = "Makarov-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/makarov, "Makarov{ammo_magazine?:-e}")
 
 /*
  * N99 (Fallout)
@@ -504,20 +427,12 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	load_method = MAGAZINE
 	w_class = ITEMSIZE_NORMAL
 
-/obj/item/gun/projectile/n99/update_icon()
-	if(ammo_magazine)
-		icon_state = "n99"
-	else
-		icon_state = "n99-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/n99, "n99{ammo_magazine?:-e}")
 
 /obj/item/gun/projectile/n80
 	icon_state = "n80"
 
-/obj/item/gun/projectile/n80/update_icon()
-	if(ammo_magazine)
-		icon_state = "n80"
-	else
-		icon_state = "n80-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/n80, "n80{ammo_magazine?:-e}")
 
 /*
  * Écureuil 10mm Pistol (Skyrat Port)
@@ -535,31 +450,19 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	load_method = MAGAZINE
 	w_class = ITEMSIZE_NORMAL
 
-/obj/item/gun/projectile/ecureuil/update_icon()
-	if(ammo_magazine)
-		icon_state = "ecureuil"
-	else
-		icon_state = "ecureuil-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ecureuil, "ecureuil{ammo_magazine?:-e}")
 
 /obj/item/gun/projectile/ecureuil/tac
 	name = "\improper Tactical \"Écureuil\" 10mm pistol"
 	icon_state = "tac_ecureuil"
 
-/obj/item/gun/projectile/ecureuil/tac/update_icon()
-	if(ammo_magazine)
-		icon_state = "tac_ecureuil"
-	else
-		icon_state = "tac_ecureuil-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ecureuil/tac, "tac_ecureuil{ammo_magazine?:-e}")
 
 /obj/item/gun/projectile/ecureuil/tac2
 	name = "\improper Tactical \"Écureuil\" 10mm pistol"
 	icon_state = "tac_ecureuil"
 
-/obj/item/gun/projectile/ecureuil/tac2/update_icon()
-	if(ammo_magazine)
-		icon_state = "tac2_ecureuil"
-	else
-		icon_state = "tac2_ecureuil-e"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ecureuil/tac2, "tac2_ecureuil{ammo_magazine?:-e}")
 
 /*
  * Lamia (Eris Port)
@@ -577,13 +480,12 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	auto_eject_sound = SFX_WEAPONS_SMG_EMPTY_ALARM
 	move_delay = 0 // Pistols have move_delay of 0
 
-/obj/item/gun/projectile/lamia/update_icon()
-	cut_overlays()
+/// Magazine fill rounded to the nearest 33%, or null with no magazine.
+/obj/item/gun/projectile/lamia/proc/appearance_fill()
 	if(!ammo_magazine)
-		return
-	var/ratio = ammo_magazine.stored_ammo.len * 100 / ammo_magazine.max_ammo
-	ratio = round(ratio, 33)
-	add_overlay("lamia_[ratio]")
+		return null
+	return round(ammo_magazine.stored_ammo.len * 100 / ammo_magazine.max_ammo, 33)
+DECLARE_APPEARANCE(/obj/item/gun/projectile/lamia, "appearance_fill", list("0" = list(APPEARANCE_OVERLAYS = list("lamia_0")), "33" = list(APPEARANCE_OVERLAYS = list("lamia_33")), "66" = list(APPEARANCE_OVERLAYS = list("lamia_66")), "99" = list(APPEARANCE_OVERLAYS = list("lamia_99"))))
 
 /******GLOCK******/
 /obj/item/gun/projectile/automatic/glock
@@ -603,12 +505,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	list(mode_name="short bursts",	burst=5, move_delay=6, burst_accuracy = list(0,-1,-1,-2,-2), dispersion = list(0.6, 1.0, 1.0, 1.0, 1.2))
 	)
 
-/obj/item/gun/projectile/automatic/glock/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "[initial(icon_state)]"
-	else
-		icon_state = "[initial(icon_state)]-empty"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/glock, "{initial(icon_state)}{ammo_magazine?:-empty}")
 
 
 /*******PPK*******/
@@ -624,12 +521,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	magazine_type = /obj/item/ammo_magazine/m9mm
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mm)
 
-/obj/item/gun/projectile/ppk/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "[initial(icon_state)]"
-	else
-		icon_state = "[initial(icon_state)]-empty"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ppk, "{initial(icon_state)}{ammo_magazine?:-empty}")
 
 
 /*******M2024*******/
@@ -645,12 +537,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	magazine_type = /obj/item/ammo_magazine/m2024
 	allowed_magazines = list(/obj/item/ammo_magazine/m2024,/obj/item/ammo_magazine/m45)
 
-/obj/item/gun/projectile/m2024/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "[initial(icon_state)]"
-	else
-		icon_state = "[initial(icon_state)]-empty"
+APPEARANCE_TEMPLATE(/obj/item/gun/projectile/m2024, "{initial(icon_state)}{ammo_magazine?:-empty}")
 
 /*******M1911 Custom fluff*******/
 /obj/item/gun/projectile/fluff/m1911

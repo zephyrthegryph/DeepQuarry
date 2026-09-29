@@ -40,13 +40,13 @@ EMP_DISABLE(/obj/machinery/rnd/server, 60 SECONDS, "emp_until")
 	if(stored_research)
 		rel_add(stored_research, "techweb_servers", src)
 
-/obj/machinery/rnd/server/update_icon()
+APPEARANCE_TEMPLATE(/obj/machinery/rnd/server, "{base_icon_state}-{appearance_suffix}")
+
+/// "off" without power; otherwise "on" while working ("halt" covers EMP-ed, disabled or broken).
+/obj/machinery/rnd/server/proc/appearance_suffix()
 	if(has_stat(NOPOWER))
-		icon_state = "[base_icon_state]-off"
-	else
-		// "working" will cover EMP'd, disabled, or just broken
-		icon_state = "[base_icon_state]-[working ? "on" : "halt"]"
-	return ..()
+		return "off"
+	return working ? "on" : "halt"
 
 /obj/machinery/rnd/server/power_change()
 	. = ..()

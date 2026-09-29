@@ -37,10 +37,8 @@ DAMAGE_REACTION(/obj/machinery/power/port_gen, DAMAGE_EMP, PROC_REF(port_gen_emp
 /obj/machinery/power/port_gen/proc/TogglePower()
 	if(active)
 		set_active(FALSE)
-		update_icon()
 	else if(HasFuel())
 		set_active(TRUE)
-		update_icon()
 	MACHINE_WAKE(src)
 
 /obj/machinery/power/port_gen/machine_step()
@@ -54,11 +52,7 @@ DAMAGE_REACTION(/obj/machinery/power/port_gen, DAMAGE_EMP, PROC_REF(port_gen_emp
 		if(!handleInactive())
 			return PROCESS_KILL
 
-/obj/machinery/power/port_gen/update_icon()
-	if(active)
-		icon_state = "[initial(icon_state)]on"
-	else
-		icon_state = initial(icon_state)
+APPEARANCE_TEMPLATE(/obj/machinery/power/port_gen, "{initial(icon_state)}{active?on:}")
 
 /obj/machinery/power/powered()
 	return 1 //doesn't require an external power source
@@ -509,23 +503,25 @@ DAMAGE_REACTION(/obj/machinery/power/port_gen, DAMAGE_EMP, PROC_REF(port_gen_emp
 
 //Port Start, RS PR #484
 
-/obj/machinery/power/port_gen/pacman/super/potato/update_icon()
-	cut_overlays()
+APPEARANCE_NONE(/obj/machinery/power/port_gen/pacman/super/potato)
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/port_gen/pacman/super/potato, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/power/port_gen/pacman/super/potato/appearance_overlays()
+	. = list()
 	set_light(0)
 	//if there was an unexploded broken state, this is where it would go. + return
 	if(active && !overheating)
 		icon_state = "potatoon"
 		var/mutable_appearance/reactorglow = mutable_appearance(icon, "eggrad", alpha = 90) //v.faint glow for reasons. the reasons being it's producing radiation as per code
-		add_overlay(reactorglow)
+		. += reactorglow
 		set_light(l_range = 2, l_power = 2, l_color = "#A8B0F8")
-		return
+		return .
 	else if(overheating)	//The warp core is overloading, Captain!
 		icon_state = "potatodanger"	//show that it's angry, even when it's off. something something subroutine. Visual feedback!
 		if(active)	//but only glow if it's also still on, since the reaction is ongoing.
 			var/mutable_appearance/reactorglow = mutable_appearance(icon, "eggrad", alpha = 190) //more intense glow, lightings
-			add_overlay(reactorglow)
+			. += reactorglow
 			set_light(l_range = 5, l_power = 4, l_color = "#A8B0F8")
-		return
+		return .
 	else	//off and it isn't angry, so we just vibe as 'off'
 		icon_state = initial(icon_state)
 //Port Emd, RS PR #484
@@ -662,11 +658,7 @@ DAMAGE_REACTION(/obj/machinery/power/port_gen, DAMAGE_EMP, PROC_REF(port_gen_emp
 	)
 	..()
 
-/obj/machinery/power/rtg/update_icon()
-	if(panel_open)
-		icon_state = "[initial(icon_state)]-open"
-	else
-		icon_state = initial(icon_state)
+APPEARANCE_TEMPLATE(/obj/machinery/power/rtg, "{initial(icon_state)}{panel_open?-open:}")
 
 /obj/machinery/power/rtg/advanced
 	desc = "An advanced RTG capable of moderating isotope decay, increasing power output but reducing lifetime. It uses plasma-fueled radiation collectors to increase output even further."
@@ -686,8 +678,7 @@ DAMAGE_REACTION(/obj/machinery/power/port_gen, DAMAGE_EMP, PROC_REF(port_gen_emp
 /// Old attackby: blocked entirely (never called ..()), so fake_gen never offers the base rtg's part replacement.
 /obj/machinery/power/rtg/fake_gen/declare_interactions(list/into)
 	return
-/obj/machinery/power/rtg/fake_gen/update_icon()
-	return
+APPEARANCE_NONE(/obj/machinery/power/rtg/fake_gen)
 
 /obj/machinery/power/rtg/fake_gen/grid
 	desc = "An array of conventional power storage units, for when the added charge longivity and cost of a SMES unit is unneded or impractical."
@@ -798,19 +789,13 @@ DAMAGE_REACTION(/obj/machinery/power/port_gen, DAMAGE_EMP, PROC_REF(port_gen_emp
 	play_sfx(src, SFX_EFFECTS_METAL_CLOSE)
 	return TRUE
 
-/obj/machinery/power/rtg/abductor/update_icon()
-	if(!state_change)
-		return //Stupid cells constantly update our icon so trying to be efficient
+APPEARANCE_TEMPLATE(/obj/machinery/power/rtg/abductor, "{icon_base}{appearance_core_suffix}")
 
-	if(cell)
-		if(panel_open)
-			icon_state = "[icon_base]-open"
-		else
-			icon_state = "[icon_base]"
-	else
-		icon_state = "[icon_base]-nocell"
-
-	state_change = FALSE
+/// Sprite suffix: no cell, open panel, or closed.
+/obj/machinery/power/rtg/abductor/proc/appearance_core_suffix()
+	if(!cell)
+		return "-nocell"
+	return panel_open ? "-open" : ""
 
 DAMAGE_REACTION(/obj/machinery/power/rtg/abductor, DAMAGE_BLOB, PROC_REF(void_core_hit_asplod))
 DAMAGE_REACTION(/obj/machinery/power/rtg/abductor, DAMAGE_EXPLOSION, PROC_REF(void_core_blast))
@@ -951,7 +936,10 @@ DAMAGE_REACTION(/obj/machinery/power/rtg/kugelblitz, DAMAGE_EXPLOSION, PROC_REF(
 	pixel_x = -32
 	return FALSE
 
-/obj/machinery/power/rtg/reg/update_icon()
+APPEARANCE_NONE(/obj/machinery/power/rtg/reg)
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/rtg/reg, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/power/rtg/reg/appearance_overlays()
+	. = list()
 	pixel_x = -32
 	if(panel_open)
 		icon_state = "reg-o"
@@ -1133,16 +1121,17 @@ DAMAGE_REACTION(/obj/machinery/power/rtg/kugelblitz, DAMAGE_EXPLOSION, PROC_REF(
 	TogglePower()
 	return TRUE
 
-/obj/machinery/power/port_gen/large_altevian/update_icon()
-	..()
+DECLARE_APPEARANCE(/obj/machinery/power/port_gen/large_altevian, "appearance_fuel_level", list("100" = list(APPEARANCE_OVERLAYS = list("alteviangen-fuel-100")), "66" = list(APPEARANCE_OVERLAYS = list("alteviangen-fuel-66")), "33" = list(APPEARANCE_OVERLAYS = list("alteviangen-fuel-33"))))
 
-	cut_overlays()
+/// Fuel gauge step for the hopper overlay ("" when empty).
+/obj/machinery/power/port_gen/large_altevian/proc/appearance_fuel_level()
 	if(sheets > 75)
-		add_overlay("alteviangen-fuel-100")
-	else if(sheets > 25)
-		add_overlay("alteviangen-fuel-66")
-	else if(sheets > 0)
-		add_overlay("alteviangen-fuel-33")
+		return "100"
+	if(sheets > 25)
+		return "66"
+	if(sheets > 0)
+		return "33"
+	return ""
 
 /obj/machinery/power/rtg/antimatter_core
 	name = "\improper Antique Anti-Matter Reactor"

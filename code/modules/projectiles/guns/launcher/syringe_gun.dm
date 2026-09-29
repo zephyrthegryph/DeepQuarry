@@ -11,7 +11,9 @@ MATERIAL_MIX(/obj/item/syringe_cartridge, list(MAT_STEEL = 125, MAT_GLASS = 375)
 	w_class = ITEMSIZE_TINY
 	var/tmp/obj/item/reagent_containers/syringe/syringe
 
-/obj/item/syringe_cartridge/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/syringe_cartridge, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/syringe_cartridge/appearance_overlays()
+	. = list()
 	underlays.Cut()
 	if(syringe())
 		underlays += image(syringe().icon, src, syringe().icon_state)

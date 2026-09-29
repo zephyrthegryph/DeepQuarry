@@ -221,10 +221,13 @@
 	else
 		..()
 
-/mob/living/simple_mob/vore/morph/update_icon()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/morph, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/mob/living/simple_mob/vore/morph/appearance_overlays()
+	. = list()
 	if(morphed)
-		return
-	return ..()
+		return .
+	. += ..()
+	return .
 
 /mob/living/simple_mob/vore/morph/update_icons()
 	if(morphed)

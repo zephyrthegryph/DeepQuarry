@@ -96,18 +96,19 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 	clear_gas_dependencies()
 	MACHINE_WAKE(src)
 
-/obj/machinery/power/generator/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/generator, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/power/generator/appearance_overlays()
+	. = list()
 	icon_state = anchored ? "teg-assembled" : "teg-unassembled"
-	cut_overlays()
 	if (circ1())
 		circ1().temperature_overlay = null
 	if (circ2())
 		circ2().temperature_overlay = null
 	if (!operable())
-		return 1
+		return .
 	else
 		if (lastgenlev != 0)
-			add_overlay("teg-op[lastgenlev]")
+			. += "teg-op[lastgenlev]"
 			if (circ1() && circ2())
 				var/extreme = (lastgenlev > 9) ? "ex" : ""
 				if (circ1().last_temperature < circ2().last_temperature)
@@ -116,7 +117,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 				else
 					circ1().temperature_overlay = "circ-[extreme]hot"
 					circ2().temperature_overlay = "circ-[extreme]cold"
-		return 1
+		return .
 
 /obj/machinery/power/generator/machine_step()
 	if(!anchored)
@@ -288,7 +289,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 	if(anchored)
 		clear_gas_dependencies()
 		MACHINE_WAKE(src)
-	update_icon()
 
 /obj/machinery/power/generator/power_spike(announce_prob = 30)
 	if(!(effective_gen >= max_power / 2 && power_region)) // Don't make a spike if we're not making a whole lot of power.

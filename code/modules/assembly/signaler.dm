@@ -26,7 +26,9 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 	signal()
 	return TRUE
 
-/obj/item/assembly/signaler/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/assembly/signaler, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/assembly/signaler/appearance_overlays()
+	. = list()
 	if(holder())
 		holder().update_icon()
 

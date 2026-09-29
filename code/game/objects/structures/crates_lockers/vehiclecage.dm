@@ -70,15 +70,16 @@
 	act_message(user, src, others = span_notice("%U% begins cutting %T%'s bolts."))
 	return tool_disassemble(user, W, 7 SECONDS, TOOL_WIRECUTTER)
 
-/obj/structure/vehiclecage/update_icon()
-	..()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/structure/vehiclecage, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/vehiclecage/appearance_overlays()
+	. = list()
+	. += ..()
 	underlays.Cut()
 
 	var/image/framepaint = new(icon = 'icons/obj/storage.dmi', icon_state = "[initial(icon_state)]_a", layer = MOB_LAYER + 1.1)
 	framepaint.plane = MOB_PLANE
 	framepaint.color = paint_color
-	add_overlay(framepaint)
+	. += framepaint
 
 	for(var/obj/vehicle/V in slot_contents(CONTAINER_SLOT_VEHICLE_CAGE))
 		var/image/showcase = new(V)
