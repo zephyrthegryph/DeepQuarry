@@ -481,7 +481,7 @@ DECLARE_REPEAT(/datum/controller/subsystem/ticker, "reboot_countdown_delay", ann
 
 	var/start_wait = world.time
 	UNTIL(round_end_sound_sent || ELAPSED_SINCE(src, start_wait, CLOCK_WORLD) > (delay * 2)) //don't wait forever
-	om_after_slot(src, "reboot_timer", delay - (world.time - start_wait), PROC_REF(reboot_callback), reason, end_string)
+	after_slot(src, "reboot_timer", delay - (world.time - start_wait), PROC_REF(reboot_callback), reason, end_string)
 
 /// The wait before the next countdown step: a minute, or what is left of the last one.
 /datum/controller/subsystem/ticker/proc/reboot_countdown_delay()

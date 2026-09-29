@@ -45,7 +45,7 @@ OWN_TIMER(/datum/guard_test_holder, guard_slot)
 
 	// name -> the accessor to try; each runs on a fresh holder and a fresh target.
 	var/list/attempts = list("own_set", "own_add", "own_put", "own_move", "own_transfer", "rel_set",
-		"rel_add", "proto_set", "proto_private", "shared_set", "om_after", "om_after_slot", "om_hook",
+		"rel_add", "proto_set", "proto_private", "shared_set", "om_after", "after_slot", "om_hook",
 		"om_link")
 	for(var/name in attempts)
 		var/datum/guard_test_holder/H = new
@@ -57,7 +57,7 @@ OWN_TIMER(/datum/guard_test_holder, guard_slot)
 			proto_set(H, "species", registered)
 		var/datum/dying = dying_end == "holder" ? H : C
 		// Holder-only accessors have no target to kill: the holder case covers them.
-		var/holder_only = (name in list("own_transfer", "proto_set", "proto_private", "shared_set", "om_after", "om_after_slot"))
+		var/holder_only = (name in list("own_transfer", "proto_set", "proto_private", "shared_set", "om_after", "after_slot"))
 		if(dying_end == "target" && holder_only)
 			qdel(donor)
 			qdel(H)
@@ -102,8 +102,8 @@ OWN_TIMER(/datum/guard_test_holder, guard_slot)
 				done = H.shared_species == registered
 			if("om_after")
 				done = !!om_after(H, 1 MINUTES, TYPE_PROC_REF(/datum/guard_test_holder, on_tick))
-			if("om_after_slot")
-				om_after_slot(H, "guard_slot", 1 MINUTES, TYPE_PROC_REF(/datum/guard_test_holder, on_tick))
+			if("after_slot")
+				after_slot(H, "guard_slot", 1 MINUTES, TYPE_PROC_REF(/datum/guard_test_holder, on_tick))
 				done = om_timer_slot_pending(H, "guard_slot")
 			if("om_hook")
 				done = om_hook(C, /datum/om/event/qdeleting, H, TYPE_PROC_REF(/datum/guard_test_holder, on_event)) ? TRUE : FALSE

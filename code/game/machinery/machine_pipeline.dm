@@ -199,7 +199,7 @@
 	if(GLOB.machine_first_wakes_bulk)
 		rel_add(om_global_owner(), "machine_first_wakes", M)
 		return
-	om_after_slot(M, "first_wake", 0, /obj/machinery/proc/materialize_wakes)
+	after_slot(M, "first_wake", 0, /obj/machinery/proc/materialize_wakes)
 
 /// Machines waiting for the boot bulk first-wake pass, in join order. A relation list on the global
 /// owner: a deleted machine drops out on its own (its relation teardown), nothing takes it out.

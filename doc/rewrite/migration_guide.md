@@ -101,8 +101,8 @@ Every constructor below also takes the standard gating arguments `behind`, `bloc
 | `cap_power(...gating)` | [built] | the `dark` state and examine while unpowered; entries refuse unpowered unless `works_unpowered` |
 | `cap_slot(var_name, accepts, ...gating, eject_needs, name, ...)` | [built] | one item slot: insert, eject, examine, UI data; the var becomes owned; draws its item when it has a layer |
 | `cap_deconstruct(board, behind = PANEL, ...)` | [built] | crowbar dismantle to a frame (in the design, `deconstructible`) |
-| `cap_construction(stage(...), ..., ladder_options(...))` | [built] (being cleaned up on rewrite/dx-construct2: entries as costs, named args) | build/undo ladders |
-| `cap_frame_ladder()` | [built] | the standard machine/computer frame ladder |
+| `cap_construction(stage(...), ..., ladder_options(...))` | [built] (costs are `cap_tool`/`cap_insert`/`cap_use_on`/`cap_hand` entries with no handler; `uses`, `sfx`, `icon` on `stage()`) | build/undo ladders |
+| `cap_frame_ladder()` | [built] (a proc on `/obj/structure/frame`) | the standard machine/computer frame ladder |
 | `cap_wall_mount(offset)` | [built] | faces a wall machine away from its wall and offsets it onto it |
 | `cap_atmos_unwrench(delay)` | [built] | unfasten an atmos device into its pipe item, refused while running or over-pressured |
 | **Bundles** [built]: `machine_basics(board, anchored_by = TOOL_WRENCH, repair_tool)` (panel, breakable, power, anchor, deconstruct behind the panel), `wall_machine(board, offset, repair_tool)` (basics without anchoring + wall mount), `console(board)`, `atmos_device(uses_power, unwrench_delay)`, `maintenance_hatch(wires, access, cover_locked_while, panel_needs_cover_closed, cover_tool, removable_cover, emag_say, emag_effect, emag_mode)` (cover + panel + wires behind it + lock + emag; the lock and emag only work closed up; the coverlock only holds the cover shut) | [built] | a later capability with the same key replaces an earlier one in place, so a bundle can refine another's part (the hatch's panel replaces the basics' panel) |
@@ -212,9 +212,9 @@ The decision table. **Read it before writing anything with a timer.**
 |---|---|---|
 | "Not more than once per N" | `COOLDOWN_DECLARE(x)` + `COOLDOWN_START(src, x, N)` / `COOLDOWN_FINISHED(src, x)` | [built] |
 | A var that reverts after N | `timed_set(src, nameof(var), value, for_time = N)`, read the var directly, `time_left(src, nameof(var))` for a countdown, `timed_cancel(...)` | [built] |
-| A temporary condition **with behaviour** (EMP'd, failed, jammed, on fire) | a timed grant of a capability: `om_grant_for(src, GRANT_CAPABILITY, /datum/capability/condition/x, source, N)` | [planned] (plan §2.17) |
+| A temporary condition **with behaviour** (EMP'd, failed, jammed, on fire) | a timed grant of a capability: `om_grant_for(src, GRANT_CAPABILITY, /datum/capability/condition/x, source, N)` | [built] (`condition.dm`) |
 | Do something once, later | `after(src, N, PROC_REF(x), args...)`; owned, weak, dropped if src or any datum arg is gone | [built] |
-| One pending "do later" per name (re-arming replaces it) | `om_after_slot(src, "name", N, PROC_REF(x))` | [built] |
+| One pending "do later" per name (re-arming replaces it) | `after_slot(src, "name", N, PROC_REF(x))` | [built] |
 | Something repeating while a condition holds | a cadence: `should_run()` + `periodic_step(dt)`, **never** a timer that re-arms itself | [built] |
 | Delete after N | `expire(N)` (movables) | [built] |
 | Long work split over ticks | a system `periodic_step()` returning `STEP_YIELD` | [planned] (kernel) |
@@ -262,6 +262,7 @@ The decision table. **Read it before writing anything with a timer.**
 
 - **Base types:** never add a var to `/atom`, `/obj`, `/obj/item`, `/obj/machinery`, `/mob`, `/mob/living` or `/mob/living/carbon/human` without asking. A ratchet counts them [planned].
 - **No `= list()` on instance vars:** use lazy lists.
+- **Null policy (library and framework code):** accessors never return null (a count is 0, a list is empty, a state is FALSE); use a null object or a sentinel where "nothing" must be represented; relations, timers (`after`, `after_slot`, `timed_set`) and dispatch drop dead targets, so a handler never receives a null or deleted target.
 - **Accessors never return null.** Use a null object (`/datum/thermal_profile/default`) or a defined sentinel (`NIGHTSHIFT_AUTO`), not null.
 - **No defensive guards in converted code:** no `?.` chains or `if(!x) return` on values the framework guarantees (owned vars, relation targets inside their hooks, timer and callback args). `QDELETED()` checks belong only at edges: I/O callbacks and user input.
 
@@ -427,9 +428,9 @@ DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interactio
 |---|---|
 | `REQ_ON(proc)`, `REQ_TARGET_STATE(proc)` | `needs = PROC_REF(proc)` (the same proc body; TRUE or text) |
 | `REQ_IN_INVENTORY`, `REQ_INTERACTION_REACH`, `REQ_REACH_ADJACENT` | delete: the dispatcher applies reach by entry kind |
-| `REQ_CONSCIOUS`, `ASK_CONSCIOUS`, `PROMPT_CONSCIOUS` | `chk_conscious` [planned]; until then keep the old form |
+| `REQ_CONSCIOUS`, `ASK_CONSCIOUS`, `PROMPT_CONSCIOUS` | `GLOBAL_PROC_REF(chk_conscious)` [built] (`chk_alive`/`chk_capable`/`chk_held`/`chk_carried`/`chk_adjacent`... for the other ASK_*/PROMPT_* flags) |
 | tag, compare and body-type clauses | a small `needs` proc, or a slot `accepts =` |
-| `ASK_*` flags on a prompt | delete once `ask_*` re-runs `needs` [planned]; until then leave them |
+| `ASK_*` flags on a prompt | [built] `ask_*` re-runs the entry's `needs` and takes `needs =`; delete `ask_flags` on converted prompts (the old om prompts keep theirs until removed) |
 
 ## B5. Appearance → `draw(look)`
 
@@ -653,9 +654,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/general_air_control/fuel_injectio
 | Old | Count | New |
 |---|---|---|
 | `om_after(E, d, PROC_REF(x), ...)` | 1,505 | `after(E, d, PROC_REF(x), ...)`, the same semantics (owned by E, weak args); a rename |
-| `om_after_unique` / `om_after_replace` | 19 / 20 | `om_after_slot(E, "name", d, PROC_REF(x))`: a slot is unique, and re-arming replaces |
+| `om_after_unique` / `om_after_replace` | 19 / 20 | `after_slot(E, "name", d, PROC_REF(x))`: a slot is unique, and re-arming replaces |
 | a proc that re-arms its own timer, `om_after_stagger`, `om_after_drift` | 4 + 7 + loops | a cadence (B12) |
-| `OWN_TIMER(type, name)` | 52 | `om_after_slot` (a slot is already owned and cancelled on destroy) |
+| `OWN_TIMER(type, name)` | 52 | `after_slot` (a slot is already owned and cancelled on destroy) |
 | `om_qdel_after(E, d)` | 47 | `expire(d)` on E |
 | `om_deadline` | 31 | internal to the scheduler; never call it in gameplay code |
 | `world_next_tick` | 2 | keep (world-level only) |
@@ -684,7 +685,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/general_air_control/fuel_injectio
 	timed_set(src, nameof(perceived_danger), new_danger, for_time = TIME_WITHOUT_RADIATION_BEFORE_RESET, revert_to = RAD_LEVEL_NONE)
 ```
 
-## B15. Temporary state → a timed grant [planned]
+## B15. Temporary state → a timed grant [built]
 
 Any var or field that exists only to hold a temporary condition with behaviour becomes a capability held for a time by a source. Examples: `failure_until`, `emp_until`, `jammed_until`, `shocked_until`, `overloaded`, `on_fire_until`.
 
@@ -698,14 +699,14 @@ Any var or field that exists only to hold a temporary condition with behaviour b
 	om_grant_for(src, GRANT_CAPABILITY, /datum/capability/condition/power_failure, source, duration)
 /datum/capability/condition/power_failure
 	blocks = ALL_ENTRIES
-	else_say = "%T% isn't responding."
+	else_say = "it isn't responding"
 /datum/capability/condition/power_failure/draw(atom/holder, datum/look/look)
 	look.state("emagged")
 ```
 
 - **Keep:** `timed_set` for pure value reverts that have no behaviour.
 - **Mobs:** keep afflictions and modifiers for body effects (they already follow this model).
-- **Until `GRANT_CAPABILITY` exists:** use `timed_set` on a plain flag, and **never** store an end time.
+- **Built:** `GRANT_CAPABILITY` (`code/datums/capabilities/condition.dm`) is a per-key effect: `om_grant_for(A, GRANT_CAPABILITY, path, source, duration)`, `om_grant(...)` and `om_revoke(...)`. The capability is one shared instance per path (`cap_condition_instance(path)`), attached with `add_capability()` while any source holds it and removed with the last hold (timed expiry or a deleted source). `/datum/capability/condition` has `blocks` (`ALL_ENTRIES`, or a list of capability types whose entries it refuses), `exempt` (capability types that still work), `else_say` (plain text, "it isn't responding"; override `refusal(holder)` to use the holder's name), `hides_verbs` and `draw()` (overlay `layer_name`).
 
 ## B16. `qdel()` → lifecycle verbs
 

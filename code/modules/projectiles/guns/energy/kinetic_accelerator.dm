@@ -203,7 +203,7 @@ OWN_TIMER(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
 	var/carried = max(1, loc.ConflictElementCount(CONFLICT_ELEMENT_KA))
 
 	om_cancel_timer_slot(src, "recharge_timerid")
-	om_after_slot(src, "recharge_timerid", recharge_time * carried, PROC_REF(reload))
+	after_slot(src, "recharge_timerid", recharge_time * carried, PROC_REF(reload))
 
 /obj/item/gun/energy/kinetic_accelerator/proc/reload()
 	power_supply.give(power_supply.maxcharge)

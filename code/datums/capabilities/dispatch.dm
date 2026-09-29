@@ -13,6 +13,8 @@
 	var/obj/item/held
 	var/datum/interaction/entry
 	var/datum/tgui/ui
+	/// Extra `needs` (ask_*(needs =)): re-run on the answer, like an entry's, against the target.
+	var/list/ask_needs
 	/// dispatch_call() has returned to its caller (TRUE once the handler finished or slept).
 	var/returned = FALSE
 
@@ -31,6 +33,10 @@
 		return "it's gone"
 	if(user.stat != CONSCIOUS)
 		return "you can't do that now"
+	if(ask_needs)
+		var/needs_reason = cap_needs_reason(target, user, held, ask_needs)
+		if(needs_reason)
+			return needs_reason
 	if(ui)
 		if(ui.status != STATUS_INTERACTIVE)
 			return "you can't use it from here any more"
@@ -92,6 +98,8 @@ GLOBAL_DATUM(dispatch_context_now, /datum/dispatch_context)
 	changed(target)
 	if(dispatch_succeeded(result))
 		dispatch_record(ctx.user, target, action_name, log, null)
+		if(istype(ctx.entry, /datum/interaction/capability) && isatom(target))
+			cap_entry_cooldown_start(target, ctx.entry)
 	return result
 
 /// Handler failures this round (the dispatch tests read them).
