@@ -8,11 +8,11 @@
 /datum/cadence/test
 	var/changes = 0
 	/// dt_seconds() as the holder was told of the change: the store already holds the new value.
-	var/list/seen = list()
+	var/list/seen
 
 /datum/cadence/test/cadence_changed()
 	changes++
-	seen += dt_seconds()
+	LAZYADD(seen, dt_seconds())
 
 /datum/unit_test/om/livesim_cadence_grants_stack_and_lapse
 
@@ -128,7 +128,10 @@
 
 /obj/test_gas_holder/capabilities()
 	. = ..()
-	. += watches_gas(port = null, when = PRESSURE_ABOVE, level = 600, hysteresis = 50, call = PROC_REF(on_cross))
+	. += watches_gas(port = null, when = PRESSURE_ABOVE, level = 600, hysteresis = 50, callback = PROC_REF(on_cross))
+
+/obj/test_gas_holder/proc/set_air(datum/gas_mixture/mixture)
+	test_air = mixture // ALLOW(ownership): a test fixture pointing at a mixture the test owns and deletes
 
 /obj/test_gas_holder/gas_at_port(port)
 	return test_air
@@ -148,7 +151,7 @@
 	second.set_temperature(T20C)
 	second.adjust_gas(/datum/gas/oxygen, 10)
 	var/obj/test_gas_holder/holder = allocate(/obj/test_gas_holder)
-	holder.test_air = first
+	holder.set_air(first)
 	gas_watch_rearm(holder)
 	var/datum/capability/watches_gas/C
 	for(var/datum/capability/watches_gas/found in caps_of(holder))
@@ -163,11 +166,11 @@
 	first.adjust_gas(/datum/gas/nitrogen, 200)
 	SSair.run_gas_frames(1)
 	om_test_ticks(6)
-	TEST_ASSERT(holder.crossings >= 1, "the crossing called the holder ([first.return_pressure()] kPa)")
-	holder.test_air = second
+	TEST_ASSERT(holder.crossings >= 1, "the crossing called the holder ([first.return_pressure()] kPa, watch [state.watch] live [state.watch?.is_live()], armed [state.armed_id])")
+	holder.set_air(second)
 	gas_watch_rearm(holder)
 	TEST_ASSERT_EQUAL(state.armed_id, second.arena_id(), "re-armed when the port got another mixture")
-	holder.test_air = null
+	holder.set_air(null)
 	gas_watch_rearm(holder)
 	TEST_ASSERT_NULL(state.watch, "a port with no mixture has no watch")
 	qdel(holder)

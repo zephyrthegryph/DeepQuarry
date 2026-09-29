@@ -2,7 +2,7 @@
 //
 //	/obj/machinery/air_sensor/valve_control/capabilities()
 //		. = ..()
-//		. += watches_gas(port = NORTH, when = PRESSURE_ABOVE, level = 4500, hysteresis = 50, call = PROC_REF(open_relief))
+//		. += watches_gas(port = NORTH, when = PRESSURE_ABOVE, level = 4500, hysteresis = 50, callback = PROC_REF(open_relief))
 //
 // Rust fires open_relief(watch, reason, source, source_kind) on the holder at the exact crossing of
 // `level` by the pressure (or temperature) of the mixture at `port`; no step polls it. After a
@@ -54,18 +54,21 @@
 	var/hysteresis = -1
 	/// The holder proc (watch, reason, source, source_kind) to call on a crossing.
 	var/callback
+	/// The OM lane the wake is delivered on. Urgent: a sensor's crossing is what a valve or an alarm
+	/// acts on, and urgent wakes drain in full every pass.
+	var/lane = LANE_URGENT
 
 /**
  * A threshold watch on the gas at `port` of the holder. `when` is PRESSURE_ABOVE / PRESSURE_BELOW
- * (kPa) or TEMPERATURE_ABOVE / TEMPERATURE_BELOW (K); `call` is PROC_REF(proc) on the holder,
+ * (kPa) or TEMPERATURE_ABOVE / TEMPERATURE_BELOW (K); `callback` is PROC_REF(proc) on the holder,
  * called (watch, reason, source, source_kind) at the exact crossing of `level`.
  */
-/proc/watches_gas(port, when = PRESSURE_ABOVE, level, hysteresis = -1, call)
+/proc/watches_gas(port, when = PRESSURE_ABOVE, level, hysteresis = -1, callback)
 	var/datum/capability/watches_gas/C = new
 	C.port = port
 	C.level = level
 	C.hysteresis = hysteresis
-	C.callback = call
+	C.callback = callback
 	switch(when)
 		if(PRESSURE_ABOVE)
 			C.channel = CH_GAS_PRESSURE
@@ -104,7 +107,7 @@ OWN(/datum/gas_watch_state, watch, OWN_DELETE)
 	armed_id = id
 	if(!mixture)
 		return
-	own_set(src, "watch", om_watch_gas(holder, mixture, C.channel, C.cmp, C.level, C.callback, C.hysteresis))
+	own_set(src, "watch", om_watch_gas(holder, mixture, C.channel, C.cmp, C.level, C.callback, C.hysteresis, C.lane))
 
 /datum/capability/watches_gas/on_holder_init(atom/holder, mapload)
 	var/datum/gas_watch_state/state = cap_data(holder, src)
