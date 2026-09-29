@@ -81,10 +81,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 	var/client/owner
 
 /datum/client_verbs/New(client/C)
-	owner = C
-
-DECLARE_REF(/datum/client_verbs, "owner", DROP, null)
-DECLARE_REF(/client, "verb_store", OWNED, null) // its grants die with the client
+	rel_set(src, "owner", C)
 
 /// The datum grants on `target` are stored on: a client's holder, or `target` itself.
 /// `create`: make a client's holder when it has none (grants); FALSE for reads and revokes.
@@ -93,7 +90,7 @@ DECLARE_REF(/client, "verb_store", OWNED, null) // its grants die with the clien
 		return target
 	var/client/C = target
 	if(!C.verb_store && create)
-		C.verb_store = new /datum/client_verbs(C)
+		own_set(C, "verb_store", new /datum/client_verbs(C)) // its grants die with the client
 	return C.verb_store
 
 // ---------------------------------------------------------------- queries
