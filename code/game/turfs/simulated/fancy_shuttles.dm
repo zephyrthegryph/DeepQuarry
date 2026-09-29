@@ -33,11 +33,6 @@ INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle)
 		return INITIALIZE_HINT_QDEL
 	split_icon = icon(split_file, null, dir)
 	GLOB.fancy_shuttles[fancy_shuttle_tag] = src
-	var/list/pending = GLOB.fancy_shuttle_pending_decals[fancy_shuttle_tag]
-	if(pending)
-		GLOB.fancy_shuttle_pending_decals -= fancy_shuttle_tag
-		for(var/list/row as anything in pending)
-			fancy_shuttle_decal_apply(src, row[1], /obj/effect/floor_decal/fancy_shuttle, row[2])
 
 /obj/effect/fancy_shuttle_floor_preview
 	name = "shuttle floor preview"
@@ -154,24 +149,20 @@ MAP_RESOLVER(/obj/effect/fancy_shuttle_floor_preview, GLOBAL_PROC_REF(map_resolv
 
 MAP_RESOLVER(/obj/effect/floor_decal/fancy_shuttle, GLOBAL_PROC_REF(resolve_fancy_shuttle_decal))
 
-/// Fancy shuttle floor decals waiting for their helper: tag -> list of list(turf, varedits).
-GLOBAL_LIST_EMPTY(fancy_shuttle_pending_decals)
-
-/// MAP_RESOLVER for fancy shuttle floors: cuts this tile's piece out of the helper's split icon.
-/// A decal loaded before its helper waits for it (the helper applies it when it initializes).
+/// MAP_RESOLVER for fancy shuttle floors: cuts this tile's piece out of the helper's split icon,
+/// once the load is in place (the helper may be loaded after the decal).
 /proc/resolve_fancy_shuttle_decal(atom/loc, path, list/varedits)
+	map_resolve_later(GLOBAL_PROC_REF(fancy_shuttle_decal_resolve), get_turf(loc), path, varedits)
+	return TRUE
+
+/proc/fancy_shuttle_decal_resolve(turf/T, path, list/varedits)
 	var/obj/effect/floor_decal/fancy_shuttle/P = path
-	var/turf/T = get_turf(loc)
 	var/tag = MAP_VAR(P, varedits, fancy_shuttle_tag)
 	var/obj/effect/fancy_shuttle/F = GLOB.fancy_shuttles[tag]
-	if(!F)
-		if(!tag)
-			WARNING("Fancy shuttle floor decal at [T?.x],[T?.y],[T?.z] has no fancy_shuttle_tag")
-			return TRUE
-		LAZYADD(GLOB.fancy_shuttle_pending_decals[tag], list(list(T, varedits)))
-		return TRUE
+	if(!F || !T)
+		WARNING("Fancy shuttle floor decal at [T?.x],[T?.y],[T?.z] couldn't locate a helper with tag [tag]")
+		return
 	fancy_shuttle_decal_apply(F, T, path, varedits)
-	return TRUE
 
 /proc/fancy_shuttle_decal_apply(obj/effect/fancy_shuttle/F, turf/T, path, list/varedits)
 	var/obj/effect/floor_decal/fancy_shuttle/P = path

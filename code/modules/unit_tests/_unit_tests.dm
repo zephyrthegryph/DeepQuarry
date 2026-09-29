@@ -234,6 +234,7 @@
 #include "dq_preferences_tests.dm"
 #include "dq_shuttle_tests.dm"
 #include "dq_state_tests.dm"
+#include "dq_sys_loot_tests.dm"
 #include "dq_lifecycle_tests.dm"
 #include "dq_lifecycle_declared_kinds_tests.dm"
 #include "dq_lifecycle_verb_tests.dm"

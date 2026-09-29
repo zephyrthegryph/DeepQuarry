@@ -375,6 +375,13 @@ accident or assume they work:
   `doc/material_engineering_implementation.md` describes the model and
   `doc/material_engineering_playtest.md` how to exercise it in game. The earlier
   "substance" system was removed in favour of this.
+- **Loot and map-time resolvers.** Random spawn tables are `DECLARE_LOOT` lines
+  (`code/__defines/loot.dm`), rolled by `loot_spawn()` / `loot_search()` with a per-round seed; there
+  is no `item_to_spawn()` and no `/datum/loot_table`. A map atom that only does work at load (decals,
+  spawners, coordinate landmarks, map helpers) declares `MAP_RESOLVER(path, proc)`
+  (`code/__defines/map_resolvers.dm`) instead of an Initialize that ends in `INITIALIZE_HINT_QDEL` or
+  deletes itself; resolved atoms are never initialized. `tools/ci/sys_rules/loot.py` and
+  `resolvers.py` reject the old shapes. See `doc/rewrite/systems.md` §8-9.
 - **Variants.** Families of subtypes that differ only in data are collapsed into one type
   plus a registry to save memory. See `code/datums/variants/README.md`.
 - **Material behaviour system — rewritten; material synergies removed.** A material's three active

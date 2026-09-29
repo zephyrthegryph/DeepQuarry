@@ -41,6 +41,11 @@ GLOBAL_LIST_EMPTY(loot_times_searched)
 	var/delete_on_depletion = FALSE
 	var/repeat_search = FALSE
 
+DECLARE_REF(/datum/loot_decl, "table", OWNED, null)
+DECLARE_REF(/datum/loot_decl, "unlucky", OWNED, null)
+DECLARE_REF(/datum/loot_decl, "uncommon", OWNED, null)
+DECLARE_REF(/datum/loot_decl, "rare", OWNED, null)
+
 /// The merged spec list (DECLARE_LOOT overrides this, merging over ..()).
 /datum/loot_decl/proc/specs()
 	return null
@@ -332,12 +337,13 @@ MAP_RESOLVER(/obj/random, GLOBAL_PROC_REF(resolve_loot))
 /// spawner's mapped offset and direction to what it made. Returns what it created (TRUE-ish for
 /// the map loader even when the roll made nothing: the spawner is resolved either way).
 /proc/resolve_loot(atom/loc, path, list/varedits, datum/loot_rng/rng)
+	var/atom/where = loc
 	if(ispath(path, /obj/random))
 		var/obj/random/P = path
-		if(loc && MAP_VAR(P, varedits, drop_get_turf))
-			loc = get_turf(loc)
+		if(where && MAP_VAR(P, varedits, drop_get_turf))
+			where = get_turf(where)
 	var/list/direct = list()
-	var/list/made = loot_spawn(path, loc, varedits, rng, direct)
+	var/list/made = loot_spawn(path, where, varedits, rng, direct)
 	if(length(varedits) && length(direct))
 		var/has_px = ("pixel_x" in varedits)
 		var/has_py = ("pixel_y" in varedits)
@@ -435,7 +441,7 @@ MAP_RESOLVER(/obj/random, GLOBAL_PROC_REF(resolve_loot))
 		return
 	to_chat(L, span_warning("You seem to have gotten the last of the spoils in \the [source]."))
 	if(decl.delete_on_depletion)
-		qdel(source)
+		source.expire(0)
 
 /// A unique item from GLOB.unique_gamma_loot (reclaiming one whose holder is gone when the pool
 /// is empty), or a rare-tier item when none is left.
