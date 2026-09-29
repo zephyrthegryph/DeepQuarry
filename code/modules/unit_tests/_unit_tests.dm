@@ -274,6 +274,7 @@
 #include "dq_om_core_tests.dm"
 #include "dq_shared_cache_tests.dm"
 #include "dq_sys_hygiene_tests.dm"
+#include "dq_sys_requirements_tests.dm"
 #include "dq_sys_tables_tests.dm"
 #include "dq_sys_topic_tests.dm"
 #include "dq_om_core_fix_tests.dm"

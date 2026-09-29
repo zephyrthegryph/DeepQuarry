@@ -150,8 +150,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/stunrevolver/detective, \
 /obj/item/gun/energy/stunrevolver/detective/proc/det_stunrevolver_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/M = user
 	if(!M.mind)	return 0
-	var/job = M.mind.assigned_role
-
 	var/_answer_k156 = rerun_ask(M, "k156", PROC_REF(det_stunrevolver_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name the gun?", title = "Rename Gun", max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_k156))
 		return

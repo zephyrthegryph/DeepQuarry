@@ -382,6 +382,15 @@ accident or assume they work:
   `doc/material_engineering_implementation.md` describes the model and
   `doc/material_engineering_playtest.md` how to exercise it in game. The earlier
   "substance" system was removed in favour of this.
+- **Interaction refusals are requirements.** An interaction effect proc does the work only; a
+  guard that tells the actor no ("it's locked", "the panel is open", "already has a cell") is a
+  requirement clause on the interaction, so the resolver refuses it and the Menu shows why:
+  `REQ_FIELD` / `REQ_FIELD_NOT` / `REQ_FIELD_EQ` (a target var or derived field),
+  `REQ_ACCESS`, `REQ_NOT_EMAGGED`, `REQ_ANCHORED`, `REQ_PANEL(open)`, or
+  `REQ_TARGET_STATE(/type/proc/can_x)` (side-effect free, returns TRUE or the reason). Full-form
+  subtypes add theirs with `also_requires`. `code/__defines/sys_requirements.dm`,
+  doc/rewrite/systems.md Â§6; the `sys_inline_refusal` lint (baseline empty) rejects a
+  message-and-return guard at the head of an effect proc.
 - **Variants.** Families of subtypes that differ only in data are collapsed into one type
   plus a registry to save memory. See `code/datums/variants/README.md`.
 - **Material behaviour system — rewritten; material synergies removed.** A material's three active

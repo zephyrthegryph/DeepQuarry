@@ -617,7 +617,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	return TRUE
 
 /// Requirement: there is a light in the fitting.
-/obj/machinery/light/proc/has_bulb(mob/user, atom/target, obj/item/held)
+/obj/machinery/light/proc/has_light_in_fitting(mob/user, atom/target, obj/item/held)
 	return status == LIGHT_EMPTY ? "there is no [get_fitting_name()] in this light" : TRUE
 
 /obj/machinery/light/proc/insert_bulb(obj/item/light/L)
@@ -952,7 +952,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	category = INTERACTION_CAT_TOGGLE
 	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/light/flamp/proc/has_shade, null))
 	effect = /obj/machinery/light/flamp/proc/interaction_toggle
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/light/proc/has_bulb))
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/light/proc/has_light_in_fitting))
 
 /obj/machinery/light/flamp/proc/has_shade(mob/actor, atom/target, obj/item/held)
 	return lamp_shade
