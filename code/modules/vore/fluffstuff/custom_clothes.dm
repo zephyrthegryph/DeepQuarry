@@ -2102,7 +2102,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/nikki, \
 		// hey, are we actually able to teleport this poor person?
 		if (hat_warp_checks(user, user, proximity_flag = 1))
 			// YOU FOOL! YOU HAVE ACTIVATED MY STAND, 「ＶＯＲＥ　ＢＹ　ＨＡＴ」！
-			act_message(src, user, others = span_danger("%U% falls over %T%'s head... and somehow falls over the rest of their body, causing them to vanish inside. Where did they go?!"), \n				blind = span_danger("The hat falls over your head as you put it on, enveloping you in a bright green light! <b>Uh oh.</b>"))
+			act_message(src, user, others = span_danger("%U% falls over %T%'s head... and somehow falls over the rest of their body, causing them to vanish inside. Where did they go?!"), \
+				blind = span_danger("The hat falls over your head as you put it on, enveloping you in a bright green light! <b>Uh oh.</b>"))
 			var/obj/item/uh_oh = DEFAULTPICK(translocator.beacons, null)
 			user.remove_from_mob(src, get_turf(user))
 			rel_set(translocator, "destination", uh_oh)
