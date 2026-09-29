@@ -1,6 +1,7 @@
 // The emag capability (doc/rewrite/dx_conventions.md §2). State: CAP_EMAGGED. A cryptographic
-// sequencer used on the holder spends one of its uses, sets the bit, tells the user `say` (act_message
-// tokens) and calls `effect` on the holder, (mob/user, obj/item/card/emag/card). EMAG_ONCE refuses a
+// sequencer used on the holder calls `effect` on the holder, (mob/user, obj/item/card/emag/card), then
+// spends one of its uses, sets the bit and tells the user `say` (act_message tokens); an effect that
+// returns EMAG_DECLINED spends nothing and sets nothing. EMAG_ONCE refuses a
 // second swipe with already_say. Draws nothing and gates nothing. Accessor: is_emagged().
 //
 //	. += emag(say = "You short out %T%'s access lock.", effect = PROC_REF(on_emag))
@@ -32,11 +33,13 @@
 		return refuse(user, "[held] has no uses left.")
 	if(C.mode == EMAG_ONCE && is_emagged(src))
 		return refuse(user, C.already_say)
+	// An effect that returns EMAG_DECLINED took nothing this time (a door that is already open):
+	// no use is spent and the bit stays as it was.
+	if(C.effect && call(src, C.effect)(user, card) == EMAG_DECLINED)
+		return TRUE
 	cap_set(src, CAP_EMAGGED, TRUE)
 	if(C.say)
 		act_message(user, src, self = span_warning(C.say), item = card)
-	if(C.effect)
-		call(src, C.effect)(user, card)
 	// One use, as /obj/item/card/emag/proc/spend() pays it; the dispatcher writes the log line.
 	card.uses--
 	if(card.uses < 1)

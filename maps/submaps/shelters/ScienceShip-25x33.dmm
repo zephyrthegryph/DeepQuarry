@@ -1210,9 +1210,9 @@
 /area/survivalpod/superpose/ScienceShip)
 "FR" = (
 /obj/machinery/door/airlock/hatch{
+	cap_state = 128;
 	icon_state = "door_locked";
 	id_tag = "estrella_side_hatch";
-	locked = 1;
 	req_access = null;
 	req_one_access = null
 	},
@@ -1401,11 +1401,11 @@
 /area/survivalpod/superpose/ScienceShip)
 "Jm" = (
 /obj/machinery/door/airlock/multi_tile/metal/mait{
+	cap_state = 128;
 	dir = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "estrella_outer";
-	locked = 1;
 	name = "External Access"
 	},
 /obj/machinery/door/firedoor/border_only,
@@ -1943,11 +1943,11 @@
 /area/survivalpod/superpose/ScienceShip)
 "VT" = (
 /obj/machinery/door/airlock/multi_tile/metal/mait{
+	cap_state = 128;
 	dir = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "estrella_inner";
-	locked = 1;
 	name = "Internal Access"
 	},
 /obj/machinery/atmospherics/pipe/simple/visible{
@@ -2018,9 +2018,9 @@
 /area/survivalpod/superpose/ScienceShip)
 "Xz" = (
 /obj/machinery/door/airlock/hatch{
+	cap_state = 128;
 	icon_state = "door_locked";
 	id_tag = "estrella_back_hatch";
-	locked = 1;
 	req_one_access = null
 	},
 /obj/machinery/button/remote/airlock{

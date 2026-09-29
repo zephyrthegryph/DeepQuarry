@@ -16,7 +16,7 @@
 		if(A.isElectrified())
 			if(A.shock(user, 100))
 				return FALSE
-	if(A.p_open)
+	if(panel_is_open(A))
 		return TRUE
 	return FALSE
 
@@ -33,7 +33,7 @@
 	var/obj/machinery/door/airlock/A = holder
 	var/haspower = A.arePowerSystemsOn() //If there's no power, then no lights will be on.
 
-	. += "The door bolts [A.locked ? "have fallen!" : "look up."]"
+	. += "The door bolts [is_bolted(A) ? "have fallen!" : "look up."]"
 	. += "The door bolt lights are [(A.lights && haspower) ? "on." : "off!"]"
 	. += "The test light is [haspower ? "on." : "off!"]"
 	. += "The backup power light is [A.backup_power_lost_until ? "off!" : "on."]"
@@ -80,6 +80,7 @@ UI_ACT_PROC(/datum/wires/airlock, ui_act_clear_frequency)
 
 /datum/wires/airlock/on_cut(wire, mend)
 	var/obj/machinery/door/airlock/A = holder
+	changed(A) // the wires window is its own host: the door's look and panel follow the wire
 	switch(wire)
 		if(WIRE_IDSCAN)
 			A.aiDisabledIdScanner = !mend
@@ -105,7 +106,6 @@ UI_ACT_PROC(/datum/wires/airlock, ui_act_clear_frequency)
 			if(!mend)
 				//Cutting this wire also drops the door bolts, and mending it does not raise them. (This is what happens now, except there are a lot more wires going to door bolts at present)
 				A.lock(1)
-				A.update_icon()
 
 		if(WIRE_AI_CONTROL)
 			if(!mend)
@@ -140,11 +140,11 @@ UI_ACT_PROC(/datum/wires/airlock, ui_act_clear_frequency)
 
 		if(WIRE_BOLT_LIGHT)
 			A.lights = mend
-			A.update_icon()
 
 
 /datum/wires/airlock/on_pulse(wire)
 	var/obj/machinery/door/airlock/A = holder
+	changed(A) // the wires window is its own host: the door's look and panel follow the wire
 	switch(wire)
 		if(WIRE_IDSCAN)
 			//Sending a pulse through flashes the red light on the door (if the door has power).
@@ -158,7 +158,7 @@ UI_ACT_PROC(/datum/wires/airlock, ui_act_clear_frequency)
 		if(WIRE_DOOR_BOLTS)
 			//one wire for door bolts. Sending a pulse through this drops door bolts if they're not down (whether power's on or not),
 			//raises them if they are down (only if power's on)
-			if(!A.locked)
+			if(!is_bolted(A))
 				A.lock()
 			else
 				A.unlock()
@@ -197,7 +197,6 @@ UI_ACT_PROC(/datum/wires/airlock, ui_act_clear_frequency)
 
 		if(WIRE_BOLT_LIGHT)
 			A.lights = !A.lights
-			A.update_icon()
 
 /datum/wires/airlock/proc/ai_control_pulse_ends()
 	var/obj/machinery/door/airlock/A = holder

@@ -222,9 +222,18 @@ GLOBAL_LIST_EMPTY(type_draws_cache)
 	var/list/form
 	/// A proc on the holder, (mob/user) -> the Menu name for this state ("Open cover"/"Close cover").
 	var/name_proc
+	/// A proc on the holder, () -> whether the entry is offered at all right now. Unlike `needs`, an
+	/// entry that isn't offered is hidden (never listed as blocked), so the input falls through to the
+	/// next candidate as a legacy handler fell through to ..(). Pure: read state only.
+	var/offered_if
+	/// The entry never touches the holder's live parts (electrification() doesn't zap it).
+	var/insulated = FALSE
 
 /datum/interaction/capability/predicate_key()
 	return "cap:[id]"
+
+/datum/interaction/capability/applies_to(atom/target)
+	return !offered_if || call(target, offered_if)()
 
 /datum/interaction/capability/display_name(mob/actor, atom/target)
 	if(name_proc)
@@ -238,6 +247,9 @@ GLOBAL_LIST_EMPTY(type_draws_cache)
 	return cap_gate_reason(target, actor, held, src)
 
 /datum/interaction/capability/run_effect(mob/actor, atom/target, obj/item/held)
+	for(var/datum/capability/C as anything in caps_of(target))
+		if(C.before_entry(target, actor, held, src))
+			return TRUE // stopped (the capability told the user); the input is used
 	var/datum/dispatch_context/ctx = new(actor, target, held, src)
 	. = cap_dispatch(ctx)
 	if(isnull(.))
@@ -299,6 +311,9 @@ GLOBAL_LIST_EMPTY(type_draws_cache)
 	E.log = log
 	E.form = form
 	E.name_proc = name_proc
+	// Reach, as every resolver-native interaction has it: the empty-hand path asks the resolver
+	// before it checks adjacency.
+	E.requires = list(REQ_INTERACTION_REACH)
 	E.priority = priority || 0
 	E.stance = stance
 	E.cap = C

@@ -127,7 +127,7 @@ REL(/obj/machinery/door/firedoor, turbolift_floor)
 		. += "These people have opened \the [src] during an alert: [users_to_open_string]."
 
 /obj/machinery/door/firedoor/Bumped(atom/AM)
-	if(p_open || operating)
+	if(panel_is_open(src) || operating)
 		return
 	if(!density)
 		return ..()

@@ -14,10 +14,12 @@
 #define CAP_EMAGGED (1<<4)
 /// Wires cut or exposed state lives in the wires datum; this bit says the wires are exposed.
 #define CAP_WIRES_EXPOSED (1<<5)
-/// Anchored by the anchor capability (mirrors nothing: the atom's own `anchored` is the truth).
+/// Welded shut (weld_shut()).
 #define CAP_WELDED (1<<6)
 /// Bolted (airlocks).
 #define CAP_BOLTED (1<<7)
+/// Emergency access: the door opens for anyone (emergency_access()).
+#define CAP_EMERGENCY (1<<8)
 
 // ---- gating keywords: behind = COVER|PANEL, locked_by = LOCK ----
 /// The entry is only reachable with the cover open.

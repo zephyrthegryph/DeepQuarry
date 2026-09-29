@@ -96,16 +96,16 @@ DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command
 			return density
 
 		if("unlock")
-			return !locked
+			return !is_bolted(src)
 
 		if("lock")
-			return locked
+			return is_bolted(src)
 
 		if("secure_open")
-			return (locked && !density)
+			return (is_bolted(src) && !density)
 
 		if("secure_close")
-			return (locked && density)
+			return (is_bolted(src) && density)
 
 		if("update")
 			return TRUE // We just want the send_status() call from check_completion()
@@ -114,7 +114,7 @@ DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command
 
 /obj/machinery/door/airlock/proc/send_status(bumped = FALSE, force = FALSE)
 	if(radio_connection())
-		if(!force && !bumped && density == last_reported_density && locked == last_reported_locked)
+		if(!force && !bumped && density == last_reported_density && is_bolted(src) == last_reported_locked)
 			return
 		var/datum/signal/signal = new
 		signal.transmission_method = TRANSMISSION_RADIO //radio signal
@@ -122,14 +122,14 @@ DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command
 		signal.data["timestamp"] = EXPIRY_AT(src, CLOCK_WORLD, 0)
 
 		signal.data["door_status"] = density?("closed"):("open")
-		signal.data["lock_status"] = locked?("locked"):("unlocked")
+		signal.data["lock_status"] = is_bolted(src) ? "locked" : "unlocked"
 
 		if (bumped)
 			signal.data["bumped_with_access"] = 1
 
 		radio_connection().post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
 		last_reported_density = density
-		last_reported_locked = locked
+		last_reported_locked = is_bolted(src)
 
 /obj/machinery/door/airlock/open(surpress_send)
 	. = ..()

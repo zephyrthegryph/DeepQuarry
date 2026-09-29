@@ -61,6 +61,12 @@
 /datum/capability/proc/verbs()
 	return null
 
+/// An entry of holder (this capability's or another's) is about to run its handler for user:
+/// TRUE stops it there (this capability already told the user why, e.g. an electrified door
+/// zapped them). Side effects are allowed: it runs once per dispatch, never while resolving.
+/datum/capability/proc/before_entry(atom/holder, mob/user, obj/item/held, datum/interaction/capability/entry)
+	return FALSE
+
 /// Init / teardown hooks for per-instance state (default children, lazily created data).
 /datum/capability/proc/on_holder_init(atom/holder, mapload)
 	return

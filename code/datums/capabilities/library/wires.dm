@@ -25,9 +25,15 @@
 		return null
 	var/datum/wires/W = A.cap_data?[C.key]
 	if(!W)
-		W = new C.wires_type(A)
+		var/wires_type = A.wires_type_for(C.wires_type)
+		W = new wires_type(A)
 		LAZYSET(A.cap_data, C.key, W)
 	return W
+
+/// The /datum/wires subtype A's wires capability makes for A: the capability's type default, or a
+/// per-instance choice (design review H1: an airlock built with secure electronics).
+/atom/proc/wires_type_for(default_type)
+	return default_type
 
 /datum/capability/wires/interactions(atom/holder)
 	return list(

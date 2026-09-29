@@ -4494,7 +4494,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/turf/T = get_turf(A)
 	A.set_density(FALSE)
 	A.operating = FALSE
-	A.set_locked(FALSE)
+	cap_set(A, CAP_BOLTED, FALSE)
 	A.frozen = FALSE
 	A.close_door_at = 0
 	A.safe = TRUE
@@ -4524,7 +4524,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(!A.close_door_at, "closed airlock did not clear its stale autoclose deadline")
 	A.set_density(FALSE)
 	A.operating = FALSE
-	A.set_locked(TRUE)
+	cap_set(A, CAP_BOLTED, TRUE)
 	A.close_door_at = world.time
 	A.door_deadlines_due()
 	TEST_ASSERT(!A.close_door_at, "locked open airlock did not clear its impossible autoclose deadline")

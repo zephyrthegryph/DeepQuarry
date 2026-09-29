@@ -16,7 +16,6 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 	var/closed_layer = DOOR_CLOSED_LAYER
 
 	var/visible = 1
-	var/p_open = 0
 	var/operating = 0
 	var/autoclose = 0
 	var/glass = 0
@@ -167,7 +166,7 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 
 /obj/machinery/door/Bumped(atom/AM)
 	. = ..()
-	if(p_open || operating)
+	if(panel_is_open(src) || operating)
 		return
 
 	if(ismob(AM))
@@ -360,7 +359,7 @@ DAMAGE_REACTION_AFTER(/obj/machinery/door, DAMAGE_THROWN, PROC_REF(door_thrown_a
 
 /obj/machinery/door/crowbar_act(mob/user, obj/item/tool)
 	if(!reinforcing)
-		return NONE
+		return ..() // the door's crowbar interactions (an airlock's pry())
 	var/obj/item/stack/material/plasteel/reinforcing_sheet = new /obj/item/stack/material/plasteel(get_turf(src), reinforcing)
 	reinforcing = 0
 	to_chat(user, span_notice("You remove \the [reinforcing_sheet]."))
@@ -379,6 +378,12 @@ DAMAGE_REACTION_AFTER(/obj/machinery/door, DAMAGE_THROWN, PROC_REF(door_thrown_a
 
 		use_tool(user, tool, src, delay = 1 SECOND, quality = TOOL_WELDER, volume = 50, amount = 0, start_self = "You start welding the plasteel into place.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 		return ITEM_INTERACT_SUCCESS
+
+	// The door's welder interactions first (an airlock's weld_shut(), offered only where welding it
+	// shut wins over repairing it), then the repair.
+	. = ..()
+	if(.)
+		return
 
 	if(get_integrity() < max_integrity)
 		if(!density)
@@ -439,7 +444,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/door, PROC_REF(on_emag), null)
 
 /obj/machinery/door/examine(mob/user)
 	. = ..()
-	if(has_stat(BROKEN))
+	if(has_stat(BROKEN) && !cap_of(src, /datum/capability/breakable)) // breakable() says it itself
 		. += "It is broken!"
 
 /// What a door does when it breaks, after the base machinery break.
@@ -466,12 +471,12 @@ APPEARANCE_TEMPLATE(/obj/machinery/door, "door{density}")
 /obj/machinery/door/proc/do_animate(animation)
 	switch(animation)
 		if("opening")
-			if(p_open)
+			if(panel_is_open(src))
 				flick("o_doorc0", src)
 			else
 				flick("doorc0", src)
 		if("closing")
-			if(p_open)
+			if(panel_is_open(src))
 				flick("o_doorc1", src)
 			else
 				flick("doorc1", src)

@@ -22,11 +22,12 @@ type Data = {
     safe: BooleanLike;
     timing: BooleanLike;
   };
-  shock: number;
-  shock_timeleft: number;
+  electrified: BooleanLike;
+  electrified_left: number;
+  emergency: BooleanLike;
   id_scanner: BooleanLike;
   lights: BooleanLike;
-  locked: BooleanLike;
+  bolted: BooleanLike;
   safe: BooleanLike;
   speed: BooleanLike;
   opened: BooleanLike;
@@ -54,11 +55,12 @@ export const AiAirlock = (props) => {
   const {
     power,
     wires,
-    shock,
-    shock_timeleft,
+    electrified,
+    electrified_left,
+    emergency,
     id_scanner,
     lights,
-    locked,
+    bolted,
     safe,
     speed,
     opened,
@@ -67,9 +69,10 @@ export const AiAirlock = (props) => {
 
   const statusMain = dangerMap[power.main] || dangerMap[0];
   const statusBackup = dangerMap[power.backup] || dangerMap[0];
-  const statusElectrify = dangerMap[shock] || dangerMap[0];
+  const shock = electrified ? 0 : 2;
+  const statusElectrify = dangerMap[shock];
   return (
-    <Window width={500} height={390}>
+    <Window width={500} height={420}>
       <Window.Content>
         <Section title="Power Status">
           <LabeledList>
@@ -80,7 +83,7 @@ export const AiAirlock = (props) => {
                 <Button
                   icon="lightbulb-o"
                   disabled={!power.main}
-                  onClick={() => act('disrupt-main')}
+                  onClick={() => act('disrupt_main')}
                 >
                   Disrupt
                 </Button>
@@ -97,7 +100,7 @@ export const AiAirlock = (props) => {
                 <Button
                   icon="lightbulb-o"
                   disabled={!power.backup}
-                  onClick={() => act('disrupt-backup')}
+                  onClick={() => act('disrupt_backup')}
                 >
                   Disrupt
                 </Button>
@@ -117,7 +120,7 @@ export const AiAirlock = (props) => {
                     <Button
                       icon="wrench"
                       disabled={!(wires.shock && shock === 0)}
-                      onClick={() => act('shock-restore')}
+                      onClick={() => act('shock_restore')}
                     >
                       Restore
                     </Button>
@@ -126,7 +129,7 @@ export const AiAirlock = (props) => {
                     <Button
                       icon="bolt"
                       disabled={!wires.shock}
-                      onClick={() => act('shock-temp')}
+                      onClick={() => act('shock_temp')}
                     >
                       Temporary
                     </Button>
@@ -135,7 +138,7 @@ export const AiAirlock = (props) => {
                     <Button
                       icon="bolt"
                       disabled={!wires.shock}
-                      onClick={() => act('shock-perm')}
+                      onClick={() => act('shock_perm')}
                     >
                       Permanent
                     </Button>
@@ -145,8 +148,8 @@ export const AiAirlock = (props) => {
             >
               {shock === 2 ? 'Safe' : 'Electrified'}{' '}
               {(!wires.shock && '[Wires have been cut!]') ||
-                (shock_timeleft > 0 && `[${shock_timeleft}s]`) ||
-                (shock_timeleft === -1 && '[Permanent]')}
+                (electrified_left > 0 && `[${electrified_left}s]`) ||
+                (electrified_left === -1 && '[Permanent]')}
             </LabeledList.Item>
           </LabeledList>
         </Section>
@@ -160,7 +163,7 @@ export const AiAirlock = (props) => {
                   icon={id_scanner ? 'power-off' : 'times'}
                   selected={id_scanner}
                   disabled={!wires.id_scanner}
-                  onClick={() => act('idscan-toggle')}
+                  onClick={() => act('idscan_toggle')}
                 >
                   {id_scanner ? 'Enabled' : 'Disabled'}
                 </Button>
@@ -168,18 +171,31 @@ export const AiAirlock = (props) => {
             >
               {!wires.id_scanner && '[Wires have been cut!]'}
             </LabeledList.Item>
+            <LabeledList.Item
+              label="Emergency Access"
+              color="bad"
+              buttons={
+                <Button
+                  icon={emergency ? 'power-off' : 'times'}
+                  selected={emergency}
+                  onClick={() => act('emergency_toggle')}
+                >
+                  {emergency ? 'Enabled' : 'Disabled'}
+                </Button>
+              }
+            />
             <LabeledList.Divider />
             <LabeledList.Item
               label="Door Bolts"
               color="bad"
               buttons={
                 <Button
-                  icon={locked ? 'lock' : 'unlock'}
-                  selected={locked}
+                  icon={bolted ? 'lock' : 'unlock'}
+                  selected={bolted}
                   disabled={!wires.bolts}
-                  onClick={() => act('bolt-toggle')}
+                  onClick={() => act('bolt_toggle')}
                 >
-                  {locked ? 'Lowered' : 'Raised'}
+                  {bolted ? 'Lowered' : 'Raised'}
                 </Button>
               }
             >
@@ -193,7 +209,7 @@ export const AiAirlock = (props) => {
                   icon={lights ? 'power-off' : 'times'}
                   selected={lights}
                   disabled={!wires.lights}
-                  onClick={() => act('light-toggle')}
+                  onClick={() => act('light_toggle')}
                 >
                   {lights ? 'Enabled' : 'Disabled'}
                 </Button>
@@ -209,7 +225,7 @@ export const AiAirlock = (props) => {
                   icon={safe ? 'power-off' : 'times'}
                   selected={safe}
                   disabled={!wires.safe}
-                  onClick={() => act('safe-toggle')}
+                  onClick={() => act('safe_toggle')}
                 >
                   {safe ? 'Enabled' : 'Disabled'}
                 </Button>
@@ -225,7 +241,7 @@ export const AiAirlock = (props) => {
                   icon={speed ? 'power-off' : 'times'}
                   selected={speed}
                   disabled={!wires.timing}
-                  onClick={() => act('speed-toggle')}
+                  onClick={() => act('speed_toggle')}
                 >
                   {speed ? 'Enabled' : 'Disabled'}
                 </Button>
@@ -241,17 +257,17 @@ export const AiAirlock = (props) => {
                 <Button
                   icon={opened ? 'sign-out-alt' : 'sign-in-alt'}
                   selected={opened}
-                  disabled={locked || welded}
-                  onClick={() => act('open-close')}
+                  disabled={bolted || welded}
+                  onClick={() => act('open_close')}
                 >
                   {opened ? 'Open' : 'Closed'}
                 </Button>
               }
             >
-              {!!(locked || welded) && (
+              {!!(bolted || welded) && (
                 <span>
-                  [Door is {locked ? 'bolted' : ''}
-                  {locked && welded ? ' and ' : ''}
+                  [Door is {bolted ? 'bolted' : ''}
+                  {bolted && welded ? ' and ' : ''}
                   {welded ? 'welded' : ''}!]
                 </span>
               )}

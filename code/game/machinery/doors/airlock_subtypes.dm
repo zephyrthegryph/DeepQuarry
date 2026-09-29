@@ -109,7 +109,7 @@
 
 /obj/machinery/door/airlock/external/bolted
 	icon_state = "door_locked" // So it looks visibly bolted in map editor
-	locked = TRUE
+	cap_state = CAP_BOLTED
 
 // For convenience in making docking ports: one that is pre-bolted with frequency set!
 /obj/machinery/door/airlock/external/bolted/cycling
@@ -173,7 +173,7 @@
 
 /obj/machinery/door/airlock/vault/bolted
 	icon_state = "door_locked"
-	locked = TRUE
+	cap_state = CAP_BOLTED
 
 /obj/machinery/door/airlock/freezer
 	name = "Freezer Airlock"
@@ -410,24 +410,9 @@
 	icon = 'icons/obj/doors/Doorphoron.dmi'
 	mineral = MAT_PHORON
 
-/obj/machinery/door/airlock/phoron/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/phoron_airlock_ignite,
-	)
-	..()
-
-/// Old attackby: any item held against the phoron airlock can ignite it if it's hot,
-/// then the rest of the attack chain (the base airlock's own handling) still runs.
-/datum/interaction/machine_item/phoron_airlock_ignite
-	id = "phoron_airlock_ignite"
-	name = "Touch"
-	held_type = /obj/item
-	consumes_input = FALSE
-	effect = /obj/machinery/door/airlock/phoron/proc/interaction_ignite
-
-/obj/machinery/door/airlock/phoron/proc/interaction_ignite(mob/user, obj/item/held, datum/interaction/interaction)
+/// Any item held against the phoron airlock ignites it if it's hot; the airlock's item use goes on.
+/obj/machinery/door/airlock/phoron/touched_with(mob/user, obj/item/held)
 	ignite(is_hot(held))
-	return FALSE
 
 /// Heat behaviour rule: a phoron airlock over fire temperature burns.
 /obj/machinery/door/airlock/phoron/proc/rule_burn(datum/rule/rule)
@@ -536,7 +521,7 @@
 
 /obj/machinery/door/airlock/alien/locked
 	icon_state = "door_locked"
-	locked = TRUE
+	cap_state = CAP_BOLTED
 
 /obj/machinery/door/airlock/alien/public // Entry to UFO.
 	req_one_access = list()
@@ -560,7 +545,7 @@
 
 /obj/machinery/door/airlock/alien/blue/locked
 	icon_state = "door_locked"
-	locked = TRUE
+	cap_state = CAP_BOLTED
 
 /obj/machinery/door/airlock/alien/blue/public // Entry to UFO.
 	req_one_access = list()

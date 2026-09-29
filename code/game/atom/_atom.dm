@@ -180,8 +180,9 @@
 	if(recursive > 5) //After a certain depth, we're just going to assume that it's too insulated to be EMP'd.
 		return
 	var/protection = (emp_protection_flags & EMP_PROTECT_ALL) | OM_EMIT(src, /datum/om/event/before/atom_pre_emp_act, severity)
-	if(!(protection & EMP_PROTECT_WIRES) && istype(wires))
-		wires.emp_pulse()
+	if(!(protection & EMP_PROTECT_WIRES))
+		var/datum/wires/W = istype(wires) ? wires : wires_of(src) // the wires capability keeps its own
+		W?.emp_pulse()
 
 	if(!(protection & EMP_PROTECT_CONTENTS))
 		for(var/atom/A in contents)

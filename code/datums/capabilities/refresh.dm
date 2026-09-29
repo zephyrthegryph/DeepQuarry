@@ -182,7 +182,9 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 			continue
 		GLOB.refresh_sweep_index++
 		checked++
-		if(A.refresh_queued)
+		// Queued here, or by a declared appearance watch (a stat or density change) whose
+		// update_icon() on this same lane marks it: its refresh is pending, not missed.
+		if(A.refresh_queued || A.appearance_queued)
 			continue
 		refresh_check_drift(A)
 

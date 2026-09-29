@@ -305,7 +305,7 @@ REL_KEYED_LIST(/obj/machinery/button/remote/shields, controlled_shields, id, /ob
 
 /obj/machinery/button/remote/airlock/release/trigger()
 	for(var/obj/machinery/door/airlock/D as anything in controlled_airlocks)
-		if(D.locked)
+		if(is_bolted(D))
 			D.unlock(1)
 		if(D.density)
 			D.open(1)

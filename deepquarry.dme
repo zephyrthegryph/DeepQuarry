@@ -573,6 +573,7 @@
 #include "code\datums\capabilities\dispatch.dm"
 #include "code\datums\capabilities\library\breakable.dm"
 #include "code\datums\capabilities\library\cover.dm"
+#include "code\datums\capabilities\library\doors.dm"
 #include "code\datums\capabilities\library\emag.dm"
 #include "code\datums\capabilities\library\lock.dm"
 #include "code\datums\capabilities\library\panel.dm"

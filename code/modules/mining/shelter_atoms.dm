@@ -679,7 +679,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 /obj/machinery/button/remote/airlock/survival_pod/bolts/proc/interaction_bolts(mob/user, obj/item/held, datum/interaction/interaction)
 	interaction_glass(user, held, interaction)
 	if(door())
-		if(door().locked)
+		if(is_bolted(door()))
 			door().unlock()
 			door().stop_blocking_light()
 		else
