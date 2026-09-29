@@ -239,7 +239,7 @@
 	set desc = "Allows you to adjust volume levels on the fly."
 
 	if(!volume_panel)
-		own_set(src, "volume_panel", new /datum/volume_panel(src))
+		volume_panel = new /datum/volume_panel(src) // the client is the one owner by design
 
 	volume_panel.tgui_interact(mob)
 

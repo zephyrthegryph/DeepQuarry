@@ -44,11 +44,14 @@
 		return FALSE
 
 	if (value == RANDOM_ANTAG_ONLY)
-		LAZYSET(preferences().randomise, requested_preference_key, RANDOM_ANTAG_ONLY)
+		var/datum/preferences/prefs_datum = preferences()
+		LAZYSET(prefs_datum.randomise, requested_preference_key, RANDOM_ANTAG_ONLY)
 	else if (value == RANDOM_ENABLED)
-		LAZYSET(preferences().randomise, requested_preference_key, RANDOM_ENABLED)
+		var/datum/preferences/prefs_datum = preferences()
+		LAZYSET(prefs_datum.randomise, requested_preference_key, RANDOM_ENABLED)
 	else if (value == RANDOM_DISABLED)
-		LAZYREMOVE(preferences().randomise, requested_preference_key)
+		var/datum/preferences/prefs_datum = preferences()
+		LAZYREMOVE(prefs_datum.randomise, requested_preference_key)
 	else
 		return FALSE
 

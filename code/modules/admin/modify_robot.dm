@@ -21,9 +21,10 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 /datum/eventkit/modify_robot/New()
 	. = ..()
 	log_and_message_admins("has used modify robot and is modifying [target()]")
-	law_list = new()
-	init_subtypes(/datum/ai_laws, law_list)
-	own_set(src, "law_list", dd_sortedObjectList(law_list))
+	var/list/laws = list()
+	init_subtypes(/datum/ai_laws, laws)
+	for(var/datum/ai_laws/laws_entry as anything in dd_sortedObjectList(laws))
+		own_add(src, "law_list", laws_entry)
 
 /datum/eventkit/modify_robot/tgui_close()
 	rel_clear(src, "target")
@@ -178,13 +179,15 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 			var/new_restriction = params["new_restriction"]
 			if(!(new_restriction in GLOB.robot_modules))
 				return FALSE
-			LAZYOR(target().restrict_modules_to, new_restriction)
+			var/mob/living/silicon/robot/robot_target = target()
+			LAZYOR(robot_target.restrict_modules_to, new_restriction)
 			return TRUE
 		if("remove_restriction")
 			var/rem_restriction = params["rem_restriction"]
 			if(!(rem_restriction in GLOB.robot_modules))
 				return FALSE
-			LAZYREMOVE(target().restrict_modules_to, rem_restriction)
+			var/mob/living/silicon/robot/robot_target = target()
+			LAZYREMOVE(robot_target.restrict_modules_to, rem_restriction)
 			return TRUE
 		if("select_source")
 			if(source)
@@ -257,10 +260,12 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 			target().module_reset(FALSE)
 			return TRUE
 		if("add_compatibility")
-			LAZYOR(target().module.supported_upgrades, text2path(params["upgrade"]))
+			var/mob/living/silicon/robot/robot_target = target()
+			LAZYOR(robot_target.module.supported_upgrades, text2path(params["upgrade"]))
 			return TRUE
 		if("rem_compatibility")
-			LAZYREMOVE(target().module.supported_upgrades, text2path(params["upgrade"]))
+			var/mob/living/silicon/robot/robot_target = target()
+			LAZYREMOVE(robot_target.module.supported_upgrades, text2path(params["upgrade"]))
 			return TRUE
 		if("add_upgrade")
 			var/new_upgrade = text2path(params["upgrade"])
@@ -283,7 +288,8 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 					UN.heldname = new_name
 				U = UN
 			if(istype(U, /obj/item/borg/upgrade/restricted))
-				LAZYOR(target().module.supported_upgrades, new_upgrade)
+				var/mob/living/silicon/robot/robot_target = target()
+				LAZYOR(robot_target.module.supported_upgrades, new_upgrade)
 			if(!U.action(ui.user, target()))
 				return FALSE
 			U.forceMove(target())

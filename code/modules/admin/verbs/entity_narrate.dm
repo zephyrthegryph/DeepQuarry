@@ -4,6 +4,7 @@
 //and for ability to narrate from long range.
 /datum/entity_narrate
 	var/list/entity_names
+	/// unique name -> /datum/entity_narrate_entry (owned), whose target is a relation view. Read with tracked(name).
 	var/list/entity_refs
 
 
@@ -13,7 +14,7 @@
 	var/tgui_selected_name = "" //String for single selection in-game name
 	var/tgui_selected_type = "" //String for single selection type
 	var/tgui_selected_id = ""   //String to retrieve ref from entity_refs
-	var/tgui_selected_refs //object references
+	var/atom/tgui_selected_refs //the selected object (a relation view)
 	var/list/tgui_selected_id_multi //List of strings containing mob ids for multi selection
 	var/tgui_narrate_mode = 0 //0 for speak, 1 for emote
 	var/tgui_narrate_privacy = 0 //0 for loud, 1 for subtle
@@ -51,7 +52,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(add_mob_for_narration, R_FUN, "Narrate Entity (Add r
 			to_chat(user, span_notice("[unique_name] is not unique! Pick another!"))
 			return
 		LAZYADD(holder.entity_names, unique_name)
-		LAZYSET(holder.entity_refs, unique_name, om_handle(L))
+		holder.track(unique_name, L)
 		log_and_message_admins("added [L.name] for their personal list to narrate", user) //Logging here to avoid spam, while still safeguarding abuse
 
 	//Covering functionality for turfs and objs. We need static type to access the name var
@@ -64,7 +65,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(add_mob_for_narration, R_FUN, "Narrate Entity (Add r
 			to_chat(user, span_notice("[unique_name] is not unique! Pick another!"))
 			return
 		LAZYADD(holder.entity_names, unique_name)
-		LAZYSET(holder.entity_refs, unique_name, om_handle(A))
+		holder.track(unique_name, A)
 		log_and_message_admins("added [A.name] for their personal list to narrate", user) //Logging here to avoid spam, while still safeguarding abuse
 
 //Proc for keeping our ref list relevant, deleting mobs that are no longer relevant for our event
@@ -88,9 +89,9 @@ ADMIN_VERB(remove_mob_for_narration, R_FUN, "Narrate Entity (Remove ref)", "Remo
 		if(_answer_a4 != "Yes")
 			return
 		holder.entity_names = list()
-		holder.entity_refs = list()
+		own_clear(holder, "entity_refs", OWN_DELETE)
 	else if(removekey)
-		LAZYREMOVE(holder.entity_refs, removekey)
+		holder.untrack(removekey)
 		LAZYREMOVE(holder.entity_names, removekey)
 
 //Planned to have TGUI functionality
@@ -148,12 +149,11 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 
 	//Separate definition for mob/living and /obj due to .say() code allowing us to engage with languages, stuttering etc
 	//We also need this so we can check for .client
-	var/wref = LAZYACCESS(holder.entity_refs, name)
-	var/selection = om_resolve(wref)
+	var/selection = holder.tracked(name)
 	if(!selection)
 		to_chat(user, span_notice("[name] has invalid reference, deleting"))
 		LAZYREMOVE(holder.entity_names, name)
-		LAZYREMOVE(holder.entity_refs, name)
+		holder.untrack(name)
 		return
 	if(isliving(selection))
 		var/mob/living/our_entity = selection
@@ -227,7 +227,7 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 			tgui_selected_id = ""
 			tgui_selected_type = ""
 			tgui_selected_name = ""
-			tgui_selected_refs = null
+			rel_clear(src, "tgui_selected_refs")
 			return TRUE
 		if("change_mode_privacy")
 			tgui_narrate_privacy = !tgui_narrate_privacy
@@ -247,21 +247,24 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 					tgui_selected_id = ""
 					tgui_selected_type = ""
 					tgui_selected_name = ""
-					tgui_selected_refs = null
+					rel_clear(src, "tgui_selected_refs")
 				else
 					tgui_selected_id_multi = list() //Using the same var for ease of implementation. Thus, we must reset to empty each time.
 					LAZYADD(tgui_selected_id_multi, params["id_selected"])
 					tgui_selected_id = params["id_selected"]
-					var/wref = LAZYACCESS(entity_refs, tgui_selected_id)
-					tgui_selected_refs = om_resolve(wref)
+					var/atom/picked = tracked(tgui_selected_id)
+					if(picked)
+						rel_set(src, "tgui_selected_refs", picked)
+					else
+						rel_clear(src, "tgui_selected_refs")
 					if(!tgui_selected_refs)
 						to_chat(ui.user, span_notice("[tgui_selected_id] has invalid reference, deleting"))
 						LAZYREMOVE(entity_names, tgui_selected_id)
-						LAZYREMOVE(entity_refs, tgui_selected_id)
+						untrack(tgui_selected_id)
 						tgui_selected_id = ""
 						tgui_selected_type = ""
 						tgui_selected_name = ""
-						tgui_selected_refs = null
+						rel_clear(src, "tgui_selected_refs")
 					if(isliving(tgui_selected_refs))
 						var/mob/living/L = tgui_selected_refs
 						if(L.client)
@@ -284,12 +287,11 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 				var/message = params["message"] //Sanitizing before speaking it
 				if(tgui_selection_mode)
 					for(var/entity in tgui_selected_id_multi)
-						var/wref = LAZYACCESS(entity_refs, entity)
-						var/ref = om_resolve(wref)
+						var/ref = tracked(entity)
 						if(!ref)
 							to_chat(ui.user, span_notice("[entity] has invalid reference, deleting"))
 							LAZYREMOVE(entity_names, entity)
-							LAZYREMOVE(entity_refs, entity)
+							untrack(entity)
 							LAZYREMOVE(tgui_selected_id_multi, entity)
 							continue
 						if(isliving(ref))
@@ -301,16 +303,15 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 							var/atom/A = ref
 							narrate_tgui_atom(A, message)
 				else
-					var/wref = LAZYACCESS(entity_refs, tgui_selected_id)
-					var/ref = om_resolve(wref)
+					var/ref = tracked(tgui_selected_id)
 					if(!ref)
 						to_chat(ui.user, span_notice("[tgui_selected_id] has invalid reference, deleting"))
 						LAZYREMOVE(entity_names, tgui_selected_id)
-						LAZYREMOVE(entity_refs, tgui_selected_id)
+						untrack(tgui_selected_id)
 						tgui_selected_id = ""
 						tgui_selected_type = ""
 						tgui_selected_name = ""
-						tgui_selected_refs = null
+						rel_clear(src, "tgui_selected_refs")
 						return TRUE
 					if(isliving(ref))
 						var/mob/living/L = ref
@@ -343,3 +344,22 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 		A.audible_message(span_italics(span_bold("\The [A.name]") + " [message]"), hearing_distance = 1)
 	else if(!tgui_narrate_mode && !tgui_narrate_privacy)
 		A.audible_message(span_bold("\The [A.name]") + " [message]")
+
+/// One tracked narration entity: its target is a relation view, so a deleted entity reads null.
+/datum/entity_narrate_entry
+	var/atom/target
+
+/// Starts tracking `A` under `unique_name`.
+/datum/entity_narrate/proc/track(unique_name, atom/A)
+	var/datum/entity_narrate_entry/entry = new
+	rel_set(entry, "target", A)
+	own_put(src, "entity_refs", unique_name, entry)
+
+/// The entity tracked under `unique_name`, or null (never tracked, or deleted since).
+/datum/entity_narrate/proc/tracked(unique_name)
+	var/datum/entity_narrate_entry/entry = LAZYACCESS(entity_refs, unique_name)
+	return entry?.target
+
+/// Stops tracking `unique_name`.
+/datum/entity_narrate/proc/untrack(unique_name)
+	own_put(src, "entity_refs", unique_name, null)

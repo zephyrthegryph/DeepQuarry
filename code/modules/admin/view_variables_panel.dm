@@ -26,7 +26,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 
 /datum/view_variables_panel/New(client/owner_client)
 	..()
-	rel_set(src, "owner", owner_client)
+	owner = owner_client // a client, not a datum: the client owns us by design (dq_vv_panel)
 
 // clears the client's cached panel (clients aren't datums).
 
@@ -196,7 +196,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 	if(!islist && !isdatum(thing))
 		return
 	if(!dq_vv_panel)
-		own_set(src, "dq_vv_panel", new /datum/view_variables_panel(src))
+		dq_vv_panel = new /datum/view_variables_panel(src) // the client is the one owner by design
 	dq_vv_panel.thing = thing
 	dq_vv_panel.refid = REF(thing)
 	dq_vv_panel.tgui_interact(usr)
@@ -212,9 +212,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 		SStgui.update_uis(dq_vv_panel)
 
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client this panel belongs to.
 /datum/view_variables_panel/proc/owner() as /client
 	return owner
 
-REL_PAIR(/client, dq_vv_panel, owner)
-REL_PAIR(/datum/view_variables_panel, owner, dq_vv_panel)

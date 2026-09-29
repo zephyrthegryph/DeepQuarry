@@ -1,5 +1,6 @@
-/client/var/tmp/datum/ticket/current_ticket	//the current ticket the (usually) not-admin client is dealing with
-/client/var/tmp/datum/ticket/selected_ticket	//the current ticket being viewed in the Tickets Panel (usually) admin/mentor client
+// A client is not a datum and can't hold a relation view, so it names its tickets by id.
+/client/var/tmp/current_ticket_id	//the id of the current ticket the (usually) not-admin client is dealing with; read with current_ticket()
+/client/var/tmp/selected_ticket_id	//the id of the ticket being viewed in the Tickets Panel (usually) admin/mentor client; read with selected_ticket()
 
 /proc/get_ahelp_channel()
 	var/datum/tgs_api/v5/api = TGS_READ_GLOBAL(tgs)
@@ -152,7 +153,8 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 
 //Reassociate still open ticket if one exists
 /datum/tickets/proc/ClientLogin(client/C, only_alert = FALSE)
-	rel_set(C, "current_ticket", CKey2ActiveTicket(C.ckey))
+	var/datum/ticket/active = CKey2ActiveTicket(C.ckey)
+	C.current_ticket_id = active?.id
 	if(C.current_ticket())
 		if(!only_alert)
 			C.current_ticket().AddInteraction("Client reconnected.")
@@ -265,7 +267,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 		log_admin("Ticket erroneously left open by code, closing...")
 		initiator().current_ticket().AddInteraction("Ticket erroneously left open by code")
 		initiator().current_ticket().Close(usr)
-	rel_set(initiator(), "current_ticket", src)
+	initiator().current_ticket_id = id
 
 	var/parsed_message = keywords_lookup(msg)
 
@@ -410,7 +412,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	state = AHELP_ACTIVE
 	closed_at = null
 	if(initiator())
-		rel_set(initiator(), "current_ticket", src)
+		initiator().current_ticket_id = id
 
 	var/admin_reopener_name = ismob(user) ? key_name_admin(user) : user
 	AddInteraction(span_purple("Reopened by [admin_reopener_name]"))
@@ -431,7 +433,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	own_clear(src, "statclick", OWN_DELETE)
 	GLOB.tickets.active_tickets -= src
 	if(initiator() && initiator().current_ticket() == src)
-		rel_clear(initiator(), "current_ticket")
+		initiator().current_ticket_id = null
 
 //Mark open ticket as closed/meme
 /datum/ticket/proc/Close(user, silent = FALSE)
@@ -759,12 +761,24 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 
 /// LC-refs: the current ticket being viewed in the Tickets Panel (usually) admin/mentor client -- an OM handle (om_handle()), so it reads null once that is deleted.
 /client/proc/selected_ticket() as /datum/ticket
-	return selected_ticket
+	return GLOB.tickets?.ticket_by_id(selected_ticket_id)
 
 /// LC-refs: the current ticket the (usually) not-admin client is dealing with -- an OM handle (om_handle()), so it reads null once that is deleted.
 /client/proc/current_ticket() as /datum/ticket
-	return current_ticket
+	return GLOB.tickets?.ticket_by_id(current_ticket_id)
 
 /// LC-refs: semi-misnomer, it's the person who ahelped/was bwoinked -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/ticket/proc/initiator() as /client
 	return initiator
+
+/// The ticket with this id (active or resolved), or null. No rights check: callers name their own tickets.
+/datum/tickets/proc/ticket_by_id(id)
+	if(isnull(id))
+		return null
+	for(var/datum/ticket/T as anything in active_tickets)
+		if(T.id == id)
+			return T
+	for(var/datum/ticket/T as anything in resolved_tickets)
+		if(T.id == id)
+			return T
+	return null

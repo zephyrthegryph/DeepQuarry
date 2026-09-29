@@ -23,8 +23,7 @@
 	..()
 	rel_set(src, "owner_admin", owner_admin)
 
-REL_PAIR(/datum/round_status_panel, owner_admin, round_status_panel)
-REL_PAIR(/datum/admins, round_status_panel, owner_admin)
+// The admin holder owns this panel (round_status_panel); owner_admin is a plain relation back.
 
 /datum/round_status_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN)
@@ -184,7 +183,7 @@ REL_PAIR(/datum/admins, round_status_panel, owner_admin)
 		tgui_alert_async(user, "The game hasn't started yet!")
 		return
 	if(!round_status_panel)
-		rel_set(src, "round_status_panel", new /datum/round_status_panel(src))
+		own_set(src, "round_status_panel", new /datum/round_status_panel(src))
 	round_status_panel.tgui_interact(user)
 
 #undef SHUTTLE_STATE_IDLE

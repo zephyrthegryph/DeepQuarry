@@ -3,7 +3,8 @@
 	Tgui panel for admins editing the access list of various machines.
 */
 /datum/access_viewer
-	var/focused_obj
+	/// The object being edited (a relation view)
+	var/obj/machinery/focused_obj
 
 /datum/access_viewer/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -18,7 +19,7 @@
 	if(..() || !check_rights_for(ui.user.client, R_DEBUG))
 		return FALSE
 
-	var/obj/machinery/req_thing = om_resolve(focused_obj)
+	var/obj/machinery/req_thing = focused_obj
 	if(!req_thing)
 		return FALSE
 
@@ -64,7 +65,7 @@
 /datum/access_viewer/tgui_data(mob/user)
 	var/list/data = list()
 	// Check if the object still exists
-	var/obj/machinery/req_thing = om_resolve(focused_obj)
+	var/obj/machinery/req_thing = focused_obj
 	if(req_thing)
 		data["name"] = req_thing.name
 		data["coords"] = "[req_thing.x].[req_thing.y].[req_thing.z]"
@@ -73,4 +74,4 @@
 	return data
 
 /datum/access_viewer/proc/set_access_focus(obj/machinery/req_thing)
-	focused_obj = om_handle(req_thing)
+	rel_set(src, "focused_obj", req_thing)

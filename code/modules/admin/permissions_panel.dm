@@ -413,5 +413,4 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 /datum/permissions_panel/proc/holder() as /datum/admins
 	return holder
 
-REL_PAIR(/datum/admins, dq_permissions_panel, holder)
-REL_PAIR(/datum/permissions_panel, holder, dq_permissions_panel)
+// The admin holder owns this panel (dq_permissions_panel); holder is a plain relation back.

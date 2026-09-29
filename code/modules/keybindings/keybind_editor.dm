@@ -5,10 +5,10 @@
 	var/profile = KEYBIND_PROFILE_DEFAULT
 
 /datum/keybind_editor/New(client/owner)
-	rel_set(src, "owner", owner)
+	src.owner = owner // a client, not a datum: the client owns us by design (keybind_editor)
 	profile = owner?.mob?.keybind_profile() || KEYBIND_PROFILE_DEFAULT
 
-// clears the client's cached editor (clients aren't datums).
+// The client is our one owner by design (clients aren't datums, so its var is plain).
 
 /client/var/tmp/datum/keybind_editor/keybind_editor
 
@@ -20,7 +20,7 @@
 	if(!prefs)
 		return
 	if(!keybind_editor)
-		own_set(src, "keybind_editor", new /datum/keybind_editor(src))
+		keybind_editor = new /datum/keybind_editor(src) // the client is the one owner by design
 	keybind_editor.tgui_interact(mob)
 
 /datum/keybind_editor/tgui_state(mob/user)
@@ -180,9 +180,7 @@
 	owner().apply_keybindings(force = TRUE)
 
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client this editor belongs to.
 /datum/keybind_editor/proc/owner() as /client
 	return owner
 
-REL_PAIR(/client, keybind_editor, owner)
-REL_PAIR(/datum/keybind_editor, owner, keybind_editor)

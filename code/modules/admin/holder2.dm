@@ -7,7 +7,12 @@ GLOBAL_VAR_INIT(href_token, GenerateToken())
 GLOBAL_PROTECT(href_token)
 
 /datum/admins
+	/// Our ranks (a relation list: ranks live in GLOB.admin_ranks, or in custom_rank). Set with set_ranks().
 	var/list/datum/admin_rank/ranks
+	/// The client-level click intercept (a relation view); needs to implement InterceptClickOn(user,params,atom).
+	var/tmp/datum/click_intercept
+	/// A per-admin rank duplicated for this holder (change_admin_flags), owned.
+	var/datum/admin_rank/custom_rank
 
 	var/target
 	var/name = "nobody's admin datum (no rank)" //Makes for better runtimes
@@ -62,7 +67,7 @@ GLOBAL_PROTECT(href_token)
 		CRASH("Admin datum created with invalid ranks: [ranks] ([json_encode(ranks)])")
 	target = ckey
 	name = "[ckey]'s admin datum ([join_admin_ranks(ranks)])"
-	src.ranks = ranks
+	set_ranks(ranks)
 	admincaster_signature = "[using_map.company_name] Officer #[rand(0,9)][rand(0,9)][rand(0,9)]"
 	href_token = GenerateToken()
 	if(protected)
@@ -297,3 +302,9 @@ you will have to do something like if(client.rights & R_ADMIN) yourself.
 /// LC-refs: the channel the admin newscaster is working on -- a picked network channel (an OM handle) or the scratch one.
 /datum/admins/proc/admincaster_feed_channel() as /datum/feed_channel
 	return admincaster_feed_channel || admincaster_scratch_channel
+
+/// Replaces our ranks (a relation list) with `new_ranks`.
+/datum/admins/proc/set_ranks(list/datum/admin_rank/new_ranks)
+	rel_clear(src, "ranks")
+	for(var/datum/admin_rank/rank as anything in new_ranks)
+		rel_add(src, "ranks", rank)

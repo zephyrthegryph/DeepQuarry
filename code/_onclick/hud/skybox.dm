@@ -31,7 +31,7 @@
 
 /client/proc/update_skybox(rebuild)
 	if(!skybox)
-		own_set(src, "skybox", new /atom/movable/screen/skybox())
+		skybox = new /atom/movable/screen/skybox() // the client is the one owner by design
 		skybox.scale_to_view(src.view)
 		screen += skybox
 		rebuild = 1

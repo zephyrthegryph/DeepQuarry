@@ -40,8 +40,6 @@
 	show_verb_panel = FALSE
 	///Contains admin info. Null if client is not an admin.
 	var/datum/admins/holder = null
-	///Needs to implement InterceptClickOn(user,params,atom) proc
-	var/tmp/datum/click_intercept
 	var/buildmode		= 0
 
 	///Contains the last message sent by this client - used to protect against copy-paste spamming.
@@ -135,12 +133,10 @@
 	var/list/misc_tabs = list() // ALLOW(instance_list): d: one per connected client; stat panel tabs
 	///A lazy list of atoms we've examined in the last RECENT_EXAMINE_MAX_WINDOW (default 2) seconds, so that we will call [/atom/proc/examine_more] instead of [/atom/proc/examine] on them when examining
 	var/list/recent_examines
-	///Our object window datum. It stores info about and handles behavior for the object tab
-	var/tmp/datum/obj_window
 
 	var/list/misc_cache = list() // ALLOW(instance_list): d: one per connected client; protean code indexes it directly
 
-	var/tmp/atom/examine_icon	//Holder for examine icon, useful for statpanel
+	var/tmp/examine_icon	//Cached examine icon source (icon2html text), useful for statpanel
 
 	//Hide top bars
 	var/fullscreen = FALSE
@@ -192,14 +188,10 @@
 // prefs, persistent_client and the admin holder outlive the connection (GLOB.preferences_datums,
 // GLOB.persistent_clients_by_ckey, GLOB.admin_datums).
 
-/// LC-refs: the click_intercept this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client-level click intercept (held on the admin holder, a datum, as a relation view).
 /client/proc/click_intercept() as /datum
-	return click_intercept
+	return holder?.click_intercept
 
-/// LC-refs: the obj_window this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
-/client/proc/obj_window()
-	return obj_window
-
-/// LC-refs: Holder for examine icon, useful for statpanel -- an OM handle (om_handle()), so it reads null once that is deleted.
-/client/proc/examine_icon() as /atom
+/// The cached examine icon source.
+/client/proc/examine_icon()
 	return examine_icon

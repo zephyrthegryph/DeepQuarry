@@ -5,9 +5,9 @@ GLOBAL_LIST_EMPTY_TYPED(persistent_clients_by_ckey, /datum/persistent_client)
 
 /// Tracks information about a client between log in and log outs
 /datum/persistent_client
-	/// The true client
+	/// The true client (not a datum: a plain var; BYOND nulls it when the client is deleted)
 	var/tmp/client/client
-	/// The mob this persistent client is currently bound to.
+	/// The mob this persistent client is currently bound to (paired with mob.persistent_client).
 	var/tmp/mob/mob
 
 	/// Major version of BYOND this client was last using.
@@ -55,7 +55,7 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 
 	if(client())
 		client().persistent_client = null
-	rel_set(src, "client", new_client)
+	client = new_client
 	if(client())
 		client().persistent_client = src
 		byond_build = client().byond_build
@@ -66,11 +66,9 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 	if(mob() == new_mob)
 		return
 
-	mob()?.persistent_client = null
-	new_mob?.persistent_client?.set_mob(null)
-
+	// A pair: setting our side sets new_mob.persistent_client, and unlinks our old mob and
+	// new_mob's old persistent client.
 	rel_set(src, "mob", new_mob)
-	new_mob?.persistent_client = src
 
 /// Writes all of the `played_names` into an HTML-escaped string.
 /datum/persistent_client/proc/get_played_names()
@@ -105,12 +103,15 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 
 		LAZYADD(writable.played_names, list("[encoded_name]" = mob_tag))
 
-/// LC-refs: the mob this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mob this persistent client is bound to (a relation view).
 /datum/persistent_client/proc/mob() as /mob
 	return mob
 
-/// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The connected client, or null.
 /datum/persistent_client/proc/client() as /client
 	return client
 
 /// LC-refs: the actions granted to this player on each login are theirs.
+
+REL_PAIR(/datum/persistent_client, mob, persistent_client)
+REL_PAIR(/mob, persistent_client, mob)

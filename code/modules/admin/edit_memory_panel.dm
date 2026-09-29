@@ -19,8 +19,7 @@
 	rel_set(src, "target_mind", target_mind)
 	rel_set(src, "admin_user", admin_user)
 
-REL_PAIR(/datum/edit_memory_panel, target_mind, tgui_edit_memory_panel)
-REL_PAIR(/datum/mind, tgui_edit_memory_panel, target_mind)
+// The mind owns this panel (tgui_edit_memory_panel); target_mind is a plain relation back.
 
 /datum/edit_memory_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_FUN|R_EVENT)
@@ -124,7 +123,7 @@ REL_PAIR(/datum/mind, tgui_edit_memory_panel, target_mind)
 		if("obj_delete")
 			var/datum/objective/O = locate(params["ref"])
 			if(istype(O))
-				own_take_member(target_mind, "objectives", O)
+				rel_remove(target_mind, "objectives", O)
 				qdel(O)
 			SStgui.update_uis(src)
 			return TRUE
