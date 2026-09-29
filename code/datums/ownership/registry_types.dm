@@ -41,6 +41,7 @@ REGISTRY_TYPE(/datum/reagent, GLOBAL_PROC_REF(registry_reagent))
 REGISTRY_TYPE(/datum/seed, GLOBAL_PROC_REF(registry_seed))
 REGISTRY_TYPE(/datum/robot_sprite, GLOBAL_PROC_REF(registry_robot_sprite))
 REGISTRY_TYPE(/datum/ai_icon, GLOBAL_PROC_REF(registry_ai_icon))
+REGISTRY_TYPE(/datum/robolimb, GLOBAL_PROC_REF(registry_robolimb))
 
 /// Enumerators for the DEF freeze (shared.dm): each returns a list (or assoc) of registered
 /// instances whose vars must not change after boot. Services with round state (controllers,
@@ -186,6 +187,9 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 
 /proc/registry_ai_icon(datum/D)
 	return (D == GLOB.default_ai_icon || (D in GLOB.ai_icons)) ? D : null
+
+/proc/registry_robolimb(datum/robolimb/D)
+	return GLOB.all_robolimbs[D.company]
 
 /proc/registry_enum_species()
 	return GLOB.all_species
