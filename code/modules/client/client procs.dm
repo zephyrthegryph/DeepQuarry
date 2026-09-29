@@ -39,6 +39,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		- If so, is there any protection against somebody spam-clicking a link?
 	If you have any  questions about this stuff feel free to ask. ~Carn
 	*/
+// ALLOW(sys_topic_override): BYOND's href entry point: rate limits, tgui middleware and logging, then the TOPIC_ACTION dispatcher.
 /client/Topic(href, href_list, hsrc)
 	if(!usr || usr != mob)	//stops us calling Topic for somebody else's client. Also helps prevent usr=null
 		return
@@ -46,6 +47,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	#if defined(TOPIC_DEBUGGING)
 	to_world("[src]'s Topic: [href] destined for [hsrc].")
 
+	// ALLOW(sys_topic_raw_dispatch): client/Topic is BYOND's href entry: transport-level keys (asset cache, rate limiter, statbrowser) are read before any datum dispatch.
 	if(href_list["nano_err"]) //nano throwing errors
 		to_world("## NanoUI, Subject [src]: " + html_decode(href_list["nano_err")]) //NANO DEBUG HOOK
 
@@ -53,6 +55,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	// asset_cache
 	var/asset_cache_job
+	// ALLOW(sys_topic_raw_dispatch): client/Topic is BYOND's href entry: transport-level keys (asset cache, rate limiter, statbrowser) are read before any datum dispatch.
 	if(href_list["asset_cache_confirm_arrival"])
 		asset_cache_job = asset_cache_confirm_arrival(href_list["asset_cache_confirm_arrival"])
 		if (!asset_cache_job)
@@ -68,6 +71,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			if (minute != topiclimiter[CURRENT_MINUTE])
 				topiclimiter[CURRENT_MINUTE] = minute
 				topiclimiter[MINUTE_COUNT] = 0
+			// ALLOW(sys_topic_raw_dispatch): client/Topic is BYOND's href entry: transport-level keys (asset cache, rate limiter, statbrowser) are read before any datum dispatch.
 			if(href_list["window_id"] != "statbrowser")
 				topiclimiter[MINUTE_COUNT] += 1
 			if (topiclimiter[MINUTE_COUNT] > mtl)
@@ -103,55 +107,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(tgui_Topic(href_list))
 		return
 
-	//Admin PM
-	if(href_list["priv_msg"])
-		var/passed_key = href_list["priv_msg"]
-		var/client/C = locate(passed_key)
-		if(ismob(C)) 		//Old stuff can feed-in mobs instead ofGLOB.clients
-			var/mob/M = C
-			C = M.client
-		if(!C && istext(passed_key))
-			C = passed_key
-		cmd_admin_pm(C,null)
-		return
-
-	if(href_list["mentorhelp_msg"])
-		var/client/C = locate(href_list["mentorhelp_msg"])
-		if(ismob(C))
-			var/mob/M = C
-			C = M.client
-		cmd_mentor_pm(C, null)
-		return
-
-	if(href_list["discord_reg"])
-		var/their_id = html_decode(href_list["discord_reg"])
-		var/sane = FALSE
-		for(var/list/L as anything in GLOB.pending_discord_registrations)
-			if(!islist(L))
-				GLOB.pending_discord_registrations -= L
-				continue
-			if(L["ckey"] == ckey && L["id"] == their_id)
-				GLOB.pending_discord_registrations -= list(L)
-				var/time = L["time"]
-				if((world.realtime - time) > 10 MINUTES)
-					to_chat(src, span_warning("Sorry, that link has expired. Please request another on Discord."))
-					return
-				sane = TRUE
-				break
-
-		if(!sane)
-			to_chat(src, span_warning("Sorry, that link doesn't appear to be valid. Please try again."))
-			return
-
-		// om_io: the player hears back when the database answers.
-		om_io(null, /datum/om/io/sql, "UPDATE erro_player SET discord_id = :discord_id WHERE ckey = :ckey", list("discord_id" = their_id, "ckey" = ckey), GLOBAL_PROC_REF(discord_registration_done), ckey, their_id)
-		return
-	if(href_list["reload_statbrowser"])
-		stat_panel.reinitialize()
-
-	if(href_list["reload_statbrowser"])
-		stat_panel.reinitialize()
-
 	//Logs all hrefs
 	log_href("[src] (usr:[usr]\[[COORD(usr)]\]) : [hsrc ? "[hsrc] " : ""][href]")
 
@@ -160,22 +115,15 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		to_chat(src, span_danger("An error has been detected in how your client is receiving resources. Attempting to correct.... (If you keep seeing these messages you might want to close byond and reconnect)"))
 		src << browse("...", "window=asset_cache_browser")
 		return
-	if (href_list["asset_cache_preload_data"])
-		asset_cache_preload_data(href_list["asset_cache_preload_data"])
+	// The client's own href actions (TOPIC_ACTION rows on /client, below).
+	if(!hsrc && topic_dispatch(src, usr, href_list))
 		return
 
-	if(href_list["commandbar_typing"])
-		handle_commandbar_typing(href_list)
-
+	// ALLOW(sys_topic_raw_dispatch): client/Topic is BYOND's href entry: transport-level keys (asset cache, rate limiter, statbrowser) are read before any datum dispatch.
 	switch(href_list["_src_"])
 		if("holder")	hsrc = holder
 		if("usr")		hsrc = mob
-		if("prefs")		return prefs.process_link(usr,href_list)
-		if("vars")		return view_var_Topic(href,href_list,hsrc)
-
-	switch(href_list["action"])
-		if("openLink")
-			src << link(href_list["link"])
+		if("vars")		return vv_topic(href_list)
 
 	if (hsrc)
 		var/datum/real_src = hsrc
@@ -187,6 +135,77 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(hsrc && hsrc != holder && DEFAULT_TRY_QUEUE_VERB(VERB_CALLBACK(src, PROC_REF(_Topic), hsrc, href, href_list)))
 		return
 	..() //redirect to hsrc.Topic()
+
+// ---------------------------------------------------------------- the client's href actions
+
+//Admin PM
+TOPIC_ACTION(/client, "priv_msg", PROC_REF(topic_priv_msg), TOPIC_TEXT("priv_msg", 64))
+TOPIC_ACTION(/client, "mentorhelp_msg", PROC_REF(topic_mentorhelp_msg), TOPIC_TEXT("mentorhelp_msg", 64))
+TOPIC_ACTION(/client, "discord_reg", PROC_REF(topic_discord_reg), TOPIC_TEXT("discord_reg", 128))
+TOPIC_ACTION(/client, "reload_statbrowser", PROC_REF(topic_reload_statbrowser))
+TOPIC_ACTION(/client, "asset_cache_preload_data", PROC_REF(topic_asset_cache_preload_data), TOPIC_TEXT("asset_cache_preload_data"))
+TOPIC_ACTION(/client, "commandbar_typing", PROC_REF(topic_commandbar_typing), TOPIC_TEXT("verb", 64), TOPIC_NUM("argument_length"))
+TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("link", 1024))
+
+/// A client passed in an href as a client ref, a mob ref (older links) or a ckey.
+/client/proc/topic_client_or_ckey(raw)
+	var/client/C = topic_resolve_ref(src, raw, /client, TOPIC_IN_CLIENTS)
+	if(!C)
+		var/mob/M = topic_resolve_ref(src, raw, /mob, TOPIC_ANY)
+		C = M?.client
+	return C
+
+/client/proc/topic_priv_msg(mob/user, list/args)
+	var/passed_key = args["priv_msg"]
+	var/C = topic_client_or_ckey(passed_key)
+	if(!C && istext(passed_key))
+		C = passed_key
+	cmd_admin_pm(C, null)
+	return TRUE
+
+/client/proc/topic_mentorhelp_msg(mob/user, list/args)
+	cmd_mentor_pm(topic_client_or_ckey(args["mentorhelp_msg"]), null)
+	return TRUE
+
+/client/proc/topic_discord_reg(mob/user, list/args)
+	var/their_id = html_decode(args["discord_reg"])
+	var/sane = FALSE
+	for(var/list/L as anything in GLOB.pending_discord_registrations)
+		if(!islist(L))
+			GLOB.pending_discord_registrations -= L
+			continue
+		if(L["ckey"] == ckey && L["id"] == their_id)
+			GLOB.pending_discord_registrations -= list(L)
+			var/time = L["time"]
+			if((world.realtime - time) > 10 MINUTES)
+				to_chat(src, span_warning("Sorry, that link has expired. Please request another on Discord."))
+				return TRUE
+			sane = TRUE
+			break
+
+	if(!sane)
+		to_chat(src, span_warning("Sorry, that link doesn't appear to be valid. Please try again."))
+		return TRUE
+
+	// om_io: the player hears back when the database answers.
+	om_io(null, /datum/om/io/sql, "UPDATE erro_player SET discord_id = :discord_id WHERE ckey = :ckey", list("discord_id" = their_id, "ckey" = ckey), GLOBAL_PROC_REF(discord_registration_done), ckey, their_id)
+	return TRUE
+
+/client/proc/topic_reload_statbrowser(mob/user, list/args)
+	stat_panel.reinitialize()
+	return TRUE
+
+/client/proc/topic_asset_cache_preload_data(mob/user, list/args)
+	asset_cache_preload_data(args["asset_cache_preload_data"])
+	return TRUE
+
+/client/proc/topic_commandbar_typing(mob/user, list/args)
+	handle_commandbar_typing(args["verb"], args["argument_length"])
+	return TRUE
+
+/client/proc/topic_open_link(mob/user, list/args)
+	src << link(args["link"])
+	return TRUE
 
 ///dumb workaround because byond doesnt seem to recognize the Topic() typepath for /datum/proc/Topic() from the client Topic,
 ///so we cant queue it without this

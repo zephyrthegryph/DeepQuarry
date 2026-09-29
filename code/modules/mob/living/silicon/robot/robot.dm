@@ -1456,17 +1456,14 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 /mob/living/silicon/robot/proc/installed_modules()
 	robotact.tgui_interact(src)
 
-/mob/living/silicon/robot/Topic(href, href_list)
-	if(..())
-		return 1
+TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts))
 
-	//All Topic Calls that are only for the Cyborg go here
-	if(usr != src)
-		return 1
-
-	if (href_list["showalerts"])
-		subsystem_alarm_monitor()
-		return 1
+/mob/living/silicon/robot/proc/topic_showalerts(mob/user, list/args)
+	//Only for the Cyborg
+	if(user != src)
+		return
+	subsystem_alarm_monitor()
+	return TRUE
 
 /mob/living/silicon/robot/proc/radio_menu()
 	radio.interact(src)//Just use the radio's Topic() instead of bullshit special-snowflake code

@@ -36,21 +36,21 @@
 	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_repairs=1'>[(datum_flags & DF_ISPROCESSING)?"Dea":"A"]ctivate</a>"
 
 
-/obj/item/mecha_parts/mecha_equipment/repair_droid/Topic(href, href_list)
-	..()
-	if(href_list["toggle_repairs"])
-		chassis.cut_overlay(droid_overlay)
-		if(datum_flags & DF_ISPROCESSING)
-			droid_overlay = new(src.icon, icon_state = "repair_droid")
-			om_task_periodic_stop(src)
-			src.mecha_log_message("Deactivated.")
-			set_ready_state(TRUE)
-		else
-			droid_overlay = new(src.icon, icon_state = "repair_droid_a")
-			src.mecha_log_message("Activated.")
-			om_task_periodic(src, PERIODIC_SLOW)
-		chassis.add_overlay(droid_overlay)
-		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/repair_droid, "toggle_repairs", PROC_REF(topic_toggle_repairs))
+
+/obj/item/mecha_parts/mecha_equipment/repair_droid/proc/topic_toggle_repairs(mob/user, list/args)
+	chassis.cut_overlay(droid_overlay)
+	if(datum_flags & DF_ISPROCESSING)
+		droid_overlay = new(src.icon, icon_state = "repair_droid")
+		om_task_periodic_stop(src)
+		src.mecha_log_message("Deactivated.")
+		set_ready_state(TRUE)
+	else
+		droid_overlay = new(src.icon, icon_state = "repair_droid_a")
+		src.mecha_log_message("Activated.")
+		om_task_periodic(src, PERIODIC_SLOW)
+	chassis.add_overlay(droid_overlay)
+	send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 	return
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid/periodic_step()

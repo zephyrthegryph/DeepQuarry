@@ -5,8 +5,8 @@
 // the screen based on `screen` and renders the appropriate
 // components. Events still embed their own HTML for now (the
 // per-event handlers each emit ad-hoc buttons that haven't been
-// unpacked); HtmlRenderer + forwardTopic relays clicks back to the
-// arcade's Topic handler the same way they did before.
+// unpacked); HtmlRenderer + forwardTopic relays their links to the
+// arcade's TOPIC_ACTION rows. The typed buttons call orion_* procs.
 
 // arcade.dm #undefs the ORION_STATUS_* macros at end-of-file, so
 // re-shadow the integer values here for use in our panel.
@@ -108,27 +108,27 @@
 		return
 	switch(action)
 		if("menu")
-			Topic("menu=1", list("menu" = "1"))
+			orion_menu(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("new_game")
-			Topic("newgame=1", list("newgame" = "1"))
+			orion_newgame(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("continue")
-			Topic("continue=1", list("continue" = "1"))
+			orion_continue(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("blackhole_continue")
-			Topic("blackhole=1", list("blackhole" = "1"))
+			orion_blackhole(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("blackhole_around")
-			Topic("pastblack=1", list("pastblack" = "1"))
+			orion_pastblack(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("killcrew")
-			Topic("killcrew=1", list("killcrew" = "1"))
+			orion_killcrew(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("close")

@@ -787,18 +787,25 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 	// structured TGUI AdminReport; byond:// links forwarded to host.
 	dq_admin_report_html(user, "Access Control", t1, src)
 
-/obj/item/rcd/Topic(href, href_list)
-	..()
-	if (usr.stat || usr.restrained())
-		return
-	if (href_list["close"])
-		// close TGUI window
-		SStgui.close_uis(src)
-		return
+TOPIC_ACTION(/obj/item/rcd, "close", PROC_REF(topic_close))
+TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access", 16))
 
-	if (href_list["access"])
-		toggle_access(href_list["access"])
-		change_airlock_access(usr)
+/obj/item/rcd/topic_allowed(mob/user, list/href_list)
+	. = ..()
+	if(!.)
+		return
+	if(user.stat || user.restrained())
+		return FALSE
+
+/obj/item/rcd/proc/topic_close(mob/user, list/args)
+	// close TGUI window
+	SStgui.close_uis(src)
+	return TRUE
+
+/obj/item/rcd/proc/topic_access(mob/user, list/args)
+	toggle_access(args["access"])
+	change_airlock_access(user)
+	return TRUE
 
 /obj/item/rcd/proc/toggle_access(acc)
 	if (acc == "all")

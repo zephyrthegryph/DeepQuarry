@@ -261,11 +261,15 @@ SUBSYSTEM_DEF(media_tracks)
 	VV_DROPDOWN_OPTION("add_track", "Add New Track")
 	VV_DROPDOWN_OPTION("remove_track", "Remove Track")
 
-/datum/controller/subsystem/media_tracks/vv_do_topic(list/href_list)
-	. = ..()
-	IF_VV_OPTION("add_track")
-		manual_track_add()
-		href_list[VV_HK_DATUM_REFRESH] = "\ref[src]"
-	IF_VV_OPTION("remove_track")
-		manual_track_remove()
-		href_list[VV_HK_DATUM_REFRESH] = "\ref[src]"
+VV_TOPIC_ACTION(/datum/controller/subsystem/media_tracks, "add_track", PROC_REF(vv_topic_add_track))
+VV_TOPIC_ACTION(/datum/controller/subsystem/media_tracks, "remove_track", PROC_REF(vv_topic_remove_track))
+
+/datum/controller/subsystem/media_tracks/proc/vv_topic_add_track(mob/user, list/args)
+	manual_track_add()
+	user.client?.debug_variables(src)
+	return TRUE
+
+/datum/controller/subsystem/media_tracks/proc/vv_topic_remove_track(mob/user, list/args)
+	manual_track_remove()
+	user.client?.debug_variables(src)
+	return TRUE

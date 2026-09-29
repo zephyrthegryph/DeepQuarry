@@ -167,8 +167,11 @@ bans them). See `doc/rewrite/object_model_core.md` §10:
 - `#define` flag/ID/threshold constants.
 - Ask players with a typed prompt, `om_ask(answerer, /datum/om/prompt/<kind>/x,
   PROC_REF(cb), var = value...)`; its `requires`/`valid()` re-check state before `cb` runs
-  (raw `input()`/`alert()`/`tgui_input_*` are banned). Sanitize free text. Validate
-  `Topic()` hrefs (`locate(ref) in …`).
+  (raw `input()`/`alert()`/`tgui_input_*` are banned). Sanitize free text.
+- Never override `Topic()` or read `href_list` yourself: declare
+  `TOPIC_ACTION(type, "key", PROC_REF(handler), TOPIC_REF/TOPIC_NUM/TOPIC_TEXT/TOPIC_RIGHTS...)`
+  rows; the core dispatcher validates every ref against its declared source
+  (doc/rewrite/systems.md §20, lint `tools/ci/sys_rules/topic.py`).
 - Parameterized SQL only, through `om_io()` / `om_sql_write()` (nothing waits on I/O);
   `format_table_name()` for table names.
 

@@ -74,12 +74,10 @@
 	return
 
 
-/obj/mecha/micro/Topic(href,href_list)
-	..()
-	var/datum/topic_input/top_filter = new (href,href_list)
-	if(top_filter.get("close"))
-		am = null
-		return
+TOPIC_ACTION(/obj/mecha/micro, "close", PROC_REF(topic_close))
+
+/obj/mecha/micro/topic_close(mob/user, list/args)
+	am = null
 
 // override move_inside() so only micro crew can use them
 

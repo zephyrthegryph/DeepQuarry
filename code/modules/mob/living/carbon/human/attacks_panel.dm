@@ -46,12 +46,15 @@ GLOBAL_LIST_EMPTY(dq_attacks_panels)
 		return
 	switch(action)
 		if("set_default")
-			var/ref = "[params["ref"]]"
-			host.Topic("default_attk=[ref]", list("default_attk" = ref))
+			var/datum/unarmed_attack/u_attack = locate_in_list(host.species?.unarmed_attacks, "[params["ref"]]")
+			if(u_attack)
+				host.set_default_attack(u_attack)
+				host.check_attacks()
 			SStgui.update_uis(src)
 			return TRUE
 		if("reset_default")
-			host.Topic("default_attk=reset_attk", list("default_attk" = "reset_attk"))
+			host.set_default_attack(null)
+			host.check_attacks()
 			SStgui.update_uis(src)
 			return TRUE
 

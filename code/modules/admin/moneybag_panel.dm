@@ -26,6 +26,6 @@
 	add_fingerprint(user)
 	if(action == "remove")
 		var/coin_type = "[params["coin"]]"
-		Topic("remove=[coin_type]", list("remove" = coin_type))
+		moneybag_remove_coin(user, coin_type)
 		SStgui.update_uis(src)
 		return TRUE

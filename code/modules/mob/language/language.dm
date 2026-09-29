@@ -287,28 +287,38 @@
 
 // check_languages verb body relocated to code/modules/mob/language/language_panel.dm (structured TGUI).
 
-/mob/living/Topic(href, href_list)
-	if(href_list["default_lang"])
-		if(href_list["default_lang"] == "reset")
-			if (species_language)
-				apply_default_language(GLOB.all_languages[species_language])
-			else
-				apply_default_language(GLOB.all_languages[LANGUAGE_GIBBERISH])
-		else
-			var/datum/language/L = locate(href_list["default_lang"])
-			if(L && (L in languages))
-				apply_default_language(L)
-		check_languages()
-		return 1
-	else if(href_list["set_lang_key"])
-		var/datum/language/L = locate(href_list["set_lang_key"])
-		if(L && (L in languages))
-			var/old_key = get_custom_prefix_by_lang(src, L)
-			om_ask(src, /datum/om/prompt/text/language_key, PROC_REF(language_key_entered), message = "Input a new key for [L.name]", default = old_key, language = L)
-			return 1
-		check_languages()
+TOPIC_ACTION(/mob/living, "default_lang=reset", PROC_REF(topic_default_lang_reset))
+TOPIC_ACTION(/mob/living, "default_lang", PROC_REF(topic_default_lang), TOPIC_REF("default_lang", /datum/language, PROC_REF(topic_known_languages)))
+TOPIC_ACTION(/mob/living, "set_lang_key", PROC_REF(topic_set_lang_key), TOPIC_REF("set_lang_key", /datum/language, PROC_REF(topic_known_languages)))
+
+/// TOPIC_REF source: the languages this mob knows.
+/mob/living/proc/topic_known_languages()
+	return languages
+
+/mob/living/proc/topic_default_lang_reset(mob/user, list/args)
+	if(user != src)
+		return
+	if (species_language)
+		apply_default_language(GLOB.all_languages[species_language])
 	else
-		return ..()
+		apply_default_language(GLOB.all_languages[LANGUAGE_GIBBERISH])
+	check_languages()
+	return TRUE
+
+/mob/living/proc/topic_default_lang(mob/user, list/args)
+	if(user != src)
+		return
+	apply_default_language(args["default_lang"])
+	check_languages()
+	return TRUE
+
+/mob/living/proc/topic_set_lang_key(mob/user, list/args)
+	if(user != src)
+		return
+	var/datum/language/L = args["set_lang_key"]
+	var/old_key = get_custom_prefix_by_lang(src, L)
+	om_ask(src, /datum/om/prompt/text/language_key, PROC_REF(language_key_entered), message = "Input a new key for [L.name]", default = old_key, language = L)
+	return TRUE
 
 /// Re-checked on the answer: the answerer still knows the language.
 /datum/om/prompt/text/language_key

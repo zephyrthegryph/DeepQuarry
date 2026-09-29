@@ -60,10 +60,11 @@
 	equip_type = EQUIP_MICRO_WEAPON
 	required_type = list(/obj/mecha/micro/sec)
 
-/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun/Topic(href,href_list)
-	..()
-	if(href_list["mode"])
-		mode = text2num(href_list["mode"])
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun, "mode", PROC_REF(topic_mode), TOPIC_NUM("mode"))
+
+/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun/proc/topic_mode(mob/user, list/args)
+	if(isnum(args["mode"]))
+		mode = args["mode"]
 		switch(mode)
 			if(0)
 				occupant_message("Now firing buckshot.")
@@ -182,15 +183,15 @@
 						ore.Move(src)
 	return 1
 
-/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/Topic(href,href_list)
-	..()
-	if (href_list["empty_box"])
-		if(contents_count(src) < 1)
-			occupant_message("The ore compartment is empty.")
-			return
-		for (var/obj/item/ore/O in contents)
-			O.forceMove(chassis.loc)
-		occupant_message("Ore compartment emptied.")
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop, "empty_box", PROC_REF(topic_empty_box))
+
+/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/proc/topic_empty_box(mob/user, list/args)
+	if(contents_count(src) < 1)
+		occupant_message("The ore compartment is empty.")
+		return
+	for (var/obj/item/ore/O in contents)
+		O.forceMove(chassis.loc)
+	occupant_message("Ore compartment emptied.")
 
 /obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/get_equip_info()
 	return "[..()] <br /><a href='byond://?src=\ref[src];empty_box=1'>Empty ore compartment</a>"

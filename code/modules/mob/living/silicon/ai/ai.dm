@@ -505,54 +505,70 @@ DECLARE_REF(/mob/living/silicon/ai, "selected_sprite", STATIC, null)
 		view_core()
 	..()
 
-/mob/living/silicon/ai/Topic(href, href_list)
-	if(..()) //VOREstation edit: So the AI can actually can actually get its OOC prefs read
-		return
-	if(usr != src)
-		return
-	/*if(..()) // <------ MOVED FROM HERE
-		return*/
-	if (href_list["mach_close"])
-		if (href_list["mach_close"] == "aialerts")
-			viewalerts = 0
-		// legacy browse(null) close removed; see /mob/Topic.
-		unset_machine()
-	if (href_list["switchcamera"])
-		switchCamera(locate_in_list(REGISTRY_MEMBERS(REGISTRY_CAMERAS), href_list["switchcamera"]))
-	if (href_list["showalerts"])
-		subsystem_alarm_monitor()
-	//Carn: holopad requests
-	if (href_list["jumptoholopad"])
-		var/obj/machinery/hologram/holopad/H = locate(href_list["jumptoholopad"])
-		if(stat == CONSCIOUS)
-			if(H)
-				actor_use(/datum/input_adapter/ai, src, H) //may as well recycle
-			else
-				to_chat(src, span_notice("Unable to locate the holopad."))
+TOPIC_ACTION(/mob/living/silicon/ai, "switchcamera", PROC_REF(topic_switchcamera), TOPIC_REF("switchcamera", /obj/machinery/camera, PROC_REF(topic_cameras)))
+TOPIC_ACTION(/mob/living/silicon/ai, "showalerts", PROC_REF(topic_showalerts))
+TOPIC_ACTION(/mob/living/silicon/ai, "jumptoholopad", PROC_REF(topic_jumptoholopad), TOPIC_REF("jumptoholopad", /obj/machinery/hologram/holopad, TOPIC_IN_WORLD)) //Carn: holopad requests
+TOPIC_ACTION(/mob/living/silicon/ai, "track", PROC_REF(topic_track), TOPIC_REF("track", /mob, TOPIC_IN_MOBS), TOPIC_TEXT("trackname", MAX_NAME_LEN * 2))
+TOPIC_ACTION(/mob/living/silicon/ai, "trackbot", PROC_REF(topic_trackbot), TOPIC_REF("trackbot", /mob/living/bot, TOPIC_IN_MOBS))
+TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_REF("open", /mob, TOPIC_IN_MOBS))
 
-	if (href_list["track"])
-		var/mob/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), href_list["track"])
+/// TOPIC_REF source: the camera network.
+/mob/living/silicon/ai/proc/topic_cameras()
+	return REGISTRY_MEMBERS(REGISTRY_CAMERAS)
 
-		if(target && (!ishuman(target) || html_decode(href_list["trackname"]) == target:get_face_name()))
-			ai_actual_track(target)
+// These links work only for the AI itself (others still reach the rows every mob has).
+/mob/living/silicon/ai/proc/topic_switchcamera(mob/user, list/args)
+	if(user != src)
+		return
+	switchCamera(args["switchcamera"])
+	return TRUE
+
+/mob/living/silicon/ai/proc/topic_showalerts(mob/user, list/args)
+	if(user != src)
+		return
+	subsystem_alarm_monitor()
+	return TRUE
+
+/mob/living/silicon/ai/proc/topic_jumptoholopad(mob/user, list/args)
+	if(user != src)
+		return
+	var/obj/machinery/hologram/holopad/H = args["jumptoholopad"]
+	if(stat == CONSCIOUS)
+		if(H)
+			actor_use(/datum/input_adapter/ai, src, H) //may as well recycle
 		else
-			to_chat(src, span_filter_warning("[span_red("System error. Cannot locate [html_decode(href_list["trackname"])].")]"))
+			to_chat(src, span_notice("Unable to locate the holopad."))
+	return TRUE
+
+/mob/living/silicon/ai/proc/topic_track(mob/user, list/args)
+	if(user != src)
 		return
+	var/mob/target = args["track"]
+	var/trackname = html_decode(args["trackname"])
+	var/mob/living/carbon/human/H = target
+	if(target && (!istype(H) || trackname == H.get_face_name()))
+		ai_actual_track(target)
+	else
+		to_chat(src, span_filter_warning("[span_red("System error. Cannot locate [trackname].")]"))
+	return TRUE
 
-	if(href_list["trackbot"])
-		var/mob/living/bot/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), href_list["trackbot"])
-		if(target)
-			ai_actual_track(target)
-		else
-			to_chat(src, span_warning("Target is not on or near any active cameras on the station."))
+/mob/living/silicon/ai/proc/topic_trackbot(mob/user, list/args)
+	if(user != src)
 		return
+	var/mob/living/bot/target = args["trackbot"]
+	if(target)
+		ai_actual_track(target)
+	else
+		to_chat(src, span_warning("Target is not on or near any active cameras on the station."))
+	return TRUE
 
-	if(href_list["open"])
-		var/mob/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), href_list["open"])
-		if(target)
-			open_nearest_door(target)
-
-	return
+/mob/living/silicon/ai/proc/topic_open_door(mob/user, list/args)
+	if(user != src)
+		return
+	var/mob/target = args["open"]
+	if(target)
+		open_nearest_door(target)
+	return TRUE
 
 /mob/living/silicon/ai/proc/camera_visibility(mob/observer/eye/aiEye/moved_eye)
 	GLOB.cameranet.visibility(moved_eye, client, src?.eyes_list())

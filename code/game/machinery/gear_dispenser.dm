@@ -692,11 +692,12 @@ DECLARE_REF(/obj/machinery/gear_dispenser/suit_fancy, "door", OWNED, null)
 	VV_DROPDOWN_OPTION("", "---")
 	VV_DROPDOWN_OPTION("admin_add", "Add New Gear")
 
-/obj/machinery/gear_dispenser/vv_do_topic(list/href_list)
-	. = ..()
-	IF_VV_OPTION("admin_add")
-		admin_add()
-		href_list[VV_HK_DATUM_REFRESH] = "\ref[src]"
+VV_TOPIC_ACTION(/obj/machinery/gear_dispenser, "admin_add", PROC_REF(vv_topic_admin_add))
+
+/obj/machinery/gear_dispenser/proc/vv_topic_admin_add(mob/user, list/args)
+	admin_add()
+	user.client?.debug_variables(src)
+	return TRUE
 
 /obj/machinery/gear_dispenser/proc/admin_add()
 	if(!check_rights(R_DEBUG|R_FUN))

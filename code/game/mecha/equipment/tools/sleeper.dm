@@ -89,19 +89,34 @@
 
 // TGUI migration. The view_stats sub-window (formerly
 // browse()) now opens MechaSleeper.tsx; inject/eject move to tgui_act.
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/Topic(href, href_list)
-	..()
-	var/datum/topic_input/top_filter = new /datum/topic_input(href, href_list)
-	if(top_filter.get("eject"))
-		go_out()
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "eject", PROC_REF(topic_eject))
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "view_stats", PROC_REF(topic_view_stats))
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "inject", PROC_REF(topic_inject), TOPIC_REF("inject", /datum/reagent, PROC_REF(topic_injectable_pool)), TOPIC_REF("source", /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, PROC_REF(topic_chassis_equipment)))
+
+/// TOPIC_REF source: the equipment on the same exosuit.
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_chassis_equipment()
+	return chassis?.equipment
+
+/// TOPIC_REF source: the reagents held by the syringe guns on the same exosuit.
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_injectable_pool()
+	var/list/pool = list()
+	for(var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG in chassis?.equipment)
+		if(SG.reagents)
+			pool += SG.reagents.reagent_list
+	return pool
+
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_eject(mob/user, list/args)
+	go_out()
+
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_view_stats(mob/user, list/args)
+	tgui_interact(user)
+
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_inject(mob/user, list/args)
+	var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG = args["source"]
+	var/datum/reagent/R = args["inject"]
+	if(!SG || !R || !(R in SG.reagents?.reagent_list))
 		return
-	if(top_filter.get("view_stats"))
-		if(chassis?.slot_item(MECHA_SLOT_PILOT))
-			tgui_interact(chassis?.slot_item(MECHA_SLOT_PILOT))
-		return
-	if(top_filter.get("inject"))
-		inject_reagent(top_filter.getType("inject", /datum/reagent), top_filter.getObj("source"))
-	return
+	inject_reagent(R, SG)
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

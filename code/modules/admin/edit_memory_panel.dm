@@ -4,7 +4,7 @@
 // shipped through admin_log_show with byond:// href links. Each
 // objective row, antag template row, and ambition/role/memory edit
 // becomes a typed React component + a tgui_act handler that calls
-// the same /datum/mind/Topic logic the legacy panel did.
+// the mind's own procs directly.
 //
 // Per-antag-type structured data: see /datum/antagonist/proc/get_panel_data
 // (code/modules/admin/antag_panel_data.dm).
@@ -116,13 +116,13 @@ DECLARE_REF(/datum/mind, "tgui_edit_memory_panel", PAIR, "target_mind")
 			SStgui.update_uis(src)
 			return TRUE
 		if("obj_toggle_complete")
-			var/datum/objective/O = locate(params["ref"])
+			var/datum/objective/O = locate_in_list(target_mind.objectives, params["ref"])
 			if(istype(O))
 				O.completed = !O.completed
 			SStgui.update_uis(src)
 			return TRUE
 		if("obj_delete")
-			var/datum/objective/O = locate(params["ref"])
+			var/datum/objective/O = locate_in_list(target_mind.objectives, params["ref"])
 			if(istype(O))
 				target_mind.objectives -= O
 				qdel(O)
@@ -137,11 +137,7 @@ DECLARE_REF(/datum/mind, "tgui_edit_memory_panel", PAIR, "target_mind")
 					obj_count++
 			return TRUE
 		if("obj_add")
-			// Delegate to the legacy Topic handler since the add-objective
-			// flow is many sub-prompts (target picker, text picker, etc.)
-			// and re-implementing it here would duplicate ~150 lines. The
-			// existing flow uses tgui_input_* prompts already.
-			target_mind.Topic("obj_add=1", list("obj_add" = "1"))
+			target_mind.begin_objective_add(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("refresh_antags")

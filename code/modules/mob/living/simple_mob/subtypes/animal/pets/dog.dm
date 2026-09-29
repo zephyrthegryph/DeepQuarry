@@ -67,13 +67,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 	return
 
 
-
-
 /obj/item/reagent_containers/food/snacks/meat/corgi
 	name = "corgi meat"
 	desc = "Tastes like... well, you know..."
-
-
 
 
 /datum/say_list/dog
@@ -103,11 +99,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 	holder_type = /obj/item/holder/corgi
 
 //pupplies cannot wear anything.
-/mob/living/simple_mob/animal/passive/dog/corgi/puppy/Topic(href, href_list)
-	if(href_list["remove_inv"] || href_list["add_inv"])
-		to_chat(usr, span_red("You can't fit this on [src]!"))
-		return
-	..()
 
 /mob/living/simple_mob/animal/passive/dog/corgi/puppy/Bockscar
 	name = "Bockscar"
@@ -173,11 +164,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 	holder_type = /obj/item/holder/lisa
 
 //Lisa already has a cute bow!
-/mob/living/simple_mob/animal/passive/dog/corgi/Lisa/Topic(href, href_list)
-	if(href_list["remove_inv"] || href_list["add_inv"])
-		to_chat(usr, span_red("[src] already has a cute bow!"))
-		return
-	..()
 
 /datum/om/stage/life/type_post/simple_mob/animal/passive/dog/corgi/Lisa
 	of = /mob/living/simple_mob/animal/passive/dog/corgi/Lisa

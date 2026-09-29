@@ -46,10 +46,10 @@
 		return
 	switch(action)
 		if("implant")
-			Topic("implant=1", list("implant" = "1"))
+			start_implant(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("replenish")
-			Topic("replenish=1", list("replenish" = "1"))
+			start_replenish(ui.user)
 			SStgui.update_uis(src)
 			return TRUE

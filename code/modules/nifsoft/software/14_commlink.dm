@@ -29,9 +29,11 @@
 /datum/nifsoft/commlink/stat_text()
 	return "Show Commlink"
 
-/datum/nifsoft/commlink/Topic(href, href_list)
-	if(href_list["open"])
-		activate()
+TOPIC_ACTION(/datum/nifsoft/commlink, "open", PROC_REF(topic_open))
+
+/datum/nifsoft/commlink/proc/topic_open(mob/user, list/args)
+	activate()
+	return TRUE
 
 /obj/item/communicator/commlink
 	name = "commlink"

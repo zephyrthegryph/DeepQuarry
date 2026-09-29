@@ -408,12 +408,6 @@ DECLARE_REF(/mob/living/silicon, "queued_alarms", STATIC, null)
 	return FALSE
 
 // === merged from silicon_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/mob/living/silicon/Topic(href, href_list) //For Robots and pAI's. And possibly AI's too.
-	if(href_list["ooc_notes"])
-		do_examine_ooc(usr)
-		return 1
-	return ..()
-
 // For handling any custom visibility in borgo sensor modes, like sleeve implants - not needed anymore but leaving anyways - Tank
 ///mob/living/silicon/toggle_sensor_mode()
 //	. = ..()

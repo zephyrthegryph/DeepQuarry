@@ -32,21 +32,6 @@ DECLARE_INTERACTIONS(/obj/item/teleportation_scroll, INTERACT_USE(null, PROC_REF
 	if(ishuman(user) && !user.restrained() && uses >= 1)
 		teleportscroll(user)
 
-/obj/item/teleportation_scroll/Topic(href, href_list)
-	..()
-	if (usr.stat || usr.restrained() || src.loc != usr)
-		return
-	var/mob/living/carbon/human/H = usr
-	if (!ishuman(H))
-		return 1
-	if ((usr == src.loc || (in_range(src, usr) && istype(src.loc, /turf))))
-		usr.set_machine(src)
-		if (href_list["spell_teleport"])
-			if (src.uses >= 1)
-				teleportscroll(H)
-				return
-	attack_self(H)
-	return
 
 /obj/item/teleportation_scroll/proc/teleportscroll(mob/user)
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(area_chosen), title = "Teleportation Scroll", message = "Area to jump to:", choices = GLOB.teleportlocs, ask_flags = ASK_CARRIED | ASK_CAPABLE | ASK_CONSCIOUS)

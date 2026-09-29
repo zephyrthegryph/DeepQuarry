@@ -2039,10 +2039,10 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 			Topic(null, list("maint_access" = "1"))
 			return TRUE
 		if("maint_set_air")
-			Topic(null, list("set_internal_tank_valve" = "1", "user" = "\ref[usr]"))
+			Topic(null, list("set_internal_tank_valve" = "1"))
 			return TRUE
 		if("maint_remove_passenger")
-			Topic(null, list("remove_passenger" = "1", "user" = "\ref[usr]"))
+			Topic(null, list("remove_passenger" = "1"))
 			return TRUE
 
 /obj/mecha/proc/report_internal_damage()
@@ -2253,200 +2253,234 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 ///// Topic /////
 /////////////////
 
-/obj/mecha/Topic(href, href_list)
-	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
-	..()
-	if(href_list["update_content"])
-		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		send_byjax(src?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","content",src.get_stats_part())
-		return
-	if(href_list["close"])
-		return
-	if(usr.stat > 0)
-		return
-	var/datum/topic_input/top_filter = new /datum/topic_input(href,href_list)
-	if(href_list["select_equip"])
-		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		var/obj/item/mecha_parts/mecha_equipment/equip = top_filter.getObj("select_equip")
-		if(equip)
-			src.selected = equip
-			src.occupant_message("You switch to [equip].")
-			src.visible_message("[src] raises [equip].")
-			send_byjax(src?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","eq_list",src.get_equipment_list())
-		return
-	if(href_list["eject"])
-		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		mecha_verb_eject(usr)
-		return
-	if(href_list["toggle_lights"])
-		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		src.lights(usr)
-		return
-/*
-	if(href_list["toggle_strafing"])
-		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		src.strafing(usr)
-		return*/
+// Href actions (TOPIC_ACTION registry). Pilot-only rows check topic_is_pilot(); the maintenance
+// rows are for someone standing next to the exosuit.
+TOPIC_ACTION(/obj/mecha, "update_content", PROC_REF(topic_update_content))
+TOPIC_ACTION(/obj/mecha, "close", PROC_REF(topic_close))
+TOPIC_ACTION(/obj/mecha, "select_equip", PROC_REF(topic_select_equip), TOPIC_REF("select_equip", /obj/item/mecha_parts/mecha_equipment, PROC_REF(topic_equipment_pool)))
+TOPIC_ACTION(/obj/mecha, "eject", PROC_REF(topic_eject))
+TOPIC_ACTION(/obj/mecha, "toggle_lights", PROC_REF(topic_toggle_lights))
+TOPIC_ACTION(/obj/mecha, "toggle_airtank", PROC_REF(topic_toggle_airtank))
+TOPIC_ACTION(/obj/mecha, "toggle_thrusters", PROC_REF(topic_toggle_thrusters))
+TOPIC_ACTION(/obj/mecha, "smoke", PROC_REF(topic_smoke))
+TOPIC_ACTION(/obj/mecha, "toggle_zoom", PROC_REF(topic_toggle_zoom))
+TOPIC_ACTION(/obj/mecha, "toggle_defence_mode", PROC_REF(topic_toggle_defence_mode))
+TOPIC_ACTION(/obj/mecha, "switch_damtype", PROC_REF(topic_switch_damtype))
+TOPIC_ACTION(/obj/mecha, "phasing", PROC_REF(topic_phasing))
+TOPIC_ACTION(/obj/mecha, "rmictoggle", PROC_REF(topic_rmictoggle))
+TOPIC_ACTION(/obj/mecha, "rspktoggle", PROC_REF(topic_rspktoggle))
+TOPIC_ACTION(/obj/mecha, "rfreq", PROC_REF(topic_rfreq), TOPIC_NUM("rfreq"))
+TOPIC_ACTION(/obj/mecha, "port_disconnect", PROC_REF(topic_port_disconnect))
+TOPIC_ACTION(/obj/mecha, "port_connect", PROC_REF(topic_port_connect))
+TOPIC_ACTION(/obj/mecha, "view_log", PROC_REF(topic_view_log))
+TOPIC_ACTION(/obj/mecha, "change_name", PROC_REF(topic_change_name))
+TOPIC_ACTION(/obj/mecha, "toggle_id_upload", PROC_REF(topic_toggle_id_upload))
+TOPIC_ACTION(/obj/mecha, "toggle_maint_access", PROC_REF(topic_toggle_maint_access))
+TOPIC_ACTION(/obj/mecha, "maint_access", PROC_REF(topic_maint_access))
+TOPIC_ACTION(/obj/mecha, "set_internal_tank_valve", PROC_REF(topic_set_internal_tank_valve))
+TOPIC_ACTION(/obj/mecha, "remove_passenger", PROC_REF(topic_remove_passenger))
+TOPIC_ACTION(/obj/mecha, "finish_req_access", PROC_REF(topic_finish_req_access))
+TOPIC_ACTION(/obj/mecha, "dna_lock", PROC_REF(topic_dna_lock))
+TOPIC_ACTION(/obj/mecha, "reset_dna", PROC_REF(topic_reset_dna))
+TOPIC_ACTION(/obj/mecha, "repair_int_control_lost", PROC_REF(topic_repair_int_control_lost))
+TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOPIC_REF("drop_from_cargo", /obj, PROC_REF(topic_cargo_pool)))
 
-	if(href_list["toggle_airtank"])
-		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		src.internal_tank(usr)
-		return
-	if (href_list["toggle_thrusters"])
-		src.thrusters(usr)
-	if (href_list["smoke"])
-		src.smoke(usr)
-	if (href_list["toggle_zoom"])
-		src.zoom(usr)
-	if(href_list["toggle_defence_mode"])
-		src.defence_mode(usr)
-	if(href_list["switch_damtype"])
-		src.query_damtype(usr)
-	if(href_list["phasing"])
-		src.phasing(usr)
+// A conscious clicker; the pilot always reaches the controls, anyone else needs the usual obj reach.
+/obj/mecha/topic_allowed(mob/user, list/href_list)
+	if(!user || user.stat)
+		return FALSE
+	if(topic_is_pilot(user))
+		return TRUE
+	return ..()
 
-	if(href_list["rmictoggle"])
-		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		radio.broadcasting = !radio.broadcasting
-		send_byjax(src?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","rmicstate",(radio.broadcasting?"Engaged":"Disengaged"))
-		return
-	if(href_list["rspktoggle"])
-		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		radio.listening = !radio.listening
-		send_byjax(src?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","rspkstate",(radio.listening?"Engaged":"Disengaged"))
-		return
-	if(href_list["rfreq"])
-		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		var/new_frequency = (radio.frequency + top_filter.getNum("rfreq"))
-		if ((radio.frequency < PUBLIC_LOW_FREQ || radio.frequency > PUBLIC_HIGH_FREQ))
-			new_frequency = sanitize_frequency(new_frequency)
-		radio.set_frequency(new_frequency)
-		send_byjax(src?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","rfreq","[format_frequency(radio.frequency)]")
-		return
-	if(href_list["port_disconnect"])
-		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		mecha_verb_disconnect_from_port(usr)
-		return
-	if (href_list["port_connect"])
-		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		mecha_verb_connect_to_port(usr)
-		return
-	if(href_list["view_log"])
-		if(usr != src?.slot_item(MECHA_SLOT_PILOT))
-			return
-		// fully-structured TGUI log sub-view.
-		tgui_subview = "log"
-		tgui_interact(src?.slot_item(MECHA_SLOT_PILOT))
-		return
-	if (href_list["change_name"])
-		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		om_ask(occupant, /datum/om/prompt/text, PROC_REF(exosuit_renamed), default = initial(name), title = "Rename exosuit", message = "Choose new exosuit name", max_length = MAX_NAME_LEN, encode = FALSE, requires = list(/datum/om/check/inside_target))
-		return
-	if (href_list["toggle_id_upload"])
-		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		add_req_access = !add_req_access
-		send_byjax(src?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","t_id_upload","[add_req_access?"L":"Unl"]ock ID upload panel")
-		return
-	if(href_list["toggle_maint_access"])
-		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		if(state)
-			occupant_message(span_warning("Maintenance protocols in effect"))
-			return
-		maint_access = !maint_access
-		send_byjax(src?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","t_maint_access","[maint_access?"Forbid":"Permit"] maintenance protocols")
-		return
-	if(href_list["req_access"] && add_req_access)
-		if(!in_range(src, usr))	return
-		output_access_dialog(top_filter.getObj("id_card"),top_filter.getMob("user"))
-		return
-	if(href_list["maint_access"] && maint_access)
-		if(!in_range(src, usr))	return
-		var/mob/user = top_filter.getMob("user")
-		if(user)
-			if(state==MECHA_OPERATING)
-				state = MECHA_BOLTS_SECURED
-				to_chat(user, "The securing bolts are now exposed.")
-			else if(state==MECHA_BOLTS_SECURED)
-				state = MECHA_OPERATING
-				to_chat(user, "The securing bolts are now hidden.")
-			output_maintenance_dialog(top_filter.getObj("id_card"),user)
-		return
-	if(href_list["set_internal_tank_valve"] && state >=MECHA_BOLTS_SECURED)
-		if(!in_range(src, usr))	return
-		var/mob/user = top_filter.getMob("user")
-		if(user)
-			om_ask(user, /datum/om/prompt/number/mecha_maint/tank_valve, PROC_REF(tank_valve_entered), default = internal_tank_valve)
-	if(href_list["remove_passenger"] && state >= MECHA_BOLTS_SECURED)
-		if(!in_range(src, usr))
-			return
-		var/mob/user = usr
-		var/list/passengers = list()
-		for (var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P in contents)
-			if (P?.slot_item(MECHA_SLOT_PILOT))
-				passengers["[P?.slot_item(MECHA_SLOT_PILOT)]"] = P
+/obj/mecha/proc/topic_is_pilot(mob/user)
+	return user && user == slot_item(MECHA_SLOT_PILOT)
 
-		if (!passengers)
-			to_chat(user, span_warning("There are no passengers to remove."))
-			return
+/// TOPIC_REF source: the equipment mounted on this exosuit.
+/obj/mecha/proc/topic_equipment_pool()
+	return equipment
 
-		om_ask(user, /datum/om/prompt/choice/mecha_remove_passenger, PROC_REF(passenger_removal_chosen), choices = passengers)
+/// TOPIC_REF source: the cargo compartment.
+/obj/mecha/proc/topic_cargo_pool()
+	return cargo
+
+/obj/mecha/proc/topic_update_content(mob/user, list/args)
+	if(!topic_is_pilot(user))
 		return
-	if(href_list["add_req_access"] && add_req_access && top_filter.getObj("id_card"))
-		if(!in_range(src, usr))	return
-		operation_req_access += top_filter.getNum("add_req_access")
-		output_access_dialog(top_filter.getObj("id_card"),top_filter.getMob("user"))
-		return
-	if(href_list["del_req_access"] && add_req_access && top_filter.getObj("id_card"))
-		if(!in_range(src, usr))	return
-		operation_req_access -= top_filter.getNum("del_req_access")
-		output_access_dialog(top_filter.getObj("id_card"),top_filter.getMob("user"))
-		return
-	if(href_list["finish_req_access"])
-		if(!in_range(src, usr))	return
-		add_req_access = 0
-		// close TGUI panel (legacy browse(null))
-		SStgui.close_uis(src)
-		return
-	if(href_list["dna_lock"])
-		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		if(istype(occupant, /mob/living/carbon/brain))
-			occupant_message("You are a brain. No.")
-			return
-		if(src?.slot_item(MECHA_SLOT_PILOT))
-			var/mob/living/_tmp_occ_10 = src?.slot_item(MECHA_SLOT_PILOT)
-			src.dna = _tmp_occ_10.dna.unique_enzymes
-			src.occupant_message("You feel a prick as the needle takes your DNA sample.")
-		return
-	if(href_list["reset_dna"])
-		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		src.dna = null
-	if(href_list["repair_int_control_lost"])
-		// The declared interaction checks the pilot and that there is control damage.
-		var/datum/interaction/recalibrate = INTERACTION(/datum/interaction/mecha_treat/recalibrate)
-		if(recalibrate?.applies_to(src))
-			recalibrate.attempt(usr, src, null)
-	if(href_list["drop_from_cargo"])
-		var/obj/O = locate(href_list["drop_from_cargo"])
-		if(O && (O in src.cargo))
-			src.occupant_message(span_notice("You unload [O]."))
-			if(!slot_remove(O, get_turf(src)))
-				O.forceMove(get_turf(src))
-			LAZYREMOVE(src.cargo, O)
-			var/turf/T = get_turf(O)
-			if(T)
-				T.Entered(O)
-			src.mecha_log_message("Unloaded [O]. Cargo compartment capacity: [cargo_capacity - length(src.cargo)]")
+	send_byjax(user, "exosuit.browser", "content", get_stats_part())
+
+/obj/mecha/proc/topic_close(mob/user, list/args)
 	return
 
-	//debug
-	/*
-	if(href_list["debug"])
-		if(href_list["set_i_dam"])
-			mech_body_plan().afflict(src, top_filter.getNum("set_i_dam"))
-		if(href_list["clear_i_dam"])
-			mech_body_plan().cure(src, top_filter.getNum("clear_i_dam"))
+/obj/mecha/proc/topic_select_equip(mob/user, list/args)
+	if(!topic_is_pilot(user))
 		return
-	*/
+	var/obj/item/mecha_parts/mecha_equipment/equip = args["select_equip"]
+	if(!equip)
+		return
+	selected = equip
+	occupant_message("You switch to [equip].")
+	visible_message("[src] raises [equip].")
+	send_byjax(user, "exosuit.browser", "eq_list", get_equipment_list())
+
+/obj/mecha/proc/topic_eject(mob/user, list/args)
+	if(topic_is_pilot(user))
+		mecha_verb_eject(user)
+
+/obj/mecha/proc/topic_toggle_lights(mob/user, list/args)
+	if(topic_is_pilot(user))
+		lights(user)
+
+/obj/mecha/proc/topic_toggle_airtank(mob/user, list/args)
+	if(topic_is_pilot(user))
+		internal_tank(user)
+
+/obj/mecha/proc/topic_toggle_thrusters(mob/user, list/args)
+	thrusters(user)
+
+/obj/mecha/proc/topic_smoke(mob/user, list/args)
+	smoke(user)
+
+/obj/mecha/proc/topic_toggle_zoom(mob/user, list/args)
+	zoom(user)
+
+/obj/mecha/proc/topic_toggle_defence_mode(mob/user, list/args)
+	defence_mode(user)
+
+/obj/mecha/proc/topic_switch_damtype(mob/user, list/args)
+	query_damtype(user)
+
+/obj/mecha/proc/topic_phasing(mob/user, list/args)
+	phasing(user)
+
+/obj/mecha/proc/topic_rmictoggle(mob/user, list/args)
+	if(!topic_is_pilot(user))
+		return
+	radio.broadcasting = !radio.broadcasting
+	send_byjax(user, "exosuit.browser", "rmicstate", (radio.broadcasting ? "Engaged" : "Disengaged"))
+
+/obj/mecha/proc/topic_rspktoggle(mob/user, list/args)
+	if(!topic_is_pilot(user))
+		return
+	radio.listening = !radio.listening
+	send_byjax(user, "exosuit.browser", "rspkstate", (radio.listening ? "Engaged" : "Disengaged"))
+
+/obj/mecha/proc/topic_rfreq(mob/user, list/args)
+	if(!topic_is_pilot(user))
+		return
+	var/delta = args["rfreq"]
+	if(!isnum(delta))
+		return
+	var/new_frequency = radio.frequency + delta
+	if((radio.frequency < PUBLIC_LOW_FREQ || radio.frequency > PUBLIC_HIGH_FREQ))
+		new_frequency = sanitize_frequency(new_frequency)
+	radio.set_frequency(new_frequency)
+	send_byjax(user, "exosuit.browser", "rfreq", "[format_frequency(radio.frequency)]")
+
+/obj/mecha/proc/topic_port_disconnect(mob/user, list/args)
+	if(topic_is_pilot(user))
+		mecha_verb_disconnect_from_port(user)
+
+/obj/mecha/proc/topic_port_connect(mob/user, list/args)
+	if(topic_is_pilot(user))
+		mecha_verb_connect_to_port(user)
+
+/obj/mecha/proc/topic_view_log(mob/user, list/args)
+	if(!topic_is_pilot(user))
+		return
+	// fully-structured TGUI log sub-view.
+	tgui_subview = "log"
+	tgui_interact(user)
+
+/obj/mecha/proc/topic_change_name(mob/user, list/args)
+	if(!topic_is_pilot(user))
+		return
+	om_ask(user, /datum/om/prompt/text, PROC_REF(exosuit_renamed), default = initial(name), title = "Rename exosuit", message = "Choose new exosuit name", max_length = MAX_NAME_LEN, encode = FALSE, requires = list(/datum/om/check/inside_target))
+
+/obj/mecha/proc/topic_toggle_id_upload(mob/user, list/args)
+	if(!topic_is_pilot(user))
+		return
+	add_req_access = !add_req_access
+	send_byjax(user, "exosuit.browser", "t_id_upload", "[add_req_access ? "L" : "Unl"]ock ID upload panel")
+
+/obj/mecha/proc/topic_toggle_maint_access(mob/user, list/args)
+	if(!topic_is_pilot(user))
+		return
+	if(state)
+		occupant_message(span_warning("Maintenance protocols in effect"))
+		return
+	maint_access = !maint_access
+	send_byjax(user, "exosuit.browser", "t_maint_access", "[maint_access ? "Forbid" : "Permit"] maintenance protocols")
+
+/obj/mecha/proc/topic_maint_access(mob/user, list/args)
+	if(!maint_access || !in_range(src, user))
+		return
+	if(state == MECHA_OPERATING)
+		state = MECHA_BOLTS_SECURED
+		to_chat(user, "The securing bolts are now exposed.")
+	else if(state == MECHA_BOLTS_SECURED)
+		state = MECHA_OPERATING
+		to_chat(user, "The securing bolts are now hidden.")
+	output_maintenance_dialog(om_resolve(active_id_card_ref), user)
+
+/obj/mecha/proc/topic_set_internal_tank_valve(mob/user, list/args)
+	if(state < MECHA_BOLTS_SECURED || !in_range(src, user))
+		return
+	om_ask(user, /datum/om/prompt/number/mecha_maint/tank_valve, PROC_REF(tank_valve_entered), default = internal_tank_valve)
+
+/obj/mecha/proc/topic_remove_passenger(mob/user, list/args)
+	if(state < MECHA_BOLTS_SECURED || !in_range(src, user))
+		return
+	var/list/passengers = list()
+	for(var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P in contents)
+		if(P?.slot_item(MECHA_SLOT_PILOT))
+			passengers["[P?.slot_item(MECHA_SLOT_PILOT)]"] = P
+	if(!length(passengers))
+		to_chat(user, span_warning("There are no passengers to remove."))
+		return
+	om_ask(user, /datum/om/prompt/choice/mecha_remove_passenger, PROC_REF(passenger_removal_chosen), choices = passengers)
+
+/obj/mecha/proc/topic_finish_req_access(mob/user, list/args)
+	if(!in_range(src, user))
+		return
+	add_req_access = 0
+	// close TGUI panel (legacy browse(null))
+	SStgui.close_uis(src)
+
+/obj/mecha/proc/topic_dna_lock(mob/user, list/args)
+	if(!topic_is_pilot(user))
+		return
+	if(istype(user, /mob/living/carbon/brain))
+		occupant_message("You are a brain. No.")
+		return
+	var/mob/living/pilot = user
+	dna = pilot.dna?.unique_enzymes
+	occupant_message("You feel a prick as the needle takes your DNA sample.")
+
+/obj/mecha/proc/topic_reset_dna(mob/user, list/args)
+	if(topic_is_pilot(user))
+		dna = null
+
+/obj/mecha/proc/topic_repair_int_control_lost(mob/user, list/args)
+	// The declared interaction checks the pilot and that there is control damage.
+	var/datum/interaction/recalibrate = INTERACTION(/datum/interaction/mecha_treat/recalibrate)
+	if(recalibrate?.applies_to(src))
+		recalibrate.attempt(user, src, null)
+
+/obj/mecha/proc/topic_drop_from_cargo(mob/user, list/args)
+	if(!topic_is_pilot(user))
+		return
+	var/obj/O = args["drop_from_cargo"]
+	if(!O)
+		return
+	occupant_message(span_notice("You unload [O]."))
+	if(!slot_remove(O, get_turf(src)))
+		O.forceMove(get_turf(src))
+	LAZYREMOVE(cargo, O)
+	var/turf/T = get_turf(O)
+	if(T)
+		T.Entered(O)
+	mecha_log_message("Unloaded [O]. Cargo compartment capacity: [cargo_capacity - length(cargo)]")
 
 /obj/mecha/proc/exosuit_renamed(datum/om/prompt/text/ask)
 	var/newname = sanitizeSafe(ask.text, MAX_NAME_LEN)

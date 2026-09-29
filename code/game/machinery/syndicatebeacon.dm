@@ -53,40 +53,38 @@
 
 /obj/machinery/syndicate_beacon/proc/beacon_offer_answered(datum/om/prompt/confirm/ask)
 	var/mob/user = ask.answerer
-	Topic("betraitor=1;traitormob=\ref[user]", list("betraitor" = "1", "traitormob" = "\ref[user]"))
+	betraitor(user, user)
 
-/obj/machinery/syndicate_beacon/Topic(href, href_list)
-	if(..())
+/// Offers `M` (who must be `user`) a traitor role; the beacon's accept path.
+/obj/machinery/syndicate_beacon/proc/betraitor(mob/user, mob/M)
+	if(!topic_allowed(user))
 		return
-	if(href_list["betraitor"])
-		if(charges < 1)
-			updateUsrDialog(usr)
+	if(charges < 1)
+		updateUsrDialog(user)
+		return
+	if(!istype(M) || M != user) // self-only: nobody accepts for someone else
+		return
+	if(M.mind?.special_role || jobban_isbanned(M, JOB_SYNDICATE))
+		temptext = span_italics("We have no need for you at this time. Have a pleasant day.") + "<br>"
+		updateUsrDialog(user)
+		return
+	charges -= 1
+	switch(rand(1,2))
+		if(1)
+			temptext = span_red(span_italics(span_bold("Double-crosser. You planned to betray us from the start. Allow us to repay the favor in kind.")))
+			updateUsrDialog(user)
+			om_after(src, rand(50,200), PROC_REF(selfdestruct))
 			return
-		var/mob/M = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), href_list["traitormob"])
-		if(!istype(M) || M != usr) // bounded locate + self-only: a crafted href must not traitor someone else
+		if(2)
 			return
-		if(M.mind?.special_role || jobban_isbanned(M, JOB_SYNDICATE))
-			temptext = span_italics("We have no need for you at this time. Have a pleasant day.") + "<br>"
-			updateUsrDialog(usr)
-			return
-		charges -= 1
-		switch(rand(1,2))
-			if(1)
-				temptext = span_red(span_italics(span_bold("Double-crosser. You planned to betray us from the start. Allow us to repay the favor in kind.")))
-				updateUsrDialog(usr)
-				om_after(src, rand(50,200), PROC_REF(selfdestruct))
-				return
-			if(2)
-				return
-		if(ishuman(M))
-			var/mob/living/carbon/human/N = M
-			to_chat(N, span_infoplain(span_bold("You have joined the ranks of the Syndicate and become a traitor to the station!")))
-			GLOB.traitors.add_antagonist(N.mind)
-			GLOB.traitors.equip(N)
-			message_admins("[N]/([N.ckey]) has accepted a traitor objective from a syndicate beacon.")
+	if(ishuman(M))
+		var/mob/living/carbon/human/N = M
+		to_chat(N, span_infoplain(span_bold("You have joined the ranks of the Syndicate and become a traitor to the station!")))
+		GLOB.traitors.add_antagonist(N.mind)
+		GLOB.traitors.equip(N)
+		message_admins("[N]/([N.ckey]) has accepted a traitor objective from a syndicate beacon.")
 
-	updateUsrDialog(usr)
-	return
+	updateUsrDialog(user)
 
 /obj/machinery/syndicate_beacon/proc/selfdestruct()
 	selfdestructing = 1
@@ -196,28 +194,25 @@
 
 // attack_hand body relocated to code/modules/admin/misc_admin_panels.dm (structured TGUI).
 
-/obj/machinery/syndicate_beacon/virgo/Topic(href, href_list)
-	if(..())
+/obj/machinery/syndicate_beacon/virgo/betraitor(mob/user, mob/M)
+	if(!topic_allowed(user))
 		return
-	if(href_list["betraitor"])
-		if(charges < 1)
-			updateUsrDialog(usr)
-			return
-		var/mob/M = locate(href_list["traitormob"])
-		if(!istype(M) || !M.mind)
-			return
-		if(M.mind.tcrystals > 0 || jobban_isbanned(M, JOB_SYNDICATE))
-			temptext = "<i>We have no need for you at this time. Have a pleasant day.</i><br>"
-			updateUsrDialog(usr)
-			return
-		charges -= 1
-		if(ishuman(M))
-			var/mob/living/carbon/human/N = M
-			to_chat(N, span_infoplain(span_bold("Access granted, here are the supplies!")))
-			GLOB.traitors.spawn_uplink(N)
-			N.mind.tcrystals = DEFAULT_TELECRYSTAL_AMOUNT
-			N.mind.accept_tcrystals = 1
-			message_admins("[N]/([N.ckey]) has received an uplink and telecrystals from the syndicate beacon.")
+	if(charges < 1)
+		updateUsrDialog(user)
+		return
+	if(!istype(M) || !M.mind)
+		return
+	if(M.mind.tcrystals > 0 || jobban_isbanned(M, JOB_SYNDICATE))
+		temptext = "<i>We have no need for you at this time. Have a pleasant day.</i><br>"
+		updateUsrDialog(user)
+		return
+	charges -= 1
+	if(ishuman(M))
+		var/mob/living/carbon/human/N = M
+		to_chat(N, span_infoplain(span_bold("Access granted, here are the supplies!")))
+		GLOB.traitors.spawn_uplink(N)
+		N.mind.tcrystals = DEFAULT_TELECRYSTAL_AMOUNT
+		N.mind.accept_tcrystals = 1
+		message_admins("[N]/([N.ckey]) has received an uplink and telecrystals from the syndicate beacon.")
 
-	updateUsrDialog(usr)
-	return
+	updateUsrDialog(user)

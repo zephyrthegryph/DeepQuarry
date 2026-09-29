@@ -23,13 +23,13 @@
 		return
 	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_cloak=1'>[equip_ready ? "A" : "Dea"]ctivate</a>"
 
-/obj/item/mecha_parts/mecha_equipment/cloak/Topic(href, href_list)
-	..()
-	if(href_list["toggle_cloak"])
-		if(equip_ready)
-			start_cloak()
-		else
-			stop_cloak()
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/cloak, "toggle_cloak", PROC_REF(topic_toggle_cloak))
+
+/obj/item/mecha_parts/mecha_equipment/cloak/proc/topic_toggle_cloak(mob/user, list/args)
+	if(equip_ready)
+		start_cloak()
+	else
+		stop_cloak()
 	return
 
 /obj/item/mecha_parts/mecha_equipment/cloak/proc/start_cloak()

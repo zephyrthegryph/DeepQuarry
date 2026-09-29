@@ -141,30 +141,51 @@
 	// structured TGUI AdminReport; byond:// links forwarded to host.
 	dq_admin_report_html(user, "The Empress Protects", dat, src)
 
-/datum/codex_tree/Topic(href, href_list)
-	. = ..()
-	if(.)
-		return
+TOPIC_ACTION(/datum/codex_tree, "target", PROC_REF(topic_target), TOPIC_REF("target", /datum/lore/codex)) // Direct link, using a ref
+TOPIC_ACTION(/datum/codex_tree, "search_query", PROC_REF(topic_search_query), TOPIC_TEXT("search_query", MAX_NAME_LEN))
+TOPIC_ACTION(/datum/codex_tree, "go_to_parent", PROC_REF(topic_go_to_parent))
+TOPIC_ACTION(/datum/codex_tree, "go_back", PROC_REF(topic_go_back))
+TOPIC_ACTION(/datum/codex_tree, "go_to_home", PROC_REF(topic_go_to_home))
+TOPIC_ACTION(/datum/codex_tree, "quick_link", PROC_REF(topic_quick_link), TOPIC_TEXT("quick_link", MAX_NAME_LEN)) // Indirect link, using a (hopefully) indexed word.
+TOPIC_ACTION(/datum/codex_tree, "close", PROC_REF(topic_close))
 
-
-	if(href_list["target"]) // Direct link, using a ref
-		var/datum/lore/codex/new_page = locate(href_list["target"])
-		go_to_page(new_page, FALSE, usr)
-	else if(href_list["search_query"])
-		quick_link(href_list["search_query"], usr)
-	else if(href_list["go_to_parent"])
-		go_to_parent(usr)
-	else if(href_list["go_back"])
-		go_back(usr)
-	else if(href_list["go_to_home"])
-		go_to_page(home, FALSE, usr)
-	else if(href_list["quick_link"]) // Indirect link, using a (hopefully) indexed word.
-		quick_link(href_list["quick_link"], usr)
-	else if(href_list["close"])
-		// close TGUI codex viewer
-		SStgui.close_uis(src)
+/datum/codex_tree/proc/topic_target(mob/user, list/args)
+	var/datum/lore/codex/new_page = args["target"]
+	if(!new_page || new_page.holder() != src) // only pages of this codex
 		return
-	display(usr)
+	go_to_page(new_page, FALSE, user)
+	display(user)
+	return TRUE
+
+/datum/codex_tree/proc/topic_search_query(mob/user, list/args)
+	quick_link(args["search_query"], user)
+	display(user)
+	return TRUE
+
+/datum/codex_tree/proc/topic_go_to_parent(mob/user, list/args)
+	go_to_parent(user)
+	display(user)
+	return TRUE
+
+/datum/codex_tree/proc/topic_go_back(mob/user, list/args)
+	go_back(user)
+	display(user)
+	return TRUE
+
+/datum/codex_tree/proc/topic_go_to_home(mob/user, list/args)
+	go_to_page(home, FALSE, user)
+	display(user)
+	return TRUE
+
+/datum/codex_tree/proc/topic_quick_link(mob/user, list/args)
+	quick_link(args["quick_link"], user)
+	display(user)
+	return TRUE
+
+/datum/codex_tree/proc/topic_close(mob/user, list/args)
+	// close TGUI codex viewer
+	SStgui.close_uis(src)
+	return TRUE
 
 DECLARE_REF(/datum/codex_tree, "home", OWNED, null)
 

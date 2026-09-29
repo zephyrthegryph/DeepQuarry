@@ -112,21 +112,21 @@
 			SStgui.update_uis(src)
 			return TRUE
 		if("untag")
-			holder().Topic("del_tag=[ref]", list("_src_" = "holder", "del_tag" = ref))
+			holder().topic_internal(ui.user, list("_src_" = "holder", "del_tag" = ref))
 			SStgui.update_uis(src)
 			return TRUE
 		if("mark")
-			holder().Topic("mark_datum=[ref]", list("_src_" = "holder", "mark_datum" = ref))
+			holder().topic_internal(ui.user, list("_src_" = "holder", "mark_datum" = ref))
 			SStgui.update_uis(src)
 			return TRUE
 		if("vv")
-			holder().Topic("Vars=[ref]", list("_src_" = "vars", "Vars" = ref))
+			ui.user.client?.vv_topic(list("Vars" = ref), TRUE)
 			return TRUE
 		if("pp")
-			holder().Topic("priv_msg=[ref]", list("_src_" = "holder", "playerpanel" = ref))
+			holder().topic_internal(ui.user, list("_src_" = "holder", "playerpanel" = ref))
 			return TRUE
 		if("follow")
-			holder().Topic("adminmoreinfo=[ref]", list("_src_" = "holder", "adminobs" = ref))
+			holder().topic_internal(ui.user, list("_src_" = "holder", "adminobs" = ref))
 			return TRUE
 
 // ---- ToRban list ---------------------------------------------------------
@@ -261,12 +261,12 @@
 			SStgui.update_uis(src)
 			return TRUE
 		if("unban")
-			holder().Topic("unbanf=[key_id]", list("unbanf" = key_id))
+			holder().topic_internal(ui.user, list("unbanf" = key_id))
 			snapshot_bans()
 			SStgui.update_uis(src)
 			return TRUE
 		if("edit")
-			holder().Topic("unbane=[key_id]", list("unbane" = key_id))
+			holder().topic_internal(ui.user, list("unbane" = key_id))
 			snapshot_bans()
 			SStgui.update_uis(src)
 			return TRUE
@@ -453,12 +453,12 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 		if("toggle_job")
 			var/title = "[params["title"]]"
 			// use REF() macro (canonical form) instead of legacy \ref[target] interpolation.
-			holder().Topic("jobban3=[title];jobban4=[REF(target())]", list("_src_" = "holder", "jobban3" = title, "jobban4" = REF(target())))
+			holder().topic_internal(ui.user, list("_src_" = "holder", "jobban3" = title, "jobban4" = REF(target())))
 			SStgui.update_uis(src)
 			return TRUE
 		if("toggle_dept")
 			var/bantype = "[params["bantype"]]"
-			holder().Topic("jobban3=[bantype];jobban4=[REF(target())]", list("_src_" = "holder", "jobban3" = bantype, "jobban4" = REF(target())))
+			holder().topic_internal(ui.user, list("_src_" = "holder", "jobban3" = bantype, "jobban4" = REF(target())))
 			SStgui.update_uis(src)
 			return TRUE
 		if("refresh")
@@ -537,16 +537,16 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 	switch(action)
 		if("sort")
 			var/by = "[params["by"]]"
-			our_comp().Topic("sort=[by]", list("our_comp" = "\ref[our_comp()]", "sort" = by))
+			our_comp().tgui_act("sort", list("field" = by), ui, ui.state())
 			SStgui.update_uis(src)
 			return TRUE
 		if("order_by_id")
-			our_comp().Topic("orderbyid=1", list("our_comp" = "\ref[our_comp()]", "orderbyid" = "1"))
+			our_comp().tgui_act("orderbyid", list(), ui, ui.state())
 			SStgui.update_uis(src)
 			return TRUE
 		if("delete")
 			var/id = "[params["id"]]"
-			our_comp().Topic("delid=[id]", list("our_comp" = "\ref[our_comp()]", "delid" = id))
+			our_comp().tgui_act("delid", list("id" = id), ui, ui.state())
 			SStgui.update_uis(src)
 			return TRUE
 
@@ -588,8 +588,8 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 	if(.)
 		return
 	if(action == "transfer_supplies")
-		var/ref = "[params["mob_ref"]]"
-		Topic("betraitor=1;traitormob=[ref]", list("betraitor" = "1", "traitormob" = ref))
+		var/mob/M = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), "[params["mob_ref"]]")
+		betraitor(ui.user, M)
 		SStgui.update_uis(src)
 		return TRUE
 

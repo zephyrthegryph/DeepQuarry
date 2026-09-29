@@ -31,9 +31,6 @@ DECLARE_REF(/obj/machinery/embedded_controller, "program", OWNED, null)
 		if(program.signal_requires_processing(signal, receive_method, receive_param))
 			MACHINE_WAKE(src)
 
-/obj/machinery/embedded_controller/Topic()
-	. = ..()
-	// stack_trace("WARNING: Embedded controller [src] ([type]) had Topic() called unexpectedly. Please report this.") // statpanel means that topic can always be called for clicking
 
 /obj/machinery/embedded_controller/tgui_act(action, params, datum/tgui/ui)
 	if(..())

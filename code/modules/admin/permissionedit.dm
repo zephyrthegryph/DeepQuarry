@@ -20,7 +20,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 
 /// Runs as a prompt flow (flow_ask()): every question is asked before anything changes, and the
 /// answers re-run this proc, so the rights checks below run again when they arrive.
-/datum/admins/proc/edit_rights_topic(list/href_list)
+/datum/admins/proc/edit_rights_topic(task, admin_key)
 	if(!GLOB.prompt_flow)
 		return prompt_flow(src, PROC_REF(edit_rights_topic), args)
 	if(!check_rights(R_PERMISSIONS))
@@ -32,10 +32,8 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		return
 	var/datum/asset/permissions_assets = get_asset_datum(/datum/asset/simple/namespaced/common)
 	permissions_assets.send(usr.client)
-	var/admin_key = href_list["key"]
 	var/admin_ckey = ckey(admin_key)
 
-	var/task = href_list["editrights"]
 	var/datum/admins/target_admin_datum = GLOB.admin_datums[admin_ckey]
 	if(!target_admin_datum)
 		target_admin_datum = GLOB.deadmins[admin_ckey]

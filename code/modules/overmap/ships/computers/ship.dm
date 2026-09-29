@@ -48,13 +48,12 @@ DECLARE_REF(/obj/machinery/computer/ship, "flight_operations_ui", OWNED, null)
 		if(sync_linked(user))
 			interface_interact(user)
 
-/obj/machinery/computer/ship/Topic(href, href_list)
-	if(..())
-		return TRUE
-	if(href_list["sync"])
-		if(sync_linked(usr))
-			interface_interact(usr)
-		return TRUE
+TOPIC_ACTION(/obj/machinery/computer/ship, "sync", PROC_REF(topic_sync))
+
+/obj/machinery/computer/ship/proc/topic_sync(mob/user, list/args)
+	if(sync_linked(user))
+		interface_interact(user)
+	return TRUE
 
 /// Opens the TGUI for this console. Return TRUE if handled.
 /// Direct interactions inside this proc must perform their own CanInteract checks.

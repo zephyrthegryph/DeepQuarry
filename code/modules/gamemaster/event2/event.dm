@@ -176,19 +176,12 @@ This allows for events that have their announcement happen after the end itself.
 	if(ended && announced)
 		finish()
 
-/datum/event2/event/Topic(href, href_list)
-	if(..())
-		return
+TOPIC_ACTION(/datum/event2/event, "abort", PROC_REF(topic_abort), TOPIC_RIGHTS(R_ADMIN|R_EVENT|R_DEBUG))
 
-	if(!check_rights(R_ADMIN|R_EVENT|R_DEBUG))
-		message_admins("[usr] has attempted to manipulate an event without sufficent privilages.")
-		return
-
-	if(href_list["abort"])
-		abort()
-		message_admins("Event '[type]' was aborted by [usr.key].")
-
-	// SSgame_master.interact(usr) // To refresh the UI. // We don't use SSgame_master yet.
+/datum/event2/event/proc/topic_abort(mob/user, list/args)
+	abort()
+	message_admins("Event '[type]' was aborted by [user.key].")
+	return TRUE
 
 /*
  * Procs to Override

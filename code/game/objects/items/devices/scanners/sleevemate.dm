@@ -188,132 +188,154 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 
 	to_chat(user,output)
 
-/obj/item/sleevemate/Topic(href, href_list)
-	usr.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+TOPIC_ACTION(/obj/item/sleevemate, "mindscan", PROC_REF(topic_mindscan), TOPIC_REF("target", /mob/living, TOPIC_IN_MOBS))
+TOPIC_ACTION(/obj/item/sleevemate, "bodyscan", PROC_REF(topic_bodyscan), TOPIC_REF("target", /mob/living, TOPIC_IN_MOBS))
+TOPIC_ACTION(/obj/item/sleevemate, "mindsteal", PROC_REF(topic_mindsteal), TOPIC_REF("target", /mob/living, TOPIC_IN_MOBS))
+TOPIC_ACTION(/obj/item/sleevemate, "mindput", PROC_REF(topic_mindput), TOPIC_REF("target", /mob/living, TOPIC_IN_MOBS))
+TOPIC_ACTION(/obj/item/sleevemate, "mindupload", PROC_REF(topic_mindupload), TOPIC_REF("target", /mob/living, TOPIC_IN_MOBS))
+TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), TOPIC_REF("target", /mob/living, TOPIC_IN_MOBS), TOPIC_TEXT("mindrelease", MAX_NAME_LEN))
 
-	//Sanity checking/href-hacking checking
-	if(usr.get_active_hand() != src)
-		to_chat(usr,span_warning("You're not holding \the [src]."))
+// Every scan link works only from the active hand.
+/obj/item/sleevemate/topic_allowed(mob/user, list/href_list)
+	. = ..()
+	if(!.)
 		return
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	if(user.get_active_hand() != src)
+		to_chat(user,span_warning("You're not holding \the [src]."))
+		return FALSE
 
-	var/target_ref = href_list["target"]
-	var/mob/living/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), target_ref)
+/// The link's target, if it is there and next to `user` (says why not otherwise).
+/obj/item/sleevemate/proc/topic_target(mob/user, list/args)
+	var/mob/living/target = args["target"]
 	if(!target)
-		to_chat(usr,span_warning("Unable to operate on that target."))
+		to_chat(user,span_warning("Unable to operate on that target."))
+		return null
+	if(!user.Adjacent(target))
+		to_chat(user,span_warning("You are too far from that target."))
+		return null
+	return target
+
+/obj/item/sleevemate/proc/topic_mindscan(mob/user, list/args)
+	var/mob/living/target = topic_target(user, args)
+	if(!target)
+		return
+	if(!target.mind || (target.mind.name in GLOB.prevent_respawns))
+		to_chat(user,span_warning("Target seems totally braindead."))
 		return
 
-	if(!usr.Adjacent(target))
-		to_chat(usr,span_warning("You are too far from that target."))
-		return
-
-	//The actual options
-	if(href_list["mindscan"])
-		if(!target.mind || (target.mind.name in GLOB.prevent_respawns))
-			to_chat(usr,span_warning("Target seems totally braindead."))
-			return
-
-		var/nif
-		if(ishuman(target))
-			var/mob/living/carbon/human/H = target
-			nif = H.nif
-			persist_nif_data(H)
-
-		usr.visible_message("[usr] begins scanning [target]'s mind.",span_notice("You begin scanning [target]'s mind."))
-		om_task_start(/datum/om/task/timed/sleevemate_topic, usr, target, receiver = src, nif = nif)
-
-		return
-
-	if(href_list["bodyscan"])
-		if(!ishuman(target))
-			to_chat(usr,span_warning("Target is not of an acceeptable body type."))
-			return
-
+	var/nif
+	if(ishuman(target))
 		var/mob/living/carbon/human/H = target
+		nif = H.nif
+		persist_nif_data(H)
 
-		usr.visible_message("[usr] begins scanning [target]'s body.",span_notice("You begin scanning [target]'s body."))
-		om_task_start(/datum/om/task/timed/sleevemate_topic2, usr, target, receiver = src, H = H)
+	user.visible_message("[user] begins scanning [target]'s mind.",span_notice("You begin scanning [target]'s mind."))
+	om_task_start(/datum/om/task/timed/sleevemate_topic, user, target, receiver = src, nif = nif)
 
+/obj/item/sleevemate/proc/topic_bodyscan(mob/user, list/args)
+	var/mob/living/target = topic_target(user, args)
+	if(!target)
+		return
+	if(!ishuman(target))
+		to_chat(user,span_warning("Target is not of an acceeptable body type."))
 		return
 
-	if(href_list["mindsteal"])
-		if(!target.mind || (target.mind.name in GLOB.prevent_respawns))
-			to_chat(usr,span_warning("Target seems totally braindead."))
-			return
+	var/mob/living/carbon/human/H = target
 
-		if(stored_mind())
-			to_chat(usr,span_warning("There is already someone's mind stored inside"))
-			return
+	user.visible_message("[user] begins scanning [target]'s body.",span_notice("You begin scanning [target]'s body."))
+	om_task_start(/datum/om/task/timed/sleevemate_topic2, user, target, receiver = src, H = H)
 
-		om_ask(usr, /datum/om/prompt/confirm/sleevemate_mindsteal, PROC_REF(mindsteal_confirmed), victim = target)
+/obj/item/sleevemate/proc/topic_mindsteal(mob/user, list/args)
+	var/mob/living/target = topic_target(user, args)
+	if(!target)
+		return
+	if(!target.mind || (target.mind.name in GLOB.prevent_respawns))
+		to_chat(user,span_warning("Target seems totally braindead."))
 		return
 
-	if(href_list["mindput"])
-		if(!stored_mind())
-			to_chat(usr,span_warning("\The [src] no longer has a stored mind."))
-			return
+	if(stored_mind())
+		to_chat(user,span_warning("There is already someone's mind stored inside"))
+		return
 
+	om_ask(user, /datum/om/prompt/confirm/sleevemate_mindsteal, PROC_REF(mindsteal_confirmed), victim = target)
+
+/obj/item/sleevemate/proc/topic_mindput(mob/user, list/args)
+	var/mob/living/target = topic_target(user, args)
+	if(!target)
+		return
+	if(!stored_mind())
+		to_chat(user,span_warning("\The [src] no longer has a stored mind."))
+		return
+
+	var/mob/living/carbon/human/H = target
+
+	if(!istype(H))
+		return //href hacking only
+
+	if(!H.nif)
+		return //Lost it? or href hacking
+
+	var/datum/nifsoft/soulcatcher/SC = H.nif.imp_check(NIF_SOULCATCHER)
+	if(!SC)
+		return //Uninstalled it?
+
+	//Lazzzyyy.
+	if(!GLOB.sleevemate_mob)
+		GLOB.sleevemate_mob = new()
+
+	if(!(soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE))
+		to_chat(user,span_notice("[GLOB.sleevemate_mob] can't be transferred!"))
+		return
+
+	put_mind(GLOB.sleevemate_mob)
+	SC.catch_mob(GLOB.sleevemate_mob)
+	to_chat(user,span_notice("Mind transferred into Soulcatcher!"))
+
+/obj/item/sleevemate/proc/topic_mindupload(mob/user, list/args)
+	var/mob/living/target = topic_target(user, args)
+	if(!target)
+		return
+	if(!stored_mind())
+		to_chat(user,span_warning("\The [src] no longer has a stored mind."))
+		return
+
+	if(!istype(target))
+		return
+
+	if(ishuman(target))
 		var/mob/living/carbon/human/H = target
-
-		if(!istype(target))
-			return //href hacking only
-
-		if(!H.nif)
-			return //Lost it? or href hacking
-
-		var/datum/nifsoft/soulcatcher/SC = H.nif.imp_check(NIF_SOULCATCHER)
-		if(!SC)
-			return //Uninstalled it?
-
-		//Lazzzyyy.
-		if(!GLOB.sleevemate_mob)
-			GLOB.sleevemate_mob = new()
-
-		if(!(soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE))
-			to_chat(usr,span_notice("[GLOB.sleevemate_mob] can't be transferred!"))
+		if(H.resleeve_lock && stored_mind().loaded_from_ckey != H.resleeve_lock)
+			to_chat(user,span_warning("\The [H] is protected from impersonation!"))
+			return
+		//Changeling bodies. Only changelings can be put in them.
+		if(H.changeling_locked && !is_changeling(stored_mind()))
+			to_chat(user,span_warning("\The [H] is too complex to put this mind into!"))
 			return
 
-		put_mind(GLOB.sleevemate_mob)
-		SC.catch_mob(GLOB.sleevemate_mob)
-		to_chat(usr,span_notice("Mind transferred into Soulcatcher!"))
+	user.visible_message(span_warning("[user] begins uploading someone's mind into [target]!"),span_notice("You begin uploading a mind into [target]!"))
+	om_task_timed(user, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done4), done_args = list(target, user))
 
-	if(href_list["mindupload"])
-		if(!stored_mind())
-			to_chat(usr,span_warning("\The [src] no longer has a stored mind."))
+/obj/item/sleevemate/proc/topic_mindrelease(mob/user, list/args)
+	var/mob/living/target = topic_target(user, args)
+	if(!target)
+		return
+	if(stored_mind())
+		to_chat(user,span_warning("There is already someone's mind stored inside"))
+		return
+	var/mob/living/carbon/human/H = target
+	if(!istype(H) || !H.nif)
+		return
+	var/datum/nifsoft/soulcatcher/SC = H.nif.imp_check(NIF_SOULCATCHER)
+	if(!SC)
+		return
+	for(var/mob/living/carbon/brain/caught_soul/soul in SC.brainmobs)
+		if(soul.name == args["mindrelease"])
+			get_mind(soul)
+			qdel(soul)
+			to_chat(user,span_notice("Mind downloaded!"))
 			return
-
-		if(!istype(target))
-			return
-
-		if(ishuman(target))
-			var/mob/living/carbon/human/H = target
-			if(H.resleeve_lock && stored_mind().loaded_from_ckey != H.resleeve_lock)
-				to_chat(usr,span_warning("\The [H] is protected from impersonation!"))
-				return
-			//Changeling bodies. Only changelings can be put in them.
-			if(H.changeling_locked && !is_changeling(stored_mind()))
-				to_chat(usr,span_warning("\The [H] is too complex to put this mind into!"))
-				return
-
-		usr.visible_message(span_warning("[usr] begins uploading someone's mind into [target]!"),span_notice("You begin uploading a mind into [target]!"))
-		om_task_timed(usr, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done4), done_args = list(target, usr))
-
-	if(href_list["mindrelease"])
-		if(stored_mind())
-			to_chat(usr,span_warning("There is already someone's mind stored inside"))
-			return
-		var/mob/living/carbon/human/H = target
-		if(!istype(H) || !H.nif)
-			return
-		var/datum/nifsoft/soulcatcher/SC = H.nif.imp_check(NIF_SOULCATCHER)
-		if(!SC)
-			return
-		for(var/mob/living/carbon/brain/caught_soul/soul in SC.brainmobs)
-			if(soul.name == href_list["mindrelease"])
-				get_mind(soul)
-				qdel(soul)
-				to_chat(usr,span_notice("Mind downloaded!"))
-				return
-		to_chat(usr,span_notice("Unable to find that mind in Soulcatcher!"))
+	to_chat(user,span_notice("Unable to find that mind in Soulcatcher!"))
 
 /datum/om/task/timed/sleevemate_topic
 	duration = 8 SECONDS

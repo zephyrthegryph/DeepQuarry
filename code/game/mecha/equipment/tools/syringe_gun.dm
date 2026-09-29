@@ -74,45 +74,27 @@ DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_vo
 	return 1
 
 
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/Topic(href,href_list)
-	..()
-	var/datum/topic_input/top_filter = new (href,href_list)
-	if(top_filter.get("toggle_mode"))
-		mode = !mode
-		update_equip_info()
-		return
-	if(top_filter.get("select_reagents"))
-		processed_reagents.len = 0
-		var/m = 0
-		var/message
-		for(var/i=1 to known_reagents.len)
-			if(m>=synth_speed)
-				break
-			var/reagent = top_filter.get("reagent_[i]")
-			if(reagent && (reagent in known_reagents))
-				message = "[m ? ", " : null][known_reagents[reagent]]"
-				processed_reagents += reagent
-				m++
-		if(processed_reagents.len)
-			message += " added to production"
-			om_task_periodic(src, PERIODIC_FAST)
-			occupant_message(message)
-			occupant_message("Reagent processing started.")
-			src.mecha_log_message("Reagent processing started.")
-		return
-	// TGUI: structured reagent management UI (MechaSyringeGun.tsx).
-	if(top_filter.get("show_reagents"))
-		if(chassis?.slot_item(MECHA_SLOT_PILOT))
-			tgui_interact(chassis?.slot_item(MECHA_SLOT_PILOT))
-	if(top_filter.get("purge_reagent"))
-		var/reagent = top_filter.get("purge_reagent")
-		if(reagent)
-			reagents.del_reagent(reagent)
-		return
-	if(top_filter.get("purge_all"))
-		reagents.clear_reagents()
-		return
-	return
+// The legacy reagent-selection form is gone (MechaSyringeGun.tsx selects via tgui_act).
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "toggle_mode", PROC_REF(topic_toggle_mode))
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "show_reagents", PROC_REF(topic_show_reagents))
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_reagent", PROC_REF(topic_purge_reagent), TOPIC_TEXT("purge_reagent", 64))
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_all", PROC_REF(topic_purge_all))
+
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_toggle_mode(mob/user, list/args)
+	mode = !mode
+	update_equip_info()
+
+// TGUI: structured reagent management UI (MechaSyringeGun.tsx).
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_show_reagents(mob/user, list/args)
+	tgui_interact(user)
+
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_purge_reagent(mob/user, list/args)
+	var/reagent = args["purge_reagent"]
+	if(reagent)
+		reagents.del_reagent(reagent)
+
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_purge_all(mob/user, list/args)
+	reagents.clear_reagents()
 
 // structured TGUI for syringe-gun reagent management.
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/tgui_interact(mob/user, datum/tgui/ui)
@@ -487,10 +469,10 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 		M.add_overlay(drone_overlay)
 	return
 
-/obj/item/mecha_parts/mecha_equipment/crisis_drone/Topic(href, href_list)
-	..()
-	if(href_list["toggle_drone"])
-		toggle_drone()
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/crisis_drone, "toggle_drone", PROC_REF(topic_toggle_drone))
+
+/obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/topic_toggle_drone(mob/user, list/args)
+	toggle_drone()
 	return
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/get_equip_info()

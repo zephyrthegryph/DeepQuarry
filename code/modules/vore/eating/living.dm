@@ -582,7 +582,6 @@
 	return taste_message
 
 
-
 //This is just the above proc but switched about.
 /mob/living/proc/smell(mob/living/smelled in living_mobs(1, TRUE))
 	set name = "Smell"
@@ -620,8 +619,6 @@
 			smell_message += "a plain old normal [src]"
 
 	return smell_message
-
-
 
 
 //
@@ -1168,40 +1165,21 @@
 	. += "<a href='byond://?src=\ref[src];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>"
 
 
-/mob/living/Topic(href, href_list)	//Can't find any instances of Topic() being overridden by /mob/living in polaris' base code, even though /mob/living/carbon/human's Topic() has a ..() call
-	if(href_list["vore_prefs"])
-		display_voreprefs(usr)
-	if(href_list["ooc_notes"])
-		do_examine_ooc(usr)
-	if(href_list["edit_ooc_notes"])
-		if(usr == src)
-			set_metainfo_panel(usr)
-	if(href_list["edit_ooc_note_likes"])
-		if(usr == src)
-			set_metainfo_likes(usr)
-	if(href_list["edit_ooc_note_dislikes"])
-		if(usr == src)
-			set_metainfo_dislikes(usr)
-	if(href_list["save_ooc_panel"])
-		if(usr == src)
-			save_ooc_panel(usr)
-	if(href_list["print_ooc_notes_chat"])
-		print_ooc_notes_chat(usr)
-	if(href_list["edit_ooc_note_favs"])
-		if(usr == src)
-			set_metainfo_favs(usr)
-	if(href_list["edit_ooc_note_maybes"])
-		if(usr == src)
-			set_metainfo_maybes(usr)
-	if(href_list["set_metainfo_ooc_style"])
-		set_metainfo_ooc_style(usr)
-	if(href_list["save_private_notes"])
-		if(usr == src)
-			save_private_notes(usr)
-	if(href_list["edit_private_notes"])
-		if(usr == src)
-			set_metainfo_private_notes(usr)
-	return ..()
+TOPIC_ACTION(/mob/living, "vore_prefs", PROC_REF(topic_vore_prefs))
+TOPIC_ACTION(/mob/living, "ooc_notes", PROC_REF(topic_ooc_notes))
+TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes_chat))
+
+/mob/living/proc/topic_vore_prefs(mob/user, list/args)
+	display_voreprefs(user)
+	return TRUE
+
+/mob/living/proc/topic_ooc_notes(mob/user, list/args)
+	do_examine_ooc(user)
+	return TRUE
+
+/mob/living/proc/topic_print_ooc_notes_chat(mob/user, list/args)
+	print_ooc_notes_chat(user)
+	return TRUE
 
 /mob/living/proc/display_voreprefs(mob/user)	//Called by Topic() calls on instances of /mob/living (and subtypes) containing vore_prefs as an argument
 	if(!user)
@@ -1489,7 +1467,6 @@ DECLARE_REF(/datum/vore_panel_button, "owner", BACK, "vore_panel_button")
 	icon = 'icons/mob/screen/midnight.dmi'
 	icon_state = "vore"
 	screen_loc = ui_smallquad
-
 
 
 //

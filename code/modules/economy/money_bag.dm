@@ -58,39 +58,6 @@ DECLARE_INTERACTIONS(/obj/item/moneybag, \
 		to_chat(user, span_blue("You empty the [C.name] into the bag."))
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/moneybag/Topic(href, href_list)
-	if(..())
-		return 1
-	// Standard interaction gating: the actor must be a conscious, unrestrained mob
-	// adjacent to the bag before any contents can be moved.
-	if(!isliving(usr))
-		return
-	var/mob/living/user = usr
-	if(user.stat != CONSCIOUS || user.restrained() || !user.Adjacent(src))
-		return
-	usr.set_machine(src)
-	src.add_fingerprint(usr)
-	if(href_list["remove"])
-		var/obj/item/coin/COIN
-		switch(href_list["remove"])
-			if(MAT_GOLD)
-				COIN = locate(/obj/item/coin/gold,src.contents)
-			if(MAT_SILVER)
-				COIN = locate(/obj/item/coin/silver,src.contents)
-			if(MAT_IRON)
-				COIN = locate(/obj/item/coin/iron,src.contents)
-			if(MAT_DIAMOND)
-				COIN = locate(/obj/item/coin/diamond,src.contents)
-			if(MAT_PHORON)
-				COIN = locate(/obj/item/coin/phoron,src.contents)
-			if(MAT_URANIUM)
-				COIN = locate(/obj/item/coin/uranium,src.contents)
-		if(!COIN)
-			return
-		COIN.forceMove(src.loc)
-	return
-
-
 
 /obj/item/moneybag/vault
 
@@ -102,3 +69,25 @@ DECLARE_INTERACTIONS(/obj/item/moneybag, \
 	new /obj/item/coin/silver(src)
 	new /obj/item/coin/gold(src)
 	new /obj/item/coin/gold(src)
+
+/// Takes one coin of material `coin_type` out of the bag.
+/obj/item/moneybag/proc/moneybag_remove_coin(mob/living/user, coin_type)
+	// Standard interaction gating: the actor must be a conscious, unrestrained mob
+	// adjacent to the bag before any contents can be moved.
+	if(!istype(user) || user.stat != CONSCIOUS || user.restrained() || !user.Adjacent(src))
+		return
+	var/static/list/coin_types = list(
+		MAT_GOLD = /obj/item/coin/gold,
+		MAT_SILVER = /obj/item/coin/silver,
+		MAT_IRON = /obj/item/coin/iron,
+		MAT_DIAMOND = /obj/item/coin/diamond,
+		MAT_PHORON = /obj/item/coin/phoron,
+		MAT_URANIUM = /obj/item/coin/uranium,
+	)
+	var/coin_path = coin_types[coin_type]
+	if(!coin_path)
+		return
+	var/obj/item/coin/COIN = locate_within(src, coin_path)
+	if(!COIN)
+		return
+	COIN.forceMove(src.loc)

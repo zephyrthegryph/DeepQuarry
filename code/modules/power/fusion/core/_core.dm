@@ -77,15 +77,17 @@ DECLARE_REF(/obj/machinery/power/fusion_core, "material_sample", SPILL, null)
 		if(!QDELETED(owned_field))
 			om_after(owned_field, 1, TYPE_PROC_REF(/obj/effect/fusion_em_field, core_tick))
 
-/obj/machinery/power/fusion_core/Topic(href, href_list)
-	if(..())
-		return 1
-	if(href_list["str"])
-		var/dif = text2num(href_list["str"])
-		field_strength = min(max(field_strength + dif, MIN_FIELD_STR), MAX_FIELD_STR)
-		update_active_power_usage(500 * field_strength)
-		if(owned_field)
-			owned_field.ChangeFieldStrength(field_strength)
+TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC_NUM("str"))
+
+/obj/machinery/power/fusion_core/proc/topic_str(mob/user, list/args)
+	var/dif = args["str"]
+	if(!isnum(dif))
+		return
+	field_strength = min(max(field_strength + dif, MIN_FIELD_STR), MAX_FIELD_STR)
+	update_active_power_usage(500 * field_strength)
+	if(owned_field)
+		owned_field.ChangeFieldStrength(field_strength)
+	return TRUE
 
 /obj/machinery/power/fusion_core/proc/Startup()
 	if(owned_field)

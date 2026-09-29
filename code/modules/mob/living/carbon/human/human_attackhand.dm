@@ -552,18 +552,6 @@
 
 // check_attacks verb body relocated to code/modules/mob/living/carbon/human/attacks_panel.dm (structured TGUI).
 
-/mob/living/carbon/human/Topic(href, href_list)
-	if(href_list["default_attk"])
-		if(href_list["default_attk"] == "reset_attk")
-			set_default_attack(null)
-		else
-			var/datum/unarmed_attack/u_attack = locate(href_list["default_attk"])
-			if(u_attack && (u_attack in species.unarmed_attacks))
-				set_default_attack(u_attack)
-		check_attacks()
-		return 1
-	else
-		return ..()
 
 /mob/living/carbon/human/proc/set_default_attack(datum/unarmed_attack/u_attack)
 	default_attack = u_attack

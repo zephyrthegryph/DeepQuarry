@@ -73,7 +73,7 @@ GLOBAL_TABLE(spellbook_catalog, GLOBAL_PROC_REF(build_spellbook_catalog))
 			var/spell_id = params["id"]
 			if(!spell_id)
 				return TRUE
-			Topic("spell_choice=[spell_id]", list("spell_choice" = "[spell_id]"))
+			choose_spell(ui.user, "[spell_id]", params, ui)
 			SStgui.update_uis(src)
 			return TRUE
 

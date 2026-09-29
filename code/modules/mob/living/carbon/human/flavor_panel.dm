@@ -71,11 +71,11 @@ TYPE_TABLE_DECLARE(/datum/flavor_panel, get_flavor_labels, list( \
 	switch(action)
 		if("edit")
 			var/key = "[params["key"]]"
-			host.Topic("flavor_change=[key]", list("flavor_change" = key))
+			topic_dispatch(host, ui.user, list("flavor_change" = key))
 			SStgui.update_uis(src)
 			return TRUE
 		if("done")
-			host.Topic("flavor_change=done", list("flavor_change" = "done"))
+			topic_dispatch(host, ui.user, list("flavor_change" = "done"))
 			return TRUE
 
 DECLARE_REF(/datum/flavor_panel, "host", HELD, null)

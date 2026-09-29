@@ -52,9 +52,6 @@
 /**
  * Called when a href for this datum is clicked
  */
-/datum/Topic(href, href_list[])
-	..()
-
 /**
  * The base of the core Destroy() chain: phase 7 of destroy_transaction()
  * (code/datums/lifecycle/transaction.dm). Only qdel() reaches it.

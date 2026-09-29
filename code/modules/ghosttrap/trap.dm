@@ -53,17 +53,16 @@ TYPE_TABLE_DECLARE(/datum/ghosttrap, ghosttrap_ban_checks, list(JOB_AI,JOB_CYBOR
 			to_chat(O, "[request_string]<a href='byond://?src=\ref[src];candidate=\ref[O];target=\ref[target]'>Click here</a> if you wish to play as this option.")
 
 // Handles a response to request_player().
-/datum/ghosttrap/Topic(href, href_list)
-	if(..())
-		return 1
-	if(href_list["candidate"] && href_list["target"])
-		var/mob/observer/dead/candidate = locate(href_list["candidate"]) // BYOND magic.
-		var/mob/target = locate(href_list["target"])                     // So much BYOND magic.
-		if(!target || !candidate)
-			return
-		if(candidate == usr && assess_candidate(candidate) && !target.ckey)
-			transfer_personality(candidate,target)
-		return 1
+TOPIC_ACTION(/datum/ghosttrap, "candidate", PROC_REF(topic_candidate), TOPIC_REF("candidate", /mob/observer/dead, TOPIC_IN_MOBS), TOPIC_REF("target", /mob, TOPIC_IN_MOBS))
+
+/datum/ghosttrap/proc/topic_candidate(mob/user, list/args)
+	var/mob/observer/dead/candidate = args["candidate"]
+	var/mob/target = args["target"]
+	if(!target || !candidate)
+		return
+	if(candidate == user && assess_candidate(candidate) && !target.ckey)
+		transfer_personality(candidate,target)
+	return TRUE
 
 // Shunts the ckey/mind into the target mob.
 /datum/ghosttrap/proc/transfer_personality(mob/candidate, mob/target)

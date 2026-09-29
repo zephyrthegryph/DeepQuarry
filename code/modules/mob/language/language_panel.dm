@@ -69,16 +69,16 @@ GLOBAL_LIST_EMPTY(dq_languages_panels)
 	switch(action)
 		if("set_default")
 			var/ref = "[params["ref"]]"
-			host.Topic("default_lang=[ref]", list("default_lang" = ref))
+			topic_dispatch(host, ui.user, list("default_lang" = ref))
 			SStgui.update_uis(src)
 			return TRUE
 		if("reset_default")
-			host.Topic("default_lang=reset", list("default_lang" = "reset"))
+			topic_dispatch(host, ui.user, list("default_lang" = "reset"))
 			SStgui.update_uis(src)
 			return TRUE
 		if("edit_key")
 			var/ref = "[params["ref"]]"
-			host.Topic("set_lang_key=[ref]", list("set_lang_key" = ref))
+			topic_dispatch(host, ui.user, list("set_lang_key" = ref))
 			SStgui.update_uis(src)
 			return TRUE
 

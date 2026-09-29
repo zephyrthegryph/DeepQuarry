@@ -174,7 +174,7 @@ GLOBAL_TABLE(non_innate_language_keys, GLOBAL_PROC_REF(build_non_innate_language
 			SStgui.update_uis(src)
 			return TRUE
 		if("vv")
-			holder().Topic("Vars=[tref]", list("_src_" = "vars", "Vars" = tref))
+			ui.user.client?.vv_topic(list("Vars" = tref), TRUE)
 			return TRUE
 		if("traitor")
 			forward_topic("traitor=[tref]")
