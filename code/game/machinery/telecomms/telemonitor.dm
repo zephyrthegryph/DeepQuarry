@@ -144,6 +144,6 @@
 /obj/machinery/computer/telecomms/monitor/proc/set_temp(text, color = "average")
 	temp = list("color" = color, "text" = text)
 
-/// LC-refs: SelectedMachine -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// SelectedMachine (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telecomms/monitor/proc/SelectedMachine() as /obj/machinery/telecomms
 	return SelectedMachine

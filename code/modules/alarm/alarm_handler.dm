@@ -3,9 +3,8 @@
 
 /datum/alarm_handler
 	var/category = ""
-	// ALLOW(instance_list): d: alarm handler singletons, one per alarm kind
-	var/list/datum/alarm/alarms = new		// All alarms, to handle cases when an origin has been deleted with one or more active alarms
-	var/list/datum/alarm/alarms_assoc	// Associative list of alarms, to efficiently acquire them based on origin.
+	/// Every active alarm (owned), kept sorted. alarm_for() finds one by origin.
+	var/list/datum/alarm/alarms
 	var/list/listeners				// A list of all objects interested in alarm changes.
 
 /// Expires alarms every 2 s while any is up (a raised alarm starts it); with none left it parks.
@@ -26,15 +25,14 @@
 
 	new_alarm = 0
 	//see if there is already an alarm of this origin
-	var/datum/alarm/existing = LAZYACCESS(alarms_assoc, origin)
+	var/datum/alarm/existing = alarm_for(origin)
 	if(existing)
 		existing.set_source_data(source, duration, severity, hidden)
 	else
 		existing = new/datum/alarm(origin, source, duration, severity, hidden)
 		new_alarm = 1
+		own_add(src, "alarms", existing)
 
-	own_add(src, "alarms", existing)
-	own_put(src, "alarms_assoc", origin, existing)
 	om_task_periodic(src, PERIODIC_SLOW)
 	if(new_alarm)
 		own_set(src, "alarms", dd_sortedObjectList(alarms))
@@ -48,22 +46,25 @@
 		return
 	origin = origin.get_alarm_origin()
 
-	var/datum/alarm/existing = LAZYACCESS(alarms_assoc, origin)
+	var/datum/alarm/existing = alarm_for(origin)
 	if(existing)
 		existing.clear(source)
 		return check_alarm_cleared(existing)
 
-/// Remove every strong alarm reference to an atom which is being destroyed.
-/// This deliberately does not depend on the caller still occupying its original
-/// alarm origin and also clears cached camera lists.
+/// The active alarm raised for `origin`, or null.
+/datum/alarm_handler/proc/alarm_for(atom/origin)
+	for(var/datum/alarm/alarm as anything in alarms)
+		if(alarm.origin == origin)
+			return alarm
+	return null
+
+/// An atom being destroyed stops sourcing alarms and leaves the cached camera lists. (An
+/// alarm's `origin` is a relation view: it clears by itself.)
 /datum/alarm_handler/proc/release_atom(atom/departing)
 	if(!departing)
 		return
-	var/list/datum/alarm/check_alarms = alarms.Copy()
+	var/list/datum/alarm/check_alarms = alarms?.Copy()
 	for(var/datum/alarm/alarm as anything in check_alarms)
-		if(alarm.origin() == departing)
-			own_take_member(src, "alarms_assoc", alarm.origin())
-			rel_clear(alarm, "origin")
 		alarm.clear(departing)
 		if(alarm.cameras)
 			alarm.cameras -= departing
@@ -83,10 +84,8 @@
 
 /datum/alarm_handler/proc/check_alarm_cleared(datum/alarm/alarm)
 	if ((alarm.end_time && world.time > alarm.end_time) || !length(alarm.sources))
-		own_take_member(src, "alarms", alarm)
-		own_take_member(src, "alarms_assoc", alarm.origin())
 		on_alarm_change(alarm, ALARM_CLEARED)
-		qdel(alarm)
+		own_remove(src, "alarms", alarm) // destroys it
 		return 1
 	return 0
 
@@ -106,7 +105,7 @@
 		return
 
 	origin = origin.get_alarm_origin()
-	var/datum/alarm/existing = LAZYACCESS(alarms_assoc, origin)
+	var/datum/alarm/existing = alarm_for(origin)
 	if(!existing)
 		return
 

@@ -62,7 +62,7 @@
 /obj/machinery/camera/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
 		return
-	var/atom/movable/AM = om_resolve(WF)
+	var/atom/movable/AM = WF
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return
@@ -71,6 +71,6 @@
 		if(isliving(AM))
 			newTarget(AM)
 
-/// LC-refs: area motion -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// area motion (a relation view: it reads null once the target is deleted).
 /obj/machinery/camera/proc/area_motion() as /area/ai_monitored
 	return area_motion

@@ -166,12 +166,12 @@ EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
 				if(!GM.loc == get_turf(src))
 					to_chat(user, span_notice("[GM.name] needs to be on the toilet."))
 					return INTERACTION_HANDLED_PASS
-				var/mob/living/swirlie = om_resolve(swirlie_mob)
+				var/mob/living/swirlie = swirlie_mob
 				if(open && !swirlie)
 					user.visible_message(span_danger("[user] starts to give [GM.name] a swirlie!"), span_notice("You start to give [GM.name] a swirlie!"))
-					swirlie_mob = om_handle(GM)
+					rel_set(src, "swirlie_mob", GM)
 					om_task_start(/datum/om/task/timed/wooden_wooden_swirlie, user, GM, receiver = src)
-					swirlie_mob = null
+					rel_clear(src, "swirlie_mob")
 				else
 					user.visible_message(span_danger("[user] slams [GM.name] into the [src]!"), span_notice("You slam [GM.name] into the [src]!"))
 					GM.injure(INJURY_BLUNT, 5, source = src)
@@ -327,11 +327,7 @@ EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
 	. = ..(user, held, interaction, radial_menu_anchor)
 	if(.)
 		return TRUE
-	if(loc_network)
-		for(var/obj/item/perfect_tele_beacon/stationary/nb in REGISTRY_MEMBERS(REGISTRY_TELE_BEACONS_PREMADE))
-			if(nb.tele_network == loc_network)
-				LAZYSET(beacons, nb.tele_name, nb)
-		loc_network = null //Consumed
+	claim_network_beacons()
 
 	if(!(user.ckey in warned_users))
 		LAZYOR(warned_users, user.ckey)
@@ -357,7 +353,7 @@ This device records all warnings given and teleport events for admin review in c
 		return
 
 	else
-		rel_set(src, "destination", LAZYACCESS(beacons, choice))
+		rel_set(src, "destination", find_beacon(choice))
 		rebuild_radial_images()
 
 /obj/item/perfect_tele/magic/proc/page_named(datum/om/prompt/text/ask)
@@ -372,7 +368,7 @@ This device records all warnings given and teleport events for admin review in c
 		to_chat(user, span_warning("Entered name length invalid (must be longer than 2, no more than than 20)."))
 		return
 
-	if(new_name in beacons)
+	if(find_beacon(new_name))
 		to_chat(user, span_warning("No duplicate names, please. '[new_name]' exists already."))
 		return
 
@@ -380,7 +376,7 @@ This device records all warnings given and teleport events for admin review in c
 	nb.tele_name = new_name
 	rel_set(nb, "tele_hand", src)
 	nb.creator = user.ckey
-	LAZYSET(beacons, new_name, nb)
+	rel_add(src, "beacons", nb)
 	beacons_left--
 	if(isliving(user))
 		var/mob/living/L = user

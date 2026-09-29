@@ -691,15 +691,15 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 	name = "heavy snowfall"
 	icon_state = "snowfall_heavy"
 
-/// LC-refs: location -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: location (reads null once it is gone).
 /datum/effect/effect/system/proc/get_location() as /turf
 	return location
 
-/// LC-refs: oldposition -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: oldposition (reads null once it is gone).
 /datum/effect/effect/system/ion_trail_follow/proc/oldposition() as /turf
 	return oldposition
 
-/// LC-refs: oldposition -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: oldposition (reads null once it is gone).
 /datum/effect/effect/system/steam_trail_follow/proc/oldposition() as /turf
 	return oldposition
 

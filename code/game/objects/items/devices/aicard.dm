@@ -194,6 +194,6 @@ DECLARE_INTERACTIONS(/obj/item/aicard, INTERACT_USE(null, PROC_REF(interaction_s
 	if(!om_after(src, 1 SECOND, PROC_REF(wipe_ai_tick), our_ai, power_lost + 2))
 		flush = FALSE
 
-/// LC-refs: carded ai -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: carded ai (reads null once it is gone).
 /obj/item/aicard/proc/carded_ai() as /mob/living/silicon/ai
 	return carded_ai

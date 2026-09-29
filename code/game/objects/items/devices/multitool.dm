@@ -141,14 +141,14 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 /obj/item/multitool/get_multitool()
 	return src
 
-/// LC-refs: buffer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: buffer (reads null once it is gone).
 /obj/item/multitool/proc/buffer() as /obj/machinery/telecomms
 	return buffer
 
-/// LC-refs: connecting -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: connecting (reads null once it is gone).
 /obj/item/multitool/proc/connecting() as /obj/machinery/clonepod
 	return connecting
 
-/// LC-refs: connectable -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: connectable (reads null once it is gone).
 /obj/item/multitool/proc/connectable() as /obj/machinery
 	return connectable

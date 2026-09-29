@@ -88,7 +88,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 		user.visible_message("[user] removes [cell()] from [src]!",span_notice("You remove [cell()]."))
 		user.put_in_hands(cell())
 		cell().update_icon()
-		rel_clear(src, "cell")
+		own_take(src, "cell") // it left for the user's hands
 	return TRUE
 
 /datum/interaction/machine_item/light_construct_insert_cell
@@ -112,7 +112,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 		span_notice("You add [W] to [src]."))
 		playsound(src, 'sound/machines/click.ogg', 50, TRUE)
 		W.forceMove(src)
-		rel_set(src, "cell", W)
+		own_set(src, "cell", W)
 		add_fingerprint(user)
 	return TRUE
 
@@ -172,9 +172,8 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	transfer_fingerprints_to(finished_light)
 	if(cell())
 		finished_light.latent_cell_charge = null
-		own_set(finished_light, "cell", cell())
 		cell().forceMove(finished_light)
-		rel_clear(src, "cell")
+		own_transfer(src, "cell", finished_light, "cell")
 	replace_with(src, finished_light)
 	return ITEM_INTERACT_SUCCESS
 
@@ -1029,11 +1028,11 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 		return
 	if(area_power_token())
 		om_unwatch(src, area_power_token(), /datum/om/behaviour/sleeper/light)
-		rel_clear(src, "area_power_token")
+		area_power_token = null
 	if(A)
 		om_attach(src, /datum/om/behaviour/sleeper/light)
 		om_watch(src, A, CHANGE_AREA_POWER, /datum/om/behaviour/sleeper/light)
-		rel_set(src, "area_power_token", A)
+		area_power_token = A
 
 /// Area power changes and players moving near a waiting auto-flicker light.
 /datum/om/behaviour/sleeper/light
@@ -1755,16 +1754,17 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 	broken()
 
 OWN(/obj/machinery/light, installed_light, OWN_CONTAINED)
+OWN(/obj/machinery/light_construct, cell, OWN_CONTAINED)
 
-/// LC-refs: the newlight this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the newlight this refers to: a relation view, null once that is deleted.
 /obj/machinery/light_construct/proc/newlight() as /obj/machinery/light
 	return newlight
 
-/// LC-refs: the area_power_token this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The area whose power this light draws on (a plain area var).
 /obj/machinery/light/proc/area_power_token() as /area
 	return area_power_token
 
-/// LC-refs: the cell this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The emergency cell fitted in the frame (owned, in its contents).
 /obj/machinery/light_construct/proc/cell() as /obj/item/cell
 	return cell
 

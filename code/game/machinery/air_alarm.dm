@@ -22,7 +22,7 @@
 
 //all air alarms in area are connected via freq 1439
 /area
-	var/main_air_alarm // The air alarm currently managing the others in the area, settings changes go to this one and propogate
+	var/obj/machinery/alarm/main_air_alarm // The air alarm currently managing the others in the area, settings changes go to this one and propogate
 	// All lazy: most areas have no air alarm or vents.
 	var/list/air_vent_names
 	var/list/air_scrub_names
@@ -30,9 +30,13 @@
 	var/list/air_scrub_info
 	var/list/air_alarms
 
+// The area's air alarms (members leave when they die) and its elected main alarm.
+REL_LIST(/area, air_alarms)
+REL(/area, main_air_alarm)
+
 /area/proc/elect_main_air_alarm(exclude_self = FALSE)
 	// loop through all sensors to update the area's sensor list as well
-	main_air_alarm = null
+	rel_clear(src, "main_air_alarm")
 	var/list/checks = list()
 	for(var/obj/machinery/alarm/AA in air_alarms)
 		if(exclude_self && AA == src)
@@ -41,8 +45,8 @@
 			checks += AA
 	if(!checks.len)
 		return
-	main_air_alarm = om_handle(pick(checks))
-	var/obj/machinery/alarm/new_main = om_resolve(main_air_alarm)
+	var/obj/machinery/alarm/new_main = pick(checks)
+	rel_set(src, "main_air_alarm", new_main)
 	for(var/obj/machinery/alarm/AA in checks)
 		if(AA == new_main)
 			om_changed(AA, CHANGE_MACHINE_SETTINGS)
@@ -51,7 +55,7 @@
 		AA.update_icon()
 
 /area/proc/main_air_alarm_is_operating()
-	var/obj/machinery/alarm/AM = om_resolve(main_air_alarm)
+	var/obj/machinery/alarm/AM = main_air_alarm
 	return AM && !(AM.stat & (NOPOWER | BROKEN))
 
 /obj/machinery/alarm
@@ -147,7 +151,7 @@
 	if(!pixel_x && !pixel_y)
 		offset_airalarm()
 	set_wires(new /datum/wires/alarm(src))
-	LAZYADD(alarm_area_ref().air_alarms, src)
+	rel_add(alarm_area_ref(), "air_alarms", src)
 	if(!alarm_area_ref().main_air_alarm_is_operating()) // select main alarm
 		alarm_area_ref().elect_main_air_alarm()
 	set_initial_TLV()
@@ -159,8 +163,8 @@
 	. = ..()
 	if(!alarm_area_ref())
 		return
-	LAZYREMOVE(alarm_area_ref().air_alarms, src)
-	if(om_resolve(alarm_area_ref().main_air_alarm) == src)
+	rel_remove(alarm_area_ref(), "air_alarms", src)
+	if(alarm_area_ref().main_air_alarm == src)
 		alarm_area_ref().elect_main_air_alarm(TRUE)
 
 /obj/machinery/alarm/proc/offset_airalarm()
@@ -206,7 +210,7 @@
 
 /obj/machinery/alarm/proc/update_area()
 	invalidate_gas_dependencies()
-	rel_set(src, "alarm_area", get_area(src))
+	alarm_area = get_area(src)
 	area_uid = "\ref[alarm_area_ref()]"
 	if(name == "alarm")
 		name = "[alarm_area_ref().name] Air Alarm \[[rand(9999)]\]" // random number id to help with players locating alarms, cosmetic
@@ -478,7 +482,7 @@
 		return
 
 	// sub light!
-	var/obj/machinery/alarm/MA = om_resolve(alarm_area_ref().main_air_alarm)
+	var/obj/machinery/alarm/MA = alarm_area_ref().main_air_alarm
 	if(MA == src)
 		// I am the main alarm
 		add_overlay(mutable_appearance(icon, "alarm_Mmode"))
@@ -503,7 +507,7 @@
 	switch(icon_level)
 		if(0)
 			icon_state = "alarm_0"
-			if(om_resolve(alarm_area_ref().main_air_alarm) == src)
+			if(alarm_area_ref().main_air_alarm == src)
 				// active controller
 				add_overlay(mutable_appearance(icon, "alarm_ov0"))
 				add_overlay(emissive_appearance(icon, "alarm_ov0"))
@@ -1128,10 +1132,10 @@
 	..()
 	register_gas_dependencies()
 
-/// LC-refs: alarm area -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The alarm's area (a location: a plain var).
 /obj/machinery/alarm/proc/alarm_area_ref() as /area
 	return alarm_area
 
-/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The radio connection (a relation view).
 /obj/machinery/alarm/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection

@@ -82,6 +82,6 @@ EXTEND_INTERACTIONS(/obj/effect/portal, \
 		else
 			do_teleport(M, target_ref(), 1) ///You will appear adjacent to the beacon
 
-/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: target (reads null once it is gone).
 /obj/effect/portal/proc/target_ref() as /obj/item
 	return target

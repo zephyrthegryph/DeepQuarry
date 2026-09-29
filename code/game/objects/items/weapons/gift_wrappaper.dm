@@ -157,8 +157,8 @@ DECLARE_INTERACTIONS(/obj/item/wrapping_paper, INTERACT_ITEM(null, PROC_REF(inte
 	G.size = W.w_class
 	G.w_class = G.size + 1
 	G.icon_state = text("gift[]", G.size)
-	own_set(G, "gift", W)
 	W.forceMove(G)
+	own_move(W, G, "gift") // from whatever held it before (a holster, a module), or adopted
 	G.add_fingerprint(user)
 	W.add_fingerprint(user)
 	src.add_fingerprint(user)

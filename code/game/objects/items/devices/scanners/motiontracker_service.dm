@@ -39,17 +39,16 @@ GLOBAL_DATUM_INIT(motiontracker_service, /datum/world_service/motiontracker, new
 		var/RF= data[2]
 		var/count 			= data[3]
 		var/list/clients 	= data[4]
-		var/turf/At = om_resolve(AF)
-		var/turf/Rt = om_resolve(RF)
-		if(Rt && At && count)
+		// A queue entry lives one service step: turfs held directly, skipped once released.
+		var/turf/At = AF
+		var/turf/Rt = RF
+		if(isturf(Rt) && isturf(At) && !QDELETED(Rt) && !QDELETED(At) && count)
 			while(count-- > 0)
 				// Place at root turf offset from signal responder's turf using px offsets. So it will show up over visblocking.
 				var/image/client_only/motion_echo/E = new /image/client_only/motion_echo('icons/effects/effects.dmi', Rt, "motion_echo", OBFUSCATION_LAYER, SOUTH)
 				E.place_from_root(At)
-				for(var/CW in clients)
-					var/client/C = om_resolve(CW)
-					if(C)
-						E.append_client(C)
+				for(var/client/C in clients) // clients that left read null
+					E.append_client(C)
 		currentrun.Remove(key)
 		expended_echos[key] = data
 		if(TICK_CHECK)
@@ -76,7 +75,7 @@ GLOBAL_DATUM_INIT(motiontracker_service, /datum/world_service/motiontracker, new
 	if(queued_echo_turfs[REF(T)]) // Already echoing
 		return
 	all_pings_round++
-	OM_EMIT(src, /datum/om/event/movable_motiontracker, om_handle(source), T)
+	OM_EMIT(src, /datum/om/event/movable_motiontracker, om_handle(source), T) // ALLOW(ownership): the event's constructor (code/datums/om_events) takes a handle
 
 // We get this back from anything that handles the signal, and queues up a turf to draw the echo on
 // The logic is in the SIGNAL HANDLER for if it does anything at all with the signal instead of assuming
@@ -86,7 +85,7 @@ GLOBAL_DATUM_INIT(motiontracker_service, /datum/world_service/motiontracker, new
 		return
 	var/rfe = REF(At)
 	if(!queued_echo_turfs[rfe]) // We only care about the final turf, not the root turf for duping
-		queued_echo_turfs[rfe] = list(om_handle(At),om_handle(Rt),echo_count,list(client))
+		queued_echo_turfs[rfe] = list(At, Rt, echo_count, list(client))
 		all_echos_round++
 	else
 		var/list/data = queued_echo_turfs[rfe]

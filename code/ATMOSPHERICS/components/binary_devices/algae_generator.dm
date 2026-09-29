@@ -28,7 +28,8 @@
 	var/recent_moles_transferred = 0
 	var/ui_error = null // For error messages to show up in nano ui.
 
-	var/datum/gas_mixture/internal = new()
+	/// The farm's own working mixture (owned).
+	var/datum/gas_mixture/internal
 	var/const/input_gas = GAS_CO2
 	var/const/output_gas = GAS_O2
 
@@ -37,6 +38,7 @@
 
 /obj/machinery/atmospherics/binary/algae_farm/Initialize(mapload)
 	. = ..()
+	own_set(src, "internal", new /datum/gas_mixture)
 	desc = initial(desc) + " Its outlet port is to the [dir2text(dir)]."
 	default_apply_parts()
 	update_icon()

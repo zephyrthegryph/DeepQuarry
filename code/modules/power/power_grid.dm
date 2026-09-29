@@ -186,7 +186,7 @@
 	var/datum/material_power_overlay/overlay = GLOB.machine_service.power_material_overlays[id]
 	var/efficiency = 1
 	if(consumer && overlay?.material_graph)
-		efficiency = overlay.material_graph.efficiencies?[om_handle(consumer)] || 1
+		efficiency = overlay.material_graph.efficiency_for(consumer)
 	var/drawn
 	if(id < 0)
 		drawn = between(0, amount / efficiency, grid[PGRID_AVAIL] - grid[PGRID_LOAD])
@@ -195,8 +195,7 @@
 	grid[PGRID_LOAD] += drawn
 	var/delivered = drawn * efficiency
 	if(consumer && overlay?.material_graph)
-		LAZYINITLIST(overlay.material_consumers)
-		overlay.material_consumers[om_handle(consumer)] += delivered
+		overlay.add_material_consumption(consumer, delivered)
 	return delivered
 
 /// Flags a problem visible on power monitors for `duration` deciseconds.
@@ -277,11 +276,12 @@
 /datum/material_power_overlay
 	/// The region this overlays (0 for a detached test overlay).
 	var/region_id = 0
-	/// Member cables, rebuilt with the material graph.
-	var/list/cables = list() // ALLOW(instance_list): d: overlays exist because engineered cables joined them; never empty
+	/// Member cables (two-sided with each cable's material_overlay), rebuilt with the material graph.
+	var/list/obj/structure/cable/cables
 	var/material_cache_dirty = TRUE
 	var/datum/material_power_graph/material_graph
-	var/list/material_consumers
+	/// Demand this interval: vertex index -> watts (material_graph.vertex_for()).
+	var/alist/material_consumers
 	var/material_loss_watts = 0
 	var/material_pending_heat = 0
 	var/material_pending_heat_elapsed = 0
@@ -296,27 +296,29 @@
 	. = ..()
 	if(region_id && GLOB.machine_service.power_material_overlays[region_id] == src)
 		GLOB.machine_service.power_material_overlays -= region_id
-	release_material_cables()
 
 /datum/material_power_overlay/proc/add_cable(obj/structure/cable/C)
-	rel_add(src, "cables", C)
-	rel_set(C, "material_overlay", src)
+	rel_add(src, "cables", C) // two-sided: sets C.material_overlay
 	invalidate_material_cache()
 
 /datum/material_power_overlay/proc/remove_cable(obj/structure/cable/C)
 	rel_remove(src, "cables", C)
-	if(C.material_overlay == src)
-		rel_clear(C, "material_overlay")
 	invalidate_material_cache()
+
+/// Books `watts` delivered to `consumer` this interval, at its vertex.
+/datum/material_power_overlay/proc/add_material_consumption(atom/consumer, watts)
+	var/index = material_graph?.vertex_for(consumer)
+	if(!index)
+		return
+	if(!material_consumers)
+		material_consumers = alist()
+	material_consumers[index] += watts
 
 /datum/material_power_overlay/proc/invalidate_material_cache()
 	material_cache_dirty = TRUE
 
 /datum/material_power_overlay/proc/release_material_cables()
-	for(var/obj/structure/cable/C as anything in cables)
-		if(C?.material_overlay == src)
-			rel_clear(C, "material_overlay")
-	rel_set(src, "cables", list())
+	rel_clear(src, "cables") // two-sided: each cable's material_overlay lets go
 
 /datum/material_power_overlay/proc/rebuild_material_cache()
 	material_cache_dirty = FALSE
@@ -326,17 +328,19 @@
 			var/obj/structure/cable/C = SSvg.entity_lookup(entity)
 			if(istype(C) && C.power_entity == entity)
 				rel_add(src, "cables", C)
-				rel_set(C, "material_overlay", src)
-	own_clear(src, "material_graph", OWN_DELETE)
+	// Demand booked so far is keyed by the old graph's vertices: it can't carry over.
+	material_consumers = null
 	own_set(src, "material_graph", new /datum/material_power_graph)
 	material_graph.build(cables, region_id)
 
-/// Supply by source for the solver: each bound machine's registered rate.
+/// Supply by vertex for the solver: each bound machine's registered rate, at its vertex.
 /datum/material_power_overlay/proc/material_sources()
-	var/list/sources = list()
+	var/alist/sources = alist()
 	for(var/obj/machinery/power/M as anything in power_grid_nodes(region_id))
 		if(M.power_supply_rate > 0)
-			sources[om_handle(M)] = M.power_supply_rate
+			var/index = material_graph?.vertex_for(M)
+			if(index)
+				sources[index] += M.power_supply_rate
 	return sources
 
 /// One overlay step: settle heat for the last interval, solve, and pay the
@@ -350,11 +354,11 @@
 	if(!material_graph?.has_custom_conductors && !material_graph?.has_superconductors)
 		power_set_material_warning(region_id, FALSE)
 		return FALSE
-	LAZYINITLIST(material_consumers)
 	for(var/obj/machinery/power/terminal/T in power_grid_nodes(region_id))
 		var/obj/machinery/power/apc/A = T.master()
 		if(istype(A))
-			material_consumers[om_handle(T)] += A.channel_load_total()
+			add_material_consumption(T, A.channel_load_total())
+
 	material_pending_heat += material_loss_watts * elapsed_seconds
 	material_pending_heat_elapsed += elapsed_seconds
 	if(material_cache_dirty || material_graph.has_superconductors || material_pending_heat_elapsed >= MATERIAL_POWER_HEAT_SETTLEMENT_INTERVAL)

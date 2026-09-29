@@ -422,14 +422,17 @@
 	..()
 	register_gas_dependencies()
 
-/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// radio connection (a relation view: it reads null once the target is deleted).
 /obj/machinery/door/airlock/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection
 
-/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// radio connection (a relation view: it reads null once the target is deleted).
 /obj/machinery/airlock_sensor/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection
 
-/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// radio connection (a relation view: it reads null once the target is deleted).
 /obj/machinery/access_button/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection
+
+// Remote door buttons find airlocks by id_tag (REL_KEYED sources).
+KEYED_TARGET(/obj/machinery/door/airlock, id_tag)

@@ -157,6 +157,6 @@ EXTEND_INTERACTIONS(/obj/machinery/vitals_monitor, \
 		beep = !beep
 		to_chat(user, span_notice("You turn the sound on \the [src] [beep ? "on" : "off"]."))
 
-/// LC-refs: victim -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// victim (a relation view: it reads null once the target is deleted).
 /obj/machinery/vitals_monitor/proc/victim() as /mob/living/carbon/human
 	return victim

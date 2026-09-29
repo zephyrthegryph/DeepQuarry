@@ -85,8 +85,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 		to_chat(user, span_red("There's already a phoron tank loaded."))
 		return TRUE
 	user.drop_item()
-	rel_set(src, "P", W)
 	W.forceMove(src)
+	own_set(src, "P", W)
 	update_icons()
 	return TRUE
 
@@ -147,7 +147,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 		return
 	Z.forceMove(get_turf(src))
 	Z.layer = initial(Z.layer)
-	rel_clear(src, "P")
+	own_take(src, "P") // dropped on the floor
 	if(active)
 		toggle_power()
 	else
@@ -185,6 +185,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 	update_icons()
 	return
 
-/// LC-refs: the P this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The loaded phoron tank (owned, in its contents; dropped when the collector is destroyed).
 /obj/machinery/power/rad_collector/proc/P() as /obj/item/tank/phoron
 	return P
+
+OWN(/obj/machinery/power/rad_collector, P, OWN_SPILL)

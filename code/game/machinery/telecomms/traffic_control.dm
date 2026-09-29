@@ -193,14 +193,14 @@
 		updateUsrDialog(user)
 		return 1
 
-/// LC-refs: editingcode -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// editingcode (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telecomms/traffic/proc/editingcode() as /mob
 	return editingcode
 
-/// LC-refs: lasteditor -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// lasteditor (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telecomms/traffic/proc/lasteditor() as /mob
 	return lasteditor
 
-/// LC-refs: SelectedServer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// SelectedServer (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telecomms/traffic/proc/SelectedServer() as /obj/machinery/telecomms/server
 	return SelectedServer

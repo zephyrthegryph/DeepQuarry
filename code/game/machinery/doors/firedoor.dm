@@ -73,8 +73,8 @@
 			LAZYADD(A.all_doors, src)
 			areas_added += A
 
-REL_PAIR(/obj/machinery/door/firedoor, turbolift_floor, doors)
-REL_PAIR_LIST(/datum/turbolift_floor, doors, turbolift_floor)
+// A lift floor's firedoor: one-sided view (the floor lists it in its own doors REL_LIST).
+REL(/obj/machinery/door/firedoor, turbolift_floor)
 
 /// Phase 2: leaves the door lists of every area it guards.
 /obj/machinery/door/firedoor/lifecycle_dematerialize()

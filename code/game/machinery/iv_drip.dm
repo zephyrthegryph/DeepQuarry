@@ -204,6 +204,6 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 
 OWN(/obj/machinery/iv_drip, beaker, OWN_CONTAINED)
 
-/// LC-refs: attached -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// attached (a relation view: it reads null once the target is deleted).
 /obj/machinery/iv_drip/proc/attached() as /mob/living/carbon/human
 	return attached

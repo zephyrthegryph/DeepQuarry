@@ -845,10 +845,10 @@
 	..()
 	register_gas_dependencies()
 
-/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// radio connection (a relation view: it reads null once the target is deleted).
 /obj/machinery/air_sensor/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection
 
-/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// radio connection (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/general_air_control/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection

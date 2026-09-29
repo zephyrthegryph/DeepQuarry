@@ -42,7 +42,8 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	var/list/internal_channels
 
 	var/datum/radio_frequency/radio_connection
-	var/list/datum/radio_frequency/secure_radio_connections // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	/// Channel name -> the radio service's shared frequency datum (not owned; rebuilt on materialize).
+	var/list/datum/radio_frequency/secure_radio_connections
 
 	///If we're a syndicate beacon or not.
 	var/beacon = FALSE
@@ -76,7 +77,7 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	. = ..()
 	set_frequency(frequency)
 	for (var/ch_name in channels)
-		own_put(src, "secure_radio_connections", ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(decl): per-channel service call with extra arguments
+		LAZYSET(secure_radio_connections, ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 
 /obj/item/radio/on_dematerialize()
 	if(GLOB.radio_service)
@@ -627,7 +628,6 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 
 /obj/item/radio/borg
 	var/mob/living/silicon/robot/myborg // Cyborg which owns this radio. Used for power checks
-	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/obj/item/encryptionkey/keyslot = null//Borg radios can handle a single encryption key
 	icon = 'icons/obj/robot_component.dmi' // Cyborgs radio icons should look like the component.
 	icon_state = "radio"
@@ -667,7 +667,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		return ITEM_INTERACT_BLOCKING
 	for(var/ch_name in channels)
 		GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
-		own_put(src, "secure_radio_connections", ch_name, null)
+		LAZYREMOVE(secure_radio_connections, ch_name) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 	keyslot.forceMove(get_turf(user))
 	own_take(src, "keyslot")
 	recalculateChannels()
@@ -709,17 +709,17 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		name = "broken radio headset"
 		return
 	for (var/ch_name in channels)
-		own_put(src, "secure_radio_connections", ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT))
+		LAZYSET(secure_radio_connections, ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 
 /obj/item/radio/proc/config(op)
 	if(GLOB.radio_service)
 		for (var/ch_name in channels)
 			GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
-	secure_radio_connections = new
+	secure_radio_connections = null // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 	channels = op
 	if(GLOB.radio_service)
 		for (var/ch_name in op)
-			own_put(src, "secure_radio_connections", ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT))
+			LAZYSET(secure_radio_connections, ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 	return
 
 /obj/item/radio/off
@@ -870,10 +870,10 @@ DECLARE_DEFAULT_CHILD(/obj/item/radio, "secure_radio_connections", list())
 DECLARE_REGISTRY(/obj/item/radio, REGISTRY_LISTENING_OBJECTS)
 OWN(/obj/item/radio/borg, keyslot, OWN_CONTAINED)
 
-/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: radio connection (reads null once it is gone).
 /obj/item/radio/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection
 
-/// LC-refs: myborg -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: myborg (reads null once it is gone).
 /obj/item/radio/borg/proc/myborg() as /mob/living/silicon/robot
 	return myborg

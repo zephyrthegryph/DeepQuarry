@@ -96,6 +96,6 @@ DECLARE_INTERACTIONS(/obj/item/holowarrant, \
 	for(var/i = 0 to 3)
 		new /obj/item/holowarrant(src) // addition ends
 
-/// LC-refs: active -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: active (reads null once it is gone).
 /obj/item/holowarrant/proc/active() as /datum/data/record/warrant
 	return active

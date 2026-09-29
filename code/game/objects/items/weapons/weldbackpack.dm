@@ -18,7 +18,7 @@
 	reagents = R
 	rel_set(R, "my_atom", src)
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
-	rel_set(src, "nozzle", new nozzle_type(src))
+	own_set(src, "nozzle", new nozzle_type(src)) // the pack owns its nozzle (deleted with it, even out in a hand)
 	nozzle_attached = 1
 
 

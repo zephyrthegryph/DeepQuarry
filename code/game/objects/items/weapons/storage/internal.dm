@@ -85,6 +85,6 @@ EXTEND_INTERACTIONS(/obj/item/storage/internal, INTERACT_HAND_UNGATED(null, TYPE
 /obj/item/storage/internal/Adjacent(atom/neighbor)
 	return master_item().Adjacent(neighbor)
 
-/// LC-refs: master item -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: master item (reads null once it is gone).
 /obj/item/storage/internal/proc/master_item() as /obj/item
 	return master_item

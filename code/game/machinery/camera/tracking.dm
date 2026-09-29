@@ -143,7 +143,7 @@
 		rel_clear(src, "cameraFollow")
 
 	var/mob/target = (isnull(LAZYACCESS(track.humans, target_name)) ? LAZYACCESS(track.others, target_name) : LAZYACCESS(track.humans, target_name))
-	own_take(src, "track")
+	own_clear(src, "track", OWN_DELETE)
 	ai_actual_track(target)
 
 /mob/living/silicon/ai/proc/ai_cancel_tracking(forced = 0)

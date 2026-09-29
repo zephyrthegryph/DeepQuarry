@@ -127,6 +127,6 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo/c4detonator, INTERACT_SELF(nul
 	to_chat(user, span_notice("You unscrew the top panel of \the [src] revealing a button."))
 	return ITEM_INTERACT_SUCCESS
 
-/// LC-refs: bomb -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: bomb (reads null once it is gone).
 /obj/item/flame/lighter/zippo/c4detonator/proc/bomb() as /obj/item/syndie/c4explosive
 	return bomb

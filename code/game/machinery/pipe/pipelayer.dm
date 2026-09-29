@@ -217,6 +217,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/pipelayer, "W", /obj/item/tool/wrench)
 
 	return 1
 
-/// LC-refs: old turf -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// old turf (a relation view: it reads null once the target is deleted).
 /obj/machinery/pipelayer/proc/old_turf() as /turf
 	return old_turf

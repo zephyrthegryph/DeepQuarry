@@ -123,6 +123,6 @@
 	to_chat(usr, span_warning("The cryptographic sequencer seems to do nothing."))
 	return 0
 
-/// LC-refs: mobspawned -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// mobspawned (a relation view: it reads null once the target is deleted).
 /obj/machinery/button/mob_spawner_button/proc/mobspawned() as /mob/living/simple_mob
 	return mobspawned
