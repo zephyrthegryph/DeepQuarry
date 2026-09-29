@@ -262,7 +262,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	/// Emergency cell deadlines (world.time; 0 for none) and when discharge accounting last ran.
 	EXPIRY_TMP_DECLARE(emergency_recharge_at)
 	EXPIRY_TMP_DECLARE(emergency_discharge_at)
-	var/emergency_discharge_started
+	EXPIRY_DECLARE(emergency_discharge_started)
 	/// Wake state: the area whose power it watches, the one om_after() timer on
 	/// next_light_deadline(), and the auto-flicker chunk watches and recheck.
 	var/tmp/area_power_token_handle
@@ -1120,15 +1120,15 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	// Set the initial emergency appearance immediately, then account for charge
 	// in coarse time-based batches: one timer per fixture every 10 seconds.
 	use_emergency_power(0)
-	emergency_discharge_started = world.time
-	emergency_discharge_at = world.time + 10 SECONDS
+	EXPIRY_STAMP(src, emergency_discharge_started, CLOCK_WORLD)
+	EXPIRY_SET(src, emergency_discharge_at, 10 SECONDS, CLOCK_WORLD)
 	schedule_light_timer()
 
 /obj/machinery/light/proc/settle_emergency_discharge()
 	if(!emergency_discharge_started || !has_cell())
 		return
 	var/elapsed = max(0, world.time - emergency_discharge_started)
-	emergency_discharge_started = world.time
+	EXPIRY_STAMP(src, emergency_discharge_started, CLOCK_WORLD)
 	var/amount = LIGHT_EMERGENCY_POWER_USE * (elapsed / (2 SECONDS))
 	if(amount > 0)
 		use_emergency_power(min(amount, emergency_cell().charge))
@@ -1144,7 +1144,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 		emergency_discharge_started = 0
 		update(FALSE)
 		return
-	emergency_discharge_at = world.time + 10 SECONDS
+	EXPIRY_SET(src, emergency_discharge_at, 10 SECONDS, CLOCK_WORLD)
 
 /obj/machinery/light/proc/schedule_emergency_recharge()
 	if(!cell || cell.charge >= cell.maxcharge || !has_power() || emergency_recharge_at)
@@ -1152,7 +1152,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	// Charging is time based. Preserve the historical rate of 0.4 charge every
 	// two seconds while stable power is available.
 	var/charge_steps = CEILING((cell.maxcharge - cell.charge) / (LIGHT_EMERGENCY_POWER_USE * 2), 1)
-	emergency_recharge_at = world.time + max(1, charge_steps * (2 SECONDS))
+	EXPIRY_SET(src, emergency_recharge_at, max(1, charge_steps * (2 SECONDS)), CLOCK_WORLD)
 	schedule_light_timer()
 
 /obj/machinery/light/proc/finish_emergency_recharge()
@@ -1182,11 +1182,11 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 		schedule_light_timer()
 		return
 	if(flickering)
-		flicker_check_at = world.time + 2 SECONDS
+		EXPIRY_SET(src, flicker_check_at, 2 SECONDS, CLOCK_WORLD)
 	else if(check_for_player_proximity(src, radius = 12, ignore_ghosts = FALSE, ignore_afk = TRUE))
 		seton(TRUE) // Lights must be on to flicker.
 		flicker(5)
-		flicker_check_at = world.time + 2 SECONDS
+		EXPIRY_SET(src, flicker_check_at, 2 SECONDS, CLOCK_WORLD)
 	else
 		seton(FALSE) // Otherwise keep it dark and spooky for when someone shows up.
 		flicker_check_at = 0

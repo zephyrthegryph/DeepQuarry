@@ -40,7 +40,7 @@ DECLARE_PERIODIC(/obj/item/reagent_containers/glass/replenishing, PERIODIC_SLOW)
 	if(isliving(loc))
 		om_task_periodic(src, PERIODIC_SLOW)
 	if(isliving(src.loc) && ELAPSED(src, last_twitch, CLOCK_WORLD) > 5 SECONDS)
-		last_twitch = world.time
+		EXPIRY_STAMP(src, last_twitch, CLOCK_WORLD)
 
 //a vampiric statuette
 //todo: cult integration
@@ -75,7 +75,7 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 	if(ELAPSED(src, last_eat, CLOCK_WORLD) > eat_interval)
 		var/obj/effect/decal/cleanable/blood/B = locate_in_list(range(2,src), /obj/effect/decal/cleanable/blood)
 		if(B)
-			last_eat = world.time
+			EXPIRY_STAMP(src, last_eat, CLOCK_WORLD)
 			B.moveToNullspace()
 			if(istype(B, /obj/effect/decal/cleanable/blood/drip))
 				charges += 0.25
@@ -128,7 +128,7 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 		bloodcall(M)
 
 /obj/item/vampiric/proc/bloodcall(mob/living/carbon/human/M)
-	last_bloodcall = world.time
+	EXPIRY_STAMP(src, last_bloodcall, CLOCK_WORLD)
 	if(istype(M))
 		playsound(src, pick('sound/hallucinations/wail.ogg','sound/hallucinations/veryfar_noise.ogg','sound/hallucinations/far_noise.ogg'), 50, 1, -3)
 		LAZYADD(nearby_mobs, M)

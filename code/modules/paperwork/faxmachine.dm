@@ -102,7 +102,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 		return
 	if(L.stat || L.restrained())
 		return
-	if(GLOB.last_fax_role_request && (ELAPSED(GLOB, last_fax_role_request, CLOCK_WORLD) < 5 MINUTES))
+	if(GLOB.last_fax_role_request && (ELAPSED_SINCE(src, GLOB.last_fax_role_request, CLOCK_WORLD) < 5 MINUTES))
 		to_chat(L, span_warning("The global automated relays are still recalibrating. Try again later or relay your request in written form for processing."))
 		return
 
@@ -181,7 +181,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	message_color = ping_dept.color
 
 	message_chat_rolerequest(message_color, ping_name, reason, role)
-	GLOB.last_fax_role_request = world.time
+	GLOB.last_fax_role_request = EXPIRY_AT(src, CLOCK_WORLD, 0)
 	to_chat(L, span_notice("Your request was transmitted."))
 
 /obj/machinery/photocopier/faxmachine/tgui_interact(mob/user, datum/tgui/ui)

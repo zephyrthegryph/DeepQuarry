@@ -46,7 +46,7 @@
 	/// List of selected items
 	var/list/choices
 	/// Time when the input was created
-	var/start_time
+	EXPIRY_DECLARE(start_time)
 	/// Timeout for the input
 	var/timeout
 	/// Whether the input was closed
@@ -68,7 +68,7 @@
 
 	if (timeout)
 		src.timeout = timeout
-		start_time = world.time
+		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
 		om_qdel_after(src, timeout)
 
 /datum/tgui_checkbox_input/proc/wait()

@@ -32,7 +32,7 @@
 	var/mothershuttle 	//tag of mothershuttle
 	var/motherdock		//tag of mothershuttle landmark, defaults to starting location
 
-	var/tmp/depart_time = 0 //Similar to above, set when the shuttle leaves when long jumping. Used for progress bars.
+	EXPIRY_TMP_DECLARE(depart_time) //Similar to above, set when the shuttle leaves when long jumping. Used for progress bars.
 
 	var/debug_logging = FALSE // If set to true, the shuttle will start broadcasting its debug messages to admins
 
@@ -195,8 +195,8 @@
 		make_sounds(HYPERSPACE_END)
 		return	//someone cancelled the launch
 
-	arrive_time = world.time + travel_time*10
-	depart_time = world.time
+	EXPIRY_SET(src, arrive_time, travel_time*10, CLOCK_WORLD)
+	EXPIRY_STAMP(src, depart_time, CLOCK_WORLD)
 
 	moving_status = SHUTTLE_INTRANSIT
 	on_shuttle_departure(start_location, destination)

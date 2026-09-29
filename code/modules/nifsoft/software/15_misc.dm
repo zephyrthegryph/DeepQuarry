@@ -191,12 +191,12 @@
 
 /datum/nifsoft/malware/install()
 	if((. = ..()))
-		last_ads = world.time
+		EXPIRY_STAMP(src, last_ads, CLOCK_WORLD)
 
 /datum/nifsoft/malware/life()
 	if((. = ..()))
 		if(nif().human.client && ELAPSED(src, last_ads, CLOCK_WORLD) > rand(10 MINUTES, 15 MINUTES) && prob(1))
-			last_ads = world.time
+			EXPIRY_STAMP(src, last_ads, CLOCK_WORLD)
 			nif().human.client.create_fake_ad_popup_multiple(/atom/movable/screen/popup/default, 5)
 
 /// LC-refs: the apc this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.

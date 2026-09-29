@@ -61,7 +61,7 @@
 	/// Whether the submitted number is rounded down into an integer.
 	var/round_value
 	/// The time at which the number input was created, for displaying timeout progress.
-	var/start_time
+	EXPIRY_DECLARE(start_time)
 	/// The lifespan of the number input, after which the window will close and delete itself.
 	var/timeout
 	/// The title of the TGUI window
@@ -79,7 +79,7 @@
 	src.state_static = ui_state
 	if (timeout)
 		src.timeout = timeout
-		start_time = world.time
+		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
 		om_qdel_after(src, timeout)
 	/// Checks for empty numbers - bank accounts, etc.
 	if(max_value == 0)

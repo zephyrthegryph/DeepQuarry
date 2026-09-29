@@ -15,9 +15,9 @@
 #define TGUI_TELEMETRY_RESPONSE_WINDOW (30 SECONDS)
 
 /// Time of telemetry request
-/datum/tgui_panel/var/telemetry_requested_at
+/datum/tgui_panel/EXPIRY_DECLARE(telemetry_requested_at)
 /// Time of telemetry analysis completion
-/datum/tgui_panel/var/telemetry_analyzed_at
+/datum/tgui_panel/EXPIRY_DECLARE(telemetry_analyzed_at)
 /// List of previous client connections
 /datum/tgui_panel/var/list/telemetry_connections
 
@@ -27,7 +27,7 @@
  * Requests some telemetry from the client.
  */
 /datum/tgui_panel/proc/request_telemetry()
-	telemetry_requested_at = world.time
+	EXPIRY_STAMP(src, telemetry_requested_at, CLOCK_WORLD)
 	telemetry_analyzed_at = null
 	window.send_message("telemetry/request", list(
 		"limits" = list(
@@ -49,7 +49,7 @@
 	if(telemetry_analyzed_at)
 		message_admins("[key_name(client())] sent telemetry more than once.")
 		return
-	telemetry_analyzed_at = world.time
+	EXPIRY_STAMP(src, telemetry_analyzed_at, CLOCK_WORLD)
 	if(!payload)
 		return
 	telemetry_connections = payload["connections"]

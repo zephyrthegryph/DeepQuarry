@@ -338,14 +338,14 @@ DECLARE_REF(/obj/belly, "owner", BACKLIST, "vore_organs")
 	if(!owner.mute_entry && entrance_logs)
 		if(!istype(thing, /mob/observer))	//Don't have ghosts announce they're reentering the belly on death
 			if(ELAPSED(src, last_transfer_log, CLOCK_WORLD) > ENTRY_MESSAGE_INTERVAL)
-				last_transfer_log = world.time
+				EXPIRY_STAMP(src, last_transfer_log, CLOCK_WORLD)
 				entrance_log_count = 0
 			if(COOLDOWN_FINISHED(src, next_transfer_log))
 				to_chat(owner,span_vnotice("[thing] slides into your [lowertext(name)]."))
 				entrance_log_count++
 				if(entrance_log_count >= MAX_ENTRY_MESSAAGES)
 					COOLDOWN_START(src, next_transfer_log, ENTRY_MESSAGE_INTERVAL)
-					last_transfer_log = world.time
+					EXPIRY_STAMP(src, last_transfer_log, CLOCK_WORLD)
 
 	//Sound w/ antispam flag setting
 	if(vore_sound && !recent_sound && !istype(thing, /mob/observer))

@@ -761,7 +761,7 @@ DECLARE_REF(/obj/item/storage/backpack/saddlebag/tempest, "soundloop", OWNED, nu
 			var/mob/M = loc
 			M.update_inv_back()
 		set_light(2, 1, newlight)
-		ambulance_last_switch = world.time
+		EXPIRY_STAMP(src, ambulance_last_switch, CLOCK_WORLD)
 */ //ChompREMOVE End
 
 /datum/looping_sound/ambulance
@@ -1544,7 +1544,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(
 		icon_state = "pandorba_d"
 		playsound(src, 'sound/items/drop/plushie.ogg', 25, 0)
 		visible_message("[src] says, \"[pokephrase]\"")
-	last_message = world.time
+	EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
 
 //Yeehawguvnah - Cephyra
 

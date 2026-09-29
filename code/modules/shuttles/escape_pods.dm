@@ -148,7 +148,7 @@
 	return		//don't do anything - the doors only open when the pod is armed.
 
 /datum/embedded_program/docking/simple/escape_pod_berth/prepare_for_undocking()
-	eject_time = world.time + eject_delay*10
+	EXPIRY_SET(src, eject_time, eject_delay*10, CLOCK_WORLD)
 
 /// LC-refs: the arming_controller this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/shuttle/autodock/ferry/escape_pod/proc/arming_controller() as /datum/embedded_program/docking/simple/escape_pod_berth

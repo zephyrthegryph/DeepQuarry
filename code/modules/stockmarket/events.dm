@@ -9,7 +9,7 @@
 	var/phase_id = 0
 	var/hidden = 0
 	var/finished = 0
-	var/last_change = 0
+	EXPIRY_DECLARE(last_change)
 
 /datum/stockEvent/proc/event_tick()
 	if (finished)
@@ -42,10 +42,10 @@
 
 
 /datum/stockEvent/product/transition()
-	last_change = world.time
+	EXPIRY_STAMP(src, last_change, CLOCK_WORLD)
 	switch (phase_id)
 		if (0)
-			next_phase = world.time + rand(300*TIME_MULTIPLIER, 600*TIME_MULTIPLIER) * (10*TIME_MULTIPLIER)
+			EXPIRY_SET(src, next_phase, rand(300*TIME_MULTIPLIER, 600*TIME_MULTIPLIER) * (10*TIME_MULTIPLIER), CLOCK_WORLD)
 			product_name = company().industry.generateProductName(company().name)
 			current_title = "Product release: [product_name]"
 			current_desc = "[company().name] unveiled their newest product at a conference, [product_name]Product release is expected to happen at spacetime [spacetime(next_phase)]."
@@ -81,7 +81,7 @@
 /datum/stockEvent/bankruptcy/transition()
 	switch (phase_id)
 		if (0)
-			next_phase = world.time + rand(300*TIME_MULTIPLIER, 600*TIME_MULTIPLIER) * (10*TIME_MULTIPLIER)
+			EXPIRY_SET(src, next_phase, rand(300*TIME_MULTIPLIER, 600*TIME_MULTIPLIER) * (10*TIME_MULTIPLIER), CLOCK_WORLD)
 			var/datum/article/A = generateBankruptcyArticle()
 			if (!A.opinion)
 				effect = rand(5) * (prob(50) ? -1 : 1)
@@ -94,7 +94,7 @@
 			current_desc = "The government prepared a press release, which will occur at spacetime [spacetime(next_phase)]."
 			phase_id = 1
 		if (1)
-			next_phase = world.time + rand(300*TIME_MULTIPLIER, 600*TIME_MULTIPLIER) * (10*TIME_MULTIPLIER)
+			EXPIRY_SET(src, next_phase, rand(300*TIME_MULTIPLIER, 600*TIME_MULTIPLIER) * (10*TIME_MULTIPLIER), CLOCK_WORLD)
 			finished = 1
 			if (effect <= -5 && prob(10))
 				current_title = "[company().name]: Complete crash"
@@ -186,7 +186,7 @@
 			name_part1 = pick("John ", "Jack ", "Jill ", "Peter ", "James ", "Lois ", "Zoey ")
 			name_part2 = pick("Bull", "Palmer", "Glass", "Ruin", "McCory", "Batty", "Lane")
 			tname = (name_part1 + name_part2)
-			next_phase = world.time + rand(300*TIME_MULTIPLIER, 600*TIME_MULTIPLIER) * (10*TIME_MULTIPLIER)
+			EXPIRY_SET(src, next_phase, rand(300*TIME_MULTIPLIER, 600*TIME_MULTIPLIER) * (10*TIME_MULTIPLIER), CLOCK_WORLD)
 			var/datum/article/A = generateArrestArticle()
 			if (!A.opinion)
 				effect = rand(5) * (prob(50) ? -1 : 1)
@@ -199,7 +199,7 @@
 			current_desc = "[female ? "She": "He"] has been charged with [offenses]; the trial is scheduled to occur at spacetime [spacetime(next_phase)]."
 			phase_id = 1
 		if (1)
-			next_phase = world.time + rand(300*TIME_MULTIPLIER, 600*TIME_MULTIPLIER) * (10*TIME_MULTIPLIER)
+			EXPIRY_SET(src, next_phase, rand(300*TIME_MULTIPLIER, 600*TIME_MULTIPLIER) * (10*TIME_MULTIPLIER), CLOCK_WORLD)
 			finished = 1
 			current_title = "[tname] [effect > 0 ? "acquitted" : "found guilty"]"
 			if (effect > 0)

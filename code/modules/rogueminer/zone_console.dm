@@ -115,7 +115,7 @@
 		return
 
 	//Set some kinda scanning var to pause UI input on console
-	GLOB.rm_controller.last_scan = world.time
+	EXPIRY_STAMP(GLOB.rm_controller, last_scan, CLOCK_WORLD)
 	scanning = 1
 	om_after(src, 6 SECONDS, PROC_REF(finish_scan))
 

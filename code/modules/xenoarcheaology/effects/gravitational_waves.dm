@@ -9,7 +9,7 @@
 	name = "Gravitational Waves"
 	effect_type = EFFECT_GRAVIATIONAL_WAVES
 
-	var/last_wave_pull = 0
+	EXPIRY_DECLARE(last_wave_pull)
 	/// At most one pull a second (see the warning above).
 	COOLDOWN_DECLARE(wave_pull_cooldown)
 	var/pull_power
@@ -45,7 +45,7 @@
 		holder = holder.loc
 	if(prob(10 + seconds_since_last_pull))
 		holder.visible_message(span_alien("\The [holder] distorts as local gravity intensifies, and shifts toward it."))
-		last_wave_pull = world.time
+		EXPIRY_STAMP(src, last_wave_pull, CLOCK_WORLD)
 		gravwave(get_turf(holder), effectrange, pull_power)
 
 /datum/artifact_effect/extreme/gravity_wave/DoEffectPulse()
@@ -58,6 +58,6 @@
 /datum/artifact_effect/extreme/gravity_wave/proc/gravwave(atom/target, pull_range = 7, pull_power = STAGE_TWO)
 	if(COOLDOWN_FINISHED(src, wave_pull_cooldown)) //NO INFINITE LOOPS. do not touch this line or you WILL crash the server. I am not kidding. Go ahead, remove it on a test server and see what happens.
 		COOLDOWN_START(src, wave_pull_cooldown, 1 SECOND)
-		last_wave_pull = world.time
+		EXPIRY_STAMP(src, last_wave_pull, CLOCK_WORLD)
 		for(var/atom/A in oview(pull_range, target))
 			A.singularity_pull(target, pull_power)

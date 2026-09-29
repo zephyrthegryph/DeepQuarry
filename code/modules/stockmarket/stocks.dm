@@ -32,7 +32,7 @@
 
 	var/disp_value_change = 0
 	var/optimism = 0
-	var/last_unification = 0
+	EXPIRY_DECLARE(last_unification)
 	var/average_shares = 100
 	var/outside_shareholders = 10000		// The amount of offstation people holding shares in this company. The higher it is, the more fluctuation it causes.
 	var/available_shares = 500000
@@ -52,7 +52,7 @@
 /datum/stock/proc/addArticle(datum/article/A)
 	if (!(A in articles))
 		LAZYINITLIST(articles); articles.Insert(1, A)
-	A.ticks = world.time
+	EXPIRY_STAMP(A, ticks, CLOCK_WORLD)
 
 /datum/stock/proc/generateEvents()
 	var/list/types = typesof(/datum/stockEvent) - /datum/stockEvent
@@ -178,7 +178,7 @@
 	average_shares /= 2
 	available_shares /= 2
 	current_value *= 2
-	last_unification = world.time
+	EXPIRY_STAMP(src, last_unification, CLOCK_WORLD)
 
 /datum/stock/proc/stock_tick(elapsed_steps = 1)
 	for (var/B in borrows)
@@ -251,7 +251,7 @@
 /datum/stock/proc/borrow(datum/borrow/B, who)
 	if (B.lease_expires)
 		return 0
-	B.lease_expires = world.time + B.lease_time
+	EXPIRY_SET(B, lease_expires, B.lease_time, CLOCK_WORLD)
 	var/old_d = B.deposit
 	var/d_amt = B.deposit * current_value * B.share_amount
 	if (!modifyAccount(who, -d_amt))

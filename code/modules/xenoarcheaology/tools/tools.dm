@@ -55,7 +55,7 @@ DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interact
 
 /obj/item/ano_scanner/interact(mob/user)
 	if(ELAPSED(src, last_scan_time, CLOCK_WORLD) >= scan_delay)
-		last_scan_time = world.time
+		EXPIRY_STAMP(src, last_scan_time, CLOCK_WORLD)
 
 		var/nearestTargetDist = -1
 		var/nearestTargetId
@@ -85,7 +85,7 @@ DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interact
 
 		if(GLOB.xenoarch_service && ((nearestTargetDist == -1) || (nearestSimpleTargetDist == -1)) && user.z && (ELAPSED(src, last_repopulation_time, CLOCK_WORLD) >= repopulation_delay))
 			if(!(user.z in using_map.xenoarch_exempt_levels)) //We found no artifacts and our Z level is not spawn exempt. Time for random generation.
-				last_repopulation_time = world.time
+				EXPIRY_STAMP(src, last_repopulation_time, CLOCK_WORLD)
 				to_chat(user, "The [src] beeps and buzzes, a warning popping up on screen stating 'No artifacts detected on current wavelength. Swapping to different wavelength. Please try scanning momentarily.'")
 				GLOB.xenoarch_service.continual_generation(user)
 

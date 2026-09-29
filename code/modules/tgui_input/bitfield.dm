@@ -50,7 +50,7 @@
 	var/value
 	// Bitfield as it was when the window opened, for the "Cancel" path.
 	var/initial_value
-	var/start_time
+	EXPIRY_DECLARE(start_time)
 	var/timeout
 	var/submitted = FALSE
 	var/closed = FALSE
@@ -63,7 +63,7 @@
 	src.allowed_edit_field = allowed_edit_field
 	if(timeout)
 		src.timeout = timeout
-		start_time = world.time
+		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
 		om_qdel_after(src, timeout)
 
 /datum/tgui_bitfield_input/proc/wait()

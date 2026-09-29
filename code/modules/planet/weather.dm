@@ -49,7 +49,7 @@
 		old_light_modifier = current_weather.light_modifier // We store the old one, so we can determine if recalculating the sun is needed.
 		old_weather = current_weather
 	current_weather = LAZYACCESS(allowed_weather_types, new_weather)
-	next_weather_shift = world.time + rand(current_weather.timer_low_bound, current_weather.timer_high_bound) MINUTES
+	EXPIRY_SET(src, next_weather_shift, rand(current_weather.timer_low_bound, current_weather.timer_high_bound) MINUTES, CLOCK_WORLD)
 	if(current_weather != old_weather)
 		if(istype(old_weather)) // At roundstart this is null.
 			old_weather.process_sounds() // Ensure that people who should hear the ending sound will hear it.
@@ -103,7 +103,7 @@
 	if(!(weather_to_queue in allowed_weather_types))
 		return
 	imminent_weather = weather_to_queue
-	imminent_weather_shift = world.time + 90 SECONDS
+	EXPIRY_SET(src, imminent_weather_shift, 90 SECONDS, CLOCK_WORLD)
 
 /datum/weather_holder/proc/proceed_to_imminent_weather()
 	var/new_weather = imminent_weather

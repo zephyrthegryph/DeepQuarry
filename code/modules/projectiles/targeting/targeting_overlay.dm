@@ -175,7 +175,7 @@ DECLARE_REF(/obj/aiming_overlay, "aiming_at", BACKLIST, "aimed")
 	toggle_active(1)
 	locked = 0
 	update_icon()
-	lock_time = world.time + 25
+	EXPIRY_SET(src, lock_time, 25, CLOCK_WORLD)
 
 /obj/aiming_overlay/update_icon()
 	if(locked)

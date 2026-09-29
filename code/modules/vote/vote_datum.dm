@@ -2,7 +2,7 @@
 	// Person who started the vote
 	var/initiator = "the server"
 	// world.time the bote started at
-	var/started_time
+	EXPIRY_DECLARE(started_time)
 	// The question being asked
 	var/question
 	// Vote type text, for showing in UIs and stuff
@@ -49,7 +49,7 @@
 		log_admin("[capitalize(vote_type_text)] vote started by [key_name(usr)].")
 
 	log_vote(text)
-	started_time = world.time
+	EXPIRY_STAMP(src, started_time, CLOCK_WORLD)
 	announce(text)
 
 /datum/vote/proc/remaining()

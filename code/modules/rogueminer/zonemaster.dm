@@ -9,7 +9,7 @@
 	var/tmp/myshuttle_landmark_handle
 
 	//world.time
-	var/prepared_at = 0
+	EXPIRY_DECLARE(prepared_at)
 
 	//accepting shuttles
 	var/ready = 0
@@ -308,7 +308,7 @@
 
 	GLOB.rm_controller.dbg("ZM(p): Zone generation done.")
 	log_world("RM(stats): PREP [myarea()] at [world.time] with [length(spawned_mobs)] mobs, [length(mineral_rocks)] minrocks, total of [length(rockspawns)] rockspawns, [length(mobspawns)] mobspawns.") //DEBUG code for playtest stats gathering.
-	prepared_at = world.time
+	EXPIRY_STAMP(src, prepared_at, CLOCK_WORLD)
 	GLOB.rm_controller.mark_ready(src)
 	return myarea()
 

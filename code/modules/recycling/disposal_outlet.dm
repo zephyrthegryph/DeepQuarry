@@ -89,7 +89,7 @@ DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF
 
 	flick("outlet-open", src)
 	if(ELAPSED(src, start_eject, CLOCK_WORLD) > 3 SECONDS)
-		start_eject = world.time
+		EXPIRY_STAMP(src, start_eject, CLOCK_WORLD)
 		playsound(src, 'sound/machines/warning-buzzer.ogg', 50, 0, 0)
 		om_after(src, 2 SECONDS, PROC_REF(expel_contents), received_items, gas, TRUE)
 	else

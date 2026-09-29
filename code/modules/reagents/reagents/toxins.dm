@@ -407,7 +407,7 @@
 	if(!(M.status_flags & FAKEDEATH))
 		M.emote("deathgasp")
 		M.tod = stationtime2text()
-		M.timeofdeath = world.time
+		M.timeofdeath = EXPIRY_AT(M, CLOCK_WORLD, 0)
 	M.status_flags |= FAKEDEATH
 	M.status_at_least(EFFECT_MUTED, 10)
 	M.status_set(EFFECT_PARALYZED, max(M.status_units(EFFECT_PARALYZED), 10))
@@ -439,7 +439,7 @@
 	if(!(M.status_flags & FAKEDEATH))
 		M.emote("deathgasp")
 		M.tod = stationtime2text()
-		M.timeofdeath = world.time
+		M.timeofdeath = EXPIRY_AT(M, CLOCK_WORLD, 0)
 	M.status_flags |= FAKEDEATH
 	M.status_at_least(EFFECT_MUTED, 10)
 	M.status_set(EFFECT_PARALYZED, max(M.status_units(EFFECT_PARALYZED), 10))

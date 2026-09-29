@@ -77,7 +77,7 @@ DECLARE_REF(/datum/artifact_effect, "active_effect", OWNED, null)
 	var/atom/target = get_master_holder()
 
 	if(ELAPSED(src, last_activation, CLOCK_WORLD) > 1 SECOND)
-		last_activation = world.time
+		EXPIRY_STAMP(src, last_activation, CLOCK_WORLD)
 		if(activated)
 			activated = FALSE
 		else

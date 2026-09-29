@@ -11,7 +11,7 @@
 
 	var/spawn_progress_time = 0
 	var/max_spawn_time = 50
-	var/last_process_time = 0
+	EXPIRY_DECLARE(last_process_time)
 
 	var/list/construction
 	var/list/tgui_construction
@@ -115,7 +115,7 @@
 		last_process_time = 0
 		return sleep_until_powered()
 	if(!last_process_time)
-		last_process_time = world.time
+		EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 	if(spawning_types.len && powered())
 		spawn_progress_time += world.time - last_process_time
 		if(spawn_progress_time > max_spawn_time)
@@ -144,7 +144,7 @@
 		else if(prob(5))
 			src.visible_message(span_notice("[icon2html(src,viewers(src))] [src] [pick("clicks","whizzes","whirrs","whooshes","clanks","clongs","clonks","bangs")]."))
 
-	last_process_time = world.time
+	EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 
 /obj/machinery/replicator/declare_interactions(list/into)
 	into += list(
@@ -283,7 +283,7 @@
 		last_process_time = 0
 		return sleep_until_powered()
 	if(!last_process_time)
-		last_process_time = world.time
+		EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 	if(spawning_types.len && powered())
 		spawn_progress_time += world.time - last_process_time
 		if(spawn_progress_time > max_spawn_time)
@@ -327,7 +327,7 @@
 		else if(prob(5))
 			src.visible_message(span_notice("[icon2html(src,viewers(src))] [src] [pick("clicks","whizzes","whirrs","whooshes","clanks","clongs","clonks","bangs")]."))
 
-	last_process_time = world.time
+	EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 
 
 /obj/machinery/replicator/vore/interaction_insert(mob/living/user, obj/item/W, datum/interaction/interaction)
@@ -555,7 +555,7 @@
 		last_process_time = 0
 		return sleep_until_powered()
 	if(!last_process_time)
-		last_process_time = world.time
+		EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 	if(spawning_types.len && powered())
 		spawn_progress_time += world.time - last_process_time
 		if(spawn_progress_time > max_spawn_time)
@@ -593,7 +593,7 @@
 		else if(prob(5))
 			src.visible_message(span_notice("[icon2html(src,viewers(src))] [src] [pick("clicks","whizzes","whirrs","whooshes","clanks","clongs","clonks","bangs")]."))
 
-	last_process_time = world.time
+	EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 
 /obj/machinery/replicator/clothing/interaction_insert(mob/living/user, obj/item/W, datum/interaction/interaction)
 	if(!W.canremove || !user.canUnEquip(W) || W.possessed_voice || is_type_in_list(W, GLOB.item_vore_blacklist)) //No armblades, no putting already possessed items in it!

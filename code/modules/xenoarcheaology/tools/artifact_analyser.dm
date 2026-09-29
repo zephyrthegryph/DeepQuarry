@@ -116,7 +116,7 @@
 					atom_say("Unable to isolate scan target.")
 				else
 					scan_in_progress = 1
-					scan_completion_time = world.time + scan_duration
+					EXPIRY_SET(src, scan_completion_time, scan_duration, CLOCK_WORLD)
 					om_after(src, scan_duration + 1, PROC_REF(scan_timer_fired))
 					atom_say("Scanning begun.")
 			return TRUE

@@ -87,7 +87,7 @@ DECLARE_INTERACTIONS(/obj/singularity, INTERACT_HAND_UNGATED(null, PROC_REF(inte
 			event()
 
 /obj/singularity/proc/admin_investigate_setup()
-	last_warning = world.time
+	EXPIRY_STAMP(src, last_warning, CLOCK_WORLD)
 	var/count = locate_in_list(orange(30, src), /obj/machinery/containment_field)
 
 	if (!count)

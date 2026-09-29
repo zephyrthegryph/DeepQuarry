@@ -521,7 +521,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 			if(value != null)
 				trackrate = round(clamp(value, -7200, 7200), 0.01)
 				if(trackrate)
-					nexttime = world.time + 36000 / abs(trackrate)
+					EXPIRY_SET(src, nexttime, 36000 / abs(trackrate), CLOCK_WORLD)
 				return TRUE
 			return TRUE
 		if("tracking")
@@ -534,7 +534,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 			else if(track == 1) //begin manual tracking
 				targetdir = cdir
 				if(trackrate)
-					nexttime = world.time + 36000/abs(trackrate)
+					EXPIRY_SET(src, nexttime, 36000/abs(trackrate), CLOCK_WORLD)
 				set_panels(targetdir)
 			return TRUE
 

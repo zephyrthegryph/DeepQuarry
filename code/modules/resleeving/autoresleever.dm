@@ -41,12 +41,12 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 		return
 	if(user.mind)
 		if(user.mind.vore_death)
-			if(ELAPSED(user, timeofdeath, CLOCK_WORLD) >= vore_respawn)
+			if(ELAPSED_SINCE(user, user.timeofdeath, CLOCK_WORLD) >= vore_respawn)
 				autoresleeve(user)
 			else
 				to_chat(user, span_warning("You must wait [((vore_respawn - (world.time - user.timeofdeath)) * 0.1) / 60] minutes to use \the [src]."))
 				return
-		else if(ELAPSED(user, timeofdeath, CLOCK_WORLD) >= respawn)
+		else if(ELAPSED_SINCE(user, user.timeofdeath, CLOCK_WORLD) >= respawn)
 			autoresleeve(user)
 		else
 			to_chat(user, span_warning("You must wait [((respawn - (world.time - user.timeofdeath)) * 0.1) /60] minutes to use \the [src]."))
@@ -134,7 +134,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 	if(isnull(_answer_k153))
 		return
 	if(_answer_k153 != "Yes")
-		if(ELAPSED(ghost, timeofdeath, CLOCK_WORLD) <= respawn) //We were given the option to resleeve due to an outside event, but closed the input box (be it by typing or otherwise) so we allow clicking the autosleever to revive.
+		if(ELAPSED_SINCE(ghost, ghost.timeofdeath, CLOCK_WORLD) <= respawn) //We were given the option to resleeve due to an outside event, but closed the input box (be it by typing or otherwise) so we allow clicking the autosleever to revive.
 			ghost.timeofdeath = world.time - respawn
 		return
 	//This keeps people from dying in round, clicking the autoresleever, then swapping savefiles and clicking 'yes'

@@ -25,7 +25,7 @@
 	EXPIRY_DECLARE(build_finish)
 
 	/// World time when the build started.
-	var/build_start = 0
+	EXPIRY_DECLARE(build_start)
 
 	/// The job ID of the part currently being processed. This is used for ordering list items for the client UI.
 	var/top_job_id = 0
@@ -127,7 +127,7 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
 		var/new_const_time = get_construction_time_w_coeff(initial(being_built().construction_time))
 		var/const_time_left = build_finish - world.time
 		var/new_build_time = (new_const_time / last_const_time) * const_time_left
-		build_finish = world.time + new_build_time
+		EXPIRY_SET(src, build_finish, new_build_time, CLOCK_WORLD)
 
 	update_static_data_for_all_viewers()
 
@@ -251,8 +251,8 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
 	rmat.use_materials(D.materials, component_coeff, 1, "built", "[D.name]")
 	being_built = D
 	current_producer_account = producer_account
-	build_finish = world.time + get_construction_time_w_coeff(initial(D.construction_time))
-	build_start = world.time
+	EXPIRY_SET(src, build_finish, get_construction_time_w_coeff(initial(D.construction_time)), CLOCK_WORLD)
+	EXPIRY_STAMP(src, build_start, CLOCK_WORLD)
 	desc = "It's building \a [D.name]."
 
 	return TRUE
