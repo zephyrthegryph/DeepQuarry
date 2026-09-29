@@ -15,8 +15,8 @@
 	var/disabled = FALSE
 	///Ref to global science techweb.
 	var/datum/techweb/stored_research
-	///The item loaded inside the machine, used by experimentors and destructive analyzers only.
-	var/loaded_item
+	///The item loaded inside the machine, used by experimentors and destructive analyzers only (owned; spills when the machine dies).
+	var/obj/item/loaded_item
 
 /obj/machinery/rnd/Initialize(mapload)
 	. = ..()
@@ -94,9 +94,9 @@
 	return result
 
 /obj/machinery/rnd/dismantle()
-	var/obj/item/our_item = om_resolve(loaded_item)
+	var/obj/item/our_item = own_take(src, "loaded_item")
 	if(our_item)
 		our_item.forceMove(drop_location())
-	loaded_item = null
 	. = ..()
 
+OWN(/obj/machinery/rnd, loaded_item, OWN_SPILL)

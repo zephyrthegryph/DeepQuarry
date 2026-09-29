@@ -62,12 +62,12 @@
 
 /obj/machinery/mecha_part_fabricator_tg/Initialize(mapload)
 	own_set(src, "print_sound", new /datum/looping_sound/lathe_print(list(src), FALSE))
-	rmat = new /datum/remote_materials( \
+	own_set(src, "rmat", new /datum/remote_materials( \
 		src, \
 		mapload, \
 		mat_container_events = list( \
 			(/datum/om/event/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/mecha_part_fabricator_tg, on_material_insert) \
-		))
+		)))
 	cached_designs = list()
 	illegal_local_designs = list()
 	. = ..()
