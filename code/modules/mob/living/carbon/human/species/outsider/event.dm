@@ -170,7 +170,7 @@ Variables you may want to make use of are:
 	return
 
 /datum/species/event1/proc/choose_limbset()
-	var/list/limb_sets = list("Normal" = 1, "Unbreakable" = 2, "Unseverable" = 3, "Indestructible" = 4)
+	var/static/list/limb_sets = list("Normal" = 1, "Unbreakable" = 2, "Unseverable" = 3, "Indestructible" = 4)
 	om_ask(usr, /datum/om/prompt/choice, PROC_REF(limbset_chosen), message = "Choose limb set to use for future spawns.", title = "Limb types.", choices = limb_sets)
 
 /datum/species/event1/proc/limbset_chosen(datum/om/prompt/choice/ask)

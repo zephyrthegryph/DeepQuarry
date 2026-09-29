@@ -31,7 +31,7 @@
 	mob_size = MOB_MINISCULE
 
 /datum/decl/mob_organ_names/yithian
-	hit_zones = list("head", "abdomen", "left foreleg", "right foreleg", "left hind leg", "right hind leg")
+TYPE_TABLE(/datum/decl/mob_organ_names/yithian, mob_organ_hit_zones, list("head", "abdomen", "left foreleg", "right foreleg", "left hind leg", "right hind leg"))
 
 /datum/decl/mob_organ_names/tindalos
-	hit_zones = list("head", "thorax", "abdomen", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "left middle leg", "right middle leg")
+TYPE_TABLE(/datum/decl/mob_organ_names/tindalos, mob_organ_hit_zones, list("head", "thorax", "abdomen", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "left middle leg", "right middle leg"))

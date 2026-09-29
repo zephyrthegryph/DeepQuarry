@@ -10,13 +10,11 @@
 	var/play_dead_until = 0
 	var/be_angery_until = 0
 
-/mob/living/simple_mob/animal/passive/opossum/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/possum_play_dead,
-		/datum/ai_behavior/idle_wander,
-		/datum/ai_behavior/idle_speak,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/animal/passive/opossum, get_ai_behaviors, list( \
+	/datum/ai_behavior/possum_play_dead, \
+	/datum/ai_behavior/idle_wander, \
+	/datum/ai_behavior/idle_speak, \
+))
 
 /mob/living/simple_mob/animal/passive/opossum/respond_to_damage()
 	if(!resting && stat == CONSCIOUS)

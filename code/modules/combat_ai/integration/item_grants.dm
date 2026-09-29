@@ -3,20 +3,14 @@
 // Items declare what AI behaviors they grant to a mob holding them. The brain
 // aggregates these into effective_behaviors on each slow tick.
 //
-// Uses the static-list-in-proc pattern: each item subtype overrides
-// get_dq_granted_behaviors() and returns a proc-local `var/static/list/L`.
-// That gives us per-subtype shared template lists with zero per-instance cost.
-// The base proc returns null so items that grant nothing pay nothing.
+// Each item subtype overrides the item_granted_behaviors type table: one
+// shared list per subtype with zero per-instance cost. The default is null so
+// items that grant nothing pay nothing.
 
-/obj/item/proc/get_dq_granted_behaviors()
-	return null
+TYPE_TABLE_DECLARE(/obj/item, item_granted_behaviors, null)
 
 // --- Concrete grants --------------------------------------------------------
 
-/obj/item/grenade/get_dq_granted_behaviors()
-	var/static/list/L = list(/datum/ai_behavior/throw_grenade)
-	return L
+TYPE_TABLE(/obj/item/grenade, item_granted_behaviors, list(/datum/ai_behavior/throw_grenade))
 
-/obj/item/gun/get_dq_granted_behaviors()
-	var/static/list/L = list(/datum/ai_behavior/aimed_shot)
-	return L
+TYPE_TABLE(/obj/item/gun, item_granted_behaviors, list(/datum/ai_behavior/aimed_shot))

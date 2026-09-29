@@ -268,7 +268,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime, \
 	visible_message(span_infoplain(span_bold("\The [src]") + " squishes!"))
 
 /datum/decl/mob_organ_names/slime
-	hit_zones = list("cytoplasmic membrane")
+TYPE_TABLE(/datum/decl/mob_organ_names/slime, mob_organ_hit_zones, list("cytoplasmic membrane"))
 
 // === merged from slime_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/slime

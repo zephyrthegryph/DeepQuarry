@@ -101,4 +101,4 @@
 	movement_cooldown = -1
 
 /datum/decl/mob_organ_names/viscerator
-	hit_zones = list("chassis", "rotor blades", "sensor array")
+TYPE_TABLE(/datum/decl/mob_organ_names/viscerator, mob_organ_hit_zones, list("chassis", "rotor blades", "sensor array"))

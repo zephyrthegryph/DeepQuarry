@@ -31,4 +31,4 @@
 	speak_emote = list("interjects")
 
 /datum/decl/mob_organ_names/penguin
-	hit_zones = list("chest", "left leg", "right leg", "left flipper", "right flipper", "head")
+TYPE_TABLE(/datum/decl/mob_organ_names/penguin, mob_organ_hit_zones, list("chest", "left leg", "right leg", "left flipper", "right flipper", "head"))

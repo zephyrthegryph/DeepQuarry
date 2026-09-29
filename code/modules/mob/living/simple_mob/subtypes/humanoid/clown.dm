@@ -31,4 +31,4 @@
 	emote_see = list("honks")
 
 /datum/decl/mob_organ_names/clown
-	hit_zones = list("head", "torso", "pie-hole", "honker", "left funny bone", "right funny bone", "left foot", "right foot", "unmentionables")
+TYPE_TABLE(/datum/decl/mob_organ_names/clown, mob_organ_hit_zones, list("head", "torso", "pie-hole", "honker", "left funny bone", "right funny bone", "left foot", "right foot", "unmentionables"))

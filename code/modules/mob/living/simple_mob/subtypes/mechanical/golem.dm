@@ -151,7 +151,7 @@ DECLARE_REF(/mob/living/simple_mob/mechanical/technomancer_golem, "core", OWNED,
 	ranged_post_animation(A)
 
 /datum/decl/mob_organ_names/golem
-	hit_zones = list("helmet", "cuirass", "left tasset", "right tasset", "left gauntlet", "right gauntlet", "weapon")
+TYPE_TABLE(/datum/decl/mob_organ_names/golem, mob_organ_hit_zones, list("helmet", "cuirass", "left tasset", "right tasset", "left gauntlet", "right gauntlet", "weapon"))
 
 // === merged from golem_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 // Cataloguer data below - strange we can catalogue space golem wizards

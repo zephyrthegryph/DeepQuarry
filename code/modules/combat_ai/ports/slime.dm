@@ -21,16 +21,14 @@ DECLARE_REF(/mob/living/simple_mob/slime/xenobio, "slime_state", OWNED, null)
 		if(X.slime_state)
 			X.slime_state.on_hear_say(speaker, multilingual_to_message(message_pieces))
 
-/mob/living/simple_mob/slime/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/slime_evolve_reproduce,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/slime_smart_attack,
-		/datum/ai_behavior/ranged_attack,
-		/datum/ai_behavior/retaliate_to_attacker,
-		/datum/ai_behavior/idle_wander,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/slime, get_ai_behaviors, list( \
+	/datum/ai_behavior/slime_evolve_reproduce, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/slime_smart_attack, \
+	/datum/ai_behavior/ranged_attack, \
+	/datum/ai_behavior/retaliate_to_attacker, \
+	/datum/ai_behavior/idle_wander, \
+))
 
 TYPE_TABLE(/mob/living/simple_mob/slime, get_ai_target_selectors, list( \
 		/datum/target_selector/slime_prefer_food, \

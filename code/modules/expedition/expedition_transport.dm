@@ -1,11 +1,8 @@
 // Ship-facing expedition planning and travel integration.
 
-/proc/expedition_threat_bands()
-	var/static/list/threat_bands = list("Low" = EXP_DIFF_LOW, "Medium" = EXP_DIFF_MED, "High" = EXP_DIFF_HIGH)
-	return threat_bands
+GLOBAL_LIST_INIT(expedition_threat_bands, list("Low" = EXP_DIFF_LOW, "Medium" = EXP_DIFF_MED, "High" = EXP_DIFF_HIGH))
 
-/proc/expedition_mission_types()
-	var/static/list/mission_types = list(
+GLOBAL_LIST_INIT(expedition_mission_types, list(
 		/datum/expedition_mission/survey,
 		/datum/expedition_mission/extermination,
 		/datum/expedition_mission/salvage,
@@ -18,8 +15,7 @@
 		/datum/expedition_mission/recon,
 		/datum/expedition_mission/restore,
 		/datum/expedition_mission/station_assault,
-	)
-	return mission_types
+	))
 
 /obj/effect/overmap/visitable/sector/expedition
 	name = "expedition site"

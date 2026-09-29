@@ -10,6 +10,5 @@
 	use_modern_ai = TRUE
 	ai_attack_on_sight = FALSE
 
-/mob/living/simple_mob/illusion/get_ai_behaviors()
-	var/static/list/L = list()  // intentionally empty — controlled externally
-	return L
+// Intentionally empty: controlled externally.
+TYPE_TABLE(/mob/living/simple_mob/illusion, get_ai_behaviors, list())

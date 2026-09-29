@@ -108,4 +108,4 @@ DECLARE_REF(/mob/living/simple_mob/mechanical/combat_drone, "shields", OWNED, nu
 /mob/living/simple_mob/mechanical/combat_drone/event
 
 /datum/decl/mob_organ_names/combatdrone
-	hit_zones = list("chassis", "comms array", "sensor suite", "left weapons module", "right weapons module", "maneuvering thruster")
+TYPE_TABLE(/datum/decl/mob_organ_names/combatdrone, mob_organ_hit_zones, list("chassis", "comms array", "sensor suite", "left weapons module", "right weapons module", "maneuvering thruster"))

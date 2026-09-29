@@ -35,17 +35,15 @@
 	can_pain_emote = FALSE
 	use_modern_ai = TRUE
 
-/mob/living/simple_mob/combat_ai_test_subject/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/retaliate_to_attacker,
-		/datum/ai_behavior/threaten,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/melee_attack,
-		/datum/ai_behavior/charge_slam,
-		/datum/ai_behavior/flee_low_hp,
-		/datum/ai_behavior/idle_wander,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_behaviors, list( \
+	/datum/ai_behavior/retaliate_to_attacker, \
+	/datum/ai_behavior/threaten, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/melee_attack, \
+	/datum/ai_behavior/charge_slam, \
+	/datum/ai_behavior/flee_low_hp, \
+	/datum/ai_behavior/idle_wander, \
+))
 
 TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selectors, list( \
 		/datum/target_selector/prefer_players, \
@@ -258,8 +256,8 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 
 /datum/unit_test/dq_combat_ai_grenade_grants_throw_behavior/Run()
 	var/obj/item/grenade/G = allocate(/obj/item/grenade)
-	var/list/granted = G.get_dq_granted_behaviors()
-	TEST_ASSERT_NOTNULL(granted, "grenade returned null from get_dq_granted_behaviors")
+	var/list/granted = TYPE_TABLE_GET(G, item_granted_behaviors)
+	TEST_ASSERT_NOTNULL(granted, "grenade returned null from item_granted_behaviors")
 	TEST_ASSERT(/datum/ai_behavior/throw_grenade in granted, "grenade doesn't grant /datum/ai_behavior/throw_grenade")
 
 
@@ -269,8 +267,8 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 
 /datum/unit_test/dq_combat_ai_gun_grants_aimed_shot_behavior/Run()
 	var/obj/item/gun/G = allocate(/obj/item/gun)
-	var/list/granted = G.get_dq_granted_behaviors()
-	TEST_ASSERT_NOTNULL(granted, "gun returned null from get_dq_granted_behaviors")
+	var/list/granted = TYPE_TABLE_GET(G, item_granted_behaviors)
+	TEST_ASSERT_NOTNULL(granted, "gun returned null from item_granted_behaviors")
 	TEST_ASSERT(/datum/ai_behavior/aimed_shot in granted, "gun doesn't grant /datum/ai_behavior/aimed_shot")
 
 

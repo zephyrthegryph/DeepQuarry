@@ -69,14 +69,18 @@
 	update_icon()
 	grant_ability(ABILITY_ID_ROBOT_EJECT_CARGO, src)
 
-/// Platforms carry heavier armour plating.
-/mob/living/silicon/robot/platform/get_component_types()
-	var/static/list/types
-	if(!types)
-		var/list/base = ..()
-		types = base.Copy()
-		types[ROBOT_SLOT_ARMOUR] = /datum/robot_component/armour/platform
-	return types
+/// Platforms carry heavier armour plating (the ROBOT_SLOT_ARMOUR entry).
+TYPE_TABLE(/mob/living/silicon/robot/platform, robot_component_types, list( \
+	/datum/robot_component/actuator, \
+	/datum/robot_component/radio, \
+	/datum/robot_component/cell, \
+	/datum/robot_component/diagnosis_unit, \
+	/datum/robot_component/camera, \
+	/datum/robot_component/binary_communication, \
+	/datum/robot_component/armour/platform, \
+	/datum/robot_component/cooling, \
+	/datum/robot_component/core, \
+))
 
 // stored atoms and the recharging item drop out (stored as handles).
 /mob/living/silicon/robot/platform/on_destroy(force)

@@ -149,7 +149,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 			if(site_destination.kind == FLIGHT_DEST_EXPEDITION && site_destination.orbit_parent_id == planet.id)
 				site_count++
 		while(site_count < 4)
-			var/list/mission_types = expedition_mission_types()
+			var/list/mission_types = GLOB.expedition_mission_types
 			var/mission_type = pick(mission_types)
 			var/difficulty = pick(EXP_DIFF_LOW, EXP_DIFF_LOW, EXP_DIFF_MED, EXP_DIFF_HIGH)
 			var/datum/expedition_mission/mission = new mission_type(difficulty)

@@ -115,7 +115,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		to_chat(user, span_warning("This vessel already has an active expedition assignment."))
 		return null
 	var/list/choices = list()
-	for(var/mission_type in expedition_mission_types())
+	for(var/mission_type in GLOB.expedition_mission_types)
 		var/datum/expedition_mission/preview = new mission_type()
 		choices[preview.name] = mission_type
 		qdel(preview)
@@ -124,7 +124,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		return
 	if(!choice || !CanInteract(user, GLOB.tgui_default_state))
 		return null
-	var/list/threat_bands = expedition_threat_bands()
+	var/list/threat_bands = GLOB.expedition_threat_bands
 	var/threat_band = rerun_ask(user, "k109", PROC_REF(plot_for_vessel), args, /datum/om/prompt/choice, message = "Select a threat band", title = "Flight Operations", choices = threat_bands)
 	if(isnull(threat_band))
 		return

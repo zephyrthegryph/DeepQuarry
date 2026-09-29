@@ -29,10 +29,9 @@
 	// Flip the framework on for every simple_mob by default.
 	use_modern_ai = TRUE
 
-/// Override per subtype. Returns a proc-local `var/static/list/L = list(...)`
-/// of /datum/ai_behavior typepaths the mob has innately.
-/mob/living/proc/get_ai_behaviors()
-	return null
+/// Per-subtype type table of /datum/ai_behavior typepaths the mob has innately
+/// (null: use the default factory). Override with TYPE_TABLE().
+TYPE_TABLE_DECLARE(/mob/living, get_ai_behaviors, null)
 
 /// Override per subtype. Returns a proc-local static list of
 /// /datum/target_selector typepaths used as the brain's selector chain.

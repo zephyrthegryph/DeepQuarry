@@ -3,7 +3,7 @@
 // These behaviors take advantage of the brain's A* pathing and the
 // post-attack / damage-event signal hooks to give each archetype the texture
 // of its legacy AI subtype (kiting, hit-and-run, evasive juke, etc).
-// All are opt-in: mobs that want them list them in get_ai_behaviors().
+// All are opt-in: mobs that want them list them in their get_ai_behaviors type table.
 
 // --- Evasive juke ----------------------------------------------------------
 // Step into an adjacent random cardinal after each completed melee attack.

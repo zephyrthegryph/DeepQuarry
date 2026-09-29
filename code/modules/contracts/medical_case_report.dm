@@ -171,8 +171,7 @@
 		"consented" = !!consent_time,
 	)
 
-/proc/medical_rare_case_types()
-	var/static/list/types = list(
+GLOBAL_LIST_INIT(medical_rare_case_types, list(
 		/datum/affliction/subdural_hematoma,
 		/datum/affliction/pneumothorax,
 		/datum/affliction/compartment_syndrome,
@@ -181,11 +180,10 @@
 		/datum/affliction/chronic_radiation,
 		/datum/affliction/ischemic_vision_loss,
 		/datum/affliction/genetic_damage,
-	)
-	return types
+	))
 
 /proc/medical_rare_case_condition(datum/affliction/condition)
-	return condition && (condition.type in medical_rare_case_types()) && condition.severity >= MEDICAL_RARE_CASE_MINIMUM_SEVERITY
+	return condition && (condition.type in GLOB.medical_rare_case_types) && condition.severity >= MEDICAL_RARE_CASE_MINIMUM_SEVERITY
 
 /proc/medical_snapshot_condition_severity(list/snapshot, condition_type)
 	for(var/list/entry as anything in snapshot?["conditions"])

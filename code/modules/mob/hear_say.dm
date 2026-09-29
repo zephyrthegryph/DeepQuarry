@@ -272,7 +272,7 @@ TYPE_TABLE(/mob/living/silicon/ai, special_mentions, list("AI"))
 /mob/proc/hear_sleep(message)
 	var/heard = ""
 	if(prob(15))
-		var/list/punctuation = list(",", "!", ".", ";", "?")
+		var/static/list/punctuation = list(",", "!", ".", ";", "?")
 		var/list/messages = splittext(message, " ")
 		var/R = rand(1, messages.len)
 		var/heardword = messages[R]

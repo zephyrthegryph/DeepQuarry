@@ -313,7 +313,7 @@
 	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/sif/murkfish
 
 /datum/decl/mob_organ_names/fish
-	hit_zones = list("head", "body", "dorsal fin", "left pectoral fin", "right pectoral fin", "tail fin")
+TYPE_TABLE(/datum/decl/mob_organ_names/fish, mob_organ_hit_zones, list("head", "body", "dorsal fin", "left pectoral fin", "right pectoral fin", "tail fin"))
 
 
 // === merged from fish_vr.dm during hard-fork de-suffix (verified no override-order change) ===

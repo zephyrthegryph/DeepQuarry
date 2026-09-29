@@ -8,7 +8,7 @@
 		"Primary" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "primary"),
 		"Highlight" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "highlight"),
 	)
-	var/list/styles = protean_blob_styles()
+	var/list/styles = GLOBAL_TABLE_GET(protean_blob_styles)
 	for(var/id in styles)
 		var/datum/protean_blob_style/S = styles[id]
 		choices[id] = S.radial_image()
@@ -28,7 +28,7 @@
 		if("Highlight")
 			om_ask(H, /datum/om/prompt/color/protean_blob, PROC_REF(blob_color_picked), message = "Pick highlight color:", title = "Protean Highlight", default = color_highlight, highlight = TRUE)
 			return
-	var/list/styles = protean_blob_styles()
+	var/list/styles = GLOBAL_TABLE_GET(protean_blob_styles)
 	var/datum/protean_blob_style/picked = styles[choice]
 	if(!picked)
 		return

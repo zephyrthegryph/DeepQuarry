@@ -47,4 +47,4 @@ DECLARE_REF(/mob/living/simple_mob/mechanical/mecha/hoverpod, "ion_trail", OWNED
 	return TRUE
 
 /datum/decl/mob_organ_names/hoverpod
-	hit_zones = list("central chassis", "control module", "hydraulics", "left manipulator", "right manipulator", "left landing strut", "right landing strut", "maneuvering thruster", "sensor suite", "radiator", "power supply")
+TYPE_TABLE(/datum/decl/mob_organ_names/hoverpod, mob_organ_hit_zones, list("central chassis", "control module", "hydraulics", "left manipulator", "right manipulator", "left landing strut", "right landing strut", "maneuvering thruster", "sensor suite", "radiator", "power supply"))

@@ -16,8 +16,6 @@
 	var/min_vitality = 0
 	var/cleaning = 0
 	var/patient_laststat = null
-	// ALLOW(instance_list): c: read-only per-subtype constant table (10 subtype overrides); a getter would share it, not worth it on a rare type
-	var/list/injection_chems = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_DEXALIN, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL) //The borg is able to heal every damage type. As a nerf, they use 750 charge per injection.
 	var/eject_port = "ingestion"
 	var/list/items_preserved = list() // ALLOW(instance_list): d: sleeper contents bookkeeping, edited in place through many paths
 	var/stabilizer = TRUE
@@ -51,6 +49,8 @@
 	var/ore_storage = FALSE
 	var/obj/item/ore_bag/sleeper/ore_bag //Used by supply compactor
 	flags = NOBLUDGEON
+//The borg is able to heal every damage type. As a nerf, they use 750 charge per injection.
+TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_DEXALIN, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL))
 
 /obj/item/dogborg/sleeper/Initialize(mapload)
 	if(analyzer) //Destructive analysis
@@ -295,7 +295,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 
 	var/mob/living/silicon/robot/robot_user = user
 	var/list/robot_chems = list()
-	for(var/re in injection_chems)
+	for(var/re in TYPE_TABLE_GET(src, sleeper_injection_chems))
 		var/datum/reagent/possible_reagent = chemistry_service().chemical_reagents[re]
 		UNTYPED_LIST_ADD(robot_chems, list("id" = possible_reagent.id, "name" = possible_reagent.name))
 
@@ -415,7 +415,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 				to_chat(ui.user, span_notice("ERROR: Subject cannot metabolise chemicals."))
 				return FALSE
 			var/selected_reagent = params["value"]
-			if(!(selected_reagent in injection_chems))
+			if(!(selected_reagent in TYPE_TABLE_GET(src, sleeper_injection_chems)))
 				return FALSE
 			if(selected_reagent == REAGENT_ID_INAPROVALINE || patient.vitality() > min_vitality)
 				inject_chem(ui.user, selected_reagent)
@@ -425,7 +425,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 
 /obj/item/dogborg/sleeper/proc/inject_chem(mob/user, chem)
 	if(patient && patient.reagents)
-		if(chem in (injection_chems + REAGENT_ID_INAPROVALINE))
+		if(chem in (TYPE_TABLE_GET(src, sleeper_injection_chems) + REAGENT_ID_INAPROVALINE))
 			if(!hound.cell || hound.cell.charge < 800) //This is so borgs don't kill themselves with it.
 				to_chat(hound, span_notice("You don't have enough power to synthesize fluids."))
 				return
