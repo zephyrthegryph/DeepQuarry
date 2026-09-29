@@ -130,7 +130,8 @@ APPEARANCE_NONE(/obj/machinery/power/apc) // ALLOW(sys_dx_old_forms): drops the 
 // ─────────────────────────────────────────────────────────────────────────────
 
 /obj/machinery/power/apc/capabilities()
-	. = wall_machine(board = /obj/item/module/power_control, repair_tool = NONE)
+	. = ..()
+	. += wall_machine(board = /obj/item/module/power_control, repair_tool = NONE)
 	. += maintenance_hatch(/datum/wires/apc, access = ACCESS_ENGINE_EQUIP, cover_locked_while = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE)
 	. += cell_bay(nameof(cell))
 	. += power_channels()
