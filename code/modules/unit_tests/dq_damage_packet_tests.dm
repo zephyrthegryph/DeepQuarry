@@ -50,7 +50,7 @@
 /obj/machinery/dq_damage_probe/receive_damage(datum/damage_packet/packet)
 	received++
 	own_clear(src, "last", OWN_DELETE)
-	own_set(src, "last", new(packet))
+	own_set(src, "last", new /datum/dq_packet_record(packet))
 	return 0
 
 
@@ -66,7 +66,7 @@
 /mob/living/simple_mob/dq_damage_probe/receive_damage(datum/damage_packet/packet)
 	received++
 	own_clear(src, "last", OWN_DELETE)
-	own_set(src, "last", new(packet))
+	own_set(src, "last", new /datum/dq_packet_record(packet))
 	return 0
 
 
