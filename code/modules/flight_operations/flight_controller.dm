@@ -361,7 +361,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 		rel_set(vessel, "active_expedition", site)
 	var/datum/flight_destination/origin = destinations[vessel.current_destination_id()]
 	var/datum/flight_plan/plan = new(vessel, origin, destination)
-	rel_set(vessel, "active_plan", plan) // the service's plans list keeps the plan; finish_plan() deletes it
+	own_set(vessel, "active_plan", plan) // the vessel owns its active plan; plans is the service's id lookup
 	plans[plan.id] = plan
 	return plan
 
@@ -498,7 +498,8 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 /datum/world_service/flight/proc/finish_plan(datum/flight_plan/plan)
 	plans -= plan.id
 	if(plan.vessel?.active_plan == plan)
-		rel_clear(plan.vessel, "active_plan")
+		own_clear(plan.vessel, "active_plan", OWN_DELETE)
+		return
 	qdel(plan)
 
 /datum/world_service/flight/stat_line()

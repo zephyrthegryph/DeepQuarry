@@ -153,7 +153,7 @@
 				if(vessel.active_plan.state != FLIGHT_PLAN_DRAFT)
 					return FALSE
 				GLOB.flight_service.plans -= vessel.active_plan.id
-				qdel(vessel.active_plan)
+				own_clear(vessel, "active_plan", OWN_DELETE)
 			var/datum/flight_plan/jump_plan = GLOB.flight_service.create_plan(vessel, params["destination_id"])
 			if(!jump_plan || !jump_plan.start())
 				to_chat(ui.user, span_warning("The jump could not be initiated."))
@@ -165,7 +165,7 @@
 				if(vessel.active_plan.state != FLIGHT_PLAN_DRAFT)
 					return FALSE
 				GLOB.flight_service.plans -= vessel.active_plan.id
-				qdel(vessel.active_plan)
+				own_clear(vessel, "active_plan", OWN_DELETE)
 			var/datum/flight_plan/plan = GLOB.flight_service.create_plan(vessel, params["destination_id"])
 			if(!plan)
 				to_chat(ui.user, span_warning("The selected destination cannot be added to this vessel's flight plan."))
