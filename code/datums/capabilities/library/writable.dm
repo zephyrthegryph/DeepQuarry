@@ -1,16 +1,16 @@
-// writable(): a pen writes on the holder. The text is pencode rendered by the paper parser
+// cap_writable(): a pen writes on the holder. The text is pencode rendered by the paper parser
 // (pencode_to_html(), code/modules/paperwork/paper.dm), in the pen's colour, and kept in the
 // holder's capability data up to max_length characters. On paper the pen opens the paper window in
 // its write view instead, so the paper's own fields, signatures and space accounting stay in charge.
 //
 //	/obj/item/sign_board/capabilities()
 //		. = ..()
-//		. += writable(max_length = 200)
-//		. += rename()
+//		. += cap_writable(max_length = 200)
+//		. += cap_rename()
 //
-// With rename() on the same type the pen writes by default and "Rename" stays in the Menu.
+// With cap_rename() on the same type the pen writes by default and "Rename" stays in the Menu.
 
-/// The priority of "Write" over the other pen entries (rename()), so a pen click writes.
+/// The priority of "Write" over the other pen entries (cap_rename()), so a pen click writes.
 #define WRITABLE_PRIORITY 5
 
 /datum/capability/writable
@@ -31,17 +31,16 @@
 	/// Visible characters written so far.
 	var/used = 0
 
-/proc/writable(max_length = MAX_PAPER_MESSAGE_LEN, pen_types = /obj/item/pen, written_state, behind = NONE, log = LOG_GAME)
+/proc/cap_writable(max_length = MAX_PAPER_MESSAGE_LEN, pen_types = /obj/item/pen, written_state, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/writable/C = new
 	C.max_length = max_length
 	C.pen_types = pen_types
 	C.written_state = written_state
-	C.behind = behind
-	C.log = log
+	cap_gating(C, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
 	return C
 
 /datum/capability/writable/interactions(atom/holder)
-	var/datum/interaction/capability/write = adopt_entry(use_on("Write", pen_types, TYPE_PROC_REF(/atom, cap_writable_write), behind = behind, needs = TYPE_PROC_REF(/atom, cap_writable_has_space), else_say = "there's no room left to write on it", works_broken = TRUE, works_unpowered = TRUE, log = log, priority = WRITABLE_PRIORITY))
+	var/datum/interaction/capability/write = adopt_entry(cap_use_on("Write", pen_types, TYPE_PROC_REF(/atom, cap_writable_write), needs = TYPE_PROC_REF(/atom, cap_writable_has_space), else_say = "there's no room left to write on it", works_broken = TRUE, works_unpowered = TRUE, priority = WRITABLE_PRIORITY))
 	return list(write)
 
 /datum/capability/writable/examine(atom/holder, mob/user)

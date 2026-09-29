@@ -1,11 +1,11 @@
-// assembly() (code/datums/capabilities/library/assembly.dm).
+// cap_assembly() (code/datums/capabilities/library/assembly.dm).
 
 /obj/cap_fixture/rigged
 	var/list/pulses
 
 /obj/cap_fixture/rigged/capabilities()
 	. = ..()
-	. += assembly(attach_types = list(/obj/item/assembly/signaler, /obj/item/assembly/timer), on_pulse = PROC_REF(fx_pulsed), attached_state = "rigged")
+	. += cap_assembly(attach_types = list(/obj/item/assembly/signaler, /obj/item/assembly/timer), on_pulse = PROC_REF(fx_pulsed), attached_state = "rigged")
 
 /obj/cap_fixture/rigged/proc/fx_pulsed(obj/item/assembly/source)
 	LAZYADD(pulses, source)

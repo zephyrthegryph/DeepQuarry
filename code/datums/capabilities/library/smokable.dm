@@ -1,4 +1,4 @@
-// smokable(): the holder (an item) is lit with something hot ("Light" with a match or lighter held,
+// cap_smokable(): the holder (an item) is lit with something hot ("Light" with a match or lighter held,
 // use_on), burns for burn_time, and goes out on its own or when put out. While lit it puffs every
 // 2 seconds: its reagents go into the mouth of whoever wears it as a mask, else a little burns away
 // (smoke_reagents(), shared with cigarettes). "Take a drag" (also its use in hand) draws `drag`
@@ -7,7 +7,7 @@
 //
 //	/obj/item/clothing/mask/cheroot/capabilities()
 //		. = ..()
-//		. += smokable(burn_time = 8 MINUTES, butt = /obj/item/trash/cigbutt, lit_state = "cheroot_on", burnt_state = "cheroot_burnt")
+//		. += cap_smokable(burn_time = 8 MINUTES, butt = /obj/item/trash/cigbutt, lit_state = "cheroot_on", burnt_state = "cheroot_burnt")
 //
 // Lit is the CAP_LIT bit; the burn time left lives in the capability data. The puff runs in the
 // holder's cap_smokable timer slot (moves to a periodic lane through systems() once the core has it).
@@ -40,7 +40,7 @@ OWN_TIMER(/obj/item, cap_smokable)
 	/// Burn time left; null while fresh.
 	var/burn_left
 
-/proc/smokable(burn_time = 10 MINUTES, drag = 5, butt, list/light_types = list(/obj/item/flame, /obj/item/weldingtool, /obj/item/assembly/igniter), lit_state, burnt_state, behind = NONE, log = LOG_GAME)
+/proc/cap_smokable(burn_time = 10 MINUTES, drag = 5, butt, list/light_types = list(/obj/item/flame, /obj/item/weldingtool, /obj/item/assembly/igniter), lit_state, burnt_state, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/smokable/C = new
 	C.burn_time = burn_time
 	C.drag = drag
@@ -48,15 +48,14 @@ OWN_TIMER(/obj/item, cap_smokable)
 	C.light_types = light_types
 	C.lit_state = lit_state
 	C.burnt_state = burnt_state
-	C.behind = behind
-	C.log = log
+	cap_gating(C, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
 	return C
 
 /datum/capability/smokable/interactions(atom/holder)
-	var/datum/interaction/capability/light = adopt_entry(use_on("Light", light_types, TYPE_PROC_REF(/obj/item, cap_smokable_light), behind = behind, needs = TYPE_PROC_REF(/obj/item, cap_smokable_can_light), works_broken = TRUE, works_unpowered = TRUE, log = log))
-	var/datum/interaction/capability/drag_entry = adopt_entry(hand("Take a drag", TYPE_PROC_REF(/obj/item, cap_smokable_drag), behind = behind, needs = TYPE_PROC_REF(/obj/item, cap_smokable_is_lit), else_say = "it isn't lit", works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/light = adopt_entry(cap_use_on("Light", light_types, TYPE_PROC_REF(/obj/item, cap_smokable_light), needs = TYPE_PROC_REF(/obj/item, cap_smokable_can_light), works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/drag_entry = adopt_entry(cap_hand("Take a drag", TYPE_PROC_REF(/obj/item, cap_smokable_drag), needs = TYPE_PROC_REF(/obj/item, cap_smokable_is_lit), else_say = "it isn't lit", works_broken = TRUE, works_unpowered = TRUE))
 	drag_entry.entry = INTERACTION_ENTRY_SELF // using it in hand takes a drag
-	var/datum/interaction/capability/snuff = adopt_entry(hand("Put out", TYPE_PROC_REF(/obj/item, cap_smokable_put_out), behind = behind, needs = TYPE_PROC_REF(/obj/item, cap_smokable_is_lit), else_say = "it isn't lit", works_broken = TRUE, works_unpowered = TRUE, log = log))
+	var/datum/interaction/capability/snuff = adopt_entry(cap_hand("Put out", TYPE_PROC_REF(/obj/item, cap_smokable_put_out), needs = TYPE_PROC_REF(/obj/item, cap_smokable_is_lit), else_say = "it isn't lit", works_broken = TRUE, works_unpowered = TRUE))
 	snuff.default_action = null // Menu only
 	return list(light, drag_entry, snuff)
 

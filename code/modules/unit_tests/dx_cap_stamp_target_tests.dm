@@ -1,8 +1,8 @@
-// stamp_target() (code/datums/capabilities/library/stamp_target.dm).
+// cap_stamp_target() (code/datums/capabilities/library/stamp_target.dm).
 
 /obj/cap_fixture/stampable/capabilities()
 	. = ..()
-	. += stamp_target(max_stamps = 2, noun = "form")
+	. += cap_stamp_target(max_stamps = 2, noun = "form")
 
 /datum/unit_test/dx_cap_stamp_target
 

@@ -1,4 +1,4 @@
-// assembly(): the holder takes one /obj/item/assembly (a signaler, timer, igniter, sensor, ...) as
+// cap_assembly(): the holder takes one /obj/item/assembly (a signaler, timer, igniter, sensor, ...) as
 // its trigger. Attaching needs the assembly unsecured, as the tank transfer valve does; it is
 // secured once inside. The holder owns it in `attached_assembly` (own_set()). "Trigger" activates
 // it (activate(), with its own cooldown); when the attached assembly pulses (its timer ran out, its
@@ -6,7 +6,7 @@
 //
 //	/obj/item/grenade/rigged/capabilities()
 //		. = ..()
-//		. += assembly(attach_types = list(/obj/item/assembly/timer, /obj/item/assembly/signaler), on_pulse = PROC_REF(detonate))
+//		. += cap_assembly(attach_types = list(/obj/item/assembly/timer, /obj/item/assembly/signaler), on_pulse = PROC_REF(detonate))
 
 /obj
 	/// The assembly attached by the assembly capability (owned: own_set()).
@@ -25,25 +25,24 @@
 	/// An overlay drawn while an assembly is attached, or null.
 	var/attached_state
 
-/proc/assembly(list/attach_types = list(/obj/item/assembly), on_pulse, detach_tool = TOOL_SCREWDRIVER, attached_state, behind = NONE, log = LOG_GAME)
+/proc/cap_assembly(list/attach_types = list(/obj/item/assembly), on_pulse, detach_tool = TOOL_SCREWDRIVER, attached_state, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/assembly/C = new
 	C.attach_types = attach_types
 	C.on_pulse = on_pulse
 	C.detach_tool = detach_tool
 	C.attached_state = attached_state
-	C.behind = behind
-	C.log = log
+	cap_gating(C, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
 	return C
 
 /datum/capability/assembly/interactions(atom/holder)
-	var/datum/interaction/capability/attach = adopt_entry(insert("Attach", attach_types, TYPE_PROC_REF(/obj, cap_assembly_attach), behind = behind, needs = TYPE_PROC_REF(/obj, cap_assembly_can_attach), works_broken = TRUE, works_unpowered = TRUE, log = log))
+	var/datum/interaction/capability/attach = adopt_entry(cap_insert("Attach", attach_types, TYPE_PROC_REF(/obj, cap_assembly_attach), needs = TYPE_PROC_REF(/obj, cap_assembly_can_attach), works_broken = TRUE, works_unpowered = TRUE))
 	var/datum/capability/entry/detach_wrapper
 	if(detach_tool)
-		detach_wrapper = tool("Detach assembly", detach_tool, TYPE_PROC_REF(/obj, cap_assembly_detach), behind = behind, needs = TYPE_PROC_REF(/obj, cap_assembly_present), else_say = "nothing is attached to it", log = log)
+		detach_wrapper = cap_tool("Detach assembly", detach_tool, TYPE_PROC_REF(/obj, cap_assembly_detach), needs = TYPE_PROC_REF(/obj, cap_assembly_present), else_say = "nothing is attached to it")
 	else
-		detach_wrapper = hand("Detach assembly", TYPE_PROC_REF(/obj, cap_assembly_detach), behind = behind, needs = TYPE_PROC_REF(/obj, cap_assembly_present), else_say = "nothing is attached to it", works_broken = TRUE, works_unpowered = TRUE, log = log)
+		detach_wrapper = cap_hand("Detach assembly", TYPE_PROC_REF(/obj, cap_assembly_detach), needs = TYPE_PROC_REF(/obj, cap_assembly_present), else_say = "nothing is attached to it", works_broken = TRUE, works_unpowered = TRUE)
 	var/datum/interaction/capability/detach = adopt_entry(detach_wrapper)
-	var/datum/interaction/capability/trigger = adopt_entry(hand("Trigger", TYPE_PROC_REF(/obj, cap_assembly_trigger), behind = behind, needs = TYPE_PROC_REF(/obj, cap_assembly_present), else_say = "nothing is attached to it", works_broken = TRUE, works_unpowered = TRUE, log = log))
+	var/datum/interaction/capability/trigger = adopt_entry(cap_hand("Trigger", TYPE_PROC_REF(/obj, cap_assembly_trigger), needs = TYPE_PROC_REF(/obj, cap_assembly_present), else_say = "nothing is attached to it", works_broken = TRUE, works_unpowered = TRUE))
 	trigger.default_action = null // Menu only: an empty hand keeps doing the holder's own thing
 	if(!detach_tool)
 		detach.default_action = null

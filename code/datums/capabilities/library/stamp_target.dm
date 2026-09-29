@@ -1,12 +1,12 @@
-// stamp_target(): a rubber stamp (or a seal ring) marks the holder. Each stamp leaves its line
+// cap_stamp_target(): a rubber stamp (or a seal ring) marks the holder. Each stamp leaves its line
 // (stamp_mark_text(), shared with paper) in the holder's capability data and its mark as an
 // overlay, "paper_[stamp icon_state]" in the holder's icon, as paper draws it. The clown's stamp only
 // works for clowns (stamp_usable_by()).
 //
 //	/obj/item/form/capabilities()
 //		. = ..()
-//		. += writable()
-//		. += stamp_target(max_stamps = 3)
+//		. += cap_writable()
+//		. += cap_stamp_target(max_stamps = 3)
 
 /datum/capability/stamp_target
 	data_type = /datum/cap_stamp_data
@@ -26,17 +26,16 @@
 	/// The overlay state of each stamp, in stamping order.
 	var/list/marks
 
-/proc/stamp_target(max_stamps, noun = "document", draws_marks = TRUE, behind = NONE, log = LOG_GAME)
+/proc/cap_stamp_target(max_stamps, noun = "document", draws_marks = TRUE, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/stamp_target/C = new
 	C.max_stamps = max_stamps
 	C.noun = noun
 	C.draws_marks = draws_marks
-	C.behind = behind
-	C.log = log
+	cap_gating(C, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
 	return C
 
 /datum/capability/stamp_target/interactions(atom/holder)
-	var/datum/interaction/capability/stamp = adopt_entry(use_on("Stamp", list(/obj/item/stamp, /obj/item/clothing/accessory/ring/seal), TYPE_PROC_REF(/atom, cap_stamp_apply), behind = behind, needs = TYPE_PROC_REF(/atom, cap_stamp_has_room), else_say = "there's no room left for another stamp", works_broken = TRUE, works_unpowered = TRUE, log = log))
+	var/datum/interaction/capability/stamp = adopt_entry(cap_use_on("Stamp", list(/obj/item/stamp, /obj/item/clothing/accessory/ring/seal), TYPE_PROC_REF(/atom, cap_stamp_apply), needs = TYPE_PROC_REF(/atom, cap_stamp_has_room), else_say = "there's no room left for another stamp", works_broken = TRUE, works_unpowered = TRUE))
 	return list(stamp)
 
 /datum/capability/stamp_target/examine(atom/holder, mob/user)

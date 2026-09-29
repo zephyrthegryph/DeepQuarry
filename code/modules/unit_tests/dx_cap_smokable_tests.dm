@@ -1,11 +1,11 @@
-// smokable() (code/datums/capabilities/library/smokable.dm).
+// cap_smokable() (code/datums/capabilities/library/smokable.dm).
 
 /obj/item/dq_cap_fixture/cig
 	icon_state = "cig"
 
 /obj/item/dq_cap_fixture/cig/capabilities()
 	. = ..()
-	. += smokable(burn_time = 20 SECONDS, drag = 2, butt = /obj/item/trash/cigbutt, lit_state = "cig_on", burnt_state = "cig_burnt")
+	. += cap_smokable(burn_time = 20 SECONDS, drag = 2, butt = /obj/item/trash/cigbutt, lit_state = "cig_on", burnt_state = "cig_burnt")
 
 /obj/item/dq_cap_fixture/cig/Initialize(mapload)
 	. = ..()
@@ -15,7 +15,7 @@
 /// No butt: it stays as a burnt husk.
 /obj/item/dq_cap_fixture/pipe/capabilities()
 	. = ..()
-	. += smokable(burn_time = 10 SECONDS)
+	. += cap_smokable(burn_time = 10 SECONDS)
 
 /datum/unit_test/dx_cap_smokable
 

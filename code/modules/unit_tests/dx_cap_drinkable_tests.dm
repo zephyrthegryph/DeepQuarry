@@ -1,11 +1,11 @@
-// drinkable() (code/datums/capabilities/library/drinkable.dm).
+// cap_drinkable() (code/datums/capabilities/library/drinkable.dm).
 
 /obj/item/dq_cap_fixture/flask
 	flags = OPENCONTAINER
 
 /obj/item/dq_cap_fixture/flask/capabilities()
 	. = ..()
-	. += drinkable(sip = 4)
+	. += cap_drinkable(sip = 4)
 
 /obj/item/dq_cap_fixture/flask/Initialize(mapload)
 	. = ..()

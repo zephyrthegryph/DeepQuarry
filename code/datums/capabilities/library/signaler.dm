@@ -1,4 +1,4 @@
-// signaler(): the holder is a remote signaling device of its own. It listens on its frequency
+// cap_signaler(): the holder is a remote signaling device of its own. It listens on its frequency
 // through the radio service (as /obj/item/assembly/signaler does), sends an "ACTIVATE" signal with
 // its code, and runs on_signal when a signal with its code arrives. "Set frequency" and "Set code"
 // are forms; the tgui window gets `frequency`, `code`, `minFrequency` and `maxFrequency`.
@@ -8,7 +8,7 @@
 //
 //	/obj/item/remote_charge/capabilities()
 //		. = ..()
-//		. += signaler(frequency = 1449, code = 12, on_signal = PROC_REF(detonate))
+//		. += cap_signaler(frequency = 1449, code = 12, on_signal = PROC_REF(detonate))
 
 /obj
 	/// Per-instance signaler frequency (the signaler capability); null: the type default.
@@ -33,19 +33,18 @@
 	/// world.time before which the holder can't signal again.
 	var/next_signal = 0
 
-/proc/signaler(frequency = RSD_FREQ, code = 30, on_signal, behind = NONE, log = LOG_GAME)
+/proc/cap_signaler(frequency = RSD_FREQ, code = 30, on_signal, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/signaler/C = new
 	C.frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
 	C.code = clamp(round(code), 1, 100)
 	C.on_signal = on_signal
-	C.behind = behind
-	C.log = log
+	cap_gating(C, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
 	return C
 
 /datum/capability/signaler/interactions(atom/holder)
-	var/datum/interaction/capability/send = adopt_entry(hand("Send signal", TYPE_PROC_REF(/obj, cap_signaler_send), behind = behind, works_unpowered = TRUE, log = log))
-	var/datum/interaction/capability/set_freq = adopt_entry(hand("Set frequency", TYPE_PROC_REF(/obj, cap_signaler_set_frequency), behind = behind, works_unpowered = TRUE, log = log, form = list(number_field("frequency", min_value = RADIO_LOW_FREQ, max_value = RADIO_HIGH_FREQ, message = "Frequency, [RADIO_LOW_FREQ] to [RADIO_HIGH_FREQ] ([format_frequency(RSD_FREQ)] is [RSD_FREQ]):", title = "Signaler", default = frequency))))
-	var/datum/interaction/capability/set_code = adopt_entry(hand("Set code", TYPE_PROC_REF(/obj, cap_signaler_set_code), behind = behind, works_unpowered = TRUE, log = log, form = list(number_field("code", min_value = 1, max_value = 100, message = "Code, 1 to 100:", title = "Signaler", default = code))))
+	var/datum/interaction/capability/send = adopt_entry(cap_hand("Send signal", TYPE_PROC_REF(/obj, cap_signaler_send), works_unpowered = TRUE))
+	var/datum/interaction/capability/set_freq = adopt_entry(cap_hand("Set frequency", TYPE_PROC_REF(/obj, cap_signaler_set_frequency), works_unpowered = TRUE, form = list(number_field("frequency", min_value = RADIO_LOW_FREQ, max_value = RADIO_HIGH_FREQ, message = "Frequency, [RADIO_LOW_FREQ] to [RADIO_HIGH_FREQ] ([format_frequency(RSD_FREQ)] is [RSD_FREQ]):", title = "Signaler", default = frequency))))
+	var/datum/interaction/capability/set_code = adopt_entry(cap_hand("Set code", TYPE_PROC_REF(/obj, cap_signaler_set_code), works_unpowered = TRUE, form = list(number_field("code", min_value = 1, max_value = 100, message = "Code, 1 to 100:", title = "Signaler", default = code))))
 	for(var/datum/interaction/capability/E as anything in list(send, set_freq, set_code))
 		E.default_action = null // Menu entries: an empty hand keeps doing the holder's own thing
 	return list(send, set_freq, set_code)
@@ -130,14 +129,14 @@
 	changed(O, CHANGE_CAPABILITY)
 	return TRUE
 
-/obj/proc/cap_signaler_send(mob/user, obj/item/held)
+/obj/proc/cap_signaler_send(mob/user)
 	var/reason = cap_signaler_signal(src)
 	if(reason)
 		return refuse(user, "\The [src] doesn't signal: [reason].")
 	to_chat(user, span_notice("You send a signal on [format_frequency(cap_signaler_frequency(src))], code [cap_signaler_code(src)]."))
 	return TRUE
 
-/obj/proc/cap_signaler_set_frequency(mob/user, obj/item/held, frequency)
+/obj/proc/cap_signaler_set_frequency(mob/user, frequency)
 	frequency = ui_number(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ, 1)
 	if(isnull(frequency))
 		return refuse(user, "That isn't a frequency.")
@@ -145,7 +144,7 @@
 	to_chat(user, span_notice("You tune \the [src] to [format_frequency(now)]."))
 	return TRUE
 
-/obj/proc/cap_signaler_set_code(mob/user, obj/item/held, code)
+/obj/proc/cap_signaler_set_code(mob/user, code)
 	code = ui_number(code, 1, 100, 1)
 	if(isnull(code))
 		return refuse(user, "That isn't a code.")

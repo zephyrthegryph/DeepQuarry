@@ -1,22 +1,22 @@
-// writable() (code/datums/capabilities/library/writable.dm), and how it sits with stamp_target(),
-// label() and rename() on one type.
+// cap_writable() (code/datums/capabilities/library/writable.dm), and how it sits with cap_stamp_target(),
+// cap_label() and cap_rename() on one type.
 
 /obj/cap_fixture/writable/capabilities()
 	. = ..()
-	. += writable(max_length = 12, written_state = "words")
+	. += cap_writable(max_length = 12, written_state = "words")
 
 /// The paperwork mix: a pen writes by default, Rename stays in the Menu, a labeller labels.
 /obj/cap_fixture/paperwork/capabilities()
 	. = ..()
-	. += writable()
-	. += stamp_target()
-	. += label()
-	. += rename()
+	. += cap_writable()
+	. += cap_stamp_target()
+	. += cap_label()
+	. += cap_rename()
 
-/// Paper declaring writable() keeps its own window.
+/// Paper declaring cap_writable() keeps its own window.
 /obj/item/paper/cap_fixture/capabilities()
 	. = ..()
-	. += writable()
+	. += cap_writable()
 
 /datum/unit_test/dx_cap_writable
 

@@ -1,4 +1,4 @@
-// edible() (code/datums/capabilities/library/edible.dm).
+// cap_edible() (code/datums/capabilities/library/edible.dm).
 
 /// Base item fixture for the consumable capabilities (dq_: skipped by the matter snapshot test).
 /obj/item/dq_cap_fixture
@@ -6,7 +6,7 @@
 
 /obj/item/dq_cap_fixture/snack/capabilities()
 	. = ..()
-	. += edible(bites = 3, bite_size = 2, trash = /obj/item/trash/candy)
+	. += cap_edible(bites = 3, bite_size = 2, trash = /obj/item/trash/candy)
 
 /obj/item/dq_cap_fixture/snack/Initialize(mapload)
 	. = ..()
@@ -16,7 +16,7 @@
 /// No reagents: one bite finishes it.
 /obj/item/dq_cap_fixture/cracker/capabilities()
 	. = ..()
-	. += edible()
+	. += cap_edible()
 
 /datum/unit_test/dx_cap_edible
 

@@ -1,11 +1,11 @@
-// signaler() (code/datums/capabilities/library/signaler.dm).
+// cap_signaler() (code/datums/capabilities/library/signaler.dm).
 
 /obj/cap_fixture/beacon
 	var/list/received
 
 /obj/cap_fixture/beacon/capabilities()
 	. = ..()
-	. += signaler(frequency = 1451, code = 7, on_signal = PROC_REF(fx_signalled))
+	. += cap_signaler(frequency = 1451, code = 7, on_signal = PROC_REF(fx_signalled))
 
 /obj/cap_fixture/beacon/proc/fx_signalled(datum/signal/signal)
 	LAZYADD(received, signal.data["message"])
@@ -63,12 +63,12 @@
 	// The forms, answered without prompting.
 	var/list/freq_form = set_freq.form
 	var/list/code_form = set_code.form
-	set_freq.form = list(dx_canned_field(/datum/form_field/number/dx_canned, "frequency", 1456))
+	set_freq.form = list(dx_entries_canned_field(/datum/form_field/number/dx_canned, "frequency", 1456))
 	set_freq.perform(H, F, null)
 	TEST_ASSERT_EQUAL(cap_signaler_frequency(F), 1457, "retuned, to an odd frequency")
 	TEST_ASSERT(dx_listens_on(F, 1457), "listening on the new frequency")
 	TEST_ASSERT(!dx_listens_on(F, 1451), "and no longer on the old one")
-	set_code.form = list(dx_canned_field(/datum/form_field/number/dx_canned, "code", 150))
+	set_code.form = list(dx_entries_canned_field(/datum/form_field/number/dx_canned, "code", 150))
 	set_code.perform(H, F, null)
 	TEST_ASSERT_EQUAL(cap_signaler_code(F), 100, "the code is clamped to 100")
 	set_freq.form = freq_form

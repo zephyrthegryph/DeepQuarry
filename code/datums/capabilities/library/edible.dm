@@ -1,4 +1,4 @@
-// edible(): the holder (an item) can be eaten a bite at a time, by its holder ("Eat", also its use
+// cap_edible(): the holder (an item) can be eaten a bite at a time, by its holder ("Eat", also its use
 // in hand) or fed to someone else ("Feed", a timed action). A bite moves bite_size units of its
 // reagents into the eater (CHEM_INGEST, scaled by the species' bite_mod), as snacks do; without
 // reagents a bite just counts. It is finished after `bites` bites or when its reagents run out,
@@ -6,10 +6,10 @@
 //
 //	/obj/item/ration_bar/capabilities()
 //		. = ..()
-//		. += edible(bites = 4, bite_size = 3, trash = /obj/item/trash/candy)
+//		. += cap_edible(bites = 4, bite_size = 3, trash = /obj/item/trash/candy)
 //
 // The consumption checks (a mouth, nothing covering it, belly-produced reagents) are shared with
-// drinkable() and standard_feed_mob().
+// cap_drinkable() and standard_feed_mob().
 
 /datum/capability/edible
 	data_type = /datum/cap_edible_data
@@ -29,21 +29,20 @@
 /datum/cap_edible_data
 	var/bites_taken = 0
 
-/proc/edible(bites, bite_size = 1, trash, eat_sound = SFX_ITEMS_EATFOOD, feed_time = 3 SECONDS, behind = NONE, log = LOG_GAME)
+/proc/cap_edible(bites, bite_size = 1, trash, eat_sound = SFX_ITEMS_EATFOOD, feed_time = 3 SECONDS, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/edible/C = new
 	C.bites = bites
 	C.bite_size = bite_size
 	C.trash = trash
 	C.eat_sound = eat_sound
 	C.feed_time = feed_time
-	C.behind = behind
-	C.log = log
+	cap_gating(C, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
 	return C
 
 /datum/capability/edible/interactions(atom/holder)
-	var/datum/interaction/capability/eat = adopt_entry(hand("Eat", TYPE_PROC_REF(/obj/item, cap_edible_eat), behind = behind, needs = TYPE_PROC_REF(/obj/item, cap_edible_can_eat), works_broken = TRUE, works_unpowered = TRUE, log = log))
+	var/datum/interaction/capability/eat = adopt_entry(cap_hand("Eat", TYPE_PROC_REF(/obj/item, cap_edible_eat), needs = TYPE_PROC_REF(/obj/item, cap_edible_can_eat), works_broken = TRUE, works_unpowered = TRUE))
 	eat.entry = INTERACTION_ENTRY_SELF // using it in hand eats it
-	var/datum/interaction/capability/feed = adopt_entry(hand("Feed", TYPE_PROC_REF(/obj/item, cap_edible_feed), behind = behind, works_broken = TRUE, works_unpowered = TRUE, log = log))
+	var/datum/interaction/capability/feed = adopt_entry(cap_hand("Feed", TYPE_PROC_REF(/obj/item, cap_edible_feed), works_broken = TRUE, works_unpowered = TRUE))
 	feed.default_action = null // Menu only
 	return list(eat, feed)
 
