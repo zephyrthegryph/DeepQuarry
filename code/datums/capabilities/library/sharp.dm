@@ -1,0 +1,37 @@
+// sharp(): the item cuts (sharp) and/or has a dismembering edge (edge). The item's own `sharp` and
+// `edge` vars stay the truth every existing reader uses (is_sharp(), has_edge(), can_puncture(), the
+// embed and armour code); the arguments are the type defaults written onto them at init, and a map
+// edit of either var wins.
+//
+//	/obj/item/knife/capabilities()
+//		. = ..()
+//		. += sharp(edge = TRUE)
+
+/datum/capability/sharp
+	works_broken = TRUE
+	works_unpowered = TRUE
+	var/sharp = TRUE
+	var/edge = FALSE
+
+/proc/sharp(edge = FALSE, sharp = TRUE)
+	var/datum/capability/sharp/C = new
+	C.sharp = sharp
+	C.edge = edge
+	return C
+
+/datum/capability/sharp/on_holder_init(atom/holder, mapload)
+	if(!isitem(holder))
+		return
+	var/obj/item/I = holder
+	cap_default_var(I, nameof(I.sharp), sharp)
+	cap_default_var(I, nameof(I.edge), edge)
+
+/datum/capability/sharp/examine(atom/holder, mob/user)
+	var/obj/item/I = holder
+	if(!istype(I))
+		return null
+	if(I.edge)
+		return list("It has a keen edge.")
+	if(I.sharp)
+		return list("It has a sharp point.")
+	return null

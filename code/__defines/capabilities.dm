@@ -18,6 +18,12 @@
 #define CAP_WELDED (1<<6)
 /// Bolted (airlocks).
 #define CAP_BOLTED (1<<7)
+/// Held in both hands (two_handed()).
+#define CAP_WIELDED (1<<8)
+/// The toggle_state() bits: one per toggle an item declares (a hood and its buttons use two).
+#define CAP_TOGGLE_1 (1<<9)
+#define CAP_TOGGLE_2 (1<<10)
+#define CAP_TOGGLE_3 (1<<11)
 
 // ---- gating keywords: behind = COVER|PANEL, locked_by = LOCK ----
 /// The entry is only reachable with the cover open.

@@ -577,7 +577,7 @@ OWN_TIMER(/obj/item, tip_timer)
 //For non-projectile attacks this usually means the attack is blocked.
 //Otherwise should return 0 to indicate that the attack is not affected in any way.
 /obj/item/proc/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
-	return 0
+	return cap_block(user, damage, damage_source, attacker, attack_text) // blocks() (code/datums/capabilities/library/block.dm)
 
 /obj/item/proc/get_loc_turf()
 	var/atom/L = loc
