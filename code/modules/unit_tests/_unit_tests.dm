@@ -130,6 +130,7 @@
 // the bottom of this file.
 #include "dq_c6_machine_parts_tests.dm"
 #include "dq_atmos_tests.dm"
+#include "dq_gas_arena_leak_tests.dm"
 #include "dq_vg_binding_tests.dm"
 #include "dq_heat_domain_tests.dm"
 #include "dq_heat_api_tests.dm"
