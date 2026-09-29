@@ -336,8 +336,7 @@ DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(intera
 	to_chat(user, span_notice("You deploy the roller bed."))
 	var/obj/structure/bed/roller/R = new held.bedtype(user.loc)
 	R.add_fingerprint(user)
-	qdel(held)
-	own_take(src, "held")
+	own_clear(src, "held", OWN_DELETE)
 	return TRUE
 
 

@@ -119,6 +119,6 @@ DECLARE_INTERACTIONS(/obj/item/powersink, INTERACT_HAND(null, PROC_REF(interacti
 		return
 	PN = attached()?.get_power_region() || 0
 
-/// LC-refs: attached -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: attached (reads null once it is gone).
 /obj/item/powersink/proc/attached() as /obj/structure/cable
 	return attached

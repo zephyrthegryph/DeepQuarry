@@ -219,8 +219,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 /obj/structure/cable/lifecycle_unbind()
 	. = ..()
 	GLOB.machine_service.power_material_cables -= src
-	material_overlay?.remove_cable(src)
-	rel_clear(src, "material_overlay")
+	material_overlay?.remove_cable(src) // dirties the overlay's graph; the pair view goes with it
 	power_unregister()
 
 /obj/structure/cable/examine(mob/user)
@@ -938,10 +937,10 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/alien, INTERACT_HAND_UNGATED("Tak
 
 #undef MAXCOIL
 
-/// LC-refs: a cable is a member of its material overlay's cables; deleting it leaves the list.
+/// A cable is a member of its material overlay's cables (two-sided); deleting it leaves the list.
 REL_PAIR(/obj/structure/cable, material_overlay, cables)
 REL_PAIR_LIST(/datum/material_power_overlay, cables, material_overlay)
 
-/// LC-refs: the breaker_box this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The breaker box this cable belongs to: a relation view, null once that box is deleted.
 /obj/structure/cable/proc/breaker_box() as /obj/machinery/power/breakerbox
 	return breaker_box

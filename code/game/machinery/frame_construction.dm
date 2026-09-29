@@ -128,9 +128,9 @@
 	var/obj/structure/frame/frame = target
 	playsound(frame, 'sound/items/Deconstruct.ogg', 50, 1)
 	to_chat(actor, span_notice("You place the circuit board inside the frame."))
-	own_set(frame, "circuit", held)
 	actor.drop_item()
 	held.forceMove(frame)
+	own_set(frame, "circuit", held) // CONTAINED: in the frame first
 	if(frame.frame_type.frame_class == FRAME_CLASS_MACHINE)
 		frame.check_components()
 		frame.update_desc()

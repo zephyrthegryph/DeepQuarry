@@ -10,8 +10,8 @@
 	mouse_drag_pointer = MOUSE_ACTIVE_POINTER
 	/// Destination tagging for the mail sorter.
 	var/sortTag = 0
-	/// Who this mail is for and who can open it.
-	var/recipient_ref
+	/// Who this mail is for and who can open it (relation view).
+	var/datum/mind/addressee
 	/// How many goodies this mail contains.
 	var/goodie_count = 1
 	// Goodies which can be given to anyone.
@@ -230,8 +230,8 @@ DECLARE_INTERACTIONS(/obj/item/mail, \
 	return TRUE
 
 /obj/item/mail/proc/unwrap(mob/user)
-	if(recipient_ref)
-		var/datum/mind/recipient = om_resolve(recipient_ref)
+	if(addressee)
+		var/datum/mind/recipient = addressee
 		if(recipient && recipient.current?.dna.unique_enzymes != user.dna.unique_enzymes)
 			balloon_alert(user, "you can't open somebody's mail! That's <em>illegal</em>")
 			return FALSE
@@ -268,7 +268,7 @@ DECLARE_INTERACTIONS(/obj/item/mail, \
 /obj/item/mail/proc/initialize_for_recipient(datum/mind/recipient, preset_goodies = FALSE)
 	var/current_title = recipient.role_alt_title ? recipient.role_alt_title : recipient.assigned_role
 	name = "[initial(name)] for [recipient.name] ([current_title])"
-	recipient_ref = om_handle(recipient)
+	rel_set(src, "addressee", recipient)
 
 	var/datum/job/this_job = SSjob.occupations_by_name[recipient.assigned_role]
 
@@ -421,6 +421,7 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	var/cargo_points = 5
+	/// Relation view: the last scanned envelope (it stays wherever it is).
 	var/obj/item/mail/saved
 
 /obj/item/mail_scanner/examine(mob/user)
@@ -439,7 +440,7 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 			return
 		balloon_alert(user, "added to database")
 		playsound(loc, 'sound/items/mail/mailscanned.ogg', 50, TRUE)
-		own_set(src, "saved", A)
+		rel_set(src, "saved", A)
 		return
 	if(isliving(A))
 		if(!saved)
@@ -448,8 +449,7 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 			return
 
 		var/datum/mind/recipient
-		if(saved.recipient_ref)
-			recipient = om_resolve(saved.recipient_ref)
+		recipient = saved.addressee
 
 		if(isnull(recipient) || isnull(recipient.current))
 			return
@@ -470,7 +470,7 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 			return
 
 		saved.scanned = TRUE
-		own_take(src, "saved")
+		rel_clear(src, "saved")
 
 		cargo_points = rand(5, 10)
 		to_chat(user, span_notice("Succesful delivery acknowledged! [cargo_points] points added to Supply."))
@@ -569,4 +569,3 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 	name = "important document"
 	icon_state = "paper_words"
 
-OWN(/obj/item/mail_scanner, saved, OWN_CONTAINED)

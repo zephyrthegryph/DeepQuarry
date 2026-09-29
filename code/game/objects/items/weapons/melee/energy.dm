@@ -597,6 +597,6 @@ OWN(/obj/item/melee/energy, bcell, OWN_CONTAINED)
 DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/blade, "spark_system", /datum/effect/effect/system/spark_spread)
 DECLARE_START_TIMER(/obj/item/melee/energy/blade, 0, PROC_REF(check_held))
 
-/// LC-refs: creator -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: creator (reads null once it is gone).
 /obj/item/melee/energy/blade/proc/creator() as /mob/living
 	return creator

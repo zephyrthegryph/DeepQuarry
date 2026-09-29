@@ -75,6 +75,11 @@
 	name = "Toggle"
 	effect = /obj/machinery/button/holosign/proc/interaction_toggle
 
+/// Holosigns sharing our id (keyed).
+/obj/machinery/button/holosign/var/list/obj/machinery/holosign/controlled_signs
+REL_KEYED_LIST(/obj/machinery/button/holosign, controlled_signs, id, /obj/machinery/holosign)
+KEYED_TARGET(/obj/machinery/holosign, id)
+
 /obj/machinery/button/holosign/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 
@@ -83,9 +88,8 @@
 	active = !active
 	icon_state = "light[active]"
 
-	for(var/obj/machinery/holosign/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(M.id == id)
-			M.toggle()
+	for(var/obj/machinery/holosign/M as anything in controlled_signs)
+		M.toggle()
 	return TRUE
 
 

@@ -56,6 +56,6 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/trunk, INTERACT_ITEM(null, PROC
 	else
 		return 0
 
-/// LC-refs: The linked atom. It should have a disposal system connection to handle receiving disposal packets. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The linked atom. It should have a disposal system connection to handle receiving disposal packets. (a relation view: it reads null once the target is deleted).
 /obj/structure/disposalpipe/trunk/proc/linked() as /atom
 	return linked

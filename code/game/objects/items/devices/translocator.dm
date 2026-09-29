@@ -14,7 +14,8 @@
 	var/longrange = 0 //Can teleport very long distances
 	var/abductor = 0 //Can be used on teleportation blocking turfs
 
-	var/list/beacons
+	/// Relation list view: our beacons (see REL_LIST below).
+	var/list/obj/item/perfect_tele_beacon/beacons
 	var/loc_network = null //Used if you want to create pre-made beacons on the maps
 	var/ready = 1
 	var/beacons_left = 3
@@ -50,8 +51,25 @@
 DECLARE_DEFAULT_CHILD(/obj/item/perfect_tele, "power_source", "cell_type")
 DECLARE_DEFAULT_CHILD(/obj/item/perfect_tele, "spk", /datum/effect/effect/system/spark_spread)
 
-// its beacons forget it.
-REL_PAIR_LIST(/obj/item/perfect_tele, beacons, tele_hand_handle)
+// Relation list view of beacons (a premade beacon may be listed by several translocators, so
+// no pair); each beacon names its maker one-sided (tele_hand), cleared when the maker dies.
+REL_LIST(/obj/item/perfect_tele, beacons)
+
+/// The beacon in `beacons` named `name`, or null.
+/obj/item/perfect_tele/proc/find_beacon(name)
+	for(var/obj/item/perfect_tele_beacon/B as anything in beacons)
+		if(B.tele_name == name)
+			return B
+	return null
+
+/// Adds the premade beacons of our loc_network (consumed on first use).
+/obj/item/perfect_tele/proc/claim_network_beacons()
+	if(!loc_network)
+		return
+	for(var/obj/item/perfect_tele_beacon/stationary/nb in REGISTRY_MEMBERS(REGISTRY_TELE_BEACONS_PREMADE))
+		if(nb.tele_network == loc_network)
+			rel_add(src, "beacons", nb)
+	loc_network = null //Consumed
 
 /obj/item/perfect_tele/update_icon()
 	if(!power_source)
@@ -67,10 +85,10 @@ REL_PAIR_LIST(/obj/item/perfect_tele, beacons, tele_hand_handle)
 	LAZYCLEARLIST(radial_images)
 
 	var/index = 1
-	for(var/bcn in beacons) //Grumble
+	for(var/obj/item/perfect_tele_beacon/beacon as anything in beacons)
+		var/bcn = beacon.tele_name
 		var/image/I = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_[index]")
 
-		var/obj/item/perfect_tele_beacon/beacon = LAZYACCESS(beacons, bcn)
 		if(destination() == beacon)
 			I.add_overlay(radial_seton)
 		else
@@ -122,11 +140,7 @@ DECLARE_INTERACTIONS(/obj/item/perfect_tele, \
 /obj/item/perfect_tele/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction, radial_menu_anchor = src)
 	if(special_handling)
 		return FALSE
-	if(loc_network)
-		for(var/obj/item/perfect_tele_beacon/stationary/nb in REGISTRY_MEMBERS(REGISTRY_TELE_BEACONS_PREMADE))
-			if(nb.tele_network == loc_network)
-				LAZYSET(beacons, nb.tele_name, nb)
-		loc_network = null //Consumed
+	claim_network_beacons()
 
 	if(!(user.ckey in warned_users))
 		LAZYOR(warned_users, user.ckey)
@@ -152,7 +166,7 @@ This device records all warnings given and teleport events for admin review in c
 		return
 
 	else
-		rel_set(src, "destination", LAZYACCESS(beacons, choice))
+		rel_set(src, "destination", find_beacon(choice))
 		rebuild_radial_images()
 
 /obj/item/perfect_tele/proc/beacon_named(datum/om/prompt/text/ask)
@@ -167,7 +181,7 @@ This device records all warnings given and teleport events for admin review in c
 		to_chat(user, span_warning("Entered name length invalid (must be longer than 2, no more than than 20)."))
 		return
 
-	if(new_name in beacons)
+	if(find_beacon(new_name))
 		to_chat(user, span_warning("No duplicate names, please. '[new_name]' exists already."))
 		return
 
@@ -175,7 +189,7 @@ This device records all warnings given and teleport events for admin review in c
 	nb.tele_name = new_name
 	rel_set(nb, "tele_hand", src)
 	nb.creator = user.ckey
-	LAZYSET(beacons, new_name, nb)
+	rel_add(src, "beacons", nb)
 	beacons_left--
 	if(isliving(user))
 		var/mob/living/L = user
@@ -193,9 +207,9 @@ This device records all warnings given and teleport events for admin review in c
 
 	else if(istype(W,/obj/item/perfect_tele_beacon))
 		var/obj/item/perfect_tele_beacon/tb = W
-		if(tb.tele_name in beacons)
+		if(tb in beacons)
 			to_chat(user,span_notice("You re-insert \the [tb] into \the [src]."))
-			rel_remove(src, "beacons", tb.tele_name)
+			rel_remove(src, "beacons", tb)
 			consume(tb, user)
 			beacons_left++
 		else
@@ -311,9 +325,8 @@ This device records all warnings given and teleport events for admin review in c
 	//Failure chance
 	if (!ignore_fail_chance)
 		if(prob(failure_chance) && length(beacons) >= 2)
-			var/list/wrong_choices = beacons - destination().tele_name
-			var/wrong_name = pick(wrong_choices)
-			rel_set(src, "destination", LAZYACCESS(beacons, wrong_name))
+			var/list/wrong_choices = beacons - destination()
+			rel_set(src, "destination", pick(wrong_choices))
 			to_chat(user,span_warning("\The [src] malfunctions and sends you to the wrong beacon!"))
 
 	//Destination beacon vore checking
@@ -569,10 +582,10 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 /obj/item/perfect_tele/frontier/unknown/six
 	loc_network = "unksix"
 
-/// LC-refs: destination -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: destination (reads null once it is gone).
 /obj/item/perfect_tele/proc/destination() as /obj/item/perfect_tele_beacon
 	return destination
 
-/// LC-refs: tele hand -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: tele hand (reads null once it is gone).
 /obj/item/perfect_tele_beacon/proc/tele_hand() as /obj/item/perfect_tele
 	return tele_hand

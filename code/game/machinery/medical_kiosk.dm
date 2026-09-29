@@ -401,6 +401,6 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 /obj/machinery/medical_kiosk/proc/our_db() as /datum/transcore_db
 	return GLOB.transcore_service.db_by_key(db_key)
 
-/// LC-refs: active user -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// active user (a relation view: it reads null once the target is deleted).
 /obj/machinery/medical_kiosk/proc/active_user() as /mob/living
 	return active_user

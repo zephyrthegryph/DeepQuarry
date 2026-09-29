@@ -136,8 +136,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 	return 1
 
 /obj/machinery/floorlayer/proc/TakeTile(obj/item/stack/tile/tile)
-	if(!T)	T = tile
 	tile.forceMove(src)
+	if(!T)
+		own_set(src, "T", tile)
 
 	SortStacks()
 
@@ -147,6 +148,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 
 OWN(/obj/machinery/floorlayer, T, OWN_CONTAINED)
 
-/// LC-refs: old turf -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// old turf (a relation view: it reads null once the target is deleted).
 /obj/machinery/floorlayer/proc/old_turf() as /turf
 	return old_turf

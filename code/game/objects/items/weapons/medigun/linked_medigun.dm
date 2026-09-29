@@ -216,6 +216,6 @@ EXTEND_INTERACTIONS(/obj/item/bork_medigun/linked, INTERACT_USE(null, PROC_REF(i
 
 	process_medigun(H, user, filter, ishealing)
 
-/// LC-refs: medigun base unit -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: medigun base unit (reads null once it is gone).
 /obj/item/bork_medigun/linked/proc/medigun_base_unit() as /obj/item/medigun_backpack
 	return medigun_base_unit

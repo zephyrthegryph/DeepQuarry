@@ -30,7 +30,7 @@
 
 /obj/structure/easel/proc/interaction_item(mob/user, obj/item/canvas/canvas, datum/interaction/interaction)
 	user.drop_from_inventory(canvas)
-	own_set(src, "painting", canvas)
+	rel_set(src, "painting", canvas) // the canvas sits on our turf: a view, not owned
 	canvas.forceMove(get_turf(src))
 	canvas.layer = layer+0.1
 	user.visible_message(span_notice("[user] puts \the [canvas] on \the [src]."),span_notice("You place \the [canvas] on \the [src]."))
@@ -43,7 +43,7 @@
 	if(painting && painting.loc == T) //Only move if it's near us.
 		painting.forceMove(get_turf(src))
 	else
-		own_take(src, "painting")
+		rel_clear(src, "painting")
 
 /obj/item/canvas
 	name = "canvas"
@@ -778,5 +778,5 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 		loaded = FALSE
 		log_and_message_admins(span_notice("[key_name_admin(user)] has deleted persistent painting made by [author]."))
 
-OWN(/obj/structure/easel, painting, OWN_CONTAINED)
+// The easel's painting sits on its turf (one-sided REL view).
 OWN(/obj/structure/sign/painting, current_canvas, OWN_CONTAINED)

@@ -73,6 +73,6 @@
 /obj/effect/abstract/particle_holder/proc/set_particle_position(x = 0, y = 0, z = 0)
 	particles.position = list(x, y, z)
 
-/// LC-refs: parent -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: parent (reads null once it is gone).
 /obj/effect/abstract/particle_holder/proc/get_parent() as /atom
 	return parent

@@ -239,6 +239,6 @@ DECLARE_INTERACTIONS(/obj/item/universal_translator, INTERACT_USE(null, PROC_REF
 	name = "handheld translator (teppi)"
 	known_languages = list(LANGUAGE_TEPPI)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition (registered: never owned or cleared).
 /obj/item/universal_translator/proc/langset() as /datum/language
 	return langset_static

@@ -10,7 +10,9 @@
 
 	var/datum/anomaly_modifiers/modifier
 
-	var/attached_anomaly
+	/// Relation view: the anomaly that owns these stats.
+	var/obj/effect/anomaly/attached_anomaly
+	/// The harvester draining this anomaly: still an om handle, written by /obj/machinery/anomaly_harvester (code/modules/anomalies).
 	var/attached_harvester
 
 	TIMESTAMP_VAR(next_activation)
@@ -41,7 +43,7 @@
 /datum/anomaly_stats/proc/calculate_points()
 	var/total = 15
 
-	var/obj/effect/anomaly/anomaly = om_resolve(attached_anomaly)
+	var/obj/effect/anomaly/anomaly = attached_anomaly
 
 	if(!anomaly)
 		return
@@ -75,9 +77,9 @@
 	return
 
 /datum/anomaly_stats/proc/update_severity(lower, upper)
-	var/obj/effect/anomaly/anom = om_resolve(attached_anomaly)
+	var/obj/effect/anomaly/anom = attached_anomaly
 	if(!istype(anom))
-		attached_anomaly = null
+		rel_clear(src, "attached_anomaly")
 		return
 	var/sev_change = rand(lower, upper)
 	severity += sev_change
@@ -110,9 +112,9 @@
 	return
 
 /datum/anomaly_stats/proc/kill_anomaly(critical)
-	var/obj/effect/anomaly/anom = om_resolve(attached_anomaly)
+	var/obj/effect/anomaly/anom = attached_anomaly
 	if(!istype(anom))
-		attached_anomaly = null
+		rel_clear(src, "attached_anomaly")
 		return
 	if(critical)
 		anom.detonate()
@@ -123,7 +125,7 @@
 	return
 
 /datum/anomaly_stats/proc/update_state(unstable)
-	var/obj/effect/anomaly/anom = om_resolve(attached_anomaly)
+	var/obj/effect/anomaly/anom = attached_anomaly
 
 	if(!istype(anom))
 		return
@@ -158,9 +160,8 @@
 
 	if(modifier)
 		modifier.on_remove(attached_anomaly)
-		own_take(src, "modifier")
 
-	own_set(src, "modifier", new picked_mod)
+	own_set(src, "modifier", new picked_mod) // disposes of the old modifier
 	modifier.on_add(attached_anomaly)
 	calculate_points()
 	return
@@ -181,7 +182,7 @@
 			stability = ANOMALY_STABLE
 
 	if(attached_harvester)
-		var/obj/machinery/anomaly_harvester/harvester = om_resolve(attached_harvester)
+		var/obj/machinery/anomaly_harvester/harvester = om_resolve(attached_harvester) // ALLOW(ownership): attached_harvester is written as a handle by code/modules/anomalies/anomaly_harvester.dm
 		if(!istype(harvester))
 			return
 

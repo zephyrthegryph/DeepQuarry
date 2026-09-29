@@ -256,8 +256,8 @@
 			windoor.req_one_access = src.electronics.conf_access
 		else
 			windoor.req_access = src.electronics.conf_access
-		own_set(windoor, "electronics", src.electronics)
 		src.electronics.forceMove(windoor)
+		own_transfer(src, "electronics", windoor, "electronics")
 	else
 		var/obj/machinery/door/window/windoor = new /obj/machinery/door/window(src.loc)
 		if(src.facing == "l")
@@ -277,8 +277,8 @@
 			windoor.req_one_access = src.electronics.conf_access
 		else
 			windoor.req_access = src.electronics.conf_access
-		own_set(windoor, "electronics", src.electronics)
 		src.electronics.forceMove(windoor)
+		own_transfer(src, "electronics", windoor, "electronics")
 
 	qdel(src)
 

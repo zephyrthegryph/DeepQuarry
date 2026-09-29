@@ -283,10 +283,11 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 			return
 		var/charjob = record_found.fields["real_rank"]
 		var/obj/item/organ/internal/mmi_holder/posibrain/nano/BR = O
-		own_take(BR, "stored_mmi") //toss the dummy...
+		var/obj/item/mmi/digital/posibrain/nano/salvaged_brain = protean_brain
+		own_clear(BR, "stored_mmi", OWN_DELETE) //toss the dummy...
 		BR.slot_clear()
-		own_set(BR, "stored_mmi", protean_brain) //...and implant the salvaged mmi in its place
-		protean_brain.forceMove(BR)
+		salvaged_brain.forceMove(BR)
+		own_move(salvaged_brain, BR, "stored_mmi") //...and implant the salvaged mmi in its place (from our protean_brain)
 		var/picked_ckey = posibrain_client.ckey
 		var/picked_slot = posibrain_client.prefs.default_slot
 		if(P.dna)
@@ -321,9 +322,8 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 
 		OM_EMIT(P, /datum/om/event/human_dna_finalized)
 
-		var/datum/mind_host/core_host = get_mind_host(protean_brain)
+		var/datum/mind_host/core_host = get_mind_host(salvaged_brain)
 		core_host.release_mind(P, "protean reconstitution")
-		protean_brain.forceMove(BR)
 	if(index < length(organs))
 		om_after(src, per_organ_delay, PROC_REF(reconstitute_organ), P, organs, index + 1)
 		return

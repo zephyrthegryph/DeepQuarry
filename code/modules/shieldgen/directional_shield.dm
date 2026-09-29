@@ -19,7 +19,7 @@
 /obj/effect/directional_shield/Initialize(mapload, new_projector)
 	. = ..()
 	if(new_projector)
-		projector = new_projector
+		rel_set(src, "projector", new_projector)
 		var/turf/us = get_turf(src)
 		var/turf/them = get_turf(projector)
 		if(them)
@@ -46,7 +46,7 @@
 	else
 		animate(src, color = new_color, 5)
 
-REL_PAIR(/obj/effect/directional_shield, projector, active_shields)
+// The projector owns its shields (active_shields); each shield names it back through a plain view.
 
 /obj/effect/directional_shield/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover, /obj/item/projectile))
@@ -118,7 +118,7 @@ REL_PAIR(/obj/effect/directional_shield, projector, active_shields)
 /obj/item/shield_projector/proc/create_shield(newloc, new_dir)
 	var/obj/effect/directional_shield/S = new(newloc, src)
 	S.dir = new_dir
-	LAZYADD(active_shields, S)
+	own_add(src, "active_shields", S)
 
 /obj/item/shield_projector/proc/create_shields() // Override this for a specific shape.  Be sure to call ..() for the checks, however.
 	if(active) // Already made.
@@ -129,9 +129,7 @@ REL_PAIR(/obj/effect/directional_shield, projector, active_shields)
 	return TRUE
 
 /obj/item/shield_projector/proc/destroy_shields()
-	for(var/obj/effect/directional_shield/S in active_shields)
-		LAZYREMOVE(active_shields, S)
-		qdel(S)
+	own_clear(src, "active_shields", OWN_DELETE)
 	set_light(0)
 	active = FALSE
 
@@ -383,8 +381,8 @@ DECLARE_INTERACTIONS(/obj/item/shield_projector, INTERACT_SELF("Toggle", PROC_RE
 	offset_from_center = 1 //Snug against the exosuit.
 	max_integrity = 200
 
-	var/tmp/my_mecha_handle
-	var/tmp/my_tool_handle
+	var/tmp/obj/mecha/my_mecha
+	var/tmp/obj/item/mecha_parts/mecha_equipment/combat_shield/my_tool
 	special_handling = TRUE
 
 /obj/item/shield_projector/line/exosuit/periodic_step()
@@ -427,10 +425,10 @@ EXTEND_INTERACTIONS(/obj/item/shield_projector/line/exosuit, INTERACT_USE("Toggl
 		my_tool().log_message("Shield overloaded.", LOG_GAME)
 		my_mecha().use_power(my_tool().energy_drain * 4)
 
-/// LC-refs: the my_mecha this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The exosuit carrying this projector (a relation view, set by the combat shield equipment).
 /obj/item/shield_projector/line/exosuit/proc/my_mecha() as /obj/mecha
-	return om_resolve(my_mecha_handle)
+	return my_mecha
 
-/// LC-refs: the my_tool this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The combat shield equipment this projector belongs to (a relation view).
 /obj/item/shield_projector/line/exosuit/proc/my_tool() as /obj/item/mecha_parts/mecha_equipment/combat_shield
-	return om_resolve(my_tool_handle)
+	return my_tool

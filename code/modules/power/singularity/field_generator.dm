@@ -27,8 +27,11 @@
 	var/power = 30000  // Current amount of power
 	var/state = 0
 	var/warming_up = 0
+	/// The containment fields this generator powers (shared with the generator at the far end;
+	/// each field is a map object, rooted by its turf).
 	var/list/obj/machinery/containment_field/fields
-	var/list/connected_gens	// OM handles of the linked generators (om_resolve_all())
+	/// Generators linked to this one (symmetric membership).
+	var/list/obj/machinery/field_generator/connected_gens
 	var/clean_up = 0
 
 	//If keeping field generators powered is hard then increase the emitter active power usage.
@@ -54,7 +57,7 @@
 	if(!active)
 		if(warming_up)
 			add_overlay("+a[warming_up]")
-	if(fields.len)
+	if(length(fields))
 		add_overlay("+on")
 	// Power level indicator
 	// Scale % power to % num_power_levels and truncate value
@@ -68,8 +71,6 @@
 
 /obj/machinery/field_generator/Initialize(mapload)
 	. = ..()
-	own_set(src, "fields", list())
-	connected_gens = list()
 	make_climbable()
 	emp_protection_flags |= EMP_PROTECT_SELF
 
@@ -223,9 +224,7 @@
 		src.power = field_generator_max_power
 
 	var/power_draw = gen_power_draw
-	for(var/obj/machinery/field_generator/FG in om_resolve_all(connected_gens))
-		if (!isnull(FG))
-			power_draw += gen_power_draw
+	power_draw += gen_power_draw * length(connected_gens)
 	for (var/obj/machinery/containment_field/F in fields)
 		if (!isnull(F))
 			power_draw += field_power_draw
@@ -253,7 +252,7 @@
 	var/actual_draw = src.power	//already checked that power < draw
 	src.power = 0
 
-	for(var/obj/machinery/field_generator/FG in om_resolve_all(connected_gens))
+	for(var/obj/machinery/field_generator/FG as anything in connected_gens?.Copy())
 		if (FG in flood_list)
 			continue
 		actual_draw += FG.draw_power(draw - actual_draw, flood_list) //since the flood list reference is shared this actually works.
@@ -305,44 +304,26 @@
 		if(!locate_on(T, /obj/machinery/containment_field))
 			var/obj/machinery/containment_field/CF = new/obj/machinery/containment_field(T)
 			CF.set_master(src,G)
-			own_add(src, "fields", CF)
-			own_add(G, "fields", CF)
+			rel_add(src, "fields", CF)
+			rel_add(G, "fields", CF)
 			CF.set_dir(field_dir)
-	var/listcheck = 0
-	for(var/obj/machinery/field_generator/FG in om_resolve_all(connected_gens))
-		if (isnull(FG))
-			continue
-		if(FG == G)
-			listcheck = 1
-			break
-	if(!listcheck)
-		connected_gens.Add(om_handle(G))
-	listcheck = 0
-	for(var/obj/machinery/field_generator/FG2 in om_resolve_all(G.connected_gens))
-		if (isnull(FG2))
-			continue
-		if(FG2 == src)
-			listcheck = 1
-			break
-	if(!listcheck)
-		G.connected_gens.Add(om_handle(src))
+	rel_add(src, "connected_gens", G) // symmetric: G lists us too
 
 /obj/machinery/field_generator/proc/cleanup()
 	clean_up = 1
-	for (var/obj/machinery/containment_field/F in fields)
+	// Each field leaves both generators' lists as it is destroyed.
+	for (var/obj/machinery/containment_field/F as anything in fields?.Copy())
 		if (QDELETED(F))
 			continue
 		qdel(F)
-	own_set(src, "fields", list())
-	for(var/obj/machinery/field_generator/FG in om_resolve_all(connected_gens))
+	for(var/obj/machinery/field_generator/FG as anything in connected_gens?.Copy())
+		rel_remove(src, "connected_gens", FG) // symmetric: FG forgets us too
 		if (QDELETED(FG))
 			continue
-		FG.connected_gens.Remove(om_handle_of(src))
 		if(!FG.clean_up)//Makes the other gens clean up as well
 			FG.cleanup()
-		connected_gens.Remove(om_handle_of(FG))
-	connected_gens = list()
 	clean_up = 0
+
 	update_icon()
 
 	//This is here to help fight the "hurr durr, release singulo cos nobody will notice before the
@@ -371,3 +352,6 @@
 /obj/machinery/field_generator/step_start_condition()
 	return active || Varedit_start
 
+
+REL_LIST(/obj/machinery/field_generator, fields)
+REL_SET(/obj/machinery/field_generator, connected_gens)

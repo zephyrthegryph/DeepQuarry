@@ -267,7 +267,7 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/blood, \
 //This version should be used for admin spawns and pre-mapped virus vectors (e.g. in PoIs), this version does not dry
 /obj/effect/decal/cleanable/mucus/mapped/Initialize(mapload)
 	. = ..()
-	LAZYOR(viruses, new /datum/affliction/contagion/engineered/random(rand(3, 6), 9, 4, infected = src))
+	own_add(src, "viruses", new /datum/affliction/contagion/engineered/random(rand(3, 6), 9, 4, infected = src))
 
 /obj/effect/decal/cleanable/mucus/Crossed(mob/living/carbon/human/perp)
 	if(perp.is_incorporeal())

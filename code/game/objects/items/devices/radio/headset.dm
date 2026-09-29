@@ -14,8 +14,8 @@
 
 	var/translate_binary = FALSE
 	var/translate_hive = FALSE
-	var/obj/item/encryptionkey/keyslot1 = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/obj/item/encryptionkey/keyslot2 = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/obj/item/encryptionkey/keyslot1 = null
+	var/obj/item/encryptionkey/keyslot2 = null
 	var/ks1type = null
 	var/ks2type = null
 
@@ -112,7 +112,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 		return ITEM_INTERACT_BLOCKING
 	for(var/ch_name in channels)
 		GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
-		own_put(src, "secure_radio_connections", ch_name, null)
+		LAZYREMOVE(secure_radio_connections, ch_name) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 	var/turf/T = get_turf(user)
 	if(keyslot1)
 		keyslot1.forceMove(T)
@@ -179,7 +179,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 			return
 
 		for (var/ch_name in channels)
-			own_put(src, "secure_radio_connections", ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT))
+			LAZYSET(secure_radio_connections, ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 
 	if(setDescription)
 		setupRadioDescription()
@@ -708,7 +708,6 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	var/mob/living/carbon/human/wearer
 	var/effect_icon = 'icons/effects/effects.dmi'	//Cosmetic Effect that will be applied to the mob as an overlay
 	var/effect_icon_state = "arrow2"
-	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/image/effect_overlay = null	//Reference to an overlay so we can remove it on unequip
 	var/overlay_offset_y = 32
 	//Spells that will be added on equip
@@ -812,7 +811,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	desc = "Bowman headset used by explorers for exploring. Access to the explorer channel."
 
 
-/// LC-refs: wearer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: wearer (reads null once it is gone).
 /obj/item/radio/headset/event/proc/wearer() as /mob/living/carbon/human
 	return wearer
 

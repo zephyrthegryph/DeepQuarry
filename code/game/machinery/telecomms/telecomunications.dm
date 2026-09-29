@@ -162,11 +162,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	soundloop.start()
 
 
-/// Phase 2: every other telecomms machine drops its link to this one.
-/obj/machinery/telecomms/lifecycle_dematerialize()
-	. = ..()
-	for(var/obj/machinery/telecomms/comm in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
-		LAZYREMOVE(comm.links, src)
+// Links are symmetric membership: linking A to B lists each in the other's links, and a dying
+// machine leaves every partner's list (the framework clears both sides).
+REL_SET(/obj/machinery/telecomms, links)
 
 // Used in auto linking
 /obj/machinery/telecomms/proc/add_link(obj/machinery/telecomms/T)
@@ -176,7 +174,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 		for(var/x in autolinkers)
 			if(LAZYFIND(T.autolinkers, x))
 				if(src != T)
-					LAZYOR(links, T)
+					rel_add(src, "links", T)
 
 /obj/machinery/telecomms/update_icon()
 	if(on)
@@ -617,7 +615,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 					log.input_type = "Corrupt File"
 
 				// Log and store everything that needs to be logged
-				LAZYADD(log_entries, log)
+				own_add(src, "log_entries", log)
 				if(!(signal.data["name"] in stored_names))
 					LAZYADD(stored_names, signal.data["name"])
 				logs++
@@ -654,7 +652,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 		for(var/i = 1, i <= logs, i++) // locate the first garbage collectable log entry and remove it
 			var/datum/comm_log_entry/L = LAZYACCESS(log_entries, i)
 			if(L.garbage_collector)
-				LAZYREMOVE(log_entries, L)
+				own_remove(src, "log_entries", L)
 				logs--
 				break
 
@@ -665,7 +663,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	log.input_type = input
 	log.parameters["message"] = content
 	log.parameters["timecode"] = stationtime2text()
-	LAZYADD(log_entries, log)
+	own_add(src, "log_entries", log)
 	update_logs()
 
 // Simple log entry datum

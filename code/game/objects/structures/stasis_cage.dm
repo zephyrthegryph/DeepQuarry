@@ -91,6 +91,6 @@
 	user.visible_message("[user] has stuffed \the [src] into \the [over_object].", "You have stuffed \the [src] into \the [over_object].")
 	over_object.contain(src)
 
-/// LC-refs: contained -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: contained (reads null once it is gone).
 /obj/structure/stasis_cage/proc/contained() as /mob/living/simple_mob
 	return contained

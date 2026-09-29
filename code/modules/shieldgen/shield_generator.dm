@@ -11,7 +11,7 @@
 	circuit = /obj/item/circuitboard/shield_generator
 	density = TRUE
 	var/list/field_segments    // List of all shield segments owned by this generator.
-	var/list/damaged_segments  // List of shield segments that have failed and are currently regenerating.
+	var/list/damaged_segments  // List of shield segments that have failed and are currently regenerating (a relation view).
 	var/shield_modes = 0                // Enabled shield mode flags
 	var/mitigation_em = 0               // Current EM mitigation
 	var/mitigation_physical = 0         // Current Physical mitigation
@@ -85,8 +85,7 @@
 
 // Shuts down the shield, removing all shield segments and unlocking generator settings.
 /obj/machinery/power/shield_generator/proc/shutdown_field()
-	for(var/obj/effect/shield/S in field_segments)
-		qdel(S)
+	own_clear(src, "field_segments", OWN_DELETE)
 
 	running = SHIELD_OFF
 	current_energy = 0
@@ -97,8 +96,7 @@
 
 // Generates the field objects. Deletes existing field, if applicable.
 /obj/machinery/power/shield_generator/proc/regenerate_field()
-	for(var/obj/effect/shield/S in field_segments)
-		qdel(S)
+	own_clear(src, "field_segments", OWN_DELETE)
 	var/list/shielded_turfs
 
 	if(check_flag(MODEFLAG_HULL))
@@ -110,7 +108,7 @@
 		var/obj/effect/shield/S = new(T)
 		rel_set(S, "gen", src)
 		S.flags_updated()
-		LAZYOR(field_segments, S)
+		own_add(src, "field_segments", S)
 
 	//Hull shield chaos icon generation
 	if(check_flag(MODEFLAG_HULL))
@@ -755,3 +753,6 @@
 	name = "experimental shield generator"
 	power_coefficient = 0.2
 	hacked = TRUE
+
+// Segments currently down and regenerating (they leave the list when they die).
+REL_LIST(/obj/machinery/power/shield_generator, damaged_segments)

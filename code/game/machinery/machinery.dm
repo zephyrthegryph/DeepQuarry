@@ -621,9 +621,10 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	materialize_parts()
 	var/obj/structure/frame/A = new /obj/structure/frame(src.loc)
 	var/obj/item/circuitboard/M = circuit
-	own_set(A, "circuit", M)
+	M.forceMove(A)
+	own_move(M, A, "circuit") // the board moves from the machine to the frame (CONTAINED there)
 	A.anchored = TRUE
-	A.frame_type = M.board_type
+	own_set(A, "frame_type", frame_type_copy(M.board_type)) // the board keeps its own
 	if(A.frame_type.circuit)
 		A.need_circuit = 0
 
@@ -657,8 +658,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	A.pixel_y = pixel_y
 	A.update_desc()
 	A.update_icon()
-	M.moveToNullspace()
-	M.atom_deconstruct(TRUE, src)
+	M.atom_deconstruct(TRUE, src) // the board stays in the frame (its CONTAINED circuit)
 	qdel(src)
 	return 1
 

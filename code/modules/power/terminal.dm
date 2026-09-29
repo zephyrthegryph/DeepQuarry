@@ -35,6 +35,6 @@
 	if(master())
 		master().overload(source)
 
-/// LC-refs: the master this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the master this refers to: a relation view, null once that is deleted.
 /obj/machinery/power/terminal/proc/master() as /obj/machinery/power
 	return master

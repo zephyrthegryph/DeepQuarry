@@ -413,10 +413,10 @@ DECLARE_INTERACTIONS(/obj/item/tape, \
 	lifted = 0
 	reset_plane_and_layer()
 
-/// LC-refs: start -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: start (reads null once it is gone).
 /obj/item/taperoll/proc/get_start() as /turf
 	return start
 
-/// LC-refs: end -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: end (reads null once it is gone).
 /obj/item/taperoll/proc/get_end() as /turf
 	return end

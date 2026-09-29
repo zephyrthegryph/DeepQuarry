@@ -7,13 +7,23 @@
 	light_color = "#e6ffff"
 	circuit = /obj/item/circuitboard/area_atmos
 
-	var/list/connectedscrubbers = list() // ALLOW(instance_list): d: filled when the console scans; atmos console
+	/// Scrubbers found by the last scan (a relation view: dead ones leave by themselves).
+	var/list/obj/machinery/portable_atmospherics/powered/scrubber/huge/connectedscrubbers
 	var/status = ""
 
 	var/range = 25
 
 	//Simple variable to prevent me from doing attack_hand in both this and the child computer
 	var/zone = "This computer is working on a wireless range, the range is currently limited to "
+
+REL_LIST(/obj/machinery/computer/area_atmos, connectedscrubbers)
+
+/// The connected scrubber with this id, or null.
+/obj/machinery/computer/area_atmos/proc/scrubber_by_id(scrub_id)
+	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/S as anything in connectedscrubbers)
+		if("[S.id]" == "[scrub_id]")
+			return S
+	return null
 
 /obj/machinery/computer/area_atmos/Initialize(mapload)
 	. = ..()
@@ -33,13 +43,12 @@
 
 /obj/machinery/computer/area_atmos/tgui_data(mob/user)
 	var/list/working = list()
-	for(var/id in connectedscrubbers)
-		var/obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber = connectedscrubbers[id]
+	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber as anything in connectedscrubbers)
 		if(!validscrubber(scrubber))
-			connectedscrubbers -= scrubber
+			rel_remove(src, "connectedscrubbers", scrubber)
 			continue
 		working.Add(list(list(
-			"id" = id,
+			"id" = "[scrubber.id]",
 			"name" = scrubber.name,
 			"on" = scrubber.on,
 			"pressure" = scrubber.air_contents.return_pressure(),
@@ -57,9 +66,9 @@
 	switch(action)
 		if("toggle")
 			var/scrub_id = params["id"]
-			var/obj/machinery/portable_atmospherics/powered/scrubber/huge/S = connectedscrubbers["[scrub_id]"]
+			var/obj/machinery/portable_atmospherics/powered/scrubber/huge/S = scrubber_by_id(scrub_id)
 			if(!validscrubber(S))
-				connectedscrubbers -= S
+				rel_remove(src, "connectedscrubbers", S)
 				return TRUE
 			S.set_on(!S.on)
 			S.update_icon()
@@ -78,10 +87,9 @@
 	add_fingerprint(ui.user)
 
 /obj/machinery/computer/area_atmos/proc/toggle_all(on)
-	for(var/id in connectedscrubbers)
-		var/obj/machinery/portable_atmospherics/powered/scrubber/huge/S = connectedscrubbers["[id]"]
+	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/S as anything in connectedscrubbers)
 		if(!validscrubber(S))
-			connectedscrubbers -= S
+			rel_remove(src, "connectedscrubbers", S)
 			continue
 		S.set_on(on)
 		S.update_icon()
@@ -94,13 +102,12 @@
 	return TRUE
 
 /obj/machinery/computer/area_atmos/proc/scanscrubbers()
-	connectedscrubbers = list()
+	rel_clear(src, "connectedscrubbers")
 
 	var/found = 0
 	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber in range(range, src.loc))
 		found = 1
-		// ALLOW(object_keyed_lists): scan roster of nearby scrubbers, rebuilt by every scan and pruned when one is gone
-		connectedscrubbers["[scrubber.id]"] = scrubber
+		rel_add(src, "connectedscrubbers", scrubber)
 
 	if(!found)
 		status = "ERROR: No scrubber found!"
@@ -113,13 +120,12 @@
 	zone = "This computer is working in a wired network limited to this area."
 
 /obj/machinery/computer/area_atmos/area/scanscrubbers(mob/user)
-	connectedscrubbers.Cut()
+	rel_clear(src, "connectedscrubbers")
 
 	var/found = 0
 	var/area/A = get_area(src)
 	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber in area_contents_of_type(A, /obj/machinery/portable_atmospherics/powered/scrubber/huge))
-		// ALLOW(object_keyed_lists): scan roster of nearby scrubbers, rebuilt by every scan and pruned when one is gone
-		connectedscrubbers["[scrubber.id]"] = scrubber
+		rel_add(src, "connectedscrubbers", scrubber)
 		found = 1
 
 	if(!found)
@@ -153,12 +159,11 @@
 	else
 		last_scan = world.time
 
-	connectedscrubbers.Cut()
+	rel_clear(src, "connectedscrubbers")
 
 	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber in world)
 		if(scrubber.scrub_id == src.scrub_id)
-			// ALLOW(object_keyed_lists): scan roster of nearby scrubbers, rebuilt by every scan and pruned when one is gone
-			connectedscrubbers["[scrubber.id]"] = scrubber
+			rel_add(src, "connectedscrubbers", scrubber)
 
 	SStgui.update_uis(src)
 

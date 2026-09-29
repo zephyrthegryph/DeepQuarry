@@ -9,7 +9,8 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 	plane = DIRTY_PLANE
 	layer = DIRTY_LAYER
 	var/persistent = FALSE
-	/// Diseases carried in it (blood, mucus, vomit), passed on by touch.
+	/// Diseases carried in it (blood, mucus, vomit), passed on by touch. Owned private copies:
+	/// never a mob's own contagion (add_contagions() copies anything another holder owns).
 	var/list/datum/affliction/contagion/viruses
 	var/generic_filth = FALSE
 	var/age = 0
@@ -19,7 +20,9 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 	var/clean_type = CLEAN_TYPE_LIGHT_DECAL
 
 /obj/effect/decal/cleanable/Initialize(mapload, _age)
-	if(!isnull(_age))
+	if(islist(_age)) // new /obj/effect/decal/cleanable/vomit(loc, contagion_copies(...))
+		add_contagions(_age, copy = FALSE)
+	else if(!isnull(_age))
 		age = _age
 	if(random_icon_states && length(src.random_icon_states) > 0)
 		src.icon_state = DEFAULTPICK(src.random_icon_states, null)
@@ -27,6 +30,13 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 		SSpersistence.track_value(src, /datum/persistent/filth)
 	. = ..()
 	update_icon()
+
+/// Adopts `contagions` into viruses as private copies. copy = FALSE when they are fresh unowned
+/// copies (contagion_copies()); a contagion some other holder owns is always copied, so a splat
+/// never aliases (or mutates) its source's contagions.
+/obj/effect/decal/cleanable/proc/add_contagions(list/contagions, copy = TRUE)
+	for(var/datum/affliction/contagion/D in contagions)
+		own_add(src, "viruses", (copy || owner_of(D)) ? D.Copy() : D)
 
 /obj/effect/decal/cleanable/wash(clean_types)
 	. = ..()

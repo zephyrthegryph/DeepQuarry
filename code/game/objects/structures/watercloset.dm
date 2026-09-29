@@ -26,8 +26,10 @@
 	//Flushing stuff
 	var/panic_mult = 1
 	var/refilling = FALSE
-	var/swirlie_mob = null //the mob being given a swirlie
-	var/teleplumb_dest_ref //the destination of this toilet if it's teleplumbed
+	/// Relation view: the mob being given a swirlie.
+	var/mob/living/swirlie_mob
+	/// Relation view: the destination of this toilet if it's teleplumbed.
+	var/atom/teleplumb_dest
 	var/list/currently_held_objects //List of objects currently in the toilet, used for flushing.
 	COOLDOWN_DECLARE(panic_flush)
 
@@ -39,7 +41,7 @@
 
 	if(teleplumb_crystal)
 		own_set(src, "teleplumb_crystal", new /obj/item/bluespace_crystal(src))
-		teleplumb_dest_ref = om_handle(locate(/obj/effect/landmark/teleplumb_exit))
+		rel_set(src, "teleplumb_dest", locate(/obj/effect/landmark/teleplumb_exit))
 		desc = "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean."
 
 	// Non-bluespace plumbing. For POIs and player construction n' stuff.
@@ -77,7 +79,7 @@
 	user.put_in_hands(teleplumb_crystal)
 	to_chat(user, span_notice("You take \the [teleplumb_crystal]."))
 	own_take(src, "teleplumb_crystal")
-	teleplumb_dest_ref = null
+	rel_clear(src, "teleplumb_dest")
 	desc = initial(desc)
 
 /obj/structure/toilet/declare_interactions(list/into)
@@ -101,7 +103,7 @@
 	effect = /obj/structure/toilet/proc/interaction_hand
 
 /obj/structure/toilet/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	var/mob/living/swirlie = om_resolve(swirlie_mob)
+	var/mob/living/swirlie = swirlie_mob
 	if(swirlie)
 		user.setClickCooldown(user.get_attack_speed())
 		user.visible_message(span_danger("[user] slams the toilet seat onto [swirlie.name]'s head!"), span_notice("You slam the toilet seat onto [swirlie.name]'s head!"), "You hear reverberating porcelain.")
@@ -161,12 +163,12 @@
 			if(GM.loc != get_turf(src))
 				to_chat(user, span_notice("[GM.name] needs to be on the toilet."))
 				return TRUE
-			var/mob/living/swirlie = om_resolve(swirlie_mob)
+			var/mob/living/swirlie = swirlie_mob
 			if(open && !swirlie)
 				user.visible_message(span_danger("[user] starts to give [GM] a swirlie!"), span_notice("You start to give [GM] a swirlie!"))
-				swirlie_mob = om_handle(GM)
+				rel_set(src, "swirlie_mob", GM)
 				om_task_start(/datum/om/task/timed/toilet_attackby, user, GM, receiver = src)
-				swirlie_mob = null
+				rel_clear(src, "swirlie_mob")
 			else
 				user.visible_message(span_danger("[user] slams [GM] into the [src]!"), span_notice("You slam [GM] into the [src]!"))
 				GM.injure(INJURY_BLUNT, 5, BP_HEAD, src)
@@ -219,9 +221,9 @@
 	to_chat(user, span_notice("You insert \the [I] into \the [src]. A deep rumble eminates from within it, and a faint blue glow eminates from the bottom of the bowl for a moment."))
 	user.drop_item()
 	I.forceMove(src)
-	own_set(src, "teleplumb_crystal", I)
+	own_move(I, src, "teleplumb_crystal")
 	//TODO: add a way to link this to custom destinations.
-	teleplumb_dest_ref = om_handle(locate(/obj/effect/landmark/teleplumb_exit))
+	rel_set(src, "teleplumb_dest", locate(/obj/effect/landmark/teleplumb_exit))
 	desc = "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean."
 	return
 /obj/structure/toilet/proc/attackby_timed_done3(obj/item/I, mob/living/user)
@@ -353,7 +355,6 @@
 		if(flush_weight + weight_value <= max_flush_weight)
 			taken_contents += flushed
 			flush_weight += weight_value
-			var/atom/teleplumb_dest = om_resolve(teleplumb_dest_ref)
 			if(teleplumb_crystal && teleplumb_dest)
 				if(isliving(flushed))
 					var/mob/living/m = flushed
@@ -1349,10 +1350,10 @@ OWN(/obj/structure/toilet, teleplumb_crystal, OWN_CONTAINED)
 
 DECLARE_DEFAULT_CHILD(/obj/structure/toilet, "bin", null)
 
-/// LC-refs: muffinmonster -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: muffinmonster (reads null once it is gone).
 /obj/structure/biowaste_tank/proc/muffinmonster() as /mob/living/simple_mob/vore/aggressive/corrupthound
 	return muffinmonster
 
-/// LC-refs: crusher -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: crusher (reads null once it is gone).
 /obj/structure/biowaste_tank/proc/crusher() as /obj/machinery/recycling/crusher
 	return crusher

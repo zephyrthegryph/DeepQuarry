@@ -173,6 +173,7 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 
 // AUTONAME
 /obj/machinery/camera/autoname
+	/// Area name -> how many autonamed cameras have been numbered there (numbers only, no camera refs).
 	var/static/list/by_area
 
 /obj/machinery/camera/autoname/Initialize(mapload)
@@ -182,22 +183,10 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 		return .
 	if(!by_area)
 		by_area = list()
-	if(!by_area[A.name])
-		by_area[A.name] = list()
-	var/list/my_area = by_area[A.name]
-	my_area += src
-	var/number = my_area.len
+	var/number = by_area[A.name] + 1
+	by_area[A.name] = number
 
 	c_tag = "[A.name] #[number]"
-
-/// Phase 2: leaves its area's autoname index.
-/obj/machinery/camera/autoname/lifecycle_dematerialize()
-	. = ..()
-	var/area/A = get_area(src)
-	if(!A || !by_area || !by_area[A.name])
-		return
-	var/list/my_area = by_area[A.name]
-	my_area -= src
 
 // CHECKS
 
