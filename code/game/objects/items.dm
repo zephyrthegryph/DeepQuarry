@@ -1,3 +1,5 @@
+OM_TIMER_SLOT(/obj/item, tip_timer)
+
 /obj/item
 	name = "item"
 	icon = 'icons/obj/weapons.dmi' //'icons/obj/items.dmi' //It was accidentally set to weapons.dmi 11 months ago...leaving it as is until further analysis
@@ -107,7 +109,6 @@
 	// drop sound - this is the default
 	var/drop_sound = "generic_drop"
 
-	var/tmp/tip_timer // reference to timer id for a tooltip we might open soon
 
 	var/no_random_knockdown = FALSE			//stops item from being able to randomly knock people down in combat
 
@@ -936,11 +937,11 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 		return
 	if(usr?.read_preference(/datum/preference/toggle/inv_tooltips) && ((src in usr) || isstorage(loc))) // If in inventory or in storage we're looking at
 		var/user = usr
-		tip_timer = om_after(src, 5, PROC_REF(openTip), location, control, params, user)
+		om_after_slot(src, "tip_timer", 5, PROC_REF(openTip), location, control, params, user)
 
 /obj/item/MouseExited()
 	. = ..()
-	om_cancel_timer(src, tip_timer)
+	om_cancel_timer_slot(src, "tip_timer")
 	closeToolTip(usr, src)
 
 /obj/item/proc/openTip(location, control, params, user)

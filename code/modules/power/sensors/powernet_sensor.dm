@@ -7,6 +7,8 @@
 // may be used in PDAs or similar applications. Second proc, return_reading_data will return list containing needed data.
 // This is used in NanoUI, for example.
 
+OM_TIMER_SLOT(/obj/machinery/power/sensor, record_timer)
+
 /obj/machinery/power/sensor
 	name = "Powernet Sensor"
 	desc = "Small machine which transmits data about specific powernet"
@@ -23,7 +25,6 @@
 	var/record_size = 60
 	var/record_interval = 50
 	var/next_record = 0
-	var/record_timer
 	var/is_secret_monitor = FALSE
 
 // Proc: Initialize(mapload)
@@ -75,13 +76,12 @@
 	else
 		use_power = USE_POWER_ACTIVE
 		record()
-	if(!record_timer)
+	if(!om_timer_slot_pending(src, "record_timer"))
 		var/delay = power_region ? max(1, next_record - world.time) : record_interval
-		record_timer = om_after(src, delay, PROC_REF(wake_for_record))
+		om_after_slot(src, "record_timer", delay, PROC_REF(wake_for_record))
 	return PROCESS_KILL
 
 /obj/machinery/power/sensor/proc/wake_for_record()
-	record_timer = null
 	// Sampling is already timer-driven and does not sleep. Do it directly rather
 	// than enrolling every sensor for a one-call wake-and-kill machinery pass.
 	machine_step()

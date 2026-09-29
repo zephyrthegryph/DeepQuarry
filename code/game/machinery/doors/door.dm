@@ -1,3 +1,5 @@
+OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
+
 /obj/machinery/door
 	announce_damage_bands = TRUE
 	name = "Door"
@@ -27,8 +29,7 @@
 	var/hitsound = 'sound/weapons/smash.ogg' //sound door makes when hit with a weapon
 	var/block_air_zones = 1 //If set, air zones cannot merge across the door even when it is opened.
 	var/close_door_at = 0 //When to automatically close the door, if possible
-	/// The om_after() timer for next_door_deadline(), and the deadline it was set for.
-	var/tmp/door_timer_token
+	/// The deadline the `door_timer_token` timer slot was last set for (next_door_deadline()).
 	var/tmp/door_timer_at = 0
 	var/list/autoclose_blockers
 
@@ -98,18 +99,16 @@
 /// Keeps one om_after() timer on next_door_deadline(). Call after changing any deadline.
 /obj/machinery/door/proc/schedule_door_timer()
 	var/deadline = next_door_deadline()
-	if(deadline == door_timer_at && (!isnull(door_timer_token) || !deadline))
+	if(deadline == door_timer_at && (om_timer_slot_pending(src, "door_timer_token") || !deadline))
 		return
-	if(!isnull(door_timer_token))
-		om_cancel_timer(src, door_timer_token)
-		door_timer_token = null
+	if(om_timer_slot_pending(src, "door_timer_token"))
+		om_cancel_timer_slot(src, "door_timer_token")
 	door_timer_at = deadline
 	if(deadline)
 		om_attach(src, /datum/om/behaviour/sleeper/timed)
-		door_timer_token = om_after(src, max(deadline - world.time, 0), PROC_REF(door_timer_fired))
+		om_after_slot(src, "door_timer_token", max(deadline - world.time, 0), PROC_REF(door_timer_fired))
 
 /obj/machinery/door/proc/door_timer_fired()
-	door_timer_token = null
 	door_timer_at = 0
 	door_deadlines_due()
 	schedule_door_timer()
@@ -129,7 +128,7 @@
 	var/deadline = next_door_deadline()
 	if(!deadline)
 		return null
-	if(isnull(door_timer_token) || door_timer_at > deadline)
+	if(!om_timer_slot_pending(src, "door_timer_token") || door_timer_at > deadline)
 		return "deadline [deadline] (now [world.time]) has no timer (timer at [door_timer_at])"
 	return null
 

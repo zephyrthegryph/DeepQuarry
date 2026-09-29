@@ -553,6 +553,7 @@
 	rec.torn_down = TRUE
 	rec.deadlines = null
 	rec.timers = null
+	rec.timer_slots = null
 	rec.timer_soonest = null
 	rec.dv = null
 	rec.rates = null

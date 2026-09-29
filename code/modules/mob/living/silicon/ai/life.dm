@@ -3,9 +3,9 @@
 // backup capacitor. The power-loss routine is a timer-driven state machine
 // (aiRestorePowerRoutine = AI_POWER_*), not a sleeping spawn.
 
+OM_TIMER_SLOT(/mob/living/silicon/ai, power_restore_timer)
+
 /mob/living/silicon/ai
-	/// Timer id of the pending power-restore step, or null.
-	var/power_restore_timer
 
 /mob/living/silicon/ai
 	life_set = LIFE_SET_AI
@@ -129,16 +129,14 @@
 
 /mob/living/silicon/ai/proc/schedule_power_restore_step(step, delay)
 	cancel_power_restore()
-	power_restore_timer = om_after(src, delay, PROC_REF(power_restore_step), step)
+	om_after_slot(src, "power_restore_timer", delay, PROC_REF(power_restore_step), step)
 
 /mob/living/silicon/ai/proc/cancel_power_restore()
-	if(power_restore_timer)
-		om_cancel_timer(src, power_restore_timer)
-		power_restore_timer = null
+	if(om_timer_slot_pending(src, "power_restore_timer"))
+		om_cancel_timer_slot(src, "power_restore_timer")
 
 /// One step of the restore routine. Each step reschedules the next.
 /mob/living/silicon/ai/proc/power_restore_step(step)
-	power_restore_timer = null
 	if(QDELETED(src) || stat == DEAD || aiRestorePowerRoutine != AI_POWER_RESTORING)
 		return
 	var/area/current_area = get_area(src)

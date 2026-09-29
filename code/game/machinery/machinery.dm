@@ -86,6 +86,8 @@ Class Procs:
 	Compiled by Aygar
 */
 
+OM_TIMER_SLOT(/obj/machinery, first_wake)
+
 /obj/machinery
 	material_template = /datum/material_template/machine_part
 	material_total = 5 * SHEET_MATERIAL_AMOUNT
@@ -134,10 +136,8 @@ Class Procs:
 	var/tmp/gas_dependency_wake_count = 0
 	/// Monotonic diagnostic counter: MACHINE_WAKE() calls on this machine.
 	var/tmp/machine_wake_count = 0
-	/// The pending materialize_wakes() timer, or 0.
-	var/tmp/materialize_timer = 0
-	/// Set when the machine is told what to do (MACHINE_WAKE(), sleep_until_keys()) while its
-	/// materialize_wakes() is still pending: that direction replaces the declared start condition.
+	/// Set when the machine is told what to do (MACHINE_WAKE(), sleep_until_keys()) while its first
+	/// wake is still pending (first_wake_pending()): that direction replaces the declared start condition.
 	var/tmp/materialize_directed = FALSE
 	/// TRUE for a type whose machine_step() reconciles its state with its power: every power or
 	/// break change (power_change(), atom_break(), atom_fix()) runs one step.
@@ -217,7 +217,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /// om_after() from joining): arm the watches that will wake it (arm_wakes()), then wake it if its
 /// declared start condition holds. Nothing else runs a machine at spawn.
 /obj/machinery/proc/materialize_wakes()
-	materialize_timer = 0
+	// Running now: it leaves the boot bulk queue (a timer-slot run has already left its slot).
+	GLOB.machine_first_wakes -= om_handle(src)
 	var/directed = materialize_directed
 	materialize_directed = FALSE
 	if(QDELETED(src))
@@ -228,6 +229,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	// a spurious wake of a machine whose input held steady.
 	if(!directed && step_start_condition())
 		MACHINE_WAKE(src)
+
+/// TRUE while this machine's first wake (materialize_wakes()) has not run yet: it waits in the
+/// boot bulk queue, or in its `first_wake` timer slot. Derived, never stored: firing, cancelling
+/// and deletion all end it on their own (a deleted machine's handle stops resolving).
+/obj/machinery/proc/first_wake_pending()
+	return om_timer_slot_pending(src, "first_wake") || (length(GLOB.machine_first_wakes) && GLOB.machine_first_wakes[om_handle(src)])
 
 /// Arms what wakes this machine later (gas watches, change watches). Default: nothing to arm.
 /obj/machinery/proc/arm_wakes()
@@ -256,7 +263,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		var/datum/om/frame/S = om_pipe_state(M, /datum/om/pipeline/machine)
 		if(S)
 			om_pipe_set_all(S, FALSE, 0)
-	if(M.materialize_timer)
+	if(M.first_wake_pending())
 		M.materialize_directed = TRUE
 	om_wake(M, /datum/om/pipeline/machine)
 
@@ -730,7 +737,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 		return FALSE
 	if(!om_attached(src, /datum/om/pipeline/machine))
 		om_attach(src, /datum/om/pipeline/machine)
-	if(materialize_timer)
+	if(first_wake_pending())
 		materialize_directed = TRUE
 	react_sleep_tokens = watches.Copy()
 	for(var/i = 1; i <= length(watches); i += 2)

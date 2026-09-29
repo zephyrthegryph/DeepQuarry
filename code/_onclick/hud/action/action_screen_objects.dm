@@ -253,8 +253,6 @@
 	screen_loc = ui_action_palette
 	var/our_hud_handle
 	var/expanded = FALSE
-	/// Id of any currently running timers that set our color matrix
-	var/color_timer_id
 
 // the hud owns us as its toggle_palette; one deleted on its own clears that var.
 DECLARE_REF(/atom/movable/screen/button_palette, "our_hud_handle", BACK_HANDLE, "toggle_palette")
@@ -303,13 +301,12 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	color_for_now(GLOB.palette_removed_matrix)
 
 /atom/movable/screen/button_palette/proc/color_for_now(list/color)
-	if(color_timer_id)
+	if(om_timer_slot_pending(src, "color_timer_id"))
 		return
 	add_atom_colour(color, TEMPORARY_COLOUR_PRIORITY) //We unfortunately cannot animate matrix colors. Curse you lummy it would be ~~non~~trivial to interpolate between the two valuessssssssss
-	color_timer_id = om_after(src, 2 SECONDS, PROC_REF(remove_color), color)
+	om_after_slot(src, "color_timer_id", 2 SECONDS, PROC_REF(remove_color), color)
 
 /atom/movable/screen/button_palette/proc/remove_color(list/to_remove)
-	color_timer_id = null
 	remove_atom_colour(TEMPORARY_COLOUR_PRIORITY, to_remove)
 
 /atom/movable/screen/button_palette/proc/can_use(mob/user)
@@ -480,3 +477,7 @@ DECLARE_REF(/atom/movable/screen/palette_scroll/up, "our_hud_handle", BACK_HANDL
 	return om_resolve(owner_handle)
 
 DECLARE_REF(/atom/movable/screen/movable/action_button, "button_overlay", OWNED, null)
+
+/atom/movable/screen/button_palette/om_declared_timer_slots()
+	. = ..()
+	. += "color_timer_id"

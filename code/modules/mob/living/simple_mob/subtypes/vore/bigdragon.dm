@@ -48,6 +48,9 @@ I think I covered everything.
 ///		Main type
 ///
 
+OM_TIMER_SLOT(/mob/living/simple_mob/vore/bigdragon, firebreathtimer)
+OM_TIMER_SLOT(/mob/living/simple_mob/vore/bigdragon, chargetimer)
+
 /mob/living/simple_mob/vore/bigdragon
 	drag_buckle = FALSE
 	name = "large dragon"
@@ -126,8 +129,6 @@ I think I covered everything.
 	var/small_icon = 'icons/mob/bigdragon_small.dmi'
 	var/small_icon_state = "dragon_small"
 	var/flames
-	var/firebreathtimer
-	var/chargetimer
 
 	tame_items = list(
 	/obj/item/coin/gold = 100,
@@ -744,7 +745,7 @@ I think I covered everything.
 		ai_busy_begin()
 	do_windup_animation(A, charge_warmup)
 	//callbacks are more reliable than byond's process scheduler
-	chargetimer = om_after(src, charge_warmup, PROC_REF(chargeend), A)
+	om_after_slot(src, "chargetimer", charge_warmup, PROC_REF(chargeend), A)
 
 
 /mob/living/simple_mob/vore/bigdragon/proc/chargeend(atom/A, explicit = 0, gentle = 0)
@@ -785,7 +786,7 @@ I think I covered everything.
 		ai_busy_begin()
 	flames = 1
 	build_icons()
-	firebreathtimer = om_after(src, charge_warmup, PROC_REF(firebreathend), A)
+	om_after_slot(src, "firebreathtimer", charge_warmup, PROC_REF(firebreathend), A)
 	playsound(src, "sound/magic/Fireball.ogg", 50, 1)
 
 /mob/living/simple_mob/vore/bigdragon/proc/firebreathend(atom/A)
@@ -896,12 +897,10 @@ I think I covered everything.
 
 /mob/living/simple_mob/vore/bigdragon/proc/canceltimers()
 	//Cancel any charges or firebreaths winding up
-	if(firebreathtimer)
-		om_cancel_timer(src, firebreathtimer)
-		firebreathtimer = null
-	if(chargetimer)
-		om_cancel_timer(src, chargetimer)
-		chargetimer = null
+	if(om_timer_slot_pending(src, "firebreathtimer"))
+		om_cancel_timer_slot(src, "firebreathtimer")
+	if(om_timer_slot_pending(src, "chargetimer"))
+		om_cancel_timer_slot(src, "chargetimer")
 	//re-enable the AI
 	ai_busy_end()
 //Smack people it warns

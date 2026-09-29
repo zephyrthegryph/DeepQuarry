@@ -1,3 +1,4 @@
+
 /obj/machinery/bluespace_denier
 	name = "bluespace desyncronizer"
 	desc = "A portable device that causes small disruptions to bluespace when its sensors detect activity within it nearby. Wrench to activate and deactivate."

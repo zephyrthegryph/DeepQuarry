@@ -17,6 +17,8 @@
 	Look at radio.dm for the prequel to this code.
 */
 
+OM_TIMER_SLOT(/obj/machinery/telecomms, thermal_timer)
+
 /obj/machinery/telecomms
 	icon = 'icons/obj/stationobjs.dmi'
 	unacidable = TRUE
@@ -46,7 +48,6 @@
 	var/noisy = TRUE
 	/// Traffic decay and the heat level it sets are slow; they do not justify
 	/// keeping every network node in the two-second machinery roster.
-	var/thermal_timer
 	var/last_thermal_check
 
 /obj/machinery/telecomms/proc/relay_information(datum/signal/signal, filter, copysig, amount = 20)
@@ -204,9 +205,8 @@ DECLARE_REF(/obj/machinery/telecomms, "soundloop", OWNED, null)
 	return was_on != on
 
 /obj/machinery/telecomms/machine_step()
-	if(thermal_timer)
-		om_cancel_timer(src, thermal_timer)
-		thermal_timer = null
+	if(om_timer_slot_pending(src, "thermal_timer"))
+		om_cancel_timer_slot(src, "thermal_timer")
 	var/power_changed = update_power()
 
 	var/elapsed_cycles = last_thermal_check ? max(round((world.time - last_thermal_check) / max(MACHINE_SERVICE_INTERVAL, 1)), 1) : 1
@@ -225,12 +225,11 @@ DECLARE_REF(/obj/machinery/telecomms, "soundloop", OWNED, null)
 	return PROCESS_KILL
 
 /obj/machinery/telecomms/proc/schedule_thermal_check()
-	if(thermal_timer || QDELETED(src))
+	if(om_timer_slot_pending(src, "thermal_timer") || QDELETED(src))
 		return
-	thermal_timer = om_after(src, max((initial(delay) + 1) * MACHINE_SERVICE_INTERVAL, 1), PROC_REF(thermal_check_due))
+	om_after_slot(src, "thermal_timer", max((initial(delay) + 1) * MACHINE_SERVICE_INTERVAL, 1), PROC_REF(thermal_check_due))
 
 /obj/machinery/telecomms/proc/thermal_check_due()
-	thermal_timer = null
 	MACHINE_WAKE(src)
 
 /obj/machinery/telecomms/power_change()

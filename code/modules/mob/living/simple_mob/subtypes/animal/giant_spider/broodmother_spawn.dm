@@ -162,6 +162,8 @@
 		qdel(src)
 	return TRUE
 
+OM_TIMER_SLOT(/mob/living/simple_mob/animal/giant_spider/broodling, deathtimer)
+
 /mob/living/simple_mob/animal/giant_spider/broodling
 	endurance = 60
 
@@ -170,12 +172,11 @@
 
 	movement_cooldown = 3
 
-	var/deathtimer
 
 /mob/living/simple_mob/animal/giant_spider/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	deathtimer = om_after(src, 2 MINUTES, PROC_REF(death)) // ALLOW(decl): keeps the timer handle
+	om_after_slot(src, "deathtimer", 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/broodling/replace_death(gibbed)

@@ -447,6 +447,9 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			// Loop.
 			Master.StartProcessing(0)
 
+	// Every machine that materialized during init arms its wakes now, in one pass (machine_pipeline.dm).
+	machine_first_wakes_flush()
+
 	var/time = (REALTIMEOFDAY - start_timeofday) / 10
 	initializations_seconds = time
 #ifdef BENCHMARK

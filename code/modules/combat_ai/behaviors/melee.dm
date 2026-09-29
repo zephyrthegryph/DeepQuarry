@@ -87,23 +87,21 @@
 		span_danger("[owner] crouches, focused on [target]!"),
 		blind_message = span_warning("You hear something heavy shift its weight."),
 	)
-	// This datum is a flyweight singleton shared by every charging mob, so the
-	// windup timer can't live on `src`. Stash its id in the brain's per-behavior
-	// state and cancel it in stop() if the telegraph gets interrupted.
+	// This datum is a flyweight singleton shared by every charging mob, so the windup timer
+	// goes in a per-brain `dash` slot on it; stop() cancels it if the telegraph is interrupted.
 	LAZYINITLIST(brain.behavior_state)
 	if(!brain.behavior_state[type])
 		brain.behavior_state[type] = list("cooldown" = 0, "charges" = null)
-	brain.behavior_state[type]["dash_timer"] = om_after(src, windup, PROC_REF(execute_dash), brain, target)
+	om_after_slot(src, "dash:[om_handle(brain)]", windup, PROC_REF(execute_dash), brain, target)
 	return DQ_BEHAVIOR_CONTINUE
 
 /datum/ai_behavior/charge_slam/stop(datum/ai_brain/brain, atom/target, atom/source, reason)
 	// Cancel any pending dash so a cancelled telegraph can't still land.
 	if(!QDELETED(brain))
-		var/list/state = LAZYACCESS(brain.behavior_state, type)
-		if(state && state["dash_timer"])
-			om_cancel_timer(src, state["dash_timer"])
-			state["dash_timer"] = null
+		om_cancel_timer_slot(src, "dash:[om_handle(brain)]")
 	return ..()
+
+OM_TIMER_SLOT(/datum/ai_behavior/charge_slam, dash)
 
 /datum/ai_behavior/charge_slam/proc/execute_dash(datum/ai_brain/brain, atom/target)
 	// The 1.2s windup means the brain/holder/target can be gone by the time
@@ -115,9 +113,6 @@
 	// cancelled/superseded charge must not deal damage even if its timer leaked.
 	if(brain.active_behavior_type != type)
 		return
-	var/list/state = LAZYACCESS(brain.behavior_state, type)
-	if(state)
-		state["dash_timer"] = null
 	if(QDELETED(brain.holder))
 		brain.stop_active(DQ_BEHAVIOR_STOP_FAILED)
 		return

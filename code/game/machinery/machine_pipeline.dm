@@ -191,8 +191,45 @@
 	if(!S)
 		return
 	om_pipe_set_all(S, TRUE, max(park_after - 1, 0))
-	if(!M.materialize_timer)
-		M.materialize_timer = om_after(M, 0, /obj/machinery/proc/materialize_wakes)
+	if(M.first_wake_pending())
+		return
+	// During init every machine's first wake runs in one bulk pass when the MC has initialized
+	// every subsystem (machine_first_wakes_flush()), before the first air fire, instead of
+	// thousands of zero-delay timers draining for minutes after the round starts.
+	if(GLOB.machine_first_wakes_bulk)
+		GLOB.machine_first_wakes[om_handle(M)] = TRUE
+		return
+	om_after_slot(M, "first_wake", 0, /obj/machinery/proc/materialize_wakes)
+
+/// Machines waiting for the boot bulk first-wake pass, by OM handle (a deleted machine's handle no
+/// longer resolves, so nothing has to take it out): handle -> TRUE, in join order.
+GLOBAL_LIST_EMPTY(machine_first_wakes)
+/// TRUE until the MC finishes initializing; while set, on_start() queues first wakes in bulk.
+GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
+
+/// Runs every queued machine's first wake (arm_wakes() and its start condition) in one pass. The MC
+/// calls it once every subsystem has initialized (pipenets and air exist, so gas watches can
+/// arm), before the first air fire. Machines that join later use their `first_wake` timer slot.
+/proc/machine_first_wakes_flush()
+	GLOB.machine_first_wakes_bulk = FALSE
+	var/list/queued = GLOB.machine_first_wakes.Copy()
+	var/start = REALTIMEOFDAY
+	var/ran = 0
+	for(var/handle in queued)
+		var/obj/machinery/M = om_resolve(handle)
+		if(!M || QDELETED(M) || !GLOB.machine_first_wakes[handle])
+			continue
+		M.materialize_wakes()
+		ran++
+	GLOB.machine_first_wakes.Cut()
+	log_world("Machine first wakes: [ran] of [length(queued)] armed in bulk in [(REALTIMEOFDAY - start) / 10] s")
+
+/// A machine's first wake is materialize_wakes(), queued by on_start(): it arms the machine's
+/// watches (arm_wakes()) and applies its start condition. After a large map load that queue can
+/// take a while to drain (machines joining after boot in large numbers, e.g. a generated site), and a machine still waiting on it
+/// has armed nothing yet -- the audit must not call that a missed wake.
+/datum/om/pipeline/machine/first_wake_pending(obj/machinery/M)
+	return istype(M) && M.first_wake_pending()
 
 /datum/om/frame/machine
 	facts = list(

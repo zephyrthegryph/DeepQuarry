@@ -4,6 +4,8 @@
 // turf graph so gases stay where vents push them and never render. Floors
 // get air via /turf/open/Initialize (because blocks_air defaults FALSE);
 // walls keep their existing blocks_air=1 and remain inert.
+OM_TIMER_SLOT(/turf/simulated, wet_cleanup_timer)
+
 /turf/simulated
 	parent_type = /turf/open
 	name = "station"
@@ -26,7 +28,6 @@
 	var/climbable = FALSE //Adds proc to wall if set to TRUE on its initialization, defined here since not all walls are subtypes of wall
 
 	var/icon_edge = 'icons/turf/outdoors_edge.dmi'	//Allows for alternative edge icon files
-	var/wet_cleanup_timer
 
 // This is not great.
 /turf/simulated/proc/wet_floor(wet_val = 1)
@@ -37,19 +38,17 @@
 		cut_overlay(wet_overlay)
 	wet_overlay = image('icons/effects/water.dmi', icon_state = "wet_floor")
 	add_overlay(wet_overlay)
-	if(wet_cleanup_timer)
-		om_cancel_timer(src, wet_cleanup_timer)
-		wet_cleanup_timer = null
+	if(om_timer_slot_pending(src, "wet_cleanup_timer"))
+		om_cancel_timer_slot(src, "wet_cleanup_timer")
 	if(wet == TURFSLIP_LUBE)
-		wet_cleanup_timer = om_after(src, 160 SECONDS, PROC_REF(wet_floor_finish))
+		om_after_slot(src, "wet_cleanup_timer", 160 SECONDS, PROC_REF(wet_floor_finish))
 	else
-		wet_cleanup_timer = om_after(src, 40 SECONDS, PROC_REF(wet_floor_finish))
+		om_after_slot(src, "wet_cleanup_timer", 40 SECONDS, PROC_REF(wet_floor_finish))
 
 /turf/simulated/proc/wet_floor_finish()
 	wet = TURFSLIP_DRY
-	if(wet_cleanup_timer)
-		om_cancel_timer(src, wet_cleanup_timer)
-		wet_cleanup_timer = null
+	if(om_timer_slot_pending(src, "wet_cleanup_timer"))
+		om_cancel_timer_slot(src, "wet_cleanup_timer")
 	if(wet_overlay)
 		cut_overlay(wet_overlay)
 		wet_overlay = null

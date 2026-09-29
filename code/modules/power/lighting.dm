@@ -219,6 +219,8 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 			icon_state = "flamp-empty"
 
 // the standard tube light fixture
+OM_TIMER_SLOT(/obj/machinery/light, light_timer_token)
+
 /obj/machinery/light
 	name = "light fixture"
 	icon = 'icons/obj/lighting.dmi'
@@ -267,7 +269,6 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	/// next_light_deadline(), and the auto-flicker chunk watches and recheck.
 	var/tmp/area_power_token_handle
 	var/tmp/last_area_power = null
-	var/tmp/light_timer_token
 	var/tmp/light_timer_at = 0
 	var/tmp/flicker_check_at = 0
 	var/tmp/list/flicker_chunk_tokens
@@ -1063,17 +1064,15 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 
 /obj/machinery/light/proc/schedule_light_timer()
 	var/deadline = next_light_deadline()
-	if(deadline == light_timer_at && (!isnull(light_timer_token) || !deadline))
+	if(deadline == light_timer_at && (om_timer_slot_pending(src, "light_timer_token") || !deadline))
 		return
-	if(!isnull(light_timer_token))
-		om_cancel_timer(src, light_timer_token)
-		light_timer_token = null
+	if(om_timer_slot_pending(src, "light_timer_token"))
+		om_cancel_timer_slot(src, "light_timer_token")
 	light_timer_at = deadline
 	if(deadline)
-		light_timer_token = om_after(src, max(deadline - world.time, 0), PROC_REF(light_timer_fired))
+		om_after_slot(src, "light_timer_token", max(deadline - world.time, 0), PROC_REF(light_timer_fired))
 
 /obj/machinery/light/proc/light_timer_fired()
-	light_timer_token = null
 	light_timer_at = 0
 	if(QDELETED(src))
 		return
@@ -1088,7 +1087,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 
 /obj/machinery/light/om_sleep_violation()
 	var/deadline = next_light_deadline()
-	if(deadline && (isnull(light_timer_token) || light_timer_at > deadline))
+	if(deadline && (!om_timer_slot_pending(src, "light_timer_token") || light_timer_at > deadline))
 		return "deadline [deadline] (now [world.time]) has no timer"
 	if(get_area(src) && isnull(area_power_token()))
 		return "not watching its area's power"

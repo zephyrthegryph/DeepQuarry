@@ -1,4 +1,6 @@
 
+OM_TIMER_SLOT(/datum/pipeline, engineered_exposure_timer)
+
 /datum/pipeline
 	var/datum/gas_mixture/air
 	/// Physical volume contributed by this pipeline, retained while its air slot
@@ -17,7 +19,6 @@
 	// ALLOW(object_keyed_lists): many-to-many atmos topology roster, cleared symmetrically by lifecycle_unbind()/Destroy()
 	var/list/datum/pipe_network/network_memberships
 	var/alert_pressure = 0
-	var/engineered_exposure_timer
 
 /datum/pipeline/proc/register_network_membership(datum/pipe_network/new_network)
 	LAZYOR(network_memberships, new_network)
@@ -82,11 +83,10 @@
 			needs_followup = TRUE
 		if(!member.check_pressure(pressure))
 			break
-	if(needs_followup && !engineered_exposure_timer)
-		engineered_exposure_timer = om_after(src, 5 SECONDS, PROC_REF(wake_engineered_exposure))
+	if(needs_followup && !om_timer_slot_pending(src, "engineered_exposure_timer"))
+		om_after_slot(src, "engineered_exposure_timer", 5 SECONDS, PROC_REF(wake_engineered_exposure))
 
 /datum/pipeline/proc/wake_engineered_exposure()
-	engineered_exposure_timer = null
 	network?.mark_dirty()
 
 /datum/pipeline/proc/temporarily_store_air()

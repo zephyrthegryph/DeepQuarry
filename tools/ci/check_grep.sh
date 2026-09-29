@@ -225,6 +225,18 @@ if $grep -n '\.(buckled|buckled_mobs|affecting|grabbed_by|pulling|pulledby)\s*[|
 	FAILED=1
 fi;
 
+part "stored timer handles"
+# A timer id kept in a var or list by hand goes stale when the timer fires, is cancelled or its
+# owner is deleted, unless every path remembers to clear it. Named timers belong in a framework
+# timer slot instead (om_after_slot()/om_cancel_timer_slot()/om_timer_slot_pending(), code/datums/om/timer.dm),
+# which the OM keeps right by construction. A local `var/x = om_after(...)` (a test holding an id
+# for one proc) is fine; storing the id anywhere else, or returning it from a helper, is not.
+if $grep -nE '([]A-Za-z0-9_.)][[:space:]]*[-+]?=|(^|[^[:alnum:]_])return|LAZYSET\(|LAZYADD\(|list\()[[:space:]]*om_after(_replace|_unique)?\(' "${code_files[@]}" | grep -vE '^code/datums/om/|var/[[:alnum:]_]+[[:space:]]*=[[:space:]]*om_after'; then
+	echo
+	echo -e "${RED}ERROR: a timer id from om_after() is stored or returned. Use a timer slot: OM_TIMER_SLOT(type, name) + om_after_slot(E, \"name\", ...), om_cancel_timer_slot(), om_timer_slot_pending().${NC}"
+	FAILED=1
+fi;
+
 part "gas mixture mirror writes"
 # /datum/gas_mixture temperature/volume are READ-ONLY mirrors of the Rust atmos arena
 # (the authoritative store). A bare `air.temperature = x` / `air_contents.volume = y`

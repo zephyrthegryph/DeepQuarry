@@ -334,8 +334,9 @@ DECLARE_REF(/datum/contract_requirement/event_count, "filter", OWNED, null)
 	var/duration
 	var/datum/contract_event_filter/filter
 	var/list/pending_tokens
-	var/list/pending_timers
 	var/list/completed_entities
+
+OM_TIMER_SLOT(/datum/contract_requirement/sustained_event, pending)
 
 /datum/contract_requirement/sustained_event/New(_event_type, _entity_field, _numeric_field, _comparator, _threshold, _duration, _target = 1, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY)
 	. = ..()
@@ -348,7 +349,6 @@ DECLARE_REF(/datum/contract_requirement/event_count, "filter", OWNED, null)
 	target = max(1, _target)
 	filter = new(_scope_mode)
 	pending_tokens = list()
-	pending_timers = list()
 	completed_entities = list()
 	if(event_type)
 		event_types += event_type
@@ -362,12 +362,8 @@ DECLARE_REF(/datum/contract_requirement/sustained_event, "filter", OWNED, null)
 	cancel_pending_timers()
 
 /datum/contract_requirement/sustained_event/proc/cancel_pending_timers()
-	for(var/entity_key in pending_timers)
-		var/timer_id = pending_timers[entity_key]
-		if(timer_id)
-			om_cancel_timer(src, timer_id)
-	if(pending_timers)
-		pending_timers.Cut()
+	for(var/entity_key in pending_tokens)
+		om_cancel_timer_slot(src, "pending:[entity_key]")
 	if(pending_tokens)
 		pending_tokens.Cut()
 
@@ -385,24 +381,20 @@ DECLARE_REF(/datum/contract_requirement/sustained_event, "filter", OWNED, null)
 	// which loses required integrity must cancel its EER timer just as surely as
 	// one whose EER itself falls below the threshold.
 	if(!filter.matches(event, contract) || !contract_evidence_compare(event.value(numeric_field), comparator, threshold))
-		var/timer_id = pending_timers[entity_key]
-		if(timer_id)
-			om_cancel_timer(src, timer_id)
-		pending_timers -= entity_key
+		om_cancel_timer_slot(src, "pending:[entity_key]")
 		pending_tokens -= entity_key
 		return FALSE
-	if(pending_timers[entity_key])
+	if(om_timer_slot_pending(src, "pending:[entity_key]"))
 		return FALSE
 	var/token = event.id
 	pending_tokens[entity_key] = token
-	pending_timers[entity_key] = om_after(src, duration, PROC_REF(complete_duration), entity_key, token, event.actor_account, event.value("detail"))
+	om_after_slot(src, "pending:[entity_key]", duration, PROC_REF(complete_duration), entity_key, token, event.actor_account, event.value("detail"))
 	return TRUE
 
 /datum/contract_requirement/sustained_event/proc/complete_duration(entity_key, token, contributor_account, detail)
 	if(state != CONTRACT_REQUIREMENT_PENDING || pending_tokens[entity_key] != token)
 		return
 	pending_tokens -= entity_key
-	pending_timers -= entity_key
 	completed_entities |= entity_key
 	add_progress(1, contributor_account, detail || "Maintained the qualifying state for [DisplayTimeText(duration)].")
 
@@ -419,9 +411,10 @@ DECLARE_REF(/datum/contract_requirement/sustained_event, "filter", OWNED, null)
 	/// Ordered entries: list(list("label" = text, "threshold" = number, "duration" = deciseconds)).
 	var/list/stages
 	var/list/pending_tokens
-	var/list/pending_timers
 	var/list/pending_stage_indices
 	var/list/completed_stages
+
+OM_TIMER_SLOT(/datum/contract_requirement/staged_sustained_event, pending)
 
 /datum/contract_requirement/staged_sustained_event/New(_event_type, _entity_field, _numeric_field, _comparator, list/_stages, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY)
 	. = ..()
@@ -431,7 +424,6 @@ DECLARE_REF(/datum/contract_requirement/sustained_event, "filter", OWNED, null)
 	comparator = _comparator
 	filter = new(_scope_mode)
 	pending_tokens = list()
-	pending_timers = list()
 	pending_stage_indices = list()
 	completed_stages = list()
 	set_stages(_stages)
@@ -455,12 +447,8 @@ DECLARE_REF(/datum/contract_requirement/staged_sustained_event, "filter", OWNED,
 	cancel_pending_timers()
 
 /datum/contract_requirement/staged_sustained_event/proc/cancel_pending_timers()
-	for(var/key in pending_timers)
-		var/timer_id = pending_timers[key]
-		if(timer_id)
-			om_cancel_timer(src, timer_id)
-	if(pending_timers)
-		pending_timers.Cut()
+	for(var/key in pending_tokens)
+		om_cancel_timer_slot(src, "pending:[key]")
 	if(pending_tokens)
 		pending_tokens.Cut()
 	if(pending_stage_indices)
@@ -476,10 +464,7 @@ DECLARE_REF(/datum/contract_requirement/staged_sustained_event, "filter", OWNED,
 	if(!filter.matches(event, contract))
 		for(var/stage_index in 1 to length(stages))
 			var/stage_key = "[entity_value]:[stage_index]"
-			var/timer_id = pending_timers[stage_key]
-			if(timer_id)
-				om_cancel_timer(src, timer_id)
-				pending_timers -= stage_key
+			if(om_cancel_timer_slot(src, "pending:[stage_key]"))
 				pending_tokens -= stage_key
 				pending_stage_indices -= stage_key
 				changed = TRUE
@@ -493,20 +478,17 @@ DECLARE_REF(/datum/contract_requirement/staged_sustained_event, "filter", OWNED,
 	var/list/stage = stages[stage_index]
 	var/qualifies = contract_evidence_compare(event.value(numeric_field), comparator, stage["threshold"])
 	if(!qualifies)
-		var/timer_id = pending_timers[stage_key]
-		if(timer_id)
-			om_cancel_timer(src, timer_id)
-			pending_timers -= stage_key
+		if(om_cancel_timer_slot(src, "pending:[stage_key]"))
 			pending_tokens -= stage_key
 			pending_stage_indices -= stage_key
 			changed = TRUE
 		return changed
-	if(pending_timers[stage_key])
+	if(om_timer_slot_pending(src, "pending:[stage_key]"))
 		return changed
 	var/token = event.id
 	pending_tokens[stage_key] = token
 	pending_stage_indices[stage_key] = stage_index
-	pending_timers[stage_key] = om_after(src, max(1, stage["duration"]), PROC_REF(complete_stage), stage_key, stage_index, token, event.actor_account, event.value("detail"))
+	om_after_slot(src, "pending:[stage_key]", max(1, stage["duration"]), PROC_REF(complete_stage), stage_key, stage_index, token, event.actor_account, event.value("detail"))
 	changed = TRUE
 	return changed
 
@@ -514,14 +496,12 @@ DECLARE_REF(/datum/contract_requirement/staged_sustained_event, "filter", OWNED,
 	if(state != CONTRACT_REQUIREMENT_PENDING || pending_tokens[stage_key] != token || ("[stage_index]" in completed_stages))
 		return
 	completed_stages |= "[stage_index]"
-	for(var/other_key in pending_timers.Copy())
+	for(var/other_key in pending_tokens.Copy())
 		if(pending_stage_indices[other_key] != stage_index)
 			continue
-		var/timer_id = pending_timers[other_key]
-		if(other_key != stage_key && timer_id)
-			om_cancel_timer(src, timer_id)
+		if(other_key != stage_key)
+			om_cancel_timer_slot(src, "pending:[other_key]")
 		pending_tokens -= other_key
-		pending_timers -= other_key
 		pending_stage_indices -= other_key
 	var/list/stage = stages[stage_index]
 	add_progress(1, contributor_account, detail || "Completed [stage["label"]] at [stage["threshold"]] for [DisplayTimeText(stage["duration"])].")

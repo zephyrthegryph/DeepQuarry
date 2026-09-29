@@ -516,7 +516,7 @@
 			break
 	if(!original_routine)
 		original_routine = trial_terms_definition.create_contract(list("offer_key" = "dq-medical-rotation-test", "board_key" = "[CONTRACT_SCOPE_DEPARTMENT]:[DEPARTMENT_MEDICAL]", "offer_kind" = CONTRACT_OFFER_STANDING))
-	TEST_ASSERT(original_routine?.offer_timer, "routine medical offer had no expiry timer")
+	TEST_ASSERT(om_timer_slot_pending(original_routine, "offer_timer"), "routine medical offer had no expiry timer")
 	original_routine.cancel("Lifecycle test")
 	TEST_ASSERT(SScontracts.find_candidate(original_routine.offer_key), "closing a standing medical offer did not queue its cooldown-safe replacement")
 	TEST_ASSERT(SScontracts.offer_cooldowns[original_routine.offer_key] > world.time, "closing a standing offer did not enforce its publication cooldown")
@@ -531,10 +531,8 @@
 	var/datum/contract_requirement/staged_sustained_event/requirement = new("dq_staged_result", "machine", "output", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, stages)
 	requirement.pending_tokens["machine-a:1"] = "token-a"
 	requirement.pending_stage_indices["machine-a:1"] = 1
-	requirement.pending_timers["machine-a:1"] = 0
 	requirement.pending_tokens["machine-b:1"] = "token-b"
 	requirement.pending_stage_indices["machine-b:1"] = 1
-	requirement.pending_timers["machine-b:1"] = 0
 	requirement.complete_stage("machine-a:1", 1, "token-a", 0, "Machine A")
 	TEST_ASSERT_EQUAL(requirement.progress, 1, "first qualifying machine did not complete the first tier")
 	requirement.complete_stage("machine-b:1", 1, "token-b", 0, "Machine B")

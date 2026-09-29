@@ -1,3 +1,5 @@
+OM_TIMER_SLOT(/obj/machinery/camera, camera_timer_token)
+
 /obj/machinery/camera
 	name = "security camera"
 	desc = "It's used to monitor rooms."
@@ -36,8 +38,7 @@
 	var/always_visible = FALSE //Visable from any map, good for entertainment network cameras
 
 	var/affected_by_emp_until = 0
-	/// The om_after() timer for next_camera_deadline(), and the deadline it was set for.
-	var/tmp/camera_timer_token
+	/// The deadline the `camera_timer_token` timer slot was last set for (next_camera_deadline()).
 	var/tmp/camera_timer_at = 0
 
 	var/client_huds = null
@@ -107,18 +108,16 @@ DECLARE_REF(/obj/machinery/camera, "assembly", OWNED, null)
 
 /obj/machinery/camera/proc/schedule_camera_timer()
 	var/deadline = next_camera_deadline()
-	if(deadline == camera_timer_at && (!isnull(camera_timer_token) || !deadline))
+	if(deadline == camera_timer_at && (om_timer_slot_pending(src, "camera_timer_token") || !deadline))
 		return
-	if(!isnull(camera_timer_token))
-		om_cancel_timer(src, camera_timer_token)
-		camera_timer_token = null
+	if(om_timer_slot_pending(src, "camera_timer_token"))
+		om_cancel_timer_slot(src, "camera_timer_token")
 	camera_timer_at = deadline
 	if(deadline)
 		om_attach(src, /datum/om/behaviour/sleeper/timed)
-		camera_timer_token = om_after(src, max(deadline - world.time, 0), PROC_REF(camera_timer_fired))
+		om_after_slot(src, "camera_timer_token", max(deadline - world.time, 0), PROC_REF(camera_timer_fired))
 
 /obj/machinery/camera/proc/camera_timer_fired()
-	camera_timer_token = null
 	camera_timer_at = 0
 	if((stat & EMPED) && world.time >= affected_by_emp_until)
 		stat &= ~EMPED
@@ -130,7 +129,7 @@ DECLARE_REF(/obj/machinery/camera, "assembly", OWNED, null)
 
 /obj/machinery/camera/om_sleep_violation()
 	var/deadline = next_camera_deadline()
-	if(deadline && (isnull(camera_timer_token) || camera_timer_at > deadline))
+	if(deadline && (!om_timer_slot_pending(src, "camera_timer_token") || camera_timer_at > deadline))
 		return "deadline [deadline] (now [world.time]) has no timer"
 	return null
 
