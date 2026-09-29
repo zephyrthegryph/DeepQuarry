@@ -690,7 +690,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 			replace_with(self, /mob/living/simple_mob/vore/alienanimals/teppi, self.store_teppi_data(self))
 			return
 		else
-			self.visible_message("\The [self] whines pathetically...", runemessage = "whines") // ALLOW(sys_visible_pair): custom runemessage; act_message has no runechat parameter
+			act_message(self, null, null, MSG_OTHERS("%U% whines pathetically..."), runemessage = "whines")
 			if(prob(50))
 				playsound(self, 'sound/voice/teppi/whine1.ogg', 75, 1)
 			else
@@ -993,7 +993,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 		teppi_mutate = TRUE
 	mom.adjust_nutrition(-500)
 	dad.adjust_nutrition(-250)
-	mom.visible_message("\The [src] is born from [mom]... It's the miracle of life!", runemessage = "grunts") // ALLOW(sys_visible_pair): custom runemessage; act_message has no runechat parameter
+	act_message(mom, src, null, MSG_OTHERS("%T% is born from %U%... It's the miracle of life!"), runemessage = "grunts")
 	handle_affinity(mom, 26)	//this way the babies will follow their parents around (and keep track of them)
 	handle_affinity(dad, 25)
 

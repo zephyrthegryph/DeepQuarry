@@ -303,8 +303,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/ex
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss/bullet_act(obj/item/projectile/P)
 	if(prob(parry_chance))
-		act_message(src, null, MSG_SELF(\
-						span_userdanger("The [P.name] gets reflected by %U%'s armor!")), MSG_OTHERS(span_danger("The [P.name] gets reflected by %U%'s armor!")))
+		act_message(src, null, \
+			MSG_SELF(span_userdanger("The [P.name] gets reflected by %U%'s armor!")), \
+			MSG_OTHERS(span_danger("The [P.name] gets reflected by %U%'s armor!")))
 
 		// Find a turf near or on the original location to bounce to
 		if(P.starting)

@@ -466,7 +466,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 
 /// Old Pet Fur verb: Pet the fur!
 /turf/simulated/floor/outdoors/fur/proc/fur_verb_pet(mob/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message(span_notice("\The [user] pets \the [src]."), span_notice("You pet \the [src]."), runemessage = "pet pat...") // ALLOW(sys_visible_pair): custom runemessage; act_message has no runechat parameter
+	act_message(user, src, MSG_SELF(span_notice("You pet %T%.")), MSG_OTHERS(span_notice("%U% pets %T%.")), runemessage = "pet pat...")
 	var/obj/effect/overmap/visitable/ship/simplemob/stardog/s = get_overmap_sector(z)
 
 	if(s && istype(s, /obj/effect/overmap/visitable/ship/simplemob/stardog))
@@ -1050,7 +1050,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
 
 /// Old attack_hand.
 /obj/effect/dog_nose/proc/interaction_boop_snoot(mob/living/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message(span_notice("\The [user] boops the snoot."),span_notice("You boop the snoot."),runemessage = "boop") // ALLOW(sys_visible_pair): custom runemessage; act_message has no runechat parameter
+	act_message(user, src, MSG_SELF(span_notice("You boop the snoot.")), MSG_OTHERS(span_notice("%U% boops the snoot.")), runemessage = "boop")
 	return TRUE
 
 /obj/effect/dog_nose/Crossed(atom/movable/AM as mob|obj)

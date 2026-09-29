@@ -73,8 +73,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, \
 	else
 		switch(interaction.stance)
 			if(I_HELP)
-				act_message(M, src, MSG_SELF(\
-					span_notice("You hug %T% to make [p_them()] feel better!")), MSG_OTHERS(span_notice("%U% hugs %T% to make [p_them()] feel better!"))) // slightly redundant as at the moment most mobs still use the normal gender var, but it works and future-proofs it
+				act_message(M, src, \
+					MSG_SELF(span_notice("You hug %T% to make [p_them()] feel better!")), \
+					MSG_OTHERS(span_notice("%U% hugs %T% to make [p_them()] feel better!"))) // slightly redundant as at the moment most mobs still use the normal gender var, but it works and future-proofs it
 				playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 
 			if(I_DISARM)

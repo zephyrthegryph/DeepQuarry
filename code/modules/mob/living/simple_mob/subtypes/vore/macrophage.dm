@@ -81,8 +81,9 @@
 	EXTRAPOLATOR_ACT_SET(., EXTRAPOLATOR_ACT_PRIORITY_SPECIAL)
 
 /mob/living/simple_mob/vore/aggressive/macrophage/proc/extrapolator_act_macrophage_done(mob/living/user, obj/item/extrapolator/extrapolator)
-	act_message(user, src, MSG_SELF(\
-		span_danger("You stab %T% with [extrapolator]'s probe, destroying it!")), MSG_OTHERS(span_danger("%U% stabs %T% with [extrapolator], sucking it up!")))
+	act_message(user, src, \
+		MSG_SELF(span_danger("You stab %T% with [extrapolator]'s probe, destroying it!")), \
+		MSG_OTHERS(span_danger("%U% stabs %T% with [extrapolator], sucking it up!")))
 	death()
 
 /mob/living/simple_mob/vore/aggressive/macrophage/proc/deathcheck()

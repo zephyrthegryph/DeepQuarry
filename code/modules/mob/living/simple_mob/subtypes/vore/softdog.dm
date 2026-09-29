@@ -217,7 +217,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/woof/cass, \
 	if(stat != DEAD)
 		return FALSE
 	if(interaction.stance == I_HELP)
-		M.visible_message("[M] pets [src].", runemessage = "pets [src]") // ALLOW(sys_visible_pair): custom runemessage; act_message has no runechat parameter
+		act_message(M, src, null, MSG_OTHERS("%U% pets %T%."), runemessage = "pets %T%")
 		om_task_timed(M, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_cass_done), done_args = list(M), on_fail = PROC_REF(attack_hand_cass_failed), fail_args = list(M))
 	return TRUE
 
@@ -228,10 +228,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/woof/cass, \
 	see_in_dark = initial(see_in_dark)
 	see_invisible = initial(see_invisible)
 	update_icon()
-	visible_message("[src] stops playing dead.", runemessage = "[src] stops playing dead") // ALLOW(sys_visible_pair): custom runemessage; act_message has no runechat parameter
+	act_message(src, null, null, MSG_OTHERS("%U% stops playing dead."), runemessage = "%U% stops playing dead")
 
 /mob/living/simple_mob/vore/woof/cass/proc/attack_hand_cass_failed(mob/living/carbon/human/M)
-	M.visible_message("The petting was interrupted!!!", runemessage = "The petting was interrupted") // ALLOW(sys_visible_pair): custom runemessage; act_message has no runechat parameter
+	act_message(M, null, null, MSG_OTHERS("The petting was interrupted!!!"), runemessage = "The petting was interrupted")
 
 GLOBAL_VAR_INIT(woof_maximum, 0)
 GLOBAL_VAR_INIT(woof_current, 0)
