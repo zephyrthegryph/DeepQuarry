@@ -112,14 +112,18 @@
 	if(visualnet && checkStatic())
 		visualnet.visibility(src, client)
 
-/mob/observer/dead/Topic(href, href_list)
-	if (href_list["track"])
-		var/mob/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), href_list["track"])
-		if(target)
-			ManualFollow(target)
-	if(href_list["reenter"])
-		reenter_corpse()
-		return
+TOPIC_ACTION(/mob/observer/dead, "track", PROC_REF(topic_track), TOPIC_REF("track", /mob, TOPIC_IN_MOBS))
+TOPIC_ACTION(/mob/observer/dead, "reenter", PROC_REF(topic_reenter))
+
+/mob/observer/dead/proc/topic_track(mob/user, list/args)
+	var/mob/target = args["track"]
+	if(target)
+		ManualFollow(target)
+	return TRUE
+
+/mob/observer/dead/proc/topic_reenter(mob/user, list/args)
+	reenter_corpse()
+	return TRUE
 
 EXTEND_INTERACTIONS(/mob/observer/dead, INTERACT_INSERT(/obj/item/book/tome, PROC_REF(observer_tome_manifest), "Manifest"))
 

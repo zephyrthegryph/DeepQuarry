@@ -29,6 +29,8 @@
 #define TOPIC_IN_WORLD "world"
 /// A connected client.
 #define TOPIC_IN_CLIENTS "clients"
+/// A live mob (the mob registry).
+#define TOPIC_IN_MOBS "mobs"
 /// Something inside the target itself (target.contents).
 #define TOPIC_IN_CONTENTS "contents"
 // Anything else is a proc name on the target (PROC_REF(my_list)) returning the list to search.

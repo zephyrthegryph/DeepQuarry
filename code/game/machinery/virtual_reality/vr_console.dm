@@ -81,21 +81,6 @@
 	if(occupant)
 		. += span_notice("[occupant] is inside.")
 
-/obj/machinery/vr_sleeper/Topic(href, href_list)
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
-	if(..())
-		return 1
-
-	if(usr == occupant)
-		to_chat(usr, span_warning("You can't reach the controls from the inside."))
-		return
-
-	add_fingerprint(usr)
-
-	if(href_list["eject"])
-		go_out()
-
-	return 1
 
 /obj/machinery/vr_sleeper/declare_interactions(list/into)
 	into += list(

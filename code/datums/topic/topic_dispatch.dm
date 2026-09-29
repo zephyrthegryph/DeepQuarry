@@ -122,6 +122,8 @@ GLOBAL_LIST_EMPTY(topic_tables)
 			found = locate(raw) in world
 		if(TOPIC_IN_CLIENTS)
 			found = locate(raw) in GLOB.clients
+		if(TOPIC_IN_MOBS)
+			found = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), raw)
 		if(TOPIC_IN_CONTENTS)
 			var/atom/A = target
 			if(!istype(A))

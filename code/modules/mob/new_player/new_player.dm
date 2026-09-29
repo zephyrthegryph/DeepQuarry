@@ -60,13 +60,6 @@ DECLARE_REF(/mob/new_player, "poll_browser_dialog", OWNED, null)
 			totalPlayers++
 			if(player.ready)totalPlayersReady++
 
-/mob/new_player/Topic(href, href_list[])
-	if(!client)
-		return 0
-	if(!ready && href_list["preference"])
-		client.prefs.process_link(src, href_list)
-	if(href_list["open_station_news"])
-		show_latest_news(GLOB.news_data.station_newspaper())
 
 /mob/new_player/proc/handle_server_news()
 	if(!client)

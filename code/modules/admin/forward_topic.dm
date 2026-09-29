@@ -23,10 +23,6 @@
 			if(user)
 				user.Topic(href_str, href_list)
 			return
-		if("prefs")
-			if(user?.client?.prefs)
-				user.client.prefs.process_link(user, href_list)
-			return
 		if("vars")
 			if(user?.client)
 				user.client.view_var_Topic(href_str, href_list, host)

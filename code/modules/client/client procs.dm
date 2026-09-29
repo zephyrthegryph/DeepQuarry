@@ -123,7 +123,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	switch(href_list["_src_"])
 		if("holder")	hsrc = holder
 		if("usr")		hsrc = mob
-		if("prefs")		return prefs.process_link(usr,href_list)
 		if("vars")		return view_var_Topic(href,href_list,hsrc)
 
 	if (hsrc)

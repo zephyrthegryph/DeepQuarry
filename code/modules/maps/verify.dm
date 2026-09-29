@@ -22,13 +22,14 @@ REGISTRY_MEMBERSHIP(/datum/map_report, REGISTRY_MAP_REPORTS)
 /datum/map_report/proc/show_to(client/C)
 	return  // body provided by modular override
 
-/datum/map_report/Topic(href, href_list)
-	. = ..()
-	if(. || !check_rights(R_ADMIN, FALSE) || !usr.client.holder.CheckAdminHref(href, href_list))
-		return
+TOPIC_ACTION(/datum/map_report, "show", PROC_REF(topic_show), TOPIC_RIGHTS(R_ADMIN))
 
-	if (href_list["show"])
-		show_to(usr)
+/datum/map_report/topic_allowed(mob/user, list/href_list)
+	return user?.client?.holder?.CheckAdminHref(null, href_list)
+
+/datum/map_report/proc/topic_show(mob/user, list/args)
+	show_to(user.client)
+	return TRUE
 
 
 /// Check a parsed but not yet loaded map for errors.
