@@ -532,7 +532,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 /obj/machinery/power/apc/on_destroy(force)
 	if(power_alarm_raised)
 		GLOB.power_alarm.clearAlarm(loc, src)
-	om_changed(src, CHANGE_MACHINE_MODE)
+	changed(src, CHANGE_MACHINE_MODE)
 	apply_area_power()
 	if(area())
 		rel_clear(area(), nameof(/area::apc))
@@ -544,7 +544,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 
 /// Something about the APC changed (settings, cell, damage): send it to Rust.
 /obj/machinery/power/apc/proc/wake_for_power_dependency()
-	om_changed(src, CHANGE_MACHINE_MODE)
+	changed(src, CHANGE_MACHINE_MODE)
 	power_sync()
 
 /// The APC is not a network node: its terminal is.
@@ -1064,12 +1064,12 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 /obj/machinery/power/apc/set_locked(state)
 	. = cap_set(src, CAP_LOCKED, state)
 	if(.)
-		om_changed(src, CHANGE_MACHINE_SETTINGS)
+		changed(src, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/power/apc/set_emagged(state)
 	. = cap_set(src, CAP_EMAGGED, state)
 	if(.)
-		om_changed(src, CHANGE_MACHINE_SETTINGS)
+		changed(src, CHANGE_MACHINE_SETTINGS)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AI malfunction
@@ -1150,7 +1150,7 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 		return
 	grid_check = state
 	power_sync()
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/power/apc/proc/set_nightshift(on, automated)
 	set waitfor = FALSE // ALLOW(scheduler): update_nightshift() CHECK_TICKs over the area lights

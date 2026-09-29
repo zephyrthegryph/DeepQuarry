@@ -60,7 +60,7 @@
 	if(!grid)
 		return
 	for(var/obj/machinery/power/M as anything in grid[PGRID_NODES])
-		om_changed(M, bits)
+		changed(M, bits)
 
 /// Polls region `id`'s numbers from Rust (once a power step). FALSE when Rust
 /// no longer has the region.

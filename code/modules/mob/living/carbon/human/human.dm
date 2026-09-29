@@ -1283,7 +1283,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		hunger_rate = initial(hunger_rate)
 
 	var/datum/species/replaced = proto_replace(src, nameof(species), GLOB.all_species[new_species])
-	om_changed(src, CHANGE_MOB_CONDITIONS) // species vision and senses
+	changed(src, CHANGE_MOB_CONDITIONS) // species vision and senses
 	old_species?.remove_components(src, species)
 	if(replaced)
 		qdel(replaced) // the private copy proto_replace() handed back, done with now

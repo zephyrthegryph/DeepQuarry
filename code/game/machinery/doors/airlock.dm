@@ -150,7 +150,7 @@
 
 /// Raises CHANGE_MACHINE_MODE for whatever watches this door (bolts, power, electrification).
 /obj/machinery/door/airlock/proc/publish_door_mode()
-	om_changed(src, CHANGE_MACHINE_MODE)
+	changed(src, CHANGE_MACHINE_MODE)
 
 // Runs in a seperate timer loop, because making every airlock process every tick just to check for unfreezing is a bad idea.
 // Only the airlocks that can freeze (can_freeze()) declare it.

@@ -311,7 +311,7 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 	var/list/fields = R.fields_by_type[holder.type] || R.fields_of(holder.type)
 	var/channel = fields[var_name]
 	if(channel)
-		om_changed(holder, channel)
+		changed(holder, channel)
 
 /// The bare name of a proc path (/obj/foo/proc/bar -> "bar").
 /proc/own_proc_name(proc_path)

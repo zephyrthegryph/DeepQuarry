@@ -203,7 +203,7 @@
 			above[i] = is_above
 			crossed = TRUE
 	if(crossed && channel && owner())
-		om_changed(owner(), channel)
+		changed(owner(), channel)
 
 /// Next crossing among all the owner's rates, as one deadline.
 /proc/om_rates_reschedule(datum/om/rec/rec)

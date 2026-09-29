@@ -62,7 +62,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/pump, DAMAGE_EMP, P
 
 	target_pressure = rand(0,1300)
 	if(on)
-		om_changed(src, CHANGE_MACHINE_SETTINGS)
+		changed(src, CHANGE_MACHINE_SETTINGS)
 	update_icon()
 
 // Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable pumps and scrubbers"
@@ -170,7 +170,7 @@ UI_ACT(/obj/machinery/portable_atmospherics/powered/pump, "power", ui_act_power)
 UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_power)
 	set_on(!on)
 	if(on)
-		om_changed(src, CHANGE_MACHINE_SETTINGS)
+		changed(src, CHANGE_MACHINE_SETTINGS)
 	. = 1
 	update_icon()
 

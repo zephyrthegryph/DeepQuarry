@@ -20,7 +20,7 @@
 	var/message = A.get_serialized_url_mappings()
 	TEST_ASSERT(!isnull(message), "serialized mappings were not built")
 	TEST_ASSERT(!isnull(A.cached_serialized_url_mappings), "serialized mappings were not kept")
-	om_changed(A, CHANGE_EXPLICIT)
+	changed(A, CHANGE_EXPLICIT)
 	TEST_ASSERT(isnull(A.cached_serialized_url_mappings), "CHANGE_EXPLICIT did not clear the declared cache")
 	TEST_ASSERT(isnull(A.cached_serialized_url_mappings_transport_type), "CHANGE_EXPLICIT did not clear the transport key")
 	TEST_ASSERT(!isnull(A.get_serialized_url_mappings()), "serialized mappings were not rebuilt after clearing")

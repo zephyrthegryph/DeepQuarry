@@ -179,7 +179,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 	if(starter == value)
 		return FALSE
 	starter = value
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 	if(starter && turbine())
 		MACHINE_WAKE(turbine())
 	return TRUE

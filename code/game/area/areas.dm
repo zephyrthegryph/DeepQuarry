@@ -284,7 +284,7 @@ DECLARE_APPEARANCE_PROC(/area, TYPE_PROC_REF(/atom, appearance_overlays), list()
 // power, and the base power_change() emits machinery_power_lost or
 // machinery_power_restored when it flips.
 /area/proc/power_change()
-	om_changed(src, CHANGE_AREA_POWER)
+	changed(src, CHANGE_AREA_POWER)
 	for(var/obj/machinery/M as anything in power_machines)
 		M.power_change()
 	if (fire || eject || party)
@@ -322,7 +322,7 @@ DECLARE_APPEARANCE_PROC(/area, TYPE_PROC_REF(/atom, appearance_overlays), list()
 			oneoff_environ += amount
 	if(amount)
 		power_loads_changed()
-		om_changed(src, CHANGE_AREA_POWER)
+		changed(src, CHANGE_AREA_POWER)
 	return amount
 
 // This is used by machines to properly update the area of power changes.
@@ -340,7 +340,7 @@ DECLARE_APPEARANCE_PROC(/area, TYPE_PROC_REF(/atom, appearance_overlays), list()
 			static_environ += amount
 	if(amount)
 		power_loads_changed()
-		om_changed(src, CHANGE_AREA_POWER)
+		changed(src, CHANGE_AREA_POWER)
 
 // This recomputes the continued power usage; can be used for testing or error recovery, but is not called every tick.
 /area/proc/retally_power()

@@ -156,7 +156,7 @@
 		REPORT_POWER_CONSUMPTION_CHANGE(old_power, new_power)
 	// A power-mode change is a settings change for a machine on a pipeline (machine_pipeline.dm).
 	// Raised after the write: watchers (declared periodic work) read the new value.
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 	return TRUE
 
 // Sets the power_channel var and then forces an area power update.

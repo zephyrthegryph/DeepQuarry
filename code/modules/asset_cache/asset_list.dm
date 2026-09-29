@@ -141,7 +141,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 /datum/asset/proc/regenerate()
 	SHOULD_CALL_PARENT(FALSE)
 	unregister()
-	om_changed(src, CHANGE_EXPLICIT)
+	changed(src, CHANGE_EXPLICIT)
 	register()
 
 /// Unregisters any assets from the transport.
@@ -290,7 +290,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 		fdel("data/spritesheets/[name]_[size_id].png")
 	sizes = list()
 	to_generate = list()
-	om_changed(src, CHANGE_EXPLICIT)
+	changed(src, CHANGE_EXPLICIT)
 	fully_generated = FALSE
 	var/old_load = load_immediately
 	load_immediately = TRUE

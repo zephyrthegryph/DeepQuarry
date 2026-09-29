@@ -164,7 +164,7 @@
 	name = "test raiser"
 
 /datum/om/stage/life/trait/test_raiser/perform(mob/living/self, datum/om/frame/life/ctx)
-	om_changed(self, CHANGE_MOB_HEALTH)
+	changed(self, CHANGE_MOB_HEALTH)
 
 /datum/om/stage/life/trait/test_raiser/idle(mob/living/self)
 	return TRUE
@@ -488,10 +488,10 @@
 	// The frame's own changes may have woken it: idle it again for the channel checks.
 	life_test_set_idle(H, S.type)
 	TEST_ASSERT(life_test_idle(H, S.type), "an idle stage idles after its run")
-	om_changed(H, CHANGE_MOB_EQUIPMENT)
+	changed(H, CHANGE_MOB_EQUIPMENT)
 	scheduler_advance(0.1)
 	TEST_ASSERT(life_test_idle(H, S.type), "a channel the stage doesn't declare leaves it idle")
-	om_changed(H, CHANGE_MOB_HEALTH)
+	changed(H, CHANGE_MOB_HEALTH)
 	scheduler_advance(0.1)
 	TEST_ASSERT(!life_test_idle(H, S.type), "its declared channel wakes it")
 	var/runs = S.runs["[REF(H)]"]
@@ -720,7 +720,7 @@
 	var/frames = life_test_frames(H)
 	H.status_set(EFFECT_SLEEPING, 2)
 	H.canmove = TRUE
-	om_changed(H, CHANGE_MOB_STATUS)
+	changed(H, CHANGE_MOB_STATUS)
 	sched.run_pass(1e9)
 	TEST_ASSERT(!H.canmove, "a status change ran the canmove derivation without a frame")
 	TEST_ASSERT_EQUAL(life_test_frames(H), frames, "no life frame ran for it")
@@ -1043,7 +1043,7 @@
 	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
 	TEST_ASSERT(life_test_settle(M), "the mouse should park first; still busy: [life_test_busy(M)]")
 	var/datum/om/frame/S = life_test_pipe(M)
-	om_changed(M, CHANGE_EXPLICIT)
+	changed(M, CHANGE_EXPLICIT)
 	sched.run_pass(1e9)
 	TEST_ASSERT(!life_test_parked(M), "a change wakes it")
 	var/frames = 0
@@ -1054,7 +1054,7 @@
 	TEST_ASSERT(S.asleep >= S.plan.n, "its stages idle again; still busy: [life_test_busy(M)]")
 	TEST_ASSERT(!life_test_parked(M), "one idle frame doesn't park it")
 	TEST_ASSERT_EQUAL(S.idle_frames, 1, "one idle frame counted")
-	om_changed(M, CHANGE_MOB_HEALTH)
+	changed(M, CHANGE_MOB_HEALTH)
 	sched.run_pass(1e9)
 	TEST_ASSERT_EQUAL(S.idle_frames, 0, "a wake between idle frames starts the count again")
 	frames = 0

@@ -200,7 +200,7 @@
 /// resolving a slot's declared policy, not an ordinary player/game move.
 /// Passed to on_slotted()/on_unslotted() (J6) and holder_destroying() is
 /// queryable during it, so a hook can skip re-derivation (body invalidate,
-/// om_changed, HUD, factor recompute) that a moment-later qdel would waste.
+/// changed, HUD, factor recompute) that a moment-later qdel would waste.
 /// Always combined with LEDGER_MOVE_FORCED.
 #define LEDGER_MOVE_DESTROYING (1<<1)
 

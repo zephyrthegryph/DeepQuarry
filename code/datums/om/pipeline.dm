@@ -925,7 +925,7 @@ GLOBAL_VAR_INIT(om_audit_first_wake_skips, 0)
 	var/datum/om/frame/S = om_pipe_state(E, src)
 	var/datum/om/scheduler/sched = E.om_rec.sched
 	sched.stat_inc(id, OM_STAT_MISSED)
-	var/message = "OM_AUDIT: MISSED WAKE [E] ([E.type]) in [name], [S.parked ? "parked since [DisplayTimeText(world.time - S.parked_at)] ago" : "awake, some stages idle"]: stage [T.type] ([T.name], wake_on [T.wake_mask]) has work but was idle. Woken by: [T.woken_by || "undeclared"]. A producer changed it without raising its channel (om_changed)."
+	var/message = "OM_AUDIT: MISSED WAKE [E] ([E.type]) in [name], [S.parked ? "parked since [DisplayTimeText(world.time - S.parked_at)] ago" : "awake, some stages idle"]: stage [T.type] ([T.name], wake_on [T.wake_mask]) has work but was idle. Woken by: [T.woken_by || "undeclared"]. A producer changed it without raising its channel (changed)."
 	log_runtime(message)
 	log_world(message)
 #if defined(UNIT_TESTS)

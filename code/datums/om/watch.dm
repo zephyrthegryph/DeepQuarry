@@ -40,7 +40,7 @@
 //    a vg pipeline field, a computed number, whatever the caller wants watched.
 //
 // Every flavour ends the same way: a crossing/change calls the watch's `wake_callback`
-// (if any) and then, if `channel` is set, om_changed(entity, channel) -- which is all an
+// (if any) and then, if `channel` is set, changed(entity, channel) -- which is all an
 // OM-pipeline (polls = FALSE) machine needs to reschedule itself. A polling (polls = TRUE)
 // legacy machine instead supplies a wake_callback that does its old wake_gas_subscriber()
 // branch inline (typically STOP watching + MACHINE_WAKE(src)).
@@ -74,8 +74,8 @@
 /datum/om_watch
 	var/entity_ref
 	var/watch_id // the key this watch is registered under on its entity (arbitrary string)
-	var/channel // optional CHANGE_MACHINE_*/CHANGE_MOB_* bit: a crossing raises om_changed(entity, channel)
-	var/list/wake_callback // optional om_callable() spec: run (no args) on every crossing, before om_changed
+	var/channel // optional CHANGE_MACHINE_*/CHANGE_MOB_* bit: a crossing raises changed(entity, channel)
+	var/list/wake_callback // optional om_callable() spec: run (no args) on every crossing, before changed
 	var/mode = OM_WATCH_BANDS
 	var/list/datum/om_watch_band/bands
 	var/list/last_side // "field:above:value" -> TRUE/FALSE at last evaluation
@@ -283,7 +283,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 
 /// Arms (or re-arms) a threshold-band watch on a gas mixture, replacing whatever this
 /// (entity, watch_id) pair previously watched. A crossing invokes `wake_callback` and/or
-/// om_changed(entity, channel).
+/// changed(entity, channel).
 /proc/om_watch_arm_bands(datum/entity, watch_id, mixture_id, list/bands, channel, list/wake_callback)
 	om_watch_disarm(entity, watch_id)
 	if(isnull(mixture_id))
@@ -502,7 +502,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 	if(W.wake_callback)
 		om_run(W.wake_callback)
 	if(W.channel)
-		om_changed(entity, W.channel)
+		changed(entity, W.channel)
 
 /// Called from GLOB.machine_service.wake_dirty_gas_subscribers() (code/controllers/subsystems/machines.dm)
 /// for every dirty mixture Rust reports. Walks every watch armed on that mixture and fires the

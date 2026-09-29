@@ -222,7 +222,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 		selecting = choice
 		update_icon()
 		if(user)
-			om_changed(user, CHANGE_MOB_TARGETING)
+			changed(user, CHANGE_MOB_TARGETING)
 
 DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /atom/movable/screen/zone_sel/appearance_overlays()

@@ -52,12 +52,11 @@ OWN_TIMER(/datum, periodic_interval)
 /// Marks E changed: queues its refresh (and its owners', up the chain) and raises `channel` for OM
 /// observers. The rare direct write outside a dispatched call or a TRACKED setter calls this.
 /proc/changed(datum/E, channel = CHANGE_EXPLICIT)
-	if(!E || QDELING(E))
+	if(!E)
 		return
-	om_changed(E, channel)
-	refresh_mark(E, channel)
+	om_raise_change(E, channel, !QDELING(E))
 
-/// Queues E's refresh (and its drawing owners', H2). changed() and om_changed() both come here.
+/// Queues E's refresh (and its drawing owners', H2). changed() comes here through om_raise_change().
 /proc/refresh_mark(datum/E, channel)
 	if(!E || QDELING(E))
 		return

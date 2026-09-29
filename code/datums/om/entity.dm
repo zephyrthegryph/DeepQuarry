@@ -8,7 +8,7 @@
 // ALLOW(scheduler): the object-model core's own record for this entity; released by the core (entity.dm) on leave
 /datum/var/tmp/datum/om/rec/om_rec
 /// Union of every channel something listens to on this entity. A setter's
-/// om_changed() returns on `!(om_listen & bits)` without a proc call more.
+/// changed() returns on `!(om_listen & bits)` without a proc call more.
 /datum/var/tmp/om_listen = 0
 
 /datum/om/rec
@@ -355,14 +355,14 @@
 
 // ---------------------------------------------------------------- change dispatch
 
-/// Setters call this after writing tracked state. Level-triggered: it says
-/// "these channels may have changed"; observers re-read current state.
-/proc/om_changed(datum/E, bits)
+/// The kernel's change dispatch, reached only through changed() (the public change API). Level-triggered:
+/// it says "these channels may have changed"; observers re-read current state. Any raise on an atom
+/// whose type derives something (a look, hidden verbs, capabilities, periodic work) queues its refresh
+/// (dx_conventions.md section 1); `force_refresh` queues it for any entity.
+/proc/om_raise_change(datum/E, bits, force_refresh = FALSE)
 	if(E.om_listen & bits)
 		om_dispatch_change(E, bits)
-	// One change API (dx_conventions.md §1): any raise on an atom whose type derives something (a look,
-	// hidden verbs, capabilities, periodic work) queues its refresh, as changed() does.
-	if(isatom(E) && !E.refresh_queued && (GLOB.type_derives_cache[E.type] || E.periodic_cadence || E.periodic_interval))
+	if(force_refresh || (isatom(E) && !E.refresh_queued && (GLOB.type_derives_cache[E.type] || E.periodic_cadence || E.periodic_interval)))
 		refresh_mark(E, bits)
 
 /proc/om_dispatch_change(datum/E, bits)
@@ -418,7 +418,7 @@
 		var/list/R = rec.relay_in
 		for(var/j in 1 to length(R) step 2)
 			if(R[j + 1] & bits)
-				om_changed(R[j], CHANGE_RELATED)
+				changed(R[j], CHANGE_RELATED)
 	// A relation var a cross-entity derived input follows changed: resubscribe.
 	if(rec.table.relay_mask & bits)
 		om_derived_relink(E, rec)

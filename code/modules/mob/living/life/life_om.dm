@@ -201,7 +201,7 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 
 /// A client logged into or out of this mob: the HUD, senses and client stages restart.
 /mob/living/proc/on_client_changed(reason)
-	om_changed(src, CHANGE_MOB_CLIENT)
+	changed(src, CHANGE_MOB_CLIENT)
 
 /// Something was equipped or unequipped.
 /mob/proc/on_equipment_changed()
@@ -209,4 +209,4 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 
 /mob/living/on_equipment_changed()
 	body?.invalidate(BODY_DIRTY_ARMOR)
-	om_changed(src, CHANGE_MOB_EQUIPMENT)
+	changed(src, CHANGE_MOB_EQUIPMENT)
