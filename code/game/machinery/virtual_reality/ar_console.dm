@@ -87,7 +87,7 @@
 	if(!occupant) //This whole thing needs cleaned up later, but this works for now.
 		return
 	occupant.forceMove(get_turf(src))
-	rel_clear(occupant, "vr_link") //The machine remembers the avatar. 1 avatar per machine. So the vr_link isn't needed anymore.
+	rel_clear(occupant, nameof(occupant.vr_link)) //The machine remembers the avatar. 1 avatar per machine. So the vr_link isn't needed anymore.
 	occupant = null
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/atom/movable/A in contents_of(src)) // In case an object was dropped inside or something // ALLOW(latent): materialized above
@@ -114,7 +114,7 @@
 		return
 
 	if(QDELETED(avatar())) //This REALLY needs to be changed to an OM handle
-		rel_clear(src, "avatar")
+		rel_clear(src, nameof(avatar))
 
 	if(avatar() && !occupant.stat)
 		to_chat(occupant,span_alien("\The [src] begins to [pick("whir","hum","pulse")] as a screen appears in front of you."))
@@ -136,9 +136,9 @@
 	if(!avatar())
 		var/turf/T = get_turf(src)
 		if(!perfect_replica)
-			rel_set(src, "avatar", new /mob/living/carbon/human(src, produce_species))
+			rel_set(src, nameof(avatar), new /mob/living/carbon/human(src, produce_species))
 		else
-			rel_set(src, "avatar", new /mob/living/carbon/human(src, occupant.species.name))
+			rel_set(src, nameof(avatar), new /mob/living/carbon/human(src, occupant.species.name))
 
 		// If the user has a non-default (Human) bodyshape, make it match theirs.
 		if(occupant.species.name != "Promethean" && occupant.species.name != "Human" && mirror_first_occupant)

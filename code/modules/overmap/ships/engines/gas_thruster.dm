@@ -5,7 +5,7 @@
 
 /datum/ship_engine/gas_thruster/New(obj/machinery/_holder)
 	..()
-	rel_set(src, "nozzle", _holder)
+	rel_set(src, nameof(nozzle), _holder)
 
 /datum/ship_engine/gas_thruster/get_status()
 	return nozzle().get_status()
@@ -85,7 +85,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /d
 
 	for(var/obj/effect/overmap/visitable/ship/S as anything in SSshuttles.ships)
 		if(S.check_ownership(src))
-			rel_add(S, "engines", controller)
+			rel_add(S, nameof(S.engines), controller)
 			if(dir != S.fore_dir)
 				atom_break()
 			break
@@ -232,7 +232,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /d
 
 	for(var/obj/machinery/atmospherics/target in get_step(one_step,node_connect))
 		if(can_be_node(target, 1))
-			rel_set(src, "node", target)
+			rel_set(src, nameof(node), target)
 			break
 
 	update_icon()
@@ -273,7 +273,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /d
 
 	for(var/obj/machinery/atmospherics/target in get_step(two_step,node_connect))
 		if(can_be_node(target, 1))
-			rel_set(src, "node", target)
+			rel_set(src, nameof(node), target)
 			break
 
 	update_icon()

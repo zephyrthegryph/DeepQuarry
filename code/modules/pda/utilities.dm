@@ -114,7 +114,7 @@
 
 /datum/data/pda/utility/scanmode/notes/start()
 	. = ..()
-	rel_set(src, "notes", pda().find_program(/datum/data/pda/app/notekeeper))
+	rel_set(src, nameof(notes), pda().find_program(/datum/data/pda/app/notekeeper))
 
 /datum/data/pda/utility/scanmode/notes/scan_atom(atom/A, mob/user)
 	if(notes() && istype(A, /obj/item/paper))

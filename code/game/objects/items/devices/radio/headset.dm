@@ -113,10 +113,10 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	var/turf/T = get_turf(user)
 	if(keyslot1)
 		keyslot1.forceMove(T)
-		own_take(src, "keyslot1")
+		own_take(src, nameof(keyslot1))
 	if(keyslot2)
 		keyslot2.forceMove(T)
-		own_take(src, "keyslot2")
+		own_take(src, nameof(keyslot2))
 	recalculateChannels()
 	to_chat(user, span_notice("You pop out the encryption keys in the headset!"))
 	playsound(src, tool.usesound, 50, TRUE)
@@ -208,7 +208,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 			return
 		if(M.mob_radio)
 			M.mob_radio.forceMove(M.loc)
-			own_take(M, "mob_radio")
+			own_take(M, nameof(M.mob_radio))
 			return
 	..()
 
@@ -723,7 +723,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	worn_factors = slowdown_to_set ? alist(BF_SLOWDOWN = slowdown_to_set) : null
 	. = ..()
 	if(H && ((H.get_equipped_item(SLOT_ID_EAR_L) == src) || (H.get_equipped_item(SLOT_ID_EAR_R) == src)))
-		rel_set(src, "wearer", H)
+		rel_set(src, nameof(wearer), H)
 		if(light_power)
 			set_light(light_range,light_power,light_color,1)
 		if(effect_icon)
@@ -736,12 +736,12 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 			for(var/thing in spells)
 				var/datum/spell/SP = new thing(H)
 				H.add_spell(SP)
-				own_add(src, "remove_spells", SP)
+				own_add(src, nameof(remove_spells), SP)
 
 /obj/item/radio/headset/event/dropped(mob/living/carbon/human/H, equipping, slot)
 	..()
 	if(wearer())
-		rel_clear(src, "wearer")
+		rel_clear(src, nameof(wearer))
 		if(light_power)
 			light_on = 0
 		if(effect_icon)

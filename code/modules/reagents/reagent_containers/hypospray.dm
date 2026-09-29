@@ -93,7 +93,9 @@
 	var/obj/item/reagent_containers/glass/beaker/vial/loaded_vial //Wow, what a name.
 	volume = 0
 
-OWN(/obj/item/reagent_containers/hypospray/vial, loaded_vial, OWN_CONTAINED)
+/obj/item/reagent_containers/hypospray/vial/ownership()
+	. = ..()
+	. += owns(nameof(loaded_vial), policy = OWN_CONTAINED)
 // Comes with an empty vial.
 DECLARE_DEFAULT_CHILD(/obj/item/reagent_containers/hypospray/vial, "loaded_vial", /obj/item/reagent_containers/glass/beaker/vial)
 
@@ -116,7 +118,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/hypospray/vial, \
 			reagents.maximum_volume = 0
 			loaded_vial.update_icon()
 			user.put_in_hands(loaded_vial)
-			own_take(src, "loaded_vial")
+			own_take(src, nameof(loaded_vial))
 			balloon_alert(user, "vial removed from \the [src]")
 			update_icon()
 			play_sfx(src, SFX_WEAPONS_FLIPBLADE)

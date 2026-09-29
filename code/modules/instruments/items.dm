@@ -17,7 +17,7 @@
 
 /obj/item/instrument/Initialize(mapload)
 	. = ..()
-	own_set(src, "song", new /datum/song/handheld(src, allowed_instrument_ids, instrument_range))
+	own_set(src, nameof(song), new /datum/song/handheld(src, allowed_instrument_ids, instrument_range))
 	allowed_instrument_ids = null //We don't need this clogging memory after its used.
 
 

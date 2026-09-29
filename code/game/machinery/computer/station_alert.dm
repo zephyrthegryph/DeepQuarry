@@ -18,7 +18,7 @@
 	circuit = /obj/item/circuitboard/stationalert_all
 
 /obj/machinery/computer/station_alert/Initialize(mapload)
-	own_set(src, "alarm_monitor", new monitor_type(src))
+	own_set(src, nameof(alarm_monitor), new monitor_type(src))
 	alarm_monitor.register_alarm(src, "update_console_icon")
 	. = ..()
 

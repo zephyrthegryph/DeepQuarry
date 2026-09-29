@@ -114,7 +114,7 @@
 	M.materialize_wakes()
 	om_cancel_timer_slot(M, "first_wake")
 	TEST_ASSERT(!P.first_wake_pending(M), "a machine whose first wake already ran is audited as usual")
-	rel_add(om_global_owner(), "machine_first_wakes", M)
+	rel_add(om_global_owner(), nameof(/datum/om/global_owner::machine_first_wakes), M)
 	TEST_ASSERT(P.first_wake_pending(M), "a machine queued for the bulk first-wake pass has its first wake pending")
 	M.materialize_wakes()
 	TEST_ASSERT(!P.first_wake_pending(M), "running the first wake ends it, with nothing to clear by hand")

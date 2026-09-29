@@ -55,7 +55,7 @@
 
 	else if(mind)
 		soul_link(/datum/soul_link/shared_body, src, target)
-		rel_set(src, "deployed_shell", target)
+		rel_set(src, nameof(deployed_shell), target)
 		if(src.client) // ITION: Resize shell based on our preffered size
 			target.resize(src.client.prefs.read_preference(/datum/preference/numeric/human/size_multiplier)) // ITION + size_multiplier migrated
 		target.deploy_init(src)
@@ -64,9 +64,9 @@
 			target.first_transfer = FALSE
 			target.copy_from_prefs_vr()
 			if(LAZYLEN(target.vore_organs))
-				rel_set(target, "vore_selected", target.vore_organs[1])
+				rel_set(target, nameof(target.vore_selected), target.vore_organs[1])
 		src.copy_vore_prefs_to_mob(target)
-		rel_set(src, "teleop", target) // So the AI 'hears' messages near its core.
+		rel_set(src, nameof(teleop), target) // So the AI 'hears' messages near its core.
 		target.post_deploy()
 
 /// Picking a shell to deploy to (AIs and shells moving between shells). A cancel aborts deployment.

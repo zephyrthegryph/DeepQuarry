@@ -88,7 +88,7 @@ DECLARE_REPEAT(/datum/spell, 1 SECOND, recharge_tick, "recharging")
 
 /datum/spell/proc/perform(mob/user = usr, skipcharge = 0) //if recharge is started is important for the trigger spells
 	if(!holder())
-		rel_set(src, "holder", user) //just in case
+		rel_set(src, nameof(holder), user) //just in case
 	if(!cast_check(skipcharge, user))
 		return
 	if(cast_delay)

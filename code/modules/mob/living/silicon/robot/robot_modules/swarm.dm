@@ -9,12 +9,12 @@
 	robot_id.forceMove(src)
 	modules |= robot_id // ALLOW(ownership): the robot owns its idcard (robot.idcard); the module only lists it as a usable item
 
-	own_add(src, "modules", new /obj/item/rcd/electric/mounted/borg/swarm(src))
-	own_add(src, "modules", new /obj/item/flash/robot(src))
-	own_add(src, "modules", new /obj/item/handcuffs/cable/tape/cyborg(src))
-	own_add(src, "modules", new /obj/item/melee/robotic/baton(src))
-	own_add(src, "modules", new /obj/item/gun/energy/robotic/taser/swarm(src))
-	own_add(src, "modules", new /obj/item/matter_decompiler/swarm(src))
+	own_add(src, nameof(modules), new /obj/item/rcd/electric/mounted/borg/swarm(src))
+	own_add(src, nameof(modules), new /obj/item/flash/robot(src))
+	own_add(src, nameof(modules), new /obj/item/handcuffs/cable/tape/cyborg(src))
+	own_add(src, nameof(modules), new /obj/item/melee/robotic/baton(src))
+	own_add(src, nameof(modules), new /obj/item/gun/energy/robotic/taser/swarm(src))
+	own_add(src, nameof(modules), new /obj/item/matter_decompiler/swarm(src))
 
 /obj/item/robot_module/drone/swarm/ranged
 	name = "swarm gunner module"
@@ -22,12 +22,12 @@
 /obj/item/robot_module/drone/swarm/ranged/create_equipment(mob/living/silicon/robot/robot)
 	..()
 
-	own_add(src, "modules", new /obj/item/gun/energy/xray/swarm(src))
+	own_add(src, nameof(modules), new /obj/item/gun/energy/xray/swarm(src))
 
 /obj/item/robot_module/drone/swarm/melee/create_equipment(mob/living/silicon/robot/robot)
 	..()
 
-	own_add(src, "modules", new /obj/item/melee/robotic/blade/ionic/lance(src))
+	own_add(src, nameof(modules), new /obj/item/melee/robotic/blade/ionic/lance(src))
 
 //Swarm Disabler Module
 /obj/item/gun/energy/taser/mounted/cyborg/swarm

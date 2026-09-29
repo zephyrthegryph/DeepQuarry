@@ -47,5 +47,5 @@
 	precedence=OOP_GROUP
 
 /datum/node/expression/op/unary/New(datum/node/expression/exp)
-	own_set(src, "exp", exp)
+	own_set(src, nameof(exp), exp)
 	return ..()

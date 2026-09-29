@@ -21,7 +21,9 @@
 		. += span_blue("[length(rockets)] / [max_rockets] rockets.")
 
 // Loaded rockets sit in the launcher's contents.
-OWN(/obj/item/gun/launcher/rocket, rockets, OWN_CONTAINED)
+/obj/item/gun/launcher/rocket/ownership()
+	. = ..()
+	. += owns(nameof(rockets), policy = OWN_CONTAINED)
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
 /obj/item/gun/launcher/rocket/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
@@ -39,7 +41,7 @@ OWN(/obj/item/gun/launcher/rocket, rockets, OWN_CONTAINED)
 	if(length(rockets))
 		var/obj/item/ammo_casing/rocket/I = LAZYACCESS(rockets, 1)
 		var/projectile_path = I.projectile_type
-		own_remove(src, "rockets", I) // the rocket is spent
+		own_remove(src, nameof(rockets), I) // the rocket is spent
 		return new projectile_path(src)
 	return null
 

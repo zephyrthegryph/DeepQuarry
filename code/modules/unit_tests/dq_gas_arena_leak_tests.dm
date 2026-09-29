@@ -56,9 +56,9 @@
 
 	// Two legacy networks merged, and one rebuilt from member mixtures.
 	var/datum/pipe_network/receiver = new
-	own_set(receiver, "air", new /datum/gas_mixture(70))
+	own_set(receiver, nameof(receiver.air), new /datum/gas_mixture(70))
 	var/datum/pipe_network/donor = new
-	own_set(donor, "air", new /datum/gas_mixture(70))
+	own_set(donor, nameof(donor.air), new /datum/gas_mixture(70))
 	receiver.merge(donor)
 	TEST_ASSERT(QDELETED(donor), "the merged donor network survived")
 

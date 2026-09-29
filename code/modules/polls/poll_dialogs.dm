@@ -26,7 +26,7 @@
 	var/answered = FALSE
 
 /datum/privacy_poll_dialog/New(mob/new_player/owner)
-	rel_set(src, "owner", owner)
+	rel_set(src, nameof(owner), owner)
 
 // The new player owns this dialog (privacy_poll_dialog); owner is a plain relation back.
 
@@ -105,7 +105,7 @@ UI_ACT_PROC(/datum/privacy_poll_dialog, ui_act_vote)
 	var/list/selected_detail
 
 /datum/poll_browser_dialog/New(mob/new_player/owner)
-	rel_set(src, "owner", owner)
+	rel_set(src, nameof(owner), owner)
 	poll_ids = list()
 	poll_meta = list()
 	refresh_poll_list()

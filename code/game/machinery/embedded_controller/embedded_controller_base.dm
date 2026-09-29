@@ -10,7 +10,7 @@
 
 /obj/machinery/embedded_controller/Initialize(mapload)
 	if(ispath(program))
-		own_set(src, "program", new program(src))
+		own_set(src, nameof(program), new program(src))
 	return ..()
 
 
@@ -120,7 +120,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio, TYPE_PROC_REF(
 /obj/machinery/embedded_controller/radio/proc/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, radio_filter))
+	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, radio_filter))
 
 /// radio connection (a relation view: it reads null once the target is deleted).
 /obj/machinery/embedded_controller/radio/proc/radio_connection() as /datum/radio_frequency

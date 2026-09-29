@@ -142,7 +142,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 			update_ref(selected_pocket)
 			return TRUE
 
-		rel_set(src, "current_pocket", selected_pocket)
+		rel_set(src, nameof(current_pocket), selected_pocket)
 		update_ref(null)
 		return TRUE
 
@@ -275,7 +275,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 		I.forceMove(selected_pocket)
 
 	to_chat(user, "You collect \the [I].")
-	rel_set(src, "current_pocket", selected_pocket)
+	rel_set(src, nameof(current_pocket), selected_pocket)
 	update_ref(I)
 	return TRUE
 
@@ -291,7 +291,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 		if(!grab_cell(A.cell, user))
 			return TRUE
 
-		own_take(A, "cell")
+		own_take(A, nameof(A.cell))
 		A.charging = FALSE
 		A.update_icon()
 
@@ -345,7 +345,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 	if(!P)
 		P = pick(pockets)
 
-	rel_set(src, "current_pocket", P)
+	rel_set(src, nameof(current_pocket), P)
 
 /// Clears the currently wrapped item and selects the pocket
 /obj/item/gripper/proc/clear_and_select_pocket()
@@ -483,6 +483,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gripper, TYPE_PROC_REF(/atom, appearance_overl
 	cell.update_icon()
 	cell.forceMove(P)
 
-	rel_set(src, "current_pocket", P)
+	rel_set(src, nameof(current_pocket), P)
 	update_ref(cell)
 	return TRUE

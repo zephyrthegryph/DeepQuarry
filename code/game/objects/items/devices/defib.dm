@@ -97,7 +97,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	bcell.update_icon()
 	bcell.forceMove(get_turf(loc))
 	user.put_in_any_hand_if_possible(bcell)
-	own_take(src, "bcell")
+	own_take(src, nameof(bcell))
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS

@@ -33,14 +33,14 @@
 /obj/machinery/power/tracker/proc/set_control(obj/machinery/power/solar_control/SC)
 	if(SC && (get_dist(src, SC) > SOLAR_MAX_DIST))
 		return 0
-	rel_set(src, "control", SC)
+	rel_set(src, nameof(control), SC)
 	return 1
 
 //set the control of the tracker to null and removes it from the previous control computer if needed
 /obj/machinery/power/tracker/proc/unset_control()
 	if(control())
-		rel_clear(control(), "connected_tracker")
-	rel_clear(src, "control")
+		rel_clear(control(), nameof(/obj/machinery/power/solar_control::connected_tracker))
+	rel_clear(src, nameof(control))
 
 //updates the tracker icon and the facing angle for the control computer
 /obj/machinery/power/tracker/proc/set_angle(angle)

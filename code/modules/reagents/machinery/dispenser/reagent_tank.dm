@@ -207,7 +207,7 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 		return
 	act_message(user, src, MSG_SELF(span_notice("You detach [rig] from %T%")), MSG_OTHERS(span_notice("%U% detaches [rig] from %T%.")))
 	rig.forceMove(get_turf(user))
-	own_take(src, "rig")
+	own_take(src, nameof(rig))
 	overlays = new/list()
 
 /// Old attackby.
@@ -568,4 +568,6 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers/cookingoil, DAMAGE_EXPLOSION, 
 
 DECLARE_REAGENTS(/obj/structure/reagent_dispensers/space_cleaner, null, list(REAGENT_ID_CLEANER = 1000))
 
-OWN(/obj/structure/reagent_dispensers/fueltank, rig, OWN_CONTAINED)
+/obj/structure/reagent_dispensers/fueltank/ownership()
+	. = ..()
+	. += owns(nameof(rig), policy = OWN_CONTAINED)

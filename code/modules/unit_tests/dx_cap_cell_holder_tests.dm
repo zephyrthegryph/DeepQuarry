@@ -4,8 +4,6 @@
 /obj/cap_fixture/cell_box
 	var/obj/item/cell/cell
 
-OWN(/obj/cap_fixture/cell_box, cell, OWN_CONTAINED)
-
 /obj/cap_fixture/cell_box/capabilities()
 	. = ..()
 	. += cap_cell_holder(nameof(cell), /obj/item/cell, behind = COVER)
@@ -13,8 +11,6 @@ OWN(/obj/cap_fixture/cell_box, cell, OWN_CONTAINED)
 /// A charger with its own cell slot.
 /obj/cap_fixture/cell_charger
 	var/obj/item/cell/charging
-
-OWN(/obj/cap_fixture/cell_charger, charging, OWN_CONTAINED)
 
 /obj/cap_fixture/cell_charger/capabilities()
 	. = ..()

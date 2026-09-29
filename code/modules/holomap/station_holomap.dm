@@ -133,7 +133,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_m
 			user.client.screen |= GLOB.global_hud.holomap // TODO - HACK! This should be there permenently really.
 			user.client.images |= holomap_datum.station_map
 
-			rel_set(src, "watching_mob", user)
+			rel_set(src, nameof(watching_mob), user)
 			dq_add_recursive_move(watching_mob())
 			om_hook(watching_mob(), /datum/om/event/movable_attempted_move, src, PROC_REF(checkPosition))
 			om_hook(watching_mob(), /datum/om/event/qdeleting, src, PROC_REF(on_watcher_deleted))
@@ -173,7 +173,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_m
 			else
 				om_after(watcher, 5, /proc/remove_client_image, watcher, holomap_datum.station_map) //we give it time to fade out
 		om_unhook(watcher, list(/datum/om/event/movable_attempted_move, /datum/om/event/qdeleting), src)
-	rel_clear(src, "watching_mob")
+	rel_clear(src, nameof(watching_mob))
 	set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/station_map/power_change()

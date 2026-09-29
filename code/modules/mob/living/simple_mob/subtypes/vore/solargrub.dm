@@ -76,7 +76,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	if(!self.ai_brain.primary_threat)
 			//first, check for potential cables nearby to powersink
 		var/turf/S = self.loc
-		rel_set(self, "attached", locate_on(S, /obj/structure/cable))
+		rel_set(self, nameof(self.attached), locate_on(S, /obj/structure/cable))
 		if(self.attached)
 			if(self.ai_brain) self.ai_busy_begin()
 			if(prob(2))
@@ -103,7 +103,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 			self.PN = 0
 			self.release_vore_contents()
 			if(self.prey_excludes)
-				rel_clear(self, "prey_excludes")
+				rel_clear(self, nameof(self.prey_excludes))
 			GLOB.moth_amount = GLOB.moth_amount + 1
 			self.death_star()
 

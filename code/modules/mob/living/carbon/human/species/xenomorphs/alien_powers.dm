@@ -152,7 +152,7 @@
 			return
 		act_message(src, A, MSG_SELF(span_alium("You spit [spit_name] at %T%.")), MSG_OTHERS(span_warning("%U% spits [spit_name] at %T%!")))
 		var/obj/item/projectile/P = new spit_projectile(get_turf(src))
-		rel_set(P, "firer", src)
+		rel_set(P, nameof(P.firer), src)
 		P.old_style_target(A)
 		P.fire()
 		play_sfx(src, SFX_WEAPONS_ALIEN_SPITACID)

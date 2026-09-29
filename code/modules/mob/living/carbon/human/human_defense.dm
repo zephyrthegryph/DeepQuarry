@@ -424,7 +424,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/carbon/human, PROC_REF(on_emag), null)
 					forceMove(T)
 					act_message(src, null, MSG_SELF(span_warning("You are pinned to the wall by [thrown_object]!")), 						MSG_OTHERS(span_warning("%U% is pinned to the wall by [thrown_object]!")))
 					set_anchored(TRUE)
-					rel_add(src, "pinned", thrown_object)
+					rel_add(src, nameof(pinned), thrown_object)
 
 // This does a prob check to catch the thing flying at you, with a minimum of 1%
 /mob/living/carbon/human/proc/can_catch(obj/item/O)

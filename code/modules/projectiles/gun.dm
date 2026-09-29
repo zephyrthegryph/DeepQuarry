@@ -136,13 +136,13 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_se
 /obj/item/gun/Initialize(mapload)
 	. = ..()
 	for(var/i in 1 to length(firemodes))
-		own_put(src, "firemodes", i, new /datum/firemode(src, LAZYACCESS(firemodes, i)))
+		own_put(src, nameof(firemodes), i, new /datum/firemode(src, LAZYACCESS(firemodes, i)))
 
 	if(isnull(scoped_accuracy))
 		scoped_accuracy = accuracy
 
 	if(dna_lock)
-		own_set(src, "attached_lock", new /obj/item/dnalockingchip(src))
+		own_set(src, nameof(attached_lock), new /obj/item/dnalockingchip(src))
 
 	if(sel_mode <= length(firemodes))
 		var/datum/firemode/new_mode = LAZYACCESS(firemodes, sel_mode)
@@ -243,7 +243,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_se
 	if(adjacent) return //A is adjacent, is the user, or is on the user's person
 
 	if(!user.aiming)
-		own_set(user, "aiming", new /obj/aiming_overlay(user))
+		own_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
 
 	if(user && user.client && user.aiming && user.aiming.active && user.aiming.aiming_at != A)
 		PreFire(A,user,params) //They're using the new gun system, locate what they're aiming at.
@@ -332,7 +332,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 	to_chat(user, span_notice("You remove \the [attached_lock] from \the [src]."))
 	user.put_in_hands(attached_lock)
 	dna_lock = FALSE
-	own_take(src, "attached_lock")
+	own_take(src, nameof(attached_lock))
 	return ITEM_INTERACT_SUCCESS
 
 DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
@@ -853,7 +853,9 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 
 	..()
 
-OWN(/obj/item/gun, attached_lock, OWN_CONTAINED)
+/obj/item/gun/ownership()
+	. = ..()
+	. += owns(nameof(attached_lock), policy = OWN_CONTAINED)
 
 /// the auto_target this refers to (a relation view: null once it is deleted).
 /obj/item/gun/proc/auto_target()

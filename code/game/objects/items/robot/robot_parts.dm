@@ -208,7 +208,7 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 				for(var/datum/language/L in O.identity().languages)
 					O.add_language(L.name)
 			O.job = JOB_CYBORG
-			var/obj/item/cell/chest_cell = own_take(chest, "cell") // detach from the chest first: set_cell() adopts it
+			var/obj/item/cell/chest_cell = own_take(chest, nameof(chest.cell)) // detach from the chest first: set_cell() adopts it
 			chest_cell?.forceMove(O) // the borg's cell is CONTAINED
 			O.set_cell(chest_cell)
 			W.forceMove(O)//Should fix cybros run time erroring when blown up. It got deleted before, along with the frame.
@@ -280,12 +280,18 @@ DECLARE_EMAG_REPEATABLE(/obj/item/robot_parts, PROC_REF(on_emag), null)
 		sabotaged = 1
 		return 1
 
-OWN(/obj/item/robot_parts/chest, cell, OWN_CONTAINED)
-OWN(/obj/item/robot_parts/head, flash1, OWN_CONTAINED)
-OWN(/obj/item/robot_parts/head, flash2, OWN_CONTAINED)
-OWN(/obj/item/robot_parts/robot_suit, l_arm, OWN_CONTAINED)
-OWN(/obj/item/robot_parts/robot_suit, r_arm, OWN_CONTAINED)
-OWN(/obj/item/robot_parts/robot_suit, l_leg, OWN_CONTAINED)
-OWN(/obj/item/robot_parts/robot_suit, r_leg, OWN_CONTAINED)
-OWN(/obj/item/robot_parts/robot_suit, chest, OWN_CONTAINED)
-OWN(/obj/item/robot_parts/robot_suit, head, OWN_CONTAINED)
+/obj/item/robot_parts/chest/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED)
+/obj/item/robot_parts/head/ownership()
+	. = ..()
+	. += owns(nameof(flash1), policy = OWN_CONTAINED)
+	. += owns(nameof(flash2), policy = OWN_CONTAINED)
+/obj/item/robot_parts/robot_suit/ownership()
+	. = ..()
+	. += owns(nameof(l_arm), policy = OWN_CONTAINED)
+	. += owns(nameof(r_arm), policy = OWN_CONTAINED)
+	. += owns(nameof(l_leg), policy = OWN_CONTAINED)
+	. += owns(nameof(r_leg), policy = OWN_CONTAINED)
+	. += owns(nameof(chest), policy = OWN_CONTAINED)
+	. += owns(nameof(head), policy = OWN_CONTAINED)

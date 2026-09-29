@@ -508,7 +508,7 @@
 	var/datum/dq_test_signal_counter/counter = new
 	om_hook(H, /datum/om/event/body_afflictions_changed, counter, TYPE_PROC_REF(/datum/dq_test_signal_counter, on_afflictions_changed))
 	var/datum/body/B = H.body
-	own_take(H, "body")
+	own_take(H, nameof(H.body))
 	qdel(B)
 	TEST_ASSERT_EQUAL(counter.removals, 1, "body.Destroy should remove the affliction through remove_affliction()")
 	TEST_ASSERT(QDELETED(A), "the removed affliction should be deleted")

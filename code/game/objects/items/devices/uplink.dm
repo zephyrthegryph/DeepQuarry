@@ -227,7 +227,7 @@ UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_view_exploits)
 
 /obj/item/radio/uplink/Initialize(mapload)
 	. = ..()
-	own_set(src, "hidden_uplink", new /obj/item/uplink/hidden(src))
+	own_set(src, nameof(hidden_uplink), new /obj/item/uplink/hidden(src))
 
 /obj/item/radio/uplink/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	. = ..()
@@ -241,7 +241,7 @@ UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_view_exploits)
 
 /obj/item/multitool/uplink/Initialize(mapload)
 	. = ..()
-	own_set(src, "hidden_uplink", new /obj/item/uplink/hidden(src))
+	own_set(src, nameof(hidden_uplink), new /obj/item/uplink/hidden(src))
 
 /obj/item/multitool/uplink/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	. = ..()
@@ -255,7 +255,7 @@ UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_view_exploits)
 
 /obj/item/radio/headset/uplink/Initialize(mapload)
 	. = ..()
-	own_set(src, "hidden_uplink", new /obj/item/uplink/hidden(src))
+	own_set(src, nameof(hidden_uplink), new /obj/item/uplink/hidden(src))
 
 /// A shared definition (registered: never owned or cleared).
 /obj/item/uplink/proc/discount_item() as /datum/uplink_item

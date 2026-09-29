@@ -113,7 +113,7 @@
 			power = 3
 
 	var/mob/living/carbon/human/H = A.host
-	rel_set(src, "ownermind", H.mind)
+	rel_set(src, nameof(ownermind), H.mind)
 
 /datum/viral_trait/growth/Activate(datum/affliction/contagion/engineered/A)
 	if(!..())
@@ -141,7 +141,7 @@
 									if(isliving(ownermind().current))
 										var/mob/living/owner = ownermind().current
 										if(owner.stat != DEAD)
-											rel_clear(src, "ownermind")
+											rel_clear(src, nameof(ownermind))
 											break
 									ownermind().transfer_to(H)
 									H.grab_ghost()

@@ -30,7 +30,7 @@
 
 /obj/structure/easel/proc/interaction_item(mob/user, obj/item/canvas/canvas, datum/interaction/interaction)
 	user.drop_from_inventory(canvas)
-	rel_set(src, "painting", canvas) // the canvas sits on our turf: a view, not owned
+	rel_set(src, nameof(painting), canvas) // the canvas sits on our turf: a view, not owned
 	canvas.forceMove(get_turf(src))
 	canvas.layer = layer+0.1
 	act_message(user, src, MSG_SELF(span_notice("You place %I% on %T%.")), MSG_OTHERS(span_notice("%U% puts %I% on %T%.")), item = canvas)
@@ -43,7 +43,7 @@
 	if(painting && painting.loc == T) //Only move if it's near us.
 		painting.forceMove(get_turf(src))
 	else
-		rel_clear(src, "painting")
+		rel_clear(src, nameof(painting))
 
 /obj/item/canvas
 	name = "canvas"
@@ -514,7 +514,7 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 		return
 	if(current_canvas)
 		current_canvas.forceMove(drop_location())
-		own_take(src, "current_canvas")
+		own_take(src, nameof(current_canvas))
 		loaded = FALSE
 		to_chat(user, span_notice("You remove the painting from the frame."))
 		update_appearance()
@@ -604,7 +604,7 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 	new_canvas.author_name = author_name
 	new_canvas.author_ckey = author_ckey
 	new_canvas.name = "painting - [title]"
-	own_set(src, "current_canvas", new_canvas)
+	own_set(src, nameof(current_canvas), new_canvas)
 	loaded = TRUE
 	update_appearance()
 
@@ -695,7 +695,7 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 	new_canvas.author_name = author_name
 	new_canvas.author_ckey = author_ckey
 	new_canvas.name = "painting - [title]"
-	own_set(src, "current_canvas", new_canvas)
+	own_set(src, nameof(current_canvas), new_canvas)
 	loaded = TRUE
 	update_appearance()
 	log_and_message_admins("spawned painting from [author_ckey] with title [title]", ask.answerer)
@@ -765,11 +765,13 @@ VV_TOPIC_ACTION(/obj/structure/sign/painting, "removepainting", PROC_REF(vv_topi
 			fdel(png)
 	for(var/obj/structure/sign/painting/P in SSpersistence.painting_frames)
 		if(P.current_canvas && md5(P.current_canvas.get_data_string()) == md5)
-			own_clear(P, "current_canvas", OWN_DELETE)
+			own_clear(P, nameof(P.current_canvas), OWN_DELETE)
 			P.update_appearance()
 	loaded = FALSE
 	log_and_message_admins(span_notice("[key_name_admin(user)] has deleted persistent painting made by [author]."))
 	return TRUE
 
 // The easel's painting sits on its turf (one-sided REL view).
-OWN(/obj/structure/sign/painting, current_canvas, OWN_CONTAINED)
+/obj/structure/sign/painting/ownership()
+	. = ..()
+	. += owns(nameof(current_canvas), policy = OWN_CONTAINED)

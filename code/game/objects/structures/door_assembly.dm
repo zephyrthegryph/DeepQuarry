@@ -324,7 +324,7 @@
 	to_chat(user, span_notice("You removed the airlock electronics!"))
 	src.state = 1
 	electronics.forceMove(src.loc)
-	own_take(src, "electronics")
+	own_take(src, nameof(electronics))
 
 /obj/structure/door_assembly/screwdriver_act(mob/user, obj/item/W)
 	if(state != 2)
@@ -367,4 +367,6 @@
 		return PROJECTILE_CONTINUE
 	return ..()
 
-OWN(/obj/structure/door_assembly, electronics, OWN_CONTAINED)
+/obj/structure/door_assembly/ownership()
+	. = ..()
+	. += owns(nameof(electronics), policy = OWN_CONTAINED)

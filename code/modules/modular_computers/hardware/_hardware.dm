@@ -80,7 +80,7 @@ DECLARE_INTERACTIONS(/obj/item/computer_hardware, INTERACT_ITEM(null, PROC_REF(i
 	. = ..()
 	w_class = hardware_size
 	if(istype(loc, /obj/item/modular_computer))
-		rel_set(src, "holder2", loc)
+		rel_set(src, nameof(/obj/item/computer_hardware/::holder2), loc)
 
 /// Handles damage checks
 /obj/item/computer_hardware/proc/check_functionality()

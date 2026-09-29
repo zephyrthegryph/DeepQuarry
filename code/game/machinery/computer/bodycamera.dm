@@ -32,7 +32,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/bodycamera, "b
 
 	add_overlay("glass")
 
-	rel_set(src, "bpinboard", add_vis_overlay(icon, "pinboard", layer = 0.1, alpha = 255, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
+	rel_set(src, nameof(bpinboard), add_vis_overlay(icon, "pinboard", layer = 0.1, alpha = 255, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
 	bpinboard.add_filter("screen cutter", 1, alpha_mask_filter(icon = mask))
 	vis_contents += bpinboard
 
@@ -89,7 +89,7 @@ APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/bodycamera)
 		return
 	if(!thing || !other_thing)
 		return
-	rel_set(src, "the_camera", other_thing)
+	rel_set(src, nameof(the_camera), other_thing)
 	var/tries = 10
 	var/atom/recursive_loc = thing
 	while(--tries)
@@ -97,7 +97,7 @@ APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/bodycamera)
 		if(!istype(recursive_loc, /atom/movable))
 			break
 	thing = recursive_loc // should get the topmost atom, which *should* be a mob, or a locker, or something that isnt just ~clothes~
-	rel_set(src, "showing", thing)
+	rel_set(src, nameof(showing), thing)
 	if(bpinboard)
 		bpinboard.vis_contents = list(thing)
 
@@ -105,8 +105,8 @@ APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/bodycamera)
 	// Reverse of the above
 	if(bpinboard)
 		bpinboard.vis_contents = null
-	rel_clear(src, "showing")
-	rel_clear(src, "the_camera")
+	rel_clear(src, nameof(showing))
+	rel_clear(src, nameof(the_camera))
 
 /obj/machinery/computer/security/telescreen/bodycamera/proc/maybe_stop_showing(atom/thing)
 	if(showing == thing)

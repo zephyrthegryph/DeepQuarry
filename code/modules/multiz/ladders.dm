@@ -26,14 +26,15 @@
 	if(allowed_directions & DOWN) //we only want to do the top one, as it will initialize the ones before it.
 		for(var/obj/structure/ladder/L in GetBelow(src))
 			if(L.allowed_directions & UP)
-				rel_set(src, "target_down", L)
-				rel_set(L, "target_up", src)
+				rel_set(src, nameof(target_down), L)
 				L.update_icon()
 				break
 	update_icon()
 
-REL_PAIR(/obj/structure/ladder, target_down, target_up)
-REL_PAIR(/obj/structure/ladder, target_up, target_down)
+/obj/structure/ladder/relations()
+	. = ..()
+	. += rel_one(nameof(target_down), back = nameof(/obj/structure/ladder::target_up))
+	. += rel_one(nameof(target_up), back = nameof(/obj/structure/ladder::target_down))
 
 /obj/structure/ladder/attack_generic(mob/user)
 	//Simple Animal

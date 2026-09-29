@@ -48,7 +48,7 @@
 
 /obj/item/rig_module/ai_container/proc/update_verb_holder()
 	if(!verb_holder)
-		own_set(src, "verb_holder", new /obj/item/ai_verbs(src))
+		own_set(src, nameof(verb_holder), new /obj/item/ai_verbs(src))
 	if(integrated_ai())
 		verb_holder.forceMove(integrated_ai())
 	else
@@ -81,8 +81,8 @@
 
 		// If the transfer failed we can delete the card.
 		if(locate_in_list(card, /mob/living/silicon/ai))
-			own_set(src, "ai_card", card)
-			rel_set(src, "integrated_ai", locate_in_list(card, /mob/living/silicon/ai))
+			own_set(src, nameof(ai_card), card)
+			rel_set(src, nameof(integrated_ai), locate_in_list(card, /mob/living/silicon/ai))
 		else
 			eject_ai()
 		update_verb_holder()
@@ -94,7 +94,7 @@
 			integrated_ai().attackby(input_device,user)
 			// If the transfer was successful, we can clear out our vars.
 			if(integrated_ai().loc != src)
-				rel_clear(src, "integrated_ai")
+				rel_clear(src, nameof(integrated_ai))
 				eject_ai()
 		else
 			// You're using an empty card on an empty suit, idiot.
@@ -109,7 +109,7 @@
 			integrated_ai().attackby(input_device,user)
 			// If the transfer was successful, we can clear out our vars.
 			if(integrated_ai().loc != src)
-				rel_clear(src, "integrated_ai")
+				rel_clear(src, nameof(integrated_ai))
 				eject_ai()
 		else
 			integrate_ai(input_device,user)
@@ -154,15 +154,15 @@
 			if(integrated_ai())
 				integrated_ai().ghostize()
 				qdel(integrated_ai())
-				rel_clear(src, "integrated_ai")
+				rel_clear(src, nameof(integrated_ai))
 			if(ai_card)
-				own_clear(src, "ai_card", OWN_DELETE)
+				own_clear(src, nameof(ai_card), OWN_DELETE)
 		else if(user)
 			user.put_in_hands(ai_card)
 		else
 			ai_card.forceMove(get_turf(src))
-	own_take(src, "ai_card")
-	rel_clear(src, "integrated_ai")
+	own_take(src, nameof(ai_card))
+	rel_clear(src, nameof(integrated_ai))
 	update_verb_holder()
 
 /obj/item/rig_module/ai_container/proc/integrate_ai(obj/item/ai,mob/user)
@@ -177,7 +177,7 @@
 			if(istype(ai, /obj/item/aicard))
 
 				if(!ai_card)
-					own_set(src, "ai_card", new /obj/item/aicard(src))
+					own_set(src, nameof(ai_card), new /obj/item/aicard(src))
 
 				var/obj/item/aicard/source_card = ai
 				var/obj/item/aicard/target_card = ai_card
@@ -194,10 +194,10 @@
 				to_chat(ai_mob, span_blue("You have been transferred to \the [holder]'s [src]."))
 				to_chat(user, span_blue("You load [ai_mob] into \the [holder]'s [src]."))
 
-			rel_set(src, "integrated_ai", ai_mob)
+			rel_set(src, nameof(integrated_ai), ai_mob)
 
 			if(!(locate(integrated_ai()) in ai_card))
-				rel_clear(src, "integrated_ai")
+				rel_clear(src, nameof(integrated_ai))
 				eject_ai()
 		else
 			to_chat(user, span_warning("There is no active AI within \the [ai]."))
@@ -207,7 +207,9 @@
 	return
 
 
-OWN(/obj/item/rig_module/ai_container, ai_card, OWN_CONTAINED)
+/obj/item/rig_module/ai_container/ownership()
+	. = ..()
+	. += owns(nameof(ai_card), policy = OWN_CONTAINED)
 
 /// Direct reference to the actual mob held in the suit. (a relation view: null once it is deleted).
 /obj/item/rig_module/ai_container/proc/integrated_ai() as /mob

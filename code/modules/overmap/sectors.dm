@@ -189,15 +189,15 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 /obj/effect/overmap/visitable/proc/add_landmark(obj/effect/shuttle_landmark/landmark, shuttle_name)
 	landmark.sector_set(src, shuttle_name)
 	if(shuttle_name)
-		rel_add(src, "restricted_waypoints", landmark)
+		rel_add(src, nameof(restricted_waypoints), landmark)
 	else
-		rel_add(src, "generic_waypoints", landmark)
+		rel_add(src, nameof(generic_waypoints), landmark)
 
 /obj/effect/overmap/visitable/proc/remove_landmark(obj/effect/shuttle_landmark/landmark, shuttle_name)
 	if(shuttle_name)
-		rel_remove(src, "restricted_waypoints", landmark)
+		rel_remove(src, nameof(restricted_waypoints), landmark)
 	else
-		rel_remove(src, "generic_waypoints", landmark)
+		rel_remove(src, nameof(generic_waypoints), landmark)
 
 /obj/effect/overmap/visitable/proc/get_waypoints(shuttle_name)
 	. = list()

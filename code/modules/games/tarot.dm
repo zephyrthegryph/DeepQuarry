@@ -15,26 +15,26 @@
 		P.name = "[name]"
 		P.card_icon = "tarot_major"
 		P.back_icon = "card_back_tarot"
-		own_add(src, "cards", P)
+		own_add(src, nameof(cards), P)
 	for(var/suit in list("wands","pentacles","cups","swords"))
 		for(var/number in list("ace","two","three","four","five","six","seven","eight","nine","ten","page","knight","queen","king"))
 			P = new()
 			P.name = "[number] of [suit]"
 			P.card_icon = "tarot_[suit]"
 			P.back_icon = "card_back_tarot"
-			own_add(src, "cards", P)
+			own_add(src, nameof(cards), P)
 
 /obj/item/deck/tarot/shuffle()
 	var/mob/living/user = usr
 	if (COOLDOWN_FINISHED(src, shuffle_cooldown))
-		var/list/unshuffled = own_take_all(src, "cards")
+		var/list/unshuffled = own_take_all(src, nameof(cards))
 		while(length(unshuffled))
 			var/datum/playingcard/P = pick(unshuffled)
 			unshuffled -= P
 			P.name = replacetext(P.name," reversed","")
 			if(prob(50))
 				P.name += " reversed"
-			own_add(src, "cards", P)
+			own_add(src, nameof(cards), P)
 		play_sfx(src, SFX_ITEMS_CARDSHUFFLE)
 		act_message(user, src, others = "%U% shuffles %T%.")
 		COOLDOWN_START(src, shuffle_cooldown, 1 SECOND)
@@ -70,25 +70,25 @@
 		else
 			P.card_icon = "dark_[name]"
 		P.back_icon = "dark_back_tarot"
-		own_add(src, "cards", P)
+		own_add(src, nameof(cards), P)
 	for(var/suit in list("wands","pentacles","cups","swords"))
 		for(var/number in list("ace","two","three","four","five","six","seven","eight","nine","ten","page","knight","queen","king"))
 			P = new()
 			P.name = "[number] of [suit]"
 			P.card_icon = "dark_[suit]"
 			P.back_icon = "dark_back_tarot"
-			own_add(src, "cards", P)
+			own_add(src, nameof(cards), P)
 
 /obj/item/deck/dark_tarot/shuffle(mob/user)
 	if (COOLDOWN_FINISHED(src, shuffle_cooldown))
-		var/list/unshuffled = own_take_all(src, "cards")
+		var/list/unshuffled = own_take_all(src, nameof(cards))
 		while(length(unshuffled))
 			var/datum/playingcard/P = pick(unshuffled)
 			unshuffled -= P
 			P.name = replacetext(P.name," reversed","")
 			if(prob(50))
 				P.name += " reversed"
-			own_add(src, "cards", P)
+			own_add(src, nameof(cards), P)
 		play_sfx(src, SFX_ITEMS_CARDSHUFFLE)
 		act_message(user, src, others = "%U% shuffles %T%.")
 		COOLDOWN_START(src, shuffle_cooldown, 1 SECOND)

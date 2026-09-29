@@ -19,7 +19,9 @@
 	var/list/prize_list //Generated during Initialize
 	var/dirty_items = FALSE // Used to refresh the static/redundant data in case the machine gets VV'd
 
-OWN(/obj/machinery/mineral/equipment_vendor, inserted_id, OWN_SPILL)
+/obj/machinery/mineral/equipment_vendor/ownership()
+	. = ..()
+	. += owns(nameof(inserted_id), policy = OWN_SPILL)
 
 // prize entries are nested per category.
 /obj/machinery/mineral/equipment_vendor/on_destroy(force)
@@ -166,7 +168,7 @@ OWN(/obj/machinery/mineral/equipment_vendor, inserted_id, OWN_SPILL)
 	if(inserted_id && !powered())
 		visible_message(span_notice("The ID slot indicator light flickers on \the [src] as it spits out a card before powering down."))
 		inserted_id.forceMove(get_turf(src))
-		own_take(src, "inserted_id")
+		own_take(src, nameof(inserted_id))
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/mineral/equipment_vendor, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/mineral/equipment_vendor/appearance_overlays()
@@ -252,7 +254,7 @@ UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_logoff)
 	if(!inserted_id)
 		return
 	ui.user.put_in_hands(inserted_id)
-	own_take(src, "inserted_id")
+	own_take(src, nameof(/obj/machinery/mineral/equipment_vendor::inserted_id))
 	add_fingerprint()
 
 UI_ACT(/obj/machinery/mineral/equipment_vendor, "purchase", ui_act_purchase, UI_ARG_TEXT("cat"), UI_ARG_TEXT("name"))
@@ -318,7 +320,7 @@ UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_purchase)
 /obj/machinery/mineral/equipment_vendor/dismantle()
 	if(inserted_id)
 		inserted_id.forceMove(loc) //Prevents deconstructing the ORM from deleting whatever ID was inside it.
-		own_take(src, "inserted_id")
+		own_take(src, nameof(inserted_id))
 	. = ..()
 
 /**

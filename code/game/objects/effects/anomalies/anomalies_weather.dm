@@ -20,7 +20,7 @@
 	LAZYADD(affected_areas, impact_area())
 
 	if(selected_weather)
-		own_set(src, "selected_weather", new selected_weather)
+		own_set(src, nameof(selected_weather), new selected_weather)
 	else
 		pick_weather()
 
@@ -39,8 +39,8 @@
 			to_chat(mob, span_notice(selected_weather.telegraph_message))
 		for(var/turf/turf in area)
 			if(isopenturf(turf))
-				rel_add(src, "affected_turfs", GetBelow(turf))
-			rel_add(src, "affected_turfs", turf)
+				rel_add(src, nameof(affected_turfs), GetBelow(turf))
+			rel_add(src, nameof(affected_turfs), turf)
 
 	apply_wibbly_filters(src)
 
@@ -50,7 +50,7 @@
 	for(var/turf/turf in to_add)
 		if(isspace(turf))
 			continue
-		rel_add(src, "affected_turfs", turf)
+		rel_add(src, nameof(affected_turfs), turf)
 
 /obj/effect/anomaly/weather/proc/find_adjacent_impacted_area(check_dir)
 	var/limit = 10
@@ -94,7 +94,7 @@
 	if(!new_weather_path)
 		new_weather_path = pick(subtypesof(/datum/anomalous_weather))
 
-	own_set(src, "selected_weather", new new_weather_path)
+	own_set(src, nameof(selected_weather), new new_weather_path)
 
 /obj/effect/anomaly/weather/proc/start_weather()
 	if(QDELETED(src))
@@ -137,28 +137,28 @@
 		if(0 to 15)
 			fx_sparks(src, 3)
 			LAZYCLEARLIST(affected_areas)
-			rel_clear(src, "affected_turfs")
+			rel_clear(src, nameof(affected_turfs))
 		if(16 to 33)
 			clear_weather()
-			rel_clear(src, "affected_turfs")
+			rel_clear(src, nameof(affected_turfs))
 			if(!istype(selected_weather, /datum/anomalous_weather/rain))
-				own_set(src, "selected_weather", new /datum/anomalous_weather/rain) // disposes of the old weather
+				own_set(src, nameof(selected_weather), new /datum/anomalous_weather/rain) // disposes of the old weather
 			update_reagent(REAGENT_ID_WATER)
 			add_turfs(circleviewturfs(src, 3))
 			start_weather()
 		if(34 to 65)
 			clear_weather()
-			rel_clear(src, "affected_turfs")
+			rel_clear(src, nameof(affected_turfs))
 			if(!istype(selected_weather, /datum/anomalous_weather/rain))
-				own_set(src, "selected_weather", new /datum/anomalous_weather/rain)
+				own_set(src, nameof(selected_weather), new /datum/anomalous_weather/rain)
 			update_reagent(pick(REAGENT_ID_WATER, REAGENT_ID_ICE, REAGENT_ID_ORANGEJUICE))
 			add_turfs(circlerangeturfs(src, 4))
 			start_weather()
 		else
 			clear_weather()
-			rel_clear(src, "affected_turfs")
+			rel_clear(src, nameof(affected_turfs))
 			if(!istype(selected_weather, /datum/anomalous_weather/rain/storm))
-				own_set(src, "selected_weather", new /datum/anomalous_weather/rain/storm)
+				own_set(src, nameof(selected_weather), new /datum/anomalous_weather/rain/storm)
 
 			var/reagent_id = pick(chemistry_service().chemical_reagents)
 			if(reagent_id in GLOB.obtainable_chemical_blacklist)

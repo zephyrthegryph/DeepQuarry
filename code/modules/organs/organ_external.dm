@@ -149,22 +149,22 @@
 /// organ removal left `imp_in` dangling.
 /datum/om/relation/slot/implant_site/on_link(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
 	if(istype(source) && istype(target))
-		rel_set(source, "part", target)
-		rel_add(target, "implants", source)
-		rel_set(source, "imp_in", target.owner)
+		rel_set(source, nameof(source.part), target)
+		rel_add(target, nameof(target.implants), source)
+		rel_set(source, nameof(source.imp_in), target.owner)
 
 /datum/om/relation/slot/implant_site/on_unlink(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
 	if(istype(source) && source.part == target)
-		rel_clear(source, "part")
+		rel_clear(source, nameof(source.part))
 	if(istype(target))
-		rel_remove(target, "implants", source)
+		rel_remove(target, nameof(target.implants), source)
 	// Unlike a bare relation, this slot's own drop_policy (DELETE) may
 	// already be what's destroying `source` (its organ is going and takes it
 	// with it) -- writing to a QDELETED datum's own vars is harmless, and
 	// leaving `imp_in` stale until then would fail a "no dangling refs" check
 	// that inspects it before GC.
 	if(istype(source))
-		rel_clear(source, "imp_in")
+		rel_clear(source, nameof(source.imp_in))
 
 /// A robotic limb is also scorched by a pulse.
 /obj/item/organ/external/organ_emp(datum/damage_packet/packet)
@@ -333,7 +333,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 	for(var/datum/affliction/tissue_necrosis/N in afflictions_here())
 		if(N.body)
 			N.body.remove_affliction(N)
-		own_take_member(src, "detached_afflictions", N)
+		own_take_member(src, nameof(detached_afflictions), N)
 		qdel(N)
 	integrity_dirty = TRUE
 
@@ -734,7 +734,7 @@ This function completely restores a damaged organ to perfect condition.
 		if(istype(implanted_object,/obj/item/implant) || istype(implanted_object,/obj/item/nif)) // We don't want to remove REAL implants. Just shrapnel etc. // NIFs pls
 			continue
 		implanted_object.forceMove(get_turf(src))
-		rel_remove(src, "implants", implanted_object)
+		rel_remove(src, nameof(implants), implanted_object)
 	if(owner && !owner.has_embedded_objects()) // rejuvenating a detached limb has no owner (D13)
 		owner.clear_alert("embeddedobject")
 
@@ -1358,9 +1358,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 /obj/item/organ/external/proc/apply_splint(atom/movable/splint)
 	if(!splinted)
-		rel_set(src, "splinted", splint)
+		rel_set(src, nameof(splinted), splint)
 		if(!applied_pressure)
-			rel_set(src, "applied_pressure", splint)
+			rel_set(src, nameof(applied_pressure), splint)
 		refresh_fracture_support()
 		return 1
 	return 0
@@ -1370,8 +1370,8 @@ Note that amputating the affected organ does in fact remove the infection from t
 		if(splinted.loc == src)
 			splinted.dropInto(owner? owner.loc : src.loc)
 		if(applied_pressure == splinted)
-			rel_clear(src, "applied_pressure")
-		rel_clear(src, "splinted")
+			rel_clear(src, nameof(applied_pressure))
+		rel_clear(src, nameof(splinted))
 		refresh_fracture_support()
 		return 1
 	return 0
@@ -1482,7 +1482,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		return 0
 	if(!silent)
 		owner.visible_message(span_danger("\The [W] sticks in the wound!"))
-	rel_add(src, "implants", W)
+	rel_add(src, nameof(implants), W)
 	owner.embedded_flag = 1
 	om_grant(owner, GRANT_VERB, /mob/proc/yank_out_object, owner)
 	owner.throw_alert("embeddedobject", /atom/movable/screen/alert/embeddedobject)
@@ -1548,7 +1548,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			implant.forceMove(get_turf(victim))
 		else
 			implant.forceMove(src)
-	rel_clear(src, "implants")
+	rel_clear(src, nameof(implants))
 
 /obj/item/organ/external/proc/disfigure(type = "brute")
 	if (disfigured)

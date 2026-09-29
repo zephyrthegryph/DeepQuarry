@@ -30,7 +30,7 @@ GLOBAL_DATUM_INIT(character_setup_service, /datum/world_service/character_setup,
 /datum/world_service/character_setup/service_step(resumed)
 	while(length(save_queue))
 		var/datum/preferences/prefs = save_queue[length(save_queue)]
-		rel_remove(src, "save_queue", prefs)
+		rel_remove(src, nameof(save_queue), prefs)
 
 		// Can't save prefs without client, because the sanitize functions will be
 		// unable to validate their whitelist status due to being unable to check
@@ -45,7 +45,7 @@ GLOBAL_DATUM_INIT(character_setup_service, /datum/world_service/character_setup,
 /datum/world_service/character_setup/proc/queue_preferences_save(datum/preferences/prefs)
 	if(!prefs)
 		return
-	rel_add(src, "save_queue", prefs)
+	rel_add(src, nameof(save_queue), prefs)
 	demand()
 
 /datum/world_service/character_setup/has_work()

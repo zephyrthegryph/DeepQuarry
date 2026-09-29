@@ -298,7 +298,7 @@ GLOBAL_LIST_EMPTY(ui_decls)
 		host.ui_opened(user, ui)
 	if(decl?.watch && !QDELETED(ui))
 		om_ui_bind(ui, host, decl.watch)
-		rel_set(ui, "om_bound", host)
+		rel_set(ui, nameof(ui.om_bound), host)
 	return ui
 
 /// A window's periodic refresh (autoupdate, forced): the host's ui_prepare() runs as it does on a

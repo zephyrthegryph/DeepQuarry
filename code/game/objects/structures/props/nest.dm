@@ -72,11 +72,11 @@ DECLARE_PERIODIC(/obj/structure/prop/nest, PERIODIC_SLOW)
 		if(den_faction)
 			L.faction = den_faction
 		visible_message(span_warning("\The [L] crawls out of \the [src]."))
-		rel_add(src, "den_mobs", L)
+		rel_add(src, nameof(den_mobs), L)
 		tally++
 
 /obj/structure/prop/nest/proc/remove_creature(mob/target)
-	rel_remove(src, "den_mobs", target)
+	rel_remove(src, nameof(den_mobs), target)
 
 /obj/structure/prop/nest/proc/update_creatures()
 	for(var/mob/living/L in den_mobs)

@@ -47,7 +47,7 @@
 	for(var/atom/movable/product as anything in instances)
 		if(product.loc == stored)
 			qdel(product)
-	rel_clear(src, "instances")
+	rel_clear(src, nameof(instances))
 	stored = null
 	..()
 
@@ -72,7 +72,7 @@
 	var/atom/movable/product
 	if(LAZYLEN(instances))
 		product = instances[instances.len]	// Remove the last added product
-		rel_remove(src, "instances", product)
+		rel_remove(src, nameof(instances), product)
 		product.forceMove(product_location)
 	else
 		amount--
@@ -118,7 +118,7 @@
 		return TRUE
 	if(!product.move_into(stored, CONTAINER_SLOT_STOCK))
 		product.forceMove(stored)
-	rel_add(src, "instances", product)
+	rel_add(src, nameof(instances), product)
 	return TRUE
 
 /// Restock: adds latent copies. Nothing is created.
@@ -140,7 +140,7 @@
 
 /// The holder calls this when a thing leaves its stock slot some other way.
 /datum/stored_item/proc/forget(atom/movable/thing)
-	rel_remove(src, "instances", thing)
+	rel_remove(src, nameof(instances), thing)
 
 // ---- Stacks: the latent count is in sheets ----
 
@@ -204,12 +204,12 @@
 	// Case 2: Amount at least one stack, or have to accumulate
 	else
 		count -= S.get_amount()
-		rel_remove(src, "instances", S)
+		rel_remove(src, nameof(instances), S)
 		for(var/obj/item/stack/T as anything in instances?.Copy())
 			if(count <= 0)
 				break
 			if(T.get_amount() <= count)
-				rel_remove(src, "instances", T)
+				rel_remove(src, nameof(instances), T)
 			count -= T.transfer_to(S, count)
 
 	S.forceMove(product_location)

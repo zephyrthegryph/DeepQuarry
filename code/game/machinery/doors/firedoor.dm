@@ -74,7 +74,9 @@
 			areas_added += A
 
 // A lift floor's firedoor: one-sided view (the floor lists it in its own doors REL_LIST).
-REL(/obj/machinery/door/firedoor, turbolift_floor)
+/obj/machinery/door/firedoor/relations()
+	. = ..()
+	. += rel_one(nameof(turbolift_floor))
 
 /// Phase 2: leaves the door lists of every area it guards.
 /obj/machinery/door/firedoor/lifecycle_dematerialize()

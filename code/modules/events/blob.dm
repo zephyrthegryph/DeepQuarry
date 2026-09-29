@@ -11,12 +11,12 @@
 		kill()
 		return
 
-	rel_set(src, "Blob", new /obj/structure/blob/core/random_medium(T))
+	rel_set(src, nameof(Blob), new /obj/structure/blob/core/random_medium(T))
 
 
 /datum/event/blob/tick()
 	if(!Blob() || !Blob().loc)
-		rel_clear(src, "Blob")
+		rel_clear(src, nameof(Blob))
 		kill()
 		return
 

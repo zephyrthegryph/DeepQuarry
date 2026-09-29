@@ -62,7 +62,7 @@
 		color = rgb(rand(30, 255),rand(30, 255),rand(30, 255))
 
 	if(start_paired)
-		rel_set(src, "mate", new /obj/item/telecube(src.loc))
+		rel_set(src, nameof(mate), new /obj/item/telecube(src.loc))
 		if(mirror_colors)
 			mate().glow_color = color
 			mate().color = glow_color
@@ -116,7 +116,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_over
 	if(mate())
 		return 0
 	else
-		rel_set(src, "mate", M)
+		rel_set(src, nameof(mate), M)
 		update_icon()
 		return 1
 

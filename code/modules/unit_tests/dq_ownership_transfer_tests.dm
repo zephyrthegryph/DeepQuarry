@@ -9,7 +9,9 @@
 	var/list/parts
 	var/obj/item/kept
 
-OWN(/obj/own_transfer_test_holder, kept, OWN_CONTAINED)
+/obj/own_transfer_test_holder/ownership()
+	. = ..()
+	. += owns(nameof(kept), policy = OWN_CONTAINED)
 
 /// Counts dropped() calls.
 /obj/item/own_transfer_test_widget

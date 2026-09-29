@@ -34,14 +34,14 @@
 	var/obj/item/wrapped = null
 
 /datum/robot_component/New(mob/living/silicon/robot/R, new_slot)
-	rel_set(src, "owner", R)
+	rel_set(src, nameof(owner), R)
 	slot = new_slot
 
 
 /// Put `part` into this slot. Afflictions the part carried rejoin the body here.
 /datum/robot_component/proc/install(obj/item/part)
 	if(part)
-		own_move(part, src, "wrapped")
+		own_move(part, src, nameof(wrapped))
 	installed = ROBOT_PART_INSTALLED
 	if(istype(wrapped, /obj/item/robot_parts/robot_component))
 		var/obj/item/robot_parts/robot_component/comp = wrapped
@@ -64,7 +64,7 @@
 	idle_usage = initial(idle_usage)
 	active_usage = initial(active_usage)
 	installed = ROBOT_PART_MISSING
-	own_take(src, "wrapped")
+	own_take(src, nameof(wrapped))
 	owner?.on_part_changed(src)
 
 /// Threshold event: the part is fried. The remains stay installed (and keep
@@ -77,9 +77,9 @@
 		brokenstate = comp.icon_state_broken
 	// Clear the slot before deleting the part so deletion handlers (the
 	// robot's cell watcher) see an empty slot rather than a removal.
-	own_clear(src, "wrapped", OWN_DELETE)
+	own_clear(src, nameof(wrapped), OWN_DELETE)
 	if(!internal)
-		own_set(src, "wrapped", new /obj/item/broken_device)
+		own_set(src, nameof(wrapped), new /obj/item/broken_device)
 		wrapped.icon_state = brokenstate
 	installed = ROBOT_PART_DESTROYED
 	max_damage = initial(max_damage)
@@ -161,10 +161,10 @@
 		return
 	for(var/datum/affliction/A as anything in leaving)
 		B.remove_affliction(A)
-		rel_clear(A, "location")
+		rel_clear(A, nameof(A.location))
 	if(wrapped && !QDELETED(wrapped))
 		if(!wrapped.carried_afflictions)
-			own_set(wrapped, "carried_afflictions", new /datum/carried_afflictions(wrapped))
+			own_set(wrapped, nameof(wrapped.carried_afflictions), new /datum/carried_afflictions(wrapped))
 		wrapped.carried_afflictions.take(leaving)
 	else
 		QDEL_LIST(leaving)
@@ -180,7 +180,7 @@
 		return
 	for(var/datum/affliction/A as anything in carried.release())
 		B.add_affliction(A, src)
-	own_clear(wrapped, "carried_afflictions", OWN_DELETE)
+	own_clear(wrapped, nameof(wrapped.carried_afflictions), OWN_DELETE)
 	B.on_status_changed()
 
 // --- Function -------------------------------------------------------------------
@@ -322,7 +322,7 @@ TYPE_TABLE_DECLARE(/mob/living/silicon/robot, robot_component_types, list( \
 	for(var/slot in 1 to ROBOT_SLOT_COUNT)
 		var/component_type = types[slot]
 		var/datum/robot_component/C = new component_type(src, slot)
-		own_put(src, "components", slot, C)
+		own_put(src, nameof(components), slot, C)
 		if(slot == ROBOT_SLOT_POWER)
 			continue
 		if(C.internal)
@@ -362,19 +362,19 @@ TYPE_TABLE_DECLARE(/mob/living/silicon/robot, robot_component_types, list( \
 
 /datum/carried_afflictions/New(obj/item/part)
 	..()
-	rel_set(src, "holder", part)
+	rel_set(src, nameof(holder), part)
 
 /obj/item/var/datum/carried_afflictions/carried_afflictions
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 
 /datum/carried_afflictions/proc/take(list/incoming)
 	for(var/datum/affliction/A as anything in incoming)
-		own_add(src, "afflictions", A)
+		own_add(src, nameof(afflictions), A)
 
 /// Hand the afflictions back and forget them.
 /datum/carried_afflictions/proc/release()
 	// own_take_all() empties `afflictions` in place: hand back the detached members it returns.
-	return own_take_all(src, "afflictions") || list()
+	return own_take_all(src, nameof(afflictions)) || list()
 
 /// Structural load the part carries (examine, installing checks).
 /datum/carried_afflictions/proc/carried_load()

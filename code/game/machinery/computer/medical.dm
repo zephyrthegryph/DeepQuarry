@@ -71,7 +71,7 @@
 		scan.forceMove(get_turf(src))
 		if(!user.get_active_hand() && ishuman(user))
 			user.put_in_hands(scan)
-		own_take(src, "scan")
+		own_take(src, nameof(scan))
 	else
 		to_chat(user, "There is nothing to remove from the console.")
 	return
@@ -181,9 +181,9 @@ UI_DATA_REPLACE(/obj/machinery/computer/med_data, "temp:text", "authenticated", 
 	if(!..())
 		return FALSE
 	if(!(active1() in GLOB.data_core.general))
-		rel_clear(src, "active1")
+		rel_clear(src, nameof(active1))
 	if(!(active2() in GLOB.data_core.medical))
-		rel_clear(src, "active2")
+		rel_clear(src, nameof(active2))
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/med_data, "cleartemp", ui_act_cleartemp)
@@ -198,7 +198,7 @@ UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_scan)
 		scan.forceMove(loc)
 		if(ishuman(ui.user) && !ui.user.get_active_hand())
 			ui.user.put_in_hands(scan)
-		own_take(src, "scan")
+		own_take(src, nameof(/obj/item/extrapolator::scan))
 	else
 		var/obj/item/I = ui.user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
@@ -220,8 +220,8 @@ UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_login)
 		var/mob/living/silicon/robot/R = ui.user
 		rank = "[R.modtype] [R.braintype]"
 	if(authenticated)
-		rel_clear(src, "active1")
-		rel_clear(src, "active2")
+		rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
+		rel_clear(src, nameof(/obj/machinery/computer/med_data::active2))
 		screen = MED_DATA_R_LIST
 
 UI_ACT(/obj/machinery/computer/med_data, "logout", ui_act_logout)
@@ -234,11 +234,11 @@ UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_logout)
 		scan.forceMove(loc)
 		if(ishuman(ui.user) && !ui.user.get_active_hand())
 			ui.user.put_in_hands(scan)
-		own_take(src, "scan")
+		own_take(src, nameof(/obj/item/extrapolator::scan))
 	authenticated = null
 	screen = null
-	rel_clear(src, "active1")
-	rel_clear(src, "active2")
+	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
+	rel_clear(src, nameof(/obj/machinery/computer/med_data::active2))
 
 UI_ACT(/obj/machinery/computer/med_data, "screen", ui_act_screen, UI_ARG_NUM("screen"))
 UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_screen)
@@ -247,8 +247,8 @@ UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_screen)
 		return FALSE
 	. = TRUE
 	screen = clamp(params["screen"] || 0, MED_DATA_R_LIST, MED_DATA_MEDBOT)
-	rel_clear(src, "active1")
-	rel_clear(src, "active2")
+	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
+	rel_clear(src, nameof(/obj/machinery/computer/med_data::active2))
 
 UI_ACT(/obj/machinery/computer/med_data, "vir", ui_act_vir, UI_ARG_REF("vir", null, /datum/data/record))
 UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_vir)
@@ -298,8 +298,8 @@ UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_d_rec)
 			medical_record = M
 			break
 
-	rel_set(src, "active1", general_record)
-	rel_set(src, "active2", medical_record)
+	rel_set(src, nameof(/obj/machinery/computer/med_data::active1), general_record)
+	rel_set(src, nameof(/obj/machinery/computer/med_data::active2), medical_record)
 	screen = MED_DATA_RECORD
 
 UI_ACT(/obj/machinery/computer/med_data, "sync_r", ui_act_sync_r)
@@ -343,8 +343,8 @@ UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_new)
 		R.fields["cdi"] = "None"
 		R.fields["cdi_d"] = "No diseases have been diagnosed at the moment."
 		R.fields["notes"] = "No notes."
-		own_add(GLOB.data_core, "medical", R)
-		rel_set(src, "active2", R)
+		own_add(GLOB.data_core, nameof(/datum/datacore::medical), R)
+		rel_set(src, nameof(/obj/machinery/computer/med_data::active2), R)
 		screen = MED_DATA_RECORD
 		set_temp("Medical record created.", "success")
 
@@ -369,22 +369,22 @@ UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_search)
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	rel_clear(src, "active1")
-	rel_clear(src, "active2")
+	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
+	rel_clear(src, nameof(/obj/machinery/computer/med_data::active2))
 	var/t1 = lowertext(params["t1"] || "")
 	if(!length(t1))
 		return
 
 	for(var/datum/data/record/R in GLOB.data_core.medical)
 		if(t1 == lowertext(R.fields["name"]) || t1 == lowertext(R.fields["id"]) || t1 == lowertext(R.fields["b_dna"]))
-			rel_set(src, "active2", R)
+			rel_set(src, nameof(/obj/machinery/computer/med_data::active2), R)
 			break
 	if(!active2())
 		set_temp("Medical record not found. You must enter the person's exact name, ID or DNA.", "danger")
 		return
 	for(var/datum/data/record/E in GLOB.data_core.general)
 		if(E.fields["name"] == active2().fields["name"] && E.fields["id"] == active2().fields["id"])
-			rel_set(src, "active1", E)
+			rel_set(src, nameof(/obj/machinery/computer/med_data::active1), E)
 			break
 	screen = MED_DATA_RECORD
 
@@ -580,7 +580,9 @@ DAMAGE_REACTION(/obj/machinery/computer/med_data, DAMAGE_EMP, PROC_REF(med_data_
 #undef FIELD
 #undef MED_FIELD
 
-OWN(/obj/machinery/computer/med_data, scan, OWN_CONTAINED)
+/obj/machinery/computer/med_data/ownership()
+	. = ..()
+	. += owns(nameof(scan), policy = OWN_CONTAINED)
 
 /// The selected record (a relation view).
 /obj/machinery/computer/med_data/proc/active1() as /datum/data/record

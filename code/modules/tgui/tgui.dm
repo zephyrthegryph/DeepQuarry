@@ -71,21 +71,21 @@
  * return datum/tgui The requested UI.
  */
 /datum/tgui/New(mob/user, datum/src_object, interface, title, datum/tgui/parent_ui, ui_x, ui_y, datum/tgui_window/window)
-	rel_set(src, "user", user)
-	rel_set(src, "src_object", src_object)
+	rel_set(src, nameof(user), user)
+	rel_set(src, nameof(src_object), src_object)
 	src.interface = interface
 	if(title)
 		src.title = title
 	src.state_static = src_object.tgui_state()
-	rel_set(src, "parent_ui", parent_ui)
+	rel_set(src, nameof(parent_ui), parent_ui)
 	if(parent_ui)
-		rel_add(parent_ui, "children", src)
+		rel_add(parent_ui, nameof(parent_ui.children), src)
 	// Deprecated
 	if(ui_x && ui_y)
 		src.window_size = list(ui_x, ui_y)
 
 	if(window)
-		rel_set(src, "window", window)
+		rel_set(src, nameof(window), window)
 		src.window_key = window.id
 	else
 		src.window_key = "[REF(src_object)]-main"
@@ -119,7 +119,7 @@
 	if(status < STATUS_UPDATE)
 		return FALSE
 	if(!window())
-		rel_set(src, "window", SStgui.request_pooled_window(user))
+		rel_set(src, nameof(window), SStgui.request_pooled_window(user))
 	#ifdef TGUI_DEV_DIAGNOSTICS
 	startup_profile["pool_acquired_ms"] = rustg_time_milliseconds(startup_timer)
 	#endif
@@ -253,10 +253,10 @@
 	var/datum/bound = om_bound
 	if(bound)
 		om_ui_unbind(src, bound)
-	rel_clear(src, "om_bound")
+	rel_clear(src, nameof(om_bound))
 	if(parent_ui())
 		parent_ui().children -= src
-	rel_clear(src, "parent_ui")
+	rel_clear(src, nameof(parent_ui))
 	qdel(src)
 
 /**
@@ -555,5 +555,9 @@
 /datum/tgui/proc/parent_ui() as /datum/tgui
 	return parent_ui
 
-REL_PAIR(/datum/tgui, user, tgui_open_uis)
-REL_PAIR_LIST(/mob, tgui_open_uis, user)
+/datum/tgui/relations()
+	. = ..()
+	. += rel_one(nameof(user), back = nameof(/mob::tgui_open_uis))
+/mob/relations()
+	. = ..()
+	. += rel_many(nameof(tgui_open_uis), back = nameof(/datum/tgui::user))

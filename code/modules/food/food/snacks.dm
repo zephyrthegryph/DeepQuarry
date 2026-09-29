@@ -91,7 +91,7 @@
 
 			if(do_nom)
 				eater.vore_selected.nom_atom(micro)
-				own_take_member(src, "food_inserted_micros", micro)
+				own_take_member(src, nameof(food_inserted_micros), micro)
 
 	if(!reagents.total_volume)
 		eater.balloon_alert_visible("eats \the [src].","finishes eating \the [src].")
@@ -105,7 +105,7 @@
 			NR.stored_nutrition = 1
 			for(var/mob/living/voice/V in possessed_voice)
 				NR.inhabit_item(V, null, V.tf_mob_holder, TRUE)
-				own_take_member(src, "possessed_voice", V)
+				own_take_member(src, nameof(possessed_voice), V)
 				qdel(V)
 			if(!NR.move_into(eater.vore_selected, BELLY_SLOT_INTERIOR, eater))
 				NR.forceMove(get_turf(eater))
@@ -116,12 +116,12 @@
 			if(possessed_voice && possessed_voice.len)
 				for(var/mob/living/voice/V in possessed_voice)
 					TrashItem.inhabit_item(V, null, V.tf_mob_holder, TRUE)
-					own_take_member(src, "possessed_voice", V)
+					own_take_member(src, nameof(possessed_voice), V)
 					qdel(V)
 		// Clean up any remaining item TF mobs
 		if(possessed_voice && possessed_voice.len)
 			for(var/mob/living/voice/V in possessed_voice)
-				own_take_member(src, "possessed_voice", V)
+				own_take_member(src, nameof(possessed_voice), V)
 				qdel(V)
 		qdel(src)
 
@@ -392,7 +392,7 @@
 		var/mob/living/living_mob = holder.held_mob
 
 		own_add(src, nameof(src.food_inserted_micros), living_mob, user = user, into = TRUE) // out of the holder
-		rel_clear(holder, "held_mob")
+		rel_clear(holder, nameof(holder.held_mob))
 		consume(holder, user)
 
 		to_chat(user, "Stuffed [living_mob] into \the [src].")
@@ -446,7 +446,7 @@
 					var/obj/item/reagent_containers/food/snacks/S = slice
 					for(var/mob/living/F in food_inserted_micros)
 						F.forceMove(S)
-						own_transfer(src, "food_inserted_micros", S, "food_inserted_micros", F)
+						own_transfer(src, nameof(food_inserted_micros), S, nameof(S.food_inserted_micros), F)
 			on_slice_extra()
 
 			consume(src, user)
@@ -477,7 +477,9 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks, \
 	return (slices_num && slice_path && slices_num > 0)
 
 // things stuffed inside drop out.
-OWN(/obj/item/reagent_containers/food/snacks, contents, OWN_SPILL)
+/obj/item/reagent_containers/food/snacks/ownership()
+	. = ..()
+	. += owns(nameof(contents), policy = OWN_SPILL)
 
 /obj/item/reagent_containers/food/snacks/proc/unpackage(mob/user)
 	package = FALSE
@@ -3962,7 +3964,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 		user.put_in_hands( pizza )
 
 		to_chat(user, span_warning("You take \the [src.pizza] out of \the [src]."))
-		own_take(src, "pizza")
+		own_take(src, nameof(pizza))
 		update_icon()
 		return TRUE
 
@@ -4062,32 +4064,32 @@ DECLARE_INTERACTIONS(/obj/item/pizzabox, \
 	return FALSE
 
 /obj/item/pizzabox/margherita/Initialize(mapload)
-	own_set(src, "pizza", new /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita(src))
+	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita(src))
 	boxtag = "Margherita Deluxe"
 	. = ..()
 
 /obj/item/pizzabox/vegetable/Initialize(mapload)
-	own_set(src, "pizza", new /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza(src))
+	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza(src))
 	boxtag = "Gourmet Vegatable"
 	. = ..()
 
 /obj/item/pizzabox/mushroom/Initialize(mapload)
-	own_set(src, "pizza", new /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza(src))
+	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza(src))
 	boxtag = "Mushroom Special"
 	. = ..()
 
 /obj/item/pizzabox/meat/Initialize(mapload)
-	own_set(src, "pizza", new /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza(src))
+	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza(src))
 	boxtag = "Meatlover's Supreme"
 	. = ..()
 
 /obj/item/pizzabox/pineapple/Initialize(mapload)
-	own_set(src, "pizza", new /obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple(src))
+	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple(src))
 	boxtag = "Hawaiian Sunrise"
 	. = ..()
 
 /obj/item/pizzabox/old/Initialize(mapload)
-	own_set(src, "pizza", new /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza(src))
+	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza(src))
 	boxtag = "Deluxe Gourmet"
 	. = ..()
 
@@ -4787,7 +4789,7 @@ MAP_RESOLVER(/obj/item/reagent_containers/food/snacks/bageltwo, GLOBAL_PROC_REF(
 	if (!C)
 		return
 
-	rel_set(src, "coating", C)
+	rel_set(src, nameof(coating), C)
 	//Now we have to do the witchcraft with masking images
 	//var/icon/I = new /icon(icon, icon_state)
 
@@ -4934,7 +4936,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch
 
 /obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch/Initialize(mapload)
 	. = ..()
-	rel_set(src, "coating", reagents.get_reagent(REAGENT_ID_BATTER))
+	rel_set(src, nameof(coating), reagents.get_reagent(REAGENT_ID_BATTER))
 	reagents.add_reagent(REAGENT_ID_OIL, 4)
 
 /obj/item/reagent_containers/food/snacks/funnelcake
@@ -8493,7 +8495,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/acorn, null, list(REAG
 		user.automatic_custom_emote(VISIBLE_MESSAGE,"[pick("burps", "cries for more", "burps twice", "looks at the area where the food was")]", check_stat = TRUE)
 
 
-OWN(/obj/item/pizzabox, pizza, OWN_CONTAINED)
+/obj/item/pizzabox/ownership()
+	. = ..()
+	. += owns(nameof(pizza), policy = OWN_CONTAINED)
 
 /// the coating this refers to (a relation view: null once it is deleted).
 /obj/item/reagent_containers/food/snacks/proc/coating() as /datum/reagent/nutriment/coating

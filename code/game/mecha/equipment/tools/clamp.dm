@@ -10,7 +10,7 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/attach(obj/mecha/M as obj)
 	..()
-	rel_set(src, "cargo_holder", M)
+	rel_set(src, nameof(cargo_holder), M)
 
 	return
 

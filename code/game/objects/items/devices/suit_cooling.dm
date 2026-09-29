@@ -133,7 +133,7 @@ DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \
 		cell.update_icon()
 
 		to_chat(user, "You remove \the [src.cell].")
-		own_take(src, "cell")
+		own_take(src, nameof(cell))
 		update_icon()
 		return
 

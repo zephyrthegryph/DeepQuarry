@@ -38,7 +38,7 @@
 			var/mob/living/simple_mob/vore/aggressive/mimic/new_mimic = new(loc, src)
 			visible_message(span_bolddanger("[new_mimic] suddenly growls as it turns out to be a mimic!"))
 			forceMove(new_mimic)
-			rel_set(new_mimic, "real_crate", src)
+			rel_set(new_mimic, nameof(new_mimic.real_crate), src)
 			new_mimic.name = name
 			new_mimic.desc = desc
 			new_mimic.icon_state = "open"
@@ -150,7 +150,7 @@ DAMAGE_REACTION(/obj/structure/closet/crate/mimic, DAMAGE_EXPLOSION, PROC_REF(bl
 		real_crate.forceMove(loc)
 	else
 		new/obj/structure/closet/crate(loc)
-	rel_clear(src, "real_crate")
+	rel_clear(src, nameof(real_crate))
 
 /obj/structure/closet/crate/mimic/airlock
 	name = "Dusty Airlock"
@@ -174,7 +174,7 @@ DAMAGE_REACTION(/obj/structure/closet/crate/mimic, DAMAGE_EXPLOSION, PROC_REF(bl
 			var/mob/living/simple_mob/vore/aggressive/mimic/airlock/new_mimic = new(loc, src)
 			visible_message(span_bolddanger("The [new_mimic] suddenly growls as it turns out to be a mimic!")) //Controls the vars of the mimic that spawns
 			forceMove(new_mimic)
-			rel_set(new_mimic, "real_crate", src)
+			rel_set(new_mimic, nameof(new_mimic.real_crate), src)
 			new_mimic.name = name
 			new_mimic.desc = desc
 			new_mimic.icon_state = "amimicopen"
@@ -228,7 +228,7 @@ DAMAGE_REACTION(/obj/structure/closet/crate/mimic, DAMAGE_EXPLOSION, PROC_REF(bl
 /// Vanishes instead of dying.
 /mob/living/simple_mob/vore/aggressive/mimic/airlock/replace_death(gibbed)
 	new/obj/machinery/door/airlock/maintenance/common (src.loc)
-	rel_clear(src, "real_crate")
+	rel_clear(src, nameof(real_crate))
 	qdel(src)
 	return TRUE
 
@@ -264,7 +264,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/crate/mimic/closet, TYPE_PROC_REF(
 			var/mob/living/simple_mob/vore/aggressive/mimic/closet/new_mimic = new(loc, src)
 			visible_message(span_bolddanger("The [new_mimic] suddenly growls as it turns out to be a mimic!")) //Controls the mimic that spawns
 			forceMove(new_mimic)
-			rel_set(new_mimic, "real_crate", src)
+			rel_set(new_mimic, nameof(new_mimic.real_crate), src)
 			new_mimic.name = name
 			new_mimic.desc = desc
 			new_mimic.icon_state = "cmimicopen"
@@ -320,7 +320,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/crate/mimic/closet, TYPE_PROC_REF(
 	..()
 	if(real_crate)
 		real_crate.forceMove(loc)
-	rel_clear(src, "real_crate")
+	rel_clear(src, nameof(real_crate))
 
 //Floor Mimics... Because mimics you have to interact with to activate was not enough...
 

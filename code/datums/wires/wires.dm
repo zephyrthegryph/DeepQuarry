@@ -35,7 +35,7 @@
 	if(_holder && !istype(_holder, holder_type))
 		CRASH("Our holder is null/the wrong type!")
 
-	rel_set(src, "holder", _holder)
+	rel_set(src, nameof(holder), _holder)
 
 	// Add in the appropriate amount of dud wires.
 	var/wire_len = length(wires)
@@ -494,8 +494,8 @@ UI_ACT_PROC(/datum/wires, ui_act_attach)
 /datum/wires/proc/attach_assembly(color, obj/item/assembly/signaler/S)
 	if(S && istype(S) && !is_attached(color))
 		S.forceMove(holder)
-		own_put(src, "assemblies", color, S) // we hold it (dropped by detach_assembly()); S.connected is the back view
-		rel_set(S, "connected", src)
+		own_put(src, nameof(assemblies), color, S) // we hold it (dropped by detach_assembly()); S.connected is the back view
+		rel_set(S, nameof(S.connected), src)
 		return S
 
 /**
@@ -509,8 +509,8 @@ UI_ACT_PROC(/datum/wires, ui_act_attach)
 /datum/wires/proc/detach_assembly(color)
 	var/obj/item/assembly/signaler/S = get_attached(color)
 	if(S && istype(S))
-		own_take_member(src, "assemblies", color)
-		rel_clear(S, "connected")
+		own_take_member(src, nameof(assemblies), color)
+		rel_clear(S, nameof(S.connected))
 		S.forceMove(holder.drop_location())
 		return S
 

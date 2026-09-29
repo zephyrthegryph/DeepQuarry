@@ -33,7 +33,7 @@
 
 /datum/ai_brain/proc/clear_path()
 	planned_path = null
-	rel_clear(src, "path_goal")
+	rel_clear(src, nameof(path_goal))
 	failed_steps = 0
 
 /proc/dq_pathfind(mob/living/actor, turf/goal, min_dist = 1, max_path = 128)
@@ -74,7 +74,7 @@
 			&& path_navigation_revision == GLOB.ai_navigation_revision)
 			return FALSE
 		planned_path = dq_pathfind(holder, target_turf, get_to)
-		rel_set(src, "path_goal", target_turf)
+		rel_set(src, nameof(path_goal), target_turf)
 		path_navigation_revision = GLOB.ai_navigation_revision
 		failed_steps = 0
 		if(!length(planned_path))

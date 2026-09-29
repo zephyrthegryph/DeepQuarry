@@ -626,7 +626,7 @@
 			suit_supply = Void.tank
 
 		if ((!suit_supply && !contents.Find(internal)) || !((get_equipped_item(SLOT_ID_MASK) && (get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT)) || (get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).item_flags & AIRTIGHT))))
-			rel_clear(src, "internal")
+			rel_clear(src, nameof(internal))
 
 		if(internal)
 			return internal.remove_air_volume(volume_needed)

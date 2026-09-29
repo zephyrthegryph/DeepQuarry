@@ -27,7 +27,7 @@
 		if(!own_set(E, nameof(E.part), SK, user = user)) // out of the hand, into the chair
 			qdel(E)
 			return TRUE
-		rel_set(SK, "master", E)
+		rel_set(SK, nameof(SK.master), E)
 		replace_with(src, E)
 	return TRUE
 

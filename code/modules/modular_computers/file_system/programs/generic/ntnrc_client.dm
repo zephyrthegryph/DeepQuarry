@@ -74,7 +74,7 @@ UI_ACT_PROC(/datum/computer_file/program/chatclient, ui_act_prg_newchannel)
 		return
 	var/datum/ntnet_conversation/C = new /datum/ntnet_conversation()
 	C.add_client(src)
-	rel_set(C, "operator", src)
+	rel_set(C, nameof(/datum/ntnet_conversation/::operator), src)
 	C.title = channel_title
 	active_channel = C.id
 	return TRUE

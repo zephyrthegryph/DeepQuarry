@@ -16,12 +16,12 @@
 	if(vr_holder)
 		exit_vr()
 		// Delete the link, because this mob won't be around much longer
-		rel_clear(vr_holder, "vr_link")
+		rel_clear(vr_holder, nameof(vr_holder.vr_link))
 
 	if(vr_link)
 		vr_link.exit_vr()
-		rel_clear(vr_link, "vr_holder")
-		rel_clear(src, "vr_link")
+		rel_clear(vr_link, nameof(vr_link.vr_holder))
+		rel_clear(src, nameof(vr_link))
 
 	for(var/obj/item/organ/I in internal_organ_list()) // a fresh list: removed() empties the slot
 		I.removed()
@@ -134,7 +134,7 @@
 	if(vr_holder)
 		src.died_in_vr = TRUE //so avatar.dm can delete bodies
 		src.exit_vr()
-		rel_clear(src.vr_holder, "vr_link")
+		rel_clear(src.vr_holder, nameof(/mob/living/carbon/human::vr_link))
 		for(var/obj/item/W in contents_of(src))
 			src.drop_from_inventory(W)
 
@@ -142,8 +142,8 @@
 	// If our mind is in VR, bring it back to the real world so it can die with its body
 	if(vr_link)
 		vr_link.exit_vr()
-		rel_clear(vr_link, "vr_holder")
-		rel_clear(src, "vr_link")
+		rel_clear(vr_link, nameof(vr_link.vr_holder))
+		rel_clear(src, nameof(vr_link))
 		to_chat(src, span_danger("Everything abruptly stops."))
 
 /mob/living/carbon/human/proc/ChangeToHusk()

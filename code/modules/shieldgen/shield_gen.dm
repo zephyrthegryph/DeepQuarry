@@ -33,7 +33,11 @@
 	energy_conversion_rate = 0.0012
 
 // Capacitors feeding this generator (two-sided with each capacitor's owned_gen).
-REL_PAIR_LIST(/obj/machinery/shield_gen, capacitors, owned_gen)
+/obj/machinery/shield_gen/relations()
+	. = ..()
+	. += rel_many(nameof(capacitors), back = nameof(/obj/machinery/shield_capacitor::owned_gen))
+	// Remote shield buttons find generators by id (REL_KEYED sources).
+	. += rel_key(nameof(id))
 
 /obj/machinery/shield_gen/Initialize(mapload)
 	if(anchored)
@@ -43,8 +47,8 @@ REL_PAIR_LIST(/obj/machinery/shield_gen, capacitors, owned_gen)
 			if(cap.owned_gen())
 				continue
 			if(get_dir(cap, src) == cap.dir)
-				rel_set(cap, "owned_gen", src)
-	own_set(src, "shield_hum", new /datum/looping_sound/shield_generator(list(src), FALSE))
+				rel_set(cap, nameof(cap.owned_gen), src)
+	own_set(src, nameof(shield_hum), new /datum/looping_sound/shield_generator(list(src), FALSE))
 	. = ..()
 	make_climbable()
 
@@ -88,9 +92,9 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
 			if(cap.owned_gen())
 				continue
 			if(get_dir(cap, src) == cap.dir && src.anchored)
-				rel_set(cap, "owned_gen", src)
+				rel_set(cap, nameof(cap.owned_gen), src)
 	else
-		rel_clear(src, "capacitors")
+		rel_clear(src, nameof(capacitors))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/shield_gen/declare_interactions(list/into)
@@ -258,7 +262,7 @@ DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen
 		if(T in covered_turfs)
 			covered_turfs.Remove(T)
 		for(var/turf/O in covered_turfs)
-			own_add(src, "field", new /obj/effect/energy_field(O, src))
+			own_add(src, nameof(field), new /obj/effect/energy_field(O, src))
 		covered_turfs = null
 
 		for(var/mob/M in view(5,src))
@@ -267,7 +271,7 @@ DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen
 			E.update_icon()
 		shield_hum.start()
 	else
-		own_clear(src, "field", OWN_DELETE)
+		own_clear(src, nameof(field), OWN_DELETE)
 
 		for(var/mob/M in view(5,src))
 			to_chat(M, "[icon2html(src, M.client)] You hear heavy droning fade out.")
@@ -282,7 +286,7 @@ DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen
 		for(var/turf/O in covered_turfs)
 			if(locate(/obj/effect/energy_field, O) || locate(/obj/machinery/pointdefense, orange(2, O)))
 				continue
-			own_add(src, "field", new /obj/effect/energy_field(O, src))
+			own_add(src, nameof(field), new /obj/effect/energy_field(O, src))
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/shield_gen, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/shield_gen/appearance_overlays()
@@ -354,6 +358,3 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/shield_gen, TYPE_PROC_REF(/atom, appearan
 // === merged from shield_gen_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/shield_gen
 	icon = 'icons/obj/machines/shielding.dmi'
-
-// Remote shield buttons find generators by id (REL_KEYED sources).
-KEYED_TARGET(/obj/machinery/shield_gen, id)

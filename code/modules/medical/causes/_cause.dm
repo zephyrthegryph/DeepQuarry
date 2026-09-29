@@ -46,7 +46,7 @@
 
 
 /datum/affliction_trigger/proc/setup()
-	own_clear(src, "produces", OWN_DELETE)
+	own_clear(src, nameof(produces), OWN_DELETE)
 
 
 /datum/affliction_trigger/New()
@@ -66,7 +66,7 @@
 // dm-health: param threshold num?
 // dm-health: param tier text?
 /datum/affliction_trigger/proc/declare(condition_type, chance = 100, requires_present = null, requires_absent = null, threshold = null, tier = null)
-	own_add(src, "produces", new /datum/affliction_trigger_outcome(condition_type, chance, requires_present, requires_absent, threshold, tier))
+	own_add(src, nameof(produces), new /datum/affliction_trigger_outcome(condition_type, chance, requires_present, requires_absent, threshold, tier))
 
 
 // --- Outcome record -----------------------------------------------------

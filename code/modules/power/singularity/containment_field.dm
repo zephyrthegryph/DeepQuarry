@@ -105,8 +105,8 @@
 /obj/machinery/containment_field/proc/set_master(master1,master2)
 	if(!master1 || !master2)
 		return 0
-	rel_set(src, "FG1", master1)
-	rel_set(src, "FG2", master2)
+	rel_set(src, nameof(FG1), master1)
+	rel_set(src, nameof(FG2), master2)
 	return 1
 
 /// the FG1 this refers to: a relation view, null once that is deleted.

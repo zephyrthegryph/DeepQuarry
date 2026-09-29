@@ -117,9 +117,9 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 					if(!T)
 						continue
 					if(!candidate.bottom_left && locate_within(T, /obj/effect/landmark/unit_test_bottom_left))
-						rel_set(candidate, "bottom_left", T)
+						rel_set(candidate, nameof(candidate.bottom_left), T)
 					if(!candidate.top_right && locate_within(T, /obj/effect/landmark/unit_test_top_right))
-						rel_set(candidate, "top_right", T)
+						rel_set(candidate, nameof(candidate.top_right), T)
 			if(candidate.bottom_left && candidate.top_right)
 				block = candidate
 				break
@@ -450,9 +450,9 @@ GLOBAL_VAR(dq_test_select_names)
 	if (isnull(uncreatables))
 		uncreatables = build_list_of_uncreatables()
 
-	rel_set(src, "test_block", acquire_unit_test_block())
-	rel_set(src, "run_loc_floor_bottom_left", test_block.bottom_left)
-	rel_set(src, "run_loc_floor_top_right", test_block.top_right)
+	rel_set(src, nameof(test_block), acquire_unit_test_block())
+	rel_set(src, nameof(run_loc_floor_bottom_left), test_block.bottom_left)
+	rel_set(src, nameof(run_loc_floor_top_right), test_block.top_right)
 
 	// Deterministic per-test RNG: reseed from the test's own type name rather
 	// than leaving the shared world RNG wherever the previous test's rand()
@@ -473,7 +473,9 @@ GLOBAL_VAR(dq_test_select_names)
 /// Everything allocate() made is the test's to delete when it ends. `allocated` is a relation
 /// list, never ownership: production code adopts allocated things freely, and whatever is still
 /// alive here when the test is torn down is deleted (deleted entries have left the view).
-REL_LIST(/datum/unit_test, allocated)
+/datum/unit_test/relations()
+	. = ..()
+	. += rel_many(nameof(allocated))
 
 /datum/unit_test/on_destroy(force)
 	for(var/datum/thing as anything in allocated?.Copy())
@@ -515,7 +517,7 @@ REL_LIST(/datum/unit_test, allocated)
 	// A type that deletes itself in Initialize() (INITIALIZE_HINT_QDEL: a lattice off open space)
 	// is already gone: nothing to clean up, and a dying thing takes no new links.
 	if(!QDELETED(instance))
-		rel_add(src, "allocated", instance)
+		rel_add(src, nameof(allocated), instance)
 	return instance
 
 /// Hands something the test didn't allocate() but did cause (a construction product, a
@@ -523,7 +525,7 @@ REL_LIST(/datum/unit_test, allocated)
 /// Returns `thing`.
 /datum/unit_test/proc/own(datum/thing)
 	if(thing && !QDELETED(thing))
-		rel_add(src, "allocated", thing)
+		rel_add(src, nameof(allocated), thing)
 	return thing
 
 /// own()s everything currently on `T` (landmarks excepted): for a test whose subject

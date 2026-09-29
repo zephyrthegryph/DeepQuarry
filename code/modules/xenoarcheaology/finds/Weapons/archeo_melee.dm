@@ -48,7 +48,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/melee/artifact_blade, PERIODIC_SLOW, "last_touc
 	if(!last_touched() || !stored_blood) //Nobody has touched us yet or we have no energy...For now.
 		return
 	if(!last_touched() || last_touched().stat == DEAD) //If our user doesn't exist or is dead, stop processing until the next unlucky sod touches us.
-		rel_clear(src, "last_touched")
+		rel_clear(src, nameof(last_touched))
 		return
 	if(loc == last_touched() && (last_touched().life_tick % 30 == 0)) //We are currently being wielded by our owner. One proc every minute.
 		/// First and foremost, the sword passively takes some blood from you when you hold it.
@@ -151,7 +151,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/melee/artifact_blade, PERIODIC_SLOW, "last_touc
 	// Yes. This means you can hand off the sword to someone else to make them the newfound owner of the cursed sword.
 	if((user != last_touched()) && !iscultist(user) && ishuman(user))
 		to_chat(user, span_cult("An overwhelming feeling of dread comes over you as you pick up the sword. You feel as though it has become attached to you."))
-		rel_set(src, "last_touched", user)
+		rel_set(src, nameof(last_touched), user)
 
 DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/melee/artifact_blade/proc/cooled_down)))
 

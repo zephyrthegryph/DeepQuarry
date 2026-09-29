@@ -98,9 +98,9 @@
 		return
 
 	var/atom/movable/screen/spell/newscreen = new /atom/movable/screen/spell()
-	rel_set(newscreen, "spell", spell)
+	rel_set(newscreen, nameof(newscreen.spell), spell)
 
-	own_set(spell, "connected_button", newscreen)
+	own_set(spell, nameof(spell.connected_button), newscreen)
 
 	if(!spell.override_base) //if it's not set, we do basic checks
 		if(spell.spell_flags & CONSTRUCT_CHECK)
@@ -116,7 +116,7 @@
 		toggle_open(2) //forces the icons to refresh on screen
 
 /atom/movable/screen/movable/spell_master/proc/remove_spell(datum/spell/spell)
-	own_clear(spell, "connected_button", OWN_DELETE)
+	own_clear(spell, nameof(spell.connected_button), OWN_DELETE)
 
 	if(length(spell_buttons()))
 		toggle_open(showing + 1)

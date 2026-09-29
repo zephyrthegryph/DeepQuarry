@@ -9,7 +9,7 @@
 
 /datum/nifsoft/crewmonitor/New()
 	..()
-	own_set(src, "arscreen", new /datum/tgui_module/crew_monitor/nif(nif()))
+	own_set(src, nameof(arscreen), new /datum/tgui_module/crew_monitor/nif(nif()))
 
 
 /datum/nifsoft/crewmonitor/activate()
@@ -35,7 +35,7 @@
 
 /datum/nifsoft/alarmmonitor/New()
 	..()
-	own_set(src, "tgarscreen", new /datum/tgui_module/alarm_monitor/engineering/nif(nif()))
+	own_set(src, nameof(tgarscreen), new /datum/tgui_module/alarm_monitor/engineering/nif(nif()))
 
 
 /datum/nifsoft/alarmmonitor/activate()

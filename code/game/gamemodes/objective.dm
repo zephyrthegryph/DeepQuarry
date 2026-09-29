@@ -24,12 +24,12 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 		if(possible_target != owner && ishuman(possible_target.current) && (possible_target.current.stat != 2))
 			possible_targets += possible_target
 	if(possible_targets.len > 0)
-		rel_set(src, "target", pick(possible_targets))
+		rel_set(src, nameof(target), pick(possible_targets))
 
 /datum/objective/proc/find_target_by_role(role, role_type=0)//Option sets either to check assigned role or special role. Default to assigned.
 	for(var/datum/mind/possible_target in SSticker.minds)
 		if((possible_target != owner) && ishuman(possible_target.current) && ((role_type ? possible_target.special_role : possible_target.assigned_role) == role) )
-			rel_set(src, "target", possible_target)
+			rel_set(src, nameof(target), possible_target)
 			break
 
 /datum/objective/assassinate/find_target()
@@ -586,9 +586,9 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 					continue
 
 	if(priority_targets.len > 0)
-		rel_set(src, "target", pick(priority_targets))
+		rel_set(src, nameof(target), pick(priority_targets))
 	else if(possible_targets.len > 0)
-		rel_set(src, "target", pick(possible_targets))
+		rel_set(src, nameof(target), pick(possible_targets))
 
 	if(target && target.current)
 		explanation_text = "We can get a good price for [target.current.real_name], the [target.assigned_role]. Take them alive."
@@ -614,35 +614,35 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	var/loot = "an object"
 	switch(rand(1,8))
 		if(1)
-			rel_set(src, "target", /obj/structure/particle_accelerator)
+			rel_set(src, nameof(target), /obj/structure/particle_accelerator)
 			target_amount = 6
 			loot = "a complete particle accelerator"
 		if(2)
-			rel_set(src, "target", /obj/machinery/the_singularitygen)
+			rel_set(src, nameof(target), /obj/machinery/the_singularitygen)
 			target_amount = 1
 			loot = "a gravitational generator"
 		if(3)
-			rel_set(src, "target", /obj/machinery/power/emitter)
+			rel_set(src, nameof(target), /obj/machinery/power/emitter)
 			target_amount = 4
 			loot = "four emitters"
 		if(4)
-			rel_set(src, "target", /obj/machinery/nuclearbomb)
+			rel_set(src, nameof(target), /obj/machinery/nuclearbomb)
 			target_amount = 1
 			loot = "a nuclear bomb"
 		if(5)
-			rel_set(src, "target", /obj/item/gun)
+			rel_set(src, nameof(target), /obj/item/gun)
 			target_amount = 6
 			loot = "six guns"
 		if(6)
-			rel_set(src, "target", /obj/item/gun/energy)
+			rel_set(src, nameof(target), /obj/item/gun/energy)
 			target_amount = 4
 			loot = "four energy guns"
 		if(7)
-			rel_set(src, "target", /obj/item/gun/energy/laser)
+			rel_set(src, nameof(target), /obj/item/gun/energy/laser)
 			target_amount = 2
 			loot = "two laser guns"
 		if(8)
-			rel_set(src, "target", /obj/item/gun/energy/ionrifle)
+			rel_set(src, nameof(target), /obj/item/gun/energy/ionrifle)
 			target_amount = 1
 			loot = "an ion gun"
 
@@ -668,28 +668,28 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 /datum/objective/heist/salvage/choose_target()
 	switch(rand(1,8))
 		if(1)
-			rel_set(src, "target", MAT_STEEL)
+			rel_set(src, nameof(target), MAT_STEEL)
 			target_amount = 300
 		if(2)
-			rel_set(src, "target", MAT_GLASS)
+			rel_set(src, nameof(target), MAT_GLASS)
 			target_amount = 200
 		if(3)
-			rel_set(src, "target", MAT_PLASTEEL)
+			rel_set(src, nameof(target), MAT_PLASTEEL)
 			target_amount = 100
 		if(4)
-			rel_set(src, "target", MAT_PHORON)
+			rel_set(src, nameof(target), MAT_PHORON)
 			target_amount = 100
 		if(5)
-			rel_set(src, "target", MAT_SILVER)
+			rel_set(src, nameof(target), MAT_SILVER)
 			target_amount = 50
 		if(6)
-			rel_set(src, "target", MAT_GOLD)
+			rel_set(src, nameof(target), MAT_GOLD)
 			target_amount = 20
 		if(7)
-			rel_set(src, "target", MAT_URANIUM)
+			rel_set(src, nameof(target), MAT_URANIUM)
 			target_amount = 20
 		if(8)
-			rel_set(src, "target", MAT_DIAMOND)
+			rel_set(src, nameof(target), MAT_DIAMOND)
 			target_amount = 20
 
 	explanation_text = "Ransack the station and escape with [target_amount] [target]."
@@ -798,7 +798,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 			if(player.mind && !(player.mind in GLOB.cult))
 				possible_targets += player.mind
 	if(possible_targets.len > 0)
-		rel_set(src, "target", pick(possible_targets))
+		rel_set(src, nameof(target), pick(possible_targets))
 	if(target) explanation_text = "Sacrifice [target.name], the [target.assigned_role]. You will need the sacrifice rune (Hell blood join) and three acolytes to do so."
 
 /datum/objective/cult/sacrifice/check_completion()
@@ -838,5 +838,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	return rval
 
 // The mind owns its objectives (mind.objectives, OWN); owner is the one-sided back view.
-REL(/datum/objective, owner)
+/datum/objective/relations()
+	. = ..()
+	. += rel_one(nameof(owner))
 // Minds live for the round; the objective only reads its target.

@@ -21,7 +21,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/gauntlets, "stored_gauntlets", /obj/i
 
 /obj/item/rig_module/gauntlets/Initialize(mapload)
 	. = ..()
-	rel_set(stored_gauntlets, "storing_module", src)
+	rel_set(stored_gauntlets, nameof(stored_gauntlets.storing_module), src)
 
 /obj/item/rig_module/gauntlets/activate()
 	if(!..())
@@ -54,4 +54,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/gauntlets, "stored_gauntlets", /obj/i
 	for(var/obj/item/kinetic_crusher/machete/gauntlets/gaming in contents_of(M))
 		M.drop_from_inventory(gaming, src)
 
-OWN(/obj/item/rig_module/gauntlets, stored_gauntlets, OWN_CONTAINED)
+/obj/item/rig_module/gauntlets/ownership()
+	. = ..()
+	. += owns(nameof(stored_gauntlets), policy = OWN_CONTAINED)

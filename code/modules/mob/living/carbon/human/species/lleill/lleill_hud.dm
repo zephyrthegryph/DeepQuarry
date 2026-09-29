@@ -35,13 +35,13 @@
 	if(get_ability_by_proc_ref(verb_given))
 		return // Duplicate
 	var/atom/movable/screen/ability/verb_based/lleill/A = new /atom/movable/screen/ability/verb_based/lleill()
-	rel_set(A, "ability_master", src)
+	rel_set(A, nameof(A.ability_master), src)
 	A.object_used = object_given
 	A.verb_to_call = verb_given
 	A.ability_icon_state = ability_icon_given
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments
-	own_add(src, "ability_objects", A)
+	own_add(src, nameof(ability_objects), A)
 	if(my_mob()?.client)
 		toggle_open(2)

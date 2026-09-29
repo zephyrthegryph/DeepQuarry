@@ -111,7 +111,7 @@
 	if(is_jammed(O))
 		return "all you hear is static"
 	var/datum/signal/signal = new
-	rel_set(signal, "source", O)
+	rel_set(signal, nameof(signal.source), O)
 	signal.encryption = cap_signaler_code(O)
 	signal.data["message"] = "ACTIVATE"
 	var/datum/radio_frequency/channel = GLOB.radio_service.return_frequency(cap_signaler_frequency(O))

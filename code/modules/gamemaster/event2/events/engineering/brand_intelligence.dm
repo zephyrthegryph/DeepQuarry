@@ -22,14 +22,14 @@
 	for(var/obj/machinery/vending/V in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(!(V.z in using_map.station_levels))
 			continue
-		rel_add(src, "vending_machines", V)
+		rel_add(src, nameof(vending_machines), V)
 
 	if(!length(vending_machines))
 		log_game("Brand intelligence event: Could not find any vending machines on station Z levels. Aborting.")
 		abort()
 		return
 
-	rel_set(src, "vender_zero", DEFAULTPICK(vending_machines, null))
+	rel_set(src, nameof(vender_zero), DEFAULTPICK(vending_machines, null))
 
 /datum/event2/event/brand_intelligence/announce()
 	if(prob(90))
@@ -76,13 +76,13 @@
 		cure_vender(vender)
 
 /datum/event2/event/brand_intelligence/proc/infect_vender(obj/machinery/vending/V)
-	rel_remove(src, "vending_machines", V)
-	rel_add(src, "infected_vending_machines", V)
+	rel_remove(src, nameof(vending_machines), V)
+	rel_add(src, nameof(infected_vending_machines), V)
 	V.set_shut_up(FALSE)
 	V.set_shoot_inventory(TRUE)
 
 /datum/event2/event/brand_intelligence/proc/cure_vender(obj/machinery/vending/V)
-	rel_remove(src, "infected_vending_machines", V)
+	rel_remove(src, nameof(infected_vending_machines), V)
 	V.set_shut_up(TRUE)
 	V.set_shoot_inventory(FALSE)
 

@@ -14,7 +14,7 @@
 
 /obj/structure/closet/crate/proc/void_shipping_ledger(reason)
 	shipping_ledger?.void_shipping_ledger(reason)
-	own_take(src, "shipping_ledger")
+	own_take(src, nameof(shipping_ledger))
 	shipping_ledger_snapshot = null
 
 /obj/structure/closet/crate/proc/freight_snapshot()
@@ -162,7 +162,7 @@
 		return FALSE
 	crate.void_shipping_ledger("superseded by scanner certification")
 	var/obj/item/paper/ledger = freight_form_paper[length(freight_form_paper)]
-	rel_remove(src, "freight_form_paper", ledger)
+	rel_remove(src, nameof(src.freight_form_paper), ledger)
 	own_set(crate, nameof(crate.shipping_ledger), ledger, into = TRUE, force = TRUE) // printed into the crate, full or not
 	var/ledger_id = "FL-[stationtime2text()]-[rand(1000, 9999)]"
 	ledger.shipping_ledger_data = list("id" = ledger_id, "valid" = TRUE, "department" = department, "destination" = destination, "department_percent" = department_percent, "cargo_percent" = 20, "producer_percentages" = producer_percentages.Copy(), "sealed_by" = user.real_name, "scanner" = machine_id)

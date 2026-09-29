@@ -43,7 +43,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 
 // Add the spell buttons to the HUD.
 /obj/item/technomancer_core/equipped(mob/user)
-	rel_set(src, "wearer", user)
+	rel_set(src, nameof(wearer), user)
 	for(var/obj/spellbutton/spell in spells)
 		wearer.ability_master.add_technomancer_ability(spell, spell.ability_icon_state)
 	..()
@@ -52,7 +52,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 /obj/item/technomancer_core/dropped(mob/user, equipping, slot)
 	for(var/atom/movable/screen/ability/obj_based/technomancer/A in wearer.ability_master.ability_objects)
 		wearer.ability_master.remove_ability(A)
-	rel_clear(src, "wearer")
+	rel_clear(src, nameof(wearer))
 	canremove = TRUE
 	..()
 
@@ -118,12 +118,12 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 		if(isliving(A))
 			var/mob/living/L = A
 			if(L.stat == DEAD)
-				own_take_member(src, "summoned_mobs", L) // detached; fade_away deletes it
+				own_take_member(src, nameof(summoned_mobs), L) // detached; fade_away deletes it
 				om_after(L, 1, TYPE_PROC_REF(/mob/living, fade_away))
 
 // Deletes all the summons and wards from the core, so that Destroy() won't have issues.
 /obj/item/technomancer_core/proc/dismiss_all_summons()
-	own_clear(src, "summoned_mobs", OWN_DELETE)
+	own_clear(src, nameof(summoned_mobs), OWN_DELETE)
 	for(var/mob/living/ward in wards_in_use)
 		LAZYREMOVE(wards_in_use, ward)
 		qdel(ward)
@@ -137,7 +137,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 
 /obj/spellbutton/Initialize(mapload, path, new_name, new_icon_state)
 	. = ..()
-	rel_set(src, "core", loc)
+	rel_set(src, nameof(core), loc)
 	if(!path || !ispath(path) || !istype(core))
 		message_admins("ERROR: /obj/spellbutton/Initialize() was not given a proper path or not placed into the right location!")
 		return INITIALIZE_HINT_QDEL
@@ -178,13 +178,13 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 		The path supplied was [path].")
 		return
 	var/obj/spellbutton/spell = new(src, path, new_name, ability_icon_state)
-	own_add(src, "spells", spell)
+	own_add(src, nameof(spells), spell)
 	if(wearer)
 		wearer.ability_master.add_technomancer_ability(spell, ability_icon_state)
 
 /obj/item/technomancer_core/proc/remove_spell(obj/spellbutton/spell_to_remove)
 	if(spell_to_remove in spells)
-		own_take_member(src, "spells", spell_to_remove)
+		own_take_member(src, nameof(spells), spell_to_remove)
 		if(wearer)
 			var/atom/movable/screen/ability/obj_based/technomancer/A = wearer.ability_master.get_ability_by_instance(spell_to_remove)
 			if(A)
@@ -193,7 +193,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 
 /obj/item/technomancer_core/proc/remove_all_spells()
 	for(var/obj/spellbutton/spell in spells)
-		own_take_member(src, "spells", spell)
+		own_take_member(src, nameof(spells), spell)
 		qdel(spell)
 
 /obj/item/technomancer_core/proc/has_spell(datum/technomancer/spell_to_check)

@@ -18,7 +18,7 @@
 	if(paired_juke())
 		to_chat(user, span_warning("The [src] is already paired to [paired_juke() == juke ? "that" : "a different"] jukebox."))
 		return
-	rel_set(src, "paired_juke", juke) // also lists us in the jukebox's remotes (REL_PAIR)
+	rel_set(src, nameof(paired_juke), juke) // also lists us in the jukebox's remotes (REL_PAIR)
 	to_chat(user, span_notice("You pair the [src] to the [juke]."))
 	icon_state = "[initial(icon_state)]_ready"
 
@@ -26,7 +26,7 @@
 	if(!paired_juke())
 		to_chat(user, span_warning("The [src] isn't paired to anything."))
 		return
-	rel_clear(src, "paired_juke")
+	rel_clear(src, nameof(paired_juke))
 	icon_state = initial(icon_state)
 	unanchor()
 	detach_area()
@@ -89,14 +89,14 @@ DECLARE_INTERACTIONS(/obj/item/juke_remote, \
 	if(A.media_source())
 		return FALSE // Already has a media source, won't overpower it with porta speaker
 	our_area = A
-	rel_set(A, "media_source", paired_juke())
+	rel_set(A, nameof(/area::media_source), paired_juke())
 	update_music()
 	return TRUE
 
 /obj/item/juke_remote/proc/detach_area()
 	if(!our_area() || (paired_juke() && our_area().media_source() != paired_juke()))
 		return
-	rel_clear(our_area(), "media_source")
+	rel_clear(our_area(), nameof(/area::media_source))
 	update_music()
 	our_area = null
 
@@ -118,5 +118,9 @@ DECLARE_INTERACTIONS(/obj/item/juke_remote, \
 	return paired_juke
 
 /// A paired speaker and its jukebox name each other; either one dying unpairs them.
-REL_PAIR(/obj/item/juke_remote, paired_juke, remotes)
-REL_PAIR_LIST(/obj/machinery/media/jukebox, remotes, paired_juke)
+/obj/item/juke_remote/relations()
+	. = ..()
+	. += rel_one(nameof(paired_juke), back = nameof(/obj/machinery/media/jukebox::remotes))
+/obj/machinery/media/jukebox/relations()
+	. = ..()
+	. += rel_many(nameof(remotes), back = nameof(/obj/item/juke_remote::paired_juke))

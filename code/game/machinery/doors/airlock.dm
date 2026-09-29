@@ -609,11 +609,11 @@ UI_DATA_REPLACE(/obj/machinery/door/airlock, "speed=normalspeed:num", "welded", 
 				return TRUE
 
 	if(!Adjacent(hold_open()))
-		rel_clear(src, "hold_open")
+		rel_clear(src, nameof(hold_open))
 
 	if(hold_open() && !density)
 		if(hold_open() == user)
-			rel_clear(src, "hold_open")
+			rel_clear(src, nameof(hold_open))
 		else
 			to_chat(user, span_warning("[hold_open()] is holding \the [src] open!"))
 
@@ -662,7 +662,7 @@ UI_DATA_REPLACE(/obj/machinery/door/airlock, "speed=normalspeed:num", "welded", 
 	return TRUE
 
 /obj/machinery/door/airlock/proc/interaction_hold_open(mob/user, obj/item/held, datum/interaction/interaction)
-	rel_set(src, "hold_open", user)
+	rel_set(src, nameof(hold_open), user)
 	act_message(user, src, others = span_info("%U% begins holding %T% open."), blind = span_info("Someone has started holding %T% open."))
 	attack_hand(user)
 	return TRUE
@@ -838,7 +838,7 @@ UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
 	else if(!density)
 		if(hold_open())
 			if(hold_open() == user)
-				rel_clear(src, "hold_open")
+				rel_clear(src, nameof(hold_open))
 				close()
 			else
 				to_chat(user, span_warning("[hold_open()] is holding \the [src] open!"))
@@ -1130,7 +1130,7 @@ UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
 		if (!electronics) create_electronics()
 
 		electronics.forceMove(get_turf(src))
-		own_take(src, "electronics")
+		own_take(src, nameof(electronics))
 	qdel(src)
 
 /obj/machinery/door/airlock/proc/handleRemoveIce(obj/item/W, mob/user as mob, time = 15)
@@ -1231,7 +1231,7 @@ UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
 			if(Adjacent(hold_open()) && !hold_open().incapacitated())
 				return FALSE
 			else
-				rel_clear(src, "hold_open")
+				rel_clear(src, nameof(hold_open))
 		if(!arePowerSystemsOn() || wires.is_cut(WIRE_OPEN_DOOR))
 			return	0
 	. = ..()
@@ -1296,7 +1296,7 @@ UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
 	if(frozen && forced) // Unfreeze on forced open
 		unFreeze()
 
-	rel_clear(src, "hold_open") //if it passes the can close check, always make sure to clear hold open
+	rel_clear(src, nameof(hold_open)) //if it passes the can close check, always make sure to clear hold open
 
 	if(safe && !ignore_safties)
 		for(var/turf/turf in locs)
@@ -1409,7 +1409,7 @@ UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
 
 		var/obj/item/airlock_electronics/assembly_electronics = assembly.electronics
 		assembly_electronics.forceMove(src)
-		own_move(assembly_electronics, src, "electronics") // from the assembly to the door
+		own_move(assembly_electronics, src, nameof(electronics)) // from the assembly to the door
 
 		//update the door's access to match the electronics'
 		secured_wires = electronics.secure
@@ -1434,16 +1434,16 @@ UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
 	if(T && (T.z in using_map.admin_levels))
 		secured_wires = 1
 	if (secured_wires)
-		own_set(src, "wires", new/datum/wires/airlock/secure(src))
+		own_set(src, nameof(wires), new/datum/wires/airlock/secure(src))
 	else
-		own_set(src, "wires", new/datum/wires/airlock(src))
+		own_set(src, nameof(wires), new/datum/wires/airlock(src))
 
 	. = ..()
 
 	if(closeOtherId != null)
 		for (var/obj/machinery/door/airlock/A in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(A.closeOtherId == closeOtherId && A != src)
-				rel_set(src, "closeOther", A)
+				rel_set(src, nameof(closeOther), A)
 				break
 	name = "\improper [name]"
 	if(frequency)
@@ -1456,9 +1456,9 @@ UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
 /obj/machinery/door/airlock/proc/create_electronics()
 	//create new electronics
 	if (secured_wires)
-		own_set(src, "electronics", new/obj/item/airlock_electronics/secure(src))
+		own_set(src, nameof(electronics), new/obj/item/airlock_electronics/secure(src))
 	else
-		own_set(src, "electronics", new/obj/item/airlock_electronics(src))
+		own_set(src, nameof(electronics), new/obj/item/airlock_electronics(src))
 
 	//update the electronics to match the door's access
 	if(LAZYLEN(req_access))
@@ -1624,7 +1624,9 @@ EXTEND_INTERACTIONS(/obj/machinery/door/airlock, INTERACT_ROBOT("Use", PROC_REF(
 		return TRUE
 	return FALSE
 
-OWN(/obj/machinery/door/airlock, electronics, OWN_CONTAINED)
+/obj/machinery/door/airlock/ownership()
+	. = ..()
+	. += owns(nameof(electronics), policy = OWN_CONTAINED)
 
 /// closeOther (a relation view: it reads null once the target is deleted).
 /obj/machinery/door/airlock/proc/closeOther() as /obj/machinery/door/airlock

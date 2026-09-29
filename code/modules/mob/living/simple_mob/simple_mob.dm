@@ -195,7 +195,7 @@ DECLARE_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/use_pda) // TGP
 		myid_access = shared_type_list(type, "myid_access", myid_access)
 
 	if(ID_provided)
-		own_set(src, "myid", new /obj/item/card/id(src)) // ALLOW(decl): conditional on ID_provided
+		own_set(src, nameof(myid), new /obj/item/card/id(src)) // ALLOW(decl): conditional on ID_provided
 		myid.access = myid_access ? myid_access.Copy() : list()
 
 	for(var/L in has_langs)
@@ -344,7 +344,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_colo
 
 /mob/living/simple_mob/proc/chase_target(ticker)
 	if(QDELETED(movement_target))
-		rel_clear(src, "movement_target")
+		rel_clear(src, nameof(movement_target))
 		return
 
 	if(ticker < 10 && (get_dist(src, movement_target) > 1)) //We only chase our target for 10 tiles or until we are next to them.
@@ -358,7 +358,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_colo
 		UnarmedAttack(movement_target, TRUE, I_HELP)
 	else if(ishuman(movement_target.loc) && prob(20))
 		visible_emote("stares at the [movement_target] that [movement_target.loc] has with an unknowable gaze.")
-	rel_clear(src, "movement_target")
+	rel_clear(src, nameof(movement_target))
 
 /mob/living/simple_mob/say_quote(message, datum/language/speaking = null)
 	if(speak_emote.len)
@@ -376,8 +376,8 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_colo
 	return span_italics("[tt_desc]")
 
 /mob/living/simple_mob/make_hud_overlays()
-	own_put(src, "hud_list", STATUS_HUD, gen_hud_image(GLOB.buildmode_hud, src, "ai_0", plane = PLANE_BUILDMODE))
-	own_put(src, "hud_list", LIFE_HUD, gen_hud_image(GLOB.buildmode_hud, src, "ais_1", plane = PLANE_BUILDMODE))
+	own_put(src, nameof(hud_list), STATUS_HUD, gen_hud_image(GLOB.buildmode_hud, src, "ai_0", plane = PLANE_BUILDMODE))
+	own_put(src, nameof(hud_list), LIFE_HUD, gen_hud_image(GLOB.buildmode_hud, src, "ais_1", plane = PLANE_BUILDMODE))
 	add_overlay(hud_list)
 
 //Makes it so that simplemobs can understand galcomm without being able to speak it.
@@ -676,7 +676,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 	om_attach(src, /datum/om/behaviour/slosh) // Sloshy element
 
 	if(!soulgem)
-		own_set(src, "soulgem", new /obj/soulgem(src))
+		own_set(src, nameof(soulgem), new /obj/soulgem(src))
 
 	// Since they have bellies, add verbs to toggle settings on them.
 	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/toggle_digestion, src)
@@ -697,7 +697,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 /mob/living/simple_mob/proc/load_default_bellies()
 	//A much more detailed version of the default /living implementation
 	var/obj/belly/B = new /obj/belly(src)
-	rel_set(src, "vore_selected", B)
+	rel_set(src, nameof(vore_selected), B)
 	B.immutable = 1
 	B.affects_vore_sprites = TRUE
 	B.name = vore_stomach_name ? vore_stomach_name : "stomach"

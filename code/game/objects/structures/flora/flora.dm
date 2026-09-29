@@ -353,7 +353,7 @@
 /obj/structure/flora/pottedplant/proc/attack_hand_timed_done(mob/user)
 	to_chat(user, span_filter_notice("You find [icon2html(stored_item, user.client)] [stored_item] in [src]!"))
 	stored_item.forceMove(get_turf(src))
-	own_take(src, "stored_item")
+	own_take(src, nameof(stored_item))
 
 /obj/structure/flora/pottedplant/large
 	name = "large potted plant"
@@ -809,4 +809,6 @@ APPEARANCE_TEMPLATE(/obj/structure/flora/sif/frostbelle, "{initial(icon_state)}{
 	desc = "A bunch of mossy rocks."
 	icon_state = "rocks2"
 
-OWN(/obj/structure/flora/pottedplant, stored_item, OWN_CONTAINED)
+/obj/structure/flora/pottedplant/ownership()
+	. = ..()
+	. += owns(nameof(stored_item), policy = OWN_CONTAINED)

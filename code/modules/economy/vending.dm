@@ -139,7 +139,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 			product.variant = spec["variant"]
 			product.category = category
 
-			own_add(src, "product_records", product)
+			own_add(src, nameof(product_records), product)
 			GLOB.vending_products[entry] = 1
 
 	if(LAZYLEN(prices))
@@ -518,7 +518,7 @@ UI_ACT_PROC(/obj/machinery/vending, ui_act_remove_coin)
 		ui.user.put_in_hands(coin)
 
 	to_chat(ui.user, span_notice("You remove \the [coin] from \the [src]."))
-	own_take(src, "coin")
+	own_take(src, nameof(/obj/machinery/vending::coin))
 	categories &= ~CAT_COIN
 	return TRUE
 
@@ -578,7 +578,7 @@ UI_ACT_PROC(/obj/machinery/vending, ui_act_vend)
 		vend_ready = TRUE
 		return
 
-	rel_set(src, "currently_vending", R)
+	rel_set(src, nameof(/obj/machinery/casino_prize_dispenser::currently_vending), R)
 
 	var/paid = FALSE
 
@@ -643,11 +643,11 @@ UI_ACT_PROC(/obj/machinery/vending, ui_act_togglevoice)
 			else
 				to_chat(user, span_notice("You weren't able to pull the coin out fast enough, the machine ate it, string and all."))
 				consume(coin, user)
-				own_take(src, "coin")
+				own_take(src, nameof(coin))
 				categories &= ~CAT_COIN
 		else
 			consume(coin)
-			own_take(src, "coin")
+			own_take(src, nameof(coin))
 			categories &= ~CAT_COIN
 
 	if(!COOLDOWN_TIMELEFT(src, reply_cooldown) && vend_reply)
@@ -667,7 +667,7 @@ UI_ACT_PROC(/obj/machinery/vending, ui_act_togglevoice)
 		visible_message(span_infoplain(span_bold("\The [src]") + " clunks and fails to dispense any item."))
 		playsound(src, "sound/[vending_sound]", 100, TRUE, 1)
 		vend_ready = 1
-		rel_clear(src, "currently_vending")
+		rel_clear(src, nameof(currently_vending))
 		SStgui.update_uis(src)
 		return
 	R.get_product(get_turf(src))
@@ -680,7 +680,7 @@ UI_ACT_PROC(/obj/machinery/vending, ui_act_togglevoice)
 	GLOB.items_sold_shift_roundstat++
 
 	vend_ready = 1
-	rel_clear(src, "currently_vending")
+	rel_clear(src, nameof(currently_vending))
 	SStgui.update_uis(src)
 
 /obj/machinery/vending/proc/do_logging(datum/stored_item/vending_product/R, mob/user, vending = 0)

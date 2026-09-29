@@ -128,7 +128,7 @@
 	if(!rec)
 		return null
 	var/datum/om/rate/R = new
-	rel_set(R, "owner", owner)
+	rel_set(R, nameof(R.owner), owner)
 	R.name = name
 	R.value = clamp(value, min_value, max_value)
 	R.per_second = per_second

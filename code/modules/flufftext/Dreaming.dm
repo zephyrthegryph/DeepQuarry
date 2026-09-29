@@ -49,7 +49,7 @@
 	var/datum/dream/chosen_dream = pick_weight(GLOB.dreams)
 
 	add_trait(src, TRAIT_DREAMING, DREAMING_SOURCE)
-	shared_set(src, "current_dream", chosen_dream)
+	shared_set(src, nameof(current_dream), chosen_dream)
 	dream_wait = 0
 	set_dream_fragments(chosen_dream.GenerateDream(src))
 
@@ -97,7 +97,7 @@ DECLARE_REPEAT(/mob/living/carbon, "dream_wait", dream_sequence, "dream_fragment
 /mob/living/carbon/proc/end_dream()
 	remove_trait(src, TRAIT_DREAMING, DREAMING_SOURCE)
 	var/datum/dream/ended = current_dream
-	shared_set(src, "current_dream", null)
+	shared_set(src, nameof(current_dream), null)
 	set_dream_fragments(null)
 	ended?.OnDreamEnd(src)
 

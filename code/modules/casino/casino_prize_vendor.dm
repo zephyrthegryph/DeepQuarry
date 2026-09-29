@@ -371,7 +371,7 @@ UI_ACT_PROC(/obj/machinery/casino_prize_dispenser, ui_act_purchase)
 		to_chat(ui.user, span_warning("Prize checkout error has occurred, purchase cancelled."))
 		return FALSE
 
-	rel_set(src, "currently_vending", bi)
+	rel_set(src, nameof(/obj/machinery/casino_prize_dispenser::currently_vending), bi)
 
 	if(istype(ui.user.get_active_hand(), /obj/item/spacecasinocash))
 		var/obj/item/spacecasinocash/cash = ui.user.get_active_hand()
@@ -395,7 +395,7 @@ UI_ACT_PROC(/obj/machinery/casino_prize_dispenser, ui_act_purchase)
 	if(ispath(bi.equipment_path, /obj/item/stack))
 		new bi.equipment_path(loc, bi.equipment_amt)
 		play_sfx(src, SFX_MACHINES_VENDING_VENDING_DROP)
-		rel_clear(src, "currently_vending")
+		rel_clear(src, nameof(currently_vending))
 		use_power(vend_power_usage)	//actuators and stuff
 		flick("[icon_state]-vend",src)
 		return TRUE
@@ -404,7 +404,7 @@ UI_ACT_PROC(/obj/machinery/casino_prize_dispenser, ui_act_purchase)
 		new bi.equipment_path(loc)
 		play_sfx(src, SFX_MACHINES_VENDING_VENDING_DROP)
 
-	rel_clear(src, "currently_vending")
+	rel_clear(src, nameof(currently_vending))
 	use_power(vend_power_usage)	//actuators and stuff
 	flick("[icon_state]-vend",src)
 

@@ -36,7 +36,7 @@ DECLARE_INTERACTIONS(/obj/item/gift, INTERACT_USE(null, PROC_REF(interaction_sel
 	play_sfx(src, SFX_ITEMS_PACKAGE_UNWRAP)
 	if(gift)
 		var/obj/item/present = gift
-		own_take(src, "gift") // owned while wrapped: unwrapping hands it over before the paper goes
+		own_take(src, nameof(gift)) // owned while wrapped: unwrapping hands it over before the paper goes
 		user.put_in_active_hand(present)
 		present.add_fingerprint(user)
 	else
@@ -158,7 +158,7 @@ DECLARE_INTERACTIONS(/obj/item/wrapping_paper, INTERACT_ITEM(null, PROC_REF(inte
 	G.w_class = G.size + 1
 	G.icon_state = text("gift[]", G.size)
 	W.forceMove(G)
-	own_move(W, G, "gift") // from whatever held it before (a holster, a module), or adopted
+	own_move(W, G, nameof(G.gift)) // from whatever held it before (a holster, a module), or adopted
 	G.add_fingerprint(user)
 	W.add_fingerprint(user)
 	src.add_fingerprint(user)

@@ -672,7 +672,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 		if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			packet_expel(src, flushed_items, air_contents)
 
-	own_set(src, "air_contents", new /datum/gas_mixture(PRESSURE_TANK_VOLUME)) // new empty gas resv. Disposal packet takes ownership of the original one!
+	own_set(src, nameof(air_contents), new /datum/gas_mixture(PRESSURE_TANK_VOLUME)) // new empty gas resv. Disposal packet takes ownership of the original one!
 	flushing = FALSE
 
 	// now reset disposal state

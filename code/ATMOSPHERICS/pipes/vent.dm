@@ -48,7 +48,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/vent, TYPE_PROC_REF(/at
 
 	for(var/obj/machinery/atmospherics/target in get_step(src,connect_direction))
 		if (can_be_node(target, 1))
-			rel_set(src, "node1", target)
+			rel_set(src, nameof(node1), target)
 			break
 
 	update_icon()
@@ -57,7 +57,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/vent, TYPE_PROC_REF(/at
 	if(reference == node1)
 		if(istype(node1, /obj/machinery/atmospherics/pipe))
 			rust_invalidate_pipeline_wrapper(parent)
-		rel_clear(src, "node1")
+		rel_clear(src, nameof(node1))
 
 	update_icon()
 

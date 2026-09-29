@@ -82,7 +82,7 @@
 		to_chat(user, "You have already selected your hardware.")
 		return
 	var/datum/malf_hardware/C = ask.hardware
-	rel_set(C, "owner", user)
+	rel_set(C, nameof(C.owner), user)
 	C.install()
 
 // Verb: ai_help()
@@ -121,7 +121,7 @@
 	var/mob/living/silicon/ai/user = src
 	var/datum/malf_research_ability/tar = ask.choice
 	var/datum/malf_research/res = user.research
-	rel_set(res, "focus_static", tar)
+	rel_set(res, nameof(res.focus_static), tar)
 	to_chat(user, "Research set: [tar.name]")
 
 // HELPER PROCS

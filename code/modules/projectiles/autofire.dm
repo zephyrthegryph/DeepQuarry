@@ -41,8 +41,8 @@ DECLARE_REPEAT(/mob/living, "autofire_delay", autofire_tick, "autofire_on")
 /mob/living/proc/start_autofire(obj/item/gun/G, atom/target, params)
 	if(QDELETED(G) || QDELETED(target))
 		return
-	rel_set(src, "autofire_gun", G)
-	rel_set(src, "autofire_target", target)
+	rel_set(src, nameof(autofire_gun), G)
+	rel_set(src, nameof(autofire_target), target)
 	autofire_params = params
 	if(!autofire_on)
 		autofire_delay = 0 // the first trigger pull comes right away
@@ -52,14 +52,14 @@ DECLARE_REPEAT(/mob/living, "autofire_delay", autofire_tick, "autofire_on")
 /// tile while the button is still held).  No-op if not autofiring.
 /mob/living/proc/update_autofire_target(atom/target, params)
 	if(autofire_on && !QDELETED(target))
-		rel_set(src, "autofire_target", target)
+		rel_set(src, nameof(autofire_target), target)
 		autofire_params = params
 
 /// End any autofire session and clear all held state.  Safe to call when idle.
 /mob/living/proc/stop_autofire()
 	set_autofire_on(FALSE)
-	rel_clear(src, "autofire_gun")
-	rel_clear(src, "autofire_target")
+	rel_clear(src, nameof(autofire_gun))
+	rel_clear(src, nameof(autofire_target))
 	autofire_params = null
 
 /// One iteration of the hold-to-fire loop (declared: while autofire_on).  Fires if the gun is

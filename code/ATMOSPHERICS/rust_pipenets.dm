@@ -16,7 +16,7 @@
 
 /datum/pipe_port/New(obj/machinery/atmospherics/machine, index)
 	..()
-	rel_set(src, "machine", machine)
+	rel_set(src, nameof(machine), machine)
 	src.index = index
 	handle = SSvg.bind_datum(src)
 
@@ -88,7 +88,7 @@
 	var/datum/gas_mixture/air = rust_unbound_port_air?["[index]"]
 	if(!air)
 		air = new(max(rust_pipe_port_volume(index), 1))
-		own_put(src, "rust_unbound_port_air", "[index]", air)
+		own_put(src, nameof(rust_unbound_port_air), "[index]", air)
 	return air
 
 /obj/machinery/atmospherics/proc/rust_pipe_port_volume(index)
@@ -109,7 +109,7 @@
 /obj/machinery/atmospherics/proc/rust_bind_pipe_port(index, datum/pipe_network/network, datum/gas_mixture/network_air)
 	var/datum/gas_mixture/old_air = rust_unbound_port_air?["[index]"]
 	if(old_air && old_air != network_air)
-		own_put(src, "rust_unbound_port_air", "[index]", null)
+		own_put(src, nameof(rust_unbound_port_air), "[index]", null)
 	return FALSE
 
 /obj/machinery/atmospherics/proc/rust_allocate_pipe_ports()
@@ -206,7 +206,7 @@
 	if(!network || QDELETED(network))
 		return
 	if(network.rust_authoritative)
-		rel_remove(network, "normal_members", src)
+		rel_remove(network, nameof(network.normal_members), src)
 		return
 	qdel(network)
 
@@ -534,9 +534,9 @@
 	network.rust_authoritative = FALSE
 	// Empty the rosters first: a retired Rust wrapper must not run the legacy gas split
 	// (pipe_network/lifecycle_unbind()) across members that Rust is rebinding.
-	rel_clear(network, "line_members")
-	rel_clear(network, "normal_members")
-	rel_clear(network, "leaks")
+	rel_clear(network, nameof(network.line_members))
+	rel_clear(network, nameof(network.normal_members))
+	rel_clear(network, nameof(network.leaks))
 	// The region's gas lives in the Rust network; the datum is only a handle.
 	for(var/obj/machinery/atmospherics/member as anything in old_members)
 		member.material_service?.environment_changed()
@@ -544,9 +544,9 @@
 		for(var/obj/machinery/atmospherics/pipe/pipe as anything in line.members)
 			pipe.material_service?.environment_changed()
 		// Likewise the line: no network to destroy, no gas to store back into its pipes.
-		rel_clear(line, "network")
-		atmos_air_set(line, "air", null)
-		rel_clear(line, "leaks")
+		rel_clear(line, nameof(line.network))
+		atmos_air_set(line, nameof(line.air), null)
+		rel_clear(line, nameof(line.leaks))
 		qdel(line)
 	// The network owns the retired region mixture: destroyed with it.
 	qdel(network)
@@ -558,7 +558,7 @@
 	var/datum/gas_mixture/region_air = transition["air"]
 	var/datum/pipe_network/network = new
 	network.rust_authoritative = TRUE
-	own_set(network, "air", region_air)
+	own_set(network, nameof(network.air), region_air)
 	network.sync_gases()
 	network.volume = volume
 	network.update = FALSE
@@ -582,17 +582,17 @@
 
 	if(length(region_pipes))
 		var/datum/pipeline/pipeline = new
-		atmos_air_set(pipeline, "air", region_air)
+		atmos_air_set(pipeline, nameof(pipeline.air), region_air)
 		pipeline.volume = 0
-		rel_clear(pipeline, "leaks")
-		rel_set(pipeline, "network", network)
+		rel_clear(pipeline, nameof(pipeline.leaks))
+		rel_set(pipeline, nameof(pipeline.network), network)
 		for(var/obj/machinery/atmospherics/pipe/pipe as anything in region_pipes)
-			rel_set(pipe, "parent", pipeline) // two-sided: adds the pipe to pipeline.members
+			rel_set(pipe, nameof(pipe.parent), pipeline) // two-sided: adds the pipe to pipeline.members
 			MACHINE_WAKE(pipe) // a pipe with DM work (HE pipes) re-evaluates on joining; others don't listen
 			pipeline.volume += pipe.volume
 			if(pipe.leaking)
-				rel_add(pipeline, "leaks", pipe)
-				rel_add(network, "leaks", pipe)
+				rel_add(pipeline, nameof(pipeline.leaks), pipe)
+				rel_add(network, nameof(network.leaks), pipe)
 		network.add_line_member(pipeline)
 
 // Fixed pipes are one conductive Rust port regardless of sprite geometry.
@@ -612,7 +612,7 @@
 	if(parent?.air)
 		return parent.air
 	if(!air_temporary)
-		own_set(src, "air_temporary", new /datum/gas_mixture(max(volume, 1)))
+		own_set(src, nameof(air_temporary), new /datum/gas_mixture(max(volume, 1)))
 	return air_temporary
 
 /obj/machinery/atmospherics/pipe/rust_pipe_port_volume(index)
@@ -623,9 +623,9 @@
 
 /obj/machinery/atmospherics/pipe/rust_bind_pipe_port(index, datum/pipe_network/network, datum/gas_mixture/network_air)
 	if(air_temporary == network_air)
-		own_take(src, "air_temporary")
+		own_take(src, nameof(air_temporary))
 	else
-		own_clear(src, "air_temporary", OWN_DELETE)
+		own_clear(src, nameof(air_temporary), OWN_DELETE)
 	return TRUE
 
 /obj/machinery/atmospherics/unary/rust_pipe_port_count()
@@ -644,8 +644,8 @@
 	return network
 
 /obj/machinery/atmospherics/unary/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
-	atmos_air_set(src, "air_contents", network_air)
-	rel_set(src, "network", new_network)
+	atmos_air_set(src, nameof(air_contents), network_air)
+	rel_set(src, nameof(network), new_network)
 	return TRUE
 
 /obj/machinery/atmospherics/binary/rust_pipe_port_count()
@@ -665,11 +665,11 @@
 
 /obj/machinery/atmospherics/binary/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
 	if(index == 1)
-		atmos_air_set(src, "air1", network_air)
-		rel_set(src, "network1", new_network)
+		atmos_air_set(src, nameof(air1), network_air)
+		rel_set(src, nameof(network1), new_network)
 	else
-		atmos_air_set(src, "air2", network_air)
-		rel_set(src, "network2", new_network)
+		atmos_air_set(src, nameof(air2), network_air)
+		rel_set(src, nameof(network2), new_network)
 	return TRUE
 
 /obj/machinery/atmospherics/trinary/rust_pipe_port_count()
@@ -689,14 +689,14 @@
 
 /obj/machinery/atmospherics/trinary/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
 	if(index == 1)
-		atmos_air_set(src, "air1", network_air)
-		rel_set(src, "network1", new_network)
+		atmos_air_set(src, nameof(air1), network_air)
+		rel_set(src, nameof(network1), new_network)
 	else if(index == 2)
-		atmos_air_set(src, "air2", network_air)
-		rel_set(src, "network2", new_network)
+		atmos_air_set(src, nameof(air2), network_air)
+		rel_set(src, nameof(network2), new_network)
 	else
-		atmos_air_set(src, "air3", network_air)
-		rel_set(src, "network3", new_network)
+		atmos_air_set(src, nameof(air3), network_air)
+		rel_set(src, nameof(network3), new_network)
 	return TRUE
 
 /obj/machinery/atmospherics/portables_connector/rust_pipe_port_count()
@@ -710,7 +710,7 @@
 		connected_device?.set_port_network_air(network_air)
 		return TRUE
 	. = ..()
-	rel_set(src, "network", new_network)
+	rel_set(src, nameof(network), new_network)
 	return TRUE
 
 /obj/machinery/atmospherics/valve/rust_pipe_port_count()
@@ -725,9 +725,9 @@
 /obj/machinery/atmospherics/valve/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
 	. = ..()
 	if(index == 1)
-		rel_set(src, "network_node1", new_network)
+		rel_set(src, nameof(network_node1), new_network)
 	else
-		rel_set(src, "network_node2", new_network)
+		rel_set(src, nameof(network_node2), new_network)
 	return TRUE
 
 /obj/machinery/atmospherics/tvalve/rust_pipe_port_count()
@@ -742,11 +742,11 @@
 /obj/machinery/atmospherics/tvalve/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
 	. = ..()
 	if(index == 1)
-		rel_set(src, "network_node1", new_network)
+		rel_set(src, nameof(network_node1), new_network)
 	else if(index == 2)
-		rel_set(src, "network_node2", new_network)
+		rel_set(src, nameof(network_node2), new_network)
 	else
-		rel_set(src, "network_node3", new_network)
+		rel_set(src, nameof(network_node3), new_network)
 	return TRUE
 
 /obj/machinery/atmospherics/omni/rust_pipe_port_count()
@@ -771,8 +771,8 @@
 	var/datum/omni_port/port = ports[index]
 	if(!port)
 		return FALSE
-	atmos_air_set(port, "air", network_air)
-	rel_set(port, "network", new_network)
+	atmos_air_set(port, nameof(port.air), network_air)
+	rel_set(port, nameof(port.network), new_network)
 	return TRUE
 
 /obj/machinery/atmospherics/pipeturbine/rust_pipe_port_count()
@@ -792,11 +792,11 @@
 
 /obj/machinery/atmospherics/pipeturbine/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
 	if(index == 1)
-		atmos_air_set(src, "air_in", network_air)
-		rel_set(src, "network1", new_network)
+		atmos_air_set(src, nameof(air_in), network_air)
+		rel_set(src, nameof(network1), new_network)
 	else
-		atmos_air_set(src, "air_out", network_air)
-		rel_set(src, "network2", new_network)
+		atmos_air_set(src, nameof(air_out), network_air)
+		rel_set(src, nameof(network2), new_network)
 	return TRUE
 
 

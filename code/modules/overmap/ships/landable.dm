@@ -29,8 +29,8 @@
 
 // We autobuild our z levels.
 /obj/effect/overmap/visitable/ship/landable/find_z_levels()
-	own_set(src, "landmark", new /obj/effect/shuttle_landmark/ship(null, shuttle)) // Create in nullspace since we lazy-create overmap z
-	rel_set(landmark, "ship", src)
+	own_set(src, nameof(landmark), new /obj/effect/shuttle_landmark/ship(null, shuttle)) // Create in nullspace since we lazy-create overmap z
+	rel_set(landmark, nameof(landmark.ship), src)
 	add_landmark(landmark, shuttle)
 
 /obj/effect/overmap/visitable/ship/landable/proc/setup_overmap_location()
@@ -66,7 +66,7 @@
 	var/datum/shuttle/shuttle_datum = SSshuttles.shuttles[shuttle]
 	if(istype(shuttle_datum,/datum/shuttle/autodock/overmap))
 		var/datum/shuttle/autodock/overmap/oms = shuttle_datum
-		rel_set(oms, "myship", src)
+		rel_set(oms, nameof(oms.myship), src)
 	om_hook(shuttle_datum, /datum/om/event/observer_shuttle_pre_move, src, PROC_REF(pre_shuttle_jump))
 	om_hook(shuttle_datum, /datum/om/event/observer_shuttle_moved, src, PROC_REF(on_shuttle_jump))
 	on_landing(landmark, shuttle_datum.current_location()) // We "land" at round start to properly place ourselves on the overmap.
@@ -112,7 +112,7 @@
 	var/obj/effect/shuttle_landmark/ship/core_landmark
 
 /obj/effect/shuttle_landmark/visiting_shuttle/Initialize(mapload, obj/effect/shuttle_landmark/ship/master, _name)
-	rel_set(src, "core_landmark", master)
+	rel_set(src, nameof(core_landmark), master)
 	name = _name
 	landmark_tag = master.shuttle_name + _name
 	om_hook(master, /datum/om/event/qdeleting, src, TYPE_PROC_REF(/datum, qdel_self))
@@ -120,7 +120,9 @@
 
 // core_landmark is a one-sided view; visitors lists only the landmarks with a shuttle stationed
 // (not a pair: a visitor landmark exists long before anything docks there).
-REL_LIST(/obj/effect/shuttle_landmark/ship, visitors)
+/obj/effect/shuttle_landmark/ship/relations()
+	. = ..()
+	. += rel_many(nameof(visitors))
 
 /obj/effect/shuttle_landmark/visiting_shuttle/is_valid(datum/shuttle/shuttle)
 	. = ..()
@@ -133,7 +135,7 @@ REL_LIST(/obj/effect/shuttle_landmark/ship, visitors)
 		return FALSE
 
 /obj/effect/shuttle_landmark/visiting_shuttle/shuttle_arrived(datum/shuttle/shuttle)
-	rel_add(core_landmark, "visitors", src)
+	rel_add(core_landmark, nameof(core_landmark.visitors), src)
 	om_hook(shuttle, /datum/om/event/observer_shuttle_moved, src, PROC_REF(shuttle_left))
 
 /obj/effect/shuttle_landmark/visiting_shuttle/proc/shuttle_left(datum/shuttle/shuttle, datum/om/event/observer_shuttle_moved/event)
@@ -141,7 +143,7 @@ REL_LIST(/obj/effect/shuttle_landmark/ship, visitors)
 	if(event.old_location == src)
 		om_unhook(shuttle, /datum/om/event/observer_shuttle_moved, src)
 		if(core_landmark)
-			rel_remove(core_landmark, "visitors", src)
+			rel_remove(core_landmark, nameof(core_landmark.visitors), src)
 
 //
 // More ship procs
@@ -191,10 +193,10 @@ REL_LIST(/obj/effect/shuttle_landmark/ship, visitors)
 		if(vessel.docked_port_id && vessel.docked_port_id != port?.id)
 			var/datum/flight_port/old_port = GLOB.flight_service.ports[vessel.docked_port_id]
 			if(old_port?.occupied_by() == vessel)
-				rel_clear(old_port, "occupied_by")
+				rel_clear(old_port, nameof(old_port.occupied_by))
 		vessel.docked_port_id = port?.id
 		if(port)
-			rel_set(port, "occupied_by", vessel)
+			rel_set(port, nameof(port.occupied_by), vessel)
 		// A delegated port inherits the physical host's celestial context, while
 		// the active flight plan retains the logical route destination.
 		var/datum/flight_destination/physical_host = GLOB.flight_service.destinations[port?.host_destination_id]
@@ -205,7 +207,7 @@ REL_LIST(/obj/effect/shuttle_landmark/ship, visitors)
 	if(vessel)
 		var/datum/flight_port/port = GLOB.flight_service.ports[vessel.docked_port_id]
 		if(port?.occupied_by() == vessel)
-			rel_clear(port, "occupied_by")
+			rel_clear(port, nameof(port.occupied_by))
 		vessel.docked_port_id = null
 
 /obj/effect/overmap/visitable/ship/landable/get_landed_info()

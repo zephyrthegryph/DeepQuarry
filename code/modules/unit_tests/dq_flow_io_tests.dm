@@ -85,7 +85,7 @@
 	var/datum/om_test_entity/candidate = entity(made)
 	var/datum/interaction/ability/picker/test_flow/A = new
 	made += A
-	rel_set(A, "test_candidate", candidate)
+	rel_set(A, nameof(A.test_candidate), candidate)
 	TEST_ASSERT_NULL(A.pick_target(actor), "pick_target() asks and returns at once")
 	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "the pick is an om_prompt")
 	var/datum/om/prompt/choice/P = sched.test_prompts[1]

@@ -124,14 +124,14 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 	newfriend.key_len = key_len
 	newfriend.line_len = line_len
 	newfriend.grid_models = grid_models.Copy()
-	own_take_all(newfriend, "gridSets")
+	own_take_all(newfriend, nameof(newfriend.gridSets))
 	for(var/datum/grid_set/source_set as anything in gridSets) // each map owns its own grid sets
 		var/datum/grid_set/set_copy = new
 		set_copy.xcrd = source_set.xcrd
 		set_copy.ycrd = source_set.ycrd
 		set_copy.zcrd = source_set.zcrd
 		set_copy.gridLines = source_set.gridLines
-		own_add(newfriend, "gridSets", set_copy)
+		own_add(newfriend, nameof(newfriend.gridSets), set_copy)
 	newfriend.modelCache = modelCache.Copy()
 	newfriend.parsed_bounds = parsed_bounds.Copy()
 	// Copy parsed bounds to reset to initial values
@@ -267,7 +267,7 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 			if(!length(gridLines)) // Skip it if only blank lines exist.
 				continue
 
-			own_add(src, "gridSets", gridSet)
+			own_add(src, nameof(gridSets), gridSet)
 
 			if(gridLines[length(gridLines)] == "")
 				gridLines.Cut(length(gridLines)) // Remove only one blank line at the end.
@@ -1115,7 +1115,7 @@ GLOBAL_LIST_EMPTY(map_model_default)
 	parsed_bounds.Cut()
 	bounds.Cut()
 	grid_models.Cut()
-	own_take_all(src, "gridSets")
+	own_take_all(src, nameof(gridSets))
 	..()
 
 #undef MAP_DMM

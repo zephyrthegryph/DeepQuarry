@@ -35,7 +35,7 @@ It's suggested to start with an if or switch statement for the message, to deter
 	var/atom/movable/holder
 
 /datum/exonet_protocol/New(atom/holder)
-	rel_set(src, "holder", holder)
+	rel_set(src, nameof(holder), holder)
 	..()
 
 // Proc: make_address()

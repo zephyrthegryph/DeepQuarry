@@ -117,7 +117,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 
 	user.say("Mah[pick("'","`")]weyh pleggh at e'ntrath!")
 
-	rel_add(src, "converting", target)
+	rel_add(src, nameof(converting), target)
 	var/list/waiting_for_input = list(target = 0) //need to box this up in order to be able to reset it again from inside spawn, apparently
 	convert_tick(attacker, target, waiting_for_input, 0)
 	return 1
@@ -125,7 +125,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 /// One pass of a conversion (every 10 seconds while the target stays on the rune).
 /obj/effect/rune/proc/convert_tick(mob/attacker, mob/living/carbon/target, list/waiting_for_input, initial_message)
 	if(target.loc != src.loc || target.stat == DEAD)
-		rel_remove(src, "converting", target)
+		rel_remove(src, nameof(converting), target)
 		if(target.injury_load(INJURY_CATEGORY_THERMAL) < 100)
 			target.status_set(EFFECT_HALLUCINATING, min(target.status_units(EFFECT_HALLUCINATING), 500))
 		return 0
@@ -199,7 +199,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	waiting_for_input[target] = 0
 	if(ask.yes) //choosing 'Resist' does nothing of course.
 		GLOB.cult.add_antagonist(target.mind)
-		rel_remove(src, "converting", target)
+		rel_remove(src, nameof(converting), target)
 		target.status_set(EFFECT_HALLUCINATING, 0) //sudden clarity
 
 /////////////////////////////////////////FOURTH RUNE
@@ -513,8 +513,8 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		D.real_name += pick("Apparition", "Aptrgangr", "Dis", "Draugr", "Dybbuk", "Eidolon", "Fetch", "Fylgja", "Ghast", "Ghost", "Gjenganger", "Haint", "Phantom", "Phantasm", "Poltergeist", "Revenant", "Shade", "Shadow", "Soul", "Spectre", "Spirit", "Spook", "Visitant", "Wraith")
 
 	log_and_message_admins("used a manifest rune.")
-	rel_set(this_rune, "manifest_dummy", D)
-	rel_set(this_rune, "manifest_user", user)
+	rel_set(this_rune, nameof(this_rune.manifest_dummy), D)
+	rel_set(this_rune, nameof(this_rune.manifest_user), user)
 	this_rune.manifest_tick()
 	return
 
@@ -532,8 +532,8 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 	if(user && user.stat==CONSCIOUS && user.client && user.loc==loc)
 		user.injure(INJURY_BLUNT, 1)
 		return
-	rel_clear(src, "manifest_dummy")
-	rel_clear(src, "manifest_user")
+	rel_clear(src, nameof(manifest_dummy))
+	rel_clear(src, nameof(manifest_user))
 	if(D)
 		act_message(D, null, MSG_SELF(span_danger("You feel pain, as bonds formed between your soul and this homunculus break.")), \
 			MSG_OTHERS(span_danger("%U% slowly dissipates into dust and bones.")), \

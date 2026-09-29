@@ -40,11 +40,11 @@ EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
 		var/obj/item/assembly/shock_kit/A = new /obj/item/assembly/shock_kit( user )
 		A.icon = 'icons/obj/assemblies.dmi'
 
-		rel_set(W, "master", A)
+		rel_set(W, nameof(W.master), A)
 		if(!own_set(A, nameof(A.part1), W, user = user))
 			return TRUE
 
-		rel_set(src, "master", A)
+		rel_set(src, nameof(src.master), A)
 		if(!own_set(A, nameof(A.part2), src, user = user))
 			return TRUE
 

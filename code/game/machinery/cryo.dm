@@ -51,7 +51,9 @@
 	add_overlay(tank)
 	update_icon()
 
-OWN(/obj/machinery/atmospherics/unary/cryo_cell, beaker, OWN_SPILL)
+/obj/machinery/atmospherics/unary/cryo_cell/ownership()
+	. = ..()
+	. += owns(nameof(beaker), policy = OWN_SPILL)
 DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/unary/cryo_cell, MACHINE_PIPELINE, list("on", "node"))
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
@@ -173,7 +175,7 @@ UI_ACT_PROC(/obj/machinery/atmospherics/unary/cryo_cell, ui_act_ejectbeaker)
 	. = TRUE
 	if(beaker)
 		beaker.forceMove(get_step(src.loc, SOUTH))
-		own_take(src, "beaker")
+		own_take(src, nameof(/obj/machinery/biogenerator::beaker))
 		update_icon()
 	add_fingerprint(ui.user)
 

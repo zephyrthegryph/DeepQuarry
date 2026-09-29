@@ -113,9 +113,9 @@
 /obj/item/spell/Initialize(mapload, coreless)
 	. = ..()
 	if(isliving(loc))
-		rel_set(src, "owner", loc)
+		rel_set(src, nameof(owner), loc)
 	if(owner_ref() && !coreless)
-		rel_set(src, "core", owner_ref().get_technomancer_core())
+		rel_set(src, nameof(core), owner_ref().get_technomancer_core())
 		if(!core)
 			to_chat(owner_ref(), span_warning("You need a Core to do that."))
 			return INITIALIZE_HINT_QDEL
@@ -154,7 +154,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/spell, TYPE_PROC_REF(/atom, appearance_overlay
 	if(!owner_ref())
 		return 0
 	if(!core)
-		rel_set(src, "core", locate_within(owner_ref(), /obj/item/technomancer_core))
+		rel_set(src, nameof(core), locate_within(owner_ref(), /obj/item/technomancer_core))
 		if(!core)
 			to_chat(owner_ref(), span_danger("You need to be wearing a core on your back!"))
 			return 0

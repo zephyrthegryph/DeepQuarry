@@ -206,10 +206,10 @@ DECLARE_UI(/datum/ui_test_host/from_var, UI_FROM_VAR("tgui_id"))
 	TEST_ASSERT_EQUAL(ui_test_last_call()[1], "child", "UI_ACT_OVERRIDE replaces the inherited handler")
 
 	var/datum/ui_test_host/target = new
-	rel_set(host, "forward_to", target)
+	rel_set(host, nameof(host.forward_to), target)
 	TEST_ASSERT(host.tgui_act("child_only", list(), ui) == null, "an action no row names and the forward target lacks does nothing")
 	var/datum/ui_test_host/child/child_target = new
-	rel_set(host, "forward_to", child_target)
+	rel_set(host, nameof(host.forward_to), child_target)
 	TEST_ASSERT(host.tgui_act("child_only", list(), ui), "UI_ACT_FORWARD hands an unknown action to its target's rows")
 
 	TEST_ASSERT(host.tgui_act("set_attribute", list("attribute" = "size", "val" = "9"), ui), "UI_ACT_NESTED routes to the sub-action")

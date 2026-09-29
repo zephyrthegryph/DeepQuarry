@@ -33,7 +33,7 @@
 	var/effect = 0
 
 /datum/stockEvent/product/New(datum/stock/S)
-	rel_set(src, "company", S)
+	rel_set(src, nameof(company), S)
 	var/mins = rand(5*TIME_MULTIPLIER,20*TIME_MULTIPLIER)
 	next_phase = mins * (600*TIME_MULTIPLIER) + world.time
 	current_title = "Product demo"
@@ -50,7 +50,7 @@
 			current_title = "Product release: [product_name]"
 			current_desc = "[company().name] unveiled their newest product at a conference, [product_name]Product release is expected to happen at spacetime [spacetime(next_phase)]."
 			var/datum/article/A = company().industry.generateInCharacterProductArticle(product_name, company())
-			rel_set(src, "product_article", A)
+			rel_set(src, nameof(product_article), A)
 			effect = A.opinion + rand(-1, 1)
 			company().affectPublicOpinion(effect)
 			phase_id = 1
@@ -70,7 +70,7 @@
 
 /datum/stockEvent/bankruptcy/New(datum/stock/S)
 	hidden = 1
-	rel_set(src, "company", S)
+	rel_set(src, nameof(company), S)
 	var/mins = rand(9*TIME_MULTIPLIER,60*TIME_MULTIPLIER)
 	bailout_millions = rand(70, 190)
 	next_phase = mins * 300*TIME_MULTIPLIER + world.time
@@ -121,7 +121,7 @@
 /datum/stockEvent/bankruptcy/proc/generateBankruptcyArticle()
 	var/datum/article/A = new
 	var/list/bankrupt_reason = list("investor pessimism", "failure of product lines", "economic recession", "overblown inflation", "overblown deflation", "collapsed pyramid schemes", "a Ponzi scheme", "economic terrorism", "extreme hedonism", "unfavourable economic climate", "rampant government corruption", "divine conspiracy", "some total bullshit", "volatile plans")
-	rel_set(A, "about", company())
+	rel_set(A, nameof(A.about), company())
 	A.headline = pick(	"[company().name] filing for bankruptcy", \
 						"[company().name] unable to pay, investors run", \
 						"[company().name] crashes, in foreclosure", \
@@ -149,7 +149,7 @@
 
 /datum/stockEvent/arrest/New(datum/stock/S)
 	hidden = 1
-	rel_set(src, "company", S)
+	rel_set(src, nameof(company), S)
 	var/mins = rand(10*TIME_MULTIPLIER, 35*TIME_MULTIPLIER)
 	next_phase = mins * 600*TIME_MULTIPLIER + world.time
 	current_title = ""
@@ -211,7 +211,7 @@
 
 /datum/stockEvent/arrest/proc/generateArrestArticle()
 	var/datum/article/A = new
-	rel_set(A, "about", company())
+	rel_set(A, nameof(A.about), company())
 	A.headline = company().industry.detokenize(pick( \
 						"[tname], [position] of [company().name] arrested", \
 						"[position] of [company().name] facing jail time", \

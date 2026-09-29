@@ -338,11 +338,11 @@ UI_ACT_PROC(/obj/item/paicard, ui_act_activate_tool)
 	to_chat(pai, examine_block(span_notice((updated ? "Your supplemental directives have been updated. Your new" : "Your") + " directives are:") + "<br>" + "Prime Directive: [span_info(pai.pai_law0)]<br>Supplemental Directives: [span_info(pai.pai_laws)]"))
 
 /obj/item/paicard/proc/setPersonality(mob/living/silicon/pai/personality)
-	rel_set(src, "pai", personality)
+	rel_set(src, nameof(pai), personality)
 	setEmotion(1)
 
 /obj/item/paicard/proc/removePersonality()
-	rel_clear(src, "pai")
+	rel_clear(src, nameof(pai))
 	setEmotion(16)
 
 /obj/item/paicard/proc/setEmotion(emotion)
@@ -795,8 +795,8 @@ DECLARE_EMAG_REPEATABLE(/obj/item/paicard, PROC_REF(on_emag), null)
 		emagged = TRUE
 		// Add tools
 		if(has_emag_toolkit)
-			own_set(src, "multitool", new /obj/item/multitool(src))
-			own_set(src, "signaler", new /obj/item/assembly/signaler(src))
+			own_set(src, nameof(multitool), new /obj/item/multitool(src))
+			own_set(src, nameof(signaler), new /obj/item/assembly/signaler(src))
 		return 1
 
 ///////////////////////////////
@@ -879,7 +879,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/paicard, PROC_REF(on_emag), null)
 		paicard.forceMove(get_turf(src))
 		var/mob/living/silicon/pai/AI = paicard.pai
 		AI.reset_perspective() // return to the card
-		own_take(src, "paicard")
+		own_take(src, nameof(paicard))
 		name = initial(src.name)
 		to_chat(AI, span_notice("You feel a tad claustrophobic as your mind closes back into your card, ejecting from \the [initial(src.name)]."))
 		if(user)
@@ -907,7 +907,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/paicard, PROC_REF(on_emag), null)
 	if(!istype(loc,/obj/item/paicard))
 		return
 	var/obj/item/paicard/card = loc
-	own_set(src, "secure_radio_connections", list())
+	own_set(src, nameof(secure_radio_connections), list())
 	channels = list()
 
 	for(var/internal_chan in internal_channels)
@@ -915,7 +915,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/paicard, PROC_REF(on_emag), null)
 		if(has_channel_access(card.pai, internal_chan))
 			channels += ch_name
 			channels[ch_name] = 1
-			own_put(src, "secure_radio_connections", ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT))
+			own_put(src, nameof(secure_radio_connections), ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT))
 
 /obj/item/paicard/typeb
 	name = "personal AI device"
@@ -932,5 +932,7 @@ DECLARE_LOOT(/obj/random/paicard, LOOT_TABLE(/obj/item/paicard, /obj/item/paicar
 	if(pai?.digestable)
 		return ..()
 
-OWN(/obj/machinery, paicard, OWN_CONTAINED)
+/obj/machinery/ownership()
+	. = ..()
+	. += owns(nameof(paicard), policy = OWN_CONTAINED)
 

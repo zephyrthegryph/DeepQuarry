@@ -63,7 +63,7 @@ UI_ACT_PROC(/datum/tgui_module/uav, ui_act_del_uav)
 		if("\ref[U]" == refstring)
 			if(current_uav() == U)
 				set_current(null)
-			rel_remove(mc_host, "paired_uavs", U)
+			rel_remove(mc_host, nameof(/obj/item/modular_computer::paired_uavs), U)
 	return TRUE
 
 UI_ACT(/datum/tgui_module/uav, "view_uav", ui_act_view_uav)
@@ -97,7 +97,7 @@ UI_ACT_PROC(/datum/tgui_module/uav, ui_act_power_uav)
 	signal_strength = 0
 	if(current_uav())
 		om_unhook(current_uav(), /datum/om/event/before/movable_z_changed, src)
-	rel_set(src, "current_uav", U)
+	rel_set(src, nameof(current_uav), U)
 	if(U)
 		om_hook(U, /datum/om/event/before/movable_z_changed, src, PROC_REF(current_uav_changed_z))
 	OM_EMIT(src, /datum/om/event/remote_view_clear)
@@ -108,7 +108,7 @@ UI_ACT_PROC(/datum/tgui_module/uav, ui_act_power_uav)
 
 	om_unhook(current_uav(), /datum/om/event/before/movable_z_changed, src)
 	signal_strength = 0
-	rel_clear(src, "current_uav")
+	rel_clear(src, nameof(current_uav))
 	OM_EMIT(src, /datum/om/event/remote_view_clear)
 
 /datum/tgui_module/uav/proc/current_uav_changed_z(datum/source, datum/om/event/before/movable_z_changed/event)
@@ -180,12 +180,12 @@ UI_ACT_PROC(/datum/tgui_module/uav, ui_act_power_uav)
 	if(!current_uav())
 		return
 	current_uav().add_master(user)
-	rel_add(src, "watchers", user)
+	rel_add(src, nameof(watchers), user)
 
 /datum/tgui_module/uav/unlook(mob/user)
 	if(current_uav())
 		current_uav().remove_master(user)
-	rel_remove(src, "watchers", user)
+	rel_remove(src, nameof(watchers), user)
 
 /datum/tgui_module/uav/tgui_close(mob/user)
 	. = ..()

@@ -305,7 +305,7 @@ UI_ACT_PROC(/obj/machinery/telecomms, ui_act_unlink)
 
 		// Remove link entries from both T and src.
 
-		rel_remove(src, "links", T)
+		rel_remove(src, nameof(/obj/machinery/telecomms::links), T)
 		. = TRUE
 
 UI_ACT(/obj/machinery/telecomms, "link", ui_act_link)
@@ -313,7 +313,7 @@ UI_ACT_PROC(/obj/machinery/telecomms, ui_act_link)
 	var/obj/item/multitool/P = get_multitool(ui.user)
 	if(P)
 		if(P.buffer() && P.buffer() != src)
-			rel_add(src, "links", P.buffer())
+			rel_add(src, nameof(/obj/machinery/telecomms::links), P.buffer())
 
 			set_temp("-% Successfully linked with \ref[P.buffer()] [P.buffer().name] %-", "average")
 
@@ -325,7 +325,7 @@ UI_ACT(/obj/machinery/telecomms, "buffer", ui_act_buffer)
 UI_ACT_PROC(/obj/machinery/telecomms, ui_act_buffer)
 	var/obj/item/multitool/P = get_multitool(ui.user)
 	if(P)
-		rel_set(P, "buffer", src)
+		rel_set(P, nameof(/obj/item/debugger::buffer), src)
 		set_temp("-% Successfully stored \ref[P.buffer()] [P.buffer().name] in buffer %-", "average")
 	. = TRUE
 
@@ -334,7 +334,7 @@ UI_ACT_PROC(/obj/machinery/telecomms, ui_act_flush)
 	var/obj/item/multitool/P = get_multitool(ui.user)
 	if(P)
 		set_temp("-% Buffer successfully flushed. %-", "average")
-		rel_clear(P, "buffer")
+		rel_clear(P, nameof(/obj/item/debugger::buffer))
 	. = TRUE
 
 UI_ACT(/obj/machinery/telecomms, "cleartemp", ui_act_cleartemp)
@@ -373,7 +373,7 @@ UI_ACT_PROC(/obj/machinery/telecomms, ui_act_cleartemp)
 		set_temp("-% Too many characters in new network tag %-", "average")
 
 	else
-		rel_clear(src, "links")
+		rel_clear(src, nameof(links))
 
 		network = newnet
 		set_temp("-% New network tag assigned: \"[network]\" %-", "average")

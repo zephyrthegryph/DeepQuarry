@@ -6,7 +6,7 @@
 	if (stat == 2 || !C.status || !(src.network in C.network)) return 0
 
 	// ok, we're alive, camera is good and in our network...
-	rel_set(src, "current", C)
+	rel_set(src, nameof(current), C)
 	src.begin_remote_view(/datum/remote_view, C, null, /datum/remote_view_config/camera_standard)
 	return 1
 
@@ -17,17 +17,17 @@
 
 /mob/living/silicon/pai/reset_perspective(atom/new_eye)
 	. = ..()
-	rel_clear(src, "current")
+	rel_clear(src, nameof(current))
 
 /mob/living/silicon/pai/verb/reset_record_view()
 	set category = "Abilities.pAI Commands"
 	set name = "Reset Records Software"
 
-	rel_clear(src, "securityActive1")
-	rel_clear(src, "securityActive2")
+	rel_clear(src, nameof(securityActive1))
+	rel_clear(src, nameof(securityActive2))
 	security_cannotfind = 0
-	rel_clear(src, "medicalActive1")
-	rel_clear(src, "medicalActive2")
+	rel_clear(src, nameof(medicalActive1))
+	rel_clear(src, nameof(medicalActive2))
 	medical_cannotfind = 0
 	SStgui.update_uis(src)
 	to_chat(src, span_notice("You reset your record-viewing software."))

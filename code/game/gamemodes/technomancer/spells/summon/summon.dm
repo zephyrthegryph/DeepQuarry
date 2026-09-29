@@ -23,7 +23,7 @@
 	qdel(E)
 	if(owner_ref()) // We might've been dropped.
 		var/mob/living/L = new summoned_mob_type(T)
-		own_add(core, "summoned_mobs", L)
+		own_add(core, nameof(core.summoned_mobs), L)
 		L.summoned = 1
 		var/image/summon_underlay = image('icons/obj/objects.dmi',"anom")
 		summon_underlay.alpha = 127

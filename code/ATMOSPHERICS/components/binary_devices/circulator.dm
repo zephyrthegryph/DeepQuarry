@@ -125,8 +125,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/binary/circulator, TYPE_PROC
 			node2.disconnect(src)
 			rust_release_network_wrapper(network2)
 
-		rel_clear(src, "node1")
-		rel_clear(src, "node2")
+		rel_clear(src, nameof(node1))
+		rel_clear(src, nameof(node2))
 
 	for(var/obj/machinery/power/generator/generator in range(1, src))
 		generator.reconnect()

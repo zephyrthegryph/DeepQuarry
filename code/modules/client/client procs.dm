@@ -288,7 +288,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	//preferences datum - also holds some persistant data for the client (because we may as well keep these datums to a minimum)
 	prefs = GLOB.preferences_datums[ckey] // ALLOW(ownership): /client is not a datum; it holds these directly
 	if(prefs)
-		rel_set(prefs, "client", src)
+		rel_set(prefs, nameof(prefs.client), src)
 		prefs.load_savefile() // just to make sure we have the latest data
 		prefs.apply_all_client_preferences()
 	else
@@ -414,7 +414,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	log_access("Logout: [key_name(src)]")
 	GLOB.tickets.ClientLogout(src)
 	if(holder)
-		rel_clear(holder, "owner")
+		rel_clear(holder, nameof(holder.owner))
 		GLOB.admins -= src
 	if(skybox)
 		qdel(skybox)
@@ -961,13 +961,13 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 
 /client/proc/open_filter_editor(atom/in_atom)
 	if(check_rights_for(src, R_HOLDER))
-		own_set(holder, "filteriffic", new /datum/filter_editor(in_atom))
+		own_set(holder, nameof(holder.filteriffic), new /datum/filter_editor(in_atom))
 		holder.filteriffic.tgui_interact(mob)
 
 ///opens the particle editor UI for the in_atom object for this client
 /client/proc/open_particle_editor(atom/movable/in_atom)
 	if(check_rights_for(src, R_HOLDER))
-		own_set(holder, "particle_test", new /datum/particle_editor(in_atom))
+		own_set(holder, nameof(holder.particle_test), new /datum/particle_editor(in_atom))
 		holder.particle_test.tgui_interact(mob)
 
 /client/proc/set_eye(new_eye)

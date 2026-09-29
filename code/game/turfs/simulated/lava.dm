@@ -26,7 +26,7 @@
 		name = "magma"
 	update_icon()
 	update_light()
-	own_set(src, "soundloop", new /datum/looping_sound/lava(list(src), FALSE))
+	own_set(src, nameof(soundloop), new /datum/looping_sound/lava(list(src), FALSE))
 	soundloop.start()
 	return ..()
 

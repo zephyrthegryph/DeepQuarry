@@ -77,6 +77,13 @@
 /datum/capability/proc/verbs()
 	return null
 
+/// Ownership entries (owns(...)) this capability contributes to its holder type's ownership table
+/// (doc/rewrite/ownership.md §1.2): a slot owns its var, so the type declares nothing for it. Per
+/// type and pure, like capabilities(): read only the capability's own settings.
+/datum/capability/proc/owned()
+	RETURN_TYPE(/list)
+	return list()
+
 /// Init / teardown hooks for per-instance state (default children, lazily created data).
 /datum/capability/proc/on_holder_init(atom/holder, mapload)
 	return

@@ -32,14 +32,14 @@
 	var/datum/planet/P = planet
 	var/datum/simple_sun/S = planet
 	if(istype(P))
-		own_set(src, "owned_sun", new /datum/simple_sun/planetary(P))
-		rel_set(src, "sun", owned_sun)
+		own_set(src, nameof(owned_sun), new /datum/simple_sun/planetary(P))
+		rel_set(src, nameof(sun), owned_sun)
 
 	if(istype(S))
-		rel_set(src, "sun", S)
+		rel_set(src, nameof(sun), S)
 
-	own_set(src, "vis_overhead", new /atom/movable/sun_vis_simple(null))
-	own_set(src, "vis_shade", new /atom/movable/sun_vis_simple(null))
+	own_set(src, nameof(vis_overhead), new /atom/movable/sun_vis_simple(null))
+	own_set(src, nameof(vis_shade), new /atom/movable/sun_vis_simple(null))
 
 /datum/planet_sunlight_handler/proc/update_sun()
 	sun().update()
@@ -123,7 +123,7 @@
 	var/tmp/datum/sun_holder/sun
 
 /datum/simple_sun/planetary/New(datum/planet/planet)
-	rel_set(src, "sun", planet.sun_holder)
+	rel_set(src, nameof(sun), planet.sun_holder)
 
 /datum/simple_sun/planetary/update()
 	. = ..()

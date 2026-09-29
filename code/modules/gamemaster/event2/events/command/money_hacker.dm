@@ -21,7 +21,7 @@
 
 /datum/event2/event/money_hacker/set_up()
 	if(REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
-		rel_set(src, "targeted_account", pick(REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)))
+		rel_set(src, nameof(targeted_account), pick(REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)))
 
 	if(!targeted_account())
 		log_game("Money hacker event could not find an account to hack. Aborting.")
@@ -107,7 +107,7 @@
 
 	T.source_terminal = pick("","[pick("Biesel","New Gibson")] GalaxyNet Terminal #[rand(111,999)]","your mums place","nantrasen high CommanD","Angessa's Pearl","Nowhere")
 
-	own_add(A, "transaction_log", T)
+	own_add(A, nameof(A.transaction_log), T)
 
 /// Accessor for the targeted_account var.
 /datum/event2/event/money_hacker/proc/targeted_account() as /datum/money_account

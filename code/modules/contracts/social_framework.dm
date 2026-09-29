@@ -68,8 +68,8 @@
 
 /datum/contract/social/New()
 	. = ..()
-	own_take_all(src, "stakeholder_roles")
-	own_take_all(src, "stakeholder_proposals")
+	own_take_all(src, nameof(stakeholder_roles))
+	own_take_all(src, nameof(stakeholder_proposals))
 
 
 /datum/contract/social/on_negotiated_terms_changed()
@@ -137,7 +137,7 @@
 /datum/contract/social/proc/add_stakeholder_role(datum/contract_stakeholder_role/role)
 	if(!role?.id || stakeholder_roles?[role.id])
 		return FALSE
-	own_put(src, "stakeholder_roles", role.id, role)
+	own_put(src, nameof(stakeholder_roles), role.id, role)
 	return TRUE
 
 /// Returns each active crew account once. Unit tests may supply a synthetic
@@ -264,7 +264,7 @@
 	proposal.status = CONTRACT_STAKEHOLDER_APPROVED
 	proposal.approved_weight = 1
 	proposal.contribution = max(proposal.contribution, contributions["[proposal.account_number]"] || 0)
-	own_put(src, "stakeholder_proposals", key, proposal)
+	own_put(src, nameof(stakeholder_proposals), key, proposal)
 	audit(CONTRACT_AUDIT_PROGRESS, "[proposal.account_name] joined [role.title].")
 	emit_contract_event(CONTRACT_EVENT_STAKEHOLDER_APPROVED, list(
 		"contract_id" = id,

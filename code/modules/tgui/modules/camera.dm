@@ -8,16 +8,16 @@
 
 /atom/movable/screen/map_view_tg/camera/generate_view(map_key)
 	. = ..()
-	own_set(src, "cam_background", new /atom/movable/screen/background())
+	own_set(src, nameof(cam_background), new /atom/movable/screen/background())
 	cam_background.del_on_map_removal = FALSE
 	cam_background.assigned_map = assigned_map
 
-	own_set(src, "local_skybox", new /atom/movable/screen/skybox())
+	own_set(src, nameof(local_skybox), new /atom/movable/screen/skybox())
 	local_skybox.del_on_map_removal = FALSE
 	local_skybox.assigned_map = assigned_map
 
 	// FG
-	own_set(src, "cam_foreground", new /atom/movable/screen/background)
+	own_set(src, nameof(cam_foreground), new /atom/movable/screen/background)
 	cam_foreground.del_on_map_removal = FALSE
 	cam_foreground.assigned_map = assigned_map
 
@@ -84,7 +84,7 @@
 	map_name = "camera_console_[REF(src)]_map"
 
 	// Initialize map objects
-	own_set(src, "cam_screen_tg", new /atom/movable/screen/map_view_tg/camera)
+	own_set(src, nameof(cam_screen_tg), new /atom/movable/screen/map_view_tg/camera)
 	cam_screen_tg.generate_view(map_name)
 
 
@@ -155,7 +155,7 @@ UI_ACT_PROC(/datum/tgui_module/camera, ui_act_switch_camera)
 	if(active_camera())
 		om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
 	if(C)
-		rel_set(src, "active_camera", C)
+		rel_set(src, nameof(/datum/tgui_module/camera::active_camera), C)
 		dq_add_recursive_move(active_camera())
 		om_hook(active_camera(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_active_camera_moved_event))
 	playsound(tgui_host(), get_sfx(SFX_TERMINAL_TYPE), 25, FALSE)
@@ -184,7 +184,7 @@ UI_ACT_PROC(/datum/tgui_module/camera, ui_act_pan)
 		if(target)
 			if(active_camera())
 				om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
-			rel_set(src, "active_camera", target)
+			rel_set(src, nameof(/datum/tgui_module/camera::active_camera), target)
 			dq_add_recursive_move(active_camera())
 			om_hook(active_camera(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_active_camera_moved_event))
 			playsound(tgui_host(), get_sfx(SFX_TERMINAL_TYPE), 25, FALSE)
@@ -215,7 +215,7 @@ UI_ACT_PROC(/datum/tgui_module/camera, ui_act_pan)
 		return
 
 	// Cameras that get here are moving, and are likely attached to some moving atom such as cyborgs.
-	rel_set(src, "last_camera_turf", newturf)
+	rel_set(src, nameof(last_camera_turf), newturf)
 
 	var/list/visible_turfs = list()
 	for(var/turf/T in (active_camera().isXRay() \
@@ -285,8 +285,8 @@ UI_ACT_PROC(/datum/tgui_module/camera, ui_act_pan)
 	if(length(concurrent_users) == 0 && is_living)
 		if(active_camera())
 			om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
-		rel_clear(src, "active_camera")
-		rel_clear(src, "last_camera_turf")
+		rel_clear(src, nameof(active_camera))
+		rel_clear(src, nameof(last_camera_turf))
 		play_sfx(tgui_host(), SFX_MACHINES_TERMINAL_OFF, 0.5, vary = FALSE)
 
 // NTOS Version

@@ -33,23 +33,23 @@
 	if(length(spell_masters))
 		for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters)
 			if(spell_master.type == master_type)
-				rel_add(src, "spell_list", spell_to_add)
+				rel_add(src, nameof(spell_list), spell_to_add)
 				spell_master.add_spell(spell_to_add)
 				if(mind)
-					rel_add(mind, "learned_spells", spell_to_add)
+					rel_add(mind, nameof(mind.learned_spells), spell_to_add)
 				return 1
 
 	var/atom/movable/screen/movable/spell_master/new_spell_master = new master_type //we're here because either we didn't find our type, or we have no spell masters to attach to
 	if(client)
 		src.client.screen += new_spell_master
-	rel_set(new_spell_master, "spell_holder", src)
+	rel_set(new_spell_master, nameof(new_spell_master.spell_holder), src)
 	new_spell_master.add_spell(spell_to_add)
 	if(spell_base)
 		new_spell_master.icon_state = spell_base
-	own_add(src, "spell_masters", new_spell_master)
-	rel_add(src, "spell_list", spell_to_add)
+	own_add(src, nameof(spell_masters), new_spell_master)
+	rel_add(src, nameof(spell_list), spell_to_add)
 	if(mind)
-		rel_add(mind, "learned_spells", spell_to_add)
+		rel_add(mind, nameof(mind.learned_spells), spell_to_add)
 
 	return 1
 
@@ -64,8 +64,8 @@
 		return
 
 	if(mind)
-		rel_remove(mind, "learned_spells", spell_to_remove)
-	rel_remove(src, "spell_list", spell_to_remove)
+		rel_remove(mind, nameof(mind.learned_spells), spell_to_remove)
+	rel_remove(src, nameof(spell_list), spell_to_remove)
 	for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters)
 		spell_master.remove_spell(spell_to_remove)
 	return 1
@@ -127,7 +127,7 @@
 /obj/item/spell/unrestricted/Initialize(mapload, coreless)
 	. = ..()
 	if(isliving(loc))
-		rel_set(src, "owner", loc)
+		rel_set(src, nameof(owner), loc)
 	if(!owner_ref())
 		return INITIALIZE_HINT_QDEL
 	update_icon()
@@ -189,7 +189,7 @@
 	if(set_up(hit_atom, user))
 		var/obj/item/projectile/new_projectile = make_projectile(spell_projectile, user)
 		new_projectile.old_style_target(hit_atom)
-		rel_set(new_projectile, "firer", user) //Don't shoot yourself while moving
+		rel_set(new_projectile, nameof(new_projectile.firer), user) //Don't shoot yourself while moving
 		new_projectile.fire()
 		log_attack("has casted [src] at \the [hit_atom].")
 		if(fire_sound)

@@ -33,7 +33,7 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster, hold_spec, list(REQ_BECAUSE(REQ
 	name = "occupied [initial(name)]"
 
 /obj/item/clothing/accessory/holster/proc/clear_holster()
-	own_take(src, "holstered")
+	own_take(src, nameof(holstered))
 	name = initial(name)
 
 /// Draws the holstered item; `stance` I_HURT draws it ready to fire.
@@ -256,4 +256,6 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster/machete/rapier/swords, hold_spec
 
 TYPE_TABLE(/obj/item/clothing/accessory/holster/case, hold_spec, list(HOLD_ONLY(list(/obj/item/instrument))))
 
-OWN(/obj/item/clothing/accessory/holster, holstered, OWN_CONTAINED)
+/obj/item/clothing/accessory/holster/ownership()
+	. = ..()
+	. += owns(nameof(holstered), policy = OWN_CONTAINED)

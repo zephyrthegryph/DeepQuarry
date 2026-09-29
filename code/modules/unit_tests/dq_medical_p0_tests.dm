@@ -70,10 +70,10 @@
 	var/mob/living/carbon/brain/B = allocate(/mob/living/carbon/brain)
 	TEST_ASSERT_NULL(B.mind, "a fresh brain mob has no mind")
 	TEST_ASSERT(!B.backup_ping_resolve(), "no mind: no notification")
-	rel_set(B, "mind", new /datum/mind("dq_p0_no_backup"))
+	rel_set(B, nameof(B.mind), new /datum/mind("dq_p0_no_backup"))
 	B.mind.name = "dq p0 nobody"
 	TEST_ASSERT(!B.backup_ping_resolve(), "no backup record: no notification")
-	rel_clear(B, "mind")
+	rel_clear(B, nameof(B.mind))
 
 /// D13 / D14: rejuvenating or damaging a detached limb touches no owner.
 /datum/unit_test/dq_p0_detached_limb_no_owner_runtime
@@ -120,15 +120,15 @@
 	// It links its target while the step runs; the target dying mid-step clears those views
 	// (a link to a dying entity is refused, so the task is built before the arm goes).
 	var/datum/om/task/timed/surgical_step/task = new
-	rel_set(task, "actor", surgeon)
-	rel_set(task, "target", H)
-	rel_set(task, "receiver", H)
-	rel_set(task, "tool", tool)
-	rel_set(task, "surgery_step", step)
+	rel_set(task, nameof(task.actor), surgeon)
+	rel_set(task, nameof(task.target), H)
+	rel_set(task, nameof(task.receiver), H)
+	rel_set(task, nameof(task.tool), tool)
+	rel_set(task, nameof(task.surgery_step), step)
 	task.zone = BP_L_ARM
 	task.cleanliness = 100
-	rel_set(task, "part", arm)
-	rel_set(task, "work_target", arm)
+	rel_set(task, nameof(task.part), arm)
+	rel_set(task, nameof(task.work_target), arm)
 	task.chance = 0
 	arm.droplimb(clean = TRUE, disintegrate = DROPLIMB_EDGE)
 	qdel(arm) // the work target is gone by the time the interruption lands

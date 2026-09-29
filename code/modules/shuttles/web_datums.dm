@@ -13,8 +13,8 @@
 	var/one_way = FALSE							// If true, you can't travel from end to start.
 
 /datum/shuttle_route/New(_start, _end, _interim, _time = 0, _oneway = FALSE)
-	rel_set(src, "start", _start)
-	rel_set(src, "end", _end)
+	rel_set(src, nameof(start), _start)
+	rel_set(src, nameof(end), _end)
 	if(_interim)
 		interim = SSshuttles.get_landmark(_interim)
 	travel_time = _time
@@ -65,10 +65,10 @@
 
 /datum/shuttle_destination/New(new_master)
 	var/landmark_tag = my_landmark_tag // Subtypes set the tag string; resolve it to the landmark obj.
-	rel_set(src, "my_landmark", SSshuttles.get_landmark(landmark_tag))
+	rel_set(src, nameof(my_landmark), SSshuttles.get_landmark(landmark_tag))
 	if(!my_landmark())
 		log_mapping("Web shuttle destination '[name]' could not find its landmark '[landmark_tag]'.") // Important error message
-	rel_set(src, "master", new_master)
+	rel_set(src, nameof(master), new_master)
 
 
 
@@ -132,8 +132,8 @@
 
 	// Now we can connect them.
 	var/datum/shuttle_route/new_route = new(src, other_place, interim_tag, travel_time)
-	rel_add(src, "routes", new_route)
-	rel_add(other_place, "routes", new_route)
+	rel_add(src, nameof(routes), new_route)
+	rel_add(other_place, nameof(other_place.routes), new_route)
 
 // Depending on certain circumstances, the shuttles can fail.
 // What happens depends on where the shuttle is.  If it's in space, it just can't move until its fixed.
@@ -168,11 +168,11 @@
 	var/autopath_class = null									// Similar to destination_class, used for typesof().
 
 /datum/shuttle_web_master/New(new_shuttle, new_destination_class = null)
-	rel_set(src, "my_shuttle", new_shuttle)
+	rel_set(src, nameof(my_shuttle), new_shuttle)
 	if(new_destination_class)
 		destination_class = new_destination_class
 	build_destinations()
-	rel_set(src, "current_destination", get_destination_by_type(starting_destination))
+	rel_set(src, nameof(current_destination), get_destination_by_type(starting_destination))
 	build_autopaths()
 
 
@@ -191,7 +191,7 @@
 			log_mapping("Web shuttle destination '[D.name]' ([new_type]) pruned: no landmark on this map.")
 			qdel(D)
 			continue
-		own_add(src, "destinations", D)
+		own_add(src, nameof(destinations), D)
 
 	// Now start the process of connecting all of them.
 	for(var/datum/shuttle_destination/D in destinations)
@@ -208,8 +208,8 @@
 /datum/shuttle_web_master/proc/on_shuttle_arrival()
 	if(future_destination())
 		future_destination().enter()
-		rel_set(src, "current_destination", future_destination())
-		rel_clear(src, "future_destination")
+		rel_set(src, nameof(current_destination), future_destination())
+		rel_clear(src, nameof(future_destination))
 
 /datum/shuttle_web_master/proc/get_available_routes()
 	if(current_destination())
@@ -225,9 +225,9 @@
 // Autopilot stuff.
 /datum/shuttle_web_master/proc/build_autopaths()
 	for(var/datum/shuttle_autopath/built as anything in init_subtypes(autopath_class))
-		own_add(src, "autopaths", built)
+		own_add(src, nameof(autopaths), built)
 	for(var/datum/shuttle_autopath/P in autopaths)
-		rel_set(P, "master", src)
+		rel_set(P, nameof(P.master), src)
 	// Drop autopaths that reference destinations pruned in build_destinations()
 	// (landmark missing on this map) — walking one would dead-end mid-route.
 	for(var/datum/shuttle_autopath/P in autopaths)
@@ -238,18 +238,18 @@
 				break
 		if(!valid)
 			log_mapping("Web shuttle autopath [P.type] pruned: references a destination with no landmark on this map.")
-			own_remove(src, "autopaths", P)
+			own_remove(src, nameof(autopaths), P)
 
 /datum/shuttle_web_master/proc/choose_path()
 	if(!length(autopaths) || !current_destination())
 		return
 	for(var/datum/shuttle_autopath/path in autopaths)
 		if(path.start == current_destination().type)
-			rel_set(src, "autopath", path)
+			rel_set(src, nameof(autopath), path)
 			break
 
 /datum/shuttle_web_master/proc/path_finished(datum/shuttle_autopath/path)
-	rel_clear(src, "autopath")
+	rel_clear(src, nameof(autopath))
 
 /datum/shuttle_web_master/proc/walk_path(target_type)
 	if(!current_destination())
@@ -257,10 +257,10 @@
 	var/datum/shuttle_route/R = current_destination().get_route_to(target_type)
 	if(!R)
 		return FALSE
-	rel_set(src, "future_destination", R.get_other_side(current_destination()))
+	rel_set(src, nameof(future_destination), R.get_other_side(current_destination()))
 	if(!future_destination()?.my_landmark()) // Nowhere to actually land; abort the hop rather than jumping to null.
 		log_shuttle("Web shuttle [my_shuttle()] aborted a hop to [target_type]: destination has no landmark.")
-		rel_clear(src, "future_destination")
+		rel_clear(src, nameof(future_destination))
 		return FALSE
 
 	var/travel_time = R.travel_time * my_shuttle().flight_time_modifier * 2 // Autopilot is less efficent than having someone flying manually.
@@ -291,11 +291,11 @@
 		// The hop failed (missing route/landmark). Drop the path so we re-plan
 		// instead of retrying the same broken hop every process tick.
 		autopath().reset_path()
-		rel_clear(src, "autopath")
+		rel_clear(src, nameof(autopath))
 
 // Call this to reset everything related to autopiloting.
 /datum/shuttle_web_master/proc/reset_autopath()
-	rel_clear(src, "autopath")
+	rel_clear(src, nameof(autopath))
 	my_shuttle().autopilot = FALSE
 
 /*************
@@ -362,6 +362,10 @@
 
 // A route names both endpoints (one-sided views); each endpoint lists the route (a list view).
 // Not pairs: one routes list would need two partner vars (start and end).
-REL(/datum/shuttle_route, start)
-REL(/datum/shuttle_route, end)
-REL_LIST(/datum/shuttle_destination, routes)
+/datum/shuttle_route/relations()
+	. = ..()
+	. += rel_one(nameof(start))
+	. += rel_one(nameof(end))
+/datum/shuttle_destination/relations()
+	. = ..()
+	. += rel_many(nameof(routes))

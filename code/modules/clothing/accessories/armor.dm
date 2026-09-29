@@ -18,13 +18,13 @@
 				var/obj/item/clothing/G = H.get_equipped_item(SLOT_ID_GLOVES)
 				if(G.body_parts_covered & ARMS)
 					to_chat(H, span_warning("You can't wear \the [src] with \the [G], it's in the way."))
-					own_take_member(S, "accessories", src)
+					own_take_member(S, nameof(S.accessories), src)
 					return
 			else if((body_parts_covered & LEGS) && istype(H.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing))
 				var/obj/item/clothing/Sh = H.get_equipped_item(SLOT_ID_SHOES)
 				if(Sh.body_parts_covered & LEGS)
 					to_chat(H, span_warning("You can't wear \the [src] with \the [Sh], it's in the way."))
-					own_take_member(S, "accessories", src)
+					own_take_member(S, nameof(S.accessories), src)
 					return
 	..()
 

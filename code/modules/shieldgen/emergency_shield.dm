@@ -160,12 +160,12 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shieldgen, MACHINE_PIPELINE, "active")
 		if (is_type_in_list(target_tile,GLOB.shieldgen_blockedturfs) && !(locate_within(target_tile, /obj/machinery/shield)))
 			if (malfunction && prob(33) || !malfunction)
 				var/obj/machinery/shield/S = new/obj/machinery/shield(target_tile)
-				own_add(src, "deployed_shields", S) // a destroyed tile leaves the list by itself
-				rel_set(S, "our_owner", src)
+				own_add(src, nameof(deployed_shields), S) // a destroyed tile leaves the list by itself
+				rel_set(S, nameof(S.our_owner), src)
 				use_power(S.shield_generate_power)
 
 /obj/machinery/shieldgen/proc/collapse_shields()
-	own_clear(src, "deployed_shields", OWN_DELETE)
+	own_clear(src, nameof(deployed_shields), OWN_DELETE)
 
 /obj/machinery/shieldgen/machine_step()
 	if(cell && cell.charge)

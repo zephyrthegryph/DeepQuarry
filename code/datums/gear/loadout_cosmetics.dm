@@ -32,9 +32,9 @@
 /datum/gear/cosmetic/nailpolish/New()
 	..()
 	// can't set description, it'll look funny
-	own_clear(src, "gear_tweaks", OWN_DELETE)
-	own_add(src, "gear_tweaks", new /datum/gear_tweak/color)
-	own_add(src, "gear_tweaks", new /datum/gear_tweak/custom_name)
+	own_clear(src, nameof(gear_tweaks), OWN_DELETE)
+	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/custom_name)
 
 /datum/gear/cosmetic/nailpolish/spawn_item(location, metadata)
 	var/obj/item/nailpolish/polish = ..()

@@ -88,7 +88,7 @@
 	if(locate_within(get_turf(src), /obj/effect/slug_glue)) // Don't stack slime forever
 		return
 	var/obj/effect/slug_glue/G = new /obj/effect/slug_glue/(get_turf(src))
-	rel_set(G, "owner_slug", src)
+	rel_set(G, nameof(G.owner_slug), src)
 	slime_count++
 
 /mob/living/simple_mob/vore/slug/Moved()
@@ -118,7 +118,7 @@
 
 /mob/living/simple_mob/vore/slug/perform_the_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, delay)
 	..()
-	rel_set(src, "last_prey", prey)
+	rel_set(src, nameof(last_prey), prey)
 
 /obj/effect/slug_glue
 	name = "liquid"
@@ -141,7 +141,7 @@
 	. = ..()
 	if(!persist_time)
 		return INITIALIZE_HINT_QDEL
-	rel_set(src, "my_turf", get_turf(src))
+	rel_set(src, nameof(my_turf), get_turf(src))
 	if(istype(my_turf, /turf/simulated/floor/water)) //Aside from not making sense in water, this prevents drowning.
 		return INITIALIZE_HINT_QDEL
 	expire(persist_time)
@@ -198,7 +198,7 @@
 	if(!my_slug || !has_buckled_mobs() || isbelly(my_slug.loc)) //Otherwise if you eat the slug it will infinitely attempt to eat you if you trip in glue.
 		return
 	if(my_slug.last_prey == victim) //Getting eaten lets you get stuck once without alerting the slug. This is to prevent instantly getting eaten again if you struggle free with run intent on.
-		rel_clear(my_slug, "last_prey")
+		rel_clear(my_slug, nameof(my_slug.last_prey))
 		return
 	my_slug.ai_brain?.give_target(victim, TRUE)
 

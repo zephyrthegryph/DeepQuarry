@@ -340,7 +340,7 @@ UI_ACT_PROC(/obj/machinery/partslathe, ui_act_ejectboard)
 	if(copy_board)
 		visible_message(span_notice("[copy_board] is ejected from [src]'s circuit reader."))
 		copy_board.forceMove(src.loc)
-		own_take(src, "copy_board")
+		own_take(src, nameof(/obj/machinery/partslathe::copy_board))
 	return TRUE
 
 UI_ACT(/obj/machinery/partslathe, "remove_mat", ui_act_remove_mat, UI_ARG_NUM("amount"), UI_ARG_TEXT("id"))
@@ -395,5 +395,7 @@ UI_ACT_PROC(/obj/machinery/partslathe, ui_act_remove_mat)
 /obj/machinery/partslathe/step_start_condition()
 	return busy
 
-OWN(/obj/machinery/partslathe, copy_board, OWN_CONTAINED)
+/obj/machinery/partslathe/ownership()
+	. = ..()
+	. += owns(nameof(copy_board), policy = OWN_CONTAINED)
 

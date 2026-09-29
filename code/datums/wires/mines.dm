@@ -35,7 +35,7 @@
 			if(C.trap)
 				var/obj/item/trap = C.trap
 				trap.forceMove(MI)
-				own_move(trap, MI, "trap") // from the disarmed casing to the dropped mine
+				own_move(trap, MI, nameof(MI.trap)) // from the disarmed casing to the dropped mine
 				for(var/wire_color in colors)
 					detach_assembly(wire_color) //Kick all the signallers off!
 

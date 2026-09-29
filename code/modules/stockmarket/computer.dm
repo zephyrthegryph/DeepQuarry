@@ -87,7 +87,7 @@ UI_ACT(/obj/machinery/computer/stockexchange, "stocks_archive", ui_act_stocks_ar
 UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_archive)
 	var/datum/stock/S = params["share"]
 	if(S)
-		rel_set(src, "current_stock", S)
+		rel_set(src, nameof(/obj/machinery/computer/stockexchange::current_stock), S)
 		screen = "archive"
 
 UI_ACT(/obj/machinery/computer/stockexchange, "stocks_history", ui_act_stocks_history, UI_ARG_REF("share", "proc:ui_source_glob_stockexchange_stocks", /datum/stock))
@@ -98,7 +98,7 @@ UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_history)
 
 UI_ACT(/obj/machinery/computer/stockexchange, "stocks_backbutton", ui_act_stocks_backbutton)
 UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_backbutton)
-	rel_clear(src, "current_stock")
+	rel_clear(src, nameof(/obj/machinery/computer/stockexchange::current_stock))
 	screen = "stocks"
 
 UI_ACT(/obj/machinery/computer/stockexchange, "stocks_cycle_view", ui_act_stocks_cycle_view)

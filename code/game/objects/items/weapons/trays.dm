@@ -26,7 +26,7 @@
 	cut_overlays()
 	for(var/obj/item/I in carrying)
 		I.forceMove(M.loc)
-		rel_remove(src, "carrying", I)
+		rel_remove(src, nameof(carrying), I)
 		if(isturf(I.loc))
 			I.scatter_steps(rand(1, 2))
 
@@ -139,7 +139,7 @@ DECLARE_INTERACTIONS(/obj/item/tray, INTERACT_ITEM(null, PROC_REF(interaction_it
 				break
 			var/image/Img = new(src.icon)
 			I.forceMove(src)
-			rel_add(src, "carrying", I)
+			rel_add(src, nameof(carrying), I)
 			Img.icon = I.icon
 			Img.icon_state = I.icon_state
 			Img.layer = layer + I.layer*0.01
@@ -164,6 +164,6 @@ DECLARE_INTERACTIONS(/obj/item/tray, INTERACT_ITEM(null, PROC_REF(interaction_it
 		cut_overlays()
 		for(var/obj/item/I in carrying)
 			I.forceMove(loc)
-			rel_remove(src, "carrying", I)
+			rel_remove(src, nameof(carrying), I)
 			if(noTable)
 				I.scatter_steps(rand(1, 2))

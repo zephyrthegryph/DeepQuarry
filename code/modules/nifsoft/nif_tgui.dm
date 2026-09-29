@@ -32,7 +32,7 @@
 	if(!ismob(M))
 		log_runtime("nif_menu created without a mob owner ([M]).")
 		return
-	rel_set(src, "owner", M)
+	rel_set(src, nameof(owner), M)
 	om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_client_login))
 	om_hook(owner, /datum/om/event/qdeleting, src, PROC_REF(on_owner_qdeleting))
 	if(owner.client)
@@ -45,7 +45,7 @@
 		owner?.client?.screen -= screen_icon
 		var/datum/hud/button_hud = owner_of(screen_icon)
 		if(istype(button_hud))
-			own_remove(button_hud, "other_important", screen_icon)
+			own_remove(button_hud, nameof(button_hud.other_important), screen_icon)
 	..()
 
 /datum/nif_menu/proc/on_owner_qdeleting(datum/source, datum/om/event/qdeleting/event)
@@ -62,8 +62,8 @@
 	// (the old hud deleted its own, which cleared this relation).
 	if(!screen_icon)
 		var/atom/movable/screen/nif/button = new
-		own_add(HUD, "other_important", button)
-		rel_set(src, "screen_icon", button)
+		own_add(HUD, nameof(HUD.other_important), button)
+		rel_set(src, nameof(screen_icon), button)
 		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(nif_menu_click))
 	screen_icon.icon = HUD.ui_style
 	screen_icon.color = HUD.ui_color

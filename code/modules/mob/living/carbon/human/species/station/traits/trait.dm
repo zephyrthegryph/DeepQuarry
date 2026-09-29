@@ -79,7 +79,7 @@
 		H.set_sdisabilities(H.sdisabilities | (sdisability)) // bitflag
 	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/trait_tutorial, src)
 	if(special_env)
-		rel_add(S, "env_traits", src)
+		rel_add(S, nameof(S.env_traits), src)
 	if(added_component_path && !species_state_has(H, added_component_path))
 		species_state_add(H, added_component_path)
 	if(added_behaviour_path)
@@ -115,7 +115,7 @@
 	if(sdisability)
 		H.set_sdisabilities(H.sdisabilities & (~sdisability)) // bitflag
 	if(special_env)
-		rel_remove(S, "env_traits", src)
+		rel_remove(S, nameof(S.env_traits), src)
 	if(added_behaviour_path && H)
 		om_detach(H, added_behaviour_path)
 	if(added_component_path)
@@ -208,4 +208,6 @@
 /datum/trait/proc/environment_effects(mob/living/carbon/human/H)
 	return
 
-REL_PAIR(/datum/trait, linked_gene, linked_trait)
+/datum/trait/relations()
+	. = ..()
+	. += rel_one(nameof(linked_gene), back = nameof(/datum/gene/trait::linked_trait))

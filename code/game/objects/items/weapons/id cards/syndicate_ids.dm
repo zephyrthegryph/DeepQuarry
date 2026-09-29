@@ -73,7 +73,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/syndicate, INTERACT_USE("Edit or show", PR
 	if(!istype(user) || user == registered_user())
 		return FALSE
 	unset_registered_user()
-	rel_set(src, "registered_user", user)
+	rel_set(src, nameof(registered_user), user)
 	user.set_id_info(src)
 	user.register(OBSERVER_EVENT_DESTROY, src, /obj/item/card/id/syndicate/proc/unset_registered_user)
 	return TRUE
@@ -82,7 +82,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/syndicate, INTERACT_USE("Edit or show", PR
 	if(!registered_user() || (user && user != registered_user()))
 		return
 	registered_user().unregister(OBSERVER_EVENT_DESTROY, src)
-	rel_clear(src, "registered_user")
+	rel_clear(src, nameof(registered_user))
 
 /proc/id_card_states()
 	if(!GLOB.id_card_states)

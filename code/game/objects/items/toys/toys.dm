@@ -37,8 +37,8 @@
 /obj/item/toy/balloon/Initialize(mapload)
 	. = ..()
 	var/datum/reagents/R = new/datum/reagents(10)
-	own_set(src, "reagents", R)
-	rel_set(R, "my_atom", src)
+	own_set(src, nameof(reagents), R)
+	rel_set(R, nameof(R.my_atom), src)
 
 /obj/item/toy/balloon/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	return NONE
@@ -765,7 +765,7 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 /obj/structure/plushie/proc/attack_hand_timed_done(mob/user)
 	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
 	stored_item.forceMove(get_turf(src))
-	own_take(src, "stored_item")
+	own_take(src, nameof(stored_item))
 	return
 
 /// Old attackby.
@@ -888,7 +888,7 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 /obj/item/toy/plushie/proc/attack_self_timed_done(mob/user)
 	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
 	stored_item.forceMove(get_turf(src))
-	own_take(src, "stored_item")
+	own_take(src, nameof(stored_item))
 	return
 
 /obj/item/toy/plushie/proc/say_phrase()
@@ -2220,7 +2220,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/minigibber, \
 	if(stored_minature)
 		to_chat(user, span_danger("\The [src] makes a violent grinding noise as it tears apart the miniature figure inside!"))
 		play_sfx(src, SFX_EFFECTS_SPLAT)
-		own_clear(src, "stored_minature", OWN_DELETE)
+		own_clear(src, nameof(stored_minature), OWN_DELETE)
 		COOLDOWN_START(src, cooldown, 0.8 SECONDS)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		to_chat(user, span_notice("You hit the gib button on \the [src]."))
@@ -2990,8 +2990,12 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/dragon, INTERACT_USE("Squeeze", PROC_R
 	om_after(src, 135, TYPE_PROC_REF(/atom, set_icon_state), "nuketoycool")
 	om_after(src, 135 + (cooldown - world.time), TYPE_PROC_REF(/atom, set_icon_state), "nuketoyidle")
 
-OWN(/obj/structure/plushie, stored_item, OWN_CONTAINED)
-OWN(/obj/item/toy/plushie, stored_item, OWN_CONTAINED)
+/obj/structure/plushie/ownership()
+	. = ..()
+	. += owns(nameof(stored_item), policy = OWN_CONTAINED)
+/obj/item/toy/plushie/ownership()
+	. = ..()
+	. += owns(nameof(stored_item), policy = OWN_CONTAINED)
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/toy/plushie, \

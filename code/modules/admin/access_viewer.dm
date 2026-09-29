@@ -77,4 +77,4 @@ UI_DATA_REPLACE(/datum/access_viewer, "merge:ui_data_datum_access_viewer{name:te
 	return data
 
 /datum/access_viewer/proc/set_access_focus(obj/machinery/req_thing)
-	rel_set(src, "focused_obj", req_thing)
+	rel_set(src, nameof(focused_obj), req_thing)

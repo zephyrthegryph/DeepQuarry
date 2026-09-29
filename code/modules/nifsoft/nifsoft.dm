@@ -50,7 +50,7 @@
 /datum/nifsoft/New(obj/item/nif/nif_load)
 	ASSERT(nif_load)
 
-	rel_set(src, "nif", nif_load)
+	rel_set(src, nameof(nif), nif_load)
 	if(!install(nif()))
 		qdel(src)
 
@@ -75,7 +75,7 @@
 		if(active)
 			deactivate()
 		. = nif().uninstall(src)
-		rel_clear(src, "nif")
+		rel_clear(src, nameof(nif))
 	if(!QDESTROYING(src))
 		qdel(src)
 

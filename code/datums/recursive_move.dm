@@ -26,12 +26,12 @@
 		AM.recursive_move.reset_parents()
 		AM.recursive_move.setup_parents()
 		return AM.recursive_move
-	own_set(AM, "recursive_move", new /datum/recursive_move(AM))
+	own_set(AM, nameof(AM.recursive_move), new /datum/recursive_move(AM))
 	return AM.recursive_move
 
 /datum/recursive_move/New(atom/movable/new_holder)
 	..()
-	rel_set(src, "holder", new_holder)
+	rel_set(src, nameof(holder), new_holder)
 	om_after(src, 0, PROC_REF(setup_parents)) // Delayed action if our holder is spawned in nullspace and then loc = target, hopefully this catches it. VV Add item does this, for example.
 
 /datum/recursive_move/proc/setup_parents()
@@ -51,7 +51,7 @@
 			reset_parents()
 			break
 		recursion++
-		rel_add(src, "parents", cur_parent)
+		rel_add(src, nameof(parents), cur_parent)
 		om_hook(cur_parent, /datum/om/event/atom_exited, src, PROC_REF(on_parent_exited))
 		om_hook(cur_parent, /datum/om/event/qdeleting, src, PROC_REF(on_qdel))
 		// Because the turf is not considered to be in the heirarchy by the relay, picking
@@ -63,7 +63,7 @@
 	if(recursion >= 64) // If we escaped due to iteration limit, cancel
 		log_runtime("RECURSIVE_MOVE: Parent hit recursion limit. ([holder]) ([holder.type])")
 		reset_parents()
-		rel_clear(src, "parents")
+		rel_clear(src, nameof(parents))
 
 	if(length(parents))
 		//Only need to watch top parent for movement. Everything is covered by Exited
@@ -127,7 +127,7 @@
 
 /datum/recursive_move/proc/reset_parents()
 	unregister_hooks()
-	rel_clear(src, "parents")
+	rel_clear(src, nameof(parents))
 
 //the banana peel of testing stays
 /obj/item/bananapeel/test

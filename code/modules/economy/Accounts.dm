@@ -49,7 +49,7 @@
 	transaction.date = GLOB.current_date_string
 	transaction.time = stationtime2text()
 	transaction.source_terminal = terminal_id
-	own_add(src, "transaction_log", transaction)
+	own_add(src, nameof(transaction_log), transaction)
 
 /datum/money_account/proc/credit(amount, source_name, purpose, terminal_id = "Station budget ledger", external = TRUE, allow_suspended = FALSE)
 	if(!isnum(amount) || amount <= 0 || (suspended && !allow_suspended))
@@ -236,7 +236,7 @@ REGISTRY_MEMBERSHIP(/datum/money_account, REGISTRY_MONEY_ACCOUNTS)
 		var/obj/item/smallDelivery/P = new /obj/item/smallDelivery(source_db.loc)
 
 		var/obj/item/paper/R = new /obj/item/paper(P)
-		own_set(P, "wrapped", R)
+		own_set(P, nameof(P.wrapped), R)
 		R.name = "Account information: [M.owner_name]"
 		R.info = span_bold("Account details (confidential)") + "<br><hr><br>"
 		R.info += "<i>Account holder:</i> [M.owner_name]<br>"
@@ -257,7 +257,7 @@ REGISTRY_MEMBERSHIP(/datum/money_account, REGISTRY_MONEY_ACCOUNTS)
 		R.stamps += "<HR><i>This paper has been stamped by the Accounts Database.</i>"
 
 	//add the account
-	own_add(M, "transaction_log", T)
+	own_add(M, nameof(M.transaction_log), T)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, M)
 
 	return M

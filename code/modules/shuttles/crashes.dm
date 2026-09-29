@@ -9,11 +9,11 @@
 /datum/shuttle/New()
 	if(crash_locations)
 		var/crash_location_ids = crash_locations
-		rel_clear(src, "crash_locations")
+		rel_clear(src, nameof(crash_locations))
 		for(var/location_tag in crash_location_ids)
 			var/obj/effect/shuttle_landmark/L = SSshuttles.get_landmark(location_tag)
 			if(L)
-				rel_add(src, "crash_locations", L)
+				rel_add(src, nameof(crash_locations), L)
 	..()
 
 // Return 0 to let the jump continue, 1 to abort the jump.

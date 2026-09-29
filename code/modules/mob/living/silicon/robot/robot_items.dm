@@ -81,7 +81,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/card/robot, "dummy_card", "dummy_card_type")
 					break
 
 				I.forceMove(src)
-				rel_add(src, "carrying", I)
+				rel_add(src, nameof(carrying), I)
 				add_overlay(image("icon" = I.icon, "icon_state" = I.icon_state, "layer" = 30 + I.layer))
 				addedSomething = 1
 		if ( addedSomething )
@@ -113,7 +113,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/card/robot, "dummy_card", "dummy_card_type")
 
 		for(var/obj/item/I in carrying)
 			I.forceMove(dropspot)
-			rel_remove(src, "carrying", I)
+			rel_remove(src, nameof(carrying), I)
 			droppedSomething = 1
 			if(!foundtable && isturf(dropspot))
 				// if no table, presume that the person just shittily dropped the tray on the ground and made a mess everywhere!

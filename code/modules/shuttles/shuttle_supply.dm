@@ -15,7 +15,7 @@
 
 	// Set the supply shuttle displays to read out the ETA
 	var/datum/signal/S = new()
-	rel_set(S, "source", src)
+	rel_set(S, nameof(S.source), src)
 	S.data = list("command" = "supply")
 	var/datum/radio_frequency/F = GLOB.radio_service.return_frequency(1435)
 	F.post_signal(src, S)

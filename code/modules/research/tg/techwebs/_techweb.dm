@@ -289,7 +289,7 @@
 		var/datum/experiment/experiment = completed_experiment
 		if (experiment == experiment_type)
 			return FALSE
-	own_add(src, "available_experiments", new experiment_type(src))
+	own_add(src, nameof(available_experiments), new experiment_type(src))
 
 /**
  * Adds a list of experiments to this techweb by their types, ensures that no duplicates are added.
@@ -309,8 +309,8 @@
  * * completed_experiment - the experiment which was completed
  */
 /datum/techweb/proc/complete_experiment(datum/experiment/completed_experiment)
-	own_take_member(src, "available_experiments", completed_experiment)
-	own_put(src, "completed_experiments", completed_experiment.type, completed_experiment)
+	own_take_member(src, nameof(available_experiments), completed_experiment)
+	own_put(src, nameof(completed_experiments), completed_experiment.type, completed_experiment)
 
 	var/result_text = "[completed_experiment] has been completed"
 	var/refund = LAZYACCESS(skipped_experiment_types, completed_experiment.type) || 0
@@ -578,5 +578,7 @@
 // 		if(experiment.type != paper_to_add.experiment_path)
 // 			continue
 
-REL_LIST(/datum/techweb, consoles_accessing)
-REL_LIST(/datum/techweb, techweb_servers)
+/datum/techweb/relations()
+	. = ..()
+	. += rel_many(nameof(consoles_accessing))
+	. += rel_many(nameof(techweb_servers))

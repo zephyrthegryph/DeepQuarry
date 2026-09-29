@@ -18,8 +18,8 @@
 /obj/machinery/vending/nifsoft_shop/Initialize(mapload)
 	. = ..()
 
-	own_set(src, "wires", new /datum/wires/vending/no_contraband(src)) //These wires can't be hacked for contraband.
-	own_set(src, "entopic", new /datum/entopic(aholder = src, aicon = icon, aicon_state = "beacon"))
+	own_set(src, nameof(wires), new /datum/wires/vending/no_contraband(src)) //These wires can't be hacked for contraband.
+	own_set(src, nameof(entopic), new /datum/entopic(aholder = src, aicon = icon, aicon_state = "beacon"))
 
 UI_DATA(/obj/machinery/vending/nifsoft_shop, "merge:ui_data_obj_machinery_vending_nifsoft_shop{chargesMoney:bool}")
 
@@ -88,7 +88,7 @@ UI_DATA(/obj/machinery/vending/nifsoft_shop, "merge:ui_data_obj_machinery_vendin
 			product.category = category
 			product.item_desc = initial(NS.desc)
 
-			own_add(src, "product_records", product)
+			own_add(src, nameof(product_records), product)
 
 /obj/machinery/vending/nifsoft_shop/can_buy(datum/stored_item/vending_product/R, mob/user)
 	. = ..()
@@ -133,10 +133,10 @@ UI_DATA(/obj/machinery/vending/nifsoft_shop, "merge:ui_data_obj_machinery_vendin
 				to_chat(user, span_notice("You successfully pull the coin out before \the [src] could swallow it."))
 			else
 				to_chat(user, span_notice("You weren't able to pull the coin out fast enough, the machine ate it, string and all."))
-				own_clear(src, "coin", OWN_DELETE)
+				own_clear(src, nameof(coin), OWN_DELETE)
 				categories &= ~CAT_COIN
 		else
-			own_clear(src, "coin", OWN_DELETE)
+			own_clear(src, nameof(coin), OWN_DELETE)
 			categories &= ~CAT_COIN
 
 	if(!COOLDOWN_TIMELEFT(src, reply_cooldown) && vend_reply)
@@ -178,5 +178,5 @@ UI_DATA(/obj/machinery/vending/nifsoft_shop, "merge:ui_data_obj_machinery_vendin
 		do_logging(R, user, 1)
 
 	vend_ready = 1
-	rel_clear(src, "currently_vending")
+	rel_clear(src, nameof(currently_vending))
 	SStgui.update_uis(src)

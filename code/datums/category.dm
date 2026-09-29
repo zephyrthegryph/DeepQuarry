@@ -18,7 +18,7 @@
 			built += category
 			categories_by_name[category.name] = category
 	for(var/datum/category_group/sorted as anything in dd_sortedObjectList(built))
-		own_add(src, "categories", sorted)
+		own_add(src, nameof(categories), sorted)
 
 
 /******************
@@ -48,7 +48,7 @@
 	// For whatever reason dd_insertObjectList(items, item) doesn't insert in the correct order
 	// If you change this, confirm that character setup doesn't become completely unordered.
 	for(var/datum/category_item/sorted as anything in dd_sortedObjectList(built))
-		own_add(src, "items", sorted)
+		own_add(src, nameof(items), sorted)
 
 
 /datum/category_group/dd_SortValue()

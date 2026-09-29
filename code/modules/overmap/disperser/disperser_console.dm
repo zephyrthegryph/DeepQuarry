@@ -49,9 +49,9 @@
 		var/obj/machinery/disperser/back/B = locate_within(get_step(M, backwards), /obj/machinery/disperser/back)
 		if(!B || get_dist(src, B) >= link_range)
 			continue
-		rel_set(src, "front", F)
-		rel_set(src, "middle", M)
-		rel_set(src, "back", B)
+		rel_set(src, nameof(front), F)
+		rel_set(src, nameof(middle), M)
+		rel_set(src, nameof(back), B)
 		// The parts are relation views: one that is destroyed reads null, so is_valid_setup() fails
 		// without a destruction signal on each.
 		if(is_valid_setup())
@@ -66,9 +66,9 @@
 	return FALSE
 
 /obj/machinery/computer/ship/disperser/proc/release_links()
-	rel_clear(src, "front")
-	rel_clear(src, "middle")
-	rel_clear(src, "back")
+	rel_clear(src, nameof(front))
+	rel_clear(src, nameof(middle))
+	rel_clear(src, nameof(back))
 
 /obj/machinery/computer/ship/disperser/proc/get_calibration()
 	var/list/calresult[caldigit]

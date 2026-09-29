@@ -50,7 +50,7 @@
 	event_type = _event_type
 	target = _target
 	value_field = _value_field
-	own_set(src, "filter", new /datum/contract_event_filter)
+	own_set(src, nameof(filter), new /datum/contract_event_filter)
 	diversity_targets = list()
 
 
@@ -230,7 +230,7 @@
 
 /datum/contract_opportunity_rule/New()
 	. = ..()
-	own_take_all(src, "signals")
+	own_take_all(src, nameof(signals))
 	context_fields = list()
 	configure()
 
@@ -246,7 +246,7 @@
 		if(existing.id == signal.id)
 			qdel(signal)
 			return null
-	own_add(src, "signals", signal)
+	own_add(src, nameof(signals), signal)
 	return signal
 
 /datum/contract_opportunity_rule/proc/forward_context(event_field, context_field = null)
@@ -381,7 +381,7 @@
 		if(!changed)
 			continue
 		if(batching)
-			rel_set(window, "batch_event", event)
+			rel_set(window, nameof(window.batch_event), event)
 			LAZYSET(pending_opportunity_windows, window_key, TRUE)
 			continue
 		evaluate_opportunity_window(rule, window, window_key, event)

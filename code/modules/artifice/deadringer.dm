@@ -32,7 +32,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/deadringer, PERIODIC_SLOW, "ringer_busy")
 	..()
 	if(timer > 20)
 		reveal()
-		rel_clear(src, "watchowner")
+		rel_clear(src, nameof(watchowner))
 
 DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/deadringer/proc/can_use_ringer)))
 
@@ -79,7 +79,7 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 /obj/item/deadringer/proc/makeacorpse(mob/living/carbon/human/H)
 	if(HAS_SYNTHETIC_BIOLOGY(H))
 		return
-	rel_set(src, "corpse", new /mob/living/carbon/human(H.loc))
+	rel_set(src, nameof(corpse), new /mob/living/carbon/human(H.loc))
 	QDEL_SWAP(corpse().dna,H.dna.Clone())
 	var/obj/item/clothing/temp = null
 	if(H.get_equipped_item(SLOT_ID_UNIFORM))
@@ -166,7 +166,7 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 	if(activated)
 		if (ismob(src.loc))
 			var/mob/living/carbon/human/H = src.loc
-			rel_set(src, "watchowner", H)
+			rel_set(src, nameof(watchowner), H)
 			if(isbelly(watchowner().loc)) //No spawning people in bellies.
 				return
 			if(H.injury_load(INJURY_CATEGORY_PHYSICAL) > bruteloss_prev || H.injury_load(INJURY_CATEGORY_THERMAL) > fireloss_prev)

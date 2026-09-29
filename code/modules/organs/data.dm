@@ -44,7 +44,7 @@
 
 /datum/organ_data/proc/setup_from_species(datum/species/S) // This needs a full rework, but can't be done unless all of transformating species code is refactored
 	SHOULD_NOT_OVERRIDE(TRUE)
-	rel_set(src, "species", S)
+	rel_set(src, nameof(species), S)
 
 // All accessed vars need to be cached during read.
 // Get data from species, if this fails use cached data

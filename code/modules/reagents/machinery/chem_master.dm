@@ -30,8 +30,8 @@
 	. = ..()
 	default_apply_parts()
 	var/datum/reagents/R = new/datum/reagents(900)	//Just a huge random number so the buffer should (probably) never dump your reagents.
-	own_set(src, "reagents", R)	//There should be a nano ui thingy to warn of this.
-	rel_set(R, "my_atom", src)
+	own_set(src, nameof(reagents), R)	//There should be a nano ui thingy to warn of this.
+	rel_set(R, nameof(R.my_atom), src)
 
 APPEARANCE_TEMPLATE(/obj/machinery/chem_master, "mixer{beaker?1:0}")
 
@@ -421,7 +421,7 @@ UI_ACT_PROC(/obj/machinery/chem_master, ui_act_ejectp)
 		loaded_pill_bottle.forceMove(get_turf(src))
 		if(Adjacent(ui.user) && !issilicon(ui.user))
 			ui.user.put_in_hands(loaded_pill_bottle)
-		own_take(src, "loaded_pill_bottle")
+		own_take(src, nameof(/obj/machinery/chem_master::loaded_pill_bottle))
 
 UI_ACT(/obj/machinery/chem_master, "print", ui_act_print, UI_ARG_NUM("beaker"), UI_ARG_NUM("idx"))
 UI_ACT_PROC(/obj/machinery/chem_master, ui_act_print)
@@ -492,7 +492,7 @@ UI_ACT_PROC(/obj/machinery/chem_master, ui_act_eject)
 	beaker.forceMove(get_turf(src))
 	if(Adjacent(ui.user) && !issilicon(ui.user))
 		ui.user.put_in_hands(beaker)
-	own_take(src, "beaker")
+	own_take(src, nameof(/obj/machinery/biogenerator::beaker))
 	reagents.clear_reagents()
 	update_icon()
 
@@ -524,5 +524,7 @@ UI_ACT_PROC(/obj/machinery/chem_master, ui_act_create_condi_bottle)
 /obj/machinery/chem_master/proc/printing_done()
 	printing = FALSE
 
-OWN(/obj/machinery/chem_master, beaker, OWN_CONTAINED)
-OWN(/obj/machinery/chem_master, loaded_pill_bottle, OWN_CONTAINED)
+/obj/machinery/chem_master/ownership()
+	. = ..()
+	. += owns(nameof(beaker), policy = OWN_CONTAINED)
+	. += owns(nameof(loaded_pill_bottle), policy = OWN_CONTAINED)

@@ -155,9 +155,9 @@ TYPE_TABLE_DECLARE(/obj/effect/fake_sun, fake_sun_light_setups, list( \
 		WARNING("Fake sun placed on a level where it can't find any outdoor turfs to color at [x],[y],[z].")
 		return
 
-	own_set(src, "sun", new /atom/movable/sun_visuals(null))
+	own_set(src, nameof(sun), new /atom/movable/sun_visuals(null))
 
-	own_set(src, "visuals", new /atom/movable/weather_visuals(null))
+	own_set(src, nameof(visuals), new /atom/movable/weather_visuals(null))
 	visuals.icon = weather_visuals_icon
 	visuals.icon_state = weather_visuals_icon_state
 

@@ -52,7 +52,7 @@
 	last_range = light_min_range
 	last_power = light_min_power
 
-	rel_set(src, "owned_core", new_owned_core)
+	rel_set(src, nameof(owned_core), new_owned_core)
 	if(!owned_core)
 		return INITIALIZE_HINT_QDEL
 	id_tag = owned_core.id_tag
@@ -60,65 +60,65 @@
 	var/obj/effect/fusion_particle_catcher/catcher
 
 	catcher = new (locate(src.x,src.y,src.z))
-	rel_set(catcher, "parent", src)
+	rel_set(catcher, nameof(catcher.parent), src)
 	catcher.SetSize(1)
-	own_add(src, "particle_catchers", catcher)
+	own_add(src, nameof(particle_catchers), catcher)
 
 	catcher = new (locate(src.x-1,src.y,src.z))
-	rel_set(catcher, "parent", src)
+	rel_set(catcher, nameof(catcher.parent), src)
 	catcher.SetSize(3)
-	own_add(src, "particle_catchers", catcher)
+	own_add(src, nameof(particle_catchers), catcher)
 	catcher = new (locate(src.x+1,src.y,src.z))
-	rel_set(catcher, "parent", src)
+	rel_set(catcher, nameof(catcher.parent), src)
 	catcher.SetSize(3)
-	own_add(src, "particle_catchers", catcher)
+	own_add(src, nameof(particle_catchers), catcher)
 	catcher = new (locate(src.x,src.y+1,src.z))
-	rel_set(catcher, "parent", src)
+	rel_set(catcher, nameof(catcher.parent), src)
 	catcher.SetSize(3)
-	own_add(src, "particle_catchers", catcher)
+	own_add(src, nameof(particle_catchers), catcher)
 	catcher = new (locate(src.x,src.y-1,src.z))
-	rel_set(catcher, "parent", src)
+	rel_set(catcher, nameof(catcher.parent), src)
 	catcher.SetSize(3)
-	own_add(src, "particle_catchers", catcher)
+	own_add(src, nameof(particle_catchers), catcher)
 
 	catcher = new (locate(src.x-2,src.y,src.z))
-	rel_set(catcher, "parent", src)
+	rel_set(catcher, nameof(catcher.parent), src)
 	catcher.SetSize(5)
-	own_add(src, "particle_catchers", catcher)
+	own_add(src, nameof(particle_catchers), catcher)
 	catcher = new (locate(src.x+2,src.y,src.z))
-	rel_set(catcher, "parent", src)
+	rel_set(catcher, nameof(catcher.parent), src)
 	catcher.SetSize(5)
-	own_add(src, "particle_catchers", catcher)
+	own_add(src, nameof(particle_catchers), catcher)
 	catcher = new (locate(src.x,src.y+2,src.z))
-	rel_set(catcher, "parent", src)
+	rel_set(catcher, nameof(catcher.parent), src)
 	catcher.SetSize(5)
-	own_add(src, "particle_catchers", catcher)
+	own_add(src, nameof(particle_catchers), catcher)
 	catcher = new (locate(src.x,src.y-2,src.z))
-	rel_set(catcher, "parent", src)
+	rel_set(catcher, nameof(catcher.parent), src)
 	catcher.SetSize(5)
-	own_add(src, "particle_catchers", catcher)
+	own_add(src, nameof(particle_catchers), catcher)
 
 	catcher = new (locate(src.x-3,src.y,src.z))
-	rel_set(catcher, "parent", src)
+	rel_set(catcher, nameof(catcher.parent), src)
 	catcher.SetSize(7)
-	own_add(src, "particle_catchers", catcher)
+	own_add(src, nameof(particle_catchers), catcher)
 
 	// Idle traps do not scan their surroundings. Field creation is the dependency
 	// that wakes only traps close enough to use it.
 	for(var/obj/machinery/power/hydromagnetic_trap/trap in range(7, src))
 		MACHINE_WAKE(trap)
 	catcher = new (locate(src.x+3,src.y,src.z))
-	rel_set(catcher, "parent", src)
+	rel_set(catcher, nameof(catcher.parent), src)
 	catcher.SetSize(7)
-	own_add(src, "particle_catchers", catcher)
+	own_add(src, nameof(particle_catchers), catcher)
 	catcher = new (locate(src.x,src.y+3,src.z))
-	rel_set(catcher, "parent", src)
+	rel_set(catcher, nameof(catcher.parent), src)
 	catcher.SetSize(7)
-	own_add(src, "particle_catchers", catcher)
+	own_add(src, nameof(particle_catchers), catcher)
 	catcher = new (locate(src.x,src.y-3,src.z))
-	rel_set(catcher, "parent", src)
+	rel_set(catcher, nameof(catcher.parent), src)
 	catcher.SetSize(7)
-	own_add(src, "particle_catchers", catcher)
+	own_add(src, nameof(particle_catchers), catcher)
 
 /obj/effect/fusion_em_field/periodic_step()
 	//make sure the field generator is still intact
@@ -502,7 +502,9 @@
 			AddParticles(reactant, react_pool[reactant])
 
 // The core owns its field (own_set in fusion_core/Startup()); the field names its core back.
-REL(/obj/effect/fusion_em_field, owned_core)
+/obj/effect/fusion_em_field/relations()
+	. = ..()
+	. += rel_one(nameof(owned_core))
 
 // a collapsing field radiates everything it held.
 /obj/effect/fusion_em_field/on_destroy(force)

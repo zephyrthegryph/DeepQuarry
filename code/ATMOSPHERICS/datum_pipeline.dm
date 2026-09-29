@@ -26,12 +26,12 @@ OWN_TIMER(/datum/pipeline, engineered_exposure_timer)
 /datum/pipeline/proc/add_edge(obj/machinery/atmospherics/pipe/edge)
 	if(!edge || QDELETED(edge))
 		return FALSE
-	rel_add(src, "edges", edge)
+	rel_add(src, nameof(edges), edge)
 	return TRUE
 
 /// Unlinks an edge pipe (both sides: `edges` is two-sided with the pipe's edge_pipelines).
 /datum/pipeline/proc/remove_edge(obj/machinery/atmospherics/pipe/edge)
-	rel_remove(src, "edges", edge)
+	rel_remove(src, nameof(edges), edge)
 
 // Rust-owned wrappers refuse deletion.
 /datum/pipeline/lifecycle_keep(force)
@@ -45,12 +45,12 @@ OWN_TIMER(/datum/pipeline, engineered_exposure_timer)
 	// Leave the network's roster before destroying it, so its unbind doesn't hand this
 	// line a share of the gas it is about to store back into its pipes.
 	for(var/datum/pipe_network/membership as anything in network_memberships?.Copy())
-		rel_remove(src, "network_memberships", membership)
+		rel_remove(src, nameof(network_memberships), membership)
 	qdel(network)
 
 	if(air && air.return_volume())
 		temporarily_store_air()
-	rel_clear(src, "leaks")
+	rel_clear(src, nameof(leaks))
 
 /// Engineered pipes are evaluated whenever their authoritative network gas is
 /// mutated. Ordinary mapped pipes retain the old cheap path.
@@ -84,15 +84,15 @@ OWN_TIMER(/datum/pipeline, engineered_exposure_timer)
 			member.loc?.assume_air(share)
 			qdel(share)
 			continue
-		own_set(member, "air_temporary", share)
+		own_set(member, nameof(member.air_temporary), share)
 
 /datum/pipeline/proc/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
 	if(network == reference)
-		atmos_air_set(src, "air", network_air)
+		atmos_air_set(src, nameof(air), network_air)
 
 /datum/pipeline/proc/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
 	if(network == reference && air == network_air)
-		atmos_air_set(src, "air", detached_pipenet_air(network_air, volume, network_volume))
+		atmos_air_set(src, nameof(air), detached_pipenet_air(network_air, volume, network_volume))
 
 /datum/pipeline/proc/return_network(obj/machinery/atmospherics/reference)
 	// Rust materializes this read-only compatibility wrapper.
@@ -216,8 +216,13 @@ OWN_TIMER(/datum/pipeline, engineered_exposure_timer)
 	if(network)
 		network.mark_dirty()
 
-REL(/datum/pipeline, network)
-REL_PAIR_LIST(/datum/pipeline, network_memberships, line_members)
-REL_PAIR_LIST(/datum/pipeline, members, parent)
-REL_PAIR_LIST(/datum/pipeline, edges, edge_pipelines)
-PROTO(/datum/pipeline, air)
+/datum/pipeline/ownership()
+	. = ..()
+	. += proto(nameof(air))
+
+/datum/pipeline/relations()
+	. = ..()
+	. += rel_one(nameof(network))
+	. += rel_many(nameof(network_memberships), back = nameof(/datum/pipe_network::line_members))
+	. += rel_many(nameof(members), back = nameof(/obj/machinery/atmospherics/pipe::parent))
+	. += rel_many(nameof(edges), back = nameof(/obj/machinery/atmospherics/pipe::edge_pipelines))

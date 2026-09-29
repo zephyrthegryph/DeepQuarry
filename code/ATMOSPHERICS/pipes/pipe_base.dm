@@ -47,14 +47,14 @@
 	wake_automatic_shutoff_valves(parent?.network)
 	if(parent)
 		if(leaking)
-			rel_add(parent, "leaks", src)
+			rel_add(parent, nameof(parent.leaks), src)
 		else
-			rel_remove(parent, "leaks", src)
+			rel_remove(parent, nameof(parent.leaks), src)
 		if(parent.network)
 			if(leaking)
-				rel_add(parent.network, "leaks", src)
+				rel_add(parent.network, nameof(/datum/pipe_network::leaks), src)
 			else
-				rel_remove(parent.network, "leaks", src)
+				rel_remove(parent.network, nameof(/datum/pipe_network::leaks), src)
 			parent.network.mark_leak_dirty()
 	// Without a network yet, network construction (rust_pipenets.dm) collects leaking pipes itself.
 
@@ -142,13 +142,13 @@
 		// to qdel that shared wrapper from every exploded pipe was deliberately
 		// rejected by QDEL_HINT_LETMELIVE and dominated large explosion cost.
 		if(!QDELETED(old_parent))
-			rel_remove(old_parent, "leaks", src)
+			rel_remove(old_parent, nameof(old_parent.leaks), src)
 	else
 		// Legacy wrappers still own their own gas and teardown semantics: destroy the line.
 		qdel(old_parent)
 	if(air_temporary)
 		loc.assume_air(air_temporary)
-		own_clear(src, "air_temporary", OWN_DELETE)
+		own_clear(src, nameof(air_temporary), OWN_DELETE)
 
 /// Arms its eligibility rule (code/datums/om/watch.dm om_watch_arm_condition()) over both
 /// mixtures either side of the leak: it wakes only once they no longer match, which is when the
@@ -321,5 +321,7 @@
 		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
 	update_icon()
 
-REL_PAIR(/obj/machinery/atmospherics/pipe, parent, members)
-REL_PAIR_LIST(/obj/machinery/atmospherics/pipe, edge_pipelines, edges)
+/obj/machinery/atmospherics/pipe/relations()
+	. = ..()
+	. += rel_one(nameof(parent), back = nameof(/datum/pipeline::members))
+	. += rel_many(nameof(edge_pipelines), back = nameof(/datum/pipeline::edges))

@@ -182,7 +182,7 @@ DECLARE_PERIODIC_WHILE(/datum/event, PERIODIC_SLOW, "event_active")
 		registry_join(REGISTRY_ACTIVE_EVENTS, src)
 		set_event_active(TRUE)
 
-		rel_set(src, "event_meta", EM)
+		rel_set(src, nameof(event_meta), EM)
 		severity = event_meta().severity
 		if(severity < EVENT_LEVEL_MUNDANE) severity = EVENT_LEVEL_MUNDANE
 		if(severity > EVENT_LEVEL_MAJOR) severity = EVENT_LEVEL_MAJOR

@@ -208,7 +208,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery, PERIODIC_FAST, "speed_process")
 /// declared start condition holds. Nothing else runs a machine at spawn.
 /obj/machinery/proc/materialize_wakes()
 	// Running now: it leaves the boot bulk queue (a timer-slot run has already left its slot).
-	rel_remove(om_global_owner(), "machine_first_wakes", src)
+	rel_remove(om_global_owner(), nameof(/datum/om/global_owner::machine_first_wakes), src)
 	var/directed = materialize_directed
 	materialize_directed = FALSE
 	if(QDELETED(src))
@@ -225,7 +225,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery, PERIODIC_FAST, "speed_process")
 /// and deletion all end it on their own (a deleted machine's handle stops resolving).
 /obj/machinery/proc/first_wake_pending()
 	// rel_names(): the boot queue holds every machine, so a list scan here made the bulk pass quadratic.
-	return om_timer_slot_pending(src, "first_wake") || rel_names(om_global_owner(), "machine_first_wakes", src)
+	return om_timer_slot_pending(src, "first_wake") || rel_names(om_global_owner(), nameof(/datum/om/global_owner::machine_first_wakes), src)
 
 /// Arms what wakes this machine later (gas watches, change watches). Default: nothing to arm.
 /obj/machinery/proc/arm_wakes()
@@ -406,14 +406,14 @@ DECLARE_PERIODIC_WHILE(/obj/machinery, PERIODIC_FAST, "speed_process")
 	if(component_parts)
 		return
 	latent_materialize_all(CONTAINER_SLOT_INTERNALS)
-	own_take_all(src, "component_parts")
+	own_take_all(src, nameof(component_parts))
 	for(var/obj/item/I in slot_contents(CONTAINER_SLOT_INTERNALS))
 		if(owner_of(I)) // already held by a var (an APC's cell, a camera's assembly): not a loose part
 			continue
 		if(istype(I, /obj/item/circuitboard))
-			own_set(src, "circuit", I)
+			own_set(src, nameof(circuit), I)
 		else
-			own_add(src, "component_parts", I)
+			own_add(src, nameof(component_parts), I)
 
 // Duplicate of below because we don't want to fuck around with CanUseTopic in TGUI
 // TODO: Replace this with can_interact from /tg/
@@ -535,18 +535,18 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 /// CONTAINER_SLOT_INTERNALS entries lazily, the first time anything (this
 /// RefreshParts() call included) asks the ledger an exact question.
 /obj/machinery/proc/default_apply_parts()
-	own_take_all(src, "component_parts")
+	own_take_all(src, nameof(component_parts))
 	RefreshParts()
 
 /obj/machinery/proc/default_use_hicell()
 	materialize_parts()
 	var/obj/item/cell/C = locate_in_list(component_parts, /obj/item/cell)
 	if(C)
-		own_take_member(src, "component_parts", C)
+		own_take_member(src, nameof(component_parts), C)
 		qdel(C)
 		C = new /obj/item/cell/high(src)
 		C.move_into(src, CONTAINER_SLOT_INTERNALS)
-		own_add(src, "component_parts", C)
+		own_add(src, nameof(component_parts), C)
 		RefreshParts()
 		return C
 
@@ -573,9 +573,9 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 					if(B.get_rating() > A.get_rating())
 						R.remove_from_storage(B, src, user)
 						R.insert_item(A, user, TRUE)
-						own_take_member(src, "component_parts", A)
+						own_take_member(src, nameof(component_parts), A)
 						B.move_into(src, CONTAINER_SLOT_INTERNALS, user)
-						own_move(B, src, "component_parts")
+						own_move(B, src, nameof(component_parts))
 						to_chat(user, span_notice("[A.name] replaced with [B.name]."))
 						parts_replaced = TRUE
 						break
@@ -621,9 +621,9 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	var/obj/structure/frame/A = new /obj/structure/frame(src.loc)
 	var/obj/item/circuitboard/M = circuit
 	M.forceMove(A)
-	own_move(M, A, "circuit") // the board moves from the machine to the frame (CONTAINED there)
+	own_move(M, A, nameof(A.circuit)) // the board moves from the machine to the frame (CONTAINED there)
 	A.set_anchored(TRUE)
-	own_set(A, "frame_type", frame_type_copy(M.board_type)) // the board keeps its own
+	own_set(A, nameof(A.frame_type), frame_type_copy(M.board_type)) // the board keeps its own
 	if(A.frame_type.circuit)
 		A.need_circuit = 0
 
@@ -636,10 +636,10 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 		for(var/obj/D in component_parts)
 			D.forceMove(src.loc)
 		if(A.components)
-			own_take_all(A, "components")
+			own_take_all(A, nameof(A.components))
 		else
-			own_take_all(A, "components")
-		own_take_all(src, "component_parts")
+			own_take_all(A, nameof(A.components))
+		own_take_all(src, nameof(component_parts))
 		A.check_components()
 
 	if(A.frame_type.frame_class == FRAME_CLASS_ALARM)
@@ -672,8 +672,8 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	// generic contents-to-turf pass, so materialize before letting go of them.
 	materialize_circuit()
 	materialize_parts()
-	own_take_all(src, "component_parts")
-	own_take(src, "circuit")
+	own_take_all(src, nameof(component_parts))
+	own_take(src, nameof(circuit))
 	return ..()
 
 /obj/machinery/atom_destruction(damage_flag)

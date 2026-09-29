@@ -35,7 +35,7 @@
 	range = expected_distance // So the hook hits the ground if no mob is hit.
 	target_distance = expected_distance
 	if(firer)	// Needed to ensure later checks in impact and on hit function.
-		own_set(src, "chain", firer.Beam(src,icon_state=beam_state,icon='icons/effects/beam.dmi',time=60, maxdistance=10,beam_type=/obj/effect/ebeam,beam_sleep_time=1))
+		own_set(src, nameof(chain), firer.Beam(src,icon_state=beam_state,icon='icons/effects/beam.dmi',time=60, maxdistance=10,beam_type=/obj/effect/ebeam,beam_sleep_time=1))
 
 	if(launcher_intent)
 		switch(launcher_intent)

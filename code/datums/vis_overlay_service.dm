@@ -20,7 +20,7 @@ GLOBAL_DATUM_INIT(vis_overlays_service, /datum/world_service/vis_overlays, new)
 		if(!overlay.unused && !length(overlay.vis_locs))
 			EXPIRY_STAMP(overlay, unused, CLOCK_WORLD)
 		else if(overlay.unused && ELAPSED(overlay, unused, CLOCK_WORLD) > overlay.cache_expiration)
-			own_take_member(src, "vis_overlay_cache", key)
+			own_take_member(src, nameof(vis_overlay_cache), key)
 			qdel(overlay)
 		if(TICK_CHECK)
 			return FALSE
@@ -34,21 +34,21 @@ GLOBAL_DATUM_INIT(vis_overlays_service, /datum/world_service/vis_overlays, new)
 		overlay = vis_overlay_cache[.]
 		if(!overlay)
 			overlay = _create_new_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags)
-			own_put(src, "vis_overlay_cache", ., overlay)
+			own_put(src, nameof(vis_overlay_cache), ., overlay)
 		else
 			overlay.unused = 0
 	else
 		overlay = _create_new_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags)
 		overlay.cache_expiration = -1
 		var/cache_id = "\ref[overlay]@{[world.time]}"
-		own_put(src, "vis_overlay_cache", cache_id, overlay)
+		own_put(src, nameof(vis_overlay_cache), cache_id, overlay)
 		. = overlay
 	thing.vis_contents += overlay
 
 	if(!isatom(thing))
 		return overlay
 
-	rel_add(thing, "managed_vis_overlays", overlay)
+	rel_add(thing, nameof(thing.managed_vis_overlays), overlay)
 	return overlay
 
 /datum/world_service/vis_overlays/proc/_create_new_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags)
@@ -71,7 +71,7 @@ GLOBAL_DATUM_INIT(vis_overlays_service, /datum/world_service/vis_overlays, new)
 	// `overlays` may be a single overlay, or a list (even thing.managed_vis_overlays itself).
 	var/list/removing = islist(overlays) ? overlays.Copy() : list(overlays)
 	for(var/obj/effect/overlay/vis/overlay as anything in removing)
-		rel_remove(thing, "managed_vis_overlays", overlay)
+		rel_remove(thing, nameof(thing.managed_vis_overlays), overlay)
 
 /atom/proc/add_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags = VIS_INHERIT_ID, unique)
 	// The extremely minimal version where you just pass a string and nothing else

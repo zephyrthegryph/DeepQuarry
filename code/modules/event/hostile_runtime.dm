@@ -28,7 +28,7 @@
 	for(var/obj/machinery/door/airlock/airlock in picked_area())
 		if(airlock.isElectrified() && !airlock.arePowerSystemsOn())
 			continue
-		rel_add(src, "target_airlocks", airlock)
+		rel_add(src, nameof(target_airlocks), airlock)
 
 	if(!picked_area())
 		log_game("Hostile Runtime event: No areas was chosen!")
@@ -75,4 +75,6 @@
 /datum/event/hostile_runtime/proc/apc() as /obj/machinery/power/apc
 	return apc
 
-REL_LIST(/datum/event/hostile_runtime, target_airlocks)
+/datum/event/hostile_runtime/relations()
+	. = ..()
+	. += rel_many(nameof(target_airlocks))

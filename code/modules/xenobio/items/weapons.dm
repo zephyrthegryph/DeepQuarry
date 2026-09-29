@@ -30,7 +30,7 @@
 
 	..()
 /obj/item/melee/baton/slime/loaded/Initialize(mapload)
-	own_set(src, "bcell", new/obj/item/cell/device(src))
+	own_set(src, nameof(bcell), new/obj/item/cell/device(src))
 	update_icon()
 	return ..()
 

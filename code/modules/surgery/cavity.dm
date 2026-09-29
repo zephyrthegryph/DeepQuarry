@@ -153,7 +153,7 @@
 		to_chat(user, span_danger("You feel something give way as you force \the [placed] into place."))
 		target.injure(INJURY_CUT, 10, part, placed, affliction = /datum/affliction/wound/internal_bleeding, flags = INJURE_IGNORE_RESISTANCE)
 		target.custom_pain("You feel something rip in your [part.name]!", 1)
-	rel_add(part, "implants", placed)
+	rel_add(part, nameof(part.implants), placed)
 	placed.forceMove(part)
 	if(istype(placed, /obj/item/nif))
 		var/obj/item/nif/N = placed
@@ -223,7 +223,7 @@
 	var/atom/movable/removed = task.removed
 	if(!(removed in part.implants))
 		return
-	rel_remove(part, "implants", removed)
+	rel_remove(part, nameof(part.implants), removed)
 	if(!target.has_embedded_objects())
 		target.clear_alert("embeddedobject")
 	BITSET(target.hud_updateflag, IMPLOYAL_HUD)
@@ -241,7 +241,7 @@
 	to_chat(user, span_notice("You pull \the [removed] out of [target]'s [part.name]."))
 	if(istype(removed, /obj/item/implant))
 		var/obj/item/implant/imp = removed
-		rel_clear(imp, "imp_in")
+		rel_clear(imp, nameof(imp.imp_in))
 		imp.implanted = FALSE
 	else if(istype(removed, /obj/item/nif))
 		var/obj/item/nif/N = removed

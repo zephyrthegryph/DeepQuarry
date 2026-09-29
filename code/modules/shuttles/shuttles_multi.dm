@@ -31,7 +31,7 @@
 	if(moving_status != SHUTTLE_IDLE)
 		return
 	var/list/destinations = get_destinations()
-	rel_set(src, "next_location", destinations[destination_key])
+	rel_set(src, nameof(next_location), destinations[destination_key])
 	if(!next_location())
 		WARNING("Shuttle [src] set to destination we can't find: [destination_key]")
 
@@ -46,11 +46,11 @@
 
 /datum/shuttle/autodock/multi/proc/build_destinations_cache()
 	EXPIRY_STAMP(src, last_cache_rebuild_time, CLOCK_WORLD)
-	rel_clear(src, "destinations_cache")
+	rel_clear(src, nameof(destinations_cache))
 	for(var/destination_tag in destination_tags)
 		var/obj/effect/shuttle_landmark/landmark = SSshuttles.get_landmark(destination_tag)
 		if (istype(landmark))
-			rel_add(src, "destinations_cache", landmark)
+			rel_add(src, nameof(destinations_cache), landmark)
 
 /datum/shuttle/autodock/multi/perform_shuttle_move()
 	..()

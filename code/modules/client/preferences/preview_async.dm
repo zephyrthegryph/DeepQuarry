@@ -331,8 +331,8 @@
 /datum/preferences/proc/dq_poll_preview_jobs(generation, list/jobs, list/ready, scale_x, scale_y, had_client)
 	var/datum/dq_preview_poll/poll = new
 	poll.state = list(generation, jobs, ready, scale_x, scale_y, had_client, list(), world.time + DQ_PREVIEW_JOB_TIMEOUT)
-	rel_set(poll, "prefs", src)
-	own_add(GLOB.character_setup_service, "preview_polls", poll)
+	rel_set(poll, nameof(poll.prefs), src)
+	own_add(GLOB.character_setup_service, nameof(/datum/world_service/character_setup::preview_polls), poll)
 	poll.set_polling(TRUE) // the declared repeat polls once a tick while this holds
 	poll.poll_step()
 
@@ -369,14 +369,14 @@ DECLARE_REPEAT(/datum/dq_preview_poll, "poll_delay", poll_step, "polling")
 	set_polling(FALSE)
 	if(prefs)
 		prefs.dq_finish_preview_jobs(state)
-		own_remove(GLOB.character_setup_service, "preview_polls", src)
+		own_remove(GLOB.character_setup_service, nameof(/datum/world_service/character_setup::preview_polls), src)
 		return
 	// The preferences are gone: only clean up the job output.
 	for(var/dir_key in outputs)
 		var/png_path = dq_preview_job_png(jobs[dir_key][2], outputs[dir_key])
 		if(png_path)
 			fdel(png_path)
-	own_remove(GLOB.character_setup_service, "preview_polls", src)
+	own_remove(GLOB.character_setup_service, nameof(/datum/world_service/character_setup::preview_polls), src)
 
 /// Applies a render's finished iconforge jobs unless the render went stale.
 /datum/preferences/proc/dq_finish_preview_jobs(list/state)

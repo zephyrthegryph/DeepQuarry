@@ -282,7 +282,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/medigun_backpack, TYPE_PROC_REF(/atom, appeara
 	. = ..()
 
 	var/obj/item/bork_medigun/linked/medigun = get_medigun()
-	rel_set(medigun, "medigun_base_unit", src)
+	rel_set(medigun, nameof(medigun.medigun_base_unit), src)
 
 	if(!is_twohanded())
 		medigun.beam_range = 4
@@ -347,24 +347,24 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 	if(W.has_tool_quality(TOOL_CROWBAR) && maintenance)
 		if(smodule )
 			smodule.forceMove(get_turf(loc))
-			own_take(src, "smodule")
+			own_take(src, nameof(smodule))
 
 		if(smanipulator)
 			smanipulator.forceMove(get_turf(loc))
-			own_take(src, "smanipulator")
+			own_take(src, nameof(smanipulator))
 			smaniptier = 0
 
 		if(slaser)
 			slaser.forceMove(get_turf(loc))
-			own_take(src, "slaser")
+			own_take(src, nameof(slaser))
 
 		if(scapacitor)
 			scapacitor.forceMove(get_turf(loc))
-			own_take(src, "scapacitor")
+			own_take(src, nameof(scapacitor))
 
 		if(sbin)
 			sbin.forceMove(get_turf(loc))
-			own_take(src, "sbin")
+			own_take(src, nameof(sbin))
 			sbintier = 0
 
 		to_chat(user, span_notice("You remove the Components from \the [src]."))
@@ -566,6 +566,8 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 /obj/item/medigun_backpack/proc/checked_use(charge_amt)
 	return (bcell && bcell.checked_use(charge_amt))
 
-OWN(/obj/item/medigun_backpack, ccell, OWN_CONTAINED)
-OWN(/obj/item/medigun_backpack, sbin, OWN_CONTAINED)
+/obj/item/medigun_backpack/ownership()
+	. = ..()
+	. += owns(nameof(ccell), policy = OWN_CONTAINED)
+	. += owns(nameof(sbin), policy = OWN_CONTAINED)
 DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "sbin", null)

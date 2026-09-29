@@ -49,11 +49,11 @@
 	var/datum/industry/industry = null
 
 /datum/stock/proc/addEvent(datum/stockEvent/E)
-	own_add(src, "events", E)
+	own_add(src, nameof(events), E)
 
 /datum/stock/proc/addArticle(datum/article/A)
 	if (!(A in articles))
-		own_add(src, "articles", A) // appended: newest article is last
+		own_add(src, nameof(articles), A) // appended: newest article is last
 	EXPIRY_STAMP(A, ticks, CLOCK_WORLD)
 
 /datum/stock/proc/generateEvents()
@@ -73,19 +73,19 @@
 
 /datum/stock/proc/generateIndustry()
 	if (findtext(name, "Farms"))
-		own_set(src, "industry", new /datum/industry/agriculture)
+		own_set(src, nameof(industry), new /datum/industry/agriculture)
 	else if (findtext(name, "Software") || findtext(name, "Programming")  || findtext(name, "IT Group") || findtext(name, "Electronics") || findtext(name, "Electric") || findtext(name, "Nanotechnology"))
-		own_set(src, "industry", new /datum/industry/it)
+		own_set(src, nameof(industry), new /datum/industry/it)
 	else if (findtext(name, "Mobile") || findtext(name, "Communications"))
-		own_set(src, "industry", new /datum/industry/communications)
+		own_set(src, nameof(industry), new /datum/industry/communications)
 	else if (findtext(name, "Pharmaceuticals") || findtext(name, "Health"))
-		own_set(src, "industry", new /datum/industry/health)
+		own_set(src, nameof(industry), new /datum/industry/health)
 	else if (findtext(name, "Wholesale") || findtext(name, "Stores"))
-		own_set(src, "industry", new /datum/industry/consumer)
+		own_set(src, nameof(industry), new /datum/industry/consumer)
 	else
 		var/ts = typesof(/datum/industry) - /datum/industry
 		var/in_t = pick(ts)
-		own_set(src, "industry", new in_t)
+		own_set(src, nameof(industry), new in_t)
 	for (var/i = 0, i < rand(2, 5), i++)
 		products += industry.generateProductName(name)
 
@@ -187,7 +187,7 @@
 		var/datum/borrow/borrow = B
 		if (ELAPSED(borrow, grace_expires, CLOCK_WORLD) > 0)
 			modifyAccount(borrow.borrower, -max(current_value * borrow.share_debt, 0), 1)
-			own_take_member(src, "borrows", borrow)
+			own_take_member(src, nameof(borrows), borrow)
 			if (borrow.borrower in GLOB.FrozenAccounts)
 				GLOB.FrozenAccounts[borrow.borrower] -= borrow
 				if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
@@ -198,7 +198,7 @@
 				var/amt = LAZYACCESS(shareholders, borrow.borrower)
 				if (amt > borrow.share_debt)
 					shareholders[borrow.borrower] -= borrow.share_debt
-					own_take_member(src, "borrows", borrow)
+					own_take_member(src, nameof(borrows), borrow)
 					if (borrow.borrower in GLOB.FrozenAccounts)
 						GLOB.FrozenAccounts[borrow.borrower] -= borrow
 					if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
@@ -212,7 +212,7 @@
 	for (var/B in borrow_brokers)
 		var/datum/borrow/borrow = B
 		if (ELAPSED(borrow, offer_expires, CLOCK_WORLD) > 0)
-			own_take_member(src, "borrow_brokers", borrow)
+			own_take_member(src, nameof(borrow_brokers), borrow)
 			qdel(borrow)
 	if (prob(100 * (1 - (0.95 ** elapsed_steps))))
 		generateBrokers()
@@ -232,14 +232,14 @@
 	var/broker = DEFAULTPICK(GLOB.stockExchange.stockBrokers, null)
 	var/datum/borrow/B = new
 	B.broker = broker
-	rel_set(B, "stock", src)
+	rel_set(B, nameof(B.stock), src)
 	B.lease_time = rand(4, 7) * 600
 	B.grace_time = rand(1, 3) * 600
 	B.share_amount = rand(1, 10) * 100
 	B.deposit = rand(20, 70) / 100
 	B.share_debt = B.share_amount
 	B.offer_expires = rand(5, 10) * 600 + world.time
-	own_add(src, "borrow_brokers", B)
+	own_add(src, nameof(borrow_brokers), B)
 
 /datum/stock/proc/modifyAccount(whose, by, force=0)
 	var/datum/money_account/account = GLOB.department_accounts[DEPARTMENT_CARGO]
@@ -265,7 +265,7 @@
 		LAZYSET(shareholders, who, B.share_amount)
 	else
 		LAZYADDASSOC(shareholders, who, B.share_amount)
-	own_transfer(src, "borrow_brokers", src, "borrows", B) // an accepted offer: still the stock's to delete
+	own_transfer(src, nameof(borrow_brokers), src, nameof(borrows), B) // an accepted offer: still the stock's to delete
 	B.borrower = who
 	B.grace_expires = B.lease_expires + B.grace_time
 	if (!(who in GLOB.FrozenAccounts))

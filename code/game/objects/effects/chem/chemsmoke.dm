@@ -54,7 +54,7 @@ DECLARE_REAGENTS(/obj/effect/effect/smoke/chem, 500, null)
 
 /datum/effect/effect/system/smoke_spread/chem/New()
 	..()
-	own_set(src, "chemholder", new/obj())
+	own_set(src, nameof(chemholder), new/obj())
 	chemholder.create_reagents(500)
 
 
@@ -68,21 +68,21 @@ DECLARE_REAGENTS(/obj/effect/effect/smoke/chem, 500, null)
 	carry.trans_to_obj(chemholder, carry.total_volume, copy = 1)
 
 	if(istype(loca, /turf/))
-		rel_set(src, "location", loca)
+		rel_set(src, nameof(location), loca)
 	else
-		rel_set(src, "location", get_turf(loca))
+		rel_set(src, nameof(location), get_turf(loca))
 	if(!get_location())
 		return
 
-	rel_clear(src, "targetTurfs")
+	rel_clear(src, nameof(targetTurfs))
 
 	//build affected area list
 	for(var/turf/T in view(range, get_location()))
 		//cull turfs to circle
 		if(sqrt((T.x - get_location().x)**2 + (T.y - get_location().y)**2) <= range)
-			rel_add(src, "targetTurfs", T)
+			rel_add(src, nameof(targetTurfs), T)
 
-	rel_clear(src, "wallList")
+	rel_clear(src, nameof(wallList))
 
 	smokeFlow() //pathing check
 
@@ -214,7 +214,7 @@ DECLARE_REAGENTS(/obj/effect/effect/smoke/chem, 500, null)
 			for(var/D in GLOB.cardinal)
 				var/turf/target = get_step(current, D)
 				if(istype(target, /turf/simulated/wall))
-					rel_add(src, "wallList", target)
+					rel_add(src, nameof(wallList), target)
 					continue
 
 				if(target in pending)
@@ -232,9 +232,9 @@ DECLARE_REAGENTS(/obj/effect/effect/smoke/chem, 500, null)
 			pending -= current
 			complete += current
 
-	rel_clear(src, "targetTurfs")
+	rel_clear(src, nameof(targetTurfs))
 	for(var/turf/T as anything in complete)
-		rel_add(src, "targetTurfs", T)
+		rel_add(src, nameof(targetTurfs), T)
 
 	return
 

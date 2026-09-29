@@ -71,7 +71,7 @@
 	if(!selection)
 		return
 
-	own_remove(src, "aipictures", selection)
+	own_remove(src, nameof(aipictures), selection)
 	to_chat(user, span_unconscious("Local image deleted"))
 
 /obj/item/camera/siliconcam/ai_camera/can_capture_turf(turf/T, mob/user)

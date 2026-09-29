@@ -64,7 +64,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suspension_gen, MACHINE_PIPELINE, "suspens
 		cell.update_icon()
 
 		icon_state = "suspension"
-		own_take(src, "cell")
+		own_take(src, nameof(cell))
 		to_chat(user, span_info("You remove the power cell"))
 	return TRUE
 
@@ -186,9 +186,9 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/suspension_gen, PROC_REF(on_emag), null)
 		anom.immortal = TRUE
 		anom.move_chance = 0
 		if(!anom.stats)
-			own_set(anom, "stats", new /datum/anomaly_stats(anom))
+			own_set(anom, nameof(anom.stats), new /datum/anomaly_stats(anom))
 
-	own_set(src, "suspension_field", new /obj/effect/suspension_field(T))
+	own_set(src, nameof(suspension_field), new /obj/effect/suspension_field(T))
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] activates with a low hum."))
 	icon_state = "suspension_on"
 	play_sfx(loc, SFX_MACHINES_QUIET_BEEP)
@@ -226,7 +226,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/suspension_gen, PROC_REF(on_emag), null)
 			anom.move_chance = initial(anom.move_chance)
 
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] deactivates with a gentle shudder."))
-	own_clear(src, "suspension_field", OWN_DELETE)
+	own_clear(src, nameof(suspension_field), OWN_DELETE)
 	icon_state = "suspension_wrenched"
 	play_sfx(loc, SFX_MACHINES_QUIET_BEEP)
 	update_icon()
@@ -249,10 +249,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/suspension_gen, TYPE_PROC_REF(/atom, appe
 	anchored = 1
 	density = 1
 
-OWN(/obj/effect/suspension_field, contents, OWN_SPILL)
+/obj/effect/suspension_field/ownership()
+	. = ..()
+	. += owns(nameof(contents), policy = OWN_SPILL)
 
 
-OWN(/obj/machinery/suspension_gen, cell, OWN_CONTAINED)
+/obj/machinery/suspension_gen/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED)
 
 /// Accessor for the auth_card var.
 /obj/machinery/suspension_gen/proc/auth_card() as /obj/item/card/id

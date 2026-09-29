@@ -96,7 +96,7 @@ DECLARE_REPEAT(/obj/effect/map_effect/beam_point, "next_beam_delay", handle_beam
 		return FALSE
 
 	var/datum/beam/new_beam = Beam(beam_target, beam_icon_state, beam_icon, beam_time, beam_max_distance, beam_type, beam_sleep_time)
-	rel_add(src, "my_beams", new_beam)
+	rel_add(src, nameof(my_beams), new_beam)
 	if(beam_creation_sound)
 		playsound(src, beam_creation_sound, 70, 1)
 
@@ -111,7 +111,7 @@ DECLARE_REPEAT(/obj/effect/map_effect/beam_point, "next_beam_delay", handle_beam
 		log_mapping("[src] ([src.type] \[[x],[y],[z]\]) was asked to destroy a beam it did not own.")
 		return FALSE
 
-	rel_remove(src, "my_beams", B)
+	rel_remove(src, nameof(my_beams), B)
 	qdel(B)
 	if(beam_destruction_sound)
 		playsound(src, beam_destruction_sound, 70, 1)

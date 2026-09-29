@@ -58,7 +58,7 @@
 
 	map_name = "appearance_changer_[REF(src)]_map"
 	// Initialize map objects
-	own_set(src, "cam_screen", new /atom/movable/screen/map_view)
+	own_set(src, nameof(cam_screen), new /atom/movable/screen/map_view)
 
 	cam_screen.name = "screen"
 	cam_screen.assigned_map = map_name
@@ -66,20 +66,20 @@
 	cam_screen.screen_loc = "[map_name]:3:-32,3:-48"
 
 	for(var/atom/movable/screen/plane_master as anything in get_tgui_plane_masters())
-		own_add(src, "cam_plane_masters", plane_master)
+		own_add(src, nameof(cam_plane_masters), plane_master)
 
 	for(var/atom/movable/screen/instance as anything in cam_plane_masters)
 		instance.assigned_map = map_name
 		instance.del_on_map_removal = FALSE
 		instance.screen_loc = "[map_name]:CENTER"
 
-	own_set(src, "local_skybox", new /atom/movable/screen/skybox())
+	own_set(src, nameof(local_skybox), new /atom/movable/screen/skybox())
 	local_skybox.assigned_map = map_name
 	local_skybox.del_on_map_removal = FALSE
 	local_skybox.screen_loc = "[map_name]:CENTER,CENTER"
 
-	rel_set(src, "owner", H)
-	own_set(src, "cam_background", new /atom/movable/screen/background)
+	rel_set(src, nameof(owner), H)
+	own_set(src, nameof(cam_background), new /atom/movable/screen/background)
 	cam_background.assigned_map = map_name
 	cam_background.del_on_map_removal = FALSE
 	check_whitelist = check_species_whitelist
@@ -103,8 +103,8 @@
 		close_ui()
 		om_unhook(owner(), /datum/om/event/movable_attempted_move, src)
 		OM_EMIT(owner(), /datum/om/event/human_dna_finalized) // Update any components using our saved appearance
-		rel_clear(src, "owner")
-		rel_clear(src, "last_camera_turf")
+		rel_clear(src, nameof(owner))
+		rel_clear(src, nameof(last_camera_turf))
 		cut_data()
 
 
@@ -481,7 +481,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_base_icon)
 			return
 		if(new_species)
 			// species is PROTO: mutate the mob's private copy, never the shared prototype
-			var/datum/species/own_species = proto_private(owner(), "species")
+			var/datum/species/own_species = proto_private(owner(), nameof(/datum/dna::species))
 			own_species.base_species = new_species
 			own_species.icobase = own_species.get_icobase()
 			own_species.deform = own_species.get_icobase(get_deform = TRUE)
@@ -582,7 +582,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_species_sound)
 	if(isnull(choice))
 		return
 	if(choice && can_change(owner(), APPEARANCE_MISC))
-		var/datum/species/own_species = proto_private(owner(), "species") // PROTO: private copy
+		var/datum/species/own_species = proto_private(owner(), nameof(/datum/dna::species)) // PROTO: private copy
 		own_species.species_sounds = choice
 		return TRUE
 	return FALSE
@@ -661,9 +661,9 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_view_stock_brec)
 	var/datum/species/S = GLOB.all_species[params["view_stock_brec"]]
 	if(S && (S.spawn_flags & (SPECIES_IS_WHITELISTED|SPECIES_CAN_JOIN)) == SPECIES_CAN_JOIN)
 		// Generate body record from species!
-		own_clear(src, "mannequin", OWN_DELETE)
-		own_set(src, "mannequin", new /mob/living/carbon/human(null, S.name))
-		rel_set(src, "owner", mannequin)
+		own_clear(src, nameof(/datum/tgui_module/appearance_changer::mannequin), OWN_DELETE)
+		own_set(src, nameof(/datum/tgui_module/appearance_changer::mannequin), new /mob/living/carbon/human(null, S.name))
+		rel_set(src, nameof(/datum/action_group::owner), mannequin)
 		owner().real_name = "Stock [S.name] Body"
 		owner().name = owner().real_name
 		owner().dna.real_name = owner().real_name
@@ -718,7 +718,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_savetodisk)
 		owner().update_dna()
 		var/datum/transhuman/body_record/record = new /datum/transhuman/body_record(owner(), FALSE, FALSE) // Saves a COPY! The old record is deleted
 		record.locked = FALSE // remove lock
-		own_set(DC.disk, "stored", record)
+		own_set(DC.disk, nameof(/datum/stored_item::stored), record)
 		DC.disk.name = "[initial(DC.disk.name)] ([owner().real_name])"
 	return TRUE
 
@@ -734,7 +734,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_ejectdisk)
 	if(can_change(owner(), APPEARANCE_RACE))
 		to_chat(ui.user,span_notice("You eject the disk."))
 		DC.disk.forceMove(get_turf(DC))
-		own_take(DC, "disk")
+		own_take(DC, nameof(/obj/machinery/computer/scan_consolenew::disk))
 		return TRUE
 	return FALSE
 
@@ -755,7 +755,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_back_to_library)
 	if(customize_usr && !owner())
 		if(!ishuman(user))
 			return FALSE
-		rel_set(src, "owner", user)
+		rel_set(src, nameof(owner), user)
 	if(!owner() || !owner().species)
 		return FALSE
 	update_active_camera_screen()
@@ -1231,10 +1231,10 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 	// checks for monkey to tell if on the menu
 	if(owner())
 		om_unhook(owner(), /datum/om/event/movable_attempted_move, src)
-		own_clear(src, "mannequin", OWN_DELETE)
-		rel_clear(src, "owner")
-	own_set(src, "mannequin", new /mob/living/carbon/human(src))
-	rel_set(src, "owner", mannequin)
+		own_clear(src, nameof(mannequin), OWN_DELETE)
+		rel_clear(src, nameof(owner))
+	own_set(src, nameof(mannequin), new /mob/living/carbon/human(src))
+	rel_set(src, nameof(owner), mannequin)
 	owner().set_species(SPECIES_LLEILL)
 	owner().species.produceCopy(owner().species.traits.Copy(),owner(),null,FALSE)
 	owner().invisibility = INVISIBILITY_ABSTRACT
@@ -1245,10 +1245,10 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 /datum/tgui_module/appearance_changer/body_designer/proc/load_record_to_body(datum/transhuman/body_record/current_project)
 	if(owner())
 		om_unhook(owner(), /datum/om/event/movable_attempted_move, src)
-		own_clear(src, "mannequin", OWN_DELETE)
-		rel_clear(src, "owner")
-	own_set(src, "mannequin", current_project.produce_human_mob(src,FALSE,FALSE,"Designer [rand(999)]"))
-	rel_set(src, "owner", mannequin)
+		own_clear(src, nameof(mannequin), OWN_DELETE)
+		rel_clear(src, nameof(owner))
+	own_set(src, nameof(mannequin), current_project.produce_human_mob(src,FALSE,FALSE,"Designer [rand(999)]"))
+	rel_set(src, nameof(owner), mannequin)
 	// Update some specifics from the current record
 	owner().dna.blood_reagents = current_project.mydna.dna.blood_reagents
 	owner().dna.blood_color = current_project.mydna.dna.blood_color
@@ -1289,7 +1289,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 /// The changer's windows refresh when the answer proc reports a change.
 /datum/om/prompt/color/appearance/prepare()
 	. = ..()
-	rel_set(src, "ui_refresh", subject)
+	rel_set(src, nameof(ui_refresh), subject)
 
 /datum/om/prompt/color/appearance/valid()
 	var/datum/tgui_module/appearance_changer/changer = subject

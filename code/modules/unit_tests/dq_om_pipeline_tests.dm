@@ -213,7 +213,7 @@
 	var/datum/om/scheduler/sched
 
 /datum/unit_test/om_pipeline/Run()
-	rel_set(src, "sched", om_test_begin())
+	rel_set(src, nameof(sched), om_test_begin())
 	try
 		run_pipeline()
 	catch(var/exception/e)
@@ -551,7 +551,7 @@
 			break
 	if(!M)
 		TEST_NOTICE(src, "no SMES on the test map; checked the APC only")
-		rel_set(src, "sched", om_test_begin())
+		rel_set(src, nameof(sched), om_test_begin())
 		return
 	TEST_ASSERT(!machine_stepping(M), "an SMES doesn't poll")
 	var/datum/om/frame/MS = om_pipe_state(M, /datum/om/pipeline/machine, TRUE)
@@ -559,7 +559,7 @@
 	for(var/i in 1 to 3)
 		om_run_frame_now(M, /datum/om/pipeline/machine)
 	TEST_ASSERT(MS.parked, "a settled SMES parks")
-	rel_set(src, "sched", om_test_begin())
+	rel_set(src, nameof(sched), om_test_begin())
 
 /// A fire alarm parks once its (dead-code today) lockdown countdown is off, and a settings
 /// change (arming a countdown) wakes it until the countdown ends.

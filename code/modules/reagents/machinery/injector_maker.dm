@@ -200,7 +200,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 		user.put_in_hands(beaker)
 	else
 		beaker.forceMove(drop_location())
-	own_take(src, "beaker")
+	own_take(src, nameof(beaker))
 	update_icon()
 	return FALSE
 
@@ -251,7 +251,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 				user.put_in_hands(beaker)
 			else
 				beaker.forceMove(drop_location())
-			own_take(src, "beaker")
+			own_take(src, nameof(beaker))
 			update_icon()
 
 
@@ -385,4 +385,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 				if(new_name)
 					P.name = new_name
 
-OWN(/obj/machinery/injector_maker, beaker, OWN_CONTAINED)
+/obj/machinery/injector_maker/ownership()
+	. = ..()
+	. += owns(nameof(beaker), policy = OWN_CONTAINED)

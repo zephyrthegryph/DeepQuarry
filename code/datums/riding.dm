@@ -11,7 +11,7 @@
 	var/rider_size = 1 // to figure out offsets for rider.
 
 /datum/riding/New(atom/movable/_ridden)
-	rel_set(src, "ridden", _ridden)
+	rel_set(src, nameof(ridden), _ridden)
 
 /datum/riding/proc/handle_vehicle_layer()
 	if(ridden().dir != NORTH)

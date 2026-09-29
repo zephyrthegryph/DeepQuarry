@@ -21,7 +21,7 @@
 
 /datum/board_game/vore_sweeper/New(atom/holder)
 	. = ..()
-	rel_set(src, "parent", holder)
+	rel_set(src, nameof(parent), holder)
 
 DECLARE_UI(/datum/board_game/vore_sweeper, "VoreSweeper")
 
@@ -49,7 +49,7 @@ UI_ACT(/datum/board_game/vore_sweeper, "be_dealer", ui_act_be_dealer)
 UI_ACT_PROC(/datum/board_game/vore_sweeper, ui_act_be_dealer)
 	if(game_state == GAME_PLAYING)
 		return FALSE
-	rel_set(src, "dealer", ui.user)
+	rel_set(src, nameof(/datum/board_game/vore_sweeper::dealer), ui.user)
 	return TRUE
 
 UI_ACT(/datum/board_game/vore_sweeper, "clear_dealer", ui_act_clear_dealer)
@@ -59,11 +59,11 @@ UI_ACT_PROC(/datum/board_game/vore_sweeper, ui_act_clear_dealer)
 		return FALSE
 	if(dealer_mob == ui.user)
 		parent().atom_say("[ui.user] stopped dealing.")
-		rel_clear(src, "dealer")
+		rel_clear(src, nameof(/datum/board_game/vore_sweeper::dealer))
 		return TRUE
 	if(get_dist(ui.user, dealer_mob) > 3)
 		parent().atom_say("Dealer has been cleared by [ui.user].")
-		rel_clear(src, "dealer")
+		rel_clear(src, nameof(/datum/board_game/vore_sweeper::dealer))
 		return TRUE
 	return FALSE
 
@@ -285,7 +285,7 @@ UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_start_game)
 			LAZYSET(placed_mines, key, TRUE)
 			placed++
 	if(play)
-		rel_clear(src, "dealer")
+		rel_clear(src, nameof(dealer))
 		game_state = GAME_PLAYING
 	return TRUE
 

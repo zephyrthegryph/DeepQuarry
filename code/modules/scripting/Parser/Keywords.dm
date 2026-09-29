@@ -45,24 +45,24 @@
 /datum/n_Keyword/nS_Keyword/kwReturn/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
 	if(istype(parser.curBlock(), /datum/node/BlockDefinition/GlobalBlock))
-		own_add(parser, "errors", new/datum/scriptError/BadReturn(parser.curToken()))
+		own_add(parser, nameof(parser.errors), new/datum/scriptError/BadReturn(parser.curToken()))
 		. = KW_WARN
 	var/datum/node/statement/ReturnStatement/stmt=new
 	parser.NextToken()   //skip 'return' token
-	own_set(stmt, "value", parser.ParseExpression())
+	own_set(stmt, nameof(stmt.value), parser.ParseExpression())
 	LAZYADD(parser.curBlock().statements, stmt)
 
 /datum/n_Keyword/nS_Keyword/kwIf/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
 	var/datum/node/statement/IfStatement/stmt=new
 	parser.NextToken()  //skip 'if' token
-	own_set(stmt, "cond", parser.ParseParenExpression())
+	own_set(stmt, nameof(stmt.cond), parser.ParseParenExpression())
 	if(!parser.CheckToken(")", /datum/token/symbol))
 		return KW_FAIL
 	if(!parser.CheckToken("{", /datum/token/symbol, skip=0)) //Token needs to be preserved for parse loop, so skip=0
 		return KW_ERR
 	LAZYADD(parser.curBlock().statements, stmt)
-	own_set(stmt, "block", new /datum/node/BlockDefinition)
+	own_set(stmt, nameof(stmt.block), new /datum/node/BlockDefinition)
 	parser.AddBlock(stmt.block)
 
 /datum/n_Keyword/nS_Keyword/kwElse/Parse(datum/n_Parser/nS_Parser/parser)
@@ -71,31 +71,31 @@
 	var/datum/node/statement/IfStatement/stmt
 	if(L&&L.len) stmt=L[L.len] //Get the last statement in the current block
 	if(!stmt || !istype(stmt) || stmt.else_block) //Ensure that it is an if statement
-		own_add(parser, "errors", new/datum/scriptError/ExpectedToken("if statement",parser.curToken()))
+		own_add(parser, nameof(parser.errors), new/datum/scriptError/ExpectedToken("if statement",parser.curToken()))
 		return KW_FAIL
 	parser.NextToken()         //skip 'else' token
 	if(!parser.CheckToken("{", /datum/token/symbol, skip=0))
 		return KW_ERR
-	own_set(stmt, "else_block", new /datum/node/BlockDefinition())
+	own_set(stmt, nameof(stmt.else_block), new /datum/node/BlockDefinition())
 	parser.AddBlock(stmt.else_block)
 
 /datum/n_Keyword/nS_Keyword/kwWhile/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
 	var/datum/node/statement/WhileLoop/stmt=new
 	parser.NextToken()  //skip 'while' token
-	own_set(stmt, "cond", parser.ParseParenExpression())
+	own_set(stmt, nameof(stmt.cond), parser.ParseParenExpression())
 	if(!parser.CheckToken(")", /datum/token/symbol))
 		return KW_FAIL
 	if(!parser.CheckToken("{", /datum/token/symbol, skip=0))
 		return KW_ERR
 	LAZYADD(parser.curBlock().statements, stmt)
-	own_set(stmt, "block", new /datum/node/BlockDefinition)
+	own_set(stmt, nameof(stmt.block), new /datum/node/BlockDefinition)
 	parser.AddBlock(stmt.block)
 
 /datum/n_Keyword/nS_Keyword/kwBreak/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
 	if(istype(parser.curBlock(), /datum/node/BlockDefinition/GlobalBlock))
-		own_add(parser, "errors", new/datum/scriptError/BadToken(parser.curToken()))
+		own_add(parser, nameof(parser.errors), new/datum/scriptError/BadToken(parser.curToken()))
 		. = KW_WARN
 	var/datum/node/statement/BreakStatement/stmt=new
 	parser.NextToken()   //skip 'break' token
@@ -104,7 +104,7 @@
 /datum/n_Keyword/nS_Keyword/kwContinue/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
 	if(istype(parser.curBlock(), /datum/node/BlockDefinition/GlobalBlock))
-		own_add(parser, "errors", new/datum/scriptError/BadToken(parser.curToken()))
+		own_add(parser, nameof(parser.errors), new/datum/scriptError/BadToken(parser.curToken()))
 		. = KW_WARN
 	var/datum/node/statement/ContinueStatement/stmt=new
 	parser.NextToken()   //skip 'break' token
@@ -115,7 +115,7 @@
 	var/datum/node/statement/FunctionDefinition/def=new
 	parser.NextToken() //skip 'def' token
 	if(!parser.options().IsValidID(parser.curToken().value))
-		own_add(parser, "errors", new/datum/scriptError/InvalidID(parser.curToken()))
+		own_add(parser, nameof(parser.errors), new/datum/scriptError/InvalidID(parser.curToken()))
 		return KW_FAIL
 	def.func_name=parser.curToken().value
 	parser.NextToken()
@@ -129,14 +129,14 @@
 				if(")")
 					break
 				else
-					own_add(parser, "errors", new/datum/scriptError/BadToken(parser.curToken()))
+					own_add(parser, nameof(parser.errors), new/datum/scriptError/BadToken(parser.curToken()))
 					return KW_ERR
 
 		else if(istype(parser.curToken(), /datum/token/word))
 			def.parameters+=parser.curToken().value
 			parser.NextToken()
 		else
-			own_add(parser, "errors", new/datum/scriptError/InvalidID(parser.curToken()))
+			own_add(parser, nameof(parser.errors), new/datum/scriptError/InvalidID(parser.curToken()))
 			return KW_ERR
 	if(!parser.CheckToken(")", /datum/token/symbol))
 		return KW_FAIL
@@ -144,12 +144,12 @@
 	if(istype(parser.curToken(), /datum/token/end)) //Function prototype
 		LAZYADD(parser.curBlock().statements, def)
 	else if(parser.curToken().value=="{" && istype(parser.curToken(), /datum/token/symbol))
-		own_set(def, "block", new /datum/node/BlockDefinition/FunctionBlock)
+		own_set(def, nameof(def.block), new /datum/node/BlockDefinition/FunctionBlock)
 		LAZYADD(parser.curBlock().statements, def)
 		parser.curBlock().functions[def.func_name]=def
 		parser.AddBlock(def.block)
 	else
-		own_add(parser, "errors", new/datum/scriptError/BadToken(parser.curToken()))
+		own_add(parser, nameof(parser.errors), new/datum/scriptError/BadToken(parser.curToken()))
 		return KW_FAIL
 
 #undef KW_FAIL

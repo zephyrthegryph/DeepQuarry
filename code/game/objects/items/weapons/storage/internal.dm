@@ -7,7 +7,7 @@
 
 /obj/item/storage/internal/Initialize(mapload)
 	. = ..()
-	rel_set(src, "master_item", loc)
+	rel_set(src, nameof(master_item), loc)
 	if(!istype(master_item(), /obj/item))
 		return INITIALIZE_HINT_QDEL
 	name = master_item().name

@@ -24,11 +24,11 @@ DECLARE_UI(/datum/error_viewer, "ErrorViewer", UI_TITLE("Error Viewer"))
 
 /datum/error_viewer/error_source/ensure_back_pointer()
 	if(!dq_back_to())
-		rel_set(src, "dq_back_to", GLOB.error_cache)
+		rel_set(src, nameof(dq_back_to), GLOB.error_cache)
 
 /datum/error_viewer/error_entry/ensure_back_pointer()
 	if(!dq_back_to())
-		rel_set(src, "dq_back_to", error_source())
+		rel_set(src, nameof(dq_back_to), error_source())
 
 /datum/error_viewer/proc/dq_pack_link_ref(datum/error_viewer/EV)
 	if(!EV)
@@ -119,7 +119,7 @@ UI_ACT_PROC(/datum/error_viewer, ui_act_navigate)
 	var/ref = "[params["ref"]]"
 	var/datum/error_viewer/EV = locate(ref)
 	if(istype(EV))
-		rel_set(EV, "dq_back_to", src)
+		rel_set(EV, nameof(/datum/error_viewer::dq_back_to), src)
 		EV.dq_linear = dq_linear
 		EV.tgui_interact(ui.user)
 	return TRUE

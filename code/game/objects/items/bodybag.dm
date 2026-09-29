@@ -24,14 +24,14 @@ DECLARE_INTERACTIONS(/obj/item/bodybag, INTERACT_SELF("Unfold", PROC_REF(bodybag
 		var/obj/structure/closet/body_bag/cryobag/R = new /obj/structure/closet/body_bag/cryobag(user.loc)
 		R.add_fingerprint(user)
 		if(syringe)
-			own_transfer(src, "syringe", R, "syringe") // stays in nullspace, now the unfolded bag's
+			own_transfer(src, nameof(syringe), R, nameof(/obj/structure/closet/body_bag/cryobag::syringe)) // stays in nullspace, now the unfolded bag's
 		consume(src, user)
 		return TRUE
 	if(robotic)
 		var/obj/structure/closet/body_bag/cryobag/robobag/R = new /obj/structure/closet/body_bag/cryobag/robobag(user.loc)
 		R.add_fingerprint(user)
 		if(syringe)
-			own_transfer(src, "syringe", R, "syringe") // stays in nullspace, now the unfolded bag's
+			own_transfer(src, nameof(syringe), R, nameof(/obj/structure/closet/body_bag/cryobag::syringe)) // stays in nullspace, now the unfolded bag's
 		consume(src, user)
 		return TRUE
 	var/obj/structure/closet/body_bag/R = new /obj/structure/closet/body_bag(user.loc)
@@ -185,7 +185,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag, TYPE_PROC_REF(/atom, app
 	var/obj/item/reagent_containers/syringe/syringe
 
 /obj/structure/closet/body_bag/cryobag/Initialize(mapload)
-	own_set(src, "tank", new tank_type(null)) // ALLOW(decl): made in nullspace, not in src. It's in nullspace to prevent ejection when the bag is opened.
+	own_set(src, nameof(tank), new tank_type(null)) // ALLOW(decl): made in nullspace, not in src. It's in nullspace to prevent ejection when the bag is opened.
 	..()
 
 
@@ -224,7 +224,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag, TYPE_PROC_REF(/a
 	. = ..()
 	if(. && syringe)
 		var/obj/item/bodybag/cryobag/folded = .
-		own_transfer(src, "syringe", folded, "syringe")
+		own_transfer(src, nameof(syringe), folded, nameof(folded.syringe))
 
 /obj/structure/closet/body_bag/cryobag/Entered(atom/movable/AM)
 	if(isliving(AM))
@@ -293,7 +293,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag, TYPE_PROC_REF(/a
 				to_chat(user,span_info("You insert \the [syringe] into \the [src], and it locks into place."))
 				user.unEquip(syringe)
 				syringe.moveToNullspace()
-				own_move(syringe, src, "syringe")
+				own_move(syringe, src, nameof(syringe))
 				for(var/mob/living/carbon/human/H in contents) // ALLOW(latent): mobs are never latent
 					inject_occupant(H)
 					break
@@ -318,7 +318,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag, TYPE_PROC_REF(/a
 		else
 			syringe.forceMove(src.loc)
 			to_chat(user,span_info("You pry \the [syringe] out of \the [src]."))
-			own_take(src, "syringe")
+			own_take(src, nameof(syringe))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/usedcryobag

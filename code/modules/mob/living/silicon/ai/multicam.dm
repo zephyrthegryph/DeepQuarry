@@ -8,8 +8,8 @@
 
 /atom/movable/screen/movable/pic_in_pic/ai/Initialize(mapload)
 	. = ..()
-	own_set(src, "aiEye", new /mob/observer/eye/aiEye/pic_in_pic()) // created in nullspace, owned by the window
-	rel_set(aiEye, "screen", src)
+	own_set(src, nameof(aiEye), new /mob/observer/eye/aiEye/pic_in_pic()) // created in nullspace, owned by the window
+	rel_set(aiEye, nameof(aiEye.screen), src)
 
 // No ownership cycle: a pic_in_pic window is never one of its own eye's hud elements.
 // The AI names its windows through relations (multicam_screens, master_multicam), cleared when a window dies.
@@ -88,14 +88,14 @@ Whatever you did that made the last camera window disappear-- don't do that agai
 		qdel(src)
 		return
 	if(ai)
-		rel_remove(ai, "multicam_screens", src)
+		rel_remove(ai, nameof(ai.multicam_screens), src)
 		om_unlink(aiEye, ai, /datum/om/relation/eye_of)
-		rel_remove(ai, "master_multicam", src)
+		rel_remove(ai, nameof(ai.master_multicam), src)
 		if(ai.multicam_on)
 			unshow_to(ai.client)
-	rel_set(src, "ai", new_ai)
+	rel_set(src, nameof(ai), new_ai)
 	if(new_ai)
-		rel_add(new_ai, "multicam_screens", src)
+		rel_add(new_ai, nameof(new_ai.multicam_screens), src)
 		om_link(aiEye, ai, /datum/om/relation/eye_of)
 		if(new_ai.multicam_on)
 			show_to(new_ai.client)
@@ -173,13 +173,13 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 	for(var/obj/machinery/camera/C as anything in remove)
 		if(QDELETED(C))
 			continue
-		rel_remove(src, "cameras_telegraphed", C)
+		rel_remove(src, nameof(cameras_telegraphed), C)
 		C.in_use_lights--
 		C.update_icon()
 	for(var/obj/machinery/camera/C as anything in add)
 		if(QDELETED(C))
 			continue
-		rel_add(src, "cameras_telegraphed", C)
+		rel_add(src, nameof(cameras_telegraphed), C)
 		C.in_use_lights++
 		C.update_icon()
 
@@ -190,11 +190,13 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 			continue
 		C.in_use_lights--
 		C.update_icon()
-	rel_clear(src, "cameras_telegraphed")
+	rel_clear(src, nameof(cameras_telegraphed))
 
 // The screen owns its eye (implicit OWN aiEye); `screen` is only the way back (a relation),
 // so ownership stays a tree (tools/ci/ownership_cycle_lint.py).
-REL_LIST(/mob/observer/eye/aiEye/pic_in_pic, cameras_telegraphed)
+/mob/observer/eye/aiEye/pic_in_pic/relations()
+	. = ..()
+	. += rel_many(nameof(cameras_telegraphed))
 
 // stops telegraphing to the cameras it watched.
 /mob/observer/eye/aiEye/pic_in_pic/on_destroy(force)
@@ -267,12 +269,14 @@ REL_LIST(/mob/observer/eye/aiEye/pic_in_pic, cameras_telegraphed)
 	if(master_multicam)
 		master_multicam.set_view_center(get_turf(eyeobj), FALSE)
 		master_multicam.unhighlight()
-		rel_clear(src, "master_multicam")
+		rel_clear(src, nameof(master_multicam))
 
 	if(P)
 		P.highlight()
 		eyeobj.setLoc(get_turf(P.center()))
 		P.set_view_center(eyeobj)
-		rel_set(src, "master_multicam", P)
+		rel_set(src, nameof(master_multicam), P)
 
-REL_LIST(/mob/living/silicon/ai, multicam_screens)
+/mob/living/silicon/ai/relations()
+	. = ..()
+	. += rel_many(nameof(multicam_screens))

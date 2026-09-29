@@ -12,7 +12,7 @@
 /obj/machinery/door/airlock/alarmlock/Initialize(mapload)
 	. = ..()
 	GLOB.radio_service.remove_object(src, air_frequency)
-	rel_set(src, "air_connection", GLOB.radio_service.add_object(src, air_frequency, RADIO_TO_AIRALARM))
+	rel_set(src, nameof(air_connection), GLOB.radio_service.add_object(src, air_frequency, RADIO_TO_AIRALARM))
 	open()
 
 /obj/machinery/door/airlock/alarmlock/receive_signal(datum/signal/signal)

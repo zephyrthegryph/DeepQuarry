@@ -16,8 +16,8 @@
 
 /datum/edit_memory_panel/New(datum/mind/target_mind, mob/admin_user)
 	..()
-	rel_set(src, "target_mind", target_mind)
-	rel_set(src, "admin_user", admin_user)
+	rel_set(src, nameof(target_mind), target_mind)
+	rel_set(src, nameof(admin_user), admin_user)
 
 // The mind owns this panel (tgui_edit_memory_panel); target_mind is a plain relation back.
 

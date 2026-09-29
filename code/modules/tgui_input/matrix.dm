@@ -102,7 +102,7 @@
 /datum/tgui_input_colormatrix/New(mob/user, message, title, atom/movable/target, list/default, matrix_only, timeout, ui_state, was_path)
 	src.default = default
 	src.message = message
-	rel_set(src, "target", target)
+	rel_set(src, nameof(target), target)
 	src.title = title
 	src.state_static = ui_state
 	src.was_path = was_path

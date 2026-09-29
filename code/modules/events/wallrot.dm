@@ -10,7 +10,7 @@
 		var/z_level = pick(using_map.station_levels)
 		var/turf/candidate = locate(rand(1, world.maxx), rand(1, world.maxy), z_level)
 		if(istype(candidate, /turf/simulated/wall))
-			rel_set(src, "center", candidate)
+			rel_set(src, nameof(center), candidate)
 			var/area/A = get_area(candidate)
 			if(!A.flag_check(AREA_FORBID_EVENTS))
 				return 1

@@ -11,7 +11,7 @@
 
 // Refreshes list of active supermatter crystals
 /datum/tgui_module/supermatter_monitor/proc/refresh()
-	rel_clear(src, "supermatters")
+	rel_clear(src, nameof(supermatters))
 	var/z = get_z(tgui_host())
 	if(!z)
 		return
@@ -20,10 +20,10 @@
 		// Delaminating, not within coverage, not on a tile.
 		if(S.grav_pulling || S.exploded || !(S.z in valid_z_levels) || !istype(S.loc, /turf/))
 			continue
-		rel_add(src, "supermatters", S)
+		rel_add(src, nameof(supermatters), S)
 
 	if(!(active() in supermatters))
-		rel_clear(src, "active")
+		rel_clear(src, nameof(active))
 
 /datum/tgui_module/supermatter_monitor/proc/get_status()
 	. = SUPERMATTER_INACTIVE
@@ -39,11 +39,11 @@ UI_DATA(/datum/tgui_module/supermatter_monitor, "merge:ui_data_datum_tgui_module
 	if(istype(active(), /obj/machinery/power/supermatter))
 		var/turf/T = get_turf(active())
 		if(!T)
-			rel_clear(src, "active")
+			rel_clear(src, nameof(active))
 			return
 		var/datum/gas_mixture/air = T.return_air()
 		if(!istype(air))
-			rel_clear(src, "active")
+			rel_clear(src, nameof(active))
 			return
 
 		data["active"] = 1
@@ -88,7 +88,7 @@ UI_DATA(/datum/tgui_module/supermatter_monitor, "merge:ui_data_datum_tgui_module
 
 UI_ACT(/datum/tgui_module/supermatter_monitor, "clear", ui_act_clear)
 UI_ACT_PROC(/datum/tgui_module/supermatter_monitor, ui_act_clear)
-	rel_clear(src, "active")
+	rel_clear(src, nameof(/area/looking_glass::active))
 	. = TRUE
 
 UI_ACT(/datum/tgui_module/supermatter_monitor, "refresh", ui_act_refresh)
@@ -101,7 +101,7 @@ UI_ACT_PROC(/datum/tgui_module/supermatter_monitor, ui_act_set)
 	var/newuid = params["set"]
 	for(var/obj/machinery/power/supermatter/S in supermatters)
 		if(S.uid == newuid)
-			rel_set(src, "active", S)
+			rel_set(src, nameof(/area/looking_glass::active), S)
 	. = TRUE
 
 /datum/tgui_module/supermatter_monitor/ntos

@@ -23,27 +23,27 @@
 
 /datum/action_group/New(datum/hud/owner)
 	..()
-	rel_set(src, "owner", owner)
+	rel_set(src, nameof(owner), owner)
 
 
 /datum/action_group/proc/insert_action(atom/movable/screen/action, index)
 	if(action in actions)
 		if(actions[index] == action)
 			return
-		rel_remove(src, "actions", action) // Don't dupe, come on
+		rel_remove(src, nameof(actions), action) // Don't dupe, come on
 	if(!index)
 		index = length(actions) + 1
 	index = min(length(actions) + 1, index)
-	rel_add(src, "actions", action)
+	rel_add(src, nameof(actions), action)
 	// rel_add appends: move the members that belong after it back to the end, in order
 	var/list/after = actions.Copy(index, length(actions))
 	for(var/atom/movable/screen/member as anything in after)
-		rel_remove(src, "actions", member)
-		rel_add(src, "actions", member)
+		rel_remove(src, nameof(actions), member)
+		rel_add(src, nameof(actions), member)
 	refresh_actions()
 
 /datum/action_group/proc/remove_action(atom/movable/screen/action)
-	rel_remove(src, "actions", action)
+	rel_remove(src, nameof(actions), action)
 	if(!QDELING(src))
 		refresh_actions()
 
@@ -128,13 +128,13 @@
 /datum/action_group/proc/generate_landing()
 	if(landing)
 		return
-	own_set(src, "landing", new /atom/movable/screen/action_landing())
+	own_set(src, nameof(landing), new /atom/movable/screen/action_landing())
 	landing.set_owner(src)
 	refresh_actions()
 
 /// Clears any landing objects we may currently have
 /datum/action_group/proc/clear_landing()
-	own_clear(src, "landing", OWN_DELETE)
+	own_clear(src, nameof(landing), OWN_DELETE)
 
 /datum/action_group/proc/update_landing()
 	if(!landing)

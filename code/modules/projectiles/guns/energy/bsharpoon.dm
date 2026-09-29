@@ -49,7 +49,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/bluespace_harpoon, "scanmod", /obj/item/stock_pa
 	to_chat(user, span_notice("You remove [scanmod] from [src]."))
 	playsound(src, tool.usesound, 75, 1)
 	scanmod.forceMove(T)
-	own_take(src, "scanmod")
+	own_take(src, nameof(scanmod))
 	update_fail_chance()
 	return ITEM_INTERACT_SUCCESS
 
@@ -239,4 +239,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/bluespace_harpoon, TYPE_PROC_REF(/atom, appear
 				icon_state = "harpoon-2"
 		transforming = 0
 
-OWN(/obj/item/bluespace_harpoon, scanmod, OWN_CONTAINED)
+/obj/item/bluespace_harpoon/ownership()
+	. = ..()
+	. += owns(nameof(scanmod), policy = OWN_CONTAINED)

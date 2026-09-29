@@ -178,7 +178,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	. = ..()
 	set_wires(new /datum/wires/apc(src))
 
-	own_set(src, "icon_renderer", new /datum/apc_icon_renderer())
+	own_set(src, nameof(icon_renderer), new /datum/apc_icon_renderer())
 
 	// Offset 24 pixels in dir so the APC is embedded in the wall but inside the area.
 	if(building)
@@ -189,7 +189,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 
 	if(building)
 		area = get_area(src)
-		rel_set(area(), "apc", src)
+		rel_set(area(), nameof(/area::apc), src)
 		opened    = 1
 		operating = 0
 		name = "[area().name] APC"
@@ -203,9 +203,16 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 /obj/machinery/power/apc/LateInitialize()
 	update()
 
-OWN(/obj/machinery/power/apc, cell, OWN_SPILL)
-REL_PAIR(/obj/machinery/power/apc, hacker, hacked_apcs)
-REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
+/obj/machinery/power/apc/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_SPILL)
+
+/obj/machinery/power/apc/relations()
+	. = ..()
+	. += rel_one(nameof(hacker), back = nameof(/mob/living/silicon/ai::hacked_apcs))
+/mob/living/silicon/ai/relations()
+	. = ..()
+	. += rel_many(nameof(hacked_apcs), back = nameof(/obj/machinery/power/apc::hacker))
 
 /// Phase 1 (unbind): the APC's Rust power node goes.
 /obj/machinery/power/apc/lifecycle_unbind()
@@ -220,7 +227,7 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 	om_changed(src, CHANGE_MACHINE_MODE)
 	apply_area_power()
 	if(area())
-		rel_clear(area(), "apc")
+		rel_clear(area(), nameof(/area::apc))
 		area().power_light  = 0
 		area().power_equip  = 0
 		area().power_environ = 0
@@ -325,14 +332,14 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 	adjust_charge(cell.charge - get_charge())
 
 /obj/machinery/power/apc/proc/make_terminal()
-	own_set(src, "terminal", new /obj/machinery/power/terminal(loc))
+	own_set(src, nameof(terminal), new /obj/machinery/power/terminal(loc))
 	terminal.set_dir(dir)
-	rel_set(terminal, "master", src)
+	rel_set(terminal, nameof(terminal.master), src)
 
 /obj/machinery/power/apc/proc/init()
 	has_electronics = APC_HAS_ELECTRONICS_SECURED // installed and secured
 	if(cell_type)
-		own_set(src, "cell", new cell_type(src))
+		own_set(src, nameof(cell), new cell_type(src))
 		cell.charge = start_charge * cell.maxcharge / 100.0
 		sync_cell_charge()
 
@@ -344,7 +351,7 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 	else
 		area = get_area_name(areastring)
 		name = "\improper [area().name] APC"
-	rel_set(area(), "apc", src)
+	rel_set(area(), nameof(/area::apc), src)
 
 	if(istype(area(), /area/submap))
 		alarms_hidden = TRUE
@@ -773,7 +780,7 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 			user.put_in_hands(cell)
 			cell.add_fingerprint(user)
 			cell.update_icon()
-			own_take(src, "cell")
+			own_take(src, nameof(cell))
 			act_message(user, null, MSG_SELF(span_notice("You remove the power cell.")), \
 				MSG_OTHERS(span_warning("[user.name] removes the power cell from [name]!")))
 			charging = 0
@@ -1152,8 +1159,8 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_EXPLOSION, PROC_REF(apc_blast_w
 
 /obj/machinery/power/apc/disconnect_terminal(obj/machinery/power/terminal/term)
 	if(terminal)
-		rel_clear(terminal, "master")
-		own_take(src, "terminal")
+		rel_clear(terminal, nameof(terminal.master))
+		own_take(src, nameof(terminal))
 	wake_for_power_dependency()
 
 /obj/machinery/power/apc/proc/overload_lighting(chance = 100)
@@ -1175,7 +1182,7 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_EXPLOSION, PROC_REF(apc_blast_w
 /obj/machinery/power/apc/proc/ai_hack(mob/living/silicon/ai/A = null)
 	if(!A || !A.is_malf() || hacker || aidisabled || A.stat == DEAD)
 		return 0
-	rel_set(src, "hacker", A) // two-sided: lists us in A.hacked_apcs
+	rel_set(src, nameof(hacker), A) // two-sided: lists us in A.hacked_apcs
 	set_locked(1)
 	return 1
 
@@ -1205,7 +1212,7 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_EXPLOSION, PROC_REF(apc_blast_w
 	GLOB.power_alarm.clearAlarm(loc, src)
 
 	// Clear malf AI ownership.
-	rel_clear(src, "hacker") // two-sided: leaves the AI's hacked_apcs
+	rel_clear(src, nameof(hacker)) // two-sided: leaves the AI's hacked_apcs
 	set_emagged(initial(emagged))
 
 	// Force icon renderer to recompute from scratch.
@@ -1276,8 +1283,8 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_EXPLOSION, PROC_REF(apc_blast_w
 	var/area/NA = get_area(src)
 	if(NA != area())
 		if(area().apc == src)
-			rel_clear(area(), "apc")
-		rel_set(NA, "apc", src)
+			rel_clear(area(), nameof(/area::apc))
+		rel_set(NA, nameof(/area::apc), src)
 		area = NA
 		name = "[area().name] APC"
 	update()

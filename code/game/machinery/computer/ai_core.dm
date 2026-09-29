@@ -13,7 +13,7 @@
 /obj/structure/AIcore/Initialize(mapload)
 	. = ..()
 	if(mapload)
-		own_set(src, "laws", new using_map.default_law_type)
+		own_set(src, nameof(laws), new using_map.default_law_type)
 
 DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
@@ -159,7 +159,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 				var/obj/structure/AIcore/deactivated/D = new(loc)
 				om_ask(user, /datum/om/prompt/confirm, TYPE_PROC_REF(/obj/structure/AIcore/deactivated, latejoin_answered), receiver = D, subject = D, title = "Latejoin", message = "Would you like this core to be open for latejoining AIs?")
 			else
-				var/datum/ai_laws/handed_laws = own_take(src, "laws") // the new AI adopts them
+				var/datum/ai_laws/handed_laws = own_take(src, nameof(laws)) // the new AI adopts them
 				var/mob/living/silicon/ai/A = new /mob/living/silicon/ai(loc, FALSE, handed_laws, brain)
 				if(A) //if there's no brain, the mob is deleted and a structure/AIcore is created
 					A.rename_self("ai", 1)
@@ -182,14 +182,14 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 				state = 1
 				icon_state = "0"
 				circuit.forceMove(loc)
-				own_take(src, "circuit")
+				own_take(src, nameof(circuit))
 				return ITEM_INTERACT_SUCCESS
 		if(3)
 			if(brain)
 				playsound(src, tool.usesound, 50, 1)
 				to_chat(user, span_notice("You remove the brain."))
 				brain.forceMove(loc)
-				own_take(src, "brain")
+				own_take(src, nameof(brain))
 				icon_state = "3"
 				return ITEM_INTERACT_SUCCESS
 		if(4)
@@ -319,5 +319,7 @@ ADMIN_VERB(empty_ai_core_toggle_latejoin, R_ADMIN|R_SERVER|R_EVENT, "Toggle AI C
 	act_message(user, src, others = span_bold("%U%") + " decides not to unbolt %T%.")
 
 // The core owns its laws until it builds an AI, which adopts them (own_take() in the build step).
-OWN(/obj/structure/AIcore, circuit, OWN_CONTAINED)
-OWN(/obj/structure/AIcore, brain, OWN_CONTAINED)
+/obj/structure/AIcore/ownership()
+	. = ..()
+	. += owns(nameof(circuit), policy = OWN_CONTAINED)
+	. += owns(nameof(brain), policy = OWN_CONTAINED)

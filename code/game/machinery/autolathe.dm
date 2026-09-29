@@ -42,8 +42,8 @@
 	var/datum/looping_sound/lathe_print/print_sound
 
 /obj/machinery/autolathe/Initialize(mapload)
-	own_set(src, "print_sound", new /datum/looping_sound/lathe_print(list(src), FALSE, TRUE))
-	own_set(src, "materials", new /datum/material_container( \
+	own_set(src, nameof(print_sound), new /datum/looping_sound/lathe_print(list(src), FALSE, TRUE))
+	own_set(src, nameof(materials), new /datum/material_container( \
 		src, \
 		subtypesof(/datum/material), \
 		0, \

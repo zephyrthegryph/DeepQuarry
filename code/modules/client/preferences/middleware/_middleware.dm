@@ -13,7 +13,7 @@
 	var/list/action_delegations
 
 /datum/preference_middleware/New(datum/preferences)
-	rel_set(src, "preferences", preferences)
+	rel_set(src, nameof(preferences), preferences)
 
 	if (isnull(key))
 		// + 2 coming from the off-by-one of copytext, and then another from the slash

@@ -11,7 +11,7 @@
 /datum/tgui_module/law_manager/New(mob/living/silicon/S)
 	. = ..()
 
-	rel_set(src, "owner", S)
+	rel_set(src, nameof(owner), S)
 
 /// Every law set the UI may name; handlers check a non-admin picked a player set.
 /datum/tgui_module/law_manager/proc/law_sets()

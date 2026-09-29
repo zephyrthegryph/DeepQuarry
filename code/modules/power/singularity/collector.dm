@@ -143,7 +143,7 @@ DAMAGE_REACTION(/obj/machinery/power/rad_collector, DAMAGE_EXPLOSION, PROC_REF(c
 		return
 	Z.forceMove(get_turf(src))
 	Z.layer = initial(Z.layer)
-	own_take(src, "P") // dropped on the floor
+	own_take(src, nameof(P)) // dropped on the floor
 	if(active)
 		toggle_power()
 	else
@@ -185,4 +185,6 @@ DAMAGE_REACTION(/obj/machinery/power/rad_collector, DAMAGE_EXPLOSION, PROC_REF(c
 /obj/machinery/power/rad_collector/proc/P() as /obj/item/tank/phoron
 	return P
 
-OWN(/obj/machinery/power/rad_collector, P, OWN_SPILL)
+/obj/machinery/power/rad_collector/ownership()
+	. = ..()
+	. += owns(nameof(P), policy = OWN_SPILL)

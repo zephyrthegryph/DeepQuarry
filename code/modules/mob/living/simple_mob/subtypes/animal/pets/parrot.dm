@@ -87,7 +87,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
 		to_chat(user, span_warning("\The [src] doesn't have a headset to remove, thankfully."))
 	else
 		ISay("BAWWWWWK LEAVE THE HEADSET BAWKKKKK!")
-		var/obj/item/radio/headset/old_headset = own_take(src, "my_headset")
+		var/obj/item/radio/headset/old_headset = own_take(src, nameof(my_headset))
 		old_headset.forceMove(get_turf(src))
 		user.put_in_hands(old_headset)
 		to_chat(user, span_notice("You take away \the [src]'s [old_headset.name]. Finally."))
@@ -245,4 +245,6 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/passive/bird/parrot, "my_hea
 // AI
 
 // The worn headset sits in the parrot's contents.
-OWN(/mob/living/simple_mob/animal/passive/bird/parrot, my_headset, OWN_CONTAINED)
+/mob/living/simple_mob/animal/passive/bird/parrot/ownership()
+	. = ..()
+	. += owns(nameof(my_headset), policy = OWN_CONTAINED)

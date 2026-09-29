@@ -99,7 +99,7 @@
 /datum/unit_test/dq_p1_b16_malish_qualem_zero_strength/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/old_heal = H.species.chem_strength_heal
-	proto_private(H, "species") // write on the mob's private species copy, never the registered one
+	proto_private(H, nameof(H.species)) // write on the mob's private species copy, never the registered one
 	H.species.chem_strength_heal = 0
 	H.bloodstr.add_reagent(REAGENT_ID_SPACEACILLIN, 5)
 	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
@@ -335,7 +335,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
 	var/datum/affliction/A = new /datum/affliction/synthetic/coolant_leak(arm)
-	own_add(arm, "detached_afflictions", A)
+	own_add(arm, nameof(arm.detached_afflictions), A)
 	H.body.attach_part(arm)
 	TEST_ASSERT(!H.body.has_affliction(/datum/affliction/synthetic/coolant_leak), "a coolant leak can't be carried onto an organic arm")
 
@@ -443,9 +443,9 @@
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, run_loc_floor_bottom_left)
 	LAZYSET(R.vore_light_states, "stale_belly", 2)
 	var/datum/robot_sprite/old_sprite = R.sprite_datum
-	var/datum/robot_sprite/private_copy = proto_replace(R, "sprite_datum", null)
+	var/datum/robot_sprite/private_copy = proto_replace(R, nameof(R.sprite_datum), null)
 	R.update_multibelly()
-	proto_set(R, "sprite_datum", private_copy || old_sprite)
+	proto_set(R, nameof(R.sprite_datum), private_copy || old_sprite)
 	TEST_ASSERT(!R.vore_light_states?["stale_belly"], "a stale belly light key is cleared")
 
 /// P2-F7: apply_effect() honours check_protection for radiation.

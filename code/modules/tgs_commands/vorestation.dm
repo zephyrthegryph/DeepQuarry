@@ -579,7 +579,7 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 			var/found = FALSE
 
 			message.text = ""
-			own_set(message, "embed", embed)
+			own_set(message, nameof(message.embed), embed)
 			embed.title = "Whitelists for [ckey]"
 
 			var/datum/db_query/query_list = SSdbcore.NewQuery(

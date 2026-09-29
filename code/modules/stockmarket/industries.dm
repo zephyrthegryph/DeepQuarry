@@ -33,7 +33,7 @@ TYPE_TABLE_DECLARE(/datum/industry, industry_title_templates_ooc, list("%company
 /datum/industry/proc/generateInCharacterProductArticle(product_name, datum/stock/S)
 	var/datum/article/A = new
 	var/list/add_tokens = list("company_name" = S.name, "product_name" = product_name, "outlet" = A.outlet, "author" = A.author)
-	rel_set(A, "about", S)
+	rel_set(A, nameof(A.about), S)
 	A.opinion = rand(-1, 1)
 
 	A.subtitle = A.detokenize(pick(subtitle_templates), tokens, add_tokens)

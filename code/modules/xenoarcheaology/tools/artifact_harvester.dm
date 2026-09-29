@@ -20,9 +20,9 @@
 /// If you want it to load smoothly, set it's dir to wherever the scanpad is!
 /obj/machinery/artifact_harvester/Initialize(mapload)
 	. = ..()
-	rel_set(src, "owned_scanner", locate_within(get_step(src, dir), /obj/machinery/artifact_scanpad))
+	rel_set(src, nameof(owned_scanner), locate_within(get_step(src, dir), /obj/machinery/artifact_scanpad))
 	if(!owned_scanner())
-		rel_set(src, "owned_scanner", locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
+		rel_set(src, nameof(owned_scanner), locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
 	default_apply_parts()
 	update_icon()
 
@@ -64,7 +64,7 @@
 			to_chat(user, span_blue("You insert [held] into [src]."))
 			user.drop_item()
 			held.forceMove(src)
-			rel_set(src, "inserted_battery", held)
+			rel_set(src, nameof(inserted_battery), held)
 			SStgui.update_uis(src)
 		else
 			to_chat(user, span_red("There is already a battery in [src]."))
@@ -138,7 +138,7 @@ UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_stopharvest)
 		harvesting = 0
 		cur_artifact().anchored = FALSE
 		cur_artifact().in_use = 0
-		rel_clear(src, "cur_artifact")
+		rel_clear(src, nameof(/obj/machinery/artifact_harvester::cur_artifact))
 		atom_say("Energy harvesting interrupted.")
 		icon_state = "incubator"
 	return TRUE
@@ -147,7 +147,7 @@ UI_ACT(/obj/machinery/artifact_harvester, "ejectbattery", ui_act_ejectbattery)
 UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_ejectbattery)
 	if(inserted_battery())
 		inserted_battery().forceMove(loc)
-		rel_clear(src, "inserted_battery")
+		rel_clear(src, nameof(/obj/item/anodevice::inserted_battery))
 	return TRUE
 
 UI_ACT(/obj/machinery/artifact_harvester, "drainbattery", ui_act_drainbattery)
@@ -180,7 +180,7 @@ UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_drainbattery)
 		return
 
 	//locate artifact on analysis pad
-	rel_clear(src, "cur_artifact")
+	rel_clear(src, nameof(cur_artifact))
 	var/articount = 0
 	var/obj/analysed
 	for(var/obj/A in get_turf(owned_scanner()))
@@ -201,7 +201,7 @@ UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_drainbattery)
 		return
 
 	if(analysed)
-		rel_set(src, "cur_artifact", analysed)
+		rel_set(src, nameof(cur_artifact), analysed)
 
 		var/list/active_effects //This will be populated when we see if it has the artifact component or the artifact_master var
 
@@ -292,7 +292,7 @@ UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_drainbattery)
 			harvesting = 0
 			cur_artifact().anchored = FALSE
 			cur_artifact().in_use = 0
-			rel_clear(src, "cur_artifact")
+			rel_clear(src, nameof(cur_artifact))
 			src.visible_message(span_bold("[name]") + " states, \"Battery is full.\"")
 			icon_state = "incubator"
 

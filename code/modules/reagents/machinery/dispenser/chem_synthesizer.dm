@@ -191,7 +191,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_synthesizer/proc/remove_cartridge(label)
-	. = own_take_member(src, "cartridges", label)
+	. = own_take_member(src, nameof(cartridges), label)
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_synthesizer/declare_interactions(list/into)
@@ -388,7 +388,7 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_eject_catalyst)
 	// Removes the catalyst bottle from the machine.
 	if(!busy && catalyst)
 		catalyst.forceMove(get_turf(src))
-		own_take(src, "catalyst")
+		own_take(src, nameof(/obj/machinery/chemical_synthesizer::catalyst))
 		update_icon()
 
 UI_ACT(/obj/machinery/chemical_synthesizer, "toggle_catalyst", ui_act_toggle_catalyst)
@@ -835,5 +835,7 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_drug_form)
 #undef RECIPE_MAX_STRING
 #undef RECIPE_MAX_STEPS
 
-OWN(/obj/machinery/chemical_synthesizer, catalyst, OWN_CONTAINED)
+/obj/machinery/chemical_synthesizer/ownership()
+	. = ..()
+	. += owns(nameof(catalyst), policy = OWN_CONTAINED)
 // Label -> installed cartridge (in contents); they go with the machine.

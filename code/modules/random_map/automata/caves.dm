@@ -75,7 +75,7 @@
 			else
 				changed = T.make_wall()
 			if(changed)
-				rel_add(src, "turfs_changed", T)
+				rel_add(src, nameof(turfs_changed), T)
 
 		if(T.density && !T.ignore_oregen)
 			if(map[current_cell] == DOOR_CHAR)
@@ -91,4 +91,4 @@
 	for(var/turf/simulated/mineral/T as anything in turfs_changed)
 		T.update_icon()
 
-	rel_clear(src, "turfs_changed")
+	rel_clear(src, nameof(turfs_changed))

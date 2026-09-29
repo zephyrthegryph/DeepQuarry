@@ -73,7 +73,7 @@ EXTEND_INTERACTIONS(/obj/item/tank/phoron, INTERACT_ITEM(null, PROC_REF(phoron_t
 			return INTERACTION_HANDLED_PASS
 		if(!own_set(F, nameof(F.ptank), src, user = user))
 			return INTERACTION_HANDLED_PASS
-		rel_set(src, "master", F)
+		rel_set(src, nameof(src.master), F)
 		F.update_icon()
 	return INTERACTION_HANDLED_PASS
 

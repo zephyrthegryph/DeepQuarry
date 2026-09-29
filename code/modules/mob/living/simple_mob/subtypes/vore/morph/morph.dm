@@ -99,7 +99,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/morph/dominated_prey, /mob/living/
 		to_chat(src, span_warning("You must restore to your original form first!"))
 		return
 	morphed = TRUE
-	rel_set(src, "form", target)
+	rel_set(src, nameof(form), target)
 
 	act_message(src, target, null, MSG_OTHERS(span_warning("%U% suddenly twists and changes shape, becoming a copy of %T%!")))
 	color = null
@@ -144,7 +144,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/morph/dominated_prey, /mob/living/
 	if(!silent)
 		act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly collapses in on itself, dissolving into a pile of flesh!")))
 
-	rel_clear(src, "form")
+	rel_clear(src, nameof(form))
 	name = initial(name)
 	desc = initial(desc)
 
@@ -325,12 +325,12 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/morph, TYPE_PROC_REF(/atom, 
 	var/mob/living/L = seq.prey
 	log_admin("[key_name_admin(src)] offered [L] to swap bodies as a morph.")
 	var/datum/om/prompt/confirm/morph_takeover_consent/ask = new
-	rel_set(ask, "answerer", L)
+	rel_set(ask, nameof(ask.answerer), L)
 	return ask
 
 /mob/living/simple_mob/vore/morph/proc/take_over_ask_consent_again(datum/om/flow/ask_sequence/morph_takeover/seq)
 	var/datum/om/prompt/confirm/morph_takeover_consent/again/ask = new
-	rel_set(ask, "answerer", seq.prey)
+	rel_set(ask, nameof(ask.answerer), seq.prey)
 	return ask
 
 /mob/living/simple_mob/vore/morph/proc/take_over_agreed(datum/om/flow/ask_sequence/morph_takeover/seq)
@@ -356,7 +356,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/morph, TYPE_PROC_REF(/atom, 
 	if(L_puller)
 		L_puller.stop_pulling()
 	stop_pulling()
-	rel_set(src, "original_mind", ensure_mind())
+	rel_set(src, nameof(original_mind), ensure_mind())
 	log_and_message_admins("has swapped bodies with [key_name_admin(L)] as a morph at [get_area(src)] - [COORD(src)].", src)
 	new /mob/living/simple_mob/vore/morph/dominated_prey(L.vore_selected, L.ensure_mind(), src, L)
 
@@ -376,9 +376,9 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/morph, TYPE_PROC_REF(/atom, 
 	. = ..()
 	if(!pmind)
 		return INITIALIZE_HINT_QDEL
-	rel_set(src, "prey_mind", pmind)
-	rel_set(src, "parent_morph", parent)
-	rel_set(src, "prey_body", prey)
+	rel_set(src, nameof(prey_mind), pmind)
+	rel_set(src, nameof(parent_morph), parent)
+	rel_set(src, nameof(prey_body), prey)
 	prey_body.forceMove(get_turf(parent_morph))
 	prey_body.muffled = FALSE
 	prey_body.absorbed = FALSE
@@ -431,7 +431,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/morph, TYPE_PROC_REF(/atom, 
 /mob/living/simple_mob/vore/morph/dominated_prey/proc/return_bodies()
 	move_player_mind(parent_morph.original_mind, parent_morph, "morph released [prey_body]")
 	move_player_mind(prey_mind, prey_body, "returned to own body from morph [parent_morph]")
-	rel_clear(parent_morph, "original_mind")
+	rel_clear(parent_morph, nameof(parent_morph.original_mind))
 
 #undef MORPH_COOLDOWN
 
