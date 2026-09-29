@@ -241,7 +241,7 @@ DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/plant_seeds(obj/item/seeds/S)
 	lastproduce = 0
-	seed = S.seed() //Grab the seed datum.
+	seed_hand_over(S, "seed_static", src, "seed") //Grab the seed datum (a packet's private copy moves over).
 	dead = 0
 	age = 1
 	//Snowflakey, maybe move this to the seed datum
@@ -272,7 +272,9 @@ DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 			if(istype(Proj, /obj/item/projectile/energy/floramut/gene))
 				var/obj/item/projectile/energy/floramut/gene/G = Proj
 				if(seed)
-					seed = seed.diverge_mutate_gene(G.gene(), get_turf(loc))	//get_turf just in case it's not in a turf.
+					var/datum/seed/mutated = seed.diverge_mutate_gene(G.gene(), get_turf(loc))	//get_turf just in case it's not in a turf.
+					if(mutated && mutated != seed)
+						proto_set(src, "seed", mutated)
 			else
 				mutate(1)
 				return
@@ -289,7 +291,10 @@ DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 			var/c = safepick(seed.chems)
 			if(length(seed.chems) > 1 && c)
 				var/turf/T = get_turf(loc)
-				seed = seed.diverge()
+				var/datum/seed/pruned = seed.diverge()
+				if(!pruned)
+					return
+				proto_set(src, "seed", pruned)
 				T.visible_message(span_infoplain(span_bold("\The [seed.display_name]") + " quivers!"))
 				seed.chems -= c
 			return
@@ -403,7 +408,7 @@ DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 
 	if(!seed.get_trait(TRAIT_HARVEST_REPEAT))
 		yield_mod = 0
-		seed = null
+		proto_set(src, "seed", null)
 		dead = 0
 		age = 0
 		sampled = 0
@@ -421,7 +426,7 @@ DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 		to_chat(user, span_filter_notice("You can't remove the dead plant while the lid is shut."))
 		return
 
-	seed = null
+	proto_set(src, "seed", null)
 	dead = 0
 	sampled = 0
 	age = 0
@@ -441,8 +446,8 @@ DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 	//Remove the seed if something is already planted.
 	if(seed)
 		previous_plant = seed.display_name
-		seed = null
-	seed = GLOB.plant_service.seeds[pick(list(PLANT_REISHI,PLANT_NETTLE,PLANT_AMANITA,PLANT_MUSHROOMS,PLANT_PLUMPHELMET,PLANT_TOWERCAP,PLANT_HAREBELLS,PLANT_WEEDS))]
+		proto_set(src, "seed", null)
+	proto_set(src, "seed", GLOB.plant_service.seeds[pick(list(PLANT_REISHI,PLANT_NETTLE,PLANT_AMANITA,PLANT_MUSHROOMS,PLANT_PLUMPHELMET,PLANT_TOWERCAP,PLANT_HAREBELLS,PLANT_WEEDS))]
 	if(!seed) return //Weed does not exist, someone fucked up.
 
 	dead = 0
@@ -474,7 +479,10 @@ DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 	// If it's not in the global list, then no products of the line have been
 	// harvested yet and it's safe to assume it's restricted to this tray.
 	if(!isnull(GLOB.plant_service.seeds[seed.name]))
-		seed = seed.diverge()
+		var/datum/seed/mutant = seed.diverge()
+		if(!mutant) // TRAIT_IMMUTABLE
+			return
+		proto_set(src, "seed", mutant)
 		seed.mutate(severity,get_turf(src))
 
 	return
@@ -530,7 +538,7 @@ DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 	var/previous_plant = seed.display_name
 	var/newseed = seed.get_mutant_variant()
 	if(newseed in GLOB.plant_service.seeds)
-		seed = GLOB.plant_service.seeds[newseed]
+		proto_set(src, "seed", GLOB.plant_service.seeds[newseed])
 	else
 		return
 
@@ -778,3 +786,6 @@ DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 	update_icon()
 
 #undef AGE_MOD_MAX
+
+/// The planted seed: a registered line, or the tray's own private (mutated / modified) copy.
+PROTO(/obj/machinery/portable_atmospherics/hydroponics, seed)

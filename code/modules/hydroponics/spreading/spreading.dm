@@ -86,7 +86,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 
 	if(!istype(newseed))
 		newseed = GLOB.plant_service.seeds[DEFAULT_SEED]
-	seed_static = newseed
+	proto_set(src, "seed_static", seed_shareable(newseed)) // vines share their seed
 	if(!seed())
 		return INITIALIZE_HINT_QDEL
 
@@ -352,6 +352,8 @@ EXTEND_INTERACTIONS(/obj/effect/plant, \
 /obj/effect/plant/proc/parent() as /obj/effect/plant
 	return parent
 
-/// A shared definition/flyweight (never cleared).
+/// The seed (PROTO): a registered line, or this holder's own private copy.
 /obj/effect/plant/proc/seed() as /datum/seed
 	return seed_static
+
+PROTO(/obj/effect/plant, seed_static)

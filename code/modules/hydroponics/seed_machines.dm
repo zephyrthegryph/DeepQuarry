@@ -247,9 +247,7 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 			seed.forceMove(get_turf(src))
 
 			if(seed.seed().name == "new line" || isnull(GLOB.plant_service.seeds[seed.seed().name]))
-				seed.seed().uid = GLOB.plant_service.seeds.len + 1
-				seed.seed().name = "[seed.seed().uid]"
-				GLOB.plant_service.seeds[seed.seed().name] = seed.seed()
+				GLOB.plant_service.register_line(seed.seed()) // the packet keeps its private copy, renamed to the line
 
 			seed.update_seed()
 			visible_message("[icon2html(src,viewers(src))] [src] beeps and spits out [seed].")
@@ -278,7 +276,7 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 			active = 1
 
 			if(seed && seed.seed())
-				genetics_static = seed.seed()
+				seed_hand_over(seed, "seed_static", src, "genetics_static") // the packet is consumed below
 				degradation = 0
 
 			consume(seed)
@@ -308,14 +306,14 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 			degradation += rand(20,60)
 			if(degradation >= 100)
 				failed_task = 1
-				genetics_static = null
+				proto_set(src, "genetics_static", null)
 				degradation = 0
 			return TRUE
 
 		if("clear_buffer")
 			if(!genetics())
 				return
-			genetics_static = null
+			proto_set(src, "genetics_static", null)
 			degradation = 0
 			return TRUE
 
@@ -377,7 +375,11 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 			active = 1
 
 			if(!isnull(GLOB.plant_service.seeds[seed.seed().name]))
-				seed.seed_static = seed.seed().diverge(1)
+				var/datum/seed/modified_seed = seed.seed().diverge(1)
+				if(!modified_seed) // TRAIT_IMMUTABLE: never edit the shared line
+					active = 0
+					return
+				proto_set(seed, "seed_static", modified_seed)
 				seed.seed_type = seed.seed().name
 				seed.update_seed()
 
@@ -394,6 +396,8 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 /obj/machinery/botany/step_start_condition()
 	return active
 
-/// A shared definition/flyweight (never cleared).
+/// The scanned seed: a registered line, or the private copy taken from a consumed packet.
 /obj/machinery/botany/extractor/proc/genetics() as /datum/seed
 	return genetics_static
+
+PROTO(/obj/machinery/botany/extractor, genetics_static)
