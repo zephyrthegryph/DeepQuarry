@@ -64,13 +64,15 @@ OWN_TIMER(/turf/simulated, wet_cleanup_timer)
 	add_overlay(wet_overlay)
 	om_after(src, 5 MINUTES, PROC_REF(snow_dries))
 
+// A turf's verbs are declared, never granted per turf: no store entry on any turf, so a
+// ChangeTurf() leaves nothing behind for the new turf (the old one's verbs go with its type).
+DECLARE_VERB_IF(/turf/simulated, /turf/simulated/proc/climb_wall, "climbable")
+
 /turf/simulated/Initialize(mapload)
 	. = ..()
 	if(istype(loc, /area/chapel))
 		holy = 1
 	levelupdate()
-	if(climbable)
-		verbs += /turf/simulated/proc/climb_wall
 	if(is_outdoors())
 		GLOB.planet_service.addTurf(src)
 
@@ -180,11 +182,8 @@ OWN_TIMER(/turf/simulated, wet_cleanup_timer)
 
 
 /turf/simulated/proc/toggle_climbability() //Again, b
-	if(climbable)
-		verbs -= /turf/simulated/proc/climb_wall
-	else
-		verbs += /turf/simulated/proc/climb_wall
 	climbable = !climbable
+	verb_store_refresh(src, /turf/simulated/proc/climb_wall)
 
 /turf/simulated/proc/snow_dries()
 	wet = TURFSLIP_DRY

@@ -8,11 +8,12 @@
 	var/limit_renames = TRUE
 	var/copy_prefs_to_mob = TRUE
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/set_name)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/set_desc)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/set_gender)
+
 /mob/living/simple_mob/Login()
 	. = ..()
-	add_verb(src, /mob/living/simple_mob/proc/set_name)
-	add_verb(src, /mob/living/simple_mob/proc/set_desc)
-	add_verb(src, /mob/living/simple_mob/proc/set_gender)
 
 	if(copy_prefs_to_mob)
 		login_prefs()

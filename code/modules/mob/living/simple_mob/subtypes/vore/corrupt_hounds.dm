@@ -114,12 +114,13 @@
 	resting = 0
 	icon_state = icon_dead
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/corrupthound, /mob/living/simple_mob/proc/animal_mount)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/corrupthound, /mob/living/proc/toggle_rider_reins)
+
 /mob/living/simple_mob/vore/aggressive/corrupthound/Login()
 	. = ..()
 	if(!riding_datum)
 		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
-	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
-	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/space/Process_Spacemove(check_drift = 0)
@@ -355,12 +356,13 @@
 	resting = 0
 	icon_state = icon_dead
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/retaliate/corrupthound/janihound, /mob/living/simple_mob/proc/animal_mount)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/retaliate/corrupthound/janihound, /mob/living/proc/toggle_rider_reins)
+
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/Login()
 	. = ..()
 	if(!riding_datum)
 		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
-	verbs |= /mob/living/simple_mob/proc/animal_mount
-	verbs |= /mob/living/proc/toggle_rider_reins
 	movement_cooldown = 3
 
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/space/Process_Spacemove(check_drift = 0)

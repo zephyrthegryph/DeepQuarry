@@ -41,7 +41,7 @@ TYPE_TABLE_DECLARE(/datum/ai_behavior, get_player_verb_info, null)
 
 /datum/ai_brain/proc/on_holder_login(mob/source)
 	if(source && istype(source, /mob/living))
-		add_verb(source, /mob/living/proc/dq_use_combat_move)
+		om_grant(source, GRANT_VERB, /mob/living/proc/dq_use_combat_move, src)
 
 // ---------------------------------------------------------------------------
 // Dispatcher verb

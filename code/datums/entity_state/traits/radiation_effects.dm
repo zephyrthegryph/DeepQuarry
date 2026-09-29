@@ -114,7 +114,7 @@
 		src.damage_multiplier = damage_multiplier
 
 	if(show_panel)
-		add_verb(owner, /mob/living/proc/radiation_control_panel)
+		om_grant(owner, GRANT_VERB, /mob/living/proc/radiation_control_panel, src)
 
 	if(toony)
 		src.toony = toony
@@ -130,7 +130,7 @@
 /datum/trait_state/radiation_effects/detach()
 	var/atom/movable/parent_movable = owner
 	if(show_panel)
-		remove_verb(owner, /mob/living/proc/radiation_control_panel)
+		om_revoke(owner, GRANT_VERB, /mob/living/proc/radiation_control_panel, src)
 
 	if(istype(parent_movable))//For the toony glow.
 		var/filter = parent_movable.get_filter("rad_glow")

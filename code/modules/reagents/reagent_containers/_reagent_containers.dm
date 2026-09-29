@@ -8,7 +8,7 @@
 	var/max_transfer_amount = 30
 	var/min_transfer_amount = 5
 	var/volume = 30
-	/// FALSE hides the Set transfer amount Menu entry (sprays, canisters), as the old verbs -= set_APTFT did.
+	/// FALSE hides the Set transfer amount Menu entry (sprays, canisters), as dropping the old set_APTFT verb did.
 	var/transfer_amount_verb = TRUE
 
 /// Old Set transfer amount verb.

@@ -20,7 +20,7 @@
 	om_hook(owner, /datum/om/event/human_dna_finalized, src, PROC_REF(on_dna_finalized))
 	if(owner.dna)
 		handle_record()
-	add_verb(owner, /mob/living/carbon/human/proc/reconstitute_form)
+	om_grant(owner, GRANT_VERB, /mob/living/carbon/human/proc/reconstitute_form, src)
 
 /mob/living/carbon/human/var/datum/xenochimera/xenochimera
 
@@ -28,7 +28,7 @@
 /datum/xenochimera/lifecycle_prerelease()
 	..()
 	if(owner)
-		remove_verb(owner, /mob/living/carbon/human/proc/reconstitute_form)
+		om_revoke(owner, GRANT_VERB, /mob/living/carbon/human/proc/reconstitute_form, src)
 
 /datum/xenochimera/proc/on_dna_finalized(datum/source, datum/om/event/human_dna_finalized/event)
 	EVENT_HANDLER
@@ -359,7 +359,7 @@
 		to_chat(owner, span_notice("Consciousness begins to stir as your new body awakens, ready to hatch.."))
 	else
 		to_chat(owner, span_warning("Consciousness begins to stir as your battered body struggles to recover from its ordeal.."))
-	add_verb(owner, /mob/living/carbon/human/proc/hatch)
+	om_grant(owner, GRANT_VERB, /mob/living/carbon/human/proc/hatch, src)
 	revive_ready = REVIVING_DONE
 	owner << sound('sound/effects/mob_effects/xenochimera/hatch_notification.ogg',0,0,0,30)
 	owner.clear_alert("regen")
@@ -379,7 +379,7 @@
 	// Was dead, still dead.
 	else
 		to_chat(owner, span_notice("Consciousness begins to stir as your new body awakens, ready to hatch."))
-		add_verb(owner, /mob/living/carbon/human/proc/hatch)
+		om_grant(owner, GRANT_VERB, /mob/living/carbon/human/proc/hatch, src)
 		revive_ready = REVIVING_DONE
 		owner << sound('sound/effects/mob_effects/xenochimera/hatch_notification.ogg',0,0,0,30)
 		owner.clear_alert("regen")
@@ -441,7 +441,7 @@
 			has_braindamage = TRUE
 
 		// Finalize!
-		remove_verb(src, /mob/living/carbon/human/proc/hatch)
+		om_revoke(src, GRANT_VERB, /mob/living/carbon/human/proc/hatch, xc)
 		clear_alert("hatch")
 		xc.chimera_hatch((reload_slot == "From Slot" && client))
 		act_message(src, null, others = span_warning(span_huge("%U% rises to %THEIR% feet."))) //Bloody hell...
@@ -453,7 +453,7 @@
 	if(!owner)
 		return
 
-	remove_verb(owner, /mob/living/carbon/human/proc/hatch)
+	om_revoke(owner, GRANT_VERB, /mob/living/carbon/human/proc/hatch, src)
 	to_chat(owner, span_notice("Your new body awakens, bursting free from your old skin."))
 	//Modify and record values (half nutrition and braindamage)
 	var/old_nutrition = owner.nutrition

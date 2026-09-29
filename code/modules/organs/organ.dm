@@ -677,26 +677,12 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 	if(!istype(owner))
 		return
 
-	var/list/save_verbs = list()
-
-	if(removed && organ_verbs)	// Do we share verbs with any other organs? Are they functioning?
-		var/list/all_organs = list()
-		all_organs |= owner.organs
-		all_organs |= owner.internal_organ_list()
-
-		for(var/obj/item/organ/O in all_organs)
-			if(!(O.status & ORGAN_DEAD) && O.organ_verbs && O.check_verb_compatability())
-				for(var/verb_type in O.organ_verbs)
-					if(verb_type in organ_verbs)
-						save_verbs |= verb_type
-
+	// Each organ grants its verbs with itself as source, so a verb shared with another
+	// working organ stays while that organ still grants it.
 	if(!removed && organ_verbs && check_verb_compatability())
-		for(var/verb_path in organ_verbs)
-			add_verb(owner, verb_path)
+		om_grant_each(owner, GRANT_VERB, organ_verbs, src)
 	else if(organ_verbs)
-		for(var/verb_path in organ_verbs)
-			if(!(verb_path in save_verbs))
-				remove_verb(owner, verb_path)
+		om_revoke_each(owner, GRANT_VERB, organ_verbs, src)
 	return
 
 /// MED-6: TRUE when periodic_step() has nothing to do for this organ right now, so the organs

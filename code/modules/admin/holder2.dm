@@ -103,7 +103,7 @@ GLOBAL_PROTECT(href_token)
 
 	if (!isnull(client))
 		disassociate()
-		add_verb(client, /client/proc/readmin)
+		om_grant(client, GRANT_VERB, /client/proc/readmin, src)
 
 /datum/admins/proc/associate(client/client)
 	if(IsAdminAdvancedProcCall())
@@ -125,7 +125,7 @@ GLOBAL_PROTECT(href_token)
 	rel_set(src, "owner", client)
 	owner().holder = src
 	owner().add_admin_verbs()
-	remove_verb(owner(), /client/proc/readmin)
+	om_revoke(owner(), GRANT_VERB, /client/proc/readmin, src)
 	owner().init_verbs() //re-initialize the verb list
 	GLOB.admins |= client
 

@@ -34,6 +34,8 @@
 /obj/item/clothing/proc/update_clothing_icon()
 	return
 
+DECLARE_VERB_IF(/obj/item/clothing, /obj/item/clothing/proc/change_color, "polychromic")
+
 /obj/item/clothing/Initialize(mapload)
 	. = ..()
 	if(starting_accessories)
@@ -42,10 +44,6 @@
 			src.attach_accessory(null, tie)
 	set_clothing_index()
 
-	// start
-	if(polychromic)
-		verbs |= /obj/item/clothing/proc/change_color
-	// start
 
 /obj/item/clothing/update_icon()
 	cut_overlays() //This removes all the overlays on the sprite and then goes down a checklist adding them as required.

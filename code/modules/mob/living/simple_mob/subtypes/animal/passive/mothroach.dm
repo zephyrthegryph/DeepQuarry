@@ -45,11 +45,12 @@
 
 	allow_mind_transfer = TRUE
 
+DECLARE_VERB(/mob/living/simple_mob/animal/passive/mothroach, /mob/living/proc/ventcrawl)
+DECLARE_VERB(/mob/living/simple_mob/animal/passive/mothroach, /mob/living/proc/hide)
+
 /mob/living/simple_mob/animal/passive/mothroach/Initialize(mapload)
 	. = ..()
 
-	add_verb(src, /mob/living/proc/ventcrawl)
-	add_verb(src, /mob/living/proc/hide)
 
 	real_name = name
 

@@ -368,7 +368,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 
 	dislocated = 1
 	if(istype(owner))
-		add_verb(owner, /mob/living/carbon/human/proc/relocate)
+		om_grant(owner, GRANT_VERB, /mob/living/carbon/human/proc/relocate, src)
 
 /obj/item/organ/external/proc/relocate()
 	if(dislocated == -1)
@@ -379,11 +379,8 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 		if(!organ_can_feel_pain())
 			owner.adjust_shock(20, "dislocation reset")
 
-		//check to see if we still need the verb
-		for(var/obj/item/organ/external/limb in owner.organs)
-			if(limb.dislocated == 1)
-				return
-		remove_verb(owner, /mob/living/carbon/human/proc/relocate)
+		// Each dislocated limb grants the verb; it stays while another limb is still out.
+		om_revoke(owner, GRANT_VERB, /mob/living/carbon/human/proc/relocate, src)
 
 /obj/item/organ/external/update_health()
 	recalc_integrity()
@@ -1487,7 +1484,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		owner.visible_message(span_danger("\The [W] sticks in the wound!"))
 	rel_add(src, "implants", W)
 	owner.embedded_flag = 1
-	add_verb(owner, /mob/proc/yank_out_object)
+	om_grant(owner, GRANT_VERB, /mob/proc/yank_out_object, owner)
 	owner.throw_alert("embeddedobject", /atom/movable/screen/alert/embeddedobject)
 	W.add_blood(owner)
 	if(ismob(W.loc))

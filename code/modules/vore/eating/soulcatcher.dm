@@ -156,9 +156,9 @@
 		brainmob.ext_blind = FALSE
 		brainmob.parent_mob = TRUE
 		rel_set(src, "own_mind", brainmob.mind)
-		remove_verb(brainmob, /mob/proc/enter_soulcatcher) //No recursive self capturing...
-		add_verb(brainmob, /mob/living/carbon/brain/caught_soul/vore/proc/transfer_self)
-		add_verb(brainmob, /mob/living/carbon/brain/caught_soul/vore/proc/reenter_body)
+		om_grant(brainmob, GRANT_VERB_HIDE, /mob/proc/enter_soulcatcher, brainmob) //No recursive self capturing...
+		om_grant(brainmob, GRANT_VERB, /mob/living/carbon/brain/caught_soul/vore/proc/transfer_self, brainmob)
+		om_grant(brainmob, GRANT_VERB, /mob/living/carbon/brain/caught_soul/vore/proc/reenter_body, brainmob)
 
 	if(isliving(M))
 		if(ishuman(M))

@@ -7,13 +7,13 @@
 		is_motion_tracking = TRUE
 		wants_to_see_motion_echos = TRUE
 		om_hook(GLOB.motiontracker_service, /datum/om/event/movable_motiontracker, src, PROC_REF(handle_motion_tracking))
-		add_verb(src,/mob/proc/toggle_motion_echo_vis)
+		om_grant(src, GRANT_VERB, /mob/proc/toggle_motion_echo_vis, src)
 
 /mob/proc/motiontracker_unsubscribe(destroying = FALSE)
 	if(is_motion_tracking)
 		is_motion_tracking = FALSE
 		om_unhook(GLOB.motiontracker_service, /datum/om/event/movable_motiontracker, src)
-		remove_verb(src,/mob/proc/toggle_motion_echo_vis)
+		om_revoke(src, GRANT_VERB, /mob/proc/toggle_motion_echo_vis, src)
 
 /mob/living/carbon/human/motiontracker_unsubscribe(destroying = FALSE)
 	// Block unsub if our species has vibration senses

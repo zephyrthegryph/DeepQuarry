@@ -122,9 +122,7 @@
 		mane_color = ask.picked_color
 		update_icon()
 
-/mob/living/simple_mob/vore/retaliate/lion/Login()
-	. = ..()
-	add_verb(src, /mob/living/simple_mob/vore/retaliate/lion/proc/set_sex)
-	add_verb(src,/mob/living/simple_mob/proc/pick_color)
-	add_verb(src, /mob/living/simple_mob/vore/retaliate/lion/proc/set_mane_color)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/retaliate/lion, /mob/living/simple_mob/vore/retaliate/lion/proc/set_sex)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/retaliate/lion, /mob/living/simple_mob/proc/pick_color)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/retaliate/lion, /mob/living/simple_mob/vore/retaliate/lion/proc/set_mane_color)
 

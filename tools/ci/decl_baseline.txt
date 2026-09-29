@@ -148,8 +148,6 @@ init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_P
 init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LATEJOIN, src)
 init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LANDMARKS, src)
 init_registry	code/modules/holomap/mapper.dm	registry_join(REGISTRY_MAPPING_BEACONS, src)
-init_service	code/game/machinery/computer/bodycamera.dm	own_set(src, "bpinboard", GLOB.vis_overlays_service.add_vis_overlay(src, icon = icon, iconstate = "pinboard", layer = 0.1, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
-init_service	code/game/machinery/computer/camera.dm	own_set(src, "pinboard", GLOB.vis_overlays_service.add_vis_overlay(src, icon = icon, iconstate = "pinboard", layer = 0.1, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
 init_service	code/game/machinery/doors/alarmlock.dm	GLOB.radio_service.remove_object(src, air_frequency)
 init_service	code/game/machinery/doors/alarmlock.dm	rel_set(src, "air_connection", GLOB.radio_service.add_object(src, air_frequency, RADIO_TO_AIRALARM))
 init_service	code/game/machinery/magnet.dm	GLOB.radio_service.add_object(src, freq, RADIO_MAGNETS)

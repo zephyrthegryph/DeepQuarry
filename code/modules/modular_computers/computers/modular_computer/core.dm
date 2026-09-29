@@ -76,7 +76,6 @@ DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 	if(hard_drive)
 		install_default_programs()
 	update_icon()
-	update_verbs()
 	. = ..()
 
 // its program is killed and hardware uninstalled.

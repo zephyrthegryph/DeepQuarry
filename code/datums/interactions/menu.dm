@@ -65,18 +65,18 @@
 			"category" = interaction.category,
 			"reason" = resolution.blocked[interaction],
 		))
-	var/list/verbs = list()
+	var/list/verb_names = list()
 	for(var/procpath/target_verb as anything in target.verbs)
 		if(!target_verb || target_verb.hidden || !istext(target_verb.name) || copytext(target_verb.name, 1, 2) == ".")
 			continue
-		verbs += target_verb.name
-	sortTim(verbs, GLOBAL_PROC_REF(cmp_text_asc))
+		verb_names += target_verb.name
+	sortTim(verb_names, GLOBAL_PROC_REF(cmp_text_asc))
 	return list(
 		"target" = capitalize(target.name),
 		"available" = available,
 		"blocked" = blocked,
 		"actions" = interaction_menu_actions(user, target),
-		"verbs" = verbs,
+		"verbs" = verb_names,
 	)
 
 /// The mob actions the native popup offered for any target, as list(id, name).

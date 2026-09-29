@@ -50,6 +50,7 @@
 	disconnect_time = null // ition: clear the disconnect time
 	sight |= SEE_SELF
 	..()
+	verb_store_login(src) // DECLARE_LOGIN_VERB (code/datums/om/grant_verbs.dm)
 	OM_EMIT(src, /datum/om/event/mob_login)
 
 	client.perspective = MOB_PERSPECTIVE

@@ -137,7 +137,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 
 		rel_set(src, "human", H) // the pair sets H.nif too
 		stat = NIF_INSTALLING
-		add_verb(H, /mob/living/carbon/human/proc/set_nif_examine)
+		om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/set_nif_examine, src)
 		own_set(src, "menu_ref", new /datum/nif_menu(H))
 		if(starting_software)
 			for(var/path in starting_software)
@@ -184,7 +184,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	stat = NIF_PREINSTALL
 	vis_update()
 	if(H)
-		remove_verb(H, /mob/living/carbon/human/proc/set_nif_examine)
+		om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/set_nif_examine, src)
 	own_clear(src, "menu_ref", OWN_DELETE)
 	unregister_human()
 	install_done = null
@@ -743,7 +743,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	set category = "OOC.Game Settings"
 
 	if(!nif)
-		remove_verb(src, /mob/living/carbon/human/proc/set_nif_examine)
+		// The NIF granted this verb; its unimplant or deletion already revoked it.
 		to_chat(src,span_warning("You don't have a NIF, not sure why this was here."))
 		return
 

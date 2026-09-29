@@ -1,9 +1,3 @@
-/// Kept for its callers. The eject Menu entries are gated by requirements now
-/// (pred_computer_has_drive / pred_computer_has_card_slot); this only still clears the
-/// object's other verbs, as it always did.
-/obj/item/modular_computer/proc/update_verbs()
-	verbs.Cut()
-
 /obj/item/modular_computer/proc/pred_computer_has_drive(mob/actor, atom/target, obj/item/held)
 	return !!portable_drive
 

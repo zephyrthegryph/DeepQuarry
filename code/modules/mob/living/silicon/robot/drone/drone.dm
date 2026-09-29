@@ -107,10 +107,11 @@ TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( 
 	can_pick_shell = FALSE
 	shell_accessories = list("eyes-miningdrone")
 
+DECLARE_VERB(/mob/living/silicon/robot/drone, /mob/living/proc/ventcrawl)
+DECLARE_VERB(/mob/living/silicon/robot/drone, /mob/living/proc/hide)
+
 /mob/living/silicon/robot/drone/Initialize(mapload, is_decoy)
 	. = ..(mapload, FALSE)
-	add_verb(src, /mob/living/proc/ventcrawl)
-	add_verb(src, /mob/living/proc/hide)
 	remove_language(LANGUAGE_ROBOT_TALK)
 	add_language(LANGUAGE_ROBOT_TALK, 0)
 	add_language(LANGUAGE_DRONE_TALK, 1)
@@ -400,10 +401,10 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_INSERT_AS(I_HELP, 
 	to_chat(src, span_infoplain("Use " + span_bold("say ;Hello") + " to talk to other drones and " + span_bold("say Hello") + " to speak silently to your nearby fellows."))
 
 /mob/living/silicon/robot/drone/add_robot_verbs()
-	add_verb(src, silicon_subsystems)
+	om_grant_each(src, GRANT_VERB, silicon_subsystems, src)
 
 /mob/living/silicon/robot/drone/remove_robot_verbs()
-	remove_verb(src, silicon_subsystems)
+	om_revoke_each(src, GRANT_VERB, silicon_subsystems, src)
 
 /mob/living/silicon/robot/drone/construction/welcome_drone()
 	to_chat(src, span_infoplain(span_bold("You are a construction drone, an autonomous engineering and fabrication system") + "."))

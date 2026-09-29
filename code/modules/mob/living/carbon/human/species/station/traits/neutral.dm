@@ -240,7 +240,7 @@
 
 /datum/trait/neutral/bloodsucker/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/carbon/human/proc/bloodsuck)
+	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/bloodsuck, src)
 
 /datum/trait/neutral/bloodsucker_freeform
 	name = "Bloodsucker"
@@ -261,7 +261,7 @@
 
 /datum/trait/neutral/bloodsucker_freeform/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/carbon/human/proc/bloodsuck)
+	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/bloodsuck, src)
 
 /datum/trait/neutral/electrovore
 	name = "Electrovore, Obligate"
@@ -300,9 +300,9 @@
 
 /datum/trait/neutral/succubus_drain/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/carbon/human/proc/succubus_drain)
-	add_verb(H, /mob/living/carbon/human/proc/succubus_drain_finalize)
-	add_verb(H, /mob/living/carbon/human/proc/succubus_drain_lethal)
+	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/succubus_drain, src)
+	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/succubus_drain_finalize, src)
+	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/succubus_drain_lethal, src)
 
 /datum/trait/neutral/venom_bite
 	name = "Venomous Injection"
@@ -331,7 +331,7 @@
 
 /datum/trait/neutral/venom_bite/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/proc/injection)
+	om_grant(H, GRANT_VERB, /mob/living/proc/injection, src)
 	LAZYADD(H.trait_injection_reagents, REAGENT_ID_MICROCILLIN)		// get small
 	LAZYADD(H.trait_injection_reagents, REAGENT_ID_MACROCILLIN)		// get BIG
 	LAZYADD(H.trait_injection_reagents, REAGENT_ID_NORMALCILLIN)	// normal
@@ -364,7 +364,7 @@
 
 /datum/trait/neutral/long_vore/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/proc/long_vore)
+	om_grant(H, GRANT_VERB, /mob/living/proc/long_vore, src)
 
 /datum/trait/neutral/feeder
 	name = "Feeder"
@@ -374,7 +374,7 @@
 
 /datum/trait/neutral/feeder/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/carbon/human/proc/slime_feed)
+	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/slime_feed, src)
 
 /datum/trait/neutral/stuffing_feeder
 	name = "Food Stuffer"
@@ -385,7 +385,7 @@
 
 /datum/trait/neutral/stuffing_feeder/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/proc/toggle_stuffing_mode)
+	om_grant(H, GRANT_VERB, /mob/living/proc/toggle_stuffing_mode, src)
 
 /datum/trait/neutral/hard_vore
 	name = "Hard Vore"
@@ -395,7 +395,7 @@
 
 /datum/trait/neutral/hard_vore/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/proc/shred_limb)
+	om_grant(H, GRANT_VERB, /mob/living/proc/shred_limb, src)
 
 /datum/trait/neutral/hardfeet
 	name = "Hard Feet"	// Free protection 4 ur pawbs
@@ -420,16 +420,14 @@
 
 /datum/trait/neutral/trashcan/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/proc/eat_trash)
-	add_verb(H, /mob/living/proc/toggle_trash_catching)
+	om_grant(H, GRANT_VERB, /mob/living/proc/eat_trash, src)
+	om_grant(H, GRANT_VERB, /mob/living/proc/toggle_trash_catching, src)
 
 // Traitgenes made into a genetrait
 /datum/trait/neutral/trashcan/unapply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	..()
-	if(!(/mob/living/proc/eat_trash in S.inherent_verbs))
-		remove_verb(H,/mob/living/proc/eat_trash)
-	if(!(/mob/living/proc/toggle_trash_catching in S.inherent_verbs))
-		remove_verb(H,/mob/living/proc/toggle_trash_catching)
+	om_revoke(H, GRANT_VERB, /mob/living/proc/eat_trash, src)
+	om_revoke(H, GRANT_VERB, /mob/living/proc/toggle_trash_catching, src)
 
 /datum/trait/neutral/gem_eater
 	name = "Expensive Taste"
@@ -447,13 +445,12 @@
 
 /datum/trait/neutral/gem_eater/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/proc/eat_minerals)
+	om_grant(H, GRANT_VERB, /mob/living/proc/eat_minerals, src)
 
 // Traitgenes made into a genetrait
 /datum/trait/neutral/gem_eater/unapply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	..()
-	if(!(/mob/living/proc/eat_minerals in S.inherent_verbs))
-		remove_verb(H,/mob/living/proc/eat_minerals)
+	om_revoke(H, GRANT_VERB, /mob/living/proc/eat_minerals, src)
 
 /datum/trait/neutral/synth_chemfurnace
 	name = "Biofuel Processor"
@@ -497,13 +494,12 @@
 
 /datum/trait/neutral/glowing_eyes/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/carbon/human/proc/toggle_eye_glow)
+	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/toggle_eye_glow, src)
 
 // Traitgenes Made into a genetrait
 /datum/trait/neutral/glowing_eyes/unapply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	if(!(/mob/living/carbon/human/proc/toggle_eye_glow in S.inherent_verbs))
-		remove_verb(H,/mob/living/carbon/human/proc/toggle_eye_glow)
+	om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/toggle_eye_glow, src)
 
 /datum/trait/neutral/glowing_body
 	name = "Glowing Body"
@@ -522,16 +518,14 @@
 
 /datum/trait/neutral/glowing_body/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/proc/glow_toggle)
-	add_verb(H, /mob/living/proc/glow_color)
+	om_grant(H, GRANT_VERB, /mob/living/proc/glow_toggle, src)
+	om_grant(H, GRANT_VERB, /mob/living/proc/glow_color, src)
 
 // Traitgenes Made into a genetrait
 /datum/trait/neutral/glowing_body/unapply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	if(!(/mob/living/proc/glow_toggle in S.inherent_verbs))
-		remove_verb(H,/mob/living/proc/glow_toggle)
-	if(!(/mob/living/proc/glow_color in S.inherent_verbs))
-		remove_verb(H,/mob/living/proc/glow_color)
+	om_revoke(H, GRANT_VERB, /mob/living/proc/glow_toggle, src)
+	om_revoke(H, GRANT_VERB, /mob/living/proc/glow_color, src)
 
 //Allergen traits! Not available to any species with a base allergens var.
 /datum/trait/neutral/allergy
@@ -1073,13 +1067,12 @@
 
 /datum/trait/neutral/dominate_predator/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/proc/dominate_predator)
+	om_grant(H, GRANT_VERB, /mob/proc/dominate_predator, src)
 
 // Traitgenes made into a genetrait
 /datum/trait/neutral/dominate_predator/unapply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	..()
-	if(!(/mob/proc/dominate_predator in S.inherent_verbs))
-		remove_verb(H,/mob/proc/dominate_predator)
+	om_revoke(H, GRANT_VERB, /mob/proc/dominate_predator, src)
 
 /datum/trait/neutral/dominate_prey
 	name = "Dominate Prey"
@@ -1095,13 +1088,12 @@
 
 /datum/trait/neutral/dominate_prey/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/proc/dominate_prey)
+	om_grant(H, GRANT_VERB, /mob/living/proc/dominate_prey, src)
 
 // Traitgenes made into a genetrait
 /datum/trait/neutral/dominate_prey/unapply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	..()
-	if(!(/mob/living/proc/dominate_prey in S.inherent_verbs))
-		remove_verb(H,/mob/living/proc/dominate_prey)
+	om_revoke(H, GRANT_VERB, /mob/living/proc/dominate_prey, src)
 
 /datum/trait/neutral/submit_to_prey
 	name = "Submit To Prey"
@@ -1117,13 +1109,12 @@
 
 /datum/trait/neutral/submit_to_prey/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/proc/lend_prey_control)
+	om_grant(H, GRANT_VERB, /mob/living/proc/lend_prey_control, src)
 
 // Traitgenes made into a genetrait
 /datum/trait/neutral/submit_to_prey/unapply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	..()
-	if(!(/mob/living/proc/lend_prey_control in S.inherent_verbs))
-		remove_verb(H,/mob/living/proc/lend_prey_control)
+	om_revoke(H, GRANT_VERB, /mob/living/proc/lend_prey_control, src)
 
 /datum/trait/neutral/vertical_nom
 	name = "Vertical Nom"
@@ -1133,7 +1124,7 @@
 
 /datum/trait/neutral/vertical_nom/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/proc/vertical_nom)
+	om_grant(H, GRANT_VERB, /mob/living/proc/vertical_nom, src)
 
 /datum/trait/neutral/micro_size_down
 	name = "Light Frame"
@@ -1229,7 +1220,7 @@
 
 /datum/trait/neutral/synth_cosmetic_pain/apply(datum/species/S,mob/living/carbon/human/H, trait_prefs = null)
 	..()
-	add_verb(H, /mob/living/carbon/human/proc/toggle_pain_module)
+	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/toggle_pain_module, src)
 
 //Food preferences ported from RogueStar
 
@@ -1620,7 +1611,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 	..()
 	if(trait_prefs && trait_prefs["biting_toggle"])
 		H.touch_reaction_flags |= SPECIES_TRAIT_PATTING_DEFENCE
-	add_verb(H, /mob/living/proc/toggle_patting_defence)
+	om_grant(H, GRANT_VERB, /mob/living/proc/toggle_patting_defence, src)
 
 /datum/trait/neutral/personal_space
 	name = "Personal Space Bubble"
@@ -1636,8 +1627,8 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 		H.touch_reaction_flags |= SPECIES_TRAIT_PERSONAL_BUBBLE
 	if(trait_prefs && trait_prefs["pickup_dodge_toggle"])
 		H.touch_reaction_flags |= SPECIES_TRAIT_PICKUP_DODGE
-	add_verb(H, /mob/living/proc/toggle_personal_space)
-	add_verb(H, /mob/living/proc/toggle_pickup_dodge)
+	om_grant(H, GRANT_VERB, /mob/living/proc/toggle_personal_space, src)
+	om_grant(H, GRANT_VERB, /mob/living/proc/toggle_pickup_dodge, src)
 
 /datum/trait/neutral/skin_reagents
 	name = "Skin Reagents"
@@ -1661,7 +1652,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 
 /datum/trait/neutral/colour_changing_eyes/apply(datum/species/S, mob/living/carbon/human/H, list/trait_prefs)
 	..()
-	add_verb(H, /mob/living/carbon/human/proc/shapeshifter_select_eye_colour)
+	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/shapeshifter_select_eye_colour, src)
 
 /* // Commented out in lieu of finding a better solution.
 /datum/trait/neutral/coldadapt/xenochimera
@@ -1884,7 +1875,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 
 /datum/trait/neutral/hide/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H,/mob/living/proc/hide)
+	om_grant(H, GRANT_VERB, /mob/living/proc/hide, src)
 
 /datum/trait/neutral/small_mouth_extreme
 	name = "Slow Eater"
@@ -2029,7 +2020,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 
 /datum/trait/neutral/mobegglaying/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H,/mob/living/proc/mobegglaying)
+	om_grant(H, GRANT_VERB, /mob/living/proc/mobegglaying, src)
 
 /datum/trait/neutral/succubus_bite
 	name = "Succubus Bite"
@@ -2039,7 +2030,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 
 /datum/trait/neutral/succubus_bite/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H,/mob/living/proc/succubus_bite)
+	om_grant(H, GRANT_VERB, /mob/living/proc/succubus_bite, src)
 
 /datum/trait/neutral/hotadapt
 	can_take = ORGANICS | SYNTHETICS //I think synths made for high heat should exist, considering they can be made spaceproof easily anyhow

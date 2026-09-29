@@ -44,13 +44,14 @@
 	vore_pounce_maxhealth = 125
 	vore_bump_emote = "tries to devour"
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/blaidd, /mob/living/simple_mob/proc/animal_mount)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/blaidd, /mob/living/proc/toggle_rider_reins)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/blaidd, /mob/living/simple_mob/vore/blaidd/proc/blaidd_invis)
+
 /mob/living/simple_mob/vore/blaidd/Login()
 	. = ..()
 	if(!riding_datum)
 		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
-	verbs |= /mob/living/simple_mob/proc/animal_mount
-	verbs |= /mob/living/proc/toggle_rider_reins
-	verbs |= /mob/living/simple_mob/vore/blaidd/proc/blaidd_invis
 	movement_cooldown = -1
 
 /mob/living/simple_mob/vore/blaidd/load_default_bellies()

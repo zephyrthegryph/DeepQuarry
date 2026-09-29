@@ -85,15 +85,16 @@ OWN_TIMER(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
 	leap_warmup = 1 SECOND
 	movement_cooldown = -3
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/simple_mob/proc/animal_mount)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/toggle_rider_reins)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/set_size)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/polymorph)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_invisibility)
+
 /mob/living/simple_mob/vore/ddraig/Login()
 	. = ..()
 	if(!riding_datum)
 		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
-	verbs |= /mob/living/simple_mob/proc/animal_mount
-	verbs |= /mob/living/proc/toggle_rider_reins
-	verbs |= /mob/living/proc/set_size
-	verbs |= /mob/living/proc/polymorph
-	verbs |= /mob/living/proc/glamour_invisibility
 	movement_cooldown = -1
 
 /mob/living/simple_mob/vore/ddraig/load_default_bellies()
@@ -388,7 +389,7 @@ OWN_TIMER(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
 	var/mob/living/new_mob = spawn_polymorph_mob(beast_type)
 	if(new_mob && isliving(new_mob))
 		new_mob.faction = faction
-		new_mob.verbs |= /mob/living/proc/revert_beast_form
-		new_mob.verbs |= /mob/living/proc/set_size
+		om_grant(new_mob, GRANT_VERB, /mob/living/proc/revert_beast_form, new_mob)
+		om_grant(new_mob, GRANT_VERB, /mob/living/proc/set_size, new_mob)
 		transfer_mob_identity(new_mob)
 		new_mob.visible_message("<b>\The [src]</b> has transformed into \the [chosen_beast]!")

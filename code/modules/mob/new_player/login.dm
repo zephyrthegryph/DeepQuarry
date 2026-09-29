@@ -49,7 +49,7 @@ REGISTRY_MEMBERSHIP(/mob/new_player, REGISTRY_NEW_PLAYERS)
 		handle_privacy_poll()
 		client.playtitlemusic()
 		version_warnings()
-		add_verb(src, /mob/proc/insidePanel)
+		om_grant(src, GRANT_VERB, /mob/proc/insidePanel, src)
 
 /mob/new_player/proc/version_warnings()
 	var/problems // string to store message to present to player as a problem

@@ -63,7 +63,7 @@
 /datum/reagent/glamour_scaling/affect_blood(mob/living/carbon/target, removed)
 	if(!(/mob/living/proc/set_size in target.verbs))
 		to_chat(target, span_warning("You feel as though you could change size at any moment."))
-		add_verb(target, /mob/living/proc/set_size)
+		om_grant(target, GRANT_VERB, /mob/living/proc/set_size, target)
 	target.bloodstr.clear_reagents() //instantly clears reagents afterwards
 	target.ingested.clear_reagents()
 	target.touching.clear_reagents()

@@ -60,12 +60,13 @@
 	vore_stomach_flavor	= "You are squeezed into the sweltering insides of the herbivore rumen."
 	vore_icons = SA_ICON_LIVING
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/hippo, /mob/living/simple_mob/proc/animal_mount)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/hippo, /mob/living/proc/toggle_rider_reins)
+
 /mob/living/simple_mob/vore/hippo/Login()
 	. = ..()
 	if(!riding_datum)
 		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
-	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
-	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
 
 /datum/say_list/hippo

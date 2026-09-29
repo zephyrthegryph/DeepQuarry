@@ -54,7 +54,7 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 	proto_set(src, "species", GLOB.all_species[SPECIES_DIONA])
 	add_language(LANGUAGE_ROOTGLOBAL)
 	add_language(LANGUAGE_GALCOM)
-	add_verb(src, /mob/living/carbon/alien/diona/proc/merge)
+	om_grant(src, GRANT_VERB, /mob/living/carbon/alien/diona/proc/merge, src)
 
 /mob/living/carbon/alien/diona/put_in_hands(obj/item/W) // No hands.
 	W.forceMove(get_turf(src))

@@ -353,9 +353,9 @@ DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 	occupant.enter_vr(avatar())
 	if(spawn_with_clothing)
 		SSjob.equip_rank(avatar(),"Visitor", 1, FALSE)
-	add_verb(avatar(),/mob/living/carbon/human/proc/perform_exit_vr)
-	add_verb(avatar(),/mob/living/carbon/human/proc/vr_transform_into_mob)
-	add_verb(avatar(),/mob/living/proc/set_size)
+	om_grant(avatar(), GRANT_VERB, /mob/living/carbon/human/proc/perform_exit_vr, avatar())
+	om_grant(avatar(), GRANT_VERB, /mob/living/carbon/human/proc/vr_transform_into_mob, avatar())
+	om_grant(avatar(), GRANT_VERB, /mob/living/proc/set_size, avatar())
 	avatar().set_virtual_reality_mob(TRUE)
 
 	//This handles all the 'We make it look like ourself' code.
@@ -374,10 +374,10 @@ DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 	if(tf)
 		var/mob/living/new_form = avatar().transform_into_mob(tf, TRUE) // No need to check prefs when the occupant already chose to transform.
 		if(isliving(new_form)) // Make sure the mob spawned properly.
-			add_verb(new_form,/mob/living/proc/vr_revert_mob_tf)
+			om_grant(new_form, GRANT_VERB, /mob/living/proc/vr_revert_mob_tf, new_form)
 			new_form.set_virtual_reality_mob(TRUE)
 
-	add_verb(avatar(), /mob/living/carbon/human/proc/perform_exit_vr) //ahealing removes the prommie verbs and the VR verbs, giving it back
+	om_grant(avatar(), GRANT_VERB, /mob/living/carbon/human/proc/perform_exit_vr, avatar()) //ahealing removes the prommie verbs and the VR verbs, giving it back
 	avatar().status_at_least(EFFECT_SLEEPING, 1)
 
 	// Prompt for username after they've enterred the body.

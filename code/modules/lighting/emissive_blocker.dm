@@ -20,7 +20,6 @@
 
 /atom/movable/emissive_blocker/Initialize(mapload, source)
 	. = ..()
-	verbs.Cut() //Cargo culting from lighting object, this maybe affects memory usage?
 
 	render_source = source
 	color = GLOB.em_block_color
