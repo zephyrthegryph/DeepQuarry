@@ -563,9 +563,8 @@
 				t_him = "her"
 
 	if(target.touch_reaction_flags & SPECIES_TRAIT_PERSONAL_BUBBLE)
-		H.visible_message( \
-			span_notice("[target] moves to avoid being touched by [H]!"), \
-			span_notice("[target] moves to avoid being touched by you!"), )
+		act_message(H, target, MSG_SELF(span_notice("%T% moves to avoid being touched by you!")), \
+			MSG_OTHERS(span_notice("%T% moves to avoid being touched by %U%!")))
 		return
 
 	var/covered_mouth = FALSE
@@ -582,33 +581,25 @@
 
 	if(H.zone_sel.selecting == BP_HEAD)
 		if((target.touch_reaction_flags & SPECIES_TRAIT_PATTING_DEFENCE) && !covered_mouth)
-			H.visible_message( \
-				span_warning("[target] reflexively bites the hand of [H] to prevent head patting!"), \
-				span_warning("[target] reflexively bites your hand!"), )
+			act_message(H, target, MSG_SELF(span_warning("%T% reflexively bites your hand!")), \
+				MSG_OTHERS(span_warning("%T% reflexively bites the hand of %U% to prevent head patting!")))
 			H.injure(INJURY_PIERCE, 1, H.hand ? BP_L_HAND : BP_R_HAND, target) // Bitten
 		else
-			H.visible_message( \
-				span_notice("[H] pats [target] on the head."), \
-				span_notice("You pat [target] on the head."), )
+			act_message(H, target, MSG_SELF(span_notice("You pat %T% on the head.")), MSG_OTHERS(span_notice("%U% pats %T% on the head.")))
 	else if(H.zone_sel.selecting == BP_R_HAND || H.zone_sel.selecting == BP_L_HAND)
-		H.visible_message( \
-			span_notice("[H] shakes [target]'s hand."), \
-			span_notice("You shake [target]'s hand."), )
+		act_message(H, target, MSG_SELF(span_notice("You shake %T%'s hand.")), MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
 	else if(H.zone_sel.selecting == "mouth")
 		if((target.touch_reaction_flags & SPECIES_TRAIT_PATTING_DEFENCE) && !covered_mouth)
-			H.visible_message( \
-				span_warning("[target] reflexively bites the hand of [H] to prevent nose booping!"), \
-				span_warning("[target] reflexively bites your hand!"), )
+			act_message(H, target, MSG_SELF(span_warning("%T% reflexively bites your hand!")), \
+				MSG_OTHERS(span_warning("%T% reflexively bites the hand of %U% to prevent nose booping!")))
 			H.injure(INJURY_PIERCE, 1, H.hand ? BP_L_HAND : BP_R_HAND, target) // Bitten
 		else
-			H.visible_message( \
-				span_notice("[H] boops [target]'s nose."), \
-				span_notice("You boop [target] on the nose."), )
+			act_message(H, target, MSG_SELF(span_notice("You boop %T% on the nose.")), MSG_OTHERS(span_notice("%U% boops %T%'s nose.")))
 	else if(H.zone_sel.selecting == BP_GROIN)
 		H.vore_bellyrub(target)
 	else
-		H.visible_message(span_notice("[H] hugs [target] to make [t_him] feel better!"), \
-						span_notice("You hug [target] to make [t_him] feel better!"))
+		act_message(H, target, MSG_SELF(span_notice("You hug %T% to make [t_him] feel better!")), \
+			MSG_OTHERS(span_notice("%U% hugs %T% to make [t_him] feel better!")))
 
 /datum/species/proc/remove_inherent_verbs(mob/living/carbon/human/H)
 	if(inherent_verbs)

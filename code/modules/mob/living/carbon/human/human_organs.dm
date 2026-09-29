@@ -116,7 +116,7 @@
 			//malfunctioning only happens intermittently so treat it as a missing limb when it procs
 			stance_damage += 2
 			if(isturf(loc) && prob(10))
-				visible_message("\The [src]'s [E.name] [pick("twitches", "shudders")] and sparks!")
+				act_message(src, null, others = "%U%'s [E.name] [pick("twitches", "shudders")] and sparks!")
 				var/datum/effect/effect/system/spark_spread/spark_system = new ()
 				spark_system.set_up(5, 0, src)
 				spark_system.attach(src)
@@ -161,7 +161,7 @@
 		for(var/limb_tag in list(BP_L_HAND, BP_L_ARM))
 			var/obj/item/organ/external/E = get_organ(limb_tag)
 			if(!E)
-				visible_message(span_danger("Lacking a functioning left hand, \the [src] drops \the [get_equipped_item(SLOT_ID_HAND_L)]."))
+				act_message(src, null, others = span_danger("Lacking a functioning left hand, %U% drops \the [get_equipped_item(SLOT_ID_HAND_L)]."))
 				drop_from_inventory(get_equipped_item(SLOT_ID_HAND_L))
 				break
 
@@ -169,7 +169,7 @@
 		for(var/limb_tag in list(BP_R_HAND, BP_R_ARM))
 			var/obj/item/organ/external/E = get_organ(limb_tag)
 			if(!E)
-				visible_message(span_danger("Lacking a functioning right hand, \the [src] drops \the [get_equipped_item(SLOT_ID_HAND_R)]."))
+				act_message(src, null, others = span_danger("Lacking a functioning right hand, %U% drops \the [get_equipped_item(SLOT_ID_HAND_R)]."))
 				drop_from_inventory(get_equipped_item(SLOT_ID_HAND_R))
 				break
 

@@ -1387,7 +1387,8 @@
 		if(prob(1) && self.get_active_hand())
 			var/stuff_to_drop = self.get_active_hand()
 			self.drop_item()
-			self.visible_message(span_notice("\The [self] suddenly drops their [stuff_to_drop]."),span_warning("You drop your [stuff_to_drop]!"))
+			act_message(self, null, MSG_SELF(span_warning("You drop your [stuff_to_drop]!")), \
+				MSG_OTHERS(span_notice("%U% suddenly drops their [stuff_to_drop].")))
 		if(prob(5))
 			fear_emote(self)
 	else if(self.fear >= 30 && prob(2))
@@ -1396,7 +1397,7 @@
 /datum/om/stage/life/status/carbon/human/proc/fear_emote(mob/living/carbon/human/self)
 	var/fear_self = pick(self.fear_message_self)
 	var/fear_other = pick(self.fear_message_other)
-	self.visible_message(span_notice("\The [self][fear_other]"),span_warning("[fear_self]"))
+	act_message(self, null, MSG_SELF(span_warning("[fear_self]")), MSG_OTHERS(span_notice("%U%[fear_other]")))
 
 /// Asleep: unconscious, pain eases, dreams and snores. Otherwise (and not knocked out) conscious.
 /datum/om/stage/life/status/carbon/human/proc/update_sleep(mob/living/carbon/human/self, in_crit)

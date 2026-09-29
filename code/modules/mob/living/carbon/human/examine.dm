@@ -277,7 +277,7 @@
 		if(((stat == DEAD || losebreath || !L || (status_flags & FAKEDEATH)) && get_dist(user, src) <= 3))
 			. += span_warning("[p_They()] [user.p_do()] not appear to be breathing.")
 		if(ishuman(user) && !user.stat && Adjacent(user))
-			user.visible_message(span_infoplain(span_bold("[user]") + " checks [src]'s pulse."), span_infoplain("You check [src]'s pulse."))
+			act_message(user, src, MSG_SELF(span_infoplain("You check %T%'s pulse.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " checks %T%'s pulse.")))
 		om_after(src, 15, PROC_REF(pulse_check_result), user)
 
 	if(fire_stacks)

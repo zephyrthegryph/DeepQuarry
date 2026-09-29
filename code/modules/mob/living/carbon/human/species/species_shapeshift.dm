@@ -114,7 +114,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 		valid_facialhairstyles += facialhairstyle
 
 
-	visible_message(span_notice("\The [src]'s form contorts subtly."))
+	act_message(src, null, others = span_notice("%U%'s form contorts subtly."))
 	// A cancel picks none (bald, no gradient, shaved).
 	om_flow_start(/datum/om/flow/shapeshift_hair, src, src, hairs = valid_hairstyles, grads = valid_gradstyles, facials = valid_facialhairstyles)
 
@@ -199,7 +199,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	om_ask(src, /datum/om/prompt/choice/shapeshift_identity, PROC_REF(shapeshifter_gender_chosen), new_gender = ask.choice)
 
 /mob/living/carbon/human/proc/shapeshifter_gender_chosen(datum/om/prompt/choice/shapeshift_identity/ask)
-	visible_message(span_notice("\The [src]'s form contorts subtly."))
+	act_message(src, null, others = span_notice("%U%'s form contorts subtly."))
 	change_gender(ask.new_gender)
 	change_gender_identity(ask.choice)
 
@@ -236,7 +236,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 		return
 
 	GLOB.wrapped_species_by_ref["\ref[src]"] = new_species
-	visible_message(span_infoplain(span_bold("\The [src]") + " shifts and contorts, taking the form of \a [new_species]!"))
+	act_message(src, null, others = span_infoplain(span_bold("%U%") + " shifts and contorts, taking the form of \a [new_species]!"))
 	regenerate_icons()
 */
 
@@ -599,7 +599,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 	for(var/obj/item/organ/external/L as anything in src.organs)
 		L.transparent = !L.transparent
-	visible_message(span_notice("\The [src]'s internal composition seems to change."))
+	act_message(src, null, others = span_notice("%U%'s internal composition seems to change."))
 	update_icons_body()
 	update_hair()
 
@@ -611,7 +611,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	species.base_species = new_species
 	GLOB.wrapped_species_by_ref["\ref[src]"] = new_species
 	if (visible)
-		visible_message(span_filter_notice(span_bold("\The [src]") + " shifts and contorts, taking the form of \a [new_species]!"))
+		act_message(src, null, others = span_filter_notice(span_bold("%U%") + " shifts and contorts, taking the form of \a [new_species]!"))
 		regenerate_icons()
 
 
@@ -653,7 +653,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 /mob/living/carbon/human/proc/shapeshifter_regenerate_answered(flavour, oocnotes)
 	to_chat(src, span_notify("You begin to reform. You will need to remain still."))
-	visible_message(span_notify("[src] rapidly contorts and shifts!"), span_danger("You begin to reform."))
+	act_message(src, null, MSG_SELF(span_danger("You begin to reform.")), MSG_OTHERS(span_notify("%U% rapidly contorts and shifts!")))
 	om_task_start(/datum/om/task/timed/human_shapeshifter_regenerate_human, src, src, receiver = src, flavour = flavour, oocnotes = oocnotes)
 
 /datum/om/task/timed/human_shapeshifter_regenerate_human
@@ -668,7 +668,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	var/oocnotes = task.oocnotes
 	if(character.client.prefs)	//Make sure we didn't d/c
 		character.client.prefs.vanity_copy_to(src, FALSE, flavour, oocnotes, FALSE, FALSE)
-		character.visible_message(span_notify("[character] adopts a new form!"), span_danger("You have reformed."))
+		act_message(character, null, MSG_SELF(span_danger("You have reformed.")), MSG_OTHERS(span_notify("%U% adopts a new form!")))
 
 /mob/living/carbon/human/proc/shapeshifter_copy_body()
 	set name = "Copy Form"
@@ -750,7 +750,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	var/flavour = input == "Yes"
 
 	to_chat(src, span_notify("You begin to reassemble into [victim]. You will need to remain still."))
-	visible_message(span_notify("[src] rapidly contorts and shifts!"), span_danger("You begin to reassemble into [victim]."))
+	act_message(src, victim, MSG_SELF(span_danger("You begin to reassemble into %T%.")), MSG_OTHERS(span_notify("%U% rapidly contorts and shifts!")))
 	om_task_timed(src, 4 SECONDS, target = victim, receiver = src, on_done = PROC_REF(copy_body_done), done_args = list(victim, flavour))
 
 /mob/living/carbon/human/proc/copy_body_done(mob/living/carbon/human/victim, flavour)
@@ -759,7 +759,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 		return
 	if(client)	//Make sure we didn't d/c
 		transform_into_other_human(victim, new /datum/human_transform_options(copy_flavour = flavour, apply_bloodtype = FALSE))
-		visible_message(span_notify("[src] adopts the form of [victim]!"), span_danger("You have reassembled into [victim]."))
+		act_message(src, victim, MSG_SELF(span_danger("You have reassembled into %T%.")), MSG_OTHERS(span_notify("%U% adopts the form of %T%!")))
 
 
 /mob/living/carbon/human/proc/shapeshifter_reassemble()
@@ -776,13 +776,13 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 /mob/living/carbon/human/proc/shapeshifter_reassemble_answered(flavour, oocnotes)
 	to_chat(src, span_notify("You begin to reform. You will need to remain still."))
-	visible_message(span_notify("[src] rapidly contorts and shifts!"), span_danger("You begin to reform."))
+	act_message(src, null, MSG_SELF(span_danger("You begin to reform.")), MSG_OTHERS(span_notify("%U% rapidly contorts and shifts!")))
 	om_task_timed(src, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(shapeshifter_reassemble_human_done), done_args = list(flavour, oocnotes))
 
 /mob/living/carbon/human/proc/shapeshifter_reassemble_human_done(flavour, oocnotes)
 	if (client?.prefs)
 		client.prefs.vanity_copy_to(src, FALSE, flavour, oocnotes, FALSE)
-		visible_message(span_notify("[src] adopts a new form!"), span_danger("You have reformed."))
+		act_message(src, null, MSG_SELF(span_danger("You have reformed.")), MSG_OTHERS(span_notify("%U% adopts a new form!")))
 
 /// Sets one colour channel set of an ears/tail/wings accessory. `slot` is "" / "2" / "3"; `rgb` is a hex2rgb() list.
 /mob/living/carbon/human/proc/set_accessory_color(kind, slot, list/rgb)

@@ -410,7 +410,7 @@ DECLARE_REF(/datum/protean_power, "button", OWNED, null)
 	var/flavour = ask.flavour
 	var/oocnotes = ask.choice
 	to_chat(H, span_notify("You begin to reassemble. You will need to remain still."))
-	H.visible_message(span_notify("[H] rapidly contorts and shifts!"), span_danger("You begin to reassemble."))
+	act_message(H, null, MSG_SELF(span_danger("You begin to reassemble.")), MSG_OTHERS(span_notify("%U% rapidly contorts and shifts!")))
 	om_task_start(/datum/om/task/timed/reform_body_activate_reform_body, H, H, flavour = flavour, oocnotes = oocnotes)
 
 /datum/om/task/timed/reform_body_activate_reform_body
@@ -426,7 +426,7 @@ DECLARE_REF(/datum/protean_power, "button", OWNED, null)
 	if(!(H.client?.prefs))
 		return
 	H.client.prefs.vanity_copy_to(H, FALSE, flavour == "Yes", oocnotes == "Yes", TRUE, FALSE)
-	H.visible_message(span_notify("[H] adopts a new form!"), span_danger("You have reassembled."))
+	act_message(H, null, MSG_SELF(span_danger("You have reassembled.")), MSG_OTHERS(span_notify("%U% adopts a new form!")))
 
 /mob/living/carbon/human/proc/nano_regenerate()
 	set name = "Total Reassembly"
@@ -488,7 +488,7 @@ DECLARE_REF(/datum/protean_power, "button", OWNED, null)
 		to_chat(H, span_warning("You lost your grip on [victim]!"))
 		return
 	to_chat(H, span_notify("You begin to reassemble into [victim]. You will need to remain still."))
-	H.visible_message(span_notify("[H] rapidly contorts and shifts!"), span_danger("You begin to reassemble into [victim]."))
+	act_message(H, victim, MSG_SELF(span_danger("You begin to reassemble into %T%.")), MSG_OTHERS(span_notify("%U% rapidly contorts and shifts!")))
 	om_task_start(/datum/om/task/timed/copy_form_activate_copy_form, H, H, victim = victim, input = input)
 	return TRUE
 
@@ -507,7 +507,7 @@ DECLARE_REF(/datum/protean_power, "button", OWNED, null)
 		return
 	if(H.client)
 		H.transform_into_other_human(victim, new /datum/human_transform_options(copy_flavour = (input == "Yes"), convert_to_prosthetics = TRUE, apply_bloodtype = FALSE))
-		H.visible_message(span_notify("[H] adopts the form of [victim]!"), span_danger("You have reassembled into [victim]."))
+		act_message(H, victim, MSG_SELF(span_danger("You have reassembled into %T%.")), MSG_OTHERS(span_notify("%U% adopts the form of %T%!")))
 
 /mob/living/carbon/human/proc/nano_copy_body()
 	set name = "Copy Form"
@@ -559,10 +559,10 @@ DECLARE_REF(/datum/protean_power, "button", OWNED, null)
 	matstack.use(CEILING((actually_added / matstack.perunit), 1))
 	if(actually_added && actually_added < howmuch)
 		to_chat(H, span_warning("Your refactory module is now full, so only [actually_added] units were stored."))
-		H.visible_message(span_notice("[H] nibbles some of the [substance] right off the stack!"))
+		act_message(H, null, others = span_notice("%U% nibbles some of the [substance] right off the stack!"))
 	else if(actually_added)
 		to_chat(H, span_notice("You store [actually_added] units of [substance]."))
-		H.visible_message(span_notice("[H] devours some of the [substance] right off the stack!"))
+		act_message(H, null, others = span_notice("%U% devours some of the [substance] right off the stack!"))
 	else
 		to_chat(H, span_notice("You're completely capped out on [substance]!"))
 
@@ -631,7 +631,7 @@ DECLARE_REF(/datum/protean_power, "button", OWNED, null)
 		if(!include_head && limb.organ_tag == BP_HEAD)
 			continue
 		limb.transparent = !limb.transparent
-	visible_message(span_notice("\The [src]'s internal composition seems to change."))
+	act_message(src, null, others = span_notice("%U%'s internal composition seems to change."))
 	update_icons_body()
 	update_hair()
 

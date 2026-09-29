@@ -256,11 +256,10 @@ DECLARE_REAGENTS(/obj/item/organ/internal/fruitgland, "usable_volume", null)
 			var/emote = fruit_gland.emote_descriptor[index]
 			var/verb_desc = fruit_gland.verb_descriptor[index]
 			var/self_verb_desc = fruit_gland.self_verb_descriptor[index]
-			usr.visible_message(span_notice("[usr] [verb_desc] [emote]"),
-							span_notice("You [self_verb_desc] [emote]"))
+			act_message(usr, null, MSG_SELF(span_notice("You [self_verb_desc] [emote]")), MSG_OTHERS(span_notice("%U% [verb_desc] [emote]")))
 		else
-			visible_message(span_notice("[src] [pick(fruit_gland.short_emote_descriptor)] a fruit."),
-								span_notice("You [pick(fruit_gland.self_emote_descriptor)] a fruit."))
+			act_message(src, null, MSG_SELF(span_notice("You [pick(fruit_gland.self_emote_descriptor)] a fruit.")), \
+				MSG_OTHERS(span_notice("%U% [pick(fruit_gland.short_emote_descriptor)] a fruit.")))
 
 		fruit_gland.reagents.remove_any(fruit_gland.transfer_amount)
 

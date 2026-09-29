@@ -15,5 +15,5 @@
 	sparks.set_up(5, 0, src)
 	sparks.attach(loc)
 	sparks.start()
-	visible_message(span_warning("Electrical sparks manifest around \the [src] as they suddenly appear!"))
+	act_message(src, null, others = span_warning("Electrical sparks manifest around %U% as they suddenly appear!"))
 	qdel(sparks)

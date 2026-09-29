@@ -21,11 +21,11 @@
 	if(istype(I, /obj/item/grab)) // Drop grabs, this is an edge case
 		var/obj/item/grab/check_grab = I
 		if(check_grab?.grab_target())
-			visible_message(span_danger("\The [src] breaks their grip on [check_grab?.grab_target()]!"))
+			act_message(src, check_grab?.grab_target(), others = span_danger("%U% breaks their grip on %T%!"))
 		drop_from_inventory(check_grab)
 		return
 
-	src.visible_message(span_notice("\The [src] holds out \the [I] to \the [target]."), span_notice("You hold out \the [I] to \the [target], waiting for them to accept it."))
+	act_message(src, target, MSG_SELF(span_notice("You hold out %I% to %T%, waiting for them to accept it.")), MSG_OTHERS(span_notice("%U% holds out %I% to %T%.")), item = I)
 
 	// The offer is answered by the target; the answer runs on us.
 	om_ask(target, /datum/om/prompt/confirm/give_item, PROC_REF(give_answered), asker = src, subject = I)
@@ -64,4 +64,4 @@
 
 	if(src.unEquip(I))
 		target.put_in_hands(I) // If this fails it will just end up on the floor, but that's fitting for things like dionaea.
-		target.visible_message(span_notice("\The [src] handed \the [I] to \the [target]"))
+		act_message(src, target, others = span_notice("%U% handed %I% to %T%"), item = I)
