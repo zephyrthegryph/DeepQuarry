@@ -46,7 +46,7 @@ DECLARE_REF(/obj/structure/ladder, "target_up", PAIR, "target_down")
 	var/obj/item/weldingtool/WT = C.get_welder()
 	if(WT.remove_fuel(0, user))
 		play_sfx(src, SFX_ITEMS_WELDER2)
-		user.visible_message("\The [user] starts to deconstruct \the [src].", "You start to deconstruct \the [src].", "You hear welding")
+		act_message(user, src, MSG_SELF("You start to deconstruct %T%."), MSG_OTHERS("%U% starts to deconstruct %T%."), MSG_BLIND("You hear welding"))
 		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(deconstruct_done), list(user, WT))
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
@@ -140,9 +140,9 @@ DECLARE_INTERACTIONS(/obj/structure/ladder, \
 
 /obj/structure/ladder/proc/climbLadder(mob/M, obj/target_ladder)
 	var/direction = (target_ladder == target_up ? "up" : "down")
-	M.visible_message(span_infoplain(span_bold("\The [M]") + " begins climbing [direction] \the [src]!"),
-		span_info("You begin climbing [direction] \the [src]!"),
-		span_info("You hear the grunting and clanging of a metal ladder being used."))
+	act_message(M, src, MSG_SELF(span_info("You begin climbing [direction] %T%!")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins climbing [direction] %T%!")), \
+		MSG_BLIND(span_info("You hear the grunting and clanging of a metal ladder being used.")))
 
 	target_ladder.audible_message(span_notice("You hear something coming [direction] \the [src]"), runemessage = "clank clank")
 

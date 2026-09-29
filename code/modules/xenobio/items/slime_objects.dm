@@ -91,7 +91,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_cube, INTERACT_USE(null, PROC_REF(interacti
 	force = 1 //Needs a token force to ensure you can attack because for some reason you can't attack with 0 force things
 
 /obj/item/slime_crystal/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
-	target.visible_message(span_warning("\The [target] has been teleported with \the [src] by \the [user]!"))
+	act_message(target, src, others = span_warning("%U% has been teleported with %T% by \the [user]!"))
 	safe_blink(target, 14)
 	consume(src, user)
 
@@ -99,7 +99,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_crystal, INTERACT_USE(null, PROC_REF(intera
 
 /// Old attack_self.
 /obj/item/slime_crystal/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message(span_warning("\The [user] teleports themselves with \the [src]!"))
+	act_message(user, src, others = span_warning("%U% teleports themselves with %T%!"))
 	safe_blink(user, 14)
 	consume(src, user)
 	return TRUE

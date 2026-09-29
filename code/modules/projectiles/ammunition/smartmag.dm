@@ -103,7 +103,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 	removed_cell.update_icon()
 	removed_cell.forceMove(get_turf(src))
 	attached_cell_handle = null
-	user.visible_message("[user] removes a cell from \the [src].", "You remove \the [removed_cell] from \the [src].")
+	act_message(user, src, MSG_SELF("You remove %I% from %T%."), MSG_OTHERS("%U% removes a cell from %T%."), item = removed_cell)
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
@@ -129,7 +129,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 	user.drop_item()
 	I.forceMove(src)
 	attached_cell_handle = om_handle(I)
-	user.visible_message("[user] installs a cell in \the [src].", "You install \the [I] into \the [src].")
+	act_message(user, src, MSG_SELF("You install %I% into %T%."), MSG_OTHERS("%U% installs a cell in %T%."), item = I)
 	update_icon()
 
 /obj/item/ammo_magazine/smart/proc/cell_removed(mob/user)
@@ -137,7 +137,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 		return
 	attached_cell().update_icon()
 	user.put_in_hands(attached_cell())
-	user.visible_message("[user] removes a cell from \the [src].", "You remove \the [attached_cell()] from \the [src].")
+	act_message(user, src, MSG_SELF("You remove \the [attached_cell()] from %T%."), MSG_OTHERS("%U% removes a cell from %T%."))
 	attached_cell_handle = null
 	update_icon()
 

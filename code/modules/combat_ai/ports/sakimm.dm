@@ -240,7 +240,7 @@ GLOBAL_LIST_INIT(dq_sakimm_loot_types, list(
 	// Wear a held hat.
 	if(held && istype(held, /obj/item/clothing/head) && !S.hat)
 		S.take_hat(S)
-		S.visible_message(span_infoplain("[span_bold("\The [S]")] wears \the [held]."))
+		act_message(S, null, others = span_infoplain("[span_bold("%U%")] wears %I%."), item = held)
 		held = S.get_active_hand()
 	// Carrying loot? Head home and pin the home radius so we stash it.
 	var/carrying = held || S.hat

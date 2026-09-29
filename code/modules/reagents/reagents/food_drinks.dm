@@ -807,7 +807,8 @@ TYPE_TABLE(/datum/reagent/nutriment/triglyceride/oil, get_data_schema, list("tem
 		M.apply_effect(2 * M.species.spice_mod, AGONY, 0)
 		warm_body(M, -rand(1, 5) * M.species.spice_mod, removed) // Really fucks you up, cause it makes you cold.
 		if(prob(5))
-			M.visible_message(span_warning("[M] [pick("dry heaves!","coughs!","splutters!")]"), pick(span_danger("You feel like your insides are freezing!"), span_danger("Your insides feel like they're turning to ice!")))
+			act_message(M, null, MSG_SELF(pick(span_danger("You feel like your insides are freezing!"), span_danger("Your insides feel like they're turning to ice!"))), \
+				MSG_OTHERS(span_warning("%U% [pick("dry heaves!","coughs!","splutters!")]")))
 	// holder.remove_reagent(REAGENT_ID_CAPSAICIN, 5) // Nop, we don't instadelete spices for free.
 
 /datum/reagent/frostoil/cryotoxin //A longer lasting version of frost oil.
@@ -866,7 +867,8 @@ TYPE_TABLE(/datum/reagent/nutriment/triglyceride/oil, get_data_schema, list("tem
 		M.apply_effect(2 * M.species.spice_mod, AGONY, 0)
 		warm_body(M, rand(1, 5) * M.species.spice_mod, removed) // Really fucks you up, cause it makes you overheat, too.
 		if(prob(5))
-			M.visible_message(span_warning("[M] [pick("dry heaves!","coughs!","splutters!")]"), pick(span_danger("You feel like your insides are burning!"), span_danger("You feel like your insides are on fire!"), span_danger("You feel like your belly is full of lava!")))
+			act_message(M, null, MSG_SELF(pick(span_danger("You feel like your insides are burning!"), span_danger("You feel like your insides are on fire!"), span_danger("You feel like your belly is full of lava!"))), \
+				MSG_OTHERS(span_warning("%U% [pick("dry heaves!","coughs!","splutters!")]")))
 	// holder.remove_reagent(REAGENT_ID_FROSTOIL, 5) // Nop, we don't instadelete spices for free.
 
 /datum/reagent/condensedcapsaicin
@@ -1016,7 +1018,8 @@ TYPE_TABLE(/datum/reagent/nutriment/triglyceride/oil, get_data_schema, list("tem
 	else
 		M.apply_effect(4, AGONY, 0)
 		if(prob(5))
-			M.visible_message(span_warning("[M] [pick("dry heaves!","coughs!","splutters!")]"), span_danger("You feel like your insides are burning!"))
+			act_message(M, null, MSG_SELF(span_danger("You feel like your insides are burning!")), \
+				MSG_OTHERS(span_warning("%U% [pick("dry heaves!","coughs!","splutters!")]")))
 
 /* Drinks */
 
@@ -5143,7 +5146,8 @@ TYPE_TABLE(/datum/reagent/nutriment/triglyceride/oil, get_data_schema, list("tem
 				if((dose < 5) && (dose == metabolism || prob(5)))
 					to_chat(M, span_danger("Your insides feel uncomfortably hot!"))
 				if(dose >= 5 && prob(5))
-					M.visible_message(span_warning("[M] [pick("dry heaves!","coughs!","splutters!")]"), pick(span_danger("You feel like your insides are burning!"), span_danger("You feel like your insides are on fire!"), span_danger("You feel like your belly is full of lava!")))
+					act_message(M, null, MSG_SELF(pick(span_danger("You feel like your insides are burning!"), span_danger("You feel like your insides are on fire!"), span_danger("You feel like your belly is full of lava!"))), \
+						MSG_OTHERS(span_warning("%U% [pick("dry heaves!","coughs!","splutters!")]")))
 
 /datum/reagent/ethanol/monstertamer
 	name = REAGENT_MONSTERTAMER
@@ -5951,7 +5955,7 @@ TYPE_TABLE(/datum/reagent/nutriment/triglyceride/oil, get_data_schema, list("tem
 /datum/reagent/drink/coffee/nukie/mega/fast/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 	if(prob(1))
-		M.visible_message(span_danger("\The [M] sizzles!"))
+		act_message(M, null, others = span_danger("%U% sizzles!"))
 		M.injure(INJURY_BURN, 5, source = src)
 
 /datum/reagent/drink/coffee/nukie/mega/high //Simultaneously makes you high and hungry

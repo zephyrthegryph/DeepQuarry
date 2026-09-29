@@ -111,7 +111,7 @@
 			return TRUE
 		copy_board = O
 		O.forceMove(src)
-		user.visible_message("[user] inserts [O] into \the [src]'s circuit reader.", span_notice("You insert [O] into \the [src]'s circuit reader."))
+		act_message(user, src, MSG_SELF(span_notice("You insert [O] into %T%'s circuit reader.")), MSG_OTHERS("%U% inserts [O] into %T%'s circuit reader."))
 		return TRUE
 	if(try_load_materials(user, O))
 		return TRUE
@@ -134,7 +134,7 @@
 			materials[S.material.name] += S.perunit
 			S.use(1)
 			count++
-		user.visible_message("[user] inserts [S.name] into \the [src].", span_notice("You insert [count] [S.name] into \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You insert [count] [S.name] into %T%.")), MSG_OTHERS("%U% inserts [S.name] into %T%."))
 		flick("partslathe-load-[S.material.name]", src)
 	else
 		to_chat(user, span_warning("\The [src] cannot hold more [S.name]."))

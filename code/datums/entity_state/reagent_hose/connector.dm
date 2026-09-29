@@ -136,7 +136,7 @@ DECLARE_REF(/datum/hose_connector, "my_hose", BACK, null)
 
 /datum/hose_connector/proc/disconnect_action(user)
 	if(carrier.Adjacent(user))
-		carrier.visible_message("[user] disconnects \the hose from \the [carrier].")
+		act_message(user, carrier, others = "%U% disconnects \the hose from %T%.")
 		my_hose.disconnect(user)
 		QDEL_NULL(my_hose)
 

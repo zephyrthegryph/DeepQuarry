@@ -60,8 +60,8 @@
 			if(!user.hand)
 				which_hand = BP_R_HAND
 			triggered(user, which_hand)
-			user.visible_message(span_warning("[user] accidentally sets off [src], breaking [p_their()] fingers."), \
-									span_warning("You accidentally trigger [src]!"))
+			act_message(user, src, MSG_SELF(span_warning("You accidentally trigger %T%!")), \
+				MSG_OTHERS(span_warning("%U% accidentally sets off %T%, breaking [p_their()] fingers.")))
 			return TRUE
 
 		to_chat(user, span_notice("You disarm [src]."))
@@ -92,8 +92,8 @@
 			if(!user.hand)
 				which_hand = BP_R_HAND
 			triggered(user, which_hand)
-			user.visible_message(span_warning("[user] accidentally sets off [src], breaking [p_their()] fingers."), \
-									span_warning("You accidentally trigger [src]!"))
+			act_message(user, src, MSG_SELF(span_warning("You accidentally trigger %T%!")), \
+				MSG_OTHERS(span_warning("%U% accidentally sets off %T%, breaking [p_their()] fingers.")))
 			return TRUE
 	return FALSE
 
@@ -105,16 +105,15 @@
 			var/mob/living/carbon/H = AM
 			if(H.m_intent == I_RUN)
 				triggered(H)
-				H.visible_message(span_warning("[H] accidentally steps on [src]."), \
-								  span_warning("You accidentally step on [src]"))
+				act_message(H, src, MSG_SELF(span_warning("You accidentally step on %T%")), MSG_OTHERS(span_warning("%U% accidentally steps on %T%.")))
 		if(ismouse(AM))
 			triggered(AM)
 	..()
 
 /obj/item/assembly/mousetrap/on_found(mob/living/finder)
 	if(armed)
-		finder.visible_message(span_warning("[finder] accidentally sets off [src], breaking [p_their()] fingers."), \
-							   span_warning("You accidentally trigger [src]!"))
+		act_message(finder, src, MSG_SELF(span_warning("You accidentally trigger %T%!")), \
+			MSG_OTHERS(span_warning("%U% accidentally sets off %T%, breaking [p_their()] fingers.")))
 		triggered(finder, finder.hand ? BP_L_HAND : BP_R_HAND)
 		return 1	//end the search!
 	return 0

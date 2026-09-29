@@ -75,7 +75,7 @@
 			return TRUE
 		if(M.get_amount() < FUSION_ROD_SHEET_AMT)
 			if(mat.name==MAT_SUPERMATTER)
-				visible_message(span_notice("\The [user] places the [mat.use_name] into the compressor."))
+				act_message(user, null, others = span_notice("%U% places the [mat.use_name] into the compressor."))
 				M.use(1)
 				blitzprogress = 1
 				return TRUE

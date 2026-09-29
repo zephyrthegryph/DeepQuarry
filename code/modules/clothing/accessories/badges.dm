@@ -46,13 +46,16 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge, INTERACT_SELF("Display",
 
 	if(isliving(user))
 		if(stored_name)
-			user.visible_message(span_notice("[user] displays their [src.name].\nIt reads: [stored_name], [badge_string]."),span_notice("You display your [src.name].\nIt reads: [stored_name], [badge_string]."))
+			act_message(user, null, MSG_SELF(span_notice("You display your [src.name].\nIt reads: [stored_name], [badge_string].")), \
+				MSG_OTHERS(span_notice("%U% displays their [src.name].\nIt reads: [stored_name], [badge_string].")))
 		else
-			user.visible_message(span_notice("[user] displays their [src.name].\nIt reads: [badge_string]."),span_notice("You display your [src.name]. It reads: [badge_string]."))
+			act_message(user, null, MSG_SELF(span_notice("You display your [src.name]. It reads: [badge_string].")), \
+				MSG_OTHERS(span_notice("%U% displays their [src.name].\nIt reads: [badge_string].")))
 	return FALSE
 
 /obj/item/clothing/accessory/badge/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	user.visible_message(span_danger("[user] invades [M]'s personal space, thrusting [src] into their face insistently."),span_danger("You invade [M]'s personal space, thrusting [src] into their face insistently."))
+	act_message(user, M, MSG_SELF(span_danger("You invade %T%'s personal space, thrusting [src] into their face insistently.")), \
+		MSG_OTHERS(span_danger("%U% invades %T%'s personal space, thrusting [src] into their face insistently.")))
 	user.do_attack_animation(M)
 	user.setClickCooldown(DEFAULT_QUICK_COOLDOWN) //NO SPAM
 	return ITEM_INTERACT_SUCCESS
@@ -212,11 +215,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/sheriff, INTERACT_USE("Fl
 
 /// Old attack_self.
 /obj/item/clothing/accessory/badge/sheriff/proc/sheriff_badge_self(mob/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message("[user] shows their sheriff badge. There's a new sheriff in town!",\
-		"You flash the sheriff badge to everyone around you!")
+	act_message(user, null, MSG_SELF("You flash the sheriff badge to everyone around you!"), \
+		MSG_OTHERS("%U% shows their sheriff badge. There's a new sheriff in town!"))
 
 /obj/item/clothing/accessory/badge/sheriff/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	user.visible_message(span_danger("[user] invades [M]'s personal space, the sheriff badge into their face!."),span_danger("You invade [M]'s personal space, thrusting the sheriff badge into their face insistently."))
+	act_message(user, M, MSG_SELF(span_danger("You invade %T%'s personal space, thrusting the sheriff badge into their face insistently.")), \
+		MSG_OTHERS(span_danger("%U% invades %T%'s personal space, the sheriff badge into their face!.")))
 	user.do_attack_animation(M)
 	user.setClickCooldown(DEFAULT_QUICK_COOLDOWN) //NO SPAM
 	return ITEM_INTERACT_SUCCESS

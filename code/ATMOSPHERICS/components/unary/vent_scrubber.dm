@@ -303,12 +303,14 @@
 		return ITEM_INTERACT_BLOCKING
 	playsound(src, W.usesound, 50, 1)
 	if(!welded)
-		user.visible_message(span_notice("<b>\The [user]</b> welds the vent shut."), span_notice("You weld the vent shut."), "You hear welding.")
+		act_message(user, null, MSG_SELF(span_notice("You weld the vent shut.")), \
+			MSG_OTHERS(span_notice("<b>%U%</b> welds the vent shut.")), \
+			MSG_BLIND("You hear welding."))
 		welded = TRUE
 		invalidate_gas_dependencies()
 		update_icon()
 	else
-		user.visible_message(span_notice("[user] unwelds the vent."), span_notice("You unweld the vent."), "You hear welding.")
+		act_message(user, null, MSG_SELF(span_notice("You unweld the vent.")), MSG_OTHERS(span_notice("%U% unwelds the vent.")), MSG_BLIND("You hear welding."))
 		welded = FALSE
 		invalidate_gas_dependencies()
 		update_icon()
@@ -332,10 +334,9 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/unary/vent_scrubber/proc/wrench_act_tool_done(mob/user)
-	user.visible_message( \
-		span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), \
-		span_notice("You have unfastened \the [src]."), \
-		"You hear a ratchet.")
+	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
+		MSG_BLIND("You hear a ratchet."))
 	atom_deconstruct()
 
 /obj/machinery/atmospherics/unary/vent_scrubber/examine(mob/user)

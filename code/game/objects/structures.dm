@@ -58,7 +58,7 @@
 /obj/structure/attack_generic(mob/user, damage, attack_verb)
 	if(!breakable || damage < STRUCTURE_MIN_DAMAGE_THRESHOLD)
 		return 0
-	visible_message(span_danger("[user] [attack_verb] the [src] apart!"))
+	act_message(user, src, others = span_danger("%U% [attack_verb] %T% apart!"))
 	user.do_attack_animation(src)
 	expire(1)
 	return 1

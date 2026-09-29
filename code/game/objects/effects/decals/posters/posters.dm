@@ -167,7 +167,7 @@ DECLARE_INTERACTIONS(/obj/structure/sign/poster, INTERACT_HAND_UNGATED(null, PRO
 
 /obj/structure/sign/poster/proc/rip_answered(datum/om/prompt/confirm/rip_poster/ask)
 	var/mob/user = ask.answerer
-	visible_message(span_warning("[user] rips [src] in a single, decisive motion!") )
+	act_message(user, src, others = span_warning("%U% rips %T% in a single, decisive motion!"))
 	play_sfx(src, SFX_ITEMS_POSTER_RIPPED)
 	ruined = TRUE
 	icon_state = "poster_ripped"

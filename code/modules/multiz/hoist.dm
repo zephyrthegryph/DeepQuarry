@@ -15,7 +15,9 @@ DECLARE_INTERACTIONS(/obj/item/hoist_kit, INTERACT_USE(null, PROC_REF(interactio
 /// Old attack_self.
 /obj/item/hoist_kit/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	new /obj/structure/hoist (get_turf(user), user.dir)
-	user.visible_message(span_warning("[user] deploys the hoist kit!"), span_notice("You deploy the hoist kit!"), span_notice("You hear the sound of parts snapping into place."))
+	act_message(user, null, MSG_SELF(span_notice("You deploy the hoist kit!")), \
+		MSG_OTHERS(span_warning("%U% deploys the hoist kit!")), \
+		MSG_BLIND(span_notice("You hear the sound of parts snapping into place.")))
 	consume(src, user)
 	return TRUE
 
@@ -46,7 +48,9 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 		to_chat(user, span_notice("\The [source_hoist().hoistee()] is already attached to \the [src]!"))
 		return TRUE
 	source_hoist().attach_hoistee(AM)
-	user.visible_message(span_danger("[user] attaches \the [AM] to \the [src]."), span_danger("You attach \the [AM] to \the [src]."), span_danger("You hear something clamp into place."))
+	act_message(user, AM, MSG_SELF(span_danger("You attach %T% to \the [src].")), \
+		MSG_OTHERS(span_danger("%U% attaches %T% to \the [src].")), \
+		MSG_BLIND(span_danger("You hear something clamp into place.")))
 	return TRUE
 
 /obj/structure/hoist/proc/attach_hoistee(atom/movable/AM)
@@ -84,7 +88,9 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 
 	var/turf/desturf = dest
 	source_hoist().hoistee().forceMove(desturf)
-	usr.visible_message(span_danger("[usr] detaches \the [source_hoist().hoistee()] from the hoist clamp."), span_danger("You detach \the [source_hoist().hoistee()] from the hoist clamp."), span_danger("You hear something unclamp."))
+	act_message(usr, null, MSG_SELF(span_danger("You detach \the [source_hoist().hoistee()] from the hoist clamp.")), \
+		MSG_OTHERS(span_danger("%U% detaches \the [source_hoist().hoistee()] from the hoist clamp.")), \
+		MSG_BLIND(span_danger("You hear something unclamp.")))
 	source_hoist().release_hoistee()
 
 // This will handle mobs unbuckling themselves.
@@ -188,7 +194,9 @@ DECLARE_INTERACTIONS(/obj/structure/hoist, \
 		return TRUE
 
 	if (!hoistee())
-		user.visible_message(span_notice("[user] begins to [movtext] the clamp."), span_notice("You begin to [movtext] the clamp."), span_notice("You hear the sound of a crank."))
+		act_message(user, null, MSG_SELF(span_notice("You begin to [movtext] the clamp.")), \
+			MSG_OTHERS(span_notice("%U% begins to [movtext] the clamp.")), \
+			MSG_BLIND(span_notice("You hear the sound of a crank.")))
 		move_dir(movedir, 0)
 		return TRUE
 
@@ -202,7 +210,9 @@ DECLARE_INTERACTIONS(/obj/structure/hoist, \
 		var/obj/O = hoistee()
 		size = O.w_class
 
-	user.visible_message(span_notice("[user] begins to [movtext] \the [hoistee()]!"), span_notice("You begin to [movtext] \the [hoistee()]!"), span_notice("You hear the sound of a crank."))
+	act_message(user, null, MSG_SELF(span_notice("You begin to [movtext] \the [hoistee()]!")), \
+		MSG_OTHERS(span_notice("%U% begins to [movtext] \the [hoistee()]!")), \
+		MSG_BLIND(span_notice("You hear the sound of a crank.")))
 	om_task_timed(user, (1 SECONDS) * size / 4, src, src, PROC_REF(move_dir), list(movedir, 1))
 	return TRUE
 

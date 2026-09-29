@@ -239,7 +239,7 @@
 
 	cut_overlays()
 	flick("tp_out",src)
-	visible_message("<b>\The [src.name]</b> [death_message]")
+	act_message(src, null, others = "<b>%U%</b> [death_message]")
 	shadekin.respite_activating = TRUE
 
 	drop_l_hand()

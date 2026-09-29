@@ -35,16 +35,13 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/gauntlets, "stored_gauntlets", /obj/i
 		deactivate()
 		return
 	if(M.combat_mode)
-		M.visible_message(
-			span_danger("[M] throws [M.p_their()] arms out, extending [stored_gauntlets] from \the [holder] with a click!"),
-			span_danger("You throw your arms out, extending [stored_gauntlets] from \the [holder] with a click!"),
-			span_notice("You hear a threatening hiss and a click.")
-			)
+		act_message(M, null, MSG_SELF(span_danger("You throw your arms out, extending [stored_gauntlets] from \the [holder] with a click!")), \
+			MSG_OTHERS(span_danger("%U% throws %THEIR% arms out, extending [stored_gauntlets] from \the [holder] with a click!")), \
+			MSG_BLIND(span_notice("You hear a threatening hiss and a click.")))
 	else
-		M.visible_message(
-			span_notice("[M] extends [stored_gauntlets] from \the [holder] with a click!"),
-			span_notice("You extend  [stored_gauntlets] from \the [holder] with a click!"),
-			span_notice("You hear a hiss and a click."))
+		act_message(M, null, MSG_SELF(span_notice("You extend  [stored_gauntlets] from \the [holder] with a click!")), \
+			MSG_OTHERS(span_notice("%U% extends [stored_gauntlets] from \the [holder] with a click!")), \
+			MSG_BLIND(span_notice("You hear a hiss and a click.")))
 
 	play_sfx(src, SFX_ITEMS_HELMETDEPLOY)
 	M.put_in_hands(stored_gauntlets)

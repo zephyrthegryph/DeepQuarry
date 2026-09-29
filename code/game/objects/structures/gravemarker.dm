@@ -90,11 +90,11 @@
 		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, volume = 0, start_self = "You start carving \the [src.name].", start_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done2), done_args = list(user, carving_2))
 
 /obj/structure/gravemarker/proc/screwdriver_act_tool_done(mob/user, carving_1)
-	user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
+	act_message(user, null, MSG_SELF("You carve your message into \the [src.name]."), MSG_OTHERS("%U% carves something into \the [src.name]."))
 	grave_name += carving_1
 	update_icon()
 /obj/structure/gravemarker/proc/screwdriver_act_tool_done2(mob/user, carving_2)
-	user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
+	act_message(user, null, MSG_SELF("You carve your message into \the [src.name]."), MSG_OTHERS("%U% carves something into \the [src.name]."))
 	epitaph += carving_2
 	update_icon()
 
@@ -103,7 +103,7 @@
 	return TRUE
 
 /obj/structure/gravemarker/proc/wrench_act_tool_done(mob/user)
-	user.visible_message("[user] takes down \the [src.name].", "You take down \the [src.name].")
+	act_message(user, null, MSG_SELF("You take down \the [src.name]."), MSG_OTHERS("%U% takes down \the [src.name]."))
 	dismantle()
 
 /obj/structure/gravemarker/atom_destruction(damage_flag)

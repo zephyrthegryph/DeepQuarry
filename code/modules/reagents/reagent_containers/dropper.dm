@@ -41,7 +41,7 @@
 		if(ismob(target))
 
 			var/time = 20 //2/3rds the time of a syringe
-			user.visible_message(span_warning("[user] is trying to squirt something into [target]'s eyes!"))
+			act_message(user, target, others = span_warning("%U% is trying to squirt something into %T%'s eyes!"))
 			om_task_timed(user, time, target, src, PROC_REF(squirt_done), list(user, target))
 			return
 
@@ -85,7 +85,8 @@
 
 		if(safe_thing)
 			trans = reagents.splash(safe_thing, min(amount_per_transfer_from_this, reagents.total_volume), max_spill=30)
-			user.visible_message(span_warning("[user] tries to squirt something into [target]'s eyes, but fails!"), span_notice("You transfer [trans] units of the solution."))
+			act_message(user, target, MSG_SELF(span_notice("You transfer [trans] units of the solution.")), \
+				MSG_OTHERS(span_warning("%U% tries to squirt something into %T%'s eyes, but fails!")))
 			return
 
 	var/contained = reagentlist()
@@ -93,7 +94,8 @@
 
 	trans += reagents.trans_to_mob(target, min(amount_per_transfer_from_this, reagents.total_volume)/2, CHEM_INGEST, can_dialysis = FALSE) //Half injected, half ingested
 	trans += reagents.trans_to_mob(target, min(amount_per_transfer_from_this, reagents.total_volume), CHEM_BLOOD) //I guess it gets into the bloodstream through the eyes or something
-	user.visible_message(span_warning("[user] squirts something into [target]'s eyes!"), span_notice("You transfer [trans] units of the solution."))
+	act_message(user, target, MSG_SELF(span_notice("You transfer [trans] units of the solution.")), \
+		MSG_OTHERS(span_warning("%U% squirts something into %T%'s eyes!")))
 
 /obj/item/reagent_containers/dropper/on_reagent_change()
 	update_icon()

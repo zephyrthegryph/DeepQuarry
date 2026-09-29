@@ -169,7 +169,7 @@ DECLARE_INTERACTIONS(/obj/item/modular_computer, \
 	if(length(components))
 		to_chat(user, "Remove all components from \the [src] before disassembling it.")
 		return ITEM_INTERACT_BLOCKING
-	visible_message("\The [src] has been disassembled by [user].")
+	act_message(src, user, others = "%U% has been disassembled by %T%.")
 	replace_with(src, /obj/item/stack/material/steel, steel_sheet_cost)
 	return ITEM_INTERACT_SUCCESS
 

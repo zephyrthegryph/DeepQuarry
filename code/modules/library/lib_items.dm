@@ -215,7 +215,7 @@ Book Cart End
 			return TRUE
 	if(dat)
 		display_content(user)
-		user.visible_message("[user] opens a book titled \"[src.title]\" and begins reading intently.")
+		act_message(user, null, others = "%U% opens a book titled \"[src.title]\" and begins reading intently.")
 		play_sfx(src, SFX_BUREAUCRACY_BOOKOPEN)
 		// onclose() was for the legacy "book" browse() window
 		// that no longer exists (books are TGUI now).
@@ -358,8 +358,8 @@ DECLARE_INTERACTIONS(/obj/item/book, \
 
 /obj/item/book/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(user.zone_sel.selecting == O_EYES)
-		user.visible_message(span_notice("You open up the book and show it to [M]."), \
-			span_notice(" [user] opens up a book and shows it to [M]."))
+		act_message(user, M, MSG_SELF(span_notice(" %U% opens up a book and shows it to %T%.")), \
+			MSG_OTHERS(span_notice("You open up the book and show it to %T%.")))
 		display_content(M)
 		user.setClickCooldown(DEFAULT_QUICK_COOLDOWN) //to prevent spam
 		return ITEM_INTERACT_SUCCESS

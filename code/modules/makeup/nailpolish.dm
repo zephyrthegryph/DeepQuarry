@@ -82,7 +82,8 @@ DECLARE_INTERACTIONS(/obj/item/nailpolish, INTERACT_USE(null, PROC_REF(interacti
 		to_chat(user, span_notice("You can't find any nails on [body_part] to paint."))
 		return ITEM_INTERACT_FAILURE
 	if(user == target)
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " paints their nails with \the [src]."), span_infoplain("You paint your nails with \the [src]."))
+		act_message(user, src, MSG_SELF(span_infoplain("You paint your nails with %T%.")), \
+			MSG_OTHERS(span_infoplain(span_bold("%U%") + " paints their nails with %T%.")))
 	else
 		om_task_start(/datum/om/task/timed/nailpolish_paint, user, target, body_part = body_part, polish = polish, fail_message = span_notice("Both you and [target] must stay still!"))
 		return ITEM_INTERACT_SUCCESS
@@ -102,7 +103,8 @@ DECLARE_INTERACTIONS(/obj/item/nailpolish, INTERACT_USE(null, PROC_REF(interacti
 	var/datum/nail_polish/polish = task.polish
 	if(body_part.nail_polish)
 		return
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " paints \the [target]'s nails with \the [src]."), span_infoplain("You paint \the [target]'s nails with \the [src]."))
+	act_message(user, target, MSG_SELF(span_infoplain("You paint %T%'s nails with \the [src].")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " paints %T%'s nails with \the [src].")))
 	body_part.set_polish(polish)
 
 /obj/item/organ/external/proc/set_polish(datum/nail_polish/polish)
@@ -147,7 +149,8 @@ DECLARE_INTERACTIONS(/obj/item/nailpolish_remover, INTERACT_USE(null, PROC_REF(i
 		to_chat(user, span_notice("[target]'s [body_part.name] has no nail polish to remove!"))
 		return ITEM_INTERACT_FAILURE
 	if(user == target)
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " removes their nail polish with \the [src]."), span_infoplain("You remove your nail polish with \the [src]."))
+		act_message(user, src, MSG_SELF(span_infoplain("You remove your nail polish with %T%.")), \
+			MSG_OTHERS(span_infoplain(span_bold("%U%") + " removes their nail polish with %T%.")))
 	else
 		om_task_start(/datum/om/task/timed/nailpolish_remover_remove, user, target, body_part = body_part, fail_message = span_notice("Both you and [target] must stay still!"))
 		return ITEM_INTERACT_SUCCESS
@@ -163,7 +166,8 @@ DECLARE_INTERACTIONS(/obj/item/nailpolish_remover, INTERACT_USE(null, PROC_REF(i
 	var/mob/living/user = task.actor
 	var/mob/living/target = task.target
 	var/obj/item/organ/external/body_part = task.body_part
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " removes \the [target]'s nail polish with \the [src]."), span_infoplain("You remove \the [target]'s nail polish with \the [src]."))
+	act_message(user, target, MSG_SELF(span_infoplain("You remove %T%'s nail polish with \the [src].")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " removes %T%'s nail polish with \the [src].")))
 	body_part.set_polish(null)
 
 /datum/nail_polish

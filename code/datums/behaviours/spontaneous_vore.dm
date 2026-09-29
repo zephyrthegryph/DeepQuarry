@@ -30,7 +30,7 @@
 
 	//We are able to eat the person stumbling into us.
 	if(can_stumble_vore(prey = target, pred = source)) //This is if the person stumbling into us is able to eat us!
-		source.visible_message(span_vwarning("[target] flops carelessly into [source]!"))
+		act_message(target, source, others = span_vwarning("%U% flops carelessly into %T%!"))
 		var/obj/belly/destination_belly = source.get_current_spont_belly(target)
 		source.begin_instant_nom(source, prey = target, pred = source, belly = destination_belly)
 		target.stop_flying()
@@ -38,7 +38,7 @@
 
 	//The person stumbling into us is able to eat us.
 	if(can_stumble_vore(prey = source, pred = target)) //This is if the person stumbling into us is able to be eaten by us! BROKEN!
-		source.visible_message(span_vwarning("[target] flops carelessly into [source]!"))
+		act_message(target, source, others = span_vwarning("%U% flops carelessly into %T%!"))
 		target.forceMove(get_turf(source))
 		var/obj/belly/destination_belly = target.get_current_spont_belly(source)
 		source.begin_instant_nom(target, prey = source, pred = target, belly = destination_belly)
@@ -63,7 +63,7 @@
 	//result: source is eaten by drop_mob
 	if(can_drop_vore(prey = source, pred = drop_mob))
 		drop_mob.feed_grabbed_to_self_falling_nom(drop_mob, prey = source)
-		drop_mob.visible_message(span_vdanger("\The [drop_mob] falls right onto \the [source]!"))
+		act_message(drop_mob, source, others = span_vdanger("%U% falls right onto %T%!"))
 		return EVENT_VETO
 
 	//pred = source
@@ -72,7 +72,7 @@
 	if(can_drop_vore(prey = drop_mob, pred = source))
 		source.feed_grabbed_to_self_falling_nom(source, prey = drop_mob)
 		source.status_at_least(EFFECT_WEAKENED, 4)
-		source.visible_message(span_vdanger("\The [drop_mob] falls right into \the [source]!"))
+		act_message(drop_mob, source, others = span_vdanger("%U% falls right into %T%!"))
 		return EVENT_VETO
 
 /datum/om/behaviour/spontaneous_vore/proc/handle_hitby(mob/living/source, atom/movable/hitby, mob/thrower, speed)
@@ -85,7 +85,7 @@
 			return
 		if(source.stat != DEAD && source.trash_catching)
 			if(source.adminbus_trash || is_type_in_list(O, GLOB.edible_trash) && O.trash_eatable && !is_type_in_list(O, GLOB.item_vore_blacklist))
-				source.visible_message(span_vwarning("[O] is thrown directly into [source]'s [lowertext(destination_belly.name)]!"))
+				act_message(source, null, others = span_vwarning("[O] is thrown directly into %U%'s [lowertext(destination_belly.name)]!"))
 				destination_belly.nom_atom(O)
 				return EVENT_VETO
 
@@ -108,7 +108,7 @@
 			if(!destination_belly)
 				return
 			destination_belly.nom_atom(thrown_mob) //Eat them!!!
-			source.visible_message(span_vwarning("[thrown_mob] is thrown right into [source]'s [lowertext(destination_belly.name)]!"))
+			act_message(thrown_mob, source, others = span_vwarning("%U% is thrown right into %T%'s [lowertext(destination_belly.name)]!"))
 			source.on_throw_vore_special(TRUE, thrown_mob)
 
 			if(thrower)
@@ -123,7 +123,7 @@
 			var/obj/belly/destination_belly = thrown_mob.get_current_spont_belly(source)
 			if(!destination_belly)
 				return
-			source.visible_message(span_vwarning("[source] suddenly slips inside of [thrown_mob]'s [lowertext(destination_belly.name)] as [thrown_mob] flies into them!"))
+			act_message(source, thrown_mob, others = span_vwarning("%U% suddenly slips inside of %T%'s [lowertext(destination_belly.name)] as %T% flies into them!"))
 			destination_belly.nom_atom(source) //Eat them!!!
 			if(source.loc != thrown_mob.vore_selected)
 				thrown_mob.vore_selected.belly_insert(source) //Double check. Should never happen but...Weirder things have happened!

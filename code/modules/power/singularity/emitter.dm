@@ -156,16 +156,16 @@
 			if(0)
 				set_state(1)
 				playsound(src, W.usesound, 75, 1)
-				user.visible_message("[user.name] secures [src] to the floor.", \
-					"You secure the external reinforcing bolts to the floor.", \
-					"You hear a ratchet.")
+				act_message(user, src, MSG_SELF("You secure the external reinforcing bolts to the floor."), \
+					MSG_OTHERS("[user.name] secures %T% to the floor."), \
+					MSG_BLIND("You hear a ratchet."))
 				set_anchored(TRUE)
 			if(1)
 				set_state(0)
 				playsound(src, W.usesound, 75, 1)
-				user.visible_message("[user.name] unsecures [src] reinforcing bolts from the floor.", \
-					"You undo the external reinforcing bolts.", \
-					"You hear a ratchet.")
+				act_message(user, src, MSG_SELF("You undo the external reinforcing bolts."), \
+					MSG_OTHERS("[user.name] unsecures %T% reinforcing bolts from the floor."), \
+					MSG_BLIND("You hear a ratchet."))
 				set_anchored(FALSE)
 				disconnect_from_network()
 			if(2)
@@ -300,7 +300,7 @@
 	if(!emagged)
 		set_locked(0)
 		set_emagged(1)
-		user.visible_message("[user.name] emags [src].",span_warning("You short out the lock."))
+		act_message(user, src, MSG_SELF(span_warning("You short out the lock.")), MSG_OTHERS("[user.name] emags %T%."))
 		return 1
 
 /obj/machinery/power/emitter/atom_destruction(damage_flag)

@@ -40,13 +40,13 @@
 		if(SMITE_SPONTANEOUSCOMBUSTION)
 			target.adjust_fire_stacks(10)
 			target.ignite_mob()
-			target.visible_message(span_danger("[target] bursts into flames!"))
+			act_message(target, null, others = span_danger("%U% bursts into flames!"))
 
 		if(SMITE_LIGHTNINGBOLT)
 			var/turf/T = get_step(get_step(target, NORTH), NORTH)
 			T.Beam(target, icon_state="lightning[rand(1,12)]", time = 5)
 			target.electrocute_act(75,def_zone = BP_HEAD)
-			target.visible_message(span_danger("[target] is struck by lightning!"))
+			act_message(target, null, others = span_danger("%U% is struck by lightning!"))
 
 		if(SMITE_SHADEKIN_ATTACK)
 			var/turf/Tt = get_turf(target) //Turf for target
@@ -169,7 +169,7 @@
 			new/obj/effect/decal/cleanable/pie_smudge(get_turf(target))
 			play_sfx(target, SFX_EFFECTS_SLIME_SQUISH, 2, extrarange = get_rand_frequency(), falloff = 5)
 			target.status_at_least(EFFECT_WEAKENED, 1)
-			target.visible_message(span_danger("[target] is struck by pie!"))
+			act_message(target, null, others = span_danger("%U% is struck by pie!"))
 
 		if(SMITE_SPICE)
 			to_chat(target, span_warning("Spice spice baby!"))

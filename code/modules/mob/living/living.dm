@@ -87,7 +87,7 @@
 	if(!..())
 		return FALSE
 
-	visible_message(span_info(span_bold("[src]") + " points at [pointing_at]."), span_info("You point at [pointing_at]."))
+	act_message(src, pointing_at, MSG_SELF(span_info("You point at %T%.")), MSG_OTHERS(span_info(span_bold("%U%") + " points at %T%.")))
 
 /mob/living/verb/succumb()
 	set name = "Succumb to death"
@@ -383,7 +383,7 @@
 		resisting++
 		G.handle_resist()
 	if(resisting)
-		visible_message(span_danger("[src] resists!"))
+		act_message(src, null, others = span_danger("%U% resists!"))
 
 /mob/living/proc/resist_fire()
 	return
@@ -504,7 +504,8 @@
 
 	if(nutrition < 100 && !blood)
 		if(message)
-			visible_message(span_warning("[src] dry heaves!"), span_userdanger("You try to throw up, but there's nothing in your stomach!"))
+			act_message(src, null, MSG_SELF(span_userdanger("You try to throw up, but there's nothing in your stomach!")), \
+				MSG_OTHERS(span_warning("%U% dry heaves!")))
 
 		if(stun)
 			status_at_least(EFFECT_STUNNED, stun)
@@ -517,11 +518,11 @@
 
 	if(iscarbon(src) && is_mouth_covered())
 		if(message)
-			visible_message(span_danger("[src] throws up all over themself!"), span_userdanger("You throw up all over yourself!"))
+			act_message(src, null, MSG_SELF(span_userdanger("You throw up all over yourself!")), MSG_OTHERS(span_danger("%U% throws up all over themself!")))
 		distance = 0
 	else if(vomit_goal)
 		if(message)
-			visible_message(span_danger("[src] throws up into the [vomit_goal]!"), span_userdanger("You throw up into the [vomit_goal]!"))
+			act_message(src, vomit_goal, MSG_SELF(span_userdanger("You throw up into %T%!")), MSG_OTHERS(span_danger("%U% throws up into %T%!")))
 		if(istype(vomit_goal, /obj/item/reagent_containers/glass/bucket))
 			var/obj/item/organ/internal/stomach/S = LAZYACCESS(organs_by_name, O_STOMACH)
 			var/obj/item/reagent_containers/glass/bucket/puke_bucket = vomit_goal
@@ -539,7 +540,7 @@
 		distance = 0
 	else
 		if(message)
-			visible_message(span_danger("[src] throws up!"), span_userdanger("You throw up!"))
+			act_message(src, null, MSG_SELF(span_userdanger("You throw up!")), MSG_OTHERS(span_danger("%U% throws up!")))
 
 	// Hurt liver means throwing up blood
 	if(!blood && ishuman(src))
@@ -834,7 +835,7 @@
 					N.injure(INJURY_BLUNT, rand(10,30), null, src)
 			src.drop_from_inventory(G)
 
-			src.visible_message(span_warning("[src] has thrown [item]."))
+			act_message(src, item, others = span_warning("%U% has thrown %T%."))
 
 			if((isspace(src.loc)) || (src.lastarea?.get_gravity() == 0))
 				src.inertia_dir = get_dir(target, src)
@@ -865,7 +866,7 @@
 		return TRUE //It may not have thrown, but it sure as hell left your hand successfully.
 
 	//actually throw it!
-	src.visible_message(span_warning("[src] has thrown [item]."))
+	act_message(src, item, others = span_warning("%U% has thrown %T%."))
 
 	if((isspace(src.loc)) || (src.lastarea?.get_gravity() == 0))
 		src.inertia_dir = get_dir(target, src)

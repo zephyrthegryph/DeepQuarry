@@ -71,7 +71,7 @@ DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine, "key", "key_type")
 	if(!open || passenger_allowed)
 		return ITEM_INTERACT_BLOCKING
 	passenger_allowed = TRUE
-	user.visible_message(span_notice("[user] cuts a cable in [src]."), span_notice("You cut the load limiter cable."))
+	act_message(user, src, MSG_SELF(span_notice("You cut the load limiter cable.")), MSG_OTHERS(span_notice("%U% cuts a cable in %T%.")))
 	return ITEM_INTERACT_SUCCESS
 
 EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \

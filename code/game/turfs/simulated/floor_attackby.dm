@@ -67,7 +67,8 @@ EXTEND_INTERACTIONS(/turf/simulated/floor, \
 					T.ReplaceWithLattice()
 					T.ChangeTurf(/turf/simulated/floor, preserve_outdoors = TRUE)
 					play_sfx(src, SFX_WEAPONS_GENHIT)
-					user.visible_message(span_notice("[user] patches a hole in the ceiling."), span_notice("You patch a hole in the ceiling."))
+					act_message(user, null, MSG_SELF(span_notice("You patch a hole in the ceiling.")), \
+						MSG_OTHERS(span_notice("%U% patches a hole in the ceiling.")))
 					expended_tile = TRUE
 			else
 				to_chat(user, span_warning("There aren't any holes in the ceiling to patch here."))
@@ -81,7 +82,8 @@ EXTEND_INTERACTIONS(/turf/simulated/floor, \
 					if(expended_tile || R.use(1))
 						make_indoors()
 						play_sfx(src, SFX_WEAPONS_GENHIT)
-						user.visible_message(span_notice("[user] roofs a tile, shielding it from the elements."), span_notice("You roof this tile, shielding it from the elements."))
+						act_message(user, null, MSG_SELF(span_notice("You roof this tile, shielding it from the elements.")), \
+							MSG_OTHERS(span_notice("%U% roofs a tile, shielding it from the elements.")))
 					break
 		return INTERACTION_HANDLED_PASS
 

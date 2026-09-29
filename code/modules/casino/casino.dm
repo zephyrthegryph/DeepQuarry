@@ -70,7 +70,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 	if(!ball)
 		to_chat(user,span_notice("This roulette wheel has no ball!"))
 		return TRUE
-	visible_message(span_notice("\The [user] spins the roulette and throws [ball.get_ball_desc()] into it."))
+	act_message(user, null, others = span_notice("%U% spins the roulette and throws [ball.get_ball_desc()] into it."))
 	play_sfx(src.loc, SFX_MACHINES_ROULETTE)
 	om_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 	ball.on_spin()

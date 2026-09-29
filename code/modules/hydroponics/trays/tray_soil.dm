@@ -31,7 +31,7 @@
 	effect = /obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_fill_in
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_fill_in(mob/user, obj/item/O, datum/interaction/interaction)
-	user.visible_message(span_notice("\The [user] begins filling in \the [src]."))
+	act_message(user, src, others = span_notice("%U% begins filling in %T%."))
 	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(fill_in_done), list(user))
 	return TRUE
 
@@ -42,7 +42,7 @@
 	effect = /obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_shovel
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/proc/fill_in_done(mob/user)
-	user.visible_message(span_notice("\The [user] fills in \the [src]."))
+	act_message(user, src, others = span_notice("%U% fills in %T%."))
 	qdel(src)
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_shovel(mob/user, obj/item/O, datum/interaction/interaction)
@@ -52,7 +52,7 @@
 			return
 		if(!choice||choice=="No")
 			return TRUE
-		user.visible_message("[user] starts dispersing the [src]...", runemessage = "disperses the [src]")
+		act_message(user, src, others = "%U% starts dispersing %T%...", runemessage = "disperses the [src]")
 		om_task_timed(user, 5 SECONDS, src, src, TYPE_PROC_REF(/datum, om_qdel_self))
 	else
 		to_chat(user, span_notice("There is something growing here."))

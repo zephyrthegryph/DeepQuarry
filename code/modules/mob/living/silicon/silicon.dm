@@ -109,9 +109,9 @@ DECLARE_REF(/mob/living/silicon, "queued_alarms", STATIC, null)
 
 		shock_damage *= siemens_coeff	//take reduced damage
 		receive_shock(shock_damage, source)
-		visible_message(span_warning("[src] was shocked by \the [source]!"), \
-			span_danger("Energy pulse detected, system damaged!"), \
-			span_warning("You hear an electrical crack."))
+		act_message(src, source, MSG_SELF(span_danger("Energy pulse detected, system damaged!")), \
+			MSG_OTHERS(span_warning("%U% was shocked by %T%!")), \
+			MSG_BLIND(span_warning("You hear an electrical crack.")))
 		if(prob(20))
 			status_at_least(EFFECT_STUNNED, 2)
 		return

@@ -357,7 +357,7 @@ Pipelines + Other Objects -> Pipe network
 		var/datum/gas_mixture/env_air = loc.return_air()
 		pressures = int_air.return_pressure() - env_air.return_pressure()
 
-	user.visible_message(span_danger("[user] is sent flying by pressure!"),span_userdanger("The pressure sends you flying!"))
+	act_message(user, null, MSG_SELF(span_userdanger("The pressure sends you flying!")), MSG_OTHERS(span_danger("%U% is sent flying by pressure!")))
 
 	// if get_dir(src, user) is not 0, target is the edge_target_turf on that dir
 	// otherwise, edge_target_turf uses a random cardinal direction

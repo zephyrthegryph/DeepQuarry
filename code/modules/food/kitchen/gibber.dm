@@ -151,7 +151,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 		to_chat(user, span_danger("Subject may not have abiotic items on."))
 		return
 
-	user.visible_message(span_danger("[user] starts to put [victim] into the gibber!"))
+	act_message(user, victim, others = span_danger("%U% starts to put %T% into the gibber!"))
 	src.add_fingerprint(user)
 	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(stuff_done), list(user, victim))
 
@@ -160,7 +160,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 		return
 	if(!victim.move_into(src, OCCUPANT_SLOT_GIBBER, user))
 		return
-	user.visible_message(span_danger("[user] stuffs [victim] into the gibber!"))
+	act_message(user, victim, others = span_danger("%U% stuffs %T% into the gibber!"))
 	update_icon()
 
 /// Old Empty Gibber verb.

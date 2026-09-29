@@ -113,7 +113,7 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
 	COOLDOWN_START(src, firable, 30 SECONDS)
 	play_sfx(src, SFX_WEAPONS_WAVE, vary = TRUE)
 
-	user.visible_message(span_warning("[user] fires \the [src]!"),span_warning("You fire \the [src]!"))
+	act_message(user, src, MSG_SELF(span_warning("You fire %T%!")), MSG_OTHERS(span_warning("%U% fires %T%!")))
 
 	fx_sparks(A, 4)
 	fx_sparks(user, 4)

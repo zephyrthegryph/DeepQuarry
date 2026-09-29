@@ -127,7 +127,7 @@
 
 	if(ammo_magazine)
 		user.put_in_hands(ammo_magazine)
-		user.visible_message("[user] removes [ammo_magazine] from [src].", span_notice("You remove [ammo_magazine] from [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You remove [ammo_magazine] from %T%.")), MSG_OTHERS("%U% removes [ammo_magazine] from %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 		ammo_magazine.update_icon()
 		ammo_magazine = null
@@ -143,12 +143,12 @@
 					count++
 				loaded.Cut()
 			if(count)
-				user.visible_message("[user] unloads [src].", span_notice("You unload [count] round\s from [src]."))
+				act_message(user, src, MSG_SELF(span_notice("You unload [count] round\s from %T%.")), MSG_OTHERS("%U% unloads %T%."))
 		else if(load_method & SINGLE_CASING)
 			var/obj/item/ammo_casing/C = loaded[loaded.len]
 			loaded.len--
 			user.put_in_hands(C)
-			user.visible_message("[user] removes \a [C] from [src].", span_notice("You remove \a [C] from [src]."))
+			act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 		user.hud_used?.update_ammo_hud(user, src)
 	else
@@ -188,10 +188,8 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	..()
 	if(auto_eject && ammo_magazine && ammo_magazine.stored_ammo && !ammo_magazine.stored_ammo.len && !(manual_chamber && chambered && chambered.BB != null)) // Manual Chambering
 		ammo_magazine.forceMove(get_turf(src.loc))
-		user.visible_message(
-			"[ammo_magazine] falls out and clatters on the floor!",
-			span_notice("[ammo_magazine] falls out and clatters on the floor!")
-			)
+		act_message(user, null, MSG_SELF(span_notice("[ammo_magazine] falls out and clatters on the floor!")), \
+			MSG_OTHERS("[ammo_magazine] falls out and clatters on the floor!"))
 		if(auto_eject_sound)
 			playsound(src, auto_eject_sound, 40, 1)
 		ammo_magazine.update_icon()
@@ -371,38 +369,38 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 		var/casing_chambered = CHECK_BITFIELD(result,BOLT_CASING_CHAMBERED) ? ", chambering a new round" : ""
 		if(closed && opened)
 			playsound(src, sound_ejectchamber, 50, 0)
-			user.visible_message(span_notice("[user] pulls back \the [bolt_name] before releasing it[close_open_ejected] causing it to slide forward again[casing_chambered]."), \
-			span_notice("You pull back \the [bolt_name] before releasing it[close_open_ejected] causing it to slide forward again[casing_chambered]."))
+			act_message(user, null, MSG_SELF(span_notice("You pull back \the [bolt_name] before releasing it[close_open_ejected] causing it to slide forward again[casing_chambered].")), \
+				MSG_OTHERS(span_notice("%U% pulls back \the [bolt_name] before releasing it[close_open_ejected] causing it to slide forward again[casing_chambered].")))
 			user.hud_used?.update_ammo_hud(user, src)
 		else if(opened)
 			playsound(src, sound_eject, 50, 0)
 			if(locked)
 				if(CHECK_BITFIELD(auto_loading_type,LOCK_MANUAL_LOCK))
 					playsound(src, sound_ejectchamber, 50, 0)
-					user.visible_message(span_notice("[user] pulls back \the [bolt_name] and locks it in the open position[casing_chambered][other_ejected]."), \
-					span_notice("You pull back \the [bolt_name] and lock it in the open position[other_ejected][casing_chambered]."))
+					act_message(user, null, MSG_SELF(span_notice("You pull back \the [bolt_name] and lock it in the open position[other_ejected][casing_chambered].")), \
+						MSG_OTHERS(span_notice("%U% pulls back \the [bolt_name] and locks it in the open position[casing_chambered][other_ejected].")))
 				else
-					user.visible_message(span_notice("[user] pulls back \the [bolt_name] before releasing it, causing it to lock in the open position[casing_chambered][other_ejected]."), \
-					span_notice("You pull back \the [bolt_name] before releasing it, causing it to lock in the open position[casing_chambered][other_ejected]."))
+					act_message(user, null, MSG_SELF(span_notice("You pull back \the [bolt_name] before releasing it, causing it to lock in the open position[casing_chambered][other_ejected].")), \
+						MSG_OTHERS(span_notice("%U% pulls back \the [bolt_name] before releasing it, causing it to lock in the open position[casing_chambered][other_ejected].")))
 			else
-				user.visible_message(span_notice("[user] opens \the [bolt_name][casing_chambered][other_ejected]."), \
-				span_notice("You pull back \the [bolt_name][casing_chambered][other_ejected]."))
+				act_message(user, null, MSG_SELF(span_notice("You pull back \the [bolt_name][casing_chambered][other_ejected].")), \
+					MSG_OTHERS(span_notice("%U% opens \the [bolt_name][casing_chambered][other_ejected].")))
 		else if(closed)
 			playsound(src, sound_chamber, 50, 0)
 			if(unlocked)
 				if(bolt_release)
 					if(stance == I_HURT && CHECK_BITFIELD(auto_loading_type,LOCK_SLAPPABLE))
-						user.visible_message(span_notice("[user] slaps the [bolt_release], causing \the [bolt_name] to slide forward[casing_chambered]!"), \
-						span_notice("You slap the [bolt_release], causing \the [bolt_name] to slide forward[casing_chambered]!"))
+						act_message(user, null, MSG_SELF(span_notice("You slap the [bolt_release], causing \the [bolt_name] to slide forward[casing_chambered]!")), \
+							MSG_OTHERS(span_notice("%U% slaps the [bolt_release], causing \the [bolt_name] to slide forward[casing_chambered]!")))
 					else
-						user.visible_message(span_notice("[user] presses the [bolt_release], causing \the [bolt_name] to slide forward[casing_chambered]."), \
-						span_notice("You press the [bolt_release], causing \the [bolt_name] to slide forward[casing_chambered]."))
+						act_message(user, null, MSG_SELF(span_notice("You press the [bolt_release], causing \the [bolt_name] to slide forward[casing_chambered].")), \
+							MSG_OTHERS(span_notice("%U% presses the [bolt_release], causing \the [bolt_name] to slide forward[casing_chambered].")))
 				else
-					user.visible_message(span_notice("[user] pulls \the [bolt_name] back the rest of the way, causing it to slide forward[casing_chambered]."), \
-					span_notice("You pull \the [bolt_name] back the rest of the way, causing it to slide forward[casing_chambered]."))
+					act_message(user, null, MSG_SELF(span_notice("You pull \the [bolt_name] back the rest of the way, causing it to slide forward[casing_chambered].")), \
+						MSG_OTHERS(span_notice("%U% pulls \the [bolt_name] back the rest of the way, causing it to slide forward[casing_chambered].")))
 			else
-				user.visible_message(span_notice("[user] closes \the [bolt_name][casing_chambered]."), \
-				span_notice("You close \the [bolt_name][casing_chambered]."))
+				act_message(user, null, MSG_SELF(span_notice("You close \the [bolt_name][casing_chambered].")), \
+					MSG_OTHERS(span_notice("%U% closes \the [bolt_name][casing_chambered].")))
 		user.hud_used?.update_ammo_hud(user, src)
 
 /obj/item/gun/projectile/proc/bolt_toggle(manual)
@@ -553,7 +551,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 
 /obj/item/gun/projectile/proc/feed_done(obj/item/ammo_magazine/handful/H, mob/user, count)
 	if(count && user)
-		user.visible_message("[user] feeds [count] round\s into [src].", span_notice("You load [count] round\s into [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You load [count] round\s into %T%.")), MSG_OTHERS("%U% feeds [count] round\s into %T%."))
 	if(H && !QDELETED(H) && !H.stored_ammo.len)
 		consume(H, user)
 	update_icon()
@@ -587,7 +585,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 				user.remove_from_mob(AM)
 				AM.forceMove(src)
 				ammo_magazine = AM
-				user.visible_message("[user] inserts [AM] into [src].", span_notice("You insert [AM] into [src]."))
+				act_message(user, src, MSG_SELF(span_notice("You insert [AM] into %T%.")), MSG_OTHERS("%U% inserts [AM] into %T%."))
 				if(manual_chamber && CHECK_BITFIELD(auto_loading_type,CHAMBER_ON_RELOAD) && bolt_open && !chambered)
 					chamber_bullet()
 					bolt_toggle()
@@ -610,7 +608,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 						AM.stored_ammo -= C //should probably go inside an ammo_magazine proc, but I guess less proc calls this way...
 						count++
 				if(count)
-					user.visible_message("[user] reloads [src].", span_notice("You load [count] round\s into [src]."))
+					act_message(user, src, MSG_SELF(span_notice("You load [count] round\s into %T%.")), MSG_OTHERS("%U% reloads %T%."))
 					play_sfx(src, SFX_WEAPONS_EMPTY)
 					user.hud_used?.update_ammo_hud(user, src)
 		AM.update_icon()
@@ -649,7 +647,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 		user.remove_from_mob(C)
 		C.forceMove(src)
 		loaded.Insert(1, C) //add to the head of the list
-		user.visible_message("[user] inserts \a [C] into [src].", span_notice("You insert \a [C] into [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You insert \a [C] into %T%.")), MSG_OTHERS("%U% inserts \a [C] into %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 		user.hud_used?.update_ammo_hud(user, src)
 
@@ -697,7 +695,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	var/message = task.message
 	if(chambered)
 		return
-	user.visible_message(span_notice(message),span_notice("You slide \the [C] into the [src]'s chamber."))
+	act_message(user, src, MSG_SELF(span_notice("You slide %I% into %T%'s chamber.")), MSG_OTHERS(span_notice(message)), item = C)
 	chambered = C
 	user.hud_used.update_ammo_hud(user, src)
 	user.remove_from_mob(C)

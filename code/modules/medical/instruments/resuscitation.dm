@@ -26,7 +26,8 @@
 	if(!H.check_has_mouth() || (H.get_equipped_item(SLOT_ID_MASK) && (H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE)) || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
 		to_chat(user, span_warning("You can't get a seal over [H]'s face."))
 		return ITEM_INTERACT_SUCCESS
-	user.visible_message(span_notice("[user] seals \the [src] over [H]'s face and starts squeezing."), span_notice("You seal \the [src] over [H]'s face and start squeezing."))
+	act_message(user, src, MSG_SELF(span_notice("You seal %T% over [H]'s face and start squeezing.")), \
+		MSG_OTHERS(span_notice("%U% seals %T% over [H]'s face and starts squeezing.")))
 	om_task_timed(user, 2 SECONDS, H, src, PROC_REF(squeeze_done), list(user, H))
 	return ITEM_INTERACT_SUCCESS
 
@@ -64,13 +65,14 @@
 	if(!H.check_has_mouth() || (H.get_equipped_item(SLOT_ID_MASK) && (H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE)))
 		to_chat(user, span_warning("You can't get into [H]'s mouth."))
 		return ITEM_INTERACT_SUCCESS
-	user.visible_message(span_notice("[user] starts working \the [src] into [H]'s airway."), span_notice("You start working \the [src] into [H]'s airway."))
+	act_message(user, src, MSG_SELF(span_notice("You start working %T% into [H]'s airway.")), \
+		MSG_OTHERS(span_notice("%U% starts working %T% into [H]'s airway.")))
 	om_task_timed(user, 4 SECONDS, H, src, PROC_REF(airway_done), list(user, H))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/airway_kit/proc/airway_done(mob/living/user, mob/living/carbon/human/H)
 	if(clear_airway(H))
-		user.visible_message(span_notice("[user] clears [H]'s airway."), span_notice("You clear [H]'s airway."))
+		act_message(user, H, MSG_SELF(span_notice("You clear %T%'s airway.")), MSG_OTHERS(span_notice("%U% clears %T%'s airway.")))
 	else
 		to_chat(user, span_notice("[H]'s airway is already clear."))
 
@@ -99,7 +101,7 @@
 	if(target_zone != BP_TORSO)
 		to_chat(user, span_warning("Aim for [H]'s chest."))
 		return ITEM_INTERACT_SUCCESS
-	user.visible_message(span_warning("[user] lines \the [src] up between [H]'s ribs."), span_notice("You line \the [src] up between [H]'s ribs."))
+	act_message(user, src, MSG_SELF(span_notice("You line %T% up between [H]'s ribs.")), MSG_OTHERS(span_warning("%U% lines %T% up between [H]'s ribs.")))
 	om_task_timed(user, 3 SECONDS, H, src, PROC_REF(needle_done), list(user, H))
 	return ITEM_INTERACT_SUCCESS
 
@@ -110,9 +112,11 @@
 	name = "used [initial(name)]"
 	H.custom_pain("Something sharp punches between your ribs!", 30)
 	if(decompress(H))
-		user.visible_message(span_notice("Air hisses out of \the [src] as [user] drives it into [H]'s chest."), span_notice("Air hisses out of \the [src]. The chest is decompressed."))
+		act_message(user, src, MSG_SELF(span_notice("Air hisses out of %T%. The chest is decompressed.")), \
+			MSG_OTHERS(span_notice("Air hisses out of %T% as %U% drives it into [H]'s chest.")))
 	else
-		user.visible_message(span_warning("[user] drives \the [src] into [H]'s chest. Nothing comes out."), span_warning("Nothing comes out. There was no trapped air."))
+		act_message(user, src, MSG_SELF(span_warning("Nothing comes out. There was no trapped air.")), \
+			MSG_OTHERS(span_warning("%U% drives %T% into [H]'s chest. Nothing comes out.")))
 		H.injure(INJURY_PIERCE, 3, BP_TORSO, src, flags = INJURE_SILENT)
 
 /// Vents trapped pleural air (C4/D2): the needle is delivered where each pneumothorax sits, so

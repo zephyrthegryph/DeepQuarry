@@ -105,7 +105,8 @@ DECLARE_REF(/obj/item/dogborg/sleeper, "items_preserved", SPILL_LIST, null)
 		H.forceMove(src)
 		update_patient()
 		om_task_periodic(src, PERIODIC_SLOW)
-		user.visible_message(span_warning("[hound.name]'s [src.name] lights up as [H.name] slips inside."), span_notice("Your [src] lights up as [H] slips inside. Life support functions engaged."))
+		act_message(user, src, MSG_SELF(span_notice("Your %T% lights up as [H] slips inside. Life support functions engaged.")), \
+			MSG_OTHERS(span_warning("[hound.name]'s [src.name] lights up as [H.name] slips inside.")))
 		log_admin("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
 		playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
 
@@ -132,12 +133,14 @@ DECLARE_REF(/obj/item/dogborg/sleeper, "items_preserved", SPILL_LIST, null)
 			if(target_obj.w_class > ITEMSIZE_LARGE)
 				to_chat(user, span_warning("\The [target] is too large to fit into your [src.name]"))
 				return
-			user.visible_message(span_warning("[hound.name] is ingesting [target.name] into their [src.name]."), span_notice("You start ingesting [target] into your [src.name]..."))
+			act_message(user, target, MSG_SELF(span_notice("You start ingesting %T% into your [src.name]...")), \
+				MSG_OTHERS(span_warning("[hound.name] is ingesting [target.name] into their [src.name].")))
 			om_task_timed(user, 3 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_sleeper_done), done_args = list(target, user))
 			return
 		if(istype(target, /mob/living/simple_mob/animal/passive/mouse)) //Edible mice, dead or alive whatever. Mostly for carcass picking you cruel bastard :v
 			var/mob/living/simple_mob/trashmouse = target
-			user.visible_message(span_warning("[hound.name] is ingesting [trashmouse] into their [src.name]."), span_notice("You start ingesting [trashmouse] into your [src.name]..."))
+			act_message(user, trashmouse, MSG_SELF(span_notice("You start ingesting %T% into your [src.name]...")), \
+				MSG_OTHERS(span_warning("[hound.name] is ingesting %T% into their [src.name].")))
 			om_task_timed(user, 3 SECONDS, target = trashmouse, receiver = src, on_done = PROC_REF(afterattack_sleeper_done2), done_args = list(user, trashmouse))
 			return
 		else if(ishuman(target))
@@ -148,7 +151,8 @@ DECLARE_REF(/obj/item/dogborg/sleeper, "items_preserved", SPILL_LIST, null)
 			if(trashman?.buckled_to())
 				to_chat(user, span_warning("[trashman] is buckled and can not be put into your [src.name]."))
 				return
-			user.visible_message(span_warning("[hound.name] is ingesting [trashman] into their [src.name]."), span_notice("You start ingesting [trashman] into your [src.name]..."))
+			act_message(user, trashman, MSG_SELF(span_notice("You start ingesting %T% into your [src.name]...")), \
+				MSG_OTHERS(span_warning("[hound.name] is ingesting %T% into their [src.name].")))
 			om_task_timed(user, 3 SECONDS, target = trashman, receiver = src, on_done = PROC_REF(afterattack_sleeper_done3), done_args = list(user, trashman))
 			return
 		return
@@ -161,14 +165,16 @@ DECLARE_REF(/obj/item/dogborg/sleeper, "items_preserved", SPILL_LIST, null)
 		if(patient)
 			to_chat(user, span_warning("Your [src.name] is already occupied."))
 			return
-		user.visible_message(span_warning("[hound.name] is ingesting [H.name] into their [src.name]."), span_notice("You start ingesting [H] into your [src]..."))
+		act_message(user, H, MSG_SELF(span_notice("You start ingesting %T% into your [src]...")), \
+			MSG_OTHERS(span_warning("[hound.name] is ingesting [H.name] into their [src.name].")))
 		om_task_timed(user, 50, target = H, receiver = src, on_done = PROC_REF(intake_patient_done), done_args = list(H, user))
 
 /obj/item/dogborg/sleeper/proc/afterattack_sleeper_done(atom/movable/target, mob/living/silicon/user)
 	if(!(contents_count(src) < max_item_count))
 		return
 	target.forceMove(src)
-	user.visible_message(span_warning("[hound.name]'s [src.name] groans lightly as [target.name] slips inside."), span_notice("Your [src.name] groans lightly as [target] slips inside."))
+	act_message(user, target, MSG_SELF(span_notice("Your [src.name] groans lightly as %T% slips inside.")), \
+		MSG_OTHERS(span_warning("[hound.name]'s [src.name] groans lightly as [target.name] slips inside.")))
 	playsound(src, gulpsound, vol = 60, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
 	if(delivery)
 		if(islist(deliverylists[delivery_tag]))
@@ -179,7 +185,8 @@ DECLARE_REF(/obj/item/dogborg/sleeper, "items_preserved", SPILL_LIST, null)
 	if(!(contents_count(src) < max_item_count))
 		return
 	trashmouse.forceMove(src)
-	user.visible_message(span_warning("[hound.name]'s [src.name] groans lightly as [trashmouse] slips inside."), span_notice("Your [src.name] groans lightly as [trashmouse] slips inside."))
+	act_message(user, trashmouse, MSG_SELF(span_notice("Your [src.name] groans lightly as %T% slips inside.")), \
+		MSG_OTHERS(span_warning("[hound.name]'s [src.name] groans lightly as %T% slips inside.")))
 	playsound(src, gulpsound, vol = 60, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
 	if(delivery)
 		if(islist(deliverylists[delivery_tag]))
@@ -191,7 +198,8 @@ DECLARE_REF(/obj/item/dogborg/sleeper, "items_preserved", SPILL_LIST, null)
 		return
 	trashman.forceMove(src)
 	om_task_periodic(src, PERIODIC_SLOW)
-	user.visible_message(span_warning("[hound.name]'s [src.name] groans lightly as [trashman] slips inside."), span_notice("Your [src.name] groans lightly as [trashman] slips inside."))
+	act_message(user, trashman, MSG_SELF(span_notice("Your [src.name] groans lightly as %T% slips inside.")), \
+		MSG_OTHERS(span_warning("[hound.name]'s [src.name] groans lightly as %T% slips inside.")))
 	log_attack("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
 	playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
 	if(delivery)

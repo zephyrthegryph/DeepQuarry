@@ -248,15 +248,15 @@ DECLARE_REF(/obj/machinery/shieldgen, "deployed_shields", OWNED_LIST, null)
 
 /obj/machinery/shieldgen/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if (active)
-		user.visible_message(span_blue("[icon2html(src,viewers(src))] [user] deactivated the shield generator."), \
-			span_blue("[icon2html(src,user.client)] You deactivate the shield generator."), \
-			"You hear heavy droning fade out.")
+		act_message(user, null, MSG_SELF(span_blue("[icon2html(src,user.client)] You deactivate the shield generator.")), \
+			MSG_OTHERS(span_blue("[icon2html(src,viewers(src))] %U% deactivated the shield generator.")), \
+			MSG_BLIND("You hear heavy droning fade out."))
 		shields_down()
 	else
 		if(anchored)
-			user.visible_message(span_blue("[icon2html(src,viewers(src))] [user] activated the shield generator."), \
-				span_blue("[icon2html(src, user.client)] You activate the shield generator."), \
-				"You hear heavy droning.")
+			act_message(user, null, MSG_SELF(span_blue("[icon2html(src, user.client)] You activate the shield generator.")), \
+				MSG_OTHERS(span_blue("[icon2html(src,viewers(src))] %U% activated the shield generator.")), \
+				MSG_BLIND("You hear heavy droning."))
 			shields_up()
 		else
 			to_chat(user, "The device must first be secured to the floor.")
@@ -325,7 +325,7 @@ DECLARE_REF(/obj/machinery/shieldgen, "deployed_shields", OWNED_LIST, null)
 			C.forceMove(src)
 			C.add_fingerprint(user)
 
-			user.visible_message(span_notice("[user] inserts a power cell into [src]."), span_notice("You insert the power cell into [src]."))
+			act_message(user, src, MSG_SELF(span_notice("You insert the power cell into %T%.")), MSG_OTHERS(span_notice("%U% inserts a power cell into %T%.")))
 			power_change()
 	else
 		to_chat(user, "The hatch must be open to insert a power cell.")

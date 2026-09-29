@@ -1996,11 +1996,11 @@ TYPE_TABLE(/obj/item/clothing/shoes/fluff/nikki, equip_spec, dq_spec_join(..(), 
 
 /obj/item/clothing/head/fluff/nikki/proc/teleport_fail(mob/user, mob/target)
 	if (target != user)
-		user.visible_message(span_notice("[user] harmlessly bops [target] with \the [src]."), \
-		span_notice("\The [src] harmlessly bops [target]. The hat seems... unwilling?"))
+		act_message(user, target, MSG_SELF(span_notice("\The [src] harmlessly bops %T%. The hat seems... unwilling?")), \
+			MSG_OTHERS(span_notice("%U% harmlessly bops %T% with \the [src].")))
 	else
-		user.visible_message(span_bold("\The [src]") + " flops over [user]'s' head for a moment, but they seem alright.", \
-		span_notice("\The [src] flops over your head for a moment, but you correct it without issue. There we go!"))
+		act_message(user, src, MSG_SELF(span_notice("%T% flops over your head for a moment, but you correct it without issue. There we go!")), \
+			MSG_OTHERS(span_bold("%T%") + " flops over %U%'s' head for a moment, but they seem alright."))
 
 /obj/item/clothing/head/fluff/nikki/proc/hat_warp_checks(mob/living/target, mob/user, proximity_flag)
 	if (!proximity_flag)
@@ -2041,11 +2041,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/nikki, \
 /obj/item/clothing/head/fluff/nikki/proc/nikki_hat_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if (istype(I, /obj/item/perfect_tele) && user.get_inactive_hand() == src)
 		if (translocator)
-			visible_message(span_notice("[user] starts to pull \a [translocator] out of \the [src] to swap it out with \the [I]..."), \
-			span_notice("You start pulling \the [translocator] pops out of its compartment with a soft 'click' as you replace it with \the [I]...."))
+			act_message(user, src, others = span_notice("%U% starts to pull \a [translocator] out of %T% to swap it out with %I%..."), \
+				blind = span_notice("You start pulling \the [translocator] pops out of its compartment with a soft 'click' as you replace it with %I%...."), \
+				item = I)
 		else
-			visible_message(span_notice("[user] begins slipping \the [I] into \the [src]..."), \
-			span_notice("You begin to snap \the [I] into a small, hidden compartment inside \the [src]..."))
+			act_message(user, src, others = span_notice("%U% begins slipping %I% into %T%..."), \
+				blind = span_notice("You begin to snap %I% into a small, hidden compartment inside %T%..."), \
+				item = I)
 		// This works for both adding and replacing a translocator
 		translocator_equip(I, user)
 		return TRUE
@@ -2100,8 +2102,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/nikki, \
 		// hey, are we actually able to teleport this poor person?
 		if (hat_warp_checks(user, user, proximity_flag = 1))
 			// YOU FOOL! YOU HAVE ACTIVATED MY STAND, 「ＶＯＲＥ　ＢＹ　ＨＡＴ」！
-			src.visible_message(span_danger("\The [src] falls over [user]'s head... and somehow falls over the rest of their body, causing them to vanish inside. Where did they go?!"), \
-			span_danger("The hat falls over your head as you put it on, enveloping you in a bright green light! <b>Uh oh.</b>"))
+			act_message(src, user, others = span_danger("%U% falls over %T%'s head... and somehow falls over the rest of their body, causing them to vanish inside. Where did they go?!"), \
+				blind = span_danger("The hat falls over your head as you put it on, enveloping you in a bright green light! <b>Uh oh.</b>"))
 			var/uh_oh = DEFAULTPICK(translocator.beacons, null)
 			user.remove_from_mob(src, get_turf(user))
 			translocator.destination_handle = om_handle(LAZYACCESS(translocator.beacons, uh_oh))
@@ -2126,16 +2128,16 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/nikki, \
 		// Silly fluffed up styles of teleporting people based on the user's stance.
 		switch(stance)
 			if (I_HELP)
-				user.visible_message(span_notice("[user] guides \the [target] to the bottomless hole within \the [src]. They begin to climb inside..."))
+				act_message(user, target, others = span_notice("%U% guides %T% to the bottomless hole within \the [src]. They begin to climb inside..."))
 				om_task_start(/datum/om/task/timed/nikki_hat_warp, user, target, receiver = src, proximity_flag = proximity_flag)
 			if (I_DISARM)
-				user.visible_message(span_danger("[user] plops \the [src] onto \the [target]'s head!"))
+				act_message(user, src, others = span_danger("%U% plops %T% onto \the [target]'s head!"))
 				translocator.afterattack(target, user, proximity_flag)
 			if (I_GRAB)
-				user.visible_message(span_danger("[user] begins stuffing [target] into \the [src]!"))
+				act_message(user, target, others = span_danger("%U% begins stuffing %T% into \the [src]!"))
 				om_task_start(/datum/om/task/timed/nikki_hat_warp, user, target, receiver = src, proximity_flag = proximity_flag)
 			if (I_HURT)
-				user.visible_message(span_danger("[user] swipes \the [src] over \the [target]!"))
+				act_message(user, src, others = span_danger("%U% swipes %T% over \the [target]!"))
 				translocator.afterattack(target, user, proximity_flag)
 
 		add_attack_logs(user, target, "Teleported [target] with via \the [src]'s [translocator]!")

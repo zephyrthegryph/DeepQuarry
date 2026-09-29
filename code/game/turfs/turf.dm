@@ -242,7 +242,7 @@ DECLARE_INTERACTIONS(/turf, \
 	user.do_attack_animation(src, no_attack_icons = TRUE)
 
 	if(!success) // Nothing got hit.
-		user.visible_message(span_warning("\The [user] swipes \the [W] over \the [src]."))
+		act_message(user, src, others = span_warning("%U% swipes %I% over %T%."), item = W)
 		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 	return success
 
@@ -437,7 +437,7 @@ DECLARE_INTERACTIONS(/turf, \
 /turf/proc/graffiti_entered(datum/om/prompt/text/graffiti/ask)
 	var/mob/vandal = ask.answerer
 	var/message = ask.text
-	vandal.visible_message(span_warning("\The [vandal] begins carving something into \the [src]."))
+	act_message(vandal, src, others = span_warning("%U% begins carving something into %T%."))
 	om_task_start(/datum/om/task/timed/turf_graffiti, vandal, src, duration = max(2 SECONDS, length(message)), message = message, click_parameters = ask.click_parameters)
 	return TRUE
 
@@ -450,7 +450,7 @@ DECLARE_INTERACTIONS(/turf, \
 	var/mob/vandal = task.actor
 	var/message = task.message
 	var/click_parameters = task.click_parameters
-	vandal.visible_message(span_danger("\The [vandal] carves some graffiti into \the [src]."))
+	act_message(vandal, src, others = span_danger("%U% carves some graffiti into %T%."))
 	var/obj/effect/decal/writing/graffiti = new(src)
 	graffiti.message = message
 	graffiti.author = vandal.ckey

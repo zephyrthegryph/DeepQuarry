@@ -238,8 +238,8 @@
 	var/mob/user = ask.answerer
 	var/obj/item/I = ask.beacon
 	var/obj/belly/B = ask.choice
-	visible_message(span_warning("[user] is trying to stuff a beacon into [src]'s [B.get_belly_name()]!"),
-		span_warning("[user] is trying to stuff a beacon into you!"))
+	act_message(src, user, MSG_SELF(span_warning("%T% is trying to stuff a beacon into you!")), \
+		MSG_OTHERS(span_warning("%T% is trying to stuff a beacon into %U%'s [B.get_belly_name()]!")))
 	om_task_start(/datum/om/task/timed/living_beacon_insert, user, src, receiver = src, I = I, B = B)
 
 /// What to write on a limb. Re-checked on the answer: the writer is still next to the canvas,
@@ -265,8 +265,8 @@
 	var/message = ask.text
 	var/mob/living/carbon/human/canvas_user = src
 	to_chat(canvas_user, span_notice("[attacker] is attempting to write on your [affecting.name]!"))
-	attacker.visible_message(span_notice("[attacker] starts writing on [canvas_user]'s [affecting.name]."), \
-		span_notice("You start writing on [canvas_user]'s [affecting.name]..."))
+	act_message(attacker, canvas_user, MSG_SELF(span_notice("You start writing on %T%'s [affecting.name]...")), \
+		MSG_OTHERS(span_notice("%U% starts writing on %T%'s [affecting.name].")))
 
 	// Progress bar for writing on someone for better consent check.
 	om_task_start(/datum/om/task/timed/living_body_writing, attacker, canvas_user, receiver = src, affecting = affecting, message = message, max_distance = 1)
@@ -291,8 +291,8 @@
 
 	LAZYSET(canvas_user.body_writing, affecting.organ_tag, message)
 
-	attacker.visible_message(span_notice("[attacker] finishes writing on [canvas_user]'s [affecting.name]."), \
-		span_notice("You finish writing on [canvas_user]'s [affecting.name]."))
+	act_message(attacker, canvas_user, MSG_SELF(span_notice("You finish writing on %T%'s [affecting.name].")), \
+		MSG_OTHERS(span_notice("%U% finishes writing on %T%'s [affecting.name].")))
 
 //
 //	Verb for saving vore preferences to save file
@@ -545,16 +545,21 @@
 	setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 
 	if(tasted == src)
-		visible_message(span_vwarning("[src] licks themself!"),span_notice("You lick yourself. You taste rather like [tasted.get_taste_message()]."),span_infoplain(span_bold("Slurp!")))
+		act_message(src, null, MSG_SELF(span_notice("You lick yourself. You taste rather like [tasted.get_taste_message()].")), \
+			MSG_OTHERS(span_vwarning("%U% licks themself!")), \
+			MSG_BLIND(span_infoplain(span_bold("Slurp!"))))
 	else
 		if((tasted.touch_reaction_flags & SPECIES_TRAIT_PERSONAL_BUBBLE) && (!LAZYLEN(tasted?.grabbed_by_list()) || !tasted.stat))
-			visible_message(span_warning("[src] tries to lick [tasted], but they dodge out of the way!"),span_warning("You try to lick [tasted], but they deftly avoid your attempt."))
+			act_message(src, tasted, MSG_SELF(span_warning("You try to lick %T%, but they deftly avoid your attempt.")), \
+				MSG_OTHERS(span_warning("%U% tries to lick %T%, but they dodge out of the way!")))
 			return
 		if(tasted.skin_reagent && ishuman(src) && (tasted != src))
 			var/mob/living/carbon/human/us_but_human = src
 			us_but_human.ingested.add_reagent(tasted.skin_reagent, 10)
 
-		visible_message(span_vwarning("[src] licks [tasted]!"),span_notice("You lick [tasted]. They taste rather like [tasted.get_taste_message()]."),span_infoplain(span_bold("Slurp!")))
+		act_message(src, tasted, MSG_SELF(span_notice("You lick %T%. They taste rather like [tasted.get_taste_message()].")), \
+			MSG_OTHERS(span_vwarning("%U% licks %T%!")), \
+			MSG_BLIND(span_infoplain(span_bold("Slurp!"))))
 		//balloon_alert_visible("licks [tasted]!", "tastes like [tasted.get_taste_message()]")
 	// This has already passed consent tests
 	if(has_trait(src, TRAIT_SLOBBER))
@@ -597,12 +602,17 @@
 	setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 
 	if(smelled == src)
-		visible_message(span_vwarning("[src] smells themself!"),span_notice("You smell yourself. You smell like [smelled.get_smell_message()]."),span_infoplain(span_bold("Sniff!")))
+		act_message(src, null, MSG_SELF(span_notice("You smell yourself. You smell like [smelled.get_smell_message()].")), \
+			MSG_OTHERS(span_vwarning("%U% smells themself!")), \
+			MSG_BLIND(span_infoplain(span_bold("Sniff!"))))
 	else
 		if((smelled.touch_reaction_flags & SPECIES_TRAIT_PERSONAL_BUBBLE) && (!LAZYLEN(smelled?.grabbed_by_list()) || !smelled.stat))
-			visible_message(span_warning("[src] tries to smell [smelled], but they dodge out of the way!"),span_warning("You try to smell [smelled], but they deftly avoid your attempt."))
+			act_message(src, smelled, MSG_SELF(span_warning("You try to smell %T%, but they deftly avoid your attempt.")), \
+				MSG_OTHERS(span_warning("%U% tries to smell %T%, but they dodge out of the way!")))
 			return
-		visible_message(span_vwarning("[src] smells [smelled]!"),span_notice("You smell [smelled]. They smell like [smelled.get_smell_message()]."),span_infoplain(span_bold("Sniff!")))
+		act_message(src, smelled, MSG_SELF(span_notice("You smell %T%. They smell like [smelled.get_smell_message()].")), \
+			MSG_OTHERS(span_vwarning("%U% smells %T%!")), \
+			MSG_BLIND(span_infoplain(span_bold("Sniff!"))))
 
 /mob/living/proc/get_smell_message(allow_generic = 1)
 	if(!vore_smell && !allow_generic)

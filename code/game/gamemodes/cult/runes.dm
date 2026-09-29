@@ -34,9 +34,9 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			user.say("Sas[pick("'","`")]so c'arta forbici!")//Only you can stop auto-muting
 		else
 			user.whisper("Sas[pick("'","`")]so c'arta forbici!")
-		user.visible_message(span_danger("[user] disappears in a flash of red light!"), \
-		span_danger("You feel as your body gets dragged through the dimension of Nar-Sie!"), \
-		span_danger("You hear a sickening crunch and sloshing of viscera."))
+		act_message(user, null, MSG_SELF(span_danger("You feel as your body gets dragged through the dimension of Nar-Sie!")), \
+			MSG_OTHERS(span_danger("%U% disappears in a flash of red light!")), \
+			MSG_BLIND(span_danger("You hear a sickening crunch and sloshing of viscera.")))
 		user.forceMove(allrunesloc[rand(1,index)])
 		return
 	if(istype(src,/obj/effect/rune))
@@ -66,9 +66,9 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			culcount++
 	if(culcount>=3)
 		user.say("Sas[pick("'","`")]so c'arta forbici tarem!")
-		user.visible_message(span_warning("You feel air moving from the rune - like as it was swapped with somewhere else."), \
-		span_warning("You feel air moving from the rune - like as it was swapped with somewhere else."), \
-		span_warning("You smell ozone."))
+		act_message(user, null, MSG_SELF(span_warning("You feel air moving from the rune - like as it was swapped with somewhere else.")), \
+			MSG_OTHERS(span_warning("You feel air moving from the rune - like as it was swapped with somewhere else.")), \
+			MSG_BLIND(span_warning("You smell ozone.")))
 		for(var/obj/O in src.loc)
 			if(!O.anchored)
 				O.forceMove(IP.loc)
@@ -86,9 +86,9 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		user.say("N[pick("'","`")]ath reth sh'yro eth d'raggathnor!")
 	else
 		user.whisper("N[pick("'","`")]ath reth sh'yro eth d'raggathnor!")
-	user.visible_message(span_warning("Rune disappears with a flash of red light, and in its place now a book lies."), \
-	span_warning("You are blinded by the flash of red light! After you're able to see again, you see that now instead of the rune there's a book."), \
-	span_warning("You hear a pop and smell ozone."))
+	act_message(user, null, MSG_SELF(span_warning("You are blinded by the flash of red light! After you're able to see again, you see that now instead of the rune there's a book.")), \
+		MSG_OTHERS(span_warning("Rune disappears with a flash of red light, and in its place now a book lies.")), \
+		MSG_BLIND(span_warning("You hear a pop and smell ozone.")))
 	if(istype(src,/obj/effect/rune))
 		new /obj/item/book/tome(src.loc)
 	else
@@ -162,9 +162,11 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 
 	initial_message = 1
 	if (!target.can_feel_pain())
-		target.visible_message(span_warning("The markings below \the [target] glow a bloody red."))
+		act_message(target, null, others = span_warning("The markings below %U% glow a bloody red."))
 	else
-		target.visible_message(span_warning("[target] writhes in pain as the markings below [target.p_them()] glow a bloody red."), span_danger("AAAAAAHHHH!"), span_warning("You hear an anguished scream."))
+		act_message(target, null, MSG_SELF(span_danger("AAAAAAHHHH!")), \
+			MSG_OTHERS(span_warning("%U% writhes in pain as the markings below %THEM% glow a bloody red.")), \
+			MSG_BLIND(span_warning("You hear an anguished scream.")))
 
 	if(!waiting_for_input[target]) //so we don't spam them with dialogs if they hesitate
 		waiting_for_input[target] = 1
@@ -261,15 +263,15 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	if(!drain)
 		return fizzle(user)
 	user.say ("Yu[pick("'","`")]gular faras desdae. Havas mithum javara. Umathar uf'kal thenar!")
-	user.visible_message(span_danger("Blood flows from the rune into [user]!"), \
-	span_danger("The blood starts flowing from the rune and into your frail mortal body. You feel... empowered."), \
-	span_warning("You hear a liquid flowing."))
+	act_message(user, null, MSG_SELF(span_danger("The blood starts flowing from the rune and into your frail mortal body. You feel... empowered.")), \
+		MSG_OTHERS(span_danger("Blood flows from the rune into %U%!")), \
+		MSG_BLIND(span_warning("You hear a liquid flowing.")))
 	if(user.bhunger)
 		user.bhunger = max(user.bhunger-2*drain,0)
 	if(drain>=50)
-		user.visible_message(span_danger("[user]'s eyes give off eerie red glow!"), \
-		span_danger("...but it wasn't nearly enough. You crave, crave for more. The hunger consumes you from within."), \
-		span_warning("You hear a heartbeat."))
+		act_message(user, null, MSG_SELF(span_danger("...but it wasn't nearly enough. You crave, crave for more. The hunger consumes you from within.")), \
+			MSG_OTHERS(span_danger("%U%'s eyes give off eerie red glow!")), \
+			MSG_BLIND(span_warning("You hear a heartbeat.")))
 		user.bhunger += drain
 		om_after(user, 5 SECONDS, GLOBAL_PROC_REF(cult_blood_hunger), user)
 		return
@@ -392,12 +394,12 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		corpse_to_raise.revive()
 
 		user.say("Pasnar val'keriam usinar. Savrae ines amutan. Yam'toth remium il'tarat!")
-		corpse_to_raise.visible_message(span_warning("[corpse_to_raise]'s eyes glow with a faint red as [corpse_to_raise.p_they()] stand[corpse_to_raise.p_s()] up, slowly starting to breathe again."), \
-		span_warning("Life... I'm alive again..."), \
-		span_warning("You hear a faint, slightly familiar whisper."))
-		body_to_sacrifice.visible_message(span_danger("[body_to_sacrifice] is torn apart, a black smoke swiftly dissipating from [body_to_sacrifice.p_their()] remains!"), \
-		span_danger("You feel as your blood boils, tearing you apart."), \
-		span_danger("You hear a thousand voices, all crying in pain."))
+		act_message(corpse_to_raise, null, MSG_SELF(span_warning("Life... I'm alive again...")), \
+			MSG_OTHERS(span_warning("%U%'s eyes glow with a faint red as %THEY% stand%S% up, slowly starting to breathe again.")), \
+			MSG_BLIND(span_warning("You hear a faint, slightly familiar whisper.")))
+		act_message(body_to_sacrifice, null, MSG_SELF(span_danger("You feel as your blood boils, tearing you apart.")), \
+			MSG_OTHERS(span_danger("%U% is torn apart, a black smoke swiftly dissipating from %THEIR% remains!")), \
+			MSG_BLIND(span_danger("You hear a thousand voices, all crying in pain.")))
 		body_to_sacrifice.gib()
 
 		to_chat(corpse_to_raise, span_cult("Your blood pulses. Your head throbs. The world goes red. All at once you are aware of a horrible, horrible truth. The veil of reality has been ripped away and in the festering wound left behind something sinister takes root."))
@@ -443,9 +445,9 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	if(user.loc==src.loc)
 		var/mob/living/carbon/human/L = user
 		user.say("Fwe[pick("'","`")]sh mah erl nyag r'ya!")
-		user.visible_message(span_warning("[user]'s eyes glow blue as [L.p_they()] freeze[L.p_s()] in place, absolutely motionless."), \
-		span_warning("The shadow that is your spirit separates itself from your body. You are now in the realm beyond. While this is a great sight, being here strains your mind and body. Hurry..."), \
-		span_warning("You hear only complete silence for a moment."))
+		act_message(user, null, MSG_SELF(span_warning("The shadow that is your spirit separates itself from your body. You are now in the realm beyond. While this is a great sight, being here strains your mind and body. Hurry...")), \
+			MSG_OTHERS(span_warning("%U%'s eyes glow blue as [L.p_they()] freeze[L.p_s()] in place, absolutely motionless.")), \
+			MSG_BLIND(span_warning("You hear only complete silence for a moment.")))
 		announce_ghost_joinleave(user.ghostize(1), 1, "You feel that they had to use some [pick("dark", "black", "blood", "forgotten", "forbidden")] magic to [pick("invade","disturb","disrupt","infest","taint","spoil","blight")] this place!")
 		L.ajourn = 1
 		cult_ajourney_tick(L)
@@ -485,9 +487,9 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 
 	user.say("Gal'h'rfikk harfrandid mud[pick("'","`")]gib!")
 	var/mob/living/carbon/human/dummy/D = new(this_rune.loc)
-	user.visible_message(span_warning("A shape forms in the center of the rune. A shape of... a man."), \
-	span_warning("A shape forms in the center of the rune. A shape of... a man."), \
-	span_warning("You hear liquid flowing."))
+	act_message(user, null, MSG_SELF(span_warning("A shape forms in the center of the rune. A shape of... a man.")), \
+		MSG_OTHERS(span_warning("A shape forms in the center of the rune. A shape of... a man.")), \
+		MSG_BLIND(span_warning("You hear liquid flowing.")))
 	D.real_name = "Unknown"
 	var/chose_name = 0
 	for(var/obj/item/paper/P in this_rune.loc)
@@ -521,9 +523,9 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		om_after(src, 3 SECONDS, PROC_REF(manifest_tick), user, D)
 		return
 	if(D)
-		D.visible_message(span_danger("[D] slowly dissipates into dust and bones."), \
-		span_danger("You feel pain, as bonds formed between your soul and this homunculus break."), \
-		span_warning("You hear faint rustle."))
+		act_message(D, null, MSG_SELF(span_danger("You feel pain, as bonds formed between your soul and this homunculus break.")), \
+			MSG_OTHERS(span_danger("%U% slowly dissipates into dust and bones.")), \
+			MSG_BLIND(span_warning("You hear faint rustle.")))
 		D.dust()
 
 
@@ -620,9 +622,9 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	if(user.stat != DEAD) // the rune takes the whole life, whatever the body model makes of 200 trauma
 		user.death()
 	GLOB.runedec+=10
-	user.visible_message(span_danger("\The [user] keels over dead, [user.p_their()] blood glowing blue as it escapes [user.p_their()] body and dissipates into thin air."), \
-	span_danger("In the last moment of your humble life, you feel an immense pain as fabric of reality mends... with your blood."), \
-	span_warning("You hear faint rustle."))
+	act_message(user, null, MSG_SELF(span_danger("In the last moment of your humble life, you feel an immense pain as fabric of reality mends... with your blood.")), \
+		MSG_OTHERS(span_danger("%U% keels over dead, %THEIR% blood glowing blue as it escapes %THEIR% body and dissipates into thin air.")), \
+		MSG_BLIND(span_warning("You hear faint rustle.")))
 	om_after(null, 1 MINUTE, GLOBAL_PROC_REF(cult_mend_rune_wait), user)
 	return
 
@@ -954,9 +956,9 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			if(users.len <= 4)				// You did the minimum, this is going to hurt more and we're going to stun you.
 				C.apply_effect(rand(3,6), STUN)
 				C.apply_effect(1, WEAKEN)
-	user.visible_message(span_warning("Rune disappears with a flash of red light, and in its place now a body lies."), \
-	span_warning("You are blinded by the flash of red light! After you're able to see again, you see that now instead of the rune there's a body."), \
-	span_warning("You hear a pop and smell ozone."))
+	act_message(user, null, MSG_SELF(span_warning("You are blinded by the flash of red light! After you're able to see again, you see that now instead of the rune there's a body.")), \
+		MSG_OTHERS(span_warning("Rune disappears with a flash of red light, and in its place now a body lies.")), \
+		MSG_BLIND(span_warning("You hear a pop and smell ozone.")))
 	qdel(src)
 
 /////////////////////////////////////////TWENTIETH RUNES
@@ -1170,8 +1172,8 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		user.say("N'ath reth sh'yro eth d[pick("'","`")]raggathnor!")
 	else
 		user.whisper("N'ath reth sh'yro eth d[pick("'","`")]raggathnor!")
-	user.visible_message(span_warning("The rune disappears with a flash of red light, and a set of armor appears on [user]..."), \
-	span_warning("You are blinded by the flash of red light! After you're able to see again, you see that you are now wearing a set of armor."))
+	act_message(user, null, MSG_SELF(span_warning("You are blinded by the flash of red light! After you're able to see again, you see that you are now wearing a set of armor.")), \
+		MSG_OTHERS(span_warning("The rune disappears with a flash of red light, and a set of armor appears on %U%...")))
 
 	H.equip_to_slot_or_del(new /obj/item/clothing/head/culthood/alt(H), SLOT_ID_HEAD)
 	H.equip_to_slot_or_del(new /obj/item/clothing/suit/cultrobes/alt(H), SLOT_ID_SUIT)

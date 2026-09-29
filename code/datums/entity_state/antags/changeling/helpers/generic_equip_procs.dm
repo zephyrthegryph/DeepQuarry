@@ -16,9 +16,9 @@
 
 	//First, check if we're already wearing the armor, and if so, take it off.
 	if(istype(M.get_equipped_item(SLOT_ID_SUIT), armor_type) || istype(M.get_equipped_item(SLOT_ID_HEAD), helmet_type) || istype(M.get_equipped_item(SLOT_ID_SHOES), boot_type))
-		M.visible_message(span_warning("[M] casts off their [M.get_equipped_item(SLOT_ID_SUIT).name]!"),
-		span_warning("We cast off our [M.get_equipped_item(SLOT_ID_SUIT).name]"),
-		span_warningplain("You hear the organic matter ripping and tearing!"))
+		act_message(M, null, MSG_SELF(span_warning("We cast off our [M.get_equipped_item(SLOT_ID_SUIT).name]")), \
+			MSG_OTHERS(span_warning("%U% casts off their [M.get_equipped_item(SLOT_ID_SUIT).name]!")), \
+			MSG_BLIND(span_warningplain("You hear the organic matter ripping and tearing!")))
 		if(istype(M.get_equipped_item(SLOT_ID_SUIT), armor_type))
 			remove_from_mob(M.get_equipped_item(SLOT_ID_SUIT))
 		if(istype(M.get_equipped_item(SLOT_ID_HEAD), helmet_type))
@@ -120,8 +120,8 @@
 
 		if(success)
 			play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
-			visible_message(span_warning("[src] pulls on their clothes, peeling it off along with parts of their skin attached!"),
-			span_notice("We remove and deform our equipment."))
+			act_message(src, null, MSG_SELF(span_notice("We remove and deform our equipment.")), \
+				MSG_OTHERS(span_warning("%U% pulls on their clothes, peeling it off along with parts of their skin attached!")))
 		changeling.armor_deployed = 0
 		return success
 

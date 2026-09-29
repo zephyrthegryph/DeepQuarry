@@ -16,10 +16,9 @@
 	if(buckled_mob)
 		if(buckled_mob?.buckled_to() == src)
 			if(buckled_mob != user)
-				buckled_mob.visible_message(\
-					span_notice("[user.name] pulls [buckled_mob.name] free from the sticky nest!"),\
-					span_notice("[user.name] pulls you free from the gelatinous resin."),\
-					span_notice("You hear squelching..."))
+				act_message(buckled_mob, null, MSG_SELF(span_notice("[user.name] pulls you free from the gelatinous resin.")), \
+					MSG_OTHERS(span_notice("[user.name] pulls [buckled_mob.name] free from the sticky nest!")), \
+					MSG_BLIND(span_notice("You hear squelching...")))
 				buckled_mob.pixel_y = 0
 				buckled_mob.old_y = 0
 				unbuckle_mob(buckled_mob)
@@ -27,10 +26,9 @@
 				if(!COOLDOWN_FINISHED(buckled_mob, last_special))
 					return
 				COOLDOWN_START(buckled_mob, last_special, NEST_RESIST_TIME)
-				buckled_mob.visible_message(\
-					span_warning("[buckled_mob.name] struggles to break free of the gelatinous resin..."),\
-					span_warning("You struggle to break free from the gelatinous resin..."),\
-					span_notice("You hear squelching..."))
+				act_message(buckled_mob, null, MSG_SELF(span_warning("You struggle to break free from the gelatinous resin...")), \
+					MSG_OTHERS(span_warning("[buckled_mob.name] struggles to break free of the gelatinous resin...")), \
+					MSG_BLIND(span_notice("You hear squelching...")))
 				om_after(src, NEST_RESIST_TIME, PROC_REF(struggle_free), user, buckled_mob)
 			src.add_fingerprint(user)
 	return
@@ -63,10 +61,9 @@
 	if(M == user)
 		return
 	else
-		M.visible_message(\
-			span_notice("[user.name] secretes a thick vile goo, securing [M.name] into [src]!"),\
-			span_warning("[user.name] drenches you in a foul-smelling resin, trapping you in the [src]!"),\
-			span_notice("You hear squelching..."))
+		act_message(M, src, MSG_SELF(span_warning("[user.name] drenches you in a foul-smelling resin, trapping you in %T%!")), \
+			MSG_OTHERS(span_notice("[user.name] secretes a thick vile goo, securing [M.name] into %T%!")), \
+			MSG_BLIND(span_notice("You hear squelching...")))
 	M.forceMove(src.loc)
 	buckle_mob(M, forced = TRUE)
 	M.pixel_y = 6
@@ -116,7 +113,7 @@
 /obj/structure/bed/nest/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if (HULK in user.mutations)
-		visible_message(span_warning("[user] destroys the [name]!"))
+		act_message(user, null, others = span_warning("%U% destroys the [name]!"))
 		take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 	else
 
@@ -125,7 +122,7 @@
 			if(interaction.stance == I_HURT)
 				var/mob/living/carbon/M = user
 				if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/hivenode))
-					visible_message (span_warning("[user] strokes the [name] and it melts away!"), 1)
+					act_message(user, null, others = span_warning("%U% strokes the [name] and it melts away!"), blind = 1)
 					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 					return TRUE
 	return TRUE

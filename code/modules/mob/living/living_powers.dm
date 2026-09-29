@@ -141,14 +141,14 @@
 /mob/living/proc/rainbow_target_chosen(datum/om/prompt/choice/rainbow_target/ask)
 	var/mob/living/carbon/human/chosen_target = ask.choice
 
-	visible_message(span_warning("[src] begins chargin' their lazor!"))
+	act_message(src, null, others = span_warning("%U% begins chargin' their lazor!"))
 	om_task_timed(src, 5 SECONDS, target = chosen_target, receiver = src, on_done = PROC_REF(healing_rainbows_living_done), done_args = list(chosen_target))
 	return TRUE
 
 /mob/living/proc/healing_rainbows_living_done(mob/living/carbon/human/chosen_target)
 	if(chosen_target.z != src.z || get_dist(src,chosen_target) > 7)
 		return
-	visible_message(span_warning("[src] fires their lazor at [chosen_target]!"))
+	act_message(src, chosen_target, others = span_warning("%U% fires their lazor at %T%!"))
 	var/obj/item/projectile/P = new /obj/item/projectile/beam/sparkledog(get_turf(src))
 	play_sfx(src, SFX_WEAPONS_SPARKLE)
 	P.launch_projectile(chosen_target, BP_TORSO, src)

@@ -61,9 +61,7 @@
 		tray.labelled = label
 		om_after(tray, 1, TYPE_PROC_REF(/atom, update_icon))
 
-	user.visible_message( \
-		span_notice("\The [user] labels [A] as [label]."), \
-		span_notice("You label [A] as [label]."))
+	act_message(user, A, MSG_SELF(span_notice("You label %T% as [label].")), MSG_OTHERS(span_notice("%U% labels %T% as [label].")))
 	A.name = "[A.name] ([label])"
 
 DECLARE_INTERACTIONS(/obj/item/hand_labeler, INTERACT_USE(null, PROC_REF(interaction_self)))

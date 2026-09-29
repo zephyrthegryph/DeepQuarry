@@ -26,7 +26,7 @@
 		to_chat(user, span_warning("[comp] is already configured to link with [comp.shuttle_tag]"))
 		return
 
-	user.visible_message(span_notice("[user] lifts [src] bottle over [comp]!"))
+	act_message(user, src, others = span_notice("%U% lifts %T% bottle over [comp]!"))
 	var/shuttle_name = rerun_ask(user, "k30", PROC_REF(afterattack), args, /datum/om/prompt/text, message = "Choose a name for the shuttle", title = "New Shuttle Name")
 	if(isnull(shuttle_name))
 		return TRUE
@@ -57,9 +57,9 @@
 	var/turf/comp_turf = get_turf(comp)
 	var/datum/shuttle/autodock/S = create_landable_shuttle(shuttle_name, comp_turf, my_area)
 	play_sfx(src, SFX_EFFECTS_GLASSBR3, vary = FALSE)
-	user.visible_message(span_notice("[user] smashes [src] on [comp]"),
-		span_info("You smash [src] on [comp], christening a new landable ship named [S.name]"),
-		span_notice("You hear glass shattering"))
+	act_message(user, src, MSG_SELF(span_info("You smash %T% on [comp], christening a new landable ship named [S.name]")), \
+		MSG_OTHERS(span_notice("%U% smashes %T% on [comp]")), \
+		MSG_BLIND(span_notice("You hear glass shattering")))
 	log_and_message_admins("Created a new shuttle [S.name]. [ADMIN_JMP(comp_turf)]", user)
 	om_after(comp_turf, 1 SECOND, TYPE_PROC_REF(/atom, om_playsound), 'sound/voice/Serithi/shuttlehere.ogg', 75, 0)
 	consume(src, user)

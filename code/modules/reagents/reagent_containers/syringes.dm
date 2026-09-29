@@ -311,9 +311,11 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 						return
 
 				if(injtime == time)
-					user.visible_message(span_warning("[user] is trying to inject [target] with [visible_name]!"),span_notice("You begin injecting [target] with [visible_name]."))
+					act_message(user, target, MSG_SELF(span_notice("You begin injecting %T% with [visible_name].")), \
+						MSG_OTHERS(span_warning("%U% is trying to inject %T% with [visible_name]!")))
 				else
-					user.visible_message(span_warning("[user] begins hunting for an injection port on [target]'s suit!"),span_notice("You begin hunting for an injection port on [target]'s suit!"))
+					act_message(user, target, MSG_SELF(span_notice("You begin hunting for an injection port on %T%'s suit!")), \
+						MSG_OTHERS(span_warning("%U% begins hunting for an injection port on %T%'s suit!")))
 
 			//The warmup
 			user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)

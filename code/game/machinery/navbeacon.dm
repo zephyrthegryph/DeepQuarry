@@ -77,7 +77,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 		return ITEM_INTERACT_BLOCKING
 	open = !open
 	playsound(src, tool.usesound, 50, TRUE)
-	user.visible_message(span_notice("[user] [open ? "opens" : "closes"] the beacon's cover."), span_infoplain("You [open ? "open" : "close"] the beacon's cover."))
+	act_message(user, null, MSG_SELF(span_infoplain("You [open ? "open" : "close"] the beacon's cover.")), \
+		MSG_OTHERS(span_notice("%U% [open ? "opens" : "closes"] the beacon's cover.")))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 

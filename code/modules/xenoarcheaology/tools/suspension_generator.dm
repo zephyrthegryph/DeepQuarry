@@ -184,7 +184,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 
 	for(var/mob/living/M in turf_contents_of_type(T, /mob/living))
 		M.status_at_least(EFFECT_WEAKENED, 5)
-		M.visible_message(span_blue("[icon2html(M,viewers(M))] [M] begins to float in the air!"),"You feel tingly and light, but it is difficult to move.")
+		act_message(M, null, MSG_SELF("You feel tingly and light, but it is difficult to move."), \
+			MSG_OTHERS(span_blue("[icon2html(M,viewers(M))] %U% begins to float in the air!")))
 
 	for(var/obj/effect/anomaly/anom in turf_contents_of_type(T, /obj/effect/anomaly))
 		anom.immortal = TRUE

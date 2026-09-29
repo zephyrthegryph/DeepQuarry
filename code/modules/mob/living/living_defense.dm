@@ -8,9 +8,8 @@
 	if(touch_reaction_flags & SPECIES_TRAIT_THORNS)
 		if(src != L)
 			L.injure(INJURY_PIERCE, 3, L.hand ? BP_L_HAND : BP_R_HAND, src)
-			L.visible_message( \
-				span_warning("[L] is hurt by sharp body parts when touching [src]!"), \
-				span_warning("[src] is covered in sharp bits and it hurt when you touched them!"), )
+			act_message(L, src, MSG_SELF(span_warning("%T% is covered in sharp bits and it hurt when you touched them!")), \
+				MSG_OTHERS(span_warning("%U% is hurt by sharp body parts when touching %T%!")))
 
 /// The mob sink: each packet kind goes to injure() through the mapping agreed
 /// with the body rewrite (damage.md §2), with the packet's penetration as
@@ -45,7 +44,7 @@
 		var/obj/item/assembly/signaler/signaler = get_active_hand()
 		if(signaler.deadman && prob(80))
 			log_and_message_admins("has triggered a signaler deadman's switch")
-			src.visible_message("<font color='red'>[src] triggers their deadman's switch!</font>")
+			act_message(src, null, others = "<font color='red'>%U% triggers their deadman's switch!</font>")
 			signaler.signal()
 	// end
 
@@ -136,7 +135,7 @@
 		attack_verb = blob.attack_verb
 		B.overmind.blob_type.on_attack(B, src, def_zone)
 
-	visible_message(span_danger("\The [B] [attack_verb] \the [src]!"), span_danger("[attack_message]!"))
+	act_message(src, B, MSG_SELF(span_danger("[attack_message]!")), MSG_OTHERS(span_danger("%T% [attack_verb] %U%!")))
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 
 	if(ai_brain)
@@ -149,7 +148,7 @@
 
 //Called when the mob is hit with an item in combat, in `stance` (the swing's interaction stance). Returns the blocked result
 /mob/living/proc/hit_with_weapon(obj/item/I, mob/living/user, effective_force, hit_zone, stance = I_HURT)
-	visible_message(span_danger("[src] has been [LAZYLEN(I.attack_verb) ? pick(I.attack_verb) : "attacked"] with [I.name] by [user]!"))
+	act_message(src, user, others = span_danger("%U% has been [LAZYLEN(I.attack_verb) ? pick(I.attack_verb) : "attacked"] with [I.name] by %T%!"))
 
 	if(ai_brain)
 		ai_brain.react_to_attack(user)
@@ -192,10 +191,10 @@
 			miss_chance = max(15*(distance-2), 0)
 
 		if (prob(miss_chance))
-			visible_message(span_notice("\The [O] misses [src] narrowly!"))
+			act_message(src, null, others = span_notice("%I% misses %U% narrowly!"), item = O)
 			return*/
 		// removing baymiss
-		src.visible_message(span_filter_warning("[span_red("[src] has been hit by [O].")]"))
+		act_message(src, null, others = span_filter_warning("[span_red("%U% has been hit by [O].")]"))
 		receive_thrown(O, throwingdatum)
 
 		if(ismob(thrower))
@@ -212,7 +211,8 @@
 		if(movable_throw_source(O) && momentum >= THROWNOBJ_KNOCKBACK_SPEED)
 			var/dir = get_dir(movable_throw_source(O), src)
 
-			visible_message(span_filter_warning("[span_red("[src] staggers under the impact!")]"),span_filter_warning("[span_red("You stagger under the impact!")]"))
+			act_message(src, null, MSG_SELF(span_filter_warning("[span_red("You stagger under the impact!")]")), \
+				MSG_OTHERS(span_filter_warning("[span_red("%U% staggers under the impact!")]")))
 			src.throw_at(get_edge_target_turf(src,dir),1,momentum)
 
 			if(!O || !src) return
@@ -226,7 +226,8 @@
 
 				if(T)
 					forceMove(T)
-					visible_message(span_warning("[src] is pinned to the wall by [O]!"),span_warning("You are pinned to the wall by [O]!"))
+					act_message(src, null, MSG_SELF(span_warning("You are pinned to the wall by [O]!")), \
+						MSG_OTHERS(span_warning("%U% is pinned to the wall by [O]!")))
 					set_anchored(TRUE)
 					LAZYADD(src.pinned, O)
 
@@ -268,9 +269,8 @@
 		if(touch_reaction_flags & SPECIES_TRAIT_THORNS)
 			if((src != L))
 				L.injure(INJURY_PIERCE, 3, L.hand ? BP_L_HAND : BP_R_HAND, src)
-				L.visible_message( \
-					span_warning("[L] is hurt by sharp body parts when touching [src]!"), \
-					span_warning("[src] is covered in sharp bits and it hurt when you touched them!"), )
+				act_message(L, src, MSG_SELF(span_warning("%T% is covered in sharp bits and it hurt when you touched them!")), \
+					MSG_OTHERS(span_warning("%U% is hurt by sharp body parts when touching %T%!")))
 
 	if(!damage)
 		return
@@ -279,7 +279,7 @@
 	add_attack_logs(user,src,"Generic attack (probably animal)", admin_notify = FALSE) //Usually due to simple_mob attacks
 	if(ai_brain)
 		ai_brain.react_to_attack(user)
-	src.visible_message(span_danger("[user] has [attack_message] [src]!"))
+	act_message(user, src, others = span_danger("%U% has [attack_message] %T%!"))
 	user.do_attack_animation(src)
 	return 1
 

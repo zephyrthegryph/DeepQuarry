@@ -35,7 +35,7 @@
 	if(. == DQ_BEHAVIOR_FAILED)
 		return
 	var/mob/living/owner = brain.get_owner()
-	owner.visible_message(span_warning("[owner] [pick(threats)] [target]!"))
+	act_message(owner, target, others = span_warning("%U% [pick(threats)] %T%!"))
 	return DQ_BEHAVIOR_DONE
 
 // --- Call for help ----------------------------------------------------------
@@ -62,7 +62,7 @@
 	if(. == DQ_BEHAVIOR_FAILED)
 		return
 	var/mob/living/owner = brain.get_owner()
-	owner.visible_message(span_warning("[owner] sounds an alarm!"))
+	act_message(owner, null, others = span_warning("%U% sounds an alarm!"))
 	// Forward the attacker to each friendly's brain so they upgrade them to HOSTILE.
 	for(var/mob/living/ally as anything in brain.model.visible_friendlies)
 		if(!ally.ai_brain)

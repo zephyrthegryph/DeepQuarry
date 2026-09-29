@@ -99,7 +99,7 @@ EXTEND_INTERACTIONS(/obj/item/sample/print, INTERACT_USE(null, PROC_REF(interact
 		return ITEM_INTERACT_FAILURE
 
 	if(user != H && H.combat_mode && !H.lying)
-		user.visible_message(span_danger("\The [user] tries to take prints from \the [H], but they move away."))
+		act_message(user, H, others = span_danger("%U% tries to take prints from %T%, but they move away."))
 		return ITEM_INTERACT_FAILURE
 
 	if(user.zone_sel.selecting == BP_R_HAND || user.zone_sel.selecting == BP_L_HAND)
@@ -114,7 +114,7 @@ EXTEND_INTERACTIONS(/obj/item/sample/print, INTERACT_USE(null, PROC_REF(interact
 		if(!has_hand)
 			to_chat(user, span_warning("They don't have any hands."))
 			return ITEM_INTERACT_FAILURE
-		user.visible_message("[user] takes a copy of \the [H]'s fingerprints.")
+		act_message(user, H, others = "%U% takes a copy of %T%'s fingerprints.")
 		var/fullprint = H.get_full_print()
 		LAZYSET(evidence, fullprint, fullprint)
 		copy_evidence(src)

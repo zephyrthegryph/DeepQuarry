@@ -53,7 +53,6 @@
 					om_after(B, rand(5, 25) SECONDS, TYPE_PROC_REF(/mob/living/simple_mob/animal/sif/glitterfly, decompose))
 
 /mob/living/simple_mob/animal/sif/glitterfly/proc/decompose()
-	visible_message(
-		span_notice("[src] decomposes due to being outside of its original habitat for too long!"),
-		span_userdanger("You decompose for being too long out of your habitat!"))
+	act_message(src, null, MSG_SELF(span_userdanger("You decompose for being too long out of your habitat!")), \
+		MSG_OTHERS(span_notice("%U% decomposes due to being outside of its original habitat for too long!")))
 	dust()

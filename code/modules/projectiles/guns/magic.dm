@@ -49,7 +49,7 @@
 
 /obj/item/gun/magic/handle_click_empty(mob/user)
 	if (user)
-		user.visible_message("*wzhzhzh*", span_danger("The [name] whizzles quietly."))
+		act_message(user, null, MSG_SELF(span_danger("The [name] whizzles quietly.")), MSG_OTHERS("*wzhzhzh*"))
 	else
 		src.visible_message("*wzhzh*")
 	play_sfx(src, SFX_WEAPONS_EMPTY, 2)

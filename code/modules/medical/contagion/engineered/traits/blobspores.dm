@@ -95,7 +95,7 @@ BONUS
 	if(!ready_to_pop)
 		return
 	var/mob/living/M = A.host
-	M.visible_message(span_danger("[M] starts swelling grotesquely!"))
+	act_message(M, null, others = span_danger("%U% starts swelling grotesquely!"))
 	om_after(src, 10 SECONDS, PROC_REF(pop), A, M)
 
 /datum/viral_trait/blobspores/proc/pop(datum/affliction/contagion/engineered/A, mob/living/M)
@@ -113,4 +113,4 @@ BONUS
 		new /mob/living/simple_mob/blob/spore(M.loc)
 	new pick_blob(M.loc)
 
-	M.visible_message(span_danger("A huge mass of blob and blob spores burst out of [M]!"))
+	act_message(M, null, others = span_danger("A huge mass of blob and blob spores burst out of %U%!"))

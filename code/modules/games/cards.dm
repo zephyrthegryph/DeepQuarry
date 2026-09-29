@@ -130,7 +130,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	cards -= P
 	H.parentdeck = src
 	H.update_icon()
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " draws a card."))
+	act_message(user, null, others = span_infoplain(span_bold("%U%") + " draws a card."))
 	to_chat(user,span_notice("It's the [P]."))
 
 /// Old Deal verb: Deal a card from a deck.
@@ -199,7 +199,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 		return
 
 
-	user.visible_message(span_notice("\The [user] looks into \the [src] and searches within it...")) // Emote before doing anything so you can't cheat!
+	act_message(user, src, others = span_notice("%U% looks into %T% and searches within it...")) // Emote before doing anything so you can't cheat!
 
 	// We store the card names as a dictionary with the card name as the key and the number of duplicates of that card
 	// 		because otherwise the TGUI checkbox checks all duplicate names if you tick just one
@@ -224,7 +224,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 		return
 
 	if(!LAZYLEN(cards_to_draw))
-		user.visible_message(span_notice("\The [user] searches for specific cards in \the [src], but draws none."))
+		act_message(user, src, others = span_notice("%U% searches for specific cards in %T%, but draws none."))
 		return
 
 	if(!H)
@@ -247,7 +247,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 				break
 	H.update_icon()
 
-	user.visible_message(span_notice("\The [user] searches for specific cards in \the [src], and draws [cards_to_draw.len]."))
+	act_message(user, src, others = span_notice("%U% searches for specific cards in %T%, and draws [cards_to_draw.len]."))
 
 /obj/item/deck/item_ctrl_click(mob/user)
 	deck_verb_deal(user)
@@ -265,9 +265,9 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 		H.concealed = 1
 		H.update_icon()
 	if(user==target)
-		user.visible_message(span_notice("\The [user] deals [dcard] card(s) to [user.p_themselves()]."))
+		act_message(user, null, others = span_notice("%U% deals [dcard] card(s) to %THEMSELVES%."))
 	else
-		user.visible_message(span_notice("\The [user] deals [dcard] card(s) to \the [target]."))
+		act_message(user, target, others = span_notice("%U% deals [dcard] card(s) to %T%."))
 	H.throw_at(get_step(target,target.dir),10,1,H)
 
 
@@ -320,7 +320,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 			newcards += P
 			cards -= P
 		cards = newcards
-		user.visible_message(span_notice("\The [user] shuffles [src]."))
+		act_message(user, src, others = span_notice("%U% shuffles %T%."))
 		play_sfx(src, SFX_ITEMS_CARDSHUFFLE)
 		COOLDOWN_START(src, shuffle_cooldown, 1 SECOND)
 	else
@@ -373,7 +373,7 @@ DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_sel
 
 /// Old attack_self.
 /obj/item/pack/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message(span_danger("[user] rips open \the [src]!"))
+	act_message(user, src, others = span_danger("%U% rips open %T%!"))
 	var/obj/item/hand/H = new()
 
 	H.cards += cards
@@ -429,7 +429,7 @@ DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_sel
 		H.parentdeck = src.parentdeck
 		H.update_icon()
 		src.update_icon()
-		user.visible_message(span_notice("\The [user] plays \the [discarding]."))
+		act_message(user, null, others = span_notice("%U% plays \the [discarding]."))
 		H.forceMove(get_turf(user))
 		H.Move(get_step(user,user.dir))
 
@@ -448,7 +448,7 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 /obj/item/hand/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	concealed = !concealed
 	update_icon()
-	user.visible_message(span_notice("\The [user] [concealed ? "conceals" : "reveals"] their hand."))
+	act_message(user, null, others = span_notice("%U% [concealed ? "conceals" : "reveals"] their hand."))
 	return TRUE
 
 /obj/item/hand/examine(mob/user)

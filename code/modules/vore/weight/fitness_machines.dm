@@ -61,7 +61,8 @@ EXTEND_INTERACTIONS(/obj/machinery/fitness, INTERACT_HAND_UNGATED("Work out", PR
 
 /obj/machinery/fitness/heavy/wrench_act(mob/user, obj/item/tool)
 	add_fingerprint(user)
-	user.visible_message(span_warning("[user] has [anchored ? "un" : ""]secured \the [src]."), span_notice("You [anchored ? "un" : ""]secure \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You [anchored ? "un" : ""]secure %T%.")), \
+		MSG_OTHERS(span_warning("%U% has [anchored ? "un" : ""]secured %T%.")))
 	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
@@ -116,4 +117,4 @@ EXTEND_INTERACTIONS(/obj/machinery/scale, INTERACT_HAND_UNGATED("Weigh", PROC_RE
 		return
 	if(user.weight) //Just in case.
 		var/kilograms = round(text2num(user.weight),4) / 2.20463
-		visible_message(span_notice("[src] displays a reading of [user.weight]lb / [kilograms]kg when [user] stands on it."))
+		act_message(src, user, others = span_notice("%U% displays a reading of [user.weight]lb / [kilograms]kg when %T% stands on it."))

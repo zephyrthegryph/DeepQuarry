@@ -81,14 +81,14 @@
 			to_chat(user, "It's going to be difficult to convince \the [src] to move into \the [over_object] without capturing it in a net.")
 			return
 
-		user.visible_message("[user] begins stuffing \the [src] into \the [over_object].", "You begin stuffing \the [src] into \the [over_object].")
+		act_message(user, src, MSG_SELF("You begin stuffing %T% into \the [over_object]."), MSG_OTHERS("%U% begins stuffing %T% into \the [over_object]."))
 		Bumped(user)
 		om_task_timed(user, 2 SECONDS, target = over_object, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(over_object, user))
 	else
 		return ..()
 
 /mob/living/simple_mob/proc/MouseDrop_timed_done(obj/structure/stasis_cage/over_object, mob/user)
-	user.visible_message("[user] has stuffed \the [src] into \the [over_object].", "You have stuffed \the [src] into \the [over_object].")
+	act_message(user, src, MSG_SELF("You have stuffed %T% into \the [over_object]."), MSG_OTHERS("%U% has stuffed %T% into \the [over_object]."))
 	over_object.contain(src)
 
 /// LC-refs: contained -- an OM handle (om_handle()), so it reads null once that is deleted.

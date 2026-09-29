@@ -66,7 +66,7 @@ EXTEND_INTERACTIONS(/obj/item/holder/micro, INTERACT_SELF("Pet", PROC_REF(micro_
 			H.help_shake_act(user)
 		if(isanimal(L))
 			var/mob/living/simple_mob/S = L
-			user.visible_message(span_notice("[user] [S.response_help] \the [S]."))
+			act_message(user, S, others = span_notice("%U% [S.response_help] %T%."))
 
 //Egg features. (The egged-mob check lives in /obj/item/holder/proc/holder_pick_up(), holder.dm.)
 /obj/item/holder/container_resist(mob/living/held)

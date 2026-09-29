@@ -135,12 +135,16 @@
 	set_anchored(!unwrenched)
 	if(unwrenched)
 		stat_add(MAINT)
-		user.visible_message(span_notice("[user] unfastens \the [src]."), span_notice("You have unfastened \the [src]. Now it can be pulled somewhere else."), "You hear ratchet.")
+		act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%. Now it can be pulled somewhere else.")), \
+			MSG_OTHERS(span_notice("%U% unfastens %T%.")), \
+			MSG_BLIND("You hear ratchet."))
 		if(user.check_current_machine(src))
 			SStgui.close_uis(src)
 	else
 		stat_remove(MAINT)
-		user.visible_message(span_notice("[user] fastens \the [src]."), span_notice("You have fastened \the [src]. Now it can dispense pipes."), "You hear ratchet.")
+		act_message(user, src, MSG_SELF(span_notice("You have fastened %T%. Now it can dispense pipes.")), \
+			MSG_OTHERS(span_notice("%U% fastens %T%.")), \
+			MSG_BLIND("You hear ratchet."))
 		power_change()
 	return ITEM_INTERACT_SUCCESS
 

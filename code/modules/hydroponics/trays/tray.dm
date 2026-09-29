@@ -198,13 +198,16 @@ OM_TIMER_SLOT(/obj/machinery/portable_atmospherics/hydroponics, growth_timer)
 		if(weedlevel > 0)
 			nymph.reagents.add_reagent(REAGENT_ID_GLUCOSE, weedlevel)
 			weedlevel = 0
-			nymph.visible_message(span_notice(span_bold("[nymph]") + " begins rooting through [src], ripping out weeds and eating them noisily."),span_notice("You begin rooting through [src], ripping out weeds and eating them noisily."))
+			act_message(nymph, src, MSG_SELF(span_notice("You begin rooting through %T%, ripping out weeds and eating them noisily.")), \
+				MSG_OTHERS(span_notice(span_bold("%U%") + " begins rooting through %T%, ripping out weeds and eating them noisily.")))
 		else if(nymph.nutrition > 100 && nutrilevel < 10)
 			nymph.adjust_nutrition(-(((10-nutrilevel)*5)))
 			nutrilevel = 10
-			nymph.visible_message(span_notice(span_bold("[nymph]") + " secretes a trickle of green liquid, refilling [src]."),span_notice("You secrete a trickle of green liquid, refilling [src]."))
+			act_message(nymph, src, MSG_SELF(span_notice("You secrete a trickle of green liquid, refilling %T%.")), \
+				MSG_OTHERS(span_notice(span_bold("%U%") + " secretes a trickle of green liquid, refilling %T%.")))
 		else
-			nymph.visible_message(span_notice(span_bold("[nymph]") + " rolls around in [src] for a bit."),span_notice("You roll around in [src] for a bit."))
+			act_message(nymph, src, MSG_SELF(span_notice("You roll around in %T% for a bit.")), \
+				MSG_OTHERS(span_notice(span_bold("%U%") + " rolls around in %T% for a bit.")))
 		return
 
 DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
@@ -611,7 +614,7 @@ DECLARE_REF(/obj/machinery/portable_atmospherics/hydroponics, "ov_alert3", OWNED
 	else if (istype(O, /obj/item/material/minihoe))  // The minihoe
 
 		if(weedlevel > 0)
-			user.visible_message(span_danger("[user] starts uprooting the weeds."), span_danger("You remove the weeds from the [src]."))
+			act_message(user, src, MSG_SELF(span_danger("You remove the weeds from %T%.")), MSG_OTHERS(span_danger("%U% starts uprooting the weeds.")))
 			weedlevel = 0
 			update_icon()
 		else
@@ -643,7 +646,7 @@ DECLARE_REF(/obj/machinery/portable_atmospherics/hydroponics, "ov_alert3", OWNED
 
 	else if(O.force && seed)
 		user.setClickCooldown(user.get_attack_speed(O))
-		user.visible_message(span_danger("\The [seed.display_name] has been attacked by [user] with \the [O]!"))
+		act_message(user, null, others = span_danger("\The [seed.display_name] has been attacked by %U% with %I%!"), item = O)
 		if(!dead)
 			health -= O.force
 			check_health()

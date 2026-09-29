@@ -42,7 +42,7 @@
 		to_chat(src, span_warning("Our sting appears ineffective against its DNA."))
 		return FALSE
 	add_attack_logs(src,T,"Transformation sting (changeling)")
-	T.visible_message(span_warning("[T] transforms!"))
+	act_message(T, null, others = span_warning("%U% transforms!"))
 	QDEL_SWAP(T.dna, chosen_dna.dna.Clone())
 	T.real_name = chosen_dna.dna.real_name
 	T.UpdateAppearance()

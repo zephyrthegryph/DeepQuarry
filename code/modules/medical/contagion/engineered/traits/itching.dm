@@ -57,6 +57,7 @@ BONUS
 	var/obj/item/organ/bodypart = M.get_organ(picked_bodypart)
 	var/can_scratch = scratch && !M.incapacitated()
 	if(bodypart && !bodypart.robotic)
-		M.visible_message("[can_scratch ? span_warning("[M] scratches their [bodypart.name].") : ""]", span_notice("Your [bodypart.name] itches. [can_scratch ? " You scratch it." : ""]"))
+		act_message(M, null, MSG_SELF(span_notice("Your [bodypart.name] itches. [can_scratch ? " You scratch it." : ""]")), \
+			MSG_OTHERS("[can_scratch ? span_warning("%U% scratches their [bodypart.name].") : ""]"))
 		if(can_scratch)
 			M.injure(INJURY_CUT, 0.5, bodypart)

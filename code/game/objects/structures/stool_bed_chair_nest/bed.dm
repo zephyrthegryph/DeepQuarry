@@ -136,7 +136,7 @@
 		if(has_buckled_mobs()) //Handles trying to buckle someone else to a chair when someone else is on it
 			to_chat(user, span_notice("\The [src] already has someone buckled to it."))
 			return TRUE
-		user.visible_message(span_notice("[user] attempts to buckle [affecting] into \the [src]!"))
+		act_message(user, affecting, others = span_notice("%U% attempts to buckle %T% into \the [src]!"))
 		om_task_start(/datum/om/task/timed/bed_attackby, user, src, W = W, affecting = affecting)
 	return TRUE
 
@@ -171,10 +171,9 @@
 
 /obj/structure/bed/proc/deferred_buckle(mob/living/affecting, buckler_name)
 	if(buckle_mob(affecting))
-		affecting.visible_message(\
-			span_danger("[affecting.name] is src?.buckled_to() to [src] by [buckler_name]!"),\
-			span_danger("You are src?.buckled_to() to [src] by [buckler_name]!"),\
-			span_notice("You hear metal clanking."))
+		act_message(affecting, src, MSG_SELF(span_danger("You are src?.buckled_to() to %T% by [buckler_name]!")), \
+			MSG_OTHERS(span_danger("[affecting.name] is src?.buckled_to() to %T% by [buckler_name]!")), \
+			MSG_BLIND(span_notice("You hear metal clanking.")))
 
 /obj/structure/bed/proc/remove_padding()
 	if(padding_material)
@@ -259,7 +258,7 @@
 			for(var/A in src?.buckled_mob_list())
 				user_unbuckle_mob(A, user)
 		else
-			visible_message("[user] collapses \the [src.name].")
+			act_message(user, null, others = "%U% collapses \the [src.name].")
 			new rollertype(get_turf(src))
 			expire(0)
 		return TRUE
@@ -365,7 +364,7 @@ DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(intera
 	if((over_object == usr && (in_range(src, usr) || usr.contents.Find(src))))
 		if(!ishuman(usr))	return
 		if(has_buckled_mobs())	return 0
-		visible_message("[usr] collapses \the [src.name].")
+		act_message(usr, null, others = "%U% collapses \the [src.name].")
 		new rollertype(get_turf(src))
 		expire(0)
 		return
@@ -442,7 +441,8 @@ DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(intera
 	return TRUE
 
 /obj/structure/dirtybed/wrench_act(mob/user, obj/item/W)
-	user.visible_message("[user] begins [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.", "You start [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.")
+	act_message(user, src, MSG_SELF("You start [anchored ? "unsecuring %T% from" : "securing %T% to"] the floor."), \
+		MSG_OTHERS("%U% begins [anchored ? "unsecuring %T% from" : "securing %T% to"] the floor."))
 	use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 100, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return TRUE
 

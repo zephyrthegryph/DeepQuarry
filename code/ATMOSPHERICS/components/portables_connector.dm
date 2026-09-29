@@ -217,10 +217,9 @@
 	..()
 	hibernate_until_device_changes()
 /obj/machinery/atmospherics/portables_connector/proc/wrench_act_tool_done(mob/user)
-	user.visible_message( \
-		span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), \
-		span_notice("You have unfastened \the [src]."), \
-		"You hear a ratchet.")
+	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
+		MSG_BLIND("You hear a ratchet."))
 	atom_deconstruct()
 
 DECLARE_REF(/obj/machinery/atmospherics/portables_connector, "connected_device", HELD, null)

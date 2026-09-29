@@ -624,7 +624,7 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 
 	if(user)
 		to_chat(user, span_danger("You are preparing to butcher \the [src]!"))
-		user.visible_message(span_danger("[user] prepares to butcher \the [src]!"))
+		act_message(user, src, others = span_danger("%U% prepares to butcher %T%!"))
 		//They can queue this up on multiple organs.
 		var/started = om_task_start(/datum/om/task/timed/organ_butcher, user, src, duration = 10 SECONDS * O.toolspeed, receiver = src, meat_dest = newtarget)
 		return !istext(started)
@@ -642,15 +642,15 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 /obj/item/organ/proc/butcher_failed(datum/om/task/timed/organ_butcher/task)
 	var/mob/living/user = task.actor
 	to_chat(user, span_notice("You reconsider butchering \the [src]..."))
-	user.visible_message(span_notice("[user] reconsiders butchering \the [src]!"))
+	act_message(user, src, others = span_notice("%U% reconsiders butchering %T%!"))
 
 /obj/item/organ/proc/butcher_done(mob/living/user, atom/newtarget)
 	if(user)
 		if(is_robotic())
-			user?.visible_message(span_warning("[user] disassembles \the [src]."))
+			act_message(user, src, others = span_warning("%U% disassembles %T%."))
 
 		else
-			user?.visible_message(span_warning("[user] butchers \the [src]."))
+			act_message(user, src, others = span_warning("%U% butchers %T%."))
 
 	if(!newtarget)
 		newtarget = get_turf(src)

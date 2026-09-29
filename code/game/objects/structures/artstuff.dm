@@ -33,7 +33,7 @@
 	painting = canvas
 	canvas.forceMove(get_turf(src))
 	canvas.layer = layer+0.1
-	user.visible_message(span_notice("[user] puts \the [canvas] on \the [src]."),span_notice("You place \the [canvas] on \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You place %I% on %T%.")), MSG_OTHERS(span_notice("%U% puts %I% on %T%.")), item = canvas)
 	return TRUE
 
 //Stick to the easel like glue
@@ -252,7 +252,7 @@ DECLARE_INTERACTIONS(/obj/item/canvas, \
 	if(basecolor)
 		canvas_color = basecolor
 		reset_grid()
-		user.visible_message("[user] smears paint on [src], covering the entire thing in paint.", "You smear paint on [src], changing the color of the entire thing.", runemessage = "smears paint")
+		act_message(user, src, MSG_SELF("You smear paint on %T%, changing the color of the entire thing."), MSG_OTHERS("%U% smears paint on %T%, covering the entire thing in paint."), runemessage = "smears paint")
 		update_appearance()
 
 /obj/item/canvas/proc/try_rename(mob/user)

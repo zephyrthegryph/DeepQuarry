@@ -289,13 +289,15 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 	sealing = 1
 
 	if(!seal_target && !suit_is_deployed())
-		M.visible_message(span_danger("[M]'s suit flashes an error light."),span_danger("Your suit flashes an error light. It can't function properly without being fully deployed."))
+		act_message(M, null, MSG_SELF(span_danger("Your suit flashes an error light. It can't function properly without being fully deployed.")), \
+			MSG_OTHERS(span_danger("%U%'s suit flashes an error light.")))
 		play_sfx(src, SFX_MACHINES_RIG_RIGERROR)
 		seal_finish(M, seal_target, booting_L, booting_R, TRUE)
 		return 0
 
 	if(!instant)
-		M.visible_message(span_notice("[M]'s suit emits a quiet hum as it begins to adjust its seals."),span_notice("With a quiet hum, the suit begins running checks and adjusting components."))
+		act_message(M, null, MSG_SELF(span_notice("With a quiet hum, the suit begins running checks and adjusting components.")), \
+			MSG_OTHERS(span_notice("%U%'s suit emits a quiet hum as it begins to adjust its seals.")))
 		if(seal_delay)
 			om_task_start(/datum/om/task/timed/rig_seal, M, src, duration = seal_delay, seal_target = seal_target, booting_L = booting_L, booting_R = booting_R)
 			return 1
@@ -651,7 +653,7 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 		return
 
 	if(seal_delay > 0 && istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
-		M.visible_message(span_notice("[M] starts putting on \the [src]..."), span_notice("You start putting on \the [src]..."))
+		act_message(M, src, MSG_SELF(span_notice("You start putting on %T%...")), MSG_OTHERS(span_notice("%U% starts putting on %T%...")))
 		om_task_timed(M, seal_delay, src, src, PROC_REF(put_on_done), list(M), IGNORE_TARGET_LOC_CHANGE, PROC_REF(put_on_failed), list(M))
 		return
 	put_on_done(M)
@@ -664,7 +666,7 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 
 /obj/item/rig/proc/put_on_done(mob/living/carbon/human/M)
 	if(istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
-		M.visible_message(span_boldnotice("[M] struggles into \the [src]."), span_boldnotice("You struggle into \the [src]."))
+		act_message(M, src, MSG_SELF(span_boldnotice("You struggle into %T%.")), MSG_OTHERS(span_boldnotice("%U% struggles into %T%.")))
 		wearer_handle = om_handle(M)
 		wearer().wearing_rig = src
 		update_icon()

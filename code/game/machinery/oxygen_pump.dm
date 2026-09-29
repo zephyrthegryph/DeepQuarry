@@ -44,14 +44,14 @@ DECLARE_REF(/obj/machinery/oxygen_pump, "contained", OWNED, null)
 	if(CanMouseDrop(target, user))
 		if(!can_apply_to_target(target, user)) // There is no point in attempting to apply a mask if it's impossible.
 			return
-		user.visible_message("\The [user] begins placing \the [contained] onto [target].")
+		act_message(user, target, others = "%U% begins placing \the [contained] onto %T%.")
 		om_task_timed(user, 2.5 SECONDS, target = target, receiver = src, on_done = PROC_REF(place_mask_done), done_args = list(user, target))
 
 /obj/machinery/oxygen_pump/proc/place_mask_done(mob/living/user, mob/living/carbon/human/target)
 	if(!can_apply_to_target(target, user))
 		return
 	// place mask and add fingerprints
-	user.visible_message("\The [user] has placed \the [contained] on [target]'s mouth.")
+	act_message(user, target, others = "%U% has placed \the [contained] on %T%'s mouth.")
 	attach_mask(target)
 	src.add_fingerprint(user)
 
@@ -66,7 +66,8 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 	if(user.is_incorporeal())
 		return TRUE
 	if((has_stat(MAINT)) && tank)
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " removes \the [tank] from \the [src]."), span_notice("You remove \the [tank] from \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You remove \the [tank] from %T%.")), \
+			MSG_OTHERS(span_infoplain(span_bold("%U%") + " removes \the [tank] from %T%.")))
 		user.put_in_hands(tank)
 		src.add_fingerprint(user)
 		tank.add_fingerprint(user)
@@ -80,7 +81,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 			tank.forceMove(src)
 		breather().remove_from_mob(contained)
 		contained.forceMove(src)
-		src.visible_message(span_infoplain(span_bold("\The [user]") + " makes \the [contained] rapidly retract back into \the [src]!"))
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + " makes \the [contained] rapidly retract back into %T%!"))
 		breather().cozyloop.stop() // Cozy Music
 		if(breather().internals)
 			breather().internals.icon_state = "internal0"
@@ -154,7 +155,9 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 			user.drop_item()
 			W.forceMove(src)
 			tank = W
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " installs \the [tank] into \the [src]."), span_notice("You install \the [tank] into \the [src]."))
+			act_message(user, src, MSG_SELF(span_notice("You install %I% into %T%.")), \
+				MSG_OTHERS(span_infoplain(span_bold("%U%") + " installs %I% into %T%.")), \
+				item = tank)
 			src.add_fingerprint(user)
 	if(istype(W, /obj/item/tank) && !has_stat(MACHINE_STAT_ANY))
 		to_chat(user, span_warning("Please open the maintenance hatch first."))
@@ -165,7 +168,8 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		return ITEM_INTERACT_BLOCKING
 	if(!stat_remove(MAINT))
 		stat_add(MAINT)
-	user.visible_message(span_notice("\The [user] [has_stat(MAINT) ? "opens" : "closes"] \the [src]."), span_notice("You [has_stat(MAINT) ? "open" : "close"] \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You [has_stat(MAINT) ? "open" : "close"] %T%.")), \
+		MSG_OTHERS(span_notice("%U% [has_stat(MAINT) ? "opens" : "closes"] %T%.")))
 	icon_state = (has_stat(MAINT)) ? icon_state_open : icon_state_closed
 	return ITEM_INTERACT_SUCCESS
 

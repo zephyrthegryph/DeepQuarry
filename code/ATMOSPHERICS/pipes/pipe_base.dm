@@ -299,10 +299,9 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/pipe/proc/wrench_act_tool_done(mob/user, unsafe_wrenching, internal_pressure)
-	user.visible_message( \
-		span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), \
-		span_notice("You have unfastened \the [src]."), \
-		span_hear("You hear a ratchet."))
+	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
+		MSG_BLIND(span_hear("You hear a ratchet.")))
 	if(unsafe_wrenching)
 		unsafe_pressure_release(user, internal_pressure)
 	atom_deconstruct()

@@ -164,7 +164,7 @@
 		if(!(def_zone in list(BP_TORSO, BP_GROIN)))
 			reflectchance /= 2
 		if(P.starting && prob(reflectchance))
-			visible_message(span_danger("\The [user]'s [src.name] reflects [attack_text]!"))
+			act_message(user, null, others = span_danger("%U%'s [src.name] reflects [attack_text]!"))
 
 			var/new_x = P.starting.x + pick(0, 0, 0, 0, 0, -1, 1, -2, 2)
 			var/new_y = P.starting.y + pick(0, 0, 0, 0, 0, -1, 1, -2, 2)

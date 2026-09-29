@@ -199,7 +199,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	if(istype(I, /obj/item/material/ashtray))
 		var/obj/item/material/ashtray/A = I
 		if(contents_count(A) > 0)
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " empties \the [A] into [src]."))
+			act_message(user, src, others = span_infoplain(span_bold("%U%") + " empties %I% into %T%."), item = A)
 			for(var/obj/item/O in contents_of(A))
 				O.forceMove(src)
 			A.update_icon()
@@ -211,7 +211,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		if(ismob(G?.grab_target()))
 			var/mob/GM = G?.grab_target()
 			for (var/mob/V in viewers(user))
-				V.visible_message("[user] starts putting [GM.name] into the disposal.", 3)
+				act_message(V, user, MSG_SELF(3), MSG_OTHERS("%T% starts putting [GM.name] into the disposal."))
 			om_task_start(/datum/om/task/timed/disposal_dunk, user, src, receiver = src, GM = GM, G = G)
 		return TRUE
 
@@ -231,17 +231,15 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 					log_and_message_admins("placed [victim] inside \the [src]", user)
 				victim.forceMove(src)
 			consume(I, user)
-			user.visible_message(
-				span_danger("[user] tosses \the [victim] into \the [src]."),
-				span_danger("You toss \the [victim] into \the [src]."),
-				span_warning("Pr-Thunk")
-			)
+			act_message(user, victim, MSG_SELF(span_danger("You toss %T% into \the [src].")), \
+				MSG_OTHERS(span_danger("%U% tosses %T% into \the [src].")), \
+				MSG_BLIND(span_warning("Pr-Thunk")))
 			update_icon()
 			return TRUE
 
 		I.forceMove(src)
 
-	user.visible_message("[user] places \the [I] into the [src].",  "You place \the [I] into the [src].","Ca-Clunk")
+	act_message(user, src, MSG_SELF("You place %I% into %T%."), MSG_OTHERS("%U% places %I% into %T%."), MSG_BLIND("Ca-Clunk"), item = I)
 	update_icon()
 	return TRUE
 
@@ -384,9 +382,10 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 	add_fingerprint(user)
 	if(user == target)
-		user.visible_message("[user] starts climbing into [src]")
+		act_message(user, src, others = "%U% starts climbing into %T%")
 	else
-		target.visible_message(span_danger("[user] starts stuffing [target] into [src]."), span_userdanger("[user] starts stuffing you into [src]!"))
+		act_message(target, user, MSG_SELF(span_userdanger("%T% starts stuffing you into [src]!")), \
+			MSG_OTHERS(span_danger("%T% starts stuffing %U% into [src].")))
 
 	om_task_timed(user, 2 SECONDS, target, src, PROC_REF(stuff_mob_done), list(target, user))
 
@@ -395,10 +394,10 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		return
 	target.forceMove(src)
 	if(user == target)
-		user.visible_message("[user] climbs into [src].", span_notice("You climb into [src]"))
+		act_message(user, src, MSG_SELF(span_notice("You climb into %T%")), MSG_OTHERS("%U% climbs into %T%."))
 		log_and_message_admins("climbed into disposals!", user)
 	else
-		target.visible_message(span_danger("[user] stuffs [target] into \the [src]."), span_userdanger("[user] stuffs [target] into \the [src]."))
+		act_message(target, user, MSG_SELF(span_userdanger("%T% stuffs %U% into \the [src].")), MSG_OTHERS(span_danger("%T% stuffs %U% into \the [src].")))
 		add_attack_logs(user,target,"Disposals dunked")
 	update_icon()
 

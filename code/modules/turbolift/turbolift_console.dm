@@ -26,9 +26,9 @@
 /obj/structure/lift/proc/pressed(mob/user, stance = I_HELP)
 	if(!istype(user, /mob/living/silicon))
 		if(stance == I_HURT)
-			user.visible_message(span_danger("\The [user] hammers on the lift button!"))
+			act_message(user, null, others = span_danger("%U% hammers on the lift button!"))
 		else
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " presses the lift button."))
+			act_message(user, null, others = span_infoplain(span_bold("%U%") + " presses the lift button."))
 
 /obj/structure/lift/Initialize(mapload, datum/turbolift/_lift)
 	. = ..()

@@ -15,13 +15,13 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 
 /// Old attack_self.
 /obj/item/supply_beacon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " begins setting up \the [src]."))
+	act_message(user, src, others = span_infoplain(span_bold("%U%") + " begins setting up %T%."))
 	om_task_timed(user, deploy_time, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/item/supply_beacon/proc/attack_self_timed_done(mob/user)
 	var/obj/S = new deploy_path(get_turf(user))
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " deploys \the [S]."))
+	act_message(user, S, others = span_infoplain(span_bold("%U%") + " deploys %T%."))
 	consume(src, user)
 
 /obj/machinery/power/supply_beacon
@@ -57,7 +57,7 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 		to_chat(user, span_warning("This device must be placed over an exposed cable."))
 		return ITEM_INTERACT_BLOCKING
 	set_anchored(!anchored)
-	user.visible_message(span_notice("\The [user] [anchored ? "secures" : "unsecures"] \the [src]."))
+	act_message(user, src, others = span_notice("%U% [anchored ? "secures" : "unsecures"] %T%."))
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
 

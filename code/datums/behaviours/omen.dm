@@ -131,7 +131,7 @@
 		return
 
 	if(omen_evil && prob(0.0001) && (living_guy.stat != DEAD)) // 1 in a million
-		living_guy.visible_message(span_danger("[living_guy] suddenly bursts into flames!"), span_danger("You suddenly burst into flames!"))
+		act_message(living_guy, null, MSG_SELF(span_danger("You suddenly burst into flames!")), MSG_OTHERS(span_danger("%U% suddenly bursts into flames!")))
 		living_guy.emote("scream")
 		living_guy.adjust_fire_stacks(20)
 		living_guy.ignite_mob()
@@ -187,7 +187,8 @@
 				if(!can_stumble_vore(living_guy, living_mob) && !can_stumble_vore(living_mob, living_guy)) //Works both ways! Either way, someone's getting eaten!
 					continue
 				living_mob.stumble_into(living_guy) //logic reversed here because the game is DUMB. This means that living_guy is stumbling into the target!
-				living_guy.visible_message(span_danger("[living_guy] loses their balance and slips into [living_mob]!"), span_boldwarning("You lose your balance, slipping into [living_mob]!"))
+				act_message(living_guy, living_mob, MSG_SELF(span_boldwarning("You lose your balance, slipping into %T%!")), \
+					MSG_OTHERS(span_danger("%U% loses their balance and slips into %T%!")))
 				omen_consume()
 				return
 
@@ -284,7 +285,8 @@
 			for(var/obj/item/reagent_containers/glass/beaker/evil_beaker in the_turf)
 				if(!evil_beaker.is_open_container() && (evil_beaker.reagents.total_volume > 0)) //A closed beaker is a safe beaker!
 					continue
-				living_guy.visible_message(span_danger("[evil_beaker] tilts, spilling its contents on [living_guy]!"), span_bolddanger("[evil_beaker] spills all over you!"))
+				act_message(living_guy, null, MSG_SELF(span_bolddanger("[evil_beaker] spills all over you!")), \
+					MSG_OTHERS(span_danger("[evil_beaker] tilts, spilling its contents on %U%!")))
 				evil_beaker.balloon_alert_visible("[evil_beaker]'s contents splashes onto [living_guy]!")
 				evil_beaker.reagents.splash(living_guy, evil_beaker.reagents.total_volume)
 				omen_consume()
@@ -295,7 +297,8 @@
 				continue
 			if(!prob(10)) //Reduce the chance further, due to the number of tables that are passed in normal play.
 				continue
-			living_guy.visible_message(span_danger("[living_guy] stubs [living_guy.p_their()] toe on [evil_table]!"), span_bolddanger("You stub your toe on [evil_table]!"))
+			act_message(living_guy, evil_table, MSG_SELF(span_bolddanger("You stub your toe on %T%!")), \
+				MSG_OTHERS(span_danger("%U% stubs %THEIR% toe on %T%!")))
 			living_guy.injure(INJURY_BLUNT, 2 * omen_damage, pick(BP_L_FOOT, BP_R_FOOT), evil_table)
 			living_guy.injure(INJURY_PAIN, 25) //It REALLY hurts.
 			living_guy.status_at_least(EFFECT_WEAKENED, 3)
@@ -327,7 +330,8 @@
 
 	if(prob(30 * omen_luck) && our_guy.get_bodypart_name(BP_HEAD)) /// Bonk!
 		play_sfx(our_guy, SFX_EFFECTS_TABLEHEADSMASH)
-		our_guy.visible_message(span_danger("[our_guy] hits [our_guy.p_their()] head really badly falling down!"), span_bolddanger("You hit your head really badly falling down!"))
+		act_message(our_guy, null, MSG_SELF(span_bolddanger("You hit your head really badly falling down!")), \
+			MSG_OTHERS(span_danger("%U% hits %THEIR% head really badly falling down!")))
 		var/max_health_coefficient = (our_guy.get_endurance() * 0.5)
 		our_guy.injure(INJURY_BLUNT, max_health_coefficient * omen_damage, BP_HEAD)
 		if(ishuman(our_guy))
@@ -360,12 +364,13 @@
 			var/obj/item/grenade/bad_grenade = source
 			if(bad_grenade.active)
 				unlucky_soul.put_in_active_hand(bad_grenade)
-				unlucky_soul.visible_message(span_warning("[src] catches [source] as it goes off in their hand!"), span_bolddanger("You catch [source] and it goes off in your hand!"))
+				act_message(unlucky_soul, src, MSG_SELF(span_bolddanger("You catch [source] and it goes off in your hand!")), \
+					MSG_OTHERS(span_warning("%T% catches [source] as it goes off in their hand!")))
 				unlucky_soul.throw_mode_off()
 				bad_grenade.detonate()
 				return TRUE
 		else
-			unlucky_soul.visible_message(span_attack("[unlucky_soul] tries to catch [source] and fumbles it, getting thrown back!"))
+			act_message(unlucky_soul, null, others = span_attack("%U% tries to catch [source] and fumbles it, getting thrown back!"))
 			unlucky_soul.status_at_least(EFFECT_WEAKENED, 5)
 			return TRUE
 
@@ -445,13 +450,14 @@
 		if(!damage_to_inflict)
 			return
 
-		unlucky_human.visible_message(span_danger("[unlucky_human] accidentally [injury_verb] [unlucky_human.p_their()] hand on [item]!"))
+		act_message(unlucky_human, null, others = span_danger("%U% accidentally [injury_verb] %THEIR% hand on [item]!"))
 		unlucky_human.injure(injury_kind, damage_to_inflict * omen_damage, current_hand, item)
 
 /mob/living/proc/omen_check_stairs(mob/living/unlucky_soul)
 	if(prob(3 * omen_luck)) /// Bonk!
 		play_sfx(unlucky_soul, SFX_EFFECTS_TABLEHEADSMASH)
-		unlucky_soul.visible_message(span_danger("One of the stairs give way as [unlucky_soul] steps onto it, tumbling them down to the bottom!"), span_bolddanger("A stair gives way and you trip to the bottom!"))
+		act_message(unlucky_soul, null, MSG_SELF(span_bolddanger("A stair gives way and you trip to the bottom!")), \
+			MSG_OTHERS(span_danger("One of the stairs give way as %U% steps onto it, tumbling them down to the bottom!")))
 		var/max_health_coefficient = (unlucky_soul.get_endurance() * 0.09)
 		for(var/obj/item/organ/external/limb in unlucky_soul.organs) //In total, you should have 11 limbs (generally, unless you have an amputation). The full omen variant we want to leave you at 1 hp, the trait version less. As of writing, the trait version is 25% of the damage, so you take 24.75 across all limbs.
 			unlucky_soul.injure(INJURY_BLUNT, max_health_coefficient * omen_damage, limb.organ_tag)

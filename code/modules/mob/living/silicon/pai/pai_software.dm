@@ -69,7 +69,7 @@
 
 /mob/living/silicon/pai/proc/wipe_software_confirmed(datum/om/prompt/confirm/ask)
 	close_up()
-	visible_message(span_filter_notice(span_bold("[src]") + " fades away from the screen, the pAI device goes silent."))
+	act_message(src, null, others = span_filter_notice(span_bold("%U%") + " fades away from the screen, the pAI device goes silent."))
 	card.removePersonality()
 	clear_client()
 

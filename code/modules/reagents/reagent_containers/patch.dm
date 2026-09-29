@@ -58,7 +58,7 @@
 			to_chat(user, span_notice("\The [src] can't be applied through such a thick material!"))
 			return ITEM_INTERACT_FAILURE
 
-		user.visible_message(span_warning("[user] attempts to place \the [src] onto [H]`s [affecting]."))
+		act_message(user, src, others = span_warning("%U% attempts to place %T% onto [H]`s [affecting]."))
 
 		user.setClickCooldown(user.get_attack_speed(src))
 		om_task_start(/datum/om/task/timed/patch_apply_patch, user, M, receiver = src, H = H, affecting = affecting)
@@ -77,7 +77,7 @@
 	var/mob/living/carbon/human/H = task.H
 	var/obj/item/organ/external/affecting = task.affecting
 	user.drop_from_inventory(src) //icon update
-	user.visible_message(span_warning("[user] applies \the [src] to [H]."))
+	act_message(user, src, others = span_warning("%U% applies %T% to [H]."))
 
 	var/contained = reagentlist()
 	add_attack_logs(user,H,"Applied a patch containing [contained]")

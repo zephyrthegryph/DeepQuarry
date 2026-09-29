@@ -269,7 +269,7 @@ EXTEND_INTERACTIONS(/obj/effect/shield, \
 	user.do_attack_animation(src)
 
 	if(gen().check_flag(MODEFLAG_HYPERKINETIC))
-		user.visible_message(span_danger("\The [user] hits \the [src] with \the [I]!"))
+		act_message(user, src, others = span_danger("%U% hits %T% with %I%!"), item = I)
 		if(I.obj_damage_type() == BURN)
 			take_damage(I.force, SHIELD_DAMTYPE_HEAT)
 		else if (I.obj_damage_type() == BRUTE)
@@ -277,7 +277,7 @@ EXTEND_INTERACTIONS(/obj/effect/shield, \
 		else
 			take_damage(I.force, SHIELD_DAMTYPE_EM)
 	else
-		user.visible_message(span_danger("\The [user] tries to attack \the [src] with \the [I], but it passes through!"))
+		act_message(user, src, others = span_danger("%U% tries to attack %T% with %I%, but it passes through!"), item = I)
 	return INTERACTION_HANDLED_PASS
 
 // Special treatment for meteors because they would otherwise penetrate right through the shield.

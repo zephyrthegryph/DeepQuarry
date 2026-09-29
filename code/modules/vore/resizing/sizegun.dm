@@ -40,7 +40,8 @@
 	set src in view(1)
 
 	size_set_to = (rand(25,200)) /100
-	usr.visible_message(span_warning("\The [usr] spins the size dial to a random value!"),span_notice("You spin the dial to a random value!"))
+	act_message(usr, null, MSG_SELF(span_notice("You spin the dial to a random value!")), \
+		MSG_OTHERS(span_warning("%U% spins the size dial to a random value!")))
 
 /obj/item/gun/energy/sizegun/consume_next_projectile()
 	. = ..()
@@ -213,7 +214,8 @@
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
 			if(istype(H.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing/gloves/bluespace))
-				M.visible_message(span_warning("\The [H]'s bracelet flashes and absorbs the beam!"),span_notice("Your bracelet flashes and absorbs the beam!"))
+				act_message(M, H, MSG_SELF(span_notice("Your bracelet flashes and absorbs the beam!")), \
+					MSG_OTHERS(span_warning("%T%'s bracelet flashes and absorbs the beam!")))
 				return
 		if(!M.resize(set_size, uncapped = M.has_large_resize_bounds(), ignore_prefs = ignoring_prefs, allow_stripping = TRUE))
 			to_chat(M, span_blue("The beam fires into your body, changing your size!"))

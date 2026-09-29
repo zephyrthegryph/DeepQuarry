@@ -38,7 +38,7 @@
 	icon = "heart-o"
 
 /datum/data/pda/utility/scanmode/medical/scan_mob(mob/living/C, mob/living/user)
-	C.visible_message(span_warning("[user] has analyzed [C]'s vitals!"))
+	act_message(user, C, others = span_warning("%U% has analyzed %T%'s vitals!"))
 	var/datum/diagnosis/D = C.diagnose(/datum/diagnostic_profile/health_analyzer)
 	if(!D)
 		return
@@ -76,7 +76,7 @@
 	icon = "exclamation-circle"
 
 /datum/data/pda/utility/scanmode/halogen/scan_mob(mob/living/C, mob/living/user)
-	C.visible_message(span_warning("[user] has analyzed [C]'s radiation levels!"))
+	act_message(user, C, others = span_warning("%U% has analyzed %T%'s radiation levels!"))
 
 	user.show_message(span_notice("Analyzing Results for [C]:"))
 	if(C.radiation)

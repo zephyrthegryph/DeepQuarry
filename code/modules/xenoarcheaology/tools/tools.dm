@@ -116,7 +116,7 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 	var/material = "unknown"
 
 /obj/item/depth_scanner/proc/scan_atom(mob/user, atom/A)
-	user.visible_message(span_bold("\The [user]") + " scans \the [A], the air around them humming gently.")
+	act_message(user, A, others = span_bold("%U%") + " scans %T%, the air around them humming gently.")
 
 	if(istype(A, /turf/simulated/mineral))
 		var/turf/simulated/mineral/M = A

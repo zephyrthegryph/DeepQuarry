@@ -158,7 +158,7 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 	user.drop_from_inventory(stock)
 	stock.forceMove(src)
 	material_sample = stock
-	visible_message(span_notice("[user] secures [stock] in [src]'s shielded treatment cradle."))
+	act_message(user, src, others = span_notice("%U% secures [stock] in %T%'s shielded treatment cradle."))
 	return TRUE
 
 /// Old attackby: `if(default_part_replacement(user, W)) return`, gated on the fusion field being off.
@@ -196,14 +196,14 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 
 /obj/machinery/power/fusion_core/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(owned_field)
-		visible_message(span_notice("[user] initiates an emergency shutdown of [src]'s fusion field."))
+		act_message(user, src, others = span_notice("%U% initiates an emergency shutdown of %T%'s fusion field."))
 		Shutdown()
 	else if(material_sample)
 		var/obj/item/stack/material/processed_alloy/finished_sample = material_sample
 		material_sample = null
 		finished_sample.forceMove(user.drop_location())
 		user.put_in_hands(finished_sample)
-		visible_message(span_notice("[user] releases [finished_sample] from [src]'s material cradle."))
+		act_message(user, src, others = span_notice("%U% releases [finished_sample] from %T%'s material cradle."))
 	else
 		to_chat(user, span_notice("The fusion field is off and the material cradle is empty."))
 	return TRUE

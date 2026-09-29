@@ -226,11 +226,11 @@
 			victim.apply_effect(6, STUTTER, blocked)
 			victim.injure(INJURY_BLUNT, 10, def_zone, src, flags = INJURE_ARMORED)
 		if(pulling)
-			occupant.visible_message(span_danger("[pulling] has thrusted \the [name] into \the [A], throwing \the [occupant] out of it!"))
+			act_message(pulling, occupant, others = span_danger("%U% has thrusted \the [name] into \the [A], throwing %T% out of it!"))
 
 			add_attack_logs(pulling,occupant,"Crashed their [name] into [A]")
 		else
-			occupant.visible_message(span_danger("[occupant] crashed into \the [A]!"))
+			act_message(occupant, A, others = span_danger("%U% crashed into %T%!"))
 
 /obj/structure/bed/chair/wheelchair/proc/create_track()
 	var/obj/effect/decal/cleanable/blood/tracks/B = new(loc)
@@ -260,7 +260,7 @@
 	if((over_object == user && (in_range(src, user) || user.contents.Find(src))))
 		if(!ishuman(user))	return
 		if(has_buckled_mobs())	return 0
-		visible_message("[user] collapses \the [src.name].")
+		act_message(user, null, others = "%U% collapses \the [src.name].")
 		var/obj/item/wheelchair/R = new folded_type(get_turf(src))
 		R.name = src.name
 		R.color = src.color

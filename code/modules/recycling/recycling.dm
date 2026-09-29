@@ -60,7 +60,7 @@
 	if(can_accept_item(O))
 		M.drop_from_inventory(O)
 		take_item(O)
-		M.visible_message(span_infoplain(span_bold("[M]") + " inserts [O] into [src]."), span_info("You insert [O] into [src]."))
+		act_message(M, src, MSG_SELF(span_info("You insert [O] into %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " inserts [O] into %T%.")))
 	else
 		to_chat(user, span_warning("\The [src] can't accept [O] for recycling."))
 	return TRUE

@@ -102,7 +102,7 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 				turn_off()
 			else
 				turn_on()
-			visible_message("[ui.user] switches [on ? "on" : "off"] [src].")
+			act_message(src, null, others = "[ui.user] switches [on ? "on" : "off"] %U%.")
 			. = TRUE
 
 		if("stop")
@@ -265,7 +265,7 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 
 /mob/living/bot/mulebot/Bump(mob/living/M)
 	if(!safety && istype(M))
-		visible_message(span_warning("[src] knocks over [M]!"))
+		act_message(src, M, others = span_warning("%U% knocks over %T%!"))
 		M.status_at_least(EFFECT_STUNNED, 8)
 		M.status_at_least(EFFECT_WEAKENED, 5)
 	..()
@@ -292,7 +292,7 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 /mob/living/bot/mulebot/explode()
 	unload(pick(0, 1, 2, 4, 8))
 
-	visible_message(span_danger("[src] blows apart!"))
+	act_message(src, null, others = span_danger("%U% blows apart!"))
 
 	var/turf/Tsec = get_turf(src)
 	new /obj/item/assembly/prox_sensor(Tsec)

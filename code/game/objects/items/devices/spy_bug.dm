@@ -20,8 +20,8 @@
 
 
 /obj/item/camerabug/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	to_chat(user, span_notice("You crush the [src] under your foot, breaking it."))
-	visible_message(span_notice("[user.name] crushes the [src] under their foot, breaking it!"))
+	act_message(user, src, MSG_SELF(span_notice("You crush %T% under your foot, breaking it.")), \
+		MSG_OTHERS(span_notice("%U% crushes %T% under %THEIR% foot, breaking it!")))
 	replace_with(src, brokentype)
 
 /obj/item/camerabug/proc/camerabug_reset_effect(mob/user, obj/item/held, datum/interaction/interaction)

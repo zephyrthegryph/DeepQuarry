@@ -23,8 +23,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver, INTERACT_VERB("Spin cylin
 /// Old Spin cylinder verb: Fun when you're bored out of your skull.
 /obj/item/gun/projectile/revolver/proc/revolver_verb_spin_cylinder(mob/user, obj/item/held, datum/interaction/interaction)
 	chamber_offset = 0
-	visible_message(span_warning("\The [user] spins the cylinder of \the [src]!"), \
-	span_notice("You hear something metallic spin and click."))
+	act_message(user, src, others = span_warning("%U% spins the cylinder of %T%!"), blind = span_notice("You hear something metallic spin and click."))
 	play_sfx(src, SFX_WEAPONS_REVOLVER_SPIN)
 	loaded = shuffle(loaded)
 	if(rand(1,max_shells) > loaded.len)
@@ -286,8 +285,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap
 /// Old Spin cylinder verb override: the LeMat spins whichever cylinder it is firing from.
 /obj/item/gun/projectile/revolver/lemat/revolver_verb_spin_cylinder(mob/user, obj/item/held, datum/interaction/interaction)
 	chamber_offset = 0
-	visible_message(span_warning("\The [user] spins the cylinder of \the [src]!"), \
-	span_notice("You hear something metallic spin and click."))
+	act_message(user, src, others = span_warning("%U% spins the cylinder of %T%!"), blind = span_notice("You hear something metallic spin and click."))
 	play_sfx(src, SFX_WEAPONS_REVOLVER_SPIN)
 	if(!flipped_firing)
 		loaded = shuffle(loaded)

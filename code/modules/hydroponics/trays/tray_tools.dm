@@ -115,7 +115,7 @@ DECLARE_INTERACTIONS(/obj/item/analyzer/plant_analyzer, INTERACT_USE(null, TYPE_
 	if(!istype(last_seed))
 		last_seed = grown_seed // TRAIT_IMMUTABLE makes diverge() return null
 
-	user.visible_message(span_notice("[user] runs the scanner over \the [target]."))
+	act_message(user, target, others = span_notice("%U% runs the scanner over %T%."))
 
 	last_reagents = list()
 	if(grown_reagents && grown_reagents.reagent_list && grown_reagents.reagent_list.len)

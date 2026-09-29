@@ -40,19 +40,18 @@
 
 /obj/structure/closet/grave/proc/interaction_grave_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(opened)
-		visible_message(span_notice("[user] starts to climb into \the [src.name]."), \
-						span_notice("You start to lower yourself into \the [src.name]."))
+		act_message(user, null, others = span_notice("%U% starts to climb into \the [src.name]."), \
+			blind = span_notice("You start to lower yourself into \the [src.name]."))
 		om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user))
 	return TRUE
 
 /obj/structure/closet/grave/proc/attack_hand_timed_done(mob/user)
 	user.forceMove(src.loc)
-	visible_message(span_notice("[user] climbs into \the [src.name]."), \
-					span_notice("You climb into \the [src.name]."))
+	act_message(user, null, others = span_notice("%U% climbs into \the [src.name]."), blind = span_notice("You climb into \the [src.name]."))
 
 /obj/structure/closet/grave/proc/attack_hand_timed_failed(mob/user)
-	visible_message(span_notice("[user] decides not to climb into \the [src.name]."), \
-					span_notice("You stop climbing into \the [src.name]."))
+	act_message(user, null, others = span_notice("%U% decides not to climb into \the [src.name]."), \
+		blind = span_notice("You stop climbing into \the [src.name]."))
 
 /obj/structure/closet/grave/CanPass(atom/movable/mover, turf/target)
 	if(opened && ismob(mover))
@@ -99,9 +98,9 @@
 /obj/structure/closet/grave/proc/interaction_grave_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(src.opened)
 		if(istype(W, /obj/item/shovel))
-			user.visible_message(span_notice("[user] piles dirt into \the [src.name]."), \
-									span_notice("You start to pile dirt into \the [src.name]."), \
-									span_notice("You hear dirt being moved."))
+			act_message(user, null, MSG_SELF(span_notice("You start to pile dirt into \the [src.name].")), \
+				MSG_OTHERS(span_notice("%U% piles dirt into \the [src.name].")), \
+				MSG_BLIND(span_notice("You hear dirt being moved.")))
 			use_tool(user, W, src, delay = 4 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done_coffin), done_args = list(user), on_fail = PROC_REF(attackby_tool_failed_coffin), fail_args = list(user))
 		if(istype(W, /obj/item/grab))
 			var/obj/item/grab/G = W
@@ -114,9 +113,10 @@
 			var/turf/T = get_turf(src)
 			for(var/obj/item/I in LB.slot_contents())
 				LB.remove_from_storage(I, T)
-			user.visible_message(span_notice("[user] empties \the [LB] into \the [src]."), \
-									span_notice("You empty \the [LB] into \the [src]."), \
-									span_notice("You hear rustling of clothes."))
+			act_message(user, src, MSG_SELF(span_notice("You empty %I% into %T%.")), \
+				MSG_OTHERS(span_notice("%U% empties %I% into %T%.")), \
+				MSG_BLIND(span_notice("You hear rustling of clothes.")), \
+				item = LB)
 			return TRUE
 		if(isrobot(user))
 			return TRUE
@@ -128,31 +128,31 @@
 	else
 		if(istype(W, /obj/item/shovel))
 			if(interaction.stance == I_HURT)	// Combat mode means you're trying to kill someone, or just get rid of the grave
-				user.visible_message(span_notice("[user] begins to smoothe out the dirt of \the [src.name]."), \
-										span_notice("You start to smoothe out the dirt of \the [src.name]."), \
-										span_notice("You hear dirt being moved."))
+				act_message(user, null, MSG_SELF(span_notice("You start to smoothe out the dirt of \the [src.name].")), \
+					MSG_OTHERS(span_notice("%U% begins to smoothe out the dirt of \the [src.name].")), \
+					MSG_BLIND(span_notice("You hear dirt being moved.")))
 				use_tool(user, W, src, delay = 4 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done2), done_args = list(user), on_fail = PROC_REF(attackby_tool_failed2), fail_args = list(user))
 				return TRUE
 			else
-				user.visible_message(span_notice("[user] begins to unearth \the [src.name]."), \
-										span_notice("You start to unearth \the [src.name]."), \
-										span_notice("You hear dirt being moved."))
+				act_message(user, null, MSG_SELF(span_notice("You start to unearth \the [src.name].")), \
+					MSG_OTHERS(span_notice("%U% begins to unearth \the [src.name].")), \
+					MSG_BLIND(span_notice("You hear dirt being moved.")))
 				use_tool(user, W, src, delay = 4 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done3), done_args = list(user), on_fail = PROC_REF(attackby_tool_failed3), fail_args = list(user))
 	return TRUE
 
 /obj/structure/closet/grave/proc/attackby_tool_done_coffin(mob/user)
-	user.visible_message(span_notice("[user] pats down the dirt on top of \the [src.name]."), \
-						span_notice("You finish filling in \the [src.name]."))
+	act_message(user, null, MSG_SELF(span_notice("You finish filling in \the [src.name].")), \
+		MSG_OTHERS(span_notice("%U% pats down the dirt on top of \the [src.name].")))
 	close()
 	return
 
 /obj/structure/closet/grave/proc/attackby_tool_failed_coffin(mob/user)
-	user.visible_message(span_notice("[user] stops filling in \the [src.name]."), \
-						span_notice("You change your mind and stop filling in \the [src.name]."))
+	act_message(user, null, MSG_SELF(span_notice("You change your mind and stop filling in \the [src.name].")), \
+		MSG_OTHERS(span_notice("%U% stops filling in \the [src.name].")))
 	return
 /obj/structure/closet/grave/proc/attackby_tool_done2(mob/user)
-	user.visible_message(span_notice("[user] finishes smoothing out \the [src.name]."), \
-							span_notice("You finish smoothing out \the [src.name]."))
+	act_message(user, null, MSG_SELF(span_notice("You finish smoothing out \the [src.name].")), \
+		MSG_OTHERS(span_notice("%U% finishes smoothing out \the [src.name].")))
 	if(LAZYLEN(contents) || has_latent())
 		alpha = 40	// If we've got stuff inside, like maybe a person, just make it hard to see us
 	else
@@ -160,18 +160,16 @@
 	return
 
 /obj/structure/closet/grave/proc/attackby_tool_failed2(mob/user)
-	user.visible_message(span_notice("[user] stops concealing \the [src.name]."), \
-							span_notice("You stop concealing \the [src.name]."))
+	act_message(user, null, MSG_SELF(span_notice("You stop concealing \the [src.name].")), MSG_OTHERS(span_notice("%U% stops concealing \the [src.name].")))
 	return
 /obj/structure/closet/grave/proc/attackby_tool_done3(mob/user)
-	user.visible_message(span_notice("[user] reaches the bottom of \the [src.name]."), \
-							span_notice("You finish digging out \the [src.name]."))
+	act_message(user, null, MSG_SELF(span_notice("You finish digging out \the [src.name].")), \
+		MSG_OTHERS(span_notice("%U% reaches the bottom of \the [src.name].")))
 	break_open()
 	return
 
 /obj/structure/closet/grave/proc/attackby_tool_failed3(mob/user)
-	user.visible_message(span_notice("[user] stops digging out \the [src.name]."), \
-						span_notice("You stop digging out \the [src.name]."))
+	act_message(user, null, MSG_SELF(span_notice("You stop digging out \the [src.name].")), MSG_OTHERS(span_notice("%U% stops digging out \the [src.name].")))
 
 /obj/structure/closet/grave/close()
 	..()

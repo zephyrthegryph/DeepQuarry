@@ -78,15 +78,15 @@ DECLARE_REF(/obj/machinery/pipelayer, "W", OWNED, null)
 	set_on(!on)
 	old_turf_handle = om_handle(get_turf(src))
 	old_dir = dir
-	user.visible_message(span_notice("[user] has [!on?"de":""]activated \the [src]."), span_notice("You [!on?"de":""]activate \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You [!on?"de":""]activate %T%.")), MSG_OTHERS(span_notice("%U% has [!on?"de":""]activated %T%.")))
 	return TRUE
 
 /obj/machinery/pipelayer/proc/eject_answered(datum/om/prompt/confirm/ask)
 	var/mob/user = ask.answerer
 	if(panel_open)
 		var/amount_ejected = eject_metal()
-		user.visible_message(span_notice("[user] removes [amount_ejected] sheet\s of [MAT_STEEL] from the \the [src]."),
-			span_notice("You remove [amount_ejected] sheet\s of [MAT_STEEL] from \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You remove [amount_ejected] sheet\s of [MAT_STEEL] from %T%.")), \
+			MSG_OTHERS(span_notice("%U% removes [amount_ejected] sheet\s of [MAT_STEEL] from %T%.")))
 	return TRUE
 
 /// Recycle a pipe into internal metal storage.
@@ -127,7 +127,7 @@ DECLARE_REF(/obj/machinery/pipelayer, "W", OWNED, null)
 	else if(!result)
 		to_chat(user, span_notice("\The [src] is full."))
 	else
-		user.visible_message(span_notice("[user] has loaded metal into \the [src]."), span_notice("You load metal into \the [src]"))
+		act_message(user, src, MSG_SELF(span_notice("You load metal into %T%")), MSG_OTHERS(span_notice("%U% has loaded metal into %T%.")))
 	return TRUE
 
 /obj/machinery/pipelayer/wrench_act(mob/user, obj/item/tool)
@@ -141,14 +141,16 @@ DECLARE_REF(/obj/machinery/pipelayer, "W", OWNED, null)
 	var/choice = ask.choice
 	P_type_t = choice
 	P_type = Pipes[P_type_t]
-	user.visible_message(span_notice("[user] has set \the [src] to manufacture [P_type_t]."), span_notice("You set \the [src] to manufacture [P_type_t]."))
+	act_message(user, src, MSG_SELF(span_notice("You set %T% to manufacture [P_type_t].")), \
+		MSG_OTHERS(span_notice("%U% has set %T% to manufacture [P_type_t].")))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/pipelayer/crowbar_act(mob/user, obj/item/tool)
 	if(panel_open)
 		return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
 	a_dis = !a_dis
-	user.visible_message(span_notice("[user] has [!a_dis?"de":""]activated auto-dismantling."), span_notice("You [!a_dis?"de":""]activate auto-dismantling."))
+	act_message(user, null, MSG_SELF(span_notice("You [!a_dis?"de":""]activate auto-dismantling.")), \
+		MSG_OTHERS(span_notice("%U% has [!a_dis?"de":""]activated auto-dismantling.")))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/pipelayer/examine(mob/user)

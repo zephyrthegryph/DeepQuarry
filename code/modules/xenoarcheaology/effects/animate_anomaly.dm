@@ -45,7 +45,7 @@
 	/// This controls the NORMAL functionality!
 	if(target() && istype(T) && isturf(O.loc))
 		O.Move(T)
-		O.visible_message(span_alien("\The [holder] lurches away from [user]"))
+		act_message(user, O, others = span_alien("\The [holder] lurches away from %U%"))
 
 	/// This does the 'we are in an artifact utilizer' functionality
 	if(istype(holder, /obj/item/anobattery))
@@ -54,10 +54,10 @@
 		T = get_step_away(utilizer, user)
 		if(istype(utilizer.loc, /turf))
 			utilizer.Move(T)
-			utilizer.visible_message(span_alien("\The [holder] lurches away from [user]"))
+			act_message(user, utilizer, others = span_alien("\The [holder] lurches away from %U%"))
 		else if(istype(utilizer.loc, /mob)) //It's in your hands and running away!
 			user.drop_from_inventory(utilizer, user.loc)
-			utilizer.visible_message(span_alien("\The [holder] squirms out of [user]'s hand!"))
+			act_message(user, utilizer, others = span_alien("\The [holder] squirms out of %U%'s hand!"))
 			T = get_step_away(utilizer, user)
 			utilizer.Move(T)
 
@@ -72,7 +72,7 @@
 		if(istype(utilizer.loc, /mob)) //It's in your hands and running away!
 			user = utilizer.loc
 			user.drop_from_inventory(utilizer, user.loc)
-			utilizer.visible_message(span_alien("\The [utilizer] squirms out of [user]'s hand!"))
+			act_message(utilizer, user, others = span_alien("%U% squirms out of %T%'s hand!"))
 		find_target(utilizer)
 	else
 		find_target()

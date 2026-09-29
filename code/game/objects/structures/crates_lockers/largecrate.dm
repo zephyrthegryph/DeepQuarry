@@ -49,9 +49,9 @@
 				AMBLINAL.ghostjoin = 1
 				AMBLINAL.ghostjoin_icon()
 				registry_join(REGISTRY_GHOST_PODS, AMBLINAL)
-	user.visible_message(span_notice("[user] pries \the [src] open."), \
-		span_notice("You pry open \the [src]."), \
-		span_notice("You hear splitting wood."))
+	act_message(user, src, MSG_SELF(span_notice("You pry open %T%.")), \
+		MSG_OTHERS(span_notice("%U% pries %T% open.")), \
+		MSG_BLIND(span_notice("You hear splitting wood.")))
 	qdel(src)
 	return TRUE
 
@@ -193,9 +193,9 @@
 	for(var/atom/movable/AM in contents)
 		if(AM.simulated)
 			AM.forceMove(T)
-	user.visible_message(span_notice("[user] pries \the [src] open."), \
-		span_notice("You pry open \the [src]."), \
-		span_notice("You hear splitting wood."))
+	act_message(user, src, MSG_SELF(span_notice("You pry open %T%.")), \
+		MSG_OTHERS(span_notice("%U% pries %T% open.")), \
+		MSG_BLIND(span_notice("You hear splitting wood.")))
 	qdel(src)
 	return TRUE
 

@@ -13,6 +13,9 @@ act_message runtime (code/modules/messages/), that is any of
   4. the retired interaction message fields: any `message_self` / `message_others` /
      `start_messages(` / `fill_message(` token in code (use `feedback` / `start_feedback`).
 
+Named arguments count by name (`self_message = x` is a self message, `range = 1` is not), and
+`[R.name]` / `[R.real_name]` name the actor just as `[R]` does.
+
 Write act_message(user, target, MSG_SELF(...), MSG_OTHERS(...), MSG_BLIND(...)) with the
 %U% / %T% / %I% tokens instead, or act_message_t() with a declared /datum/msg template.
 """
@@ -28,6 +31,7 @@ PROC_HEAD = re.compile(r"^(/[\w/]+?)(?:/proc|/verb)?/(\w+)\s*\(([^)]*)\)")
 OLD_FIELDS = re.compile(r"(?<![\w.])(message_self|message_others|start_messages|fill_message)\b")
 TO_CHAT = re.compile(r"^\s*to_chat\s*\(\s*([A-Za-z_]\w*)\s*,")
 BS = chr(92)
+NAMED = re.compile(r"^([A-Za-z_]\w*)\s*=(?!=)(.*)$", re.S)
 MOB_NAMES = ("user", "usr")
 
 
@@ -76,7 +80,8 @@ def split_args(text, start):
 
 
 def named(arg, name):
-    return re.search(r"\[\s*" + re.escape(name) + r"\s*\]", arg) is not None
+    # `[R]`, and the actor's name read off it: `[R.name]`, `[R.real_name]`, `[src.name]`.
+    return re.search(r"\[\s*" + re.escape(name) + r"(?:\.(?:name|real_name))?\s*\]", arg) is not None
 
 
 def scan(files):
@@ -117,9 +122,20 @@ def scan(files):
             if "ALLOW(sys_visible_pair)" in line:
                 continue
             recv = m.group(1)
-            args, _ = split_args(text, m.end())
+            raw, _ = split_args(text, m.end())
+            # Named arguments (`self_message = x`, `range = 1`) are not positional.
+            args, kw = [], {}
+            for a in raw:
+                km = NAMED.match(a)
+                if km:
+                    kw[km.group(1)] = km.group(2).strip()
+                else:
+                    args.append(a)
+            if "message" in kw:
+                args.insert(0, kw["message"])
             first = args[0] if args else ""
-            second = args[1] if len(args) > 1 else ""
+            second = kw.get("self_message", args[1] if len(args) > 1 else "")
+            args = args + [v for k, v in kw.items() if k in ("self_message", "blind_message")]
             ptype = proc_type[line_of] or ""
             in_mob = ptype.startswith("/mob")
             recv_is_mob = False

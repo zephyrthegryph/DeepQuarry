@@ -230,7 +230,7 @@ DECLARE_REF(/datum/seed_pile, "seeds", SPILL_LIST, null)
 
 /obj/machinery/seed_storage/proc/interaction_insert_seeds(mob/user, obj/item/seeds/O, datum/interaction/interaction)
 	add(O)
-	user.visible_message(span_filter_notice("[user] puts \the [O.name] into \the [src]."), span_filter_notice("You put \the [O] into \the [src]."))
+	act_message(user, src, MSG_SELF(span_filter_notice("You put %I% into %T%.")), MSG_OTHERS(span_filter_notice("%U% puts \the [O.name] into %T%.")), item = O)
 	return TRUE
 
 /// Empty a seed bag into storage.
@@ -247,7 +247,8 @@ DECLARE_REF(/datum/seed_pile, "seeds", SPILL_LIST, null)
 		++loaded
 		add(G)
 	if (loaded)
-		user.visible_message(span_filter_notice("[user] puts the seeds from \the [P.name] into \the [src]."), span_filter_notice("You put the seeds from \the [P.name] into \the [src]."))
+		act_message(user, src, MSG_SELF(span_filter_notice("You put the seeds from \the [P.name] into %T%.")), \
+			MSG_OTHERS(span_filter_notice("%U% puts the seeds from \the [P.name] into %T%.")))
 	else
 		to_chat(user, span_notice("There are no seeds in \the [P.name]."))
 	return TRUE

@@ -51,14 +51,16 @@ TYPE_TABLE(/obj/item/dogborg/sleeper/compactor/supply, sleeper_injection_chems, 
 
 	if(isturf(target))
 		if(ore_bag.gather_all(target, user, TRUE))
-			user.visible_message(span_warning("[hound.name]'s [src.name] groans lightly as ore slips inside."), span_notice("Your [src.name] groans lightly as ore slips inside."))
+			act_message(user, null, MSG_SELF(span_notice("Your [src.name] groans lightly as ore slips inside.")), \
+				MSG_OTHERS(span_warning("[hound.name]'s [src.name] groans lightly as ore slips inside.")))
 			playsound(src, gulpsound, vol = 60, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
 			return
 	if(istype(target, /obj/item/ore) && !istype(target, /obj/item/ore/slag) && !istype(target, /obj/item/ore/archeology_debris))
 		var/turf_check = isturf(target.loc) //get_turf intentionally not used here due to clicking ore in a backpack or other weirdness.
 		if(turf_check)
 			if(ore_bag.gather_all(target.loc, user, TRUE))
-				user.visible_message(span_warning("[hound.name]'s [src.name] groans lightly as ore slips inside."), span_notice("Your [src.name] groans lightly as ore slips inside."))
+				act_message(user, null, MSG_SELF(span_notice("Your [src.name] groans lightly as ore slips inside.")), \
+					MSG_OTHERS(span_warning("[hound.name]'s [src.name] groans lightly as ore slips inside.")))
 				playsound(src, gulpsound, vol = 60, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
 				return
 	. = ..()

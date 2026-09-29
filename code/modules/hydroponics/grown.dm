@@ -294,7 +294,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 	if(istype(user.loc,/turf/space))
 		return FALSE
 
-	user.visible_message(span_danger("\The [user] squashes \the [src]!"))
+	act_message(user, src, others = span_danger("%U% squashes %T%!"))
 	seed().thrown_at(src,user)
 	if(!QDELETED(src))
 		consume(src, user)

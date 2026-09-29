@@ -155,7 +155,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/holofloor, INTERACT_ITEM("Nothing", TY
 	var/damage = rand(0, 9)
 	if(!damage)
 		play_sfx(target, SFX_WEAPONS_PUNCHMISS)
-		target.visible_message(span_danger("[user] has attempted to punch [target]!"))
+		act_message(user, target, others = span_danger("%U% has attempted to punch %T%!"))
 		return TRUE
 	var/obj/item/organ/external/affecting = target.get_organ(ran_zone(user.zone_sel.selecting))
 	var/armor_block = target.armor_against(INJURY_PAIN, affecting)
@@ -165,11 +165,11 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/holofloor, INTERACT_ITEM("Nothing", TY
 
 	play_sfx(target, SFX_PUNCH, 0.5, extrarange = -1)
 
-	target.visible_message(span_bolddanger("[user] has punched [target]!"))
+	act_message(user, target, others = span_bolddanger("%U% has punched %T%!"))
 
 	target.injure(INJURY_PAIN, damage, affecting?.organ_tag, user, flags = INJURE_ARMORED)
 	if(damage >= 9)
-		target.visible_message(span_bolddanger("[user] has weakened [target]!"))
+		act_message(user, target, others = span_bolddanger("%U% has weakened %T%!"))
 		target.apply_effect(4, WEAKEN, armor_block)
 
 	return TRUE
@@ -188,17 +188,17 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 			qdel(W)	//gotta delete it here because if window breaks, it won't get deleted
 			switch (state)
 				if(1)
-					M.visible_message(span_warning("[user] slams [M] against \the [src]!"))
+					act_message(user, M, others = span_warning("%U% slams %T% against \the [src]!"))
 					M.injure(INJURY_PAIN, 7, null, src)
 					hit(10)
 				if(2)
-					M.visible_message(span_danger("[user] bashes [M] against \the [src]!"))
+					act_message(user, M, others = span_danger("%U% bashes %T% against \the [src]!"))
 					if (prob(50))
 						M.status_at_least(EFFECT_WEAKENED, 1)
 					M.injure(INJURY_PAIN, 10, null, src)
 					hit(25)
 				if(3)
-					M.visible_message(span_danger("<big>[user] crushes [M] against \the [src]!</big>"))
+					act_message(M, user, others = span_danger("<big>%T% crushes %U% against \the [src]!</big>"))
 					M.status_at_least(EFFECT_WEAKENED, 5)
 					M.injure(INJURY_PAIN, 20, null, src)
 					hit(50)
@@ -337,7 +337,7 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 
 /obj/item/holo/esword/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(active && default_parry_check(user, attacker, damage_source) && prob(50))
-		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
+		act_message(user, src, others = span_danger("%U% parries [attack_text] with %T%!"))
 
 		fx_sparks(user.loc, 5, FALSE)
 		play_sfx(src, SFX_WEAPONS_BLADE1)
@@ -431,7 +431,7 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 		return INTERACTION_HANDLED_PASS
 	else if (istype(W, /obj/item) && get_dist(src,user)<2)
 		user.drop_item(src.loc)
-		visible_message(span_notice("[user] dunks [W] into the [src]!"), 3)
+		act_message(user, src, others = span_notice("%U% dunks [W] into %T%!"), blind = 3)
 		return INTERACTION_HANDLED_PASS
 	return INTERACTION_HANDLED_PASS
 
@@ -585,7 +585,7 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 	derez()
 
 /mob/living/simple_mob/animal/space/carp/holodeck/proc/derez()
-	visible_message(span_infoplain(span_bold("\The [src]") + " fades away!"))
+	act_message(src, null, others = span_infoplain(span_bold("%U%") + " fades away!"))
 	qdel(src)
 
 

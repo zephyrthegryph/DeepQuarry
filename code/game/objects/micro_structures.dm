@@ -133,11 +133,11 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	return TRUE
 
 /obj/structure/micro_tunnel/proc/tunnel_reach(mob/living/user)
-	user.visible_message(span_warning("\The [user] reaches into \the [src]. . ."),span_warning("You reach into \the [src]. . ."))
+	act_message(user, src, MSG_SELF(span_warning("You reach into %T%. . .")), MSG_OTHERS(span_warning("%U% reaches into %T%. . .")))
 	om_task_start(/datum/om/task/timed/micro_reach/tunnel, user, src)
 
 /obj/structure/micro_tunnel/proc/tunnel_climb(mob/living/user)
-	user.visible_message(span_notice("\The [user] begins climbing into \the [src]!"))
+	act_message(user, src, others = span_notice("%U% begins climbing into %T%!"))
 	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_interact_timed_done2), done_args = list(user), on_fail = PROC_REF(tunnel_interact_timed_failed2), fail_args = list(user))
 
 /// A big mob picks between squeezing into the tunnel and reaching in.
@@ -167,7 +167,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 		if("Exit")
 			user.forceMove(get_turf(src.loc))
 			user.cancel_camera()
-			user.visible_message(span_notice("\The [user] climbs out of \the [src]!"))
+			act_message(user, src, others = span_notice("%U% climbs out of %T%!"))
 		if("Move")
 			var/list/destinations = find_destinations()
 			if(!destinations.len)
@@ -226,12 +226,12 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	var/mob/living/user = task.actor
 	if(!contents_count(src))
 		to_chat(user, span_warning("There was nothing inside."))
-		user.visible_message(span_notice("\The [user] pulls their hand out of \the [src]."),span_warning("You pull your hand out of \the [src]"))
+		act_message(user, src, MSG_SELF(span_warning("You pull your hand out of %T%")), MSG_OTHERS(span_notice("%U% pulls their hand out of %T%.")))
 		return
 	var/grabbed = pick(src.contents)
 	if(!grabbed)
 		to_chat(user, span_warning("There was nothing inside."))
-		user.visible_message(span_notice("\The [user] pulls their hand out of \the [src]."),span_warning("You pull your hand out of \the [src]"))
+		act_message(user, src, MSG_SELF(span_warning("You pull your hand out of %T%")), MSG_OTHERS(span_notice("%U% pulls their hand out of %T%.")))
 		return
 
 	if(ishuman(user))
@@ -244,7 +244,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 			var/atom/movable/whatever = grabbed
 			whatever.forceMove(get_turf(src.loc))
 
-		user.visible_message(span_warning("\The [user] pulls \the [grabbed] out of \the [src]! ! !"))
+		act_message(user, src, others = span_warning("%U% pulls \the [grabbed] out of %T%! ! !"))
 		return
 
 	else if(isanimal(user))
@@ -256,7 +256,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 		else
 			var/atom/movable/whatever = grabbed
 			whatever.forceMove(get_turf(src.loc))
-		user.visible_message(span_warning("\The [user] pulls \the [grabbed] out of \the [src]! ! !"))
+		act_message(user, src, others = span_warning("%U% pulls \the [grabbed] out of %T%! ! !"))
 		return
 
 /obj/structure/micro_tunnel/proc/can_enter(mob/living/user)
@@ -289,7 +289,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 	return TRUE
 
 /obj/structure/micro_tunnel/proc/mouse_drop_climb(mob/living/k)
-	k.visible_message(span_notice("\The [k] begins climbing into \the [src]!"))
+	act_message(k, src, others = span_notice("%U% begins climbing into %T%!"))
 	om_task_timed(k, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(MouseDrop_T_timed_done), done_args = list(k), on_fail = PROC_REF(MouseDrop_T_timed_failed), fail_args = list(k))
 
 /obj/structure/micro_tunnel/proc/MouseDrop_T_timed_done(mob/living/k)
@@ -301,7 +301,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 	return
 
 /obj/structure/micro_tunnel/proc/enter_tunnel(mob/living/k)
-	k.visible_message(span_notice("\The [k] climbs into \the [src]!"))
+	act_message(k, src, others = span_notice("%U% climbs into %T%!"))
 	k.forceMove(src)
 	k.cancel_camera()
 	to_chat(k,span_notice("You are inside of \the [src]. It's dark and gloomy inside of here. You can click upon the tunnel to exit, or travel to another tunnel if there are other tunnels linked to it."))
@@ -362,7 +362,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 		if("Exit")
 			user.forceMove(get_turf(src.loc))
 			user.cancel_camera()
-			user.visible_message(span_notice("\The [user] climbs out of \the [src]!"))
+			act_message(user, src, others = span_notice("%U% climbs out of %T%!"))
 		if("Move")
 			var/list/destinations = list()
 			if(istype(src,/obj/structure/micro_tunnel))	//If we're in a tunnel let's also get the tunnel's destinations
@@ -411,11 +411,11 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 		return
 
 	if(!(usr.mob_size <= MOB_TINY || usr.get_effective_size(TRUE) <= micro_accepted_scale))
-		usr.visible_message(span_warning("\The [usr] reaches into \the [src]. . ."),span_warning("You reach into \the [src]. . ."))
+		act_message(usr, src, MSG_SELF(span_warning("You reach into %T%. . .")), MSG_OTHERS(span_warning("%U% reaches into %T%. . .")))
 		om_task_start(/datum/om/task/timed/micro_reach, usr, src, contained_mobs = contained_mobs)
 		return
 
-	usr.visible_message(span_notice("\The [usr] begins climbing into \the [src]!"))
+	act_message(usr, src, others = span_notice("%U% begins climbing into %T%!"))
 	om_task_start(/datum/om/task/timed/obj_micro_interact2, usr, src, contained_mobs = contained_mobs)
 	return TRUE
 
@@ -431,7 +431,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 
 /obj/proc/micro_reach_failed(datum/om/task/timed/micro_reach/task)
 	var/mob/usr_mob = task.actor
-	usr_mob.visible_message(span_notice("\The [usr_mob] pulls their hand out of \the [src]."),span_warning("You pull your hand out of \the [src]"))
+	act_message(usr_mob, src, MSG_SELF(span_warning("You pull your hand out of %T%")), MSG_OTHERS(span_notice("%U% pulls their hand out of %T%.")))
 
 /// Reached into the tunnel: pull a random occupant out.
 /obj/proc/micro_reach_done(datum/om/task/timed/micro_reach/task)
@@ -440,12 +440,12 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 
 	if(!contained_mobs.len)
 		to_chat(usr_mob, span_warning("There was nothing inside."))
-		usr_mob.visible_message(span_notice("\The [usr_mob] pulls their hand out of \the [src]."),span_warning("You pull your hand out of \the [src]"))
+		act_message(usr_mob, src, MSG_SELF(span_warning("You pull your hand out of %T%")), MSG_OTHERS(span_notice("%U% pulls their hand out of %T%.")))
 		return
 	var/grabbed = pick(contained_mobs)
 	if(!grabbed)
 		to_chat(usr_mob, span_warning("There was nothing inside."))
-		usr_mob.visible_message(span_notice("\The [usr_mob] pulls their hand out of \the [src]."),span_warning("You pull your hand out of \the [src]"))
+		act_message(usr_mob, src, MSG_SELF(span_warning("You pull your hand out of %T%")), MSG_OTHERS(span_notice("%U% pulls their hand out of %T%.")))
 		return
 
 	if(ishuman(usr_mob))
@@ -459,7 +459,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 			var/atom/movable/whatever = grabbed
 			whatever.forceMove(get_turf(src.loc))
 
-		usr_mob.visible_message(span_warning("\The [usr_mob] pulls \the [grabbed] out of \the [src]! ! !"))
+		act_message(usr_mob, src, others = span_warning("%U% pulls \the [grabbed] out of %T%! ! !"))
 		return
 
 	else if(isanimal(usr_mob))
@@ -471,7 +471,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 		else
 			var/atom/movable/whatever = grabbed
 			whatever.forceMove(get_turf(src.loc))
-		usr_mob.visible_message(span_warning("\The [usr_mob] pulls \the [grabbed] out of \the [src]! ! !"))
+		act_message(usr_mob, src, others = span_warning("%U% pulls \the [grabbed] out of %T%! ! !"))
 		return
 
 /datum/om/task/timed/obj_micro_interact
@@ -525,7 +525,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 	var/list/contained_mobs = task.contained_mobs
 	var/mob/usr_mob = task.actor
 
-	usr_mob.visible_message(span_notice("\The [usr_mob] climbs into \the [src]!"))
+	act_message(usr_mob, src, others = span_notice("%U% climbs into %T%!"))
 	usr_mob.forceMove(src)
 	usr_mob.cancel_camera()
 	to_chat(usr_mob,span_notice("You are inside of \the [src]. You can click upon the tunnel to exit, or travel to another tunnel if there are other tunnels linked to it."))

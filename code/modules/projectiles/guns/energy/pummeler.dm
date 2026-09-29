@@ -47,7 +47,7 @@
 			var/mob/living/simple_mob/vore/alienanimals/startreader/S = L
 			if(!S.flipped)
 				S.injure(INJURY_BLUNT, 100, source = src)
-				S.visible_message(span_notice("\The [S] is flipped over!!!"))
+				act_message(S, null, others = span_notice("%U% is flipped over!!!"))
 				S.flipped = TRUE
 				S.flip_cooldown = 10
 				S.handle_flip()

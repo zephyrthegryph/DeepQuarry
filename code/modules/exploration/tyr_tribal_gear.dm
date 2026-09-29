@@ -396,7 +396,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/tyr_chainsaw, "bcell", /obj/item/ce
 	var/bad_arc = reverse_direction(user.dir) //arc of directions from which we cannot block
 	if(check_shield_arc(user, bad_arc, damage_source, attacker))
 		if(prob(get_block_chance(user, damage, damage_source, attacker)))
-			user.visible_message(span_danger("\The [user] blocks [attack_text] with \the [src]!"))
+			act_message(user, src, others = span_danger("%U% blocks [attack_text] with %T%!"))
 			return 1
 	else
 		var/obj/item/projectile/P = damage_source

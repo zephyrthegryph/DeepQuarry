@@ -33,7 +33,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/engagement, INTERACT_USE("
 
 /// Old attack_self.
 /obj/item/clothing/accessory/ring/engagement/proc/engagement_ring_present_self(mob/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message(span_warning("\The [user] gets down on one knee, presenting \the [src]."),span_warning("You get down on one knee, presenting \the [src]."))
+	act_message(user, src, MSG_SELF(span_warning("You get down on one knee, presenting %T%.")), \
+		MSG_OTHERS(span_warning("%U% gets down on one knee, presenting %T%.")))
 
 /obj/item/clothing/accessory/ring/cti
 	name = "CTI ring"

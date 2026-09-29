@@ -81,7 +81,7 @@
 		to_chat(user, "You failed to salvage anything valuable from [src].")
 		return
 	var/N = new type(get_turf(user))
-	user.visible_message("[user] cuts [N] from [src]", "You cut [N] from [src]", "You hear a sound of welder nearby")
+	act_message(user, src, MSG_SELF("You cut [N] from %T%"), MSG_OTHERS("%U% cuts [N] from %T%"), MSG_BLIND("You hear a sound of welder nearby"))
 	if(istype(N, /obj/item/mecha_parts/part))
 		welder_salvage -= type
 	salvage_num--
@@ -94,7 +94,7 @@
 		to_chat(user, "You failed to salvage anything valuable from [src].")
 		return
 	var/N = new type(get_turf(user))
-	user.visible_message("[user] cuts [N] from [src].", "You cut [N] from [src].")
+	act_message(user, src, MSG_SELF("You cut [N] from %T%."), MSG_OTHERS("%U% cuts [N] from %T%."))
 	salvage_num--
 
 /obj/effect/decal/mecha_wreckage/proc/pry_salvage(mob/user)
@@ -103,4 +103,4 @@
 		return
 	S.forceMove(get_turf(user))
 	crowbar_salvage -= S
-	user.visible_message("[user] pries [S] from [src].", "You pry [S] from [src].")
+	act_message(user, S, MSG_SELF("You pry %T% from [src]."), MSG_OTHERS("%U% pries %T% from [src]."))

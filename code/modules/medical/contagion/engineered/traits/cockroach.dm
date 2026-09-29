@@ -49,7 +49,8 @@
 				to_chat(M, span_notice("You feel in tune with the station."))
 		if(5)
 			if(prob(base_message_chance))
-				M.visible_message(span_danger("[M] squirms as a cockroach crawl from their pores!"), span_userdanger("A cockroach crawls out of your face!!"))
+				act_message(M, null, MSG_SELF(span_userdanger("A cockroach crawls out of your face!!")), \
+					MSG_OTHERS(span_danger("%U% squirms as a cockroach crawl from their pores!")))
 				new /mob/living/simple_mob/animal/passive/cockroach(M.loc)
 			if(prob(base_message_chance))
 				to_chat(M, span_notice("You feel something crawling in your pipes!"))

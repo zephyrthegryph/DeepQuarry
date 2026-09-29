@@ -46,7 +46,8 @@
 	GLOB.cultnet.updateVisibility(src)
 
 /mob/living/proc/delayed_gib()
-	visible_message(span_danger(span_bold("[src]") + " starts convulsing violently!"), span_danger("You feel as if your body is tearing itself apart!"))
+	act_message(src, null, MSG_SELF(span_danger("You feel as if your body is tearing itself apart!")), \
+		MSG_OTHERS(span_danger(span_bold("%U%") + " starts convulsing violently!")))
 	status_at_least(EFFECT_WEAKENED, 30)
 	status_adjust(EFFECT_JITTERY, 1000)
 	om_after(src, rand(2 SECONDS, 10 SECONDS), PROC_REF(gib))

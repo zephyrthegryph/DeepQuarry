@@ -59,7 +59,7 @@
 
 /obj/machinery/power/tracker/crowbar_act(mob/user, obj/item/W)
 	play_sfx(src, SFX_MACHINES_CLICK)
-	user.visible_message(span_notice("[user] begins to take the glass off the solar tracker."))
+	act_message(user, null, others = span_notice("%U% begins to take the glass off the solar tracker."))
 	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(remove_glass_done), list(user))
 	return ITEM_INTERACT_SUCCESS
 
@@ -68,7 +68,7 @@
 	S.tracker = TRUE
 	S.set_anchored(TRUE)
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-	user.visible_message(span_notice("[user] takes the glass off the tracker."))
+	act_message(user, null, others = span_notice("%U% takes the glass off the tracker."))
 	replace_with(src, glass_type, 2)
 
 // Tracker Electronic

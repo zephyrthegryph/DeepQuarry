@@ -125,12 +125,12 @@
 		fx_sparks(src.loc, 5, FALSE)
 		play_sfx(src, SFX_WEAPONS_BLADE1)
 		play_sfx(src, SFX_SPARKS)
-		user.visible_message(span_danger("\The [src] was sliced apart by [user]!"))
+		act_message(src, user, others = span_danger("%U% was sliced apart by %T%!"))
 		break_to_parts()
 		return INTERACTION_HANDLED_PASS
 
 	if(istype(W, /obj/item/melee/changeling/arm_blade))
-		user.visible_message(span_danger("\The [src] was sliced apart by [user]!"))
+		act_message(src, user, others = span_danger("%U% was sliced apart by %T%!"))
 		break_to_parts()
 		return INTERACTION_HANDLED_PASS
 
@@ -167,8 +167,7 @@
 	// Shards. Extra damage, plus potentially the fact YOU LITERALLY HAVE A PIECE OF GLASS/METAL/WHATEVER IN YOUR FACE
 	for(var/obj/item/material/shard/S in L)
 		if(prob(50))
-			M.visible_message(span_danger("\The [S] slices [M]'s face messily!"),
-								span_danger("\The [S] slices your face messily!"))
+			act_message(M, null, MSG_SELF(span_danger("%I% slices your face messily!")), MSG_OTHERS(span_danger("%I% slices %U%'s face messily!")), item = S)
 			M.injure(INJURY_BLUNT, 10, BP_HEAD, src)
 			if(prob(2))
 				M.embed(S, def_zone = BP_HEAD)

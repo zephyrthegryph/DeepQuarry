@@ -212,7 +212,7 @@
 	if(A == user)
 		to_chat(user,span_notice("You upload [src] into your NIF."))
 	else
-		Ht.visible_message(span_warning("[Hu] begins uploading [src] into [Ht]!"),span_danger("[Hu] is uploading [src] into you!"))
+		act_message(Ht, Hu, MSG_SELF(span_danger("%T% is uploading [src] into you!")), MSG_OTHERS(span_warning("%T% begins uploading [src] into %U%!")))
 
 	icon_state = "[initial(icon_state)]-animate"	//makes it play the item animation upon using on a valid target
 	update_icon()

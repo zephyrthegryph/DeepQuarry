@@ -61,7 +61,7 @@ DECLARE_REF(/obj/machinery/computer/security/telescreen/bodycamera, "bradio", OW
 	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, alternate_table), INPUT_ACTION_ALTERNATE))
 		if(isliving(usr) && Adjacent(usr) && !usr.incapacitated())
 			bodycam_toggle()
-			visible_message("<b>[usr]</b> toggles [src] [enabled ? "on" : "off"].","You toggle [src] [enabled ? "on" : "off"].", runemessage = "click")
+			act_message(usr, src, MSG_SELF("You toggle %T% [enabled ? "on" : "off"]."), MSG_OTHERS("<b>%U%</b> toggles %T% [enabled ? "on" : "off"]."), runemessage = "click")
 	//Changing click to only come into play when shift or alt clicking. These things are ANNOYING.
 			return
 	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, shift_table), INPUT_ACTION_INSPECT))

@@ -63,7 +63,8 @@ BONUS
 				to_chat(M, span_notice("Your skin crawls."))
 		if(4)
 			if(prob(base_message_chance))
-				M.visible_message(span_danger("Lumps form on [M]'s skin!"), span_userdanger("You cringe in pain as lumps form and move around on your skin!"))
+				act_message(M, null, MSG_SELF(span_userdanger("You cringe in pain as lumps form and move around on your skin!")), \
+					MSG_OTHERS(span_danger("Lumps form on %U%'s skin!")))
 		if(5)
 			phagecounter -= max(2, A.stage_rate)
 			if(gigagerms && phagecounter <= 0)
@@ -101,5 +102,6 @@ BONUS
 			if(D == A)
 				continue
 			phage.infections += D.Copy()
-	M.visible_message(span_danger("A strange creature burst out of [M]!"), span_userdanger("A slimy creature bursts forth from your flesh!"))
+	act_message(M, null, MSG_SELF(span_userdanger("A slimy creature bursts forth from your flesh!")), \
+		MSG_OTHERS(span_danger("A strange creature burst out of %U%!")))
 	om_after(phage, 3 MINUTES, TYPE_PROC_REF(/mob/living/simple_mob/vore/aggressive/macrophage, deathcheck))

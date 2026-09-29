@@ -28,12 +28,13 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/move_inside(mob/user)
 	if (chassis)
-		chassis.visible_message(span_notice("[user] starts to climb into [chassis]."))
+		act_message(user, chassis, others = span_notice("%U% starts to climb into %T%."))
 
 	om_task_start(/datum/om/task/timed/passenger_boarded, user, src, receiver = src)
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/forced_out(mob/user, mob/passenger_occupant)
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " opens the hatch on \the [src] and removes [passenger_occupant]!"), span_notice("You open the hatch on \the [src] and remove [passenger_occupant]!"))
+	act_message(user, src, MSG_SELF(span_notice("You open the hatch on %T% and remove [passenger_occupant]!")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " opens the hatch on %T% and removes [passenger_occupant]!")))
 	go_out()
 	mecha_log_message("[passenger_occupant] was removed.")
 

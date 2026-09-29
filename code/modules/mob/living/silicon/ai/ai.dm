@@ -870,11 +870,11 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 
 /mob/living/silicon/ai/proc/wrench_act_tool_done(mob/user)
 	set_anchored(!anchored)
-	user.visible_message(span_notice("\The [user] finishes [anchored ? "fastening down" : "unfastening"] \the [src]!"))
+	act_message(user, src, others = span_notice("%U% finishes [anchored ? "fastening down" : "unfastening"] %T%!"))
 	return ITEM_INTERACT_SUCCESS
 
 /mob/living/silicon/ai/proc/wrench_act_tool_failed(mob/user)
-	user.visible_message(span_notice("\The [user] decides not to [anchored ? "unbolt" : "bolt"] \the [src]."))
+	act_message(user, src, others = span_notice("%U% decides not to [anchored ? "unbolt" : "bolt"] %T%."))
 	return ITEM_INTERACT_BLOCKING
 
 /mob/living/silicon/ai/proc/control_integrated_radio()

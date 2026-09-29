@@ -274,20 +274,20 @@ EXTEND_INTERACTIONS(/obj/structure/AIcore/deactivated, INTERACT_ITEM(null, PROC_
 
 /obj/structure/AIcore/deactivated/wrench_act(mob/user, obj/item/tool)
 	if(anchored)
-		user.visible_message(span_bold("\The [user]") + " starts to unbolt \the [src] from the plating...")
+		act_message(user, src, others = span_bold("%U%") + " starts to unbolt %T% from the plating...")
 		use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(unbolted), done_args = list(user), on_fail = PROC_REF(unbolt_abandoned), fail_args = list(user))
 		return ITEM_INTERACT_SUCCESS
-	user.visible_message(span_bold("\The [user]") + " starts to bolt \the [src] to the plating...")
+	act_message(user, src, others = span_bold("%U%") + " starts to bolt %T% to the plating...")
 	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(wrench_act_tool_done3), done_args = list(user), on_fail = PROC_REF(wrench_act_tool_failed3), fail_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/AIcore/deactivated/proc/wrench_act_tool_done3(mob/user)
-	user.visible_message(span_bold("\The [user]") + " finishes fastening down \the [src]!")
+	act_message(user, src, others = span_bold("%U%") + " finishes fastening down %T%!")
 	set_anchored(TRUE)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/AIcore/deactivated/proc/wrench_act_tool_failed3(mob/user)
-	user.visible_message(span_bold("\The [user]") + " decides not to bolt \the [src].")
+	act_message(user, src, others = span_bold("%U%") + " decides not to bolt %T%.")
 	return ITEM_INTERACT_SUCCESS
 
 ADMIN_VERB(empty_ai_core_toggle_latejoin, R_ADMIN|R_SERVER|R_EVENT, "Toggle AI Core Latejoin", "Toggles the option to latejoin as AI core.", ADMIN_CATEGORY_SILICON)
@@ -314,11 +314,11 @@ ADMIN_VERB(empty_ai_core_toggle_latejoin, R_ADMIN|R_SERVER|R_EVENT, "Toggle AI C
 		to_chat(user, span_infoplain("\The [id] is now [span_green("available")] for latejoining AIs."))
 
 /obj/structure/AIcore/deactivated/proc/unbolted(mob/user)
-	user.visible_message(span_bold("\The [user]") + " finishes unfastening \the [src]!")
+	act_message(user, src, others = span_bold("%U%") + " finishes unfastening %T%!")
 	set_anchored(FALSE)
 
 /obj/structure/AIcore/deactivated/proc/unbolt_abandoned(mob/user)
-	user?.visible_message(span_bold("\The [user]") + " decides not to unbolt \the [src].")
+	act_message(user, src, others = span_bold("%U%") + " decides not to unbolt %T%.")
 
 // laws are handed to the AI built from this core, so they aren't owned here.
 DECLARE_REF(/obj/structure/AIcore, "laws", HELD, null)

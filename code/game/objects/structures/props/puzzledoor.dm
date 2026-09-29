@@ -120,7 +120,7 @@ DECLARE_REF(/obj/machinery/door/blast/puzzle, "locks", LIST_BACK, list(/obj/stru
 		user.setClickCooldown(user.get_attack_speed(W))
 		if(W.obj_damage_type())
 			user.do_attack_animation(src)
-			user.visible_message(span_danger("\The [user] hits \the [src] with \the [W] with no visible effect."))
+			act_message(user, src, others = span_danger("%U% hits %T% with %I% with no visible effect."), item = W)
 
 	else if(istype(C, /obj/item/plastique))
 		to_chat(user, span_danger("On contacting \the [src], a flash of light envelops \the [C] as it is turned to ash. Oh."))

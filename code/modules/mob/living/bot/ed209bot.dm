@@ -26,7 +26,7 @@
 		icon_state = "ed209[on]"
 
 /mob/living/bot/secbot/ed209/explode()
-	visible_message(span_warning("[src] blows apart!"))
+	act_message(src, null, others = span_warning("%U% blows apart!"))
 	var/turf/Tsec = get_turf(src)
 
 	new /obj/item/secbot_assembly/ed209_assembly(Tsec)

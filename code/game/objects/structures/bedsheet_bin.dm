@@ -49,7 +49,8 @@ DECLARE_INTERACTIONS(/obj/item/bedsheet, \
 /// Old attackby.
 /obj/item/bedsheet/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(is_sharp(I))
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " begins cutting up [src] with [I]."), span_notice("You begin cutting up [src] with [I]."))
+		act_message(user, src, MSG_SELF(span_notice("You begin cutting up %T% with [I].")), \
+			MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins cutting up %T% with [I].")))
 		om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 		return INTERACTION_HANDLED_PASS
 	return FALSE

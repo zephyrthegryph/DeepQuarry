@@ -88,7 +88,7 @@ DECLARE_REF(/obj/machinery/gear_painter, "inserted", SPILL, null)
 /obj/machinery/gear_painter/proc/interaction_insert(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I,/obj/item/stack/material/cyborg)) //Needs an exception for borg materials to avoid glitches.
 		return TRUE
-	user.visible_message(span_notice("[user] inserts \the [I] into the Color Mate receptable."))
+	act_message(user, null, others = span_notice("%U% inserts %I% into the Color Mate receptable."), item = I)
 	user.drop_from_inventory(I)
 	I.forceMove(src)
 	inserted = I
@@ -99,7 +99,7 @@ DECLARE_REF(/obj/machinery/gear_painter, "inserted", SPILL, null)
 	if(inserted)
 		return
 	if(user)
-		visible_message(span_warning("[user] stuffs [victim] into [src]!"))
+		act_message(user, victim, others = span_warning("%U% stuffs %T% into [src]!"))
 	inserted = victim
 	inserted.forceMove(src)
 

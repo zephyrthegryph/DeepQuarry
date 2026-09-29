@@ -53,7 +53,7 @@
 		range = range * 2
 		to_chat(src, span_notice("We are extra loud."))
 
-	visible_message(span_notice("[src] appears to shout."))
+	act_message(src, null, others = span_notice("%U% appears to shout."))
 	var/list/affected = list()
 	for(var/mob/living/M in range(range, src))
 		if(iscarbon(M))
@@ -139,7 +139,7 @@
 
 	changeling.set_cooldown(CHANGELING_SCREECH, 10 SECONDS)
 	om_after(src, 10 SECONDS, PROC_REF(changeling_screech_ready))
-	visible_message(span_notice("[src] appears to shout."))
+	act_message(src, null, others = span_notice("%U% appears to shout."))
 	add_attack_logs(src,src,"Use dissonant shriek")
 	return TRUE
 

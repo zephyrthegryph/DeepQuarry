@@ -94,8 +94,7 @@ DECLARE_INTERACTIONS(/obj/structure/construction, INTERACT_ITEM(null, PROC_REF(i
 			if (coil.use(1))
 				stage = FRAME_WIRED
 				user.update_examine_panel(src)
-				user.visible_message("\The [user] adds wires to \the [src].", \
-					"You add wires to \the [src].", "You hear a noise.")
+				act_message(user, src, MSG_SELF("You add wires to %T%."), MSG_OTHERS("%U% adds wires to %T%."), MSG_BLIND("You hear a noise."))
 				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 				update_icon()
 		return INTERACTION_HANDLED_PASS
@@ -110,7 +109,7 @@ DECLARE_INTERACTIONS(/obj/structure/construction, INTERACT_ITEM(null, PROC_REF(i
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/construction/proc/welder_act_tool_done(mob/user)
-	user.visible_message(span_warning("\The [user] has deconstructed \the [src]."), span_notice("You deconstruct \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You deconstruct %T%.")), MSG_OTHERS(span_warning("%U% has deconstructed %T%.")))
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT, 1.5)
 	replace_with(src, /obj/item/stack/material/steel, 2)
 
@@ -120,7 +119,7 @@ DECLARE_INTERACTIONS(/obj/structure/construction, INTERACT_ITEM(null, PROC_REF(i
 	stage = FRAME_FASTENED
 	user.update_examine_panel(src)
 	new /obj/item/stack/cable_coil(get_turf(src), 1, "red")
-	user.visible_message("\The [user] removes the wiring from \the [src].", "You remove the wiring from \the [src].", "You hear a snip.")
+	act_message(user, src, MSG_SELF("You remove the wiring from %T%."), MSG_OTHERS("%U% removes the wiring from %T%."), MSG_BLIND("You hear a snip."))
 	playsound(src, W.usesound, 50, 1)
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
@@ -128,12 +127,12 @@ DECLARE_INTERACTIONS(/obj/structure/construction, INTERACT_ITEM(null, PROC_REF(i
 /obj/structure/construction/screwdriver_act(mob/user, obj/item/W)
 	if(stage == FRAME_UNFASTENED)
 		stage = FRAME_FASTENED
-		user.visible_message("\The [user] screws \the [src] in place.", "You screw \the [src] in place.", "You hear a noise.")
+		act_message(user, src, MSG_SELF("You screw %T% in place."), MSG_OTHERS("%U% screws %T% in place."), MSG_BLIND("You hear a noise."))
 	else if(stage == FRAME_FASTENED)
 		stage = FRAME_UNFASTENED
-		user.visible_message("\The [user] unscrews \the [src].", "You unscrew \the [src].", "You hear a noise.")
+		act_message(user, src, MSG_SELF("You unscrew %T%."), MSG_OTHERS("%U% unscrews %T%."), MSG_BLIND("You hear a noise."))
 	else
-		user.visible_message("\The [user] closes \the [src]'s casing.", "You close \the [src]'s casing.", "You hear a click.")
+		act_message(user, src, MSG_SELF("You close %T%'s casing."), MSG_OTHERS("%U% closes %T%'s casing."), MSG_BLIND("You hear a click."))
 		playsound(src, W.usesound, 75, 1)
 		var/obj/newmachine = new build_machine_type(get_turf(src), src.dir)
 		newmachine.pixel_x = pixel_x

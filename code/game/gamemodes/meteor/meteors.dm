@@ -169,7 +169,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 		var/obj/item/I = batter.get_active_hand()
 		if(!batter.stat && istype(I, /obj/item/material/twohanded/baseballbat))
 			batter.do_attack_animation(src)
-			batter.visible_message("[batter] deflects [src] with [I]]! Home run!", "You deflect [src] with [I]! Home run!")
+			act_message(batter, src, MSG_SELF("You deflect %T% with [I]! Home run!"), MSG_OTHERS("%U% deflects %T% with [I]]! Home run!"))
 			walk_away(src, batter, 100, 1)
 			return
 	if(A.handle_meteor_impact(src)) // Used for special behaviour when getting hit specifically by a meteor, like a shield.

@@ -44,13 +44,13 @@
 /// The old attackby always chained to ..() at the end regardless of branch, so this always
 /// declines (returns FALSE) after doing its work, letting the base attackby chain still run.
 /obj/machinery/the_singularitygen/proc/interaction_install(mob/user, obj/item/W, datum/interaction/interaction)
-	visible_message(span_infoplain(span_bold("\The [user]") + " begins to modify \the [src] with \the [W]."))
+	act_message(user, src, others = span_infoplain(span_bold("%U%") + " begins to modify %T% with %I%."), item = W)
 	om_task_timed(user, 30 SECONDS, src, src, PROC_REF(install_done), list(user, W))
 	return FALSE
 
 /obj/machinery/the_singularitygen/proc/install_done(mob/user, obj/item/W)
 	user.drop_from_inventory(W)
-	visible_message(span_infoplain(span_bold("\The [user]") + " installs \the [W] onto \the [src]."))
+	act_message(user, src, others = span_infoplain(span_bold("%U%") + " installs %I% onto %T%."), item = W)
 	consume(W, user)
 	var/turf/T = get_turf(src)
 	var/new_machine = /obj/machinery/particle_smasher
@@ -60,15 +60,15 @@
 /obj/machinery/the_singularitygen/wrench_act(mob/user, obj/item/W)
 	set_anchored(!anchored)
 	playsound(src, W.usesound, 75, 1)
-	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] [src.name] to the floor.", \
-		"You [anchored ? "secure" : "unsecure"] the [src.name] to the floor.", \
-		"You hear a ratchet.")
+	act_message(user, null, MSG_SELF("You [anchored ? "secure" : "unsecure"] the [src.name] to the floor."), \
+		MSG_OTHERS("[user.name] [anchored ? "secures" : "unsecures"] [src.name] to the floor."), \
+		MSG_BLIND("You hear a ratchet."))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/the_singularitygen/screwdriver_act(mob/user, obj/item/W)
 	panel_open = !panel_open
 	playsound(src, W.usesound, 50, 1)
-	visible_message(span_infoplain(span_bold("\The [user]") + " adjusts \the [src]'s mechanisms."))
+	act_message(user, src, others = span_infoplain(span_bold("%U%") + " adjusts %T%'s mechanisms."))
 	if(panel_open)
 		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(inspect_done), list(user, W))
 	else

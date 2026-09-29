@@ -123,7 +123,8 @@
 			return FALSE
 		if(O)
 			O.robotize()
-			H.visible_message(span_danger("[H]'s [O] shifts, and becomes metal before your very eyes."), span_userdanger("Your [O] feels numb, and cold."))
+			act_message(H, null, MSG_SELF(span_userdanger("Your [O] feels numb, and cold.")), \
+				MSG_OTHERS(span_danger("%U%'s [O] shifts, and becomes metal before your very eyes.")))
 			return TRUE
 	return FALSE
 

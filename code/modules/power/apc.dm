@@ -449,9 +449,12 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 		return
 	has_electronics = APC_HAS_ELECTRONICS_NONE
 	if(has_stat(BROKEN))
-		user.visible_message(span_warning("[user.name] has broken the charred power control board inside [name]!"), span_notice("You broke the charred power control board and remove the remains."), "You hear a crack!")
+		act_message(user, null, MSG_SELF(span_notice("You broke the charred power control board and remove the remains.")), \
+			MSG_OTHERS(span_warning("[user.name] has broken the charred power control board inside [name]!")), \
+			MSG_BLIND("You hear a crack!"))
 	else
-		user.visible_message(span_warning("[user.name] has removed the power control board from [name]!"), span_notice("You remove the power control board."))
+		act_message(user, null, MSG_SELF(span_notice("You remove the power control board.")), \
+			MSG_OTHERS(span_warning("[user.name] has removed the power control board from [name]!")))
 		new /obj/item/module/power_control(loc)
 
 /obj/machinery/power/apc/screwdriver_act(mob/user, obj/item/tool)
@@ -516,10 +519,14 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 /obj/machinery/power/apc/proc/welder_act_tool_done(mob/user, obj/item/tool)
 	if(emagged || (has_stat(BROKEN)) || opened == 2)
 		new /obj/item/stack/material/steel(loc)
-		user.visible_message(span_warning("[src] has been cut apart by [user.name] with [tool]."), span_notice("You disassembled the broken APC frame."), "You hear welding.")
+		act_message(user, src, MSG_SELF(span_notice("You disassembled the broken APC frame.")), \
+			MSG_OTHERS(span_warning("%T% has been cut apart by [user.name] with [tool].")), \
+			MSG_BLIND("You hear welding."))
 	else
 		new /obj/item/frame/apc(loc)
-		user.visible_message(span_warning("[src] has been cut from the wall by [user.name] with [tool]."), span_notice("You cut the APC frame from the wall."), "You hear welding.")
+		act_message(user, src, MSG_SELF(span_notice("You cut the APC frame from the wall.")), \
+			MSG_OTHERS(span_warning("%T% has been cut from the wall by [user.name] with [tool].")), \
+			MSG_BLIND("You hear welding."))
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
 
@@ -533,12 +540,13 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 	if(cell)
 		to_chat(user, span_warning("You need to remove the power cell first."))
 		return ITEM_INTERACT_BLOCKING
-	user.visible_message(span_warning("[user.name] connects [tool] to the APC and begins resetting it."), "You begin resetting the APC...")
+	act_message(user, null, MSG_SELF("You begin resetting the APC..."), \
+		MSG_OTHERS(span_warning("[user.name] connects [tool] to the APC and begins resetting it.")))
 	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(reset_done), list(user, tool))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/apc/proc/reset_done(mob/user, obj/item/tool)
-	user.visible_message(span_notice("[user.name] resets the APC with a beep from [tool]."), "You finish resetting the APC.")
+	act_message(user, null, MSG_SELF("You finish resetting the APC."), MSG_OTHERS(span_notice("[user.name] resets the APC with a beep from [tool].")))
 	play_sfx(src, SFX_MACHINES_CHIME, 0.5)
 	reboot()
 
@@ -572,9 +580,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 		if(user.has_status(EFFECT_STUNNED))
 			return
 	C.use(10)
-	user.visible_message(\
-		span_warning("[user.name] has added cables to the APC frame!"),\
-		"You add cables to the APC frame.")
+	act_message(user, null, MSG_SELF("You add cables to the APC frame."), MSG_OTHERS(span_warning("[user.name] has added cables to the APC frame!")))
 	make_terminal()
 	terminal.connect_to_network()
 
@@ -588,8 +594,8 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 /obj/machinery/power/apc/proc/replace_cover_done(mob/user, obj/item/W)
 	if(!has_stat(BROKEN) || cell)
 		return
-	user.visible_message(span_notice("[user.name] has replaced the damaged APC cover with a new one."),\
-		"You replace the damaged APC cover with a new one.")
+	act_message(user, null, MSG_SELF("You replace the damaged APC cover with a new one."), \
+		MSG_OTHERS(span_notice("[user.name] has replaced the damaged APC cover with a new one.")))
 	consume(W, user)
 	atom_fix()
 	reboot()
@@ -617,9 +623,8 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 		W.forceMove(src)
 		cell = W
 		sync_cell_charge()
-		user.visible_message(\
-			span_warning("[user.name] has inserted a power cell into [name]!"),\
-			span_notice("You insert the power cell."))
+		act_message(user, null, MSG_SELF(span_notice("You insert the power cell.")), \
+			MSG_OTHERS(span_warning("[user.name] has inserted a power cell into [name]!")))
 		power_sync()
 		chargecount = 0
 		update_icon()
@@ -634,13 +639,12 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 		if(C.get_amount() < 10)
 			to_chat(user, span_warning("You need ten lengths of cable for that."))
 			return TRUE
-		user.visible_message(span_warning("[user.name] adds cables to the APC frame."), \
-			"You start adding cables to the APC frame...")
+		act_message(user, null, MSG_SELF("You start adding cables to the APC frame..."), MSG_OTHERS(span_warning("[user.name] adds cables to the APC frame.")))
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(add_cables_done), list(user, C))
 	else if(istype(W, /obj/item/module/power_control) && opened && has_electronics == APC_HAS_ELECTRONICS_NONE && !((has_stat(BROKEN))))
-		user.visible_message(span_warning("[user.name] inserts the power control board into [src]."), \
-			"You start to insert the power control board into the frame...")
+		act_message(user, src, MSG_SELF("You start to insert the power control board into the frame..."), \
+			MSG_OTHERS(span_warning("[user.name] inserts the power control board into %T%.")))
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		om_task_timed(user, 1 SECOND, src, src, PROC_REF(insert_board_done), list(user, W))
 	else if(istype(W, /obj/item/module/power_control) && opened && has_electronics == APC_HAS_ELECTRONICS_NONE && (has_stat(BROKEN)))
@@ -651,22 +655,22 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 			if(cell)
 				to_chat(user, span_warning("You need to remove the power cell first."))
 				return TRUE
-			user.visible_message(span_warning("[user.name] begins replacing the damaged APC cover with a new one."),\
-				"You begin to replace the damaged APC cover...")
+			act_message(user, null, MSG_SELF("You begin to replace the damaged APC cover..."), \
+				MSG_OTHERS(span_warning("[user.name] begins replacing the damaged APC cover with a new one.")))
 			om_task_timed(user, 5 SECONDS, src, src, PROC_REF(replace_cover_done), list(user, W))
 	else
 		if((has_stat(BROKEN)) \
 				&& !opened \
 				&& W.force >= 5 \
 				&& W.w_class >= ITEMSIZE_SMALL)
-			user.visible_message(span_danger("The [name] has been hit with the [W.name] by [user.name]!"), \
-				span_danger("You hit the [name] with your [W.name]!"), \
-				"You hear a bang!")
+			act_message(user, null, MSG_SELF(span_danger("You hit the [name] with your [W.name]!")), \
+				MSG_OTHERS(span_danger("The [name] has been hit with the [W.name] by [user.name]!")), \
+				MSG_BLIND("You hear a bang!"))
 			if(prob(20))
 				opened = 2
-				user.visible_message(span_danger("The APC cover was knocked down with the [W.name] by [user.name]!"), \
-					span_danger("You knock down the APC cover with your [W.name]!"), \
-					"You hear a bang!")
+				act_message(user, null, MSG_SELF(span_danger("You knock down the APC cover with your [W.name]!")), \
+					MSG_OTHERS(span_danger("The APC cover was knocked down with the [W.name] by [user.name]!")), \
+					MSG_BLIND("You hear a bang!"))
 				update_icon()
 		else
 			if(istype(user, /mob/living/silicon))
@@ -747,7 +751,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 		var/mob/living/carbon/human/H = user
 		if(H.species.can_shred(H, FALSE, 14))
 			user.setClickCooldown(user.get_attack_speed())
-			user.visible_message(span_warning("[user.name] slashes at the [name]!"), span_notice("You slash at the [name]!"))
+			act_message(user, null, MSG_SELF(span_notice("You slash at the [name]!")), MSG_OTHERS(span_warning("[user.name] slashes at the [name]!")))
 			play_sfx(src, SFX_WEAPONS_SLASH, 2)
 			add_hiddenprint(H)
 			if(beenhit >= pick(3, 4) && !wiresexposed)
@@ -767,8 +771,8 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 			cell.add_fingerprint(user)
 			cell.update_icon()
 			cell = null
-			user.visible_message(span_warning("[user.name] removes the power cell from [name]!"),\
-				span_notice("You remove the power cell."))
+			act_message(user, null, MSG_SELF(span_notice("You remove the power cell.")), \
+				MSG_OTHERS(span_warning("[user.name] removes the power cell from [name]!")))
 			charging = 0
 			power_sync()
 			update_icon()

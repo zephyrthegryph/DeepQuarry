@@ -142,7 +142,8 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 	if(!open || !W.has_tool_quality(TOOL_WIRECUTTER))
 		return FALSE
 	passenger_allowed = !passenger_allowed
-	user.visible_message(span_notice("[user] [passenger_allowed ? "cuts" : "mends"] a cable in [src]."),span_notice("You [passenger_allowed ? "cut" : "mend"] the load limiter cable."))
+	act_message(user, src, MSG_SELF(span_notice("You [passenger_allowed ? "cut" : "mend"] the load limiter cable.")), \
+		MSG_OTHERS(span_notice("%U% [passenger_allowed ? "cuts" : "mends"] a cable in %T%.")))
 	return TRUE
 
 /// Old verb "Unlatch".

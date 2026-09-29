@@ -75,7 +75,7 @@ DECLARE_REF(/obj/machinery/shield_gen, "field", OWNED_LIST, null)
 /obj/machinery/shield_gen/wrench_act(mob/user, obj/item/W)
 	set_anchored(!anchored)
 	playsound(src, W.usesound, 75, 1)
-	src.visible_message(span_blue("[icon2html(src,viewers(src))] [src] has been [anchored?"bolted to the floor":"unbolted from the floor"] by [user]."))
+	act_message(user, src, others = span_blue("[icon2html(src,viewers(src))] %T% has been [anchored?"bolted to the floor":"unbolted from the floor"] by %U%."))
 
 	if(active)
 		toggle()

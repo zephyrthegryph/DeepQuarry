@@ -21,7 +21,7 @@ DECLARE_INTERACTIONS(/obj/item/scrying, INTERACT_USE(null, PROC_REF(interaction_
 		return TRUE
 
 	to_chat(user, span_info("You can see... everything!"))
-	visible_message(span_danger("[user] stares into [src], [user.p_their()] eyes glazing over."))
+	act_message(user, src, others = span_danger("%U% stares into %T%, %THEIR% eyes glazing over."))
 
 	user.teleop = user.ghostize(1)
 	announce_ghost_joinleave(user.teleop, 1, "You feel that they used a powerful artifact to [pick("invade","disturb","disrupt","infest","taint","spoil","blight")] this place with their presence.")

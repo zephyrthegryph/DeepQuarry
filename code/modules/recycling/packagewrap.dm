@@ -54,9 +54,9 @@
 		src.add_fingerprint(user)
 		src.amount -= 1
 		wrap_used()
-		user.visible_message("\The [user] wraps \a [target] with \a [src].",\
-		span_notice("You wrap \the [target], leaving [amount] units of paper on \the [src]."),\
-		"You hear someone taping paper around a small object.")
+		act_message(user, target, MSG_SELF(span_notice("You wrap %T%, leaving [amount] units of paper on \the [src].")), \
+			MSG_OTHERS("%U% wraps %T% with \a [src]."), \
+			MSG_BLIND("You hear someone taping paper around a small object."))
 		play_sfx(src, SFX_ITEMS_PACKAGE_WRAP)
 
 	else if (istype(target, /obj/structure/closet/crate))
@@ -72,9 +72,9 @@
 		O.forceMove(P)
 		src.amount -= 3
 		wrap_used()
-		user.visible_message("\The [user] wraps \a [target] with \a [src].",\
-		span_notice("You wrap \the [target], leaving [amount] units of paper on \the [src]."),\
-		"You hear someone taping paper around a large object.")
+		act_message(user, target, MSG_SELF(span_notice("You wrap %T%, leaving [amount] units of paper on \the [src].")), \
+			MSG_OTHERS("%U% wraps %T% with \a [src]."), \
+			MSG_BLIND("You hear someone taping paper around a large object."))
 		play_sfx(src, SFX_ITEMS_PACKAGE_WRAP)
 
 	else if (istype (target, /obj/structure/closet))
@@ -90,9 +90,9 @@
 		O.forceMove(P)
 		src.amount -= 3
 		wrap_used()
-		user.visible_message("\The [user] wraps \a [target] with \a [src].",\
-		span_notice("You wrap \the [target], leaving [amount] units of paper on \the [src]."),\
-		"You hear someone taping paper around a large object.")
+		act_message(user, target, MSG_SELF(span_notice("You wrap %T%, leaving [amount] units of paper on \the [src].")), \
+			MSG_OTHERS("%U% wraps %T% with \a [src]."), \
+			MSG_BLIND("You hear someone taping paper around a large object."))
 		play_sfx(src, SFX_ITEMS_PACKAGE_WRAP)
 
 	else

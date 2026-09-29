@@ -37,7 +37,7 @@ EXTEND_INTERACTIONS(/obj/structure/table, \
 		to_chat(user, span_notice("It won't budge."))
 		return
 
-	user.visible_message(span_warning("[user] flips \the [src]!"))
+	act_message(user, src, others = span_warning("%U% flips %T%!"))
 
 	om_emit(src, new /datum/om/event/climb_shake(user))
 

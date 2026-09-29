@@ -79,8 +79,8 @@
 	effect = /obj/machinery/power/quantumpad/proc/interaction_boost
 
 /obj/machinery/power/quantumpad/proc/interaction_boost(mob/user, obj/item/quantum_pad_booster/booster, datum/interaction/interaction)
-	visible_message("[user] violently jams [booster] into the side of [src]. [src] beeps, quietly.", \
-	"You hear the sound of a device being improperly installed in sensitive machinery, then subsequent beeping.", runemessage = "beep!")
+	act_message(src, user, others = "%T% violently jams [booster] into the side of %U%. \The [src] beeps, quietly.", \
+	blind = "You hear the sound of a device being improperly installed in sensitive machinery, then subsequent beeping.", runemessage = "beep!")
 	play_sfx(src, SFX_ITEMS_RPED)
 	boosted = TRUE
 	consume(booster, user)

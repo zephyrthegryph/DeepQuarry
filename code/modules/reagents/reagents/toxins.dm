@@ -322,7 +322,7 @@
 	if(prob(15))
 		M.emote(pick("twitch", "blink_r", "shiver"))
 	if(prob(15))
-		M.visible_message("[M] shudders violently.", "You shudder uncontrollably, it hurts.")
+		act_message(M, null, MSG_SELF("You shudder uncontrollably, it hurts."), MSG_OTHERS("%U% shudders violently."))
 		M.injure(INJURY_BLUNT, 6 * removed, source = src)
 
 /datum/reagent/toxin/stimm/overdose(mob/living/carbon/M, alient, removed)
@@ -445,7 +445,7 @@
 	M.status_set(EFFECT_PARALYZED, max(M.status_units(EFFECT_PARALYZED), 10))
 
 	if(prob(0.1))
-		M.visible_message("[M] wheezes.", "You wheeze sharply... it's cold.")
+		act_message(M, null, MSG_SELF("You wheeze sharply... it's cold."), MSG_OTHERS("%U% wheezes."))
 		M.adjust_bodytemperature(-(10 * TEMPERATURE_DAMAGE_COEFFICIENT), min_temp = T0C - 10)
 
 // its mob wakes from fake death.
@@ -655,7 +655,7 @@
 		if(prob(20))
 			to_chat(M, span_danger("You feel like your insides are burning!"))
 		else if(prob(20))
-			M.visible_message(span_warning("[M] [pick("dry heaves!","coughs!","splutters!","rubs at their eyes!")]"))
+			act_message(M, null, others = span_warning("%U% [pick("dry heaves!","coughs!","splutters!","rubs at their eyes!")]"))
 	else
 		M.status_at_least(EFFECT_BLURRY, 10)
 

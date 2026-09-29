@@ -117,7 +117,7 @@
 	if(QDELETED(user) || QDELETED(climbed_thing))
 		return
 
-	user.visible_message(span_warning("[user] starts climbing onto \the [climbed_thing]!"))
+	act_message(user, climbed_thing, others = span_warning("%U% starts climbing onto %T%!"))
 	add_climber(climbed_thing, user)
 	om_task_start(/datum/om/task/timed/climbable_climb, user, user, duration = (issmall(user) ? delay_time * 0.6 : delay_time), climbed_thing = climbed_thing)
 
@@ -140,9 +140,9 @@
 	if(can_climb(climbed_thing, user, post_climb_check=1))
 		climb_to(climbed_thing, user)
 		if(get_turf(user) == get_turf(climbed_thing))
-			user.visible_message(span_warning("[user] climbs onto \the [climbed_thing]!"))
+			act_message(user, climbed_thing, others = span_warning("%U% climbs onto %T%!"))
 		else
-			user.visible_message(span_warning("[user] climbed over \the [climbed_thing]!"))
+			act_message(user, climbed_thing, others = span_warning("%U% climbed over %T%!"))
 	else
 		to_chat(user, span_warning("You fail to climb onto \the [climbed_thing]."))
 	remove_climber(climbed_thing, user)
@@ -177,7 +177,7 @@
 	if(user) // Crates pass null on open because no user
 		if(!LAZYLEN(climbers) || (user in climbers))
 			return
-		user.visible_message(span_warning("\The [user] shakes \the [climbed_thing]."), span_notice("You shake \the [climbed_thing]."))
+		act_message(user, climbed_thing, MSG_SELF(span_notice("You shake %T%.")), MSG_OTHERS(span_warning("%U% shakes %T%.")))
 
 	for(var/mob/living/M in climbers)
 		if(M.is_incorporeal())

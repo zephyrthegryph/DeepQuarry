@@ -161,13 +161,13 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 		deadman = FALSE
 		om_task_periodic_stop(src)
 	else if(prob(5))
-		M.visible_message("[M]'s finger twitches a bit over [src]'s signal button!")
+		act_message(M, src, others = "%U%'s finger twitches a bit over %T%'s signal button!")
 
 /obj/item/assembly/signaler/proc/deadman_it_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	deadman = TRUE
 	om_task_periodic(src, PERIODIC_SLOW)
 	log_and_message_admins("is threatening to trigger a signaler deadman's switch", user)
-	user.visible_message("<font color='red'>[user] moves their finger over [src]'s signal button...</font>")
+	act_message(user, src, others = "<font color='red'>%U% moves their finger over %T%'s signal button...</font>")
 // end
 
 

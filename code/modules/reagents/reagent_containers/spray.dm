@@ -51,7 +51,7 @@ MATERIAL_MIX(/obj/item/reagent_containers/spray, list(MAT_GLASS = 300, MAT_STEEL
 /obj/item/reagent_containers/spray/proc/Spray_at(atom/A as mob|obj, mob/user, proximity)
 	play_sfx(src, SFX_EFFECTS_SPRAY2, 0.5)
 	if (A.density && proximity)
-		A.visible_message("[user] sprays [A] with [src].")
+		act_message(user, A, others = "%U% sprays %T% with [src].")
 		reagents.splash(A, amount_per_transfer_from_this)
 	else
 		var/obj/effect/effect/water/chempuff/D = new/obj/effect/effect/water/chempuff(get_turf(src))

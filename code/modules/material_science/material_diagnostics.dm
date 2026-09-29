@@ -98,7 +98,7 @@
 		to_chat(user, span_warning("The assembly must be accessible and stopped before opening its service cover."))
 		return ITEM_INTERACT_BLOCKING
 	maintenance_open = !maintenance_open
-	owner().visible_message(span_notice("[user] [maintenance_open ? "opens" : "closes"] [owner()]'s service cover."))
+	act_message(user, owner(), others = span_notice("%U% [maintenance_open ? "opens" : "closes"] [owner()]'s service cover."))
 	return ITEM_INTERACT_SUCCESS
 
 /datum/material_service/proc/replace_with_stock(datum/source, datum/om/event/before/attackby/event)
@@ -163,7 +163,7 @@
 	if(istype(owner(), /obj/structure/cable))
 		var/obj/structure/cable/cable = owner()
 		cable.material_overlay?.invalidate_material_cache()
-	owner().visible_message(span_notice("[user] fits a new [role] into [owner()]."))
+	act_message(user, owner(), others = span_notice("%U% fits a new [role] into [owner()]."))
 	contents_changed()
 
 /datum/material_service/tgui_host(mob/user)

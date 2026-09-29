@@ -108,12 +108,12 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 	if(user.incapacitated()) return
 
 	if(kickstand)
-		visible_message("[user] puts up \the [src]'s kickstand.")
+		act_message(user, src, others = "%U% puts up %T%'s kickstand.")
 	else
 		if(istype(src.loc,/turf/space) || istype(src.loc, /turf/simulated/floor/water))
 			to_chat(user, span_warning(" You don't think kickstands work here..."))
 			return
-		visible_message("[user] puts down \the [src]'s kickstand.")
+		act_message(user, src, others = "%U% puts down %T%'s kickstand.")
 		var/mob/pulledby = src?.pulled_by_mob()
 		if(pulledby)
 			pulledby.stop_pulling()

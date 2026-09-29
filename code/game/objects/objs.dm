@@ -72,7 +72,7 @@
 				m.forceMove(src.loc)
 			else
 				m.forceMove(get_turf(src.loc))
-			m.visible_message(span_notice("\The [m] tumbles out of \the [src]!"))
+			act_message(m, src, others = span_notice("%U% tumbles out of %T%!"))
 
 	if(istype(src, /obj/item))
 		var/obj/item/I = src

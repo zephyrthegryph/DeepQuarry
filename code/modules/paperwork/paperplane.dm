@@ -67,8 +67,8 @@ DECLARE_INTERACTIONS(/obj/item/paperplane, \
 
 	else if(is_hot(P))
 		if(user.disabilities & CLUMSY && prob(10))
-			user.visible_message(span_warning("[user] accidentally ignites themselves!"), \
-				span_userdanger("You miss the [src] and accidentally light yourself on fire!"))
+			act_message(user, src, MSG_SELF(span_userdanger("You miss %T% and accidentally light yourself on fire!")), \
+				MSG_OTHERS(span_warning("%U% accidentally ignites themselves!")))
 			user.unEquip(P)
 			user.adjust_fire_stacks(1)
 			user.ignite_mob()
@@ -77,7 +77,7 @@ DECLARE_INTERACTIONS(/obj/item/paperplane, \
 		if(!(in_range(user, src))) //to prevent issues as a result of telepathically lighting a paper
 			return INTERACTION_HANDLED_PASS
 		user.unEquip(src)
-		user.visible_message(span_danger("[user] lights [src] ablaze with [P]!"), span_danger("You light [src] on fire!"))
+		act_message(user, src, MSG_SELF(span_danger("You light %T% on fire!")), MSG_OTHERS(span_danger("%U% lights %T% ablaze with [P]!")))
 		fire_act()
 
 	add_fingerprint(user)

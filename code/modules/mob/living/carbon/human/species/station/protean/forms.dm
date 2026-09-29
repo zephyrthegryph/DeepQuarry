@@ -196,7 +196,7 @@ TYPE_TABLE_DECLARE(/datum/form, get_form_verbs, null)
 
 /datum/form/proc/announce_enter(mob/living/carbon/human/H)
 	if(enter_message)
-		H.visible_message(span_infoplain(span_bold("[H.name]") + " [enter_message]"))
+		act_message(H, null, others = span_infoplain(span_bold("%U%") + " [enter_message]"))
 	if(enter_sound)
 		playsound(H, enter_sound, 15)
 

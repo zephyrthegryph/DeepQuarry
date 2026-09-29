@@ -45,7 +45,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 /// Old attack_self.
 /obj/item/reagent_containers/glass/rag/proc/rag_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(on_fire)
-		user.visible_message(span_warning("\The [user] stamps out [src]."), span_warning("You stamp out [src]."))
+		act_message(user, src, MSG_SELF(span_warning("You stamp out %T%.")), MSG_OTHERS(span_warning("%U% stamps out %T%.")))
 		user.unEquip(src)
 		extinguish()
 	else
@@ -59,7 +59,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 		if(F.lit)
 			src.ignite()
 			if(on_fire)
-				visible_message(span_warning("\The [user] lights [src] with [W]."))
+				act_message(user, src, others = span_warning("%U% lights %T% with [W]."))
 			else
 				to_chat(user, span_warning("You manage to singe [src], but fail to light it."))
 
@@ -93,7 +93,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 
 	if(reagents.total_volume)
 		var/target_text = trans_dest? "\the [trans_dest]" : "\the [user.loc]"
-		user.visible_message(span_danger("\The [user] begins to wring out [src] over [target_text]."), span_notice("You begin to wring out [src] over [target_text]."))
+		act_message(user, src, MSG_SELF(span_notice("You begin to wring out %T% over [target_text].")), \
+			MSG_OTHERS(span_danger("%U% begins to wring out %T% over [target_text].")))
 
 		//50 for a fully soaked rag
 		om_task_start(/datum/om/task/timed/rag_wring, user, src, duration = reagents.total_volume*5, trans_dest = trans_dest, target_text = target_text)
@@ -111,26 +112,26 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 		reagents.trans_to(trans_dest, reagents.total_volume)
 	else
 		reagents.splash(user.loc, reagents.total_volume)
-	user.visible_message(span_danger("\The [user] wrings out [src] over [target_text]."), span_notice("You finish to wringing out [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You finish to wringing out %T%.")), MSG_OTHERS(span_danger("%U% wrings out %T% over [target_text].")))
 	update_name()
 
 /obj/item/reagent_containers/glass/rag/proc/wipe_down(atom/A, mob/user)
 	if(!reagents.total_volume)
 		to_chat(user, span_warning("The [initial(name)] is dry!"))
 	else
-		user.visible_message("[user] starts to wipe [A] with [src].")
+		act_message(user, A, others = "%U% starts to wipe %T% with [src].")
 		update_name()
 		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(wipe_done), list(user, A))
 
 /obj/item/reagent_containers/glass/rag/proc/wipe_done(mob/user, atom/A)
-	user.visible_message("[user] finishes wiping [A]!")
+	act_message(user, A, others = "%U% finishes wiping %T%!")
 	A.on_rag_wipe(src)
 
 /obj/item/reagent_containers/glass/rag/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)
 	if(isliving(target)) //Leaving this as isliving.
 		var/mob/living/M = target
 		if(on_fire) //Check if rag is on fire, if so igniting them and stopping.
-			user.visible_message(span_danger("\The [user] hits [target] with [src]!"),)
+			act_message(user, target, others = span_danger("%U% hits %T% with [src]!"))
 			user.do_attack_animation(src)
 			M.ignite_mob()
 		else if(user.zone_sel.selecting == O_MOUTH) //Check player target location, provided the rag is not on fire. Then check if mouth is exposed.
@@ -141,11 +142,9 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 					return ITEM_INTERACT_FAILURE
 				else if(reagents.total_volume) //Final check. If the rag is not on fire and their face is uncovered, smother target.
 					user.do_attack_animation(src)
-					user.visible_message(
-						span_danger("\The [user] smothers [target] with [src]!"),
-						span_warning("You smother [target] with [src]!"),
-						"You hear some struggling and muffled cries of surprise"
-						)
+					act_message(user, target, MSG_SELF(span_warning("You smother %T% with [src]!")), \
+						MSG_OTHERS(span_danger("%U% smothers %T% with [src]!")), \
+						MSG_BLIND("You hear some struggling and muffled cries of surprise"))
 					//it's inhaled, so... maybe CHEM_BLOOD doesn't make a whole lot of sense but it's the best we can do for now
 					reagents.trans_to_mob(target, amount_per_transfer_from_this, CHEM_BLOOD)
 					update_name()
@@ -171,7 +170,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 			return
 
 		if(A.reagents && A.reagents.trans_to_obj(src, reagents.maximum_volume))
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " soaks [src] using [A]."), span_notice("You soak [src] using [A]."))
+			act_message(user, src, MSG_SELF(span_notice("You soak %T% using [A].")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " soaks %T% using [A].")))
 			update_name()
 		return
 

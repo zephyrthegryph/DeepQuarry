@@ -142,9 +142,9 @@
 			if(istype(L) && can_stumble_vore(prey = L, pred = M))
 				unbuckle_mob(L, TRUE)
 				if(M == user)
-					M.visible_message(span_warning("[M.name] sits down on [L.name]!"))
+					act_message(M, L, others = span_warning("%U% sits down on %T%!"))
 				else
-					M.visible_message(span_warning("[M.name] is forced to sit down on [L.name] by [user.name]!"))
+					act_message(user, M, others = span_warning("%T% is forced to sit down on [L.name] by %U%!"))
 				M.begin_instant_nom(user, L, M, M.vore_selected)
 
 	add_fingerprint(user)
@@ -162,17 +162,15 @@
 			if(M == user)
 				reveal_message["buckled_mob"] = span_notice("You come out of hiding and buckle yourself to [src].")
 				reveal_message["buckled_to"] = span_notice("You come out of hiding as [M.name] buckles themselves to you.")
-				M.visible_message(\
-					span_notice("[M.name] buckles themselves to [src]."),\
-					span_notice("You buckle yourself to [src]."),\
-					span_notice("You hear metal clanking."))
+				act_message(M, src, MSG_SELF(span_notice("You buckle yourself to %T%.")), \
+					MSG_OTHERS(span_notice("[M.name] buckles themselves to %T%.")), \
+					MSG_BLIND(span_notice("You hear metal clanking.")))
 			else
 				reveal_message["buckled_mob"] = span_notice("You are revealed as you are buckled to [src].")
 				reveal_message["buckled_to"] = span_notice("You are revealed as [M.name] is buckled to you.")
-				M.visible_message(\
-					span_danger("[M.name] is buckled to [src] by [user.name]!"),\
-					span_danger("You are buckled to [src] by [user.name]!"),\
-					span_notice("You hear metal clanking."))
+				act_message(M, src, MSG_SELF(span_danger("You are buckled to %T% by [user.name]!")), \
+					MSG_OTHERS(span_danger("[M.name] is buckled to %T% by [user.name]!")), \
+					MSG_BLIND(span_notice("You hear metal clanking.")))
 
 		M.reveal(silent, reveal_message["buckled_mob"]) //Reveal people so they aren't buckled to chairs from behind.
 		var/mob/living/L = src
@@ -184,15 +182,13 @@
 	play_sfx(src.loc, SFX_EFFECTS_SEATBELT)
 	if(M)
 		if(M != user)
-			M.visible_message(\
-				span_notice("[M.name] was unbuckled by [user.name]!"),\
-				span_notice("You were unbuckled from [src] by [user.name]."),\
-				span_notice("You hear metal clanking."))
+			act_message(M, src, MSG_SELF(span_notice("You were unbuckled from %T% by [user.name].")), \
+				MSG_OTHERS(span_notice("[M.name] was unbuckled by [user.name]!")), \
+				MSG_BLIND(span_notice("You hear metal clanking.")))
 		else
-			M.visible_message(\
-				span_notice("[M.name] unbuckled themselves!"),\
-				span_notice("You unbuckle yourself from [src]."),\
-				span_notice("You hear metal clanking."))
+			act_message(M, src, MSG_SELF(span_notice("You unbuckle yourself from %T%.")), \
+				MSG_OTHERS(span_notice("[M.name] unbuckled themselves!")), \
+				MSG_BLIND(span_notice("You hear metal clanking.")))
 		add_fingerprint(user)
 	return M
 

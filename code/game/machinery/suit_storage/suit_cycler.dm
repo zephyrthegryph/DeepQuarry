@@ -165,7 +165,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		to_chat(user, span_danger("There is no room inside the cycler for [grabbed.name]."))
 		return TRUE
 
-	visible_message(span_notice("[user] starts putting [grabbed.name] into the suit cycler."), 3)
+	act_message(user, null, others = span_notice("%U% starts putting [grabbed.name] into the suit cycler."), blind = 3)
 
 	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_insert_grab_timed_done), done_args = list(user, G))
 

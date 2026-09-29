@@ -20,7 +20,7 @@
 		to_chat(user, span_warning("You need more fuel!"))
 		return ITEM_INTERACT_SUCCESS
 
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " welds the barrel of \the [src] into place."))
+	act_message(user, src, others = span_infoplain(span_bold("%U%") + " welds the barrel of %T% into place."))
 	play_sfx(src, SFX_ITEMS_WELDER2, 2)
 	increment_construction_stage()
 	return ITEM_INTERACT_SUCCESS
@@ -28,7 +28,7 @@
 /obj/item/coilgun_assembly/screwdriver_act(mob/user, obj/item/tool)
 	if(construction_stage < 9)
 		return NONE
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " secures \the [src] and finishes it off."))
+	act_message(user, src, others = span_infoplain(span_bold("%U%") + " secures %T% and finishes it off."))
 	play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 	var/obj/item/gun/magnetic/coilgun = new(loc)
 	var/put_in_hands
@@ -54,18 +54,18 @@ DECLARE_INTERACTIONS(/obj/item/coilgun_assembly, INTERACT_ITEM(null, PROC_REF(in
 				to_chat(user, span_warning("You need at least 5 [reinforcing.singular_name]\s for this task."))
 				return INTERACTION_HANDLED_PASS
 			reinforcing.use(5)
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " shapes some steel sheets around \the [src] to form a body."))
+			act_message(user, src, others = span_infoplain(span_bold("%U%") + " shapes some steel sheets around %T% to form a body."))
 			increment_construction_stage()
 			return INTERACTION_HANDLED_PASS
 
 	if(istype(thing, /obj/item/tape_roll) && construction_stage == 2)
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " secures \the [src] together with \the [thing]."))
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + " secures %T% together with %I%."), item = thing)
 		increment_construction_stage()
 		return INTERACTION_HANDLED_PASS
 
 	if(istype(thing, /obj/item/pipe) && construction_stage == 3)
 		consume(thing, user)
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " jams \the [thing] into \the [src]."))
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + " jams %I% into %T%."), item = thing)
 		increment_construction_stage()
 		return INTERACTION_HANDLED_PASS
 
@@ -75,12 +75,12 @@ DECLARE_INTERACTIONS(/obj/item/coilgun_assembly, INTERACT_ITEM(null, PROC_REF(in
 			to_chat(user, span_warning("You need at least 5 lengths of cable for this task."))
 			return INTERACTION_HANDLED_PASS
 		cable.use(5)
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " wires \the [src]."))
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + " wires %T%."))
 		increment_construction_stage()
 		return INTERACTION_HANDLED_PASS
 
 	if(istype(thing, /obj/item/smes_coil) && construction_stage >= 6 && construction_stage <= 8)
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " installs \a [thing] into \the [src]."))
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + " installs \a [thing] into %T%."))
 		consume(thing, user)
 		increment_construction_stage()
 		return INTERACTION_HANDLED_PASS

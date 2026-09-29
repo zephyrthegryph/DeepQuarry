@@ -130,7 +130,7 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 /obj/item/xenobio/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src && loaded_item)
 		user.put_in_hands(loaded_item)
-		user.visible_message(span_notice("[user] removes [loaded_item] from [src]."), span_notice("You remove [loaded_item] from [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You remove [loaded_item] from %T%.")), MSG_OTHERS(span_notice("%U% removes [loaded_item] from %T%.")))
 		loaded_item = null
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 	else
@@ -146,7 +146,7 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 		user.drop_item()
 		I.forceMove(src)
 		loaded_item = I
-		user.visible_message(span_notice("[user] inserts [I] into [src]."), span_notice("You slot [I] into [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You slot [I] into %T%.")), MSG_OTHERS(span_notice("%U% inserts [I] into %T%.")))
 		return 1
 	return FALSE
 
@@ -154,7 +154,7 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 /obj/item/xenobio/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(loaded_item)
 		user.put_in_hands(loaded_item)
-		user.visible_message(span_notice("[user] removes [loaded_item] from [src]."), span_notice("You remove [loaded_item] from [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You remove [loaded_item] from %T%.")), MSG_OTHERS(span_notice("%U% removes [loaded_item] from %T%.")))
 		loaded_item = null
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 	return TRUE
@@ -169,7 +169,7 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 
 	play_sfx(src, SFX_WEAPONS_WAVE, vary = TRUE)
 
-	user.visible_message(span_warning("[user] fires \the [src]!"),span_warning("You fire \the [src]!"))
+	act_message(user, src, MSG_SELF(span_warning("You fire %T%!")), MSG_OTHERS(span_warning("%U% fires %T%!")))
 
 	fx_sparks(A, 4)
 	fx_sparks(user, 4)

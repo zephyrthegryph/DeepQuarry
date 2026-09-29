@@ -129,7 +129,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 				food_inserted_micros -= micro
 
 	if(!reagents.total_volume && changed)
-		eater.visible_message(span_notice("[eater] finishes drinking from \the [src]."),span_notice("You finish drinking from \the [src]."))
+		act_message(eater, src, MSG_SELF(span_notice("You finish drinking from %T%.")), MSG_OTHERS(span_notice("%U% finishes drinking from %T%.")))
 		if(trash)
 			feeder.drop_from_inventory(src)	//so icons update :[
 			if(ispath(trash,/obj/item))

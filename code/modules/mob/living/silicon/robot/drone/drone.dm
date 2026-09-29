@@ -264,7 +264,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_ITEM_AS(I_HELP, "P
 		return TRUE
 	user.unEquip(held)
 	place_on_head(held)
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " puts \the [held] on \the [src]."))
+	act_message(user, src, others = span_infoplain(span_bold("%U%") + " puts %I% on %T%."), item = held)
 	return TRUE
 
 /// Drones' wiring is always reachable.
@@ -285,7 +285,8 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_ITEM_AS(I_HELP, "P
 	if(!allowed(user))
 		to_chat(user, span_danger("Access denied."))
 		return FALSE
-	user.visible_message(span_danger("\The [user] swipes [user.p_their()] ID card through \the [src], attempting to reboot it."), span_danger(">You swipe your ID card through \the [src], attempting to reboot it."))
+	act_message(user, src, MSG_SELF(span_danger(">You swipe your ID card through %T%, attempting to reboot it.")), \
+		MSG_OTHERS(span_danger("%U% swipes %THEIR% ID card through %T%, attempting to reboot it.")))
 	var/drones = 0
 	for(var/mob/living/silicon/robot/drone/D in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		drones++

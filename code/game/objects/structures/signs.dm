@@ -16,7 +16,7 @@
 	return TRUE
 
 /obj/structure/sign/proc/unfasten(mob/user)
-	user.visible_message(span_notice("\The [user] unfastens \the [src]."), span_notice("You unfasten \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You unfasten %T%.")), MSG_OTHERS(span_notice("%U% unfastens %T%.")))
 	var/obj/item/sign/S = new(src.loc)
 	S.name = name
 	S.desc = desc
@@ -1640,11 +1640,13 @@ DECLARE_REF(/obj/structure/sign/flag, "linked_flag", PAIR, "linked_flag")
 
 /obj/structure/sign/flag/unfasten(mob/user)
 	if(!ripped)
-		user.visible_message(span_notice("\The [user] unfastens \the [src] and folds it back up."), span_notice("You unfasten \the [src] and fold it back up."))
+		act_message(user, src, MSG_SELF(span_notice("You unfasten %T% and fold it back up.")), \
+			MSG_OTHERS(span_notice("%U% unfastens %T% and folds it back up.")))
 		var/obj/item/flag/F = new flagtype(get_turf(user))
 		user.put_in_hands(F)
 	else
-		user.visible_message(span_notice("\The [user] unfastens the tattered remnants of \the [src]."), span_notice("You unfasten the tattered remains of \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You unfasten the tattered remains of %T%.")), \
+			MSG_OTHERS(span_notice("%U% unfastens the tattered remnants of %T%.")))
 	if(linked_flag)
 		qdel(linked_flag) //otherwise you're going to get weird duping nonsense
 	qdel(src)
@@ -1676,7 +1678,7 @@ DECLARE_REF(/obj/structure/sign/flag, "linked_flag", PAIR, "linked_flag")
 
 /obj/structure/sign/flag/proc/rip_answered(datum/om/prompt/confirm/flag_rip/ask)
 	var/mob/user = ask.answerer
-	visible_message(span_warning("\The [user] rips \the [src] in a single, decisive motion!" ))
+	act_message(user, src, others = span_warning("%U% rips %T% in a single, decisive motion!" ))
 	play_sfx(src.loc, SFX_ITEMS_POSTER_RIPPED)
 	add_fingerprint(user)
 	rip()
@@ -1701,12 +1703,12 @@ DECLARE_REF(/obj/structure/sign/flag, "linked_flag", PAIR, "linked_flag")
 
 /obj/structure/sign/flag/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/flame/lighter) || W.has_tool_quality(TOOL_WELDER))
-		visible_message(span_warning("\The [user] starts to burn \the [src] down!"))
+		act_message(user, src, others = span_warning("%U% starts to burn %T% down!"))
 		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 		return TRUE
 
 /obj/structure/sign/flag/proc/attackby_timed_done(mob/user)
-	visible_message(span_warning("\The [user] burns \the [src] down!"))
+	act_message(user, src, others = span_warning("%U% burns %T% down!"))
 	play_sfx(src.loc, SFX_ITEMS_CIGS_LIGHTERS_CIG_LIGHT, volume = 100, extrarange = 0)
 	new /obj/effect/decal/cleanable/ash(src.loc)
 	if(linked_flag)

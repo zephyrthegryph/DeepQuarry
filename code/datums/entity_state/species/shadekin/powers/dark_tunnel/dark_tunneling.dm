@@ -29,7 +29,7 @@
 	smoke.attach(T)
 	smoke.set_up(10, 0, T)
 	smoke.start()
-	actor.visible_message(span_notice("[actor] begins pulling dark energies around themselves."))
+	act_message(actor, null, others = span_notice("%U% begins pulling dark energies around themselves."))
 	var/started = om_task_start(/datum/om/task/timed/interaction_cost, actor, null, duration = DARK_TUNNEL_CHANNEL_TIME, acted_on = target, held = held)
 	return istext(started) ? FALSE : USE_TOOL_PENDING
 
@@ -78,7 +78,7 @@
 		return FALSE
 	var/datum/map_template/shelter/template = dq_dark_tunnel_template()
 	play_sfx(actor, SFX_EFFECTS_PHASEIN)
-	actor.visible_message(span_notice("[actor] finishes pulling dark energies around themselves, creating a portal."))
+	act_message(actor, null, others = span_notice("%U% finishes pulling dark energies around themselves, creating a portal."))
 	log_and_message_admins("[key_name_admin(actor)] created a tunnel to the dark at [get_area(T)]!")
 	template.annihilate_plants(T)
 	template.load(T, centered = TRUE)

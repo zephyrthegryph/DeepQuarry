@@ -480,7 +480,8 @@ VV_TOPIC_ACTION(/area, "check_static_power", PROC_REF(vv_topic_check_static_powe
 // H.AdjustWeakened(3) // No longer weakens.
 		to_chat(mob, span_notice("The sudden appearance of gravity makes you fall to the floor!"))
 		if(has_trait(H, TRAIT_UNLUCKY) && prob(50) && H.get_bodypart_name(BP_HEAD))
-			H.visible_message(span_warning("[H] falls to the ground from the sudden appearance of gravity, smashing [H.p_their()] head against the ground!"),span_warning("You smash your head into the ground as gravity appears!"))
+			act_message(H, null, MSG_SELF(span_warning("You smash your head into the ground as gravity appears!")), \
+				MSG_OTHERS(span_warning("%U% falls to the ground from the sudden appearance of gravity, smashing %THEIR% head against the ground!")))
 			H.injure(INJURY_BLUNT, 14, BP_HEAD, src)
 			play_sfx(H, SFX_EFFECTS_TABLEHEADSMASH)
 		play_sfx(mob, SFX_BODYFALL)

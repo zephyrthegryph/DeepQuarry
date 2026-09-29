@@ -46,7 +46,8 @@
 /obj/machinery/flasher/wirecutter_act(mob/user, obj/item/tool)
 	add_fingerprint(user)
 	disable = !disable
-	user.visible_message(span_warning("[user] has [disable ? "disconnected" : "connected"] [src]'s flashbulb!"), span_warning("You [disable ? "disconnect" : "connect"] [src]'s flashbulb!"))
+	act_message(user, src, MSG_SELF(span_warning("You [disable ? "disconnect" : "connect"] %T%'s flashbulb!")), \
+		MSG_OTHERS(span_warning("%U% has [disable ? "disconnected" : "connected"] %T%'s flashbulb!")))
 	return ITEM_INTERACT_SUCCESS
 
 //Let the AI trigger them directly.

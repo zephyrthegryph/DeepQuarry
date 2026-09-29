@@ -101,7 +101,8 @@
 	if(uploaded)
 		to_chat(user, span_notice("The payload is already resident."))
 		return TRUE
-	user.visible_message(span_notice("[user] begins uploading a control payload."), span_notice("You begin uploading the malware payload."))
+	act_message(user, null, MSG_SELF(span_notice("You begin uploading the malware payload.")), \
+		MSG_OTHERS(span_notice("%U% begins uploading a control payload.")))
 	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(upload_done), list(user))
 	return TRUE
 

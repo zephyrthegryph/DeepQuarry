@@ -283,7 +283,7 @@
 		return 0
 
 	if(istype(cashmoney, /obj/item/spacecasinocash))
-		visible_message(span_info("\The [user] inserts some chips into \the [src]."))
+		act_message(user, src, others = span_info("%U% inserts some chips into %T%."))
 		cashmoney.worth -= price
 
 		if(cashmoney.worth <= 0)

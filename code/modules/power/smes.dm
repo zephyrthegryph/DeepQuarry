@@ -334,9 +334,8 @@ DECLARE_REF(/obj/machinery/power/smes, "soundloop", OWNED, null)
 	term.connect_to_network()
 	LAZYOR(terminals, term)
 	power_sync()
-	user.visible_message(\
-			span_filter_notice(span_notice("[user.name] has added cables to the [src].")),\
-			span_filter_notice(span_notice("You added cables to the [src].")))
+	act_message(user, src, MSG_SELF(span_filter_notice(span_notice("You added cables to %T%."))), \
+		MSG_OTHERS(span_filter_notice(span_notice("[user.name] has added cables to %T%."))))
 	set_stat(0)
 	if(!power_region)
 		connect_to_network()
@@ -472,7 +471,8 @@ DECLARE_REF(/obj/machinery/power/smes, "soundloop", OWNED, null)
 		if(user.has_status(EFFECT_STUNNED))
 			return ITEM_INTERACT_SUCCESS
 	new /obj/item/stack/cable_coil(loc, 10)
-	user.visible_message(span_filter_notice(span_notice("[user.name] cut the cables and dismantled the power terminal.")), span_filter_notice(span_notice("You cut the cables and dismantle the power terminal.")))
+	act_message(user, null, MSG_SELF(span_filter_notice(span_notice("You cut the cables and dismantle the power terminal."))), \
+		MSG_OTHERS(span_filter_notice(span_notice("[user.name] cut the cables and dismantled the power terminal."))))
 	LAZYREMOVE(terminals, term)
 	qdel(term)
 

@@ -1376,7 +1376,8 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 		if(istype(L, /mob/living/simple_mob/slime))
 			var/mob/living/simple_mob/slime/S = L
 			S.injure(INJURY_CORROSIVE, rand(15, 25) * amount, source = src)	// Does more damage than water.
-			S.visible_message(span_warning("[S]'s flesh sizzles where the fluid touches it!"), span_danger("Your flesh burns in the fluid!"))
+			act_message(S, null, MSG_SELF(span_danger("Your flesh burns in the fluid!")), \
+				MSG_OTHERS(span_warning("%U%'s flesh sizzles where the fluid touches it!")))
 		remove_self(amount)
 
 /datum/reagent/leporazine
@@ -2112,10 +2113,8 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	if (!(M.gender == gender_change || M.gender_change_cooldown == 1) && M.allow_spontaneous_tf)
 		//set not to bug them because the chem is activating
 		M.gender_change_cooldown = 1
-		M.visible_message(
-			span_notice("[M] suddenly twitches as some of their features seem to contort and reshape."),
-			span_notice("You lose focus as warmth spreads throughout your chest and abdomen.")
-		)
+		act_message(M, null, MSG_SELF(span_notice("You lose focus as warmth spreads throughout your chest and abdomen.")), \
+			MSG_OTHERS(span_notice("%U% suddenly twitches as some of their features seem to contort and reshape.")))
 		//wait 30 seconds, growth takes time yo
 		om_after(M, 30 SECONDS, GLOBAL_PROC_REF(change_drug_ask), M, gender_change)
 

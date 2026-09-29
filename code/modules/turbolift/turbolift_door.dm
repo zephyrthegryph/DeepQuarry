@@ -33,7 +33,7 @@ DECLARE_REF(/obj/machinery/door/airlock/lift, "floor_handle", BACKLIST_HANDLE, "
 					if(!(locate_within(dest, /obj/machinery/door/airlock/lift)))
 						if(LM.Move(dest))
 							moved = 1
-							LM.visible_message("\The [LM] scurries away from the closing doors.")
+							act_message(LM, null, others = "%U% scurries away from the closing doors.")
 							break
 				if(!moved) // nowhere to go....
 					LM.gib()

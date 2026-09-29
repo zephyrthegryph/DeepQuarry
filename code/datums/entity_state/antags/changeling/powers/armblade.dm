@@ -90,11 +90,11 @@
 
 /obj/item/melee/changeling/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(default_parry_check(user, attacker, damage_source) && prob(defend_chance))
-		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
+		act_message(user, src, others = span_danger("%U% parries [attack_text] with %T%!"))
 		play_sfx(src, SFX_WEAPONS_SLASH)
 		return 1
 	if(unique_parry_check(user, attacker, damage_source) && prob(projectile_parry_chance))
-		user.visible_message(span_danger("\The [user] deflects [attack_text] with \the [src]!"))
+		act_message(user, src, others = span_danger("%U% deflects [attack_text] with %T%!"))
 		play_sfx(src, SFX_WEAPONS_SLASH)
 		return 1
 

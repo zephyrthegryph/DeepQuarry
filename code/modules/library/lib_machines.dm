@@ -369,7 +369,8 @@
 				if(arcanecheckout)
 					new /obj/item/book/tome(src.loc)
 					to_chat(usr, span_warning("Your sanity barely endures the seconds spent in the vault's browsing window. The only thing to remind you of this when you stop browsing is a dusty old tome sitting on the desk. You don't really remember printing it."))
-					usr.visible_message(span_infoplain(span_bold("\The [usr]") + " stares at the blank screen for a few moments, [usr.p_their()] expression frozen in fear. When [usr.p_they()] finally awaken from it, [usr.p_they()] look a lot older."), 2)
+					act_message(usr, null, MSG_SELF(2), \
+						MSG_OTHERS(span_infoplain(span_bold("%U%") + " stares at the blank screen for a few moments, %THEIR% expression frozen in fear. When %THEY% finally awaken from it, %THEY% look a lot older.")))
 					arcanecheckout = 0
 			screenstate = 0
 			return TRUE
@@ -658,13 +659,13 @@
 	if(istype(held, /obj/item/paper))
 		user.drop_item()
 		held.forceMove(src)
-		user.visible_message("[user] loads some paper into [src].", "You load some paper into [src].")
+		act_message(user, src, MSG_SELF("You load some paper into %T%."), MSG_OTHERS("%U% loads some paper into %T%."))
 		src.visible_message("[src] begins to hum as it warms up its printing drums.")
 		om_after(src, rand(200,400), PROC_REF(bind_paper), held)
 	else
 		user.drop_item()
 		held.forceMove(src)
-		user.visible_message("[user] loads some paper into [src].", "You load some paper into [src].")
+		act_message(user, src, MSG_SELF("You load some paper into %T%."), MSG_OTHERS("%U% loads some paper into %T%."))
 		src.visible_message("[src] begins to hum as it warms up its printing drums.")
 		om_after(src, rand(300,500), PROC_REF(bind_bundle), held)
 	return TRUE

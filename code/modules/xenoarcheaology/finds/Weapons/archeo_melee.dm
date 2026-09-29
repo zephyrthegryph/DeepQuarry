@@ -96,7 +96,7 @@
 	/// Check 2: (We're a cultist AND they're a cultist) OR (Our factions align)
 	/// If these are true, we get hurt.
 	if((!iscultist(user) && (ishuman(M) && !istype(M, /mob/living/carbon/human/ai_controlled))  || ((iscultist(user) && iscultist(M)) || M.faction == user.faction)))
-		user.visible_message(span_cult("[user]'s arm is engulfed in dark flames!"))
+		act_message(user, null, others = span_cult("%U%'s arm is engulfed in dark flames!"))
 		to_chat(user, span_cult("An inexplicable force rips through your arm as it's engulfed in flames, tearing the sword from your grasp!"))
 		user.drop_from_inventory(src, user.loc)
 		user.status_at_least(EFFECT_WEAKENED, 5)

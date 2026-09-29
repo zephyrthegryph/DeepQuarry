@@ -62,7 +62,7 @@
 			to_chat(user, span_warning("You [locked ? "enable" : "disable"] the safety lock on \the [src]."))
 		else
 			to_chat(user, span_warning("Access denied."))
-		user.visible_message(span_notice("[user] swipes \the [I] against \the [src]."))
+		act_message(user, src, others = span_notice("%U% swipes %I% against %T%."), item = I)
 		return INTERACTION_HANDLED_PASS
 	return ..()
 
@@ -112,8 +112,8 @@
 		return
 	recharging = 1
 	update_icon()
-	user.visible_message(span_notice("[user] opens \the [src] and starts pumping the handle."), \
-						span_notice("You open \the [src] and start pumping the handle."))
+	act_message(user, src, MSG_SELF(span_notice("You open %T% and start pumping the handle.")), \
+		MSG_OTHERS(span_notice("%U% opens %T% and starts pumping the handle.")))
 	om_task_timed(user, 1 SECOND, src, src, PROC_REF(pump_cycle), list(user), on_fail = PROC_REF(pump_end), fail_args = list(user))
 
 /// One pump every second (a timed action each) until full.

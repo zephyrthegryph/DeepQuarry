@@ -736,11 +736,11 @@ EXTEND_INTERACTIONS(/obj/structure/prop/machine/nt_pod, INTERACT_DRAG(null, PROC
 /obj/structure/prop/machine/centrifuge/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!on)
 		on = TRUE
-		user.visible_message("\The [user] turns on \the [src].")
+		act_message(user, src, others = "%U% turns on %T%.")
 		icon_state = "centrifuge_moving"
 	else
 		on = FALSE
-		user.visible_message("\The [user] turns off \the [src].")
+		act_message(user, src, others = "%U% turns off %T%.")
 		icon_state = "centrifuge"
 
 	update_icon()
@@ -768,11 +768,11 @@ EXTEND_INTERACTIONS(/obj/structure/prop/machine/nt_pod, INTERACT_DRAG(null, PROC
 /obj/structure/prop/machine/incubator/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!on)
 		on = TRUE
-		user.visible_message("\The [user] turns on \the [src].")
+		act_message(user, src, others = "%U% turns on %T%.")
 		icon_state = "incubator_on"
 	else
 		on = FALSE
-		user.visible_message("\The [user] turns off \the [src].")
+		act_message(user, src, others = "%U% turns off %T%.")
 		icon_state = "incubator"
 
 	update_icon()
@@ -800,11 +800,11 @@ EXTEND_INTERACTIONS(/obj/structure/prop/machine/nt_pod, INTERACT_DRAG(null, PROC
 /obj/structure/prop/machine/disease_analyser/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!on)
 		on = TRUE
-		user.visible_message("\The [user] turns on \the [src].")
+		act_message(user, src, others = "%U% turns on %T%.")
 		icon_state = "analyser_"
 	else
 		on = FALSE
-		user.visible_message("\The [user] turns off \the [src].")
+		act_message(user, src, others = "%U% turns off %T%.")
 		icon_state = "analyser"
 
 	update_icon()
@@ -832,11 +832,11 @@ EXTEND_INTERACTIONS(/obj/structure/prop/machine/nt_pod, INTERACT_DRAG(null, PROC
 /obj/structure/prop/machine/isolator/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!on)
 		on = TRUE
-		user.visible_message("\The [user] turns on \the [src].")
+		act_message(user, src, others = "%U% turns on %T%.")
 		icon_state = "isolator_"
 	else
 		on = FALSE
-		user.visible_message("\The [user] turns off \the [src].")
+		act_message(user, src, others = "%U% turns off %T%.")
 		icon_state = "isolator_in"
 
 	update_icon()

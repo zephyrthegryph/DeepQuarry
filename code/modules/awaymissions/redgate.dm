@@ -256,12 +256,12 @@ EXTEND_INTERACTIONS(/obj/item/laserdome_flag, INTERACT_HAND_DEFAULT("Pick up", P
 
 	//set the verb based on matching (or mismatching) outfits, and teleport the flag back to base if it was touched by the owning team
 	if(grabbing_team == laser_team)
-		user.visible_message(span_warning("[user] is returning \the [src]!"))
+		act_message(user, src, others = span_warning("%U% is returning %T%!"))
 		//channel return, rather than instant; if they fail the channel (e.g. because they got tagged!) then drop it
 		om_task_timed(user, flag_return_delay, src, src, PROC_REF(flag_returned), list(user), IGNORE_TARGET_LOC_CHANGE, PROC_REF(flag_return_failed), list(user))
 		return
 	else
-		user.visible_message(span_warning("[user] has taken \the [src]!"))
+		act_message(user, src, others = span_warning("%U% has taken %T%!"))
 		GLOB.global_announcer.autosay("[src] taken by [capitalize(grabbing_team)] team!","Laserdome Announcer","Entertainment")
 
 /obj/item/laserdome_flag/red
@@ -390,7 +390,7 @@ EXTEND_INTERACTIONS(/obj/item/laserdome_hyperball, INTERACT_HAND_DEFAULT("Pick u
 	else
 		return	//if they're not on a team, stop!
 
-	user.visible_message(span_warning("[user] has taken \the [src]!"))
+	act_message(user, src, others = span_warning("%U% has taken %T%!"))
 	//cache our grabber and their team, for throw interactions with the goals later
 	last_holder = M
 	last_team = grabbing_team

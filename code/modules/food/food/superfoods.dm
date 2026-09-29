@@ -551,7 +551,8 @@ DECLARE_INTERACTIONS(/obj/structure/chaoscake, INTERACT_ITEM(null, PROC_REF(inte
 							/obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza/bigslice)
 
 /obj/structure/theonepizza/proc/slice_done(mob/living/user)
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " successfully cuts The One Pizza."), span_notice("You successfully cut The One Pizza."))
+	act_message(user, null, MSG_SELF(span_notice("You successfully cut The One Pizza.")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " successfully cuts The One Pizza.")))
 	for(var/slicetype in slicelist)
 		new slicetype(src.loc)
 	qdel(src)
@@ -561,7 +562,8 @@ DECLARE_INTERACTIONS(/obj/structure/theonepizza, INTERACT_ITEM(null, PROC_REF(in
 /// Old attackby.
 /obj/structure/theonepizza/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/material/knife))
-		user.visible_message(span_bold("\The [user]") + " starts to slowly cut through The One Pizza.", span_notice("You start to slowly cut through The One Pizza."))
+		act_message(user, null, MSG_SELF(span_notice("You start to slowly cut through The One Pizza.")), \
+			MSG_OTHERS(span_bold("%U%") + " starts to slowly cut through The One Pizza."))
 		om_task_timed(user, slicetime, src, src, PROC_REF(slice_done), list(user))
 	return INTERACTION_HANDLED_PASS
 

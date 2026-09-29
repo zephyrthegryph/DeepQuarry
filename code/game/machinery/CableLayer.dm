@@ -59,7 +59,7 @@
 
 /obj/machinery/cablelayer/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	set_on(!on)
-	user.visible_message("\The [user] [!on?"dea":"a"]ctivates \the [src].", "You switch [src] [on? "on" : "off"]")
+	act_message(user, src, MSG_SELF("You switch %T% [on? "on" : "off"]"), MSG_OTHERS("%U% [!on?"dea":"a"]ctivates %T%."))
 	return TRUE
 
 /obj/machinery/cablelayer/wirecutter_act(mob/user, obj/item/tool)

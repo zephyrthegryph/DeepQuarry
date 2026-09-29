@@ -51,10 +51,10 @@
 
 	if(idaccessible == 0)
 		idaccessible = 1
-		visible_message(span_notice("\The [src] clicks as their access modification slot opens."),span_notice("You allow access modifications."), runemessage = "click")
+		act_message(src, null, MSG_SELF(span_notice("You allow access modifications.")), MSG_OTHERS(span_notice("%U% clicks as their access modification slot opens.")), runemessage = "click")
 	else
 		idaccessible = 0
-		visible_message(span_notice("\The [src] clicks as their access modification slot closes."),span_notice("You block access modfications."), runemessage = "click")
+		act_message(src, null, MSG_SELF(span_notice("You block access modfications.")), MSG_OTHERS(span_notice("%U% clicks as their access modification slot closes.")), runemessage = "click")
 
 /mob/living/silicon/pai/verb/toggle_gender_identity_vr()
 	set name = "Set Gender Identity"
@@ -211,18 +211,12 @@
 				t_him = "them"
 
 	if(H.zone_sel.selecting == BP_HEAD)
-		H.visible_message( \
-			span_notice("[H] pats [target] on the head."), \
-			span_notice("You pat [target] on the head."), )
+		act_message(H, target, MSG_SELF(span_notice("You pat %T% on the head.")), MSG_OTHERS(span_notice("%U% pats %T% on the head.")))
 	else if(H.zone_sel.selecting == BP_R_HAND || H.zone_sel.selecting == BP_L_HAND)
-		H.visible_message( \
-			span_notice("[H] shakes [target]'s hand."), \
-			span_notice("You shake [target]'s hand."), )
+		act_message(H, target, MSG_SELF(span_notice("You shake %T%'s hand.")), MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
 	else if(H.zone_sel.selecting == "mouth")
-		H.visible_message( \
-			span_notice("[H] boops [target]'s nose."), \
-			span_notice("You boop [target] on the nose."), )
+		act_message(H, target, MSG_SELF(span_notice("You boop %T% on the nose.")), MSG_OTHERS(span_notice("%U% boops %T%'s nose.")))
 	else
-		H.visible_message(span_notice("[H] hugs [target] to make [t_him] feel better!"), \
-						span_notice("You hug [target] to make [t_him] feel better!"))
+		act_message(H, target, MSG_SELF(span_notice("You hug %T% to make [t_him] feel better!")), \
+			MSG_OTHERS(span_notice("%U% hugs %T% to make [t_him] feel better!")))
 	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)

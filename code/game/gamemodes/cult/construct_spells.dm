@@ -679,7 +679,7 @@
 		attack_message = pick(S.attacktext)
 	if(isliving(hit_atom))
 		var/mob/living/L = hit_atom
-		L.visible_message(span_danger("\The [user] [attack_message] \the [L], sending them flying!"))
+		act_message(user, L, others = span_danger("%U% [attack_message] %T%, sending them flying!"))
 		play_sfx(src, SFX_PUNCH)
 		L.status_at_least(EFFECT_WEAKENED, 2)
 		L.injure(INJURY_BLUNT, rand(30, 50), source = user)
@@ -687,7 +687,7 @@
 		L.throw_at(get_edge_target_turf(L, throwdir), 3, 1, src)
 	if(istype(hit_atom, /turf/simulated/wall))
 		var/turf/simulated/wall/W = hit_atom
-		user.visible_message(span_warning("\The [user] rears its fist, preparing to hit \the [W]!"))
+		act_message(user, W, others = span_warning("%U% rears its fist, preparing to hit %T%!"))
 		var/windup = cooldown
 		if(W.reinf_material)
 			windup = cooldown * 2
@@ -697,7 +697,7 @@
 
 /obj/item/spell/construct/slam/proc/slam_lowered(datum/om/task/timed/slam_slam_wall/task)
 	var/mob/living/user = task.actor
-	user?.visible_message(span_bold("\The [user]") + " lowers its fist.")
+	act_message(user, null, others = span_bold("%U%") + " lowers its fist.")
 
 /datum/om/task/timed/slam_slam_wall
 	complete_proc = /obj/item/spell/construct/slam/proc/slam_wall
@@ -709,7 +709,7 @@
 	var/mob/living/user = task.actor
 	var/turf/simulated/wall/W = task.W
 	var/attack_message = task.attack_message
-	W.visible_message(span_danger("\The [user] [attack_message] \the [W], obliterating it!"))
+	act_message(user, W, others = span_danger("%U% [attack_message] %T%, obliterating it!"))
 	W.dismantle_wall(1)
 	qdel(src)
 

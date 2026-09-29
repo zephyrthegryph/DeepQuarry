@@ -23,4 +23,4 @@
 		blob_options += /obj/structure/blob/node
 	new /obj/structure/blob/core/living_agate(M.loc)
 
-	M.visible_message(span_danger("A huge mass of blob and blob spores burst out of [M]!"))
+	act_message(M, null, others = span_danger("A huge mass of blob and blob spores burst out of %U%!"))

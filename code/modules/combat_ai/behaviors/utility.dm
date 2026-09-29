@@ -47,7 +47,7 @@
 	// Adjacent — pick up.
 	owner.put_in_any_hand_if_possible(I)
 	if(I.loc == owner)
-		owner.visible_message(span_notice("[owner] picks up [I]."))
+		act_message(owner, null, others = span_notice("%U% picks up [I]."))
 		// Force rebuild on next strategic tick — happens naturally via slow tick.
 		brain.invalidate_selection()
 		return DQ_BEHAVIOR_DONE

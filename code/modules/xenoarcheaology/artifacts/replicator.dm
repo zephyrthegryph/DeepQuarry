@@ -199,7 +199,7 @@
 	user.drop_item()
 	W.forceMove(src)
 	stored_materials.Add(W)
-	src.visible_message(span_notice(span_bold("\The [user]") + " inserts \the [W] into \the [src]."))
+	act_message(user, src, others = span_notice(span_bold("%U%") + " inserts %I% into %T%."), item = W)
 	return TRUE
 
 
@@ -412,7 +412,7 @@
 						inserted_human.drop_from_inventory(I)
 				inserted_mob.forceMove(src)
 				stored_materials.Add(inserted_mob)
-				src.visible_message(span_filter_notice(span_bold("\The [user]") + " inserts \the [inserted_mob] into \the [src]."))
+				act_message(user, src, others = span_filter_notice(span_bold("%U%") + " inserts \the [inserted_mob] into %T%."))
 				return TRUE
 		else
 			to_chat(user, span_notice("You cannot put \the [W] into the machine. ((The micro must be connected to the server.))"))
@@ -433,7 +433,7 @@
 			//Now that we've dropped all the items they have, let's shove them back into the micro holder.
 	W.forceMove(src)
 	stored_materials.Add(W)
-	src.visible_message(span_filter_notice(span_bold("\The [user]") + " inserts \the [W] into \the [src]."))
+	act_message(user, src, others = span_filter_notice(span_bold("%U%") + " inserts %I% into %T%."), item = W)
 	return TRUE
 
 /obj/machinery/replicator/vore/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -677,7 +677,7 @@
 						inserted_human.drop_from_inventory(I)
 				inserted_mob.forceMove(src)
 				stored_materials.Add(inserted_mob)
-				src.visible_message(span_filter_notice(span_bold("\The [user]") + " inserts \the [inserted_mob] into \the [src]."))
+				act_message(user, src, others = span_filter_notice(span_bold("%U%") + " inserts \the [inserted_mob] into %T%."))
 				return TRUE
 		else
 			to_chat(user, span_notice("You cannot put \the [W] into the machine. ((They must be connected to the server.))"))
@@ -696,7 +696,7 @@
 			//Now that we've dropped all the items they have, let's shove them back into the micro holder.
 	W.forceMove(src)
 	stored_materials.Add(W)
-	src.visible_message(span_filter_notice(span_bold("\The [user]") + " inserts \the [W] into \the [src]."))
+	act_message(user, src, others = span_filter_notice(span_bold("%U%") + " inserts %I% into %T%."), item = W)
 	return TRUE
 
 

@@ -82,7 +82,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	effect = /obj/machinery/power/solar/proc/interaction_strike
 
 /obj/machinery/power/solar/proc/interaction_strike(mob/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message(span_warning("[user] strikes the solar panel with [held]."))
+	act_message(user, null, others = span_warning("%U% strikes the solar panel with [held]."))
 	user.setClickCooldown(user.get_attack_speed(held))
 	add_fingerprint(user)
 	receive_weapon_hit(held, user)
@@ -90,7 +90,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 
 /obj/machinery/power/solar/crowbar_act(mob/user, obj/item/W)
 	play_sfx(src, SFX_MACHINES_CLICK)
-	user.visible_message(span_notice("[user] begins to take the glass off the solar panel."))
+	act_message(user, null, others = span_notice("%U% begins to take the glass off the solar panel."))
 	use_tool(user, W, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
@@ -98,7 +98,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	var/obj/item/solar_assembly/S = new(loc)
 	S.set_anchored(TRUE)
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-	user.visible_message(span_notice("[user] takes the glass off the solar panel."))
+	act_message(user, null, others = span_notice("%U% takes the glass off the solar panel."))
 	replace_with(src, glass_type, 2)
 
 // First time integrity bottoms out, the panel flips to its broken (cracked) state.
@@ -245,7 +245,7 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 			var/obj/item/stack/material/S = W
 			if(S.use(2))
 				play_sfx(src, SFX_MACHINES_CLICK)
-				user.visible_message(span_notice("[user] places the glass on the solar assembly."))
+				act_message(user, null, others = span_notice("%U% places the glass on the solar assembly."))
 				replace_with(src, tracker ? /obj/machinery/power/tracker : /obj/machinery/power/solar, W.type)
 			else
 				to_chat(user, span_warning("You need two sheets of glass to put them into a solar panel."))
@@ -257,7 +257,7 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 			tracker = 1
 			user.drop_item()
 			consume(W, user)
-			user.visible_message(span_notice("[user] inserts the electronics into the solar assembly."))
+			act_message(user, null, others = span_notice("%U% inserts the electronics into the solar assembly."))
 			return 1
 	return FALSE
 
@@ -265,7 +265,7 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 	if(!isturf(loc))
 		return ITEM_INTERACT_BLOCKING
 	set_anchored(!anchored)
-	user.visible_message(span_notice("[user] [anchored ? "wrenches" : "unwrenches"] the solar assembly [anchored ? "into" : "from"] place."))
+	act_message(user, null, others = span_notice("%U% [anchored ? "wrenches" : "unwrenches"] the solar assembly [anchored ? "into" : "from"] place."))
 	playsound(src, W.usesound, 75, 1)
 	return ITEM_INTERACT_SUCCESS
 
@@ -274,7 +274,7 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 		return ITEM_INTERACT_BLOCKING
 	new /obj/item/tracker_electronics(src.loc)
 	tracker = 0
-	user.visible_message(span_notice("[user] takes out the electronics from the solar assembly."))
+	act_message(user, null, others = span_notice("%U% takes out the electronics from the solar assembly."))
 	return ITEM_INTERACT_SUCCESS
 
 //

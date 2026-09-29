@@ -135,7 +135,7 @@
 	user.remove_from_mob(P)
 	power_supply = P
 	P.forceMove(src)
-	user.visible_message("[user] inserts [P] into [src].", span_notice("You insert [P] into [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You insert [P] into %T%.")), MSG_OTHERS("%U% inserts [P] into %T%."))
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 	update_icon()
 	update_held_icon()
@@ -151,7 +151,7 @@
 			if(power_supply)
 				to_chat(user, span_notice("[src] already has a power cell."))
 			else
-				user.visible_message("[user] is reloading [src].", span_notice("You start to insert [P] into [src]."))
+				act_message(user, src, MSG_SELF(span_notice("You start to insert [P] into %T%.")), MSG_OTHERS("%U% is reloading %T%."))
 				om_task_timed(user, reload_time * P.w_class, src, src, PROC_REF(cell_inserted), list(user, P))
 		else
 			to_chat(user, span_notice("This cell is not fitted for [src]."))
@@ -164,7 +164,7 @@
 	if(power_supply)
 		user.put_in_hands(power_supply)
 		power_supply.update_icon()
-		user.visible_message("[user] removes [power_supply] from [src].", span_notice("You remove [power_supply] from [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You remove [power_supply] from %T%.")), MSG_OTHERS("%U% removes [power_supply] from %T%."))
 		power_supply = null
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 		update_icon()

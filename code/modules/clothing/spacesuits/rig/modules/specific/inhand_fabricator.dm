@@ -26,7 +26,7 @@
 	if(target)
 		var/obj/item/firing = new fabrication_type()
 		firing.forceMove(get_turf(src))
-		H.visible_message(span_danger("[H] launches \a [firing]!"))
+		act_message(H, null, others = span_danger("%U% launches \a [firing]!"))
 		firing.throw_at(target,fire_force,fire_distance)
 	else
 		if(H.get_equipped_item(SLOT_ID_HAND_L) && H.get_equipped_item(SLOT_ID_HAND_R))

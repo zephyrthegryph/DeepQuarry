@@ -169,9 +169,9 @@
 
 	play_sfx(src, SFX_EFFECTS_GLASSKNOCK)
 	user.do_attack_animation(src)
-	user.visible_message(span_danger("\The [user] bangs against \the [src]!"),
-						span_danger("You bang against \the [src]!"),
-						"You hear a banging sound.")
+	act_message(user, src, MSG_SELF(span_danger("You bang against %T%!")), \
+		MSG_OTHERS(span_danger("%U% bangs against %T%!")), \
+		MSG_BLIND("You hear a banging sound."))
 	return TRUE
 
 /// Old attack_hand: a Hulk smashes through, or a knock.
@@ -184,14 +184,14 @@
 	user.setClickCooldown(user.get_attack_speed())
 	if(user.has_mutation(HULK))
 		user.say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!"))
-		user.visible_message(span_danger("[user] smashes through [src]!"))
+		act_message(user, src, others = span_danger("%U% smashes through %T%!"))
 		user.do_attack_animation(src)
 		shatter()
 	else
 		play_sfx(src, SFX_EFFECTS_GLASSKNOCK)
-		user.visible_message("[user.name] knocks on the [src.name].",
-							"You knock on the [src.name].",
-							"You hear a knocking sound.")
+		act_message(user, null, MSG_SELF("You knock on the [src.name]."), \
+			MSG_OTHERS("[user.name] knocks on the [src.name]."), \
+			MSG_BLIND("You hear a knocking sound."))
 	return TRUE
 
 /obj/structure/window/attack_generic(mob/user, damage)
@@ -199,12 +199,12 @@
 	if(!damage)
 		return
 	if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
-		visible_message(span_danger("[user] smashes into [src]!"))
+		act_message(user, src, others = span_danger("%U% smashes into %T%!"))
 		if(reinf)
 			damage = damage / 2
 		receive_generic_attack(user, damage)
 	else
-		visible_message(span_infoplain(span_bold("\The [user]") + " bonks \the [src] harmlessly."))
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + " bonks %T% harmlessly."))
 	user.do_attack_animation(src)
 	return 1
 
@@ -224,17 +224,17 @@
 			qdel(W)	//gotta delete it here because if window breaks, it won't get deleted
 			switch (state)
 				if(1)
-					M.visible_message(span_warning("[user] slams [M] against \the [src]!"))
+					act_message(user, M, others = span_warning("%U% slams %T% against \the [src]!"))
 					M.injure(INJURY_BLUNT, 7, null, src)
 					hit(10)
 				if(2)
-					M.visible_message(span_danger("[user] bashes [M] against \the [src]!"))
+					act_message(user, M, others = span_danger("%U% bashes %T% against \the [src]!"))
 					if (prob(50))
 						M.status_at_least(EFFECT_WEAKENED, 1)
 					M.injure(INJURY_BLUNT, 10, null, src)
 					hit(25)
 				if(3)
-					M.visible_message(span_danger("<big>[user] crushes [M] against \the [src]!</big>"))
+					act_message(M, user, others = span_danger("<big>%T% crushes %U% against \the [src]!</big>"))
 					M.status_at_least(EFFECT_WEAKENED, 5)
 					M.injure(INJURY_BLUNT, 20, null, src)
 					hit(50)
@@ -246,10 +246,9 @@
 		var/obj/item/stack/cable_coil/C = W
 		if (C.use(1))
 			play_sfx(src, SFX_EFFECTS_SPARKS1, 0.75)
-			user.visible_message( \
-				span_infoplain(span_bold("\The [user]") + " begins to wire \the [src] for electrochromic tinting."), \
-				span_notice("You begin to wire \the [src] for electrochromic tinting."), \
-				"You hear sparks.")
+			act_message(user, src, MSG_SELF(span_notice("You begin to wire %T% for electrochromic tinting.")), \
+				MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins to wire %T% for electrochromic tinting.")), \
+				MSG_BLIND("You hear sparks."))
 			use_tool(user, C, src, delay = 2 SECONDS, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(state))
 	else if(istype(W,/obj/item/frame) && anchored)
 		var/obj/item/frame/F = W
@@ -653,7 +652,7 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 /obj/machinery/button/windowtint/wirecutter_act(mob/user, obj/item/tool)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	user.visible_message(span_warning("[user] has cut the wires inside \the [src]!"), "You have cut the wires inside \the [src].")
+	act_message(user, src, MSG_SELF("You have cut the wires inside %T%."), MSG_OTHERS(span_warning("%U% has cut the wires inside %T%!")))
 	playsound(src, tool.usesound, 50, TRUE)
 	new /obj/item/stack/cable_coil(get_turf(src), 5)
 	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING

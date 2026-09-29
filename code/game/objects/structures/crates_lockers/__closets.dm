@@ -320,9 +320,10 @@ DECLARE_REF(/obj/structure/closet, "door_obj", OWNED, null)
 			var/turf/T = get_turf(src)
 			for(var/obj/item/I in LB.slot_contents())
 				LB.remove_from_storage(I, T)
-			user.visible_message(span_notice("[user] empties \the [LB] into \the [src]."), \
-									span_notice("You empty \the [LB] into \the [src]."), \
-									span_notice("You hear rustling of clothes."))
+			act_message(user, src, MSG_SELF(span_notice("You empty %I% into %T%.")), \
+				MSG_OTHERS(span_notice("%U% empties %I% into %T%.")), \
+				MSG_BLIND(span_notice("You hear rustling of clothes.")), \
+				item = LB)
 			return TRUE
 		if(isrobot(user))
 			return TRUE
@@ -354,7 +355,8 @@ DECLARE_REF(/obj/structure/closet, "door_obj", OWNED, null)
 	if(!opened)
 		to_chat(user, span_notice("You can't reach the anchoring bolts when the door is closed!"))
 		return TRUE
-	user.visible_message("\The [user] begins [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.", "You start [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.")
+	act_message(user, src, MSG_SELF("You start [anchored ? "unsecuring %T% from" : "securing %T% to"] the floor."), \
+		MSG_OTHERS("%U% begins [anchored ? "unsecuring %T% from" : "securing %T% to"] the floor."))
 	use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 0, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return TRUE
 
@@ -468,7 +470,7 @@ DECLARE_REF(/obj/structure/closet, "door_obj", OWNED, null)
 	if(damage < STRUCTURE_MIN_DAMAGE_THRESHOLD)
 		return
 	user.do_attack_animation(src)
-	visible_message(span_danger("[user] [attack_message] the [src]!"))
+	act_message(user, src, others = span_danger("%U% [attack_message] %T%!"))
 	dump_contents()
 	om_after(src, 1, TYPE_PROC_REF(/datum, om_qdel_self))
 	return 1

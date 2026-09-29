@@ -133,7 +133,8 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots/vox, fit_spec, list(REQ_FITS_BODYTY
 /obj/item/clothing/shoes/magboots/vox/dropped(mob/user, equipping, slot)
 	..()
 	if(magpulse)
-		user.visible_message("The [src] go limp as they are removed from [user]'s feet.", "The [src] go limp as they are removed from your feet.")
+		act_message(user, src, MSG_SELF("%T% go limp as they are removed from your feet."), \
+			MSG_OTHERS("%T% go limp as they are removed from %U%'s feet."))
 		item_flags &= ~NOSLIP
 		magpulse = FALSE
 		canremove = TRUE

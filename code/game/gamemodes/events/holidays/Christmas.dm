@@ -23,7 +23,9 @@
 
 /obj/item/toy/xmas_cracker/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)
 	if( !cracked && (issilicon(target) || (ishuman(target) && !target.get_active_hand())) && target.stat == CONSCIOUS)
-		target.visible_message(span_notice("[user] and [target] pop \an [src]! *pop*"), span_notice("You pull \an [src] with [target]! *pop*"), span_notice("You hear a *pop*."))
+		act_message(target, user, MSG_SELF(span_notice("You pull \an [src] with %U%! *pop*")), \
+			MSG_OTHERS(span_notice("%T% and %U% pop \an [src]! *pop*")), \
+			MSG_BLIND(span_notice("You hear a *pop*.")))
 		var/obj/item/paper/Joke = new /obj/item/paper(user.loc)
 		Joke.name = "[pick("awful","terrible","unfunny")] joke"
 		Joke.info = pick("What did one snowman say to the other?\n\n" + span_italics("'Is it me or can you smell carrots?'"),

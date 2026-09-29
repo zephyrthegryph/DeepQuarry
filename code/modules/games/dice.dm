@@ -138,9 +138,9 @@ DECLARE_INTERACTIONS(/obj/item/dice, \
 		else if(sides == 20 && result == 1)
 			comment = "Ouch, bad luck."
 
-		user.visible_message(span_notice("[user] has thrown [src]. It lands on [result]. [comment]"), \
-								span_notice("You throw [src]. It lands on a [result]. [comment]"), \
-								span_notice("You hear [src] landing on a [result]. [comment]"))
+		act_message(user, src, MSG_SELF(span_notice("You throw %T%. It lands on a [result]. [comment]")), \
+			MSG_OTHERS(span_notice("%U% has thrown %T%. It lands on [result]. [comment]")), \
+			MSG_BLIND(span_notice("You hear %T% landing on a [result]. [comment]")))
 
 /// Old Set Face verb: Turn the dice to a specific face.
 /obj/item/dice/proc/dice_verb_set_face(mob/user, obj/item/held, datum/interaction/interaction)
@@ -160,7 +160,7 @@ DECLARE_INTERACTIONS(/obj/item/dice, \
 
 	result = to_value
 	icon_state = "[name][result]"
-	user.visible_message(span_notice("\The [user] turned \the [src] to the face reading [result] manually."))
+	act_message(user, src, others = span_notice("%U% turned %T% to the face reading [result] manually."))
 
 /obj/item/dice/item_ctrl_click(mob/user)
 	set_dice(user)
@@ -228,9 +228,9 @@ EXTEND_INTERACTIONS(/obj/item/storage/dicecup, \
 /obj/item/storage/dicecup/proc/interaction_shake(mob/user, obj/item/held, datum/interaction/interaction)
 	if(interaction_self(user, held, interaction))
 		return TRUE
-	user.visible_message(span_notice("[user] shakes [src]."), \
-							span_notice("You shake [src]."), \
-							span_notice("You hear dice rolling."))
+	act_message(user, src, MSG_SELF(span_notice("You shake %T%.")), \
+		MSG_OTHERS(span_notice("%U% shakes %T%.")), \
+		MSG_BLIND(span_notice("You hear dice rolling.")))
 	rollCup(user)
 
 /obj/item/storage/dicecup/proc/rollCup(mob/user)

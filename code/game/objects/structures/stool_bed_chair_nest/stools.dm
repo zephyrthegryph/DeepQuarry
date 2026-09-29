@@ -73,7 +73,7 @@
 
 /obj/item/stool/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if (prob(5) && isliving(M))
-		user.visible_message(span_danger("[user] breaks [src] over [M]'s back!"))
+		act_message(user, src, others = span_danger("%U% breaks %T% over [M]'s back!"))
 		user.setClickCooldown(user.get_attack_speed())
 		user.do_attack_animation(M)
 

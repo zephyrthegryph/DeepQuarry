@@ -32,8 +32,8 @@
 	recharging = 1
 	update_icon()
 	play_sfx(src, SFX_WEAPONS_CLOCKWORK_CLOCKWORK_COCK)
-	user.visible_message(span_notice("[user] pulls the charging handle on \the [src] and it whirrs to life!"), \
-						span_notice("You pull the charging handle on \the [src] and begin the reloading sequence."))
+	act_message(user, src, MSG_SELF(span_notice("You pull the charging handle on %T% and begin the reloading sequence.")), \
+		MSG_OTHERS(span_notice("%U% pulls the charging handle on %T% and it whirrs to life!")))
 	play_sfx(src, SFX_WEAPONS_CLOCKWORK_CWC_RIFLE_FABRICATE)
 	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(recharge_cycle), list(user), on_fail = PROC_REF(recharge_end), fail_args = list(user))
 

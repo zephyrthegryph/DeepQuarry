@@ -268,7 +268,7 @@
 /// Let people ride on you. Runs on the rider (the picked target); `actor` is the robot.
 /mob/living/proc/dq_do_robot_mount(mob/living/silicon/robot/actor, obj/item/held, datum/interaction/ability/interaction)
 	if(actor.buckle_mob(src))
-		actor.visible_message(span_notice("[src] starts riding [actor.name]!"))
+		act_message(src, actor, others = span_notice("%U% starts riding %T%!"))
 	return TRUE
 
 // ---------------------------------------------------------------------------

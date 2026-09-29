@@ -53,7 +53,7 @@
 		user.remove_from_mob(G)
 		G.forceMove(src)
 		LAZYINITLIST(grenades); grenades.Insert(1, G) //add to the head of the list, so that it is loaded on the next pump
-		user.visible_message("[user] inserts \a [G] into [src].", span_notice("You insert \a [G] into [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You insert \a [G] into %T%.")), MSG_OTHERS("%U% inserts \a [G] into %T%."))
 		return
 	to_chat(user, span_warning("[G] doesn't seem to fit in the [src]!"))
 
@@ -62,7 +62,7 @@
 		var/obj/item/grenade/G = grenades[grenades.len]
 		grenades.len--
 		user.put_in_hands(G)
-		user.visible_message("[user] removes \a [G] from [src].", span_notice("You remove \a [G] from [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You remove \a [G] from %T%.")), MSG_OTHERS("%U% removes \a [G] from %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 	else
 		to_chat(user, span_warning("[src] is empty."))
@@ -122,14 +122,14 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/grenade, INTERACT_HAND(null, PROC_RE
 		user.remove_from_mob(G)
 		G.forceMove(src)
 		chambered_handle = om_handle(G)
-		user.visible_message("[user] load \a [G] into [src].", span_notice("You load \a [G] into [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You load \a [G] into %T%.")), MSG_OTHERS("%U% load \a [G] into %T%."))
 		return
 	to_chat(user, span_warning("[G] doesn't seem to fit in the [src]!"))
 
 /obj/item/gun/launcher/grenade/underslung/unload(mob/user)
 	if(chambered())
 		user.put_in_hands(chambered())
-		user.visible_message("[user] removes \a [chambered()] from [src].", span_notice("You remove \a [chambered()] from [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You remove \a [chambered()] from %T%.")), MSG_OTHERS("%U% removes \a [chambered()] from %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 		chambered_handle = null
 	else

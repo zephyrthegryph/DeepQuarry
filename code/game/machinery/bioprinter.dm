@@ -327,7 +327,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/organ_printer/flesh/full, "container", /obj
 	if(container)
 		to_chat(user, span_warning("\The [src] already has a container loaded!"))
 		return
-	user.visible_message("[user] has loaded \the [G] into \the [src].", "You load \the [G] into \the [src].")
+	act_message(user, src, MSG_SELF("You load %I% into %T%."), MSG_OTHERS("%U% has loaded %I% into %T%."), item = G)
 	container = G
 	user.drop_item()
 	G.forceMove(src)

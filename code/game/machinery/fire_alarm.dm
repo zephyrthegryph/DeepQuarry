@@ -165,7 +165,7 @@ DECLARE_REF(/obj/machinery/firealarm, "causality", OWNED, null)
 /obj/machinery/firealarm/wirecutter_act(mob/user, obj/item/tool)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	user.visible_message(span_warning("[user] has cut the wires inside \the [src]!"), "You have cut the wires inside \the [src].")
+	act_message(user, src, MSG_SELF("You have cut the wires inside %T%."), MSG_OTHERS(span_warning("%U% has cut the wires inside %T%!")))
 	playsound(src, tool.usesound, 50, TRUE)
 	new /obj/item/stack/cable_coil(get_turf(src), 5)
 	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
@@ -174,7 +174,8 @@ DECLARE_REF(/obj/machinery/firealarm, "causality", OWNED, null)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
 	detecting = !detecting
-	user.visible_message(span_notice("\The [user] has [detecting ? "reconnected" : "disconnected"] [src]'s detecting unit!"), span_notice("You have [detecting ? "reconnected" : "disconnected"] [src]'s detecting unit."))
+	act_message(user, src, MSG_SELF(span_notice("You have [detecting ? "reconnected" : "disconnected"] %T%'s detecting unit.")), \
+		MSG_OTHERS(span_notice("%U% has [detecting ? "reconnected" : "disconnected"] %T%'s detecting unit!")))
 	return ITEM_INTERACT_SUCCESS
 
 // Machine pipeline (doc/rewrite/machine_pipeline.dm, code/game/machinery/machine_pipeline.dm):

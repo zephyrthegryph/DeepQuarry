@@ -49,7 +49,7 @@
 		return
 
 	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
-		visible_message("[usr] attaches \the [src] to \the [over_object].")
+		act_message(usr, src, others = "%U% attaches %T% to \the [over_object].")
 		attached_handle = om_handle(over_object)
 		MACHINE_WAKE(src)
 		update_icon()

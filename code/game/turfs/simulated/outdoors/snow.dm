@@ -46,14 +46,14 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/snow, \
 /turf/simulated/floor/outdoors/snow/proc/snow_scoop(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!Adjacent(user))
 		return TRUE
-	visible_message("[user] starts scooping up some snow.", "You start scooping up some snow.")
+	act_message(user, null, others = "%U% starts scooping up some snow.", blind = "You start scooping up some snow.")
 	om_task_timed(user, 1 SECOND, src, src, PROC_REF(scoop_done), list(user))
 	return TRUE
 
 /turf/simulated/floor/outdoors/snow/proc/scoop_done(mob/user)
 	var/obj/S = new /obj/item/stack/material/snow(user.loc)
 	user.put_in_hands(S)
-	visible_message("[user] scoops up a pile of snow.", "You scoop up a pile of snow.")
+	act_message(user, null, others = "%U% scoops up a pile of snow.", blind = "You scoop up a pile of snow.")
 
 /turf/simulated/floor/outdoors/ice
 	name = "ice"

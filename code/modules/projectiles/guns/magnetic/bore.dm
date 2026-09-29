@@ -64,7 +64,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 
 		if(removing)
 			user.put_in_hands(removing)
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " removes \the [removing] from \the [src]."))
+			act_message(user, src, others = span_infoplain(span_bold("%U%") + " removes %I% from %T%."), item = removing)
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			update_icon()
 			return TRUE
@@ -92,7 +92,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 		to_chat(user, span_warning("\The [src] has no manipulator installed."))
 		return ITEM_INTERACT_SUCCESS
 	user.put_in_hands(manipulator)
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " levers \the [manipulator] from \the [src]."))
+	act_message(user, src, others = span_infoplain(span_bold("%U%") + " levers \the [manipulator] from %T%."))
 	playsound(src, tool.usesound, 50, 1)
 	mat_cost = initial(mat_cost)
 	manipulator = null
@@ -124,7 +124,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 	loading = FALSE
 	var/mob/user = task.actor
 	if(task.loaded_any && user)
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " loads \the [src] with \the [task.sheets]."))
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + " loads %T% with \the [task.sheets]."))
 		play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 	update_icon()
 
@@ -141,7 +141,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 			user.drop_from_inventory(manipulator, src)
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			mat_cost = initial(mat_cost) / (2*manipulator.rating)
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " slots \the [manipulator] into \the [src]."))
+			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%."), item = manipulator)
 			update_icon()
 			update_rating_mod()
 			return
@@ -173,7 +173,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 			mat_storage += (SHEET_MATERIAL_AMOUNT/2*0.8) //two plasma ores needed per sheet, some inefficiency for not using refined product
 			success = TRUE
 		if(success)
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " loads \the [src] with \the [M]."))
+			act_message(user, src, others = span_infoplain(span_bold("%U%") + " loads %T% with %I%."), item = M)
 			play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 		update_icon()
 		return

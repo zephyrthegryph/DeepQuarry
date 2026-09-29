@@ -31,7 +31,7 @@
 		return ITEM_INTERACT_FAILURE
 
 	if(user != H && H.combat_mode && !H.lying)
-		user.visible_message(span_danger("\The [user] tries to take a swab sample from \the [H], but they move away."))
+		act_message(user, H, others = span_danger("%U% tries to take a swab sample from %T%, but they move away."))
 		return ITEM_INTERACT_FAILURE
 
 	if(user.zone_sel.selecting == O_MOUTH)
@@ -41,7 +41,7 @@
 		if(!H.check_has_mouth())
 			to_chat(user, span_warning("They don't have a mouth."))
 			return ITEM_INTERACT_FAILURE
-		user.visible_message("[user] swabs \the [H]'s mouth for a saliva sample.")
+		act_message(user, H, others = "%U% swabs %T%'s mouth for a saliva sample.")
 		dna = list(H.dna.unique_enzymes)
 		sample_type = "DNA"
 
@@ -57,7 +57,7 @@
 		if(!has_hand)
 			to_chat(user, span_warning("They don't have any hands."))
 			return
-		user.visible_message("[user] swabs [H]'s palm for a sample.")
+		act_message(user, H, others = "%U% swabs %T%'s palm for a sample.")
 		sample_type = "GSR"
 		gsr = H.forensic_data?.get_gunshotresidue()
 	else
@@ -115,7 +115,7 @@
 		sample_type = "residue"
 
 	if(sample_type)
-		user.visible_message("\The [user] swabs \the [A] for a sample.", "You swab \the [A] for a sample.")
+		act_message(user, A, MSG_SELF("You swab %T% for a sample."), MSG_OTHERS("%U% swabs %T% for a sample."))
 		set_used(sample_type, A)
 
 /obj/item/forensics/swab/proc/set_used(sample_str, atom/source)

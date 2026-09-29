@@ -92,11 +92,11 @@ DECLARE_REF(/obj/structure/mirror, "M", OWNED, null)
 		return TRUE
 
 	if(prob(I.force * 2))
-		visible_message(span_warning("[user] smashes [src] with [I]!"))
+		act_message(user, src, others = span_warning("%U% smashes %T% with [I]!"))
 		if(glass)
 			shatter()
 	else
-		visible_message(span_warning("[user] hits [src] with [I]!"))
+		act_message(user, src, others = span_warning("%U% hits %T% with [I]!"))
 		play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 70)
 	return TRUE
 
@@ -136,11 +136,11 @@ DECLARE_REF(/obj/structure/mirror, "M", OWNED, null)
 		return 0
 
 	if(damage)
-		user.visible_message(span_danger("[user] smashes [src]!"))
+		act_message(user, src, others = span_danger("%U% smashes %T%!"))
 		if(glass)
 			shatter()
 	else
-		user.visible_message(span_danger("[user] hits [src] and bounces off!"))
+		act_message(user, src, others = span_danger("%U% hits %T% and bounces off!"))
 	return 1
 
 // The following mirror is ~special~.

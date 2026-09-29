@@ -178,7 +178,7 @@
 			add_verb(new_mob,/mob/living/proc/shapeshift_form)
 			new_mob.tf_form = src
 			new_mob.forceMove(src.loc)
-			visible_message(span_warning("[src] twists and contorts, shapeshifting into a different form!"))
+			act_message(src, null, others = span_warning("%U% twists and contorts, shapeshifting into a different form!"))
 			if(new_mob.ensure_mind())
 				new_mob.tf_form_mind = new_mob.mind
 				new_mob.tf_form_holds_key = new_mob.key == new_mob.mind.key

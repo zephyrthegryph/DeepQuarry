@@ -24,18 +24,18 @@
 		if(!leader)
 			if(speaker_affinity >= 100)
 				ai_brain.set_follow(speaker)
-				visible_message(span_notice("\The [src] starts following \the [speaker]"), span_notice("\The [src] starts following you."))
+				act_message(src, speaker, MSG_SELF(span_notice("%U% starts following you.")), MSG_OTHERS(span_notice("%U% starts following %T%")))
 			return
 		// Has a different leader currently.
 		if(speaker_affinity > affinity[leader.real_name])
-			visible_message(span_notice("\The [src] starts following \the [speaker]"), span_notice("\The [src] starts following you."))
+			act_message(src, speaker, MSG_SELF(span_notice("%U% starts following you.")), MSG_OTHERS(span_notice("%U% starts following %T%")))
 			ai_brain.set_follow(speaker)
 			return
 		if(speaker_affinity == affinity[leader.real_name])
 			ai_brain.lose_follow()
-			visible_message(span_notice("\The [src] gives off an anxious whine."))
+			act_message(src, null, others = span_notice("%U% gives off an anxious whine."))
 			return
 	if(findtext(message, "stop teppi") || findtext(message, "stay here") || findtext(message, "stop [name]"))
 		if(leader == speaker)
 			ai_brain.lose_follow()
-			visible_message(span_notice("\The [src] stops following \the [speaker]"), span_notice("\The [src] stops following you."))
+			act_message(src, speaker, MSG_SELF(span_notice("%U% stops following you.")), MSG_OTHERS(span_notice("%U% stops following %T%")))

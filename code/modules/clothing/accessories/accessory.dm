@@ -307,7 +307,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory, INTERACT_HAND_UNGATED(null, PR
 							sound_strength = "cannot hear"
 							sound = "anything"
 
-				user.visible_message("[user] places [src] against [M]'s [body_part] and listens attentively.", "You place [src] against [their] [body_part]. You [sound_strength] [sound]. [message_holder] [message_holder2]")
+				act_message(user, src, MSG_SELF("You place %T% against [their] [body_part]. You [sound_strength] [sound]. [message_holder] [message_holder2]"), \
+					MSG_OTHERS("%U% places %T% against [M]'s [body_part] and listens attentively."))
 				return ITEM_INTERACT_SUCCESS
 
 	return ..(M,user)
@@ -1002,7 +1003,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
 		if(!istype(H))
 			return
 		if(!H.resizable)
-			H.visible_message(span_warning("The space around [H] compresses for a moment but then nothing happens."),span_notice("The space around you distorts but nothing happens to you."))
+			act_message(H, null, MSG_SELF(span_notice("The space around you distorts but nothing happens to you.")), \
+				MSG_OTHERS(span_warning("The space around %U% compresses for a moment but then nothing happens.")))
 			return
 		if(applied_ratio == null)
 			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
@@ -1011,14 +1013,16 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
 			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 			applied_ratio = H.size_multiplier ? (target_size / H.size_multiplier) : 1
 			H.resize(target_size, ignore_prefs = FALSE, allow_stripping = TRUE)		//In case someone else tries to put it on you.
-			H.visible_message(span_warning("The space around [H] distorts as they change size!"),span_notice("The space around you distorts as you change size!"))
+			act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you change size!")), \
+				MSG_OTHERS(span_warning("The space around %U% distorts as they change size!")))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			fx_sparks(M, 3)
 		else
 			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 			H.resize(applied_ratio ? (H.size_multiplier / applied_ratio) : H.size_multiplier, ignore_prefs = FALSE, allow_stripping = TRUE)
 			applied_ratio = null
-			H.visible_message(span_warning("The space around [H] distorts as they return to their original size!"),span_notice("The space around you distorts as you return to your original size!"))
+			act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you return to your original size!")), \
+				MSG_OTHERS(span_warning("The space around %U% distorts as they return to their original size!")))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			to_chat(M, span_warning("\The [src] flickers. It is now recharging and will be ready again in ten seconds."))
 			fx_sparks(M, 3)
@@ -1093,10 +1097,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/modified
 		if(!istype(H))
 			return
 		if(!H.resizable)
-			H.visible_message(span_warning("The space around [H] compresses for a moment but then nothing happens."),span_notice("The space around you distorts but nothing happens to you."))
+			act_message(H, null, MSG_SELF(span_notice("The space around you distorts but nothing happens to you.")), \
+				MSG_OTHERS(span_warning("The space around %U% compresses for a moment but then nothing happens.")))
 			return
 		if (target_size < 0.26)
-			H.visible_message(span_warning("The collar on [H] flickers, but fizzles out."),span_notice("Your collar flickers, but is not powerful enough to shrink you that small."))
+			act_message(H, null, MSG_SELF(span_notice("Your collar flickers, but is not powerful enough to shrink you that small.")), \
+				MSG_OTHERS(span_warning("The collar on %U% flickers, but fizzles out.")))
 			return
 		if(applied_ratio == null)
 			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
@@ -1105,14 +1111,16 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/modified
 			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 			applied_ratio = H.size_multiplier ? (target_size / H.size_multiplier) : 1
 			H.resize(target_size, ignore_prefs = FALSE, allow_stripping = TRUE)		//In case someone else tries to put it on you.
-			H.visible_message(span_warning("The space around [H] distorts as they change size!"),span_notice("The space around you distorts as you change size!"))
+			act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you change size!")), \
+				MSG_OTHERS(span_warning("The space around %U% distorts as they change size!")))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			fx_sparks(M, 3)
 		else
 			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 			H.resize(applied_ratio ? (H.size_multiplier / applied_ratio) : H.size_multiplier, ignore_prefs = FALSE, allow_stripping = TRUE)
 			applied_ratio = null
-			H.visible_message(span_warning("The space around [H] distorts as they return to their original size!"),span_notice("The space around you distorts as you return to your original size!"))
+			act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you return to your original size!")), \
+				MSG_OTHERS(span_warning("The space around %U% distorts as they return to their original size!")))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			to_chat(M, span_warning("\The [src] flickers. It is now recharging and will be ready again in ten seconds."))
 			fx_sparks(M, 3)
@@ -1161,10 +1169,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunct
 		if(!istype(H))
 			return
 		if(!H.resizable)
-			H.visible_message(span_warning("The space around [H] compresses for a moment but then nothing happens."),span_notice("The space around you distorts but nothing happens to you."))
+			act_message(H, null, MSG_SELF(span_notice("The space around you distorts but nothing happens to you.")), \
+				MSG_OTHERS(span_warning("The space around %U% compresses for a moment but then nothing happens.")))
 			return
 		if (target_size < 0.25)
-			H.visible_message(span_warning("The collar on [H] flickers, but fizzles out."),span_notice("Your collar flickers, but is not powerful enough to shrink you that small."))
+			act_message(H, null, MSG_SELF(span_notice("Your collar flickers, but is not powerful enough to shrink you that small.")), \
+				MSG_OTHERS(span_warning("The collar on %U% flickers, but fizzles out.")))
 			return
 		if(currently_shrinking == 0)
 			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
@@ -1174,18 +1184,21 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunct
 			applied_ratio = H.size_multiplier ? (target_size / H.size_multiplier) : 1
 			currently_shrinking = 1
 			H.resize(target_size, ignore_prefs = FALSE, allow_stripping = TRUE)		//In case someone else tries to put it on you.
-			H.visible_message(span_warning("The space around [H] distorts as they change size!"),span_notice("The space around you distorts as you change size!"))
+			act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you change size!")), \
+				MSG_OTHERS(span_warning("The space around %U% distorts as they change size!")))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			fx_sparks(M, 3)
 		else if(currently_shrinking == 1)
 			if(applied_ratio == null)
-				H.visible_message(span_warning("The space around [H] twists and turns for a moment but then nothing happens."),span_notice("The space around you distorts but stay the same size."))
+				act_message(H, null, MSG_SELF(span_notice("The space around you distorts but stay the same size.")), \
+					MSG_OTHERS(span_warning("The space around %U% twists and turns for a moment but then nothing happens.")))
 				return
 			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 			H.resize(applied_ratio ? (H.size_multiplier / applied_ratio) : H.size_multiplier, ignore_prefs = FALSE, allow_stripping = TRUE)
 			applied_ratio = null
 			currently_shrinking = 0
-			H.visible_message(span_warning("The space around [H] distorts as they return to their original size!"),span_notice("The space around you distorts as you return to your original size!"))
+			act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you return to your original size!")), \
+				MSG_OTHERS(span_warning("The space around %U% distorts as they return to their original size!")))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			to_chat(M, span_warning("\The [src] flickers. It is now recharging and will be ready again in ten seconds."))
 			fx_sparks(M, 3)

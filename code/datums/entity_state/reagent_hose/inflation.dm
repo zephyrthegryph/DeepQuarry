@@ -75,7 +75,7 @@
 
 	// Display action
 	name = "[human_owner()]'s [feedback]"
-	user.visible_message("\The [user] starts to connect the hose to \the [human_owner()]'s [feedback]...")
+	act_message(user, null, others = "%U% starts to connect the hose to \the [human_owner()]'s [feedback]...")
 	var/started = om_task_start(/datum/om/task/timed/inflation_inflation_connected, user, human_owner(), other = other, origin = origin, target_arg = target, distancetonode = distancetonode, tubing = tubing, feedback = feedback)
 	return !istext(started)
 

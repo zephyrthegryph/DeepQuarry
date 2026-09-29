@@ -195,7 +195,8 @@ DECLARE_REF(/obj/item/organ/external, "tourniquet", HELD, null)
 	if(!choice)
 		return
 	var/obj/item/organ/external/E = cinched[choice]
-	user.visible_message(span_notice("[user] starts loosening the tourniquet on [src == user ? "their" : "[src]'s"] [E.name]."), span_notice("You start loosening the tourniquet on the [E.name]."))
+	act_message(user, src, MSG_SELF(span_notice("You start loosening the tourniquet on the [E.name].")), \
+		MSG_OTHERS(span_notice("%U% starts loosening the tourniquet on [src == user ? "their" : "%T%'s"] [E.name].")))
 	om_task_timed(user, TOURNIQUET_REMOVE_TIME, src, src, PROC_REF(loosen_tourniquet_done), list(user, E))
 
 /mob/living/carbon/human/proc/loosen_tourniquet_done(mob/living/user, obj/item/organ/external/E)
@@ -205,7 +206,8 @@ DECLARE_REF(/obj/item/organ/external, "tourniquet", HELD, null)
 	var/obj/item/tourniquet/T = E.remove_tourniquet(user)
 	if(T)
 		user.put_in_hands(T)
-		user.visible_message(span_notice("[user] loosens the tourniquet on [src == user ? "their" : "[src]'s"] [E.name]."), span_notice("You loosen the tourniquet on the [E.name]. Blood rushes back into it."))
+		act_message(user, src, MSG_SELF(span_notice("You loosen the tourniquet on the [E.name]. Blood rushes back into it.")), \
+			MSG_OTHERS(span_notice("%U% loosens the tourniquet on [src == user ? "their" : "%T%'s"] [E.name].")))
 
 // --- Ischemia -------------------------------------------------------------------------
 

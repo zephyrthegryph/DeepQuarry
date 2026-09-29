@@ -91,7 +91,7 @@
 		// provocation. Gate stays on brain presence + the existing coin flip.
 		if(ai_brain && prob(vore_pounce_chance/2)) // This is a gamble!
 			user.status_at_least(EFFECT_WEAKENED, 5) //They get tackled anyway whether they're edible or not.
-			user.visible_message(span_danger("[user] swats [src] with [O] and promptly gets tackled!"))
+			act_message(user, src, others = span_danger("%U% swats %T% with [O] and promptly gets tackled!"))
 			if(will_eat(user))
 				ai_busy_begin()
 				animal_nom(user)
@@ -99,7 +99,7 @@
 				ai_busy_end()
 			//legacy give_target call on attack/feed removed; brain handles auto-targeting.
 		else
-			user.visible_message(span_info("[user] swats [src] with [O]!"))
+			act_message(user, src, others = span_info("%U% swats %T% with [O]!"))
 			release_vore_contents()
 			for(var/mob/living/L in living_mobs(0)) //add everyone on the tile to the do-not-eat list for a while
 				if(!(LAZYFIND(prey_excludes, L))) // Unless they're already on it, just to avoid fuckery.

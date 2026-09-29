@@ -211,9 +211,9 @@
 		to_chat(user, span_warning("You cannot place \the [src] on this spot!"))
 		return
 	play_sfx(src, SFX_MACHINES_CLICK, 1.5)
-	user.visible_message("\The [user] attaches \the [src] to the wall.",
-		span_notice("You attach \the [src] to the wall."),
-		span_warningplain("You hear clicking."))
+	act_message(user, src, MSG_SELF(span_notice("You attach %T% to the wall.")), \
+		MSG_OTHERS("%U% attaches %T% to the wall."), \
+		MSG_BLIND(span_warningplain("You hear clicking.")))
 	if(isrobot(user)) //Robots cannot unequip/drop items, for Safety Reasons.
 		forceMove(T)
 	user.drop_item(T)

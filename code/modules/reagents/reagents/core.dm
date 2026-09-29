@@ -296,7 +296,8 @@ TYPE_TABLE(/datum/reagent/blood, get_data_schema, list("donor", "viruses", "spec
 		if(istype(L, /mob/living/simple_mob/slime))
 			var/mob/living/simple_mob/slime/S = L
 			S.injure(INJURY_CORROSIVE, 15 * amount, source = src)
-			S.visible_message(span_warning("[S]'s flesh sizzles where the water touches it!"), span_danger("Your flesh burns in the water!"))
+			act_message(S, null, MSG_SELF(span_danger("Your flesh burns in the water!")), \
+				MSG_OTHERS(span_warning("%U%'s flesh sizzles where the water touches it!")))
 
 		// Then extinguish people on fire.
 		var/needed = max(0,L.fire_stacks) * 5
@@ -312,7 +313,7 @@ TYPE_TABLE(/datum/reagent/blood, get_data_schema, list("donor", "viruses", "spec
 					var/obj/item/clothing/mask/smokable/S = H.get_equipped_item(SLOT_ID_MASK)
 					if(S.lit)
 						S.quench()
-						H.visible_message(span_notice("[H]\'s [S.name] is put out."))
+						act_message(H, null, others = span_notice("%U%\'s [S.name] is put out."))
 
 // Water poisons Prometheans in place of its normal action (holy water's extras still run).
 /datum/reagent/water
@@ -328,7 +329,8 @@ TYPE_TABLE(/datum/reagent/blood, get_data_schema, list("donor", "viruses", "spec
 /datum/reagent/water/affect_touch(mob/living/carbon/M, alien, removed)
 	// Kept: a flavour message only.
 	if(alien == IS_SLIME && prob(10))
-		M.visible_message(span_warning("[M]'s flesh sizzles where the water touches it!"), span_danger("Your flesh burns in the water!"))
+		act_message(M, null, MSG_SELF(span_danger("Your flesh burns in the water!")), \
+			MSG_OTHERS(span_warning("%U%'s flesh sizzles where the water touches it!")))
 	..()
 // 
 

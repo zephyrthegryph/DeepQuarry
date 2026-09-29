@@ -147,12 +147,12 @@
 			if(isliving(user))
 				var/mob/living/L = user
 				if(L.has_status(EFFECT_MUTED))
-					M.visible_message(message = "[name_to_use] opens their mouth silently!", self_message = "You cannot say anything!", blind_message = emote_message_impaired, runemessage = "opens their mouth silently!")
+					act_message(M, null, MSG_SELF("You cannot say anything!"), MSG_OTHERS("[name_to_use] opens their mouth silently!"), MSG_BLIND(emote_message_impaired), runemessage = "opens their mouth silently!")
 					return
 				else
 					M.audible_message(message = use_3p, self_message = use_1p, deaf_message = emote_message_impaired, hearing_distance = use_range, radio_message = use_radio, runemessage = prefinal_3p)
 		else
-			M.visible_message(message = use_3p, self_message = use_1p, blind_message = emote_message_impaired, range = use_range, runemessage = prefinal_3p)
+			act_message(M, null, MSG_SELF(use_1p), MSG_OTHERS(use_3p), MSG_BLIND(emote_message_impaired), range = use_range, runemessage = prefinal_3p)
 
 	do_extra(user, target)
 	do_sound(user)

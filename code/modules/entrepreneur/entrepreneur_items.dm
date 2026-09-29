@@ -452,7 +452,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 		result = next_result
 	else
 		result = pick(possible_results)
-	src.visible_message(span_notice("[user] slides the [W] over to [result]!"))
+	act_message(user, src, others = span_notice("%U% slides the [W] over to [result]!"))
 	next_result = 0
 
 /// Old click_alt.
@@ -527,10 +527,10 @@ EXTEND_INTERACTIONS(/obj/structure/bed/roller/massage, INTERACT_ALT(null, PROC_R
 /obj/structure/bed/roller/massage/proc/interaction_alt(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
 	if(anchored)
 		set_anchored(0)
-		src.visible_message(span_notice("[user] turns the breaks off on the [src]!"))
+		act_message(user, src, others = span_notice("%U% turns the breaks off on %T%!"))
 	else if(!anchored)
 		set_anchored(1)
-		src.visible_message(span_notice("[user] turns the breaks on for the [src]!"))
+		act_message(user, src, others = span_notice("%U% turns the breaks on for %T%!"))
 	return TRUE
 
 /obj/structure/bed/roller/massage/buckle_mob(mob/living/M)
@@ -549,7 +549,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/roller/massage, INTERACT_ALT(null, PROC_R
 /obj/item/entrepreneur/magnifying_glass/afterattack(atom/T, mob/living/user as mob)
 	if(!T.desc)
 		return
-	user.visible_message(span_notice("\The [user] examines the \the [T] with \the [src]!"))
+	act_message(user, T, others = span_notice("%U% examines %T% with \the [src]!"))
 	to_chat(user, span_huge("[T.desc]"))
 
 // Streamer and influencer

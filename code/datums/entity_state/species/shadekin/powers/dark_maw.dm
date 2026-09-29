@@ -185,7 +185,7 @@ DECLARE_REF(/obj/effect/abstract/dark_maw, "owner_handle.shadekin", BACK_VIA, "a
 		var/mob/living/unbuckler = user
 		var/datum/shadekin/SK = unbuckler.get_shadekin_state()
 		if(SK)
-			visible_message(span_danger("[user] dissipates \the [src] with a touch!"))
+			act_message(user, src, others = span_danger("%U% dissipates %T% with a touch!"))
 			unbuckle_mob(buckled_mob)
 			return
 	. = ..()

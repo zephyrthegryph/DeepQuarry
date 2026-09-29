@@ -64,6 +64,6 @@
 
 	charge.charges--
 	var/obj/item/grenade/new_grenade = new charge.product_type(get_turf(H))
-	H.visible_message(span_danger("[H] launches \a [new_grenade]!"))
+	act_message(H, null, others = span_danger("%U% launches \a [new_grenade]!"))
 	new_grenade.activate(H)
 	new_grenade.throw_at(target,fire_force,fire_distance)

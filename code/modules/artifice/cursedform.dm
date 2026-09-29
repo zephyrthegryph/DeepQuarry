@@ -16,8 +16,9 @@
 		if(istype(P, /obj/item/flame/lighter/zippo))
 			class = "rose"
 
-		user.visible_message("<span class='[class]'>[user] holds \the [P] up to \the [src], it looks like [user.p_they()] [user.p_are()] trying to burn it!</span>", \
-		"<span class='[class]'>You hold \the [P] up to \the [src], burning it slowly.</span>")
+		act_message(user, src, MSG_SELF("<span class='[class]'>You hold %I% up to %T%, burning it slowly.</span>"), \
+			MSG_OTHERS("<span class='[class]'>%U% holds %I% up to %T%, it looks like %THEY% [user.p_are()] trying to burn it!</span>"), \
+			item = P)
 
 		om_task_start(/datum/om/task/timed/cursed_burn, user, src, flame = P, class = class)
 
@@ -40,8 +41,8 @@
 	if(!task.flame?.lit)
 		cursed_burn_failed(task)
 		return
-	user.visible_message("<span class='[class]'>[user] burns right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>", \
-	"<span class='[class]'>You burn right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>")
+	act_message(user, src, MSG_SELF("<span class='[class]'>You burn right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.</span>"), \
+		MSG_OTHERS("<span class='[class]'>%U% burns right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.</span>"))
 
 	if(user.get_inactive_hand() == src)
 		user.drop_from_inventory(src)
@@ -52,6 +53,6 @@
 /obj/item/paper/carbon/cursedform/proc/cursed_sear(mob/user)
 	if(isliving(user))
 		var/mob/living/L = user
-		L.visible_message(span_danger("[L] convulses, the very letters of \the [src] searing themselves into their eyes!"), \
-			span_critical("You convulse, the very letters of \the [src] searing themselves into your eyes!"))
+		act_message(L, src, MSG_SELF(span_critical("You convulse, the very letters of %T% searing themselves into your eyes!")), \
+			MSG_OTHERS(span_danger("%U% convulses, the very letters of %T% searing themselves into their eyes!")))
 		L.apply_body_effect(/datum/body_effect/grievous_wounds, 10 MINUTES)

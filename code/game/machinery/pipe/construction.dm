@@ -216,10 +216,7 @@ DECLARE_INTERACTIONS(/obj/item/pipe, \
 	transfer_fingerprints_to(A)
 
 	playsound(src, W.usesound, 50, 1)
-	user.visible_message( \
-		"[user] fastens \the [src].", \
-		span_notice("You fasten \the [src]."), \
-		span_warningplain("You hear ratcheting."))
+	act_message(user, src, MSG_SELF(span_notice("You fasten %T%.")), MSG_OTHERS("%U% fastens %T%."), MSG_BLIND(span_warningplain("You hear ratcheting.")))
 
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS

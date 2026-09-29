@@ -88,7 +88,7 @@ GLOBAL_LIST_INIT(mark_spells, list())
 			if(!allowed_to_teleport())
 				to_chat(user, span_warning("Teleportation doesn't seem to work here."))
 				return
-			visible_message(span_warning("\The [user] starts glowing!"))
+			act_message(user, null, others = span_warning("%U% starts glowing!"))
 			recall_glow(user, marker, check_for_scepter() ? 2 : 3, 3)
 			return 1
 	else
@@ -101,7 +101,7 @@ GLOBAL_LIST_INIT(mark_spells, list())
 /// The glow builds once a second for `time_left` seconds, then the Recall.
 /obj/item/spell/recall/proc/recall_glow(mob/living/user, datum/technomancer_marker/marker, time_left, light_intensity)
 	if(user.incapacitated())
-		visible_message(span_notice("\The [user]'s glow fades."))
+		act_message(user, null, others = span_notice("%U%'s glow fades."))
 		to_chat(user, span_danger("You cannot Recall while incapacitated!"))
 		return
 	if(time_left > 0)

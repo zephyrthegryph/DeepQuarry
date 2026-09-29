@@ -194,7 +194,7 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 		beaker =  G
 		user.drop_item()
 		G.forceMove(src)
-		user.visible_message("[user] adds \a [G] to \the [src]!", "You add \a [G] to \the [src]!")
+		act_message(user, src, MSG_SELF("You add \a [G] to %T%!"), MSG_OTHERS("%U% adds \a [G] to %T%!"))
 		SStgui.update_uis(src)
 		update_icon()
 	else if(istype(G, /obj/item/grab))

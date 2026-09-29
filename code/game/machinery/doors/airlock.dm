@@ -88,16 +88,16 @@
 	if(!operable())
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 			if(locked || welded)
-				visible_message(span_danger("\The [user] begins breaking into \the [src] internals!"))
+				act_message(user, src, others = span_danger("%U% begins breaking into %T% internals!"))
 				om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done), done_args = list(user), busy = user)
 			else if(density)
-				visible_message(span_danger("\The [user] forces \the [src] open!"))
+				act_message(user, src, others = span_danger("%U% forces %T% open!"))
 				open(TRUE)
 			else
-				visible_message(span_danger("\The [user] forces \the [src] closed!"))
+				act_message(user, src, others = span_danger("%U% forces %T% closed!"))
 				close(1)
 		else
-			visible_message(span_notice("\The [user] strains fruitlessly to force \the [src] [density ? "open" : "closed"]."))
+			act_message(user, src, others = span_notice("%U% strains fruitlessly to force %T% [density ? "open" : "closed"]."))
 		return
 	..()
 
@@ -115,22 +115,22 @@
 	var/mob/living/carbon/human/X = user
 	if(istype(X.species, /datum/species/xenos))
 		if(locked || welded)
-			visible_message(span_alium("\The [user] begins tearing into \the [src] internals!"))
+			act_message(user, src, others = span_alium("%U% begins tearing into %T% internals!"))
 			do_animate("deny")
 			om_task_timed(user, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done), done_args = list(user), busy = user)
 		else if(density)
-			visible_message(span_alium("\The [user] begins forcing \the [src] open!"))
+			act_message(user, src, others = span_alium("%U% begins forcing %T% open!"))
 			om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done2), done_args = list(user), busy = user)
 		else
-			visible_message(span_danger("\The [user] forces \the [src] closed!"))
+			act_message(user, src, others = span_danger("%U% forces %T% closed!"))
 			close(1)
 	else
 		do_animate("deny")
-		visible_message(span_notice("\The [user] strains fruitlessly to force \the [src] [density ? "open" : "closed"]."))
+		act_message(user, src, others = span_notice("%U% strains fruitlessly to force %T% [density ? "open" : "closed"]."))
 		return
 
 /obj/machinery/door/airlock/proc/attack_alien_timed_done(mob/user)
-	visible_message(span_danger("\The [user] tears \the [src] open, sparks flying from its electronics!"))
+	act_message(user, src, others = span_danger("%U% tears %T% open, sparks flying from its electronics!"))
 	do_animate("spark")
 	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_TEAR_APART, volume_channel = VOLUME_CHANNEL_DOORS)
 	set_locked(FALSE)
@@ -140,7 +140,7 @@
 	atom_break() //These aren't emags, these be CLAWS
 /obj/machinery/door/airlock/proc/attack_alien_timed_done2(mob/user)
 	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING, volume_channel = VOLUME_CHANNEL_DOORS)
-	visible_message(span_danger("\The [user] forces \the [src] open!"))
+	act_message(user, src, others = span_danger("%U% forces %T% open!"))
 	open(TRUE)
 
 /obj/machinery/door/airlock/get_material()
@@ -654,7 +654,7 @@ About the new airlock wires panel:
 	..()
 
 /obj/machinery/door/airlock/proc/interaction_hammer(mob/user, obj/item/held, datum/interaction/interaction)
-	visible_message(span_warning("[user] hammers on \the [src]!"), span_warning("Someone hammers loudly on \the [src]!"))
+	act_message(user, src, others = span_warning("%U% hammers on %T%!"), blind = span_warning("Someone hammers loudly on %T%!"))
 	add_fingerprint(user)
 	if(icon_state == "door_closed" && arePowerSystemsOn())
 		flick("door_deny", src)
@@ -663,7 +663,7 @@ About the new airlock wires panel:
 
 /obj/machinery/door/airlock/proc/interaction_hold_open(mob/user, obj/item/held, datum/interaction/interaction)
 	hold_open_handle = om_handle(user)
-	visible_message(span_info("[user] begins holding \the [src] open."), span_info("Someone has started holding \the [src] open."))
+	act_message(user, src, others = span_info("%U% begins holding %T% open."), blind = span_info("Someone has started holding %T% open."))
 	attack_hand(user)
 	return TRUE
 
@@ -681,18 +681,18 @@ About the new airlock wires panel:
 
 	if(arePowerSystemsOn())
 		if(isElectrified())
-			visible_message(span_warning("[user] presses the door bell on \the [src], making it violently spark!"), span_warning("\The [src] sparks!"))
+			act_message(user, src, others = span_warning("%U% presses the door bell on %T%, making it violently spark!"), blind = span_warning("%T% sparks!"))
 			add_fingerprint(user)
 			fx_sparks(src, 5)
 		else
-			visible_message(span_info("[user] presses the door bell on \the [src]."), span_info("\The [src]'s bell rings."))
+			act_message(user, src, others = span_info("%U% presses the door bell on %T%."), blind = span_info("%T%'s bell rings."))
 			add_fingerprint(user)
 		if(icon_state == "door_closed")
 			flick("door_deny", src)
 		playsound(src, knock_sound, 50, 0, 3)
 		return CLICK_ACTION_SUCCESS
 
-	visible_message(span_info("[user] knocks on \the [src]."), span_info("Someone knocks on \the [src]."))
+	act_message(user, src, others = span_info("%U% knocks on %T%."), blind = span_info("Someone knocks on %T%."))
 	add_fingerprint(user)
 	playsound(src, knock_unpowered_sound, 50, 0, 3)
 	return CLICK_ACTION_SUCCESS

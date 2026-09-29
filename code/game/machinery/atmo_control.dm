@@ -130,7 +130,7 @@
 
 /obj/machinery/air_sensor/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 50, 1)
-	user.visible_message("[user] unfastens \the [src].", span_notice("You have unfastened \the [src]."), "You hear ratcheting.")
+	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), MSG_OTHERS("%U% unfastens %T%."), MSG_BLIND("You hear ratcheting."))
 	var/obj/item/pipe_gsensor/gsensor = new /obj/item/pipe_gsensor(loc)
 	gsensor.id_tag = id_tag
 	gsensor.output = output

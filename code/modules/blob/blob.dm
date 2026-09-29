@@ -105,7 +105,7 @@
 	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
 		if(L.stat == DEAD)
 			continue
-		L.visible_message(span_danger("The blob attacks \the [L]!"), span_danger("The blob attacks you!"))
+		act_message(L, null, MSG_SELF(span_danger("The blob attacks you!")), MSG_OTHERS(span_danger("The blob attacks %U%!")))
 		play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 		L.injure(INJURY_BLUNT, rand(30, 40), null, src)
 		return
@@ -144,7 +144,7 @@ EXTEND_INTERACTIONS(/obj/effect/blob, \
 	var/obj/item/W = held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
-	visible_message(span_danger("\The [src] has been attacked with \the [W][(user ? " by [user]." : ".")]"))
+	act_message(src, user, others = span_danger("%U% has been attacked with %I%[user ? " by %T%." : "."]"), item = W)
 	var/damage_type = W.obj_damage_type()
 	if(damage_type == BURN && W.has_tool_quality(TOOL_WELDER))
 		playsound(src, W.usesound, 100, 1)

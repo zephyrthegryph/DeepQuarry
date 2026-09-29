@@ -19,9 +19,9 @@ EXTEND_INTERACTIONS(/obj/effect/spider, \
 	user.setClickCooldown(user.get_attack_speed(W))
 
 	if(LAZYLEN(W.attack_verb))
-		visible_message(span_warning("\The [src] has been [pick(W.attack_verb)] with \the [W][(user ? " by [user]." : ".")]"))
+		act_message(src, user, others = span_warning("%U% has been [pick(W.attack_verb)] with %I%[user ? " by %T%." : "."]"), item = W)
 	else
-		visible_message(span_warning("\The [src] has been attacked with \the [W][(user ? " by [user]." : ".")]"))
+		act_message(src, user, others = span_warning("%U% has been attacked with %I%[user ? " by %T%." : "."]"), item = W)
 
 	receive_weapon_hit(W, user, W.force / 4)
 	return INTERACTION_HANDLED_PASS
@@ -31,7 +31,7 @@ EXTEND_INTERACTIONS(/obj/effect/spider, \
 	if(!welder.remove_fuel(0, user))
 		return ITEM_INTERACT_BLOCKING
 	user.setClickCooldown(user.get_attack_speed(tool))
-	visible_message(span_warning("\The [src] has been burned with \the [tool] by [user]."))
+	act_message(src, user, others = span_warning("%U% has been burned with %I% by %T%."), item = tool)
 	playsound(src, tool.usesound, 100, TRUE)
 	take_damage(15, BRUTE, MELEE, sound_effect = FALSE)
 	return ITEM_INTERACT_SUCCESS
@@ -46,12 +46,12 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	user.do_attack_animation(src)
 	if(prob(20))
-		visible_message(span_warning("\The [user] tries to stomp on \the [src], but misses!"))
+		act_message(user, src, others = span_warning("%U% tries to stomp on %T%, but misses!"))
 		var/list/nearby = oview(2, src)
 		if(length(nearby))
 			walk_to(src, pick(nearby), 2)
 			return
-	visible_message(span_warning("\The [user] stomps \the [src] dead!"))
+	act_message(user, src, others = span_warning("%U% stomps %T% dead!"))
 	die()
 
 /obj/effect/spider/proc/die()

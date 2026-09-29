@@ -668,7 +668,7 @@ DECLARE_REF(/obj/item/clothing/shoes, "holding", OWNED, null)
 	holding.forceMove(get_turf(user))
 
 	if(user.put_in_hands(holding))
-		user.visible_message(span_danger("\The [user] pulls a knife out of their boot!"))
+		act_message(user, null, others = span_danger("%U% pulls a knife out of their boot!"))
 		play_sfx(src, SFX_WEAPONS_HOLSTER_SHEATHOUT, 0.5, vary = FALSE)
 		holding = null
 		cut_overlay("[icon_state]_knife")
@@ -1260,16 +1260,17 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 	if (src.loc == user)
 		switch(sensor_mode)
 			if(SUIT_SENSOR_OFF)
-				user.visible_message("[user] adjusts their sensors.", "You disable your suit's remote sensing equipment.")
+				act_message(user, null, MSG_SELF("You disable your suit's remote sensing equipment."), MSG_OTHERS("%U% adjusts their sensors."))
 			if(SUIT_SENSOR_BINARY)
-				user.visible_message("[user] adjusts their sensors.", "Your suit will now report whether you are live or dead.")
+				act_message(user, null, MSG_SELF("Your suit will now report whether you are live or dead."), MSG_OTHERS("%U% adjusts their sensors."))
 			if(SUIT_SENSOR_VITAL)
-				user.visible_message("[user] adjusts their sensors.", "Your suit will now report your vital lifesigns.")
+				act_message(user, null, MSG_SELF("Your suit will now report your vital lifesigns."), MSG_OTHERS("%U% adjusts their sensors."))
 			if(SUIT_SENSOR_TRACKING)
-				user.visible_message("[user] adjusts their sensors.", "Your suit will now report your vital lifesigns as well as your coordinate position.")
+				act_message(user, null, MSG_SELF("Your suit will now report your vital lifesigns as well as your coordinate position."), \
+					MSG_OTHERS("%U% adjusts their sensors."))
 
 	else if (istype(src.loc, /mob))
-		user.visible_message("[user] adjusts [src.loc]'s sensors.", "You adjust [src.loc]'s sensors.")
+		act_message(user, null, MSG_SELF("You adjust [src.loc]'s sensors."), MSG_OTHERS("%U% adjusts [src.loc]'s sensors."))
 
 /// Old verb "Toggle Suit Sensors".
 /obj/item/clothing/under/proc/under_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
@@ -1516,7 +1517,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 		user.unEquip(I)
 		I.forceMove(src)
 		holding = I
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " shoves \the [I] into \the [src]."))
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + " shoves %I% into %T%."), item = I)
 		update_icon()
 		return INTERACTION_HANDLED_PASS
 	return FALSE

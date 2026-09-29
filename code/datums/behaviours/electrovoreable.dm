@@ -36,7 +36,7 @@
 			return COMPONENT_CANCEL_ATTACK_CHAIN
 
 		living_user.show_message(span_warning("Power surges from you and flows into [source_cell], increasing its charge!"))
-		living_user.visible_message(span_notice("[living_user] squeezes [source_cell] tightly, charging it!"))
+		act_message(living_user, null, others = span_notice("%U% squeezes [source_cell] tightly, charging it!"))
 
 		var/totransfer = min(todrain, ((source_cell.maxcharge - source_cell.charge) / 15))
 
@@ -53,7 +53,7 @@
 			return COMPONENT_CANCEL_ATTACK_CHAIN
 
 		living_user.show_message(span_warning("Sparks fly from [source_cell] as you drain energy from it!"))
-		living_user.visible_message(span_danger("[living_user] causes sparks to emit from [source_cell] as it loses its charge!"))
+		act_message(living_user, null, others = span_danger("%U% causes sparks to emit from [source_cell] as it loses its charge!"))
 
 		var/coefficient = 0.9
 		var/totransfer = min(source_cell.charge, 1500)

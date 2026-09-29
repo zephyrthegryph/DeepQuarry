@@ -287,9 +287,9 @@
 // Simplified payment processing, returns 1 on success.
 /obj/machinery/lapvend/proc/process_payment(mob/user, obj/item/card/id/I, obj/item/ID_container)
 	if(I==ID_container || ID_container == null)
-		visible_message(span_info("\The [user] swipes \the [I] through \the [src]."))
+		act_message(user, src, others = span_info("%U% swipes %I% through %T%."), item = I)
 	else
-		visible_message(span_info("\The [user] swipes \the [ID_container] through \the [src]."))
+		act_message(user, src, others = span_info("%U% swipes %I% through %T%."), item = ID_container)
 	var/datum/money_account/customer_account = get_account(I.associated_account_number)
 	if (!customer_account || customer_account.suspended)
 		ping("Connection error. Unable to connect to account.")

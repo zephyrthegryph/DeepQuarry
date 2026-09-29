@@ -16,7 +16,7 @@
 
 	to_chat(user, span_alien("\The [B] produces a soothing ooze!"))
 
-	T.visible_message(span_alium("\The [B] shudders at \the [user]'s touch, before disgorging a disgusting ooze."))
+	act_message(user, T, others = span_alium("%I% shudders at %U%'s touch, before disgorging a disgusting ooze."), item = B)
 
 	for(var/turf/simulated/floor/F in view(2, T))
 		var/obj/effect/effect/water/splash = new(T)

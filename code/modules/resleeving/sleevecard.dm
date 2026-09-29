@@ -47,7 +47,7 @@ EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
 		var/obj/item/card/emag/E = I
 		if(E.uses && !emagged)
 			E.uses --
-			user.visible_message(span_warning("\The [user] swipes a card over [src]."),span_warning("You swipe your [E] over [src]."), range = 2, runemessage = "click")
+			act_message(user, src, MSG_SELF(span_warning("You swipe your [E] over %T%.")), MSG_OTHERS(span_warning("%U% swipes a card over %T%.")), range = 2, runemessage = "click")
 			emagged = TRUE
 			if(pai)
 				var/mob/living/silicon/pai/infomorph/our_infomorph = pai

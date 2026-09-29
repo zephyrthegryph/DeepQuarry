@@ -336,6 +336,14 @@ As built (rewrite/sys-messages):
 - Lint `sys_visible_pair` (tools/ci/sys_rules/messages.py): a visible_message call outside the
   runtime that passes a mob self message, interpolates the actor (`[R]` for a mob receiver R,
   `[src]` in a bare call in a /mob proc, `[user]`/`[usr]`), or follows `to_chat(R, ...)`.
+  Named arguments are read by name (`self_message =` is the self line; `range =` is not), and
+  `[R.name]` / `[R.real_name]` count as naming the actor.
+- Migration (rewrite/msg2): every legacy site converted, baseline empty, no ALLOW. An atom
+  emitting a line about its user (`visible_message("[user] ...")` in an /obj proc) became
+  `act_message(user, src, others = ...)` (the line now originates at the user, no eye rune), or
+  `act_message(src, user, ...)` where the user may be null. Obj calls that passed a self line
+  as the blind argument (`visible_message(others, "You ...")`) now show it to the user.
+  Tokens render `	he`, so proper names are unchanged and objects gain "the".
 
 ## 16. Sound and effect sets
 

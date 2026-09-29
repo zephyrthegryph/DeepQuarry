@@ -48,9 +48,9 @@
 		play_sfx(src, SFX_EFFECTS_BLOBATTACK)
 		var/T = get_turf(src)
 		new /obj/effect/gibspawner/human(T)
-		visible_message(span_warning("With a sickening squish, [src] reforms their whole body, casting their old parts on the floor!"),
-		span_notice("We reform our body.  We are whole once more."),
-		span_warningplain("You hear organic matter ripping and tearing!"))
+		act_message(src, null, MSG_SELF(span_notice("We reform our body.  We are whole once more.")), \
+			MSG_OTHERS(span_warning("With a sickening squish, %U% reforms their whole body, casting their old parts on the floor!")), \
+			MSG_BLIND(span_warningplain("You hear organic matter ripping and tearing!")))
 
 	feedback_add_details("changeling_powers","RR")
 	return 1

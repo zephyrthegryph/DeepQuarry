@@ -124,7 +124,7 @@ DECLARE_REF(/obj/structure/drop_pod, "air", OWNED, null)
 			to_chat(user, span_warning("Nothing left to do with it now. Maybe you can break it down into materials."))
 		else
 			open_pod()
-			user.visible_message(span_infoplain(span_bold("[user]") + " opens \the [src]!"),span_infoplain("You open \the [src]!"))
+			act_message(user, src, MSG_SELF(span_infoplain("You open %T%!")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " opens %T%!")))
 	return TRUE
 
 /obj/structure/drop_pod/wrench_act(mob/user, obj/item/O)

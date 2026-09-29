@@ -200,13 +200,12 @@ EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
 
 		play_sfx(src, SFX_ITEMS_SMOLEBUILDINGHIT2)
 		user.do_attack_animation(src)
-		user.visible_message(span_danger("\The [user] bangs against \the [src]!"),
-							span_danger("You bang against \the [src]!"),
-							"You hear a banging sound.")
+		act_message(user, src, MSG_SELF(span_danger("You bang against %T%!")), \
+			MSG_OTHERS(span_danger("%U% bangs against %T%!")), \
+			MSG_BLIND("You hear a banging sound."))
 		take_damage(25, BRUTE, MELEE, FALSE)
 	else
-		user.visible_message("[user.name] knocks on the [src.name].",
-							"You knock on the [src.name].")
+		act_message(user, null, MSG_SELF("You knock on the [src.name]."), MSG_OTHERS("[user.name] knocks on the [src.name]."))
 	return
 
 /// Stomped flat: the building leaves ruins.

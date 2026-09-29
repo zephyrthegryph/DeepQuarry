@@ -144,7 +144,7 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 	if(!t)
 		return
 
-	visible_message(span_warning("[src] is trying to inject [H]!"))
+	act_message(src, H, others = span_warning("%U% is trying to inject %T%!"))
 	if(declare_treatment)
 		var/area/location = get_area(src)
 		GLOB.global_announcer.autosay("[src] is treating <b>[H]</b> in <b>[location]</b>", "[src]", "Medical")
@@ -183,7 +183,7 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 	else
 		H.reagents.add_reagent(t, injection_amount)
 	log_game("MEDBOT: [src] injected [key_name(H)] with [injection_amount]u of [t].")
-	visible_message(span_warning("[src] injects [H] with the syringe!"))
+	act_message(src, H, others = span_warning("%U% injects %T% with the syringe!"))
 	if(SScontracts)
 		emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
 			"department" = DEPARTMENT_SYNTHETIC,
@@ -215,7 +215,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 /mob/living/bot/medbot/proc/medbot_interaction_hand(mob/living/carbon/human/H, obj/item/held, datum/interaction/interaction)
 	. = TRUE
 	if(istype(H) && interaction.stance == I_DISARM && !is_tipped)
-		H.visible_message(span_danger("[H] begins tipping over [src]."), span_warning("You begin tipping over [src]..."))
+		act_message(H, src, MSG_SELF(span_warning("You begin tipping over %T%...")), MSG_OTHERS(span_danger("%U% begins tipping over %T%.")))
 
 		if(COOLDOWN_FINISHED(src, tipping_voice_cooldown))
 			COOLDOWN_START(src, tipping_voice_cooldown, 15 SECONDS)// message for tipping happens when we start interacting, message for righting comes after finishing
@@ -227,7 +227,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 		om_task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done), done_args = list(H))
 
 	else if(istype(H) && interaction.stance == I_HELP && is_tipped)
-		H.visible_message(span_notice("[H] begins righting [src]."), span_notice("You begin righting [src]..."))
+		act_message(H, src, MSG_SELF(span_notice("You begin righting %T%...")), MSG_OTHERS(span_notice("%U% begins righting %T%.")))
 		om_task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done2), done_args = list(H))
 	else
 		tgui_interact(H)
@@ -340,7 +340,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 	if(!emagged)
 		if(user)
 			to_chat(user, span_warning("You short out [src]'s reagent synthesis circuits."))
-		visible_message(span_warning("[src] buzzes oddly!"))
+		act_message(src, null, others = span_warning("%U% buzzes oddly!"))
 		flick("medibot_spark", src)
 		target = null
 		om_release_busy(src, "emagged")
@@ -352,7 +352,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 
 /mob/living/bot/medbot/explode()
 	on = 0
-	visible_message(span_danger("[src] blows apart!"))
+	act_message(src, null, others = span_danger("%U% blows apart!"))
 	var/turf/Tsec = get_turf(src)
 
 	new /obj/item/storage/firstaid(Tsec)
@@ -380,7 +380,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 
 /mob/living/bot/medbot/proc/tip_over(mob/user)
 	play_sfx(src, SFX_MACHINES_WARNING_BUZZER)
-	user.visible_message(span_danger("[user] tips over [src]!"), span_danger("You tip [src] over!"))
+	act_message(user, src, MSG_SELF(span_danger("You tip %T% over!")), MSG_OTHERS(span_danger("%U% tips over %T%!")))
 	is_tipped = TRUE
 	tipper_name = user.name
 	var/matrix/mat = transform
@@ -389,13 +389,13 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 /mob/living/bot/medbot/proc/set_right(mob/user)
 	var/list/messagevoice
 	if(user)
-		user.visible_message(span_notice("[user] sets [src] right-side up!"), span_green("You set [src] right-side up!"))
+		act_message(user, src, MSG_SELF(span_green("You set %T% right-side up!")), MSG_OTHERS(span_notice("%U% sets %T% right-side up!")))
 		if(user.name == tipper_name)
 			messagevoice = list("I forgive you." = SFX_VOICE_MEDBOT_FORGIVE)
 		else
 			messagevoice = list("Thank you!" = SFX_VOICE_MEDBOT_THANK_YOU, "You are a good person." = SFX_VOICE_MEDBOT_YOURE_GOOD)
 	else
-		visible_message(span_notice("[src] manages to [pick("writhe", "wriggle", "wiggle")] enough to right itself."))
+		act_message(src, null, others = span_notice("%U% manages to [pick("writhe", "wriggle", "wiggle")] enough to right itself."))
 		messagevoice = list("Fuck you." = SFX_VOICE_MEDBOT_FUCK_YOU, "Your behavior has been reported, have a nice day." = SFX_VOICE_MEDBOT_REPORTED)
 
 	tipper_name = null

@@ -83,10 +83,8 @@
 	if(. == DQ_BEHAVIOR_FAILED)
 		return
 	var/mob/living/owner = brain.get_owner()
-	owner.visible_message(
-		span_danger("[owner] crouches, focused on [target]!"),
-		blind_message = span_warning("You hear something heavy shift its weight."),
-	)
+	act_message(owner, target, others = span_danger("%U% crouches, focused on %T%!"), \
+		blind = span_warning("You hear something heavy shift its weight."))
 	// This datum is a flyweight singleton shared by every charging mob, so the windup timer
 	// goes in a per-brain `dash` slot on it; stop() cancels it if the telegraph is interrupted.
 	LAZYINITLIST(brain.behavior_state)
@@ -129,7 +127,7 @@ OM_TIMER_SLOT(/datum/ai_behavior/charge_slam, dash)
 	if(SM.Adjacent(target))
 		var/dmg = rand(SM.melee_damage_lower, SM.melee_damage_upper) * damage_mult
 		target.attack_generic(SM, dmg, "slams into")
-		SM.visible_message(span_danger("[SM] slams into [target] with crushing force!"))
+		act_message(SM, target, others = span_danger("%U% slams into %T% with crushing force!"))
 		if(isliving(target))
 			var/mob/living/L = target
 			L.apply_effect(2, WEAKEN)

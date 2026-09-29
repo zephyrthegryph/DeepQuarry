@@ -172,34 +172,28 @@ DECLARE_INTERACTIONS(/obj/structure/particle_accelerator, INTERACT_INSERT(/obj/i
 			if(tool_quality == TOOL_WRENCH)
 				playsound(src, O.usesound, 75, 1)
 				set_anchored(TRUE)
-				user.visible_message("[user.name] secures the [src.name] to the floor.", \
-					"You secure the external bolts.")
+				act_message(user, null, MSG_SELF("You secure the external bolts."), MSG_OTHERS("[user.name] secures the [src.name] to the floor."))
 				temp_state++
 		if(1)
 			if(tool_quality == TOOL_WRENCH)
 				playsound(src, O.usesound, 75, 1)
 				set_anchored(FALSE)
-				user.visible_message("[user.name] detaches the [src.name] from the floor.", \
-					"You remove the external bolts.")
+				act_message(user, null, MSG_SELF("You remove the external bolts."), MSG_OTHERS("[user.name] detaches the [src.name] from the floor."))
 				temp_state--
 			else if(istype(O, /obj/item/stack/cable_coil))
 				if(O:use(1,user))
-					user.visible_message("[user.name] adds wires to the [src.name].", \
-						"You add some wires.")
+					act_message(user, null, MSG_SELF("You add some wires."), MSG_OTHERS("[user.name] adds wires to the [src.name]."))
 					temp_state++
 		if(2)
 			if(tool_quality == TOOL_WIRECUTTER)//TODO:Shock user if its on?
-				user.visible_message("[user.name] removes some wires from the [src.name].", \
-					"You remove some wires.")
+				act_message(user, null, MSG_SELF("You remove some wires."), MSG_OTHERS("[user.name] removes some wires from the [src.name]."))
 				temp_state--
 			else if(tool_quality == TOOL_SCREWDRIVER)
-				user.visible_message("[user.name] closes the [src.name]'s access panel.", \
-					"You close the access panel.")
+				act_message(user, null, MSG_SELF("You close the access panel."), MSG_OTHERS("[user.name] closes the [src.name]'s access panel."))
 				temp_state++
 		if(3)
 			if(tool_quality == TOOL_SCREWDRIVER)
-				user.visible_message("[user.name] opens the [src.name]'s access panel.", \
-					"You open the access panel.")
+				act_message(user, null, MSG_SELF("You open the access panel."), MSG_OTHERS("[user.name] opens the [src.name]'s access panel."))
 				temp_state--
 	if(temp_state == src.construction_state)//Nothing changed
 		return 0
@@ -288,34 +282,28 @@ DECLARE_INTERACTIONS(/obj/structure/particle_accelerator, INTERACT_INSERT(/obj/i
 			if(tool_quality == TOOL_WRENCH)
 				playsound(src, O.usesound, 75, 1)
 				set_anchored(TRUE)
-				user.visible_message("[user.name] secures the [src.name] to the floor.", \
-					"You secure the external bolts.")
+				act_message(user, null, MSG_SELF("You secure the external bolts."), MSG_OTHERS("[user.name] secures the [src.name] to the floor."))
 				temp_state++
 		if(1)
 			if(tool_quality == TOOL_WRENCH)
 				playsound(src, O.usesound, 75, 1)
 				set_anchored(FALSE)
-				user.visible_message("[user.name] detaches the [src.name] from the floor.", \
-					"You remove the external bolts.")
+				act_message(user, null, MSG_SELF("You remove the external bolts."), MSG_OTHERS("[user.name] detaches the [src.name] from the floor."))
 				temp_state--
 			else if(istype(O, /obj/item/stack/cable_coil))
 				if(O:use(1))
-					user.visible_message("[user.name] adds wires to the [src.name].", \
-						"You add some wires.")
+					act_message(user, null, MSG_SELF("You add some wires."), MSG_OTHERS("[user.name] adds wires to the [src.name]."))
 					temp_state++
 		if(2)
 			if(tool_quality == TOOL_WIRECUTTER)//TODO:Shock user if its on?
-				user.visible_message("[user.name] removes some wires from the [src.name].", \
-					"You remove some wires.")
+				act_message(user, null, MSG_SELF("You remove some wires."), MSG_OTHERS("[user.name] removes some wires from the [src.name]."))
 				temp_state--
 			else if(tool_quality == TOOL_SCREWDRIVER)
-				user.visible_message("[user.name] closes the [src.name]'s access panel.", \
-					"You close the access panel.")
+				act_message(user, null, MSG_SELF("You close the access panel."), MSG_OTHERS("[user.name] closes the [src.name]'s access panel."))
 				temp_state++
 		if(3)
 			if(tool_quality == TOOL_SCREWDRIVER)
-				user.visible_message("[user.name] opens the [src.name]'s access panel.", \
-					"You open the access panel.")
+				act_message(user, null, MSG_SELF("You open the access panel."), MSG_OTHERS("[user.name] opens the [src.name]'s access panel."))
 				temp_state--
 				set_active(0)
 	if(temp_state == src.construction_state)//Nothing changed

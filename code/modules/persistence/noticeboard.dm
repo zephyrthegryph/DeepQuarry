@@ -103,7 +103,7 @@ DECLARE_REF(/obj/structure/noticeboard, "notices", OWNED_LIST, null)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/noticeboard/proc/wrench_act_tool_done(mob/user)
-	visible_message(span_danger("[user] has dismantled [src]!"))
+	act_message(user, src, others = span_danger("%U% has dismantled %T%!"))
 	dismantle()
 	return ITEM_INTERACT_SUCCESS
 

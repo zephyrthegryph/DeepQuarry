@@ -114,11 +114,13 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 	if(.)
 		return TRUE
 	if(next())
-		user.visible_message("[user] unlatches and carefully relaxes the bolt on [src].", span_warning("You unlatch and carefully relax the bolt on [src], unloading the spring."))
+		act_message(user, src, MSG_SELF(span_warning("You unlatch and carefully relax the bolt on %T%, unloading the spring.")), \
+			MSG_OTHERS("%U% unlatches and carefully relaxes the bolt on %T%."))
 		next_handle = null
 	else if(length(darts))
 		play_sfx(src, SFX_WEAPONS_FLIPBLADE)
-		user.visible_message("[user] draws back the bolt on [src], clicking it into place.", span_warning("You draw back the bolt on the [src], loading the spring!"))
+		act_message(user, src, MSG_SELF(span_warning("You draw back the bolt on %T%, loading the spring!")), \
+			MSG_OTHERS("%U% draws back the bolt on %T%, clicking it into place."))
 		next_handle = om_handle(LAZYACCESS(darts, 1))
 	add_fingerprint(user)
 
@@ -136,7 +138,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_RE
 		var/obj/item/syringe_cartridge/C = LAZYACCESS(darts, 1)
 		LAZYREMOVE(darts, C)
 		user.put_in_hands(C)
-		user.visible_message("[user] removes \a [C] from [src].", span_notice("You remove \a [C] from [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 	else
 		return FALSE
@@ -152,7 +154,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_RE
 		user.remove_from_mob(C)
 		C.forceMove(src)
 		LAZYADD(darts, C) //add to the end
-		user.visible_message("[user] inserts \a [C] into [src].", span_notice("You insert \a [C] into [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You insert \a [C] into %T%.")), MSG_OTHERS("%U% inserts \a [C] into %T%."))
 		return INTERACTION_HANDLED_PASS
 	return ..()
 

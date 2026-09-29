@@ -33,7 +33,8 @@
 	if(has_trait(user, TRAIT_UNLUCKY) && prob(0.1) && ishuman(user)) //1 in a thousand
 		var/mob/living/carbon/human/unlucky_human = user
 		if(unlucky_human.has_omen() && unlucky_human.omen_evil) //Also going to make sure they got the EVIL version.
-			unlucky_human.visible_message(span_danger("[unlucky_human] snaps, their hand fading to ash!"), span_danger(span_huge("OH GOD YOUR HAND")))
+			act_message(unlucky_human, null, MSG_SELF(span_danger(span_huge("OH GOD YOUR HAND"))), \
+				MSG_OTHERS(span_danger("%U% snaps, their hand fading to ash!")))
 			for(var/limb in list(BP_L_HAND, BP_R_HAND))
 				var/obj/item/organ/external/L = unlucky_human.get_organ(limb)
 				if(istype(L) && L.is_usable() && !L.splinted)

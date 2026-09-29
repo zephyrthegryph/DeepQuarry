@@ -87,7 +87,7 @@
 	to_chat(M, span_critical("Please be advised, this role is NOT AN ANTAGONIST."))
 	to_chat(M, span_warning("You may be a spooky (or cute!) space critter, but your role is to facilitate roleplay, not to fight the station and slaughter people. You're free to get into any kind of roleplay scene you like if OOC prefs align, but emphasis is on the 'roleplay' here. If you intend to be an actual threat, you MUST seek permission from staff first. GENERALLY, this role should avoid well populated areas, but you might be able to get away with it if you spawn as something relatively innocuous."))
 	newPred.ckey = M.ckey
-	newPred.visible_message(span_warning("[newPred] emerges from somewhere!"))
+	act_message(newPred, null, others = span_warning("%U% emerges from somewhere!"))
 	log_and_message_admins("successfully used a Maintenance Critter spawner to spawn in as a [newPred].", newPred)
 	newPred.offer_load_bellies()
 	replace_with(src, newPred)
@@ -155,7 +155,7 @@
 	to_chat(new_character, span_critical("Please be advised, this role is " + span_bold("NOT AN ANTAGONIST.")))
 	to_chat(new_character, span_notice("Whoever or whatever your chosen character slot is, your role is to facilitate roleplay focused around that character; this role is not free license to attack and murder people without provocation or explicit out-of-character consent. You should probably be cautious around high-traffic and highly sensitive areas (e.g. Telecomms) as Security personnel would be well within their rights to treat you as a trespasser. That said, good luck!"))
 
-	new_character.visible_message(span_warning("[new_character] appears to crawl out of somewhere."))
+	act_message(new_character, null, others = span_warning("%U% appears to crawl out of somewhere."))
 	qdel(src)
 
 DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/unified_hole, REGISTRY_GHOST_PODS)

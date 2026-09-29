@@ -179,7 +179,7 @@ DECLARE_DEFAULT_CHILD(/obj/structure/trash_pile, "mouse_nest", /obj/structure/mo
 			to_chat(H, span_warning("\The [src] is already being searched."))
 			return TRUE
 
-		H.visible_message("[user] searches through \the [src].",span_notice("You search through \the [src]."))
+		act_message(H, user, MSG_SELF(span_notice("You search through \the [src].")), MSG_OTHERS("%T% searches through \the [src]."))
 		if(hider())
 			to_chat(hider(),span_warning("[user] is searching the trash pile you're in!"))
 

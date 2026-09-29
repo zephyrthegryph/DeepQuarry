@@ -307,7 +307,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/footwraps, fit_spec, null)
 	var/atom/target = get_edge_target_turf(user, user.dir) //gets the user's direction
 
 	play_sfx(src, SFX_EFFECTS_STEALTHOFF)
-	user.visible_message(span_warning("[user] dashes forward into the air!"))
+	act_message(user, null, others = span_warning("%U% dashes forward into the air!"))
 	user.throw_at(target, jumpdistance, jumpspeed)
 	COOLDOWN_START(src, recharging_time, recharging_rate)
 

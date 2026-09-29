@@ -6,7 +6,7 @@
 		to_chat(user, span_notice("[H] is missing that bodypart."))
 		return
 
-	user.visible_message(span_notice("[user] starts inspecting [src?.grab_target()]'s [E.name] carefully."))
+	act_message(user, null, others = span_notice("%U% starts inspecting [src?.grab_target()]'s [E.name] carefully."))
 	om_task_start(/datum/om/task/timed/grab_inspect_organ_grab, user, H, target_zone_arg = target_zone, E = E)
 	return TRUE
 
@@ -205,7 +205,7 @@
 	if(!organ || organ.dislocated == -1)
 		return
 
-	attacker.visible_message(span_danger("[attacker] [pick("bent", "twisted")] [target]'s [organ.name] into a jointlock!"))
+	act_message(attacker, target, others = span_danger("%U% [pick("bent", "twisted")] %T%'s [organ.name] into a jointlock!"))
 
 	if(!target.can_feel_pain(organ))
 		return
@@ -245,7 +245,7 @@
 		return
 	if(target.lying)
 		return
-	attacker.visible_message(span_danger("[attacker] thrusts [attacker.p_their()] head into [target]'s skull!"))
+	act_message(attacker, target, others = span_danger("%U% thrusts %THEIR% head into %T%'s skull!"))
 
 	var/damage = 20
 	var/obj/item/clothing/hat = attacker.get_equipped_item(SLOT_ID_HEAD)
@@ -258,7 +258,7 @@
 
 	if(!armor && target.headcheck(BP_HEAD) && prob(damage))
 		target.apply_effect(20, PARALYZE)
-		target.visible_message(span_danger("[target] [target.species.get_knockout_message(target)]"))
+		act_message(target, null, others = span_danger("%U% [target.species.get_knockout_message(target)]"))
 
 	play_sfx(attacker, SFX_SWING_HIT)
 	add_attack_logs(attacker,target,"Headbutted using grab")
@@ -288,14 +288,14 @@
 		to_chat(attacker, span_warning("You are too small to do that!"))
 		return
 
-	attacker.visible_message(span_danger("[attacker] starts forcing [target] to the ground!"))
+	act_message(attacker, target, others = span_danger("%U% starts forcing %T% to the ground!"))
 	om_task_timed(attacker, 2 SECONDS, target = target, receiver = src, on_done = PROC_REF(pin_down_grab_done), done_args = list(target, attacker))
 
 /obj/item/grab/proc/pin_down_grab_done(mob/target, mob/attacker)
 	if(!(target))
 		return
 	note_action()
-	attacker.visible_message(span_danger("[attacker] forces [target] to the ground!"))
+	act_message(attacker, target, others = span_danger("%U% forces %T% to the ground!"))
 	apply_pinning(target, attacker)
 
 /obj/item/grab/proc/apply_pinning(mob/target, mob/attacker)

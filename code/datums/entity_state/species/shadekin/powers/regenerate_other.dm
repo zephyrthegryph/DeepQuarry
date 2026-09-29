@@ -42,7 +42,7 @@
 	SK.shadekin_adjust_energy(-50)
 	play_sfx(L, SFX_EFFECTS_EMPULSE, 0.75)
 	apply_body_effect(/datum/body_effect/shadekin/heal_boop, 1 MINUTE)
-	actor.visible_message(span_notice("\The [actor] gently places a hand on \the [src]..."))
+	act_message(actor, src, others = span_notice("%U% gently places a hand on %T%..."))
 	actor.face_atom(src)
 	return TRUE
 

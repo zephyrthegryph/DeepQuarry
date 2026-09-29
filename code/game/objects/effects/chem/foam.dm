@@ -168,7 +168,8 @@ DECLARE_INTERACTIONS(/obj/structure/foamedmetal, \
 /// Old attack_hand.
 /obj/structure/foamedmetal/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if ((user.has_mutation(HULK)) || (prob(75 - metal * 25)))
-		user.visible_message(span_warning("[user] smashes through the foamed metal."), span_notice("You smash through the metal foam wall."))
+		act_message(user, null, MSG_SELF(span_notice("You smash through the metal foam wall.")), \
+			MSG_OTHERS(span_warning("%U% smashes through the foamed metal.")))
 		qdel(src)
 	else
 		to_chat(user, span_notice("You hit the metal foam but bounce off it."))
@@ -186,7 +187,9 @@ DECLARE_INTERACTIONS(/obj/structure/foamedmetal, \
 		return INTERACTION_HANDLED_PASS
 
 	if(prob(I.force * 20 - metal * 25))
-		user.visible_message(span_warning("[user] smashes through the foamed metal."), span_notice("You smash through the foamed metal with \the [I]."))
+		act_message(user, null, MSG_SELF(span_notice("You smash through the foamed metal with %I%.")), \
+			MSG_OTHERS(span_warning("%U% smashes through the foamed metal.")), \
+			item = I)
 		qdel(src)
 	else
 		to_chat(user, span_notice("You hit the metal foam to no effect."))

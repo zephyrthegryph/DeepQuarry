@@ -204,8 +204,8 @@
 	if(!shock(user, 90))
 		playsound(src, W.usesound, 100, 1)
 		set_anchored(!anchored)
-		user.visible_message(span_notice("[user] [anchored ? "fastens" : "unfastens"] the grille."), \
-			span_notice("You have [anchored ? "fastened the grille to" : "unfastened the grille from"] the floor."))
+		act_message(user, null, MSG_SELF(span_notice("You have [anchored ? "fastened the grille to" : "unfastened the grille from"] the floor.")), \
+			MSG_OTHERS(span_notice("%U% [anchored ? "fastens" : "unfastens"] the grille.")))
 	return TRUE
 
 // shock user with probability prb (if all connections & power are working)
@@ -233,7 +233,7 @@
 
 
 /obj/structure/grille/attack_generic(mob/user, damage, attack_verb)
-	visible_message(span_danger("[user] [attack_verb] the [src]!"))
+	act_message(user, src, others = span_danger("%U% [attack_verb] %T%!"))
 	user.do_attack_animation(src)
 	receive_generic_attack(user, damage)
 	return 1
