@@ -282,7 +282,7 @@
 	if(damage_band)
 		output += damage_flavour_text(damage_band)
 
-	output += caps_examine(user)
+	output += examine_lines(user)
 	om_emit_examine(src, user, output)
 	return output
 
