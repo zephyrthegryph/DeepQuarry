@@ -19,7 +19,7 @@ GLOBAL_LIST_EMPTY(loot_times_searched)
 	/// FALSE until build() ran.
 	var/built = FALSE
 	/// The main weighted table, or null.
-	var/datum/loot_entry/sub/table
+	var/datum/loot_entry/sub/main_table
 	var/count = 1
 	/// Percent chance that anything spawns.
 	var/chance = 100
@@ -41,7 +41,7 @@ GLOBAL_LIST_EMPTY(loot_times_searched)
 	var/delete_on_depletion = FALSE
 	var/repeat_search = FALSE
 
-DECLARE_REF(/datum/loot_decl, "table", OWNED, null)
+DECLARE_REF(/datum/loot_decl, "main_table", OWNED, null)
 DECLARE_REF(/datum/loot_decl, "unlucky", OWNED, null)
 DECLARE_REF(/datum/loot_decl, "uncommon", OWNED, null)
 DECLARE_REF(/datum/loot_decl, "rare", OWNED, null)
@@ -56,7 +56,7 @@ DECLARE_REF(/datum/loot_decl, "rare", OWNED, null)
 	if(!length(S))
 		return FALSE
 	if(S["table"])
-		table = new /datum/loot_entry/sub(1, S["table"])
+		main_table = new /datum/loot_entry/sub(1, S["table"])
 	if(!isnull(S["count"]))
 		count = S["count"]
 	if(!isnull(S["chance"]))
@@ -94,12 +94,15 @@ DECLARE_REF(/datum/loot_decl, "rare", OWNED, null)
 /// or an ancestor. Null when there is none.
 /proc/loot_decl_for(path)
 	RETURN_TYPE(/datum/loot_decl)
-	var/static/list/cache = list()
 	if(isnull(path))
 		return null
-	var/datum/loot_decl/decl = cache[path]
-	if(!isnull(decl))
-		return decl || null
+	return CACHED(loot_decls, path) || null
+
+DECLARE_SHARED_CACHE(loot_decls, GLOBAL_PROC_REF(build_loot_decl), SC_NEVER)
+
+/// Builds the loot declaration for `path` (loot_decl_for()'s cache builder), or null.
+/proc/build_loot_decl(path)
+	var/datum/loot_decl/decl
 	var/decl_type
 	if(ispath(path, /datum/loot_decl))
 		decl_type = path
@@ -119,7 +122,6 @@ DECLARE_REF(/datum/loot_decl, "rare", OWNED, null)
 		decl = new decl_type
 		if(!decl.build())
 			decl = null
-	cache[path] = decl || FALSE
 	return decl
 
 // ---- table entries ----
@@ -236,15 +238,17 @@ DECLARE_REF(/datum/loot_decl, "rare", OWNED, null)
 
 /// A stable hash of a type path (djb2-style, kept under LOOT_HASH_MOD so it stays exact).
 /proc/loot_type_hash(path)
-	var/static/list/cache = list()
-	. = cache[path]
-	if(isnull(.))
-		var/text = "[path]"
-		var/h = 5381 % LOOT_HASH_MOD
-		for(var/i in 1 to length(text))
-			h = (h * 31 + text2ascii(text, i)) % LOOT_HASH_MOD
-		cache[path] = h
-		. = h
+	return CACHED(loot_type_hashes, path)
+
+DECLARE_SHARED_CACHE(loot_type_hashes, GLOBAL_PROC_REF(build_loot_type_hash), SC_NEVER)
+
+/// Computes loot_type_hash()'s value for `path` (its cache builder).
+/proc/build_loot_type_hash(path)
+	var/text = "[path]"
+	var/h = 5381 % LOOT_HASH_MOD
+	for(var/i in 1 to length(text))
+		h = (h * 31 + text2ascii(text, i)) % LOOT_HASH_MOD
+	return h
 
 /// The rng for a roll of `path` at `loc`: seeded from the round seed, the position and the type,
 /// plus a serial when the roll happens after map load.
@@ -277,16 +281,16 @@ DECLARE_REF(/datum/loot_decl, "rare", OWNED, null)
 	else
 		if(decl.chance < 100 && !rng.chance(decl.chance))
 			return null
-		if(decl.table)
+		if(decl.main_table)
 			for(var/i in 1 to decl.count)
 				var/entry
 				if(decl.per_round)
 					entry = LAZYACCESS(decl.round_picks, path)
 					if(!entry)
-						entry = decl.table.pick_entry(new /datum/loot_rng(GLOB.loot_seed + loot_type_hash(path)))
+						entry = decl.main_table.pick_entry(new /datum/loot_rng(GLOB.loot_seed + loot_type_hash(path)))
 						LAZYSET(decl.round_picks, path, entry)
 				else
-					entry = decl.table.pick_entry(rng)
+					entry = decl.main_table.pick_entry(rng)
 				loot_emit(entry, loc, rng, direct, nested)
 		for(var/entry in decl.all)
 			loot_emit(entry, loc, rng, direct, nested)
@@ -390,7 +394,7 @@ MAP_RESOLVER_VARS(/obj/random, "drop_get_turf")
 		searched_by |= L.ckey
 
 	var/datum/loot_rng/rng = loot_rng_at(source, source.loot_decl)
-	var/datum/loot_entry/sub/tier = decl.table
+	var/datum/loot_entry/sub/tier = decl.main_table
 	var/span = "notice"
 	var/obj/item/gamma
 	if(has_trait(L, TRAIT_UNLUCKY) && decl.unlucky)

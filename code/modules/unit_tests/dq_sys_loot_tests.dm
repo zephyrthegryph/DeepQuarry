@@ -18,12 +18,12 @@ DECLARE_LOOT(/loot/unit_test/parent/child, LOOT_ALL(/obj/item/tool/crowbar))
 /datum/unit_test/dq_sys_loot_declarations/Run()
 	var/datum/loot_decl/toolbox = loot_decl_for(/obj/random/toolbox)
 	TEST_ASSERT_NOTNULL(toolbox, "/obj/random/toolbox has a declaration")
-	TEST_ASSERT(toolbox.table && toolbox.table.total > 0, "the toolbox table has weighted entries")
+	TEST_ASSERT(toolbox.main_table && toolbox.main_table.total > 0, "the toolbox table has weighted entries")
 	TEST_ASSERT_EQUAL(loot_decl_for(/obj/random/toolbox), toolbox, "declarations are built once and shared")
 
 	var/datum/loot_decl/child = loot_decl_for(LOOT_REF(/loot/unit_test/parent/child))
 	TEST_ASSERT_NOTNULL(child, "the child declaration builds")
-	TEST_ASSERT_NULL(child.table, "a child naming LOOT_ALL drops the parent's table")
+	TEST_ASSERT_NULL(child.main_table, "a child naming LOOT_ALL drops the parent's table")
 	TEST_ASSERT_EQUAL(child.chance, 50, "the child inherits the parent's chance")
 	TEST_ASSERT_EQUAL(child.count, 3, "the child inherits the parent's count")
 	TEST_ASSERT_EQUAL(length(child.all), 1, "the child's own LOOT_ALL is kept")
@@ -68,10 +68,10 @@ DECLARE_LOOT(/loot/unit_test/parent/child, LOOT_ALL(/obj/item/tool/crowbar))
 	TEST_ASSERT_EQUAL(length(made), 2, "LOOT_ALL spawns both entries")
 	var/wrenches = 0
 	var/crowbars = 0
-	for(var/atom/movable/AM as anything in made)
-		if(istype(AM, /obj/item/tool/wrench))
+	for(var/obj/item/I in made)
+		if(I.has_tool_quality(TOOL_WRENCH))
 			wrenches++
-		else if(istype(AM, /obj/item/tool/crowbar))
+		else if(I.has_tool_quality(TOOL_CROWBAR))
 			crowbars++
 	TEST_ASSERT_EQUAL(wrenches, 1, "the wrench spawned")
 	TEST_ASSERT_EQUAL(crowbars, 1, "the crowbar spawned")

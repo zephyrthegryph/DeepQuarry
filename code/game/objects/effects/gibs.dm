@@ -26,35 +26,37 @@
 			if(isturf(location) && length(directions))
 				gib.streak(directions)
 
-/// A gib pattern: rows of list(gib type, amount (-1: 0 to 2), streak directions).
+/// Gib patterns: rows of list(gib type, amount (-1: 0 to 2), streak directions).
+GLOBAL_LIST_INIT(gib_pattern_generic, list( \
+	list(/obj/effect/decal/cleanable/blood/gibs, 2, list(WEST, NORTHWEST, SOUTHWEST, NORTH)), \
+	list(/obj/effect/decal/cleanable/blood/gibs, 2, list(EAST, NORTHEAST, SOUTHEAST, SOUTH)), \
+	list(/obj/effect/decal/cleanable/blood/gibs/core, 1, list()) \
+))
+GLOBAL_LIST_INIT(gib_pattern_human, list( \
+	list(/obj/effect/decal/cleanable/blood/gibs, 1, list(NORTH, NORTHEAST, NORTHWEST)), \
+	list(/obj/effect/decal/cleanable/blood/gibs/down, 1, list(SOUTH, SOUTHEAST, SOUTHWEST)), \
+	list(/obj/effect/decal/cleanable/blood/gibs, 1, list(WEST, NORTHWEST, SOUTHWEST)), \
+	list(/obj/effect/decal/cleanable/blood/gibs, 1, list(EAST, NORTHEAST, SOUTHEAST)), \
+	list(/obj/effect/decal/cleanable/blood/gibs, 1, list(NORTH, SOUTH, EAST, WEST, NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST)), \
+	list(/obj/effect/decal/cleanable/blood/gibs, -1, list(NORTH, SOUTH, EAST, WEST, NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST)), \
+	list(/obj/effect/decal/cleanable/blood/gibs/core, 1, list()) \
+))
+GLOBAL_LIST_INIT(gib_pattern_robot, list( \
+	list(/obj/effect/decal/cleanable/blood/gibs/robot/up, 1, list(NORTH, NORTHEAST, NORTHWEST)), \
+	list(/obj/effect/decal/cleanable/blood/gibs/robot/down, 1, list(SOUTH, SOUTHEAST, SOUTHWEST)), \
+	list(/obj/effect/decal/cleanable/blood/gibs/robot, 1, list(WEST, NORTHWEST, SOUTHWEST)), \
+	list(/obj/effect/decal/cleanable/blood/gibs/robot, 1, list(EAST, NORTHEAST, SOUTHEAST)), \
+	list(/obj/effect/decal/cleanable/blood/gibs/robot, 1, list(NORTH, SOUTH, EAST, WEST, NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST)), \
+	list(/obj/effect/decal/cleanable/blood/gibs/robot/limb, -1, list(NORTH, SOUTH, EAST, WEST, NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST)) \
+))
+
+/// The gib pattern of an /obj/effect/gibspawner type (a shared GLOB list; don't modify it).
 /proc/gib_pattern(gibber_type)
-	var/static/list/generic = list(
-		list(/obj/effect/decal/cleanable/blood/gibs, 2, list(WEST, NORTHWEST, SOUTHWEST, NORTH)),
-		list(/obj/effect/decal/cleanable/blood/gibs, 2, list(EAST, NORTHEAST, SOUTHEAST, SOUTH)),
-		list(/obj/effect/decal/cleanable/blood/gibs/core, 1, list()),
-	)
-	var/static/list/human = list(
-		list(/obj/effect/decal/cleanable/blood/gibs, 1, list(NORTH, NORTHEAST, NORTHWEST)),
-		list(/obj/effect/decal/cleanable/blood/gibs/down, 1, list(SOUTH, SOUTHEAST, SOUTHWEST)),
-		list(/obj/effect/decal/cleanable/blood/gibs, 1, list(WEST, NORTHWEST, SOUTHWEST)),
-		list(/obj/effect/decal/cleanable/blood/gibs, 1, list(EAST, NORTHEAST, SOUTHEAST)),
-		list(/obj/effect/decal/cleanable/blood/gibs, 1, GLOB.alldirs),
-		list(/obj/effect/decal/cleanable/blood/gibs, -1, GLOB.alldirs),
-		list(/obj/effect/decal/cleanable/blood/gibs/core, 1, list()),
-	)
-	var/static/list/robot = list(
-		list(/obj/effect/decal/cleanable/blood/gibs/robot/up, 1, list(NORTH, NORTHEAST, NORTHWEST)),
-		list(/obj/effect/decal/cleanable/blood/gibs/robot/down, 1, list(SOUTH, SOUTHEAST, SOUTHWEST)),
-		list(/obj/effect/decal/cleanable/blood/gibs/robot, 1, list(WEST, NORTHWEST, SOUTHWEST)),
-		list(/obj/effect/decal/cleanable/blood/gibs/robot, 1, list(EAST, NORTHEAST, SOUTHEAST)),
-		list(/obj/effect/decal/cleanable/blood/gibs/robot, 1, GLOB.alldirs),
-		list(/obj/effect/decal/cleanable/blood/gibs/robot/limb, -1, GLOB.alldirs),
-	)
 	if(ispath(gibber_type, /obj/effect/gibspawner/robot))
-		return robot
+		return GLOB.gib_pattern_robot
 	if(ispath(gibber_type, /obj/effect/gibspawner/human))
-		return human
-	return generic
+		return GLOB.gib_pattern_human
+	return GLOB.gib_pattern_generic
 
 /// A mapped gib spray: resolved at map time into its gibs.
 /obj/effect/gibspawner
