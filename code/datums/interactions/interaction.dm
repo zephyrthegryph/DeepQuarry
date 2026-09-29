@@ -176,6 +176,10 @@
 /datum/interaction/proc/start_feedback_for(mob/actor, atom/target, obj/item/held)
 	return start_feedback
 
+/// Inline start lines, list(self, others), for a timed interaction with no start_feedback template; or null.
+/datum/interaction/proc/start_lines(mob/actor, atom/target, obj/item/held)
+	return null
+
 /**
  * Pays the cost through the tool pipeline (use_tool(), tools.dm): quality and
  * tier, fuel or charge, the sound, the scaled wait and the resources. Returns
