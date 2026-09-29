@@ -5,7 +5,7 @@ GLOBAL_DATUM_INIT(nightshift_service, /datum/world_service/nightshift, new)
 
 /datum/world_service/nightshift
 	name = "Night Shift"
-	boot_after = /datum/controller/subsystem/atoms
+	needs = list(/datum/controller/subsystem/atoms)
 	lane = /datum/om/behaviour/world/nightshift
 	/// Follows the map's night hours on its own (was can_fire); FALSE when disabled by config or
 	/// while an admin holds night shift on or off.

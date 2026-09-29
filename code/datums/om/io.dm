@@ -19,8 +19,9 @@
 //   - visible in om_diagnostics()["io"]: per kind started/completed/errors/dropped,
 //     pending, queued, and latency (average and max, ms).
 //
-// Kinds: /datum/om/io/sql (rustg_sql_query_async / rustg_sql_check_query) and
-// /datum/om/io/http (rustg_http_request_async / rustg_http_check_request). A kind is a
+// Kinds: /datum/om/io/sql (rustg_sql_query_async / rustg_sql_check_query),
+// /datum/om/io/http (rustg_http_request_async / rustg_http_check_request) and
+// /datum/om/io/rustg_job (an iconforge job started by the caller). A kind is a
 // singleton; per-job state lives on the job.
 
 /// Deciseconds a job may stay unanswered before the lane abandons it with an error.
@@ -141,6 +142,28 @@
 	catch // ALLOW(silent_catch): a malformed result is returned to the caller as the job's error
 		return list(null, "bad http result: [raw]")
 	return list(R, null)
+
+/// rust-g jobs the caller already started: om_io(E, /datum/om/io/rustg_job, job_id, on_done, ...).
+/// `job_id` comes from an iconforge `*_async` call; the kind polls rustg_iconforge_check() on the I/O lane
+/// instead of the caller spinning on it. result = the job's raw text, or null with error text.
+/datum/om/io/rustg_job
+	name = "rustg_job"
+	arg_count = 1
+
+/datum/om/io/rustg_job/start(datum/om/io_job/J)
+	var/id = J.request[1]
+	if(isnull(id) || id == "")
+		J.preset_error = "rustg job start failed: no job id"
+		return null
+	return "[id]"
+
+/datum/om/io/rustg_job/check(job_id)
+	return rustg_iconforge_check(job_id)
+
+/datum/om/io/rustg_job/decode(raw)
+	if(raw == RUSTG_JOB_ERROR || raw == RUSTG_JOB_NO_SUCH_JOB)
+		return list(null, "rustg job failed: [raw]")
+	return list(raw, null)
 
 /proc/om_io_kind(kind_type)
 	RETURN_TYPE(/datum/om/io)

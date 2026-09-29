@@ -49,6 +49,7 @@ LINTS = {
     "silent_catch": "tools/ci/silent_catch_lint.py (catches that swallow an exception)",
     "spatial": "tools/ci/spatial_lint.py",
     "tracked": "tools/ci/tracked_lint.py (writes to a TRACKED var outside its setter; target 0)",
+    "system_boundary": "tools/ci/system_boundary_lint.py (cross-module access to a system's private state)",
     "subsystem_fire": "tools/ci/subsystem_fire_lint.py (fire() outside the core allowlist)",
 }
 

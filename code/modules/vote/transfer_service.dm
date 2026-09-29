@@ -5,7 +5,7 @@ GLOBAL_DATUM_INIT(transfer_service, /datum/world_service/transfer, new)
 
 /datum/world_service/transfer
 	name = "Transfer"
-	boot_after = /datum/controller/subsystem/atoms
+	needs = list(/datum/controller/subsystem/atoms)
 	lane = /datum/om/behaviour/world/transfer
 
 	VAR_PRIVATE/timerbuffer = 0 //buffer for time check

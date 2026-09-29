@@ -6,7 +6,7 @@ GLOBAL_DATUM_INIT(event_service, /datum/world_service/events, new)
 
 /datum/world_service/events
 	name = "Events"
-	boot_after = /datum/controller/subsystem/atoms
+	needs = list(/datum/controller/subsystem/atoms)
 
 	var/list/datum/event/finished_events = list()
 

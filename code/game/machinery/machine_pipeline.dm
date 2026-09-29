@@ -194,7 +194,7 @@
 	if(M.first_wake_pending())
 		return
 	// During init every machine's first wake runs in one bulk pass when the MC has initialized
-	// every subsystem (machine_first_wakes_flush()), before the first air fire, instead of
+	// every boot node (the machine service's on_members_ready()), before the first air fire, instead of
 	// thousands of zero-delay timers draining for minutes after the round starts.
 	if(GLOB.machine_first_wakes_bulk)
 		rel_add(om_global_owner(), "machine_first_wakes", M)
@@ -208,10 +208,10 @@ REL_LIST(/datum/om/global_owner, machine_first_wakes)
 /// TRUE until the MC finishes initializing; while set, on_start() queues first wakes in bulk.
 GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 
-/// Runs every queued machine's first wake (arm_wakes() and its start condition) in one pass. The MC
-/// calls it once every subsystem has initialized (pipenets and air exist, so gas watches can
-/// arm), before the first air fire. Machines that join later use their `first_wake` timer slot.
-/proc/machine_first_wakes_flush()
+/// Runs every queued machine's first wake (arm_wakes() and its start condition) in one pass. The kernel
+/// calls on_members_ready() once every boot node has initialized (pipenets and air exist, so gas
+/// watches can arm), before the first air fire. Machines that join later use their `first_wake` timer slot.
+/datum/world_service/machines/on_members_ready()
 	GLOB.machine_first_wakes_bulk = FALSE
 	var/datum/om/global_owner/owner = om_global_owner()
 	var/list/queued = owner.machine_first_wakes?.Copy() || list()

@@ -11,7 +11,9 @@
 // next tick through a one-tick deadline, instead of waiting for its next cadence frame.
 
 /datum/world_service
-	var/name = "world service"
+	parent_type = /datum/system
+	name = "world service"
+	abstract_type = /datum/world_service
 	/// The /datum/om/behaviour/world type that runs step(), or null for a data-only service.
 	var/lane
 	/// Milliseconds spent in service_step() since boot, and the number of completed steps.
@@ -23,44 +25,41 @@
 	var/current_ms = 0
 	/// TRUE while a yielded step is waiting to resume.
 	var/resuming = FALSE
-	/// TRUE once initialize() has run. A lazy (data-only) service initializes on first use through
-	/// LAZY_SERVICE(); initialize() sets this first so a re-entrant lookup doesn't recurse.
-	var/initialized = FALSE
+	// `initialized` (kernel/system.dm): TRUE once initialize() has run. A lazy (data-only) service
+	// initializes on first use through LAZY_SERVICE(); initialize() sets it first so a re-entrant
+	// lookup doesn't recurse.
 	/// On-demand lane: parked while has_work() is FALSE, unparked by demand() when work is queued
 	/// (a cascade, an explosion, a star move). Idle services then cost the scheduler nothing.
 	var/on_demand = FALSE
-	/// Boot slot: the subsystem type after whose Initialize() the MC initializes this service
-	/// (boot_world_services_after()). Null: lazy (LAZY_SERVICE()) or initialized by its owner.
-	var/boot_after
-	/// Service types that must initialize before this one; booted first, in declared order.
-	var/list/order_after
+	// Boot slot: `needs` (kernel/system.dm) names the subsystems and services that must initialize before
+	// this one; the boot DAG initializes it right after them. No needs: lazy (LAZY_SERVICE()) or
+	// initialized by its owner.
 
 /// One-time setup, called by whatever used to be this service's Initialize() dependency slot, or
 /// on first use by ready() for a lazy service. Overrides set `initialized = TRUE` first.
-/datum/world_service/proc/initialize()
+/datum/world_service/initialize()
 	initialized = TRUE
 
 /// Server shutdown (MC Shutdown(), after the subsystems): flush whatever must survive the round.
-/datum/world_service/proc/on_shutdown()
+/datum/world_service/on_shutdown()
 	return
 
-/// Initializes `S` after every service in its order_after (depth first; initialized guards cycles).
+/// Only a service that declares `needs` boots in the DAG; the rest are lazy or initialized by their owner.
+/datum/world_service/boots_in_dag()
+	return length(needs) > 0
+
+/// Hand boot (a subsystem that needs a service early): initializes `S` after every service it needs
+/// (depth first; initialized guards cycles).
 /proc/boot_world_service(datum/world_service/S)
 	if(S.initialized)
 		return
 	for(var/datum/world_service/other as anything in world_services())
-		if(other.type in S.order_after)
+		if(other.type in S.needs)
 			boot_world_service(other)
 	var/started = REALTIMEOFDAY
 	S.initialize()
 	S.initialized = TRUE
 	log_world("World service [S.name] initialized in [(REALTIMEOFDAY - started) / 10]s.")
-
-/// MC boot hook: initializes every service whose boot slot is `subsystem_type`.
-/proc/boot_world_services_after(subsystem_type)
-	for(var/datum/world_service/S as anything in world_services())
-		if(S.boot_after == subsystem_type)
-			boot_world_service(S)
 
 /// MC shutdown hook.
 /proc/shutdown_world_services()
@@ -98,6 +97,10 @@
 		om_unpark(owner, lane)
 		if(now)
 			om_wake(owner, lane)
+
+/// Telemetry (kernel/system.dm metrics()): the cost counters the profiler and the stat panel read.
+/datum/world_service/metrics()
+	return alist("name" = name, "total_ms" = total_ms, "steps" = steps, "cost" = cost, "resuming" = resuming, "initialized" = initialized)
 
 /// One line for the admin status/profiler readouts (was the subsystem's stat_entry()).
 /datum/world_service/proc/stat_line()
