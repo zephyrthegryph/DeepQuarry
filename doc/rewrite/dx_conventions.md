@@ -111,6 +111,36 @@ Write it the way DM already works:
 
 ## Lints
 
-`cap_bits_lint.py`, `tracked_lint.py`, `ui_actions_lint.py` and `sys_lint.py` (`dx_old_forms`,
-`dx_manual_transfer`, and the dx_* rules from `rewrite/dx-lints`) run in `check_ratchets.sh`. Legacy
-sites are baselined shrink-only. New code is held to 0.
+All run in `check_ratchets.sh`, each with `--selftest` fixtures. Legacy sites are baselined
+shrink-only; new code is held to 0. `// ALLOW(<lint>): <reason>` keeps a justified site.
+
+- **`ui_actions_lint.py`** reads `ui_action_key()`'s rules out of `ui_actions.dm`. For a migrated
+  interface, every TSX `act()` must reach an `act_` proc (the host's, or a capability's it declares)
+  with declared keys. C1 `ui_unsent_param`: every `act_` parameter is sent by some `act()`. C2
+  `ui_unvalidated_param`: each parameter's first use is a `ui_*` validator, `!!x`, `switch(x)`,
+  `islist(x)` or a compare with a constant.
+- **`tracked_lint.py`**: writes to a `TRACKED` / `SETTER` var outside its setter.
+- **`cap_bits_lint.py`**: `CAP_*` bits outside `cap_bits.dm`, shared or out of range, and raw
+  `cap_state` writes.
+- **`sys_lint.py`** rules:
+  - `dx_untracked_read` (H4): a derived proc (`draw`, `should_run`, `hidden_verbs`, `tgui_data`, a
+    capability's `draw`/`gate`/`ui_data`/`examine`, a `needs =` proc) reads another object's var that
+    isn't `TRACKED`/`SETTER` or behind a watched relation.
+  - `dx_reactive_write` (H5): a derived proc writes anything but locals, the `data` list, `.` and
+    `look.*`. It replaces `SHOULD_BE_PURE`, which these hooks can't carry: DreamChecker's purity is
+    transitive over every write, and every capability lookup (`caps_of`/`cap_of`/`cap_data`) memoizes
+    through a shared_cache and every `look.*` call writes the builder.
+  - `dx_caps_instance_read` (M3): `capabilities()` reads an instance var.
+  - `dx_timed_write` (M5): a `timed_set()` var written other than through it or its setter.
+  - `dx_string_names`: a string literal as the var name of an `own_*`/`rel_*`/`om_set`/`timed_*`
+    accessor.
+  - `dx_raw_overlays`: `add_overlay`/`cut_overlay(s)`/`overlays +=`/`-=` outside the look builder.
+  - `dx_raw_delay`: a numeric literal (not 0) not scaled by a time define in a delay argument.
+  - `dx_manual_fingerprint_log`: `add_fingerprint`/`log_*`/`message_admins` in an `act_` proc or a
+    capability entry handler.
+  - `dx_constructor_shadow` (H7): a type proc named like a global `cap_*` constructor or bundle.
+  - `dx_manual_transfer`: a hand-rolled take-out or move next to `own_set`/`own_add`/`own_put`.
+  - `dx_old_forms`: the removed macros.
+- **`doc_snippets.py`**: a call in a doc/rewrite `dm` block to a name that doesn't exist. Complete
+  (untagged) blocks compile under `-DDOC_SNIPPETS` (`doc_snippets.py --write`, then build with
+  `-DDOC_SNIPPETS`); `fragment` blocks are name-checked only, `before` blocks are skipped.

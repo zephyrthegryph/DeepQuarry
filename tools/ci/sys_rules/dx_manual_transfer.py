@@ -23,7 +23,8 @@ RULES = {
 }
 
 TAKE_OUT = re.compile(r"\b(drop_item|drop_from_inventory|unEquip|remove_from_mob|drop_l_hand|drop_r_hand|drop_active_hand|remove_from_storage)\s*\(")
-OWN = re.compile(r"\bown_(?:set|add|put)\s*\(\s*([\w.]+)\s*,\s*[^,()]+\s*,\s*(?:[^,()]+,\s*)?([\w.]+)\s*[,)]")
+# The var-name argument is nameof(...) (dx_string_names) or, in legacy code, a string.
+OWN = re.compile(r"\bown_(?:set|add|put)\s*\(\s*([\w.]+)\s*,\s*(?:nameof\([^()]*\)|[^,()]+)\s*,\s*(?:[^,()]+,\s*)?([\w.]+)\s*[,)]")
 MOVE = re.compile(r"([\w.]+)\s*\??\.\s*forceMove\s*\(\s*([\w.]+)\s*\)|([\w.]+)\.loc\s*=\s*([\w.]+)\s*$")
 
 BEFORE = 5  # lines looked at before an own_* call
@@ -72,3 +73,38 @@ def scan(files):
             elif moved:
                 out["manual_move_adopt"].append((rel, i + 1))
     return out
+
+
+SELFTEST_FIXTURE = """/obj/machinery/charger/proc/insert_cell(mob/user, obj/item/cell/C)
+	if(!user.drop_item())
+		return
+	own_set(src, nameof(src.cell), C)
+/obj/machinery/charger/proc/move_then_adopt(obj/item/cell/C)
+	C.forceMove(src)
+	own_set(src, nameof(src.cell), C)
+/obj/machinery/charger/proc/one_call(mob/user, obj/item/cell/C)
+	own_set(src, nameof(src.cell), C, user = user)
+/obj/machinery/charger/proc/take_after(mob/user, obj/item/I)
+	own_add(src, nameof(src.parts), I)
+	user.unEquip(I)
+/obj/machinery/charger/proc/other_thing(obj/item/cell/C, obj/item/D)
+	D.forceMove(src)
+	own_set(src, nameof(src.cell), C)
+"""
+
+
+def selftest():
+    lines = SELFTEST_FIXTURE.split("\n")
+    got = scan([("code/x.dm", lines)])
+
+    def at(snippet):
+        return [k + 1 for k, line in enumerate(lines) if snippet in line][0]
+    # A take-out before (or just after) an own_* call is a manual transfer; a forceMove of the same
+    # item into the same holder right before it is a manual move. The one-call form and a move of a
+    # different item are fine.
+    assert sorted(n for _r, n in got["manual_transfer"]) == sorted([
+        at("own_set(src, nameof(src.cell), C)"), at("own_add(src, nameof(src.parts), I)")]), got
+    assert [n for _r, n in got["manual_move_adopt"]] == [
+        [k + 1 for k, line in enumerate(lines) if "own_set(src, nameof(src.cell), C)" in line][1]], got
+    assert not scan([("code/datums/ownership/x.dm", lines)])["manual_transfer"], "the framework is exempt"
+    return "dx_manual_transfer"

@@ -5567,3 +5567,9 @@
 #include "code\modules\combat_ai\ports\ysbryd.dm"
 // END DQ MODULAR INCLUDES
 // END_INCLUDE
+
+// The complete ```dm blocks of doc/rewrite/*.md, compile-checked on demand: run
+// python tools/ci/doc_snippets.py --write, then build with -DDOC_SNIPPETS (the file is generated and gitignored).
+#ifdef DOC_SNIPPETS
+#include "tools\ci\generated\doc_snippets.dm"
+#endif

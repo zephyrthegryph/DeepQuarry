@@ -2,9 +2,10 @@
 """Tracked-var write lint (doc/rewrite/dx_conventions.md §1, final_design.md §1).
 
 `TRACKED(T, var, channel)` (code/__defines/capabilities.dm) declares that `var` on type T (and its
-subtypes) is written only through its setter `T/proc/set_<var>(value)`, which calls changed(). A
-hand-written `/T/proc/set_<var>(` (or a subtype override of it) is also a setter body. Reads are
-unrestricted.
+subtypes) is written only through its setter `T/proc/set_<var>(value)`, which calls changed().
+`SETTER(T, var)` registers a hand-written `T/proc/set_<var>(value)` as var's setter and makes var
+tracked exactly the same way. A hand-written `/T/proc/set_<var>(` (or a subtype override of it) is
+the setter body. Reads are unrestricted.
 
 Counted, for every tracked var V of type T, outside a setter body of V:
   * `V = x`, `src.V = x`, `V += x`, `V -= x` (and the other compound ops), `V++`, `V--`, `++V`, `--V`
@@ -32,7 +33,7 @@ from allow_annotations import allowed  # noqa: E402
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 LINT = "tracked"
 
-TRACKED_LINE = re.compile(r"^\s*TRACKED\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,")
+TRACKED_LINE = re.compile(r"^\s*(?:TRACKED\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,|SETTER\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\))")
 # A top-level proc definition: /type/proc/name(, /type/verb/name( or /type/name( (an override).
 PROC_DEF = re.compile(r"^(/[\w/]*?)/(?:(?:proc|verb)/)?(\w+)\s*\((.*)$")
 TYPE_DEF = re.compile(r"^/[\w/]+\s*$")
@@ -86,15 +87,22 @@ def collect(files):
         with open(path, encoding="utf-8", errors="replace") as handle:
             raw = handle.read()
         texts[rel] = raw
-        if "TRACKED(" not in raw:
+        if "TRACKED(" not in raw and "SETTER(" not in raw:
             continue
         for line in raw.split("\n"):
             if line.lstrip().startswith("#define"):
                 continue
             m = TRACKED_LINE.match(line)
             if m:
-                tracked.setdefault(m.group(2), set()).add(normalize_type(m.group(1)))
+                add_tracked(tracked, m)
     return tracked, texts
+
+
+def add_tracked(tracked, m):
+    """Records the var of a TRACKED_LINE match (TRACKED or SETTER) on its type."""
+    var = m.group(2) or m.group(4)
+    path = m.group(1) or m.group(3)
+    tracked.setdefault(var, set()).add(normalize_type(path))
 
 
 def tracked_type_of(tracked, var, owner):
@@ -212,6 +220,22 @@ TRACKED(/obj/machinery/pump, target_pressure, CHANGE_MACHINE_SETTINGS)
 	unknown.target_pressure = 1
 	// P.target_pressure = 8 in a comment
 	var/s = "P.target_pressure = 8"
+
+/obj/machinery/valve
+	var/open = FALSE
+SETTER(/obj/machinery/valve, open)
+
+/obj/machinery/valve/proc/set_open(value)
+	open = value
+	update_pipes()
+
+/obj/machinery/valve/proc/bad_open()
+	open = TRUE
+
+/proc/external_valve(obj/machinery/valve/V)
+	V.open = FALSE
+	if(V.open == TRUE)
+		return
 """,
 }
 
@@ -223,6 +247,8 @@ SELFTEST_EXPECT = [
     ("code/a.dm", 29, "target_pressure"),
     ("code/a.dm", 39, "P.target_pressure"),
     ("code/a.dm", 42, "B.target_pressure"),
+    ("code/a.dm", 56, "open"),
+    ("code/a.dm", 59, "V.open"),
 ]
 
 
@@ -232,10 +258,10 @@ def selftest():
         for line in text.split("\n"):
             m = TRACKED_LINE.match(line)
             if m:
-                tracked.setdefault(m.group(2), set()).add(normalize_type(m.group(1)))
+                add_tracked(tracked, m)
     hits, setters = scan(tracked, SELFTEST)
     got = [(rel, n, msg.split(" ")[0]) for rel, n, msg in hits]
-    ok = got == SELFTEST_EXPECT and len(setters) == 1
+    ok = got == SELFTEST_EXPECT and len(setters) == 2
     if not ok:
         print("tracked_lint selftest FAILED")
         print("  expected:", SELFTEST_EXPECT)

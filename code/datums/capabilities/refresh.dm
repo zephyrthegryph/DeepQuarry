@@ -141,6 +141,7 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
 	if(GLOB.derive_probing && derive_called_by_override(callee.caller, "draw"))
+		// ALLOW(sys_dx_reactive_write): the derive probe notes the override; it runs only while GLOB.derive_probing
 		GLOB.derive_probe_found |= TYPE_DERIVES_LOOK
 	for(var/datum/capability/C as anything in caps_ordered(src, CAP_ORDER_DRAW))
 		C.draw(src, look)
@@ -155,6 +156,7 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
 	if(GLOB.derive_probing && derive_called_by_override(callee.caller, "hidden_verbs"))
+		// ALLOW(sys_dx_reactive_write): the derive probe notes the override; it runs only while GLOB.derive_probing
 		GLOB.derive_probe_found |= TYPE_DERIVES_VERBS
 	return caps_hidden_verbs()
 

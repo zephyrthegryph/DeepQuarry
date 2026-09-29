@@ -82,10 +82,10 @@
 /proc/cap_assembly_put(obj/O, obj/item/assembly/A, mob/user)
 	if(O.attached_assembly || !istype(A))
 		return FALSE
-	if(user && A.loc == user && !user.drop_from_inventory(A, O))
+	// One call takes A out of the hand (or wherever it is), moves it in and adopts it. No `user`:
+	// the calling handler refuses with its own message and is already recorded by its dispatch.
+	if(!own_set(O, nameof(/obj::attached_assembly), A, into = TRUE))
 		return FALSE
-	A.forceMove(O)
-	own_set(O, nameof(/obj::attached_assembly), A)
 	if(!A.secured)
 		A.toggle_secure()
 	changed(O, CHANGE_CAPABILITY)
