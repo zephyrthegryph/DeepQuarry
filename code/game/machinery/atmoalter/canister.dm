@@ -171,7 +171,7 @@
 		var/mixture_id = air_contents?.arena_id()
 		if(isnull(mixture_id))
 			return
-		om_watch_arm_value(src, "gas", mixture_id, GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(current_update_flag)), wake_callback = CALLBACK(src, PROC_REF(wake_om_pipeline)))
+		om_watch_arm_value(src, "gas", mixture_id, GAS_DEPENDENCY_ALL, om_callable(src, PROC_REF(current_update_flag)), wake_callback = om_callable(src, PROC_REF(wake_om_pipeline)))
 		return
 	return ..()
 

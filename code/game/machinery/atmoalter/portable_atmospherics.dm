@@ -46,7 +46,7 @@
 	if(isnull(mixture_id))
 		return
 	// The machine pipeline wakes on om_changed() (machine_pipeline.dm).
-	var/datum/callback/wake = CALLBACK(src, PROC_REF(wake_om_pipeline))
+	var/list/wake = om_callable(src, PROC_REF(wake_om_pipeline))
 	om_watch_arm_revision(src, "gas", mixture_id, GAS_DEPENDENCY_ALL, wake_callback = wake, current_revision = air_contents.revision())
 
 /obj/machinery/portable_atmospherics/proc/clear_gas_dependency()

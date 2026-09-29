@@ -82,7 +82,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 		var/id = air?.arena_id()
 		if(!isnull(id))
 			mixture_ids |= id
-	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 
 /obj/machinery/power/generator/proc/gas_wake_condition()
 	if(!circ1() || !circ2())

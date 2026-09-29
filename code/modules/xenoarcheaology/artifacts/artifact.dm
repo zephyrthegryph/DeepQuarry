@@ -26,7 +26,7 @@
 	if(env && env.return_temperature() > ARTIFACT_HEAT_BREAK)
 		qdel(src)
 		return PROCESS_KILL
-	var/datum/om_watch/W = om_watch_arm_bands(src, "heat", env?.arena_id(), list(new /datum/om_watch_band("temperature", TRUE, ARTIFACT_HEAT_BREAK)), null, CALLBACK(src, PROC_REF(heat_wake)))
+	var/datum/om_watch/W = om_watch_arm_bands(src, "heat", env?.arena_id(), list(new /datum/om_watch_band("temperature", TRUE, ARTIFACT_HEAT_BREAK)), null, om_callable(src, PROC_REF(heat_wake)))
 	if(W)
 		LAZYSET(W.last_side, "temperature:[TRUE]:[ARTIFACT_HEAT_BREAK]", FALSE) // below it now: the first reading above fires
 	return PROCESS_KILL

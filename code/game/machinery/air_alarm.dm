@@ -281,7 +281,7 @@
 /// waking on every harmless room-air diffusion revision bump.
 /obj/machinery/alarm/proc/register_gas_dependencies()
 	var/datum/gas_mixture/environment = return_air()
-	om_watch_arm_value(src, "gas", environment?.arena_id(), GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(current_control_signature)), channel = CHANGE_MACHINE_GAS)
+	om_watch_arm_value(src, "gas", environment?.arena_id(), GAS_DEPENDENCY_ALL, om_callable(src, PROC_REF(current_control_signature)), channel = CHANGE_MACHINE_GAS)
 
 /obj/machinery/alarm/proc/unregister_gas_dependencies()
 	om_watch_disarm(src, "gas")

@@ -5750,7 +5750,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_om_watch_derived_fires_on_band_crossing/Run()
 	var/obj/machinery/dq_om_watch_test_probe/M = new(locate(1, 1, 1))
 	var/list/datum/om_watch_band/bands = list(new /datum/om_watch_band("value", TRUE, 10, 2))
-	om_watch_arm_derived(M, "probe", bands, channel = null, getter = CALLBACK(M, TYPE_PROC_REF(/obj/machinery/dq_om_watch_test_probe, read_probe)), wake_callback = CALLBACK(M, TYPE_PROC_REF(/obj/machinery/dq_om_watch_test_probe, count_wake)))
+	om_watch_arm_derived(M, "probe", bands, channel = null, getter = om_callable(M, TYPE_PROC_REF(/obj/machinery/dq_om_watch_test_probe, read_probe)), wake_callback = om_callable(M, TYPE_PROC_REF(/obj/machinery/dq_om_watch_test_probe, count_wake)))
 	M.probe = 5
 	om_watch_recheck(M, "probe")
 	TEST_ASSERT_EQUAL(M.wakes, 0, "a non-crossing change fired a derived watch")

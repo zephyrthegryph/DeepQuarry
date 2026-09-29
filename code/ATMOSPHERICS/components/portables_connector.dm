@@ -92,7 +92,7 @@
 	var/datum/gas_mixture/device_air = connected_device?.air_contents
 	if(!device_air)
 		return
-	om_watch_arm_raw(src, "device", device_air.arena_id(), GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(on_device_gas_changed)))
+	om_watch_arm_raw(src, "device", device_air.arena_id(), GAS_DEPENDENCY_ALL, om_callable(src, PROC_REF(on_device_gas_changed)))
 
 /obj/machinery/atmospherics/portables_connector/proc/clear_gas_dependency()
 	om_watch_disarm(src, "device")

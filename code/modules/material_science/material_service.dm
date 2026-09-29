@@ -373,7 +373,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 			om_watch_disarm(src, "gas[id]")
 	for(var/id in next_ids)
 		if(!(id in mixture_ids))
-			om_watch_arm_raw(src, "gas[id]", id, interest_mask, CALLBACK(src, PROC_REF(on_gas_notify)))
+			om_watch_arm_raw(src, "gas[id]", id, interest_mask, om_callable(src, PROC_REF(on_gas_notify)))
 	mixture_ids = next_ids
 	mixture_pressures = next_pressures
 	mixture_corrosion = next_corrosion

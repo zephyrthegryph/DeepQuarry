@@ -101,7 +101,7 @@
 /obj/machinery/air_sensor/proc/register_gas_dependencies()
 	var/datum/gas_mixture/environment = return_air()
 	// Wakes only when the rounded readings it broadcasts would change, not on every revision.
-	om_watch_arm_value(src, "gas", environment?.arena_id(), dependency_mask(), CALLBACK(src, PROC_REF(current_reading_signature)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+	om_watch_arm_value(src, "gas", environment?.arena_id(), dependency_mask(), om_callable(src, PROC_REF(current_reading_signature)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 
 /obj/machinery/air_sensor/proc/unregister_gas_dependencies()
 	om_watch_disarm(src, "gas")

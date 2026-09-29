@@ -32,7 +32,7 @@
 		var/id = air?.arena_id()
 		if(!isnull(id))
 			mixture_ids |= id
-	om_watch_arm_condition(src, "gas", mixture_ids, gas_dependency_mask, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+	om_watch_arm_condition(src, "gas", mixture_ids, gas_dependency_mask, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 
 /obj/machinery/atmospherics/unary/proc/unregister_gas_dependencies()
 	om_watch_disarm(src, "gas")

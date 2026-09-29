@@ -175,7 +175,7 @@
 		var/id = air?.arena_id()
 		if(!isnull(id))
 			mixture_ids |= id
-	om_watch_arm_condition(src, "leak", mixture_ids, GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(leak_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_leak)))
+	om_watch_arm_condition(src, "leak", mixture_ids, GAS_DEPENDENCY_ALL, om_callable(src, PROC_REF(leak_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_leak)))
 
 /obj/machinery/atmospherics/pipe/proc/leak_wake_condition()
 	return leaking && leak_needs_equalization(parent?.air, loc?.return_air())

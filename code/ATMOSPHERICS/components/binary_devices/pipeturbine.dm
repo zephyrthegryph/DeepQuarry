@@ -79,7 +79,7 @@
 		return
 	// Spun down with no pressure head: park until the head returns (the test above).
 	kin_energy = 0
-	om_watch_arm_condition(src, "gas", list(air_in.arena_id(), air_out.arena_id()), GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+	om_watch_arm_condition(src, "gas", list(air_in.arena_id(), air_out.arena_id()), GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 	return PROCESS_KILL
 
 /obj/machinery/atmospherics/pipeturbine/proc/gas_wake_condition()
@@ -261,7 +261,7 @@
 /obj/machinery/atmospherics/pipeturbine/arm_wakes()
 	..()
 	if(air_in && air_out)
-		om_watch_arm_condition(src, "gas", list(air_in.arena_id(), air_out.arena_id()), GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+		om_watch_arm_condition(src, "gas", list(air_in.arena_id(), air_out.arena_id()), GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 
 /// Phase 1, after the shared topology teardown: let go of the arms and network wrappers the
 /// base unbind doesn't know about, so two doomed neighbours can't keep each other alive.

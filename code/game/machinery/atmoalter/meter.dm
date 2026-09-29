@@ -50,7 +50,7 @@
 /// resolution never wakes it.
 /obj/machinery/meter/proc/register_gas_dependency()
 	var/datum/gas_mixture/environment = target_ref()?.return_air()
-	om_watch_arm_value(src, "gas", environment?.arena_id(), GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(current_display_signature)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+	om_watch_arm_value(src, "gas", environment?.arena_id(), GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(current_display_signature)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 
 /obj/machinery/meter/proc/current_display_signature()
 	var/datum/gas_mixture/environment = target_ref()?.return_air()

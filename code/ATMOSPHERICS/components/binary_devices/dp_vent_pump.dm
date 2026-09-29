@@ -170,7 +170,7 @@
 		var/id = air?.arena_id()
 		if(!isnull(id))
 			mixture_ids |= id
-	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_COMPOSITION, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_for_state_change)))
+	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_COMPOSITION, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_for_state_change)))
 	MACHINE_SLEEP(src)
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/gas_wake_condition()

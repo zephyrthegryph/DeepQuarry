@@ -493,6 +493,48 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		return list(copy, TRUE)
 	return list(L, FALSE)
 
+/// A deferred call as data: the callee and every datum argument held as handles (deeply), so a
+/// stored call never keeps what it names alive -- the replacement for CALLBACK / /datum/callback,
+/// whose strong references were invisible to ownership. Returns list(callee handle or null for a
+/// global proc, proc ref, captured args, positions), or null when an argument is already gone.
+/// Store it in any var; run it with om_run().
+/proc/om_callable(datum/target, proc_ref, ...)
+	var/list/call_args = length(args) > 2 ? args.Copy(3) : null
+	var/list/capture = call_args ? om_capture_args(call_args) : list(null, null)
+	if(!capture)
+		return null
+	var/callee_handle = null
+	if(target)
+		callee_handle = om_handle(target)
+		if(isnull(callee_handle))
+			return null
+	return list(callee_handle, proc_ref, capture[1], capture[2])
+
+/// Runs an om_callable() spec with its stored arguments followed by `...`. Returns what the proc
+/// returned, or null when the target or a captured argument no longer exists (the call is dropped).
+/proc/om_run(list/spec, ...)
+	if(!islist(spec) || length(spec) != 4)
+		return null
+	var/datum/target = null
+	if(spec[1])
+		target = om_resolve(spec[1])
+		if(!target)
+			return null
+	var/list/stored = spec[3]
+	var/list/call_args = stored ? stored.Copy() : list()
+	if(spec[4] && !om_resolve_captured(call_args, spec[4]))
+		return null
+	if(length(args) > 1)
+		call_args += args.Copy(2)
+	if(target)
+		return call(target, spec[2])(arglist(call_args))
+	return call(spec[2])(arglist(call_args))
+
+/// om_run() without waiting: the call runs in its own stack (INVOKE_ASYNC for a stored spec).
+/proc/om_run_async(list/spec, ...)
+	set waitfor = FALSE
+	return om_run(arglist(args))
+
 /// Resolves captured handles in place. FALSE if any is gone (or, with `nulls_for_gone`, passes
 /// null for it instead: cleanup that must still run). The record keeps its own copy.
 /proc/om_resolve_captured(list/captured, list/positions, nulls_for_gone = FALSE)

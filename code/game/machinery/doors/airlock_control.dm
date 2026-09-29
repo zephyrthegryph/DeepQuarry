@@ -184,7 +184,7 @@
 /// so a change that leaves that reading identical cannot affect an airlock controller or icon.
 /obj/machinery/airlock_sensor/proc/register_gas_dependencies()
 	var/datum/gas_mixture/environment = return_air()
-	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 
 /obj/machinery/airlock_sensor/proc/gas_wake_condition()
 	var/datum/gas_mixture/environment = return_air()

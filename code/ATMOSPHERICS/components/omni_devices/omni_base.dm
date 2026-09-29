@@ -90,7 +90,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 		var/id = P.air?.arena_id()
 		if(!isnull(id))
 			mixture_ids |= id
-	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_for_state_change)))
+	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_ALL, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_for_state_change)))
 	MACHINE_SLEEP(src)
 
 /obj/machinery/atmospherics/omni/proc/clear_gas_dependencies()

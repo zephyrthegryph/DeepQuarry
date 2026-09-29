@@ -45,7 +45,7 @@
 		var/id = air?.arena_id()
 		if(!isnull(id))
 			mixture_ids |= id
-	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_TEMPERATURE, CALLBACK(src, PROC_REF(heat_exchange_actionable)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_TEMPERATURE, om_callable(src, PROC_REF(heat_exchange_actionable)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/unregister_gas_dependencies()
 	om_watch_disarm(src, "gas")

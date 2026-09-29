@@ -99,7 +99,7 @@
 	if(co2_moles < MINIMUM_MOLES_TO_FILTER)
 		ui_error = "Insufficient [GLOB.gas_data.name[input_gas]] to process."
 		update_icon()
-		om_watch_arm_condition(src, "gas", list(air1.arena_id()), GAS_DEPENDENCY_COMPOSITION, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+		om_watch_arm_condition(src, "gas", list(air1.arena_id()), GAS_DEPENDENCY_COMPOSITION, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 		return PROCESS_KILL
 
 	// STEP 4 - Consume the resources
@@ -349,5 +349,5 @@
 /obj/machinery/atmospherics/binary/algae_farm/arm_wakes()
 	..()
 	if(air1)
-		om_watch_arm_condition(src, "gas", list(air1.arena_id()), GAS_DEPENDENCY_COMPOSITION, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+		om_watch_arm_condition(src, "gas", list(air1.arena_id()), GAS_DEPENDENCY_COMPOSITION, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 
