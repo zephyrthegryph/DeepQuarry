@@ -5,7 +5,10 @@
 //   - on E's clock: E's timer clock (om_timer_clock(), bio for living mobs, machine for
 //     machinery) scales it, and suspension or stasis pauses it;
 //   - weak: every datum argument is captured as an OM handle and resolved when the timer
-//     fires. If any is gone the call is dropped (counted in sched.timers_dropped).
+//     fires. A gone argument arrives as null and the call still runs (SStimer's semantics:
+//     cleanup such as vend_ready = TRUE always happens; counted in sched.timers_nulled and
+//     logged). after_if_alive() opts a pure effect out: its call is dropped instead (counted
+//     in sched.timers_dropped).
 // No datum per timer: a timer is five slots in the owner's record, and the owner has one
 // deadline on the wheel (the soonest of its timers), as tasks and rates do.
 //
@@ -52,6 +55,10 @@
 
 /datum/om/scheduler/var/datum/om/global_owner/global_owner
 /datum/om/scheduler/var/timers_dropped = 0
+/// Timers that ran with at least one deleted argument passed as null (the default, om_after()/after()).
+/datum/om/scheduler/var/timers_nulled = 0
+/// Deleted arguments om_resolve_value() replaced with null during the current resolution.
+GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 
 /proc/om_global_owner()
 	RETURN_TYPE(/datum/om/global_owner)
@@ -260,11 +267,13 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 /// (for om_cancel_timer()), or 0 if E or an argument is already gone. E null: the global owner.
 /proc/om_after(datum/E, delay, proc_ref, ...)
 	var/list/call_args = length(args) > 3 ? args.Copy(4) : null
-	return om_after_list(E, delay, proc_ref, call_args, FALSE)
+	return om_after_list(E, delay, proc_ref, call_args, TRUE)
 
-/// om_after()'s body. nulls_for_gone: a captured datum argument deleted before the timer fires is
-/// passed as null instead of dropping the call (after(): cleanup that must still run).
-/proc/om_after_list(datum/E, delay, proc_ref, list/call_args, nulls_for_gone = FALSE)
+/// om_after()'s body. nulls_for_gone (the default for om_after()/after()): a captured datum argument
+/// deleted before the timer fires, or already deleted when it is scheduled, is passed as null and the
+/// call runs. FALSE (after_if_alive()): the call is dropped, and an already-deleted argument is
+/// refused up front (returns 0).
+/proc/om_after_list(datum/E, delay, proc_ref, list/call_args, nulls_for_gone = TRUE)
 	if(isnull(E))
 		E = om_global_owner()
 	if(!own_guard(E, null, "a timer ([proc_ref])")) // the one teardown guard (guard.dm)
@@ -275,7 +284,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	var/list/captured = null
 	var/list/positions = null
 	if(call_args)
-		var/list/capture = om_capture_args(call_args)
+		var/list/capture = om_capture_args(call_args, nulls_for_gone)
 		if(!capture)
 			return 0
 		captured = capture[1]
@@ -593,11 +602,11 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 /// Captures `call_args`' datums as handles, deeply. Returns list(captured, positions): positions
 /// are the argument indexes holding a handle or a list with handles in it. Null when an argument
 /// is already deleted or can't be captured (a datum assoc key).
-/proc/om_capture_args(list/call_args)
+/proc/om_capture_args(list/call_args, nulls_for_gone = FALSE)
 	var/list/captured = call_args ? call_args.Copy() : null
 	var/list/positions = null
 	for(var/i in 1 to length(captured))
-		var/list/result = om_capture_value(captured[i], 0)
+		var/list/result = om_capture_value(captured[i], 0, nulls_for_gone)
 		if(!result)
 			return null
 		if(result[2])
@@ -606,10 +615,12 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 	return list(captured, positions)
 
 /// list(captured value, changed) for one value, or null when it can't be captured.
-/proc/om_capture_value(value, depth)
+/proc/om_capture_value(value, depth, nulls_for_gone = FALSE)
 	if(isdatum(value))
 		var/h = om_handle(value)
 		if(isnull(h))
+			if(nulls_for_gone)
+				return list(null, FALSE) // already deleted: passed as null, like one deleted later
 			return null
 		return list(list(OM_CAPTURED_MARK, h), TRUE)
 	if(!islist(value))
@@ -625,11 +636,11 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 			var/datum/K = key
 			OWN_REPORT("om_capture_args: a deferred call's argument uses [K.type] as an assoc key; pass it as a value")
 			return null
-		var/list/key_result = om_capture_value(key, depth + 1)
+		var/list/key_result = om_capture_value(key, depth + 1, nulls_for_gone)
 		if(!key_result)
 			return null
 		var/assoc = (istext(key) || isdatum(key)) ? L[key] : null
-		var/list/value_result = isnull(assoc) ? null : om_capture_value(assoc, depth + 1)
+		var/list/value_result = isnull(assoc) ? null : om_capture_value(assoc, depth + 1, nulls_for_gone)
 		if(!isnull(assoc) && !value_result)
 			return null
 		if(key_result[2] || value_result?[2])
@@ -702,8 +713,10 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 	var/list/L = value
 	if(length(L) == 2 && L[1] == OM_CAPTURED_MARK)
 		var/datum/D = om_resolve(L[2])
-		if(!D && !nulls_for_gone)
-			return null
+		if(!D)
+			if(!nulls_for_gone)
+				return null
+			GLOB.om_resolve_nulled++
 		return list(D)
 	var/list/out = L.Copy()
 	for(var/j in 1 to length(out))
@@ -748,10 +761,14 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		T.Cut(best, best + OM_TIMER_STRIDE)
 		if(!length(T))
 			rec.timers = null
+		GLOB.om_resolve_nulled = 0
 		if(!om_resolve_captured(captured, positions, !!(timer_flags & OM_TIMER_NULLS_FOR_GONE)))
 			rec.sched.timers_dropped++
-			log_qdel("OM: dropped timer [proc_ref] on [E] ([E.type]): a captured argument was deleted before it fired")
+			log_qdel("OM: dropped timer [proc_ref] on [E] ([E.type]): a captured argument was deleted before it fired (after_if_alive)")
 			continue
+		if(GLOB.om_resolve_nulled)
+			rec.sched.timers_nulled++
+			log_qdel("OM: timer [proc_ref] on [E] ([E.type]) runs with [GLOB.om_resolve_nulled] deleted argument(s) passed as null")
 		try
 			om_guarded_call(E, proc_ref, captured, is_global)
 		catch(var/exception/e)
