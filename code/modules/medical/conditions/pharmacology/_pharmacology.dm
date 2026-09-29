@@ -39,7 +39,7 @@
 	progression_rate = 0
 
 /// A reagent above its `overdose` threshold. Thresholds match the reagent
-/// declarations (code/modules/reagents/reagents/medicine.dm); severity scales
+/// declarations (code/modules/reagents/reagents/content/medicine.dm); severity scales
 /// with the excess (chem_scaling), and the reagent's encyclopedia entry links
 /// straight to the condition.
 /datum/affliction/overdose
