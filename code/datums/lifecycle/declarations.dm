@@ -22,18 +22,18 @@
 /// The declaration table for D's type, or null when the type declares nothing.
 /proc/lifecycle_decls_of(datum/D)
 	RETURN_TYPE(/datum/lifecycle_decls)
-	var/static/list/cache = list()
-	var/datum/lifecycle_decls/decls = cache[D.type]
-	if(!isnull(decls))
-		return decls || null
-	decls = new /datum/lifecycle_decls(D.type)
+	var/decls = CACHED_KEY(lifecycle_decls, D.type, D)
+	return decls || null
+
+DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC_NEVER)
+
+/// Shared-cache builder: D's type's declarations, or FALSE when it declares nothing
+/// (a falsy value is still cached, so undeclared types are not rebuilt).
+/proc/build_lifecycle_decls(datum/D)
+	var/datum/lifecycle_decls/decls = new /datum/lifecycle_decls(D.type)
 	D.declare_lifecycle(decls)
 	decls.finish(D)
-	if(!decls.work)
-		cache[D.type] = FALSE
-		return null
-	cache[D.type] = decls
-	return decls
+	return decls.work ? decls : FALSE
 
 /// One type's declarations. Read-only after finish().
 /datum/lifecycle_decls
