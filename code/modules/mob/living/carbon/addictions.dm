@@ -144,7 +144,8 @@
 		var/datum/reagent/RE = chemistry_service().chemical_reagents[C]
 		var/addict_counter_before = LAZYACCESS(addiction_counters,C)
 		if(LAZYACCESS(addiction_counters,C) > 0)
-			LAZYSET(addiction_counters,C,RE.handle_addiction(src,species.reagent_tag)) // withdrawl can modify the value however it deems fit as you are affected by it
+			var/withdrawal_counter = RE.handle_addiction(src,species.reagent_tag)
+			LAZYSET(addiction_counters,C,withdrawal_counter) // withdrawl can modify the value however it deems fit as you are affected by it
 		// remove if finished
 		if(LAZYACCESS(addiction_counters,C) == 0)
 			var/message = RE.addiction_cure_message()

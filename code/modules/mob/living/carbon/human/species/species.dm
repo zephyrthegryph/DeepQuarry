@@ -505,7 +505,7 @@
 		qdel(stray)
 	for(var/obj/item/organ/stray as anything in H.internal_organ_list())
 		qdel(stray)
-	H.bad_external_organs?.Cut()
+	rel_clear(H, "bad_external_organs")
 
 	// Parent first, whatever order the table lists them in.
 	var/list/pending = has_limbs.Copy()

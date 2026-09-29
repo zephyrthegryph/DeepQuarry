@@ -75,7 +75,10 @@
 	icon = 'icons/mob/pai_hud.dmi'
 
 /datum/hud
+	/// pAI / simple mob HUDs: every screen shown by the hud toggles (a roster; the screens are owned elsewhere).
 	var/list/hud_elements
+	/// pAI / simple mob HUDs: screens the hud builds that sit in no other hud list (owned).
+	var/list/extra_screens
 
 /mob/living/silicon/pai/create_mob_hud(datum/hud/HUD)
 	..()
@@ -85,15 +88,6 @@
 	var/ui_color = "#ffffff"
 	var/ui_alpha = 255
 
-	var/list/adding = list()
-	var/list/other = list()
-	var/list/hotkeybuttons = list()
-	var/list/hud_elements = list()
-
-	HUD.adding = adding
-	HUD.other = other
-	own_set(HUD, "hotkeybuttons", hotkeybuttons)
-	HUD.hud_elements = hud_elements
 
 	var/atom/movable/screen/pai/using
 
@@ -102,7 +96,7 @@
 	combat_button.icon = ui_style
 	combat_button.alpha = ui_alpha
 	combat_button.layer = LAYER_HUD_ITEM
-	rel_add(HUD, "adding", combat_button)
+	own_add(HUD, "adding", combat_button)
 
 	//Move intent (walk/run)
 	using = new /atom/movable/screen()
@@ -113,7 +107,7 @@
 	using.color = ui_color
 	using.alpha = ui_alpha
 	own_add(HUD, "adding", using)
-	own_set(HUD, "move_intent", using)
+	rel_set(HUD, "move_intent", using)
 
 	//Resist button
 	using = new /atom/movable/screen()
@@ -131,8 +125,7 @@
 	pullin.icon_state = "pull0"
 	pullin.name = "pull"
 	pullin.screen_loc = ui_movi
-	own_add(HUD, "hotkeybuttons", pullin)
-	LAZYOR(HUD.hud_elements, pullin)
+	rel_add(HUD, "hud_elements", pullin)
 
 	//Health status
 	own_set(src, "healths", new /atom/movable/screen())
@@ -140,7 +133,7 @@
 	healths.icon_state = "health0"
 	healths.name = "health"
 	healths.screen_loc = ui_health
-	LAZYOR(HUD.hud_elements, healths)
+	rel_add(HUD, "hud_elements", healths)
 
 	own_set(src, "pain", new /atom/movable/screen( null ))
 
@@ -150,12 +143,12 @@
 	zone_sel.alpha = ui_alpha
 	zone_sel.cut_overlays()
 	zone_sel.update_icon()
-	LAZYOR(HUD.hud_elements, zone_sel)
+	rel_add(HUD, "hud_elements", zone_sel)
 
 	own_set(src, "pai_fold_display", new /atom/movable/screen/pai/pai_fold_display())
 	pai_fold_display.screen_loc = ui_health
 	pai_fold_display.icon_state = "folded"
-	LAZYOR(HUD.hud_elements, pai_fold_display)
+	rel_add(HUD, "hud_elements", pai_fold_display)
 
 	//Choose chassis button
 	using = new /atom/movable/screen/pai()
@@ -164,7 +157,8 @@
 	using.screen_loc = ui_movi
 	using.color = ui_color
 	using.alpha = ui_alpha
-	hud_elements |= using
+	own_add(HUD, "extra_screens", using)
+	rel_add(HUD, "hud_elements", using)
 
 	//Software interface button
 	using = new /atom/movable/screen/pai()
@@ -173,7 +167,8 @@
 	using.screen_loc = ui_acti
 	using.color = ui_color
 	using.alpha = ui_alpha
-	hud_elements |= using
+	own_add(HUD, "extra_screens", using)
+	rel_add(HUD, "hud_elements", using)
 
 	//Radio configuration button
 	using = new /atom/movable/screen/pai()
@@ -182,7 +177,8 @@
 	using.screen_loc = ui_acti
 	using.color = ui_color
 	using.alpha = ui_alpha
-	hud_elements |= using
+	own_add(HUD, "extra_screens", using)
+	rel_add(HUD, "hud_elements", using)
 
 	//PDA button
 	using = new /atom/movable/screen/pai()
@@ -191,7 +187,8 @@
 	using.screen_loc = ui_pai_comms
 	using.color = ui_color
 	using.alpha = ui_alpha
-	hud_elements |= using
+	own_add(HUD, "extra_screens", using)
+	rel_add(HUD, "hud_elements", using)
 
 	//Communicator button
 	using = new /atom/movable/screen/pai()
@@ -200,7 +197,8 @@
 	using.screen_loc = ui_pai_comms
 	using.color = ui_color
 	using.alpha = ui_alpha
-	hud_elements |= using
+	own_add(HUD, "extra_screens", using)
+	rel_add(HUD, "hud_elements", using)
 
 	//Language button
 	using = new /atom/movable/screen/pai()
@@ -209,7 +207,8 @@
 	using.screen_loc = ui_acti
 	using.color = ui_color
 	using.alpha = ui_alpha
-	hud_elements |= using
+	own_add(HUD, "extra_screens", using)
+	rel_add(HUD, "hud_elements", using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "software toggle"
@@ -217,7 +216,8 @@
 	using.screen_loc = ui_inventory
 	using.color = ui_color
 	using.alpha = ui_alpha
-	hud_elements |= using
+	own_add(HUD, "extra_screens", using)
+	rel_add(HUD, "hud_elements", using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "directives"
@@ -225,7 +225,7 @@
 	using.screen_loc = "WEST:6,SOUTH:18"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	other |= using
+	own_add(HUD, "other", using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "crew manifest"
@@ -233,7 +233,7 @@
 	using.screen_loc = "WEST:6,SOUTH+1:2"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	other |= using
+	own_add(HUD, "other", using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "medical records"
@@ -241,7 +241,7 @@
 	using.screen_loc = "WEST:6,SOUTH+1:18"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	other |= using
+	own_add(HUD, "other", using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "security records"
@@ -249,7 +249,7 @@
 	using.screen_loc = "WEST:6,SOUTH+2:2"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	other |= using
+	own_add(HUD, "other", using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "atmosphere sensor"
@@ -257,7 +257,7 @@
 	using.screen_loc = "WEST:6,SOUTH+2:18"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	other |= using
+	own_add(HUD, "other", using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "remote signaler"
@@ -265,7 +265,7 @@
 	using.screen_loc = "WEST:6,SOUTH+3:2"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	other |= using
+	own_add(HUD, "other", using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "universal translator"
@@ -273,7 +273,7 @@
 	using.screen_loc = "WEST:6,SOUTH+3:18"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	other |= using
+	own_add(HUD, "other", using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "door jack"
@@ -281,7 +281,7 @@
 	using.screen_loc = "WEST:6,SOUTH+4:2"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	other |= using
+	own_add(HUD, "other", using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "ar hud"
@@ -289,7 +289,7 @@
 	using.screen_loc = "WEST:6,SOUTH+4:18"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	other |= using
+	own_add(HUD, "other", using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "death alarm"
@@ -297,54 +297,60 @@
 	using.screen_loc = "WEST:6,SOUTH+5:2"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	other |= using
+	own_add(HUD, "other", using)
 
 	own_set(src, "autowhisper_display", new /atom/movable/screen())
 	autowhisper_display.icon = 'icons/mob/screen/minimalist.dmi'
 	autowhisper_display.icon_state = "autowhisper"
 	autowhisper_display.name = "autowhisper"
 	autowhisper_display.screen_loc = "EAST-1:28,CENTER-2:13"
-	hud_elements |= autowhisper_display
+	rel_add(HUD, "hud_elements", autowhisper_display)
 
 	var/atom/movable/screen/aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
 	aw.icon_state = "aw-select"
 	aw.name = "autowhisper mode"
 	aw.screen_loc = "EAST-1:28,CENTER-2:13"
-	hud_elements |= aw
+	own_add(HUD, "extra_screens", aw)
+	rel_add(HUD, "hud_elements", aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
 	aw.icon_state = "lang"
 	aw.name = "check known languages"
 	aw.screen_loc = ui_under_health
-	hud_elements |= aw
+	own_add(HUD, "extra_screens", aw)
+	rel_add(HUD, "hud_elements", aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
 	aw.icon_state = "pose"
 	aw.name = "set pose"
 	aw.screen_loc = ui_under_health
-	hud_elements |= aw
+	own_add(HUD, "extra_screens", aw)
+	rel_add(HUD, "hud_elements", aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
 	aw.icon_state = "up"
 	aw.name = "move upwards"
 	aw.screen_loc = ui_under_health
-	hud_elements |= aw
+	own_add(HUD, "extra_screens", aw)
+	rel_add(HUD, "hud_elements", aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
 	aw.icon_state = "down"
 	aw.name = "move downwards"
 	aw.screen_loc = ui_under_health
-	hud_elements |= aw
+	own_add(HUD, "extra_screens", aw)
+	rel_add(HUD, "hud_elements", aw)
 
 	if(client)
 		client.screen = list()
-		client.screen += hud_elements
-		client.screen += adding + hotkeybuttons
+		client.screen += HUD.hud_elements
+		client.screen += HUD.adding
+		client.screen += HUD.hotkeybuttons
 		client.screen += client.void
 
 	HUD.inventory_shown = 0

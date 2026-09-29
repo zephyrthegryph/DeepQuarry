@@ -105,7 +105,7 @@
 		//We're good!
 		var/mob/living/carbon/human/S = nif().human
 		var/HP_percent = 2 * S.vitality() - 1 // 1 = well, 0 = the crit line, -1 = dead
-		if(!nif().human.bad_external_organs.len)
+		if(!length(nif().human.bad_external_organs))
 			if(mode || active)
 				nif().notify("User Status: NORMAL. Medichines deactivating.")
 //Needs fixing W << 'sound/voice/nifmedsynth_normal.ogg'

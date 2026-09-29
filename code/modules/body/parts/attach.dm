@@ -166,21 +166,19 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 /// never nulled again: human code indexes them without a null check.
 /proc/dq_part_cache(mob/living/M, obj/item/organ/part)
 	if(istype(part, /obj/item/organ/external))
-		if(!M.organs)
-			rel_clear(M, "organs")
 		if(!M.organs_by_name)
-			M.organs_by_name = list()
+			M.organs_by_name = list() // ALLOW(ownership): tag -> part lookup derived from the `organs` relation list; kept in step only here and in dq_part_uncache()
 		rel_add(M, "organs", part)
-		M.organs_by_name[part.organ_tag] = part
+		M.organs_by_name[part.organ_tag] = part // ALLOW(ownership): tag -> part lookup derived from the `organs` relation list; kept in step only here and in dq_part_uncache()
 	// Internal organs: nothing to cache, the limb's keyed organ slot is the record.
 
 /// Removes `part` from `M`'s organ caches. A key another part now holds stays.
 /proc/dq_part_uncache(mob/living/M, obj/item/organ/part)
 	if(istype(part, /obj/item/organ/external))
-		M.organs?.Remove(part)
+		rel_remove(M, "organs", part)
 		if(M.organs_by_name?[part.organ_tag] == part)
-			M.organs_by_name -= part.organ_tag
-		M.bad_external_organs?.Remove(part)
+			M.organs_by_name -= part.organ_tag // ALLOW(ownership): tag -> part lookup derived from the `organs` relation list
+		rel_remove(M, "bad_external_organs", part)
 
 /// `part` and every part below it, parents before children, read from the
 /// ledger's tree slots.

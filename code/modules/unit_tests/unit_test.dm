@@ -450,7 +450,6 @@ GLOBAL_VAR(dq_test_select_names)
 	if (isnull(uncreatables))
 		uncreatables = build_list_of_uncreatables()
 
-	allocated = new
 	rel_set(src, "test_block", acquire_unit_test_block())
 	rel_set(src, "run_loc_floor_bottom_left", test_block.bottom_left)
 	rel_set(src, "run_loc_floor_top_right", test_block.top_right)
@@ -504,7 +503,7 @@ GLOBAL_VAR(dq_test_select_names)
 		instance = new type(arglist(arguments))
 	else
 		instance = new type()
-	allocated += instance
+	own_add(src, "allocated", instance)
 	return instance
 
 /// Hands something the test didn't allocate() but did cause (a construction product, a
@@ -512,7 +511,9 @@ GLOBAL_VAR(dq_test_select_names)
 /// Returns `thing`.
 /datum/unit_test/proc/own(datum/thing)
 	if(thing && !QDELETED(thing))
-		allocated |= thing
+		// A thing some other holder already owns goes when that owner goes.
+		if(!owner_of(thing))
+			own_add(src, "allocated", thing)
 	return thing
 
 /// own()s everything currently on `T` (landmarks excepted): for a test whose subject

@@ -38,9 +38,14 @@
 	if(owner.client)
 		create_mob_button(owner)
 
-// takes the NIF verb back from its owner. Hooks, the screen icon (owned; it
-// leaves client screens in its own teardown) and the owner ref are core work.
+// takes the NIF verb back from its owner and deletes its button from the hud that owns it.
+// Hooks and the owner ref are core work.
 /datum/nif_menu/on_destroy(force)
+	if(screen_icon)
+		owner?.client?.screen -= screen_icon
+		var/datum/hud/button_hud = owner_of(screen_icon)
+		if(istype(button_hud))
+			own_remove(button_hud, "other_important", screen_icon)
 	if(ishuman(owner))
 		remove_verb(owner, /mob/living/carbon/human/proc/nif_menu)
 	..()
@@ -55,13 +60,16 @@
 
 /datum/nif_menu/proc/create_mob_button(mob/user)
 	var/datum/hud/HUD = user.hud_used
+	// The hud owns the button (other_important); a new hud's button is made afresh
+	// (the old hud deleted its own, which cleared this relation).
 	if(!screen_icon)
-		own_set(src, "screen_icon", new /atom/movable/screen/nif())
+		var/atom/movable/screen/nif/button = new
+		own_add(HUD, "other_important", button)
+		rel_set(src, "screen_icon", button)
 		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(nif_menu_click))
 	screen_icon.icon = HUD.ui_style
 	screen_icon.color = HUD.ui_color
 	screen_icon.alpha = HUD.ui_alpha
-	own_add(HUD, "other_important", screen_icon)
 	user.client?.screen += screen_icon
 
 	add_verb(user, /mob/living/carbon/human/proc/nif_menu)

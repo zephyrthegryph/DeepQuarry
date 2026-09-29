@@ -182,7 +182,8 @@
 	button.screen_loc = ui_acti
 	rel_set(button, "hud", src)
 	button.update_for(owner)
-	own_set(src, "combat_mode_button", button)
+	// The caller owns the button through one of its screen lists (adding); this names it.
+	rel_set(src, "combat_mode_button", button)
 	return button
 
 // ---------------------------------------------------------------------------

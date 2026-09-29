@@ -83,7 +83,7 @@
 /datum/affliction/contagion/engineered/cold/New(process = 1, datum/affliction/contagion/engineered/D, copy = 0)
 	if(!D)
 		name = "Engineered Cold"
-		symptoms = list(new /datum/viral_trait/sneeze)
+		own_add(src, "symptoms", new /datum/viral_trait/sneeze)
 	..(process, D, copy)
 
 
@@ -92,7 +92,7 @@
 /datum/affliction/contagion/engineered/flu/New(process = 1, datum/affliction/contagion/engineered/D, copy = 0)
 	if(!D)
 		name = "Engineered Flu"
-		symptoms = list(new /datum/viral_trait/cough)
+		own_add(src, "symptoms", new /datum/viral_trait/cough)
 	..(process, D, copy)
 
 // Macrophages
@@ -100,7 +100,7 @@
 /datum/affliction/contagion/engineered/macrophage/New(process = 1, datum/affliction/contagion/engineered/D, copy = 0)
 	if(!D)
 		name = "Macrophages"
-		symptoms = list(new /datum/viral_trait/macrophage)
+		own_add(src, "symptoms", new /datum/viral_trait/macrophage)
 	..(process, D, copy)
 
 // Blob Spores
@@ -108,5 +108,5 @@
 /datum/affliction/contagion/engineered/blobspores/New(process = 1, datum/affliction/contagion/engineered/D, copy = 0)
 	if(!D)
 		name = "Blob Spores"
-		symptoms = list(new /datum/viral_trait/blobspores)
+		own_add(src, "symptoms", new /datum/viral_trait/blobspores)
 	..(process, D, copy)

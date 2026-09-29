@@ -262,15 +262,15 @@
 	set_cell(new_cell)
 
 /mob/living/silicon/robot/proc/setup_hud_images()
-	hud_list[HEALTH_HUD]		= gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_HEALTH)
-	hud_list[STATUS_HUD]		= gen_hud_image('icons/mob/hud.dmi', src, "hudhealth100", plane = PLANE_CH_STATUS)
-	hud_list[LIFE_HUD]			= gen_hud_image('icons/mob/hud.dmi', src, "hudhealth100", plane = PLANE_CH_LIFE)
-	hud_list[ID_HUD]			= gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_ID)
-	hud_list[WANTED_HUD]		= gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_WANTED)
-	hud_list[IMPLOYAL_HUD]		= gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPLOYAL)
-	hud_list[IMPCHEM_HUD]		= gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPCHEM)
-	hud_list[IMPTRACK_HUD]		= gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPTRACK)
-	hud_list[SPECIALROLE_HUD]	= gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_SPECIAL)
+	own_put(src, "hud_list", HEALTH_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_HEALTH))
+	own_put(src, "hud_list", STATUS_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudhealth100", plane = PLANE_CH_STATUS))
+	own_put(src, "hud_list", LIFE_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudhealth100", plane = PLANE_CH_LIFE))
+	own_put(src, "hud_list", ID_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_ID))
+	own_put(src, "hud_list", WANTED_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_WANTED))
+	own_put(src, "hud_list", IMPLOYAL_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPLOYAL))
+	own_put(src, "hud_list", IMPCHEM_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPCHEM))
+	own_put(src, "hud_list", IMPTRACK_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPTRACK))
+	own_put(src, "hud_list", SPECIALROLE_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_SPECIAL))
 
 /// The sprite datum is never null after Initialize: the module default, or
 /// the generic default when the sprite subsystem isn't ready.

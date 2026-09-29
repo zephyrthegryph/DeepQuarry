@@ -8,14 +8,8 @@
 	var/ui_color = "#ffffff"
 	var/ui_alpha = 255
 
-	var/list/adding = list()
-	var/list/other = list()
-	var/list/hotkeybuttons = list()
 	var/list/slot_info = list()
 
-	HUD.adding = adding
-	HUD.other = other
-	own_set(HUD, "hotkeybuttons", hotkeybuttons)
 
 	var/list/hud_elements = list()
 	var/atom/movable/screen/using
@@ -40,10 +34,10 @@
 				inv_box.set_dir(slot_data["dir"])
 
 			if(slot_data["toggle"])
-				other += inv_box
+				own_add(HUD, "other", inv_box)
 				has_hidden_gear = 1
 			else
-				adding += inv_box
+				own_add(HUD, "adding", inv_box)
 
 	if(has_hidden_gear)
 		using = new /atom/movable/screen()
@@ -54,7 +48,7 @@
 		using.hud_layerise()
 		using.color = ui_color
 		using.alpha = ui_alpha
-		adding += using
+		own_add(HUD, "adding", using)
 
 	// The combat mode button (it replaced the intent selector).
 	using = HUD.make_combat_mode_button(src)
@@ -73,7 +67,7 @@
 	using.color = ui_color
 	using.alpha = ui_alpha
 	own_add(HUD, "adding", using)
-	own_set(HUD, "move_intent", using)
+	rel_set(HUD, "move_intent", using)
 
 	//Resist button
 	using = new /atom/movable/screen()
@@ -83,7 +77,7 @@
 	using.screen_loc = ui_pull_resist
 	using.color = ui_color
 	using.alpha = ui_alpha
-	hotkeybuttons += using
+	own_add(HUD, "hotkeybuttons", using)
 
 	//Pull button
 	own_set(src, "pullin", new /atom/movable/screen())
@@ -91,7 +85,6 @@
 	pullin.icon_state = "pull0"
 	pullin.name = "pull"
 	pullin.screen_loc = ui_pull_resist
-	hotkeybuttons += pullin
 	hud_elements |= pullin
 
 	//Health status
@@ -115,6 +108,7 @@
 	aw.name = "autowhisper mode"
 	aw.screen_loc = "EAST-1:28,CENTER-2:13"
 	hud_elements |= aw
+	own_add(HUD, "extra_screens", aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
@@ -122,6 +116,7 @@
 	aw.name = "check known languages"
 	aw.screen_loc = ui_under_health
 	hud_elements |= aw
+	own_add(HUD, "extra_screens", aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
@@ -129,6 +124,7 @@
 	aw.name = "move upwards"
 	aw.screen_loc = ui_under_health
 	hud_elements |= aw
+	own_add(HUD, "extra_screens", aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
@@ -136,6 +132,7 @@
 	aw.name = "move downwards"
 	aw.screen_loc = ui_under_health
 	hud_elements |= aw
+	own_add(HUD, "extra_screens", aw)
 
 	own_set(src, "pain", new /atom/movable/screen( null ))
 
@@ -162,7 +159,7 @@
 		using.screen_loc = ui_drop_throw
 		using.color = ui_color
 		using.alpha = ui_alpha
-		hotkeybuttons += using
+		own_add(HUD, "hotkeybuttons", using)
 
 		//Equip detail
 		using = new /atom/movable/screen()
@@ -186,7 +183,7 @@
 		inv_box.slot_id = SLOT_ID_HAND_R
 		inv_box.color = ui_color
 		inv_box.alpha = ui_alpha
-		own_set(HUD, "r_hand_hud_object", inv_box)
+		rel_set(HUD, "r_hand_hud_object", inv_box)
 		own_add(HUD, "adding", inv_box)
 		slot_info["[SLOT_ID_HAND_R]"] = inv_box.screen_loc
 
@@ -201,7 +198,7 @@
 		inv_box.slot_id = SLOT_ID_HAND_L
 		inv_box.color = ui_color
 		inv_box.alpha = ui_alpha
-		own_set(HUD, "l_hand_hud_object", inv_box)
+		rel_set(HUD, "l_hand_hud_object", inv_box)
 		own_add(HUD, "adding", inv_box)
 		slot_info["[SLOT_ID_HAND_L]"] = inv_box.screen_loc
 
@@ -232,7 +229,6 @@
 		throw_icon.screen_loc = ui_drop_throw
 		throw_icon.color = ui_color
 		throw_icon.alpha = ui_alpha
-		hotkeybuttons += throw_icon
 		hud_elements |= throw_icon
 
 	extra_huds(HUD, HUD.ui_style, hud_elements)
@@ -240,5 +236,6 @@
 	if(client)
 		client.screen = list()
 		client.screen += hud_elements
-		client.screen += adding + hotkeybuttons
+		client.screen += HUD.adding
+		client.screen += HUD.hotkeybuttons
 		client.screen += client.void
