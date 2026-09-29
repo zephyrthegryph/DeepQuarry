@@ -483,7 +483,6 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_drug_form)
 	// Toggles between bottles, pills, and patches.
 	drug_substance = params["drug_index"]
 
-DECLARE_UI_MODAL(/obj/machinery/chemical_synthesizer)
 
 /obj/machinery/chemical_synthesizer/ui_modal_opened(mob/user, id, list/arguments, datum/tgui/ui, datum/tgui_state/state)
 	. = TRUE

@@ -9,7 +9,7 @@
 
 
 	//TGUI Helper Vars
-	var/tgui_id = "EntityNarrate"
+	tgui_id = "EntityNarrate"
 	var/tgui_selection_mode = 0 //0 for single entity, 1 for multi entity
 	var/tgui_selected_name = "" //String for single selection in-game name
 	var/tgui_selected_type = "" //String for single selection type

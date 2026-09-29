@@ -195,7 +195,7 @@
 
 /datum/inventory_panel
 	var/mob/living/host
-	var/tgui_id = "InventoryPanel"
+	tgui_id = "InventoryPanel"
 
 /datum/inventory_panel/New(mob/living/new_host)
 	if(!istype(new_host))

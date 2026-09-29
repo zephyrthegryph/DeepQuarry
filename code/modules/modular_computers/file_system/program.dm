@@ -36,7 +36,6 @@
 	var/computer_emagged = 0				// Set to 1 if computer that's running us was emagged. Computer updates this every Process() tick
 	var/ntnet_speed = 0						// GQ/s - current network connectivity transfer rate
 	/// Name of the tgui interface
-	var/tgui_id
 
 /datum/computer_file/program/New(obj/item/modular_computer/comp = null)
 	..()

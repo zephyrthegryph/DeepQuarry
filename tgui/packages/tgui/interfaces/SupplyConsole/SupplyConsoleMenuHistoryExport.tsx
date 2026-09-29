@@ -61,8 +61,6 @@ export const SupplyConsoleMenuHistoryExport = (props) => {
                               act('export_edit_field', {
                                 ref: r.ref,
                                 index: i + 1,
-                                edit: 'meow',
-                                default: item.object,
                               })
                             }
                           >

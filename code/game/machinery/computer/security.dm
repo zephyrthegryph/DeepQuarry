@@ -449,7 +449,6 @@ UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_photo_side)
 		active2().fields["notes"] = notes
 		SStgui.update_uis(src)
 
-DECLARE_UI_MODAL(/obj/machinery/computer/secure_data)
 
 /obj/machinery/computer/secure_data/ui_modal_opened(mob/user, id, list/arguments, datum/tgui/ui, datum/tgui_state/state)
 	. = TRUE
