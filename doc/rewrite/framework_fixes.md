@@ -103,7 +103,7 @@ Derived outputs re-run exactly when something they read changes, and never other
 
 1. **The type-derive record is sticky** (`refresh.dm:218-224`). Record it only when the result is type-pure.
 2. **Two change APIs:** see 9.3. Timed reverts must call `changed()`.
-3. **`after()` drops callbacks when a datum argument is gone** (`timer.dm:741`). By default the callback now runs with the gone args nulled, which is master's `SStimer` behaviour; the counter and log stay. `drop_if_gone = TRUE` opts pure effects out. This fixes stuck vending, suit cyclers and clone pods.
+3. **`after()` drops callbacks when a datum argument is gone** (`timer.dm:741`). By default the callback now runs with the gone args nulled, which is master's `SStimer` behaviour; the counter and log stay. Pure effects opt out with `after_if_alive(E, delay, PROC_REF(x), args...)` (as built: DM rejects an undeclared named argument such as `drop_if_gone =` on a variadic proc at runtime, so the opt-out is its own proc). This fixes stuck vending, suit cyclers and clone pods. [built]
 4. **`ask_*` context:** see 9.1.
 5. **`SHOULD_CALL_PARENT`** on `capabilities()`, `derived()`, `settings()`, `relations()`, `ownership()`, `type_verbs()`, `hidden_verbs()`, `tgui_data()` and `examine_lines()`.
 6. **A runtime in a block proc** is reported and not cached.
