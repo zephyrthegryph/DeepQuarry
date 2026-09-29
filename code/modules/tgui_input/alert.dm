@@ -59,7 +59,7 @@
 	/// The button that the user has pressed, null if no selection has been made
 	var/choice
 	/// The time at which the tgui_modal was created, for displaying timeout progress.
-	var/start_time
+	EXPIRY_DECLARE(start_time)
 	/// The lifespan of the tgui_modal, after which the window will close and delete itself.
 	var/timeout
 	/// The bool that controls if this modal should grab window focus
@@ -77,7 +77,7 @@
 	src.state_static = ui_state
 	if (timeout)
 		src.timeout = timeout
-		start_time = world.time
+		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
 		om_qdel_after(src, timeout)
 
 /**

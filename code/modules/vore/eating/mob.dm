@@ -104,7 +104,7 @@
 	// ALLOW(instance_list): d: per-mob voice_sounds_list, filled at runtime; mobs are few
 	var/list/voice_sounds_list = list()	// The sound list containing our voice sounds!
 	var/died_in_vr = FALSE //For virtual reality sleepers
-	var/last_move_time = 0 //For movement smoothing
+	EXPIRY_DECLARE(last_move_time) //For movement smoothing
 
 	var/max_voreoverlay_alpha = 255
 

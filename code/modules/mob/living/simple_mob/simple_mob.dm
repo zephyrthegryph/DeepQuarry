@@ -113,7 +113,7 @@
 	var/melee_attack_delay = 2			// If set, the mob will do a windup animation and can miss if the target moves out of the way.
 	var/ranged_attack_delay = null
 	var/special_attack_delay = null
-	var/ranged_cooldown = 0
+	EXPIRY_DECLARE(ranged_cooldown)
 	var/ranged_cooldown_time = 0
 	var/picked_color = FALSE
 	var/picked_size = FALSE
@@ -487,7 +487,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	var/vore_bump_chance = 0			// Chance of trying to eat anyone that bumps into them, regardless of hostility
 	var/vore_bump_emote	= "grabs hold of"				// Allow messages for bumpnom mobs to have a flavorful bumpnom
 	var/vore_pounce_chance = 5			// Chance of this mob knocking down an opponent
-	var/vore_pounce_cooldown = 0		// Cooldown timer - if it fails a pounce it won't pounce again for a while
+	EXPIRY_DECLARE(vore_pounce_cooldown) // Cooldown timer - if it fails a pounce it won't pounce again for a while
 	var/vore_pounce_successrate	= 100	// Chance of a pounce succeeding against a theoretical 0-health opponent
 	var/vore_pounce_falloff = 1			// Success rate falloff per %health of target mob.
 	var/vore_pounce_maxhealth = 80		// Mob will not attempt to pounce targets above this %health

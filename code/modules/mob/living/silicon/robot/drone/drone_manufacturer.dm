@@ -18,7 +18,8 @@
 	var/fabricator_tag = "Upper Level"
 	var/drone_progress = 0
 	var/produce_drones = 2
-	var/time_last_drone = 500
+	EXPIRY_DECLARE(time_last_drone)
+	time_last_drone = 500
 	var/drone_type = /mob/living/silicon/robot/drone
 
 	icon = 'icons/obj/machines/drone_fab.dmi'
@@ -83,7 +84,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/drone_fabricator, REGISTRY_DRONE_FABRICATORS)
 	flick("h_lathe_leave",src)
 	drone_progress = 0
 
-	time_last_drone = world.time
+	EXPIRY_STAMP(src, time_last_drone, CLOCK_WORLD)
 	MACHINE_WAKE(src)
 
 	var/mob/living/silicon/robot/drone/new_drone = new drone_type(get_turf(src))

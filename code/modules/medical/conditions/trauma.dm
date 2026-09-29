@@ -328,7 +328,8 @@ TYPE_TABLE(/datum/affliction/untreated_fracture, affliction_stages, list( \
 	// balance: stage 3 lowers BF_CIRCULATION.
 	/// total_burn()'s per-tick cache.
 	var/tmp/burn_cache = 0
-	var/tmp/burn_cache_time = -1
+	EXPIRY_TMP_DECLARE(burn_cache_time)
+	burn_cache_time = -1
 
 /datum/affliction/burn_shock/New()
 	..()
@@ -381,7 +382,7 @@ TYPE_TABLE(/datum/affliction/burn_shock, affliction_stages, list( \
 /datum/affliction/burn_shock/proc/total_burn(fresh = FALSE)
 	if(!fresh && burn_cache_time == world.time)
 		return burn_cache
-	burn_cache_time = world.time
+	EXPIRY_STAMP(src, burn_cache_time, CLOCK_WORLD)
 	burn_cache = 0
 	var/mob/living/carbon/human/H = owner
 	if(istype(H))

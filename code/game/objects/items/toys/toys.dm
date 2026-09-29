@@ -823,7 +823,7 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 	icon_state = "nymphplushie"
 	drop_sound = SFX_ITEMS_DROP_PLUSHIE
 	w_class = ITEMSIZE_TINY
-	var/last_message = 0
+	EXPIRY_DECLARE(last_message)
 	var/pokephrase = "Uww!"
 	var/opened = FALSE	// has this been slit open? this will allow you to store an object in a plushie.
 	// ALLOW(state_ref): owned: the item hidden inside the plushie, kept in its contents
@@ -862,7 +862,7 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 	if(stored_item && opened && !om_busy(src))
 		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user), claims = TRUE)
 
-	if(world.time - last_message <= 1 SECOND)
+	if(ELAPSED(src, last_message, CLOCK_WORLD) <= 1 SECOND)
 		return
 	if(interaction.stance == I_HELP)
 		user.visible_message(span_notice(span_bold("\The [user]") + " hugs [src]!"),span_notice("You hug [src]!"))
@@ -877,7 +877,7 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 			COOLDOWN_START(src, cooldown_timer, cooldown_length)
 	if(pokephrase) //There was no indiciation you had to use disarm intent to make it speak...So now it speaks if you touch it at all!
 		say_phrase()
-	last_message = world.time
+	EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
 
 /obj/item/toy/plushie/proc/attack_self_timed_done(mob/user)
 	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
@@ -2794,7 +2794,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/partypopper, INTERACT_USE(null, PROC_REF(inte
 	icon = 'icons/obj/items.dmi'
 	icon_state = "acorn_branch"
 	w_class = ITEMSIZE_SMALL
-	var/next_use = 0
+	EXPIRY_DECLARE(next_use)
 	var/registered_mob //On request, only one person is able to use it at a time.
 
 DECLARE_INTERACTIONS(/obj/item/toy/acorn_branch, INTERACT_USE(null, PROC_REF(interaction_self)))
@@ -2819,7 +2819,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/acorn_branch, INTERACT_USE(null, PROC_REF(int
 	var/spawnloc = get_turf(H)
 	var/obj/item/I = new /obj/item/reagent_containers/food/snacks/acorn(spawnloc)
 	H.put_in_inactive_hand(I)
-	next_use = (world.time + 30 SECONDS)
+	EXPIRY_SET(src, next_use, 30 SECONDS, CLOCK_WORLD)
 	H.visible_message(span_notice("\The [H] pulls an acorn from \the [src]!"))
 	return TRUE
 

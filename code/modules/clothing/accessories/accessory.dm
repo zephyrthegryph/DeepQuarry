@@ -960,7 +960,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
 	/// undoes the collar's own contribution instead of clobbering whatever other
 	/// size sources (potions, sizeguns, etc.) did to the wearer in the meantime.
 	var/applied_ratio
-	var/last_activated
+	EXPIRY_DECLARE(last_activated)
 	var/target_size = 1
 	on = 1
 
@@ -1005,17 +1005,17 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
 			H.visible_message(span_warning("The space around [H] compresses for a moment but then nothing happens."),span_notice("The space around you distorts but nothing happens to you."))
 			return
 		if(applied_ratio == null)
-			if(!(world.time - last_activated > 10 SECONDS))
+			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
-			last_activated = world.time
+			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 			applied_ratio = H.size_multiplier ? (target_size / H.size_multiplier) : 1
 			H.resize(target_size, ignore_prefs = FALSE, allow_stripping = TRUE)		//In case someone else tries to put it on you.
 			H.visible_message(span_warning("The space around [H] distorts as they change size!"),span_notice("The space around you distorts as you change size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			fx_sparks(M, 3)
 		else
-			last_activated = world.time
+			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 			H.resize(applied_ratio ? (H.size_multiplier / applied_ratio) : H.size_multiplier, ignore_prefs = FALSE, allow_stripping = TRUE)
 			applied_ratio = null
 			H.visible_message(span_warning("The space around [H] distorts as they return to their original size!"),span_notice("The space around you distorts as you return to your original size!"))
@@ -1099,17 +1099,17 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/modified
 			H.visible_message(span_warning("The collar on [H] flickers, but fizzles out."),span_notice("Your collar flickers, but is not powerful enough to shrink you that small."))
 			return
 		if(applied_ratio == null)
-			if(!(world.time - last_activated > 10 SECONDS))
+			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
-			last_activated = world.time
+			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 			applied_ratio = H.size_multiplier ? (target_size / H.size_multiplier) : 1
 			H.resize(target_size, ignore_prefs = FALSE, allow_stripping = TRUE)		//In case someone else tries to put it on you.
 			H.visible_message(span_warning("The space around [H] distorts as they change size!"),span_notice("The space around you distorts as you change size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			fx_sparks(M, 3)
 		else
-			last_activated = world.time
+			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 			H.resize(applied_ratio ? (H.size_multiplier / applied_ratio) : H.size_multiplier, ignore_prefs = FALSE, allow_stripping = TRUE)
 			applied_ratio = null
 			H.visible_message(span_warning("The space around [H] distorts as they return to their original size!"),span_notice("The space around you distorts as you return to your original size!"))
@@ -1167,10 +1167,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunct
 			H.visible_message(span_warning("The collar on [H] flickers, but fizzles out."),span_notice("Your collar flickers, but is not powerful enough to shrink you that small."))
 			return
 		if(currently_shrinking == 0)
-			if(!(world.time - last_activated > 10 SECONDS))
+			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
-			last_activated = world.time
+			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 			applied_ratio = H.size_multiplier ? (target_size / H.size_multiplier) : 1
 			currently_shrinking = 1
 			H.resize(target_size, ignore_prefs = FALSE, allow_stripping = TRUE)		//In case someone else tries to put it on you.
@@ -1181,7 +1181,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunct
 			if(applied_ratio == null)
 				H.visible_message(span_warning("The space around [H] twists and turns for a moment but then nothing happens."),span_notice("The space around you distorts but stay the same size."))
 				return
-			last_activated = world.time
+			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 			H.resize(applied_ratio ? (H.size_multiplier / applied_ratio) : H.size_multiplier, ignore_prefs = FALSE, allow_stripping = TRUE)
 			applied_ratio = null
 			currently_shrinking = 0

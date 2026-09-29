@@ -95,7 +95,7 @@ GLOBAL_VAR_INIT(tgs_flow_seq, 0)
 /datum/tgs_chat_command/proc/run_as_flow(datum/tgs_chat_user/sender, params)
 	for(var/stale in GLOB.tgs_flow_senders) // a flow dropped on the way never collects its sender
 		var/list/held = GLOB.tgs_flow_senders[stale]
-		if(world.time - held[2] > 10 MINUTES)
+		if(ELAPSED_SINCE(src, held[2], CLOCK_WORLD) > 10 MINUTES)
 			GLOB.tgs_flow_senders -= stale
 	var/key = "[++GLOB.tgs_flow_seq]"
 	GLOB.tgs_flow_senders[key] = list(sender, world.time)

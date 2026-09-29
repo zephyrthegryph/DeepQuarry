@@ -26,8 +26,8 @@
 /datum/trait_state/schizophrenia/setup()
 	if(!ishuman(owner))
 		return FALSE
-	episode["next_episode_begin"] = world.time + 6000
-	episode["next_episode_end"] = world.time + 9000
+	episode["next_episode_begin"] = EXPIRY_AT(src, CLOCK_WORLD, 10 MINUTES)
+	episode["next_episode_end"] = EXPIRY_AT(src, CLOCK_WORLD, 15 MINUTES)
 	return TRUE
 
 /datum/trait_state/schizophrenia/life_tick()
@@ -38,7 +38,7 @@
 	var/med_vol = get_med_volume(human_guy)
 
 	if(!episode["in_episode"])
-		if(world.time > episode["next_episode_begin"])
+		if(ELAPSED_SINCE(src, episode["next_episode_begin"], CLOCK_WORLD) > 0)
 			episode["meds_at_beginning"] = med_vol
 			episode["in_episode"] = TRUE
 
@@ -55,18 +55,18 @@
 			episode["meds_at_end"] = TRUE
 
 	else
-		if(world.time > episode["next_episode_end"])
+		if(ELAPSED_SINCE(src, episode["next_episode_end"], CLOCK_WORLD) > 0)
 			episode["meds_at_end"] = med_vol
 			episode["in_episode"] = FALSE
 			var/break_length_dev = med_vol ? break_length_meds_dev : break_length_nomeds_dev
 			var/break_length_avg = med_vol ? break_length_meds_avg : break_length_nomeds_avg
 			var/episode_length_dev = med_vol ? episode_length_meds_dev : episode_length_nomeds_dev
 			var/episode_length_avg = med_vol ? episode_length_meds_avg : episode_length_nomeds_avg
-			episode["next_episode_begin"] = world.time + max(120,GAUSSIAN_RANDOM() * break_length_dev + break_length_avg)
+			episode["next_episode_begin"] = EXPIRY_AT(src, CLOCK_WORLD, max(120,GAUSSIAN_RANDOM() * break_length_dev + break_length_avg))
 			episode["next_episode_end"] = episode["next_episode_begin"] + max(120,GAUSSIAN_RANDOM() * episode_length_dev + episode_length_avg)
 		else
 			if(!episode["meds_at_beginning"] && med_vol)
-				episode["next_episode_end"] = world.time + (episode["next_episode_end"] - world.time)/8
+				episode["next_episode_end"] = EXPIRY_AT(src, CLOCK_WORLD, LEFT_UNTIL(src, episode["next_episode_end"], CLOCK_WORLD)/8)
 			human_guy.status_set(EFFECT_HALLUCINATING, min(hallucination_max,human_guy.status_units(EFFECT_HALLUCINATING) + hallucination_increase))
 
 ///Checks to see if we have tercozolam in our systeem and returns how much if so.

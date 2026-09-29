@@ -265,8 +265,8 @@
 /obj/machinery/department_storefront/tgui_data(mob/user)
 	var/list/stock = list()
 	var/list/rows_by_key = list()
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/item as anything in contents) // ALLOW(latent): materialized above
+	// Listing never materializes (systems.md §18): stock is placed real by the stocking action.
+	FOR_REAL_CONTENTS(var/obj/item/item as anything, src)
 		var/item_ref = REF(item)
 		var/listing_key = "[item.type]|[stock_prices[item_ref]]"
 		var/list/row = rows_by_key[listing_key]

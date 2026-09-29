@@ -48,8 +48,7 @@
 		playing = 0
 		return PROCESS_KILL
 	// If the current track isn't finished playing, let it keep going
-	// ALLOW(sys_deadline_poll): track end rides on the playback step, which re-checks power and the media source every tick while playing
-	if(current_track() && world.time < media_start_time + current_track().duration)
+	if(current_track() && ELAPSED(src, media_start_time, CLOCK_WORLD) < current_track().duration)
 		return
 	// Oh... nothing in queue? Well then pick next according to our rules
 	var/list/tracks = getTracksList()
@@ -77,7 +76,7 @@
 /obj/machinery/media/jukebox/proc/start_stop_song()
 	if(current_track() && playing)
 		media_url = current_track().url
-		media_start_time = world.time
+		EXPIRY_STAMP(src, media_start_time, CLOCK_WORLD)
 		audible_message(span_notice("\The [src] begins to play [current_track().display()]."), runemessage = "[current_track().display()]")
 	else
 		media_url = ""

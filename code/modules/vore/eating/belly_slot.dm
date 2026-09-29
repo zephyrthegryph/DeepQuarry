@@ -25,7 +25,7 @@ OM_TIMER_SLOT(/obj/belly, liquid_timer)
 	var/tmp/cycle_token
 	/// The period the clock runs at, and when it last ran a cycle.
 	var/tmp/cycle_period
-	var/tmp/cycle_last = 0
+	EXPIRY_TMP_DECLARE(cycle_last)
 
 /// An occupied belly's digestion cycle: a deadline re-armed every cycle_period.
 /datum/om/behaviour/belly_cycle
@@ -84,7 +84,7 @@ OM_TIMER_SLOT(/obj/belly, liquid_timer)
 		var/period = belly_cycle_period()
 		if(!cycle_token || cycle_period != period)
 			if(!cycle_token)
-				cycle_last = world.time
+				EXPIRY_STAMP(src, cycle_last, CLOCK_WORLD)
 			cycle_token = TRUE
 			cycle_period = period
 			om_deadline(src, max(period - (world.time - cycle_last), 0), /datum/om/behaviour/belly_cycle)
@@ -107,7 +107,7 @@ OM_TIMER_SLOT(/obj/belly, liquid_timer)
 	if(QDELETED(src) || !cycle_token)
 		return
 	var/seconds = (world.time - cycle_last) / (1 SECONDS)
-	cycle_last = world.time
+	EXPIRY_STAMP(src, cycle_last, CLOCK_WORLD)
 	om_deadline(src, cycle_period, /datum/om/behaviour/belly_cycle)
 	belly_cycle(seconds)
 	if(!QDELETED(src) && !belly_occupied())

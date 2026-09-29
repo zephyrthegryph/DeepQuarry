@@ -7,7 +7,7 @@
 	var/spawn_type
 	var/time_spent_spawning = 0
 	var/time_per_spawn = 0
-	var/last_process= 0
+	EXPIRY_DECLARE(last_process)
 	density = TRUE
 	var/previous_power_state = 0
 
@@ -46,7 +46,7 @@
 /// cloner sleeps until power returns (a power change runs a step).
 /obj/machinery/auto_cloner/machine_step()
 	if(!last_process)
-		last_process = world.time
+		EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
 	if(powered(power_channel))
 		if(!previous_power_state)
 			previous_power_state = 1
@@ -90,4 +90,4 @@
 			last_process = 0
 			return PROCESS_KILL
 
-	last_process = world.time
+	EXPIRY_STAMP(src, last_process, CLOCK_WORLD)

@@ -22,13 +22,6 @@
 
 #define COOLDOWN_TIMELEFT(cd_source, cd_index) (max(0, cd_source.cd_index - world.time))
 
-/*
- * TIMESTAMP_VAR(name): a var that records a world.time as *data* rather than as a rate limit:
- * an expiry or deadline (a contract, a lease, a guest pass), a scheduled time a service or
- * machine acts at (a launch, a payroll, a weather shift), or a start/recorded time read back
- * for elapsed math (time of death, a scan's start, a cache's stamp). Comparing one with
- * world.time is a state check, so tools/ci/cooldown_lint.py does not count compares that read
- * a var declared this way. A "not more than once per N" belongs in COOLDOWN_DECLARE instead.
- */
-#define TIMESTAMP_VAR(name) var/##name = 0
-#define TIMESTAMP_TMP_VAR(name) var/tmp/##name = 0
+// A world.time kept as *data* rather than as a rate limit (an expiry, a schedule, a start stamp
+// read back for elapsed math) is an expiry: EXPIRY_DECLARE/EXPIRY_SET/EXPIRY_ACTIVE/ELAPSED
+// (code/__defines/sys_expiry.dm). tools/ci/cooldown_lint.py leaves those to the expiry lint.

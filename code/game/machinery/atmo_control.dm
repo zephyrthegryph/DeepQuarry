@@ -79,7 +79,7 @@
 		var/datum/signal/signal = new
 		signal.transmission_method = TRANSMISSION_RADIO //radio signal
 		signal.data["tag"] = id_tag
-		signal.data["timestamp"] = world.time
+		signal.data["timestamp"] = EXPIRY_AT(src, CLOCK_WORLD, 0)
 		var/list/readings = sensor_readings(return_air())
 		for(var/key in readings)
 			signal.data[key] = readings[key]

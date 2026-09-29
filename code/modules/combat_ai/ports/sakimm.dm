@@ -201,7 +201,7 @@ GLOBAL_LIST_INIT(dq_sakimm_loot_types, list(
 	else
 		S.set_use_stance(I_HURT)
 	S.attack_target(L, S.input_stance())
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	// post_melee_attack: dance to the side so we're a harder target, then the
 	// generic call_for_help behavior can rally allies next selection.
 	var/turf/sidestep = get_step(S, pick(GLOB.alldirs))

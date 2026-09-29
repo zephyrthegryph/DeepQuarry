@@ -81,7 +81,7 @@
 	var/last_delivery_pressure = 0
 	var/last_delivery_temperature = 0
 	var/last_delivery_mixture
-	var/last_work_time = 0
+	EXPIRY_DECLARE(last_work_time)
 	var/last_work_kind
 	var/last_work_duration = 0
 
@@ -93,7 +93,7 @@
 	loss_joules += input_energy - useful_energy
 	last_input_watts = input_energy / max(elapsed, 0.1)
 	last_output_watts = useful_energy / max(elapsed, 0.1)
-	last_work_time = world.time
+	EXPIRY_STAMP(src, last_work_time, CLOCK_WORLD)
 	last_work_duration = elapsed
 	add_heat(input_energy - useful_energy)
 
@@ -104,7 +104,7 @@
 	var/material_output_setting = 1
 	var/material_cadence_setting = 1
 	var/material_stored_energy = 0
-	var/material_last_charge
+	EXPIRY_DECLARE(material_last_charge)
 	var/material_beam_joules = 0
 
 /obj/machinery/power/emitter/proc/emitter_efficiency()
@@ -127,8 +127,8 @@
 	return clamp(min(optical_limit, electrical_limit), 0.1, 3) * thermal_limit
 
 /obj/machinery/power/emitter/proc/charge_emitter()
-	var/elapsed = isnull(material_last_charge) ? 0 : max(world.time - material_last_charge, 0) / 10
-	material_last_charge = world.time
+	var/elapsed = !material_last_charge ? 0 : max(ELAPSED(src, material_last_charge, CLOCK_WORLD), 0) / 10
+	EXPIRY_STAMP(src, material_last_charge, CLOCK_WORLD)
 	if(elapsed <= 0)
 		return
 	var/limit = emitter_output_limit()

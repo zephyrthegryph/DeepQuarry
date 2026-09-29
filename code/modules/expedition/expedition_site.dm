@@ -44,11 +44,11 @@
 	/// Planet destination that owns this surface site.
 	var/parent_destination_id
 	/// world.time at generation, and the last time a player was aboard.
-	var/generated_at = 0
-	var/last_occupied = 0
+	EXPIRY_DECLARE(generated_at)
+	EXPIRY_DECLARE(last_occupied)
 	/// world.time of the most recent deploy; guards against release during the
 	/// bluespace-travel window (0 until the first deploy).
-	var/deployed_at = 0
+	EXPIRY_DECLARE(deployed_at)
 	/// Set once the mission's on_complete() has fired, so it only pays out once.
 	var/rewarded = FALSE
 
@@ -56,8 +56,8 @@
 	z_level = _z_level
 	difficulty = _difficulty
 	landing_handle = om_handle(_landing)
-	generated_at = world.time
-	last_occupied = world.time
+	EXPIRY_STAMP(src, generated_at, CLOCK_WORLD)
+	EXPIRY_STAMP(src, last_occupied, CLOCK_WORLD)
 	participants = list()
 
 DECLARE_REF(/datum/expedition_site, "station_defense", OWNED, null)

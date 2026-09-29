@@ -41,7 +41,7 @@
 	return ..()
 
 /datum/shuttle/autodock/ferry/escape_pod/can_force()
-	if (arming_controller().eject_time && world.time < arming_controller().eject_time + 50)
+	if (arming_controller().eject_time && ELAPSED(arming_controller(), eject_time, CLOCK_WORLD) < 5 SECONDS)
 		return 0	//dont allow force launching until 5 seconds after the arming controller has reached it's countdown
 	return ..()
 
@@ -119,7 +119,7 @@
 /datum/embedded_program/docking/simple/escape_pod_berth
 	var/armed = 0
 	var/eject_delay = 10	//give latecomers some time to get out of the way if they don't make it onto the pod
-	TIMESTAMP_VAR(eject_time)
+	EXPIRY_DECLARE(eject_time)
 	var/closing = 0
 
 /datum/embedded_program/docking/simple/escape_pod_berth/proc/arm()
@@ -148,7 +148,7 @@
 	return		//don't do anything - the doors only open when the pod is armed.
 
 /datum/embedded_program/docking/simple/escape_pod_berth/prepare_for_undocking()
-	eject_time = world.time + eject_delay*10
+	EXPIRY_SET(src, eject_time, eject_delay*10, CLOCK_WORLD)
 	om_after(src, eject_delay*10, PROC_REF(eject_timer_fired))
 
 /// LC-refs: the arming_controller this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.

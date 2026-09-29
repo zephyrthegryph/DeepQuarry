@@ -35,7 +35,7 @@
 	var/datum/trait_state/gargoyle/comp = H.get_trait_state(/datum/trait_state/gargoyle)
 	var/tint = "#FFFFFF"
 	if(comp)
-		comp.cooldown = world.time + (15 SECONDS)
+		EXPIRY_SET(comp, cooldown, (15 SECONDS), CLOCK_WORLD)
 		comp.statue_handle = om_handle(src)
 		comp.transformed = TRUE
 		comp.paused = FALSE
@@ -185,7 +185,7 @@
 		return
 	var/datum/trait_state/gargoyle/comp = gargoyle.get_trait_state(/datum/trait_state/gargoyle)
 	if(comp)
-		comp.cooldown = world.time + (15 SECONDS)
+		EXPIRY_SET(comp, cooldown, (15 SECONDS), CLOCK_WORLD)
 		comp.statue_handle = null
 		comp.transformed = FALSE
 	else

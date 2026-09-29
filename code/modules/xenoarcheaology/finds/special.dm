@@ -20,7 +20,7 @@ DECLARE_PERIODIC(/obj/item/reagent_containers/glass/replenishing, PERIODIC_SLOW)
 //a talking gas mask!
 /obj/item/clothing/mask/gas/poltergeist
 	var/list/heard_talk
-	var/last_twitch = 0
+	EXPIRY_DECLARE(last_twitch)
 	var/max_stored_messages = 100
 
 /// Echoes what it heard through its wearer every 2 s while worn by someone with something to say
@@ -39,8 +39,8 @@ DECLARE_PERIODIC(/obj/item/reagent_containers/glass/replenishing, PERIODIC_SLOW)
 	LAZYADD(heard_talk, multilingual_to_message(message_pieces))
 	if(isliving(loc))
 		om_task_periodic(src, PERIODIC_SLOW)
-	if(isliving(src.loc) && world.time - last_twitch > 50)
-		last_twitch = world.time
+	if(isliving(src.loc) && ELAPSED(src, last_twitch, CLOCK_WORLD) > 5 SECONDS)
+		EXPIRY_STAMP(src, last_twitch, CLOCK_WORLD)
 
 //a vampiric statuette
 //todo: cult integration
@@ -50,9 +50,9 @@ DECLARE_PERIODIC(/obj/item/reagent_containers/glass/replenishing, PERIODIC_SLOW)
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	var/charges = 0
 	var/list/nearby_mobs
-	var/last_bloodcall = 0
+	EXPIRY_DECLARE(last_bloodcall)
 	var/bloodcall_interval = 50
-	var/last_eat = 0
+	EXPIRY_DECLARE(last_eat)
 	var/eat_interval = 100
 	var/wight_check_index = 1
 	var/list/shadow_wights
@@ -64,7 +64,7 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 	if(!mob_near(world.view, TRUE))
 		return sleep_until_mob_near(world.view, TRUE)
 	//see if we've identified anyone nearby
-	if(world.time - last_bloodcall > bloodcall_interval && length(nearby_mobs))
+	if(ELAPSED(src, last_bloodcall, CLOCK_WORLD) > bloodcall_interval && length(nearby_mobs))
 		var/mob/living/carbon/human/M = pop(nearby_mobs)
 		if((M in view(7,src)) && M.vitality() > 0.6)
 			if(prob(50))
@@ -72,10 +72,10 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 				LAZYADD(nearby_mobs, M)
 
 	//suck up some blood to gain power
-	if(world.time - last_eat > eat_interval)
+	if(ELAPSED(src, last_eat, CLOCK_WORLD) > eat_interval)
 		var/obj/effect/decal/cleanable/blood/B = locate_in_list(range(2,src), /obj/effect/decal/cleanable/blood)
 		if(B)
-			last_eat = world.time
+			EXPIRY_STAMP(src, last_eat, CLOCK_WORLD)
 			B.moveToNullspace()
 			if(istype(B, /obj/effect/decal/cleanable/blood/drip))
 				charges += 0.25
@@ -124,11 +124,11 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 
 /obj/item/vampiric/hear_talk(mob/M, list/message_pieces, verb)
 	..()
-	if(world.time - last_bloodcall >= bloodcall_interval && (M in view(7, src)))
+	if(ELAPSED(src, last_bloodcall, CLOCK_WORLD) >= bloodcall_interval && (M in view(7, src)))
 		bloodcall(M)
 
 /obj/item/vampiric/proc/bloodcall(mob/living/carbon/human/M)
-	last_bloodcall = world.time
+	EXPIRY_STAMP(src, last_bloodcall, CLOCK_WORLD)
 	if(istype(M))
 		play_sfx(src, SFX_HALLUCINATIONS_WAIL)
 		LAZYADD(nearby_mobs, M)

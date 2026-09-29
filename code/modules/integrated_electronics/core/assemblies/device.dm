@@ -67,7 +67,7 @@ EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
 /obj/item/assembly/electronic_assembly/examine(mob/user)
 	. = ..()
 	if(EA)
-		for(var/obj/item/integrated_circuit/IC in contents_of(EA))
+		FOR_REAL_CONTENTS(var/obj/item/integrated_circuit/IC, EA)
 			. += IC.external_examine(user)
 
 /// Old Open/Close Device Assembly verb: Open or close device assembly!

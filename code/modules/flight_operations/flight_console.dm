@@ -98,7 +98,7 @@
 		"contacts" = list(),
 		"plan" = null,
 		"expedition" = null,
-		"server_time" = world.time,
+		"server_time" = EXPIRY_AT(null, CLOCK_WORLD, 0),
 	)
 	if(!vessel)
 		return data

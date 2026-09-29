@@ -343,7 +343,7 @@
 		var/output = rustg_iconforge_check(jobs[dir_key][1])
 		if(output != RUSTG_JOB_NO_RESULTS_YET)
 			outputs[dir_key] = output
-	if(length(outputs) < length(jobs) && world.time <= state[8])
+	if(length(outputs) < length(jobs) && ELAPSED_SINCE(null, state[8], CLOCK_WORLD) <= 0)
 		om_after(null, world.tick_lag, GLOBAL_PROC_REF(dq_preview_poll_step), prefs_handle, state)
 		return
 	var/datum/preferences/prefs = om_resolve(prefs_handle)

@@ -276,7 +276,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 			for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				if(L.z == site.z_level)
 					site.participants |= L
-			site.last_occupied = world.time
+			EXPIRY_STAMP(site, last_occupied, CLOCK_WORLD)
 			continue
 		if(site.status >= EXP_STATUS_ACTIVE)
 			if(site.has_travel_lease())
@@ -285,11 +285,11 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 				continue
 			// Never release within the deploy grace window: crew may still be in the
 			// bluespace-travel gap (0 on-z players) between service_step() and arrival.
-			if(site.deployed_at && (world.time - site.deployed_at) <= EXP_DEPLOY_GRACE)
+			if(site.deployed_at && ELAPSED_SINCE(src, site.deployed_at, CLOCK_WORLD) <= EXP_DEPLOY_GRACE)
 				continue
-			if((world.time - site.last_occupied) > EXP_AUTO_RELEASE_GRACE)
+			if(ELAPSED_SINCE(src, site.last_occupied, CLOCK_WORLD) > EXP_AUTO_RELEASE_GRACE)
 				release_site(site, "unoccupied after deployment")
-		else if(site.status == EXP_STATUS_READY && !site.has_active_assignment() && (world.time - site.generated_at) > 5 MINUTES)
+		else if(site.status == EXP_STATUS_READY && !site.has_active_assignment() && ELAPSED_SINCE(src, site.generated_at, CLOCK_WORLD) > 5 MINUTES)
 			release_site(site, "unassigned before deployment")
 	return TRUE
 

@@ -417,7 +417,7 @@
 		pda().id.assignment = newassignment
 		pda().id.name = text("[pda().id.registered_name]'s ID Card ([pda().id.assignment])")
 		GLOB.data_core.manifest_modify(pda().id.registered_name, pda().id.assignment, pda().id.rank)
-		pda().id.last_job_switch = world.time
+		EXPIRY_STAMP(pda().id, last_job_switch, CLOCK_WORLD)
 		callHook("reassign_employee", list(pda().id))
 		newjob.current_positions++
 		user.mind.assigned_role = pda().id.rank
@@ -446,7 +446,7 @@
 		pda().id.assignment = ptojob.title
 		pda().id.name = text("[pda().id.registered_name]'s ID Card ([pda().id.assignment])")
 		GLOB.data_core.manifest_modify(pda().id.registered_name, pda().id.assignment, pda().id.rank)
-		pda().id.last_job_switch = world.time
+		EXPIRY_STAMP(pda().id, last_job_switch, CLOCK_WORLD)
 		callHook("reassign_employee", list(pda().id))
 		user.mind.assigned_role = ptojob.title
 		user.mind.role_alt_title = ptojob.title
@@ -468,7 +468,7 @@
 
 
 /datum/data/pda/app/timeclock/proc/getCooldown()
-	return 1 MINUTES - (world.time - pda().id.last_job_switch)
+	return 1 MINUTES - ELAPSED(pda().id, last_job_switch, CLOCK_WORLD)
 
 /datum/data/pda/app/timeclock/proc/checkFace(mob/user)
 	var/turf/location = get_turf(user)

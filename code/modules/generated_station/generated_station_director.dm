@@ -5,11 +5,11 @@
 	var/details
 	var/source_department_id
 	var/confidence = 0
-	var/created_at = 0
+	EXPIRY_DECLARE(created_at)
 	var/expires_at = 0
 	var/target_ref
 
-/datum/generated_station_knowledge_report/proc/is_expired(at_time = world.time)
+/datum/generated_station_knowledge_report/proc/is_expired(at_time = EXPIRY_AT(null, CLOCK_WORLD, 0))
 	return expires_at > 0 && at_time >= expires_at
 
 /datum/generated_station_squad
@@ -35,7 +35,7 @@
 	var/kind
 	var/global_coordination = FALSE
 	var/state = GENERATED_STATION_ORDER_PENDING
-	var/created_at = 0
+	EXPIRY_DECLARE(created_at)
 
 /// Event-driven strategic state for one station. Producers submit observations
 /// and capability changes directly; this layer never discovers state by polling mobs.
@@ -142,7 +142,7 @@ DECLARE_REF(/datum/generated_station_director, "global_knowledge", OWNED_VALUES,
 	report.details = details
 	report.source_department_id = source_department_id
 	report.confidence = clamp(confidence, 0, 100)
-	report.created_at = world.time
+	EXPIRY_STAMP(report, created_at, CLOCK_WORLD)
 	report.expires_at = lifetime > 0 ? world.time + lifetime : 0
 	reports[report.id] = report
 	source_knowledge[report.id] = report
@@ -224,7 +224,7 @@ DECLARE_REF(/datum/generated_station_director, "global_knowledge", OWNED_VALUES,
 	order.report_id = report_id
 	order.kind = kind
 	order.global_coordination = global_coordination
-	order.created_at = world.time
+	EXPIRY_STAMP(order, created_at, CLOCK_WORLD)
 	order.state = GENERATED_STATION_ORDER_ACTIVE
 	orders[order.id] = order
 	squad.active_order_id = order.id

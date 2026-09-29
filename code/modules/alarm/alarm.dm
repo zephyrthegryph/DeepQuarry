@@ -5,12 +5,12 @@
 	var/source_name = ""	// The name of the source should it be lost (for example a destroyed camera)
 	var/duration	= 0		// How long this source will be alarming, 0 for indefinetely.
 	var/severity 	= 1		// How severe the alarm from this source is.
-	TIMESTAMP_VAR(start_time) // When this source began alarming.
-	TIMESTAMP_VAR(end_time)		// Use to set when this trigger should clear, in case the source is lost.
+	EXPIRY_DECLARE(start_time) // When this source began alarming.
+	EXPIRY_DECLARE(end_time)		// Use to set when this trigger should clear, in case the source is lost.
 
 /datum/alarm_source/New(atom/source)
 	src.source = source
-	start_time = world.time
+	EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
 	source_name = source.get_source_name()
 
 /datum/alarm
@@ -21,7 +21,7 @@
 	var/tmp/last_area_handle	//The last acquired area, used should origin be lost (for example a destroyed borg containing an alarming camera).
 	var/last_name	//The last acquired name, used should origin be lost
 	var/tmp/last_camera_area_handle	//The last area in which cameras where fetched, used to see if the camera list should be updated.
-	TIMESTAMP_VAR(end_time)//Used to set when this alarm should clear, in case the origin is lost.
+	EXPIRY_DECLARE(end_time)//Used to set when this alarm should clear, in case the origin is lost.
 	var/hidden = FALSE				//If this alarm can be seen from consoles or other things.
 
 /datum/alarm/New(atom/origin, atom/source, duration, severity, hidden)
@@ -36,15 +36,15 @@ DECLARE_REF(/datum/alarm, "sources", OWNED_LIST, null)
 /datum/alarm/proc/alarm_tick()
 	// Has origin gone missing?
 	if(!origin() && !end_time)
-		end_time = world.time + ALARM_RESET_DELAY
+		EXPIRY_SET(src, end_time, ALARM_RESET_DELAY, CLOCK_WORLD)
 	for(var/datum/alarm_source/AS in sources)
 		// Has the alarm passed its best before date?
-		if((AS.end_time && world.time > AS.end_time) || (AS.duration && world.time > (AS.start_time + AS.duration)))
+		if((AS.end_time && ELAPSED_SINCE(src, AS.end_time, CLOCK_WORLD) > 0) || (AS.duration && ELAPSED_SINCE(src, (AS.start_time + AS.duration), CLOCK_WORLD) > 0))
 			LAZYREMOVE(sources, AS)
 		// Has the source gone missing?	Then reset the normal duration and set end_time
 		if(!AS.source && !AS.end_time)	// end_time is used instead of duration to ensure the reset doesn't remain in the future indefinetely.
 			AS.duration = 0
-			AS.end_time = world.time + ALARM_RESET_DELAY
+			EXPIRY_SET(AS, end_time, ALARM_RESET_DELAY, CLOCK_WORLD)
 
 #undef ALARM_RESET_DELAY
 

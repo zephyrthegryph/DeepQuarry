@@ -193,7 +193,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 		ui.open()
 
 /obj/machinery/sleeper/tgui_data(mob/user)
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
+	var/mob/living/carbon/human/occupant = slot_item_real(OCCUPANT_SLOT_SLEEPER)
 	var/data[0]
 	data["amounts"] = amounts
 	data["hasOccupant"] = occupant ? 1 : 0

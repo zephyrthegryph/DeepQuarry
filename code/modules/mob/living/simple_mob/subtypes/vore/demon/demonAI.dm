@@ -57,8 +57,8 @@
 
 	var/shifted_out = FALSE
 	var/shift_state = AB_SHIFT_NONE
-	var/last_shift = 0
-	var/blood_spawn = 0
+	EXPIRY_DECLARE(last_shift)
+	EXPIRY_DECLARE(blood_spawn)
 	var/is_shifting = FALSE
 
 	can_pain_emote = FALSE

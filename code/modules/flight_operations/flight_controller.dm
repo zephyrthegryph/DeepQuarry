@@ -383,7 +383,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 
 /datum/world_service/flight/proc/process_plan(datum/flight_plan/plan)
 	if(plan.state == FLIGHT_PLAN_FAILED)
-		if(world.time >= plan.terminal_cleanup_at)
+		if(!BEFORE(src, plan.terminal_cleanup_at, CLOCK_WORLD))
 			finish_plan(plan)
 		return
 	if(plan.cancel_requested)
@@ -399,7 +399,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 				plan.fail("The vessel has no open-space departure landmark.")
 				return
 			plan.state = FLIGHT_PLAN_UNDOCKING
-			plan.departure_deadline = world.time + 20 SECONDS
+			EXPIRY_SET(plan, departure_deadline, 20 SECONDS, CLOCK_WORLD)
 			plan.vessel.shuttle().short_jump(landable.landmark)
 			return
 		enter_transit(plan)
@@ -409,11 +409,11 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 		if(istype(landable) && landable.status == SHIP_STATUS_OVERMAP && plan.vessel.shuttle().moving_status == SHUTTLE_IDLE)
 			enter_transit(plan)
 			return
-		if(world.time > plan.departure_deadline)
+		if(ELAPSED_SINCE(src, plan.departure_deadline, CLOCK_WORLD) > 0)
 			plan.fail("The vessel could not complete undocking.")
 		return
 	if(plan.state == FLIGHT_PLAN_TRANSIT)
-		if(world.time < plan.estimated_arrival_at)
+		if(BEFORE(src, plan.estimated_arrival_at, CLOCK_WORLD))
 			return
 		if(plan.generation_state == FLIGHT_GENERATION_RUNNING)
 			plan.state = FLIGHT_PLAN_HOLDING
@@ -433,12 +433,12 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 			return
 		if(!plan.arrival_port() && !plan.destination().expedition()?.landing_waypoint)
 			plan.state = FLIGHT_PLAN_ARRIVED
-			plan.arrival_at = world.time
+			EXPIRY_STAMP(plan, arrival_at, CLOCK_WORLD)
 			plan.release_leases()
 			finish_plan(plan)
 			return
 		plan.state = FLIGHT_PLAN_ARRIVING
-		plan.departure_deadline = world.time + 30 SECONDS
+		EXPIRY_SET(plan, departure_deadline, 30 SECONDS, CLOCK_WORLD)
 		return
 	if(plan.state == FLIGHT_PLAN_ARRIVING)
 		var/obj/effect/overmap/visitable/ship/landable/landable = plan.vessel.ship()
@@ -446,18 +446,18 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 		if(!plan.vessel.shuttle() || (istype(landable) && landable.status == SHIP_STATUS_LANDED && plan.vessel.shuttle().moving_status == SHUTTLE_IDLE && plan.vessel.shuttle().current_location() == expected_landmark))
 			set_vessel_docked_port(plan.vessel, plan.arrival_port())
 			plan.state = FLIGHT_PLAN_ARRIVED
-			plan.arrival_at = world.time
+			EXPIRY_STAMP(plan, arrival_at, CLOCK_WORLD)
 			plan.release_leases()
 			finish_plan(plan)
 			return
-		if(world.time > plan.departure_deadline)
+		if(ELAPSED_SINCE(src, plan.departure_deadline, CLOCK_WORLD) > 0)
 			plan.fail("The vessel could not complete its landing sequence.")
 
 /datum/world_service/flight/proc/enter_transit(datum/flight_plan/plan)
 	set_vessel_docked_port(plan.vessel, null)
 	plan.state = FLIGHT_PLAN_TRANSIT
-	plan.departure_at = world.time
-	plan.estimated_arrival_at = world.time + FLIGHT_DEFAULT_TRANSIT_TIME
+	EXPIRY_STAMP(plan, departure_at, CLOCK_WORLD)
+	EXPIRY_SET(plan, estimated_arrival_at, FLIGHT_DEFAULT_TRANSIT_TIME, CLOCK_WORLD)
 	if(plan.generation_state != FLIGHT_GENERATION_RUNNING)
 		return TRUE
 	plan.generation_stage = "Generating destination during transit"

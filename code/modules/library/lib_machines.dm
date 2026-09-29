@@ -14,8 +14,8 @@
 /datum/borrowbook // Datum used to keep track of who has borrowed what when and for how long.
 	var/bookname
 	var/mobname
-	var/getdate
-	var/duedate
+	EXPIRY_DECLARE(getdate)
+	EXPIRY_DECLARE(duedate)
 
 /*
  * Library Public Computer
@@ -397,8 +397,8 @@
 			var/datum/borrowbook/b = new
 			b.bookname = sanitizeSafe(buffer_book)
 			b.mobname = sanitize(buffer_mob)
-			b.getdate = world.time
-			b.duedate = world.time + (checkoutperiod * 600)
+			EXPIRY_STAMP(b, getdate, CLOCK_WORLD)
+			EXPIRY_SET(b, duedate, (checkoutperiod * 600), CLOCK_WORLD)
 			LAZYADD(checkouts, b)
 			return TRUE
 		if("checkin")
@@ -599,8 +599,7 @@
 	data["has_cache"] = !!cache()
 	data["cache_name"] = cache() ? cache().name : ""
 	var/has_book = FALSE
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/book/B in contents) // ALLOW(latent): materialized above
+	FOR_REAL_CONTENTS(var/obj/item/book/B, src)
 		has_book = TRUE
 		break
 	data["has_book"] = has_book

@@ -181,7 +181,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/gryphon, get_ai_behaviors, list( \
 	// (the leap, which runs on timers and toggles ai_brain.busy
 	// itself). We just kick it off.
 	G.special_attack_target(target, G.input_stance())
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 TYPE_TABLE(/datum/ai_behavior/gryphon_leap, get_player_verb_info, list( \

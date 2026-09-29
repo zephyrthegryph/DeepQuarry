@@ -40,7 +40,7 @@
 	var/datum/matter_synth/water = null
 	var/digest_brute = 2
 	/// world.time of the last digestion pass (0: none yet).
-	var/tmp/last_digest_time = 0
+	EXPIRY_TMP_DECLARE(last_digest_time)
 	var/digest_burn = 3
 	var/digest_multiplier = 1
 	var/recycles = FALSE
@@ -502,7 +502,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 		// digest_brute / digest_burn are rates per BELLY_BASELINE_TICK, applied as
 		// continuous harm for the time since the last digestion pass.
 		var/delta_factor = last_digest_time ? clamp((world.time - last_digest_time) / BELLY_BASELINE_TICK, 0, DOGBORG_DIGEST_MAX_CATCHUP) : 1
-		last_digest_time = world.time
+		EXPIRY_STAMP(src, last_digest_time, CLOCK_WORLD)
 
 		//Burn all the mobs or add them to the exclusion list
 		for(var/mob/living/T in (touchable_items))

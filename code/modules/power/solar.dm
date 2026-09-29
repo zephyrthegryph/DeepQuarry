@@ -296,7 +296,7 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 	var/targetdir = 0		// target angle in manual tracking (since it updates every game minute)
 	var/track = 0			// 0= off  1=timed  2=auto (tracker)
 	var/trackrate = 600		// 300-900 seconds
-	TIMESTAMP_VAR(nexttime) // time for a panel to rotate of 1° in manual tracking
+	EXPIRY_DECLARE(nexttime) // time for a panel to rotate of 1° in manual tracking
 	var/tmp/connected_tracker_handle
 	var/needs_panel_check	// Powernet has been updated, need to check if panels are still connected.
 	var/connected_power		// Sum of power supplied by connected panels.
@@ -487,8 +487,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 			connected_tracker().unset_control()
 
 	if(track==1 && trackrate) //manual tracking and set a rotation speed
-		// ALLOW(sys_deadline_poll): tracking rate inside the continuous solar control step (1 degree per interval)
-		if(nexttime <= world.time) //every time we need to increase/decrease the angle by 1°...
+		if(EXPIRY_EXPIRED(src, nexttime, CLOCK_WORLD)) //every time we need to increase/decrease the angle by 1°...
 			targetdir = (targetdir + trackrate/abs(trackrate) + 360) % 360 	//... do it
 			nexttime += 36000/abs(trackrate) //reset the counter for the next 1°
 
@@ -522,7 +521,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 			if(value != null)
 				trackrate = round(clamp(value, -7200, 7200), 0.01)
 				if(trackrate)
-					nexttime = world.time + 36000 / abs(trackrate)
+					EXPIRY_SET(src, nexttime, 36000 / abs(trackrate), CLOCK_WORLD)
 				return TRUE
 			return TRUE
 		if("tracking")
@@ -535,7 +534,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 			else if(track == 1) //begin manual tracking
 				targetdir = cdir
 				if(trackrate)
-					nexttime = world.time + 36000/abs(trackrate)
+					EXPIRY_SET(src, nexttime, 36000/abs(trackrate), CLOCK_WORLD)
 				set_panels(targetdir)
 			return TRUE
 

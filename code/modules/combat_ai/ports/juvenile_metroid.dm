@@ -108,7 +108,7 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile, get_ai_target_selectors, lis
 	else
 		MJ.set_use_stance(I_HURT)             // Otherwise just hurt it.
 	MJ.attack_target(L, MJ.input_stance())
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------

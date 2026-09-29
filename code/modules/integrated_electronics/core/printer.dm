@@ -17,7 +17,7 @@
 
 	// Printing state variables
 	var/is_printing = FALSE		// If true, printer is busy cloning.
-	var/print_end_time = 0		// World time when printing will finish
+	EXPIRY_DECLARE(print_end_time) // World time when printing will finish
 	var/tmp/queued_assembly_handle	// The assembly being cloned.
 
 /obj/item/integrated_circuit_printer/proc/finish_printing()
@@ -492,7 +492,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit_printer, \
 	// Start the printing process
 	queued_assembly_handle = om_handle(assembly)
 	is_printing = TRUE
-	print_end_time = world.time + print_time
+	EXPIRY_SET(src, print_end_time, print_time, CLOCK_WORLD)
 
 	om_after(src, print_time, PROC_REF(finish_printing))
 

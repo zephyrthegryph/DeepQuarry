@@ -115,7 +115,7 @@
 	value = CATALOGUER_REWARD_HARD
 
 /mob/living/simple_mob/vore/fluffball/PounceTarget(mob/living/M, successrate = 100)
-	vore_pounce_cooldown = world.time + 20 SECONDS // don't attempt another pounce for a while
+	EXPIRY_SET(src, vore_pounce_cooldown, 20 SECONDS, CLOCK_WORLD) // don't attempt another pounce for a while
 	if(prob(successrate)) // pounce success!
 		M.status_at_least(EFFECT_WEAKENED, 5)
 		M.visible_message("<span class='danger'>\The [src] pounces on \the [M]!</span>!")

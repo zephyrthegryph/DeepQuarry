@@ -117,7 +117,7 @@
 			if(!istype(user)) // Invalid ref
 				return
 
-			if(world.time < internal_data["supply_reqtime"])
+			if(BEFORE(src, internal_data["supply_reqtime"], CLOCK_WORLD))
 				visible_message(span_warning("[src] flashes, \"[internal_data["supply_reqtime"] - world.time] seconds remaining until another requisition form may be printed.\""))
 				return
 
@@ -318,7 +318,7 @@
 	if(!ask.text)
 		return
 	GLOB.supply_service.create_order(ask.pack, ask.answerer, ask.text)
-	internal_data["supply_reqtime"] = (world.time + 5) % 1e5
+	internal_data["supply_reqtime"] = EXPIRY_AT(src, CLOCK_WORLD, 5) % 1e5
 
 /obj/item/commcard/proc/export_item_field_chosen(datum/om/prompt/choice/commcard_export_field/ask)
 	om_ask(ask.answerer, /datum/om/prompt/text/commcard/export_item, PROC_REF(export_item_edited), message = ask.edit_message, default = ask.edit_default, crate = ask.crate, index = ask.index, field = ask.choice)

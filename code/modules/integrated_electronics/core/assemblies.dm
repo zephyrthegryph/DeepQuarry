@@ -112,7 +112,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 
 	var/total_parts = 0
 	var/total_complexity = 0
-	for(var/obj/item/integrated_circuit/part in contents)
+	FOR_REAL_CONTENTS(var/obj/item/integrated_circuit/part, src)
 		total_parts += part.size
 		total_complexity = total_complexity + part.complexity
 
@@ -130,7 +130,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 	data["assembly_name"] = name
 
 	var/list/circuits = list()
-	for(var/obj/item/integrated_circuit/circuit in contents)
+	FOR_REAL_CONTENTS(var/obj/item/integrated_circuit/circuit, src)
 		UNTYPED_LIST_ADD(circuits, circuit.tgui_data(user, ui, state))
 	data["circuits"] = circuits
 
@@ -287,7 +287,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 /obj/item/electronic_assembly/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))
-		for(var/obj/item/integrated_circuit/IC in contents)
+		FOR_REAL_CONTENTS(var/obj/item/integrated_circuit/IC, src)
 			// Make sure there's actually examine text to prevent empty lines being printed for EVERY component!
 			var/examine_text = IC.external_examine(user)
 			if (length(examine_text))

@@ -27,7 +27,7 @@
 	var/pretend_weapon = null
 	var/damage = 0
 	var/hits = 0
-	var/time_inflicted = 0
+	EXPIRY_DECLARE(time_inflicted)
 
 /datum/autopsy_data/proc/copy()
 	var/datum/autopsy_data/W = new()

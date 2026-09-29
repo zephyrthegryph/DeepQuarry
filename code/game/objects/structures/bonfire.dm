@@ -12,7 +12,7 @@
 	anchored = TRUE
 	buckle_lying = FALSE
 	var/burning = FALSE
-	TIMESTAMP_VAR(next_fuel_consumption) // world.time of when next item in fuel list gets eatten to sustain the fire.
+	EXPIRY_DECLARE(next_fuel_consumption) // world.time of when next item in fuel list gets eatten to sustain the fire.
 	var/grill = FALSE
 	var/datum/material/material
 	var/set_temperature = T0C + 30	//K
@@ -172,13 +172,13 @@
 		return FALSE
 
 	if(istype(consumed_fuel, /obj/item/stack/material/log))
-		next_fuel_consumption = world.time + 6 MINUTES
+		EXPIRY_SET(src, next_fuel_consumption, 6 MINUTES, CLOCK_WORLD)
 		consume(consumed_fuel)
 		update_icon()
 		return TRUE
 
 	else if(istype(consumed_fuel, /obj/item/stack/material/wood)) // One log makes two planks of wood.
-		next_fuel_consumption = world.time + 3 MINUTE
+		EXPIRY_SET(src, next_fuel_consumption, 3 MINUTE, CLOCK_WORLD)
 		consume(consumed_fuel)
 		update_icon()
 		return TRUE
@@ -259,8 +259,7 @@
 	if(!check_oxygen())
 		extinguish()
 		return
-	// ALLOW(sys_deadline_poll): fuel burn rate inside the continuous burning step (oxygen and heat run every tick)
-	if(world.time >= next_fuel_consumption)
+	if(EXPIRY_EXPIRED(src, next_fuel_consumption, CLOCK_WORLD))
 		if(!consume_fuel(pop(contents)))
 			extinguish()
 			return
@@ -317,7 +316,7 @@
 	density = TRUE
 	anchored = TRUE
 	var/burning = FALSE
-	TIMESTAMP_VAR(next_fuel_consumption)
+	EXPIRY_DECLARE(next_fuel_consumption)
 	var/set_temperature = T0C + 20	//K
 	var/heating_power = 40000
 	resistance_flags = FIRE_PROOF
@@ -393,13 +392,13 @@
 		return FALSE
 
 	if(istype(consumed_fuel, /obj/item/stack/material/log))
-		next_fuel_consumption = world.time + 6 MINUTES
+		EXPIRY_SET(src, next_fuel_consumption, 6 MINUTES, CLOCK_WORLD)
 		consume(consumed_fuel)
 		update_icon()
 		return TRUE
 
 	else if(istype(consumed_fuel, /obj/item/stack/material/wood)) // One log makes two planks of wood.
-		next_fuel_consumption = world.time + 3 MINUTES
+		EXPIRY_SET(src, next_fuel_consumption, 3 MINUTES, CLOCK_WORLD)
 		consume(consumed_fuel)
 		update_icon()
 		return TRUE
@@ -465,8 +464,7 @@
 	if(!check_oxygen())
 		extinguish()
 		return
-	// ALLOW(sys_deadline_poll): fuel burn rate inside the continuous burning step (oxygen and heat run every tick)
-	if(world.time >= next_fuel_consumption)
+	if(EXPIRY_EXPIRED(src, next_fuel_consumption, CLOCK_WORLD))
 		if(!consume_fuel(pop(contents)))
 			extinguish()
 			return

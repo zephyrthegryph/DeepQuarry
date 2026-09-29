@@ -13,7 +13,7 @@
 	var/scanning = 0
 	var/scanner_progress = 0
 	var/scanner_rate = 5
-	var/last_process_worldtime = 0
+	EXPIRY_DECLARE(last_process_worldtime)
 	var/report_num = 0
 
 /obj/machinery/dnaforensics/Initialize(mapload)
@@ -93,7 +93,7 @@
 				if(bloodsamp())
 					scanner_progress = 0
 					scanning = TRUE
-					last_process_worldtime = world.time
+					EXPIRY_STAMP(src, last_process_worldtime, CLOCK_WORLD)
 					MACHINE_WAKE(src)
 					to_chat(ui.user, span_notice("Scan initiated."))
 					update_icon()
@@ -123,7 +123,7 @@
 			//calculate time difference
 			var/deltaT = (world.time - last_process_worldtime) * 0.1
 			scanner_progress = min(100, scanner_progress + scanner_rate * deltaT)
-	last_process_worldtime = world.time
+	EXPIRY_STAMP(src, last_process_worldtime, CLOCK_WORLD)
 
 /obj/machinery/dnaforensics/proc/complete_scan()
 	visible_message(span_notice("[icon2html(src,viewers(src))] makes an insistent chime."), 2)

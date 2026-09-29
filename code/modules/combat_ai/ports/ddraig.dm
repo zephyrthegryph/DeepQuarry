@@ -86,7 +86,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/ddraig, get_ai_target_selectors, list( \
 	if(!istype(D))
 		return DQ_BEHAVIOR_FAILED
 	D.lunge(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 TYPE_TABLE(/datum/ai_behavior/ddraig_lunge, get_player_verb_info, list( \
@@ -120,7 +120,7 @@ TYPE_TABLE(/datum/ai_behavior/ddraig_lunge, get_player_verb_info, list( \
 	if(!istype(D))
 		return DQ_BEHAVIOR_FAILED
 	D.firebreathstart(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 TYPE_TABLE(/datum/ai_behavior/ddraig_firebreath, get_player_verb_info, list( \
@@ -154,7 +154,7 @@ TYPE_TABLE(/datum/ai_behavior/ddraig_firebreath, get_player_verb_info, list( \
 	if(!istype(D))
 		return DQ_BEHAVIOR_FAILED
 	D.tfbeam(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 TYPE_TABLE(/datum/ai_behavior/ddraig_tfbeam, get_player_verb_info, list( \

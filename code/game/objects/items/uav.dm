@@ -38,7 +38,7 @@
 	var/static/image/radial_pair = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_pair")
 
 	// Movement cooldown
-	var/next_move = 0
+	EXPIRY_DECLARE(next_move)
 
 	// Idle shutdown time
 	var/no_masters_time = 0
@@ -292,7 +292,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 /obj/item/uav/relaymove(mob/user, direction, signal = 1)
 	if(signal && state == UAV_ON && (user in src?.uav_masters()))
 		if(COOLDOWN_FINISHED(src, next_move))
-			next_move = world.time + (1 SECOND/signal)
+			EXPIRY_SET(src, next_move, (1 SECOND/signal), CLOCK_WORLD)
 			step(src, direction)
 		return TRUE // Even if we couldn't step, we're taking credit for absorbing the move
 	return FALSE

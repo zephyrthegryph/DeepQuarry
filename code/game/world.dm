@@ -313,7 +313,7 @@ GLOBAL_VAR(restart_counter)
 	var/data = list()
 	data["tick_usage"] = world.tick_usage
 	data["tick_lag"] = world.tick_lag
-	data["time"] = world.time
+	data["time"] = EXPIRY_AT(src, CLOCK_WORLD, 0)
 	data["timestamp"] = rustg_unix_timestamp()
 	return data
 

@@ -40,7 +40,7 @@
 	var/docile_counter = 0						// How long we are docile for
 
 	var/has_reproduced = FALSE
-	var/used_dominate							// world.time when the dominate power was last used.
+	EXPIRY_DECLARE(used_dominate) // world.time when the dominate power was last used.
 
 	can_be_drop_prey = FALSE
 	vent_crawl_time = 30 						// faster vent crawler

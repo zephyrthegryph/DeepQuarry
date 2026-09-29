@@ -314,7 +314,7 @@ SUBSYSTEM_DEF(tgui)
 	if(window.locked || window.status != TGUI_WINDOW_CLOSED)
 		return
 	window.prewarmed = TRUE
-	window.prewarm_started_at = world.time
+	EXPIRY_STAMP(window, prewarm_started_at, CLOCK_WORLD)
 	window.initialize(
 		strict_mode = TRUE,
 		fancy = client.prefs?.read_preference(/datum/preference/toggle/tgui_fancy),
@@ -344,7 +344,7 @@ SUBSYSTEM_DEF(tgui)
 		// would otherwise count toward the reserve forever. Tear it down so the
 		// slot is rebuilt.
 		if(!window.locked && window.prewarmed && window.status == TGUI_WINDOW_LOADING \
-			&& window.prewarm_started_at && world.time - window.prewarm_started_at > TGUI_PREWARM_LOAD_TIMEOUT)
+			&& window.prewarm_started_at && ELAPSED(window, prewarm_started_at, CLOCK_WORLD) > TGUI_PREWARM_LOAD_TIMEOUT)
 			log_tgui(client, "Prewarmed shell never became ready after [DisplayTimeText(world.time - window.prewarm_started_at)]; replacing it.", window = window)
 			window.prewarmed = FALSE
 			window.prewarm_started_at = 0

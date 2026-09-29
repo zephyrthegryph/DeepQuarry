@@ -128,12 +128,12 @@ DECLARE_REF(/datum/flight_vessel, "active_plan", OWNED, null)
 	var/tmp/arrival_port_handle
 	var/state = FLIGHT_PLAN_DRAFT
 	var/failure_reason
-	var/created_at
-	var/departure_at
-	var/arrival_at
-	var/estimated_arrival_at
-	var/departure_deadline
-	var/terminal_cleanup_at
+	EXPIRY_DECLARE(created_at)
+	EXPIRY_DECLARE(departure_at)
+	EXPIRY_DECLARE(arrival_at)
+	EXPIRY_DECLARE(estimated_arrival_at)
+	EXPIRY_DECLARE(departure_deadline)
+	EXPIRY_DECLARE(terminal_cleanup_at)
 	var/generation_state = FLIGHT_GENERATION_NONE
 	var/generation_progress = 0
 	var/generation_stage = "Not required"
@@ -145,7 +145,7 @@ DECLARE_REF(/datum/flight_vessel, "active_plan", OWNED, null)
 	origin_handle = om_handle(new_origin)
 	destination_handle = om_handle(new_destination)
 	LAZYADD(destination().active_plans, src)
-	created_at = world.time
+	EXPIRY_STAMP(src, created_at, CLOCK_WORLD)
 	id = "flight-[REF(src)]"
 	if(destination()?.expedition() && destination().expedition().z_level <= 0)
 		generation_state = FLIGHT_GENERATION_QUEUED
@@ -198,7 +198,7 @@ DECLARE_REF(/datum/flight_vessel, "active_plan", OWNED, null)
 			fail("No compatible arrival port is available.")
 			return FALSE
 	state = FLIGHT_PLAN_PREPARING
-	estimated_arrival_at = world.time + FLIGHT_DEFAULT_TRANSIT_TIME
+	EXPIRY_SET(src, estimated_arrival_at, FLIGHT_DEFAULT_TRANSIT_TIME, CLOCK_WORLD)
 	if(generation_state == FLIGHT_GENERATION_QUEUED)
 		generation_state = FLIGHT_GENERATION_RUNNING
 		generation_stage = "Reserving destination"
@@ -211,7 +211,7 @@ DECLARE_REF(/datum/flight_vessel, "active_plan", OWNED, null)
 	failure_reason = reason
 	state = FLIGHT_PLAN_FAILED
 	release_leases(TRUE)
-	terminal_cleanup_at = world.time + 10 SECONDS
+	EXPIRY_SET(src, terminal_cleanup_at, 10 SECONDS, CLOCK_WORLD)
 	log_world("Flight plan [id] for [vessel?.name || "unknown vessel"] failed: [reason]")
 
 /datum/flight_plan/proc/request_abort()

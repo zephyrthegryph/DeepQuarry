@@ -48,7 +48,7 @@ OM_TIMER_SLOT(/datum/material_response, scintillation_timer)
 	var/medical_form = FALSE
 	var/armor_form = FALSE
 	var/tool_form = FALSE
-	var/last_energy_settlement
+	EXPIRY_DECLARE(last_energy_settlement)
 	var/reference_temperature
 	var/next_piezo_response = 0
 	var/stored_phase_energy = 0
@@ -71,7 +71,7 @@ DECLARE_REF(/datum/material_response, "parent", BACK, "material_response")
 	medical_form = !!_medical_form
 	armor_form = !!_armor_form
 	tool_form = !!_tool_form
-	last_energy_settlement = world.time
+	EXPIRY_STAMP(src, last_energy_settlement, CLOCK_WORLD)
 	reference_temperature = ambient_temperature()
 	stored_reactive_energy = armor_form ? material.reactive_energy_capacity : 0
 	if(material.reagent_porosity > 0 && (medical_form || tool_form))

@@ -128,7 +128,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/kururak, get_ai_behaviors, list( \
 	if(issilicon(L) && stance != I_GRAB)
 		stance = I_DISARM
 	K.special_attack_target(L, stance)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------
@@ -157,7 +157,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/kururak, get_ai_behaviors, list( \
 	if(!brain.model || !length(brain.model.visible_friendlies))
 		return null
 	// Only worth rallying once we're actually in a fight (recently swung).
-	if(world.time > brain.last_attack_at + 5 SECONDS)
+	if(ELAPSED_SINCE(src, brain.last_attack_at + 5 SECONDS, CLOCK_WORLD) > 0)
 		return null
 	return DQAI_RESULT(48, threat)
 

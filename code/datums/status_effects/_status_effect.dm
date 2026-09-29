@@ -6,12 +6,14 @@
 	/// When set initially / in on_creation, this is how long the status effect lasts in deciseconds.
 	/// While processing, this becomes the world.time when the status effect will expire.
 	/// -1 = infinite duration.
-	var/duration = STATUS_EFFECT_PERMANENT
+	EXPIRY_DECLARE(duration)
+	duration = STATUS_EFFECT_PERMANENT
 	/// When set initially / in on_creation, this is how long between [proc/tick] calls in deciseconds.
 	/// Note that this cannot be faster than the processing subsystem you choose to fire the effect on. (See: [var/processing_speed])
 	/// While processing, this becomes the world.time when the next tick will occur.
 	/// -1 = will prevent ticks, and if duration is also unlimited (-1), stop processing wholesale.
-	var/tick_interval = 1 SECONDS
+	EXPIRY_DECLARE(tick_interval)
+	tick_interval = 1 SECONDS
 	///If our tick intervals are set to be a dynamic value within a range, the lowerbound of said range
 	var/tick_interval_lowerbound
 	///If our tick intervals are set to be a dynamic value within a range, the upperbound of said range
@@ -58,9 +60,9 @@
 		// but we'll still set it to -1 / STATUS_EFFECT_PERMANENT for proper unified handling
 		duration = STATUS_EFFECT_PERMANENT
 	if(duration != STATUS_EFFECT_PERMANENT)
-		duration = world.time + duration
+		EXPIRY_SET(src, duration, duration, CLOCK_WORLD)
 	if(tick_interval != STATUS_EFFECT_NO_TICK)
-		tick_interval = world.time + tick_interval
+		EXPIRY_SET(src, tick_interval, tick_interval, CLOCK_WORLD)
 
 	if(alert_type)
 		var/atom/movable/screen/alert/status_effect/new_alert = owner.throw_alert(id, alert_type)
@@ -68,8 +70,7 @@
 		linked_alert = new_alert //so we can reference the alert, if we need to
 		update_shown_duration()
 
-	// ALLOW(cooldown): status effect core: duration/tick_interval hold a length until on_apply turns them into end times
-	if(duration > world.time || tick_interval > world.time) //don't process if we don't care
+	if(EXPIRY_ACTIVE(src, duration, CLOCK_WORLD) || EXPIRY_ACTIVE(src, tick_interval, CLOCK_WORLD)) //don't process if we don't care
 		switch(processing_speed)
 			if(STATUS_EFFECT_FAST_PROCESS)
 				om_task_periodic(src, PERIODIC_FAST)
@@ -100,7 +101,7 @@ DECLARE_REF(/datum/status_effect, "owner", BACKLIST, "status_effects")
 	if(!linked_alert || !show_duration)
 		return
 
-	linked_alert.maptext = MAPTEXT("<span style='text-align:center'>[round((duration - world.time)/10, 1)]s</span>")
+	linked_alert.maptext = MAPTEXT("<span style='text-align:center'>[round(EXPIRY_LEFT(src, duration, CLOCK_WORLD)/10, 1)]s</span>")
 
 // Status effect process. Handles adjusting its duration and ticks.
 // If you're adding processed effects, put them in [proc/tick]
@@ -114,19 +115,17 @@ DECLARE_REF(/datum/status_effect, "owner", BACKLIST, "status_effects")
 
 	if(tick_interval == STATUS_EFFECT_AUTO_TICK)
 		tick(delta / (1 SECONDS)) // the periodic lane passes deciseconds
-	// ALLOW(cooldown, sys_deadline_poll): status effect core: tick_interval is the next tick time, a cadence gate inside the framework's shared periodic step
-	else if(tick_interval != STATUS_EFFECT_NO_TICK && tick_interval < world.time)
+	else if(tick_interval != STATUS_EFFECT_NO_TICK && EXPIRY_EXPIRED(src, tick_interval, CLOCK_WORLD))
 		var/tick_length = (tick_interval_upperbound && tick_interval_lowerbound) ? rand(tick_interval_lowerbound, tick_interval_upperbound) : initial(tick_interval)
 		tick(tick_length / (1 SECONDS))
-		tick_interval = world.time + tick_length
+		EXPIRY_SET(src, tick_interval, tick_length, CLOCK_WORLD)
 
 	if(QDELING(src))
 		// tick deleted us, no need to continue
 		return
 
 	if(duration != STATUS_EFFECT_PERMANENT)
-		// ALLOW(cooldown, sys_deadline_poll): status effect core: duration is the effect end time (expiry state, owned by the EXPIRY_* migration)
-		if(duration < world.time)
+		if(EXPIRY_EXPIRED(src, duration, CLOCK_WORLD))
 			qdel(src)
 			return
 		update_shown_duration()
@@ -182,7 +181,7 @@ DECLARE_REF(/datum/status_effect, "owner", BACKLIST, "status_effects")
 	var/original_duration = initial(duration)
 	if(original_duration == STATUS_EFFECT_PERMANENT)
 		return
-	duration = world.time + original_duration
+	EXPIRY_SET(src, duration, original_duration, CLOCK_WORLD)
 
 /// Adds nextmove modifier multiplicatively to the owner while applied
 /datum/status_effect/proc/nextmove_modifier()
@@ -207,8 +206,7 @@ DECLARE_REF(/datum/status_effect, "owner", BACKLIST, "status_effects")
 		return FALSE
 
 	duration -= seconds
-	// ALLOW(cooldown): status effect core: duration is the effect end time
-	if(duration <= world.time)
+	if(EXPIRY_EXPIRED(src, duration, CLOCK_WORLD))
 		qdel(src)
 		return TRUE
 

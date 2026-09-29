@@ -112,7 +112,7 @@ TYPE_TABLE(/mob/living/simple_mob/slime, get_ai_target_selectors, list( \
 		else
 			my_slime.set_use_stance(I_HURT)
 	SM.attack_target(target, SM.input_stance())
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------

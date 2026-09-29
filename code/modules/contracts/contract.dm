@@ -1,11 +1,11 @@
 /datum/contract_audit_entry
-	var/time
+	EXPIRY_DECLARE(time)
 	var/category
 	var/detail
 
 /datum/contract_audit_entry/New(_category, _detail)
 	. = ..()
-	time = world.time
+	EXPIRY_STAMP(src, time, CLOCK_WORLD)
 	category = _category
 	detail = _detail
 
@@ -201,12 +201,12 @@ OM_TIMER_SLOT(/datum/contract, offer_timer)
 	var/station_reputation_reward = 0
 	var/department_reputation_reward = 0
 	var/personal_reputation_reward = 0
-	var/deadline = 0
+	EXPIRY_DECLARE(deadline)
 	var/deadline_duration = 0
 	var/deadline_grace_duration = CONTRACT_DEFAULT_GRACE_DURATION
-	var/grace_until = 0
-	var/offer_expires_at = 0
-	var/accepted_at = 0
+	EXPIRY_DECLARE(grace_until)
+	EXPIRY_DECLARE(offer_expires_at)
+	EXPIRY_DECLARE(accepted_at)
 	var/accepted_by_account = 0
 	var/closed_at = 0
 	var/offer_kind = CONTRACT_OFFER_OPPORTUNITY
@@ -277,7 +277,7 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 	if(!length(audit_log))
 		audit(CONTRACT_AUDIT_CREATED, "Contract offered by [issuer_name].")
 	audit(CONTRACT_AUDIT_OFFER, "Published on [board_key || "the contract board"]: [offer_reason || "eligible offer"].")
-	offer_expires_at = world.time + duration
+	EXPIRY_SET(src, offer_expires_at, duration, CLOCK_WORLD)
 	om_after_slot(src, "offer_timer", duration, PROC_REF(expire_offer))
 	return TRUE
 
@@ -424,7 +424,7 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 	var/datum/contract_definition/definition = SScontracts?.definitions[definition_id]
 	if(state != CONTRACT_OFFERED || (definition && !definition.prepare_accept(src, accepting_account, user, source)) || validate())
 		return FALSE
-	if(offer_expires_at && world.time >= offer_expires_at)
+	if(offer_expires_at && !BEFORE(src, offer_expires_at, CLOCK_WORLD))
 		expire_offer()
 		return FALSE
 	if(scope == CONTRACT_SCOPE_PERSONAL && accepting_account?.account_number != owner_account_number)
@@ -441,11 +441,11 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 		om_cancel_timer_slot(src, "offer_timer")
 	offer_expires_at = 0
 	state = CONTRACT_ACTIVE
-	accepted_at = world.time
+	EXPIRY_STAMP(src, accepted_at, CLOCK_WORLD)
 	accepted_by_account = accepting_account?.account_number || contract_account_for_mob(user)?.account_number
 	if(deadline_duration > 0)
-		deadline = world.time + deadline_duration
-	if(deadline > world.time) // ALLOW(cooldown): contract/offer expiry and deadline state, not a rate limit
+		EXPIRY_SET(src, deadline, deadline_duration, CLOCK_WORLD)
+	if(BEFORE(src, deadline, CLOCK_WORLD))
 		om_after_slot(src, "deadline_timer", deadline - world.time, PROC_REF(check_deadline))
 	SScontracts.set_contract_state(src, old_state, state)
 	subscribe_events()
@@ -471,12 +471,12 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 	return null
 
 /datum/contract/proc/check_deadline()
-	if(state == CONTRACT_ACTIVE && deadline && world.time >= deadline) // ALLOW(cooldown): contract/offer expiry and deadline state, not a rate limit
+	if(state == CONTRACT_ACTIVE && deadline && !BEFORE(src, deadline, CLOCK_WORLD))
 		if(deadline_grace_duration > 0)
 			enter_grace()
 		else
 			fail("The deadline expired.")
-	else if(state == CONTRACT_GRACE && grace_until && world.time >= grace_until)
+	else if(state == CONTRACT_GRACE && grace_until && !BEFORE(src, grace_until, CLOCK_WORLD))
 		fail("The evidence grace period expired.")
 
 /datum/contract/proc/enter_grace()
@@ -484,7 +484,7 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 		return FALSE
 	var/old_state = state
 	state = CONTRACT_GRACE
-	grace_until = world.time + deadline_grace_duration
+	EXPIRY_SET(src, grace_until, deadline_grace_duration, CLOCK_WORLD)
 	om_after_slot(src, "deadline_timer", deadline_grace_duration, PROC_REF(check_deadline))
 	SScontracts.set_contract_state(src, old_state, state)
 	audit(CONTRACT_AUDIT_GRACE, "The operational deadline passed; already-prepared evidence has [DisplayTimeText(deadline_grace_duration)] to arrive.")
@@ -505,7 +505,7 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 /datum/contract/proc/receive_event(datum/contract_event/event)
 	if(!(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)))
 		return FALSE
-	if(state == CONTRACT_ACTIVE && deadline && world.time > deadline)
+	if(state == CONTRACT_ACTIVE && deadline && ELAPSED_SINCE(src, deadline, CLOCK_WORLD) > 0)
 		check_deadline()
 	if(!(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)))
 		return FALSE
@@ -664,7 +664,7 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 	grace_until = 0
 	state = new_state
 	closure_code = _closure_code
-	closed_at = world.time
+	EXPIRY_STAMP(src, closed_at, CLOCK_WORLD)
 	SScontracts.set_contract_state(src, old_state, state)
 	audit(category, detail)
 	SScontracts?.on_contract_closed(src)

@@ -32,7 +32,7 @@
 	drop_sound = SFX_ITEMS_DROP_HAT
 	pickup_sound = SFX_ITEMS_PICKUP_HAT
 	/// world.time it was cinched on, or null while loose.
-	var/applied_at
+	EXPIRY_DECLARE(applied_at)
 	/// Limbs a tourniquet can go on.
 	var/static/list/applicable_zones = list(BP_L_ARM, BP_R_ARM, BP_L_LEG, BP_R_LEG)
 
@@ -132,7 +132,7 @@ DECLARE_REF(/obj/item/organ/external, "tourniquet", HELD, null)
 		return FALSE
 	tourniquet = T
 	T.forceMove(src)
-	T.applied_at = world.time
+	EXPIRY_STAMP(T, applied_at, CLOCK_WORLD)
 	afflict_ischemia_below()
 	update_damages()
 	log_game("TOURNIQUET: [key_name(user)] applied [T] to [key_name(owner)]'s [name] at [AREACOORD(owner || src)]; flow below it stopped.")

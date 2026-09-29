@@ -3,12 +3,12 @@
 	icon_state = "banana"
 	item_state = "emergency_engi"
 	arm_sound = SFX_EFFECTS_3
-	var/implode_at
+	EXPIRY_DECLARE(implode_at)
 
 /obj/item/grenade/supermatter/detonate()
 	..()
 	om_task_periodic(src, PERIODIC_SLOW)
-	implode_at = world.time + 10 SECONDS
+	EXPIRY_SET(src, implode_at, 10 SECONDS, CLOCK_WORLD)
 	om_after(src, 10 SECONDS, PROC_REF(implode))
 	update_icon()
 	play_sfx(src, SFX_WEAPONS_WAVE, volume = 100)

@@ -133,11 +133,11 @@ DECLARE_INTERACTIONS(/obj/item/folder, \
 	var/list/data = list()
 	data["folder_name"] = name
 	var/list/items = list()
-	for(var/obj/item/paper/P in slot_contents(CONTAINER_SLOT_PAGES))
+	FOR_REAL_CONTENTS(var/obj/item/paper/P, src)
 		items += list(list("ref" = "\ref[P]", "name" = P.name, "kind" = "paper"))
-	for(var/obj/item/photo/Ph in slot_contents(CONTAINER_SLOT_PAGES))
+	FOR_REAL_CONTENTS(var/obj/item/photo/Ph, src)
 		items += list(list("ref" = "\ref[Ph]", "name" = Ph.name, "kind" = "photo"))
-	for(var/obj/item/paper_bundle/Pb in slot_contents(CONTAINER_SLOT_PAGES))
+	FOR_REAL_CONTENTS(var/obj/item/paper_bundle/Pb, src)
 		items += list(list("ref" = "\ref[Pb]", "name" = Pb.name, "kind" = "bundle"))
 	data["items"] = items
 	return data

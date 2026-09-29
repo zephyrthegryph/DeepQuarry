@@ -28,7 +28,7 @@
 
 /client/proc/asset_cache_update_json()
 	asset_json_update_queued = FALSE
-	if (world.time - connection_time < 10 SECONDS) //don't override the existing data file on a new connection
+	if (ELAPSED_SINCE(src, connection_time, CLOCK_WORLD) < 10 SECONDS) //don't override the existing data file on a new connection
 		return
 
 	src << browse(json_encode(sent_assets), "file=asset_data.json&display=0")

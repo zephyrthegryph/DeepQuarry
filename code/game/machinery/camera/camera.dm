@@ -37,7 +37,7 @@ OM_TIMER_SLOT(/obj/machinery/camera, camera_timer_token)
 	var/on_open_network = 0
 	var/always_visible = FALSE //Visable from any map, good for entertainment network cameras
 
-	var/affected_by_emp_until = 0
+	EXPIRY_DECLARE(affected_by_emp_until)
 	/// The deadline the `camera_timer_token` timer slot was last set for (next_camera_deadline()).
 	var/tmp/camera_timer_at = 0
 
@@ -119,7 +119,7 @@ DECLARE_REF(/obj/machinery/camera, "assembly", OWNED, null)
 
 /obj/machinery/camera/proc/camera_timer_fired()
 	camera_timer_at = 0
-	if((has_stat(EMPED)) && world.time >= affected_by_emp_until)
+	if(has_stat(EMPED) && EXPIRY_EXPIRED(src, affected_by_emp_until, CLOCK_WORLD))
 		stat_remove(EMPED)
 		cancelCameraAlarm()
 		update_icon()
@@ -143,7 +143,7 @@ DECLARE_REF(/obj/machinery/camera, "assembly", OWNED, null)
 	if (. & EMP_PROTECT_SELF)
 		return
 	if(!isEmpProof() && (forced || prob(100/severity)))
-		if(!affected_by_emp_until || (world.time > affected_by_emp_until))
+		if(!affected_by_emp_until || EXPIRY_EXPIRED(src, affected_by_emp_until, CLOCK_WORLD))
 			affected_by_emp_until = max(affected_by_emp_until, world.time + (90 SECONDS / severity))
 			stat_add(EMPED)
 			set_light(0)

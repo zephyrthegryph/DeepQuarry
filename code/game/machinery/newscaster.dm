@@ -26,7 +26,7 @@
 	var/backup_author=""
 	var/censored=0
 	var/is_admin_channel=0
-	var/updated = 0
+	EXPIRY_DECLARE(updated)
 	var/announcement = ""
 
 /datum/feed_message/proc/clear()
@@ -42,7 +42,7 @@
 	parent_channel().update()
 
 /datum/feed_channel/proc/update()
-	updated = world.time
+	EXPIRY_STAMP(src, updated, CLOCK_WORLD)
 
 /datum/feed_channel/proc/clear()
 	src.channel_name = ""

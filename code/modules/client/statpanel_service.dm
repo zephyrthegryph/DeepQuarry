@@ -8,7 +8,8 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 	var/list/global_data
 	var/list/mc_data
 	var/list/mc_metrics
-	var/mc_metrics_generated_at = -INFINITY
+	EXPIRY_DECLARE(mc_metrics_generated_at)
+	mc_metrics_generated_at = -INFINITY
 
 	///how many subsystem fires between most tab updates
 	var/default_wait = 10
@@ -146,9 +147,9 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 	var/coord_entry = COORD(eye_turf)
 	if(!mc_data)
 		generate_mc_data()
-	if(!mc_metrics || world.time >= mc_metrics_generated_at + 5 SECONDS)
+	if(!mc_metrics || !BEFORE(src, mc_metrics_generated_at + 5 SECONDS, CLOCK_WORLD))
 		mc_metrics = generate_mc_metrics()
-		mc_metrics_generated_at = world.time
+		EXPIRY_STAMP(src, mc_metrics_generated_at, CLOCK_WORLD)
 	target.stat_panel.send_message("update_mc", list(
 		"mc_data" = mc_data,
 		"mc_metrics" = mc_metrics,

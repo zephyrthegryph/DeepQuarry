@@ -427,7 +427,7 @@
 	if(!site() || !players_present())
 		return state
 	if(!started_at)
-		started_at = world.time
+		EXPIRY_STAMP(src, started_at, CLOCK_WORLD)
 	if(COOLDOWN_FINISHED(src, wave_cooldown))
 		spawn_wave()
 		COOLDOWN_START(src, wave_cooldown, wave_interval)

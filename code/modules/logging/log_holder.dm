@@ -25,7 +25,7 @@ GLOBAL_REAL(logger, /datum/log_holder)
 	var/list/data_cache
 
 	/// Last time the ui_data was updated
-	var/last_data_update = 0
+	EXPIRY_DECLARE(last_data_update)
 
 	var/initialized = FALSE
 	var/shutdown = FALSE
@@ -72,7 +72,7 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 	return data
 
 /datum/log_holder/tgui_data(mob/user)
-	if(!last_data_update || (world.time - last_data_update) > LOG_UPDATE_TIMEOUT)
+	if(!last_data_update || ELAPSED_SINCE(src, last_data_update, CLOCK_WORLD) > LOG_UPDATE_TIMEOUT)
 		cache_ui_data()
 	return data_cache || list()
 
@@ -88,7 +88,7 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 		category_map[category.category] = category_data
 
 	LAZYCLEARLIST(data_cache)
-	last_data_update = world.time
+	EXPIRY_STAMP(src, last_data_update, CLOCK_WORLD)
 
 	LAZYSET(data_cache, "categories", category_map)
 	LAZYSET(data_cache, "last_data_update", last_data_update)

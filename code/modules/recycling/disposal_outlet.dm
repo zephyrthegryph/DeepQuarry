@@ -12,7 +12,7 @@
 	var/active = FALSE // Code appendix.
 	var/tmp/target_handle	// this will be where the output objects are 'thrown' to.
 	var/mode = 0
-	TIMESTAMP_VAR(start_eject)
+	EXPIRY_DECLARE(start_eject)
 	var/eject_range = 3 //Did you know, in TGcode, it's a default of 2 tiles?
 
 /obj/structure/disposaloutlet/Initialize(mapload)
@@ -88,8 +88,8 @@ DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF
 	SHOULD_NOT_SLEEP(TRUE)
 
 	flick("outlet-open", src)
-	if((start_eject + 30) < world.time)
-		start_eject = world.time
+	if(ELAPSED(src, start_eject, CLOCK_WORLD) > 3 SECONDS)
+		EXPIRY_STAMP(src, start_eject, CLOCK_WORLD)
 		play_sfx(src, SFX_MACHINES_WARNING_BUZZER)
 		om_after(src, 2 SECONDS, PROC_REF(expel_contents), received_items, gas, TRUE)
 	else

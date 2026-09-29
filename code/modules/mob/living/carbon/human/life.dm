@@ -17,7 +17,7 @@
 	var/heartbeat = 0
 	var/chemical_darksight = 0
 	/// world.time of the next periodic full HUD refresh (hud refresh system).
-	var/hud_full_refresh_at = 0
+	EXPIRY_DECLARE(hud_full_refresh_at)
 
 // Human Life (doc/rewrite/life_on_om.md). The living core runs first; the human-only steps that
 // followed ..() in the old Life() are TAIL stages below, in their old order:
@@ -58,8 +58,8 @@
 /datum/om/stage/life/hud_refresh/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	// The periodic safety refresh is intentionally rare (once a minute); state-changing
 	// code continues to set its exact HUD dirty bits.
-	if(world.time >= self.hud_full_refresh_at)
-		self.hud_full_refresh_at = world.time + 1 MINUTES
+	if(!BEFORE(src, self.hud_full_refresh_at, CLOCK_WORLD))
+		EXPIRY_SET(self, hud_full_refresh_at, 1 MINUTES, CLOCK_WORLD)
 		self.hud_updateflag = (1 << TOTAL_HUDS) - 1
 
 /// Lazy: sleeps until the next refresh is due.

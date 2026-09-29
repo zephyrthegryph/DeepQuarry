@@ -32,7 +32,7 @@ SUBSYSTEM_DEF(ticker)
 	var/selected_tip // What will be the tip of the day?
 
 	var/timeLeft //pregame timer
-	var/start_at
+	EXPIRY_DECLARE(start_at)
 
 	var/gametime_offset = 432000 //Deciseconds to add to world.time for station time.
 	var/station_time_rate_multiplier = 12 //factor of station time progressal vs real time.
@@ -52,7 +52,7 @@ SUBSYSTEM_DEF(ticker)
 
 	var/roundend_check_paused = FALSE
 
-	var/round_start_time = 0
+	EXPIRY_DECLARE(round_start_time)
 	var/list/round_start_events
 	var/list/round_end_events
 	var/mode_result = "undefined"
@@ -75,16 +75,16 @@ SUBSYSTEM_DEF(ticker)
 	/// Time remaining until restart in desiseconds
 	var/restart_timeleft
 	/// world.time of last restart warning.
-	var/last_restart_notify
+	EXPIRY_DECLARE(last_restart_notify)
 
 /datum/controller/subsystem/ticker/Initialize()
-	start_at = world.time + (CONFIG_GET(number/lobby_countdown) * 10)
+	EXPIRY_SET(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10), CLOCK_WORLD)
 	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/ticker/fire(resumed = FALSE)
 	switch(current_state)
 		if(GAME_STATE_STARTUP)
-			start_at = world.time + (CONFIG_GET(number/lobby_countdown) * 10)
+			EXPIRY_SET(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10), CLOCK_WORLD)
 			for(var/client/C in GLOB.clients)
 				window_flash(C, ignorepref = TRUE) //let them know lobby has opened up.
 			to_chat(world, span_boldnotice("Welcome to [station_name()]!"))
@@ -128,7 +128,7 @@ SUBSYSTEM_DEF(ticker)
 			if(!setup())
 				//setup failed
 				current_state = GAME_STATE_STARTUP
-				start_at = world.time + (CONFIG_GET(number/lobby_countdown) * 10)
+				EXPIRY_SET(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10), CLOCK_WORLD)
 				timeLeft = null
 				Master.SetRunLevel(RUNLEVEL_LOBBY)
 
@@ -171,9 +171,9 @@ SUBSYSTEM_DEF(ticker)
 		if(GAME_STATE_FINISHED)
 			post_game_tick()
 
-			if (world.time - last_restart_notify >= 1 MINUTE && !delay_end)
+			if (ELAPSED(src, last_restart_notify, CLOCK_WORLD) >= 1 MINUTE && !delay_end)
 				to_chat(world, span_boldannounce("Restarting in [round(restart_timeleft/600, 1)] minute\s."))
-				last_restart_notify = world.time
+				EXPIRY_STAMP(src, last_restart_notify, CLOCK_WORLD)
 
 /datum/controller/subsystem/ticker/proc/setup()
 	to_chat(world, span_boldannounce("Starting game..."))
@@ -199,7 +199,7 @@ SUBSYSTEM_DEF(ticker)
 	LAZYCLEARLIST(round_start_events)
 
 	//otherwise round_start_time would be 0 for the signals
-	round_start_time = world.time
+	EXPIRY_STAMP(src, round_start_time, CLOCK_WORLD)
 	GLOB.round_start_time = REALTIMEOFDAY
 
 	// Spawn randomized items
@@ -342,7 +342,7 @@ SUBSYSTEM_DEF(ticker)
 				restart_timeleft = 1 MINUTE // No point waiting five minutes if everyone's dead.
 				if(!delay_end)
 					to_chat(world, span_boldannounce("Rebooting due to destruction of [station_name()] in [round(restart_timeleft/600)] minute\s."))
-					last_restart_notify = world.time
+					EXPIRY_STAMP(src, last_restart_notify, CLOCK_WORLD)
 			else
 				feedback_set_details("end_proper", "proper completion")
 				restart_timeleft = restart_timeout
@@ -481,7 +481,7 @@ SUBSYSTEM_DEF(ticker)
 	to_chat(world, span_boldannounce("Rebooting World in [DisplayTimeText(delay)]. [reason]"))
 
 	var/start_wait = world.time
-	UNTIL(round_end_sound_sent || (world.time - start_wait) > (delay * 2)) //don't wait forever
+	UNTIL(round_end_sound_sent || ELAPSED_SINCE(src, start_wait, CLOCK_WORLD) > (delay * 2)) //don't wait forever
 	om_after_slot(src, "reboot_timer", delay - (world.time - start_wait), PROC_REF(reboot_callback), reason, end_string)
 
 /datum/controller/subsystem/ticker/proc/announce_countdown(remaining_time)

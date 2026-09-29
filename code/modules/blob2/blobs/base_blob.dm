@@ -11,8 +11,8 @@
 	var/point_return = 0 //How many points the blob gets back when it removes a blob of that type. If less than 0, blob cannot be removed.
 	max_integrity = 30
 	var/health_regen = 2 //how much health this blob regens when pulsed
-	var/pulse_timestamp = 0 //we got pulsed when?
-	var/heal_timestamp = 0 //we got healed when?
+	EXPIRY_DECLARE(pulse_timestamp) //we got pulsed when?
+	EXPIRY_DECLARE(heal_timestamp) //we got healed when?
 	var/mob/observer/blob/overmind = null
 	var/base_name = "blob" // The name that gets appended along with the blob_type's name.
 	var/faction = FACTION_BLOB
@@ -80,13 +80,13 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 	overmind.blob_type.on_emp(src, severity)
 
 /obj/structure/blob/proc/pulsed()
-	if(pulse_timestamp <= world.time)
+	if(!BEFORE(src, pulse_timestamp, CLOCK_WORLD))
 		consume_tile()
-		if(heal_timestamp <= world.time)
+		if(!BEFORE(src, heal_timestamp, CLOCK_WORLD))
 			adjust_integrity(health_regen)
-			heal_timestamp = world.time + 2 SECONDS
+			EXPIRY_SET(src, heal_timestamp, 2 SECONDS, CLOCK_WORLD)
 		update_icon()
-		pulse_timestamp = world.time + 1 SECOND
+		EXPIRY_SET(src, pulse_timestamp, 1 SECOND, CLOCK_WORLD)
 		if(overmind)
 			faction = overmind.blob_type.faction
 			overmind.blob_type.on_pulse(src)
@@ -122,9 +122,9 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 
 		if(distance <= expand_range)
 			var/can_expand = TRUE
-			if(blobs_to_affect.len >= 120 && B.heal_timestamp > world.time)
+			if(blobs_to_affect.len >= 120 && BEFORE(src, B.heal_timestamp, CLOCK_WORLD))
 				can_expand = FALSE
-			if(!expanded && can_expand && B.pulse_timestamp <= world.time && prob(expand_probablity))
+			if(!expanded && can_expand && !BEFORE(src, B.pulse_timestamp, CLOCK_WORLD) && prob(expand_probablity))
 				var/obj/structure/blob/newB = B.expand(null, null, !expanded) //expansion falls off with range but is faster near the blob causing the expansion
 				if(newB)
 					if(expanded)

@@ -118,7 +118,7 @@ GLOBAL_VAR_INIT(allowed_ghost_spawns, 2)
 		if(L.name == JOB_GHOSTROLES)
 			ghost_spawn_exists = TRUE
 			break
-	var/deathtime = world.time - user.timeofdeath
+	var/deathtime = ELAPSED(user, timeofdeath, CLOCK_WORLD)
 	var/time_diff = 15 MINUTES - deathtime
 	var/timedifference_text = time_diff > 0 ? time2text(time_diff, "mm:ss") : ""
 	var/list/ghost_join_data = list(
@@ -157,7 +157,7 @@ GLOBAL_VAR_INIT(allowed_ghost_spawns, 2)
 	var/time_till_play
 	if(CONFIG_GET(flag/use_age_restriction_for_jobs) && isnum(user.client.player_age))
 		time_till_play = max(0, 3 - user.client.player_age)
-	var/deathtime = world.time - user.timeofdeath
+	var/deathtime = ELAPSED(user, timeofdeath, CLOCK_WORLD)
 	var/time_diff = 5 MINUTES - deathtime
 	var/timedifference_text = time_diff > 0 ? time2text(time_diff, "mm:ss") : ""
 	var/list/all_fabricators = list()

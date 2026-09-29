@@ -78,7 +78,7 @@
 	if(!user.MayRespawn(TRUE))
 		return
 
-	var/deathtime = world.time - user.timeofdeath
+	var/deathtime = ELAPSED(user, timeofdeath, CLOCK_WORLD)
 	var/deathtimeminutes = round(deathtime / (1 MINUTE))
 	var/pluralcheck = "minute"
 	if(deathtimeminutes == 0)

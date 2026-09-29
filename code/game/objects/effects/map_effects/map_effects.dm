@@ -12,7 +12,7 @@
 	var/ignore_ghosts = FALSE			// If true, ghosts won't satisfy the above requirement.
 	var/ignore_afk = TRUE				// If true, AFK people (5 minutes) won't satisfy it as well.
 	var/retry_delay = 5 SECONDS			// How long until we check for players again.
-	var/next_attempt = 0				// Next time we're going to do ACTUAL WORK
+	EXPIRY_DECLARE(next_attempt) // Next time we're going to do ACTUAL WORK
 
 /obj/effect/map_effect/singularity_pull()
 	return
@@ -38,7 +38,7 @@ DECLARE_PERIODIC(/obj/effect/map_effect/interval, PERIODIC_SLOW)
 	// Check to see if we're useful first.
 	if(!always_run && !check_for_player_proximity(src, proximity_needed, ignore_ghosts, ignore_afk))
 		return sleep_until_mob_near(proximity_needed, TRUE)
-	next_attempt = world.time + rand(interval_lower_bound, interval_upper_bound)
+	EXPIRY_SET(src, next_attempt, rand(interval_lower_bound, interval_upper_bound), CLOCK_WORLD)
 	trigger()
 	om_after(src, max(next_attempt - world.time, 1), /datum/proc/periodic_resume)
 	return PROCESS_KILL

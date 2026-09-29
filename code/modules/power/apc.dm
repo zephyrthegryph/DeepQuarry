@@ -95,7 +95,7 @@
 	/// Absolute world.time when an EMP/power failure ends. The legacy counter was
 	/// decremented every machinery fire, forcing every disabled APC to poll and
 	/// rebuild its icon for minutes after a large explosion.
-	var/failure_until = 0
+	EXPIRY_DECLARE(failure_until)
 	var/force_update = 0
 	var/alarms_hidden = FALSE       // if TRUE, power alarms from this APC are hidden on consoles
 	var/nightshift_lights = FALSE

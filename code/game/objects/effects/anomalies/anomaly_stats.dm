@@ -13,7 +13,7 @@
 	var/attached_anomaly
 	var/attached_harvester
 
-	TIMESTAMP_VAR(next_activation)
+	EXPIRY_DECLARE(next_activation)
 	// Total of points we'll get once the anomaly does a pulse
 	var/points
 	var/curr_health

@@ -464,7 +464,7 @@
 		event_tags += "record_cleared"
 	LAZYINITLIST(active2().disposition_history)
 	active2().disposition_history.Add(list(list(
-		"occurred_at" = world.time,
+		"occurred_at" = EXPIRY_AT(src, CLOCK_WORLD, 0),
 		"actor_account" = contract_account_for_mob(user)?.account_number,
 		"actor_name" = user?.real_name,
 		"previous_status" = old_status,

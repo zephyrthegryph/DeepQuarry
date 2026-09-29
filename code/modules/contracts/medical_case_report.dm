@@ -43,7 +43,7 @@
 	var/target_name
 	var/target_condition_type
 	var/target_condition_name
-	var/consent_time = 0
+	EXPIRY_DECLARE(consent_time)
 	var/tmp/consent_record_handle
 	var/consent_evidence_id
 	var/datum/contract_requirement/event_count/evidence_requirement
@@ -87,7 +87,7 @@
 /datum/contract/medical_case_report/proc/register_consent(obj/item/paper/paper, mob/living/carbon/human/subject)
 	if(state != CONTRACT_ACTIVE || consent_time || SScontracts.subject_identity(subject)?.id != target_ref || !target_condition())
 		return FALSE
-	consent_time = world.time
+	EXPIRY_STAMP(src, consent_time, CLOCK_WORLD)
 	consent_record_handle = om_handle(paper)
 	return TRUE
 
@@ -116,7 +116,7 @@
 	payload["signed"] = TRUE
 	report.consent_evidence_id = evidence_id
 	SScontracts.bind_evidence_subject(evidence_id, report.target_ref)
-	payload["signature_time"] = world.time
+	payload["signature_time"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	paper.name = "signed case registry consent - [subject.real_name]"
 	paper.info += "<br><b>Status:</b> Consent registered.<br><b>Filing instruction:</b> Bundle this form with the completed case narrative and longitudinal body scans, then fax it to [CONTRACT_FAX_CASE_REGISTRY]."
 	paper.updateinfolinks()
@@ -225,7 +225,7 @@ GLOBAL_LIST_INIT(medical_rare_case_types, list(
 	var/list/baseline
 	var/list/followup
 	for(var/list/evidence as anything in scans)
-		if(evidence["subject_id"] != report.target_ref || evidence["scan_time"] < report.consent_time || evidence["scan_time"] > world.time)
+		if(evidence["subject_id"] != report.target_ref || evidence["scan_time"] < report.consent_time || BEFORE(packet, evidence["scan_time"], CLOCK_WORLD))
 			continue
 		var/severity = medical_snapshot_condition_severity(evidence["snapshot"], report.target_condition_type)
 		if(isnum(severity) && severity >= MEDICAL_RARE_CASE_MINIMUM_SEVERITY)

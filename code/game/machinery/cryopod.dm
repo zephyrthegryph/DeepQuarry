@@ -219,7 +219,7 @@
 	var/disallow_occupant_types = list()
 
 	var/time_till_despawn = 60 // Down to 1 minute to reflect respawn times. //Now 6 seconds. Mind the deciseconds.
-	var/time_entered = 0          // Used to keep track of the safe period.
+	EXPIRY_DECLARE(time_entered) // Used to keep track of the safe period.
 	var/obj/item/radio/intercom/announce //
 
 	var/control_computer_handle
@@ -354,7 +354,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 			go_out(TRUE)
 			return
 		//Allow a ten minute gap between entering the pod and actually despawning.
-		if(world.time - time_entered < time_till_despawn)
+		if(ELAPSED(src, time_entered, CLOCK_WORLD) < time_till_despawn)
 			return
 
 		if(!occupant.client && occupant.stat<2) //Occupant is living and has no client.
@@ -555,7 +555,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	// begin: Dont delete mobs-in-mobs
 	if(to_despawn.client && to_despawn.stat<2)
 		var/mob/observer/dead/newghost = to_despawn.ghostize()
-		newghost.timeofdeath = world.time
+		EXPIRY_STAMP(newghost, timeofdeath, CLOCK_WORLD)
 	// end: Dont delete mobs-in-mobs
 
 	//This should guarantee that ghosts don't spawn.
@@ -674,7 +674,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	to_chat(user, span_notice("[on_enter_occupant_message]"))
 	to_chat(user, span_boldnotice("If you ghost, log out or close your client now, your character will shortly be permanently removed from the round."))
 
-	time_entered = world.time
+	EXPIRY_STAMP(src, time_entered, CLOCK_WORLD)
 
 	add_fingerprint(user)
 
@@ -767,7 +767,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	to_chat(M, span_notice("[on_enter_occupant_message]"))
 	to_chat(M, span_boldnotice("If you ghost, log out or close your client now, your character will shortly be permanently removed from the round."))
 	set_occupant(M)
-	time_entered = world.time
+	EXPIRY_STAMP(src, time_entered, CLOCK_WORLD)
 	if(isliving(M) && applies_stasis)
 		var/mob/living/L = M
 		L.set_stasis(/datum/body_effect/stasis/total, src)

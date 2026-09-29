@@ -37,7 +37,7 @@ GLOBAL_LIST_INIT(event_collector_associations,list())
 	var/sound_for_recipe_complete
 
 	var/wait_between_items = 0 //How long must you wait before adding another item
-	var/next_item_added = 0 //world time when the next item can be added
+	EXPIRY_DECLARE(next_item_added) //world time when the next item can be added
 
 	var/type_to_spawn_on_complete
 
@@ -245,7 +245,7 @@ DECLARE_INTERACTIONS(/obj/structure/event_collector, INTERACT_ITEM(null, PROC_RE
 		current_step += 1
 		update_icon()
 		post_recipe_complete(user)
-		next_item_added = (world.time + wait_between_items)
+		EXPIRY_SET(src, next_item_added, wait_between_items, CLOCK_WORLD)
 
 /obj/structure/event_collector/proc/start_recipe_process()
 	awaiting_next_recipe = TRUE

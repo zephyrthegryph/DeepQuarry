@@ -209,7 +209,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 					"subject_ref" = identity.id,
 					"subject_id" = identity.id,
 					"subject_name" = scanned_human.real_name,
-					"scan_time" = world.time,
+					"scan_time" = EXPIRY_AT(src, CLOCK_WORLD, 0),
 					"snapshot" = medical_trial_snapshot(scanned_human),
 					"trial_markers" = scanned_human.medical_trial_marker_snapshot(),
 					"operator_account" = operator_account?.account_number,
@@ -222,7 +222,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 					"actor_account" = operator_account?.account_number,
 					"department" = DEPARTMENT_MEDICAL,
 					"evidence_ids" = list(evidence_id),
-					"scan_time" = world.time,
+					"scan_time" = EXPIRY_AT(src, CLOCK_WORLD, 0),
 					"detail" = "Authenticated body scan printed",
 				), "medical-scan:[evidence_id]", src, ui?.user, scanned_human)
 		else

@@ -17,7 +17,7 @@
 	var/bubble_icon = "normal" ///what icon the atom uses for speechbubbles
 	var/datum/forensics_crime/forensic_data
 
-	var/tmp/last_bumped = 0
+	EXPIRY_TMP_DECLARE(last_bumped)
 
 	///Chemistry.
 	var/datum/reagents/reagents = null

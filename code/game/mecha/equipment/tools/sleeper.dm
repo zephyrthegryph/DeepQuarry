@@ -110,7 +110,7 @@
 		ui.open()
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/tgui_data(mob/user)
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER)
+	var/mob/living/carbon/human/occupant = slot_item_real(OCCUPANT_SLOT_MECHA_SLEEPER)
 	var/list/data = list()
 	data["has_occupant"] = occupant ? 1 : 0
 	if(!occupant)
@@ -146,7 +146,7 @@
 				rlist += list(list("name" = "[R]", "volume" = round(R.volume, 0.01)))
 	data["reagents"] = rlist
 	var/list/inj = list()
-	var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG = locate(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun) in chassis.slot_contents()
+	var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG = locate_within(chassis, /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 	if(SG?.reagents && islist(SG.reagents.reagent_list))
 		for(var/datum/reagent/R in SG.reagents.reagent_list)
 			if(R.volume > 0)

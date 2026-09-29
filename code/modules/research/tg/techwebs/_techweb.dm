@@ -65,7 +65,7 @@
 	///A multiplier applied to all research gain, cut in half if the Master server was sabotaged.
 	var/income_modifier = 1
 	///The amount of research points generated the techweb generated the latest time it generated.
-	var/last_income
+	EXPIRY_DECLARE(last_income)
 
 	/**
 	 * Assoc list of relationships with various partners

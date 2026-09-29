@@ -28,7 +28,7 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 	var/min_force = 10 //minimum amount of force needed to damage the door with a melee weapon
 	var/hitsound = SFX_WEAPONS_SMASH //sound door makes when hit with a weapon
 	var/block_air_zones = 1 //If set, air zones cannot merge across the door even when it is opened.
-	var/close_door_at = 0 //When to automatically close the door, if possible
+	EXPIRY_DECLARE(close_door_at) //When to automatically close the door, if possible
 	/// The deadline the `door_timer_token` timer slot was last set for (next_door_deadline()).
 	var/tmp/door_timer_at = 0
 	var/list/autoclose_blockers
@@ -115,11 +115,11 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 
 /// Runs every deadline that has passed. Called from the door's timer wake.
 /obj/machinery/door/proc/door_deadlines_due()
-	if(close_door_at && world.time >= close_door_at)
+	if(close_door_at && EXPIRY_EXPIRED(src, close_door_at, CLOCK_WORLD))
 		if(density && !operating)
 			close_door_at = 0
 		else if(autoclose)
-			close_door_at = world.time + next_close_wait()
+			EXPIRY_SET(src, close_door_at, next_close_wait(), CLOCK_WORLD)
 			close()
 		else
 			close_door_at = 0
@@ -134,7 +134,7 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 
 /obj/machinery/door/proc/autoclose_in(wait)
 	clear_autoclose_blockers()
-	close_door_at = world.time + wait
+	EXPIRY_SET(src, close_door_at, wait, CLOCK_WORLD)
 	schedule_door_timer()
 
 /obj/machinery/door/proc/sleep_until_autoclose_blocker_moves(atom/movable/blocker)
@@ -172,9 +172,9 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 
 	if(ismob(AM))
 		var/mob/M = AM
-		if(world.time - M.last_bumped <= 10)
+		if(ELAPSED(M, last_bumped, CLOCK_WORLD) <= 1 SECOND)
 			return	//Can bump-open one airlock per second. This is to prevent shock spam.
-		M.last_bumped = world.time
+		EXPIRY_STAMP(M, last_bumped, CLOCK_WORLD)
 		if(M.restrained() && !check_access(null))
 			return
 		else if(has_trait(M, TRAIT_AMBIENT_PEST_MOB) && !(M.ckey))

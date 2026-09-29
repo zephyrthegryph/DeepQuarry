@@ -359,22 +359,46 @@ As built:
 ## 17. Expiry
 
 ```dm
-EXPIRY_DECLARE(stun_until)                 // var + clock
-EXPIRY_SET(src, stun_until, 5 SECONDS, CLOCK_MOB)
-EXPIRY_LEFT(src, stun_until)               // deciseconds left, 0 when expired
-EXPIRY_ACTIVE(src, stun_until)
-ELAPSED(src, started_at)                   // clock-aware elapsed
+EXPIRY_DECLARE(stun_until)                          // var/stun_until = 0 (EXPIRY_TMP_DECLARE: var/tmp)
+EXPIRY_SET(src, stun_until, 5 SECONDS, CLOCK_WORLD)
+EXPIRY_EXTEND(src, stun_until, 5 SECONDS, CLOCK_WORLD)  // never shortens
+EXPIRY_LEFT(src, stun_until, CLOCK_WORLD)           // deciseconds left, 0 when expired
+EXPIRY_ACTIVE(src, stun_until, CLOCK_WORLD)         // EXPIRY_EXPIRED is the negation
+EXPIRY_CLEAR(src, stun_until)
+EXPIRY_STAMP(src, started_at, CLOCK_WORLD)          // record now
+ELAPSED(src, started_at, CLOCK_WORLD)               // clock-aware elapsed
+// raw points (list slots, locals, records): EXPIRY_AT, ELAPSED_SINCE, LEFT_UNTIL, BEFORE
 ```
 
-- Clock-aware (stasis, machine clock). Distinct from COOLDOWN (a gate); expiry is state that
-  ends. Replaces `world.time + X` comparisons for expiry-shaped state.
-- Lint `sys_world_time_expiry`.
+- Clock-aware. **As built:** DM has no per-var metadata, so the clock is passed on every read
+  as well as the write (one var, one clock). `CLOCK_WORLD` compiles to `world.time`;
+  `CLOCK_OWN` is the datum's OM timer clock (`om_timer_clock()`: bio for living mobs, machine
+  for machinery), which follows the domain's rate and stops in stasis/suspension exactly like
+  `om_after()` timers (`expiry_clock_now()`, `code/datums/sys/expiry.dm`).
+- Distinct from COOLDOWN (a gate); expiry is state that ends. `TIMESTAMP_VAR` is gone
+  (became `EXPIRY_DECLARE`). A world.time compare is owned by exactly one lint: a rate limit by
+  `tools/ci/cooldown_lint.py`, a recorded time by `sys_world_time_expiry`
+  (`tools/ci/sys_rules/expiry.py`, which also counts `world.time - x <cmp>` elapsed compares).
+- `EXPIRY_ON_LAPSE(PATH, var, clock, PROC_REF(x))`: a declared hook in the lifecycle table that
+  runs when the expiry lapses. It is armed as one `om_after` on the holder by every
+  `EXPIRY_SET`/`EXPIRY_EXTEND` and again at materialize, so it fires however the holder was made;
+  a holder that materializes with the expiry not running lapses at once. Hooks must be
+  idempotent. The guest pass turns red through this, with no poll.
+- Lints `sys_world_time_expiry`, `sys_world_time_write` (raw writes, including member writes
+  through `EXPIRY_AT`) and `sys_expiry_undeclared` (a macro-used var that isn't `EXPIRY_DECLARE`d): all 0.
 
 ## 18. FOR_REAL_CONTENTS
 
-`FOR_REAL_CONTENTS(var/x as anything, A)` iterates materialized contents without resolving
-latent entries. Lint `sys_materializing_walk` bans `FOR_CONTENTS`/`contents_of` in `tgui_data`
-and `examine`. Fixes `anomaly_harvester.dm:171`.
+`FOR_REAL_CONTENTS(var/x as anything, A)` iterates materialized direct contents without
+resolving the latent generator or materializing entries (non-copying). Lint
+`sys_materializing_walk` (`tools/ci/sys_rules/contents.py`) bans `FOR_CONTENTS`, `contents_of`,
+`slot_contents`, `slot_item`, `latent_entries`, `get_all_contents`, `latent_materialize(_all)` and the raw
+`in contents` / `in X.contents` / `in src` walks inside `tgui_data()` and
+`examine()` bodies; latent things are shown from type data (`latent_names()`,
+`latent_count()`) and materialized by the action that takes them. A single occupant is read with
+`slot_item_real(slot)` (`code/datums/sys/contents.dm`), which never builds the ledger. **As built:** 37 sites fixed,
+including `anomaly_harvester.dm` (its `tgui_data` materialized the whole machine every UI tick);
+lint at 0.
 
 ## 19. Verbs through grants
 

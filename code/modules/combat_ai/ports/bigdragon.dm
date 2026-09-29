@@ -61,7 +61,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/bigdragon, get_ai_target_selectors, list(
 	if(!D || D.nospecial || !D.specialtoggle)
 		return DQ_BEHAVIOR_FAILED
 	D.repulse()
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 TYPE_TABLE(/datum/ai_behavior/dragon_tail_sweep, get_player_verb_info, list( \
@@ -108,7 +108,7 @@ TYPE_TABLE(/datum/ai_behavior/dragon_tail_sweep, get_player_verb_info, list( \
 	if(!D || D.nospecial || !D.specialtoggle)
 		return DQ_BEHAVIOR_FAILED
 	D.chargestart(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 TYPE_TABLE(/datum/ai_behavior/dragon_charge, get_player_verb_info, list( \
@@ -150,7 +150,7 @@ TYPE_TABLE(/datum/ai_behavior/dragon_charge, get_player_verb_info, list( \
 	if(!D || D.norange || !D.flametoggle)
 		return DQ_BEHAVIOR_FAILED
 	D.firebreathstart(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 TYPE_TABLE(/datum/ai_behavior/dragon_fire_breath, get_player_verb_info, list( \

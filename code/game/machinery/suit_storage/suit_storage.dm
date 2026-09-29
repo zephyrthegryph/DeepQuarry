@@ -99,7 +99,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 		ui.open()
 
 /obj/machinery/suit_storage_unit/tgui_data()
-	var/mob/living/carbon/human/OCCUPANT = src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE)
+	var/mob/living/carbon/human/OCCUPANT = slot_item_real(OCCUPANT_SLOT_SUIT_STORAGE)
 	var/list/data = list()
 
 	data["broken"] = isbroken

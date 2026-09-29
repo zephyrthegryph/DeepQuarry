@@ -18,7 +18,7 @@ GLOBAL_DATUM_INIT(emergency_shuttle_service, /datum/world_service/emergency_shut
 	var/datum/shuttle/autodock/ferry/emergency/shuttle // Set in shuttle_emergency.dm TODO - is it really?
 	var/list/escape_pods = list()
 
-	TIMESTAMP_VAR(launch_time) //the time at which the shuttle will be launched
+	EXPIRY_DECLARE(launch_time) //the time at which the shuttle will be launched
 	var/auto_recall = FALSE		//if set, the shuttle will be auto-recalled
 	var/evac = FALSE			//1 = emergency evacuation, 0 = crew transfer
 	var/wait_for_launch = FALSE	//if the shuttle is waiting to launch
@@ -45,11 +45,9 @@ GLOBAL_DATUM_INIT(emergency_shuttle_service, /datum/world_service/emergency_shut
 		if(!wait_for_launch)
 			return TRUE
 
-		// ALLOW(sys_deadline_poll): evac countdown: the service steps every tick during it for announcements, and admin verbs move the times in place
-		if(evac && auto_recall && world.time >= auto_recall_at)
+		if(evac && auto_recall && !BEFORE(src, auto_recall_at, CLOCK_WORLD))
 			recall()
-		// ALLOW(sys_deadline_poll): evac countdown: the service steps every tick during it for announcements, and admin verbs move the times in place
-		if(world.time >= launch_time)	//time to launch the shuttle
+		if(EXPIRY_EXPIRED(src, launch_time, CLOCK_WORLD))	//time to launch the shuttle
 			stop_launch_countdown()
 
 			if(!shuttle.location)	//leaving from the station
@@ -100,7 +98,7 @@ GLOBAL_DATUM_INIT(emergency_shuttle_service, /datum/world_service/emergency_shut
 //begins the launch countdown and sets the amount of time left until launch
 /datum/world_service/emergency_shuttle/proc/set_launch_countdown(seconds)
 	wait_for_launch = TRUE
-	launch_time = world.time + (seconds * 10)
+	EXPIRY_SET(src, launch_time, (seconds * 10), CLOCK_WORLD)
 	om_changed(GLOB.emergency_shuttle_service, CHANGE_SHUTTLE_SCHEDULE)
 	demand()
 

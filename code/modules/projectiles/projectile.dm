@@ -28,8 +28,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	//Fired processing vars
 	var/fired = FALSE	//Have we been fired yet
-	var/last_projectile_move = 0
-	var/last_process = 0
+	EXPIRY_DECLARE(last_projectile_move)
+	EXPIRY_DECLARE(last_process)
 	var/time_offset = 0
 	var/datum/point/vector/trajectory
 	var/trajectory_ignore_forcemove = FALSE	//instructs forceMove to NOT reset our trajectory to the new location!
@@ -217,7 +217,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile/proc/pixel_move(trajectory_multiplier, hitscanning = FALSE)
 	if(!loc || !trajectory)
 		return
-	last_projectile_move = world.time
+	EXPIRY_STAMP(src, last_projectile_move, CLOCK_WORLD)
 	if(homing)
 		process_homing()
 	var/forcemoved = FALSE
@@ -287,7 +287,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		homing_offset_y = -homing_offset_y
 
 /obj/item/projectile/periodic_step()
-	last_process = world.time
+	EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
 	if(!loc || !fired || !trajectory)
 		fired = FALSE
 		return PROCESS_KILL
@@ -374,7 +374,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	forceMove(starting)
 	trajectory_ignore_forcemove = FALSE
 	trajectory = new(starting.x, starting.y, starting.z, pixel_x, pixel_y, Angle, GLOB.projectile_pixel_speed)
-	last_projectile_move = world.time
+	EXPIRY_STAMP(src, last_projectile_move, CLOCK_WORLD)
 	permutated = list()
 	originalRange = range
 	fired = TRUE

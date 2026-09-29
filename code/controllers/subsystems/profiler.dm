@@ -110,7 +110,7 @@ SUBSYSTEM_DEF(profiler)
 	subsystems["world_step"] = om_world_diagnostics()
 	var/list/profile = list(
 		"sequence" = ++diagnostic_sequence,
-		"world_time_ds" = world.time,
+		"world_time_ds" = EXPIRY_AT(src, CLOCK_WORLD, 0),
 		"players" = length(GLOB.clients),
 		// world.cpu / world.tick_usage are the whole server tick (DM code). The map
 		// send cost (appearance/turf/obj changes pushed to clients) is world.map_cpu

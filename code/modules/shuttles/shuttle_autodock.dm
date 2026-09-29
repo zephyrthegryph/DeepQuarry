@@ -4,7 +4,7 @@
 // Why isn't it you ask? Eh, baystation did it this way and its convenient to keep the files smaller I guess.
 /datum/shuttle/autodock
 	var/in_use = null	// Tells the controller whether this shuttle needs processing, also attempts to prevent double-use
-	TIMESTAMP_VAR(last_dock_attempt_time)
+	EXPIRY_DECLARE(last_dock_attempt_time)
 
 	var/docking_controller_tag = null // ID of the controller on the shuttle (If multiple, this is the default one)
 	var/datum/embedded_program/docking/shuttle_docking_controller // Controller on the shuttle (the one in use)
@@ -91,7 +91,7 @@ DECLARE_REF(/datum/shuttle/autodock, "in_use", DROP, null)
 /datum/shuttle/autodock/dock()
 	if(active_docking_controller() && shuttle_docking_controller)
 		shuttle_docking_controller.initiate_docking(active_docking_controller().id_tag)
-		last_dock_attempt_time = world.time
+		EXPIRY_STAMP(src, last_dock_attempt_time, CLOCK_WORLD)
 
 /datum/shuttle/autodock/undock()
 	if(shuttle_docking_controller)
@@ -144,7 +144,7 @@ DECLARE_REF(/datum/shuttle/autodock, "in_use", DROP, null)
 				set_process_state(WAIT_FINISH)
 
 		if (WAIT_FINISH)
-			if (world.time > last_dock_attempt_time + DOCK_ATTEMPT_TIMEOUT || check_docked())
+			if (ELAPSED(src, last_dock_attempt_time, CLOCK_WORLD) > DOCK_ATTEMPT_TIMEOUT || check_docked())
 				//*** all done here
 				set_process_state(IDLE_STATE)
 				arrived()

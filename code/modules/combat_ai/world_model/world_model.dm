@@ -72,7 +72,7 @@
 		else
 			visible_neutrals += M
 
-	last_update = world.time
+	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
 	trim_old_damage()
 	trim_old_sounds()
 	trim_old_hazards()
@@ -128,7 +128,7 @@
 		return
 	for(var/i = length(known_hazards), i >= 1, i--)
 		var/list/entry = known_hazards[i]
-		if(entry[3] < world.time)
+		if(ELAPSED_SINCE(src, entry[3], CLOCK_WORLD) > 0)
 			known_hazards.Cut(i, i + 1)
 	UNSETEMPTY(known_hazards)
 

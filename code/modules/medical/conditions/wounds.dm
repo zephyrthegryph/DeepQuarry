@@ -66,7 +66,7 @@
 	var/salved = FALSE
 	var/disinfected = FALSE
 	/// world.time the wound was made.
-	TIMESTAMP_VAR(created)
+	EXPIRY_DECLARE(created)
 	/// Number of merged wounds of this type.
 	var/amount = 1
 	var/germ_level = 0
@@ -88,7 +88,7 @@
 /datum/affliction/wound/New(location, initial_damage = 0)
 	..()
 	wound_category = injury_category
-	created = world.time
+	EXPIRY_STAMP(src, created, CLOCK_WORLD)
 	damage = initial_damage
 	init_stage(initial_damage)
 	bleed_timer += initial_damage
@@ -154,7 +154,7 @@
 	if(is_treated())
 		return TRUE
 	if(wound_damage() <= autoheal_cutoff)
-		if(created + 10 MINUTES > world.time) // Wounds don't autoheal for ten minutes if not bandaged.
+		if(BEFORE(src, created + 10 MINUTES, CLOCK_WORLD)) // Wounds don't autoheal for ten minutes if not bandaged.
 			return FALSE
 		return TRUE
 	return FALSE

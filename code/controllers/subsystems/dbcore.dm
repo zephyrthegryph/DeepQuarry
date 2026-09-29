@@ -6,7 +6,7 @@ SUBSYSTEM_DEF(dbcore)
 	runlevels = RUNLEVEL_LOBBY|RUNLEVELS_DEFAULT
 	priority = FIRE_PRIORITY_DATABASE
 
-	var/failed_connection_timeout = 0
+	EXPIRY_DECLARE(failed_connection_timeout)
 
 	var/schema_mismatch = 0
 	var/db_minor = 0
@@ -83,7 +83,7 @@ SUBSYSTEM_DEF(dbcore)
 	// First handle the already running queries; abandon any that have
 	// exceeded slow_query_timeout_ds to prevent pool exhaustion.
 	for (var/datum/db_query/query in queries_active)
-		if(slow_query_timeout_ds > 0 && (world.time - query.last_activity_time) > slow_query_timeout_ds)
+		if(slow_query_timeout_ds > 0 && ELAPSED(query, last_activity_time, CLOCK_WORLD) > slow_query_timeout_ds)
 			// Query has been in-flight too long — mark broken and free the slot.
 			stack_trace("DB query exceeded slow_query_timeout ([slow_query_timeout_ds] ds); freeing slot. SQL: [query.sql]")
 			log_sql("Slow query timeout: \"[query.sql]\" active for [world.time - query.last_activity_time] ds")
@@ -105,7 +105,7 @@ SUBSYSTEM_DEF(dbcore)
 	// And finally, let check queries for undeleted queries, check ticking if there is a lot of work to do.
 	while(length(processing_queries))
 		var/datum/db_query/query = popleft(processing_queries)
-		if(world.time - query.last_activity_time > (5 MINUTES))
+		if(ELAPSED(query, last_activity_time, CLOCK_WORLD) > (5 MINUTES))
 			stack_trace("Found undeleted query, check the sql.log for the undeleted query and add a delete call to the query datum.")
 			log_sql("Undeleted query: \"[query.sql]\" LA: [query.last_activity] LAT: [query.last_activity_time]")
 			qdel(query)
@@ -220,11 +220,11 @@ SUBSYSTEM_DEF(dbcore)
 	if(IsConnected())
 		return TRUE
 
-	if(failed_connection_timeout <= world.time) //it's been more than 5 seconds since we failed to connect, reset the counter
+	if(EXPIRY_EXPIRED(src, failed_connection_timeout, CLOCK_WORLD)) //it's been more than 5 seconds since we failed to connect, reset the counter
 		failed_connections = 0
 
 	if(failed_connections > 5) //If it failed to establish a connection more than 5 times in a row, don't bother attempting to connect for 5 seconds.
-		failed_connection_timeout = world.time + 50
+		EXPIRY_SET(src, failed_connection_timeout, 5 SECONDS, CLOCK_WORLD)
 		return FALSE
 
 	if(!CONFIG_GET(flag/sql_enabled))
@@ -445,7 +445,7 @@ mass_insert_io() runs it on the I/O lane; on_done gets the outcome.
 	var/job_id
 	var/last_error
 	var/last_activity
-	var/last_activity_time
+	EXPIRY_DECLARE(last_activity_time)
 
 	// Output
 	var/list/list/rows
@@ -478,7 +478,7 @@ mass_insert_io() runs it on the I/O lane; on_done gets the outcome.
 
 /datum/db_query/proc/Activity(activity)
 	last_activity = activity
-	last_activity_time = world.time
+	EXPIRY_STAMP(src, last_activity_time, CLOCK_WORLD)
 
 /datum/db_query/proc/warn_execute(async = TRUE)
 	. = Execute(async)

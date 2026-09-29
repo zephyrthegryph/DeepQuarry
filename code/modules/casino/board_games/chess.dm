@@ -40,7 +40,7 @@
 	var/list/selected_figure
 	var/list/last_double_pawn_move
 	var/game_flags = NONE
-	var/turn_start_time = 0
+	EXPIRY_DECLARE(turn_start_time)
 	var/winner
 
 /datum/board_game/chess/tgui_interact(mob/user, datum/tgui/ui)
@@ -114,7 +114,7 @@ GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 				return FALSE
 			current_board = get_defaultboard()
 			game_state = GAME_PLAYER_ONE
-			turn_start_time = world.time
+			EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
 		if("play_again")
 			if(game_state < GAME_OVER)
@@ -122,7 +122,7 @@ GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 			if(!om_resolve(player_one) || !om_resolve(player_two))
 				return FALSE
 			reset()
-			turn_start_time = world.time
+			EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
 		if("play_again_swapped")
 			if(game_state < GAME_OVER)
@@ -133,7 +133,7 @@ GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 			var/temp_player = player_one
 			player_one = player_two
 			player_two = temp_player
-			turn_start_time = world.time
+			EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
 		if("game_action")
 			if(ui.user == om_resolve(player_one) && game_state == GAME_PLAYER_ONE)
@@ -141,14 +141,14 @@ GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 				if(game_action)
 					if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
 						game_state = GAME_PLAYER_TWO
-						turn_start_time = world.time
+						EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 					return TRUE
 			if(ui.user == om_resolve(player_two) && game_state == GAME_PLAYER_TWO)
 				var/game_action = player_actions(params["action"], params["data"], ui.user, "b")
 				if(game_action)
 					if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
 						game_state = GAME_PLAYER_ONE
-						turn_start_time = world.time
+						EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 					return TRUE
 			return FALSE
 

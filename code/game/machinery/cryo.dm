@@ -118,7 +118,7 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 		ui.open()
 
 /obj/machinery/atmospherics/unary/cryo_cell/tgui_data(mob/user)
-	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
+	var/mob/living/carbon/occupant = slot_item_real(OCCUPANT_SLOT_CRYO)
 	// this is the data which will be sent to the ui
 	var/data[0]
 	data["isOperating"] = on

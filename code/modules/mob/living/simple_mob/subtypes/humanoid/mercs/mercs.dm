@@ -327,7 +327,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 			shoot(A) //Perform the shoot action
 			if(casingtype) //If the mob is designated to leave casings...
 				new casingtype(loc) //... leave the casing.
-			ranged_cooldown = world.time + ranged_cooldown_time + ((injury_level / 2) SECONDS) //Special addition here. This is a timer. Keeping updating the time after shooting. Add that ranged cooldown time specified in the mob to the world time.
+			EXPIRY_SET(src, ranged_cooldown, ranged_cooldown_time + ((injury_level / 2) SECONDS), CLOCK_WORLD) //Special addition here. This is a timer. Keeping updating the time after shooting. Add that ranged cooldown time specified in the mob to the world time.
 		return TRUE	//End these commands here.
 	// ition End
 

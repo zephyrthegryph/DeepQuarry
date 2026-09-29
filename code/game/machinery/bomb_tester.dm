@@ -25,7 +25,7 @@
 	var/sim_canister_output = 10*ONE_ATMOSPHERE
 
 	var/simulating = 0
-	TIMESTAMP_VAR(simulation_started)
+	EXPIRY_DECLARE(simulation_started)
 	/// om_after() timer that ends the running simulation, or 0.
 	var/tmp/simulation_timer = 0
 	var/simulation_delay = 20 SECONDS
@@ -219,7 +219,7 @@
 		return
 	simulating = 1
 	set_use_power(USE_POWER_ACTIVE)
-	simulation_started = world.time
+	EXPIRY_STAMP(src, simulation_started, CLOCK_WORLD)
 	simulation_timer = om_after(src, simulation_delay, PROC_REF(simulation_timer_fired))
 	update_icon()
 	switch(sim_mode)

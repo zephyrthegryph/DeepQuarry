@@ -232,6 +232,14 @@
 /// `FOR_CONTENTS(var/atom/movable/AM as anything, T)`
 #define FOR_CONTENTS(decl, holder) for(decl in (holder).contents)
 
+/// Walk over only the *materialized* direct contents of `holder`: never resolves a latent
+/// generator and never materializes an entry (doc/rewrite/systems.md section 18). The read for
+/// UI data and examine text, which must not change what exists by looking at it; show latent
+/// things from type data (latent_names(), latent_count()) and materialize in the action that
+/// takes them. Non-copying: the body must not move things in or out.
+/// `FOR_REAL_CONTENTS(var/obj/item/I as anything, src)`
+#define FOR_REAL_CONTENTS(decl, holder) for(decl in (holder).contents)
+
 /// Whether `thing` is directly inside `holder`, without copying the holder's
 /// contents. Equivalent to `thing in holder.contents` for movables (and for a
 /// turf in its area).

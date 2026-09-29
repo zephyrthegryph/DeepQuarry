@@ -100,7 +100,7 @@ FLOOR SAFES
 	data["open"] = !!open
 	data["dial"] = dial
 	var/list/c = list()
-	for(var/obj/item/P in contents)
+	FOR_REAL_CONTENTS(var/obj/item/P, src)
 		c += list(list("ref" = "\ref[P]", "name" = P.name))
 	data["contents"] = c
 	return data

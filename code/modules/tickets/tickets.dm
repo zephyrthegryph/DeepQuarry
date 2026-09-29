@@ -224,8 +224,8 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	var/list/tags
 	var/state = AHELP_ACTIVE
 
-	var/opened_at
-	var/closed_at
+	EXPIRY_DECLARE(opened_at)
+	EXPIRY_DECLARE(closed_at)
 
 	var/tmp/initiator_handle	//semi-misnomer, it's the person who ahelped/was bwoinked
 	var/handler_ref
@@ -258,7 +258,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 		return
 
 	id = ++ticket_counter
-	opened_at = world.time
+	EXPIRY_STAMP(src, opened_at, CLOCK_WORLD)
 
 	name = msg
 
@@ -433,7 +433,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 /datum/ticket/proc/RemoveActive()
 	if(state != AHELP_ACTIVE)
 		return
-	closed_at = world.time
+	EXPIRY_STAMP(src, closed_at, CLOCK_WORLD)
 	QDEL_NULL(statclick)
 	GLOB.tickets.active_tickets -= src
 	if(initiator() && initiator().current_ticket() == src)

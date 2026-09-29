@@ -383,7 +383,7 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 
 	W.hits += 1
 	W.damage += damage
-	W.time_inflicted = world.time
+	EXPIRY_STAMP(W, time_inflicted, CLOCK_WORLD)
 
 /// Organs are anatomy, not item integrity: /atom/take_damage() does nothing
 /// to them. A patient's organs are harmed through injure() (internal organs:

@@ -46,7 +46,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	var/tmp/other_flags = 0
 
 	var/tmp/stat = NIF_PREINSTALL		// Status of the NIF
-	var/tmp/install_done				// Time when install will finish
+	EXPIRY_TMP_DECLARE(install_done) // Time when install will finish
 	var/tmp/open = FALSE				// If it's open for maintenance (1-3)
 	var/tmp/should_be_in = BP_HEAD		// Organ we're supposed to be held in
 
@@ -314,10 +314,10 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	if(!install_done)
 		if(human.mind.name == owner)
 			owner_key = human.ckey
-			install_done = world.time + 1 MINUTE
+			EXPIRY_SET(src, install_done, 1 MINUTE, CLOCK_WORLD)
 			notify("Welcome back, [owner]! Performing quick-calibration...")
 		else if(!owner)
-			install_done = world.time + 15 MINUTES // Install time from 35 minutes to 15 minutes.
+			EXPIRY_SET(src, install_done, 15 MINUTES, CLOCK_WORLD) // Install time from 35 minutes to 15 minutes.
 			owner_key = human.ckey
 			notify("Adapting to new user...")
 			om_after(src, 5 SECONDS, PROC_REF(notify), "Adjoining optic [HAS_SYNTHETIC_BIOLOGY(human) ? "interface" : "nerve"], please be patient.", TRUE)

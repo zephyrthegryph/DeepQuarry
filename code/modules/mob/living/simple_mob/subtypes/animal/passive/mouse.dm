@@ -107,7 +107,7 @@
 	layer = MOB_LAYER
 	play_sfx(src, SFX_EFFECTS_MOUSE_SQUEAK_LOUD)
 	if(client)
-		client.time_died_as_mouse = world.time
+		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
 	..()
 
 /mob/living/simple_mob/animal/passive/mouse/cannot_use_vents()
@@ -119,7 +119,7 @@
 	src.icon_state = "mouse_[body_color]_splat"
 	layer = MOB_LAYER
 	if(client)
-		client.time_died_as_mouse = world.time
+		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
 
 /*
  * Mouse types
@@ -336,7 +336,7 @@ EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interact
 	src.icon_state = "mouse_miner_splat"
 	layer = MOB_LAYER
 	if(client)
-		client.time_died_as_mouse = world.time
+		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
 
 /mob/living/simple_mob/animal/passive/mouse/beastmode
 	body_color = "white" // Always set white so it can be easily recoloured
