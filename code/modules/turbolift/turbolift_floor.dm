@@ -7,9 +7,12 @@
 	var/arrival_sound
 	var/delay_time
 
-	var/list/doors = list() // ALLOW(instance_list): d: every lift floor has doors
+	/// The floor's exterior doors, airlocks and firedoors (a relation view: doors leave when they die).
+	var/list/doors
 	/// The floor's call panel (REL_PAIR with its `floor`).
 	var/tmp/obj/structure/lift/button/ext_panel
+
+REL_LIST(/datum/turbolift_floor, doors)
 
 /datum/turbolift_floor/proc/set_area_ref(ref)
 	var/area/turbolift/A = locate(ref)

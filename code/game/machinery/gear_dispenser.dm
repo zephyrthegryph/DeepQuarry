@@ -981,6 +981,6 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 #undef GD_UNIQUE
 
 
-/// LC-refs: held gear disp -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// held gear disp (a relation view: it reads null once the target is deleted).
 /obj/machinery/gear_dispenser/suit_fancy/proc/held_gear_disp() as /datum/gear_disp
 	return held_gear_disp

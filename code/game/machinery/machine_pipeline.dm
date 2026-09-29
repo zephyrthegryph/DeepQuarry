@@ -447,10 +447,10 @@
 /datum/om/stage/machine/power/alarm/perform(obj/machinery/alarm/M, datum/om/frame/machine/F)
 	if(!M.alarm_area_ref())
 		return STAGE_IDLE
-	var/obj/machinery/alarm/MA = om_resolve(M.alarm_area_ref().main_air_alarm)
+	var/obj/machinery/alarm/MA = M.alarm_area_ref().main_air_alarm
 	if(!MA)
 		M.alarm_area_ref().elect_main_air_alarm()
-		MA = om_resolve(M.alarm_area_ref().main_air_alarm) // try again
+		MA = M.alarm_area_ref().main_air_alarm // try again
 	if(!MA || (M.stat & (NOPOWER|BROKEN)) || M.shorted || MA.shorted)
 		M.register_gas_dependencies()
 		return STAGE_IDLE

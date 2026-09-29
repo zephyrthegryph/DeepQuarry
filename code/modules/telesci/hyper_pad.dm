@@ -216,10 +216,10 @@
 /obj/machinery/hyperpad/centre/proc/animate_charge(obj/machinery/hyperpad/Pad, mutable_appearance/color)
 	Pad.add_overlay(color)
 
-/// LC-refs: the primary this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the primary this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/hyperpad/proc/primary() as /obj/machinery/hyperpad/centre
 	return primary
 
-/// LC-refs: the linked_pad this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the linked_pad this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/hyperpad/centre/proc/linked_pad() as /obj/machinery/hyperpad/centre
 	return linked_pad

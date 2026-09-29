@@ -34,6 +34,6 @@
 				autoclose = 0
 				open()
 
-/// LC-refs: air connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// air connection (a relation view: it reads null once the target is deleted).
 /obj/machinery/door/airlock/alarmlock/proc/air_connection() as /datum/radio_frequency
 	return air_connection

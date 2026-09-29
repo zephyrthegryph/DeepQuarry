@@ -171,6 +171,6 @@
 	name = "Magix System IV"
 	desc = "An arcane artifact that holds much magic. Running E-Knock 2.2: Sorceror's Edition"
 
-/// LC-refs: connected -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// connected (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/pod/proc/connected() as /obj/machinery/mass_driver
 	return connected

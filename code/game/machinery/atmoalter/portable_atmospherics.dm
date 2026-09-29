@@ -262,6 +262,6 @@
 
 OWN(/obj/machinery/portable_atmospherics/powered, cell, OWN_CONTAINED)
 
-/// LC-refs: connected port -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// connected port (a relation view: it reads null once the target is deleted).
 /obj/machinery/portable_atmospherics/proc/connected_port() as /obj/machinery/atmospherics/portables_connector
 	return connected_port

@@ -41,7 +41,9 @@ Possible to do for anyone motivated enough:
 	idle_power_usage = 5
 	use_power = USE_POWER_IDLE
 	// ALLOW(object_keyed_lists): AI -> hologram; Destroy() runs clear_holo() per AI, which resets the AI's holo and deletes its hologram
-	var/list/mob/living/silicon/ai/masters //Lazy list of AIs that use the holopad
+	var/list/mob/living/silicon/ai/masters //Lazy list of AIs that use the holopad (a relation view)
+	/// The holograms this pad projects, one per master (owned; each names its AI in `master`).
+	var/list/obj/effect/overlay/aiholo/holograms
 	COOLDOWN_DECLARE(request_cooldown) //to prevent request spam. ~Carn
 	var/holo_range = 5 // Change to change how far the AI can move away from the holopad before deactivating.
 
@@ -95,11 +97,22 @@ Possible to do for anyone motivated enough:
 	var/mob/observer/eye/eyeobj = user?.active_eye()
 	if(eyeobj?.loc != src.loc)//Set client eye on the object if it's not already.
 		eyeobj?.setLoc(get_turf(src))
-	else if(!LAZYACCESS(masters, user))//If there is no hologram, possibly make one.
+	else if(!hologram_of(user))//If there is no hologram, possibly make one.
 		activate_holo(user)
 	else//If there is a hologram, remove it.
 		clear_holo(user)
 	return TRUE
+
+/// The hologram this pad projects for `user`, or null. (Replaces LAZYACCESS(masters, user): masters
+/// is now a plain list of AIs, and the pad owns the holograms.)
+/obj/machinery/hologram/holopad/proc/hologram_of(mob/living/silicon/ai/user)
+	RETURN_TYPE(/obj/effect/overlay/aiholo)
+	if(!user)
+		return null
+	for(var/obj/effect/overlay/aiholo/H as anything in holograms)
+		if(H.master == user)
+			return H
+	return null
 
 /obj/machinery/hologram/holopad/proc/activate_holo(mob/living/silicon/ai/user)
 	var/mob/observer/eye/eyeobj = user?.active_eye()
@@ -118,7 +131,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 /obj/machinery/hologram/holopad/hear_talk(mob/M, list/message_pieces, verb)
 	if(M && LAZYLEN(masters))
 		for(var/mob/living/silicon/ai/master in masters)
-			if(LAZYACCESS(masters, master) && M != master)
+			if(hologram_of(master) && M != master)
 				master.relay_speech(M, message_pieces, verb)
 
 /obj/machinery/hologram/holopad/see_emote(mob/living/M, text)
@@ -134,6 +147,8 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 		var/rendered = span_game(span_say(span_italics("Holopad received, " + span_message("[msg]"))))
 		master.show_message(rendered, type)
 	return
+
+REL_LIST(/obj/machinery/hologram/holopad, masters)
 
 /obj/machinery/hologram/holopad/proc/create_holo(mob/living/silicon/ai/A, turf/T = loc)
 	var/obj/effect/overlay/aiholo/hologram = new(T) // Spawn a blank effect at the location. // to specific type for adding vars
@@ -158,7 +173,8 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 	for(var/obj/belly/B as anything in A.vore_organs)
 		B.forceMove(hologram)
 
-	LAZYSET(masters, A, hologram)
+	own_add(src, "holograms", hologram)
+	rel_add(src, "masters", A)
 	set_light(2)			//pad lighting
 	icon_state = "holopad1"
 	flick("holopadload", src)
@@ -174,7 +190,9 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 /obj/machinery/hologram/holopad/proc/clear_holo(mob/living/silicon/ai/user)
 	if(user.holo == src)
 		rel_clear(user, "holo")
-	qdel(LAZYACCESS(masters, user))//Get rid of user's hologram
+	var/obj/effect/overlay/aiholo/old_holo = hologram_of(user)
+	if(old_holo)
+		own_remove(src, "holograms", old_holo)//Get rid of user's hologram
 	rel_remove(src, "masters", user) //Discard AI from the list of those who use holopad
 	if(!LAZYLEN(masters))//If no users left
 		set_light(0)			//pad lighting (hologram lighting will be handled automatically since its owner was deleted)
@@ -193,8 +211,8 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 		return PROCESS_KILL
 
 /obj/machinery/hologram/holopad/proc/move_hologram(mob/living/silicon/ai/user)
-	if(LAZYACCESS(masters, user))
-		var/obj/effect/overlay/aiholo/H = LAZYACCESS(masters, user)
+	if(hologram_of(user))
+		var/obj/effect/overlay/aiholo/H = hologram_of(user)
 		var/mob/observer/eye/eyeobj = user?.active_eye()
 		walk_towards(H, eyeobj)
 		//Hologram left the screen (got stuck on a wall or something)

@@ -164,6 +164,6 @@
 	else
 		. += "ai-fixer-empty"
 
-/// LC-refs: occupier -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// occupier (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/aifixer/proc/occupier() as /mob/living/silicon/ai
 	return occupier

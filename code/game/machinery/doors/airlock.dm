@@ -1594,15 +1594,15 @@ EXTEND_INTERACTIONS(/obj/machinery/door/airlock, INTERACT_ROBOT("Use", PROC_REF(
 
 OWN(/obj/machinery/door/airlock, electronics, OWN_CONTAINED)
 
-/// LC-refs: closeOther -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// closeOther (a relation view: it reads null once the target is deleted).
 /obj/machinery/door/airlock/proc/closeOther() as /obj/machinery/door/airlock
 	return closeOther
 
-/// LC-refs: hold open -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// hold open (a relation view: it reads null once the target is deleted).
 /obj/machinery/door/airlock/proc/hold_open() as /mob
 	return hold_open
 
-/// LC-refs: water res -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// water res (a relation view: it reads null once the target is deleted).
 /mob/living/silicon/robot/proc/water_res() as /datum/matter_synth
 	return water_res
 

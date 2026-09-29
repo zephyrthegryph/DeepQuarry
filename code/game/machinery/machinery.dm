@@ -623,7 +623,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	var/obj/item/circuitboard/M = circuit
 	own_set(A, "circuit", M)
 	A.anchored = TRUE
-	A.frame_type = M.board_type
+	own_set(A, "frame_type", frame_type_copy(M.board_type)) // the board keeps its own
 	if(A.frame_type.circuit)
 		A.need_circuit = 0
 

@@ -395,14 +395,14 @@
 		T.set_temperature(5000)  // arena-authoritative; not the stale DM mirror
 		T.hotspot_expose(50000,50000,1)
 
-/// LC-refs: the linkedholodeck this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the linkedholodeck this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/HolodeckControl/proc/linkedholodeck() as /area
 	return linkedholodeck
 
-/// LC-refs: the last_to_emag this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the last_to_emag this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/HolodeckControl/proc/last_to_emag() as /mob
 	return last_to_emag
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the target this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/HolodeckControl/proc/target() as /area
 	return target

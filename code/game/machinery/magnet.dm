@@ -362,10 +362,10 @@
 /obj/machinery/magnetic_module/step_start_condition()
 	return TRUE // its power draw
 
-/// LC-refs: center -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// center (a relation view: it reads null once the target is deleted).
 /obj/machinery/magnetic_module/proc/get_center() as /turf
 	return center
 
-/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// radio connection (a relation view: it reads null once the target is deleted).
 /obj/machinery/magnetic_controller/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection

@@ -2,8 +2,7 @@
 /datum/turbolift
 	var/tmp/datum/turbolift_floor/target_floor	// Where are we going?
 	var/tmp/datum/turbolift_floor/current_floor	// Where is the lift currently?
-	// ALLOW(instance_list): d: every lift has doors
-	var/list/doors = list()                             // Doors inside the lift structure.
+	var/list/doors                                      // Doors inside the lift structure (REL_PAIR_LIST with each door's lift).
 	var/list/queued_floors                     // Where are we moving to next?
 	// ALLOW(instance_list): d: filled when the lift is built
 	var/list/floors = list()                            // All floors in this system.
@@ -80,7 +79,7 @@
 /datum/turbolift/proc/doors_are_open(datum/turbolift_floor/use_floor)
 	if(!use_floor)
 		use_floor = current_floor()
-	for(var/obj/machinery/door/airlock/door in (use_floor ? (doors + use_floor.doors) : doors))
+	for(var/obj/machinery/door/airlock/door in (list() + doors + use_floor?.doors))
 		if(!door.density)
 			return 1
 	return 0
@@ -88,14 +87,14 @@
 /datum/turbolift/proc/open_doors(datum/turbolift_floor/use_floor)
 	if(!use_floor)
 		use_floor = current_floor()
-	for(var/obj/machinery/door/airlock/door in (use_floor ? (doors + use_floor.doors) : doors))
+	for(var/obj/machinery/door/airlock/door in (list() + doors + use_floor?.doors))
 		door.open()
 	return
 
 /datum/turbolift/proc/close_doors(datum/turbolift_floor/use_floor)
 	if(!use_floor)
 		use_floor = current_floor()
-	for(var/obj/machinery/door/airlock/door in (use_floor ? (doors + use_floor.doors) : doors))
+	for(var/obj/machinery/door/airlock/door in (list() + doors + use_floor?.doors))
 		door.close()
 	return
 
@@ -230,10 +229,10 @@
 	update_ext_panel_icons()
 
 
-/// LC-refs: Where are we going? -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Where are we going? (a relation view: it reads null once the target is deleted).
 /datum/turbolift/proc/target_floor() as /datum/turbolift_floor
 	return target_floor
 
-/// LC-refs: Where is the lift currently? -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Where is the lift currently? (a relation view: it reads null once the target is deleted).
 /datum/turbolift/proc/current_floor() as /datum/turbolift_floor
 	return current_floor

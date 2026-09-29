@@ -144,14 +144,14 @@
 	new/obj/machinery/clamp(A.loc, A)
 	qdel(src)
 
-/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// target (a relation view: it reads null once the target is deleted).
 /obj/machinery/clamp/proc/target_ref() as /obj/machinery/atmospherics/pipe/simple
 	return target
 
-/// LC-refs: network node1 -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// network node1 (a relation view: it reads null once the target is deleted).
 /obj/machinery/clamp/proc/network_node1() as /datum/pipe_network
 	return network_node1
 
-/// LC-refs: network node2 -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// network node2 (a relation view: it reads null once the target is deleted).
 /obj/machinery/clamp/proc/network_node2() as /datum/pipe_network
 	return network_node2

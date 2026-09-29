@@ -297,6 +297,6 @@
 
 	transport_objects(get_turf(linked_pad()))
 
-/// LC-refs: the linked_pad this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the linked_pad this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/power/quantumpad/proc/linked_pad() as /obj/machinery/power/quantumpad
 	return linked_pad

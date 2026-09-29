@@ -477,7 +477,7 @@
 /obj/machinery/media/jukebox/step_start_condition()
 	return playing
 
-/// LC-refs: current track -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// current track (a relation view: it reads null once the target is deleted).
 /obj/machinery/media/jukebox/proc/current_track() as /datum/track
 	return current_track
 
