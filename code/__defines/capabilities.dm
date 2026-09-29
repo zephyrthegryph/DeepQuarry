@@ -1,29 +1,9 @@
 // Capabilities, tracked state and the refresh engine (doc/rewrite/dx_conventions.md).
 // Runtime: code/datums/capabilities/.
 
-// ---- cap_state bits: one per boolean capability state, on /atom/var/cap_state ----
-/// The cover (a hatch, the APC's front plate) is open.
-#define CAP_COVER_OPEN (1<<0)
-/// The maintenance panel is open.
-#define CAP_PANEL_OPEN (1<<1)
-/// The access lock is engaged.
-#define CAP_LOCKED (1<<2)
-/// Broken: every entry refuses unless it is works_broken.
-#define CAP_BROKEN (1<<3)
-/// Emagged.
-#define CAP_EMAGGED (1<<4)
-/// Wires cut or exposed state lives in the wires datum; this bit says the wires are exposed.
-#define CAP_WIRES_EXPOSED (1<<5)
-/// Anchored by the anchor capability (mirrors nothing: the atom's own `anchored` is the truth).
-#define CAP_WELDED (1<<6)
-/// Bolted (airlocks).
-#define CAP_BOLTED (1<<7)
-/// A reagent container is open (its lid is off, or it has none): reagents go in and out, and
-/// is_open_container() answers TRUE. Set at init for lidless containers (reagent_container()).
-#define CAP_LID_OPEN (1<<8)
-
+// ---- cap_state bits: ALL allocated in code/__defines/cap_bits.dm (tools/ci/cap_bits_lint.py) ----
 // ---- storage categories (L1: the one allocation of HOLDS_* bits) ----
-// A storage() holder's `holds` is a mask of these; an item's `storage_class` says which it is.
+// A cap_storage() holder's `holds` is a mask of these; an item's `storage_class` says which it is.
 // can_hold rule (storage.dm): HOLDS_ANY takes anything that fits; otherwise an item fits when
 // (holds & HOLDS_TOOLS) and it has tool qualities, or (item.storage_class & holds) != 0.
 // DM bitfields are safe to 24 bits.
@@ -97,3 +77,18 @@
 #define CLOCK_WORLD 0
 /// The holder's own clock (paused in stasis or suspension).
 #define CLOCK_OWN 1
+
+// ---- capability ordering (caps_ordered()) ----
+#define CAP_ORDER_DRAW "draw"
+#define CAP_ORDER_EXAMINE "examine"
+
+// ---- emag() modes ----
+/// The emag works once: a second swipe is refused with already_say.
+#define EMAG_ONCE 0
+/// The emag works every time (its effect runs again).
+#define EMAG_REPEATABLE 1
+
+// ---- tool arguments ----
+/// cover(open_tool = BY_HAND): opened with an empty hand. (DM substitutes a default for an explicit
+/// null argument, so null can't mean "by hand".)
+#define BY_HAND "by_hand"

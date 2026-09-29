@@ -4,15 +4,15 @@
 //
 //	/obj/item/flask/capabilities()
 //		. = ..()
-//		. += reagent_container(volume = 60, transfer_amounts = list(5, 10, 30), open_lid = TRUE)
+//		. += cap_reagent_container(volume = 60, transfer_amounts = list(5, 10, 30), lid = TRUE)
 //
 // State: CAP_LID_OPEN (open for reagents; is_open_container() reads it). A lidded container
-// (open_lid = TRUE) starts as its type's cap_state says and offers Open lid / Close lid; a lidless
+// (lid = TRUE) starts as its type's cap_state says and offers Open lid / Close lid; a lidless
 // one is opened at init and stays open. The transfer amount lives in the capability data
 // (/datum/cap_reagent_data), defaulting to the first of transfer_amounts.
 //
 // Entries, all on the holder (the resolver offers target-side entries only):
-//   Open lid / Close lid     empty hand, when open_lid.
+//   Open lid / Close lid     empty hand, when lid.
 //   Set transfer amount      a form choosing one of transfer_amounts (or, with cycle_transfer, the
 //                            next amount without asking), when there is more than one.
 //   Pour in                  a held open container with reagents pours into the holder (fillable).
@@ -31,7 +31,7 @@
 	/// The amounts a user can pick; the first is the default.
 	var/list/transfer_amounts
 	/// Has a lid that opens and closes (else always open).
-	var/open_lid = FALSE
+	var/lid = FALSE
 	/// Other containers can fill from it.
 	var/pourable = TRUE
 	/// Other containers can pour into it.
@@ -50,56 +50,53 @@
 
 /**
  * The reagent container capability. volume: the holder's reagent volume; transfer_amounts: the
- * choices (first is the default); open_lid: has a lid; pourable / fillable / splashable: what other
+ * choices (first is the default); lid: has a lid; pourable / fillable / splashable: what other
  * containers can do with it; cycle_transfer: Set transfer amount steps instead of asking.
  */
-/proc/reagent_container(volume = 30, list/transfer_amounts = list(5, 10, 15, 30), open_lid = FALSE, pourable = TRUE, fillable = TRUE, splashable = TRUE, cycle_transfer = FALSE, fill_levels = 4, log = null)
+/proc/cap_reagent_container(volume = 30, list/transfer_amounts = list(5, 10, 15, 30), lid = FALSE, pourable = TRUE, fillable = TRUE, splashable = TRUE, cycle_transfer = FALSE, fill_levels = 4, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/reagent_container/C = new
 	C.volume = volume
 	C.transfer_amounts = transfer_amounts
-	C.open_lid = open_lid
+	C.lid = lid
 	C.pourable = pourable
 	C.fillable = fillable
 	C.splashable = splashable
 	C.cycle_transfer = cycle_transfer
 	C.fill_levels = fill_levels
-	C.works_broken = TRUE
-	C.works_unpowered = TRUE
-	C.log = log
-	return C
+	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 /datum/capability/reagent_container/on_holder_init(atom/holder, mapload)
 	if(!holder.reagents)
 		holder.create_reagents(volume)
-	if(!open_lid)
+	if(!lid)
 		cap_set(holder, CAP_LID_OPEN, TRUE) // lidless: always open
 
 /datum/capability/reagent_container/interactions(atom/holder)
 	. = list()
-	if(open_lid)
-		. += cap_claim_entry(src, hand("Open lid", TYPE_PROC_REF(/atom, cap_reagent_toggle_lid), works_broken = TRUE, works_unpowered = TRUE, log = log, name_proc = TYPE_PROC_REF(/atom, cap_reagent_lid_name)), "reagents:lid", empty_handed = TRUE)
+	if(lid)
+		. += cap_claim_entry(src, cap_hand("Open lid", TYPE_PROC_REF(/atom, cap_reagent_toggle_lid), works_broken = TRUE, works_unpowered = TRUE, name_proc = TYPE_PROC_REF(/atom, cap_reagent_lid_name)), "reagents:lid", empty_handed = TRUE)
 	if(length(transfer_amounts) > 1)
 		var/list/form = cycle_transfer ? null : list(choice_field("amount", TYPE_PROC_REF(/atom, cap_reagent_amount_choices), message = "Amount per transfer:"))
-		. += cap_claim_entry(src, hand("Set transfer amount", TYPE_PROC_REF(/atom, cap_reagent_set_amount), works_broken = TRUE, works_unpowered = TRUE, form = form), "reagents:amount", INTERACTION_CAT_CONFIGURE, empty_handed = TRUE)
+		. += cap_claim_entry(src, cap_hand("Set transfer amount", TYPE_PROC_REF(/atom, cap_reagent_set_amount), works_broken = TRUE, works_unpowered = TRUE, form = form), "reagents:amount", INTERACTION_CAT_CONFIGURE, empty_handed = TRUE)
 	if(fillable)
-		. += cap_claim_entry(src, use_on("Pour in", /obj/item, TYPE_PROC_REF(/atom, cap_reagent_pour_in), needs = TYPE_PROC_REF(/atom, cap_reagent_pour_in_reason), works_broken = TRUE, works_unpowered = TRUE, log = log, priority = 5), "reagents:pour_in")
-	. += cap_claim_entry(src, use_on("Splash", /obj/item, TYPE_PROC_REF(/atom, cap_reagent_splash_on), needs = TYPE_PROC_REF(/atom, cap_reagent_splash_reason), works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME, priority = 5, stance = I_HURT), "reagents:splash:[I_HURT]")
+		. += cap_claim_entry(src, cap_use_on("Pour in", /obj/item, TYPE_PROC_REF(/atom, cap_reagent_pour_in), needs = TYPE_PROC_REF(/atom, cap_reagent_pour_in_reason), works_broken = TRUE, works_unpowered = TRUE, priority = 5), "reagents:pour_in")
+	. += cap_claim_entry(src, cap_use_on("Splash", /obj/item, TYPE_PROC_REF(/atom, cap_reagent_splash_on), needs = TYPE_PROC_REF(/atom, cap_reagent_splash_reason), works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME, priority = 5, stance = I_HURT), "reagents:splash:[I_HURT]")
 	if(pourable)
-		. += cap_claim_entry(src, use_on("Fill from", /obj/item, TYPE_PROC_REF(/atom, cap_reagent_fill_from), needs = TYPE_PROC_REF(/atom, cap_reagent_fill_from_reason), works_broken = TRUE, works_unpowered = TRUE, log = log, priority = 4), "reagents:fill_from")
+		. += cap_claim_entry(src, cap_use_on("Fill from", /obj/item, TYPE_PROC_REF(/atom, cap_reagent_fill_from), needs = TYPE_PROC_REF(/atom, cap_reagent_fill_from_reason), works_broken = TRUE, works_unpowered = TRUE, priority = 4), "reagents:fill_from")
 
 /datum/capability/reagent_container/examine(atom/holder, mob/user)
 	. = list()
 	var/datum/reagents/R = holder.reagents
 	if(R)
 		. += R.total_volume ? "It contains [R.total_volume] of [R.maximum_volume] units." : "It is empty. It holds [R.maximum_volume] units."
-	if(open_lid && !(holder.cap_state & CAP_LID_OPEN))
+	if(lid && !(holder.cap_state & CAP_LID_OPEN))
 		. += "Its lid is closed."
 
 /datum/capability/reagent_container/draw(atom/holder, datum/look/look)
 	var/datum/reagents/R = holder.reagents
 	if(R && R.maximum_volume)
 		look.gauge("fill", level = R.total_volume / R.maximum_volume, levels = fill_levels)
-	look.overlay("lid", when = open_lid && !(holder.cap_state & CAP_LID_OPEN))
+	look.overlay("lid", when = lid && !(holder.cap_state & CAP_LID_OPEN))
 
 /datum/capability/reagent_container/ui_data(atom/holder, mob/user, list/data)
 	data["reagent_volume"] = holder.reagents?.total_volume || 0
@@ -158,21 +155,21 @@
 /atom/proc/cap_reagent_lid_name(mob/user)
 	return (cap_state & CAP_LID_OPEN) ? "Close lid" : "Open lid"
 
-/atom/proc/cap_reagent_toggle_lid(mob/user, obj/item/held)
+/atom/proc/cap_reagent_toggle_lid(mob/user, datum/capability/reagent_container/cap)
 	var/opening = !(cap_state & CAP_LID_OPEN)
 	cap_set(src, CAP_LID_OPEN, opening)
 	act_message(user, src, self = "You [opening ? "take the lid off" : "put the lid on"] %T%.", others = "%U% [opening ? "takes the lid off" : "puts the lid on"] %T%.")
 	return TRUE
 
 /atom/proc/cap_reagent_amount_choices(mob/user)
-	var/datum/capability/reagent_container/C = cap_current(src, /datum/capability/reagent_container)
+	var/datum/capability/reagent_container/C = cap_of(src, /datum/capability/reagent_container)
 	. = list()
 	for(var/amount in C?.transfer_amounts)
 		. += "[amount]"
 
 /// amount: the choice from the form (text), or null to step to the next amount (cycle_transfer).
-/atom/proc/cap_reagent_set_amount(mob/user, obj/item/held, amount)
-	var/datum/capability/reagent_container/C = cap_current(src, /datum/capability/reagent_container)
+/atom/proc/cap_reagent_set_amount(mob/user, amount, datum/capability/reagent_container/cap)
+	var/datum/capability/reagent_container/C = cap
 	if(!C)
 		return FALSE
 	var/list/amounts = C.transfer_amounts
@@ -194,7 +191,7 @@
 		return FALSE
 	return reagent_source_reason(held) || reagent_sink_reason(src) || TRUE
 
-/atom/proc/cap_reagent_pour_in(mob/user, obj/item/held)
+/atom/proc/cap_reagent_pour_in(mob/user, obj/item/held, datum/capability/reagent_container/cap)
 	var/moved = held.reagents.trans_to_holder(reagents, reagent_transfer_amount(held))
 	if(!moved)
 		return refuse(user, "Nothing pours out of \the [held].")
@@ -204,13 +201,13 @@
 /atom/proc/cap_reagent_fill_from_reason(mob/user, obj/item/held)
 	if(!held)
 		return FALSE
-	var/datum/capability/reagent_container/C = cap_current(src, /datum/capability/reagent_container)
+	var/datum/capability/reagent_container/C = cap_of(src, /datum/capability/reagent_container)
 	// Something that takes pouring is poured into, unless the held container has nothing to pour.
 	if(C?.fillable && held.reagents?.total_volume)
 		return FALSE
 	return reagent_source_reason(src) || reagent_sink_reason(held) || TRUE
 
-/atom/proc/cap_reagent_fill_from(mob/user, obj/item/held)
+/atom/proc/cap_reagent_fill_from(mob/user, obj/item/held, datum/capability/reagent_container/cap)
 	var/moved = reagents.trans_to_holder(held.reagents, reagent_transfer_amount(src))
 	if(!moved)
 		return refuse(user, "Nothing flows out of \the [src].")
@@ -224,7 +221,7 @@
 		return "\the [held] can't be splashed"
 	return reagent_source_reason(held) || TRUE
 
-/atom/proc/cap_reagent_splash_on(mob/user, obj/item/held)
+/atom/proc/cap_reagent_splash_on(mob/user, obj/item/held, datum/capability/reagent_container/cap)
 	if(!held.cap_reagent_splash_onto(user, src))
 		return refuse(user, "Nothing splashes out of \the [held].")
 	return TRUE

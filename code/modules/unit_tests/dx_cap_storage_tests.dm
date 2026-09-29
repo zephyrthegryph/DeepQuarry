@@ -14,17 +14,17 @@
 /// A tool belt: tools and medical things, two at most, up to normal size.
 /obj/cap_fixture/storage_belt/capabilities()
 	. = ..()
-	. += storage(holds = HOLDS_TOOLS | HOLDS_MEDICAL, slots = 2, max_w_class = ITEMSIZE_NORMAL, max_total = ITEMSIZE_COST_NORMAL * 7, use_sound = FALSE)
+	. += cap_storage(holds = HOLDS_TOOLS | HOLDS_MEDICAL, slots = 2, max_w_class = ITEMSIZE_NORMAL, max_total = ITEMSIZE_COST_NORMAL * 7, use_sound = FALSE)
 
 /// Anything small, little space; locked by the lock bit.
 /obj/cap_fixture/storage_lockbox/capabilities()
 	. = ..()
-	. += storage(max_total = ITEMSIZE_COST_SMALL * 2, locked_by = LOCK, use_sound = FALSE)
+	. += cap_storage(max_total = ITEMSIZE_COST_SMALL * 2, locked_by = LOCK, use_sound = FALSE)
 
 /// Medical only, with an exception for plain test items named "exception".
 /obj/cap_fixture/storage_picky/capabilities()
 	. = ..()
-	. += storage(holds = HOLDS_MEDICAL, can_hold_proc = PROC_REF(storage_exception), use_sound = FALSE)
+	. += cap_storage(holds = HOLDS_MEDICAL, can_hold_proc = PROC_REF(storage_exception), use_sound = FALSE)
 
 /obj/cap_fixture/storage_picky/proc/storage_exception(obj/item/I, mob/user)
 	if(I.name == "exception")
@@ -91,9 +91,9 @@
 	TEST_ASSERT_NULL(take_out.why_not(H, belt, null), "Take out is available with contents")
 	var/list/choices = belt.cap_storage_choices(H)
 	TEST_ASSERT_EQUAL(length(choices), 2, "both things are choices")
-	TEST_ASSERT(belt.cap_storage_take_out(H, null, choice = screwdriver.name), "the form's handler takes the screwdriver out")
+	TEST_ASSERT(belt.cap_storage_take_out(H, choice = screwdriver.name, cap = cap_of(belt, /datum/capability/storage)), "the form's handler takes the screwdriver out")
 	TEST_ASSERT(H.is_in_hands(screwdriver), "the screwdriver is in the hand")
-	TEST_ASSERT_EQUAL(belt.cap_storage_take_out(H, null, choice = "no such thing"), UI_REFUSED, "a stale choice is refused")
+	TEST_ASSERT_EQUAL(belt.cap_storage_take_out(H, choice = "no such thing", cap = cap_of(belt, /datum/capability/storage)), UI_REFUSED, "a stale choice is refused")
 	TEST_ASSERT(empty_out.perform(H, belt, null), "Empty out runs")
 	TEST_ASSERT_EQUAL(wrench.loc, T, "the wrench lands on the floor")
 	TEST_ASSERT(!length(belt.storage_items()), "nothing is left inside")

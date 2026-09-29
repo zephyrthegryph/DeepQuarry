@@ -3,17 +3,17 @@
 /// Lidless, takes pouring and gives it, three amounts.
 /obj/cap_fixture/reagent_vat/capabilities()
 	. = ..()
-	. += reagent_container(volume = 100, transfer_amounts = list(10, 20, 50))
+	. += cap_reagent_container(volume = 100, transfer_amounts = list(10, 20, 50))
 
 /// A lidded jar that cycles its amount.
 /obj/cap_fixture/reagent_jar/capabilities()
 	. = ..()
-	. += reagent_container(volume = 60, transfer_amounts = list(5, 10), open_lid = TRUE, cycle_transfer = TRUE)
+	. += cap_reagent_container(volume = 60, transfer_amounts = list(5, 10), lid = TRUE, cycle_transfer = TRUE)
 
 /// A tank: only fills other containers.
 /obj/cap_fixture/reagent_tank/capabilities()
 	. = ..()
-	. += reagent_container(volume = 200, fillable = FALSE)
+	. += cap_reagent_container(volume = 200, fillable = FALSE)
 
 /// A held capability container whose contents can't be splashed.
 /obj/item/cap_fixture_flask
@@ -21,7 +21,7 @@
 
 /obj/item/cap_fixture_flask/capabilities()
 	. = ..()
-	. += reagent_container(volume = 30, splashable = FALSE)
+	. += cap_reagent_container(volume = 30, splashable = FALSE)
 
 /// Makes B (an allocated legacy beaker) hold `amount` water, pouring 10 at a time.
 /proc/dxr_beaker(obj/item/reagent_containers/glass/beaker/B, amount)
@@ -111,9 +111,9 @@
 	TEST_ASSERT(!length(jar_amount?.form), "the cycling jar doesn't ask")
 	TEST_ASSERT_EQUAL(reagent_transfer_amount(vat), 10, "the default is the first amount")
 	TEST_ASSERT_EQUAL(jointext(vat.cap_reagent_amount_choices(H), ","), "10,20,50", "the choices are the declared amounts")
-	TEST_ASSERT(vat.cap_reagent_set_amount(H, null, amount = "20"), "a valid choice is taken")
+	TEST_ASSERT(vat.cap_reagent_set_amount(H, amount = "20", cap = cap_of(vat, /datum/capability/reagent_container)), "a valid choice is taken")
 	TEST_ASSERT_EQUAL(reagent_transfer_amount(vat), 20, "and becomes the transfer amount")
-	TEST_ASSERT_EQUAL(vat.cap_reagent_set_amount(H, null, amount = "7"), UI_REFUSED, "an undeclared amount is refused")
+	TEST_ASSERT_EQUAL(vat.cap_reagent_set_amount(H, amount = "7", cap = cap_of(vat, /datum/capability/reagent_container)), UI_REFUSED, "an undeclared amount is refused")
 	TEST_ASSERT_EQUAL(reagent_transfer_amount(vat), 20, "and changes nothing")
 	TEST_ASSERT(jar_amount.perform(H, jar, null), "the cycle runs")
 	TEST_ASSERT_EQUAL(reagent_transfer_amount(jar), 10, "to the next amount")

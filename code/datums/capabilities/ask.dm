@@ -11,63 +11,106 @@
 // reach re-check. Text is sanitised, numbers clamped.
 
 /// The context to re-check for a prompt: the running dispatch, or a fresh one for target.
-/proc/ask_context(mob/user, datum/target)
+/proc/ask_context(mob/user, datum/target, datum/dispatch_context/context)
+	if(context)
+		return context
 	var/datum/dispatch_context/ctx = GLOB.dispatch_context_now
 	if(ctx && ctx.user == user && (!target || ctx.target == target))
+		if(ctx.returned)
+			// A resumed handler asking again: unbind while it sleeps on the prompt.
+			GLOB.dispatch_context_now = null
 		return ctx
 	return new /datum/dispatch_context(user, target)
 
-/// Null if ctx still holds (the answer counts), else tells the user why and returns FALSE.
+/// "[user]|[target]|[action]" -> TRUE while that prompt is open (M7: one per user per action).
+GLOBAL_LIST_EMPTY(asks_open)
+
+/// The key of ctx's action for the one-open-prompt rule.
+/proc/ask_key(datum/dispatch_context/ctx)
+	var/action = ctx.entry ? ctx.entry.id : (ctx.ui ? "ui" : "direct")
+	return "[ctx.user ? SHARED_CACHE_UID(ctx.user) : "-"]|[ctx.target ? SHARED_CACHE_UID(ctx.target) : "-"]|[action]"
+
+/// Claims the prompt slot of ctx's action for its user. FALSE (and a message) when one is already open.
+/proc/ask_open(datum/dispatch_context/ctx)
+	var/key = ask_key(ctx)
+	if(GLOB.asks_open[key])
+		to_chat(ctx.user, span_warning("You already have that open."))
+		return FALSE
+	GLOB.asks_open[key] = TRUE
+	return TRUE
+
+/proc/ask_close(datum/dispatch_context/ctx)
+	GLOB.asks_open -= ask_key(ctx)
+
+/// TRUE if ctx still holds (the answer counts), else tells the user why and returns FALSE. On TRUE
+/// ctx becomes the current context again, so the handler's next ask_*() re-checks the same action.
 /proc/ask_still_valid(datum/dispatch_context/ctx)
 	var/reason = ctx.invalid_reason()
 	if(!reason)
+		if(ctx.returned)
+			GLOB.dispatch_context_now = ctx
 		return TRUE
 	to_chat(ctx.user, span_warning("Never mind: [reason]."))
 	return FALSE
 
-/proc/ask_text(mob/user, message, title, default, max_length = MAX_MESSAGE_LEN, multiline = FALSE, datum/target)
-	var/datum/dispatch_context/ctx = ask_context(user, target)
+/proc/ask_text(mob/user, message, title, default, max_length = MAX_MESSAGE_LEN, multiline = FALSE, datum/target, datum/dispatch_context/context)
+	var/datum/dispatch_context/ctx = ask_context(user, target, context)
+	if(!ask_open(ctx))
+		return null
 	var/answer = tgui_input_text(user, message, title || "Input", default, max_length, multiline)
+	ask_close(ctx)
 	if(isnull(answer) || !ask_still_valid(ctx))
 		return null
 	answer = sanitize(answer, max_length)
 	return length(answer) ? answer : null
 
-/proc/ask_number(mob/user, message, min_value = 0, max_value = INFINITY, title, default = 0, round_value = TRUE, datum/target)
-	var/datum/dispatch_context/ctx = ask_context(user, target)
+/proc/ask_number(mob/user, message, min_value = 0, max_value = INFINITY, title, default = 0, round_value = TRUE, datum/target, datum/dispatch_context/context)
+	var/datum/dispatch_context/ctx = ask_context(user, target, context)
+	if(!ask_open(ctx))
+		return null
 	var/answer = tgui_input_number(user, message, title || "Input", default, max_value, min_value, 0, round_value)
+	ask_close(ctx)
 	if(isnull(answer) || !ask_still_valid(ctx))
 		return null
 	return ui_number(answer, min_value, max_value, round_value ? 1 : 0)
 
-/proc/ask_list(mob/user, message, list/choices, title, default, datum/target)
-	var/datum/dispatch_context/ctx = ask_context(user, target)
+/proc/ask_list(mob/user, message, list/choices, title, default, datum/target, datum/dispatch_context/context)
+	var/datum/dispatch_context/ctx = ask_context(user, target, context)
+	if(!ask_open(ctx))
+		return null
 	var/answer = tgui_input_list(user, message, title || "Select", choices, default)
+	ask_close(ctx)
 	if(isnull(answer) || !ask_still_valid(ctx))
 		return null
 	return ui_choice(answer, choices)
 
 /// TRUE for yes, FALSE for no, null when cancelled or no longer valid.
-/proc/ask_yes_no(mob/user, message, title, datum/target)
-	var/datum/dispatch_context/ctx = ask_context(user, target)
+/proc/ask_yes_no(mob/user, message, title, datum/target, datum/dispatch_context/context)
+	var/datum/dispatch_context/ctx = ask_context(user, target, context)
+	if(!ask_open(ctx))
+		return null
 	var/answer = tgui_alert(user, message, title || "Confirm", list("Yes", "No"))
+	ask_close(ctx)
 	if(isnull(answer) || !ask_still_valid(ctx))
 		return null
 	return answer == "Yes"
 
-/proc/ask_color(mob/user, message, title, default = "#ffffff", datum/target)
-	var/datum/dispatch_context/ctx = ask_context(user, target)
+/proc/ask_color(mob/user, message, title, default = "#ffffff", datum/target, datum/dispatch_context/context)
+	var/datum/dispatch_context/ctx = ask_context(user, target, context)
+	if(!ask_open(ctx))
+		return null
 	var/answer = tgui_color_picker(user, message, title || "Colour", default)
+	ask_close(ctx)
 	if(isnull(answer) || !ask_still_valid(ctx))
 		return null
 	return sanitize_hexcolor(answer, default)
 
 /// One of `candidates` (mobs), by name.
-/proc/ask_mob(mob/user, message, list/candidates, title, datum/target)
+/proc/ask_mob(mob/user, message, list/candidates, title, datum/target, datum/dispatch_context/context)
 	var/list/by_name = list()
 	for(var/mob/M as anything in candidates)
 		by_name[avoid_assoc_duplicate_keys(M.name, by_name)] = M
-	var/choice = ask_list(user, message, by_name, title, null, target)
+	var/choice = ask_list(user, message, by_name, title, target = target, context = context)
 	if(isnull(choice))
 		return null
 	var/mob/M = by_name[choice]
@@ -91,14 +134,14 @@
 
 /datum/form_field/choice/ask(datum/dispatch_context/ctx)
 	var/list/L = istext(choices) ? call(ctx.target, choices)(ctx.user) : choices
-	return ask_list(ctx.user, message || "Choose [name]:", L, title)
+	return ask_list(ctx.user, message || "Choose [name]:", L, title, context = ctx)
 
 /datum/form_field/text
 	var/max_length = MAX_MESSAGE_LEN
 	var/default
 
 /datum/form_field/text/ask(datum/dispatch_context/ctx)
-	return ask_text(ctx.user, message || "Enter [name]:", title, default, max_length)
+	return ask_text(ctx.user, message || "Enter [name]:", title, default, max_length, context = ctx)
 
 /datum/form_field/number
 	var/min_value = 0
@@ -106,7 +149,7 @@
 	var/default = 0
 
 /datum/form_field/number/ask(datum/dispatch_context/ctx)
-	return ask_number(ctx.user, message || "Enter [name]:", min_value, max_value, title, default)
+	return ask_number(ctx.user, message || "Enter [name]:", min_value, max_value, title, default, context = ctx)
 
 /proc/choice_field(name, choices, message, title)
 	var/datum/form_field/choice/F = new

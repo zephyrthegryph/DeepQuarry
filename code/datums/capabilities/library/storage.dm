@@ -4,7 +4,7 @@
 //
 //	/obj/item/belt/utility/capabilities()
 //		. = ..()
-//		. += storage(holds = HOLDS_TOOLS | HOLDS_ENGINEERING, slots = 7, max_w_class = ITEMSIZE_NORMAL)
+//		. += cap_storage(holds = HOLDS_TOOLS | HOLDS_ENGINEERING, slots = 7, max_w_class = ITEMSIZE_NORMAL)
 //
 // What fits is a category rule, not a type list (final design §0.1): the holder `holds` a mask of
 // HOLDS_* bits; an item fits when (holds & HOLDS_TOOLS) and it has tool qualities, or its
@@ -23,17 +23,17 @@
 // From code: storage_insert(I, user), storage_remove(I, destination, user), storage_items().
 
 /obj
-	/// storage(): this instance's HOLDS_* mask, or null for the capability's `holds`.
+	/// cap_storage(): this instance's HOLDS_* mask, or null for the capability's `holds`.
 	var/hold_mask
-	/// storage(): this instance's item count limit, or null for the capability's.
+	/// cap_storage(): this instance's item count limit, or null for the capability's.
 	var/hold_slots
-	/// storage(): this instance's largest w_class, or null for the capability's.
+	/// cap_storage(): this instance's largest w_class, or null for the capability's.
 	var/hold_max_w_class
-	/// storage(): this instance's space in storage-cost units, or null for the capability's.
+	/// cap_storage(): this instance's space in storage-cost units, or null for the capability's.
 	var/hold_max_total
 
 /obj/item
-	/// The HOLDS_* categories this item counts as for storage() holders (tools need none).
+	/// The HOLDS_* categories this item counts as for cap_storage() holders (tools need none).
 	var/storage_class = NONE
 
 /datum/capability/storage
@@ -57,7 +57,7 @@
  * max_total: space in storage-cost units; can_hold_proc: the holder's exception proc. behind /
  * locked_by gate every entry (a lockbox: locked_by = LOCK).
  */
-/proc/storage(holds = HOLDS_ANY, slots = null, max_w_class = ITEMSIZE_SMALL, max_total = ITEMSIZE_COST_SMALL * 4, can_hold_proc = null, quick_empty = TRUE, use_sound = SFX_RUSTLE, behind = NONE, locked_by = NONE, log = null)
+/proc/cap_storage(holds = HOLDS_ANY, slots = null, max_w_class = ITEMSIZE_SMALL, max_total = ITEMSIZE_COST_SMALL * 4, can_hold_proc = null, quick_empty = TRUE, use_sound = SFX_RUSTLE, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/storage/C = new
 	C.holds = holds
 	C.slots = slots
@@ -66,19 +66,14 @@
 	C.can_hold_proc = can_hold_proc
 	C.quick_empty = quick_empty
 	C.use_sound = use_sound
-	C.behind = behind
-	C.locked_by = locked_by
-	C.works_broken = TRUE
-	C.works_unpowered = TRUE
-	C.log = log
-	return C
+	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 /datum/capability/storage/interactions(atom/holder)
 	. = list()
-	. += cap_claim_entry(src, insert("Put in", /obj/item, TYPE_PROC_REF(/atom, cap_storage_put_in), behind = behind, locked_by = locked_by, needs = TYPE_PROC_REF(/atom, cap_storage_insert_reason), works_broken = TRUE, works_unpowered = TRUE, log = log, priority = 1), "storage:put_in")
-	. += cap_claim_entry(src, hand("Take out", TYPE_PROC_REF(/atom, cap_storage_take_out), behind = behind, locked_by = locked_by, needs = TYPE_PROC_REF(/atom, cap_storage_has_items), else_say = "it's empty", works_broken = TRUE, works_unpowered = TRUE, log = log, form = list(choice_field("choice", TYPE_PROC_REF(/atom, cap_storage_choices), message = "Take out what?"))), "storage:take_out", INTERACTION_CAT_OPEN, empty_handed = TRUE)
+	. += cap_claim_entry(src, cap_insert("Put in", /obj/item, TYPE_PROC_REF(/atom, cap_storage_put_in), needs = TYPE_PROC_REF(/atom, cap_storage_insert_reason), works_broken = TRUE, works_unpowered = TRUE, priority = 1), "storage:put_in")
+	. += cap_claim_entry(src, cap_hand("Take out", TYPE_PROC_REF(/atom, cap_storage_take_out), needs = TYPE_PROC_REF(/atom, cap_storage_has_items), else_say = "it's empty", works_broken = TRUE, works_unpowered = TRUE, form = list(choice_field("choice", TYPE_PROC_REF(/atom, cap_storage_choices), message = "Take out what?"))), "storage:take_out", INTERACTION_CAT_OPEN, empty_handed = TRUE)
 	if(quick_empty)
-		. += cap_claim_entry(src, hand("Empty out", TYPE_PROC_REF(/atom, cap_storage_empty_out), behind = behind, locked_by = locked_by, needs = TYPE_PROC_REF(/atom, cap_storage_has_items), else_say = "it's empty", works_broken = TRUE, works_unpowered = TRUE, log = log), "storage:empty_out", INTERACTION_CAT_EJECT, empty_handed = TRUE)
+		. += cap_claim_entry(src, cap_hand("Empty out", TYPE_PROC_REF(/atom, cap_storage_empty_out), needs = TYPE_PROC_REF(/atom, cap_storage_has_items), else_say = "it's empty", works_broken = TRUE, works_unpowered = TRUE), "storage:empty_out", INTERACTION_CAT_EJECT, empty_handed = TRUE)
 
 /datum/capability/storage/examine(atom/holder, mob/user)
 	var/count = length(holder.storage_items())
@@ -147,7 +142,7 @@
 
 // ---- the ledger slot ----
 
-/// The storage slot a storage() capability gives its holder (added by slot_relation_overrides(),
+/// The storage slot a cap_storage() capability gives its holder (added by slot_relation_overrides(),
 /// slot_def.dm). Its refusal and capacity are the holder's capability's; contents spill when the
 /// holder is destroyed.
 /datum/om/relation/slot/cap_storage
@@ -233,8 +228,8 @@
 	for(var/obj/item/I as anything in storage_items())
 		.[avoid_assoc_duplicate_keys(I.name, .)] = I
 
-/atom/proc/cap_storage_put_in(mob/user, obj/item/held)
-	var/datum/capability/storage/C = cap_current(src, /datum/capability/storage)
+/atom/proc/cap_storage_put_in(mob/user, obj/item/held, datum/capability/storage/cap)
+	var/datum/capability/storage/C = cap
 	if(!storage_insert(held, user))
 		return refuse(user, "\The [held] won't go in \the [src].")
 	if(C?.use_sound)
@@ -243,7 +238,7 @@
 	return TRUE
 
 /// choice: the name picked from cap_storage_choices(); re-resolved here, since the item may be gone.
-/atom/proc/cap_storage_take_out(mob/user, obj/item/held, choice)
+/atom/proc/cap_storage_take_out(mob/user, choice, datum/capability/storage/cap)
 	var/list/choices = cap_storage_choices(user)
 	var/obj/item/I = choices[choice]
 	if(!I)
@@ -251,13 +246,13 @@
 	if(!storage_remove(I, get_turf(user), user))
 		return refuse(user, "You can't take \the [I] out.")
 	user.put_in_hands(I)
-	var/datum/capability/storage/C = cap_current(src, /datum/capability/storage)
+	var/datum/capability/storage/C = cap
 	if(C?.use_sound)
 		playsound(src, C.use_sound, 50, FALSE, -5)
 	act_message(user, src, self = "You take %I% out of %T%.", others = "%U% takes %I% out of %T%.", item = I)
 	return TRUE
 
-/atom/proc/cap_storage_empty_out(mob/user, obj/item/held)
+/atom/proc/cap_storage_empty_out(mob/user, datum/capability/storage/cap)
 	var/turf/T = get_turf(src)
 	var/count = 0
 	for(var/obj/item/I as anything in storage_items())
