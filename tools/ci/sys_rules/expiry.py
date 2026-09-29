@@ -60,3 +60,45 @@ def scan(files):
             if hit:
                 out["world_time_expiry"].append((rel, number))
     return out
+
+
+# ---- partial-migration rules (lead review: the lint must fail on a half migration) ----
+RULES["world_time_write"] = ("a stored time is written with EXPIRY_SET/EXPIRY_EXTEND/EXPIRY_STAMP "
+                             "(or EXPIRY_AT for list slots/records), never `x = world.time (+ N)`")
+RULES["expiry_undeclared"] = "a var read/written by EXPIRY_*/ELAPSED is declared with EXPIRY_DECLARE/EXPIRY_TMP_DECLARE"
+
+# `x = world.time`, `x = world.time + N`, `x += ...` excluded; `==` excluded. A local declared on the
+# same line (`var/t = world.time`) is a snapshot for this proc, not stored state: not counted.
+WRITE_RE = re.compile(r"(?<![=!<>])=(?!=)\s*\(?\s*world\.time\b(?!\s*[-*/%])")
+LOCAL_RE = re.compile(r"^\s*var/(?!static)")
+MACRO_USE = re.compile(r"\b(?:EXPIRY_(?:SET|EXTEND|CLEAR|ACTIVE|EXPIRED|LEFT|STAMP)|ELAPSED)\(\s*[^,()]+(?:\([^()]*\))?\s*,\s*(\w+)")
+DECLARED = re.compile(r"\b(?:STATIC_)?EXPIRY(?:_TMP)?_DECLARE\(\s*(\w+)\s*\)")
+
+_scan_compare = scan
+
+
+def scan(files):  # noqa: F811
+    out = _scan_compare(files)
+    out["world_time_write"] = []
+    out["expiry_undeclared"] = []
+    declared = set()
+    uses = []
+    for rel, lines in files:
+        for line in lines:
+            if "EXPIRY" in line:
+                declared.update(DECLARED.findall(line))
+        if rel.startswith(SKIP):
+            continue
+        for number, line in enumerate(lines, 1):
+            code = line.split("//", 1)[0]
+            if code.lstrip().startswith("#"):
+                continue
+            if "world.time" in code and WRITE_RE.search(code) and not LOCAL_RE.match(code):
+                out["world_time_write"].append((rel, number))
+            if "EXPIRY_" in code or "ELAPSED(" in code:
+                for name in MACRO_USE.findall(code):
+                    uses.append((rel, number, name))
+    for rel, number, name in uses:
+        if name not in declared:
+            out["expiry_undeclared"].append((rel, number))
+    return out
