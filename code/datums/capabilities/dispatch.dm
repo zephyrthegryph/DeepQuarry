@@ -98,6 +98,8 @@ GLOBAL_DATUM(dispatch_context_now, /datum/dispatch_context)
 	changed(target)
 	if(dispatch_succeeded(result))
 		dispatch_record(ctx.user, target, action_name, log, null)
+		if(istype(ctx.entry, /datum/interaction/capability) && isatom(target))
+			cap_entry_cooldown_start(target, ctx.entry)
 	return result
 
 /// Handler failures this round (the dispatch tests read them).

@@ -277,7 +277,7 @@ OWN_TIMER(/mob/living/simple_mob, update_icon_timer)
 			if(prob(loot_list[path]))
 				new path(get_turf(src))
 
-	om_after_slot(src, "update_icon_timer", 0.3 SECONDS, PROC_REF(callback_update_icon))
+	after_slot(src, "update_icon_timer", 0.3 SECONDS, PROC_REF(callback_update_icon))
 
 	ghostjoin = 0
 	registry_leave(REGISTRY_GHOST_PODS, src)

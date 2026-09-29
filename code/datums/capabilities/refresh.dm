@@ -35,7 +35,7 @@ OWN_TIMER(/datum, periodic_interval)
 	var/want = !!D.should_run()
 	var/pending = om_timer_slot_pending(D, "periodic_interval")
 	if(want && !pending)
-		om_after_slot(D, "periodic_interval", D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), D)
+		after_slot(D, "periodic_interval", D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), D)
 	else if(!want && pending)
 		om_cancel_timer_slot(D, "periodic_interval")
 
@@ -45,7 +45,7 @@ OWN_TIMER(/datum, periodic_interval)
 		return
 	if(D.periodic_step(D.periodic_interval) == PROCESS_KILL || !D.should_run())
 		return
-	om_after_slot(D, "periodic_interval", D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), D)
+	after_slot(D, "periodic_interval", D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), D)
 
 /// Marks E changed: queues its refresh (and its owners', up the chain) and raises `channel` for OM
 /// observers. The rare direct write outside a dispatched call or a TRACKED setter calls this.
@@ -76,6 +76,8 @@ OWN_TIMER(/datum, periodic_interval)
 		D = owner
 
 GLOBAL_LIST_EMPTY(refresh_queue)
+/// Refreshes run so far (the dx_refresh benchmark reads it).
+GLOBAL_VAR_INIT(refresh_bench_drained, 0)
 /// The entity whose refresh is running now (the self-mark detector reads it).
 GLOBAL_DATUM(refresh_running, /datum)
 GLOBAL_VAR_INIT(refresh_self_mark_expected, FALSE)
@@ -161,6 +163,7 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 		done[D] = TRUE
 		var/bits = D.refresh_bits
 		D.refresh_bits = 0
+		GLOB.refresh_bench_drained++
 		try
 			refresh_one(D, bits)
 		catch(var/exception/e)
@@ -242,6 +245,11 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 	var/datum/look/L = GLOB.look_builder
 	L.reset()
 	A.draw(L)
+	// Transient flashes (look_flash()) sit on top of whatever draw() described.
+	if(A.look_flash_state)
+		L.state(A.look_flash_state)
+	for(var/state in A.look_flashes)
+		L.overlay(state)
 	if(!L.touched)
 		if(apply && !isnull(A.look_key))
 			// It drew before and draws nothing now: applying the empty look takes back everything the

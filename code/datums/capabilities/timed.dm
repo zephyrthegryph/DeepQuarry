@@ -54,9 +54,9 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 	if(clock == CLOCK_WORLD)
 		// Real time runs on the global owner. It holds a ref text, not D, so the timer never keeps a
 		// deleted holder alive; the token check drops a stale or reused ref.
-		om_after_slot(null, "timed:[SHARED_CACHE_UID(D)]:[var_name]", for_time, GLOBAL_PROC_REF(timed_expire_ref), REF(D), var_name, token)
+		after_slot(null, "timed:[SHARED_CACHE_UID(D)]:[var_name]", for_time, GLOBAL_PROC_REF(timed_expire_ref), REF(D), var_name, token)
 	else
-		om_after_slot(D, "timed:[var_name]", for_time, GLOBAL_PROC_REF(timed_expire), D, var_name, token)
+		after_slot(D, "timed:[var_name]", for_time, GLOBAL_PROC_REF(timed_expire), D, var_name, token)
 	return TRUE
 
 /proc/timed_expire_ref(ref_text, var_name, token)

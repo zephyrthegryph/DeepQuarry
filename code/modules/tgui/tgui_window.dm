@@ -643,7 +643,7 @@ OWN_TIMER(/datum/tgui_window, payload_timeout)
 		"count" = chunk_count,
 		"chunks" = list(),
 	)
-	om_after_slot(src, "payload_timeout:[payload_id]", 10 SECONDS, PROC_REF(remove_oversized_payload), payload_id)
+	after_slot(src, "payload_timeout:[payload_id]", 10 SECONDS, PROC_REF(remove_oversized_payload), payload_id)
 
 /datum/tgui_window/proc/append_payload_chunk(payload_id, chunk)
 	var/list/payload = LAZYACCESS(oversized_payloads, payload_id)
@@ -661,7 +661,7 @@ OWN_TIMER(/datum/tgui_window, payload_timeout)
 			return
 		on_message(message_type, json_decode(final_payload), list("type" = message_type, "payload" = final_payload, "tgui" = TRUE, "window_id" = id))
 	else
-		om_after_slot(src, "payload_timeout:[payload_id]", 10 SECONDS, PROC_REF(remove_oversized_payload), payload_id)
+		after_slot(src, "payload_timeout:[payload_id]", 10 SECONDS, PROC_REF(remove_oversized_payload), payload_id)
 
 /datum/tgui_window/proc/remove_oversized_payload(payload_id)
 	LAZYREMOVE(oversized_payloads, payload_id)

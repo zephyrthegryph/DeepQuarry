@@ -141,7 +141,16 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 /// type or body plan, e.g. an instance flag). Returning null (the default)
 /// means "use the registry's declared groups, keyed by slot_holder_key()".
 /atom/proc/slot_relation_overrides()
-	return null
+	// A cap_storage() capability adds the capability storage slot to the type's declared slots
+	// (code/datums/capabilities/library/storage.dm). Types are cached, so this runs once per key.
+	if(!cap_of(src, /datum/capability/storage))
+		return null
+	var/list/declared = om_registry().slot_group_for(slot_holder_key())
+	. = declared ? declared.Copy() : list()
+	for(var/datum/om/relation/slot/def as anything in .)
+		if(def.slot_id == CONTAINER_SLOT_STORAGE)
+			return .
+	. += dq_slot_def(/datum/om/relation/slot/cap_storage)
 
 /// The limit for this holder. Override for per-instance capacities.
 /datum/om/relation/slot/proc/capacity_for(atom/holder)

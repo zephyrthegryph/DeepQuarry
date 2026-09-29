@@ -90,7 +90,7 @@
 	LAZYINITLIST(brain.behavior_state)
 	if(!brain.behavior_state[type])
 		brain.behavior_state[type] = list("cooldown" = 0, "charges" = null)
-	om_after_slot(src, "dash:[om_handle(brain)]", windup, PROC_REF(execute_dash), brain, target)
+	after_slot(src, "dash:[om_handle(brain)]", windup, PROC_REF(execute_dash), brain, target)
 	return DQ_BEHAVIOR_CONTINUE
 
 /datum/ai_behavior/charge_slam/stop(datum/ai_brain/brain, atom/target, atom/source, reason)
