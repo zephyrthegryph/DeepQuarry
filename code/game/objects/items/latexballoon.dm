@@ -19,7 +19,7 @@
 /obj/item/latexballon/proc/blow(obj/item/tank/tank)
 	if (icon_state == "latexballon_bursted")
 		return
-	src.air_contents = tank.remove_air_volume(3)
+	own_set(src, "air_contents", tank.remove_air_volume(3))
 	icon_state = "latexballon_blow"
 	item_state = "latexballon"
 

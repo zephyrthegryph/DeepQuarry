@@ -223,7 +223,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	to_chat(user, "You fit \the [IH] into the suit cycler.")
 	user.drop_item()
 	IH.forceMove(src)
-	helmet = IH
+	own_set(src, "helmet", IH)
 
 	update_icon()
 	return TRUE
@@ -271,7 +271,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	to_chat(user, "You fit \the [IS] into the suit cycler.")
 	user.drop_item()
 	IS.forceMove(src)
-	suit = IS
+	own_set(src, "suit", IS)
 
 	update_icon()
 	return TRUE
@@ -406,11 +406,11 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 				if("helmet")
 					if(helmet)
 						helmet.forceMove(get_turf(src))
-						helmet = null
+						own_take(src, "helmet")
 				if("suit")
 					if(suit)
 						suit.forceMove(get_turf(src))
-						suit = null
+						own_take(src, "suit")
 			. = TRUE
 
 		if("department")

@@ -560,7 +560,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/material/processed_alloy, INTERACT_ITEM(null
 	batch.homogeneity = clamp(batch.homogeneity + round(strength / 8), 0, 100)
 	batch.record_electricity(300)
 	batch.recalculate()
-	target = replace_processed_stack(stock, batch, src)
+	own_set(src, "target", replace_processed_stack(stock, batch, src))
 	energy = max(0, energy - 300)
 	qdel(batch)
 	return TRUE

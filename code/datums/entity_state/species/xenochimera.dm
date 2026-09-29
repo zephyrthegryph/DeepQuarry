@@ -525,9 +525,9 @@
 	RETURN_TYPE(/datum/xenochimera)
 	if(xenochimera)
 		return xenochimera
-	xenochimera = new /datum/xenochimera(src)
+	own_set(src, "xenochimera", new /datum/xenochimera(src))
 	return xenochimera
 
 /// Removes the xenochimera state datum, if any.
 /mob/living/carbon/human/proc/remove_xenochimera()
-	QDEL_NULL(xenochimera)
+	own_clear(src, "xenochimera", OWN_DELETE)

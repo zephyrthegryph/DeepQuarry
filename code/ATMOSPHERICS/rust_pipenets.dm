@@ -16,7 +16,7 @@
 
 /datum/pipe_port/New(obj/machinery/atmospherics/machine, index)
 	..()
-	src.machine = machine
+	rel_set(src, "machine", machine)
 	src.index = index
 	handle = SSvg.bind_datum(src)
 
@@ -90,10 +90,10 @@
 	if(!air)
 		air = new(max(rust_pipe_port_volume(index), 1))
 		if(!rust_unbound_port_air)
-			rust_unbound_port_air = list()
+			own_set(src, "rust_unbound_port_air", list())
 		if(length(rust_unbound_port_air) < index)
 			rust_unbound_port_air.len = index
-		rust_unbound_port_air[index] = air
+		own_put(src, "rust_unbound_port_air", index, air)
 	return air
 
 /obj/machinery/atmospherics/proc/rust_pipe_port_volume(index)
@@ -117,7 +117,7 @@
 		old_air = rust_unbound_port_air[index]
 	if(old_air && old_air != network_air)
 		qdel(old_air)
-		rust_unbound_port_air[index] = null
+		own_put(src, "rust_unbound_port_air", index, null)
 	return FALSE
 
 /obj/machinery/atmospherics/proc/rust_allocate_pipe_ports()
@@ -213,7 +213,7 @@
 	if(!network || QDELETED(network))
 		return
 	if(network.rust_authoritative)
-		network.normal_members -= src
+		rel_remove(network, "normal_members", src)
 		unregister_network_membership(network)
 		return
 	qdel(network)
@@ -538,10 +538,10 @@
 	var/list/obj/machinery/atmospherics/old_members = network.normal_members
 	var/datum/gas_mixture/old_air = network.air
 	network.rust_authoritative = FALSE
-	network.line_members = null
-	network.normal_members = null
-	network.air = null
-	network.gases = null
+	rel_clear(network, "line_members")
+	rel_clear(network, "normal_members")
+	own_take(network, "air")
+	rel_clear(network, "gases")
 	network.leaks = null
 	// The region's gas lives in the Rust network; the datum is only a handle.
 	for(var/obj/machinery/atmospherics/member as anything in old_members)
@@ -550,11 +550,11 @@
 	for(var/datum/pipeline/line as anything in old_lines)
 		for(var/obj/machinery/atmospherics/pipe/pipe as anything in line.members)
 			pipe.material_service?.environment_changed()
-		line.network = null
-		line.network_memberships = null
-		line.air = null
-		line.members = null
-		line.edges = null
+		rel_clear(line, "network")
+		rel_clear(line, "network_memberships")
+		own_take(line, "air")
+		rel_clear(line, "members")
+		rel_clear(line, "edges")
 		line.leaks = null
 		qdel(line)
 	qdel(network)
@@ -567,8 +567,8 @@
 	var/datum/gas_mixture/region_air = transition["air"]
 	var/datum/pipe_network/network = new
 	network.rust_authoritative = TRUE
-	network.air = region_air
-	network.gases = list(region_air)
+	own_set(network, "air", region_air)
+	rel_set(network, "gases", list(region_air))
 	network.volume = volume
 	network.update = FALSE
 	rust_pipe_region_networks[region] = network
@@ -591,14 +591,14 @@
 
 	if(length(region_pipes))
 		var/datum/pipeline/pipeline = new
-		pipeline.air = region_air
+		own_set(pipeline, "air", region_air)
 		pipeline.volume = 0
-		pipeline.members = region_pipes
-		pipeline.edges = list()
+		rel_set(pipeline, "members", region_pipes)
+		rel_set(pipeline, "edges", list())
 		pipeline.leaks = list()
-		pipeline.network = network
+		rel_set(pipeline, "network", network)
 		for(var/obj/machinery/atmospherics/pipe/pipe as anything in region_pipes)
-			pipe.parent = pipeline
+			rel_set(pipe, "parent", pipeline)
 			MACHINE_WAKE(pipe) // a pipe with DM work (HE pipes) re-evaluates on joining; others don't listen
 			pipeline.volume += pipe.volume
 			if(pipe.leaking)
@@ -623,7 +623,7 @@
 	if(parent?.air)
 		return parent.air
 	if(!air_temporary)
-		air_temporary = new(max(volume, 1))
+		own_set(src, "air_temporary", new /datum/gas_mixture(max(volume, 1)))
 	return air_temporary
 
 /obj/machinery/atmospherics/pipe/rust_pipe_port_volume(index)
@@ -635,7 +635,7 @@
 /obj/machinery/atmospherics/pipe/rust_bind_pipe_port(index, datum/pipe_network/network, datum/gas_mixture/network_air)
 	if(air_temporary && air_temporary != network_air)
 		qdel(air_temporary)
-	air_temporary = null
+	own_take(src, "air_temporary")
 	return TRUE
 
 /obj/machinery/atmospherics/unary/rust_pipe_port_count()
@@ -656,8 +656,8 @@
 /obj/machinery/atmospherics/unary/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
 	if(air_contents != network_air)
 		qdel(air_contents)
-	air_contents = network_air
-	network = new_network
+	own_set(src, "air_contents", network_air)
+	rel_set(src, "network", new_network)
 	return TRUE
 
 /obj/machinery/atmospherics/binary/rust_pipe_port_count()
@@ -679,13 +679,13 @@
 	if(index == 1)
 		if(air1 != network_air)
 			qdel(air1)
-		air1 = network_air
-		network1 = new_network
+		own_set(src, "air1", network_air)
+		rel_set(src, "network1", new_network)
 	else
 		if(air2 != network_air)
 			qdel(air2)
-		air2 = network_air
-		network2 = new_network
+		own_set(src, "air2", network_air)
+		rel_set(src, "network2", new_network)
 	return TRUE
 
 /obj/machinery/atmospherics/trinary/rust_pipe_port_count()
@@ -707,18 +707,18 @@
 	if(index == 1)
 		if(air1 != network_air)
 			qdel(air1)
-		air1 = network_air
-		network1 = new_network
+		own_set(src, "air1", network_air)
+		rel_set(src, "network1", new_network)
 	else if(index == 2)
 		if(air2 != network_air)
 			qdel(air2)
-		air2 = network_air
-		network2 = new_network
+		own_set(src, "air2", network_air)
+		rel_set(src, "network2", new_network)
 	else
 		if(air3 != network_air)
 			qdel(air3)
-		air3 = network_air
-		network3 = new_network
+		own_set(src, "air3", network_air)
+		rel_set(src, "network3", new_network)
 	return TRUE
 
 /obj/machinery/atmospherics/portables_connector/rust_pipe_port_count()
@@ -732,7 +732,7 @@
 		connected_device?.set_port_network_air(network_air)
 		return TRUE
 	. = ..()
-	network = new_network
+	rel_set(src, "network", new_network)
 	return TRUE
 
 /obj/machinery/atmospherics/valve/rust_pipe_port_count()
@@ -747,9 +747,9 @@
 /obj/machinery/atmospherics/valve/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
 	. = ..()
 	if(index == 1)
-		network_node1 = new_network
+		rel_set(src, "network_node1", new_network)
 	else
-		network_node2 = new_network
+		rel_set(src, "network_node2", new_network)
 	return TRUE
 
 /obj/machinery/atmospherics/tvalve/rust_pipe_port_count()
@@ -764,11 +764,11 @@
 /obj/machinery/atmospherics/tvalve/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
 	. = ..()
 	if(index == 1)
-		network_node1 = new_network
+		rel_set(src, "network_node1", new_network)
 	else if(index == 2)
-		network_node2 = new_network
+		rel_set(src, "network_node2", new_network)
 	else
-		network_node3 = new_network
+		rel_set(src, "network_node3", new_network)
 	return TRUE
 
 /obj/machinery/atmospherics/omni/rust_pipe_port_count()
@@ -795,8 +795,8 @@
 		return FALSE
 	if(port.air != network_air)
 		qdel(port.air)
-	port.air = network_air
-	port.network = new_network
+	own_set(port, "air", network_air)
+	rel_set(port, "network", new_network)
 	return TRUE
 
 /obj/machinery/atmospherics/pipeturbine/rust_pipe_port_count()
@@ -818,13 +818,13 @@
 	if(index == 1)
 		if(air_in != network_air)
 			qdel(air_in)
-		air_in = network_air
-		network1 = new_network
+		own_set(src, "air_in", network_air)
+		rel_set(src, "network1", new_network)
 	else
 		if(air_out != network_air)
 			qdel(air_out)
-		air_out = network_air
-		network2 = new_network
+		own_set(src, "air_out", network_air)
+		rel_set(src, "network2", new_network)
 	return TRUE
 
 

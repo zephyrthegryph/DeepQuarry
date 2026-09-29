@@ -48,7 +48,7 @@
 
 /obj/item/rig_module/ai_container/proc/update_verb_holder()
 	if(!verb_holder)
-		verb_holder = new(src)
+		own_set(src, "verb_holder", new /obj/item/ai_verbs(src))
 	if(integrated_ai())
 		verb_holder.forceMove(integrated_ai())
 	else
@@ -81,7 +81,7 @@
 
 		// If the transfer failed we can delete the card.
 		if(locate_in_list(card, /mob/living/silicon/ai))
-			ai_card = card
+			own_set(src, "ai_card", card)
 			integrated_ai_handle = om_handle(locate_in_list(card, /mob/living/silicon/ai))
 		else
 			eject_ai()
@@ -157,12 +157,12 @@
 				integrated_ai_handle = null
 			if(ai_card)
 				qdel(ai_card)
-				ai_card = null
+				own_take(src, "ai_card")
 		else if(user)
 			user.put_in_hands(ai_card)
 		else
 			ai_card.forceMove(get_turf(src))
-	ai_card = null
+	own_take(src, "ai_card")
 	integrated_ai_handle = null
 	update_verb_holder()
 
@@ -178,7 +178,7 @@
 			if(istype(ai, /obj/item/aicard))
 
 				if(!ai_card)
-					ai_card = new /obj/item/aicard(src)
+					own_set(src, "ai_card", new /obj/item/aicard(src))
 
 				var/obj/item/aicard/source_card = ai
 				var/obj/item/aicard/target_card = ai_card
@@ -192,7 +192,7 @@
 			else
 				user.drop_from_inventory(ai)
 				ai.forceMove(src)
-				ai_card = ai
+				own_set(src, "ai_card", ai)
 				to_chat(ai_mob, span_blue("You have been transferred to \the [holder]'s [src]."))
 				to_chat(user, span_blue("You load [ai_mob] into \the [holder]'s [src]."))
 

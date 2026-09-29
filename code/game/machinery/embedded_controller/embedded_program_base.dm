@@ -6,7 +6,7 @@
 	var/id_tag
 
 /datum/embedded_program/New(obj/machinery/embedded_controller/M)
-	master = M
+	rel_set(src, "master", M)
 	if (istype(M, /obj/machinery/embedded_controller/radio))
 		var/obj/machinery/embedded_controller/radio/R = M
 		id_tag = R.id_tag

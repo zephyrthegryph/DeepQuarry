@@ -42,6 +42,6 @@
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments
-	LAZYADD(ability_objects, A)
+	own_add(src, "ability_objects", A)
 	if(my_mob()?.client)
 		toggle_open(2)

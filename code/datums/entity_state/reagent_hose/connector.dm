@@ -35,7 +35,7 @@
 /// Binds to `new_carrier`. FALSE when the carrier is incompatible.
 /datum/hose_connector/proc/attach(atom/movable/new_carrier, set_unique_name = null)
 	carrier = new_carrier
-	reagents = new /datum/reagents(60, src)
+	own_set(src, "reagents", new /datum/reagents(60, src))
 	// Handle uniquely named connectors
 	if(set_unique_name)
 		name = set_unique_name

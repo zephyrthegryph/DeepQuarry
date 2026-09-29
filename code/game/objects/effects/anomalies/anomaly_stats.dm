@@ -158,9 +158,9 @@
 
 	if(modifier)
 		modifier.on_remove(attached_anomaly)
-		modifier = null
+		own_take(src, "modifier")
 
-	modifier = new picked_mod
+	own_set(src, "modifier", new picked_mod)
 	modifier.on_add(attached_anomaly)
 	calculate_points()
 	return

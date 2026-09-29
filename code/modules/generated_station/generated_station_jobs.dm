@@ -81,7 +81,7 @@
 /// Materializes as lane work; `new_on_done` is invoked with the materialization (or null).
 /datum/generated_station_materialization_job/proc/execute_async(datum/generated_station_spec/spec, z_level, origin_x, origin_y, datum/callback/new_on_done)
 	now = FALSE
-	on_done = new_on_done
+	rel_set(src, "on_done", new_on_done)
 	if(!start(spec, z_level, origin_x, origin_y))
 		finish_async()
 		return

@@ -69,7 +69,7 @@
  * return datum/tgui The requested UI.
  */
 /datum/tgui/New(mob/user, datum/src_object, interface, title, datum/tgui/parent_ui, ui_x, ui_y, datum/tgui_window/window)
-	src.user = user
+	rel_set(src, "user", user)
 	src.src_object_handle = om_handle(src_object)
 	src.interface = interface
 	if(title)

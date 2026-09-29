@@ -54,7 +54,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 	if(provided_file()) // Server mode, disconnect all clients
 		for(var/datum/computer_file/program/nttransfer/P in connected_clients)
 			P.crash_download("Connection terminated by remote server")
-		downloaded_file = null
+		own_take(src, "downloaded_file")
 		if(GLOB.ntnet_global)
 			LAZYREMOVE(GLOB.ntnet_global.fileservers, src)
 	..(forced)
@@ -74,7 +74,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 /datum/computer_file/program/nttransfer/proc/finalize_download()
 	if(remote())
 		LAZYREMOVE(remote().connected_clients, src)
-	downloaded_file = null
+	own_take(src, "downloaded_file")
 	remote_handle = null
 	download_completion = 0
 
@@ -142,7 +142,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 				if(pass != remote().server_password)
 					error = "Incorrect Password"
 					return
-			downloaded_file = remote().provided_file().clone()
+			own_set(src, "downloaded_file", remote().provided_file().clone())
 			LAZYADD(remote().connected_clients, src)
 			return TRUE
 		if("PRG_reset")

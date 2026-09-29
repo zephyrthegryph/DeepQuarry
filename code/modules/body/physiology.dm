@@ -104,7 +104,7 @@
 		COOLDOWN_START(S, expires_at, duration)
 	else
 		COOLDOWN_RESET(S, expires_at)
-	S.still_valid = still_valid
+	own_set(S, "still_valid", still_valid)
 	if(changed)
 		invalidate(BODY_DIRTY_PHYSIOLOGY)
 	if(fresh)
@@ -294,7 +294,7 @@
 
 /datum/physiology/New(datum/body/new_body)
 	..()
-	body = new_body
+	rel_set(src, "body", new_body)
 
 /// Recompute the derived values. Plans override. FALSE if the owner can't be
 /// evaluated yet (still being set up).

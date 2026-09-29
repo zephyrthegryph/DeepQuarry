@@ -135,7 +135,7 @@
 			to_chat(user, span_warning("The core sampler is out of sample bags."))
 		else
 			//create a new sample bag which we'll fill with rock samples
-			filled_bag = new /obj/item/evidencebag(src)
+			own_set(src, "filled_bag", new /obj/item/evidencebag(src))
 			filled_bag.name = "sample bag"
 			filled_bag.desc = "a bag for holding research samples."
 
@@ -172,7 +172,7 @@ DECLARE_INTERACTIONS(/obj/item/core_sampler, \
 			success = M.put_in_inactive_hand(filled_bag)
 		if(!success)
 			filled_bag.forceMove(get_turf(src))
-		filled_bag = null
+		own_take(src, "filled_bag")
 		icon_state = "sampler0"
 	else
 		to_chat(user, span_warning("The core sampler is empty."))

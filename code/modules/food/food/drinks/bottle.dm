@@ -133,7 +133,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 	if(!isGlass || rag) return
 	if(user.unEquip(R))
 		to_chat(user, span_notice("You stuff [R] into [src]."))
-		rag = R
+		own_set(src, "rag", R)
 		rag.forceMove(src)
 		flags &= ~OPENCONTAINER
 		update_icon()
@@ -141,7 +141,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 /obj/item/reagent_containers/food/drinks/bottle/proc/remove_rag(mob/user)
 	if(!rag) return
 	user.put_in_hands(rag)
-	rag = null
+	own_take(src, "rag")
 	flags |= (initial(flags) & OPENCONTAINER)
 	update_icon()
 

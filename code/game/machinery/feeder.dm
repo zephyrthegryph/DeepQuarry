@@ -75,7 +75,7 @@
 
 	user.drop_item()
 	W.forceMove(src)
-	beaker = W
+	own_set(src, "beaker", W)
 	MACHINE_WAKE(src)
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	update_icon()
@@ -104,7 +104,7 @@
 	new /obj/item/stack/material/plastic(loc, 4)
 	if(beaker)
 		beaker.forceMove(get_turf(src))
-		beaker = null
+		own_take(src, "beaker")
 	qdel(src)
 
 /// Feeds while a patient and a container are attached; otherwise it sleeps until one is.
@@ -135,7 +135,7 @@
 	if(!beaker)
 		return FALSE
 	beaker.forceMove(get_turf(src))
-	beaker = null
+	own_take(src, "beaker")
 	update_icon()
 	return TRUE
 

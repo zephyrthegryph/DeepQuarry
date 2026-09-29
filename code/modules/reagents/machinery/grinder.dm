@@ -74,7 +74,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent
 		if (beaker)
 			return TRUE
 		else
-			beaker =  O
+			own_set(src, "beaker", O)
 			user.drop_item()
 
 			O.forceMove(src)
@@ -238,9 +238,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent
 			user.put_in_hands(beaker)
 		else
 			beaker.forceMove(drop_location())
-		beaker = null
+		own_take(src, "beaker")
 	if(new_beaker)
-		beaker = new_beaker
+		own_set(src, "beaker", new_beaker)
 	update_icon()
 	return TRUE
 

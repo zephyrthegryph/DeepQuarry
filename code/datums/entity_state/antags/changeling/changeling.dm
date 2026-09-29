@@ -97,7 +97,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 
 /datum/changeling/New(mob/living/new_owner)
 	..()
-	owner = new_owner
+	rel_set(src, "owner", new_owner)
 	if(owner)
 		if(GLOB.possible_changeling_IDs.len)
 			changelingID = pick(GLOB.possible_changeling_IDs)
@@ -132,7 +132,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	changeling_update_languages(comp.absorbed_languages)
 
 	if(!comp.GetDNA(newDNA.name)) // Don't duplicate - I wonder if it's possible for it to still be a different DNA? DNA code could use a rewrite
-		comp.absorbed_dna += newDNA
+		own_add(comp, "absorbed_dna", newDNA)
 
 //Restores our verbs. It will only restore verbs allowed during lesser (monkey) form if we are not human
 /mob/proc/make_changeling()
@@ -147,7 +147,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 			return
 		var/mob/living/living_self = src
 		comp = new /datum/changeling(living_self)
-		living_self.changeling_state = comp
+		own_set(living_self, "changeling_state", comp)
 	mind.antag_holder.changeling_handle = om_handle(comp)
 	var/lesser_form = !ishuman(src)
 
@@ -169,7 +169,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 				add_verb(src, P.verbpath)
 			if(P.make_hud_button)
 				if(!src.ability_master)
-					src.ability_master = new /atom/movable/screen/movable/ability_master(src)
+					own_set(src, "ability_master", new /atom/movable/screen/movable/ability_master(src))
 				src.ability_master.add_ling_ability(
 					object_given = src,
 					verb_given = P.verbpath,
@@ -360,7 +360,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		for(var/changeling_power in GLOB.changeling_powers)
 			GLOB.powerinstances += new changeling_power()
 	if(!comp.power_panel)
-		comp.power_panel = new()
+		own_set(comp, "power_panel", new /datum/changeling_panel())
 		comp.power_panel.comp_handle = om_handle(comp)
 
 	comp.power_panel.tgui_interact(src)
@@ -396,8 +396,8 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 
 	if(Thepower.make_hud_button && Thepower.isVerb)
 		if(owner.ability_master)
-			QDEL_NULL(owner.ability_master)
-			owner.ability_master = new /atom/movable/screen/movable/ability_master(owner)
+			own_clear(owner, "ability_master", OWN_DELETE)
+			own_set(owner, "ability_master", new /atom/movable/screen/movable/ability_master(owner))
 		owner.ability_master.add_ling_ability(
 			object_given = owner,
 			verb_given = Thepower.verbpath,

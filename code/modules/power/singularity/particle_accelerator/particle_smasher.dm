@@ -29,7 +29,7 @@
 
 /obj/machinery/particle_smasher/Initialize(mapload)
 	. = ..()
-	storage = list()
+	own_set(src, "storage", list())
 	update_icon()
 	prepare_recipes()
 
@@ -78,7 +78,7 @@
 	if(M.uses_charge)
 		to_chat(user, span_notice("You cannot fill \the [src] with a synthesizer!"))
 		return TRUE
-	target = M.split(1)
+	own_set(src, "target", M.split(1))
 	target.forceMove(src)
 	update_icon()
 	return TRUE
@@ -135,7 +135,7 @@
 	else
 		user.drop_from_inventory(W)
 	W.forceMove(src)
-	storage += W
+	own_add(src, "storage", W)
 	return TRUE
 
 /obj/machinery/particle_smasher/wrench_act(mob/user, obj/item/W)
@@ -308,7 +308,7 @@
 		return
 
 	qdel(target)
-	target = null
+	own_take(src, "target")
 
 	if(reagent_container())
 		reagent_container().reagents.clear_reagents()
@@ -317,14 +317,14 @@
 		for(var/obj/item/I in storage)
 			for(var/item_type in recipe.items)
 				if(istype(I, item_type) && prob(recipe.item_consume_chance))
-					storage -= I
+					own_take_member(src, "storage", I)
 					qdel(I)
 					break
 
 	var/result = recipe.result
 	if(recipe.recipe_type == PS_RESULT_STACK)
 		var/obj/item/stack/material/M = new result(src)
-		target = M
+		own_set(src, "target", M)
 	else if(recipe.recipe_type == PS_RESULT_ITEM)
 		new result(get_turf(src))
 	update_icon()
@@ -340,14 +340,14 @@
 	return TRUE
 
 /obj/machinery/particle_smasher/proc/DumpContents()
-	target = null
+	own_take(src, "target")
 	reagent_container_handle = null
 	successful_craft = FALSE
 	var/turf/T = get_turf(src)
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/I in contents) // ALLOW(latent): materialized above
 		if(I in storage)
-			storage -= I
+			own_take_member(src, "storage", I)
 		I.forceMove(T)
 	update_icon()
 

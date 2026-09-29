@@ -97,7 +97,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/magboots, INTERACT_USE("Toggle", PR
 	//Equipping shoes. If you put it so you can put your shoes somewhere BUT your shoe slot, make sure this shit works.
 	if(equipping && (slot == SLOT_ID_SHOES))
 		if(H.get_equipped_item(SLOT_ID_SHOES) && H.get_equipped_item(SLOT_ID_SHOES) != src)
-			shoes = H.get_equipped_item(SLOT_ID_SHOES)
+			own_set(src, "shoes", H.get_equipped_item(SLOT_ID_SHOES))
 			H.unEquip(shoes, TRUE, src)
 			to_chat(user, "You slip \the [src] on over \the [shoes].")
 		return
@@ -105,7 +105,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/magboots, INTERACT_USE("Toggle", PR
 	if(shoes)
 		if(!H.equip_to_slot_if_possible(shoes, SLOT_ID_SHOES, FALSE, TRUE, TRUE, TRUE))
 			shoes.forceMove(get_turf(src))
-		shoes = null
+		own_take(src, "shoes")
 
 /obj/item/clothing/shoes/magboots/examine(mob/user)
 	. = ..()

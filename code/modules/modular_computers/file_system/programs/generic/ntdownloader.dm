@@ -54,7 +54,7 @@
 		generate_network_log("Began downloading file [PRG.filename].[PRG.filetype] from unspecified server.")
 		hacked_download = 0
 
-	downloaded_file = PRG.clone()
+	own_set(src, "downloaded_file", PRG.clone())
 
 /datum/computer_file/program/ntnetdownload/proc/check_file_download(filename)
 	//returns 1 if file can be downloaded, returns 0 if download prohibited
@@ -76,7 +76,7 @@
 	if(!downloaded_file)
 		return
 	generate_network_log("Aborted download of file [hacked_download ? "**ENCRYPTED**" : downloaded_file.filename].[downloaded_file.filetype].")
-	downloaded_file = null
+	own_take(src, "downloaded_file")
 	download_completion = 0
 	ui_header = "downloader_finished.gif"
 
@@ -87,7 +87,7 @@
 	if(!computer() || !computer().hard_drive || !computer().hard_drive.store_file(downloaded_file))
 		// The download failed
 		downloaderror = "I/O ERROR - Unable to save file. Check whether you have enough free space on your hard drive and whether your hard drive is properly connected. If the issue persists contact your system administrator for assistance."
-	downloaded_file = null
+	own_take(src, "downloaded_file")
 	download_completion = 0
 	ui_header = "downloader_finished.gif"
 
@@ -129,7 +129,7 @@
 			if(downloaderror)
 				download_completion = 0
 				download_netspeed = 0
-				downloaded_file = null
+				own_take(src, "downloaded_file")
 				downloaderror = ""
 			return TRUE
 	return FALSE

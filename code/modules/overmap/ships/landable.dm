@@ -29,7 +29,7 @@
 
 // We autobuild our z levels.
 /obj/effect/overmap/visitable/ship/landable/find_z_levels()
-	src.landmark = new(null, shuttle) // Create in nullspace since we lazy-create overmap z
+	own_set(src, "landmark", new /obj/effect/shuttle_landmark/ship(null, shuttle)) // Create in nullspace since we lazy-create overmap z
 	landmark.ship_handle = om_handle(src)
 	add_landmark(landmark, shuttle)
 
@@ -113,7 +113,7 @@
 	var/obj/effect/shuttle_landmark/ship/core_landmark
 
 /obj/effect/shuttle_landmark/visiting_shuttle/Initialize(mapload, obj/effect/shuttle_landmark/ship/master, _name)
-	core_landmark = master
+	rel_set(src, "core_landmark", master)
 	name = _name
 	landmark_tag = master.shuttle_name + _name
 	om_hook(master, /datum/om/event/qdeleting, src, TYPE_PROC_REF(/datum, qdel_self))

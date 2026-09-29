@@ -292,7 +292,7 @@
 		var/datum/experiment/experiment = completed_experiment
 		if (experiment == experiment_type)
 			return FALSE
-	LAZYADD(available_experiments, new experiment_type(src))
+	own_add(src, "available_experiments", new experiment_type(src))
 
 /**
  * Adds a list of experiments to this techweb by their types, ensures that no duplicates are added.
@@ -312,8 +312,8 @@
  * * completed_experiment - the experiment which was completed
  */
 /datum/techweb/proc/complete_experiment(datum/experiment/completed_experiment)
-	LAZYREMOVE(available_experiments, completed_experiment)
-	LAZYSET(completed_experiments, completed_experiment.type, completed_experiment)
+	own_take_member(src, "available_experiments", completed_experiment)
+	own_put(src, "completed_experiments", completed_experiment.type, completed_experiment)
 
 	var/result_text = "[completed_experiment] has been completed"
 	var/refund = LAZYACCESS(skipped_experiment_types, completed_experiment.type) || 0

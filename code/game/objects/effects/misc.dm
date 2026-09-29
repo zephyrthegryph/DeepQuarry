@@ -113,7 +113,7 @@
 	var/icon_dist
 
 /obj/effect/abstract/directional_lighting/Initialize(mapload)
-	light_spot = new
+	own_set(src, "light_spot", new /obj/effect/abstract/light_spot)
 	. = ..()
 	vis_contents += light_spot
 

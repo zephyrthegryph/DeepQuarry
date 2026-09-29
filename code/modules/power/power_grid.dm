@@ -299,14 +299,14 @@
 	release_material_cables()
 
 /datum/material_power_overlay/proc/add_cable(obj/structure/cable/C)
-	cables |= C
-	C.material_overlay = src
+	rel_add(src, "cables", C)
+	rel_set(C, "material_overlay", src)
 	invalidate_material_cache()
 
 /datum/material_power_overlay/proc/remove_cable(obj/structure/cable/C)
-	cables -= C
+	rel_remove(src, "cables", C)
 	if(C.material_overlay == src)
-		C.material_overlay = null
+		rel_clear(C, "material_overlay")
 	invalidate_material_cache()
 
 /datum/material_power_overlay/proc/invalidate_material_cache()
@@ -315,8 +315,8 @@
 /datum/material_power_overlay/proc/release_material_cables()
 	for(var/obj/structure/cable/C as anything in cables)
 		if(C?.material_overlay == src)
-			C.material_overlay = null
-	cables = list()
+			rel_clear(C, "material_overlay")
+	rel_set(src, "cables", list())
 
 /datum/material_power_overlay/proc/rebuild_material_cache()
 	material_cache_dirty = FALSE
@@ -325,10 +325,10 @@
 		for(var/entity in vg_power_region_members(region_id))
 			var/obj/structure/cable/C = SSvg.entity_lookup(entity)
 			if(istype(C) && C.power_entity == entity)
-				cables += C
-				C.material_overlay = src
-	QDEL_NULL(material_graph)
-	material_graph = new
+				rel_add(src, "cables", C)
+				rel_set(C, "material_overlay", src)
+	own_clear(src, "material_graph", OWN_DELETE)
+	own_set(src, "material_graph", new /datum/material_power_graph)
 	material_graph.build(cables, region_id)
 
 /// Supply by source for the solver: each bound machine's registered rate.

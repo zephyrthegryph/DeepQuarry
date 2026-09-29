@@ -65,7 +65,7 @@ Gunshots/explosions/opening doors/less rare audio (done)
 /mob/living/carbon/proc/start_hallucinations(hallucination_type = /datum/hallucinations)
 	if(hallucinations || !ishuman(src))
 		return hallucinations
-	hallucinations = new hallucination_type(src)
+	own_set(src, "hallucinations", new hallucination_type(src))
 	return hallucinations
 
 /mob/living/carbon/proc/get_hallucination_state()

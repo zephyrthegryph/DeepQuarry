@@ -324,8 +324,8 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 	var/obj/item/multitool/multitool = tool
 	if(istype(multitool.connectable(), /obj/machinery/bodyscanner))
 		var/obj/machinery/bodyscanner/body_scanner = multitool.connectable()
-		scanner = body_scanner
-		body_scanner.console = src
+		rel_set(src, "scanner", body_scanner)
+		rel_set(body_scanner, "console", src)
 		to_chat(user, span_warning("You link [src] to [body_scanner]!"))
 	else
 		to_chat(user, span_warning("You store [src] in [multitool]'s buffer!"))
@@ -490,8 +490,8 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 	for(dir in list(NORTH, EAST, SOUTH, WEST)) // Loop through every direction
 		bodyscannernew = locate(/obj/machinery/bodyscanner, get_step(src, dir)) // Try to find a scanner in that direction
 		if(bodyscannernew)
-			scanner = bodyscannernew
-			bodyscannernew.console = src
+			rel_set(src, "scanner", bodyscannernew)
+			rel_set(bodyscannernew, "console", src)
 			set_dir(get_dir(src, bodyscannernew))
 			return
 	return

@@ -198,7 +198,7 @@
 	if(previous)
 		previous.Detach(1)
 	if(next)
-		next.previous = null
+		rel_clear(next, "previous")
 	..()
 
 /mob/living/simple_mob/animal/space/space_worm/Moved(atom/old_loc, direction, forced = FALSE)
@@ -215,7 +215,7 @@
 	if(open_maw && !stat && obstacle != previous)
 		om_after(src, 1, PROC_REF(bump_eat), obstacle) // a tick later, after the bump settles
 	else
-		currentlyEating = null
+		rel_clear(src, "currentlyEating")
 		. = ..(obstacle)
 
 /mob/living/simple_mob/animal/space/space_worm/update_icon()
@@ -238,7 +238,7 @@
 /// Bump()'s deferred half: starts eating what the maw ran into.
 /mob/living/simple_mob/animal/space/space_worm/proc/bump_eat(atom/obstacle)
 	if(currentlyEating != obstacle)
-		currentlyEating = obstacle
+		rel_set(src, "currentlyEating", obstacle)
 	ai_busy_begin()
 	AttemptToEat(obstacle)
 
@@ -259,7 +259,7 @@
 
 /mob/living/simple_mob/animal/space/space_worm/proc/eat_finished(success)
 	if(success)
-		currentlyEating = null
+		rel_clear(src, "currentlyEating")
 	ai_busy_end()
 
 /mob/living/simple_mob/animal/space/space_worm/proc/eat_wall_done(turf/simulated/wall/W)
@@ -328,8 +328,8 @@
 	if(!attachement)
 		return
 
-	previous = attachement
-	attachement.next = src
+	rel_set(src, "previous", attachement)
+	rel_set(attachement, "next", src)
 
 	return
 
@@ -337,7 +337,7 @@
 	var/mob/living/simple_mob/animal/space/space_worm/head/newHead = new severed_head_type(loc,0)
 	var/mob/living/simple_mob/animal/space/space_worm/newHeadPrevious = previous
 
-	previous = null //so that no extra heads are spawned
+	rel_clear(src, "previous") //so that no extra heads are spawned
 
 	newHead.Attach(newHeadPrevious)
 

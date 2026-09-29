@@ -613,7 +613,7 @@ DECLARE_INTERACTIONS(/obj/item/storage, \
 
 /obj/item/storage/proc/close(mob/user)
 	hide_from(user)
-	user.s_active = null
+	rel_clear(user, "s_active")
 
 /obj/item/storage/proc/close_all()
 	for(var/mob/M in can_see_contents())
@@ -641,9 +641,9 @@ DECLARE_INTERACTIONS(/obj/item/storage, \
 		user.s_active.hide_from(user)
 
 	if(!hud)
-		hud = new /datum/storage_hud(src)
+		own_set(src, "hud", new /datum/storage_hud(src))
 	LAZYDISTINCTADD(is_seeing, user)
-	user.s_active = src
+	rel_set(user, "s_active", src)
 	var/client/C = user.client
 	if(C)
 		C.screen += hud.screen_atoms()
@@ -659,9 +659,9 @@ DECLARE_INTERACTIONS(/obj/item/storage, \
 			if(I.loc != user)
 				C.screen -= I
 	if(user.s_active == src)
-		user.s_active = null
+		rel_clear(user, "s_active")
 	if(!LAZYLEN(is_seeing))
-		QDEL_NULL(hud)
+		own_clear(src, "hud", OWN_DELETE)
 
 /// Lays the HUD out again after a change, for everyone looking.
 /obj/item/storage/proc/refresh_hud()
@@ -702,18 +702,18 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 
 /datum/storage_hud/New(obj/item/storage/S)
 	..()
-	storage = S
-	backdrop = list()
-	catchers = list()
-	shown = list()
+	rel_set(src, "storage", S)
+	own_set(src, "backdrop", list())
+	own_set(src, "catchers", list())
+	rel_set(src, "shown", list())
 	var/master = om_handle(S)
 	if(S.storage_slots)
-		backdrop += new_backdrop(master, "block")
+		own_add(src, "backdrop", new_backdrop(master, "block"))
 	else
-		backdrop += new_backdrop(master, "storage_start")
-		backdrop += new_backdrop(master, "storage_continue")
-		backdrop += new_backdrop(master, "storage_end")
-	closer = new /atom/movable/screen/close()
+		own_add(src, "backdrop", new_backdrop(master, "storage_start"))
+		own_add(src, "backdrop", new_backdrop(master, "storage_continue"))
+		own_add(src, "backdrop", new_backdrop(master, "storage_end"))
+	own_set(src, "closer", new /atom/movable/screen/close())
 	closer.master_ref = master
 	closer.icon_state = "storage_close"
 	closer.hud_layerise()
@@ -745,8 +745,8 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 
 /// Places the items and sizes the backdrop.
 /datum/storage_hud/proc/layout()
-	QDEL_LIST(catchers)
-	catchers = list()
+	own_clear(src, "catchers", OWN_DELETE)
+	own_set(src, "catchers", list())
 	var/list/items = storage.hud_order(storage.stored_items())
 	var/list/counts
 	if(storage.display_contents_with_number)
@@ -768,7 +768,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		I.latent_unpin(src)
 	for(var/obj/item/I as anything in items - shown)
 		I.latent_pin(src)
-	shown = items
+	rel_set(src, "shown", items)
 	if(storage.storage_slots)
 		boxes_layout(counts)
 	else
@@ -778,7 +778,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	var/atom/movable/storage_slot/SS = new(null, I)
 	SS.screen_loc = I.screen_loc
 	SS.mouse_opacity = MOUSE_OPACITY_OPAQUE
-	catchers += SS
+	own_add(src, "catchers", SS)
 	return SS
 
 /// Fixed-size storage (belts, boxes): a grid up to seven wide.

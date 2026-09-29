@@ -17,7 +17,7 @@
 
 /obj/machinery/portable_atmospherics/Initialize(mapload)
 	..()
-	air_contents = new
+	own_set(src, "air_contents", new /datum/gas_mixture)
 	air_contents.set_volume(volume)
 	air_contents.set_temperature(T20C)
 	return INITIALIZE_HINT_LATELOAD
@@ -77,7 +77,7 @@
 	return air_contents
 
 /obj/machinery/portable_atmospherics/set_port_network_air(datum/gas_mixture/new_air)
-	air_contents = new_air
+	own_set(src, "air_contents", new_air)
 	return TRUE
 
 /obj/machinery/portable_atmospherics/update_icon()
@@ -115,7 +115,7 @@
 	anchored = FALSE
 
 	var/obj/machinery/atmospherics/portables_connector/old_port = connected_port()
-	old_port.connected_device = null
+	rel_clear(old_port, "connected_device")
 	old_port.on = 0
 	MACHINE_SLEEP(old_port)
 	connected_port_handle = null
@@ -155,7 +155,7 @@
 	var/obj/item/tank/T = W
 	user.drop_item()
 	T.forceMove(src)
-	holding = T
+	own_set(src, "holding", T)
 	update_icon()
 	return TRUE
 
@@ -224,7 +224,7 @@
 
 	user.drop_item()
 	C.add_fingerprint(user)
-	cell = C
+	own_set(src, "cell", C)
 	C.forceMove(src)
 	user.visible_message(span_notice("[user] opens the panel on [src] and inserts [C]."), span_notice("You open the panel on [src] and insert [C]."))
 	power_change()
@@ -240,7 +240,7 @@
 	playsound(src, tool.usesound, 50, TRUE)
 	cell.add_fingerprint(user)
 	cell.forceMove(loc)
-	cell = null
+	own_take(src, "cell")
 	power_change()
 	return ITEM_INTERACT_SUCCESS
 

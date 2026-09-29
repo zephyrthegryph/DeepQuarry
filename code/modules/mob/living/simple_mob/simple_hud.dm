@@ -15,7 +15,7 @@
 
 	HUD.adding = adding
 	HUD.other = other
-	HUD.hotkeybuttons = hotkeybuttons
+	own_set(HUD, "hotkeybuttons", hotkeybuttons)
 
 	var/list/hud_elements = list()
 	var/atom/movable/screen/using
@@ -73,7 +73,7 @@
 	using.color = ui_color
 	using.alpha = ui_alpha
 	HUD.adding += using
-	HUD.move_intent = using
+	own_set(HUD, "move_intent", using)
 
 	//Resist button
 	using = new /atom/movable/screen()
@@ -83,26 +83,26 @@
 	using.screen_loc = ui_pull_resist
 	using.color = ui_color
 	using.alpha = ui_alpha
-	HUD.hotkeybuttons += using
+	own_add(HUD, "hotkeybuttons", using)
 
 	//Pull button
-	pullin = new /atom/movable/screen()
+	own_set(src, "pullin", new /atom/movable/screen())
 	pullin.icon = ui_style
 	pullin.icon_state = "pull0"
 	pullin.name = "pull"
 	pullin.screen_loc = ui_pull_resist
-	HUD.hotkeybuttons += pullin
+	own_add(HUD, "hotkeybuttons", pullin)
 	hud_elements |= pullin
 
 	//Health status
-	healths = new /atom/movable/screen()
+	own_set(src, "healths", new /atom/movable/screen())
 	healths.icon = ui_style
 	healths.icon_state = "health0"
 	healths.name = "health"
 	healths.screen_loc = ui_health
 	hud_elements |= healths
 
-	autowhisper_display = new /atom/movable/screen()
+	own_set(src, "autowhisper_display", new /atom/movable/screen())
 	autowhisper_display.icon = 'icons/mob/screen/minimalist.dmi'
 	autowhisper_display.icon_state = "autowhisper"
 	autowhisper_display.name = "autowhisper"
@@ -137,9 +137,9 @@
 	aw.screen_loc = ui_under_health
 	hud_elements |= aw
 
-	pain = new /atom/movable/screen( null )
+	own_set(src, "pain", new /atom/movable/screen( null ))
 
-	zone_sel = new /atom/movable/screen/zone_sel( null )
+	own_set(src, "zone_sel", new /atom/movable/screen/zone_sel( null ))
 	zone_sel.icon = ui_style
 	zone_sel.color = ui_color
 	zone_sel.alpha = ui_alpha
@@ -162,7 +162,7 @@
 		using.screen_loc = ui_drop_throw
 		using.color = ui_color
 		using.alpha = ui_alpha
-		HUD.hotkeybuttons += using
+		own_add(HUD, "hotkeybuttons", using)
 
 		//Equip detail
 		using = new /atom/movable/screen()
@@ -186,7 +186,7 @@
 		inv_box.slot_id = SLOT_ID_HAND_R
 		inv_box.color = ui_color
 		inv_box.alpha = ui_alpha
-		HUD.r_hand_hud_object = inv_box
+		own_set(HUD, "r_hand_hud_object", inv_box)
 		HUD.adding += inv_box
 		slot_info["[SLOT_ID_HAND_R]"] = inv_box.screen_loc
 
@@ -201,7 +201,7 @@
 		inv_box.slot_id = SLOT_ID_HAND_L
 		inv_box.color = ui_color
 		inv_box.alpha = ui_alpha
-		HUD.l_hand_hud_object = inv_box
+		own_set(HUD, "l_hand_hud_object", inv_box)
 		HUD.adding += inv_box
 		slot_info["[SLOT_ID_HAND_L]"] = inv_box.screen_loc
 
@@ -225,14 +225,14 @@
 		HUD.adding += using
 
 		//Throw button
-		throw_icon = new /atom/movable/screen()
+		own_set(src, "throw_icon", new /atom/movable/screen())
 		throw_icon.icon = ui_style
 		throw_icon.icon_state = "act_throw_off"
 		throw_icon.name = "throw"
 		throw_icon.screen_loc = ui_drop_throw
 		throw_icon.color = ui_color
 		throw_icon.alpha = ui_alpha
-		HUD.hotkeybuttons += throw_icon
+		own_add(HUD, "hotkeybuttons", throw_icon)
 		hud_elements |= throw_icon
 
 	extra_huds(HUD, HUD.ui_style, hud_elements)

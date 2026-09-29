@@ -48,7 +48,7 @@ DECLARE_INTERACTIONS(/obj/item/chameleon, INTERACT_USE(null, PROC_REF(toggle)))
 		eject_all()
 		playsound(src, 'sound/effects/pop.ogg', 100, 1, -6)
 		qdel(active_dummy)
-		active_dummy = null
+		own_take(src, "active_dummy")
 		to_chat(user, span_notice("You deactivate the [src]."))
 		var/obj/effect/overlay/T = new /obj/effect/overlay(get_turf(src))
 		T.icon = 'icons/effects/effects.dmi'
@@ -78,7 +78,7 @@ DECLARE_INTERACTIONS(/obj/item/chameleon, INTERACT_USE(null, PROC_REF(toggle)))
 		eject_all()
 		if(delete_dummy)
 			qdel(active_dummy)
-		active_dummy = null
+		own_take(src, "active_dummy")
 		can_use = 0
 		om_after(src, 5 SECONDS, PROC_REF(allow_use))
 
@@ -106,8 +106,8 @@ DECLARE_INTERACTIONS(/obj/item/chameleon, INTERACT_USE(null, PROC_REF(toggle)))
 	overlays = new_overlays
 	set_dir(O.dir)
 	M.forceMove(src)
-	master = C
-	master.active_dummy = src
+	rel_set(src, "master", C)
+	own_set(master, "active_dummy", src)
 
 EXTEND_INTERACTIONS(/obj/effect/dummy/chameleon, \
 	INTERACT_ITEM("Disrupt", PROC_REF(interaction_disrupt)), \

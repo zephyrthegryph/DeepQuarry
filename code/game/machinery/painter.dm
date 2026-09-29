@@ -91,7 +91,7 @@ OWN(/obj/machinery/gear_painter, inserted, OWN_SPILL)
 	user.visible_message(span_notice("[user] inserts \the [I] into the Color Mate receptable."))
 	user.drop_from_inventory(I)
 	I.forceMove(src)
-	inserted = I
+	own_set(src, "inserted", I)
 	SStgui.update_uis(src)
 	return TRUE
 
@@ -100,7 +100,7 @@ OWN(/obj/machinery/gear_painter, inserted, OWN_SPILL)
 		return
 	if(user)
 		visible_message(span_warning("[user] stuffs [victim] into [src]!"))
-	inserted = victim
+	own_set(src, "inserted", victim)
 	inserted.forceMove(src)
 
 /obj/machinery/gear_painter/AllowDrop()
@@ -132,7 +132,7 @@ OWN(/obj/machinery/gear_painter, inserted, OWN_SPILL)
 	inserted.forceMove(drop_location())
 	if(isliving(user))
 		user.put_in_hands(inserted)
-	inserted = null
+	own_take(src, "inserted")
 	update_icon()
 	SStgui.update_uis(src)
 

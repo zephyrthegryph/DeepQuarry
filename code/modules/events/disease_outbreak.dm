@@ -20,12 +20,12 @@ GLOBAL_LIST_EMPTY(current_pending_diseases)
 			else
 				stack_trace("Disease Outbreak: Invalid Event Level [severity]. Expected: 1-2")
 				virus = /datum/affliction/contagion/cold
-		chosen_disease = new virus
+		own_set(src, "chosen_disease", new virus)
 	else
 		if(severity == EVENT_LEVEL_MAJOR)
-			chosen_disease = create_virus(severity * pick(2,3))	//50% chance for a major disease instead of a moderate one
+			own_set(src, "chosen_disease", create_virus(severity * pick(2,3))) //50% chance for a major disease instead of a moderate one
 		else
-			chosen_disease = create_virus(severity * 2)
+			own_set(src, "chosen_disease", create_virus(severity * 2))
 
 	chosen_disease.virus_modifiers |= CARRIER
 

@@ -72,9 +72,9 @@
 		return
 
 	// Link the two mobs for client transfer
-	avatar.vr_holder = src
-	src.teleop = avatar
-	src.vr_link = avatar // Can't reuse vr_holder so that death can automatically eject users from VR
+	rel_set(avatar, "vr_holder", src)
+	rel_set(src, "teleop", avatar)
+	rel_set(src, "vr_link", avatar) // Can't reuse vr_holder so that death can automatically eject users from VR
 
 	// Move the mind
 	src.mind.transfer_to(avatar)
@@ -116,8 +116,8 @@
 		to_chat(vr_holder, span_warning("Pain from your time in VR lingers."))		// 250 damage leaves the user unconscious for several seconds in addition to paincrit
 
 	// Maintain a link with the mob, but don't use teleop
-	vr_holder.vr_link = src
-	vr_holder.teleop = null
+	rel_set(vr_holder, "vr_link", src)
+	rel_clear(vr_holder, "teleop")
 
 	if(player_initated && istype(vr_holder.loc, /obj/machinery/vr_sleeper))
 		var/obj/machinery/vr_sleeper/V = vr_holder.loc

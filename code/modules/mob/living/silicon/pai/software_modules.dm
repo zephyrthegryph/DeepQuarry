@@ -190,8 +190,8 @@
 				for(var/datum/data/record/E in GLOB.data_core.medical)
 					if ((E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
 						M = E
-				P.medicalActive1 = R
-				P.medicalActive2 = M
+				rel_set(P, "medicalActive1", R)
+				rel_set(P, "medicalActive2", M)
 		else
 			P.medical_cannotfind = 1
 		return 1
@@ -240,19 +240,19 @@
 			var/datum/data/record/R = record
 			var/datum/data/record/S = null
 			if (!( GLOB.data_core.general.Find(R) ))
-				P.securityActive1 = null
-				P.securityActive2 = null
+				rel_clear(P, "securityActive1")
+				rel_clear(P, "securityActive2")
 				P.security_cannotfind = 1
 			else
 				P.security_cannotfind = 0
 				for(var/datum/data/record/E in GLOB.data_core.security)
 					if ((E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
 						S = E
-				P.securityActive1 = R
-				P.securityActive2 = S
+				rel_set(P, "securityActive1", R)
+				rel_set(P, "securityActive2", S)
 		else
-			P.securityActive1 = null
-			P.securityActive2 = null
+			rel_clear(P, "securityActive1")
+			rel_clear(P, "securityActive2")
 			P.security_cannotfind = 1
 		return TRUE
 
@@ -288,16 +288,16 @@
 	switch(action)
 		if("jack")
 			if(P.cable && P.cable.machine())
-				P.hackdoor = P.cable.machine()
+				rel_set(P, "hackdoor", P.cable.machine())
 				P.hackloop()
 			return 1
 		if("cancel")
-			P.hackdoor = null
+			rel_clear(P, "hackdoor")
 			return 1
 		if("cable")
 			var/turf/T = get_turf(P)
 			P.hack_aborted = 0
-			P.cable = new /obj/item/pai_cable(T)
+			own_set(P, "cable", new /obj/item/pai_cable(T))
 			for(var/mob/M in viewers(T))
 				M.show_message(span_warning("A port on [P] opens to reveal [P.cable], which promptly falls to the floor."), 3,
 								span_warning("You hear the soft click of something light and hard falling to the ground."), 2)
@@ -315,7 +315,7 @@
 		hack_aborted = 1
 		hackprogress = 0
 		cable.machine_handle = null
-		hackdoor = null
+		rel_clear(src, "hackdoor")
 		return
 	hack_tick(D)
 
@@ -326,7 +326,7 @@
 	else
 		hack_aborted = 1
 		hackprogress = 0
-		hackdoor = null
+		rel_clear(src, "hackdoor")
 		return
 	if(hackprogress >= 1000)
 		hackprogress = 0

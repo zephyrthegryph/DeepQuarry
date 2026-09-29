@@ -113,7 +113,7 @@
 			if(user)
 				to_chat(user, span_notice("\The [target] already has a [component_type] installed!"))
 			return FALSE
-		chassis = target
+		rel_set(src, "chassis", target)
 		if(user)
 			user.drop_from_inventory(src)
 		forceMove(target)
@@ -141,7 +141,7 @@
 			mech_body_plan().cure(chassis, internal_damage_flag)
 
 		forceMove(get_turf(chassis))
-	chassis = null
+	rel_clear(src, "chassis")
 	return TRUE
 
 /// One nanopaste repair a second (a timed action on `site`) until whole or out of paste.

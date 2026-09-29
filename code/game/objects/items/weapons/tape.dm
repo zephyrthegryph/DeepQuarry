@@ -123,7 +123,7 @@
 	return stuck.examine(user)
 
 /obj/item/ducttape/proc/attach(obj/item/W)
-	stuck = W
+	own_set(src, "stuck", W)
 	W.forceMove(src)
 	icon_state = W.icon_state + "_taped"
 	name = W.name + " (taped)"
@@ -139,7 +139,7 @@
 	user.drop_from_inventory(src)
 	stuck.forceMove(get_turf(src))
 	user.put_in_hands(stuck)
-	stuck = null
+	own_take(src, "stuck")
 	overlays = null
 	consume(src, user)
 	return TRUE

@@ -362,11 +362,11 @@ OWN(/obj/item/clothing/gloves, contents, OWN_SPILL)
 		if(istype(G))
 			to_chat(user, "You slip \the [src] on over \the [H.get_equipped_item(SLOT_ID_GLOVES)].")
 			if(istype(G, /obj/item/clothing/gloves))
-				gloves = H.get_equipped_item(SLOT_ID_GLOVES)
+				own_set(src, "gloves", H.get_equipped_item(SLOT_ID_GLOVES))
 			else if(istype(G, /obj/item/clothing/accessory))
-				ring = H.get_equipped_item(SLOT_ID_GLOVES)
+				own_set(src, "ring", H.get_equipped_item(SLOT_ID_GLOVES))
 			else
-				gloves = H.get_equipped_item(SLOT_ID_GLOVES) //Fallback
+				own_set(src, "gloves", H.get_equipped_item(SLOT_ID_GLOVES)) //Fallback
 			H.unEquip(H.get_equipped_item(SLOT_ID_GLOVES), TRUE, src)
 			if(!(flags & THICKMATERIAL))
 				if(istype(G, /obj/item/clothing/gloves) || istype(G, /obj/item/clothing/accessory)) //Because sometimes you can wear non-glove items on your hands.
@@ -377,13 +377,13 @@ OWN(/obj/item/clothing/gloves, contents, OWN_SPILL)
 	if(gloves)
 		if(!H.equip_to_slot_if_possible(gloves, SLOT_ID_GLOVES))
 			gloves.forceMove(get_turf(src))
-		gloves = null
+		own_take(src, "gloves")
 		return
 
 	if(ring) //We do NOT have gloves under our gloves but have a ring under our glove instead!
 		if(!H.equip_to_slot_if_possible(ring, SLOT_ID_GLOVES))
 			ring.forceMove(get_turf(src))
-		ring = null
+		own_take(src, "ring")
 		return
 
 /obj/item/clothing/gloves
@@ -670,7 +670,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 	if(user.put_in_hands(holding))
 		user.visible_message(span_danger("\The [user] pulls a knife out of their boot!"))
 		playsound(src, 'sound/weapons/holster/sheathout.ogg', 25)
-		holding = null
+		own_take(src, "holding")
 		cut_overlay("[icon_state]_knife")
 	else
 		to_chat(user, span_warning("Your need an empty, unbroken hand to do that."))
@@ -955,7 +955,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 	if(!hoodtype)
 		return
 	var/obj/item/clothing/head/hood/H = new hoodtype(src)
-	hood = H
+	own_set(src, "hood", H)
 	if(!actions_types.len) //If we don't already have a special action type, let's add it.
 		actions_types |= /datum/action/item_action/toggle_hood
 
@@ -1515,7 +1515,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 			return INTERACTION_HANDLED_PASS
 		user.unEquip(I)
 		I.forceMove(src)
-		holding = I
+		own_set(src, "holding", I)
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " shoves \the [I] into \the [src]."))
 		update_icon()
 		return INTERACTION_HANDLED_PASS

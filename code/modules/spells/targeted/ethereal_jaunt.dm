@@ -29,7 +29,7 @@
 		animation.icon = 'icons/mob/mob.dmi'
 		animation.plane = MOB_PLANE
 		animation.layer = ABOVE_MOB_LAYER
-		animation.master = holder
+		rel_set(animation, "master", holder)
 		target.extinguish_mob()
 		if(target?.buckled_to())
 			var/atom/movable/_tmp_buck_42 = target?.buckled_to()

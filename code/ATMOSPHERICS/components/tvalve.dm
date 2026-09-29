@@ -139,11 +139,11 @@
 
 /obj/machinery/atmospherics/tvalve/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
 	if(network_node1 == old_network)
-		network_node1 = new_network
+		rel_set(src, "network_node1", new_network)
 	if(network_node2 == old_network)
-		network_node2 = new_network
+		rel_set(src, "network_node2", new_network)
 	if(network_node3 == old_network)
-		network_node3 = new_network
+		rel_set(src, "network_node3", new_network)
 
 	return 1
 
@@ -153,15 +153,15 @@
 /obj/machinery/atmospherics/tvalve/disconnect(obj/machinery/atmospherics/reference)
 	if(reference==node1)
 		rust_release_network_wrapper(network_node1)
-		node1 = null
+		rel_clear(src, "node1")
 
 	else if(reference==node2)
 		rust_release_network_wrapper(network_node2)
-		node2 = null
+		rel_clear(src, "node2")
 
 	else if(reference==node3)
 		rust_release_network_wrapper(network_node3)
-		node3 = null
+		rel_clear(src, "node3")
 
 	update_underlays()
 
@@ -282,8 +282,8 @@
 /// base unbind doesn't know about, so two doomed neighbours can't keep each other alive.
 /obj/machinery/atmospherics/tvalve/lifecycle_unbind()
 	. = ..()
-	node3 = null
-	network_node1 = null
-	network_node2 = null
-	network_node3 = null
+	rel_clear(src, "node3")
+	rel_clear(src, "network_node1")
+	rel_clear(src, "network_node2")
+	rel_clear(src, "network_node3")
 

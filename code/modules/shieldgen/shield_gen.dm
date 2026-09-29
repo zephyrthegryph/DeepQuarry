@@ -42,7 +42,7 @@
 			if(get_dir(cap, src) == cap.dir)
 				LAZYOR(capacitors, cap)
 				cap.owned_gen_handle = om_handle(src)
-	shield_hum = new(list(src), FALSE)
+	own_set(src, "shield_hum", new /datum/looping_sound/shield_generator(list(src), FALSE))
 	. = ..()
 	make_climbable()
 

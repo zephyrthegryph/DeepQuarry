@@ -86,7 +86,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 			if(!user.unEquip(W))
 				return TRUE
 			W.forceMove(src)
-			bcell = W
+			own_set(src, "bcell", W)
 			to_chat(user, span_notice("You install a cell in \the [src]."))
 			update_icon()
 		return TRUE
@@ -98,7 +98,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	bcell.update_icon()
 	bcell.forceMove(get_turf(loc))
 	user.put_in_any_hand_if_possible(bcell)
-	bcell = null
+	own_take(src, "bcell")
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS

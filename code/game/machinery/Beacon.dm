@@ -13,7 +13,7 @@
 /obj/machinery/bluespace_beacon/Initialize(mapload)
 	. = ..()
 	var/turf/T = src.loc
-	Beacon = new /obj/item/radio/beacon
+	own_set(src, "Beacon", new /obj/item/radio/beacon)
 	Beacon.invisibility = INVISIBILITY_MAXIMUM
 	Beacon.forceMove(T)
 	om_hook(Beacon, list(/datum/om/event/moved, /datum/om/event/qdeleting), src, PROC_REF(beacon_changed))
@@ -38,7 +38,7 @@
 /obj/machinery/bluespace_beacon/machine_step()
 	if(!Beacon)
 		var/turf/T = src.loc
-		Beacon = new /obj/item/radio/beacon
+		own_set(src, "Beacon", new /obj/item/radio/beacon)
 		Beacon.invisibility = INVISIBILITY_MAXIMUM
 		Beacon.forceMove(T)
 		om_hook(Beacon, list(/datum/om/event/moved, /datum/om/event/qdeleting), src, PROC_REF(beacon_changed))
@@ -56,7 +56,7 @@
 /obj/machinery/bluespace_beacon/proc/beacon_changed(datum/source, datum/om/event/event)
 	EVENT_HANDLER
 	if(source == Beacon && QDELETED(source))
-		Beacon = null
+		own_take(src, "Beacon")
 	MACHINE_WAKE(src)
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).

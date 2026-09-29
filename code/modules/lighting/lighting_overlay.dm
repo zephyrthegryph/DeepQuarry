@@ -27,7 +27,7 @@
 		qdel(affected_turf.lighting_object, force = TRUE)
 		stack_trace("a lighting object was assigned to a turf that already had a lighting object!")
 
-	affected_turf.lighting_object = src
+	rel_set(affected_turf, "lighting_object", src)
 	affected_turf.set_luminosity(0)
 
 	if(CONFIG_GET(number/starlight))
@@ -48,7 +48,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_object)
 // The turf's overlay resets.
 /datum/lighting_object/on_destroy(force)
 	if (isturf(affected_turf))
-		affected_turf.lighting_object = null
+		rel_clear(affected_turf, "lighting_object")
 		affected_turf.set_luminosity(1)
 		affected_turf.underlays -= current_underlay
 	..()

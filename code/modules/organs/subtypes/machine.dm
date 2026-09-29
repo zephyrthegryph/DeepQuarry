@@ -44,10 +44,10 @@
 	if(!ishuman(owner) || ismannequin(owner))
 		return
 	if(installed)
-		stored_mmi = installed
+		own_set(src, "stored_mmi", installed)
 		installed.forceMove(src)
 	else
-		stored_mmi = new brain_type(src)
+		own_set(src, "stored_mmi", new brain_type(src))
 	return INITIALIZE_HINT_LATELOAD
 
 /// THE way an MMI goes into a human's brain slot (surgery, vore reform): born in `target`, a

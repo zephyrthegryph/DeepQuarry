@@ -15,14 +15,14 @@
 
 /datum/genetics/side_effect/proc/start(mob/living/carbon/human/H)
 	if(H && ishuman(H))
-		H.genetic_side_effects += src
+		own_add(H, "genetic_side_effects", src)
 	// start the side effect, this should give some cue as to what's happening,
 	// such as gasping. These cues need to be unique among side-effects.
 
 /datum/genetics/side_effect/proc/finish(WR)
 	var/mob/living/carbon/human/H = om_resolve(WR)
 	if(!H || !ishuman(H)) return FALSE
-	H.genetic_side_effects -= src
+	own_take_member(H, "genetic_side_effects", src)
 	if(antidote_reagent && (H.reagents.has_reagent(antidote_reagent)|| H.ingested.has_reagent(antidote_reagent) || H.touching.has_reagent(antidote_reagent)))
 		return TRUE
 	return FALSE

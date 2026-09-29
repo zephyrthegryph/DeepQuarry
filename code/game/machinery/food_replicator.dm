@@ -43,7 +43,7 @@
 	if(T)
 		if(container)
 			container.forceMove(T)
-			container = null
+			own_take(src, "container")
 	QDEL_NULL_LIST(products)
 	return ..()
 
@@ -158,7 +158,7 @@
 
 	user.drop_item()
 	O.forceMove(src)
-	container = O
+	own_set(src, "container", O)
 	balloon_alert(user, "placed \the [O] in \the [src]")
 	return TRUE
 
@@ -241,7 +241,7 @@
 /obj/machinery/food_replicator/proc/remove_beaker()
 	if(container)
 		container.forceMove(get_turf(src))
-		container = null
+		own_take(src, "container")
 		return TRUE
 	return FALSE
 

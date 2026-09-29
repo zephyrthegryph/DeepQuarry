@@ -394,7 +394,7 @@
 		var/mob/living/living_mob = holder.held_mob
 
 		living_mob.forceMove(src)
-		holder.held_mob = null
+		rel_clear(holder, "held_mob")
 		consume(holder, user)
 
 		food_inserted_micros += living_mob
@@ -3969,7 +3969,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpiz
 		user.put_in_hands( pizza )
 
 		to_chat(user, span_warning("You take \the [src.pizza] out of \the [src]."))
-		src.pizza = null
+		own_take(src, "pizza")
 		update_icon()
 		return TRUE
 
@@ -4041,7 +4041,7 @@ DECLARE_INTERACTIONS(/obj/item/pizzabox, \
 		if( src.open )
 			user.drop_item()
 			I.forceMove(src)
-			src.pizza = I
+			own_set(src, "pizza", I)
 
 			update_icon()
 
@@ -4070,32 +4070,32 @@ DECLARE_INTERACTIONS(/obj/item/pizzabox, \
 	return FALSE
 
 /obj/item/pizzabox/margherita/Initialize(mapload)
-	pizza = new /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita(src)
+	own_set(src, "pizza", new /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita(src))
 	boxtag = "Margherita Deluxe"
 	. = ..()
 
 /obj/item/pizzabox/vegetable/Initialize(mapload)
-	pizza = new /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza(src)
+	own_set(src, "pizza", new /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza(src))
 	boxtag = "Gourmet Vegatable"
 	. = ..()
 
 /obj/item/pizzabox/mushroom/Initialize(mapload)
-	pizza = new /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza(src)
+	own_set(src, "pizza", new /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza(src))
 	boxtag = "Mushroom Special"
 	. = ..()
 
 /obj/item/pizzabox/meat/Initialize(mapload)
-	pizza = new /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza(src)
+	own_set(src, "pizza", new /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza(src))
 	boxtag = "Meatlover's Supreme"
 	. = ..()
 
 /obj/item/pizzabox/pineapple/Initialize(mapload)
-	pizza = new /obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple(src)
+	own_set(src, "pizza", new /obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple(src))
 	boxtag = "Hawaiian Sunrise"
 	. = ..()
 
 /obj/item/pizzabox/old/Initialize(mapload)
-	pizza = new /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza(src)
+	own_set(src, "pizza", new /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza(src))
 	boxtag = "Deluxe Gourmet"
 	. = ..()
 

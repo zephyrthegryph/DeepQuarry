@@ -105,10 +105,10 @@
 	W.lighting_corners_initialised = old_lighting_corners_initialized
 	var/turf/simulated/W_sim = W
 	if(istype(W_sim) && old_shandler)
-		W_sim.shandler = old_shandler
-		old_shandler.holder = W
+		rel_set(W_sim, "shandler", old_shandler)
+		rel_set(old_shandler, "holder", W)
 	else if(istype(W_sim) && (GLOB.planet_service.initialized && GLOB.planet_service.z_to_planet.len >= z && GLOB.planet_service.z_to_planet[z]) && has_dynamic_lighting())
-		W_sim.shandler = new(src)
+		rel_set(W_sim, "shandler", new /datum/sunlight_handler(src))
 		W_sim.shandler.manualInit()
 	// old_fire was ZAS-only; no-op under LINDA (no old fire to remove).
 
@@ -132,15 +132,15 @@
 
 	dangerous_objects = old_dangerous_objects
 
-	lighting_corner_NE = old_lighting_corner_NE
-	lighting_corner_SE = old_lighting_corner_SE
-	lighting_corner_SW = old_lighting_corner_SW
-	lighting_corner_NW = old_lighting_corner_NW
+	rel_set(src, "lighting_corner_NE", old_lighting_corner_NE)
+	rel_set(src, "lighting_corner_SE", old_lighting_corner_SE)
+	rel_set(src, "lighting_corner_SW", old_lighting_corner_SW)
+	rel_set(src, "lighting_corner_NW", old_lighting_corner_NW)
 
 	dynamic_lumcount = old_dynamic_lumcount
 
 	if(SSlighting.initialized)
-		lighting_object = old_lighting_object
+		rel_set(src, "lighting_object", old_lighting_object)
 
 		directional_opacity = old_directional_opacity
 		if(!defer_explosion_appearance)

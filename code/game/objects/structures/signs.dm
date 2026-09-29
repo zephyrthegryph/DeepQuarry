@@ -1602,8 +1602,8 @@
 	if(flag_size)
 		P.icon_state = "[flag_path]_l"
 		var/obj/structure/sign/flag/P2 = new(user.loc)
-		P.linked_flag = P2
-		P2.linked_flag = P
+		rel_set(P, "linked_flag", P2)
+		rel_set(P2, "linked_flag", P)
 		P2.icon_state = "[flag_path]_r"
 		P2.dir = P.dir
 		switch(P2.dir)

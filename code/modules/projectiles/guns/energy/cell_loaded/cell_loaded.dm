@@ -64,7 +64,7 @@
 		else
 			to_chat(loc,span_warning("\The [src] is now firing [new_batt.type_name]."))
 
-	chambered = new_batt
+	own_set(src, "chambered", new_batt)
 	update_charge()
 	update_icon()
 	var/mob/living/M = loc // TGMC Ammo HUD
@@ -99,7 +99,7 @@
 		switch_to(ammo_magazine.stored_ammo[1])
 
 /obj/item/gun/projectile/cell_loaded/unload_ammo(mob/user, allow_dump=1)
-	chambered = null
+	own_take(src, "chambered")
 	return ..()
 
 /obj/item/gun/projectile/cell_loaded/update_icon()

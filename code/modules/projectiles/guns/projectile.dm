@@ -47,7 +47,7 @@
 			if(random_start_ammo)
 				loaded.Cut(0,rand(0,max_shells))
 		if(ispath(magazine_type) && (load_method & MAGAZINE))
-			ammo_magazine = new magazine_type(src)
+			own_set(src, "ammo_magazine", new magazine_type(src))
 			allowed_magazines += /obj/item/ammo_magazine/smart
 			if(random_start_ammo)
 				var/ammo_cut = rand(0,ammo_magazine.max_ammo)
@@ -62,11 +62,11 @@
 	if(!manual_chamber) // Manual Chambering
 		//get the next casing
 		if(loaded.len)
-			chambered = loaded[1] //load next casing.
+			own_set(src, "chambered", loaded[1]) //load next casing.
 			if(handle_casings != HOLD_CASINGS)
 				loaded -= chambered
 		else if(ammo_magazine && ammo_magazine.stored_ammo.len)
-			chambered = ammo_magazine.stored_ammo[ammo_magazine.stored_ammo.len]
+			own_set(src, "chambered", ammo_magazine.stored_ammo[ammo_magazine.stored_ammo.len])
 			if(handle_casings != HOLD_CASINGS)
 				ammo_magazine.stored_ammo -= chambered
 	if(manual_chamber && auto_loading_type && CHECK_BITFIELD(auto_loading_type,OPEN_BOLT) && bolt_open)
@@ -113,7 +113,7 @@
 				loaded += chambered
 
 	if(handle_casings != HOLD_CASINGS)
-		chambered = null
+		own_take(src, "chambered")
 
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
@@ -130,7 +130,7 @@
 		user.visible_message("[user] removes [ammo_magazine] from [src].", span_notice("You remove [ammo_magazine] from [src]."))
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
 		ammo_magazine.update_icon()
-		ammo_magazine = null
+		own_take(src, "ammo_magazine")
 		user.hud_used?.update_ammo_hud(user, src)
 	else if(loaded.len)
 		//presumably, if it can be speed-loaded, it can be speed-unloaded.
@@ -195,7 +195,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 		if(auto_eject_sound)
 			playsound(src, auto_eject_sound, 40, 1)
 		ammo_magazine.update_icon()
-		ammo_magazine = null
+		own_take(src, "ammo_magazine")
 		update_icon() //make sure to do this after unsetting ammo_magazine
 		user.hud_used?.update_ammo_hud(user, src)
 
@@ -483,7 +483,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 		to_chamber = ammo_magazine.stored_ammo[ammo_magazine.stored_ammo.len]
 		if(handle_casings != HOLD_CASINGS)
 			ammo_magazine.stored_ammo -= to_chamber
-	chambered = to_chamber
+	own_set(src, "chambered", to_chamber)
 	if(to_chamber)
 		return TRUE
 	else
@@ -586,7 +586,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 					return
 				user.remove_from_mob(AM)
 				AM.forceMove(src)
-				ammo_magazine = AM
+				own_set(src, "ammo_magazine", AM)
 				user.visible_message("[user] inserts [AM] into [src].", span_notice("You insert [AM] into [src]."))
 				if(manual_chamber && CHECK_BITFIELD(auto_loading_type,CHAMBER_ON_RELOAD) && bolt_open && !chambered)
 					chamber_bullet()
@@ -698,7 +698,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	if(chambered)
 		return
 	user.visible_message(span_notice(message),span_notice("You slide \the [C] into the [src]'s chamber."))
-	chambered = C
+	own_set(src, "chambered", C)
 	user.hud_used.update_ammo_hud(user, src)
 	user.remove_from_mob(C)
 	C.forceMove(src)

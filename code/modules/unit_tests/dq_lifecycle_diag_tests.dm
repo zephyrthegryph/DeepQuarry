@@ -88,8 +88,8 @@
 	GLOB.dq_lifecycle_report_capture = list()
 	var/datum/dq_diag_owner_a/A = new
 	var/datum/dq_diag_owner_b/B = new
-	A.b = B
-	B.a = A
+	own_set(A, "b", B)
+	own_set(B, "a", A)
 	qdel(A)
 	var/list/capture = GLOB.dq_lifecycle_report_capture
 	GLOB.dq_lifecycle_report_capture = null
@@ -108,13 +108,13 @@
 
 	var/datum/dq_diag_leaker/leaker = new
 	var/datum/dq_diag_leaked/leaked = new
-	leaked.holder = leaker
+	rel_set(leaked, "holder", leaker)
 	leaker.members = list(leaked)
 	qdel(leaker)
 
 	var/datum/dq_diag_clean/clean = new
 	var/datum/dq_diag_leaked/bystander = new
-	clean.other = bystander // live, and holds nothing back: not a leak
+	rel_set(clean, "other", bystander) // live, and holds nothing back: not a leak
 	qdel(clean)
 
 	var/list/capture = GLOB.dq_lifecycle_report_capture
@@ -124,8 +124,8 @@
 
 	// Break the cycle by hand so the fixtures themselves collect.
 	leaker.members = null
-	leaked.holder = null
-	clean.other = null
+	rel_clear(leaked, "holder")
+	rel_clear(clean, "other")
 	qdel(bystander)
 
 	TEST_ASSERT(dq_diag_capture_has(capture, "LIFECYCLE LEAK: /datum/dq_diag_leaker.members still holds a list with deleted /datum/dq_diag_leaked"), "the leaker's list was reported: [json_encode(capture)]")
@@ -151,7 +151,7 @@
 /obj/item/dq_diag_init_refuser/on_destroy(force)
 	if(fragile_destroy)
 		// Touches state Initialize() never built: a runtime mid-Destroy().
-		made_in_init.other = null
+		rel_clear(made_in_init, "other")
 	..()
 
 /obj/item/dq_diag_init_refuser/fragile

@@ -31,12 +31,12 @@
 
 /mob/proc/add_spell(datum/spell/spell_to_add, spell_base = "wiz_spell_ready", master_type = /atom/movable/screen/movable/spell_master)
 	if(!spell_masters)
-		spell_masters = list()
+		own_set(src, "spell_masters", list())
 
 	if(spell_masters.len)
 		for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters)
 			if(spell_master.type == master_type)
-				spell_list.Add(spell_to_add)
+				rel_add(src, "spell_list", spell_to_add)
 				spell_master.add_spell(spell_to_add)
 				if(mind)
 					if(!mind.learned_spells)
@@ -51,8 +51,8 @@
 	new_spell_master.add_spell(spell_to_add)
 	if(spell_base)
 		new_spell_master.icon_state = spell_base
-	spell_masters.Add(new_spell_master)
-	spell_list.Add(spell_to_add)
+	own_add(src, "spell_masters", new_spell_master)
+	rel_add(src, "spell_list", spell_to_add)
 	if(mind)
 		if(!mind.learned_spells)
 			mind.learned_spells = list()
@@ -72,7 +72,7 @@
 
 	if(mind && mind.learned_spells)
 		mind.learned_spells.Remove(spell_to_remove)
-	spell_list.Remove(spell_to_remove)
+	rel_remove(src, "spell_list", spell_to_remove)
 	for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters)
 		spell_master.remove_spell(spell_to_remove)
 	return 1
@@ -197,7 +197,7 @@
 	if(set_up(hit_atom, user))
 		var/obj/item/projectile/new_projectile = make_projectile(spell_projectile, user)
 		new_projectile.old_style_target(hit_atom)
-		new_projectile.firer = user	//Don't shoot yourself while moving
+		rel_set(new_projectile, "firer", user) //Don't shoot yourself while moving
 		new_projectile.fire()
 		log_attack("has casted [src] at \the [hit_atom].")
 		if(fire_sound)

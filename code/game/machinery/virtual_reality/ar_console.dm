@@ -89,7 +89,7 @@
 	if(!occupant) //This whole thing needs cleaned up later, but this works for now.
 		return
 	occupant.forceMove(get_turf(src))
-	occupant.vr_link = null //The machine remembers the avatar. 1 avatar per machine. So the vr_link isn't needed anymore.
+	rel_clear(occupant, "vr_link") //The machine remembers the avatar. 1 avatar per machine. So the vr_link isn't needed anymore.
 	occupant = null
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/atom/movable/A in contents_of(src)) // In case an object was dropped inside or something // ALLOW(latent): materialized above

@@ -46,7 +46,7 @@
 
 	for(var/obj/machinery/atmospherics/target in get_step(src,connect_direction))
 		if (can_be_node(target, 1))
-			node1 = target
+			rel_set(src, "node1", target)
 			break
 
 	update_icon()
@@ -55,7 +55,7 @@
 	if(reference == node1)
 		if(istype(node1, /obj/machinery/atmospherics/pipe))
 			rust_invalidate_pipeline_wrapper(parent)
-		node1 = null
+		rel_clear(src, "node1")
 
 	update_icon()
 

@@ -39,7 +39,7 @@ DECLARE_INTERACTIONS(/obj/item/cane/concealed, \
 		user.put_in_hands(src)
 		user.update_inv_l_hand(0)
 		user.update_inv_r_hand()
-		concealed_blade = null
+		own_take(src, "concealed_blade")
 		update_icon()
 	return TRUE
 
@@ -50,7 +50,7 @@ DECLARE_INTERACTIONS(/obj/item/cane/concealed, \
 		playsound(src, 'sound/weapons/holster/sheathin.ogg', 50, 1)
 		user.drop_from_inventory(W)
 		W.forceMove(src)
-		src.concealed_blade = W
+		own_set(src, "concealed_blade", W)
 		update_icon()
 	else
 		return FALSE

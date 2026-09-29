@@ -31,7 +31,7 @@
 			if(!copied())
 				copied_handle = om_handle(user)
 			if(pay_energy(500))
-				illusion = new(T)
+				own_set(src, "illusion", new /mob/living/simple_mob/illusion(T))
 				illusion.copy_appearance(copied())
 				illusion.copy_overlays(copied(), TRUE)
 				to_chat(user, span_notice("An illusion of \the [copied()] is made on \the [T]."))

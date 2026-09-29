@@ -66,7 +66,7 @@
 /datum/mind/New(key)
 	src.key = key
 	purchase_log = list()
-	antag_holder = new
+	own_set(src, "antag_holder", new /datum/antag_holder)
 	..()
 
 /// Low level: link this mind to `new_character`. Use transfer_mind() (or
@@ -80,7 +80,7 @@
 	var/datum/character_identity/carried_identity = get_identity()
 	if(!carried_identity && isliving(new_character))
 		carried_identity = new_character.identity()
-	identity = carried_identity
+	own_set(src, "identity", carried_identity)
 	var/datum/changeling/changeling_comp
 	var/mob/living/old_character = current
 	if(current)
@@ -88,13 +88,13 @@
 		if(changeling_comp)
 			current.remove_changeling_powers()
 			remove_verb(current, /mob/proc/EvolutionMenu)
-		current.mind = null
+		rel_clear(current, "mind")
 
 	if(new_character.mind)		//remove any mind currently in our new body's mind variable
-		new_character.mind.current = null
+		rel_clear(new_character.mind, "current")
 
-	current = new_character		//link ourself to our new body
-	new_character.mind = src	//and link our new body to ourself
+	rel_set(src, "current", new_character) //link ourself to our new body
+	rel_set(new_character, "mind", src) //and link our new body to ourself
 	if(isliving(new_character))
 		if(share_identity)
 			new_character.share_identity(identity)
@@ -134,7 +134,7 @@
 	// fully structured TGUI panel; see
 	// code/modules/admin/edit_memory_panel.dm.
 	if(!tgui_edit_memory_panel)
-		tgui_edit_memory_panel = new(src, user)
+		rel_set(src, "tgui_edit_memory_panel", new /datum/edit_memory_panel(src, user))
 	tgui_edit_memory_panel.tgui_interact(user)
 
 /datum/mind/Topic(href, href_list)
@@ -200,7 +200,7 @@
 	else if (href_list["obj_delete"])
 		var/datum/objective/objective = locate(href_list["obj_delete"])
 		if(!istype(objective))	return
-		objectives -= objective
+		own_take_member(src, "objectives", objective)
 
 	else if(href_list["obj_completed"])
 		var/datum/objective/objective = locate(href_list["obj_completed"])
@@ -392,39 +392,39 @@
 			var/mob/living/M = new_target
 			if (!istype(M) || !M.mind || new_target == "Free objective")
 				new_objective = new objective_path
-				new_objective.owner = src
+				rel_set(new_objective, "owner", src)
 				new_objective:target = null
 				new_objective.explanation_text = "Free objective"
 			else
 				new_objective = new objective_path
-				new_objective.owner = src
+				rel_set(new_objective, "owner", src)
 				new_objective:target = M.mind
 				new_objective.explanation_text = "[objective_type] [M.real_name], the [M.mind.special_role ? M.mind:special_role : M.mind:assigned_role]."
 
 		if ("prevent")
 			new_objective = new /datum/objective/block
-			new_objective.owner = src
+			rel_set(new_objective, "owner", src)
 
 		if ("hijack")
 			new_objective = new /datum/objective/hijack
-			new_objective.owner = src
+			rel_set(new_objective, "owner", src)
 
 		if ("escape")
 			new_objective = new /datum/objective/escape
-			new_objective.owner = src
+			rel_set(new_objective, "owner", src)
 
 		if ("survive")
 			new_objective = new /datum/objective/survive
-			new_objective.owner = src
+			rel_set(new_objective, "owner", src)
 
 		if ("mercenary")
 			new_objective = new /datum/objective/nuclear
-			new_objective.owner = src
+			rel_set(new_objective, "owner", src)
 
 		if ("steal")
 			if (!istype(objective, /datum/objective/steal))
 				new_objective = new /datum/objective/steal
-				new_objective.owner = src
+				rel_set(new_objective, "owner", src)
 			else
 				new_objective = objective
 			var/datum/objective/steal/steal = new_objective
@@ -446,23 +446,23 @@
 				if("vore")
 					new_objective = new /datum/objective/vore
 					new_objective.explanation_text = "Devour [target_number] [target_number == 1 ? "person" : "people"]. What happens to them after you do that is irrelevant."
-			new_objective.owner = src
+			rel_set(new_objective, "owner", src)
 			new_objective.target_amount = target_number
 
 		if ("custom")
 			var/expl = edit.detail
 			if (!expl) return
 			new_objective = new /datum/objective
-			new_objective.owner = src
+			rel_set(new_objective, "owner", src)
 			new_objective.explanation_text = expl
 
 	if (!new_objective) return
 
 	if (objective)
-		objectives -= objective
+		own_take_member(src, "objectives", objective)
 		objectives.Insert(objective_pos, new_objective)
 	else
-		objectives += new_objective
+		own_add(src, "objectives", new_objective)
 
 /datum/mind/proc/telecrystals_set(datum/om/prompt/number/ask)
 	tcrystals = ask.number
@@ -513,7 +513,7 @@
 	role_alt_title =  null
 	//changeling =    null //TODO: Figure out where this is all used and move it from mind to mob.
 	initial_account_handle = null
-	objectives =      list()
+	own_set(src, "objectives", list())
 	special_verbs =   list()
 	has_been_rev =    0
 	rev_cooldown =    0
@@ -553,18 +553,18 @@
 	if(mind)
 		mind.key = key
 	else
-		mind = new /datum/mind(key)
+		rel_set(src, "mind", new /datum/mind(key))
 		mind.original_character = om_handle(src)
 		if(SSticker)
 			SSticker.minds += mind
 		else
 			log_world("## DEBUG: mind_initialize(): No ticker ready yet! Please inform Carn")
 	if(!mind.name)	mind.name = real_name
-	mind.current = src
+	rel_set(mind, "current", src)
 	if(mind.identity)
 		bind_identity(mind.identity)
 	else
-		mind.identity = identity()
+		own_set(mind, "identity", identity())
 	if(GLOB.antag_service.player_is_antag(mind))
 		add_verb(src.client, /client/proc/aooc)
 	if (client?.prefs)

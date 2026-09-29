@@ -23,7 +23,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	log_and_message_admins("has used modify robot and is modifying [target()]")
 	law_list = new()
 	init_subtypes(/datum/ai_laws, law_list)
-	law_list = dd_sortedObjectList(law_list)
+	own_set(src, "law_list", dd_sortedObjectList(law_list))
 
 /datum/eventkit/modify_robot/tgui_close()
 	target_handle = null
@@ -191,18 +191,18 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 				qdel(source)
 			var/module_type = GLOB.robot_modules[params["new_source"]]
 			if(ispath(module_type, /obj/item/robot_module/robot/syndicate))
-				source = new /mob/living/silicon/robot/syndicate(null)
+				own_set(src, "source", new /mob/living/silicon/robot/syndicate(null))
 			else if(ispath(module_type, /obj/item/robot_module/robot/malf))
-				source = new /mob/living/silicon/robot/malf(null)
+				own_set(src, "source", new /mob/living/silicon/robot/malf(null))
 			else
-				source = new /mob/living/silicon/robot(null)
+				own_set(src, "source", new /mob/living/silicon/robot(null))
 			source.modtype = params["new_source"]
 			var/obj/item/robot_module/robot/robot_type = new module_type(source)
 			source.sprite_datum = pick(SSrobot_sprites.get_module_sprites(source.modtype, source))
 			source.update_icon()
 			source.emag_items = TRUE
 			if(!istype(robot_type, /obj/item/robot_module/robot))
-				QDEL_NULL(source)
+				own_clear(src, "source", OWN_DELETE)
 				return TRUE
 			return TRUE
 		if("reset_module")
@@ -213,7 +213,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 			if(!selected_item)
 				return TRUE
 			if(istype(selected_item, /obj/item/card/id))
-				source.idcard = null
+				own_take(source, "idcard")
 			source.module.emag -= selected_item
 			source.module.modules -= selected_item
 			target().module.add_item(selected_item, target())

@@ -226,7 +226,7 @@
 	if(!user.unEquip(O))
 		return FALSE
 	O.forceMove(src)
-	scan = O
+	own_set(src, "scan", O)
 	to_chat(user, "You insert [O].")
 	tgui_interact(user)
 	return TRUE
@@ -472,13 +472,13 @@
 				scan.forceMove(loc)
 				if(ishuman(ui.user) && !ui.user.get_active_hand())
 					ui.user.put_in_hands(scan)
-				scan = null
+				own_take(src, "scan")
 			else
 				var/obj/item/I = ui.user.get_active_hand()
 				if(istype(I, /obj/item/card/id))
 					ui.user.drop_item()
 					I.forceMove(src)
-					scan = I
+					own_set(src, "scan", I)
 		if("cleartemp")
 			temp = null
 		if("login")
@@ -511,7 +511,7 @@
 					scan.forceMove(loc)
 					if(ishuman(ui.user) && !ui.user.get_active_hand())
 						ui.user.put_in_hands(scan)
-					scan = null
+					own_take(src, "scan")
 				authenticated = null
 				screen = null
 				active1_handle = null

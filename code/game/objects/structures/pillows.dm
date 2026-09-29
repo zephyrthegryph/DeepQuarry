@@ -66,8 +66,8 @@ EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow, \
 /obj/structure/bed/pillowpile/Initialize(mapload)
 	. = ..()
 	var/turf/T = get_turf(src)
-	front = new pillowpilefront(T)
-	front.pile = src
+	rel_set(src, "front", new pillowpilefront(T))
+	rel_set(front, "pile", src)
 
 // The front piece is the pile's other half: it goes when the pile does, and taking the
 // front apart on its own lets go of the link from both sides.

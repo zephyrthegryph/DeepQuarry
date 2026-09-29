@@ -44,26 +44,26 @@
 		line_member.detach_network_air(src, air, network_volume)
 	for(var/obj/machinery/atmospherics/normal_member in old_normal_members)
 		normal_member.detach_network_air(src, air, network_volume)
-	line_members = null
-	normal_members = null
-	gases = null
+	rel_clear(src, "line_members")
+	rel_clear(src, "normal_members")
+	rel_clear(src, "gases")
 	leaks = null
 	external_air_volumes = null
 	for(var/datum/pipeline/line_member in old_line_members)
 		line_member.unregister_network_membership(src)
 		if(line_member.network == src)
-			line_member.network = null
+			rel_clear(line_member, "network")
 	for(var/obj/machinery/atmospherics/normal_member in old_normal_members)
 		normal_member.unregister_network_membership(src)
 		normal_member.reassign_network(src, null)
-	QDEL_NULL(air)
+	own_clear(src, "air", OWN_DELETE)
 	volume = 0
 
 /datum/pipe_network/proc/add_normal_member(obj/machinery/atmospherics/member)
 	if(!member || QDELETED(member))
 		return FALSE
 	// ALLOW(object_keyed_lists): many-to-many atmos topology roster, cleared symmetrically by lifecycle_unbind()/Destroy()
-	normal_members |= member
+	rel_add(src, "normal_members", member)
 	member.register_network_membership(src)
 	return TRUE
 
@@ -71,7 +71,7 @@
 	if(!member || QDELETED(member))
 		return FALSE
 	// ALLOW(object_keyed_lists): many-to-many atmos topology roster, cleared symmetrically by lifecycle_unbind()/Destroy()
-	line_members |= member
+	rel_add(src, "line_members", member)
 	member.register_network_membership(src)
 	return TRUE
 
@@ -135,15 +135,15 @@
 	var/list/giver_external = giver.external_air_volumes
 
 	if(!air)
-		air = new(max(volume, 1))
+		own_set(src, "air", new /datum/gas_mixture(max(volume, 1)))
 	if(giver.air)
 		air.merge(giver.air)
 	volume += giver.volume
 	air.set_volume(max(volume, 1))
 
-	normal_members |= giver_normal_members
+	rel_add(src, "normal_members", giver_normal_members)
 
-	line_members |= giver_line_members
+	rel_add(src, "line_members", giver_line_members)
 
 	leaks |= giver_leaks
 
@@ -157,7 +157,7 @@
 		line_member.bind_network_air(giver, air)
 		line_member.unregister_network_membership(giver)
 		line_member.register_network_membership(src)
-		line_member.network = src
+		rel_set(line_member, "network", src)
 
 	if(length(giver_external))
 		if(!external_air_volumes)
@@ -170,17 +170,17 @@
 	// The receiving network now owns every transferred member.  Leaving the
 	// donor's lists populated retained a second copy of the whole pipenet forever.
 	STOP_PROCESSING_PIPENET(giver)
-	giver.normal_members = null
-	giver.line_members = null
+	rel_clear(giver, "normal_members")
+	rel_clear(giver, "line_members")
 	giver.leaks = null
-	giver.gases = null
+	rel_clear(giver, "gases")
 	giver.external_air_volumes = null
 	var/datum/gas_mixture/giver_air = giver.air
-	giver.air = null
+	own_take(giver, "air")
 	giver.volume = 0
 	qdel(giver)
 	qdel(giver_air)
-	gases = list(air)
+	rel_set(src, "gases", list(air))
 	mark_topology_dirty()
 	return 1
 
@@ -207,13 +207,13 @@
 	for(var/datum/gas_mixture/member_air in old_gases)
 		network_air.merge(member_air)
 	network_air.set_volume(max(volume, 1))
-	air = network_air
+	own_set(src, "air", network_air)
 	for(var/datum/pipeline/line_member in line_members)
 		line_member.bind_network_air(src, network_air)
 	for(var/obj/machinery/atmospherics/normal_member in normal_members)
 		normal_member.bind_network_air(src, network_air)
 	// ALLOW(object_keyed_lists): many-to-many atmos topology roster, cleared symmetrically by lifecycle_unbind()/Destroy()
-	gases = list(network_air)
+	rel_set(src, "gases", list(network_air))
 	for(var/datum/gas_mixture/member_air in old_gases)
 		if(member_air != network_air)
 			qdel(member_air)
@@ -225,7 +225,7 @@
 	if(!owner || !external_air || external_air == air || external_air_volumes?[owner])
 		return FALSE
 	if(!air)
-		air = new(1)
+		own_set(src, "air", new /datum/gas_mixture(1))
 	var/external_volume = external_air.return_volume()
 	air.merge(external_air)
 	volume += external_volume
@@ -236,7 +236,7 @@
 	external_air_volumes[owner] = external_volume
 	owner.set_port_network_air(air)
 	qdel(external_air)
-	gases = list(air)
+	rel_set(src, "gases", list(air))
 	mark_dirty()
 	return TRUE
 

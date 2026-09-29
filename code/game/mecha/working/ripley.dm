@@ -115,7 +115,7 @@
 
 /obj/mecha/working/ripley/Initialize(mapload)
 	. = ..()
-	orescanner = new /obj/item/mining_scanner
+	own_set(src, "orescanner", new /obj/item/mining_scanner)
 
 EXTEND_INTERACTIONS(/obj/mecha/working/ripley, \
 	INTERACT_VERB("Detect Ores", PROC_REF(ripley_detect_ore), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \

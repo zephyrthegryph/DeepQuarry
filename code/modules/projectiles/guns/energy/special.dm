@@ -71,7 +71,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/energy/floragun, "emitter", /obj/item/stock_
 		to_chat(user, span_notice("You remove the [emitter.name] from the [src]."))
 		emitter.forceMove(get_turf(src.loc))
 		playsound(src, tool.usesound, 50, 1)
-		emitter = null
+		own_take(src, "emitter")
 	else
 		to_chat(user, span_notice("There is no micro laser in this [src]."))
 	return ITEM_INTERACT_SUCCESS
@@ -83,7 +83,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/energy/floragun, "emitter", /obj/item/stock_
 		if(!emitter)
 			user.drop_item()
 			W.forceMove(src)
-			emitter = W
+			own_set(src, "emitter", W)
 			to_chat(user, span_notice("You install a [emitter.name] in [src]."))
 		else
 			to_chat(user, span_notice("[src] already has a laser."))

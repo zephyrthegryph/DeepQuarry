@@ -19,13 +19,13 @@
 /mob/living/carbon/human/proc/add_forms(forms_type = /datum/forms)
 	RETURN_TYPE(/datum/forms)
 	if(!character_forms)
-		character_forms = new forms_type(src)
+		own_set(src, "character_forms", new forms_type(src))
 	return character_forms
 
 /// Removes the character's forms datum if it is of `forms_type` (or a subtype).
 /mob/living/carbon/human/proc/remove_forms(forms_type = /datum/forms)
 	if(istype(character_forms, forms_type))
-		QDEL_NULL(character_forms)
+		own_clear(src, "character_forms", OWN_DELETE)
 
 /// The form the character is currently wearing, or null for ordinary humans.
 /mob/living/carbon/human/proc/current_form()
@@ -58,12 +58,12 @@
 	if(!ishuman(H))
 		log_runtime("FORMS: forms datum created for a non-human ([H]).")
 		return
-	owner = H
+	rel_set(src, "owner", H)
 	forms = list()
 	var/list/types = get_form_types()
 	for(var/form_type in types)
 		forms[form_type] = new form_type()
-	current = forms[types[1]]
+	rel_set(src, "current", forms[types[1]])
 	attach()
 
 /// Joins the owner (was RegisterWithParent).
@@ -105,7 +105,7 @@
 	switching = TRUE
 	var/datum/form/old = current
 	old.on_exit(src, H)
-	current = next
+	rel_set(src, "current", next)
 	next.on_enter(src, H)
 	H.invalidate_factors()
 	if(!silent)

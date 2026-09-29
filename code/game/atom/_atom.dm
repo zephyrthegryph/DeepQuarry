@@ -81,11 +81,11 @@
 	if(!isnull(heat_body))
 		release_heat_body()
 	if(reagents)
-		QDEL_NULL(reagents)
+		own_clear(src, "reagents", OWN_DELETE)
 	if(light)
-		QDEL_NULL(light)
+		own_clear(src, "light", OWN_DELETE)
 	if(forensic_data)
-		QDEL_NULL(forensic_data)
+		own_clear(src, "forensic_data", OWN_DELETE)
 	// Checking length(overlays) before cutting has significant speed benefits
 	if (length(overlays))
 		overlays.Cut()
@@ -372,7 +372,7 @@
 		dq_set_blood_color(src, SYNTH_BLOOD_COLOUR)
 	if(istype(M))
 		if (!istype(M.dna, /datum/dna))
-			M.dna = new /datum/dna(null)
+			own_set(M, "dna", new /datum/dna(null))
 			M.dna.real_name = M.real_name
 		M.check_dna()
 		dq_set_blood_color(src, M.species.get_blood_colour(M))
@@ -701,7 +701,7 @@ GLOBAL_LIST_EMPTY(icon_dimensions)
 
 /// Sets the wire datum of an atom
 /atom/proc/set_wires(datum/wires/new_wires)
-	wires = new_wires
+	own_set(src, "wires", new_wires)
 
 /// Its icon state (om_after() target for a state that reverts, like a flash of a sprite).
 /atom/proc/set_icon_state(new_state)

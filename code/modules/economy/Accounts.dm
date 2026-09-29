@@ -236,7 +236,7 @@ REGISTRY_MEMBERSHIP(/datum/money_account, REGISTRY_MONEY_ACCOUNTS)
 		var/obj/item/smallDelivery/P = new /obj/item/smallDelivery(source_db.loc)
 
 		var/obj/item/paper/R = new /obj/item/paper(P)
-		P.wrapped = R
+		own_set(P, "wrapped", R)
 		R.name = "Account information: [M.owner_name]"
 		R.info = span_bold("Account details (confidential)") + "<br><hr><br>"
 		R.info += "<i>Account holder:</i> [M.owner_name]<br>"

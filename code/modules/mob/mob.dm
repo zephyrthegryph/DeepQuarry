@@ -43,7 +43,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		M.stop_following()
 	motiontracker_unsubscribe(TRUE) // Force unsubscribe
 	if(mind?.current == src)
-		mind.current = null
+		rel_clear(mind, "current")
 	// the mind forgets us as its original character.
 	if(mind && om_handle_is(mind.original_character, src))
 		mind.original_character = null
@@ -52,20 +52,20 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	//return QDEL_HINT_HARDDEL_NOW
 
 /mob/proc/remove_screen_obj_references()
-	hands = null
-	pullin = null
-	purged = null
-	internals = null
-	i_select = null
-	m_select = null
-	healths = null
-	throw_icon = null
-	pain = null
-	item_use_icon = null
-	gun_move_icon = null
-	gun_setting_icon = null
-	spell_masters = null
-	zone_sel = null
+	own_take(src, "hands")
+	own_take(src, "pullin")
+	own_take(src, "purged")
+	own_take(src, "internals")
+	own_take(src, "i_select")
+	own_take(src, "m_select")
+	own_take(src, "healths")
+	own_take(src, "throw_icon")
+	own_take(src, "pain")
+	own_take(src, "item_use_icon")
+	own_take(src, "gun_move_icon")
+	own_take(src, "gun_setting_icon")
+	own_take(src, "spell_masters")
+	own_take(src, "zone_sel")
 
 /mob/Initialize(mapload)
 	OM_EMIT_WORLD(/datum/om/event/world_mob_created, src)
@@ -471,7 +471,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 		//Their objectives cleanup
 		if(length(mind.objectives))
-			QDEL_LIST(mind.objectives)
+			own_clear(mind, "objectives", OWN_DELETE)
 			mind.special_role = null
 
 		//Cut the PDA manifest (ugh)
@@ -1562,7 +1562,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 
 		if(L.ai_brain)	//Cleaning up the original ai
 			var/datum/ai_brain/old_brain = L.ai_brain
-			L.ai_brain = null
+			own_take(L, "ai_brain")
 			qdel(old_brain)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
 		L.initialize_ai_brain()
 		om_ask_sequence(/datum/om/flow/ask_sequence/vv_ai_setup, usr, null, steps = list(/datum/om/prompt/text/vv_ai_faction, /datum/om/prompt/choice/vv_ai_stance, /datum/om/prompt/confirm/vv_ai_wake), on_done = PROC_REF(vv_ai_configured), requires = PROMPT_ADMIN(R_HOLDER))

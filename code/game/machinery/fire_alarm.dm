@@ -60,10 +60,10 @@ FIRE ALARM
 	if(z in using_map.contact_levels)
 		set_security_level(GLOB.security_level ? get_security_level() : "green")
 
-	soundloop = new(list(src), FALSE) // Create soundloop
-	engalarm = new(list(src), FALSE) // Create soundloop
-	critalarm = new(list(src), FALSE) // Create soundloop
-	causality = new(list(src), FALSE) // Create soundloop
+	own_set(src, "soundloop", new /datum/looping_sound/alarm/fire_alarm(list(src), FALSE)) // Create soundloop
+	own_set(src, "engalarm", new /datum/looping_sound/alarm/engineering_alarm(list(src), FALSE)) // Create soundloop
+	own_set(src, "critalarm", new /datum/looping_sound/alarm/sm_critical_alarm(list(src), FALSE)) // Create soundloop
+	own_set(src, "causality", new /datum/looping_sound/alarm/sm_causality_alarm(list(src), FALSE)) // Create soundloop
 
 
 // a sounding alarm is reset for its area.

@@ -117,7 +117,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 
 	// Adds friend_name var checks
 	if(!friend_name || L.real_name == friend_name)
-		friend = L
+		rel_set(src, "friend", L)
 		face_atom(L)
 		to_chat(L, span_notice("\The [src] is now your friend! Meow."))
 		visible_emote(pick("nuzzles [friend].", "brushes against [friend].", "rubs against [friend].", "purrs."))

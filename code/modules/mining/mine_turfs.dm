@@ -457,14 +457,14 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 
 			excavation_level += S.excavation_amount
 			update_archeo_overlays(S.excavation_amount)
-			geologic_data = new /datum/geosample(src)
+			own_set(src, "geologic_data", new /datum/geosample(src))
 			//drop some rocks
 			next_rock += S.excavation_amount
 			while(next_rock > 50)
 				next_rock -= 50
 				var/obj/item/ore/archeology_debris/O = new(src)
 				geologic_data.UpdateNearbyArtifactInfo(src)
-				O.geologic_data = geologic_data
+				own_set(O, "geologic_data", geologic_data)
 
 		if (istype(W, /obj/item/pickaxe))
 			if(!istype(user.loc, /turf))
@@ -522,14 +522,14 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 
 	excavation_level += P.excavation_amount
 	update_archeo_overlays(P.excavation_amount)
-	geologic_data = new /datum/geosample(src)
+	own_set(src, "geologic_data", new /datum/geosample(src))
 	//drop some rocks
 	next_rock += P.excavation_amount
 	while(next_rock > 50)
 		next_rock -= 50
 		var/obj/item/ore/archeology_debris/O = new(src)
 		geologic_data.UpdateNearbyArtifactInfo(src)
-		O.geologic_data = geologic_data
+		own_set(O, "geologic_data", geologic_data)
 
 //THIS IS THE 'YOU HIT AN ARTIFACT AND ARE GOING TOO DEEP' PROC. This is NOT the 'you destroyed the turf' proc. For that, look at 'GetDrilled'
 /turf/simulated/mineral/proc/wreckfinds(destroy = FALSE)
@@ -589,12 +589,12 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 	if(!mineral())
 		return
 	clear_ore_effects()
-	geologic_data = new /datum/geosample(src)
+	own_set(src, "geologic_data", new /datum/geosample(src))
 	var/new_ore_path = mineral().ore
 	var/obj/item/ore/O = new new_ore_path(src)
 	if(istype(O))
 		geologic_data.UpdateNearbyArtifactInfo(src)
-		O.geologic_data = geologic_data
+		own_set(O, "geologic_data", geologic_data)
 	return O
 
 /turf/simulated/mineral/proc/excavate_turf()
@@ -657,7 +657,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 /turf/simulated/mineral/proc/excavate_find(is_clean = 0, datum/find/F)
 	//with skill and luck, players can cleanly extract finds
 	//otherwise, they come out inside a chunk of rock
-	geologic_data = new /datum/geosample(src)
+	own_set(src, "geologic_data", new /datum/geosample(src))
 	var/obj/item/X
 	if(is_clean)
 		X = new /obj/item/archaeological_find(src, F.find_type)
@@ -665,7 +665,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 		X = new /obj/item/strangerock(src, F.find_type)
 		geologic_data.UpdateNearbyArtifactInfo(src)
 		var/obj/item/strangerock/SR = X
-		SR.geologic_data = geologic_data
+		own_set(SR, "geologic_data", geologic_data)
 
 	//some find types delete the /obj/item/archaeological_find and replace it with something else, this handles when that happens
 	//yuck

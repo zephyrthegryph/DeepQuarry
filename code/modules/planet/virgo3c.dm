@@ -34,7 +34,7 @@ GLOBAL_DATUM(planet_virgo3c, /datum/planet/virgo3c)
 /datum/planet/virgo3c/New()
 	..()
 	GLOB.planet_virgo3c = src
-	weather_holder = new /datum/weather_holder/virgo3c(src)
+	own_set(src, "weather_holder", new /datum/weather_holder/virgo3c(src))
 
 /datum/planet/virgo3c/update_sun()
 	..()

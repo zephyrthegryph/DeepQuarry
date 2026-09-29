@@ -20,7 +20,7 @@
 	// if a target is deleted and associated with a stake, force stake to forget
 	for(var/obj/structure/target_stake/T in view(3,src))
 		if(T.pinned_target == src)
-			T.pinned_target = null
+			own_take(T, "pinned_target")
 			T.density = TRUE
 			break
 	..()
@@ -70,7 +70,7 @@ DECLARE_INTERACTIONS(/obj/item/target, INTERACT_HAND(null, PROC_REF(interaction_
 				src.forceMove(get_turf(user))
 				to_chat(user, "You take the target out of the stake.")
 
-			stake.pinned_target = null
+			own_take(stake, "pinned_target")
 			return TRUE
 
 	else

@@ -178,7 +178,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	. = ..()
 	set_wires(new /datum/wires/apc(src))
 
-	icon_renderer     = new /datum/apc_icon_renderer()
+	own_set(src, "icon_renderer", new /datum/apc_icon_renderer())
 
 	// Offset 24 pixels in dir so the APC is embedded in the wall but inside the area.
 	if(building)
@@ -325,14 +325,14 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 	adjust_charge(cell.charge - get_charge())
 
 /obj/machinery/power/apc/proc/make_terminal()
-	terminal = new /obj/machinery/power/terminal(loc)
+	own_set(src, "terminal", new /obj/machinery/power/terminal(loc))
 	terminal.set_dir(dir)
 	terminal.master_handle = om_handle(src)
 
 /obj/machinery/power/apc/proc/init()
 	has_electronics = APC_HAS_ELECTRONICS_SECURED // installed and secured
 	if(cell_type)
-		cell = new cell_type(src)
+		own_set(src, "cell", new cell_type(src))
 		cell.charge = start_charge * cell.maxcharge / 100.0
 		sync_cell_charge()
 
@@ -618,7 +618,7 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 			return TRUE
 		user.drop_item()
 		W.forceMove(src)
-		cell = W
+		own_set(src, "cell", W)
 		sync_cell_charge()
 		user.visible_message(\
 			span_warning("[user.name] has inserted a power cell into [name]!"),\
@@ -769,7 +769,7 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 			user.put_in_hands(cell)
 			cell.add_fingerprint(user)
 			cell.update_icon()
-			cell = null
+			own_take(src, "cell")
 			user.visible_message(span_warning("[user.name] removes the power cell from [name]!"),\
 				span_notice("You remove the power cell."))
 			charging = 0
@@ -1113,7 +1113,7 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 /obj/machinery/power/apc/disconnect_terminal(obj/machinery/power/terminal/term)
 	if(terminal)
 		terminal.master_handle = null
-		terminal = null
+		own_take(src, "terminal")
 	wake_for_power_dependency()
 
 /obj/machinery/power/apc/proc/overload_lighting(chance = 100)
@@ -1135,8 +1135,8 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 /obj/machinery/power/apc/proc/ai_hack(mob/living/silicon/ai/A = null)
 	if(!A || !A.hacked_apcs || hacker || aidisabled || A.stat == DEAD)
 		return 0
-	hacker = A
-	A.hacked_apcs += src
+	rel_set(src, "hacker", A)
+	rel_add(A, "hacked_apcs", src)
 	locked = 1
 	update_icon()
 	return 1
@@ -1168,8 +1168,8 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 
 	// Clear malf AI ownership.
 	if(hacker && hacker.hacked_apcs && (src in hacker.hacked_apcs))
-		hacker.hacked_apcs -= src
-	hacker = null
+		rel_remove(hacker, "hacked_apcs", src)
+	rel_clear(src, "hacker")
 	emagged = initial(emagged)
 
 	// Force icon renderer to recompute from scratch.

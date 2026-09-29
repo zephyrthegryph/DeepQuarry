@@ -13,7 +13,7 @@
 	apply_default_language(GLOB.all_languages[LANGUAGE_GALCOM])
 
 	if(istype(loc, /obj/item/communicator))
-		comm = loc
+		own_set(src, "comm", loc)
 	. = ..()
 
 // Proc: transfer_identity()

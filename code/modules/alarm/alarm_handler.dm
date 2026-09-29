@@ -33,11 +33,11 @@
 		existing = new/datum/alarm(origin, source, duration, severity, hidden)
 		new_alarm = 1
 
-	alarms |= existing
-	LAZYSET(alarms_assoc, origin, existing)
+	own_add(src, "alarms", existing)
+	own_put(src, "alarms_assoc", origin, existing)
 	om_task_periodic(src, PERIODIC_SLOW)
 	if(new_alarm)
-		alarms = dd_sortedObjectList(alarms)
+		own_set(src, "alarms", dd_sortedObjectList(alarms))
 		on_alarm_change(existing, ALARM_RAISED)
 
 	return new_alarm
@@ -62,7 +62,7 @@
 	var/list/datum/alarm/check_alarms = alarms.Copy()
 	for(var/datum/alarm/alarm as anything in check_alarms)
 		if(alarm.origin() == departing)
-			LAZYREMOVE(alarms_assoc, alarm.origin())
+			own_take_member(src, "alarms_assoc", alarm.origin())
 			alarm.origin_handle = null
 		alarm.clear(departing)
 		if(alarm.cameras)
@@ -83,8 +83,8 @@
 
 /datum/alarm_handler/proc/check_alarm_cleared(datum/alarm/alarm)
 	if ((alarm.end_time && world.time > alarm.end_time) || !length(alarm.sources))
-		alarms -= alarm
-		LAZYREMOVE(alarms_assoc, alarm.origin())
+		own_take_member(src, "alarms", alarm)
+		own_take_member(src, "alarms_assoc", alarm.origin())
 		on_alarm_change(alarm, ALARM_CLEARED)
 		qdel(alarm)
 		return 1

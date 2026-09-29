@@ -273,14 +273,14 @@ GLOBAL_DATUM_INIT(transcore_service, /datum/world_service/transcore, new)
 // Called from mind_record to add itself to the transcore.
 /datum/transcore_db/proc/add_backup(datum/transhuman/mind_record/MR)
 	ASSERT(MR)
-	backed_up[MR.mindname] = MR
-	backed_up = sortAssoc(backed_up)
+	own_put(src, "backed_up", MR.mindname, MR)
+	own_set(src, "backed_up", sortAssoc(backed_up))
 
 // Remove a mind_record from the backup-checking list.  Keeps track of it in has_left // Why do we do that? ~Leshana
 /datum/transcore_db/proc/stop_backup(datum/transhuman/mind_record/MR)
 	ASSERT(MR)
-	LAZYSET(has_left, MR.mindname, MR)
-	backed_up.Remove("[MR.mindname]")
+	own_put(src, "has_left", MR.mindname, MR)
+	own_take_member(src, "backed_up", "[MR.mindname]")
 	MR.cryo_at = world.time
 
 // Called from body_record to add itself to the transcore.
@@ -288,13 +288,13 @@ GLOBAL_DATUM_INIT(transcore_service, /datum/world_service/transcore, new)
 	ASSERT(BR)
 	if(body_scans[BR.mydna.name])
 		qdel(body_scans[BR.mydna.name])
-	body_scans[BR.mydna.name] = BR
-	body_scans = sortAssoc(body_scans)
+	own_put(src, "body_scans", BR.mydna.name, BR)
+	own_set(src, "body_scans", sortAssoc(body_scans))
 
 // Remove a body record from the database (Usually done when someone cryos)  // Why? ~Leshana
 /datum/transcore_db/proc/remove_body(datum/transhuman/body_record/BR)
 	ASSERT(BR)
-	body_scans.Remove("[BR.mydna.name]")
+	own_take_member(src, "body_scans", "[BR.mydna.name]")
 
 // Moves all mind records from the databaes into the disk and shuts down all backup canary processing.
 /datum/transcore_db/proc/core_dump(obj/item/disk/transcore/disk)
@@ -303,7 +303,7 @@ GLOBAL_DATUM_INIT(transcore_service, /datum/world_service/transcore, new)
 	GLOB.global_announcer.autosay("An emergency core dump has been initiated!", "TransCore Oversight", "Medical")
 
 	disk.stored += backed_up
-	backed_up.Cut()
+	own_take_all(src, "backed_up")
 	core_dumped = TRUE
 	return length(disk.stored)
 

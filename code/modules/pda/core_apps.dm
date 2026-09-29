@@ -324,7 +324,7 @@
 	. = ..()
 	//Initialize an intercom to announce going on/off duty
 	if(!announce)
-		announce = new /obj/item/radio/intercom(src)
+		own_set(src, "announce", new /obj/item/radio/intercom(src))
 
 /datum/data/pda/app/timeclock/update_ui(mob/user as mob, list/data)
 	//Because tgui_data seems a bit weird with pda apps

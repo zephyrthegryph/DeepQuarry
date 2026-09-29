@@ -28,8 +28,8 @@ BLOOD_VOLUME_SURVIVE = 40
 	if(species.flags & NO_BLOOD)
 		return
 
-	vessel = new/datum/reagents(species.blood_volume)
-	vessel.my_atom = src
+	own_set(src, "vessel", new/datum/reagents(species.blood_volume))
+	rel_set(vessel, "my_atom", src)
 
 	if(!should_have_organ(O_HEART)) //We want the var for safety but we can do without the actual blood.
 		return
@@ -287,7 +287,7 @@ BLOOD_VOLUME_SURVIVE = 40
 		return null
 	if(!B)
 		B = new /datum/reagent/blood
-	B.holder = container.reagents
+	rel_set(B, "holder", container.reagents)
 	B.volume += amount
 
 	//set reagent data
@@ -372,7 +372,7 @@ BLOOD_VOLUME_SURVIVE = 40
 	if(!our)
 		log_runtime("[src] has no blood reagent, proceeding with fallback reinitialization.")
 		var/vessel_old = vessel
-		vessel = null
+		own_take(src, "vessel")
 		qdel(vessel_old)
 		make_blood(amount)
 		if(!vessel)

@@ -47,7 +47,7 @@
 		resistance_flags |= BOMB_PROOF
 	om_hook(src, list(/datum/om/event/machinery_power_lost, /datum/om/event/machinery_power_restored), src, PROC_REF(on_power_signal))
 	set_wires(new /datum/wires/camera(src))
-	assembly = new(src)
+	own_set(src, "assembly", new /obj/item/camera_assembly(src))
 	assembly.state = 4
 	LAZYOR(client_huds, GLOB.global_hud.whitense)
 
@@ -299,7 +299,7 @@
 			assembly.state = 1
 			to_chat(user, span_notice("You cut \the [src] free from the wall."))
 			new /obj/item/stack/cable_coil(loc, 2)
-		assembly = null
+		own_take(src, "assembly")
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
 

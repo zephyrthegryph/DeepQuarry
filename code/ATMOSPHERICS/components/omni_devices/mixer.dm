@@ -60,7 +60,7 @@
 	for(var/datum/omni_port/P in ports)
 		if(P.update)
 			if(output == P)
-				output = null
+				rel_clear(src, "output")
 			if(inputs.Find(P))
 				inputs -= P
 
@@ -69,7 +69,7 @@
 					// ALLOW(object_keyed_lists): subset of the owned ports list (DECLARE_REF(..., OWNED_LIST) on /omni), rebuilt from it
 					inputs += P
 				if(ATM_OUTPUT)
-					output = P
+					rel_set(src, "output", P)
 
 	if(!mapper_set())
 		for(var/datum/omni_port/P in inputs)

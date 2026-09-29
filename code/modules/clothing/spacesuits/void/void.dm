@@ -145,7 +145,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/space/void, "tank", "tank")
 
 	helm.forceMove(src)
 	helm.set_light_flags(helm.light_flags | LIGHT_ATTACHED)
-	hood = helm
+	own_set(src, "hood", helm)
 
 /obj/item/clothing/suit/space/void/proc/remove_helmet()
 	if(!hood)
@@ -153,7 +153,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/space/void, "tank", "tank")
 
 	hood.forceMove(get_turf(src))
 	hood.set_light_flags(hood.light_flags & ~LIGHT_ATTACHED)
-	hood = null
+	own_take(src, "hood")
 
 /obj/item/clothing/suit/space/void/ui_action_click(mob/living/user, action_name)
 	if(..())
@@ -223,10 +223,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 	var/obj/item/removing = null
 	if(tank)
 		removing = tank
-		tank = null
+		own_take(src, "tank")
 	else
 		removing = cooler
-		cooler = null
+		own_take(src, "cooler")
 	to_chat(H, span_danger("You press the emergency release, ejecting \the [removing] from your suit."))
 	playsound(src.loc, 'sound/machines/click.ogg', 75, 1)
 	removing.canremove = TRUE
@@ -259,7 +259,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 			to_chat(user, "You attach \the [W] to \the [src]'s boot mounts.")
 			user.drop_item()
 			W.forceMove(src)
-			boots = W
+			own_set(src, "boots", W)
 		return INTERACTION_HANDLED_PASS
 	else if(istype(W,/obj/item/tank))
 		if(tank)
@@ -270,7 +270,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 			to_chat(user, "You insert \the [W] into \the [src]'s storage compartment.")
 			user.drop_item()
 			W.forceMove(src)
-			tank = W
+			own_set(src, "tank", W)
 		return INTERACTION_HANDLED_PASS
 	else if(istype(W,/obj/item/suit_cooling_unit))
 		if(cooler)
@@ -281,7 +281,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 			to_chat(user, "You insert \the [W] into \the [src]'s storage compartment.")
 			user.drop_item()
 			W.forceMove(src)
-			cooler = W
+			own_set(src, "cooler", W)
 		return INTERACTION_HANDLED_PASS
 
 	return FALSE
@@ -408,12 +408,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(nu
 			to_chat(user, "You pop \the [tank] out of \the [src]'s storage compartment.")
 			tank.forceMove(get_turf(src))
 			playsound(src, tool.usesound, 50, 1)
-			src.tank = null
+			own_take(src, "tank")
 		else if(choice == cooler)
 			to_chat(user, "You pop \the [cooler] out of \the [src]'s storage compartment.")
 			cooler.forceMove(get_turf(src))
 			playsound(src, tool.usesound, 50, 1)
-			src.cooler = null
+			own_take(src, "cooler")
 		else if(choice == hood)
 			to_chat(user, "You detach \the [hood] from \the [src]'s helmet mount.")
 			remove_helmet()
@@ -422,7 +422,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(nu
 			to_chat(user, "You detach \the [boots] from \the [src]'s boot mounts.")
 			boots.forceMove(get_turf(src))
 			playsound(src, tool.usesound, 50, 1)
-			src.boots = null
+			own_take(src, "boots")
 	else
 		to_chat(user, "\The [src] does not have anything installed.")
 	return ITEM_INTERACT_SUCCESS
@@ -443,17 +443,17 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(nu
 			to_chat(user, "You pop \the [tank] out of \the [src]'s storage compartment.")
 			tank.forceMove(get_turf(src))
 			playsound(src, tool.usesound, 50, 1)
-			src.tank = null
+			own_take(src, "tank")
 		else if(choice == cooler)
 			to_chat(user, "You pop \the [cooler] out of \the [src]'s storage compartment.")
 			cooler.forceMove(get_turf(src))
 			playsound(src, tool.usesound, 50, 1)
-			src.cooler = null
+			own_take(src, "cooler")
 		else if(choice == boots)
 			to_chat(user, "You detach \the [boots] from \the [src]'s boot mounts.")
 			boots.forceMove(get_turf(src))
 			playsound(src, tool.usesound, 50, 1)
-			src.boots = null
+			own_take(src, "boots")
 	else
 		to_chat(user, "\The [src] does not have anything installed.")
 	return ITEM_INTERACT_SUCCESS

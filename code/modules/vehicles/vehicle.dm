@@ -50,7 +50,7 @@
 //-------------------------------------------
 /obj/vehicle/Initialize(mapload)
 	. = ..()
-	soundloop = new(list(src), FALSE)
+	own_set(src, "soundloop", new /datum/looping_sound/idle_carengine(list(src), FALSE))
 
 ///obj/vehicle/New()
 //	..()
@@ -250,7 +250,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 		if(cell)
 			cell.forceMove(Tsec)
 			cell.update_icon()
-			cell = null
+			own_take(src, "cell")
 
 	qdel(src)
 
@@ -287,7 +287,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 
 	H.drop_from_inventory(C)
 	C.forceMove(src)
-	cell = C
+	own_set(src, "cell", C)
 	powercheck()
 	to_chat(H, span_notice("You install [C] in [src]."))
 
@@ -300,7 +300,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	to_chat(H, span_notice("You remove [cell] from [src]."))
 	cell.forceMove(get_turf(H))
 	H.put_in_hands(cell)
-	cell = null
+	own_take(src, "cell")
 	powercheck()
 
 /obj/vehicle/proc/RunOver(mob/living/M)
@@ -330,7 +330,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	C.set_dir(dir)
 	C.anchored = TRUE
 
-	load = C
+	rel_set(src, "load", C)
 
 	if(load_item_visible)
 		C.pixel_x += load_offset_x
@@ -390,7 +390,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	if(ismob(load))
 		unbuckle_mob(load)
 
-	load = null
+	rel_clear(src, "load")
 
 	return 1
 

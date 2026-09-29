@@ -16,7 +16,7 @@
 /datum/om/relation/throw_of/on_unlink(datum/thrownthing/source, atom/movable/target, datum/om/edge/edge)
 	om_unhook(target, /datum/om/event/before/living_turf_collision, source)
 	if(target.throwing == source)
-		target.throwing = null
+		rel_clear(target, "throwing")
 
 /datum/thrownthing
 	///OM handle to the original intended target of the throw, to prevent hardDels
@@ -85,7 +85,7 @@
 	src.diagonals_first = diagonals_first
 	src.force = force
 	src.gentle = gentle
-	src.callback = callback
+	own_set(src, "callback", callback)
 	src.target_zone = target_zone
 	if(!QDELETED(thrower) && ismob(thrower))
 		src.target_zone = thrower.zone_sel ? thrower.zone_sel.selecting : null
@@ -197,7 +197,7 @@
 	var/atom/movable/thrownthing = throw_subject()
 	if(QDELETED(thrownthing))
 		return
-	thrownthing.throwing = null
+	rel_clear(thrownthing, "throwing")
 	if (!hit)
 		var/atom/movable/actual_target = om_resolve(initial_target)
 		for (var/thing in get_turf(thrownthing)) //looking for our target on the turf we land on.

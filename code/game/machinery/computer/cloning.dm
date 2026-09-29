@@ -109,7 +109,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 	if(!diskette)
 		user.drop_item()
 		W.forceMove(src)
-		diskette = W
+		own_set(src, "diskette", W)
 		to_chat(user, "You insert [W].")
 		SStgui.update_uis(src)
 	return TRUE
@@ -294,7 +294,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 						menu = MENU_MAIN
 						return
 
-					loaded_BR = new /datum/transhuman/body_record(diskette.stored)
+					own_set(src, "loaded_BR", new /datum/transhuman/body_record(diskette.stored))
 					active_BR_handle = om_handle(loaded_BR) // Traitgenes Storing the entire body record
 					set_temp("Successfully loaded from disk.", "success")
 				if("save")
@@ -308,7 +308,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 				if("eject")
 					if(!isnull(diskette))
 						diskette.forceMove(get_turf(src))
-						diskette = null
+						own_take(src, "diskette")
 		if("refresh")
 			SStgui.update_uis(src)
 		if("selectpod")

@@ -176,7 +176,7 @@
 		contained.forceMove(src)
 	else
 		qdel(contained)
-		contained = new mask_type(src)
+		own_set(src, "contained", new mask_type(src))
 	breather_handle = null
 	src.visible_message(span_infoplain(span_bold("\The [contained]") + " slips to \the [src]!"))
 	update_icon()
@@ -226,7 +226,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 			else if (tank && is_loosen)
 				user.visible_message(span_warningplain(span_bold("\The [user]") + " removes \the [tank] from \the [src]."), span_warning("You remove \the [tank] from \the [src]."))
 				user.put_in_hands(tank)
-				tank = null
+				own_take(src, "tank")
 				valve_opened = FALSE
 				om_task_periodic_stop(src)
 				update_icon()
@@ -259,7 +259,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 		if ("Remove vessel")
 			if(beaker)
 				beaker.forceMove(loc)
-				beaker = null
+				own_take(src, "beaker")
 				update_icon()
 
 /obj/structure/medical_stand/proc/medical_stand_toggle_mode_effect(mob/user, obj/item/held, datum/interaction/interaction)
@@ -337,7 +337,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 		else
 			user.drop_item()
 			W.forceMove(src)
-			tank = W
+			own_set(src, "tank", W)
 			user.visible_message(span_bold("\The [user]") + " attaches \the [tank] to \the [src].", span_notice("You attach \the [tank] to \the [src]."))
 			src.add_fingerprint(user)
 			update_icon()
@@ -349,7 +349,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 			return TRUE
 		user.drop_item()
 		W.forceMove(src)
-		beaker = W
+		own_set(src, "beaker", W)
 		to_chat(user, "You attach \the [W] to \the [src].")
 		update_icon()
 		return TRUE
@@ -405,7 +405,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 				contained.forceMove(src)
 			else
 				qdel(contained)
-				contained = new mask_type (src)
+				own_set(src, "contained", new mask_type (src))
 			src.visible_message(span_bold("\The [contained]") + " slips to \the [src]!")
 			breather_handle = null
 			update_icon()

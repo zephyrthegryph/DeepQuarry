@@ -167,7 +167,7 @@ OWN(/obj/machinery/mineral/equipment_vendor, inserted_id, OWN_SPILL)
 	if(inserted_id && !powered())
 		visible_message(span_notice("The ID slot indicator light flickers on \the [src] as it spits out a card before powering down."))
 		inserted_id.forceMove(get_turf(src))
-		inserted_id = null
+		own_take(src, "inserted_id")
 
 /obj/machinery/mineral/equipment_vendor/update_icon()
 	if(panel_open)
@@ -258,7 +258,7 @@ OWN(/obj/machinery/mineral/equipment_vendor, inserted_id, OWN_SPILL)
 			if(!inserted_id)
 				return
 			ui.user.put_in_hands(inserted_id)
-			inserted_id = null
+			own_take(src, "inserted_id")
 		if("purchase")
 			if(!inserted_id)
 				flick(icon_deny, src)
@@ -312,7 +312,7 @@ OWN(/obj/machinery/mineral/equipment_vendor, inserted_id, OWN_SPILL)
 		return TRUE
 	else if(!inserted_id && (user.unEquip(I) || isrobot(user)))
 		I.forceMove(src)
-		inserted_id = I
+		own_set(src, "inserted_id", I)
 		tgui_interact(user)
 	return TRUE
 
@@ -325,7 +325,7 @@ OWN(/obj/machinery/mineral/equipment_vendor, inserted_id, OWN_SPILL)
 /obj/machinery/mineral/equipment_vendor/dismantle()
 	if(inserted_id)
 		inserted_id.forceMove(loc) //Prevents deconstructing the ORM from deleting whatever ID was inside it.
-		inserted_id = null
+		own_take(src, "inserted_id")
 	. = ..()
 
 /**

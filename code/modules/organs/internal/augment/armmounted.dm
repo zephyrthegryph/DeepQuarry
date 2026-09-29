@@ -230,7 +230,7 @@
 			var/obj/item/Tool = integrated_tools[tool]
 			if(istype(Tool, /obj/item/stack))
 				var/obj/item/stack/S = Tool
-				S.synths = synths
+				rel_set(S, "synths", synths)
 				S.uses_charge = synths.len
 			integrated_tools_by_name[Tool.name] = Tool
 			integrated_tool_images[Tool.name] = image(icon = Tool.icon, icon_state = Tool.icon_state)
@@ -261,7 +261,7 @@
 
 	if(length(options) == 1)
 		for(var/key in options)
-			integrated_object = integrated_tools_by_name[key]
+			own_set(src, "integrated_object", integrated_tools_by_name[key])
 		return ..()
 
 	om_ask(owner, /datum/om/prompt/choice/radial, PROC_REF(integrated_tool_chosen), choices = options, anchor = owner)
@@ -270,7 +270,7 @@
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/integrated_tool_chosen(datum/om/prompt/choice/radial/ask)
 	if(!owner || ask.answerer != owner || is_broken())
 		return
-	integrated_object = integrated_tools_by_name[ask.choice]
+	own_set(src, "integrated_object", integrated_tools_by_name[ask.choice])
 	tool_picked = TRUE
 	augment_action()
 

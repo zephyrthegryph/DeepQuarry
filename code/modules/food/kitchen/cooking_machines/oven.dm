@@ -44,7 +44,7 @@
 /obj/machinery/appliance/cooker/oven/Initialize(mapload)
 	. = ..()
 
-	oven_loop = new(list(src), FALSE)
+	own_set(src, "oven_loop", new /datum/looping_sound/oven(list(src), FALSE))
 
 
 /obj/machinery/appliance/cooker/oven/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)

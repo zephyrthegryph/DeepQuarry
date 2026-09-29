@@ -127,7 +127,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	client_handle = om_handle(C)
 
 	for(var/middleware_type in subtypesof(/datum/preference_middleware))
-		LAZYADD(middleware, new middleware_type(src))
+		own_add(src, "middleware", new middleware_type(src))
 
 	if(istype(C)) // IS_CLIENT_OR_MOCK
 		client_ckey = C.ckey

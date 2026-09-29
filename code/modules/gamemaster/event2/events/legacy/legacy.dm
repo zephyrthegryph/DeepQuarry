@@ -18,7 +18,7 @@
 	tick_count++
 
 /datum/event2/event/legacy/set_up()
-	legacy_event = new legacy_event(null, external_use = TRUE)
+	own_set(src, "legacy_event", new legacy_event(null, external_use = TRUE))
 	legacy_event.severity = severity
 	legacy_event.setup()
 

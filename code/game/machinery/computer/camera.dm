@@ -19,7 +19,7 @@
 	. = ..()
 	if(!LAZYLEN(network))
 		network = get_default_networks()
-	camera = new camera_datum_type(src, network)
+	own_set(src, "camera", new camera_datum_type(src, network))
 
 /obj/machinery/computer/security/proc/get_default_networks()
 	. = using_map.station_networks.Copy()
@@ -110,7 +110,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/entertainment,
 
 	add_overlay(MAT_GLASS)
 
-	pinboard = GLOB.vis_overlays_service.add_vis_overlay(src, icon = icon, iconstate = "pinboard", layer = 0.1, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE)
+	own_set(src, "pinboard", GLOB.vis_overlays_service.add_vis_overlay(src, icon = icon, iconstate = "pinboard", layer = 0.1, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
 	pinboard.add_filter("screen cutter", 1, alpha_mask_filter(icon = mask))
 	/*
 	pinboard = new()

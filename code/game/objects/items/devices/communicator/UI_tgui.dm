@@ -17,7 +17,7 @@
 	map_name = "communicator_[REF(src)]_map"
 
 	// Initialize map objects
-	cam_screen = new
+	own_set(src, "cam_screen", new /atom/movable/screen/map_view)
 	cam_screen.name = "screen"
 	cam_screen.assigned_map = map_name
 	cam_screen.del_on_map_removal = FALSE
@@ -30,13 +30,13 @@
 		instance.del_on_map_removal = FALSE
 		instance.screen_loc = "[map_name]:CENTER"
 
-	local_skybox = new()
+	own_set(src, "local_skybox", new /atom/movable/screen/skybox())
 	local_skybox.assigned_map = map_name
 	local_skybox.del_on_map_removal = FALSE
 	local_skybox.screen_loc = "[map_name]:CENTER,CENTER"
 	cam_plane_masters += local_skybox
 
-	cam_background = new
+	own_set(src, "cam_background", new /atom/movable/screen/background)
 	cam_background.assigned_map = map_name
 	cam_background.del_on_map_removal = FALSE
 

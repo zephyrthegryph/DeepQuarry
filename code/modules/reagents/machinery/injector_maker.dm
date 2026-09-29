@@ -74,7 +74,7 @@
 /obj/machinery/injector_maker/proc/interaction_add_beaker(mob/user, obj/item/O, datum/interaction/interaction)
 	if (beaker)
 		return TRUE
-	beaker = O
+	own_set(src, "beaker", O)
 	user.drop_item()
 	O.forceMove(src)
 	update_icon()
@@ -193,7 +193,7 @@
 		user.put_in_hands(beaker)
 	else
 		beaker.forceMove(drop_location())
-	beaker = null
+	own_take(src, "beaker")
 	update_icon()
 	return FALSE
 
@@ -244,7 +244,7 @@
 				user.put_in_hands(beaker)
 			else
 				beaker.forceMove(drop_location())
-			src.beaker = null
+			own_take(src, "beaker")
 			update_icon()
 
 

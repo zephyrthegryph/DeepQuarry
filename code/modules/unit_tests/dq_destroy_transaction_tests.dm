@@ -31,7 +31,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 /obj/item/dq_destroy_transaction_phase_probe/Initialize(mapload)
 	. = ..()
 	om_hook(src, /datum/om/event/qdeleting, src, PROC_REF(on_qdeleting))
-	child = new(src)
+	own_set(src, "child", new(src))
 
 /obj/item/dq_destroy_transaction_phase_probe/proc/on_qdeleting(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
@@ -333,7 +333,7 @@ REL_PAIR(/datum/dq_destroy_transaction_scrub_fixture, partner, partner)
 
 /datum/destroy_effects_data/dq_destroy_transaction_scrub_reset/apply(datum/D)
 	var/datum/dq_destroy_transaction_scrub_fixture/fixture = D
-	fixture.partner = new /datum/dq_destroy_transaction_pair_fixture
+	rel_set(fixture, "partner", new /datum/dq_destroy_transaction_pair_fixture)
 	fixture.reset_after_links = TRUE
 	return null
 

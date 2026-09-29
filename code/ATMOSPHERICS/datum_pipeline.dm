@@ -20,21 +20,21 @@
 	var/engineered_exposure_timer
 
 /datum/pipeline/proc/register_network_membership(datum/pipe_network/new_network)
-	LAZYOR(network_memberships, new_network)
+	rel_add(src, "network_memberships", new_network)
 
 /datum/pipeline/proc/unregister_network_membership(datum/pipe_network/old_network)
-	LAZYREMOVE(network_memberships, old_network)
+	rel_remove(src, "network_memberships", old_network)
 
 /datum/pipeline/proc/add_edge(obj/machinery/atmospherics/pipe/edge)
 	if(!edge || QDELETED(edge))
 		return FALSE
-	LAZYOR(edges, edge)
+	rel_add(src, "edges", edge)
 	edge.register_edge_pipeline(src)
 	return TRUE
 
 /datum/pipeline/proc/remove_edge(obj/machinery/atmospherics/pipe/edge, clear_backlink = TRUE)
 	if(edges)
-		edges -= edge
+		rel_remove(src, "edges", edge)
 	if(clear_backlink && edge)
 		edge.unregister_edge_pipeline(src)
 
@@ -48,25 +48,25 @@
 	// Drop our backlink before invalidating the shared topology.  The network's
 	// Destroy() clears every other member and is deliberately re-entry safe.
 	var/list/old_memberships = network_memberships
-	network_memberships = null
+	rel_clear(src, "network_memberships")
 	for(var/datum/pipe_network/membership as anything in old_memberships)
 		if(membership?.line_members)
-			membership.line_members -= src
+			rel_remove(membership, "line_members", src)
 	var/datum/pipe_network/old_network = network
-	network = null
+	rel_clear(src, "network")
 	qdel(old_network)
 
 	if(air && air.return_volume())
 		temporarily_store_air()
-	QDEL_NULL(air)
+	own_clear(src, "air", OWN_DELETE)
 	var/list/old_members = members
 	var/list/old_edges = edges
-	members = null
-	edges = null
+	rel_clear(src, "members")
+	rel_clear(src, "edges")
 	leaks = null
 	for(var/obj/machinery/atmospherics/pipe/P in old_members)
 		if(P.parent == src)
-			P.parent = null
+			rel_clear(P, "parent")
 	for(var/obj/machinery/atmospherics/pipe/edge in old_edges)
 		edge.unregister_edge_pipeline(src)
 
@@ -93,18 +93,18 @@
 	//Update individual gas_mixtures by volume ratio
 
 	for(var/obj/machinery/atmospherics/pipe/member in members)
-		member.air_temporary = new
+		own_set(member, "air_temporary", new /datum/gas_mixture)
 		member.air_temporary.copy_from(air)
 		member.air_temporary.set_volume(member.volume)
 		member.air_temporary.multiply(member.volume / air.return_volume())
 
 /datum/pipeline/proc/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
 	if(network == reference)
-		air = network_air
+		own_set(src, "air", network_air)
 
 /datum/pipeline/proc/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
 	if(network == reference && air == network_air)
-		air = detached_pipenet_air(network_air, volume, network_volume)
+		own_set(src, "air", detached_pipenet_air(network_air, volume, network_volume))
 
 /datum/pipeline/proc/return_network(obj/machinery/atmospherics/reference)
 	// Rust materializes this read-only compatibility wrapper.

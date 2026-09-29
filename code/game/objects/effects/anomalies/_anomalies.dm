@@ -32,10 +32,10 @@
 		return INITIALIZE_HINT_QDEL
 
 	if(!drops_core)
-		anomaly_core = null
+		own_take(src, "anomaly_core")
 
 	if(anomaly_core)
-		anomaly_core = new anomaly_core(src)
+		own_set(src, "anomaly_core", new anomaly_core(src))
 		anomaly_core.set_frequency(sanitize_frequency(rand(PUBLIC_LOW_FREQ, PUBLIC_HIGH_FREQ)))
 		anomaly_core.code = rand(1, 100)
 		anomaly_core.anomaly_type = type
@@ -103,18 +103,18 @@ DECLARE_PERIODIC(/obj/effect/anomaly, PERIODIC_SLOW)
 	new /obj/effect/effect/smoke(loc)
 	if(!isnull(anomaly_core))
 		anomaly_core.forceMove(get_turf(src))
-		anomaly_core = null
+		own_take(src, "anomaly_core")
 	qdel(src)
 
 /obj/effect/anomaly/proc/stabilize(anchor = FALSE, has_core = TRUE, add_stats = FALSE)
 	immortal = TRUE
 	name = (has_core ? "stable " : "hollow ") + name
 	if(!has_core)
-		QDEL_NULL(anomaly_core)
+		own_clear(src, "anomaly_core", OWN_DELETE)
 	if(anchor)
 		move_chance = 0
 	if(!stats && add_stats)
-		stats = new /datum/anomaly_stats
+		own_set(src, "stats", new /datum/anomaly_stats)
 		stats.attached_anomaly = om_handle(src)
 		stats.calculate_points()
 		density = TRUE

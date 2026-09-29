@@ -53,7 +53,7 @@
 			om_attach(src, /datum/om/behaviour/spontaneous_vore)
 	if(LAZYLEN(vore_organs))
 		if(!soulgem)
-			soulgem = new(src)
+			own_set(src, "soulgem", new /obj/soulgem(src))
 		return TRUE
 
 	//We'll load our client's organs if we have one
@@ -62,14 +62,14 @@
 			to_chat(src,span_warning("ERROR: You seem to have saved VOREStation prefs, but they couldn't be loaded."))
 			return FALSE
 		if(LAZYLEN(vore_organs))
-			vore_selected = vore_organs[1]
+			own_set(src, "vore_selected", vore_organs[1])
 			return TRUE
 
 	//Or, we can create a basic one for them
 	if(!LAZYLEN(vore_organs) && isliving(src))
 		LAZYINITLIST(vore_organs)
 		var/obj/belly/B = new /obj/belly(src)
-		vore_selected = B
+		own_set(src, "vore_selected", B)
 		B.immutable = TRUE
 		B.name = "Stomach"
 		B.desc = "It appears to be rather warm and wet. Makes sense, considering it's inside \the [name]."
@@ -79,7 +79,7 @@
 			if(istype(H.species,/datum/species/monkey))
 				allow_spontaneous_tf = TRUE
 		if(!soulgem)
-			soulgem = new(src)
+			own_set(src, "soulgem", new /obj/soulgem(src))
 		return TRUE
 
 /mob/living/init_vore(force)
@@ -368,24 +368,24 @@
 				log_state("copy_from_prefs_vr: a belly of [src] did not load: [jointext(errors, "; ")]")
 		if(!length(vore_organs))
 			var/obj/belly/B = new /obj/belly(src)
-			vore_selected = B
+			own_set(src, "vore_selected", B)
 			B.immutable = TRUE
 			B.name = "Stomach"
 			B.desc = "It appears to be rather warm and wet. Makes sense, considering it's inside \the [name]."
 			B.can_taste = TRUE
 		else
-			vore_selected = vore_organs[1]
+			own_set(src, "vore_selected", vore_organs[1])
 
 		if(soulgem)
 			src.soulgem.release_mobs()
-			QDEL_NULL(soulgem)
+			own_clear(src, "soulgem", OWN_DELETE)
 		if(length(P.soulcatcher_prefs))
 			var/list/errors = list()
-			soulgem = state_materialize(P.soulcatcher_prefs, src, NONE, errors)
+			own_set(src, "soulgem", state_materialize(P.soulcatcher_prefs, src, NONE, errors))
 			if(!soulgem)
 				log_state("copy_from_prefs_vr: the soulgem of [src] did not load: [jointext(errors, "; ")]")
 		if(!soulgem)
-			soulgem = new(src)
+			own_set(src, "soulgem", new /obj/soulgem(src))
 
 	return TRUE
 
@@ -673,8 +673,8 @@
 	else if(iscapturecrystal(loc))
 		var/obj/item/capture_crystal/crystal = loc
 		crystal.unleash()
-		crystal.bound_mob = null
-		crystal.bound_mob = capture_crystal = 0
+		rel_clear(crystal, "bound_mob")
+		rel_set(crystal, "bound_mob", capture_crystal = 0)
 		clear_fullscreen(ATOM_BELLY_FULLSCREEN)
 		log_and_message_admins("used the OOC escape button to get out of [crystal] owned by [crystal.owner]. [ADMIN_FLW(src)]", src)
 
@@ -1425,13 +1425,13 @@
 
 /datum/vore_panel_button/New(mob/living/M)
 	..()
-	owner = M
+	rel_set(src, "owner", M)
 	om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_client_login))
 	if(owner.client)
 		create_mob_button(owner)
 	add_verb(owner, /mob/proc/insidePanel)
 	if(!owner.vorePanel)
-		owner.vorePanel = new(owner)
+		own_set(owner, "vorePanel", new /datum/vore_look(owner))
 
 // takes the panel verb and panel back from its owner. Hooks, the screen icon
 // (owned; it leaves client screens in its own teardown) and the owner <->
@@ -1443,13 +1443,13 @@
 		LAZYREMOVE(HUD?.other_important, screen_icon)
 	if(M)
 		remove_verb(M, /mob/proc/insidePanel)
-		QDEL_NULL(M.vorePanel)
+		own_clear(M, "vorePanel", OWN_DELETE)
 	..()
 
 /// Gives the mob its vore panel HUD button if it has none.
 /mob/living/proc/add_vore_panel_button()
 	if(!vore_panel_button)
-		vore_panel_button = new /datum/vore_panel_button(src)
+		own_set(src, "vore_panel_button", new /datum/vore_panel_button(src))
 	return vore_panel_button
 
 /datum/vore_panel_button/proc/on_client_login(datum/source, datum/om/event/mob_client_login/event)
@@ -1459,7 +1459,7 @@
 /datum/vore_panel_button/proc/create_mob_button(mob/user)
 	var/datum/hud/HUD = user.hud_used
 	if(!screen_icon)
-		screen_icon = new()
+		own_set(src, "screen_icon", new /atom/movable/screen/vore_panel())
 		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(vore_panel_click))
 	if(ispAI(user))
 		screen_icon.icon = 'icons/mob/pai_hud.dmi'

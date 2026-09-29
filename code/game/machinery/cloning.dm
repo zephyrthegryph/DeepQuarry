@@ -451,7 +451,7 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 			for(var/obj/item/reagent_containers/glass/G in containers)
 				om_unhook(G, /datum/om/event/qdeleting, src)
 				G.forceMove(T)
-				LAZYREMOVE(containers, G)
+				own_take_member(src, "containers", G)
 		return	1
 	return 0
 
@@ -495,12 +495,12 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 /obj/machinery/clonepod/proc/track_biomass_container(obj/item/reagent_containers/glass/container)
 	if(!container || (container in containers))
 		return
-	LAZYADD(containers, container)
+	own_add(src, "containers", container)
 	om_hook(container, /datum/om/event/qdeleting, src, PROC_REF(on_biomass_container_qdel))
 
 /obj/machinery/clonepod/proc/on_biomass_container_qdel(obj/item/reagent_containers/glass/container, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
-	LAZYREMOVE(containers, container)
+	own_take_member(src, "containers", container)
 
 //Health Tracker Implant
 

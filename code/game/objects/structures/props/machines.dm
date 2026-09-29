@@ -603,9 +603,9 @@
 	mask.vis_flags = VIS_INHERIT_ID
 	vis_contents += mask
 
-	outside = add_vis_overlay(icon, "nt_pod_over", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE)
-	door = add_vis_overlay(icon, "nothing", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE)
-	fluid = add_vis_overlay(icon, "nothing", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE)
+	own_set(src, "outside", add_vis_overlay(icon, "nt_pod_over", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE))
+	own_set(src, "door", add_vis_overlay(icon, "nothing", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE))
+	own_set(src, "fluid", add_vis_overlay(icon, "nothing", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE))
 
 	// Gather up our friends
 	if(mapload)

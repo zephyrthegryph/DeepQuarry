@@ -18,7 +18,7 @@
 /atom/movable/screen/movable/pic_in_pic/Initialize(mapload)
 	. = ..()
 	make_backgrounds()
-	popup_screen = new
+	own_set(src, "popup_screen", new /atom/movable/screen/map_view_tg)
 	popup_screen.generate_view("camera-[REF(src)]_map")
 
 
@@ -62,7 +62,7 @@
 	add_overlay(move_tab)
 
 	if(!button_x)
-		button_x = new /atom/movable/screen/component_button(null, src)
+		own_set(src, "button_x", new /atom/movable/screen/component_button(null, src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "close"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'
@@ -75,7 +75,7 @@
 	vis_contents += button_x
 
 	if(!button_expand)
-		button_expand = new /atom/movable/screen/component_button(null, src)
+		own_set(src, "button_expand", new /atom/movable/screen/component_button(null, src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "expand"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'
@@ -88,7 +88,7 @@
 	vis_contents += button_expand
 
 	if(!button_shrink)
-		button_shrink = new /atom/movable/screen/component_button(null, src)
+		own_set(src, "button_shrink", new /atom/movable/screen/component_button(null, src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "shrink"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'
@@ -101,7 +101,7 @@
 	vis_contents += button_shrink
 
 	if(!button_pop)
-		button_pop = new /atom/movable/screen/component_button(null, src)
+		own_set(src, "button_pop", new /atom/movable/screen/component_button(null, src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "pop"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'

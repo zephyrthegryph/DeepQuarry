@@ -759,7 +759,7 @@
 /obj/machinery/power/rtg/abductor/proc/interaction_eject_cell(mob/user, obj/item/held, datum/interaction/interaction)
 	cell.forceMove(get_turf(src))
 	user.put_in_active_hand(cell)
-	cell = null
+	own_take(src, "cell")
 	state_change = TRUE
 	RefreshParts()
 	update_icon()
@@ -792,7 +792,7 @@
 /obj/machinery/power/rtg/abductor/proc/interaction_insert_cell(mob/user, obj/item/I, datum/interaction/interaction)
 	user.remove_from_mob(I)
 	I.forceMove(src)
-	cell = I
+	own_set(src, "cell", I)
 	RefreshParts()
 	update_icon()
 	playsound(src, 'sound/effects/metal_close.ogg', 50, 1)

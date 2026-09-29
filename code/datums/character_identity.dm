@@ -107,7 +107,7 @@
 		return
 	identity_handle = om_handle(I)
 	if(mind)
-		mind.identity = I
+		own_set(mind, "identity", I)
 
 /// Add/remove bookkeeping for persistent traits (genetic body effects, body_effects.dm).
 /mob/living/proc/record_genetic_effect(effect_type, present)
@@ -131,7 +131,7 @@
 	RETURN_TYPE(/datum/character_identity)
 	if(!identity && isliving(current))
 		var/mob/living/L = current
-		identity = L.identity()
+		own_set(src, "identity", L.identity())
 	return identity
 
 // --- Moving minds --------------------------------------------------------------------

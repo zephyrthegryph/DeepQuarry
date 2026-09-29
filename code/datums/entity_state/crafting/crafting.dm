@@ -1,7 +1,7 @@
 /// The mob this crafting menu belongs to (the holder's `crafting` var points back at us).
 /datum/personal_crafting/New(mob/owner)
 	..()
-	src.owner = owner
+	rel_set(src, "owner", owner)
 	if(ismob(owner))
 		om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_owner_login))
 

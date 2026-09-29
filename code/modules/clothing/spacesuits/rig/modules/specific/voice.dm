@@ -23,7 +23,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/voice, "voice_holder", /obj/item/voic
 
 /obj/item/rig_module/voice/installed()
 	..()
-	holder.speech = src
+	own_set(holder, "speech", src)
 
 /obj/item/rig_module/voice/engage()
 

@@ -24,7 +24,7 @@ REL_PAIR_LIST(/mob/living, trait_states, owner)
 
 /datum/trait_state/New(mob/living/owner)
 	..()
-	src.owner = owner
+	rel_set(src, "owner", owner)
 
 /// Called once after New() with the extra add_trait_state() args. Return FALSE when the state
 /// can't live on this mob (was COMPONENT_INCOMPATIBLE); it is then deleted without attaching.
@@ -82,10 +82,10 @@ REL_PAIR_LIST(/mob/living, trait_states, owner)
 	var/list/setup_args = args.Copy(2)
 	if(!S.setup(arglist(setup_args)))
 		log_game("TRAIT_STATE: [state_type] refused [key_name(src)] ([type]); not attached.")
-		S.owner = null
+		rel_clear(S, "owner")
 		qdel(S)
 		return null
-	LAZYADD(trait_states, S)
+	own_add(src, "trait_states", S)
 	S.attach()
 	return S
 

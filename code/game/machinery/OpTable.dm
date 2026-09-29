@@ -18,9 +18,9 @@
 /obj/machinery/optable/Initialize(mapload)
 	. = ..()
 	for(var/direction in list(NORTH,EAST,SOUTH,WEST))
-		computer = locate(/obj/machinery/computer/operating, get_step(src, direction))
+		rel_set(src, "computer", locate(/obj/machinery/computer/operating, get_step(src, direction)))
 		if(computer)
-			computer.table = src
+			rel_set(computer, "table", src)
 			break
 
 /obj/machinery/optable/ex_act(severity)
@@ -54,7 +54,7 @@ EXTEND_INTERACTIONS(/obj/machinery/optable, \
 		// `lying` is only recomputed by update_canmove(); a patient just laid
 		// down via take_victim() has resting set but may not be lying yet.
 		if(M.lying || M.resting)
-			victim = M
+			rel_set(src, "victim", M)
 			if(M.pulse)
 				if(M.stat)
 					icon_state = "table2-sleep"
@@ -63,7 +63,7 @@ EXTEND_INTERACTIONS(/obj/machinery/optable, \
 			else
 				icon_state = "table2-dead"
 			return 1
-	victim = null
+	rel_clear(src, "victim")
 	icon_state = "table2-idle"
 	return 0
 
@@ -90,7 +90,7 @@ EXTEND_INTERACTIONS(/obj/machinery/optable, \
 	add_fingerprint(user)
 	if(ishuman(C))
 		var/mob/living/carbon/human/H = C
-		victim = H
+		rel_set(src, "victim", H)
 		MACHINE_WAKE(src)
 		if(computer)
 			MACHINE_WAKE(computer)

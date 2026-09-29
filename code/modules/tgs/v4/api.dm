@@ -84,7 +84,7 @@
 
 	var/list/revisionData = cached_json["revision"]
 	if(revisionData)
-		cached_revision = new
+		own_set(src, "cached_revision", new /datum/tgs_revision_information)
 		cached_revision.commit = revisionData["commitSha"]
 		cached_revision.origin_commit = revisionData["originCommitSha"]
 

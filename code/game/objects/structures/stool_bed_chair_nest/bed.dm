@@ -305,7 +305,7 @@ DECLARE_INTERACTIONS(/obj/item/roller, \
 		if(!RH.held)
 			to_chat(user, span_notice("You collect the roller bed."))
 			src.forceMove(RH)
-			RH.held = src
+			own_set(RH, "held", src)
 			return INTERACTION_HANDLED_PASS
 
 	return FALSE
@@ -337,7 +337,7 @@ DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(intera
 	var/obj/structure/bed/roller/R = new held.bedtype(user.loc)
 	R.add_fingerprint(user)
 	qdel(held)
-	held = null
+	own_take(src, "held")
 	return TRUE
 
 

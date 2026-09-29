@@ -97,7 +97,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 			log_world("## ERROR [src] created a voidsuit [voidsuit] and wants to add a helmet but it already has one")
 		else
 			magboots = new magboots_type(voidsuit)
-			voidsuit.boots = magboots
+			own_set(voidsuit, "boots", magboots)
 
 	if(refit)
 		voidsuit.refit_for_species(user.species?.get_bodytype()) // does helmet and boots if they're attached
@@ -108,7 +108,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 				log_world("## ERROR [src] created a voidsuit [voidsuit] and wants to add a suit cooler but it already has one")
 			else
 				var/obj/item/life_support = new /obj/item/suit_cooling_unit(voidsuit)
-				voidsuit.cooler = life_support
+				own_set(voidsuit, "cooler", life_support)
 		else if(user.species?.breath_type)
 			if(voidsuit.tank)
 				log_world("## ERROR [src] created a voidsuit [voidsuit] and wants to add a tank but it already has one")
@@ -119,7 +119,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 
 				if(tankpath)
 					var/obj/item/life_support = new tankpath(voidsuit)
-					voidsuit.tank = life_support
+					own_set(voidsuit, "tank", life_support)
 				else
 					voidsuit.audible_message("Dispenser warning: Unable to locate suitable airtank for user.")
 
@@ -170,7 +170,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 		var/datum/gear_disp/S = new gear
 		real_gear_list[S.name] = S
 	if(one_setting)
-		one_setting = new one_setting
+		own_set(src, "one_setting", new one_setting)
 	dispenses = real_gear_list
 
 /obj/machinery/gear_dispenser/declare_interactions(list/into)
@@ -337,7 +337,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 
 /obj/machinery/gear_dispenser/suit_fancy/Initialize(mapload)
 	. = ..()
-	door = add_vis_overlay("closed", layer = 4, unique = TRUE)
+	own_set(src, "door", add_vis_overlay("closed", layer = 4, unique = TRUE))
 	icon_state = "suit_storage"
 	if(special_frame)
 		add_overlay(special_frame)

@@ -39,18 +39,18 @@
 		if(P.update)
 			any_updated = TRUE
 			if(output == P)
-				output = null
+				rel_clear(src, "output")
 			if(input == P)
-				input = null
+				rel_clear(src, "input")
 			if(atmos_filters.Find(P))
 				atmos_filters -= P
 
 			P.air.set_volume(200)
 			switch(P.mode)
 				if(ATM_INPUT)
-					input = P
+					rel_set(src, "input", P)
 				if(ATM_OUTPUT)
-					output = P
+					rel_set(src, "output", P)
 				if(ATM_O2 to ATM_LASTGAS)
 					// ALLOW(object_keyed_lists): subset of the owned ports list (DECLARE_REF(..., OWNED_LIST) on /omni), rebuilt from it
 					atmos_filters += P

@@ -106,7 +106,7 @@ DECLARE_INTERACTIONS(/obj/item/nailpolish, INTERACT_USE(null, PROC_REF(interacti
 	body_part.set_polish(polish)
 
 /obj/item/organ/external/proc/set_polish(datum/nail_polish/polish)
-	nail_polish = polish
+	own_set(src, "nail_polish", polish)
 	owner?.update_icons_body()
 
 /obj/item/nailpolish_remover

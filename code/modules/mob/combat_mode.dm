@@ -182,7 +182,7 @@
 	button.screen_loc = ui_acti
 	button.hud_handle = om_handle(src)
 	button.update_for(owner)
-	combat_mode_button = button
+	own_set(src, "combat_mode_button", button)
 	return button
 
 // ---------------------------------------------------------------------------

@@ -46,7 +46,7 @@
 	winset(C, "mapwindow.belly_overlay", "is-visible=true;inner-background-color=#00000000")
 	if(!active_ui)
 		var/datum/tgui_window/win = new(C, "mapwindow.belly_overlay")
-		active_ui = new /datum/tgui(owner(), src, "BellyOverlay", "Belly Overlay", null, null, null, win)
+		own_set(src, "active_ui", new /datum/tgui(owner(), src, "BellyOverlay", "Belly Overlay", null, null, null, win))
 		// Opening the window touches blocking BYOND UI calls (winexists / asset
 		// stoplag). This UI can be reached from no-sleep contexts (e.g. a death
 		// triggered during atom Initialize), so fire the open asynchronously — it
@@ -179,7 +179,7 @@
 	if(!M)
 		return null
 	if(!M.belly_overlay_tgui)
-		M.belly_overlay_tgui = new /datum/belly_overlay_tgui(M)
+		own_set(M, "belly_overlay_tgui", new /datum/belly_overlay_tgui(M))
 	return M.belly_overlay_tgui
 
 /mob

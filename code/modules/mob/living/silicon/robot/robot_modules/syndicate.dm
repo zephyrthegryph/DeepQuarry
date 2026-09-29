@@ -29,11 +29,11 @@
 	src.modules += new /obj/item/multitool/ai_detector/cyborg(src)
 
 	var/datum/matter_synth/cloth = new /datum/matter_synth/cloth(40000)
-	synths += cloth
+	own_add(src, "synths", cloth)
 
 	var/jetpack = new/obj/item/tank/jetpack/carbondioxide(src)
 	src.modules += jetpack
-	robot.internals = jetpack
+	own_set(robot, "internals", jetpack)
 
 	var/obj/item/card/id/robot_id = robot.idcard
 	robot_id.forceMove(src)
@@ -88,23 +88,23 @@
 
 	// Materials.
 	var/datum/matter_synth/nanite = new /datum/matter_synth/nanite(10000)
-	synths += nanite
+	own_add(src, "synths", nanite)
 	var/datum/matter_synth/wire = new /datum/matter_synth/wire()
-	synths += wire
+	own_add(src, "synths", wire)
 	var/datum/matter_synth/metal = new /datum/matter_synth/metal(40000)
-	synths += metal
+	own_add(src, "synths", metal)
 	var/datum/matter_synth/glass = new /datum/matter_synth/glass(40000)
-	synths += glass
+	own_add(src, "synths", glass)
 
 	var/obj/item/stack/nanopaste/N = new /obj/item/stack/nanopaste(src)
 	N.uses_charge = 1
 	N.charge_costs = list(1000)
-	N.synths = list(nanite)
+	rel_set(N, "synths", list(nanite))
 	src.modules += N
 
 	var/obj/item/dogborg/sleeper/compactor/syndie/MD = new /obj/item/dogborg/sleeper/compactor/syndie(src)
-	MD.metal = metal
-	MD.glass = glass
+	rel_set(MD, "metal", metal)
+	rel_set(MD, "glass", glass)
 	src.modules += MD
 
 	src.modules += new /obj/item/dogborg/pounce(src)
@@ -138,20 +138,20 @@
 
 	// Materials.
 	var/datum/matter_synth/medicine = new /datum/matter_synth/medicine(15000)
-	synths += medicine
+	own_add(src, "synths", medicine)
 
 	var/obj/item/stack/medical/advanced/ointment/O = new /obj/item/stack/medical/advanced/ointment(src)
 	var/obj/item/stack/medical/advanced/bruise_pack/B = new /obj/item/stack/medical/advanced/bruise_pack(src)
 	var/obj/item/stack/medical/splint/S = new /obj/item/stack/medical/splint(src)
 	O.uses_charge = 1
 	O.charge_costs = list(1000)
-	O.synths = list(medicine)
+	rel_set(O, "synths", list(medicine))
 	B.uses_charge = 1
 	B.charge_costs = list(1000)
-	B.synths = list(medicine)
+	rel_set(B, "synths", list(medicine))
 	S.uses_charge = 1
 	S.charge_costs = list(1000)
-	S.synths = list(medicine)
+	rel_set(S, "synths", list(medicine))
 	src.modules += O
 	src.modules += B
 	src.modules += S

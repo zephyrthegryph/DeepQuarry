@@ -139,7 +139,7 @@
 /datum/unit_test/dq_borg_destroyed_mind_placement/Run()
 	var/mob/living/silicon/robot/R = new /mob/living/silicon/robot(test_floor())
 	if(!R.mmi)
-		R.mmi = new /obj/item/mmi(R)
+		own_set(R, "mmi", new /obj/item/mmi(R))
 	var/obj/item/mmi/mmi = R.mmi
 	var/datum/mind/M = dq_test_give_mind(R, "Borg On Floor")
 	qdel(R)
@@ -150,7 +150,7 @@
 
 	var/mob/living/silicon/robot/lost = new /mob/living/silicon/robot(test_floor())
 	if(!lost.mmi)
-		lost.mmi = new /obj/item/mmi(lost)
+		own_set(lost, "mmi", new /obj/item/mmi(lost))
 	var/obj/item/mmi/lost_mmi = lost.mmi
 	var/datum/mind/M2 = dq_test_give_mind(lost, "Borg In Nullspace")
 	lost.moveToNullspace()

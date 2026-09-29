@@ -43,11 +43,11 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/freezer, 120, null)
 
 	for(var/obj/machinery/atmospherics/target in get_step(src, node_connect))
 		if(can_be_node(target, 1))
-			node = target
+			rel_set(src, "node", target)
 			break
 
 	if(check_for_obstacles())
-		node = null
+		rel_clear(src, "node")
 
 	if(node)
 		update_icon()

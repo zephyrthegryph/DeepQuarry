@@ -330,8 +330,8 @@
 		// Unique: the existing adoption record is kept.
 		qdel(src)
 		return
-	parent = new_parent
-	new_parent.economic_adoption = src
+	rel_set(src, "parent", new_parent)
+	own_set(new_parent, "economic_adoption", src)
 	invoice_id = _invoice_id
 	customer_account = _customer_account
 	customer_department = _customer_department

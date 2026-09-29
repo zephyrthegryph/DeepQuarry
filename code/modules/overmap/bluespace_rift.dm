@@ -18,8 +18,8 @@ REL_PAIR(/obj/effect/overmap/bluespace_rift, partner, partner)
 
 /obj/effect/overmap/bluespace_rift/proc/pair(obj/effect/overmap/bluespace_rift/new_partner)
 	if(istype(new_partner))
-		partner = new_partner
-		new_partner.partner = src
+		rel_set(src, "partner", new_partner)
+		rel_set(new_partner, "partner", src)
 
 /obj/effect/overmap/bluespace_rift/proc/take_this(atom/movable/AM)
 	paused = TRUE

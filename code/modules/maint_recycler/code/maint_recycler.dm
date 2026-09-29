@@ -125,7 +125,7 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 /obj/machinery/maint_recycler/Initialize(mapload)
 	. = ..()
 	//init hatch
-	hatch = new
+	own_set(src, "hatch", new /obj/effect/overlay/recycler)
 	hatch.icon = 'code/modules/maint_recycler/icons/maint_recycler.dmi'
 	hatch.icon_state = "door closed"
 	hatch.layer = src.layer+0.1
@@ -137,7 +137,7 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 	//at least for 32x32 stuff!
 	src.underlays |= underlay
 
-	monitor_screen = new
+	own_set(src, "monitor_screen", new /obj/effect/overlay/recycler)
 	monitor_screen.plane = PLANE_LIGHTING_ABOVE
 	monitor_screen.layer = src.layer + 0.1
 	monitor_screen.icon = src.icon
@@ -145,7 +145,7 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 
 	src.vis_contents |= monitor_screen
 
-	item_overlay = new
+	own_set(src, "item_overlay", new /obj/effect/overlay/recycler)
 	item_overlay.layer = src.layer-0.1
 	src.vis_contents |= item_overlay
 
@@ -224,7 +224,7 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 				user.drop_item() //mobs need to be properly handled, can't just move the holder into the thing
 				m.dir = SOUTH //the disposal bins do that and it simply doesn't work.
 				m.forceMove(src)
-				inserted_item = m
+				own_set(src, "inserted_item", m)
 			else
 				return TRUE //too far away, dumbass.
 		else
@@ -233,7 +233,7 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 		to_chat(user, span_notice("You put \the [O] into \the [src]'s processing compartment!"))
 		user.drop_item()
 		O.forceMove(src)
-		inserted_item = O
+		own_set(src, "inserted_item", O)
 
 	update_icon()
 	return FALSE
@@ -248,7 +248,7 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 			if(inserted_item == null)
 				visible_message("\The [source] lands in \the [src].",runemessage = "swish")
 				source.forceMove(src)
-				inserted_item = source
+				own_set(src, "inserted_item", source)
 				update_icon()
 				playsound(src, 'code/modules/maint_recycler/sfx/voice/a wonderful throw.ogg', 75)
 				set_screen_state("screen_happy",10)
@@ -366,7 +366,7 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 	else
 		qdel(inserted_item)
 	set_screen_state("screen_cashout",10)
-	inserted_item = null
+	own_take(src, "inserted_item")
 	door_locked = FALSE
 	open_door(user)
 	update_icon()

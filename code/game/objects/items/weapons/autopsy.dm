@@ -51,7 +51,7 @@
 		if(!D)
 			D = new()
 			D.weapon = W.weapon
-			LAZYSET(wdata, V, D)
+			own_put(src, "wdata", V, D)
 
 		if(!LAZYACCESS(D.organs_scanned, O.name))
 			if(D.organ_names == "")
@@ -64,7 +64,7 @@
 
 	for(var/V in O.trace_chemicals)
 		if(O.trace_chemicals[V] > 0 && !LAZYFIND(chemtraces, V))
-			LAZYADD(chemtraces, V)
+			own_add(src, "chemtraces", V)
 
 /obj/item/autopsy_scanner/proc/print_data_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || !(ishuman(user)))
@@ -160,8 +160,8 @@
 
 	if(target_name != M.name)
 		target_name = M.name
-		src.wdata = list()
-		src.chemtraces = list()
+		own_set(src, "wdata", list())
+		own_set(src, "chemtraces", list())
 		src.timeofdeath = null
 		to_chat(user, span_notice("A new patient has been registered. Purging data for previous patient."))
 

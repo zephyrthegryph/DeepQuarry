@@ -19,7 +19,7 @@ MATERIAL_MIX(/obj/item/nifrepairer, list(MAT_STEEL = 4000, MAT_GLASS = 6000))
 /obj/item/nifrepairer/Initialize(mapload)
 	. = ..()
 
-	supply = new(max = 60, A = src) // ALLOW(decl): constructor arguments
+	own_set(src, "supply", new /datum/reagents(max = 60, A = src)) // ALLOW(decl): constructor arguments
 
 DECLARE_INTERACTIONS(/obj/item/nifrepairer, INTERACT_ITEM("Load", PROC_REF(interaction_item)))
 

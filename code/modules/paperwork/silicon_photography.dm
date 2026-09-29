@@ -20,7 +20,7 @@
 	p.forceMove(src)
 	photos_taken++
 	p.name = "Image [photos_taken][sufix]"
-	LAZYADD(aipictures, p)
+	own_add(src, "aipictures", p)
 
 /obj/item/camera/siliconcam/proc/injectmasteralbum(mob/user, obj/item/photo/p) //stores image information to a list similar to that of the datacore
 	var/mob/living/silicon/robot/C = user
@@ -72,7 +72,7 @@
 	if(!selection)
 		return
 
-	LAZYREMOVE(aipictures, selection)
+	own_take_member(src, "aipictures", selection)
 	qdel(selection)
 	to_chat(user, span_unconscious("Local image deleted"))
 

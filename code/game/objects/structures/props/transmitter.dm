@@ -9,7 +9,7 @@
 	var/message_to_play = "The quick brown fox jumps over the lazy dog."
 
 /obj/structure/prop/transmitter/Initialize(mapload)
-	soundloop = new(list(src), FALSE)
+	own_set(src, "soundloop", new /datum/looping_sound/sequence/morse(list(src), FALSE))
 	set_new_message(message_to_play)
 	soundloop.start()
 	interaction_message = "On the monitor it displays '[uppertext(message_to_play)]'."

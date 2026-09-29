@@ -35,7 +35,7 @@
 	if(_holder && !istype(_holder, holder_type))
 		CRASH("Our holder is null/the wrong type!")
 
-	holder = _holder
+	rel_set(src, "holder", _holder)
 
 	// Add in the appropriate amount of dud wires.
 	var/wire_len = length(wires)

@@ -194,12 +194,12 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	if(!VERB_SHOULD_YIELD)
 		return finish_image_generation(msgwidth, mheight, target, owner, complete_text, lifespan)
 
-	finish_callback = CALLBACK(src, PROC_REF(finish_image_generation), msgwidth, mheight, target, owner, complete_text, lifespan)
+	own_set(src, "finish_callback", CALLBACK(src, PROC_REF(finish_image_generation), msgwidth, mheight, target, owner, complete_text, lifespan))
 	GLOB.runechat_service.message_queue += finish_callback
 	GLOB.runechat_service.demand()
 
 /datum/chatmessage/proc/finish_image_generation(msgwidth, mheight, atom/target, mob/owner, complete_text, lifespan)
-	finish_callback = null
+	own_take(src, "finish_callback")
 	var/rough_time = REALTIMEOFDAY
 
 	approx_lines = max(1, mheight / CHAT_MESSAGE_APPROX_LHEIGHT)

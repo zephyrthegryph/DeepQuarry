@@ -305,7 +305,7 @@
 			best_dist = d
 			best = T
 	if(best)
-		marker = new(best)
+		own_set(src, "marker", new /obj/structure/expedition_marker(best))
 		tracked += om_handle(marker)
 
 /datum/expedition_objective/reach/check()
@@ -388,7 +388,7 @@
 	var/turf/T = S.random_floor()
 	if(!T)
 		return
-	target_obj = new(T)
+	own_set(src, "target_obj", new /obj/structure/expedition_demo_target(T))
 	tracked += om_handle(target_obj)
 	for(var/turf/G in range(2, T))
 		if(G == T || !expedition_is_walkable(G))

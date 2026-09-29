@@ -76,7 +76,7 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	. = ..()
 	set_frequency(frequency)
 	for (var/ch_name in channels)
-		secure_radio_connections[ch_name] = GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT) // ALLOW(decl): per-channel service call with extra arguments
+		own_put(src, "secure_radio_connections", ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(decl): per-channel service call with extra arguments
 
 /obj/item/radio/on_dematerialize()
 	if(GLOB.radio_service)
@@ -656,7 +656,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	if(!keyslot)
 		user.drop_item()
 		W.forceMove(src)
-		keyslot = W
+		own_set(src, "keyslot", W)
 
 	recalculateChannels()
 	return TRUE
@@ -667,9 +667,9 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		return ITEM_INTERACT_BLOCKING
 	for(var/ch_name in channels)
 		GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
-		secure_radio_connections[ch_name] = null
+		own_put(src, "secure_radio_connections", ch_name, null)
 	keyslot.forceMove(get_turf(user))
-	keyslot = null
+	own_take(src, "keyslot")
 	recalculateChannels()
 	to_chat(user, "You pop out the encryption key in the radio!")
 	playsound(src, tool.usesound, 50, TRUE)
@@ -709,7 +709,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		name = "broken radio headset"
 		return
 	for (var/ch_name in channels)
-		secure_radio_connections[ch_name] = GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
+		own_put(src, "secure_radio_connections", ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT))
 
 /obj/item/radio/proc/config(op)
 	if(GLOB.radio_service)
@@ -719,7 +719,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	channels = op
 	if(GLOB.radio_service)
 		for (var/ch_name in op)
-			secure_radio_connections[ch_name] = GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
+			own_put(src, "secure_radio_connections", ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT))
 	return
 
 /obj/item/radio/off

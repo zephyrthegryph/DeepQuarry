@@ -30,7 +30,7 @@
 
 
 /obj/machinery/rnd/production/Initialize(mapload)
-	print_sound = new(list(src), FALSE)
+	own_set(src, "print_sound", new /datum/looping_sound/lathe_print(list(src), FALSE))
 	materials = new /datum/remote_materials(
 		src, \
 		mapload, \

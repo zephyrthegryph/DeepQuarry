@@ -85,7 +85,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 	if(selected)
 		to_chat(user, span_notice("You remove [selected] from \the [src]."))
 		selected.forceMove(loc)
-		T = null
+		own_take(src, "T")
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/floorlayer/screwdriver_act(mob/user, obj/item/tool)
@@ -95,7 +95,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 /obj/machinery/floorlayer/proc/tile_type_chosen(datum/om/prompt/choice/ask)
 	var/obj/item/stack/tile/selected = ask.choice
 	if(selected.loc == src)
-		T = selected
+		own_set(src, "T", selected)
 
 /obj/machinery/floorlayer/examine(mob/user)
 	. = ..()
@@ -118,7 +118,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 /obj/machinery/floorlayer/proc/TakeNewStack()
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/stack/tile/tile in contents) // ALLOW(latent): materialized above
-		T = tile
+		own_set(src, "T", tile)
 		return 1
 	return 0
 

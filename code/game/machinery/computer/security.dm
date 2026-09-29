@@ -72,7 +72,7 @@
 		scan.forceMove(get_turf(src))
 		if(!user.get_active_hand() && ishuman(user))
 			user.put_in_hands(scan)
-		scan = null
+		own_take(src, "scan")
 	else
 		to_chat(user, "There is nothing to remove from the console.")
 	return TRUE
@@ -92,7 +92,7 @@
 	if(!user.unEquip(held))
 		return FALSE
 	held.forceMove(src)
-	scan = held
+	own_set(src, "scan", held)
 	to_chat(user, "You insert \the [held].")
 	tgui_interact(user)
 	return TRUE
@@ -216,13 +216,13 @@
 				scan.forceMove(loc)
 				if(ishuman(ui.user) && !ui.user.get_active_hand())
 					ui.user.put_in_hands(scan)
-				scan = null
+				own_take(src, "scan")
 			else
 				var/obj/item/I = ui.user.get_active_hand()
 				if(istype(I, /obj/item/card/id))
 					ui.user.drop_item()
 					I.forceMove(src)
-					scan = I
+					own_set(src, "scan", I)
 		if("login")
 			var/login_type = text2num(params["login_type"])
 			if(login_type == LOGIN_TYPE_NORMAL && istype(scan))
@@ -254,7 +254,7 @@
 					scan.forceMove(loc)
 					if(ishuman(ui.user) && !ui.user.get_active_hand())
 						ui.user.put_in_hands(scan)
-					scan = null
+					own_take(src, "scan")
 				authenticated = null
 				screen = null
 				active1_handle = null

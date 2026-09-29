@@ -208,7 +208,7 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 			to_chat(user, span_warning("A beaker is already loaded into the machine."))
 			return TRUE
 
-		beaker = item
+		own_set(src, "beaker", item)
 		user.drop_item()
 		item.forceMove(src)
 		user.visible_message("\The [user] adds \a [item] to \the [src]!", "You add \a [item] to \the [src]!")
@@ -255,7 +255,7 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 	// release contents
 	if(beaker)
 		beaker.forceMove(get_turf(src))
-		beaker = null
+		own_take(src, "beaker")
 	var/mob/living/carbon/WC = get_occupant()
 	if(WC)
 		slot_remove(WC, get_turf(src))
@@ -350,7 +350,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/scan_consolenew, \
 		if(!disk)
 			user.drop_item()
 			I.forceMove(src)
-			disk = I
+			own_set(src, "disk", I)
 			to_chat(user, "You insert [I].")
 			SStgui.update_uis(src) // update all UIs attached to src
 	else
@@ -364,7 +364,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 	for(var/i=0;i<3;i++)
 		// Traitgenes Use bodyrecords
 		var/datum/transhuman/body_record/R = new /datum/transhuman/body_record()
-		R.mydna = new
+		own_set(R, "mydna", new /datum/dna2/record)
 		R.mydna.dna = new
 		R.mydna.dna.ResetUI()
 		R.mydna.dna.ResetSE()
@@ -387,7 +387,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 	var/id = text2num(copytext(blk,1,pos))
 	if(!id) return 0
 	I.block = id
-	I.buf = buffer
+	own_set(I, "buf", buffer)
 	return 1
 
 /obj/machinery/computer/scan_consolenew
@@ -589,7 +589,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 			if(!disk)
 				return TRUE
 			disk.forceMove(get_turf(src))
-			disk = null
+			own_take(src, "disk")
 		// Transfer Buffer Management
 		if("bufferOption")
 			var/bufferOption = params["option"]
@@ -618,7 +618,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 					playsound(src, "keyboard", 40)
 					// Traitgenes Storing the entire body record
 					var/datum/transhuman/body_record/R = new /datum/transhuman/body_record()
-					R.mydna = new
+					own_set(R, "mydna", new /datum/dna2/record)
 					R.mydna.dna = new
 					R.mydna.dna.ResetUI()
 					R.mydna.dna.ResetSE()
@@ -686,7 +686,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 			if(!disk)
 				return TRUE
 			disk.forceMove(get_turf(src))
-			disk = null
+			own_take(src, "disk")
 			return TRUE
 
 /**
@@ -711,7 +711,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 	I.forceMove(loc)
 	I.name += " ([buf.mydna.name])"
 	if(copy_buffer)
-		I.buf = buf.mydna.copy()
+		own_set(I, "buf", buf.mydna.copy())
 	return I
 
 /**

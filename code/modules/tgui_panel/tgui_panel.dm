@@ -18,7 +18,7 @@
 
 /datum/tgui_panel/New(client/client, id)
 	src.client_handle = om_handle(client)
-	window = new(client, id)
+	own_set(src, "window", new /datum/tgui_window(client, id))
 	window.subscribe(src, PROC_REF(on_message))
 
 /datum/tgui_panel/Del()

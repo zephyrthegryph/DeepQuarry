@@ -22,7 +22,7 @@
 	if(!isrobot(R))
 		log_runtime("robot_belly created for a non-robot ([R]).")
 		return
-	owner = R
+	rel_set(src, "owner", R)
 	R.can_buckle = TRUE
 	R.buckle_movable = TRUE
 	R.buckle_lying = FALSE
@@ -48,7 +48,7 @@
 /// Gives `R` a robot belly if it has none.
 /mob/living/silicon/robot/proc/add_robot_belly()
 	if(!robot_belly)
-		robot_belly = new /datum/robot_belly(src)
+		own_set(src, "robot_belly", new /datum/robot_belly(src))
 	return robot_belly
 
 /// The sleeper sets this; the sprite only redraws when it actually changes.

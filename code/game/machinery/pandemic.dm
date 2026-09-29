@@ -133,7 +133,7 @@
 	if(!beaker)
 		return
 	beaker.forceMove(loc)
-	beaker = null
+	own_take(src, "beaker")
 	icon_state = "pandemic0"
 
 /obj/machinery/computer/pandemic/proc/print_form(datum/affliction/contagion/engineered/D, mob/living/user)
@@ -233,7 +233,7 @@
 	if(stat & (NOPOWER|BROKEN))
 		return TRUE
 	user.drop_item()
-	beaker = I
+	own_set(src, "beaker", I)
 	beaker.forceMove(src)
 	to_chat(user, span_notice("You add \the [I] to the machine."))
 	update_tgui_static_data(user)

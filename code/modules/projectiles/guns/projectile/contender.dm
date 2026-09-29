@@ -30,7 +30,7 @@
 		return TRUE
 	if(chambered)
 		chambered.forceMove(get_turf(src))
-		chambered = null
+		own_take(src, "chambered")
 		var/obj/item/ammo_casing/C = loaded[1]
 		loaded -= C
 

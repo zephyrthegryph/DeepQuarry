@@ -42,7 +42,7 @@
 	if(!C)
 		return
 	owner_handle = om_handle(C)
-	tooltip_window = new(C, control)
+	own_set(src, "tooltip_window", new /datum/tgui_window(C, control))
 	// The tgui ui is opened lazily in show(), bound to the CURRENT mob. Opening it
 	// here (at login) binds it to the lobby new_player mob, which is deleted on
 	// spawn — after which update_uis() pushes to a dead user and the frontend

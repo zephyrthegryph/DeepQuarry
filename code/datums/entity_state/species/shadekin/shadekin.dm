@@ -101,7 +101,7 @@
 		log_runtime("SHADEKIN: [type] created for incompatible [new_owner] ([new_owner?.type]); ignoring.")
 		return
 	owner = new_owner
-	owner.shadekin = src
+	rel_set(owner, "shadekin", src)
 	if(!ishuman(owner))
 		om_stage_add(owner, /datum/om/stage/life/trait/shadekin) //Happens every life tick (mobs)
 	//Humans are ticked by the species_components life stage instead.
@@ -144,7 +144,7 @@
 
 /// Removes this mob's shadekin state, if any.
 /mob/living/proc/remove_shadekin()
-	QDEL_NULL(shadekin)
+	own_clear(src, "shadekin", OWN_DELETE)
 
 // revokes its granted abilities, trait stage and verbs; hides the owner's energy hud.
 /datum/shadekin/lifecycle_prerelease()

@@ -523,7 +523,7 @@
 	om_ask(actor, /datum/om/prompt/choice, PROC_REF(external_chosen), message = "What do you wish to severely damage?", choices = T.organs, title = "Organ Choice", ask_flags = ASK_CONSCIOUS)
 
 /datum/om/flow/shred_limb/proc/external_chosen(datum/om/prompt/choice/ask)
-	T_ext = ask.choice
+	rel_set(src, "T_ext", ask.choice)
 	if(T_ext.vital)
 		om_ask(actor, /datum/om/prompt/confirm, PROC_REF(ask_internal), message = "Are you sure you wish to severely damage their [T_ext]? It will likely kill [target]...", title = "Shred Limb", ask_flags = ASK_CONSCIOUS)
 		return
@@ -538,7 +538,7 @@
 	om_ask(actor, /datum/om/prompt/choice, PROC_REF(internal_chosen), message = "Do you wish to severely damage an internal organ, as well? If not, click 'cancel'", choices = T_organs, cancel_answer = "", title = "Organ Choice", ask_flags = ASK_CONSCIOUS)
 
 /datum/om/flow/shred_limb/proc/internal_chosen(datum/om/prompt/choice/ask)
-	T_int = ask.choice || null
+	rel_set(src, "T_int", ask.choice || null)
 	if(T_int?.vital)
 		om_ask(actor, /datum/om/prompt/confirm, PROC_REF(ask_belly), message = "Are you sure you wish to severely damage their [T_int]? It will likely kill [target]...", title = "Shred Limb", ask_flags = ASK_CONSCIOUS)
 		return
@@ -550,7 +550,7 @@
 	om_ask(actor, /datum/om/prompt/choice, PROC_REF(belly_chosen), message = "To where do you wish to swallow the organ if you tear if out? If not at all, click 'cancel'", choices = L.vore_organs, cancel_answer = "", title = "Organ Choice", ask_flags = ASK_CONSCIOUS)
 
 /datum/om/flow/shred_limb/proc/belly_chosen(datum/om/prompt/choice/ask)
-	B = ask.choice || null
+	rel_set(src, "B", ask.choice || null)
 	var/mob/living/L = actor
 	L.shred_limb_answered(target, T_ext, T_int, B)
 

@@ -127,8 +127,8 @@
 			node2.disconnect(src)
 			rust_release_network_wrapper(network2)
 
-		node1 = null
-		node2 = null
+		rel_clear(src, "node1")
+		rel_clear(src, "node2")
 
 	return ITEM_INTERACT_SUCCESS
 
@@ -145,12 +145,12 @@
 
 	for(var/obj/machinery/atmospherics/target in get_step(src,node1_connect))
 		if(target.initialize_directions & get_dir(target,src))
-			node1 = target
+			rel_set(src, "node1", target)
 			break
 
 	for(var/obj/machinery/atmospherics/target in get_step(src,node2_connect))
 		if(target.initialize_directions & get_dir(target,src))
-			node2 = target
+			rel_set(src, "node2", target)
 			break
 
 /obj/machinery/atmospherics/pipeturbine/return_network(obj/machinery/atmospherics/reference)
@@ -164,9 +164,9 @@
 
 /obj/machinery/atmospherics/pipeturbine/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
 	if(network1 == old_network)
-		network1 = new_network
+		rel_set(src, "network1", new_network)
 	if(network2 == old_network)
-		network2 = new_network
+		rel_set(src, "network2", new_network)
 
 	return 1
 
@@ -182,24 +182,24 @@
 
 /obj/machinery/atmospherics/pipeturbine/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
 	if(network1 == reference)
-		air_in = network_air
+		own_set(src, "air_in", network_air)
 	if(network2 == reference)
-		air_out = network_air
+		own_set(src, "air_out", network_air)
 
 /obj/machinery/atmospherics/pipeturbine/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
 	if(network1 == reference && air_in == network_air)
-		air_in = detached_pipenet_air(network_air, 200, network_volume)
+		own_set(src, "air_in", detached_pipenet_air(network_air, 200, network_volume))
 	if(network2 == reference && air_out == network_air)
-		air_out = detached_pipenet_air(network_air, 800, network_volume)
+		own_set(src, "air_out", detached_pipenet_air(network_air, 800, network_volume))
 
 /obj/machinery/atmospherics/pipeturbine/disconnect(obj/machinery/atmospherics/reference)
 	if(reference==node1)
 		rust_release_network_wrapper(network1)
-		node1 = null
+		rel_clear(src, "node1")
 
 	else if(reference==node2)
 		rust_release_network_wrapper(network2)
-		node2 = null
+		rel_clear(src, "node2")
 
 	return null
 
@@ -221,13 +221,13 @@
 	make_rotatable()
 
 /obj/machinery/power/turbinemotor/proc/updateConnection()
-	turbine = null
+	rel_clear(src, "turbine")
 	if(src.loc && anchored)
-		turbine = locate_within(get_step(src,dir), /obj/machinery/atmospherics/pipeturbine)
+		rel_set(src, "turbine", locate_within(get_step(src,dir), /obj/machinery/atmospherics/pipeturbine))
 		if(!turbine)
 			return
 		if (turbine.stat & (BROKEN) || !turbine.anchored || turn(turbine.dir,180) != dir)
-			turbine = null
+			rel_clear(src, "turbine")
 
 /// Converts its turbine's spin while there is any; parked otherwise, the turbine's own step wakes
 /// it (pipeturbine machine_step()).
@@ -244,7 +244,7 @@
 	anchored = !anchored
 	MACHINE_WAKE(src)
 	playsound(src, W.usesound, 50, 1)
-	turbine = null
+	rel_clear(src, "turbine")
 	to_chat(user, span_notice("You [anchored ? "secure" : "unsecure"] the bolts holding \the [src] to the floor."))
 	updateConnection()
 	return ITEM_INTERACT_SUCCESS
@@ -267,6 +267,6 @@
 /// base unbind doesn't know about, so two doomed neighbours can't keep each other alive.
 /obj/machinery/atmospherics/pipeturbine/lifecycle_unbind()
 	. = ..()
-	network1 = null
-	network2 = null
+	rel_clear(src, "network1")
+	rel_clear(src, "network2")
 

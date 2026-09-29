@@ -116,12 +116,12 @@
 			M.drop_from_inventory(piece)
 		qdel(piece)
 
-	R.gloves    = null
-	R.boots     = null
-	R.helmet    = null
-	R.chest     = null
-	R.cell      = null
-	R.air_supply = null
+	own_take(R, "gloves")
+	own_take(R, "boots")
+	own_take(R, "helmet")
+	own_take(R, "chest")
+	own_take(R, "cell")
+	own_take(R, "air_supply")
 
 	for(var/obj/item/rig_module/module in R.installed_modules)
 		qdel(module)

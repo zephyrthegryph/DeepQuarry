@@ -58,7 +58,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/technomancer_golem, "cor
 
 
 /mob/living/simple_mob/mechanical/technomancer_golem/unref_spell()
-	active_spell = null
+	own_take(src, "active_spell")
 	return ..()
 
 /mob/living/simple_mob/mechanical/technomancer_golem
@@ -78,7 +78,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/technomancer_golem, "cor
 	if(active_spell)
 		qdel(active_spell)
 
-	active_spell = new path(src)
+	own_set(src, "active_spell", new path(src))
 
 /mob/living/simple_mob/mechanical/technomancer_golem/verb/test_giving_spells()
 	om_ask(usr, /datum/om/prompt/choice, PROC_REF(test_spell_chosen), choices = known_spells, title = "Give spell", message = "What spell?", optional = TRUE)

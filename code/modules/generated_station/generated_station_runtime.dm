@@ -175,8 +175,8 @@
 /datum/expedition_site/proc/initialize_generated_station_runtime()
 	if(!station_spec || station_simulation)
 		return FALSE
-	station_simulation = new(station_spec)
-	station_director = new(station_simulation)
+	own_set(src, "station_simulation", new /datum/generated_station_simulation(station_spec))
+	own_set(src, "station_director", new /datum/generated_station_director(station_simulation))
 	station_controls = list()
 	var/list/controlled_departments = list()
 	for(var/obj/effect/landmark/generated_station_department_core/core in station_materialization?.control_landmarks)
@@ -248,11 +248,11 @@
 	if(!station_materialization)
 		return FALSE
 	var/datum/generated_station_materializer/repairer = new
-	repairer.result = station_materialization
+	own_set(repairer, "result", station_materialization)
 	repairer.min_x = station_materialization.origin_x
 	repairer.min_y = station_materialization.origin_y
 	var/succeeded = repairer.finalize_furnishing_access()
-	repairer.result = null
+	own_take(repairer, "result")
 	qdel(repairer)
 	return succeeded
 

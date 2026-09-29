@@ -360,7 +360,7 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 	var/datum/faction_agent_record/record = new
 	record.account_number = account.account_number
 	record.faction_id = faction_id
-	record.agent_mind = user.mind
+	rel_set(record, "agent_mind", user.mind)
 	record.candidate_started_at = world.time
 	agent_records["[account.account_number]"] = record
 	var/datum/reputation_faction/faction = GLOB.reputation_factions[faction_id]
@@ -416,7 +416,7 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 	if(!record || record.tier < FACTION_AGENT_TIER_TRUSTED || record.operative_contract_id)
 		return FALSE
 	if(current_owner?.mind)
-		record.agent_mind = current_owner.mind
+		rel_set(record, "agent_mind", current_owner.mind)
 	var/datum/mind/owner_mind = record.agent_mind
 	var/datum/antagonist/operative_role = GLOB.antag_service.get_antag_data(CONTRACT_OPERATIVE_ANTAG_ID)
 	if(!owner_mind?.current || owner_mind.special_role || !operative_role || !operative_role.add_antagonist(owner_mind, TRUE, TRUE, FALSE, FALSE, TRUE))
@@ -492,9 +492,9 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 			stable_ledger.affiliations_initialized = faction_reputation?.affiliations_initialized || FALSE
 			if(faction_reputation?.positive_reputation_earned)
 				stable_ledger.positive_reputation_earned = faction_reputation.positive_reputation_earned.Copy()
-		faction_reputation = stable_ledger
+		rel_set(src, "faction_reputation", stable_ledger)
 	if(!faction_reputation)
-		faction_reputation = new()
+		rel_set(src, "faction_reputation", new /datum/faction_reputation_ledger())
 	return faction_reputation
 
 /mob/living/proc/get_faction_reputation(faction_id)

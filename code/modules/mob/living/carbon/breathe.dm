@@ -81,9 +81,9 @@
 /mob/living/carbon/proc/get_breath_from_internal(volume_needed=BREATH_VOLUME) //hopefully this will allow overrides to specify a different default volume without breaking any cases where volume is passed in.
 	if(internal)
 		if (!contents.Find(internal))
-			internal = null
+			own_take(src, "internal")
 		if (!(get_equipped_item(SLOT_ID_MASK) && (get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT)))
-			internal = null
+			own_take(src, "internal")
 		if(internal)
 			if (internals)
 				internals.icon_state = "internal1"

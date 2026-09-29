@@ -82,7 +82,7 @@
 			if (i > 0 && get_dist(src, D) < i)
 				continue // already checked this one
 			else if(confirmTarget(D))
-				target = D
+				rel_set(src, "target", D)
 				registry_join(REGISTRY_CLEANBOT_RESERVED_TURFS, D)
 				return
 
@@ -159,7 +159,7 @@
 		), "automation:[REF(src)]:sanitation:[world.time]", src)
 	if(D == target)
 		registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, target)
-		target = null
+		rel_clear(src, "target")
 /mob/living/bot/cleanbot/proc/UnarmedAttack_cleanbot_done2()
 	var/cleaned_turf_id = REF(loc)
 	if(blood)

@@ -110,7 +110,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/heart/machine/anomalock, INTERACT_I
 	if(core || W.loc != user)
 		return
 	user.unEquip(W, TRUE, src)
-	core = W
+	own_set(src, "core", W)
 	balloon_alert(user, "core_installed")
 	playsound(src, 'sound/machines/click.ogg')
 	update_icon()
@@ -131,7 +131,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/heart/machine/anomalock, INTERACT_I
 	core.forceMove(drop_location())
 	if(Adjacent(user) && !issilicon(user))
 		user.put_in_hands(core)
-	core = null
+	own_take(src, "core")
 	update_icon()
 
 DECLARE_DEFAULT_CHILD(/obj/item/organ/internal/heart/machine/anomalock/prebuilt, "core", /obj/item/assembly/signaler/anomaly/flux)

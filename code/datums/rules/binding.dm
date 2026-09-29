@@ -150,7 +150,7 @@
 /datum/rule_binding/New(atom/owner, list/rules)
 	..()
 	owner_ref = om_handle(owner)
-	src.owner = owner
+	rel_set(src, "owner", owner)
 	table = dq_rule_table_for(rules)
 	owner.rule_binding = src
 	var/count = table.count
@@ -161,7 +161,7 @@
 	for(var/i in 1 to count)
 		if((live & RULE_BIT(i)) && check(rules[i]))
 			holding |= RULE_BIT(i)
-	src.owner = null
+	rel_clear(src, "owner")
 
 /// Phase 1 (unbind): drops its rules and frees its Rust reactor nodes.
 /datum/rule_binding/lifecycle_unbind()
@@ -267,9 +267,9 @@
 
 /// Resolve the owner for this call; a binding whose owner is gone deletes itself.
 /datum/rule_binding/proc/resolve()
-	owner = om_resolve(owner_ref)
+	rel_set(src, "owner", om_resolve(owner_ref))
 	if(!owner || QDELETED(owner))
-		owner = null
+		rel_clear(src, "owner")
 		qdel(src)
 		return FALSE
 	return TRUE
@@ -289,7 +289,7 @@
 	if(!resolve())
 		return
 	evaluate_rules()
-	owner = null
+	rel_clear(src, "owner")
 
 /datum/rule_binding/proc/evaluate_rules()
 	var/list/rules = table.rules

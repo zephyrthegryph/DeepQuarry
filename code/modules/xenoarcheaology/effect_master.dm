@@ -53,7 +53,7 @@
 		qdel(src)
 		return
 	holder_handle = om_handle(new_holder)
-	new_holder.artifact_master = src
+	rel_set(new_holder, "artifact_master", src)
 
 	my_effects = list()
 

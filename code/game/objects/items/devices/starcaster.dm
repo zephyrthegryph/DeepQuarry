@@ -67,11 +67,11 @@ DECLARE_INTERACTIONS(/obj/item/starcaster_news, INTERACT_USE(null, PROC_REF(inte
 
 			for(var/datum/computer_file/data/news_article/N in GLOB.ntnet_global.available_news)
 				if(N.uid == text2num(params["uid"]))
-					loaded_article_owned = N.clone()
+					own_set(src, "loaded_article_owned", N.clone())
 					break
 		if("PRG_reset")
 			. = TRUE
-			loaded_article_owned = null
+			own_take(src, "loaded_article_owned")
 		if("PRG_toggle_archived")
 			. = TRUE
 			show_archived = !show_archived

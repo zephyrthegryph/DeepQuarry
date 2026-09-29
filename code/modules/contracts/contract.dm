@@ -240,8 +240,8 @@
 
 /datum/contract/New()
 	. = ..()
-	requirements = list()
-	children = list()
+	own_set(src, "requirements", list())
+	rel_set(src, "children", list())
 	contributions = list()
 	contributor_names = list()
 	audit_log = list()
@@ -287,15 +287,15 @@ REL_PAIR_LIST(/datum/contract, children, parent)
 /datum/contract/proc/add_requirement(datum/contract_requirement/requirement)
 	if(!requirement || state != CONTRACT_OFFERED)
 		return FALSE
-	requirement.contract = src
-	requirements += requirement
+	rel_set(requirement, "contract", src)
+	own_add(src, "requirements", requirement)
 	return TRUE
 
 /datum/contract/proc/add_child(datum/contract/child)
 	if(!child || child == src || child.parent)
 		return FALSE
-	child.parent = src
-	children += child
+	rel_set(child, "parent", src)
+	rel_add(src, "children", child)
 	return TRUE
 
 /datum/contract/proc/add_negotiation_clause(datum/contract_negotiation_clause/clause)

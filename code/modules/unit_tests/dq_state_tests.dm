@@ -131,7 +131,7 @@
 	owned.text = "owned"
 	probe.path_value = /obj/item/paper
 	probe.values = list("plain", 3, /obj/item/pen, "#hash" = "escaped", "#path" = "not a wrapper")
-	probe.ref_value = owned
+	rel_set(probe, "ref_value", owned)
 	var/list/blob = state_serialize(probe)
 	TEST_ASSERT_NOTNULL(blob, "the probe should serialize")
 	var/datum/dq_state_probe/copy = state_materialize(json_decode(json_encode(blob)), null)
@@ -215,7 +215,7 @@
 	TEST_ASSERT_EQUAL(length(blockers), 0, "a box of paper with no outside references should collapse: [jointext(blockers, "; ")]")
 
 	var/datum/dq_state_holder/holder = new
-	holder.held = box
+	rel_set(holder, "held", box)
 	blockers = box.state_collapse_blockers(1)
 	TEST_ASSERT(length(blockers) == 1 && findtext(blockers[1], "outside"), "an outside var holding the box should block collapse: [jointext(blockers, "; ")]")
 	qdel(holder)
@@ -381,6 +381,6 @@
 	var/list/errors = list()
 	TEST_ASSERT_NULL(state_serialize(paper, NONE, errors), "a paper with a pinned contract document should refuse serialization")
 	TEST_ASSERT(length(errors), "the pinned refusal should say why")
-	paper.contract_document = null
+	own_take(paper, "contract_document")
 	qdel(document)
 	TEST_ASSERT_NOTNULL(state_serialize(paper), "the paper should serialize again once the document is gone")

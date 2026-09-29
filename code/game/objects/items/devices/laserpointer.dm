@@ -33,9 +33,9 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 /obj/item/laser_pointer/Initialize(mapload, laser_path)
 	. = ..()
 	if(ispath(laser_path))
-		diode = new laser_path // ALLOW(decl): diode from an Initialize argument
+		own_set(src, "diode", new laser_path) // ALLOW(decl): diode from an Initialize argument
 	else
-		diode = new(src) // ALLOW(decl): paired with the argument branch above
+		own_set(src, "diode", new /obj/item/stock_parts/micro_laser(src)) // ALLOW(decl): paired with the argument branch above
 	if(!pointer_icon_state)
 		pointer_icon_state = pick("red_laser","green_laser","blue_laser","purple_laser")
 
@@ -55,7 +55,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 	if(!diode)
 		user.drop_item()
 		W.forceMove(src)
-		diode = W
+		own_set(src, "diode", W)
 		to_chat(user, span_notice("You install a [diode.name] in [src]."))
 	else
 		to_chat(user, span_notice("[src] already has a diode."))
@@ -66,7 +66,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You remove the [diode.name] from the [src]."))
 	diode.forceMove(get_turf(loc))
-	diode = null
+	own_take(src, "diode")
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/laser_pointer/afterattack(atom/target, mob/living/user, flag, params)

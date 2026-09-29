@@ -164,7 +164,7 @@ DECLARE_INTERACTIONS(/obj/item/glamour_face, INTERACT_USE(null, PROC_REF(interac
 		H.icon_state = chosen_target.icon_state
 		H.copy_overlays(chosen_target, TRUE)
 		H.resize(chosen_target.size_multiplier, ignore_prefs = TRUE)
-		homunculus = H
+		rel_set(src, "homunculus", H)
 		H.owner = src
 
 /obj/item/glamour_face/proc/homunculus_action_chosen(datum/om/prompt/choice/ask)
@@ -176,7 +176,7 @@ DECLARE_INTERACTIONS(/obj/item/glamour_face, INTERACT_USE(null, PROC_REF(interac
 	if(h_action == "Recall")
 		H.visible_message(span_infoplain(span_bold("\The [H]") + " returns to the face."))
 		qdel(H)
-		homunculus = 0
+		rel_set(src, "homunculus", 0)
 		return
 	if(h_action == "Speak Through")
 		om_ask(user, /datum/om/prompt/text, PROC_REF(homunculus_words_entered), message = "What should the homunculus say:", title = "Speak Through", ask_flags = ASK_HELD | ASK_CAPABLE)

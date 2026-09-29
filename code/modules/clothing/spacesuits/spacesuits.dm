@@ -52,7 +52,7 @@
 		return
 
 	if(!camera)
-		camera = new /obj/machinery/camera(src)
+		own_set(src, "camera", new /obj/machinery/camera(src))
 		camera.replace_networks(camera_networks)
 		camera.set_status(FALSE) //So the camera will activate in the following check.
 

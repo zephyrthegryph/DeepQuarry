@@ -23,7 +23,7 @@
 	#ifdef UNIT_TESTS
 	// Build one human per body type up-front. set_species runs once per species here
 	// instead of once per (species × clothing item).
-	human_storage = new()
+	own_set(src, "human_storage", new())
 	test_humans = list()
 	for(var/body_type in list(SPECIES_HUMAN, SPECIES_VOX, SPECIES_TESHARI))
 		var/mob/living/carbon/human/H = new(human_storage)
@@ -58,7 +58,7 @@
 		om_unhook(H, /datum/om/event/unittest_data, src)
 		qdel(H)
 	test_humans = null
-	QDEL_NULL(human_storage)
+	own_clear(src, "human_storage", OWN_DELETE)
 	#endif
 
 	// Data-quality issues (missing worn/base sprites, heat/cold flag style) are a

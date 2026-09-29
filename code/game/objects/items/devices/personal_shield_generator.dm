@@ -45,11 +45,11 @@
 	. = ..()
 	if(has_weapon)
 		if(ispath(active_weapon))
-			active_weapon = new active_weapon(src, src) // ALLOW(decl): constructor arguments
-			active_weapon.power_supply = bcell
+			own_set(src, "active_weapon", new active_weapon(src, src)) // ALLOW(decl): constructor arguments
+			own_set(active_weapon, "power_supply", bcell)
 		else
-			active_weapon = new(src, src) // ALLOW(decl): constructor arguments
-			active_weapon.power_supply = bcell
+			own_set(src, "active_weapon", new /obj/item/gun/energy/gun/generator(src, src)) // ALLOW(decl): constructor arguments
+			own_set(active_weapon, "power_supply", bcell)
 	om_task_periodic_stop(src) //We do this so it doesn't start processing until it's first used.
 	update_icon()
 
@@ -151,9 +151,9 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			if(!user.unEquip(W))
 				return TRUE
 			W.forceMove(src)
-			bcell = W
+			own_set(src, "bcell", W)
 			if(active_weapon)
-				active_weapon.power_supply = bcell
+				own_set(active_weapon, "power_supply", bcell)
 			to_chat(user, span_notice("You install a cell in \the [src]."))
 			update_icon()
 
@@ -172,10 +172,10 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 		return ITEM_INTERACT_BLOCKING
 	bcell.update_icon()
 	bcell.forceMove(get_turf(src))
-	bcell = null
+	own_take(src, "bcell")
 	if(active_weapon)
 		reattach_gun()
-		active_weapon.power_supply = null
+		own_take(active_weapon, "power_supply")
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
@@ -201,10 +201,10 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	sparks.set_up(5, 1, src)
 	sparks.start()
 	qdel(bcell)
-	bcell = null
+	own_take(src, "bcell")
 	if(active_weapon)
 		reattach_gun()
-		active_weapon.power_supply = null
+		own_take(active_weapon, "power_supply")
 	to_chat(user, span_notice("You remove the cell from \the [src], destroying the battery."))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
@@ -302,10 +302,10 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 
 			if(active_weapon) //Retract the gun. There's about to be no cell anymore.
 				reattach_gun()
-				active_weapon.power_supply = null
+				own_take(active_weapon, "power_supply")
 
 			bcell.use(generator_active_cost) //Causes it to go boom.
-			bcell = null
+			own_take(src, "bcell")
 			shield_active = 0
 			om_task_periodic_stop(src)
 			update_icon()
@@ -385,7 +385,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 /obj/item/gun/energy/gun/generator/Initialize(mapload, obj/item/personal_shield_generator/shield_gen)
 	. = ..()
 	shield_generator_handle = om_handle(shield_gen)
-	power_supply = shield_generator().bcell
+	own_set(src, "power_supply", shield_generator().bcell)
 
 /obj/item/gun/energy/gun/generator/proc/can_use(mob/user, mob/M)
 	if(!check_charge(charge_cost))

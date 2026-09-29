@@ -142,7 +142,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_se
 		scoped_accuracy = accuracy
 
 	if(dna_lock)
-		attached_lock = new /obj/item/dnalockingchip(src)
+		own_set(src, "attached_lock", new /obj/item/dnalockingchip(src))
 
 	if(sel_mode <= length(firemodes))
 		var/datum/firemode/new_mode = LAZYACCESS(firemodes, sel_mode)
@@ -245,7 +245,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_se
 	if(adjacent) return //A is adjacent, is the user, or is on the user's person
 
 	if(!user.aiming)
-		user.aiming = new(user)
+		own_set(user, "aiming", new /obj/aiming_overlay(user))
 
 	if(user && user.client && user.aiming && user.aiming.active && user.aiming.aiming_at != A)
 		PreFire(A,user,params) //They're using the new gun system, locate what they're aiming at.
@@ -318,7 +318,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 		to_chat(user, span_notice("You insert \the [A] into \the [src]."))
 		user.drop_item()
 		A.forceMove(src)
-		attached_lock = A
+		own_set(src, "attached_lock", A)
 		dna_lock = 1
 		return
 
@@ -335,7 +335,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 	to_chat(user, span_notice("You remove \the [attached_lock] from \the [src]."))
 	user.put_in_hands(attached_lock)
 	dna_lock = FALSE
-	attached_lock = null
+	own_take(src, "attached_lock")
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/gun/emag_act(remaining_charges, mob/user)

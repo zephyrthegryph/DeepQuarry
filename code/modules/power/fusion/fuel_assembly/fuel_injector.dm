@@ -89,7 +89,7 @@ OWN(/obj/machinery/fusion_fuel_injector, cur_assembly, OWN_SPILL)
 	if(cur_assembly)
 		cur_assembly.forceMove(get_turf(src))
 		user.put_in_hands(cur_assembly)
-	cur_assembly = held
+	own_set(src, "cur_assembly", held)
 	if(istype(held,/obj/item/fuel_assembly/blitz))
 		visible_message(span_warning("The fuel injector begins to shake and whirr violently as it tries to accept the blitz rod!"))
 		om_after(src, 3 SECONDS, PROC_REF(blitz_boom))
@@ -146,7 +146,7 @@ OWN(/obj/machinery/fusion_fuel_injector, cur_assembly, OWN_SPILL)
 		cur_assembly.forceMove(get_turf(src))
 		user.put_in_hands(cur_assembly)
 		visible_message(span_infoplain(span_bold("\The [user]") + " removes \the [cur_assembly] from \the [src]."))
-		cur_assembly = null
+		own_take(src, "cur_assembly")
 		return TRUE
 	else
 		to_chat(user, span_warning("There is no fuel rod in \the [src]."))

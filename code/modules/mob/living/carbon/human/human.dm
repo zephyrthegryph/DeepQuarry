@@ -38,7 +38,7 @@
 
 /mob/living/carbon/human/Initialize(mapload, new_species = null)
 	if(!dna)
-		dna = new /datum/dna(null) // ALLOW(decl): needed before parent init by set_species(); ctor takes an arg
+		own_set(src, "dna", new /datum/dna(null)) // ALLOW(decl): needed before parent init by set_species(); ctor takes an arg
 		// Species name is handled by set_species()
 
 	if(!species)
@@ -1274,11 +1274,11 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	if(!keep_organs)
 		body_type = species.body_plan
 	if(!body)
-		body = new body_type(src)
+		own_set(src, "body", new body_type(src))
 	else if(!keep_organs && body.type != body_type)
 		log_game("BODY: [key_name(src)] body plan [body.type] -> [body_type] on species change to [species.name].")
-		QDEL_NULL(body)
-		body = new body_type(src)
+		own_clear(src, "body", OWN_DELETE)
+		own_set(src, "body", new body_type(src))
 		// The slot set is keyed by body plan.
 		rebuild_slot_ledger()
 		// So is the Life plan (physiology applies by body plan).

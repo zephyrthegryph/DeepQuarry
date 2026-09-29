@@ -37,7 +37,7 @@
 	set name = "Show Text Messages"
 	set desc = "Allows you to see exonet text messages you've sent and received."
 	if(!dq_exonet_log_panel_cache)
-		dq_exonet_log_panel_cache = new(src)
+		own_set(src, "dq_exonet_log_panel_cache", new /datum/exonet_log_panel(src))
 	dq_exonet_log_panel_cache.tgui_interact(src)
 
 

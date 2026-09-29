@@ -91,12 +91,12 @@
 /datum/unit_test/dq_k_b_d25_single_heat_writer/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/internal/stomach/machine/S = allocate(/obj/item/organ/internal/stomach/machine)
-	S.owner = H
+	rel_set(S, "owner", H)
 	H.robobody_count = 3
 	var/before = H.bodytemperature
 	S.handle_organ_proc_special()
 	TEST_ASSERT_EQUAL(H.bodytemperature, before, "the machine stomach writes no chassis heat")
-	S.owner = null
+	rel_clear(S, "owner")
 
 /// P2-S11: nutrition writers clamp.
 /datum/unit_test/dq_k_b_s11_nutrition_writers_clamp

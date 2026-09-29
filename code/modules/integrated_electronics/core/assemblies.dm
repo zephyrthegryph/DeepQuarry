@@ -165,7 +165,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 			battery.forceMove(T)
 			playsound(T, 'sound/items/Crowbar.ogg', 50, 1)
 			to_chat(ui.user, span_notice("You pull \the [battery] out of \the [src]'s power supplier."))
-			battery = null
+			own_take(src, "battery")
 			return TRUE
 
 		// Circuit actions

@@ -154,7 +154,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 			var/atom/movable/screen/radial/slice/new_element = new /atom/movable/screen/radial/slice
 			new_element.tooltips = use_tooltips
 			new_element.set_parent(src)
-			LAZYADD(elements, new_element)
+			own_add(src, "elements", new_element)
 
 	var/page = 1
 	page_data = list(null)
@@ -258,7 +258,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 			E.vis_contents += info_button
 
 /datum/radial_menu/New()
-	close_button = new
+	own_set(src, "close_button", new /atom/movable/screen/radial/center)
 	close_button.set_parent(src)
 
 /datum/radial_menu/proc/Reset()

@@ -74,7 +74,7 @@
 	var/obj/machinery/atmospherics/valve/shutoff/valve = allocate(/obj/machinery/atmospherics/valve/shutoff, test_floor())
 	var/datum/pipe_network/ours = new()
 	var/datum/pipe_network/theirs = new()
-	valve.network_node1 = ours
+	rel_set(valve, "network_node1", ours)
 	valve.subscribe_network_keys()
 
 	// Held steady, and with a change on another network, the valve sleeps; its own network wakes it.
@@ -88,6 +88,6 @@
 	var/failure = om_wake_test(valve, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(wake_automatic_shutoff_valves), ours))
 	TEST_ASSERT(!failure, failure)
 
-	valve.network_node1 = null
+	rel_clear(valve, "network_node1")
 	qdel(ours)
 	qdel(theirs)

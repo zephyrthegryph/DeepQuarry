@@ -29,7 +29,7 @@
 		linkedmonitor().unpair(src)
 	linkedmonitor_handle = null
 	qdel(camera)
-	camera = new camtype(src)
+	own_set(src, "camera", new camtype(src))
 	to_chat(user, span_notice("You turn the [src] off and on again, delinking it from any monitors."))
 
 /obj/item/brokenbug

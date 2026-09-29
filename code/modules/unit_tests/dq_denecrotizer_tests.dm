@@ -58,9 +58,9 @@
 
 	// The continuation takes its om task (basic_rez() runs it through om_task_start()).
 	var/datum/om/task/timed/denecrotizer_basic_rez/task = new
-	task.actor = user
-	task.target = target
-	task.receiver = D
+	rel_set(task, "actor", user)
+	rel_set(task, "target", target)
+	rel_set(task, "receiver", D)
 	D.basic_rez_timed_done(task)
 
 	TEST_ASSERT_EQUAL(target.see_in_dark, custom_see_in_dark, "basic_rez must not reset see_in_dark back to initial() after another system set a legitimate post-revival value")

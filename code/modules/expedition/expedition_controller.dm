@@ -176,7 +176,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	site.name = "Site [pick("Theta", "Sigma", "Kappa", "Vega", "Orion", "Lyra", "Cygnus", "Draco")]-[rand(1, 99)]"
 	site.faction = mission?.faction_type || expedition_pick_faction(difficulty)
 	site.name += " — [expedition_faction_name(site.faction)]"
-	site.mission = mission
+	own_set(site, "mission", mission)
 	site.assigned_shuttle_handle = om_handle(assigned_shuttle)
 	site.origin_console_handle = om_handle(origin_console)
 	site.parent_destination_id = parent_destination_id
@@ -207,7 +207,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	if(!descriptor || QDELETED(descriptor) || !plan || QDELETED(plan))
 		return
 	var/datum/expedition_mission/mission = descriptor.mission
-	descriptor.mission = null
+	own_take(descriptor, "mission")
 	plan.generation_progress = 15
 	plan.generation_stage = "Generating terrain"
 	generate_site_async(mission, descriptor.difficulty, descriptor.assigned_shuttle(), descriptor.origin_console(), plan, CALLBACK(src, PROC_REF(site_materialized), descriptor, plan, mission))
@@ -215,7 +215,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 /// The generated site replaces its descriptor (the destination the crew planned against).
 /datum/world_service/expedition/proc/site_materialized(datum/expedition_site/descriptor, datum/flight_plan/plan, datum/expedition_mission/mission, datum/expedition_site/site)
 	if(!site)
-		descriptor.mission = mission
+		own_set(descriptor, "mission", mission)
 		if(plan && !QDELETED(plan))
 			plan.generation_state = FLIGHT_GENERATION_FAILED
 			plan.generation_stage = "Terrain generation failed"
@@ -349,7 +349,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	if(istype(apc_turf, /turf/simulated/floor))
 		var/obj/machinery/power/apc/APC = new(apc_turf)
 		APC.set_dir(WEST)
-		emergency_area.apc = APC
+		rel_set(emergency_area, "apc", APC)
 		materialization.infrastructure += APC
 		if(APC.terminal)
 			materialization.infrastructure += APC.terminal
@@ -551,8 +551,8 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 
 	var/datum/expedition_site/site = new(z, difficulty)
 	site.generation_seed = generation_seed
-	site.station_spec = station_spec
-	site.station_materialization = station_materialization
+	own_set(site, "station_spec", station_spec)
+	own_set(site, "station_materialization", station_materialization)
 	if(!site.initialize_generated_station_utilities())
 		station_materialization.degradation_events += "utility initialization failed; station published with local emergency services"
 	if(!site.initialize_generated_station_runtime())
@@ -593,11 +593,11 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 
 	var/obj/effect/shuttle_landmark/automatic/clearing/expedition/waypoint = new(site.landing())
 	waypoint.site_handle = om_handle(site)
-	site.landing_waypoint = waypoint
+	own_set(site, "landing_waypoint", waypoint)
 
 	// Let the mission lay down its objective content.
 	if(mission)
-		site.mission = mission
+		own_set(site, "mission", mission)
 		mission.populate(site)
 		if(!mission.has_viable_objectives())
 			station_materialization.degradation_events += "mission objective population was incomplete"
@@ -700,7 +700,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		site.origin_console().active_expedition_handle = null
 	if(site.assigned_flight_vessel()?.active_expedition() == site)
 		site.assigned_flight_vessel().active_expedition_handle = null
-	QDEL_NULL(site.landing_waypoint)
+	own_clear(site, "landing_waypoint", OWN_DELETE)
 	qdel_handle(site.overmap_sector_handle); site.overmap_sector_handle = null
 	teardown_z["[z]"] = TRUE
 	var/datum/expedition_teardown_job/job = new(src, site, reason)

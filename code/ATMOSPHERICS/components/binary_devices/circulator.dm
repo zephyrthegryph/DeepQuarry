@@ -124,8 +124,8 @@
 			node2.disconnect(src)
 			rust_release_network_wrapper(network2)
 
-		node1 = null
-		node2 = null
+		rel_clear(src, "node1")
+		rel_clear(src, "node2")
 
 	for(var/obj/machinery/power/generator/generator in range(1, src))
 		generator.reconnect()

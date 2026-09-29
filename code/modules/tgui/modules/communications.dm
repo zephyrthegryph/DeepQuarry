@@ -41,7 +41,7 @@
 
 /datum/tgui_module/communications/New(host)
 	. = ..()
-	crew_announcement = new()
+	own_set(src, "crew_announcement", new /datum/announcement/priority())
 	crew_announcement.newscast = TRUE
 
 /datum/tgui_module/communications/tgui_interact(mob/user, datum/tgui/ui)

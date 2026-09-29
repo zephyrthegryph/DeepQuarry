@@ -50,9 +50,9 @@
 */
 /datum/n_Parser/proc/NextToken()
 	if(index>=tokens.len)
-		curToken_ref=null
+		rel_clear(src, "curToken_ref")
 	else
-		curToken_ref=tokens[++index]
+		rel_set(src, "curToken_ref", tokens[++index])
 	return curToken()
 
 /*
@@ -70,14 +70,14 @@
 */
 /datum/n_Parser/nS_Parser/New(tokens[], datum/n_scriptOptions/options)
 	src.tokens=tokens
-	src.options_ref=options
-	curBlock_ref=global_block
+	rel_set(src, "options_ref", options)
+	rel_set(src, "curBlock_ref", global_block)
 	return ..()
 
 /datum/n_Parser/nS_Parser/Parse()
 	ASSERT(tokens)
 	for(,src.index<=src.tokens.len, src.index++)
-		curToken_ref=tokens[index]
+		rel_set(src, "curToken_ref", tokens[index])
 		switch(curToken().type)
 			if(/datum/token/keyword)
 				var/datum/n_Keyword/kw=options().keywords[curToken().value]
@@ -130,11 +130,11 @@
 
 /datum/n_Parser/nS_Parser/proc/AddBlock(datum/node/BlockDefinition/B)
 	blocks.Push(curBlock())
-	curBlock_ref=B
+	rel_set(src, "curBlock_ref", B)
 
 /datum/n_Parser/nS_Parser/proc/EndBlock()
 	if(curBlock()==global_block) return 0
-	curBlock_ref=blocks.Pop()
+	rel_set(src, "curBlock_ref", blocks.Pop())
 	return 1
 
 /datum/n_Parser/nS_Parser/proc/ParseAssignment()
@@ -145,14 +145,14 @@
 	NextToken()
 	var/t=options().binary_operators[options().assign_operators[curToken().value]]
 	var/datum/node/statement/VariableAssignment/stmt=new()
-	stmt.var_name=new(name)
+	own_set(stmt, "var_name", new /datum/node/identifier(name))
 	NextToken()
 	if(t)
-		stmt.value=new t()
+		own_set(stmt, "value", new t())
 		stmt.value:exp=new/datum/node/expression/value/variable(stmt.var_name)
 		stmt.value:exp2=ParseExpression()
 	else
-		stmt.value=ParseExpression()
+		own_set(stmt, "value", ParseExpression())
 	LAZYADD(curBlock().statements, stmt)
 
 /datum/n_Parser/nS_Parser/proc/ParseFunctionStatement()

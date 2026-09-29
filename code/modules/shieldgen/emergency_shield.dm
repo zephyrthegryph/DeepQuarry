@@ -318,7 +318,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/shieldgen, "cell", "cell_type")
 		var/obj/item/cell/C = user.get_active_hand()
 		if(istype(C))
 			user.drop_item()
-			cell = C
+			own_set(src, "cell", C)
 			C.forceMove(src)
 			C.add_fingerprint(user)
 

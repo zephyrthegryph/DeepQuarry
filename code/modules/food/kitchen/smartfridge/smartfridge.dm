@@ -43,7 +43,7 @@
 	else
 		set_wires(new /datum/wires/smartfridge(src))
 
-	soundloop = new(list(src), FALSE)
+	own_set(src, "soundloop", new /datum/looping_sound/fridge(list(src), FALSE))
 	update_icon()
 	default_apply_parts()
 

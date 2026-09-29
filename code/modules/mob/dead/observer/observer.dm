@@ -77,7 +77,7 @@
 				else
 					name = capitalize(pick(GLOB.first_names_female)) + " " + capitalize(pick(GLOB.last_names))
 
-		mind = M.mind	//we don't transfer the mind but we keep a reference to it.
+		rel_set(src, "mind", M.mind) //we don't transfer the mind but we keep a reference to it.
 
 		// Fix for naked ghosts.
 		// Unclear why this isn't being grabbed by appearance.
@@ -278,7 +278,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 			return
 	mind.current.ajourn=0
 	mind.current.key = key
-	mind.current.teleop = null
+	rel_clear(mind.current, "teleop")
 	if(istype(mind.current.loc, /obj/structure/morgue))
 		var/obj/structure/morgue/M = mind.current.loc
 		M.update(1)
@@ -709,7 +709,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	om_ask(actor, /datum/om/prompt/choice, PROC_REF(blood_picked), title = "Blood Choice", message = "What blood would you like to use?", choices = choices)
 
 /datum/om/flow/bloody_doodle/proc/blood_picked(datum/om/prompt/choice/ask)
-	blood = ask.choice
+	rel_set(src, "blood", ask.choice)
 	om_ask(actor, /datum/om/prompt/choice, PROC_REF(direction_picked), title = "Tile selection", message = "Which way?", choices = list("Here","North","South","East","West"))
 
 /datum/om/flow/bloody_doodle/proc/direction_picked(datum/om/prompt/choice/ask)

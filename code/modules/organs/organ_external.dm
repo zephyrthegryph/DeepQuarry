@@ -109,11 +109,11 @@ OWN(/obj/item/organ/external, splinted, OWN_CONTAINED)
 	if(splinted && splinted.loc == src)
 		splinted.moveToNullspace()
 		qdel(splinted)
-	splinted = null
+	own_take(src, "splinted")
 
 	if(tourniquet && tourniquet.loc == src)
 		qdel(tourniquet)
-	tourniquet = null
+	own_take(src, "tourniquet")
 
 	// The detach hook (body/parts/attach.dm) keeps the owner's organ caches; the
 	// implant site slot's own teardown (destroy transaction phase 5, before
@@ -153,13 +153,13 @@ OWN(/obj/item/organ/external, splinted, OWN_CONTAINED)
 /// organ removal left `imp_in` dangling.
 /datum/om/relation/slot/implant_site/on_link(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
 	if(istype(source) && istype(target))
-		source.part = target
+		own_set(source, "part", target)
 		LAZYADD(target.implants, source)
 		source.imp_in_handle = om_handle(target.owner)
 
 /datum/om/relation/slot/implant_site/on_unlink(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
 	if(istype(source) && source.part == target)
-		source.part = null
+		own_take(source, "part")
 	if(istype(target))
 		LAZYREMOVE(target.implants, source)
 	// Unlike a bare relation, this slot's own drop_policy (DELETE) may
@@ -1368,9 +1368,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 /obj/item/organ/external/proc/apply_splint(atom/movable/splint)
 	if(!splinted)
-		splinted = splint
+		own_set(src, "splinted", splint)
 		if(!applied_pressure)
-			applied_pressure = splint
+			rel_set(src, "applied_pressure", splint)
 		refresh_fracture_support()
 		return 1
 	return 0
@@ -1380,8 +1380,8 @@ Note that amputating the affected organ does in fact remove the infection from t
 		if(splinted.loc == src)
 			splinted.dropInto(owner? owner.loc : src.loc)
 		if(applied_pressure == splinted)
-			applied_pressure = null
-		splinted = null
+			rel_clear(src, "applied_pressure")
+		own_take(src, "splinted")
 		refresh_fracture_support()
 		return 1
 	return 0

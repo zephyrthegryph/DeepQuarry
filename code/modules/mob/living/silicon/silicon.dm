@@ -59,7 +59,7 @@ OWN(/mob/living/silicon, common_radio, OWN_CONTAINED)
 		return
 	if(idcard)
 		return
-	idcard = new idcard_type(src)
+	own_set(src, "idcard", new idcard_type(src))
 	set_id_info(idcard)
 
 /mob/living/silicon/proc/SetName(pickedName as text)
@@ -378,7 +378,7 @@ OWN(/mob/living/silicon, common_radio, OWN_CONTAINED)
 
 /mob/living/silicon/reset_perspective(atom/new_eye)
 	. = ..()
-	cameraFollow = null
+	rel_clear(src, "cameraFollow")
 
 /mob/living/silicon/flash_eyes(intensity = FLASH_PROTECTION_MODERATE, override_blindness_check = FALSE, affect_silicon = FALSE, visual = FALSE, type = /atom/movable/screen/fullscreen/flash)
 	if(affect_silicon)

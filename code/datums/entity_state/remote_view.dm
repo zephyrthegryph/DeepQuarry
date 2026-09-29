@@ -33,7 +33,7 @@
 	// Like the old component's highlander replace: the previous view goes after the new one began.
 	if(old_view && old_view != new_view && !QDELETED(old_view))
 		qdel(old_view)
-	remote_view = new_view
+	own_set(src, "remote_view", new_view)
 	new_view.attach()
 	return new_view
 
@@ -120,7 +120,7 @@
 		return
 	om_unhook_all(src)
 	if(host_mob.remote_view == src)
-		host_mob.remote_view = null
+		rel_clear(host_mob, "remote_view")
 	// Reset to default size
 	host_mob.set_viewsize()
 	if(settings?.use_zoom_hud && !host_mob.hud_used.hud_shown)

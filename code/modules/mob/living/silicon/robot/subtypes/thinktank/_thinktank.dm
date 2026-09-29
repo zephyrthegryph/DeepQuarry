@@ -121,7 +121,7 @@
 /mob/living/silicon/robot/platform/setup_module()
 	..()
 	if(ispath(module, /obj/item/robot_module))
-		module = new module(src)
+		own_set(src, "module", new module(src))
 
 /mob/living/silicon/robot/platform/module_reset(notify = TRUE)
 	return FALSE

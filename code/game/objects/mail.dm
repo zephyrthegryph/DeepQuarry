@@ -439,7 +439,7 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 			return
 		balloon_alert(user, "added to database")
 		playsound(loc, 'sound/items/mail/mailscanned.ogg', 50, TRUE)
-		saved = A
+		own_set(src, "saved", A)
 		return
 	if(isliving(A))
 		if(!saved)
@@ -470,7 +470,7 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 			return
 
 		saved.scanned = TRUE
-		saved = null
+		own_take(src, "saved")
 
 		cargo_points = rand(5, 10)
 		to_chat(user, span_notice("Succesful delivery acknowledged! [cargo_points] points added to Supply."))

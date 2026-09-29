@@ -70,8 +70,8 @@
 		var/turf/anchor_turf = get_turf(where)
 		offset_x = (anchor_turf.x - user_turf.x) * ICON_SIZE_X + where.pixel_x - user.pixel_x
 		offset_y = (anchor_turf.y - user_turf.y) * ICON_SIZE_Y + where.pixel_y - user.pixel_y
-	ui = menu
-	menu.om_prompt = src
+	rel_set(src, "ui", menu)
+	rel_set(menu, "om_prompt", src)
 	menu.show_to(user, offset_x, offset_y)
 	log_input("Input: [key_name(user)] was shown a radial menu ([type]) on [where].")
 	return TRUE
@@ -101,14 +101,14 @@ REL_PAIR(/datum/radial_menu/om, om_prompt, ui)
 	if(isnull(answer))
 		return
 	var/datum/om/prompt/P = om_prompt
-	om_prompt = null
+	rel_clear(src, "om_prompt")
 	dismiss()
 	if(P)
 		om_prompt_answer(P, answer)
 
 /datum/radial_menu/om/close_menu()
 	var/datum/om/prompt/P = om_prompt
-	om_prompt = null
+	rel_clear(src, "om_prompt")
 	dismiss()
 	if(P)
 		om_prompt_closed(P)

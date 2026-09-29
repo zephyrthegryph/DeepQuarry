@@ -6,7 +6,7 @@
 	var/our_brightness = 1.0
 
 /datum/sun_holder/New(source)
-	sun = new(null)
+	own_set(src, "sun", new /atom/movable/sun_visuals(null))
 	our_planet_static = source
 
 /datum/sun_holder/proc/update_color(new_color)

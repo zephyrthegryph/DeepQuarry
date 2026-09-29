@@ -53,7 +53,7 @@
 	if(watcher == world)
 		is_global = TRUE
 
-	src.special_callback = special_callback
+	own_set(src, "special_callback", special_callback)
 
 
 /// Actually goes through the process of showing the cinematic to the list of watchers.

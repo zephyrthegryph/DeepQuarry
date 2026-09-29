@@ -269,7 +269,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 	var/parsed_message = keywords_lookup(msg)
 
-	statclick = new(null, src)
+	own_set(src, "statclick", new /obj/effect/statclick/ticket(null, src))
 	_interactions = list()
 
 	if(is_bwoink)
@@ -398,7 +398,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 		to_chat(usr, span_warning("This user already has an active ticket, cannot reopen this one."))
 		return
 
-	statclick = new(null, src)
+	own_set(src, "statclick", new /obj/effect/statclick/ticket(null, src))
 	GLOB.tickets.active_tickets += src
 	GLOB.tickets.closed_tickets -= src
 	GLOB.tickets.resolved_tickets -= src
@@ -428,7 +428,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	if(state != AHELP_ACTIVE)
 		return
 	closed_at = world.time
-	QDEL_NULL(statclick)
+	own_clear(src, "statclick", OWN_DELETE)
 	GLOB.tickets.active_tickets -= src
 	if(initiator() && initiator().current_ticket() == src)
 		initiator().current_ticket_handle = null

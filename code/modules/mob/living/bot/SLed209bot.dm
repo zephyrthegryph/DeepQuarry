@@ -43,7 +43,7 @@
 	playsound(src, emagged ? 'sound/weapons/laser3.ogg' : 'sound/weapons/taser.ogg', 50, 1)
 	var/obj/item/projectile/P = new projectile(loc)
 
-	P.firer = src
+	rel_set(P, "firer", src)
 	P.old_style_target(A)
 	P.fire()
 

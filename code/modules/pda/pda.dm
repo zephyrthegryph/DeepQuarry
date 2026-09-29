@@ -301,7 +301,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 		else
 			id.forceMove(get_turf(src))
 		cut_overlay("pda-id")
-		id = null
+		own_take(src, "id")
 
 /obj/item/pda/proc/remove_pen()
 	var/obj/item/pen/O = locate_within(src, /obj/item/pen)
@@ -374,7 +374,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 		cartridge.radio.hostpda_handle = null
 	to_chat(user, span_notice("You remove \the [cartridge] from the [name]."))
 	playsound(src, 'sound/machines/id_swipe.ogg', 100, 1)
-	cartridge = null
+	own_take(src, "cartridge")
 	update_programs()
 	update_shortcuts()
 	start_program(find_program(/datum/data/pda/app/main_menu))
@@ -388,14 +388,14 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 			var/obj/item/I = user.get_active_hand()
 			if (istype(I, /obj/item/card/id) && user.unEquip(I))
 				I.forceMove(src)
-				id = I
+				own_set(src, "id", I)
 			return 1
 	else
 		var/obj/item/card/I = user.get_active_hand()
 		if (istype(I, /obj/item/card/id) && I:registered_name && user.unEquip(I))
 			var/obj/old_id = id
 			I.forceMove(src)
-			id = I
+			own_set(src, "id", I)
 			user.put_in_hands(old_id)
 			return 1
 	return 0
@@ -414,7 +414,7 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 /// Old attackby.
 /obj/item/pda/proc/interaction_item(mob/user, obj/item/C, datum/interaction/interaction)
 	if(istype(C, /obj/item/cartridge) && !cartridge)
-		cartridge = C
+		own_set(src, "cartridge", C)
 		user.drop_item()
 		cartridge.forceMove(src)
 		cartridge.update_programs(src)
@@ -443,7 +443,7 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 			return INTERACTION_HANDLED_PASS
 	else if(istype(C, /obj/item/paicard) && !src.pai)
 		user.drop_item(src)
-		pai = C
+		own_set(src, "pai", C)
 		to_chat(user, span_notice("You slot \the [C] into \the [src]."))
 		SStgui.update_uis(src) // update all UIs attached to src
 	else if(istype(C, /obj/item/pen))
@@ -480,7 +480,7 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 	if (id && !delete_id && id.loc == src)
 		id.forceMove(get_turf(loc))
 	else
-		QDEL_NULL(id)
+		own_clear(src, "id", OWN_DELETE)
 	..()
 
 //Some spare PDAs in a box

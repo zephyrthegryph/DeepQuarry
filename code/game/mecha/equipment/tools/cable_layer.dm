@@ -9,7 +9,7 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/Initialize(mapload)
 	. = ..()
-	cable = new(src, 0)
+	own_set(src, "cable", new /obj/item/stack/cable_coil(src, 0))
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/MoveAction()
 	layCable()
@@ -64,7 +64,7 @@
 		if(to_load)
 			to_load = min(CC.get_amount(), to_load)
 			if(!cable)
-				cable = new(src, to_load)
+				own_set(src, "cable", new /obj/item/stack/cable_coil(src, to_load))
 			else
 				cable.add(to_load)
 			CC.use(to_load)

@@ -30,7 +30,7 @@
 		S = new overmind.blob_type.spore_type(src.loc, src)
 		S.faction = overmind.blob_type.faction
 		if(istype(S))
-			S.overmind = overmind
+			rel_set(S, "overmind", overmind)
 			overmind.blob_mobs.Add(S)
 			if(overmind.blob_type.ranged_spores)
 				S.projectiletype = overmind.blob_type.spore_projectile

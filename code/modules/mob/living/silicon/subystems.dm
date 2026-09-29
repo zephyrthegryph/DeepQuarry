@@ -32,13 +32,13 @@
 	idcard_type = /obj/item/card/id/syndicate
 
 /mob/living/silicon/proc/init_subsystems()
-	alarm_monitor 	= new(src)
-	atmos_control 	= new(src)
-	crew_manifest	= new(src)
-	crew_monitor 	= new(src)
-	law_manager 	= new(src)
-	power_monitor	= new(src)
-	rcon 			= new(src)
+	own_set(src, "alarm_monitor", new /datum/tgui_module/alarm_monitor/all/robot(src))
+	own_set(src, "atmos_control", new /datum/tgui_module/atmos_control/robot(src))
+	own_set(src, "crew_manifest", new /datum/tgui_module/crew_manifest/robot(src))
+	own_set(src, "crew_monitor", new /datum/tgui_module/crew_monitor/robot(src))
+	own_set(src, "law_manager", new /datum/tgui_module/law_manager/robot(src))
+	own_set(src, "power_monitor", new /datum/tgui_module/power_monitor/robot(src))
+	own_set(src, "rcon", new /datum/tgui_module/rcon/robot(src))
 
 	if(!register_alarms)
 		return
@@ -115,5 +115,5 @@
 
 /mob/living/silicon/robot/init_subsystems()
 	..()
-	decal_control = new(src)
+	own_set(src, "decal_control", new /datum/tgui_module/robot_ui_decals(src))
 

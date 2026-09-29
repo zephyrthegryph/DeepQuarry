@@ -39,10 +39,10 @@
 			var/obj/effect/bmode/buildquit/D = new/obj/effect/bmode/buildquit(H)
 			D.master_handle = om_handle(H)
 
-			H.builddir = A
-			H.buildhelp = B
-			H.buildmode = C
-			H.buildquit = D
+			own_set(H, "builddir", A)
+			own_set(H, "buildhelp", B)
+			own_set(H, "buildmode", C)
+			own_set(H, "buildquit", D)
 			M.client.screen += A
 			M.client.screen += B
 			M.client.screen += C
@@ -463,8 +463,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 				to_chat(user, span_notice("Ladder locations set, building ladders."))
 				var/obj/structure/ladder/A = new /obj/structure/ladder/up(holder.buildmode.coordA())
 				var/obj/structure/ladder/B = new /obj/structure/ladder(holder.buildmode.coordB())
-				A.target_up = B
-				B.target_down = A
+				rel_set(A, "target_up", B)
+				rel_set(B, "target_down", A)
 				A.flags |= ADMIN_SPAWNED
 				B.flags |= ADMIN_SPAWNED
 				A.update_icon()

@@ -109,11 +109,11 @@
 	if(!law)
 		return
 
-	zeroth_law = new(law)
+	own_set(src, "zeroth_law", new /datum/ai_law/zero(law))
 	if(law_borg) //Making it possible for slaved borgs to see a different law 0 than their AI. --NEO
-		zeroth_law_borg = new(law_borg)
+		own_set(src, "zeroth_law_borg", new /datum/ai_law/zero(law_borg))
 	else
-		zeroth_law_borg = null
+		own_take(src, "zeroth_law_borg")
 	LAZYCLEARLIST(sorted_laws)
 
 /datum/ai_laws/proc/add_ion_law(law)
@@ -125,7 +125,7 @@
 			return
 
 	var/new_law = new/datum/ai_law/ion(law)
-	ion_laws += new_law
+	own_add(src, "ion_laws", new_law)
 	if(state_ion.len < ion_laws.len)
 		state_ion += 1
 
@@ -140,7 +140,7 @@
 			return
 
 	var/new_law = new/datum/ai_law/inherent(law)
-	inherent_laws += new_law
+	own_add(src, "inherent_laws", new_law)
 	if(state_inherent.len < inherent_laws.len)
 		state_inherent += 1
 
@@ -159,12 +159,12 @@
 		delete_law(supplied_laws[number])
 
 	while (src.supplied_laws.len < number)
-		src.supplied_laws += ""
+		own_add(src, "supplied_laws", "")
 		if(state_supplied.len < supplied_laws.len)
 			state_supplied += 1
 
 	var/new_law = new/datum/ai_law/supplied(law, number)
-	supplied_laws[number] = new_law
+	own_put(src, "supplied_laws", number, new_law)
 	if(state_supplied.len < supplied_laws.len)
 		state_supplied += 1
 
@@ -191,7 +191,7 @@
 /datum/ai_law/supplied/delete_law(datum/ai_laws/laws)
 	var/index = laws.supplied_laws.Find(src)
 	if(index)
-		laws.supplied_laws[index] = ""
+		own_put(laws, "supplied_laws", index, "")
 		laws.state_supplied[index] = 1
 
 /datum/ai_laws/proc/internal_delete_law(list/datum/ai_law/laws, list/state, list/datum/ai_law/law)
@@ -206,19 +206,19 @@
 *	Clear Laws	*
 ****************/
 /datum/ai_laws/proc/clear_zeroth_laws()
-	zeroth_law = null
-	zeroth_law_borg = null
+	own_take(src, "zeroth_law")
+	own_take(src, "zeroth_law_borg")
 
 /datum/ai_laws/proc/clear_ion_laws()
-	ion_laws.Cut()
+	own_take_all(src, "ion_laws")
 	LAZYCLEARLIST(sorted_laws)
 
 /datum/ai_laws/proc/clear_inherent_laws()
-	inherent_laws.Cut()
+	own_take_all(src, "inherent_laws")
 	LAZYCLEARLIST(sorted_laws)
 
 /datum/ai_laws/proc/clear_supplied_laws()
-	supplied_laws.Cut()
+	own_take_all(src, "supplied_laws")
 	LAZYCLEARLIST(sorted_laws)
 
 /datum/ai_laws/proc/get_formatted_laws()

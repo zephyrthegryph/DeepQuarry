@@ -51,7 +51,7 @@ REL_PAIR_LIST(/obj/structure/blob/factory, spores, factory)
 
 /mob/living/simple_mob/blob/blob_act(obj/structure/blob/B)
 	if(!overmind && B.overmind)
-		overmind = B.overmind
+		rel_set(src, "overmind", B.overmind)
 		faction = B.overmind.blob_type.faction
 		update_icon()
 

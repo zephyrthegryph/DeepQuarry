@@ -388,8 +388,8 @@ REL_PAIR(/obj/mecha, minihud, owner_mech)
 		if(internal_tank)
 			qdel(internal_tank)
 	equipment.Cut()
-	cell = null
-	internal_tank = null
+	own_take(src, "cell")
+	own_take(src, "internal_tank")
 
 	GLOB.mech_destroyed_roundstat++
 
@@ -484,21 +484,21 @@ REL_PAIR(/obj/mecha, minihud, owner_mech)
 	// the ZAS portable canister type was deleted in the LINDA migration.
 	// Mech internal tank now uses /obj/item/tank/air (regular oxygen tank) which
 	// has return_air() and persists in the mech's contents.
-	internal_tank = new /obj/item/tank/air(src)
+	own_set(src, "internal_tank", new /obj/item/tank/air(src))
 	return internal_tank
 
 /obj/mecha/proc/add_cell(obj/item/cell/C=null)
 	if(C)
 		C.forceMove(src)
-		cell = C
+		own_set(src, "cell", C)
 		return
-	cell = new /obj/item/cell/mech(src)
+	own_set(src, "cell", new /obj/item/cell/mech(src))
 
 /obj/mecha/get_cell()
 	return cell
 
 /obj/mecha/proc/add_cabin()
-	cabin_air = new
+	own_set(src, "cabin_air", new /datum/gas_mixture)
 	cabin_air.set_temperature(T20C)
 	cabin_air.set_volume(200)
 	// adjust_multi was XGM; LINDA's gas_mixture has adjust_gas per-call.
@@ -511,7 +511,7 @@ REL_PAIR(/obj/mecha, minihud, owner_mech)
 	return cabin_air
 
 /obj/mecha/proc/add_radio()
-	radio = new(src)
+	own_set(src, "radio", new /obj/item/radio(src))
 	radio.name = "[src] radio"
 	radio.icon = icon
 	radio.icon_state = icon_state
@@ -1245,7 +1245,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 				to_chat(user, "You install the powercell")
 				user.drop_item()
 				W.forceMove(src)
-				src.cell = W
+				own_set(src, "cell", W)
 				src.mecha_log_message("Powercell installed")
 			else
 				to_chat(user, "There's already a powercell installed.")
@@ -1321,7 +1321,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 			return 0
 		brainmob.canmove = 1 //should allow relaymove
 		mmi_as_oc.forceMove(src)
-		mmi_as_oc.mecha = src
+		own_set(mmi_as_oc, "mecha", src)
 		src.Entered(mmi_as_oc)
 		src.Move(src.loc)
 		update_icon()
@@ -1387,7 +1387,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	return cabin_air
 
 /obj/mecha/set_port_network_air(datum/gas_mixture/new_air)
-	cabin_air = new_air
+	own_set(src, "cabin_air", new_air)
 	return TRUE
 
 /obj/mecha/proc/connect(obj/machinery/atmospherics/portables_connector/new_port)
@@ -1398,8 +1398,8 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	if(!(new_port.loc in locs) || !cabin_air)
 		return 0
 
-	connected_port = new_port
-	connected_port.connected_device = src
+	rel_set(src, "connected_port", new_port)
+	rel_set(connected_port, "connected_device", src)
 	connected_port.on = 1
 
 	// Inject cabin_air into the port's pipe network so an external supply can
@@ -1417,8 +1417,8 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 
 	connected_port.rust_detach_external_device()
 
-	connected_port.connected_device = null
-	connected_port = null
+	rel_clear(connected_port, "connected_device")
+	rel_clear(src, "connected_port")
 
 	playsound(src, 'sound/mecha/gasdisconnected.ogg', 50, 1)
 	mecha_log_message("Disconnected from gas port.")
@@ -1642,7 +1642,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		src.log_append_to_last("[H] moved in as pilot.")
 		update_icon()
 		if(occupant.hud_used)
-			minihud = new (occupant.hud_used, src)
+			rel_set(src, "minihud", new /datum/mini_hud/mech (occupant.hud_used, src))
 
 		// The *_possible capability vars gate the pilot's Menu entries (pred_mecha_can_* in mecha_actions.dm).
 
@@ -1729,7 +1729,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 			mmi.forceMove(src.loc)
 			if(mmi.get_occupant())
 				occupant.forceMove(mmi)
-			mmi.mecha = null
+			own_take(mmi, "mecha")
 			occupant.canmove = 0
 		occupant.clear_alert("charge")
 		occupant.clear_alert("mech damage")
@@ -2272,7 +2272,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
 		var/obj/item/mecha_parts/mecha_equipment/equip = top_filter.getObj("select_equip")
 		if(equip)
-			src.selected = equip
+			own_set(src, "selected", equip)
 			src.occupant_message("You switch to [equip].")
 			src.visible_message("[src] raises [equip].")
 			send_byjax(src?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","eq_list",src.get_equipment_list())

@@ -26,7 +26,7 @@
 
 	if(istype(user))
 		user.stop_aiming(no_message=1)
-	holstered = I
+	own_set(src, "holstered", I)
 	user.drop_from_inventory(holstered, target = src)
 	holstered.add_fingerprint(user)
 	w_class = max(w_class, holstered.w_class)
@@ -34,7 +34,7 @@
 	name = "occupied [initial(name)]"
 
 /obj/item/clothing/accessory/holster/proc/clear_holster()
-	holstered = null
+	own_take(src, "holstered")
 	name = initial(name)
 
 /// Draws the holstered item; `stance` I_HURT draws it ready to fire.

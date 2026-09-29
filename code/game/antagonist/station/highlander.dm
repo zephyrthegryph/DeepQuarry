@@ -21,13 +21,13 @@ GLOBAL_DATUM(highlanders, /datum/antagonist/highlander)
 /datum/antagonist/highlander/create_objectives(datum/mind/player)
 
 	var/datum/objective/steal/steal_objective = new
-	steal_objective.owner = player
+	rel_set(steal_objective, "owner", player)
 	steal_objective.set_target("nuclear authentication disk")
-	player.objectives |= steal_objective
+	own_add(player, "objectives", steal_objective)
 
 	var/datum/objective/hijack/hijack_objective = new
-	hijack_objective.owner = player
-	player.objectives |= hijack_objective
+	rel_set(hijack_objective, "owner", player)
+	own_add(player, "objectives", hijack_objective)
 
 /datum/antagonist/highlander/equip(mob/living/carbon/human/player)
 

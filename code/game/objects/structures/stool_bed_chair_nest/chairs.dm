@@ -25,9 +25,9 @@
 		var/obj/structure/bed/chair/e_chair/E = new (src.loc, material.name)
 		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 		E.set_dir(dir)
-		E.part = SK
+		own_set(E, "part", SK)
 		SK.forceMove(E)
-		SK.master = E
+		own_set(SK, "master", E)
 		replace_with(src, E)
 	return TRUE
 

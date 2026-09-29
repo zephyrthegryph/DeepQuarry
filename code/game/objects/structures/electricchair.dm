@@ -17,8 +17,8 @@
 	C.set_dir(dir)
 	if(part)
 		part.forceMove(loc)
-		part.master = null
-		part = null
+		own_take(part, "master")
+		own_take(src, "part")
 	replace_with(src, C)
 	return TRUE
 

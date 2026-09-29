@@ -836,8 +836,8 @@ EXTEND_INTERACTIONS(/obj/structure/flora/tree/fur/wall, INTERACT_ITEM(null, TYPE
 	if(istype(s,/obj/effect/overmap/visitable/ship/simplemob/stardog))
 		var/mob/living/simple_mob/vore/overmap/stardog/dog = s.parent
 		if(!dog.control_node)
-			host = dog
-			dog.control_node = src
+			rel_set(src, "host", dog)
+			rel_set(dog, "control_node", src)
 
 REL_PAIR(/obj/structure/control_pod, host, control_node)
 
@@ -868,7 +868,7 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	if(controller)	//got busy while you were waiting, get rekt
 		to_chat(user, span_warning("You can see \the [controller] inside! Tendrils of nerves seem to have attached themselves to \the [controller]! There's no room for you right now!"))
 		return
-	controller = user
+	rel_set(src, "controller", user)
 	visible_message(span_warning("\The [src] accepts \the [controller], submerging them beneath the surface of the flesh!"))
 	user.stop_pulling()
 	user.forceMove(src)
@@ -897,7 +897,7 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	var/turf/throwtarg = locate(our_x, our_y, z)	//teehee
 	playsound(src, 'sound/vore/schlorp.ogg', vol = 100, vary = FALSE, volume_channel = VOLUME_CHANNEL_VORE)
 	controller.throw_at(throwtarg, 10, 1)
-	controller = null
+	rel_clear(src, "controller")
 
 /obj/effect/landmark/stardog	//I didn't know how else to decide where the dog will land
 	name = "stardog landing"
@@ -1103,9 +1103,9 @@ EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
 		if(id == T.id)
 			if(T == src)
 				continue
-			target = T
+			own_set(src, "target", T)
 			if(!T.target)
-				T.target = src
+				own_set(T, "target", src)
 
 /obj/effect/dog_teleporter/Crossed(atom/movable/AM as mob|obj)	//I am ashamed to admit how long it took to get this to do anything
 	. = ..()
@@ -1322,7 +1322,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 	if(mobstuff && !linked_mob)	//You might be wondering how we got here. It all started when I decided that I would make a vore level and make some of the turfs affect some mob somewhere in the world. So I used some convenient tools that people who are actually smart made, to make this horrible abomination.
 		var/obj/effect/overmap/visitable/ship/simplemob/stardog/s = get_overmap_sector(z)
 		if(s && istype(s,/obj/effect/overmap/visitable/ship/simplemob/stardog))
-			linked_mob = s.parent	//dogge
+			rel_set(src, "linked_mob", s.parent) //dogge
 
 	if(linked_mob)	//Please for the love of all that is good, make all this mob shit its own proc, future me
 		damage += clamp(((500 - linked_mob.nutrition) / 100), 1 , 5)

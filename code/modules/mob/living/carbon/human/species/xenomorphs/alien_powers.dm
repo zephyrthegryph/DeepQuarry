@@ -152,7 +152,7 @@
 			return
 		visible_message(span_warning("[src] spits [spit_name] at \the [A]!"), span_alium("You spit [spit_name] at \the [A]."))
 		var/obj/item/projectile/P = new spit_projectile(get_turf(src))
-		P.firer = src
+		rel_set(P, "firer", src)
 		P.old_style_target(A)
 		P.fire()
 		playsound(src, 'sound/weapons/alien_spitacid.ogg', 25, 0)

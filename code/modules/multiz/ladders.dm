@@ -26,8 +26,8 @@
 	if(allowed_directions & DOWN) //we only want to do the top one, as it will initialize the ones before it.
 		for(var/obj/structure/ladder/L in GetBelow(src))
 			if(L.allowed_directions & UP)
-				target_down = L
-				L.target_up = src
+				rel_set(src, "target_down", L)
+				rel_set(L, "target_up", src)
 				L.update_icon()
 				break
 	update_icon()

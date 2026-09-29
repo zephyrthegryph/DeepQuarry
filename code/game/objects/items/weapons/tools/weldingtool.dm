@@ -47,7 +47,7 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	. = ..()
 	var/datum/reagents/R = new/datum/reagents(max_fuel)
 	reagents = R
-	R.my_atom = src
+	rel_set(R, "my_atom", src)
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
 	update_icon()
 	if(always_process)
@@ -116,7 +116,7 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 		R.use(1)
 		var/obj/item/flamethrower/F = new/obj/item/flamethrower(get_turf(user))
 		user.drop_from_inventory(src,F)
-		F.weldtool = src
+		own_set(F, "weldtool", src)
 		add_fingerprint(user)
 		return INTERACTION_HANDLED_PASS
 
@@ -475,7 +475,7 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 	. = ..()
 	if(istype(loc, /obj/item/weldpack))
 		var/obj/item/weldpack/holder = loc
-		mounted_pack = holder
+		rel_set(src, "mounted_pack", holder)
 	else
 		return INITIALIZE_HINT_QDEL
 
@@ -602,7 +602,7 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 		if(power_supply)
 			power_supply.update_icon()
 			user.put_in_hands(power_supply)
-			power_supply = null
+			own_take(src, "power_supply")
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			setWelding(0)
 			update_icon()
@@ -618,7 +618,7 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 			if(!power_supply)
 				user.drop_item()
 				W.forceMove(src)
-				power_supply = W
+				own_set(src, "power_supply", W)
 				to_chat(user, span_notice("You install a cell in \the [src]."))
 				update_icon()
 			else

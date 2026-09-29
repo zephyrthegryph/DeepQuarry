@@ -150,7 +150,7 @@ DECLARE_PERIODIC(/obj/item/card/id/guest, PERIODIC_SLOW)
 		return TRUE
 	if(!giver && user.unEquip(held))
 		held.forceMove(src)
-		giver = held
+		own_set(src, "giver", held)
 		SStgui.update_uis(src)
 	else if(giver)
 		to_chat(user, span_warning("There is already ID card inside."))
@@ -170,7 +170,7 @@ DECLARE_PERIODIC(/obj/item/card/id/guest, PERIODIC_SLOW)
 			user.put_in_hands(giver)
 		else
 			giver.forceMove(src.loc)
-		giver = null
+		own_take(src, "giver")
 		LAZYCLEARLIST(accesses)
 	else
 		to_chat(user, span_warning("There is nothing to remove from the console."))
@@ -237,16 +237,16 @@ DECLARE_PERIODIC(/obj/item/card/id/guest, PERIODIC_SLOW)
 					giver.forceMove(ui.user.loc)
 					if(!ui.user.get_active_hand())
 						ui.user.put_in_hands(giver)
-					giver = null
+					own_take(src, "giver")
 				else
 					giver.forceMove(src.loc)
-					giver = null
+					own_take(src, "giver")
 				LAZYCLEARLIST(accesses)
 			else
 				var/obj/item/I = ui.user.get_active_hand()
 				if(istype(I, /obj/item/card/id) && ui.user.unEquip(I))
 					I.forceMove(src)
-					giver = I
+					own_set(src, "giver", I)
 
 		if("print")
 			var/dat = "<h3>Activity log of guest pass terminal #[uid]</h3><br>"

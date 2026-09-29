@@ -57,6 +57,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/spell/flame_tongue, "welder", /obj/item/weldingt
 		if(welder && user && (welder.loc == user))
 			welder.forceMove(src)
 		else
-			welder = null
+			own_take(src, "welder")
 			consume(src, user)
 			return

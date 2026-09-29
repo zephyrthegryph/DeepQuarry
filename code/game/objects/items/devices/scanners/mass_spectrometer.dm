@@ -22,7 +22,7 @@ MATERIAL_MIX(/obj/item/mass_spectrometer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	. = ..()
 	var/datum/reagents/R = new/datum/reagents(5)
 	reagents = R
-	R.my_atom = src
+	rel_set(R, "my_atom", src)
 
 /obj/item/mass_spectrometer/on_reagent_change()
 	if(reagents.total_volume)

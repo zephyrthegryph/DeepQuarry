@@ -53,7 +53,7 @@
 	var/obj/item/card/id/head_id = new(console)
 	head_id.rank = JOB_CHIEF_ENGINEER
 	head_id.assignment = JOB_CHIEF_ENGINEER
-	console.scan = head_id
+	own_set(console, "scan", head_id)
 	TEST_ASSERT(console.can_view_department(DEPARTMENT_ENGINEERING), "Chief Engineer could not view Engineering finances")
 	TEST_ASSERT(!console.can_view_department(DEPARTMENT_MEDICAL), "Chief Engineer could view Medical finances")
 	TEST_ASSERT(!console.can_allocate_station_budget(), "Chief Engineer could allocate Station funds")
@@ -239,7 +239,7 @@
 	var/obj/machinery/account_database/terminal = new(test_turf)
 	var/obj/item/card/id/authorizer = new(terminal)
 	authorizer.registered_name = "Account Test Captain"
-	terminal.held_card = authorizer
+	own_set(terminal, "held_card", authorizer)
 	var/list/preexisting_packages = list()
 	for(var/obj/item/smallDelivery/existing_package in turf_contents_of_type(test_turf, /obj/item/smallDelivery))
 		preexisting_packages += existing_package
@@ -423,7 +423,7 @@
 	var/obj/item/retail_scanner/civilian/terminal = new(test_turf)
 	var/mob/living/carbon/human/user = new(test_turf)
 	user.job = JOB_ENGINEER
-	terminal.linked_account = service
+	rel_set(terminal, "linked_account", service)
 	TEST_ASSERT(!service_checkout_confirmation_valid(terminal, user, 1, 1, 100, 101, customer.account_number, customer.account_number, service, service), "changed ticket amount survived confirmation validation")
 	TEST_ASSERT(!service_checkout_confirmation_valid(terminal, user, 1, 2, 100, 100, customer.account_number, customer.account_number, service, service), "equal-value itemization change survived confirmation validation")
 	TEST_ASSERT(!service_checkout_confirmation_valid(terminal, user, 1, 1, 100, 100, customer.account_number, impostor.account_number, service, service), "changed ID survived confirmation validation")
@@ -546,7 +546,7 @@
 	second_provider.department_id = DEPARTMENT_CARGO
 	registry_join(REGISTRY_MONEY_ACCOUNTS, first_provider)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, second_provider)
-	scanner.linked_account = first_provider
+	rel_set(scanner, "linked_account", first_provider)
 	scanner.service_staff_account_number = 884003
 	scanner.service_staff_name = "Previous worker"
 	TEST_ASSERT(scanner.access_action("link_account", list("name" = "[second_provider.account_number]", "pin" = "[second_provider.remote_access_pin]"), null), "scanner rejected a valid provider relink")
@@ -561,7 +561,7 @@
 	TEST_ASSERT_EQUAL(register.transaction_amount, 45, "register total diverged from its itemization")
 	TEST_ASSERT(!register.access_action("custom_order", list("purpose" = "Repair", "amount" = 1, "price" = 20), null), "register accepted one item label with conflicting prices")
 	TEST_ASSERT_EQUAL(service_ticket_total(register.item_list, register.price_list), register.transaction_amount, "register itemization and payable total did not reconcile")
-	register.linked_account = first_provider
+	rel_set(register, "linked_account", first_provider)
 	register.service_staff_account_number = 884003
 	register.service_staff_name = "Previous worker"
 	TEST_ASSERT(register.access_action("link_account", list("name" = "[second_provider.account_number]", "pin" = "[second_provider.remote_access_pin]"), null), "register rejected a valid provider relink")
@@ -603,10 +603,10 @@
 	customer_id.registered_name = customer_account.owner_name
 	customer_id.associated_account_number = customer_account.account_number
 	var/obj/item/pda/customer_pda = new(customer)
-	customer_pda.id = customer_id
+	own_set(customer_pda, "id", customer_id)
 
 	var/obj/machinery/cash_register/civilian/register = new(test_turf)
-	register.linked_account = service
+	rel_set(register, "linked_account", service)
 	register.transaction_amount = 25
 	register.transaction_purpose = "Lifecycle meal"
 	register.item_list["meal"] = 1
@@ -771,7 +771,7 @@
 
 	// The same provenance supplies a crew-facing price through Research's departmental checkout scanner.
 	var/obj/item/retail_scanner/science/scanner = new(test_turf)
-	scanner.linked_account = research
+	rel_set(scanner, "linked_account", research)
 	var/mob/living/carbon/human/customer = new(test_turf)
 	var/obj/item/card/id/customer_id = new(customer)
 	customer_id.associated_account_number = producer.account_number
@@ -950,7 +950,7 @@
 	var/datum/faction_agent_record/record = new
 	record.account_number = owner_account.account_number
 	record.faction_id = REPUTATION_FACTION_SYNDICATE
-	record.agent_mind = owner_mind
+	rel_set(record, "agent_mind", owner_mind)
 	record.tier = FACTION_AGENT_TIER_ACCREDITED
 	GLOB.station_faction_relations.agent_records["[owner_account.account_number]"] = record
 	TEST_ASSERT(GLOB.supply_service.market_counterparty_visible(syndicate_broker, owner), "accredited agent could not see their principal market")
@@ -1202,7 +1202,7 @@
 		"cargo_percent" = 20,
 		"producer_percentages" = list(),
 	)
-	crate.shipping_ledger = ledger
+	own_set(crate, "shipping_ledger", ledger)
 	crate.shipping_ledger_snapshot = crate.freight_snapshot()
 	TEST_ASSERT(crate.shipping_ledger_valid(), "an unchanged sealed freight ledger was rejected")
 	var/datum/exported_crate/export = new
@@ -1213,7 +1213,7 @@
 	TEST_ASSERT(!crate.apply_shipping_ledger(export), "tampered freight retained authenticated routing")
 	TEST_ASSERT(!ledger.shipping_ledger_data["valid"], "tampered freight ledger was not visibly voided")
 	ledger.shipping_ledger_data["valid"] = TRUE
-	crate.shipping_ledger = ledger
+	own_set(crate, "shipping_ledger", ledger)
 	crate.shipping_ledger_snapshot = crate.freight_snapshot()
 	crate.open()
 	TEST_ASSERT(!ledger.shipping_ledger_data["valid"], "opening certified freight did not void its paper ledger")

@@ -21,7 +21,7 @@
 
 /datum/round_status_panel/New(datum/admins/owner_admin)
 	..()
-	src.owner_admin = owner_admin
+	rel_set(src, "owner_admin", owner_admin)
 
 REL_PAIR(/datum/round_status_panel, owner_admin, round_status_panel)
 REL_PAIR(/datum/admins, round_status_panel, owner_admin)
@@ -184,7 +184,7 @@ REL_PAIR(/datum/admins, round_status_panel, owner_admin)
 		tgui_alert_async(user, "The game hasn't started yet!")
 		return
 	if(!round_status_panel)
-		round_status_panel = new(src)
+		rel_set(src, "round_status_panel", new /datum/round_status_panel(src))
 	round_status_panel.tgui_interact(user)
 
 #undef SHUTTLE_STATE_IDLE

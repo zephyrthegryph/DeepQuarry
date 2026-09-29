@@ -38,7 +38,7 @@
 		entry.initialize()
 		product_datums += entry
 	//move to relevant location
-	monitor_screen = new
+	own_set(src, "monitor_screen", new /obj/effect/overlay/recycler)
 	monitor_screen.plane = PLANE_LIGHTING_ABOVE
 	monitor_screen.layer = src.layer + 0.1
 	monitor_screen.icon = src.icon

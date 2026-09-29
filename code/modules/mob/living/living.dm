@@ -1053,7 +1053,7 @@
 
 /datum/character_setup_button/New(mob/living/M)
 	..()
-	owner = M
+	rel_set(src, "owner", M)
 	om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_client_login))
 	if(owner.client)
 		create_mob_button(owner)
@@ -1069,7 +1069,7 @@
 /// Gives the mob its character setup HUD button if it has none.
 /mob/living/proc/add_character_setup_button()
 	if(!character_setup_button)
-		character_setup_button = new /datum/character_setup_button(src)
+		own_set(src, "character_setup_button", new /datum/character_setup_button(src))
 	return character_setup_button
 
 /datum/character_setup_button/proc/on_client_login(datum/source, datum/om/event/mob_client_login/event)
@@ -1079,7 +1079,7 @@
 /datum/character_setup_button/proc/create_mob_button(mob/user)
 	var/datum/hud/HUD = user.hud_used
 	if(!screen_icon)
-		screen_icon = new()
+		own_set(src, "screen_icon", new /atom/movable/screen/character_setup())
 		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(character_setup_click))
 	if(ispAI(user))
 		screen_icon.icon = 'icons/mob/pai_hud.dmi'
@@ -1157,8 +1157,8 @@
 
 	selected_image = image(icon = GLOB.buildmode_hud, loc = src, icon_state = "ai_sel")
 
-	deaf_loop = new(list(src), FALSE) // ALLOW(decl): looping_sound takes constructor args
-	firesoundloop = new(list(src), FALSE) // ALLOW(decl): looping_sound takes constructor args
+	own_set(src, "deaf_loop", new /datum/looping_sound/mob/deafened(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
+	own_set(src, "firesoundloop", new /datum/looping_sound/mob/on_fire(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
 	// stunnedloop = new(list(src), FALSE)
 	if(firesoundloop) // Partly safety, partly so we can have different probs for randomization
 		if(prob(40)) // Randomize our end_sound. Can't really do this easily in looping_sound without some work

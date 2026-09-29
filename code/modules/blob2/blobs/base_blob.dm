@@ -21,7 +21,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 
 /obj/structure/blob/Initialize(mapload, new_overmind)
 	if(new_overmind)
-		overmind = new_overmind
+		rel_set(src, "overmind", new_overmind)
 		faction = overmind.blob_type.faction
 	set_dir(pick(GLOB.cardinal))
 	consume_tile()
@@ -110,7 +110,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 			continue
 
 		if(!B.overmind && !istype(B, /obj/structure/blob/core) && prob(30))
-			B.overmind = pulsing_overmind //reclaim unclaimed, non-core blobs.
+			rel_set(B, "overmind", pulsing_overmind) //reclaim unclaimed, non-core blobs.
 			B.update_icon()
 
 		var/distance = get_dist(get_turf(src), get_turf(B))
@@ -178,9 +178,9 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 		var/obj/structure/blob/B = new /obj/structure/blob/normal(src.loc)
 		B.faction = faction
 		if(controller)
-			B.overmind = controller
+			rel_set(B, "overmind", controller)
 		else
-			B.overmind = overmind
+			rel_set(B, "overmind", overmind)
 		B.density = TRUE
 		if(T.Enter(B,src)) //NOW we can attempt to move into the tile
 			// A decisecond later, so the slide animation works.
@@ -224,7 +224,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 		return
 	var/obj/structure/blob/B = new type(src.loc, controller)
 	if(controller)
-		B.overmind = controller
+		rel_set(B, "overmind", controller)
 	B.update_icon()
 	B.set_dir(dir)
 	replace_with(src, B)
@@ -413,7 +413,7 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 
 			else
 				faction = B.faction
-				overmind = B.overmind
+				rel_set(src, "overmind", B.overmind)
 				update_icon()
 				return
 

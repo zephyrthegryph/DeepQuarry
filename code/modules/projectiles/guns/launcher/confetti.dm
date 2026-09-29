@@ -35,7 +35,7 @@
 	playsound(user, 'sound/weapons/shotgunpump.ogg', 60, 1)
 	if(!chambered)
 		if(confetti_charge)
-			chambered = new /obj/item/grenade/confetti/party_ball
+			own_set(src, "chambered", new /obj/item/grenade/confetti/party_ball)
 			--confetti_charge
 			to_chat(user, span_blue("You compress a new confetti ball."))
 		else
@@ -56,7 +56,7 @@
 	return chambered
 
 /obj/item/gun/launcher/confetti_cannon/handle_post_fire(mob/user)
-	chambered = null
+	own_take(src, "chambered")
 
 /obj/item/gun/launcher/confetti_cannon/overdrive
 	name = "overdrive confetti cannon"
@@ -96,13 +96,13 @@
 		playsound(src, 'sound/effects/pop.ogg', 50, 0)
 		switch(choice)
 			if("Confetti")
-				chambered = new /obj/item/grenade/confetti/party_ball
+				own_set(src, "chambered", new /obj/item/grenade/confetti/party_ball)
 				to_chat(user, span_blue("Confetti loaded."))
 			if("Banana Peel")
-				chambered = new /obj/item/bananapeel
+				own_set(src, "chambered", new /obj/item/bananapeel)
 				to_chat(user, span_blue("Banana peel loaded."))
 			if("Cream Pie")
-				chambered = new /obj/item/reagent_containers/food/snacks/pie
+				own_set(src, "chambered", new /obj/item/reagent_containers/food/snacks/pie)
 				to_chat(user, span_blue("Banana cream pie loaded."))
 	else
 		to_chat(user, span_red("The [src] is already loaded!"))

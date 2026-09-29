@@ -61,7 +61,7 @@ OWN(/obj/machinery/computer/timeclock, card, OWN_SPILL)
 /obj/machinery/computer/timeclock/proc/interaction_insert_id(mob/user, obj/item/card/id/I, datum/interaction/interaction)
 	if(!card && user.unEquip(I))
 		I.forceMove(src)
-		card = I
+		own_set(src, "card", I)
 		playsound(src, 'sound/effects/insert_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 		SStgui.update_uis(src)
 		update_icon()
@@ -120,13 +120,13 @@ OWN(/obj/machinery/computer/timeclock, card, OWN_SPILL)
 		if("id")
 			if(card)
 				ui.user.put_in_hands(card)
-				card = null
+				own_take(src, "card")
 				playsound(src, 'sound/effects/remove_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 			else
 				var/obj/item/I = ui.user.get_active_hand()
 				if (istype(I, /obj/item/card/id) && ui.user.unEquip(I))
 					I.forceMove(src)
-					card = I
+					own_set(src, "card", I)
 					playsound(src, 'sound/effects/insert_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 			update_icon()
 			return TRUE
@@ -135,7 +135,7 @@ OWN(/obj/machinery/computer/timeclock, card, OWN_SPILL)
 				if(checkCardCooldown(ui.user))
 					makeOnDuty(params["switch-to-onduty-rank"], params["switch-to-onduty-assignment"], ui.user)
 					ui.user.put_in_hands(card)
-					card = null
+					own_take(src, "card")
 					playsound(src, 'sound/effects/remove_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 			update_icon()
 			return TRUE
@@ -144,7 +144,7 @@ OWN(/obj/machinery/computer/timeclock, card, OWN_SPILL)
 				if(checkCardCooldown(ui.user))
 					makeOffDuty(ui.user)
 					ui.user.put_in_hands(card)
-					card = null
+					own_take(src, "card")
 					playsound(src, 'sound/effects/remove_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 			update_icon()
 			return TRUE

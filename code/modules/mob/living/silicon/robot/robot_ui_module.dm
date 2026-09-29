@@ -170,7 +170,7 @@
 		if(module)
 			qdel(module)
 		modtype = new_module
-		module = new module_type(src)
+		own_set(src, "module", new module_type(src))
 		feedback_inc("cyborg_[lowertext(new_module)]",1)
 	updatename()
 	hud_used.update_robot_modules_display()

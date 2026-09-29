@@ -328,7 +328,7 @@
 	var/mob/user = task.actor
 	user.drop_from_inventory(I, src)
 	I.forceMove(src)
-	stored_item = I
+	own_set(src, "stored_item", I)
 	src.visible_message("[icon2html(src,viewers(src))] [icon2html(I,viewers(src))] [user] places [I] into [src].")
 
 /obj/structure/flora/pottedplant/proc/attackby_timed_failed2(datum/om/task/timed/pottedplant_attackby/task)
@@ -351,7 +351,7 @@
 /obj/structure/flora/pottedplant/proc/attack_hand_timed_done(mob/user)
 	to_chat(user, span_filter_notice("You find [icon2html(stored_item, user.client)] [stored_item] in [src]!"))
 	stored_item.forceMove(get_turf(src))
-	stored_item = null
+	own_take(src, "stored_item")
 
 /obj/structure/flora/pottedplant/large
 	name = "large potted plant"

@@ -182,7 +182,7 @@
 	control_landmarks = list()
 	service_endpoints = list()
 	service_routes = list()
-	furnishings = list()
+	rel_set(src, "furnishings", list())
 	owned_furnishing_atoms = list()
 	doors = list()
 	infrastructure = list()
@@ -296,7 +296,7 @@
 		return FALSE
 
 	spec_handle = om_handle(new_spec)
-	active_job = job
+	own_set(src, "active_job", job)
 	z_level = new_z
 	min_x = origin_x
 	min_y = origin_y
@@ -309,7 +309,7 @@
 	maintenance_area_handle = om_handle(generated_station_create_area(/area/generated_station/maintenance))
 	maintenance_area().station_id = spec().id
 	maintenance_area().name = "[spec().name] Maintenance"
-	result = new
+	own_set(src, "result", new /datum/generated_station_materialization)
 	result.station_id = spec().id
 	result.z_level = z_level
 	result.origin_x = min_x
@@ -359,9 +359,9 @@
 	last_failure_details = details || last_failure_details || stage
 	log_world("Generated station [spec()?.id] materialization failed during [stage].")
 	qdel(result)
-	result = null
-	QDEL_NULL(tile_plan)
-	active_job = null
+	own_take(src, "result")
+	own_clear(src, "tile_plan", OWN_DELETE)
+	own_take(src, "active_job")
 	return GENERATED_STATION_PHASE_FAILED
 
 /// A structural stage failed: its tile plan errors are the details.
@@ -382,8 +382,8 @@
 /datum/generated_station_materializer/proc/phase_tile_grid(cursor)
 	generation_checkpoint("Compiling structural ownership", 27)
 	if(!cursor)
-		QDEL_NULL(tile_plan)
-		tile_plan = new(spec().grid_width, spec().grid_height, src, TRUE)
+		own_clear(src, "tile_plan", OWN_DELETE)
+		own_set(src, "tile_plan", new /datum/generated_station_tile_plan(spec().grid_width, spec().grid_height, src, TRUE))
 		cursor = 1
 	for(var/x in cursor to tile_plan.grid_width)
 		tile_plan.fill_column(x)
@@ -485,8 +485,8 @@
 		return
 	if(length(tile_plan.errors))
 		return abort_structural("tile-plan")
-	result.tile_plan = tile_plan
-	tile_plan = null
+	own_set(result, "tile_plan", tile_plan)
+	own_take(src, "tile_plan")
 	return null
 
 /datum/generated_station_materializer/proc/phase_modules(cursor)
@@ -613,7 +613,7 @@
 		// interior access door; retain the playable result and let the independent
 		// architecture audit report any concrete remaining defect.
 		log_world("Generated station [spec().id] retained its best-effort furnishing layout after access repair was exhausted.")
-	result.service_validation = result.validate_services(spec(), src)
+	own_set(result, "service_validation", result.validate_services(spec(), src))
 	generation_checkpoint("Finalizing walls and atmosphere", 57, TRUE)
 	return null
 
@@ -644,7 +644,7 @@
 
 /datum/generated_station_materializer/proc/phase_finalize(cursor)
 	finalize()
-	active_job = null
+	own_take(src, "active_job")
 	return null
 
 /// Applies the Rust room floor contract after structural turfs exist. Room
@@ -980,7 +980,7 @@
 		var/datum/generated_room_solution/solution = solutions_by_native_id["[fixture.room_numeric_id]"]
 		if(solution)
 			var/datum/generated_room_placement/placement = new
-			placement.feature = new /datum/generated_room_feature
+			own_set(placement, "feature", new /datum/generated_room_feature)
 			placement.feature.id = fixture.fixture_id
 			placement.feature.atom_type = atom_type
 			placement.x = fixture.x

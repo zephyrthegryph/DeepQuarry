@@ -32,7 +32,7 @@ DECLARE_INTERACTIONS(/obj/item/implantpad, \
 		user.put_in_active_hand(case)
 
 		src.case.add_fingerprint(user)
-		src.case = null
+		own_take(src, "case")
 
 		src.add_fingerprint(user)
 		update()
@@ -47,7 +47,7 @@ DECLARE_INTERACTIONS(/obj/item/implantpad, \
 		if(!( src.case ))
 			user.drop_item()
 			C.forceMove(src)
-			src.case = C
+			own_set(src, "case", C)
 	else
 		return INTERACTION_HANDLED_PASS
 	src.update()

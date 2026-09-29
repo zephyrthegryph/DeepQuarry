@@ -34,14 +34,14 @@
 	var/obj/item/wrapped = null
 
 /datum/robot_component/New(mob/living/silicon/robot/R, new_slot)
-	owner = R
+	rel_set(src, "owner", R)
 	slot = new_slot
 
 
 /// Put `part` into this slot. Afflictions the part carried rejoin the body here.
 /datum/robot_component/proc/install(obj/item/part)
 	if(part)
-		wrapped = part
+		own_set(src, "wrapped", part)
 	installed = ROBOT_PART_INSTALLED
 	if(istype(wrapped, /obj/item/robot_parts/robot_component))
 		var/obj/item/robot_parts/robot_component/comp = wrapped
@@ -64,7 +64,7 @@
 	idle_usage = initial(idle_usage)
 	active_usage = initial(active_usage)
 	installed = ROBOT_PART_MISSING
-	wrapped = null
+	own_take(src, "wrapped")
 	owner?.on_part_changed(src)
 
 /// Threshold event: the part is fried. The remains stay installed (and keep
@@ -78,11 +78,11 @@
 	// Clear the slot before deleting the part so deletion handlers (the
 	// robot's cell watcher) see an empty slot rather than a removal.
 	var/obj/item/old_part = wrapped
-	wrapped = null
+	own_take(src, "wrapped")
 	if(old_part)
 		qdel(old_part)
 	if(!internal)
-		wrapped = new /obj/item/broken_device
+		own_set(src, "wrapped", new /obj/item/broken_device)
 		wrapped.icon_state = brokenstate
 	installed = ROBOT_PART_DESTROYED
 	max_damage = initial(max_damage)
@@ -164,10 +164,10 @@
 		return
 	for(var/datum/affliction/A as anything in leaving)
 		B.remove_affliction(A)
-		A.location = null
+		rel_clear(A, "location")
 	if(wrapped && !QDELETED(wrapped))
 		if(!wrapped.carried_afflictions)
-			wrapped.carried_afflictions = new /datum/carried_afflictions(wrapped)
+			own_set(wrapped, "carried_afflictions", new /datum/carried_afflictions(wrapped))
 		wrapped.carried_afflictions.take(leaving)
 	else
 		QDEL_LIST(leaving)
@@ -183,7 +183,7 @@
 		return
 	for(var/datum/affliction/A as anything in carried.release())
 		B.add_affliction(A, src)
-	QDEL_NULL(wrapped.carried_afflictions)
+	own_clear(wrapped, "carried_afflictions", OWN_DELETE)
 	B.on_status_changed()
 
 // --- Function -------------------------------------------------------------------
@@ -367,7 +367,7 @@
 
 /datum/carried_afflictions/New(obj/item/part)
 	..()
-	holder = part
+	rel_set(src, "holder", part)
 
 /obj/item/var/datum/carried_afflictions/carried_afflictions
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).

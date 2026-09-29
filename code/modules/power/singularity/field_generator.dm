@@ -68,7 +68,7 @@
 
 /obj/machinery/field_generator/Initialize(mapload)
 	. = ..()
-	fields = list()
+	own_set(src, "fields", list())
 	connected_gens = list()
 	make_climbable()
 	emp_protection_flags |= EMP_PROTECT_SELF
@@ -305,8 +305,8 @@
 		if(!locate_on(T, /obj/machinery/containment_field))
 			var/obj/machinery/containment_field/CF = new/obj/machinery/containment_field(T)
 			CF.set_master(src,G)
-			fields += CF
-			G.fields += CF
+			own_add(src, "fields", CF)
+			own_add(G, "fields", CF)
 			CF.set_dir(field_dir)
 	var/listcheck = 0
 	for(var/obj/machinery/field_generator/FG in om_resolve_all(connected_gens))
@@ -333,7 +333,7 @@
 		if (QDELETED(F))
 			continue
 		qdel(F)
-	fields = list()
+	own_set(src, "fields", list())
 	for(var/obj/machinery/field_generator/FG in om_resolve_all(connected_gens))
 		if (QDELETED(FG))
 			continue

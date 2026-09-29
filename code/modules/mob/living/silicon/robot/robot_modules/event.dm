@@ -35,7 +35,7 @@
 	src.emag += new /obj/item/gun/energy/robotic/laser/retro(src)
 
 	var/datum/matter_synth/wire = new /datum/matter_synth/wire()
-	synths += wire
+	own_add(src, "synths", wire)
 
 	src.modules += new /obj/item/dogborg/sleeper/lost(src)
 	src.modules += new /obj/item/dogborg/pounce(src)
@@ -77,10 +77,10 @@
 	src.emag += new /obj/item/gun/energy/robotic/laser/retro(src)
 
 	var/datum/matter_synth/wood = new /datum/matter_synth/wood(50000) // "Buffing this to 50k on account of broken code not letting us pick up more stacks. Wee."
-	synths += wood
+	own_add(src, "synths", wood)
 
 	var/obj/item/stack/material/cyborg/wood/W = new (src)
-	W.synths = list(wood)
+	rel_set(W, "synths", list(wood))
 	src.modules += W
 
 	// For uwu
@@ -114,55 +114,55 @@
 	var/datum/matter_synth/plasteel = new /datum/matter_synth/plasteel(20000)
 	var/datum/matter_synth/plastic = new /datum/matter_synth/plastic(50000)
 	var/datum/matter_synth/wire = new /datum/matter_synth/wire()
-	synths += metal
-	synths += glass
-	synths += plasteel
-	synths += plastic
-	synths += wire
+	own_add(src, "synths", metal)
+	own_add(src, "synths", glass)
+	own_add(src, "synths", plasteel)
+	own_add(src, "synths", plastic)
+	own_add(src, "synths", wire)
 
 	var/obj/item/matter_decompiler/MD = new /obj/item/matter_decompiler(src)
-	MD.metal = metal
-	MD.glass = glass
+	rel_set(MD, "metal", metal)
+	rel_set(MD, "glass", glass)
 	src.modules += MD
 
 	var/obj/item/stack/material/cyborg/steel/M = new (src)
-	M.synths = list(metal)
+	rel_set(M, "synths", list(metal))
 	src.modules += M
 
 	var/obj/item/stack/material/cyborg/glass/G = new (src)
-	G.synths = list(glass)
+	rel_set(G, "synths", list(glass))
 	src.modules += G
 
 	var/obj/item/stack/rods/cyborg/rods = new /obj/item/stack/rods/cyborg(src)
-	rods.synths = list(metal)
+	rel_set(rods, "synths", list(metal))
 	src.modules += rods
 
 	var/obj/item/stack/cable_coil/cyborg/C = new /obj/item/stack/cable_coil/cyborg(src)
-	C.synths = list(wire)
+	rel_set(C, "synths", list(wire))
 	src.modules += C
 
 	var/obj/item/stack/material/cyborg/plasteel/PS = new (src)
-	PS.synths = list(plasteel)
+	rel_set(PS, "synths", list(plasteel))
 	src.modules += PS
 
 	var/obj/item/stack/tile/wood/cyborg/WT = new /obj/item/stack/tile/wood/cyborg(src)
-	WT.synths = list(wood)
+	rel_set(WT, "synths", list(wood))
 	src.modules += WT
 
 	var/obj/item/stack/tile/floor/cyborg/S = new /obj/item/stack/tile/floor/cyborg(src)
-	S.synths = list(metal)
+	rel_set(S, "synths", list(metal))
 	src.modules += S
 
 	var/obj/item/stack/tile/roofing/cyborg/CT = new /obj/item/stack/tile/roofing/cyborg(src)
-	CT.synths = list(metal)
+	rel_set(CT, "synths", list(metal))
 	src.modules += CT
 
 	var/obj/item/stack/material/cyborg/glass/reinforced/RG = new (src)
-	RG.synths = list(metal, glass)
+	rel_set(RG, "synths", list(metal, glass))
 	src.modules += RG
 
 	var/obj/item/stack/material/cyborg/plastic/PL = new (src)
-	PL.synths = list(plastic)
+	rel_set(PL, "synths", list(plastic))
 	src.modules += PL //CHOMEdit End
 
 /obj/item/robot_module/robot/malf/gravekeeper/handle_special_unlocks(mob/living/silicon/robot/owner_robot)

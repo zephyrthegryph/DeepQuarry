@@ -36,7 +36,7 @@ DECLARE_INTERACTIONS(/obj/item/gift, INTERACT_USE(null, PROC_REF(interaction_sel
 	playsound(src, 'sound/items/package_unwrap.ogg', 50,1)
 	if(gift)
 		var/obj/item/present = gift
-		gift = null // owned while wrapped: unwrapping hands it over before the paper goes
+		own_take(src, "gift") // owned while wrapped: unwrapping hands it over before the paper goes
 		user.put_in_active_hand(present)
 		present.add_fingerprint(user)
 	else
@@ -157,7 +157,7 @@ DECLARE_INTERACTIONS(/obj/item/wrapping_paper, INTERACT_ITEM(null, PROC_REF(inte
 	G.size = W.w_class
 	G.w_class = G.size + 1
 	G.icon_state = text("gift[]", G.size)
-	G.gift = W
+	own_set(G, "gift", W)
 	W.forceMove(G)
 	G.add_fingerprint(user)
 	W.add_fingerprint(user)

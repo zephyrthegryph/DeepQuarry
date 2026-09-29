@@ -111,8 +111,8 @@
 
 /datum/species/shapeshifter/hanner/proc/add_lleill_abilities(mob/living/carbon/human/H)
 	if(!H.ability_master || !istype(H.ability_master, /atom/movable/screen/movable/ability_master/lleill))
-		H.ability_master = null
-		H.ability_master = new /atom/movable/screen/movable/ability_master/lleill(H)
+		own_take(H, "ability_master")
+		own_set(H, "ability_master", new /atom/movable/screen/movable/ability_master/lleill(H))
 	for(var/datum/power/lleill/P in lleill_ability_datums)
 		if(!(P.verbpath in H.verbs))
 			add_verb(H, P.verbpath)

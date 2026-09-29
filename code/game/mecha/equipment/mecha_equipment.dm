@@ -86,7 +86,7 @@
 		chassis.equipment -= src
 		listclearnulls(chassis.equipment)
 		if(chassis.selected == src)
-			chassis.selected = null
+			own_take(chassis, "selected")
 		src.update_chassis_page()
 		chassis.occupant_message(span_red("The [src] is destroyed!"))
 		chassis.log_append_to_last("[src] is destroyed.",1)
@@ -199,7 +199,7 @@
 	if(equip_type != EQUIP_SPECIAL && length(M.universal_equipment) < M.max_universal_equip && !has_equipped)
 		LAZYADD(M.universal_equipment, src)
 	M.equipment += src
-	chassis = M
+	rel_set(src, "chassis", M)
 	if(!move_into(M, MECHA_SLOT_EQUIPMENT))
 		forceMove(M) // the equipment lists above already committed; guarantee the move
 
@@ -208,7 +208,7 @@
 
 	M.mecha_log_message("[src] initialized.")
 	if(!M.selected)
-		M.selected = src
+		own_set(M, "selected", src)
 	src.update_chassis_page()
 	return
 
@@ -242,10 +242,10 @@
 				LAZYREMOVE(chassis.micro_weapon_equipment, src)
 			// ition end: MICROMECHS
 	if(chassis.selected == src)
-		chassis.selected = null
+		own_take(chassis, "selected")
 	update_chassis_page()
 	chassis.mecha_log_message("[src] removed from equipment.")
-	chassis = null
+	rel_clear(src, "chassis")
 	set_ready_state(TRUE)
 	enable_special = FALSE
 	return

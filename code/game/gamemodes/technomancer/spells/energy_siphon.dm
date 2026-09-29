@@ -164,7 +164,7 @@
 /// Seven bolts 0.3 s apart: process() takes two seconds to tick, this ensures the appearance of a ongoing beam.
 /obj/item/spell/energy_siphon/proc/create_lightning_beam(mob/user, atom/source, left = 7)
 	var/obj/item/projectile/beam/lightning/energy_siphon/lightning = new(get_turf(source))
-	lightning.firer = user
+	rel_set(lightning, "firer", user)
 	lightning.old_style_target(user)
 	lightning.fire()
 	if(left > 1)

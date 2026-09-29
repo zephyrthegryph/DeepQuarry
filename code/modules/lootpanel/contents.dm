@@ -2,9 +2,9 @@
 /datum/lootpanel/proc/add_to_index(datum/search_object/index)
 	om_hook(index, /datum/om/event/qdeleting, src, PROC_REF(on_searchable_deleted))
 	if(isnull(index.icon))
-		LAZYADD(to_image, index)
+		own_add(src, "to_image", index)
 
-	searchables += index
+	own_add(src, "searchables", index)
 
 
 /// Used to populate searchables and start generating if needed
@@ -44,8 +44,8 @@
 /// For: Resetting to empty. Ignores the searchable qdel event
 /datum/lootpanel/proc/reset_contents()
 	for(var/datum/search_object/index as anything in searchables)
-		searchables -= index
-		LAZYREMOVE(to_image, index)
+		own_take_member(src, "searchables", index)
+		own_take_member(src, "to_image", index)
 
 		if(QDELETED(index))
 			continue

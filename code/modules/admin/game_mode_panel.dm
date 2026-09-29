@@ -9,7 +9,7 @@
 
 /datum/game_mode_panel/New(datum/game_mode/target_mode)
 	..()
-	src.target_mode = target_mode
+	rel_set(src, "target_mode", target_mode)
 
 REL_PAIR(/datum/game_mode_panel, target_mode, tgui_game_mode_panel)
 REL_PAIR(/datum/game_mode, tgui_game_mode_panel, target_mode)

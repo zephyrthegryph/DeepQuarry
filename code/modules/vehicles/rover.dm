@@ -99,7 +99,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/rover/engine, \
 	if(!key)
 		user.drop_item()
 		W.forceMove(src)
-		key = W
+		own_set(src, "key", W)
 	return TRUE
 
 //cargo trains are open topped, so there is a chance the projectile will hit the mob ridding the train instead
@@ -245,7 +245,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/rover/engine, \
 	key.forceMove(user.loc)
 	if(!user.get_active_hand())
 		user.put_in_hands(key)
-	key = null
+	own_take(src, "key")
 
 //-------------------------------------------
 // Loading/unloading procs
@@ -287,7 +287,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/rover/engine, \
 		unbuckle_mob(load)
 		C.alpha = 255
 
-	load = null
+	rel_clear(src, "load")
 
 
 //Load the object "inside" the trolley and add an overlay of it.
@@ -301,7 +301,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/rover/engine, \
 		return 0
 
 	var/datum/vehicle_dummy_load/dummy_load = new()
-	load = dummy_load
+	rel_set(src, "load", dummy_load)
 
 	if(!load)
 		return
@@ -323,7 +323,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/rover/engine, \
 /obj/vehicle/train/rover/trolley/unload(mob/user, direction)
 	if(istype(load, /datum/vehicle_dummy_load))
 		var/datum/vehicle_dummy_load/dummy_load = load
-		load = dummy_load.actual_load
+		rel_set(src, "load", dummy_load.actual_load)
 		dummy_load.actual_load = null
 		qdel(dummy_load)
 		cut_overlays()

@@ -8,7 +8,7 @@
 
 /obj/item/paicard/flipper/Initialize(mapload)
 	emag_act()
-	pai = new /mob/living/silicon/pai/flipper(src) // ALLOW(decl): must exist before the paicard's own init, after emag_act()
+	rel_set(src, "pai", new /mob/living/silicon/pai/flipper(src)) // ALLOW(decl): must exist before the paicard's own init, after emag_act()
 	. = ..()
 	desc = "The [name] is a versatile security device designed to protect and empower users in a variety of contexts. With features such as wireless hacking, radio analysis, signal jamming, and physical lock picking, the [name] is the ultimate tool for security professionals, hobbyists, and anyone seeking to better understand and defend against modern threats. Whether you're investigating a security breach, testing your own defenses, or simply curious about the workings of wireless technology, the [name] has you covered."
 	setEmotion(4)
@@ -30,7 +30,7 @@
 	"The wet, fleshy walls of [name]'s maw seem to pulse and throb in time with your heartbeat, as if they're alive and responding to your presence. The soft and yielding surface wraps around you like a protective cocoon.",
 	"You feel the gentle pressure of [name]'s maw all around you, the slick and wet surfaces pulsating softly. The sensation is oddly comforting, as if you're being cradled in the embrace of a nurturing being.",
 	"The warm, moist environment of [name]'s maw surrounds you completely, the walls of flesh glistening and undulating gently. The soft, plush surface seems to mold itself to your form, creating a snug and comfortable space for you to rest in.")
-	vore_selected = B
+	own_set(src, "vore_selected", B)
 
 	B = new /obj/belly/flipper/throat(src)
 	B.affects_vore_sprites = FALSE

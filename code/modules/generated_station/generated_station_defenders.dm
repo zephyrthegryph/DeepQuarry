@@ -364,7 +364,7 @@
 /datum/expedition_site/proc/initialize_generated_station_defenders()
 	if(!station_director || station_defense)
 		return FALSE
-	station_defense = new(src, station_director)
+	own_set(src, "station_defense", new /datum/generated_station_defense_runtime(src, station_director))
 	station_defense.create_roster()
 	return TRUE
 

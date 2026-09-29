@@ -40,7 +40,7 @@
 
 // Add the spell buttons to the HUD.
 /obj/item/technomancer_core/equipped(mob/user)
-	wearer = user
+	rel_set(src, "wearer", user)
 	om_task_periodic(src, PERIODIC_SLOW) // regenerates and keeps its wearer's upkeep while worn
 	for(var/obj/spellbutton/spell in spells)
 		wearer.ability_master.add_technomancer_ability(spell, spell.ability_icon_state)
@@ -50,7 +50,7 @@
 /obj/item/technomancer_core/dropped(mob/user, equipping, slot)
 	for(var/atom/movable/screen/ability/obj_based/technomancer/A in wearer.ability_master.ability_objects)
 		wearer.ability_master.remove_ability(A)
-	wearer = null
+	rel_clear(src, "wearer")
 	..()
 
 // 'pay_energy' is too vague of a name for a proc at the mob level.
@@ -137,7 +137,7 @@
 
 /obj/spellbutton/Initialize(mapload, path, new_name, new_icon_state)
 	. = ..()
-	src.core = loc
+	rel_set(src, "core", loc)
 	if(!path || !ispath(path) || !istype(core))
 		message_admins("ERROR: /obj/spellbutton/Initialize() was not given a proper path or not placed into the right location!")
 		return INITIALIZE_HINT_QDEL

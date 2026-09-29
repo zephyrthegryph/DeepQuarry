@@ -341,7 +341,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 		if(_gtype) mixture.set_moles(_gtype, (rand(1,1000) * mixture.return_volume()) / (R_IDEAL_GAS_EQUATION * mixture.return_temperature()))
 	// mixture.update_values() removed; no-op under LINDA.
 	var/datum/supply_demand_order/gas/O = new(qty = 1)
-	O.mixture = mixture
+	own_set(O, "mixture", mixture)
 	LAZYADD(required_items, O)
 	return
 

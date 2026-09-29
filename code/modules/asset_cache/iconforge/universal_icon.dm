@@ -25,70 +25,70 @@
 		var/datum/icon_transformer/T = new()
 		if(color)
 			T.blend_color(color, ICON_MULTIPLY)
-		src.transform = T
+		own_set(src, "transform", T)
 	else if(!isnull(transform))
-		src.transform = transform
+		own_set(src, "transform", transform)
 	else // null = empty list
-		src.transform = null
+		own_take(src, "transform")
 
 /datum/universal_icon/proc/copy()
 	RETURN_TYPE(/datum/universal_icon)
 	var/datum/universal_icon/new_icon = new(icon_file, icon_state, dir, frame)
 	if(!isnull(src.transform))
-		new_icon.transform = src.transform.copy()
+		own_set(new_icon, "transform", src.transform.copy())
 	return new_icon
 
 /datum/universal_icon/proc/blend_color(color, blend_mode)
 	if(!transform)
-		transform = new
+		own_set(src, "transform", new /datum/icon_transformer)
 	transform.blend_color(color, blend_mode)
 	return src
 
 /datum/universal_icon/proc/blend_icon(datum/universal_icon/icon_object, blend_mode, x=1, y=1)
 	if(!transform)
-		transform = new
+		own_set(src, "transform", new /datum/icon_transformer)
 	transform.blend_icon(icon_object, blend_mode, x, y)
 	return src
 
 /datum/universal_icon/proc/scale(width, height)
 	if(!transform)
-		transform = new
+		own_set(src, "transform", new /datum/icon_transformer)
 	transform.scale(width, height)
 	return src
 
 /datum/universal_icon/proc/crop(x1, y1, x2, y2)
 	if(!transform)
-		transform = new
+		own_set(src, "transform", new /datum/icon_transformer)
 	transform.crop(x1, y1, x2, y2)
 	return src
 
 /datum/universal_icon/proc/flip(dir)
 	if(!transform)
-		transform = new
+		own_set(src, "transform", new /datum/icon_transformer)
 	transform.flip(dir)
 	return src
 
 /datum/universal_icon/proc/rotate(angle)
 	if(!transform)
-		transform = new
+		own_set(src, "transform", new /datum/icon_transformer)
 	transform.rotate(angle)
 	return src
 
 /datum/universal_icon/proc/shift(dir, offset, wrap=0)
 	if(!transform)
-		transform = new
+		own_set(src, "transform", new /datum/icon_transformer)
 	transform.shift(dir, offset, wrap)
 	return src
 
 /datum/universal_icon/proc/swap_color(src_color, dst_color)
 	if(!transform)
-		transform = new
+		own_set(src, "transform", new /datum/icon_transformer)
 	transform.swap_color(src_color, dst_color)
 	return src
 
 /datum/universal_icon/proc/draw_box(color, x1, y1, x2=x1, y2=y1)
 	if(!transform)
-		transform = new
+		own_set(src, "transform", new /datum/icon_transformer)
 	transform.draw_box(color, x1, y1, x2, y2)
 	return src
 
@@ -111,19 +111,19 @@
 
 /datum/universal_icon/proc/map_colors_rgba(rr, rg, rb, ra, gr, gg, gb, ga, br, bg, bb, ba, ar, ag, ab, aa, r0=0, g0=0, b0=0, a0=0)
 	if(!transform)
-		transform = new
+		own_set(src, "transform", new /datum/icon_transformer)
 	transform.map_colors(rr, rg, rb, ra, gr, gg, gb, ga, br, bg, bb, ba, ar, ag, ab, aa, r0, g0, b0, a0)
 	return src
 
 /datum/universal_icon/proc/map_colors_rgb(rr, rg, rb, gr, gg, gb, br, bg, bb, r0=0, g0=0, b0=0)
 	if(!transform)
-		transform = new
+		own_set(src, "transform", new /datum/icon_transformer)
 	transform.map_colors(rr, rg, rb, 0, gr, gg, gb, 0, br, bg, bb, 0, 0, 0, 0, 1, r0, g0, b0, 0)
 	return src
 
 /datum/universal_icon/proc/map_colors_rgb_hex(r_rgb, g_rgb, b_rgb, rgb0=rgb(0,0,0))
 	if(!transform)
-		transform = new
+		own_set(src, "transform", new /datum/icon_transformer)
 	var/rr = hex2num(copytext(r_rgb, 2, 4)) / 255
 	var/rg = hex2num(copytext(r_rgb, 4, 6)) / 255
 	var/rb = hex2num(copytext(r_rgb, 6, 8)) / 255
@@ -145,7 +145,7 @@
 
 /datum/universal_icon/proc/map_colors_rgba_hex(r_rgba, g_rgba, b_rgba, a_rgba, rgba0="#00000000")
 	if(!transform)
-		transform = new
+		own_set(src, "transform", new /datum/icon_transformer)
 	var/rr = hex2num(copytext(r_rgba, 2, 4)) / 255
 	var/rg = hex2num(copytext(r_rgba, 4, 6)) / 255
 	var/rb = hex2num(copytext(r_rgba, 6, 8)) / 255
@@ -178,7 +178,7 @@
 /// Amount ranges from 0-1 (100% opacity)
 /datum/universal_icon/proc/change_opacity(amount)
 	if(!transform)
-		transform = new
+		own_set(src, "transform", new /datum/icon_transformer)
 	transform.blend_color("#ffffff[num2hex(clamp(amount, 0, 1) * 255, 2)]", ICON_MULTIPLY)
 	return src
 

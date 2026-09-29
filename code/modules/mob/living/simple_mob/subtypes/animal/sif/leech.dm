@@ -295,7 +295,7 @@
 		if(!M.stat)
 			to_chat(M, span_critical("You feel a sharp pain as something digs into your flesh!"))
 
-		src.host = M
+		rel_set(src, "host", M)
 		src.forceMove(M)
 		if(ai_brain)
 			ai_brain.set_hostile(FALSE)
@@ -303,7 +303,7 @@
 
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
-			host_bodypart = H.get_organ(infest_target)
+			own_set(src, "host_bodypart", H.get_organ(infest_target))
 			LAZYOR(host_bodypart.implants, src)
 
 		return
@@ -334,11 +334,11 @@
 
 	if(host_bodypart)
 		LAZYREMOVE(host_bodypart.implants, src)
-		host_bodypart = null
+		own_take(src, "host_bodypart")
 
 	forceMove(get_turf(host))
 
-	host = null
+	rel_clear(src, "host")
 
 /mob/living/simple_mob/animal/sif/leech/verb/inject_victim()
 	set category = "Abilities.Leech"

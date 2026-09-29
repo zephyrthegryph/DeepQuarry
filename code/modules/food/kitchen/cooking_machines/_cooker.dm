@@ -172,12 +172,12 @@
 /obj/machinery/appliance/cooker/proc/arm_thermostat()
 	if(!isnull(thermostat_watch))
 		return TRUE
-	thermostat_watch = heat_watch_threshold(src, src, optimal_temp - COOKER_THERMOSTAT_BAND, FALSE, PROC_REF(on_thermostat))
+	own_set(src, "thermostat_watch", heat_watch_threshold(src, src, optimal_temp - COOKER_THERMOSTAT_BAND, FALSE, PROC_REF(on_thermostat)))
 	return !isnull(thermostat_watch)
 
 /// Cooled below the thermostat band (thermostat_watch): heat again.
 /obj/machinery/appliance/cooker/proc/on_thermostat(datum/native_watch/heat/watch, reason, source)
-	QDEL_NULL(thermostat_watch)
+	own_clear(src, "thermostat_watch", OWN_DELETE)
 	MACHINE_WAKE(src)
 
 

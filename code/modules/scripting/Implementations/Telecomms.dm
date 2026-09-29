@@ -35,7 +35,7 @@
 	if(returnerrors.len)
 		return returnerrors
 
-	interpreter 		= new(program)
+	own_set(src, "interpreter", new /datum/n_Interpreter/TCS_Interpreter(program))
 	interpreter.persist	= 1
 	interpreter.Compiler_handle= om_handle(src)
 

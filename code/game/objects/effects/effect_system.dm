@@ -34,7 +34,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	setup = 1
 
 /datum/effect/effect/system/proc/attach(atom/atom)
-	holder = atom
+	rel_set(src, "holder", atom)
 
 /datum/effect/effect/system/proc/start()
 

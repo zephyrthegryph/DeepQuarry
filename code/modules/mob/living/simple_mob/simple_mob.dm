@@ -189,7 +189,7 @@
 		myid_access = shared_type_list(type, "myid_access", myid_access)
 
 	if(ID_provided)
-		myid = new /obj/item/card/id(src) // ALLOW(decl): conditional on ID_provided
+		own_set(src, "myid", new /obj/item/card/id(src)) // ALLOW(decl): conditional on ID_provided
 		myid.access = myid_access ? myid_access.Copy() : list()
 
 	for(var/L in has_langs)
@@ -345,7 +345,7 @@
 
 /mob/living/simple_mob/proc/chase_target(ticker)
 	if(QDELETED(movement_target))
-		movement_target = null
+		own_take(src, "movement_target")
 		return
 
 	if(ticker < 10 && (get_dist(src, movement_target) > 1)) //We only chase our target for 10 tiles or until we are next to them.
@@ -359,7 +359,7 @@
 		UnarmedAttack(movement_target, TRUE, I_HELP)
 	else if(ishuman(movement_target.loc) && prob(20))
 		visible_emote("stares at the [movement_target] that [movement_target.loc] has with an unknowable gaze.")
-	movement_target = null
+	own_take(src, "movement_target")
 
 /mob/living/simple_mob/say_quote(message, datum/language/speaking = null)
 	if(speak_emote.len)
@@ -675,7 +675,7 @@
 	om_attach(src, /datum/om/behaviour/slosh) // Sloshy element
 
 	if(!soulgem)
-		soulgem = new(src)
+		own_set(src, "soulgem", new /obj/soulgem(src))
 
 	// Since they have bellies, add verbs to toggle settings on them.
 	add_verb(src, /mob/living/simple_mob/proc/toggle_digestion)
@@ -696,7 +696,7 @@
 /mob/living/simple_mob/proc/load_default_bellies()
 	//A much more detailed version of the default /living implementation
 	var/obj/belly/B = new /obj/belly(src)
-	vore_selected = B
+	own_set(src, "vore_selected", B)
 	B.immutable = 1
 	B.affects_vore_sprites = TRUE
 	B.name = vore_stomach_name ? vore_stomach_name : "stomach"

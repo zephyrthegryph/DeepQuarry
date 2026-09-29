@@ -285,7 +285,7 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 			remove_verb(stored_swap(), V)
 
 	var/mob/observer/dead/ghost = stored_swap().ghostize(0)
-	ghost.spell_list = stored_swap().spell_list
+	rel_set(ghost, "spell_list", stored_swap().spell_list)
 
 	move_player(user, stored_swap(), "spellbook body swap")
 	stored_swap().spell_list = user.spell_list
@@ -295,7 +295,7 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 			add_verb(user, V)
 
 	transfer_mind(ghost.mind, user, "spellbook body swap", force = TRUE)
-	user.spell_list = ghost.spell_list
+	rel_set(user, "spell_list", ghost.spell_list)
 
 	if(length(user.mind.special_verbs))
 		for(var/V in user.mind.special_verbs)

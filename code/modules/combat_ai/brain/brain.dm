@@ -71,8 +71,8 @@
 		stack_trace("ai_brain instantiated with no owner")
 		qdel(src)
 		return
-	holder = owner
-	model = new /datum/world_model(owner)
+	rel_set(src, "holder", owner)
+	own_set(src, "model", new /datum/world_model(owner))
 	target_selector_chain = list(/datum/target_selector/closest)
 	home_turf_handle = om_handle(get_turf(owner))
 	manage_processing(DQAI_PROCESSING)
@@ -417,7 +417,7 @@
 			break
 	if(new_threat != primary_threat)
 		var/old = primary_threat
-		primary_threat = new_threat
+		rel_set(src, "primary_threat", new_threat)
 		OM_EMIT(holder, /datum/om/event/dqai_target_changed, new_threat, old)
 		sync_fast_processing()
 
@@ -426,7 +426,7 @@
 /datum/ai_brain/proc/drop_primary_threat()
 	lose_threat_at = 0
 	var/old = primary_threat
-	primary_threat = null
+	rel_clear(src, "primary_threat")
 	if(holder)
 		OM_EMIT(holder, /datum/om/event/dqai_target_lost, old)
 	if(active_behavior_type)
@@ -566,7 +566,7 @@
 		add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_PERSONAL_DEFAULT_DURATION, "hit me")
 		if(!primary_threat)
 			var/mob/old = primary_threat
-			primary_threat = attacker
+			rel_set(src, "primary_threat", attacker)
 			OM_EMIT(holder, /datum/om/event/dqai_target_changed, attacker, old)
 	OM_EMIT(holder, /datum/om/event/dqai_damage_taken, amount, injury_kind, attacker)
 	dispatch_behavior_signal(DQAI_TRIGGER_DAMAGE_TAKEN, amount, injury_kind, attacker)

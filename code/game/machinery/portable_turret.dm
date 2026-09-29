@@ -281,7 +281,7 @@
 
 /obj/machinery/porta_turret/Initialize(mapload)
 	//Sets up a spark system
-	spark_system = new /datum/effect/effect/system/spark_spread
+	own_set(src, "spark_system", new /datum/effect/effect/system/spark_spread)
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
 
@@ -985,7 +985,7 @@
 		def_zone = pick(BP_TORSO, BP_GROIN)
 
 	//Shooting Code:
-	A.firer = src
+	rel_set(A, "firer", src)
 	A.old_style_target(target)
 	A.launch_projectile_from_turf(target, def_zone, src)
 

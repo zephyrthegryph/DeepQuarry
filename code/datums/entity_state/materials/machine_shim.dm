@@ -16,8 +16,8 @@
 
 /datum/using_machine_shim/New(mob/new_owner, obj/machinery/machine)
 	..()
-	owner = new_owner
-	owner.machine_shim = src
+	rel_set(src, "owner", new_owner)
+	own_set(owner, "machine_shim", src)
 	// Mob
 	om_stage_add(host_mob(), /datum/om/stage/life/trait/using_machine_shim)
 	om_hook(host_mob(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_mob_moved))

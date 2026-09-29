@@ -78,7 +78,7 @@
 REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 
 /obj/machinery/message_server/Initialize(mapload)
-	soundloop = new(list(src), FALSE)
+	own_set(src, "soundloop", new /datum/looping_sound/tcomms(list(src), FALSE))
 	if(prob(60)) // 60% chance to change the midloop
 		if(prob(40))
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
@@ -124,11 +124,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 		if (findtextEx(message,token))
 			message = span_red("[message]")	//Rejected messages will be indicated by red color.
 			result = token										//Token caused rejection (if there are multiple, last will be chosen>.
-	LAZYADD(pda_msgs, new/datum/data_pda_msg(recipient,sender,message))
+	own_add(src, "pda_msgs", new/datum/data_pda_msg(recipient,sender,message))
 	return result
 
 /obj/machinery/message_server/proc/send_rc_message(recipient = "",sender = "",message = "",stamp = "", id_auth = "", priority = 1)
-	LAZYADD(rc_msgs, new/datum/data_rc_msg(recipient,sender,message,stamp,id_auth,priority))
+	own_add(src, "rc_msgs", new/datum/data_rc_msg(recipient,sender,message,stamp,id_auth,priority))
 	var/authmsg = "[message]\n"
 	if (id_auth)
 		authmsg += "([id_auth])\n"
@@ -323,10 +323,10 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		BR.msg_syndicate = msg_syndicate
 		BR.msg_cargo = msg_cargo
 		BR.msg_service = msg_service
-		BR.feedback = feedback
+		own_set(BR, "feedback", feedback)
 		BR.messages = messages
 		BR.messages_admin = messages_admin
-		feedback = null
+		own_take(src, "feedback")
 	return ..()
 
 /obj/machinery/blackbox_recorder/proc/find_feedback_datum(variable)
@@ -334,7 +334,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		if(FV.get_variable() == variable)
 			return FV
 	var/datum/feedback_variable/FV = new(variable)
-	feedback += FV
+	own_add(src, "feedback", FV)
 	return FV
 
 /obj/machinery/blackbox_recorder/proc/get_round_feedback()

@@ -40,7 +40,7 @@
 	if((src.loc == user || Adjacent(user)) && Bait)
 		Bait.forceMove(get_turf(user))
 		to_chat(user, span_notice("You remove the bait from \the [src]."))
-		Bait = null
+		own_take(src, "Bait")
 	else
 		..()
 
@@ -70,7 +70,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF
 		if(Bait)
 			Bait.forceMove(get_turf(user))
 			to_chat(user, span_notice("You swap \the [Bait] with \the [I]."))
-		Bait = I
+		own_set(src, "Bait", I)
 		user.drop_from_inventory(Bait)
 		Bait.forceMove(src)
 		update_bait()
@@ -105,7 +105,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF
 /obj/item/material/fishing_rod/proc/consume_bait()
 	if(Bait)
 		qdel(Bait)
-		Bait = null
+		own_take(src, "Bait")
 		return TRUE
 	return FALSE
 

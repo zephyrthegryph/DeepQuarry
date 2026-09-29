@@ -26,12 +26,12 @@
 		AM.recursive_move.reset_parents()
 		AM.recursive_move.setup_parents()
 		return AM.recursive_move
-	AM.recursive_move = new /datum/recursive_move(AM)
+	own_set(AM, "recursive_move", new /datum/recursive_move(AM))
 	return AM.recursive_move
 
 /datum/recursive_move/New(atom/movable/new_holder)
 	..()
-	holder = new_holder
+	rel_set(src, "holder", new_holder)
 	om_after(src, 0, PROC_REF(setup_parents)) // Delayed action if our holder is spawned in nullspace and then loc = target, hopefully this catches it. VV Add item does this, for example.
 
 /datum/recursive_move/proc/setup_parents()

@@ -115,14 +115,14 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 /obj/machinery/mining/drill/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	faultreporter = new /obj/item/radio/intercom{channels=list("Supply")}(null)
+	own_set(src, "faultreporter", new /obj/item/radio/intercom{channels=list("Supply")}(null))
 	make_climbable()
 
 
 /obj/machinery/mining/drill/dismantle()
 	if(cell)
 		cell.forceMove(loc)
-		cell = null
+		own_take(src, "cell")
 	return ..()
 
 /obj/machinery/mining/drill/get_cell()
@@ -261,7 +261,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 		else
 			user.drop_item()
 			O.forceMove(src)
-			cell = O
+			own_set(src, "cell", O)
 			materialize_parts()
 			component_parts += O
 			balloon_alert(user, "you install \the [O]")
@@ -307,7 +307,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 		user.put_in_hands(cell)
 		if(component_parts)
 			component_parts -= cell
-		cell = null
+		own_take(src, "cell")
 		return TRUE
 	else if(need_player_check)
 		balloon_alert(user, "manual override hit, the drill's error checking resets.")
@@ -378,7 +378,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
 	if(cap_rating)
 		charge_use -= 10 * cap_rating
-	cell = locate_within(src, /obj/item/cell)
+	own_set(src, "cell", locate_within(src, /obj/item/cell))
 
 /obj/machinery/mining/drill/proc/check_supports()
 

@@ -18,7 +18,7 @@
 	reagent_list = reagents_empty_list()
 	reagent_by_id = reagent_list
 	maximum_volume = max
-	my_atom = A
+	rel_set(src, "my_atom", A)
 
 // The id index holds the same reagents: declared, so phase 4 empties it
 // (its members are already deleted through reagent_list by then) and the
@@ -173,7 +173,7 @@
 		// keeps the O(1) slot and the extras remain accessible only via reagent_list iteration.
 		if(!reagent_by_id[id])
 			reagent_by_id[id] = R
-		R.holder = src
+		rel_set(R, "holder", src)
 		R.volume = amount
 		R.initialize_data(data)
 		SetViruses(R,data)
@@ -524,7 +524,7 @@
 /atom/proc/create_reagents(max_vol, reagents_type = /datum/reagents)
 	if(!ispath(reagents_type))
 		reagents_type = /datum/reagents
-	reagents = new reagents_type(max_vol, src)
+	own_set(src, "reagents", new reagents_type(max_vol, src))
 
 // Aurora Cooking Port
 /datum/reagents/proc/get_reagent(id) // Returns reference to reagent matching passed ID

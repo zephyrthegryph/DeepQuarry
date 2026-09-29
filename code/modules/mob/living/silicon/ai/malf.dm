@@ -5,9 +5,9 @@
 	var/mob/living/silicon/ai/user = src
 	// Setup Variables
 	malfunctioning = 1
-	research = new/datum/malf_research()
+	own_set(src, "research", new/datum/malf_research())
 	research.owner_handle = om_handle(src)
-	hacked_apcs = list()
+	rel_set(src, "hacked_apcs", list())
 	recalc_cpu()
 
 	add_verb(src, new/datum/game_mode/malfunction/verb/ai_select_hardware())
@@ -26,12 +26,12 @@
 
 /mob/living/silicon/ai/proc/stop_malf_finish()
 	var/mob/living/silicon/ai/user = src
-	research = null
+	own_take(src, "research")
 	// Fix hacked APCs
 	if(hacked_apcs)
 		for(var/obj/machinery/power/apc/A in hacked_apcs)
-			A.hacker = null
-	hacked_apcs = null
+			rel_clear(A, "hacker")
+	rel_clear(src, "hacked_apcs")
 	// Reset our verbs
 	src.verbs = null
 	add_ai_verbs()
@@ -139,4 +139,4 @@
 /mob/living/silicon/ai/proc/create_powersupply()
 	if(psupply)
 		qdel(psupply)
-	psupply = new/obj/machinery/ai_powersupply(src)
+	own_set(src, "psupply", new/obj/machinery/ai_powersupply(src))

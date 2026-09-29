@@ -62,7 +62,7 @@
 
 /datum/tgui_module/email_client/proc/log_out()
 	current_account_handle = null
-	downloading = null
+	own_take(src, "downloading")
 	download_progress = 0
 	last_message_count = 0
 	read_message_count = 0
@@ -203,7 +203,7 @@
 	msg_title = ""
 	msg_body = ""
 	msg_recipient = ""
-	msg_attachment = null
+	own_take(src, "msg_attachment")
 	current_message_handle = null
 
 /datum/tgui_module/email_client/proc/relayed_process(netspeed)
@@ -215,7 +215,7 @@
 		var/obj/item/modular_computer/MC = tgui_host()
 		if(!istype(MC) || !MC.hard_drive || !MC.hard_drive.check_functionality())
 			error = "Error uploading file. Are you using a functional and NTOSv2-compliant device?"
-			downloading = null
+			own_take(src, "downloading")
 			download_progress = 0
 			return 1
 
@@ -223,7 +223,7 @@
 			error = "File successfully downloaded to local device."
 		else
 			error = "Error saving file: I/O Error: The hard drive may be full or nonfunctional."
-		downloading = null
+		own_take(src, "downloading")
 		download_progress = 0
 	return 1
 
@@ -332,7 +332,7 @@
 			message.title = msg_title
 			message.stored_data = msg_body
 			message.source = current_account().login
-			message.attachment = msg_attachment
+			own_set(message, "attachment", msg_attachment)
 			if(!current_account().send_mail(msg_recipient, message))
 				error = "Error sending email: this address doesn't exist."
 				return 1
@@ -426,7 +426,7 @@
 
 		if("addattachment")
 			var/obj/item/modular_computer/MC = tgui_host()
-			msg_attachment = null
+			own_take(src, "msg_attachment")
 
 			if(!istype(MC) || !MC.hard_drive || !MC.hard_drive.check_functionality())
 				error = "Error uploading file. Are you using a functional and NTOSv2-compliant device?"
@@ -452,16 +452,16 @@
 				if(CF.unsendable)
 					continue
 				if(CF.filename == picked_file)
-					msg_attachment = CF.clone()
+					own_set(src, "msg_attachment", CF.clone())
 					break
 			if(!istype(msg_attachment))
-				msg_attachment = null
+				own_take(src, "msg_attachment")
 				error = "Unknown error when uploading attachment."
 				return 1
 
 			if(msg_attachment.size > 32)
 				error = "Error uploading attachment: File exceeds maximal permitted file size of 32GQ."
-				msg_attachment = null
+				own_take(src, "msg_attachment")
 			else
 				error = "File [msg_attachment.filename].[msg_attachment.filetype] has been successfully uploaded."
 			return 1
@@ -474,17 +474,17 @@
 				error = "Error downloading file. Are you using a functional and NTOSv2-compliant device?"
 				return 1
 
-			downloading = current_message().attachment.clone()
+			own_set(src, "downloading", current_message().attachment.clone())
 			download_progress = 0
 			return 1
 
 		if("canceldownload")
-			downloading = null
+			own_take(src, "downloading")
 			download_progress = 0
 			return 1
 
 		if("remove_attachment")
-			msg_attachment = null
+			own_take(src, "msg_attachment")
 			return 1
 
 

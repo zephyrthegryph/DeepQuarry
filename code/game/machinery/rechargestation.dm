@@ -27,7 +27,7 @@
 /obj/machinery/recharge_station/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	cell = default_use_hicell()
+	own_set(src, "cell", default_use_hicell())
 	update_icon()
 
 /// Sealed occupant slot (C8a, containment.md §10).
@@ -257,7 +257,7 @@
 	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
 	man_rating += get_part_rating(/obj/item/stock_parts/manipulator)
 	materialize_parts()
-	cell = locate_in_list(component_parts, /obj/item/cell)
+	own_set(src, "cell", locate_in_list(component_parts, /obj/item/cell))
 
 	charging_power = 40000 + 40000 * cap_rating
 	restore_power_active = 10000 + 15000 * cap_rating

@@ -43,15 +43,15 @@
 /obj/machinery/door_timer/LateInitialize()
 	for(var/obj/machinery/door/window/brigdoor/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
-			LAZYADD(targets,M)
+			rel_add(src, "targets", M)
 
 	for(var/obj/machinery/flasher/F in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(F.id == id)
-			LAZYADD(targets,F)
+			rel_add(src, "targets", F)
 
 	for(var/obj/structure/closet/secure_closet/brig/C in REGISTRY_MEMBERS(REGISTRY_BRIG_CLOSETS))
 		if(C.id == id)
-			LAZYADD(targets,C)
+			rel_add(src, "targets", C)
 	for(var/atom/movable/target as anything in targets)
 		om_hook(target, /datum/om/event/qdeleting, src, PROC_REF(target_deleted))
 
@@ -61,7 +61,7 @@
 
 /obj/machinery/door_timer/proc/target_deleted(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
-	LAZYREMOVE(targets, source)
+	rel_remove(src, "targets", source)
 
 //Main door timer loop, if it's timing and time is >0 reduce time by 1.
 // if it's less than 0, open door, reset timer

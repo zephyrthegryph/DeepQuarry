@@ -2,8 +2,8 @@
 /datum/lootpanel/proc/on_searchable_deleted(datum/search_object/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
 
-	searchables -= source
-	LAZYREMOVE(to_image, source)
+	own_take_member(src, "searchables", source)
+	own_take_member(src, "to_image", source)
 
 	var/datum/tgui/window = SStgui.get_open_ui(owner().mob, src)
 #if !defined(UNIT_TESTS) // we dont want to delete searchables if we're testing

@@ -100,7 +100,7 @@
 	var/atom/movable/screen/spell/newscreen = new /atom/movable/screen/spell()
 	newscreen.spell_handle = om_handle(spell)
 
-	spell.connected_button = newscreen
+	own_set(spell, "connected_button", newscreen)
 
 	if(!spell.override_base) //if it's not set, we do basic checks
 		if(spell.spell_flags & CONSTRUCT_CHECK)
@@ -118,7 +118,7 @@
 /atom/movable/screen/movable/spell_master/proc/remove_spell(datum/spell/spell)
 	qdel(spell.connected_button)
 
-	spell.connected_button = null
+	own_take(spell, "connected_button")
 
 	if(length(spell_buttons()))
 		toggle_open(showing + 1)

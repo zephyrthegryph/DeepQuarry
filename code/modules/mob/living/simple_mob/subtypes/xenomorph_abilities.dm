@@ -63,7 +63,7 @@
 
 /datum/action/innate/xeno_ch/Grant(mob/living/L)
 	if(L)
-		parent_xeno = L
+		rel_set(src, "parent_xeno", L)
 	..()
 
 /datum/action/innate/xeno_ch/xeno_build

@@ -39,10 +39,10 @@
 	name = new_name
 	real_name = new_name
 	if(desired_blob_type)
-		blob_type = new desired_blob_type()
+		own_set(src, "blob_type", new desired_blob_type())
 	else
 		var/datum/blob_type/BT = pick(subtypesof(/datum/blob_type))
-		blob_type = new BT()
+		own_set(src, "blob_type", new BT())
 	color = blob_type.complementary_color
 	if(blob_core())
 		blob_core().update_icon()
@@ -60,12 +60,12 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 /mob/observer/blob/on_destroy(force)
 	for(var/obj/structure/blob/B as anything in REGISTRY_MEMBERS(REGISTRY_BLOBS))
 		if(B && B.overmind == src)
-			B.overmind = null
+			rel_clear(B, "overmind")
 			B.update_icon() //reset anything that was ours
 
 	for(var/mob/living/simple_mob/blob/spore/BM as anything in blob_mobs)
 		if(BM)
-			BM.overmind = null
+			rel_clear(BM, "overmind")
 			BM.update_icons()
 
 	..()

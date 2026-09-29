@@ -347,7 +347,7 @@ GLOBAL_LIST(construction_frame_floor)
 
 		if(frame_type.circuit)
 			need_circuit = FALSE
-			circuit = new frame_type.circuit(src)
+			own_set(src, "circuit", new frame_type.circuit(src))
 
 	if(frame_type.name == "Computer")
 		density = TRUE

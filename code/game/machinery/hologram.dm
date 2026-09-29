@@ -137,7 +137,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 
 /obj/machinery/hologram/holopad/proc/create_holo(mob/living/silicon/ai/A, turf/T = loc)
 	var/obj/effect/overlay/aiholo/hologram = new(T) // Spawn a blank effect at the location. // to specific type for adding vars
-	hologram.master = A // So you can reference the master AI from in the hologram procs
+	rel_set(hologram, "master", A) // So you can reference the master AI from in the hologram procs
 	hologram.icon = A.holo_icon
 	hologram.pixel_x = 16 - round(A.holo_icon.Width() / 2) // centers the hologram on the tile
 	// hologram.mouse_opacity = 0//So you can't click on it. // Removal
@@ -162,7 +162,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 	set_light(2)			//pad lighting
 	icon_state = "holopad1"
 	flick("holopadload", src)
-	A.holo = src
+	rel_set(A, "holo", src)
 	if(LAZYLEN(masters))
 		MACHINE_WAKE(src)
 
@@ -173,9 +173,9 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 
 /obj/machinery/hologram/holopad/proc/clear_holo(mob/living/silicon/ai/user)
 	if(user.holo == src)
-		user.holo = null
+		rel_clear(user, "holo")
 	qdel(LAZYACCESS(masters, user))//Get rid of user's hologram
-	LAZYREMOVE(masters, user) //Discard AI from the list of those who use holopad
+	rel_remove(src, "masters", user) //Discard AI from the list of those who use holopad
 	if(!LAZYLEN(masters))//If no users left
 		set_light(0)			//pad lighting (hologram lighting will be handled automatically since its owner was deleted)
 		icon_state = "holopad0"

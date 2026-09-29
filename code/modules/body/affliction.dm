@@ -150,7 +150,7 @@
 
 /datum/affliction/New(location)
 	..()
-	src.location = location
+	rel_set(src, "location", location)
 	configure(location)
 
 // an affliction leaves its body (symptoms end, factors recompute).

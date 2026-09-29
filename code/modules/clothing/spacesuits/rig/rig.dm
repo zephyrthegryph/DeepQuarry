@@ -173,7 +173,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 		om_task_periodic(src, PERIODIC_SLOW)
 	else
 		om_task_periodic_stop(src)
-		QDEL_NULL(minihud) // Just in case we get removed some other way
+		own_clear(src, "minihud", OWN_DELETE) // Just in case we get removed some other way
 
 		// The control module has left the wearer's body — dropped, force-dropped on
 		// damage, stuffed into storage, gibbed off, or a protean transforming out of
@@ -409,9 +409,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 	canremove = seal_target
 	if(M.hud_used)
 		if(canremove)
-			QDEL_NULL(minihud)
+			own_clear(src, "minihud", OWN_DELETE)
 		else
-			minihud = new (M.hud_used, src)
+			own_set(src, "minihud", new /datum/mini_hud/rig (M.hud_used, src))
 	to_chat(M, span_boldnotice("Your entire suit [canremove ? "loosens as the components relax" : "tightens around you as the components lock into place"]."))
 	playsound(src, 'sound/machines/rig/rigstarted.ogg', 10, FALSE)
 	M.client?.screen -= booting_L

@@ -28,7 +28,7 @@ DECLARE_REAGENTS(/obj/item/grenade/chem_grenade, 1000, null)
 		if(detonator)
 			detonator.detached()
 			user.put_in_hands(detonator)
-			detonator=null
+			own_take(src, "detonator")
 			det_time = null
 			stage=0
 			icon_state = initial(icon_state)
@@ -69,7 +69,7 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 		playsound(src, 'sound/items/Screwdriver2.ogg', 25, -3)
 		user.remove_from_mob(det)
 		det.forceMove(src)
-		detonator = det
+		own_set(src, "detonator", det)
 		if(istimer(detonator.a_left))
 			var/obj/item/assembly/timer/T = detonator.a_left
 			det_time = 10*T.time

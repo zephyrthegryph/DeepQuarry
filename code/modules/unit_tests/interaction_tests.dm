@@ -150,7 +150,7 @@
 	var/obj/item/part = allocate(/obj/item, machine)
 	var/obj/item/circuitboard/board = allocate(/obj/item/circuitboard, machine)
 	machine.component_parts = list(part)
-	machine.circuit = board
+	own_set(machine, "circuit", board)
 
 	machine.deconstruct(FALSE)
 

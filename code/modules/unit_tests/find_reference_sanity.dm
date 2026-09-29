@@ -11,7 +11,7 @@ OWN(/atom/movable/ref_holder, test, OWN_CONTAINED)
 
 /atom/movable/ref_holder/on_destroy(force)
 	// A static var outlives the instance: clear it by hand.
-	static_test = null
+	rel_clear(src, "static_test")
 	..()
 
 /atom/movable/ref_test
@@ -42,7 +42,7 @@ OWN(/atom/movable/ref_test, self_ref, OWN_CONTAINED)
 	SSgarbage.should_save_refs = TRUE
 
 	//Set up for the first round of tests
-	testbed.test = victim
+	own_set(testbed, "test", victim)
 	testbed.test_list += victim
 	testbed.test_assoc_list["baseline"] = victim
 
@@ -81,7 +81,7 @@ OWN(/atom/movable/ref_test, self_ref, OWN_CONTAINED)
 	SSgarbage.should_save_refs = TRUE
 
 	//Let's get a bit esoteric
-	victim.self_ref = victim
+	own_set(victim, "self_ref", victim)
 	var/list/to_find = list(victim)
 	testbed.test_list += list(to_find)
 	var/list/to_find_assoc = list(victim)
@@ -136,7 +136,7 @@ OWN(/atom/movable/ref_test, self_ref, OWN_CONTAINED)
 	SSgarbage.should_save_refs = TRUE
 
 	//Lets check static vars now, since those can be a real headache
-	testbed.static_test = victim
+	rel_set(testbed, "static_test", victim)
 
 	//Yes we do actually need to do this. The searcher refuses to read weird lists
 	//And global.vars is a really weird list

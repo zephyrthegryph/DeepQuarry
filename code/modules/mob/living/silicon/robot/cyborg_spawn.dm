@@ -35,7 +35,7 @@
 		var/obj/item/robot_module/module_type = GLOB.robot_modules[preferred_module]
 		if(module_type)
 			modtype = preferred_module
-			module = new module_type(src)
+			own_set(src, "module", new module_type(src))
 			set_default_module_icon()
 			transform_module()
 		return

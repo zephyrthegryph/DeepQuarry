@@ -157,7 +157,7 @@ DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
 		if(!desired_blob_type && !isnull(difficulty_threshold))
 			desired_blob_type = get_random_blob_type()
 		var/mob/observer/blob/B = new(loc, TRUE, 60, desired_blob_type)
-		overmind = B
+		rel_set(src, "overmind", B)
 		B.blob_core_handle = om_handle(src)
 		B.ai_controlled = TRUE
 		update_icon()
@@ -170,7 +170,7 @@ DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
 
 	var/client/C = null
 	if(!new_overmind)
-		Q = new /datum/ghost_query/blob()
+		own_set(src, "Q", new /datum/ghost_query/blob())
 		om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
 		Q.query()
 
@@ -187,7 +187,7 @@ DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
 		C = D.client
 		overmind_creation(C)
 	om_unhook(Q, /datum/om/event/ghost_query_complete, src)
-	QDEL_NULL(Q) //get rid of the query
+	own_clear(src, "Q", OWN_DELETE) //get rid of the query
 
 /obj/structure/blob/core/proc/overmind_creation(client/new_overmind)
 	if(new_overmind)
@@ -196,7 +196,7 @@ DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
 		var/mob/observer/blob/B = new(loc, TRUE, 60, desired_blob_type)
 		B.key = new_overmind.key
 		B.blob_core_handle = om_handle(src)
-		src.overmind = B
+		rel_set(src, "overmind", B)
 		update_icon()
 		if(B.mind && !B.mind.special_role)
 			B.mind.special_role = "Blob Overmind"

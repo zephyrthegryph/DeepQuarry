@@ -196,7 +196,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 	if(!islist && !isdatum(thing))
 		return
 	if(!dq_vv_panel)
-		dq_vv_panel = new(src)
+		own_set(src, "dq_vv_panel", new /datum/view_variables_panel(src))
 	dq_vv_panel.thing = thing
 	dq_vv_panel.refid = REF(thing)
 	dq_vv_panel.tgui_interact(usr)

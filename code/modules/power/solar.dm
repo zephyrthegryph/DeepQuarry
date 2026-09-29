@@ -460,7 +460,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 		latent_materialize_all() // a walk needs real things (C5)
 		for(var/obj/C in contents_of(src)) // ALLOW(latent): materialized above
 			C.forceMove(src.loc)
-		A.circuit = M
+		own_set(A, "circuit", M)
 		A.state = 3
 		A.icon_state = "computer_3"
 		A.anchored = TRUE
@@ -472,7 +472,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 		latent_materialize_all() // a walk needs real things (C5)
 		for(var/obj/C in contents_of(src)) // ALLOW(latent): materialized above
 			C.forceMove(src.loc)
-		A.circuit = M
+		own_set(A, "circuit", M)
 		A.state = 4
 		A.icon_state = "computer_4"
 		A.anchored = TRUE

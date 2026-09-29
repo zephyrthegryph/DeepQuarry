@@ -92,7 +92,7 @@
 
 	HUD.adding = adding
 	HUD.other = other
-	HUD.hotkeybuttons = hotkeybuttons
+	own_set(HUD, "hotkeybuttons", hotkeybuttons)
 	HUD.hud_elements = hud_elements
 
 	var/atom/movable/screen/pai/using
@@ -113,7 +113,7 @@
 	using.color = ui_color
 	using.alpha = ui_alpha
 	HUD.adding += using
-	HUD.move_intent = using
+	own_set(HUD, "move_intent", using)
 
 	//Resist button
 	using = new /atom/movable/screen()
@@ -123,28 +123,28 @@
 	using.screen_loc = ui_movi
 	using.color = ui_color
 	using.alpha = ui_alpha
-	HUD.hotkeybuttons += using
+	own_add(HUD, "hotkeybuttons", using)
 
 	//Pull button
-	pullin = new /atom/movable/screen()
+	own_set(src, "pullin", new /atom/movable/screen())
 	pullin.icon = ui_style
 	pullin.icon_state = "pull0"
 	pullin.name = "pull"
 	pullin.screen_loc = ui_movi
-	HUD.hotkeybuttons += pullin
+	own_add(HUD, "hotkeybuttons", pullin)
 	LAZYOR(HUD.hud_elements, pullin)
 
 	//Health status
-	healths = new /atom/movable/screen()
+	own_set(src, "healths", new /atom/movable/screen())
 	healths.icon = ui_style
 	healths.icon_state = "health0"
 	healths.name = "health"
 	healths.screen_loc = ui_health
 	LAZYOR(HUD.hud_elements, healths)
 
-	pain = new /atom/movable/screen( null )
+	own_set(src, "pain", new /atom/movable/screen( null ))
 
-	zone_sel = new /atom/movable/screen/zone_sel( null )
+	own_set(src, "zone_sel", new /atom/movable/screen/zone_sel( null ))
 	zone_sel.icon = ui_style
 	zone_sel.color = ui_color
 	zone_sel.alpha = ui_alpha
@@ -152,7 +152,7 @@
 	zone_sel.update_icon()
 	LAZYOR(HUD.hud_elements, zone_sel)
 
-	pai_fold_display = new /atom/movable/screen/pai/pai_fold_display()
+	own_set(src, "pai_fold_display", new /atom/movable/screen/pai/pai_fold_display())
 	pai_fold_display.screen_loc = ui_health
 	pai_fold_display.icon_state = "folded"
 	LAZYOR(HUD.hud_elements, pai_fold_display)
@@ -299,7 +299,7 @@
 	using.alpha = ui_alpha
 	other |= using
 
-	autowhisper_display = new /atom/movable/screen()
+	own_set(src, "autowhisper_display", new /atom/movable/screen())
 	autowhisper_display.icon = 'icons/mob/screen/minimalist.dmi'
 	autowhisper_display.icon_state = "autowhisper"
 	autowhisper_display.name = "autowhisper"

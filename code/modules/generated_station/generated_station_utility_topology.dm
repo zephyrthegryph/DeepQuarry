@@ -454,7 +454,7 @@
 		return null
 	spec_handle = om_handle(new_spec)
 	materialization_handle = om_handle(new_materialization)
-	result = new
+	own_set(src, "result", new /datum/generated_station_utility_topology)
 	result.station_id = spec().id
 	var/list/path_targets = list()
 	var/list/power_targets = list()
@@ -481,7 +481,7 @@
 		APC.set_dir(apc_wall_direction)
 		result.power_objects += APC
 		result.apcs += APC
-		A.apc = APC
+		rel_set(A, "apc", APC)
 		var/turf/apc_terminal_turf = get_turf(APC.terminal)
 		if(!apc_terminal_turf)
 			return fail_global_build("APC in [A] did not create a terminal")
@@ -674,7 +674,7 @@
 
 /datum/generated_station_utility_builder/proc/fail_global_build(reason)
 	log_world("Generated station utility build failed for [spec()?.id]: [reason]")
-	QDEL_NULL(result)
+	own_clear(src, "result", OWN_DELETE)
 	return null
 
 /datum/generated_station_utility_builder/proc/add_external_connection(list/connections, turf/T, direction)
@@ -802,7 +802,7 @@
 	if(!station_spec || !station_materialization || station_utilities)
 		return FALSE
 	var/datum/generated_station_utility_builder/builder = new
-	station_utilities = builder.build(station_spec, station_materialization)
+	own_set(src, "station_utilities", builder.build(station_spec, station_materialization))
 	qdel(builder)
 	return !!station_utilities
 

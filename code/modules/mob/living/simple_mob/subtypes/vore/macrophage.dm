@@ -68,7 +68,7 @@
 	melee_damage_lower += max(0, D.resistance)
 	melee_damage_upper += max(0, D.resistance)
 	infections += D
-	base_disease = D
+	own_set(src, "base_disease", D)
 
 /mob/living/simple_mob/vore/aggressive/macrophage/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run = FALSE)
 	. = ..()
@@ -160,6 +160,6 @@
 
 /mob/living/simple_mob/vore/aggressive/macrophage/load_default_bellies()
 	var/obj/belly/B = new /obj/belly/macrophage(src)
-	vore_selected = B
+	own_set(src, "vore_selected", B)
 
 // The macrophage's own strain; victims get copies. base_disease is also in infections.

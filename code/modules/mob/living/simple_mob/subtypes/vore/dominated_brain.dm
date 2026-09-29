@@ -20,8 +20,8 @@
 /mob/living/dominated_brain/Initialize(mapload, mob/living/pred, preyname, mob/living/prey)
 	prey_name = preyname
 	if(prey)
-		prey_body = prey
-	pred_body = pred
+		rel_set(src, "prey_body", prey)
+	rel_set(src, "pred_body", pred)
 	if(!isliving(loc))
 		return INITIALIZE_HINT_QDEL
 	. = ..()
@@ -58,14 +58,14 @@
 	EVENT_HANDLER
 	if(prey_body)
 		om_unhook(prey_body, /datum/om/event/qdeleting, src)
-		prey_body = null
+		rel_clear(src, "prey_body")
 
 /// Also called directly with no args (lets_unregister_our_signals).
 /mob/living/dominated_brain/proc/pred_was_deleted(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
 	if(pred_body)
 		om_unhook(pred_body, /datum/om/event/qdeleting, src)
-		pred_body = null
+		rel_clear(src, "pred_body")
 
 /mob/living/dominated_brain/process_resist()
 	//Resisting control by an alien mind.
@@ -114,8 +114,8 @@
 	else if(prey_body)	//It exists, but it's not here, let's spawn them a temporary home.
 		var/mob/living/dominated_brain/ndb = new /mob/living/dominated_brain(pred_body, pred_body, prey_name, prey_body)
 		ndb.name = prey_name
-		ndb.prey_mind = prey_mind
-		ndb.pred_mind = pred_mind
+		rel_set(ndb, "prey_mind", prey_mind)
+		rel_set(ndb, "pred_mind", pred_mind)
 
 		prey_goes_here = ndb
 		prey_goes_here.real_name = src.prey_name
@@ -126,8 +126,8 @@
 	else		//The prey body does not exist, let's put them in the back seat instead!
 		var/mob/living/dominated_brain/ndb = new /mob/living/dominated_brain(pred_body, pred_body, prey_name)
 		ndb.name = prey_name
-		ndb.prey_mind = prey_mind
-		ndb.pred_mind = pred_mind
+		rel_set(ndb, "prey_mind", prey_mind)
+		rel_set(ndb, "pred_mind", pred_mind)
 
 		prey_goes_here = ndb
 		src.languages -= src.temp_languages
@@ -237,7 +237,7 @@
 	ask.key = key
 	ask.title = title
 	ask.message = message
-	ask.answerer = answerer
+	rel_set(ask, "answerer", answerer)
 	ask.decline_text = decline_text
 	return ask
 
@@ -545,8 +545,8 @@
 	else
 		pred_brain = new /mob/living/dominated_brain(pred, pred, prey.name, prey)
 
-	pred_brain.prey_mind = prey.ensure_mind()
-	pred_brain.pred_mind = pred.mind
+	rel_set(pred_brain, "prey_mind", prey.ensure_mind())
+	rel_set(pred_brain, "pred_mind", pred.mind)
 	pred_brain.was_mob = isnull(pred_brain.pred_mind)
 	pred_brain.name = pred.name
 	pred_brain.real_name = pred.real_name
@@ -572,8 +572,8 @@
 	var/mob/living/dominated_brain/db = new /mob/living/dominated_brain(src, src, M.name, M)
 	db.name = M.name
 	db.real_name = M.real_name
-	db.prey_mind = M.ensure_mind()
-	db.pred_mind = mind
+	rel_set(db, "prey_mind", M.ensure_mind())
+	rel_set(db, "pred_mind", mind)
 
 	M.languages -= M.temp_languages
 	db.languages |= M.languages

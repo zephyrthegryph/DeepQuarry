@@ -367,7 +367,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
 					AI.lose_target()  // sleep-style state — drop current target
 					if(prob(tame_chance))
 						AI.set_hostile(FALSE)
-						friend = M
+						rel_set(src, "friend", M)
 						AI.set_follow(friend)
 						if(tamed != 1)
 							tamed = 1
@@ -381,7 +381,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
 					audible_emote("growls disapprovingly at [M].")
 					if(M == friend)
 						AI.lose_follow()
-						friend = null
+						rel_clear(src, "friend")
 					return TRUE
 			return FALSE
 

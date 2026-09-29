@@ -404,7 +404,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	component_parts = list()
 	for(var/obj/item/I in slot_contents(CONTAINER_SLOT_INTERNALS))
 		if(istype(I, /obj/item/circuitboard))
-			circuit = I
+			own_set(src, "circuit", I)
 		else
 			component_parts += I
 
@@ -621,7 +621,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	materialize_parts()
 	var/obj/structure/frame/A = new /obj/structure/frame(src.loc)
 	var/obj/item/circuitboard/M = circuit
-	A.circuit = M
+	own_set(A, "circuit", M)
 	A.anchored = TRUE
 	A.frame_type = M.board_type
 	if(A.frame_type.circuit)
@@ -674,7 +674,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	materialize_circuit()
 	materialize_parts()
 	component_parts = null
-	circuit = null
+	own_take(src, "circuit")
 	return ..()
 
 /obj/machinery/atom_destruction(damage_flag)

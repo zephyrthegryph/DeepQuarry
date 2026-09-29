@@ -54,7 +54,7 @@
 	if(!new_theme_path)
 		new_theme_path = pick(subtypesof(/datum/dimension_theme))
 
-	theme = new new_theme_path
+	own_set(src, "theme", new new_theme_path)
 
 	apply_theme_icon()
 

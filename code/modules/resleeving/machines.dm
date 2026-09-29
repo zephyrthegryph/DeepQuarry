@@ -13,7 +13,7 @@
 /obj/machinery/clonepod/transhuman/full/Initialize(mapload)
 	. = ..()
 	for(var/i = 1 to container_limit)
-		LAZYADD(containers, new /obj/item/reagent_containers/glass/bottle/biomass(src))
+		own_add(src, "containers", new /obj/item/reagent_containers/glass/bottle/biomass(src))
 
 /obj/machinery/clonepod/transhuman/growclone(datum/transhuman/body_record/current_project)
 	//Manage machine-specific stuff.
@@ -42,7 +42,7 @@
 
 		if(tankpath)
 			H.equip_to_slot_or_del(new tankpath(H), SLOT_ID_BACK)
-			H.internal = H.get_equipped_item(SLOT_ID_BACK)
+			own_set(H, "internal", H.get_equipped_item(SLOT_ID_BACK))
 			if(istype(H.internal,/obj/item/tank) && H.internals)
 				H.internals.icon_state = "internal1"
 

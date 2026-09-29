@@ -32,7 +32,7 @@
 	if(!ismob(M))
 		log_runtime("nif_menu created without a mob owner ([M]).")
 		return
-	owner = M
+	rel_set(src, "owner", M)
 	om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_client_login))
 	om_hook(owner, /datum/om/event/qdeleting, src, PROC_REF(on_owner_qdeleting))
 	if(owner.client)
@@ -56,7 +56,7 @@
 /datum/nif_menu/proc/create_mob_button(mob/user)
 	var/datum/hud/HUD = user.hud_used
 	if(!screen_icon)
-		screen_icon = new()
+		own_set(src, "screen_icon", new /atom/movable/screen/nif())
 		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(nif_menu_click))
 	screen_icon.icon = HUD.ui_style
 	screen_icon.color = HUD.ui_color

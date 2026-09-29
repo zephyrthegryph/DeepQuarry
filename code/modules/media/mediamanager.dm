@@ -19,7 +19,7 @@
 // Set up player on login.
 /client/New()
 	. = ..()
-	media = new /datum/media_manager(src)
+	own_set(src, "media", new /datum/media_manager(src))
 	media.open()
 	media.update_music()
 
@@ -154,7 +154,7 @@
 	// Enable the hidden skin element so its BROWSER actually loads our
 	// assets — the 1x1 size keeps it invisible regardless of is-visible.
 	winset(owner(), WINDOW_ID, "is-disabled=false;is-visible=true")
-	media_window = new(owner(), WINDOW_ID)
+	own_set(src, "media_window", new /datum/tgui_window(owner(), WINDOW_ID))
 	media_window.initialize(
 		assets = list(get_asset_datum(/datum/asset/simple/tgui)),
 	)

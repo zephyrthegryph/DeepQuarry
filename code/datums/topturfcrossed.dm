@@ -11,7 +11,7 @@
 	if(!ismovable(new_owner))
 		log_runtime("TOPTURFCROSSED: attached to non-movable [new_owner] ([new_owner?.type])")
 		return
-	owner = new_owner
+	rel_set(src, "owner", new_owner)
 	dq_add_recursive_move(owner) // Required if we want to be useful at all
 	om_hook(owner, /datum/om/event/movable_attempted_move, src, PROC_REF(handle_location_change))
 	update_turf_hooks(get_turf(owner))

@@ -240,7 +240,7 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 	if(deployed_headpods)
 		to_chat(L, span_warning("The HeadPods are already deployed!"))
 		return
-	deployed_headpods = new ()
+	own_set(src, "deployed_headpods", new /obj/item/headpods ())
 	L.put_in_any_hand_if_possible(deployed_headpods)
 	update_icon()
 
@@ -260,7 +260,7 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 
 	if(istype(potential_holder))
 		potential_holder.unEquip(deployed_headpods, force = TRUE)
-	QDEL_NULL(deployed_headpods)
+	own_clear(src, "deployed_headpods", OWN_DELETE)
 	update_icon()
 
 /obj/item/walkpod/proc/check_headpods()

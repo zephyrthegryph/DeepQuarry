@@ -15,7 +15,7 @@
 /obj/item/chainsaw/Initialize(mapload)
 	var/datum/reagents/R = new/datum/reagents(max_fuel)
 	reagents = R
-	R.my_atom = src
+	rel_set(R, "my_atom", src)
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
 	. = ..()
 

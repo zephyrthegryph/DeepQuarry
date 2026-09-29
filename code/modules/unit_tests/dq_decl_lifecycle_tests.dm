@@ -13,7 +13,7 @@ GLOBAL_LIST_EMPTY(dq_decl_test_log)
 	var/datum/owner_ref
 
 /datum/dq_decl_owned_child/New(datum/owner)
-	owner_ref = owner
+	rel_set(src, "owner_ref", owner)
 
 
 /obj/item/dq_decl_part

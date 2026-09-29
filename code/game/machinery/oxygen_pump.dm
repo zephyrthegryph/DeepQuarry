@@ -68,7 +68,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		user.put_in_hands(tank)
 		src.add_fingerprint(user)
 		tank.add_fingerprint(user)
-		tank = null
+		own_take(src, "tank")
 		return TRUE
 	if (!tank)
 		to_chat(user, span_warning("There is no tank in \the [src]!"))
@@ -151,7 +151,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		else
 			user.drop_item()
 			W.forceMove(src)
-			tank = W
+			own_set(src, "tank", W)
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " installs \the [tank] into \the [src]."), span_notice("You install \the [tank] into \the [src]."))
 			src.add_fingerprint(user)
 	if(istype(W, /obj/item/tank) && !stat)

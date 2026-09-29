@@ -9,7 +9,7 @@
 /datum/shuttle/New()
 	if(crash_locations)
 		var/crash_location_ids = crash_locations
-		crash_locations = null
+		rel_clear(src, "crash_locations")
 		for(var/location_tag in crash_location_ids)
 			var/obj/effect/shuttle_landmark/L = SSshuttles.get_landmark(location_tag)
 			if(L)

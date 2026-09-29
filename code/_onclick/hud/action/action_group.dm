@@ -23,7 +23,7 @@
 
 /datum/action_group/New(datum/hud/owner)
 	..()
-	actions = list()
+	own_set(src, "actions", list())
 	src.owner_handle = om_handle(owner)
 
 
@@ -31,7 +31,7 @@
 	if(action in actions)
 		if(actions[index] == action)
 			return
-		actions -= action // Don't dupe, come on
+		own_take_member(src, "actions", action) // Don't dupe, come on
 	if(!index)
 		index = length(actions) + 1
 	index = min(length(actions) + 1, index)
@@ -39,7 +39,7 @@
 	refresh_actions()
 
 /datum/action_group/proc/remove_action(atom/movable/screen/action)
-	actions -= action
+	own_take_member(src, "actions", action)
 	if(!QDELING(src))
 		refresh_actions()
 
@@ -124,13 +124,13 @@
 /datum/action_group/proc/generate_landing()
 	if(landing)
 		return
-	landing = new()
+	own_set(src, "landing", new /atom/movable/screen/action_landing())
 	landing.set_owner(src)
 	refresh_actions()
 
 /// Clears any landing objects we may currently have
 /datum/action_group/proc/clear_landing()
-	QDEL_NULL(landing)
+	own_clear(src, "landing", OWN_DELETE)
 
 /datum/action_group/proc/update_landing()
 	if(!landing)

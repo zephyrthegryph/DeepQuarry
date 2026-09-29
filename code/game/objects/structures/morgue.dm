@@ -88,11 +88,11 @@
 			A.forceMove(src)
 	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 	qdel(src.connected)
-	src.connected = null
+	rel_clear(src, "connected")
 
 /obj/structure/morgue/proc/open()
 	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-	src.connected = new /obj/structure/m_tray( src.loc )
+	rel_set(src, "connected", new /obj/structure/m_tray( src.loc ))
 	step(src.connected, src.dir)
 	src.connected.layer = OBJ_LAYER
 	var/turf/T = get_step(src, src.dir)
@@ -105,7 +105,7 @@
 		src.connected.set_dir(src.dir)
 	else
 		qdel(src.connected)
-		src.connected = null
+		rel_clear(src, "connected")
 
 
 /// Old attackby: relabel with a pen.
@@ -263,7 +263,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 		QDEL_NULL(connected)
 	else if (src.locked == 0)
 		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-		src.connected = new /obj/structure/m_tray/c_tray( src.loc )
+		rel_set(src, "connected", new /obj/structure/m_tray/c_tray( src.loc ))
 		step(src.connected, dir)
 		src.connected.layer = OBJ_LAYER
 		var/turf/T = get_step(src, dir)
@@ -301,7 +301,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 /obj/structure/morgue/crematorium/relaymove(mob/user as mob)
 	if (user.stat || locked)
 		return
-	src.connected = new /obj/structure/m_tray/c_tray( src.loc )
+	rel_set(src, "connected", new /obj/structure/m_tray/c_tray( src.loc ))
 	step(src.connected, EAST)
 	src.connected.layer = OBJ_LAYER
 	var/turf/T = get_step(src, EAST)
@@ -313,7 +313,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 		src.connected.icon_state = "cremat"
 	else
 		qdel(src.connected)
-		src.connected = null
+		rel_clear(src, "connected")
 	return
 
 /obj/structure/morgue/crematorium/proc/cremation_done()

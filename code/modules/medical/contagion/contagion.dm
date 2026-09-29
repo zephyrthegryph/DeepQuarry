@@ -133,7 +133,7 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 
 /datum/affliction/contagion/on_added()
 	..()
-	host = owner
+	rel_set(src, "host", owner)
 	sync_severity()
 	registry_join(REGISTRY_ACTIVE_DISEASES, src)
 	update_spread_lane()
@@ -145,7 +145,7 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 		End()
 	..()
 	registry_leave(REGISTRY_ACTIVE_DISEASES, src)
-	host = null
+	rel_clear(src, "host")
 
 /datum/affliction/contagion/proc/try_infect(mob/living/infectee, make_copy = TRUE)
 	return infect(infectee, make_copy)

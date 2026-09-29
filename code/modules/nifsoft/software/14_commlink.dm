@@ -42,7 +42,7 @@
 
 /obj/item/communicator/commlink/Initialize(mapload, soft)
 	. = ..()
-	nif = loc
+	rel_set(src, "nif", loc)
 	nifsoft_handle = om_handle(soft)
 
 REL_PAIR(/obj/item/communicator/commlink, nif, comm)

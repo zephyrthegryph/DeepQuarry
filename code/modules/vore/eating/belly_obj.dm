@@ -286,7 +286,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 	. = ..()
 	//If not, we're probably just in a prefs list or something.
 	if(ismob(loc))
-		owner = loc
+		rel_set(src, "owner", loc)
 		LAZYADD(owner.vore_organs, src)
 		belly_reschedule()
 
@@ -739,7 +739,7 @@ REL_PAIR_LIST(/mob/living, vore_organs, owner)
 				var/datum/mind_host/mmi_host = get_mind_host(hasMMI)
 				var/mob/living/carbon/brain/view = mmi_host.receive_mind(M.mind, "cyborg [R] digested")
 				view.remove_language(LANGUAGE_ROBOT_TALK)
-				R.mmi = null
+				own_take(R, "mmi")
 		else if(!R.shell) // Shells don't have brainmobs in their MMIs.
 			to_chat(R, span_danger("Oops! Something went very wrong, your MMI was unable to receive your mind. You have been ghosted. Please make a bug report so we can fix this bug."))
 		if(R.shell) // Let the standard procedure for shells handle this.
@@ -747,14 +747,14 @@ REL_PAIR_LIST(/mob/living, vore_organs, owner)
 			return
 
 	if(istype(hasMMI))
-		hasMMI.body_backup = M
+		own_set(hasMMI, "body_backup", M)
 		om_suspend(M, M)
 		slot_remove(M, hasMMI)
 	else
 		var/mob/observer/G = M.ghostize(FALSE) // Make sure they're out, so we can copy attack logs and such.
 		if(G)
 			belly_insert(G)
-			G.body_backup = M
+			own_set(G, "body_backup", M)
 			om_suspend(M, M)
 			slot_remove(M, G)
 		else

@@ -23,7 +23,7 @@
 	var/list/helmets	// OM handles of the registered pilot helmets
 
 /datum/shuttle/autodock/web_shuttle/New()
-	web_master = new web_master_type(src)
+	own_set(src, "web_master", new web_master_type(src))
 	build_destinations()
 	if(autopilot)
 		flags |= SHUTTLE_FLAGS_PROCESS

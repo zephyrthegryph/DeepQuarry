@@ -97,7 +97,7 @@
 
 /datum/node/expression/value/variable/New(ident)
 	.=..()
-	id=ident
+	own_set(src, "id", ident)
 	if(istext(id))id=new(id)
 
 /datum/node/expression/value/variable/ToString()

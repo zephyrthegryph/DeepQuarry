@@ -9,7 +9,7 @@
 	if(isliving(src))
 		var/mob/living/M = src
 		if(!M.aiming)
-			M.aiming = new(src)
+			own_set(M, "aiming", new /obj/aiming_overlay(src))
 		M.aiming.toggle_active()
 	else
 		to_chat(src, span_warning("This verb may only be used by living mobs, sorry."))
@@ -17,7 +17,7 @@
 
 /mob/living/proc/stop_aiming(obj/item/thing, no_message = 0)
 	if(!aiming)
-		aiming = new(src)
+		own_set(src, "aiming", new /obj/aiming_overlay(src))
 	if(thing && aiming.aiming_with() != thing)
 		return
 	aiming.cancel_aiming(no_message)

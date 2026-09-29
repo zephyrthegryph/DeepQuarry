@@ -32,14 +32,14 @@
 	var/datum/planet/P = planet
 	var/datum/simple_sun/S = planet
 	if(istype(P))
-		owned_sun = new /datum/simple_sun/planetary(P)
+		own_set(src, "owned_sun", new /datum/simple_sun/planetary(P))
 		sun_handle = om_handle(owned_sun)
 
 	if(istype(S))
 		sun_handle = om_handle(S)
 
-	vis_overhead = new(null)
-	vis_shade = new(null)
+	own_set(src, "vis_overhead", new /atom/movable/sun_vis_simple(null))
+	own_set(src, "vis_shade", new /atom/movable/sun_vis_simple(null))
 
 /datum/planet_sunlight_handler/proc/update_sun()
 	sun().update()

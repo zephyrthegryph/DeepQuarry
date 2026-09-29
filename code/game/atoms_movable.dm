@@ -124,7 +124,7 @@
 	if(rad_insulation != RAD_NO_INSULATION)
 		RAD_SHIELDING_CHANGED(loc)
 	if(light_system == STATIC_LIGHT && light)
-		QDEL_NULL(light)
+		own_clear(src, "light", OWN_DELETE)
 	return ..()
 
 /atom/movable/Destroy()
@@ -137,7 +137,7 @@
 	if(em_block)
 		cut_overlay(em_block)
 		om_unhook(em_block, /datum/om/event/qdeleting, src)
-		QDEL_NULL(em_block)
+		own_clear(src, "em_block", OWN_DELETE)
 	// Leave the turf's opacity_sources while loc is still valid.
 	stop_blocking_light()
 	. = ..()
@@ -152,7 +152,7 @@
 	// never run Destroy() and keep a loc ref to this deleted container.
 	for(var/atom/movable/AM in contents.Copy())
 		qdel(AM)
-	QDEL_NULL(ledger)
+	own_clear(src, "ledger", OWN_DELETE)
 
 	moveToNullspace()
 
@@ -166,7 +166,7 @@
 
 	stop_orbit()
 	throw_source_handle = null
-	QDEL_NULL(riding_datum)
+	own_clear(src, "riding_datum", OWN_DELETE)
 	set_listening(NON_LISTENING_ATOM)
 
 ////////////////////////////////////////
@@ -569,7 +569,7 @@
 		real_force = thrown_item.throwforce
 
 	var/datum/thrownthing/TT = new(src, target, dir, range, speed, thrower, FALSE, real_force, FALSE, callback)
-	throwing = TT
+	rel_set(src, "throwing", TT)
 
 	pixel_z = 0
 	if(spin && does_spin)
@@ -786,7 +786,7 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 	om_unhook(source, /datum/om/event/qdeleting, src)
 	cut_overlay(source)
 	if(em_block == source)
-		em_block = null
+		own_take(src, "em_block")
 
 /atom/movable/proc/abstract_move(atom/new_loc)
 	var/atom/old_loc = loc

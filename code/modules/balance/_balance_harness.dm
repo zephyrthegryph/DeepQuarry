@@ -164,7 +164,7 @@
 			entry["error"] = "no breathable floor to run on"
 			continue
 		var/datum/balance_scenario/scenario = new path
-		scenario.site = site
+		rel_set(scenario, "site", site)
 		entry["description"] = scenario.description
 		var/runtimes_before = GLOB.total_runtimes
 		var/start = REALTIMEOFDAY

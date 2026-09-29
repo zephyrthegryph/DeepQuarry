@@ -113,7 +113,7 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 
 /datum/om/flow/trader_trade/proc/product_picked(datum/om/prompt/choice/ask)
 	var/obj/trader/trader = target
-	product = ask.choice
+	rel_set(src, "product", ask.choice)
 	if(!istype(product) || !(product in trader.products))
 		to_chat(actor, span_notice("You decided not to get anything."))
 		trader.trading = FALSE
@@ -151,7 +151,7 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 	user.put_in_hands(input)
 	trader.products -= input
 	trader.deduct_value(p)
-	product = null
+	rel_clear(src, "product")
 	stage = "change"
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(change_answered), buttons = TRUE, title = "[trader]", message = "Would you like your change back, or would you like it to remain banked for later use? (Anyone can use banked funds)", choices = list("Keep it banked","I want my change"), timeout = 10 SECONDS)
 

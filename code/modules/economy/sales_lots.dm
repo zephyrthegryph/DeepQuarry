@@ -14,7 +14,7 @@
 
 /obj/structure/closet/crate/proc/void_shipping_ledger(reason)
 	shipping_ledger?.void_shipping_ledger(reason)
-	shipping_ledger = null
+	own_take(src, "shipping_ledger")
 	shipping_ledger_snapshot = null
 
 /obj/structure/closet/crate/proc/freight_snapshot()
@@ -167,7 +167,7 @@
 	var/ledger_id = "FL-[stationtime2text()]-[rand(1000, 9999)]"
 	ledger.shipping_ledger_data = list("id" = ledger_id, "valid" = TRUE, "department" = department, "destination" = destination, "department_percent" = department_percent, "cargo_percent" = 20, "producer_percentages" = producer_percentages.Copy(), "sealed_by" = user.real_name, "scanner" = machine_id)
 	ledger.set_content("FREIGHT LEDGER [ledger_id]\n\nConsignor: [department]\nConsignee: [destination]\nCertified by: [user.real_name]\nScanner: [machine_id]\nEstimated eligible value: [eligible_value] Th\n\nRevenue: [department_percent]% [department], 20% Cargo[length(producer_rows) ? ", [jointext(producer_rows, "; ")]" : ""].\n\nOpening or changing the certified crate voids this document.", "freight ledger [ledger_id]")
-	crate.shipping_ledger = ledger
+	own_set(crate, "shipping_ledger", ledger)
 	crate.shipping_ledger_snapshot = crate.freight_snapshot()
 	playsound(src, 'sound/machines/chime.ogg', 25)
 	to_chat(user, span_notice("[src] prints [ledger] into [crate] and seals its authenticated cargo snapshot."))

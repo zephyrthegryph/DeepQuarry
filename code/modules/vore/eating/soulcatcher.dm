@@ -60,11 +60,11 @@
 
 // Allows to transfer the soulgem to the given mob
 /obj/soulgem/proc/transfer_self(mob/target)
-	QDEL_NULL(target.soulgem)
+	own_clear(target, "soulgem", OWN_DELETE)
 	owner().soulgem = null
 	forceMove(target)
 	owner_handle = om_handle(target)
-	target.soulgem = src
+	rel_set(target, "soulgem", src)
 
 // Cleaning up our refs before deletion
 
@@ -135,7 +135,7 @@
 	//Create a new brain mob
 	var/mob/living/carbon/brain/caught_soul/vore/brainmob = new(src)
 	brainmob.gem_handle = om_handle(src)
-	brainmob.container = src
+	own_set(brainmob, "container", src)
 	brainmob.status_set(EFFECT_MUTED, 0)
 	brainmob.ext_deaf = !flag_check(NIF_SC_ALLOW_EARS)
 	brainmob.ext_blind = !flag_check(NIF_SC_ALLOW_EYES)
@@ -491,7 +491,7 @@
 		own_mind_handle = null
 	brainmobs -= M
 	M.gem_handle = om_handle(gem)
-	M.container = gem
+	own_set(M, "container", gem)
 	gem.brainmobs += M
 	if(M == selected_soul())
 		update_selected_soul()

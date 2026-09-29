@@ -119,7 +119,7 @@
 /datum/unit_test/dq_med7_d12_bioregen_clears_necrosis/Run()
 	var/obj/item/organ/external/arm/arm = allocate(/obj/item/organ/external/arm)
 	var/datum/affliction/tissue_necrosis/N = new(arm)
-	N.location = arm
+	rel_set(N, "location", arm)
 	LAZYADD(arm.detached_afflictions, N)
 	arm.clear_necrosis()
 	var/list/remaining = arm.afflictions_here()

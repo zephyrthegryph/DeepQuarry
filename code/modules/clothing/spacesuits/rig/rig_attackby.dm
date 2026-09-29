@@ -69,7 +69,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 			if(!user.unEquip(W))
 				return INTERACTION_HANDLED_PASS
 
-			air_supply = W
+			own_set(src, "air_supply", W)
 			W.forceMove(src)
 			to_chat(user, "You slot [W] into [src] and tighten the connecting valve.")
 			return INTERACTION_HANDLED_PASS
@@ -83,7 +83,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 					return TRUE
 
 			if(!installed_modules)
-				installed_modules = list()
+				rel_set(src, "installed_modules", list())
 			if(length(installed_modules))
 				for(var/obj/item/rig_module/installed_mod in installed_modules)
 					if(!installed_mod.redundant && istype(installed_mod,W))
@@ -101,7 +101,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 				return INTERACTION_HANDLED_PASS
 			to_chat(user, "You jack \the [W] into \the [src]'s battery mount.")
 			W.forceMove(src)
-			src.cell = W
+			own_set(src, "cell", W)
 			return INTERACTION_HANDLED_PASS
 
 		return INTERACTION_HANDLED_PASS
@@ -142,7 +142,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/tank/removed_tank = air_supply
 	user.put_in_hands(removed_tank)
-	air_supply = null
+	own_take(src, "air_supply")
 	to_chat(user, "You detach and remove \the [removed_tank].")
 	return ITEM_INTERACT_SUCCESS
 
@@ -169,7 +169,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 		for(var/obj/item/rig_module/module in installed_modules)
 			module.deactivate()
 		user.put_in_hands(cell)
-		cell = null
+		own_take(src, "cell")
 		return ITEM_INTERACT_SUCCESS
 	var/list/possible_removals = list()
 	for(var/obj/item/rig_module/module in installed_modules)

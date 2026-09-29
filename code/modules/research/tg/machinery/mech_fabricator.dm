@@ -61,7 +61,7 @@
 /obj/machinery/mecha_part_fabricator_tg/var/datum/design_techweb/being_built
 
 /obj/machinery/mecha_part_fabricator_tg/Initialize(mapload)
-	print_sound = new(list(src), FALSE)
+	own_set(src, "print_sound", new /datum/looping_sound/lathe_print(list(src), FALSE))
 	rmat = new /datum/remote_materials( \
 		src, \
 		mapload, \
@@ -262,7 +262,7 @@
 
 		atom_say("Obstruction cleared. The fabrication of [stored_part] is now complete.")
 		stored_part.forceMove(exit)
-		stored_part = null
+		own_take(src, "stored_part")
 
 	if(!process_queue)
 		return PROCESS_KILL
@@ -307,7 +307,7 @@
 	if(exit.density)
 		atom_say("Error! The part outlet is obstructed.")
 		desc = "It's trying to dispense the fabricated [dispensed_design.name], but the part outlet is obstructed."
-		stored_part = built_part
+		own_set(src, "stored_part", built_part)
 		return FALSE
 
 	atom_say("The fabrication of [built_part] is now complete.")

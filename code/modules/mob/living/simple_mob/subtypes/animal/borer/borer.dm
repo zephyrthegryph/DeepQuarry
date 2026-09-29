@@ -311,8 +311,8 @@
 	ckey = candidate.ckey
 
 	if(candidate.mind)
-		src.mind = candidate.mind
-		candidate.mind.current = src
+		rel_set(src, "mind", candidate.mind)
+		rel_set(candidate.mind, "current", src)
 		mind.assigned_role = JOB_CORTICAL_BORER
 		mind.special_role = JOB_CORTICAL_BORER
 
@@ -328,7 +328,7 @@
 
 /mob/living/simple_mob/animal/borer/extra_huds(datum/hud/hud,icon/ui_style,list/hud_elements)
 	// Chem hud
-	borer_chem_display = new /atom/movable/screen/borer/chems()
+	own_set(src, "borer_chem_display", new /atom/movable/screen/borer/chems())
 	borer_chem_display.screen_loc = ui_ling_chemical_display
 	borer_chem_display.icon_state = "ling_chems"
 	hud_elements |= borer_chem_display

@@ -52,7 +52,7 @@ OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
 		return TRUE
 	if(!inserted_id && (user.unEquip(I) || isrobot(user)))
 		I.forceMove(src)
-		inserted_id = I
+		own_set(src, "inserted_id", I)
 		SStgui.update_uis(src)
 	return TRUE
 
@@ -141,7 +141,7 @@ OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
 			if(!inserted_id)
 				return
 			ui.user.put_in_hands(inserted_id)
-			inserted_id = null
+			own_take(src, "inserted_id")
 			. = TRUE
 		if("claim")
 			if(istype(inserted_id))
@@ -157,7 +157,7 @@ OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
 			if(istype(I))
 				ui.user.drop_item()
 				I.forceMove(src)
-				inserted_id = I
+				own_set(src, "inserted_id", I)
 			else
 				to_chat(ui.user, span_warning("No valid ID."))
 			. = TRUE

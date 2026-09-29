@@ -555,7 +555,7 @@
 		update_icon()
 		return
 	if(!door_obj)
-		door_obj = new
+		own_set(src, "door_obj", new /obj/effect/overlay/closet_door)
 	vis_contents |= door_obj
 	door_obj.icon = icon
 	door_obj.icon_state = "door_front"

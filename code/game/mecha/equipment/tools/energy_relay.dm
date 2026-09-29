@@ -35,13 +35,13 @@
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/detach()
 	om_task_periodic_stop(src)
 	if(chassis?.energy_relay == src)
-		chassis.energy_relay = null
+		own_take(chassis, "energy_relay")
 	..()
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/attach(obj/mecha/M)
 	..()
-	chassis.energy_relay = src
+	own_set(chassis, "energy_relay", src)
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/can_attach(obj/mecha/M)

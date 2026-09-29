@@ -20,9 +20,9 @@
 /obj/machinery/atmospherics/trinary/Initialize(mapload)
 	. = ..()
 
-	air1 = new
-	air2 = new
-	air3 = new
+	own_set(src, "air1", new /datum/gas_mixture)
+	own_set(src, "air2", new /datum/gas_mixture)
+	own_set(src, "air3", new /datum/gas_mixture)
 
 	air1.set_volume(200)
 	air2.set_volume(200)
@@ -102,11 +102,11 @@
 
 /obj/machinery/atmospherics/trinary/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
 	if(network1 == old_network)
-		network1 = new_network
+		rel_set(src, "network1", new_network)
 	if(network2 == old_network)
-		network2 = new_network
+		rel_set(src, "network2", new_network)
 	if(network3 == old_network)
-		network3 = new_network
+		rel_set(src, "network3", new_network)
 
 	return 1
 
@@ -124,32 +124,32 @@
 
 /obj/machinery/atmospherics/trinary/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
 	if(network1 == reference)
-		air1 = network_air
+		own_set(src, "air1", network_air)
 	if(network2 == reference)
-		air2 = network_air
+		own_set(src, "air2", network_air)
 	if(network3 == reference)
-		air3 = network_air
+		own_set(src, "air3", network_air)
 
 /obj/machinery/atmospherics/trinary/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
 	if(network1 == reference && air1 == network_air)
-		air1 = detached_pipenet_air(network_air, 200, network_volume)
+		own_set(src, "air1", detached_pipenet_air(network_air, 200, network_volume))
 	if(network2 == reference && air2 == network_air)
-		air2 = detached_pipenet_air(network_air, 200, network_volume)
+		own_set(src, "air2", detached_pipenet_air(network_air, 200, network_volume))
 	if(network3 == reference && air3 == network_air)
-		air3 = detached_pipenet_air(network_air, 200, network_volume)
+		own_set(src, "air3", detached_pipenet_air(network_air, 200, network_volume))
 
 /obj/machinery/atmospherics/trinary/disconnect(obj/machinery/atmospherics/reference)
 	if(reference==node1)
 		rust_release_network_wrapper(network1)
-		node1 = null
+		rel_clear(src, "node1")
 
 	else if(reference==node2)
 		rust_release_network_wrapper(network2)
-		node2 = null
+		rel_clear(src, "node2")
 
 	else if(reference==node3)
 		rust_release_network_wrapper(network3)
-		node3 = null
+		rel_clear(src, "node3")
 
 	update_underlays()
 
@@ -227,8 +227,8 @@
 /// base unbind doesn't know about, so two doomed neighbours can't keep each other alive.
 /obj/machinery/atmospherics/trinary/lifecycle_unbind()
 	. = ..()
-	node3 = null
-	network1 = null
-	network2 = null
-	network3 = null
+	rel_clear(src, "node3")
+	rel_clear(src, "network1")
+	rel_clear(src, "network2")
+	rel_clear(src, "network3")
 

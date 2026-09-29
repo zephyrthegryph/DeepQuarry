@@ -7,7 +7,7 @@
 	// Get the mob.
 	if((flags & ANTAG_OVERRIDE_MOB) && (!player.current || (mob_path && !istype(player.current, mob_path))))
 		var/mob/holder = player.current
-		player.current = new mob_path(get_turf(player.current))
+		rel_set(player, "current", new mob_path(get_turf(player.current)))
 		player.transfer_to(player.current)
 		if(holder) qdel(holder)
 	player.original_character = om_handle(player.current)

@@ -13,7 +13,7 @@ OWN(/datum/seed_pile, seeds, OWN_SPILL)
 	name = O.name
 	amount = 1
 	seed_type_static = O.seed()
-	seeds += O
+	own_add(src, "seeds", O)
 	src.ID = ID
 
 /datum/seed_pile/proc/matches(obj/item/seeds/O)
@@ -422,22 +422,22 @@ OWN(/datum/seed_pile, seeds, OWN_SPILL)
 				var/obj/O = pick(N.seeds)
 				if(O)
 					--N.amount
-					N.seeds -= O
+					own_take_member(N, "seeds", O)
 					if(N.amount <= 0 || N.seeds.len <= 0)
-						piles -= N
-						LAZYREMOVE(piles_contra, N)
+						own_take_member(src, "piles", N)
+						own_take_member(src, "piles_contra", N)
 						qdel(N)
 					O.forceMove(src.loc)
 				else
-					piles -= N
-					LAZYREMOVE(piles_contra, N)
+					own_take_member(src, "piles", N)
+					own_take_member(src, "piles_contra", N)
 					qdel(N)
 				return TRUE
 			else if(action == "purge")
 				for(var/obj/O in N.seeds)
 					qdel(O)
-				piles -= N
-				LAZYREMOVE(piles_contra, N)
+				own_take_member(src, "piles", N)
+				own_take_member(src, "piles_contra", N)
 				qdel(N)
 				return TRUE
 			break
@@ -501,22 +501,22 @@ OWN(/datum/seed_pile, seeds, OWN_SPILL)
 		for (var/datum/seed_pile/N in piles_contra)
 			if (N.matches(O))
 				++N.amount
-				N.seeds += (O)
+				own_add(N, "seeds", (O))
 				return
 			else if(N.ID >= newID)
 				newID = N.ID + 1
-		LAZYADD(piles_contra, new /datum/seed_pile(O, newID))
+		own_add(src, "piles_contra", new /datum/seed_pile(O, newID))
 		return
 
 	for (var/datum/seed_pile/N in piles)
 		if (N.matches(O))
 			++N.amount
-			N.seeds += (O)
+			own_add(N, "seeds", (O))
 			return
 		else if(N.ID >= newID)
 			newID = N.ID + 1
 
-	piles += new /datum/seed_pile(O, newID)
+	own_add(src, "piles", new /datum/seed_pile(O, newID))
 
 	return
 

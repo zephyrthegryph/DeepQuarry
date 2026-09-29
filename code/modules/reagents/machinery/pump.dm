@@ -24,7 +24,7 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 /obj/machinery/pump/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	cell = default_use_hicell()
+	own_set(src, "cell", default_use_hicell())
 
 	add_hose_connector(/datum/hose_connector/output)
 
@@ -47,7 +47,7 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 	qdel(src.reagents)
 	src.reagents = R
 
-	cell = locate_within(src, /obj/item/cell)
+	own_set(src, "cell", locate_within(src, /obj/item/cell))
 
 /obj/machinery/pump/update_icon()
 	..()
@@ -155,7 +155,7 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 		to_chat(user, span_notice("There is a power cell already installed."))
 		return TRUE
 	user.drop_from_inventory(W, src)
-	cell = W // Link the cell to us
+	own_set(src, "cell", W) // Link the cell to us
 	to_chat(user, span_notice("You insert the power cell."))
 	RefreshParts() // Handles cell assignment
 	update_icon()
@@ -172,7 +172,7 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 		user.put_in_hands(cell)
 		cell.add_fingerprint(user)
 		cell.update_icon()
-		cell = null
+		own_take(src, "cell")
 		set_state(FALSE)
 		to_chat(user, span_notice("You remove the power cell."))
 		return TRUE

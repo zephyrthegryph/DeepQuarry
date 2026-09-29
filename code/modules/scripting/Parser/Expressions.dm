@@ -61,11 +61,11 @@ Takes a token expected to represent a value and returns an <expression> node.
 
 			while(A)
 				var/datum/node/expression/value/variable/V=new()
-				V.id=new(A.member)
+				own_set(V, "id", new /datum/node/identifier(A.member))
 				if(E)
-					V.object=E
+					own_set(V, "object", E)
 				else
-					V.object=new/datum/node/identifier(A.object)
+					own_set(V, "object", new/datum/node/identifier(A.object))
 				E=V
 				A=S.Pop()
 			return E
@@ -137,11 +137,11 @@ of the val stack.
 	//depending on whether O is a binary or unary operator.
 	if(istype(O, /datum/node/expression/op/binary))
 		var/datum/node/expression/op/binary/B=O
-		B.exp2=val.Pop()
-		B.exp =val.Pop()
+		own_set(B, "exp2", val.Pop())
+		own_set(B, "exp", val.Pop())
 		val.Push(B)
 	else
-		O.exp=val.Pop()
+		own_set(O, "exp", val.Pop())
 		val.Push(O)
 
 /*

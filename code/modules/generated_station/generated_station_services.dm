@@ -407,7 +407,7 @@
 			if(T)
 				endpoint.x = T.x - min_x + 1
 				endpoint.y = T.y - min_y + 1
-				endpoint.landmark = new(T)
+				own_set(endpoint, "landmark", new /obj/effect/landmark/generated_station_service(T))
 				endpoint.landmark.station_id = spec().id
 				endpoint.landmark.department_node_id = node.id
 				endpoint.landmark.service_id = service_id

@@ -8,7 +8,7 @@
 
 /datum/plane_holder/New(mob/this_guy)
 	ASSERT(ismob(this_guy))
-	my_mob = this_guy
+	rel_set(src, "my_mob", this_guy)
 
 	//It'd be nice to lazy init these but some of them are important to just EXIST. Like without ghost planemaster, you can see ghosts. Go figure.
 	//Note, if you're adding a new plane master, please update code\modules\tgui\modules\camera.dm.
@@ -241,7 +241,7 @@
 
 /atom/movable/screen/plane_master/augmented/Initialize(mapload, mob/M)
 	. = ..()
-	my_mob = M
+	rel_set(src, "my_mob", M)
 
 /// Phase 2: its mob leaves the entopic users.
 /atom/movable/screen/plane_master/augmented/lifecycle_dematerialize()

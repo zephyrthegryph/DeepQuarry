@@ -65,7 +65,7 @@
 	icon_dead = "droneM_dead"
 
 /mob/living/simple_mob/mechanical/combat_drone/Initialize(mapload)
-	ion_trail = new // ALLOW(decl): configured and started before parent init
+	own_set(src, "ion_trail", new /datum/effect/effect/system/ion_trail_follow) // ALLOW(decl): configured and started before parent init
 	ion_trail.set_up(src)
 	ion_trail.start()
 	return ..()

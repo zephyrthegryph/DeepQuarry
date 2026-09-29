@@ -71,7 +71,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 
 	user.drop_item()
 	W.forceMove(src)
-	beaker = W
+	own_set(src, "beaker", W)
 	to_chat(user, "You attach \the [W] to \the [src].")
 	update_icon()
 	return TRUE
@@ -87,7 +87,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 	new /obj/item/stack/rods(loc, 6)
 	if(beaker)
 		beaker.forceMove(get_turf(src))
-		beaker = null
+		own_take(src, "beaker")
 	qdel(src)
 
 /obj/machinery/iv_drip/machine_step()
@@ -164,7 +164,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 	if(!beaker)
 		return FALSE
 	beaker.forceMove(get_turf(src))
-	beaker = null
+	own_take(src, "beaker")
 	update_icon()
 	return TRUE
 

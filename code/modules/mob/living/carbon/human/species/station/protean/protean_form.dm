@@ -30,7 +30,7 @@
 // the protean's rig forgets its protean.
 /datum/forms/protean/on_destroy(force)
 	if(rig && (!owner || rig.myprotean == owner))
-		rig.myprotean = null
+		rel_clear(rig, "myprotean")
 	..()
 
 /datum/forms/protean/proc/blob_form()

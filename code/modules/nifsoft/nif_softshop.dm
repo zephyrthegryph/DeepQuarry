@@ -21,7 +21,7 @@
 	if(wires)
 		qdel(wires)
 	wires = new /datum/wires/vending/no_contraband(src) //These wires can't be hacked for contraband.
-	entopic = new(aholder = src, aicon = icon, aicon_state = "beacon")
+	own_set(src, "entopic", new /datum/entopic(aholder = src, aicon = icon, aicon_state = "beacon"))
 
 /obj/machinery/vending/nifsoft_shop/tgui_data(mob/user)
 	. = ..()
@@ -133,11 +133,11 @@
 			else
 				to_chat(user, span_notice("You weren't able to pull the coin out fast enough, the machine ate it, string and all."))
 				qdel(coin)
-				coin = null
+				own_take(src, "coin")
 				categories &= ~CAT_COIN
 		else
 			qdel(coin)
-			coin = null
+			own_take(src, "coin")
 			categories &= ~CAT_COIN
 
 	if(!COOLDOWN_TIMELEFT(src, reply_cooldown) && vend_reply)

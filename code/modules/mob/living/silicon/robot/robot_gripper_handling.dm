@@ -279,7 +279,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 		if(!grab_cell(A.cell, user))
 			return TRUE
 
-		A.cell = null
+		own_take(A, "cell")
 		A.charging = FALSE
 		A.update_icon()
 

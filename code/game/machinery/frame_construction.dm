@@ -128,7 +128,7 @@
 	var/obj/structure/frame/frame = target
 	playsound(frame, 'sound/items/Deconstruct.ogg', 50, 1)
 	to_chat(actor, span_notice("You place the circuit board inside the frame."))
-	frame.circuit = held
+	own_set(frame, "circuit", held)
 	actor.drop_item()
 	held.forceMove(frame)
 	if(frame.frame_type.frame_class == FRAME_CLASS_MACHINE)
@@ -160,7 +160,7 @@
 /datum/interaction/construction/frame/remove_board/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/frame/frame = target
 	frame.circuit.forceMove(frame.loc)
-	frame.circuit = null
+	own_take(frame, "circuit")
 	if(frame.frame_type.frame_class == FRAME_CLASS_MACHINE)
 		frame.req_components = null
 	frame.update_desc()
@@ -379,7 +379,7 @@
 
 	circuit.moveToNullspace()
 	circuit.move_into(new_machine, CONTAINER_SLOT_INTERNALS)
-	new_machine.circuit = circuit
+	own_set(new_machine, "circuit", circuit)
 
 	new_machine.RefreshParts()
 	new_machine.finalize_material_assembly()
@@ -396,7 +396,7 @@
 	B.set_dir(dir)
 	circuit.construct(B)
 	circuit.moveToNullspace()
-	B.circuit = circuit
+	own_set(B, "circuit", circuit)
 	if(!alarm)
 		B.update_icon()
 	qdel(src)
@@ -409,7 +409,7 @@
 	B.set_dir(dir)
 	circuit.construct(B)
 	circuit.moveToNullspace()
-	B.circuit = circuit
+	own_set(B, "circuit", circuit)
 	var/obj/machinery/computer/LC = locate_within(get_step(B, turn(B.dir, 90)), /obj/machinery/computer)
 	var/obj/machinery/computer/RC = locate_within(get_step(B, turn(B.dir, -90)), /obj/machinery/computer)
 	if(LC)

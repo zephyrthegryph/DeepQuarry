@@ -64,7 +64,7 @@
 	if(!held_card)
 		user.drop_item()
 		O.forceMove(src)
-		held_card = O
+		own_set(src, "held_card", O)
 
 		SStgui.update_uis(src)
 
@@ -199,7 +199,7 @@
 
 				if(ishuman(ui.user) && !ui.user.get_active_hand())
 					ui.user.put_in_hands(held_card)
-				held_card = null
+				own_take(src, "held_card")
 
 			else
 				var/obj/item/I = ui.user.get_active_hand()
@@ -207,7 +207,7 @@
 					var/obj/item/card/id/C = I
 					ui.user.drop_item()
 					C.forceMove(src)
-					held_card = C
+					own_set(src, "held_card", C)
 
 		if("view_account_detail")
 			var/index = text2num(params["account_index"])

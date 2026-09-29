@@ -6,7 +6,7 @@
 		hat.forceMove(get_turf(src))
 		H.put_in_hands(hat)
 		H.visible_message(span_danger("\The [H] removes \the [src]'s [hat]."))
-		hat = null
+		own_take(src, "hat")
 		update_icon()
 	else
 		return ..()

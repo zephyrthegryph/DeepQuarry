@@ -22,7 +22,7 @@ REL_PAIR_LIST(/mob/living, shared_soul_links, soul_sharer)
 
 /datum/soul_link/proc/remove_soul_sharer(mob/living/sharer)
 	if(soul_sharer == sharer)
-		soul_sharer = null
+		rel_clear(src, "soul_sharer")
 		LAZYREMOVE(sharer.shared_soul_links, src)
 
 // Used to assign variables, called primarily by soullink()
@@ -31,8 +31,8 @@ REL_PAIR_LIST(/mob/living, shared_soul_links, soul_sharer)
 /datum/soul_link/proc/parse_args(mob/living/owner, mob/living/sharer)
 	if(!owner || !sharer)
 		return FALSE
-	soul_owner = owner
-	soul_sharer = sharer
+	rel_set(src, "soul_owner", owner)
+	rel_set(src, "soul_sharer", sharer)
 	LAZYADD(owner.owned_soul_links, src)
 	LAZYADD(sharer.shared_soul_links, src)
 	return TRUE
@@ -61,7 +61,7 @@ REL_PAIR_LIST(/mob/living, shared_soul_links, soul_sharer)
 /datum/soul_link/multi_sharer/parse_args(mob/living/owner, list/sharers)
 	if(!owner || !LAZYLEN(sharers))
 		return FALSE
-	soul_owner = owner
+	rel_set(src, "soul_owner", owner)
 	soul_sharers = sharers
 	LAZYADD(owner.owned_soul_links, src)
 	for(var/mob/living/L as anything in sharers)

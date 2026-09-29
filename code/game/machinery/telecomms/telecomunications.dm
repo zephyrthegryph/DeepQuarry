@@ -148,7 +148,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 		else
 			for(var/obj/machinery/telecomms/T in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 				add_link(T)
-	soundloop = new(list(src), FALSE)
+	own_set(src, "soundloop", new /datum/looping_sound/tcomms(list(src), FALSE))
 	if(prob(60)) // 60% chance to change the midloop
 		if(prob(40))
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
@@ -547,9 +547,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	var/obj/item/radio/headset/server_radio = null
 
 /obj/machinery/telecomms/server/Initialize(mapload)
-	Compiler = new()
+	own_set(src, "Compiler", new /datum/TCS_Compiler())
 	Compiler.Holder_handle = om_handle(src)
-	server_radio = new()
+	own_set(src, "server_radio", new /obj/item/radio/headset())
 	. = ..()
 
 /obj/machinery/telecomms/server/receive_information(datum/signal/signal, obj/machinery/telecomms/machine_from)

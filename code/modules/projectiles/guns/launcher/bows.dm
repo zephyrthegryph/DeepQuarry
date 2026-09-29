@@ -57,7 +57,7 @@
 
 /obj/item/gun/launcher/crossbow/bow/proc/unload(mob/user)
 	var/obj/item/arrow/A = bolt
-	bolt = null
+	own_take(src, "bolt")
 	drawn = FALSE
 	A.forceMove(get_turf(user))
 	user.put_in_hands(A)
@@ -70,7 +70,7 @@
 	return bolt
 
 /obj/item/gun/launcher/crossbow/bow/handle_post_fire(mob/user, atom/target)
-	bolt = null
+	own_take(src, "bolt")
 	drawn = FALSE
 	update_icon()
 	..()
@@ -123,7 +123,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 	. = INTERACTION_HANDLED_PASS
 	if(!bolt && istype(W,/obj/item/arrow/standard))
 		user.drop_from_inventory(W, src)
-		bolt = W
+		own_set(src, "bolt", W)
 		user.visible_message(span_infoplain("[user] slides [bolt] into [src]."),span_infoplain("You slide [bolt] into [src]."))
 		update_icon()
 
@@ -145,7 +145,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 	hardlight = TRUE
 
 /obj/item/gun/launcher/crossbow/bow/hardlight/unload(mob/user)
-	QDEL_NULL(bolt)
+	own_clear(src, "bolt", OWN_DELETE)
 	update_icon()
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
@@ -161,7 +161,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 	// Automatically knock the arrow as it forms
 	if(!bolt)
 		user.visible_message(span_infoplain(span_bold("[user]") + " fabricates a new hardlight projectile with [src]."),span_infoplain("You fabricate a new hardlight projectile with [src]."))
-		bolt = new /obj/item/arrow/energy(src)
+		own_set(src, "bolt", new /obj/item/arrow/energy(src))
 		update_icon()
 	draw(user)
 

@@ -25,8 +25,8 @@
 		// Unique: the existing document state is kept.
 		qdel(src)
 		return
-	holder = new_holder
-	new_holder.contract_document = src
+	rel_set(src, "holder", new_holder)
+	own_set(new_holder, "contract_document", src)
 	contract_id = _contract_id
 	document_kind = _document_kind
 	destination = _destination
@@ -71,7 +71,7 @@
 	department_share = 0
 	contributor_share = 1
 	deadline_duration = 25 MINUTES
-	action_requirement = new(CONTRACT_EVENT_CONTRACT_ACTION_ACCEPTED, 1, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT)
+	own_set(src, "action_requirement", new /datum/contract_requirement/event_count(CONTRACT_EVENT_CONTRACT_ACTION_ACCEPTED, 1, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT))
 	action_requirement.name = "Linked study objective"
 	action_requirement.description = "Remittance is contingent upon verified receipt through the station fax or outbound freight network."
 	add_requirement(action_requirement)
@@ -349,7 +349,7 @@
 	var/datum/medical_trial_participant/signed_participant = trial.participants[identity.id]
 	signed_participant.consent_time = world.time
 	signed_participant.consent_evidence_id = evidence_id
-	signed_participant.consent_record = paper
+	rel_set(signed_participant, "consent_record", paper)
 	paper.name = "signed VeyMed observation record - [subject.real_name]"
 	paper.info += "<br><b>Registered subject:</b> [subject.real_name]<br><b>Status:</b> Consent registered.<br><b>Filing instruction:</b> Bundle this signed form with genuine body-scanner reports from before exposure and at least one minute after exposure, then fax the packet to [CONTRACT_FAX_VEYMED]."
 	paper.updateinfolinks()

@@ -170,7 +170,7 @@
 /mob/living/silicon/robot/Initialize(mapload, is_decoy)
 	if(islist(req_access))
 		req_access = shared_type_list(type, "req_access", req_access)
-	spark_system = new /datum/effect/effect/system/spark_spread() // ALLOW(decl): configured before parent init
+	own_set(src, "spark_system", new /datum/effect/effect/system/spark_spread()) // ALLOW(decl): configured before parent init
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
 	om_hook(src, /datum/om/event/living_shield_injury, src, PROC_REF(absorb_injury_with_shield))
@@ -181,7 +181,7 @@
 
 	set_wires(new /datum/wires/robot(src))
 
-	robot_modules_background = new() // ALLOW(decl): screen object made in nullspace, configured before parent init
+	own_set(src, "robot_modules_background", new /atom/movable/screen()) // ALLOW(decl): screen object made in nullspace, configured before parent init
 	robot_modules_background.icon_state = "block"
 	ident = rand(1, 999)
 	updatename(modtype)
@@ -218,15 +218,15 @@
 	update_icon()
 
 /mob/living/silicon/robot/proc/setup_radio()
-	radio = new /obj/item/radio/borg(src)
-	common_radio = radio
+	own_set(src, "radio", new /obj/item/radio/borg(src))
+	own_set(src, "common_radio", radio)
 
 /// The photo camera and the machinery camera that feeds the robots network.
 /mob/living/silicon/robot/proc/setup_camera()
 	if(photo_camera_type)
-		aiCamera = new photo_camera_type(src)
+		own_set(src, "aiCamera", new photo_camera_type(src))
 	if(!scrambledcodes && !camera)
-		camera = new /obj/machinery/camera(src)
+		own_set(src, "camera", new /obj/machinery/camera(src))
 		camera.c_tag = real_name
 		camera.replace_networks(list(NETWORK_DEFAULT,NETWORK_ROBOTS))
 		if(wires.is_cut(WIRE_BORG_CAMERA))
@@ -238,7 +238,7 @@
 	return
 
 /mob/living/silicon/robot/proc/setup_laws()
-	laws = new using_map.default_law_type //use map's default
+	own_set(src, "laws", new using_map.default_law_type) //use map's default
 	additional_law_channels["Binary"] = "#b"
 	if(!lawupdate || scrambledcodes)
 		return
@@ -254,7 +254,7 @@
 
 /mob/living/silicon/robot/proc/setup_cell()
 	var/obj/item/cell/new_cell = cell
-	cell = null
+	own_take(src, "cell")
 	if(ispath(new_cell))
 		new_cell = new new_cell(src)
 	else if(!new_cell && cell_type)
@@ -326,18 +326,18 @@
 			if(T && host)
 				var/mob/living/carbon/brain/view = host.receive_mind(mind, "cyborg [src] destroyed")
 				view.remove_language(LANGUAGE_ROBOT_TALK)
-				mmi = null
+				own_take(src, "mmi")
 			else
 				if(!T)
 					log_game("MIND: cyborg [key_name(src)] was destroyed with no location; its MMI is lost and the mind is ghosted without re-entry.")
-					QDEL_NULL(mmi) // ALLOW(decl): the MMI is lost with the mind when there is no turf
+					own_clear(src, "mmi", OWN_DELETE) // ALLOW(decl): the MMI is lost with the mind when there is no turf
 				else if(!shell) // Shells don't have brainmobs in their MMIs.
 					log_game("MIND: cyborg [key_name(src)] was destroyed but its MMI [mmi] has no mind host; ghosting.")
 					to_chat(src, span_danger("Oops! Something went very wrong, your MMI was unable to receive your mind. You have been ghosted. Please make a bug report so we can fix this bug."))
-				mmi = null
+				own_take(src, "mmi")
 				ghostize(FALSE)
 		else
-			QDEL_NULL(mmi) // ALLOW(decl): mindless MMI deleted here on purpose, beside the mind-transfer branch
+			own_clear(src, "mmi", OWN_DELETE) // ALLOW(decl): mindless MMI deleted here on purpose, beside the mind-transfer branch
 	clear_traitor_hud()
 	disconnect_from_ai(TRUE)
 	if(shell)
@@ -407,7 +407,7 @@
 	var/obj/item/cell/old_cell = cell
 	if(old_cell)
 		om_unhook(old_cell, list(/datum/om/event/before/atom_pre_emp_act, /datum/om/event/qdeleting), src)
-	cell = new_cell
+	own_set(src, "cell", new_cell)
 	// A5: a replacement (not a removal: remove_cell() uninstalls first and keeps the cell) takes
 	// the old cell out of the mount and deletes it, instead of orphaning it in contents (a
 	// suit-built borg's default cell, overwritten by the chest's).
@@ -447,7 +447,7 @@
 	EVENT_HANDLER
 	var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
 	if(mount?.wrapped == source)
-		mount.wrapped = null
+		own_take(mount, "wrapped")
 		mount.installed = ROBOT_PART_MISSING
 	set_cell(null)
 
@@ -599,13 +599,13 @@
 // setup the PDA and its name
 /mob/living/silicon/robot/proc/setup_PDA()
 	if (!rbPDA)
-		rbPDA = new/obj/item/pda/ai(src)
+		own_set(src, "rbPDA", new/obj/item/pda/ai(src))
 	rbPDA.set_name_and_job(name,"[modtype] [braintype]")
 	add_verb(src, /obj/item/pda/ai/verb/cmd_pda_open_ui)
 
 /mob/living/silicon/robot/proc/setup_communicator()
 	if (!communicator)
-		communicator = new/obj/item/communicator/integrated(src)
+		own_set(src, "communicator", new/obj/item/communicator/integrated(src))
 	communicator.register_device(name, "[modtype] [braintype]")
 	add_verb(src, /obj/item/communicator/integrated/verb/activate)
 
@@ -814,7 +814,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		return FALSE
 	user.drop_from_inventory(W)
 	W.forceMove(src)
-	bolt = W
+	own_set(src, "bolt", W)
 	to_chat(user, span_notice("You install \the [W]."))
 	return TRUE
 
@@ -980,10 +980,10 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		return FALSE
 	to_chat(user, span_filter_notice("You damage some parts of the chassis, but eventually manage to rip out [mmi]!"))
 	var/obj/item/robot_parts/robot_suit/C = new/obj/item/robot_parts/robot_suit(loc)
-	C.l_leg = new/obj/item/robot_parts/l_leg(C)
-	C.r_leg = new/obj/item/robot_parts/r_leg(C)
-	C.l_arm = new/obj/item/robot_parts/l_arm(C)
-	C.r_arm = new/obj/item/robot_parts/r_arm(C)
+	own_set(C, "l_leg", new/obj/item/robot_parts/l_leg(C))
+	own_set(C, "r_leg", new/obj/item/robot_parts/r_leg(C))
+	own_set(C, "l_arm", new/obj/item/robot_parts/l_arm(C))
+	own_set(C, "r_arm", new/obj/item/robot_parts/r_arm(C))
 	C.update_icon()
 	new/obj/item/robot_parts/chest(loc)
 	qdel(src)
@@ -1114,7 +1114,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 
 /mob/living/silicon/robot/proc/wrench_act_robot_done(mob/user)
 	bolt.forceMove(get_turf(src))
-	bolt = null
+	own_take(src, "bolt")
 	to_chat(user, span_filter_notice("You remove the restraining bolt."))
 	return ITEM_INTERACT_SUCCESS
 
@@ -1402,7 +1402,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 /mob/living/silicon/robot/proc/place_on_head(obj/item/new_hat)
 	if(hat)
 		remove_hat(get_turf(src))
-	hat = new_hat
+	own_set(src, "hat", new_hat)
 	new_hat.forceMove(src)
 	update_icon()
 
@@ -1411,7 +1411,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	var/obj/item/old_hat = hat
 	if(!old_hat)
 		return null
-	hat = null
+	own_take(src, "hat")
 	old_hat.forceMove(drop_loc)
 	update_icon()
 	return old_hat
@@ -1593,7 +1593,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 			sync() // One last sync attempt
 		om_unhook(old_ai, list(/datum/om/event/silicon_laws_changed, /datum/om/event/qdeleting), src)
 		old_ai.connected_robots -= src
-	connected_ai = new_ai
+	rel_set(src, "connected_ai", new_ai)
 	if(new_ai)
 		new_ai.connected_robots |= src
 		om_hook(new_ai, /datum/om/event/silicon_laws_changed, src, PROC_REF(on_master_laws_changed))
@@ -1631,7 +1631,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	disconnect_from_ai(TRUE)
 	clear_supplied_laws()
 	clear_inherent_laws()
-	laws = new /datum/ai_laws/syndicate_override
+	own_set(src, "laws", new /datum/ai_laws/syndicate_override)
 	var/time = time2text(world.realtime,"hh:mm:ss")
 	GLOB.lawchanges.Add("[time] <B>:</B> [user.name]([user.key]) emagged [name]([key])")
 	set_zeroth_law("Only [user.real_name] and people [user.p_they()] designate[user.p_s()] as being such are operatives.")

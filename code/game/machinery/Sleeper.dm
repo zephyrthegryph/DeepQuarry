@@ -38,8 +38,8 @@ REL_PAIR(/obj/machinery/sleep_console, sleeper, console)
 	for(var/direction in GLOB.cardinal) // Loop through every direction
 		sleepernew = locate(/obj/machinery/sleeper, get_step(src, direction)) // Try to find a scanner in that direction
 		if(sleepernew)
-			sleeper = sleepernew
-			sleepernew.console = src
+			rel_set(src, "sleeper", sleepernew)
+			rel_set(sleepernew, "console", src)
 			break
 
 
@@ -403,7 +403,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 		return TRUE
 	if(istype(I, /obj/item/reagent_containers/glass))
 		if(!beaker)
-			beaker = I
+			own_set(src, "beaker", I)
 			user.drop_item()
 			I.forceMove(src)
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " adds \a [I] to \the [src]."), span_notice("You add \a [I] to \the [src]."))
@@ -554,7 +554,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 /obj/machinery/sleeper/proc/remove_beaker()
 	if(beaker)
 		beaker.forceMove(get_turf(src))
-		beaker = null
+		own_take(src, "beaker")
 		toggle_filter()
 
 /obj/machinery/sleeper/proc/inject_chemical(mob/living/user, chemical, amount)

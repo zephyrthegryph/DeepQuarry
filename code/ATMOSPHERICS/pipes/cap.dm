@@ -28,7 +28,7 @@
 	if(reference == node)
 		if(istype(node, /obj/machinery/atmospherics/pipe))
 			rust_invalidate_pipeline_wrapper(parent)
-		node = null
+		rel_clear(src, "node")
 
 	update_icon()
 
@@ -49,7 +49,7 @@
 /obj/machinery/atmospherics/pipe/cap/atmos_init()
 	for(var/obj/machinery/atmospherics/target in get_step(src, dir))
 		if (can_be_node(target, 1))
-			node = target
+			rel_set(src, "node", target)
 			break
 
 	var/turf/T = src.loc			// hide if turf is not intact

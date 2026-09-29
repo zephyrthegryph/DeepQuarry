@@ -25,7 +25,7 @@ DECLARE_INTERACTIONS(/obj/item/bodybag, INTERACT_SELF("Unfold", PROC_REF(bodybag
 		R.add_fingerprint(user)
 		if(syringe)
 			R.syringe = syringe
-			syringe = null
+			own_take(src, "syringe")
 		consume(src, user)
 		return TRUE
 	if(robotic)
@@ -33,7 +33,7 @@ DECLARE_INTERACTIONS(/obj/item/bodybag, INTERACT_SELF("Unfold", PROC_REF(bodybag
 		R.add_fingerprint(user)
 		if(syringe)
 			R.syringe = syringe
-			syringe = null
+			own_take(src, "syringe")
 		consume(src, user)
 		return TRUE
 	var/obj/structure/closet/body_bag/R = new /obj/structure/closet/body_bag(user.loc)
@@ -222,7 +222,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag, \
 	. = ..()
 	if(. && syringe)
 		var/obj/item/bodybag/cryobag/folded = .
-		folded.syringe = syringe
+		own_set(folded, "syringe", syringe)
 		syringe = null
 
 /obj/structure/closet/body_bag/cryobag/Entered(atom/movable/AM)

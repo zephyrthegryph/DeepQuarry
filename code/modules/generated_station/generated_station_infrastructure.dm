@@ -2,7 +2,7 @@
 	if(!istype(T, /turf/simulated) || T.density)
 		return FALSE
 	if(!T.air)
-		T.air = T.create_gas_mixture()
+		own_set(T, "air", T.create_gas_mixture())
 		if(SSair?.initialized)
 			T.update_air_ref(0)
 	var/datum/gas_mixture/air = T.return_air()

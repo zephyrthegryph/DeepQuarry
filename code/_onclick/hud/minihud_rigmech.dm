@@ -15,10 +15,10 @@
 
 /datum/mini_hud/rig/New(datum/hud/other, obj/item/rig/owner)
 	owner_rig_handle = om_handle(owner)
-	power = new ()
-	health = new ()
-	air = new ()
-	airtoggle = new ()
+	own_set(src, "power", new /atom/movable/screen/rig/power ())
+	own_set(src, "health", new /atom/movable/screen/rig/health ())
+	own_set(src, "air", new /atom/movable/screen/rig/air ())
+	own_set(src, "airtoggle", new /atom/movable/screen/rig/airtoggle ())
 
 	screenobjs = list(power, health, air, airtoggle)
 	screenobjs += new /atom/movable/screen/rig/deco1
@@ -58,10 +58,10 @@
 
 /datum/mini_hud/mech/New(datum/hud/other, obj/mecha/owner)
 	owner_mech_handle = om_handle(owner)
-	power = new ()
-	health = new ()
-	air = new ()
-	airtoggle = new ()
+	own_set(src, "power", new /atom/movable/screen/mech/power ())
+	own_set(src, "health", new /atom/movable/screen/mech/health ())
+	own_set(src, "air", new /atom/movable/screen/mech/air ())
+	own_set(src, "airtoggle", new /atom/movable/screen/mech/airtoggle ())
 
 	screenobjs = list(power, health, air, airtoggle)
 	screenobjs += new /atom/movable/screen/mech/deco1

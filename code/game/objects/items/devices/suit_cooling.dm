@@ -132,7 +132,7 @@ DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \
 		cell.update_icon()
 
 		to_chat(user, "You remove \the [src.cell].")
-		src.cell = null
+		own_take(src, "cell")
 		update_icon()
 		return
 
@@ -152,7 +152,7 @@ DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \
 		else
 			user.drop_item()
 			W.forceMove(src)
-			cell = W
+			own_set(src, "cell", W)
 			to_chat(user, "You insert the [cell].")
 	update_icon()
 	return TRUE

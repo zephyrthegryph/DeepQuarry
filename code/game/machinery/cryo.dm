@@ -172,7 +172,7 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 		if("ejectBeaker")
 			if(beaker)
 				beaker.forceMove(get_step(src.loc, SOUTH))
-				beaker = null
+				own_take(src, "beaker")
 				update_icon()
 		if("ejectOccupant")
 			if(!occupant || isslime(ui.user) || ispAI(ui.user))
@@ -191,7 +191,7 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 			to_chat(user, span_warning("A beaker is already loaded into the machine."))
 			return TRUE
 
-		beaker =  G
+		own_set(src, "beaker", G)
 		user.drop_item()
 		G.forceMove(src)
 		user.visible_message("[user] adds \a [G] to \the [src]!", "You add \a [G] to \the [src]!")

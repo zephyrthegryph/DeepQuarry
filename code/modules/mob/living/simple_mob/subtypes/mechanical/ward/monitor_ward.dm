@@ -49,7 +49,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/ward/monitor/crew, INTERAC
 /mob/living/simple_mob/mechanical/ward/monitor/crew/proc/monitor_ward_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	. = TRUE
 	if(istype(O, /obj/item/card/id) && !owner)
-		owner = user
+		rel_set(src, "owner", user)
 		return
 	return FALSE
 

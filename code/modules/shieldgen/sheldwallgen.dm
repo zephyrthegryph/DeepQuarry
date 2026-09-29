@@ -271,8 +271,8 @@
 /obj/machinery/shieldwall/Initialize(mapload, obj/machinery/shieldwallgen/A, obj/machinery/shieldwallgen/B)
 	. = ..()
 	update_nearby_tiles()
-	src.gen_primary = A
-	src.gen_secondary = B
+	rel_set(src, "gen_primary", A)
+	rel_set(src, "gen_secondary", B)
 	if(istype(A) && istype(B) && A.active && B.active)
 		needs_power = 1
 		if(prob(50))

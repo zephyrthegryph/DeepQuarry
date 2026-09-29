@@ -42,17 +42,17 @@
 	if(reference == node1)
 		if(istype(node1, /obj/machinery/atmospherics/pipe))
 			rust_invalidate_pipeline_wrapper(parent)
-		node1 = null
+		rel_clear(src, "node1")
 
 	if(reference == node2)
 		if(istype(node2, /obj/machinery/atmospherics/pipe))
 			rust_invalidate_pipeline_wrapper(parent)
-		node2 = null
+		rel_clear(src, "node2")
 
 	if(reference == node3)
 		if(istype(node3, /obj/machinery/atmospherics/pipe))
 			rust_invalidate_pipeline_wrapper(parent)
-		node3 = null
+		rel_clear(src, "node3")
 
 	update_icon()
 	handle_leaking()
@@ -115,7 +115,7 @@
 		if(direction&connect_directions)
 			for(var/obj/machinery/atmospherics/target in get_step(src,direction))
 				if (can_be_node(target, 1))
-					node1 = target
+					rel_set(src, "node1", target)
 					connect_directions &= ~direction
 					break
 			if (node1)
@@ -125,7 +125,7 @@
 		if(direction&connect_directions)
 			for(var/obj/machinery/atmospherics/target in get_step(src,direction))
 				if (can_be_node(target, 2))
-					node2 = target
+					rel_set(src, "node2", target)
 					connect_directions &= ~direction
 					break
 			if (node2)
@@ -135,7 +135,7 @@
 		if(direction&connect_directions)
 			for(var/obj/machinery/atmospherics/target in get_step(src,direction))
 				if (can_be_node(target, 3))
-					node3 = target
+					rel_set(src, "node3", target)
 					connect_directions &= ~direction
 					break
 			if (node3)
@@ -285,5 +285,5 @@
 /// base unbind doesn't know about, so two doomed neighbours can't keep each other alive.
 /obj/machinery/atmospherics/pipe/manifold/lifecycle_unbind()
 	. = ..()
-	node3 = null
+	rel_clear(src, "node3")
 

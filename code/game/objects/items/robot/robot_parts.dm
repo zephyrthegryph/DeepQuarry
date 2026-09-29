@@ -116,28 +116,28 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 		if(src.l_leg)	return INTERACTION_HANDLED_PASS
 		user.drop_item()
 		W.forceMove(src)
-		src.l_leg = W
+		own_set(src, "l_leg", W)
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/r_leg))
 		if(src.r_leg)	return INTERACTION_HANDLED_PASS
 		user.drop_item()
 		W.forceMove(src)
-		src.r_leg = W
+		own_set(src, "r_leg", W)
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/l_arm))
 		if(src.l_arm)	return INTERACTION_HANDLED_PASS
 		user.drop_item()
 		W.forceMove(src)
-		src.l_arm = W
+		own_set(src, "l_arm", W)
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/r_arm))
 		if(src.r_arm)	return INTERACTION_HANDLED_PASS
 		user.drop_item()
 		W.forceMove(src)
-		src.r_arm = W
+		own_set(src, "r_arm", W)
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/chest))
@@ -145,7 +145,7 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 		if(W:wires_const && W:cell)
 			user.drop_item()
 			W.forceMove(src)
-			src.chest = W
+			own_set(src, "chest", W)
 			src.update_icon()
 		else if(!W:wires_const)
 			to_chat(user, span_warning("You need to attach wires_const to it first!"))
@@ -157,7 +157,7 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 		if(W:flash2 && W:flash1)
 			user.drop_item()
 			W.forceMove(src)
-			src.head = W
+			own_set(src, "head", W)
 			src.update_icon()
 		else
 			to_chat(user, span_warning("You need to attach a flash to it first!"))
@@ -201,7 +201,7 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 
 			user.drop_item()
 
-			O.mmi = W
+			own_set(O, "mmi", W)
 			O.post_mmi_setup()
 			O.invisibility = INVISIBILITY_NONE
 			O.custom_name = created_name
@@ -215,7 +215,7 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 					O.add_language(L.name)
 			O.job = JOB_CYBORG
 			O.set_cell(chest.cell)
-			chest.cell = null
+			own_take(chest, "cell")
 			W.forceMove(O)//Should fix cybros run time erroring when blown up. It got deleted before, along with the frame.
 
 			feedback_inc("cyborg_birth",1)
@@ -240,7 +240,7 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/chest, INTERACT_ITEM(null, PROC_REF(i
 		else
 			user.drop_item()
 			W.forceMove(src)
-			src.cell = W
+			own_set(src, "cell", W)
 			to_chat(user, span_notice("You insert the cell!"))
 	if(istype(W, /obj/item/stack/cable_coil))
 		if(src.wires_const)
@@ -270,12 +270,12 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/chest, INTERACT_ITEM(null, PROC_REF(i
 	else if(src.flash1)
 		user.drop_item()
 		W.forceMove(src)
-		src.flash2 = W
+		own_set(src, "flash2", W)
 		to_chat(user, span_notice("You insert the flash into the eye socket!"))
 	else
 		user.drop_item()
 		W.forceMove(src)
-		src.flash1 = W
+		own_set(src, "flash1", W)
 		to_chat(user, span_notice("You insert the flash into the eye socket!"))
 
 

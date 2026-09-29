@@ -62,7 +62,7 @@ MATERIAL_MIX(/obj/item/backup_implanter, list(MAT_STEEL = 2000, MAT_GLASS = 2000
 	. = ..()
 	for(var/i = 1 to max_implants)
 		var/obj/item/implant/backup/imp = new(src, db_key)
-		imps |= imp
+		own_add(src, "imps", imp)
 		imp.germ_level = 0
 	update()
 
@@ -84,7 +84,7 @@ EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
 		to_chat(user, span_notice("You eject a backup implant."))
 		var/obj/item/implant/backup/imp = imps[imps.len]
 		imp.forceMove(get_turf(user))
-		imps -= imp
+		own_take_member(src, "imps", imp)
 		user.put_in_any_hand_if_possible(imp)
 		update()
 	else
@@ -96,7 +96,7 @@ EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
 /obj/item/backup_implanter/proc/backup_implanter_interaction_load(mob/user, obj/item/W, datum/interaction/interaction)
 	if(imps.len < max_implants)
 		user.unEquip(W)
-		imps |= W
+		own_add(src, "imps", W)
 		W.germ_level = 0
 		W.forceMove(src)
 		update()
@@ -119,7 +119,7 @@ EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
 		var/obj/item/implant/backup/imp = imps[imps.len]
 		if(imp.handle_implant(M,user.zone_sel.selecting))
 			imp.post_implant(M)
-			imps -= imp
+			own_take_member(src, "imps", imp)
 			add_attack_logs(user,M,"Implanted backup implant")
 
 		update()

@@ -232,7 +232,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /d
 
 	for(var/obj/machinery/atmospherics/target in get_step(one_step,node_connect))
 		if(can_be_node(target, 1))
-			node = target
+			rel_set(src, "node", target)
 			break
 
 	update_icon()
@@ -273,7 +273,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /d
 
 	for(var/obj/machinery/atmospherics/target in get_step(two_step,node_connect))
 		if(can_be_node(target, 1))
-			node = target
+			rel_set(src, "node", target)
 			break
 
 	update_icon()

@@ -16,9 +16,9 @@
 	using.screen_loc = ui_acti
 	using.layer = HUD_LAYER
 	HUD.adding += using
-	HUD.move_intent = using
+	own_set(HUD, "move_intent", using)
 
-	healths = new /atom/movable/screen()
+	own_set(src, "healths", new /atom/movable/screen())
 	healths.icon = HUD.ui_style
 	healths.icon_state = "health0"
 	healths.name = "health"

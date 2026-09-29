@@ -251,7 +251,7 @@
 	var/list/entries
 
 /datum/native_watch/heat/proc/start(atom/target, kind, level, both_edges, lane, keep_body)
-	src.target = target
+	rel_set(src, "target", target)
 	src.kind = kind
 	src.level = level
 	src.both_edges = both_edges
@@ -299,7 +299,7 @@ REL_PAIR_LIST(/atom, heat_watches, target)
 	body = null
 	if(!isturf(target))
 		LAZYREMOVE(target?.heat_watches, src)
-	target = null
+	rel_clear(src, "target")
 
 /// The target's body changed (created, or released at rest): follow it.
 /datum/native_watch/heat/proc/relink()

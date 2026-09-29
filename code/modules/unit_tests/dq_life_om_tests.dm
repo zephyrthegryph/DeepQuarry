@@ -205,7 +205,7 @@
 	var/datum/om/scheduler/sched
 
 /datum/unit_test/life_om/Run()
-	sched = om_test_begin()
+	rel_set(src, "sched", om_test_begin())
 	try
 		run_life()
 	catch(var/exception/e)

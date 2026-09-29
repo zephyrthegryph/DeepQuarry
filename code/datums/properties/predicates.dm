@@ -42,11 +42,11 @@
 /// Compile `spec` against `registry` (default: the global one). Called once.
 /datum/predicate/proc/compile(datum/property_registry/registry)
 	var/datum/predicate_compiler/compiler = new(registry || dq_property_registry(), name || "[type]")
-	root = compiler.compile_spec(spec)
+	own_set(src, "root", compiler.compile_spec(spec))
 	errors = length(compiler.errors) ? compiler.errors : null
 	watchable = length(compiler.watchable) ? compiler.watchable : null
 	if(errors)
-		root = new /datum/pred_node/invalid
+		own_set(src, "root", new /datum/pred_node/invalid)
 	return !errors
 
 /// TRUE if every clause passes.

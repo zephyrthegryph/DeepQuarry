@@ -94,11 +94,11 @@ OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
 	//Tanning!
 	for(var/obj/item/stack/hairlesshide/HH in washing)
 		var/obj/item/stack/wetleather/WL = new(src, HH.get_amount())
-		LAZYREMOVE(washing, HH)
+		own_take_member(src, "washing", HH)
 		HH.forceMove(get_turf(src))
 		HH.use(HH.get_amount())
 
-		LAZYADD(washing, WL)
+		own_add(src, "washing", WL)
 	var/has_mobs = FALSE
 	for(var/mob/living/mobs in washing)
 		has_mobs = TRUE
@@ -195,7 +195,7 @@ OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
 			if(state in list(EMPTY_OPEN, FULL_OPEN))
 				user.drop_item()
 				W.forceMove(src)
-				LAZYADD(washing, W)
+				own_add(src, "washing", W)
 				state = FULL_OPEN
 			else
 				to_chat(user, span_notice("You can't put the item in right now."))
@@ -210,7 +210,7 @@ OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
 		var/mob/grabbed = G?.grab_target()
 		user.visible_message("[user] stuffs [grabbed] into the [src] and shuts the door!", "You stuff [grabbed] into the [src] and shut the door!")
 		grabbed.forceMove(src)
-		LAZYADD(washing, grabbed)
+		own_add(src, "washing", grabbed)
 		consume(G, user)
 		state = FULL_CLOSED
 	else
@@ -240,14 +240,14 @@ OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
 			state = EMPTY_OPEN
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
-			LAZYCLEARLIST(washing)
+			own_take_all(src, "washing")
 		if(FULL_OPEN)
 			state = FULL_CLOSED
 		if(FULL_CLOSED)
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
 			crayon_handle = null
-			LAZYCLEARLIST(washing)
+			own_take_all(src, "washing")
 			state = EMPTY_OPEN
 		if(RUNNING)
 			if(user)
@@ -265,7 +265,7 @@ OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
 				O.forceMove(get_turf(src))
 			crayon_handle = null
 			state = EMPTY_OPEN
-			LAZYCLEARLIST(washing)
+			own_take_all(src, "washing")
 
 	update_icon()
 	return TRUE

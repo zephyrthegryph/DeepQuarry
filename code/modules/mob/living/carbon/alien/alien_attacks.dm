@@ -23,7 +23,7 @@
 			// which established the grabbing relation (grabbed_by/affecting).
 			G.synch()
 
-			LAssailant = M
+			rel_set(src, "LAssailant", M)
 
 			playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 			for(var/mob/O in viewers(src, null))

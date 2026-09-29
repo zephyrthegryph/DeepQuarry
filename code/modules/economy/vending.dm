@@ -288,7 +288,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 /obj/machinery/vending/proc/interaction_coin(mob/user, obj/item/W, datum/interaction/interaction)
 	user.drop_item()
 	W.forceMove(src)
-	coin = W
+	own_set(src, "coin", W)
 	categories |= CAT_COIN
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	SStgui.update_uis(src)
@@ -512,7 +512,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 				ui.user.put_in_hands(coin)
 
 			to_chat(ui.user, span_notice("You remove \the [coin] from \the [src]."))
-			coin = null
+			own_take(src, "coin")
 			categories &= ~CAT_COIN
 			return TRUE
 		if("vend")
@@ -637,11 +637,11 @@ GLOBAL_LIST_EMPTY(vending_products)
 			else
 				to_chat(user, span_notice("You weren't able to pull the coin out fast enough, the machine ate it, string and all."))
 				consume(coin, user)
-				coin = null
+				own_take(src, "coin")
 				categories &= ~CAT_COIN
 		else
 			consume(coin)
-			coin = null
+			own_take(src, "coin")
 			categories &= ~CAT_COIN
 
 	if(!COOLDOWN_TIMELEFT(src, reply_cooldown) && vend_reply)

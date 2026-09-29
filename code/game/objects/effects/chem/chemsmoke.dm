@@ -52,7 +52,7 @@ DECLARE_REAGENTS(/obj/effect/effect/smoke/chem, 500, null)
 
 /datum/effect/effect/system/smoke_spread/chem/New()
 	..()
-	chemholder = new/obj()
+	own_set(src, "chemholder", new/obj())
 	chemholder.create_reagents(500)
 
 

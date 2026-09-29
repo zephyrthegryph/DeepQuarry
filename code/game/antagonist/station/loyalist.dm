@@ -43,6 +43,6 @@ GLOBAL_DATUM(loyalists, /datum/antagonist/loyalists)
 		if(!player.mind || player.stat==2 || !(SSjob.is_job_in_department(player.mind.assigned_role, DEPARTMENT_COMMAND)))
 			continue
 		var/datum/objective/protect/loyal_obj = new
-		loyal_obj.target = player.mind
+		rel_set(loyal_obj, "target", player.mind)
 		loyal_obj.explanation_text = "Protect [player.real_name], the [player.mind.assigned_role]."
 		LAZYADD(global_objectives, loyal_obj)

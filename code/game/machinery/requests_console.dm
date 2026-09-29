@@ -58,7 +58,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 
 /obj/machinery/requests_console/Initialize(mapload)
 	. = ..()
-	announcement = new
+	own_set(src, "announcement", new /datum/announcement)
 	announcement.title = "[department] announcement"
 	announcement.newscast = 1
 

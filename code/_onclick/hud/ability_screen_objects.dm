@@ -103,14 +103,14 @@
 	new_button.name = name_given
 	new_button.ability_icon_state = name_given
 	new_button.update_icon(1)
-	LAZYADD(ability_objects, new_button)
+	own_add(src, "ability_objects", new_button)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
 /atom/movable/screen/movable/ability_master/proc/remove_ability(atom/movable/screen/ability/ability)
 	if(!ability)
 		return
-	LAZYREMOVE(ability_objects, ability)
+	own_take_member(src, "ability_objects", ability)
 	qdel(ability)
 
 	if(length(ability_objects))
@@ -164,7 +164,7 @@ DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/abili
 /atom/movable/screen/ability/on_destroy(force)
 	var/atom/movable/screen/movable/ability_master/master = master_of()
 	if(master)
-		LAZYREMOVE(master.ability_objects, src)
+		own_take_member(master, "ability_objects", src)
 		if(!length(master.ability_objects))
 			master.update_icon()
 	..()
@@ -246,7 +246,7 @@ DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/abili
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments
-	LAZYADD(ability_objects, A)
+	own_add(src, "ability_objects", A)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
@@ -270,7 +270,7 @@ DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/abili
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments
-	LAZYADD(ability_objects, A)
+	own_add(src, "ability_objects", A)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
@@ -300,7 +300,7 @@ DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/abili
 	A.object_handle = om_handle(object_given)
 	A.ability_icon_state = ability_icon_given
 	A.name = object_given.name
-	LAZYADD(ability_objects, A)
+	own_add(src, "ability_objects", A)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 

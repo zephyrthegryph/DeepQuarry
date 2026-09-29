@@ -24,7 +24,7 @@
 /mob/living/simple_mob/homunculus/replace_death(gibbed)
 	if(owner)
 		var/obj/item/glamour_face/O = owner
-		O.homunculus = 0
+		rel_set(O, "homunculus", 0)
 	qdel(src)
 	return TRUE
 

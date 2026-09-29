@@ -76,7 +76,7 @@
 
 /mob/living/simple_mob/vore/gryphon/load_default_bellies()
 	var/obj/belly/B = new /obj/belly/gryphon/beak(src)
-	vore_selected = B
+	own_set(src, "vore_selected", B)
 	B.affects_vore_sprites = FALSE
 	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list("You get pushed around the creature's maw, that tongue pressing you against the roof of its mouth and humming as it savors your taste",

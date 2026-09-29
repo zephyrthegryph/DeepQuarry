@@ -57,7 +57,7 @@
 /datum/protean_power/New()
 	..()
 	if(in_stat_panel)
-		button = new(null, src)
+		own_set(src, "button", new /obj/effect/protean_power_button(null, src))
 
 
 /datum/protean_power/proc/try_activate(mob/living/carbon/human/H)
@@ -104,7 +104,7 @@
 
 /obj/effect/protean_power_button/Initialize(mapload, datum/protean_power/new_power)
 	. = ..()
-	power = new_power
+	rel_set(src, "power", new_power)
 	name = power.name
 	desc = power.desc
 	icon = power.icon

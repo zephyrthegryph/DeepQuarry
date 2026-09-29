@@ -17,7 +17,7 @@
 */
 /datum/n_Interpreter/proc/Load(datum/node/BlockDefinition/GlobalBlock/program)
 	ASSERT(program)
-	src.program 	= program
+	own_set(src, "program", program)
 	CreateGlobalScope()
 
 /*
@@ -67,15 +67,15 @@
 	var/datum/node/statement/FunctionDefinition/S = new()
 	S.func_name		= name
 	S.parameters	= params
-	S.block			= new()
+	own_set(S, "block", new /datum/node/BlockDefinition/FunctionBlock())
 	S.block.SetVar("src", object)
 	var/datum/node/expression/FunctionCall/C = new()
 	C.func_name	= path
-	C.object		= new("src")
+	own_set(C, "object", new /datum/node/identifier("src"))
 	for(var/p in params)
 		C.parameters += new/datum/node/expression/value/variable(p)
 	var/datum/node/statement/ReturnStatement/R=new()
-	R.value=C
+	own_set(R, "value", C)
 	LAZYADD(S.block.statements, R)
 	globalScope.functions[name] = S
 /*

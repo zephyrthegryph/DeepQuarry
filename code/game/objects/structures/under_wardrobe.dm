@@ -145,7 +145,7 @@
 /datum/om/flow/ask_sequence/gear_tweak/underwear/New(category, datum/gear_tweak/tweak)
 	..()
 	src.category = category
-	src.tweak = tweak
+	rel_set(src, "tweak", tweak)
 
 /obj/structure/undies_wardrobe/proc/underwear_tweak_answered(mob/living/carbon/human/H, new_metadata, datum/om/flow/ask_sequence/gear_tweak/underwear/seq)
 	var/underwear = seq.category

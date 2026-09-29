@@ -32,7 +32,7 @@ OWN(/obj/machinery/computer/transhuman/designer, disk, OWN_SPILL)
 /obj/machinery/computer/transhuman/designer/dismantle()
 	if(disk)
 		disk.forceMove(get_turf(src))
-		disk = null
+		own_take(src, "disk")
 	. = ..()
 
 EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \
@@ -43,7 +43,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \
 /// Old attackby.
 /obj/machinery/computer/transhuman/designer/proc/body_designer_interaction_insert_disk(mob/user, obj/item/W, datum/interaction/interaction)
 	user.unEquip(W)
-	disk = W
+	own_set(src, "disk", W)
 	disk.forceMove(src)
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	SStgui.update_uis(src)
@@ -56,7 +56,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \
 	if(inoperable())
 		return
 	if(!designer_gui)
-		designer_gui = new(src, null)
+		own_set(src, "designer_gui", new /datum/tgui_module/appearance_changer/body_designer(src, null))
 		designer_gui.linked_body_design_console = om_handle(src)
 		designer_gui.jiggle_map()
 	if(!designer_gui.owner())

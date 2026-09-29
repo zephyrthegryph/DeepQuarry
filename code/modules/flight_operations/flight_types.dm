@@ -140,7 +140,7 @@
 
 /datum/flight_plan/New(datum/flight_vessel/new_vessel, datum/flight_destination/new_origin, datum/flight_destination/new_destination)
 	..()
-	vessel = new_vessel
+	rel_set(src, "vessel", new_vessel)
 	origin_handle = om_handle(new_origin)
 	destination_handle = om_handle(new_destination)
 	LAZYADD(destination().active_plans, src)

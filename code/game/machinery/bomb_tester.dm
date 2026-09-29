@@ -37,15 +37,15 @@
 	. = ..()
 	default_apply_parts()
 	RefreshParts()
-	faketank = new
+	own_set(src, "faketank", new /datum/gas_mixture)
 
 /obj/machinery/bomb_tester/dismantle()
 	if(tank1)
 		tank1.forceMove(get_turf(src))
-		tank1 = null
+		own_take(src, "tank1")
 	if(tank2)
 		tank2.forceMove(get_turf(src))
-		tank2 = null
+		own_take(src, "tank2")
 	simulation_finish(1)
 	return ..()
 
@@ -100,9 +100,9 @@
 	user.drop_item(I)
 	I.forceMove(src)
 	if(!tank1)
-		tank1 = I
+		own_set(src, "tank1", I)
 	else
-		tank2 = I
+		own_set(src, "tank2", I)
 	update_icon()
 	SStgui.update_uis(src)
 	to_chat(user, span_notice("You connect \the [I] to \the [src]'s [I==tank1 ? "primary" : "secondary"] slot."))
@@ -165,9 +165,9 @@
 				var/obj/item/tank/T = ui.user.get_active_hand()
 				var/slot = params["slot"]
 				if(slot == 1 && !tank1)
-					tank1 = T
+					own_set(src, "tank1", T)
 				else if(slot == 2 && !tank2)
-					tank2 = T
+					own_set(src, "tank2", T)
 				else
 					to_chat(ui.user, span_warning("Slot [slot] is full."))
 					return
@@ -182,9 +182,9 @@
 			var/obj/item/tank/T = locate_in_list(list(tank1, tank2), params["ref"])
 			if(istype(T))
 				if(T == tank1)
-					tank1 = null
+					own_take(src, "tank1")
 				if(T == tank2)
-					tank2 = null
+					own_take(src, "tank2")
 				T.forceMove(get_turf(src))
 				update_icon()
 			return TRUE

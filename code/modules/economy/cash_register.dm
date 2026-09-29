@@ -39,7 +39,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	. = ..()
 	cash_stored = rand(10, 70)*10
 	if(GLOB.economy_init && account_to_connect)
-		linked_account = GLOB.department_accounts[account_to_connect]
+		rel_set(src, "linked_account", GLOB.department_accounts[account_to_connect])
 
 /obj/machinery/cash_register/examine(mob/user)
 	. = ..(user)
@@ -191,7 +191,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 					visible_message("[icon2html(src, viewers(src))]" + span_warning("Account has been suspended."))
 					return FALSE
 				var/provider_changed = linked_account != new_account
-				linked_account = new_account
+				rel_set(src, "linked_account", new_account)
 				if(provider_changed)
 					reset_memory()
 				else
@@ -310,7 +310,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	if(confirm_item == I && confirm_revision == ticket_revision)
 		return 1
 	else
-		confirm_item = I
+		rel_set(src, "confirm_item", I)
 		confirm_revision = ticket_revision
 		src.visible_message(span_infoplain("[icon2html(src,viewers(src))]" + span_bold("Total price:") + " [transaction_amount] Thaler\s. Swipe again to confirm."))
 		playsound(src, 'sound/machines/twobeep.ogg', 25)
@@ -488,7 +488,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 
 /obj/machinery/cash_register/proc/ticket_changed()
 	ticket_revision++
-	confirm_item = null
+	rel_clear(src, "confirm_item")
 	confirm_revision = 0
 
 /obj/machinery/cash_register/proc/get_current_transaction()

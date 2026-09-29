@@ -125,7 +125,7 @@
 	LE.icon = 'icons/effects/genetics.dmi'
 	LE.icon_state = "eyelasers"
 	playsound(src, 'sound/weapons/taser2.ogg', 75, 1)
-	LE.firer = src
+	rel_set(LE, "firer", src)
 	LE.preparePixelProjectile(A, src, params)
 	LE.fire()
 

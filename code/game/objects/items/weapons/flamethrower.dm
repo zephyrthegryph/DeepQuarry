@@ -118,7 +118,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/flamethrower, "weldtool", /obj/item/weldingtool)
 		if(igniter)		return INTERACTION_HANDLED_PASS
 		user.drop_item()
 		I.forceMove(src)
-		igniter = I
+		own_set(src, "igniter", I)
 		update_icon()
 		return INTERACTION_HANDLED_PASS
 
@@ -127,7 +127,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/flamethrower, "weldtool", /obj/item/weldingtool)
 			to_chat(user, span_notice("There appears to already be a phoron tank loaded in [src]!"))
 			return INTERACTION_HANDLED_PASS
 		user.drop_item()
-		ptank = W
+		own_set(src, "ptank", W)
 		W.forceMove(src)
 		update_icon()
 		return INTERACTION_HANDLED_PASS
@@ -140,13 +140,13 @@ DECLARE_DEFAULT_CHILD(/obj/item/flamethrower, "weldtool", /obj/item/weldingtool)
 	var/turf/T = get_turf(src)
 	if(weldtool)
 		weldtool.forceMove(T)
-		weldtool = null
+		own_take(src, "weldtool")
 	if(igniter)
 		igniter.forceMove(T)
-		igniter = null
+		own_take(src, "igniter")
 	if(ptank)
 		ptank.forceMove(T)
-		ptank = null
+		own_take(src, "ptank")
 	new /obj/item/stack/rods(T)
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
@@ -215,7 +215,7 @@ DECLARE_INTERACTIONS(/obj/item/flamethrower, \
 			if(!ptank)
 				return FALSE
 			usr.put_in_hands(ptank)
-			ptank = null
+			own_take(src, "ptank")
 			lit = 0
 			update_icon()
 			return TRUE

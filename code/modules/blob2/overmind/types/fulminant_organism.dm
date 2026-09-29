@@ -23,7 +23,7 @@
 	if(prob(10)) // 10% chance to make a weak spore when expanding.
 		var/mob/living/simple_mob/blob/spore/S = new spore_type(T)
 		if(istype(S))
-			S.overmind = O
+			rel_set(S, "overmind", O)
 			S.faction = faction
 			O.blob_mobs.Add(S)
 		else
@@ -35,7 +35,7 @@
 		var/mob/living/simple_mob/blob/spore/S = new spore_type(get_turf(B))
 		B.visible_message(span_danger("\The [S] floats free from the [name]!"))
 		if(istype(S))
-			S.overmind = B.overmind
+			rel_set(S, "overmind", B.overmind)
 			S.faction = faction
 			B.overmind.blob_mobs.Add(S)
 		else

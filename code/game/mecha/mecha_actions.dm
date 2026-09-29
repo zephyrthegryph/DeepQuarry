@@ -67,7 +67,7 @@
 
 /datum/action/innate/mecha/Grant(mob/living/L, obj/mecha/M)
 	if(M)
-		chassis = M
+		rel_set(src, "chassis", M)
 	..()
 
 /datum/action/innate/mecha/mech_toggle_lights
@@ -172,7 +172,7 @@
 		chassis.occupant_message("No equipment available.")
 		return
 	if(!chassis.selected)
-		chassis.selected = available_equipment[1]
+		own_set(chassis, "selected", available_equipment[1])
 		chassis.occupant_message("You select [chassis.selected]")
 		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","eq_list",chassis.get_equipment_list())
 		button_icon_state = "mech_cycle_equip_on"
@@ -183,11 +183,11 @@
 		number++
 		if(A == chassis.selected)
 			if(available_equipment.len == number)
-				chassis.selected = null
+				own_take(chassis, "selected")
 				chassis.occupant_message("You switch to no equipment")
 				button_icon_state = "mech_cycle_equip_off"
 			else
-				chassis.selected = available_equipment[number+1]
+				own_set(chassis, "selected", available_equipment[number+1])
 				chassis.occupant_message("You switch to [chassis.selected]")
 				button_icon_state = "mech_cycle_equip_on"
 			send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","eq_list",chassis.get_equipment_list())

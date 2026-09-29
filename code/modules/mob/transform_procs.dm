@@ -16,7 +16,7 @@
 	var/atom/movable/overlay/animation = new /atom/movable/overlay( loc )
 	animation.icon_state = "blank"
 	animation.icon = 'icons/mob/mob.dmi'
-	animation.master = src
+	rel_set(animation, "master", src)
 	flick("h2monkey", animation)
 	om_after(src, 48, PROC_REF(monkeyize_1), animation)
 
@@ -173,11 +173,11 @@
 	O.job = JOB_CYBORG
 	if(O.mind && O.mind.assigned_role == JOB_CYBORG)
 		if(O.mind.role_alt_title == JOB_ALT_ROBOT)
-			O.mmi = new /obj/item/mmi/digital/posibrain(O)
+			own_set(O, "mmi", new /obj/item/mmi/digital/posibrain(O))
 		else if(O.mind.role_alt_title == JOB_ALT_DRONE)
-			O.mmi = new /obj/item/mmi/digital/robot(O)
+			own_set(O, "mmi", new /obj/item/mmi/digital/robot(O))
 		else
-			O.mmi = new /obj/item/mmi(O)
+			own_set(O, "mmi", new /obj/item/mmi(O))
 
 		O.mmi.take_identity(src) // the MMI holds the character by reference; the mind is in the borg
 

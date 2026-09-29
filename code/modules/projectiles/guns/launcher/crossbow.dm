@@ -84,7 +84,7 @@
 	return bolt
 
 /obj/item/gun/launcher/crossbow/handle_post_fire(mob/user, atom/target)
-	bolt = null
+	own_take(src, "bolt")
 	tension = 0
 	update_icon()
 	..()
@@ -101,7 +101,7 @@
 			user.visible_message("[user] relaxes the tension on [src]'s string and removes [bolt].","You relax the tension on [src]'s string and remove [bolt].")
 			bolt.forceMove(get_turf(src))
 			var/obj/item/arrow/A = bolt
-			bolt = null
+			own_take(src, "bolt")
 			A.removed(user)
 		else
 			user.visible_message("[user] relaxes the tension on [src]'s string.","You relax the tension on [src]'s string.")
@@ -175,14 +175,14 @@
 	if(!bolt)
 		if (istype(W,/obj/item/arrow))
 			user.drop_from_inventory(W, src)
-			bolt = W
+			own_set(src, "bolt", W)
 			user.visible_message("[user] slides [bolt] into [src].","You slide [bolt] into [src].")
 			update_icon()
 			return
 		else if(istype(W,/obj/item/stack/rods))
 			var/obj/item/stack/rods/R = W
 			if (R.use(1))
-				bolt = new /obj/item/arrow/rod(src)
+				own_set(src, "bolt", new /obj/item/arrow/rod(src))
 				bolt.add_fingerprint(user)
 				bolt.forceMove(src)
 				update_icon()

@@ -458,26 +458,26 @@ GLOBAL_DATUM_INIT(gear_tweak_free_digestable, /datum/gear_tweak/toggle_digestabl
 /datum/gear_tweak/tablet/tweak_item(obj/item/modular_computer/tablet/I, list/metadata)
 	if(ValidProcessors[metadata[1]])
 		var/t = ValidProcessors[metadata[1]]
-		I.processor_unit = new t(I)
+		own_set(I, "processor_unit", new t(I))
 	if(ValidBatteries[metadata[2]])
 		var/t = ValidBatteries[metadata[2]]
-		I.battery_module = new t(I)
+		own_set(I, "battery_module", new t(I))
 		I.battery_module.charge_to_full()
 	if(ValidHardDrives[metadata[3]])
 		var/t = ValidHardDrives[metadata[3]]
-		I.hard_drive = new t(I)
+		own_set(I, "hard_drive", new t(I))
 	if(ValidNetworkCards[metadata[4]])
 		var/t = ValidNetworkCards[metadata[4]]
-		I.network_card = new t(I)
+		own_set(I, "network_card", new t(I))
 	if(ValidNanoPrinters[metadata[5]])
 		var/t = ValidNanoPrinters[metadata[5]]
-		I.nano_printer = new t(I)
+		own_set(I, "nano_printer", new t(I))
 	if(ValidCardSlots[metadata[6]])
 		var/t = ValidCardSlots[metadata[6]]
-		I.card_slot = new t(I)
+		own_set(I, "card_slot", new t(I))
 	if(ValidTeslaLinks[metadata[7]])
 		var/t = ValidTeslaLinks[metadata[7]]
-		I.tesla_link = new t(I)
+		own_set(I, "tesla_link", new t(I))
 	I.update_verbs()
 
 /datum/gear_tweak/laptop
@@ -549,26 +549,26 @@ GLOBAL_DATUM_INIT(gear_tweak_free_digestable, /datum/gear_tweak/toggle_digestabl
 /datum/gear_tweak/laptop/tweak_item(obj/item/modular_computer/laptop/preset/I, list/metadata)
 	if(ValidProcessors[metadata[1]])
 		var/t = ValidProcessors[metadata[1]]
-		I.processor_unit = new t(I)
+		own_set(I, "processor_unit", new t(I))
 	if(ValidBatteries[metadata[2]])
 		var/t = ValidBatteries[metadata[2]]
-		I.battery_module = new t(I)
+		own_set(I, "battery_module", new t(I))
 		I.battery_module.charge_to_full()
 	if(ValidHardDrives[metadata[3]])
 		var/t = ValidHardDrives[metadata[3]]
-		I.hard_drive = new t(I)
+		own_set(I, "hard_drive", new t(I))
 	if(ValidNetworkCards[metadata[4]])
 		var/t = ValidNetworkCards[metadata[4]]
-		I.network_card = new t(I)
+		own_set(I, "network_card", new t(I))
 	if(ValidNanoPrinters[metadata[5]])
 		var/t = ValidNanoPrinters[metadata[5]]
-		I.nano_printer = new t(I)
+		own_set(I, "nano_printer", new t(I))
 	if(ValidCardSlots[metadata[6]])
 		var/t = ValidCardSlots[metadata[6]]
-		I.card_slot = new t(I)
+		own_set(I, "card_slot", new t(I))
 	if(ValidTeslaLinks[metadata[7]])
 		var/t = ValidTeslaLinks[metadata[7]]
-		I.tesla_link = new t(I)
+		own_set(I, "tesla_link", new t(I))
 	I.update_verbs()
 
 /datum/gear_tweak/implant_location

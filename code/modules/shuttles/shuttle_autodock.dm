@@ -71,7 +71,7 @@
 		return
 	if(shuttle_docking_controller)
 		om_unhook(shuttle_docking_controller, /datum/om/event/qdeleting, src)
-	shuttle_docking_controller = controller
+	rel_set(src, "shuttle_docking_controller", controller)
 	if(shuttle_docking_controller)
 		om_hook(shuttle_docking_controller, /datum/om/event/qdeleting, src, PROC_REF(docking_controller_deleted))
 
@@ -83,7 +83,7 @@
 /datum/shuttle/autodock/proc/docking_controller_deleted(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
 	if(shuttle_docking_controller == source)
-		shuttle_docking_controller = null
+		rel_clear(src, "shuttle_docking_controller")
 /*
 	Docking stuff
 */

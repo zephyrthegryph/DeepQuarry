@@ -155,9 +155,9 @@ GLOBAL_LIST_EMPTY(fake_sunlight_zs)
 		WARNING("Fake sun placed on a level where it can't find any outdoor turfs to color at [x],[y],[z].")
 		return
 
-	sun = new(null)
+	own_set(src, "sun", new /atom/movable/sun_visuals(null))
 
-	visuals = new(null)
+	own_set(src, "visuals", new /atom/movable/weather_visuals(null))
 	visuals.icon = weather_visuals_icon
 	visuals.icon_state = weather_visuals_icon_state
 

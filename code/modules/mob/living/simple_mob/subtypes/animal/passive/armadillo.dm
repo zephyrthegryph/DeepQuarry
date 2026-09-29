@@ -92,7 +92,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/armadillo, \
 		return
 	else
 		user.drop_item(new_hat)
-		hat = new_hat
+		own_set(src, "hat", new_hat)
 		new_hat.forceMove(src)
 		to_chat(user, span_notice("You place \a [new_hat] on \the [src].  How adorable!"))
 		update_icon()
@@ -105,14 +105,14 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/armadillo, \
 		hat.forceMove(get_turf(src))
 		user.put_in_hands(hat)
 		to_chat(user, span_warning("You take away \the [src]'s [hat.name].  How mean."))
-		hat = null
+		own_take(src, "hat")
 		update_icon()
 
 /mob/living/simple_mob/animal/passive/armadillo/proc/drop_hat()
 	if(!hat)
 		return
 	hat.forceMove(get_turf(src))
-	hat = null
+	own_take(src, "hat")
 	update_icon()
 
 /obj/item/holder/armadillo

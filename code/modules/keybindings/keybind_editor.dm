@@ -20,7 +20,7 @@
 	if(!prefs)
 		return
 	if(!keybind_editor)
-		keybind_editor = new(src)
+		own_set(src, "keybind_editor", new /datum/keybind_editor(src))
 	keybind_editor.tgui_interact(mob)
 
 /datum/keybind_editor/tgui_state(mob/user)

@@ -138,12 +138,12 @@ DECLARE_SHARED_CACHE_EX(mob_hat, GLOBAL_PROC_REF(build_mob_hat), SC_NEVER, 1024,
 	..()
 	additional_law_channels -= "Binary"
 	additional_law_channels["Drone"] = ":d"
-	laws = new law_type
+	own_set(src, "laws", new law_type)
 
 /mob/living/silicon/robot/drone/setup_module()
 	..()
 	if(!module)
-		module = new module_type(src)
+		own_set(src, "module", new module_type(src))
 	flavor_text = "It's a tiny little repair drone. The casing is stamped with an corporate logo and the subscript: '[using_map.company_name] Recursive Repair Systems: Fixing Tomorrow's Problem, Today!'"
 	playsound(src, 'sound/machines/twobeep.ogg', 50, 0)
 
@@ -349,7 +349,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_ITEM_AS(I_HELP, "P
 	clear_supplied_laws(1)
 	clear_inherent_laws(1)
 	clear_ion_laws(1)
-	laws = new law_type
+	own_set(src, "laws", new law_type)
 
 //Reboot procs.
 

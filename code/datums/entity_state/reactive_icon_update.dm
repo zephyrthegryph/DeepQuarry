@@ -26,12 +26,12 @@
 		return null
 	if(reactive_icon)
 		qdel(reactive_icon)
-	reactive_icon = new type(src, icon_prefix, directions, range, triggering_mobs)
+	own_set(src, "reactive_icon", new type(src, icon_prefix, directions, range, triggering_mobs))
 	return reactive_icon
 
 /datum/reactive_icon_update/New(obj/owner, icon_prefix, list/directions, range, triggering_mobs)
 	..()
-	src.owner = owner
+	rel_set(src, "owner", owner)
 	src.icon_prefix = icon_prefix
 	src.directions = directions
 	src.range = range

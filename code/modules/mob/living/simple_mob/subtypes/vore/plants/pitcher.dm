@@ -307,7 +307,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pitcher_fruit, null, l
 /obj/item/reagent_containers/food/snacks/pitcher_fruit/Initialize(mapload)
 	. = ..()
 	bitesize = 1
-	pit = new /obj/item/seeds/pitcherseed(src.contents) // ALLOW(decl): not placed in contents (list loc)
+	own_set(src, "pit", new /obj/item/seeds/pitcherseed(src.contents)) // ALLOW(decl): not placed in contents (list loc)
 	seed = pit.seed()
 
 /obj/item/reagent_containers/food/snacks/pitcher_fruit/afterattack(obj/O as obj, mob/user as mob, proximity)

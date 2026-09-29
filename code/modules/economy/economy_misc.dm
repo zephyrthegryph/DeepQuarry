@@ -45,10 +45,10 @@ GLOBAL_VAR_INIT(economy_init, 0)
 
 	for(var/obj/item/retail_scanner/RS in REGISTRY_MEMBERS(REGISTRY_TRANSACTION_DEVICES))
 		if(RS.account_to_connect)
-			RS.linked_account = GLOB.department_accounts[RS.account_to_connect]
+			rel_set(RS, "linked_account", GLOB.department_accounts[RS.account_to_connect])
 	for(var/obj/machinery/cash_register/CR in REGISTRY_MEMBERS(REGISTRY_TRANSACTION_DEVICES))
 		if(CR.account_to_connect)
-			CR.linked_account = GLOB.department_accounts[CR.account_to_connect]
+			rel_set(CR, "linked_account", GLOB.department_accounts[CR.account_to_connect])
 
 	GLOB.current_date_string = "[num2text(rand(1,31))] [pick("January","February","March","April","May","June","July","August","September","October","November","December")], [GLOB.game_year]"
 

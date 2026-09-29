@@ -94,12 +94,12 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	if(!keyslot1)
 		user.drop_item()
 		W.forceMove(src)
-		keyslot1 = W
+		own_set(src, "keyslot1", W)
 
 	else
 		user.drop_item()
 		W.forceMove(src)
-		keyslot2 = W
+		own_set(src, "keyslot2", W)
 
 
 	recalculateChannels()
@@ -112,14 +112,14 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 		return ITEM_INTERACT_BLOCKING
 	for(var/ch_name in channels)
 		GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
-		secure_radio_connections[ch_name] = null
+		own_put(src, "secure_radio_connections", ch_name, null)
 	var/turf/T = get_turf(user)
 	if(keyslot1)
 		keyslot1.forceMove(T)
-		keyslot1 = null
+		own_take(src, "keyslot1")
 	if(keyslot2)
 		keyslot2.forceMove(T)
-		keyslot2 = null
+		own_take(src, "keyslot2")
 	recalculateChannels()
 	to_chat(user, span_notice("You pop out the encryption keys in the headset!"))
 	playsound(src, tool.usesound, 50, TRUE)
@@ -179,7 +179,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 			return
 
 		for (var/ch_name in channels)
-			secure_radio_connections[ch_name] = GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
+			own_put(src, "secure_radio_connections", ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT))
 
 	if(setDescription)
 		setupRadioDescription()
@@ -208,11 +208,11 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 		if(!M.mob_radio)
 			user.drop_item()
 			forceMove(M)
-			M.mob_radio = src
+			own_set(M, "mob_radio", src)
 			return
 		if(M.mob_radio)
 			M.mob_radio.forceMove(M.loc)
-			M.mob_radio = null
+			own_take(M, "mob_radio")
 			return
 	..()
 

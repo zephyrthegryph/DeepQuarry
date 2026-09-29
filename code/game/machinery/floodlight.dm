@@ -109,7 +109,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floodlight, "cell", /obj/item/cell)
 		cell.add_fingerprint(user)
 		cell.update_icon()
 
-		cell = null
+		own_take(src, "cell")
 		on = 0
 		set_light(0)
 		to_chat(user, "You remove the power cell")
@@ -143,7 +143,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floodlight, "cell", /obj/item/cell)
 			else
 				user.drop_item()
 				W.forceMove(src)
-				cell = W
+				own_set(src, "cell", W)
 				to_chat(user, "You insert the power cell.")
 	update_icon()
 	return TRUE

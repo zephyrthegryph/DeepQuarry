@@ -108,7 +108,7 @@
 	var/datum/tgui_module/power_monitor/power_monitor
 
 /datum/data/pda/app/power/New()
-	power_monitor = new(src)
+	own_set(src, "power_monitor", new /datum/tgui_module/power_monitor(src))
 	. = ..()
 
 

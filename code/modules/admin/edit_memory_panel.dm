@@ -16,7 +16,7 @@
 
 /datum/edit_memory_panel/New(datum/mind/target_mind, mob/admin_user)
 	..()
-	src.target_mind = target_mind
+	rel_set(src, "target_mind", target_mind)
 	src.admin_user_handle = om_handle(admin_user)
 
 REL_PAIR(/datum/edit_memory_panel, target_mind, tgui_edit_memory_panel)
@@ -124,7 +124,7 @@ REL_PAIR(/datum/mind, tgui_edit_memory_panel, target_mind)
 		if("obj_delete")
 			var/datum/objective/O = locate(params["ref"])
 			if(istype(O))
-				target_mind.objectives -= O
+				own_take_member(target_mind, "objectives", O)
 				qdel(O)
 			SStgui.update_uis(src)
 			return TRUE

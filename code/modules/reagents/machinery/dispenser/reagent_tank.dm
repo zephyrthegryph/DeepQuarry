@@ -203,7 +203,7 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 		return
 	user.visible_message(span_notice("[user] detaches [rig] from \the [src]."), span_notice("You detach [rig] from \the [src]"))
 	rig.forceMove(get_turf(user))
-	rig = null
+	own_take(src, "rig")
 	overlays = new/list()
 
 /// Old attackby.
@@ -227,7 +227,7 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 		message_admins("[key_name_admin(user)] rigged fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]) for explosion. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
 		log_game("[key_name(user)] rigged fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]) for explosion.")
 
-	rig = H
+	own_set(src, "rig", H)
 	user.drop_item()
 	H.forceMove(src)
 

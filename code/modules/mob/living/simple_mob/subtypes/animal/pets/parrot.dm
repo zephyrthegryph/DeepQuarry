@@ -77,7 +77,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
 		return
 	else
 		user.drop_item(new_headset)
-		my_headset = new_headset
+		own_set(src, "my_headset", new_headset)
 		new_headset.forceMove(src)
 		to_chat(user, span_warning("You place \a [new_headset] on \the [src]. You monster."))
 		to_chat(src, span_notice("\The [user] gives you \a [new_headset]. You should put it to good use immediately."))
@@ -92,7 +92,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
 		user.put_in_hands(my_headset)
 		to_chat(user, span_notice("You take away \the [src]'s [my_headset.name]. Finally."))
 		to_chat(src, span_warning("\The [user] takes your [my_headset.name] away! How cruel!"))
-		my_headset = null
+		own_take(src, "my_headset")
 
 /mob/living/simple_mob/animal/passive/bird/parrot/examine(mob/user)
 	. = ..()

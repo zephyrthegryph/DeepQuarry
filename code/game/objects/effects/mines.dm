@@ -60,7 +60,7 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 /obj/effect/mine/proc/trigger_trap(mob/living/victim)
 	if(istype(trap, /obj/item/grenade))
 		var/obj/item/grenade/G = trap
-		trap = null
+		own_take(src, "trap")
 		G.forceMove(get_turf(src))
 		if(victim && victim.ckey)
 			msg_admin_attack("[key_name_admin(victim)] stepped on \a [src.name], triggering [trap]")
@@ -68,7 +68,7 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 
 	if(istype(trap, /obj/item/transfer_valve))
 		var/obj/item/transfer_valve/TV = trap
-		trap = null
+		own_take(src, "trap")
 		TV.forceMove(get_turf(src))
 		TV.toggle_valve()
 
@@ -372,7 +372,7 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 		if(allowed)
 			user.drop_from_inventory(W)
 			W.forceMove(src)
-			trap = W
+			own_set(src, "trap", W)
 
 	return FALSE
 
@@ -382,8 +382,8 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 	src.transfer_fingerprints_to(R)
 	R.add_fingerprint(user)
 	if(trap)
-		R.trap = trap
-		trap = null
+		own_set(R, "trap", trap)
+		own_take(src, "trap")
 		R.trap.forceMove(R)
 	if(explode_now)
 		R.explode(user)
@@ -463,7 +463,7 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 		return
 	to_chat(user, span_notice("You finish disconnecting the mine's trigger."))
 	trap.forceMove(get_turf(src))
-	trap = null
+	own_take(src, "trap")
 
 //Lasertag mines
 

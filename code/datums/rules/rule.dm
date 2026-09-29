@@ -89,12 +89,12 @@
 			errors += "unknown effect kind [effect_kind]"
 	if(exit_proc && once)
 		errors += "exit_proc needs once = FALSE"
-	predicate = new
+	own_set(src, "predicate", new /datum/predicate)
 	predicate.name = "rule [name || type]"
 	predicate.spec = condition
 	if(!predicate.compile())
 		errors += predicate.errors
-		predicate = null
+		own_take(src, "predicate")
 	else
 		var/datum/rule_compiler/compiler = new(src)
 		compiler.visit(predicate.root)

@@ -15,7 +15,7 @@
 	if(!owner()?.mob)
 		return
 	if(!dq_newscaster_panel)
-		dq_newscaster_panel = new(src)
+		rel_set(src, "dq_newscaster_panel", new /datum/newscaster_panel(src))
 	dq_newscaster_panel.tgui_interact(owner().mob)
 
 /datum/admins
@@ -26,7 +26,7 @@
 
 /datum/newscaster_panel/New(datum/admins/owner_holder)
 	..()
-	holder = owner_holder
+	rel_set(src, "holder", owner_holder)
 
 REL_PAIR(/datum/newscaster_panel, holder, dq_newscaster_panel)
 REL_PAIR(/datum/admins, dq_newscaster_panel, holder)

@@ -33,8 +33,8 @@
 	D2.holder_handle = om_handle(src)
 	D.forceMove(src)
 	D2.forceMove(src)
-	a_left = D
-	a_right = D2
+	own_set(src, "a_left", D)
+	own_set(src, "a_right", D2)
 	name = "[D.name]-[D2.name] assembly"
 	update_icon()
 	user.put_in_hands(src)
@@ -204,8 +204,8 @@
 	tmr.secured = 1
 	tmr.holder_handle = om_handle(src)
 
-	a_left = tmr
-	a_right = ign
+	own_set(src, "a_left", tmr)
+	own_set(src, "a_right", ign)
 	secured = 1
 	update_icon()
 	name = initial(name) + " ([tmr.time] secs)"

@@ -202,7 +202,7 @@
 
 /obj/machinery/computer/ship/proc/open_flight_operations(mob/user, datum/tgui/ui)
 	if(!flight_operations_ui)
-		flight_operations_ui = new(src)
+		own_set(src, "flight_operations_ui", new /datum/flight_operations_ui(src))
 	flight_operations_ui.tgui_interact(user, ui)
 
 /obj/machinery/computer/ship/helm/tgui_interact(mob/user, datum/tgui/ui)
@@ -216,7 +216,7 @@
 
 /obj/machinery/computer/shuttle_control/explore/tgui_interact(mob/user, datum/tgui/ui)
 	if(!flight_operations_ui)
-		flight_operations_ui = new(src)
+		own_set(src, "flight_operations_ui", new /datum/flight_operations_ui(src))
 	flight_operations_ui.tgui_interact(user, ui)
 
 

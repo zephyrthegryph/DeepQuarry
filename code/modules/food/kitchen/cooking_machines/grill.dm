@@ -30,7 +30,7 @@
 
 /obj/machinery/appliance/cooker/grill/Initialize(mapload)
 	. = ..()
-	grill_loop = new(list(src), FALSE)
+	own_set(src, "grill_loop", new /datum/looping_sound/grill(list(src), FALSE))
 
 
 /obj/machinery/appliance/cooker/grill/update_icon() // TODO: Cooking icon

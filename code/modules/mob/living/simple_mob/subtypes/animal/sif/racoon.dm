@@ -64,7 +64,7 @@
 /mob/living/simple_mob/animal/sif/sakimm/proc/drop_hat(mob/user)
 	if(hat)
 		hat.forceMove(get_turf(user))
-		hat = null
+		own_take(src, "hat")
 		update_icon()
 		if(user == src)
 			to_chat(user, span_notice("You removed your hat."))
@@ -93,7 +93,7 @@
 	else
 		if(user == src)
 			if(istype(get_active_hand(), /obj/item/clothing/head))
-				hat = get_active_hand()
+				own_set(src, "hat", get_active_hand())
 				drop_from_inventory(hat, src)
 				hat.forceMove(src)
 				to_chat(user, span_notice("You put on the hat."))

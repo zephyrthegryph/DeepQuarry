@@ -58,7 +58,7 @@
 		return
 
 	var/mob/living/silicon/robot/R = loc
-	R.module = src
+	own_set(R, "module", src)
 
 	add_camera_networks(R)
 	add_languages(R)
@@ -84,7 +84,7 @@
 
 /obj/item/robot_module/proc/create_equipment(mob/living/silicon/robot/robot)
 	if(!istype(robot.idcard, idcard_type))
-		QDEL_NULL(robot.idcard)
+		own_clear(robot, "idcard", OWN_DELETE)
 	robot.init_id(idcard_type)
 	return
 
@@ -95,7 +95,7 @@
 
 /// The module is leaving `robot`. Undo on_robot_equip().
 /obj/item/robot_module/proc/on_robot_unequip(mob/living/silicon/robot/robot)
-	QDEL_NULL(robot.robot_belly)
+	own_clear(robot, "robot_belly", OWN_DELETE)
 
 // Reset the module and delete it
 /obj/item/robot_module/proc/reset_module(mob/living/silicon/robot/robot)
@@ -114,7 +114,7 @@
 	modules -= robot.idcard
 	if(robot.idcard.loc != robot)
 		robot.idcard.forceMove(robot)
-	robot.module = null
+	own_take(robot, "module")
 	consume(src, robot)
 
 
@@ -213,15 +213,15 @@
 		if(!found)
 			var/datum/matter_synth/new_synth = new matter_synth.type(10000)
 			item_synths += new_synth
-			synths += new_synth
-	item_with_synth.synths = item_synths
+			own_add(src, "synths", new_synth)
+	rel_set(item_with_synth, "synths", item_synths)
 
 /obj/item/robot_module/proc/add_item(atom/movable/new_item, mob/living/silicon/robot/robot)
 	if(istype(new_item, /obj/item/card/id))
 		if(robot.idcard)
 			modules -= robot.idcard
-			QDEL_NULL(robot.idcard)
-		robot.idcard = new_item
+			own_clear(robot, "idcard", OWN_DELETE)
+		own_set(robot, "idcard", new_item)
 	modules += new_item
 	new_item.forceMove(src)
 	robot.hud_used?.update_robot_modules_display()
@@ -240,46 +240,46 @@
 			var/found = FALSE
 			for(var/datum/matter_synth/synth as anything in synths)
 				if(item_with_matter.metal.type == synth.type)
-					item_with_matter.metal = synth
+					rel_set(item_with_matter, "metal", synth)
 					found = TRUE
 					break
 			if(!found)
 				var/datum/matter_synth/metal = new /datum/matter_synth/metal(40000)
-				item_with_matter.metal = metal
-				LAZYADD(synths, metal)
+				rel_set(item_with_matter, "metal", metal)
+				own_add(src, "synths", metal)
 		if(item_with_matter.glass)
 			var/found = FALSE
 			for(var/datum/matter_synth/synth as anything in synths)
 				if(item_with_matter.glass.type == synth.type)
-					item_with_matter.glass = synth
+					rel_set(item_with_matter, "glass", synth)
 					found = TRUE
 					break
 			if(!found)
 				var/datum/matter_synth/glass = new /datum/matter_synth/glass(40000)
-				item_with_matter.glass = glass
-				LAZYADD(synths, glass)
+				rel_set(item_with_matter, "glass", glass)
+				own_add(src, "synths", glass)
 		if(item_with_matter.wood)
 			var/found = FALSE
 			for(var/datum/matter_synth/synth as anything in synths)
 				if(item_with_matter.wood.type == synth.type)
-					item_with_matter.wood = synth
+					rel_set(item_with_matter, "wood", synth)
 					found = TRUE
 					break
 			if(!found)
 				var/datum/matter_synth/wood = new /datum/matter_synth/wood(40000)
-				item_with_matter.wood = wood
-				LAZYADD(synths, wood)
+				rel_set(item_with_matter, "wood", wood)
+				own_add(src, "synths", wood)
 		if(item_with_matter.plastic)
 			var/found = FALSE
 			for(var/datum/matter_synth/synth as anything in synths)
 				if(item_with_matter.plastic.type == synth.type)
-					item_with_matter.plastic = synth
+					rel_set(item_with_matter, "plastic", synth)
 					found = TRUE
 					break
 			if(!found)
 				var/datum/matter_synth/plastic = new /datum/matter_synth/plastic(40000)
-				item_with_matter.plastic = plastic
-				LAZYADD(synths, plastic)
+				rel_set(item_with_matter, "plastic", plastic)
+				own_add(src, "synths", plastic)
 
 // Cyborgs (non-drones), default loadout. This will be given to every module.
 /obj/item/robot_module/robot/create_equipment(mob/living/silicon/robot/robot)
@@ -289,9 +289,9 @@
 	water.recharge_rate = 10
 	water.max_energy = 1000
 	robot.water_res_handle = om_handle(water)
-	synths += water
+	own_add(src, "synths", water)
 	var/obj/item/robot_tongue/T = new /obj/item/robot_tongue(src)
-	T.water = water
+	rel_set(T, "water", water)
 	src.modules += T
 	var/obj/item/gps/robot/robot_gps = new /obj/item/gps/robot(src)
 	adjust_gps(robot_gps)
@@ -356,20 +356,20 @@
 	PS.name = "Polyacid spray"
 
 	var/datum/matter_synth/medicine = new /datum/matter_synth/medicine(10000)
-	synths += medicine
+	own_add(src, "synths", medicine)
 
 	var/obj/item/stack/nanopaste/N = new /obj/item/stack/nanopaste(src)
 	var/obj/item/stack/medical/advanced/bruise_pack/B = new /obj/item/stack/medical/advanced/bruise_pack(src)
 	var/obj/item/stack/medical/advanced/ointment/O = new /obj/item/stack/medical/advanced/ointment(src) // edit: we have burn surgeries so they should be able to do them
 	N.uses_charge = 1
 	N.charge_costs = list(1000)
-	N.synths = list(medicine)
+	rel_set(N, "synths", list(medicine))
 	B.uses_charge = 1
 	B.charge_costs = list(1000)
-	B.synths = list(medicine)
+	rel_set(B, "synths", list(medicine))
 	O.uses_charge = 1
 	O.charge_costs = list(1000)
-	O.synths = list(medicine)
+	rel_set(O, "synths", list(medicine))
 	src.modules += N
 	src.modules += B
 	src.modules += O
@@ -419,7 +419,7 @@
 	PS.name = "Polyacid spray"
 
 	var/datum/matter_synth/medicine = new /datum/matter_synth/medicine(30000)
-	synths += medicine
+	own_add(src, "synths", medicine)
 
 	var/obj/item/stack/medical/advanced/clotting/C = new (src)
 	var/obj/item/stack/medical/advanced/ointment/O = new /obj/item/stack/medical/advanced/ointment(src)
@@ -427,16 +427,16 @@
 	var/obj/item/stack/medical/splint/S = new /obj/item/stack/medical/splint(src)
 	C.uses_charge = 1
 	C.charge_costs = list(5000)
-	C.synths = list(medicine)
+	rel_set(C, "synths", list(medicine))
 	O.uses_charge = 1
 	O.charge_costs = list(1000)
-	O.synths = list(medicine)
+	rel_set(O, "synths", list(medicine))
 	B.uses_charge = 1
 	B.charge_costs = list(1000)
-	B.synths = list(medicine)
+	rel_set(B, "synths", list(medicine))
 	S.uses_charge = 1
 	S.charge_costs = list(1000)
-	S.synths = list(medicine)
+	rel_set(S, "synths", list(medicine))
 	src.modules += O
 	src.modules += B
 	src.modules += S
@@ -499,18 +499,18 @@
 	var/datum/matter_synth/plastic = new /datum/matter_synth/plastic(40000)
 
 	var/datum/matter_synth/wire = new /datum/matter_synth/wire()
-	synths += metal
-	synths += glass
-	synths += plasteel
-	synths += wood
-	synths += plastic
-	synths += wire
+	own_add(src, "synths", metal)
+	own_add(src, "synths", glass)
+	own_add(src, "synths", plasteel)
+	own_add(src, "synths", wood)
+	own_add(src, "synths", plastic)
+	own_add(src, "synths", wire)
 
 	var/obj/item/dogborg/sleeper/compactor/decompiler/BD = new /obj/item/dogborg/sleeper/compactor/decompiler(src)
-	BD.metal = metal
-	BD.glass = glass
-	BD.wood = wood
-	BD.plastic = plastic
+	rel_set(BD, "metal", metal)
+	rel_set(BD, "glass", glass)
+	rel_set(BD, "wood", wood)
+	rel_set(BD, "plastic", plastic)
 	src.modules += BD
 
 	src.modules += new /obj/item/robotic_multibelt/materials(src)
@@ -596,14 +596,14 @@
 	glass.max_energy = 50000
 	glass.energy = 0
 
-	synths += metal
-	synths += glass
+	own_add(src, "synths", metal)
+	own_add(src, "synths", glass)
 
 	//Sheet refiners can only produce raw sheets.
 	var/obj/item/stack/material/cyborg/steel/M = new (src)
 	M.name = "steel recycler"
 	M.desc = "A device that refines recycled steel into sheets."
-	M.synths = list(metal)
+	rel_set(M, "synths", list(metal))
 	M.recipes = list()
 	M.recipes += new/datum/stack_recipe("steel sheet", /obj/item/stack/material/steel, 1, 1, 20)
 	src.modules += M
@@ -612,14 +612,14 @@
 	G.name = "glass recycler"
 	G.desc = "A device that refines recycled glass into sheets."
 	G.material = get_material_by_name("placeholder") //Hacky shit but we want sheets, not windows.
-	G.synths = list(glass)
+	rel_set(G, "synths", list(glass))
 	G.recipes = list()
 	G.recipes += new/datum/stack_recipe("glass sheet", /obj/item/stack/material/glass, 1, 1, 20)
 	src.modules += G
 
 	var/obj/item/dogborg/sleeper/compactor/C = new /obj/item/dogborg/sleeper/compactor(src)
-	C.metal = metal
-	C.glass = glass
+	rel_set(C, "metal", metal)
+	rel_set(C, "glass", glass)
 	src.modules += C
 
 	src.emag += new /obj/item/dogborg/pounce(src) //Pounce
@@ -690,7 +690,7 @@
 
 	var/datum/reagents/R = new/datum/reagents(50)
 	PB.reagents = R
-	R.my_atom = PB
+	rel_set(R, "my_atom", PB)
 	R.add_reagent(REAGENT_ID_BEER2, 50)
 	PB.name = "Auntie Hong's Final Sip"
 	PB.desc = "A bottle of very special mix of alcohol and poison. Some may argue that there's alcohol to die for, but Auntie Hong took it to next level."
@@ -799,12 +799,12 @@
 	src.emag += new /obj/item/kinetic_crusher/machete/dagger(src)
 
 	var/datum/matter_synth/beacon = new /datum/matter_synth/beacon(10000)
-	synths += beacon
+	own_add(src, "synths", beacon)
 
 	var/obj/item/stack/marker_beacon/MB = new /obj/item/stack/marker_beacon(src)
 	MB.uses_charge = 1
 	MB.charge_costs = list(500)
-	MB.synths = list(beacon)
+	rel_set(MB, "synths", list(beacon))
 	src.modules += MB
 
 	src.modules += new /obj/item/dogborg/sleeper/compactor/supply(src)
@@ -845,14 +845,14 @@
 	src.emag += new /obj/item/hand_tele(src)
 
 	var/datum/matter_synth/nanite = new /datum/matter_synth/nanite(10000)
-	synths += nanite
+	own_add(src, "synths", nanite)
 	var/datum/matter_synth/wire = new /datum/matter_synth/wire()						//Added to allow repairs, would rather add cable now than be asked to add it later,
-	synths += wire																		//Cable code, taken from engiborg,
+	own_add(src, "synths", wire) //Cable code, taken from engiborg,
 
 	var/obj/item/stack/nanopaste/N = new /obj/item/stack/nanopaste(src)
 	N.uses_charge = 1
 	N.charge_costs = list(1000)
-	N.synths = list(nanite)
+	rel_set(N, "synths", list(nanite))
 	src.modules += N
 
 	src.modules += new /obj/item/dogborg/sleeper/compactor/analyzer(src)
@@ -923,7 +923,7 @@
 	src.modules += new /obj/item/floor_painter(src)
 	src.modules += new /obj/item/pipe_dispenser(src)
 
-	robot.internals = new/obj/item/tank/jetpack/carbondioxide(src)
+	own_set(robot, "internals", new/obj/item/tank/jetpack/carbondioxide(src))
 	src.modules += robot.internals
 
 	var/obj/item/pickaxe/plasmacutter/borg/PC = new /obj/item/pickaxe/plasmacutter/borg(src)
@@ -935,17 +935,17 @@
 	var/datum/matter_synth/wood = new /datum/matter_synth/wood(25000)
 	var/datum/matter_synth/plastic = new /datum/matter_synth/plastic(25000)
 	var/datum/matter_synth/wire = new /datum/matter_synth/wire(30)
-	synths += metal
-	synths += glass
-	synths += wood
-	synths += plastic
-	synths += wire
+	own_add(src, "synths", metal)
+	own_add(src, "synths", glass)
+	own_add(src, "synths", wood)
+	own_add(src, "synths", plastic)
+	own_add(src, "synths", wire)
 
 	var/obj/item/matter_decompiler/MD = new /obj/item/matter_decompiler(src)
-	MD.metal = metal
-	MD.glass = glass
-	MD.wood = wood
-	MD.plastic = plastic
+	rel_set(MD, "metal", metal)
+	rel_set(MD, "glass", glass)
+	rel_set(MD, "wood", wood)
+	rel_set(MD, "plastic", plastic)
 	src.modules += new /obj/item/robotic_multibelt/materials(src)
 	src.modules += MD
 

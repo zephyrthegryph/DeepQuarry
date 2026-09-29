@@ -94,12 +94,12 @@
 	if(!F)
 		if(P.character_forms)
 			log_game("FORMS: [key_name(P)] had [P.character_forms.type] replaced by protean forms for a new control cluster.")
-			QDEL_NULL(P.character_forms)
+			own_clear(P, "character_forms", OWN_DELETE)
 		F = P.add_forms(/datum/forms/protean)
 	if(F.rig && F.rig != src)
-		F.rig.myprotean = null
-	F.rig = src
-	myprotean = P
+		rel_clear(F.rig, "myprotean")
+	rel_set(F, "rig", src)
+	rel_set(src, "myprotean", P)
 	if(P.get_equipped_item(SLOT_ID_BACK))
 		om_after(src, 3, PROC_REF(AssimilateBag), P, 1, P.get_equipped_item(SLOT_ID_BACK)) // ALLOW(decl): conditional, extra args
 	else
@@ -111,14 +111,14 @@
 	if(myprotean)
 		var/datum/forms/protean/F = myprotean.get_protean_forms()
 		if(F?.rig == src)
-			F.rig = null
+			rel_clear(F, "rig")
 		if(myprotean.loc == src)
 			myprotean.forceMove(drop_location())
 		// A dormant core with no cluster left is repaired on the protean itself.
 		if(F?.is_dormant())
 			log_game("NANOFORM: [key_name(myprotean)]'s control cluster was destroyed during dormancy; repairs continue on the body at [AREACOORD(myprotean)].")
 			myprotean.visible_message(span_warning("[myprotean]'s core spills out of the ruined control cluster.")) // ALLOW(decl): message from the protean, only while dormant
-		myprotean = null
+		rel_clear(src, "myprotean")
 	..()
 
 /obj/item/rig/proc/AssimilateBag(mob/living/carbon/human/P, spawned, obj/item/storage/backpack/B)
@@ -129,7 +129,7 @@
 		if(QDELETED(B)) // for mannequins or such
 			return
 		B.forceMove(src)
-		rig_storage = B
+		own_set(src, "rig_storage", B)
 		P.drop_item(B)
 		to_chat(P, span_notice("[B] has been integrated into the [src]."))
 		if(spawned)	//This feels very dumb to have a second if but I'm lazy
@@ -142,7 +142,7 @@
 /obj/item/rig/protean/proc/protean_removebag_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(rig_storage)
 		user.put_in_hands(rig_storage)
-		rig_storage = null
+		own_take(src, "rig_storage")
 	else
 		to_chat(user, "This Rig does not have a bag installed. Use a bag on it to install one.")
 
@@ -331,7 +331,7 @@ EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 		if(!user.unEquip(W))
 			return INTERACTION_HANDLED_PASS
 
-		air_supply = W
+		own_set(src, "air_supply", W)
 		W.forceMove(src)
 		to_chat(user, "You slot [W] into [src] and tighten the connecting valve.")
 		return INTERACTION_HANDLED_PASS
@@ -339,7 +339,7 @@ EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 		// Check if this is a hardsuit upgrade or a modification.
 	else if(istype(W,/obj/item/rig_module))
 		if(!installed_modules)
-			installed_modules = list()
+			rel_set(src, "installed_modules", list())
 		if(length(installed_modules))
 			for(var/obj/item/rig_module/installed_mod in installed_modules)
 				if(!installed_mod.redundant && istype(installed_mod,W))
@@ -393,7 +393,7 @@ EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 	else
 		user.put_in_hands(air_supply)
 	to_chat(user, "You detach and remove \the [air_supply].")
-	air_supply = null
+	own_take(src, "air_supply")
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/rig/protean/screwdriver_act(mob/living/user, obj/item/tool)
@@ -471,14 +471,14 @@ EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 	stop_soaking()
 	if(!istype(M) || M == myprotean)
 		return
-	soaking_wearer = M
+	rel_set(src, "soaking_wearer", M)
 	om_hook(M, /datum/om/event/before/living_injure, src, PROC_REF(soak_wearer_injury))
 
 /obj/item/rig/protean/proc/stop_soaking()
 	if(!soaking_wearer)
 		return
 	om_unhook(soaking_wearer, /datum/om/event/before/living_injure, src)
-	soaking_wearer = null
+	rel_clear(src, "soaking_wearer")
 
 /obj/item/rig/protean/proc/soak_wearer_injury(mob/living/carbon/human/source, datum/om/event/before/living_injure/event)
 	EVENT_HANDLER

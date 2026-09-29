@@ -11,7 +11,7 @@
 
 /obj/structure/blob/resource/Initialize(mapload, new_overmind)
 	if(overmind)
-		overmind.resource_blobs += src
+		rel_add(overmind, "resource_blobs", src)
 	return ..()
 
 REL_PAIR(/obj/structure/blob/resource, overmind, resource_blobs)

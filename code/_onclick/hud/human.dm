@@ -17,7 +17,7 @@
 
 	HUD.adding = adding
 	HUD.other = other
-	HUD.hotkeybuttons = hotkeybuttons //These can be disabled for hotkey users
+	own_set(HUD, "hotkeybuttons", hotkeybuttons) //These can be disabled for hotkey users
 	HUD.slot_info = slot_info
 
 	var/list/hud_elements = list()
@@ -79,7 +79,7 @@
 		using.color = HUD.ui_color
 		using.alpha = HUD.ui_alpha
 		adding += using
-		HUD.move_intent = using
+		own_set(HUD, "move_intent", using)
 
 	if(hud_data.has_drop)
 		using = new /atom/movable/screen()
@@ -120,7 +120,7 @@
 		inv_box.slot_id = SLOT_ID_HAND_R
 		inv_box.color = HUD.ui_color
 		inv_box.alpha = HUD.ui_alpha
-		HUD.r_hand_hud_object = inv_box
+		own_set(HUD, "r_hand_hud_object", inv_box)
 		adding += inv_box
 		slot_info["[SLOT_ID_HAND_R]"] = inv_box.screen_loc
 
@@ -135,7 +135,7 @@
 		inv_box.slot_id = SLOT_ID_HAND_L
 		inv_box.color = HUD.ui_color
 		inv_box.alpha = HUD.ui_alpha
-		HUD.l_hand_hud_object = inv_box
+		own_set(HUD, "l_hand_hud_object", inv_box)
 		adding += inv_box
 		slot_info["[SLOT_ID_HAND_L]"] = inv_box.screen_loc
 
@@ -170,7 +170,7 @@
 		hotkeybuttons += using
 
 	if(hud_data.has_throw)
-		throw_icon = new /atom/movable/screen()
+		own_set(src, "throw_icon", new /atom/movable/screen())
 		throw_icon.icon = HUD.ui_style
 		throw_icon.icon_state = "act_throw_off"
 		throw_icon.name = "throw"
@@ -180,7 +180,7 @@
 		hotkeybuttons += throw_icon
 		hud_elements |= throw_icon
 
-		pullin = new /atom/movable/screen()
+		own_set(src, "pullin", new /atom/movable/screen())
 		pullin.icon = HUD.ui_style
 		pullin.icon_state = "pull0"
 		pullin.name = "pull"
@@ -189,7 +189,7 @@
 		hud_elements |= pullin
 
 	if(hud_data.has_internals)
-		internals = new /atom/movable/screen()
+		own_set(src, "internals", new /atom/movable/screen())
 		internals.icon = HUD.ui_style
 		internals.icon_state = "internal0"
 		if(istype(internal, /obj/item/tank)) //Internals on already? Iight, prove it
@@ -199,14 +199,14 @@
 		hud_elements |= internals
 
 	if(hud_data.has_warnings)
-		healths = new /atom/movable/screen()
+		own_set(src, "healths", new /atom/movable/screen())
 		healths.icon = HUD.ui_style
 		healths.icon_state = "health0"
 		healths.name = "health"
 		healths.screen_loc = ui_health
 		hud_elements |= healths
 
-	autowhisper_display = new /atom/movable/screen()
+	own_set(src, "autowhisper_display", new /atom/movable/screen())
 	autowhisper_display.icon = 'icons/mob/screen/minimalist.dmi'
 	autowhisper_display.icon_state = "autowhisper"
 	autowhisper_display.name = "autowhisper"
@@ -268,25 +268,25 @@
 	hud_elements |= xenochimera_danger_display
 	hud_elements |= lleill_display
 
-	ling_chem_display = new /atom/movable/screen/ling/chems()
+	own_set(src, "ling_chem_display", new /atom/movable/screen/ling/chems())
 	ling_chem_display.screen_loc = ui_ling_chemical_display
 	ling_chem_display.icon_state = "ling_chems"
 	hud_elements |= ling_chem_display
 
-	wiz_instability_display = new /atom/movable/screen/wizard/instability()
+	own_set(src, "wiz_instability_display", new /atom/movable/screen/wizard/instability())
 	wiz_instability_display.screen_loc = ui_wiz_instability_display
 	wiz_instability_display.icon_state = "wiz_instability_none"
 	hud_elements |= wiz_instability_display
 
-	wiz_energy_display = new/atom/movable/screen/wizard/energy()
+	own_set(src, "wiz_energy_display", new/atom/movable/screen/wizard/energy())
 	wiz_energy_display.screen_loc = ui_wiz_energy_display
 	wiz_energy_display.icon_state = "wiz_energy"
 	hud_elements |= wiz_energy_display
 
 
-	pain = new /atom/movable/screen( null )
+	own_set(src, "pain", new /atom/movable/screen( null ))
 
-	zone_sel = new /atom/movable/screen/zone_sel( null )
+	own_set(src, "zone_sel", new /atom/movable/screen/zone_sel( null ))
 	zone_sel.icon = HUD.ui_style
 	zone_sel.color = HUD.ui_color
 	zone_sel.alpha = HUD.ui_alpha
@@ -295,23 +295,23 @@
 	hud_elements |= zone_sel
 
 	//Handle the gun settings buttons
-	gun_setting_icon = new /atom/movable/screen/gun/mode(null)
+	own_set(src, "gun_setting_icon", new /atom/movable/screen/gun/mode(null))
 	gun_setting_icon.icon = HUD.ui_style
 	gun_setting_icon.color = HUD.ui_color
 	gun_setting_icon.alpha = HUD.ui_alpha
 	hud_elements |= gun_setting_icon
 
-	item_use_icon = new /atom/movable/screen/gun/item(null)
+	own_set(src, "item_use_icon", new /atom/movable/screen/gun/item(null))
 	item_use_icon.icon = HUD.ui_style
 	item_use_icon.color = HUD.ui_color
 	item_use_icon.alpha = HUD.ui_alpha
 
-	gun_move_icon = new /atom/movable/screen/gun/move(null)
+	own_set(src, "gun_move_icon", new /atom/movable/screen/gun/move(null))
 	gun_move_icon.icon = HUD.ui_style
 	gun_move_icon.color = HUD.ui_color
 	gun_move_icon.alpha = HUD.ui_alpha
 
-	radio_use_icon = new /atom/movable/screen/gun/radio(null)
+	own_set(src, "radio_use_icon", new /atom/movable/screen/gun/radio(null))
 	radio_use_icon.icon = HUD.ui_style
 	radio_use_icon.color = HUD.ui_color
 	radio_use_icon.alpha = HUD.ui_alpha

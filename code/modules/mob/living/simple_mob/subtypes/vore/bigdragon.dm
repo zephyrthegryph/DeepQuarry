@@ -514,7 +514,7 @@ I think I covered everything.
 		"The vast tongue quivers, inching you up close to it's gaping gullet. The slick hatch squeezes on a limb of yours, giving it a plush, sloppy, inviting tug...",
 		"Nestled atop the muscle, an array of deep, dull muffled glrrrgles echo up the beast's gullet, a gastric siren-song calling out for you.")
 	gut1 = B
-	vore_selected = B
+	own_set(src, "vore_selected", B)
 	B = new /obj/belly/dragon/throat(src)
 	B.affects_vore_sprites = FALSE
 	B.own_emote_lists()
@@ -874,7 +874,7 @@ I think I covered everything.
 	// personal disposition for state changes.
 	faction = FACTION_NEUTRAL
 	norange = 1		//Don't start fires while friendly
-	vore_selected = gut2 //Just incase it eats someone right after being tamed
+	own_set(src, "vore_selected", gut2) //Just incase it eats someone right after being tamed
 	ai_brain?.set_hostile(FALSE)
 	ai_brain?.lose_target()
 
@@ -890,7 +890,7 @@ I think I covered everything.
 	say("HAVE IT YOUR WAY THEN")
 	// DQEdit - legacy ai_brain swap removed; brain stays put.
 	ai_brain?.set_hostile(TRUE)
-	vore_selected = gut1
+	own_set(src, "vore_selected", gut1)
 	if(attacker)
 		ai_brain?.give_target(attacker, TRUE)
 

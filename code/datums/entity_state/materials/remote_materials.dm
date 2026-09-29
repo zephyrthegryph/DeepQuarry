@@ -91,7 +91,7 @@ handles linking back and forth.
 	silo_handle = null
 
 	if(local_container)
-		QDEL_NULL(local_container)
+		own_clear(src, "local_container", OWN_DELETE)
 	local_container = new /datum/material_container( \
 		owner, \
 		subtypesof(/datum/material), \
@@ -162,7 +162,7 @@ handles linking back and forth.
 					new_container.materials[mat] += mat_amount
 					mat_container().materials[mat] = 0
 			if(mat_container() == local_container)
-				local_container = null
+				own_take(src, "local_container")
 			qdel(mat_container())
 		silo_handle = om_handle(new_silo)
 		LAZYADD(silo().ore_connected_machines, src)

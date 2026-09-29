@@ -34,7 +34,7 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 			M.put_in_hands(imp)
 		to_chat(M, span_notice("You remove \the [imp] from \the [src]."))
 		name = "implanter"
-		imp = null
+		own_take(src, "imp")
 
 	update()
 
@@ -71,7 +71,7 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 			BITSET(H.hud_updateflag, IMPLOYAL_HUD)
 			BITSET(H.hud_updateflag, BACKUP_HUD) // Backup HUD updates
 
-	imp = null
+	own_take(src, "imp")
 	update()
 
 /obj/item/implanter/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

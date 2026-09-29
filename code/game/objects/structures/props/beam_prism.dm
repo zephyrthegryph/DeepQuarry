@@ -288,15 +288,15 @@ REL_PAIR_LIST(/obj/structure/prop/prismcontrol, my_turrets, remote_dial)
 	. = ..()
 	if(length(my_turrets)) //Preset controls.
 		for(var/obj/structure/prop/prism/P in my_turrets)
-			P.remote_dial = src
+			rel_set(P, "remote_dial", src)
 	else
 		. = INITIALIZE_HINT_LATELOAD
 
 /obj/structure/prop/prismcontrol/LateInitialize()
 	for(var/obj/structure/prop/prism/P in orange(src, world.view)) //Don't search a huge area.
 		if(P.dialID == dialID && !P.remote_dial && P.external_control_lock)
-			LAZYOR(my_turrets, P)
-			P.remote_dial = src
+			rel_add(src, "my_turrets", P)
+			rel_set(P, "remote_dial", src)
 
 // its turrets forget the dial.
 REL_PAIR_LIST(/obj/structure/prop/prismcontrol, my_turrets, remote_dial)

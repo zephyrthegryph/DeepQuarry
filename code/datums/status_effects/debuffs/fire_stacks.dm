@@ -258,7 +258,7 @@
 	if(moblight_type)
 		if(moblight)
 			qdel(moblight)
-		moblight = new moblight_type(owner)
+		own_set(src, "moblight", new moblight_type(owner))
 
 	cache_stacks()
 	return TRUE
@@ -273,7 +273,7 @@
 	extinguish()
 
 /datum/status_effect/fire_handler/fire_stacks/proc/extinguish()
-	QDEL_NULL(moblight)
+	own_clear(src, "moblight", OWN_DELETE)
 	on_fire = FALSE
 	cache_stacks()
 	for(var/obj/item/equipped in (owner.get_equipped_items()))

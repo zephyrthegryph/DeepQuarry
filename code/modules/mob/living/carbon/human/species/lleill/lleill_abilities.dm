@@ -364,7 +364,7 @@
 	om_ask(actor, /datum/om/prompt/choice, PROC_REF(target_chosen), message = "Who do you wish to take energy from?", title = "Make contact", choices = targets)
 
 /datum/om/flow/lleill_contact/proc/target_chosen(datum/om/prompt/choice/ask)
-	chosen_target = ask.choice
+	rel_set(src, "chosen_target", ask.choice)
 	om_ask(actor, /datum/om/prompt/choice, PROC_REF(type_chosen), message = "How do you wish to make contact with \the [chosen_target]?", title = "Contact type", choices = contact_options)
 
 /datum/om/flow/lleill_contact/proc/type_chosen(datum/om/prompt/choice/ask)
@@ -637,8 +637,8 @@
 	var/turf/beast_loc = src.loc
 	ourmob.forceMove(beast_loc)
 	ourmob.forceMove(beast_loc)
-	ourmob.vore_selected = vore_selected
-	vore_selected = null
+	own_set(ourmob, "vore_selected", vore_selected)
+	own_take(src, "vore_selected")
 	ourmob.mob_belly_transfer(src)
 
 	om_run_frame_now(ourmob, /datum/om/pipeline/life)

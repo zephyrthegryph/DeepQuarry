@@ -58,7 +58,7 @@
 
 	map_name = "appearance_changer_[REF(src)]_map"
 	// Initialize map objects
-	cam_screen = new
+	own_set(src, "cam_screen", new /atom/movable/screen/map_view)
 
 	cam_screen.name = "screen"
 	cam_screen.assigned_map = map_name
@@ -72,14 +72,14 @@
 		instance.del_on_map_removal = FALSE
 		instance.screen_loc = "[map_name]:CENTER"
 
-	local_skybox = new()
+	own_set(src, "local_skybox", new /atom/movable/screen/skybox())
 	local_skybox.assigned_map = map_name
 	local_skybox.del_on_map_removal = FALSE
 	local_skybox.screen_loc = "[map_name]:CENTER,CENTER"
 	cam_plane_masters += local_skybox
 
 	owner_handle = om_handle(H)
-	cam_background = new
+	own_set(src, "cam_background", new /atom/movable/screen/background)
 	cam_background.assigned_map = map_name
 	cam_background.del_on_map_removal = FALSE
 	check_whitelist = check_species_whitelist
@@ -514,8 +514,8 @@
 			var/datum/species/S = GLOB.all_species[params["view_stock_brec"]]
 			if(S && (S.spawn_flags & (SPECIES_IS_WHITELISTED|SPECIES_CAN_JOIN)) == SPECIES_CAN_JOIN)
 				// Generate body record from species!
-				QDEL_NULL(mannequin)
-				mannequin = new /mob/living/carbon/human(null, S.name)
+				own_clear(src, "mannequin", OWN_DELETE)
+				own_set(src, "mannequin", new /mob/living/carbon/human(null, S.name))
 				owner_handle = om_handle(mannequin)
 				owner().real_name = "Stock [S.name] Body"
 				owner().name = owner().real_name
@@ -567,7 +567,7 @@
 			if(can_change(owner(), APPEARANCE_RACE))
 				to_chat(ui.user,span_notice("You eject the disk."))
 				DC.disk.forceMove(get_turf(DC))
-				DC.disk = null
+				own_take(DC, "disk")
 				return TRUE
 		if("back_to_library")
 			if(can_change(owner(), APPEARANCE_RACE))
@@ -1049,7 +1049,7 @@
 	var/obj/machinery/computer/transhuman/designer/DC = om_resolve(linked_body_design_console)
 	if(DC)
 		DC.selected_record = FALSE
-		DC.designer_gui = null // no hardrefs
+		own_take(DC, "designer_gui") // no hardrefs
 	linked_body_design_console = null
 	..()
 
@@ -1057,9 +1057,9 @@
 	// checks for monkey to tell if on the menu
 	if(owner())
 		om_unhook(owner(), /datum/om/event/movable_attempted_move, src)
-		QDEL_NULL(mannequin)
+		own_clear(src, "mannequin", OWN_DELETE)
 		owner_handle = null
-	mannequin = new /mob/living/carbon/human(src)
+	own_set(src, "mannequin", new /mob/living/carbon/human(src))
 	owner_handle = om_handle(mannequin)
 	owner().set_species(SPECIES_LLEILL)
 	owner().species.produceCopy(owner().species.traits.Copy(),owner(),null,FALSE)
@@ -1071,9 +1071,9 @@
 /datum/tgui_module/appearance_changer/body_designer/proc/load_record_to_body(datum/transhuman/body_record/current_project)
 	if(owner())
 		om_unhook(owner(), /datum/om/event/movable_attempted_move, src)
-		QDEL_NULL(mannequin)
+		own_clear(src, "mannequin", OWN_DELETE)
 		owner_handle = null
-	mannequin = current_project.produce_human_mob(src,FALSE,FALSE,"Designer [rand(999)]")
+	own_set(src, "mannequin", current_project.produce_human_mob(src,FALSE,FALSE,"Designer [rand(999)]"))
 	owner_handle = om_handle(mannequin)
 	// Update some specifics from the current record
 	owner().dna.blood_reagents = current_project.mydna.dna.blood_reagents
@@ -1115,7 +1115,7 @@
 /// The changer's windows refresh when the answer proc reports a change.
 /datum/om/prompt/color/appearance/prepare()
 	. = ..()
-	ui_refresh = subject
+	rel_set(src, "ui_refresh", subject)
 
 /datum/om/prompt/color/appearance/valid()
 	var/datum/tgui_module/appearance_changer/changer = subject

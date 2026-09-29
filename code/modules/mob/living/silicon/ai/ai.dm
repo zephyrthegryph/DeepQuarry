@@ -114,7 +114,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 /mob/living/silicon/ai/Initialize(mapload, is_decoy, datum/ai_laws/L, obj/item/mmi/B, safety = FALSE)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 
-	announcement = new() // ALLOW(decl): configured before parent init
+	own_set(src, "announcement", new /datum/announcement/priority()) // ALLOW(decl): configured before parent init
 	announcement.title = "A.I. Announcement"
 	announcement.announcement_type = "A.I. Announcement"
 	announcement.newscast = 1
@@ -130,14 +130,14 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 				pickedName = null
 
 	if(!is_dummy)
-		aiPDA = new/obj/item/pda/ai(src) // ALLOW(decl): conditional on is_dummy
+		own_set(src, "aiPDA", new/obj/item/pda/ai(src)) // ALLOW(decl): conditional on is_dummy
 	SetName(pickedName)
 	anchored = TRUE
 	canmove = 0
 	density = TRUE
 
 	if(!is_dummy)
-		aiCommunicator = new /obj/item/communicator/integrated(src) // ALLOW(decl): conditional on is_dummy
+		own_set(src, "aiCommunicator", new /obj/item/communicator/integrated(src)) // ALLOW(decl): conditional on is_dummy
 
 	holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo1"))
 
@@ -145,12 +145,12 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 	if(L)
 		if (istype(L, /datum/ai_laws))
-			laws = L
+			own_set(src, "laws", L)
 	else
-		laws = new using_map.default_law_type // ALLOW(decl): only when no laws were passed in
+		own_set(src, "laws", new using_map.default_law_type) // ALLOW(decl): only when no laws were passed in
 
-	aiRadio = new(src) // ALLOW(decl): wired to common_radio before parent init
-	common_radio = aiRadio
+	own_set(src, "aiRadio", new /obj/item/radio/headset/heads/ai_integrated(src)) // ALLOW(decl): wired to common_radio before parent init
+	own_set(src, "common_radio", aiRadio)
 	aiRadio.myAi = src
 	additional_law_channels["Binary"] = "#b"
 	additional_law_channels["Holopad"] = ":h"
@@ -334,10 +334,10 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 
 /obj/machinery/ai_powersupply/Initialize(mapload)
 	. = ..()
-	powered_ai = loc
+	rel_set(src, "powered_ai", loc)
 	if(!istype(powered_ai))
 		return INITIALIZE_HINT_QDEL
-	powered_ai.psupply = src
+	own_set(powered_ai, "psupply", src)
 	if(istype(powered_ai,/mob/living/silicon/ai/announcer))	//Don't try to get a loc for a nullspace announcer mob, just put it into it
 		forceMove(powered_ai)
 	else
@@ -553,7 +553,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 	if(camera)
 		camera.set_light(0)
 	if(istype(new_eye,/obj/machinery/camera))
-		camera = new_eye
+		rel_set(src, "camera", new_eye)
 	if(new_eye != GLOB.ai_camera_room_landmark)
 		end_multicam()
 	. = ..()
@@ -795,7 +795,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 	if(!camera_light_on)
 		if(camera)
 			camera.set_light(0)
-			camera = null
+			rel_clear(src, "camera")
 	else
 		lightNearbyCamera()
 
@@ -810,17 +810,17 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 			if(camera && src.camera != camera)
 				src.camera.set_light(0)
 				if(!camera.light_disabled)
-					src.camera = camera
+					rel_set(src, "camera", camera)
 					src.camera.set_light(AI_CAMERA_LUMINOSITY)
 				else
-					src.camera = null
+					rel_clear(src, "camera")
 			else if(isnull(camera))
 				src.camera.set_light(0)
-				src.camera = null
+				rel_clear(src, "camera")
 		else
 			var/obj/machinery/camera/camera = near_range_camera(eyeobj)
 			if(camera && !camera.light_disabled)
-				src.camera = camera
+				rel_set(src, "camera", camera)
 				src.camera.set_light(AI_CAMERA_LUMINOSITY)
 		camera_light_on = world.timeofday + 1 * 20 // Update the light every 2 seconds.
 

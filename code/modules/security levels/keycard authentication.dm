@@ -34,9 +34,9 @@
 /obj/machinery/keycard_auth/proc/screwdriver_act_tool_done(mob/user)
 	to_chat(user, "You remove the faceplate from the [src]")
 	var/obj/structure/frame/A = new /obj/structure/frame(loc)
-	A.circuit = circuit
+	own_set(A, "circuit", circuit)
 	A.frame_type = circuit.board_type
-	circuit = null
+	own_take(src, "circuit")
 	A.need_circuit = FALSE
 	A.pixel_x = pixel_x
 	A.pixel_y = pixel_y

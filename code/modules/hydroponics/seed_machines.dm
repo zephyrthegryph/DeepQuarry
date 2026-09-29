@@ -100,7 +100,7 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 		if(loaded_disk)
 			loaded_disk.forceMove(get_turf(src))
 			visible_message(span_filter_notice("[icon2html(src,viewers(src))] [src] beeps and spits out [loaded_disk]."))
-			loaded_disk = null
+			own_take(src, "loaded_disk")
 
 /obj/machinery/botany/declare_interactions(list/into)
 	into += list(
@@ -129,7 +129,7 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 	else
 		user.drop_from_inventory(W)
 		W.forceMove(src)
-		seed = W
+		own_set(src, "seed", W)
 		to_chat(user, span_filter_notice("You load [W] into [src]."))
 	return TRUE
 
@@ -171,7 +171,7 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 /obj/machinery/botany/proc/interaction_load_disk(mob/user, obj/item/W, datum/interaction/interaction)
 	user.drop_from_inventory(W)
 	W.forceMove(src)
-	loaded_disk = W
+	own_set(src, "loaded_disk", W)
 	to_chat(user, span_filter_notice("You load [W] into [src]."))
 	return TRUE
 
@@ -254,7 +254,7 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 			seed.update_seed()
 			visible_message("[icon2html(src,viewers(src))] [src] beeps and spits out [seed].")
 
-			seed = null
+			own_take(src, "seed")
 			return TRUE
 
 		if("eject_disk")
@@ -262,7 +262,7 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 				return
 			loaded_disk.forceMove(get_turf(src))
 			visible_message("[icon2html(src,viewers(src))] [src] beeps and spits out [loaded_disk].")
-			loaded_disk = null
+			own_take(src, "loaded_disk")
 			return TRUE
 
 /obj/machinery/botany/extractor/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
@@ -282,7 +282,7 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 				degradation = 0
 
 			consume(seed)
-			seed = null
+			own_take(src, "seed")
 			return TRUE
 
 		if("get_gene")

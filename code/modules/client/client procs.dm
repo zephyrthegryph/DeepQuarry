@@ -244,9 +244,9 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	GLOB.directory[ckey] = src
 
 	if(GLOB.persistent_clients_by_ckey[ckey])
-		persistent_client = GLOB.persistent_clients_by_ckey[ckey]
+		rel_set(src, "persistent_client", GLOB.persistent_clients_by_ckey[ckey])
 	else
-		persistent_client = new(ckey)
+		rel_set(src, "persistent_client", new /datum/persistent_client(ckey))
 	persistent_client.set_client(src)
 
 	if (CONFIG_GET(flag/chatlog_database_backend))
@@ -254,25 +254,25 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	winset(src, null, list("browser-options" = "find,refresh"))
 	// Instantiate stat panel
-	stat_panel = new(src, "statbrowser")
+	own_set(src, "stat_panel", new /datum/tgui_window(src, "statbrowser"))
 	stat_panel.subscribe(src, PROC_REF(on_stat_panel_message))
 
 	// Instantiate tgui panel
-	tgui_say = new(src, "tgui_say")
-	tgui_shocker = new(src, "tgui_shock")
+	own_set(src, "tgui_say", new /datum/tgui_say(src, "tgui_say"))
+	own_set(src, "tgui_shocker", new /datum/tgui_shock(src, "tgui_shock"))
 	initialize_commandbar_spy()
-	tgui_panel = new(src, "browseroutput")
+	own_set(src, "tgui_panel", new /datum/tgui_panel(src, "browseroutput"))
 
 	GLOB.tickets.ClientLogin(src)
 
 	//preferences datum - also holds some persistant data for the client (because we may as well keep these datums to a minimum)
-	prefs = GLOB.preferences_datums[ckey]
+	rel_set(src, "prefs", GLOB.preferences_datums[ckey])
 	if(prefs)
 		prefs.client_handle = om_handle(src)
 		prefs.load_savefile() // just to make sure we have the latest data
 		prefs.apply_all_client_preferences()
 	else
-		prefs = new /datum/preferences(src)
+		rel_set(src, "prefs", new /datum/preferences(src))
 		GLOB.preferences_datums[ckey] = prefs
 	prefs.last_ip = address				//these are gonna be used for banning
 	prefs.last_id = computer_id			//these are gonna be used for banning
@@ -280,7 +280,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	var/full_version = "[byond_version].[byond_build ? byond_build : "xxx"]"
 	log_access("Login: [key_name(src)] from [address ? address : "localhost"]-[computer_id] || BYOND v[full_version]")
 
-	prefs_vr = new/datum/vore_preferences(src)
+	own_set(src, "prefs_vr", new/datum/vore_preferences(src))
 
 	. = ..()	//calls mob.Login()
 
@@ -333,7 +333,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	tgui_say.initialize()
 	tgui_shocker.initialize()
 
-	loot_panel = new(src)
+	own_set(src, "loot_panel", new /datum/lootpanel(src))
 
 	connection_time = world.time
 	connection_realtime = world.realtime
@@ -353,7 +353,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	send_resources()
 
 	if(!void)
-		void = new()
+		own_set(src, "void", new /atom/movable/screen/click_catcher())
 	screen += void
 
 	attempt_auto_fit_viewport()
@@ -389,14 +389,14 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		holder.owner_handle = null
 		GLOB.admins -= src
 	if(skybox)
-		QDEL_NULL(skybox)
+		own_clear(src, "skybox", OWN_DELETE)
 	if(fakeConversations)
-		QDEL_NULL(fakeConversations)
-	QDEL_NULL(loot_panel)
+		own_clear(src, "fakeConversations", OWN_DELETE)
+	own_clear(src, "loot_panel", OWN_DELETE)
 	// Client-scoped persistent UIs: their /datum/tgui entries would otherwise
 	// linger in SStgui.all_uis for every reconnect.
-	QDEL_NULL(tooltips)
-	QDEL_NULL(media)
+	own_clear(src, "tooltips", OWN_DELETE)
+	own_clear(src, "media", OWN_DELETE)
 	..()
 	return QDEL_HINT_HARDDEL_NOW
 
@@ -928,13 +928,13 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 /client/proc/open_filter_editor(atom/in_atom)
 	if(check_rights_for(src, R_HOLDER))
-		holder.filteriffic = new /datum/filter_editor(in_atom)
+		own_set(holder, "filteriffic", new /datum/filter_editor(in_atom))
 		holder.filteriffic.tgui_interact(mob)
 
 ///opens the particle editor UI for the in_atom object for this client
 /client/proc/open_particle_editor(atom/movable/in_atom)
 	if(check_rights_for(src, R_HOLDER))
-		holder.particle_test = new /datum/particle_editor(in_atom)
+		own_set(holder, "particle_test", new /datum/particle_editor(in_atom))
 		holder.particle_test.tgui_interact(mob)
 
 /client/proc/set_eye(new_eye)

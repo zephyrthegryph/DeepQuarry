@@ -409,7 +409,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 	if(!amount)
 		return
 
-	module.synths += new synth_path(amount)
+	own_add(module, "synths", new synth_path(amount))
 	update_material_multibelts()
 
 /mob/living/silicon/robot/proc/update_material_multibelts()
@@ -437,7 +437,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 
 	for(var/datum/matter_synth/synth in module.synths)
 		if(istype(synth, synth_path))
-			module.synths -= synth
+			own_take_member(module, "synths", synth)
 			qdel(synth)
 	update_material_multibelts()
 
@@ -503,7 +503,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 
 	for(var/stack_to_add in possible_synths)
 		var/obj/item/stack/current_stack = new stack_to_add(src)
-		current_stack.synths = possible_synths[stack_to_add]
+		rel_set(current_stack, "synths", possible_synths[stack_to_add])
 		cyborg_integrated_tools += current_stack
 
 	. = ..()
@@ -728,7 +728,7 @@ EXTEND_INTERACTIONS(/obj/item/gripper, INTERACT_VERB("Drop Item", PROC_REF(gripp
 
 /obj/item/reagent_containers/glass/bucket/cyborg/Initialize(mapload)
 	. = ..()
-	R = loc.loc
+	rel_set(src, "R", loc.loc)
 	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(check_loc))
 
 /obj/item/reagent_containers/glass/bucket/cyborg/proc/check_loc(atom/movable/mover, datum/om/event/movable_attempted_move/event)

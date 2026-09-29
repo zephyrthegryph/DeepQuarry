@@ -73,9 +73,9 @@
 /obj/mecha/combat/gygax/dark/add_cell(obj/item/cell/C=null)
 	if(C)
 		C.forceMove(src)
-		cell = C
+		own_set(src, "cell", C)
 		return
-	cell = new /obj/item/cell/hyper(src)
+	own_set(src, "cell", new /obj/item/cell/hyper(src))
 
 /obj/mecha/combat/gygax/serenity
 	desc = "A lightweight exosuit made from a modified Gygax chassis combined with proprietary VeyMed medical tech. It's faster and sturdier than most medical mechs, but much of the armor plating has been stripped out, leaving it more vulnerable than a regular Gygax."

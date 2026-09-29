@@ -13,7 +13,7 @@
 /obj/structure/AIcore/Initialize(mapload)
 	. = ..()
 	if(mapload)
-		laws = new using_map.default_law_type
+		rel_set(src, "laws", new using_map.default_law_type)
 
 DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
@@ -26,7 +26,7 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 				to_chat(user, span_notice("You place the circuit board inside the frame."))
 				icon_state = "1"
-				circuit = P
+				own_set(src, "circuit", P)
 				user.drop_item()
 				P.forceMove(src)
 		if(2)
@@ -90,7 +90,7 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 
 				user.drop_item()
 				P.forceMove(src)
-				brain = P
+				own_set(src, "brain", P)
 				to_chat(user, "Added [P].")
 				icon_state = "3b"
 	return INTERACTION_HANDLED_PASS
@@ -184,14 +184,14 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 				state = 1
 				icon_state = "0"
 				circuit.forceMove(loc)
-				circuit = null
+				own_take(src, "circuit")
 				return ITEM_INTERACT_SUCCESS
 		if(3)
 			if(brain)
 				playsound(src, tool.usesound, 50, 1)
 				to_chat(user, span_notice("You remove the brain."))
 				brain.forceMove(loc)
-				brain = null
+				own_take(src, "brain")
 				icon_state = "3"
 				return ITEM_INTERACT_SUCCESS
 		if(4)

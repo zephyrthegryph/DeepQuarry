@@ -18,7 +18,7 @@
 	fuel_ports = list()
 	for(var/area/A in shuttle_area)
 		for(var/obj/structure/fuel_port/fuel_port_in_area in contents_of(A))
-			fuel_port_in_area.parent_shuttle = src
+			rel_set(fuel_port_in_area, "parent_shuttle", src)
 			fuel_ports += fuel_port_in_area
 
 /datum/shuttle/autodock/overmap/fuel_check()

@@ -46,7 +46,7 @@
 
 	// Associate the holder with the new turf.
 	new_holder.my_turf_handle = om_handle(new_dest)
-	new_dest.landed_holder_ref = new_holder
+	own_set(new_dest, "landed_holder_ref", new_holder)
 
 	//Update underlays if necessary (interior corners won't have changed).
 	if(new_dest.takes_underlays && !new_dest.interior_corner)

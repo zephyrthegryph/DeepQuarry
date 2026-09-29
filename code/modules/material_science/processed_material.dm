@@ -80,7 +80,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	material.name = key
 	material.display_name = batch.display_name()
 	material.use_name = material.display_name
-	material.batch_template = batch.copy_batch()
+	own_set(material, "batch_template", batch.copy_batch())
 	material.hardness = batch.hardness
 	material.integrity = clamp(round(batch.toughness * 2), 5, 250)
 	material.elasticity = clamp(batch.toughness - batch.brittleness * 0.25, 1, 100)
@@ -256,8 +256,8 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	// Stack merging is an explicit later interaction, so constructing directly
 	// on the output turf preserves both initialization and the returned ref.
 	var/obj/item/stack/material/processed_alloy/stock = new /obj/item/stack/material/processed_alloy(location, stack_amount, material_key)
-	QDEL_NULL(stock.batch_state)
-	stock.batch_state = batch.copy_for_amount(stack_amount)
+	own_clear(stock, "batch_state", OWN_DELETE)
+	own_set(stock, "batch_state", batch.copy_for_amount(stack_amount))
 	stock.feedstock_purity = batch.purity
 	stock.feedstock_lot_id = uppertext(copytext(md5("[world.realtime]-[REF(stock)]-[rand()]"), 1, 9))
 	stock.update_thermal_processing()
@@ -298,7 +298,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		export_value_per_sheet = max(material.supply_conversion_value, 0)
 		set_economic_provenance(DEPARTMENT_RESEARCH, export_value_per_sheet * amount)
 		var/datum/material/processed_alloy/processed = material
-		batch_state = processed.batch_template.copy_for_amount(amount)
+		own_set(src, "batch_state", processed.batch_template.copy_for_amount(amount))
 
 
 /obj/item/stack/material/processed_alloy/proc/physical_batch() as /datum/material_batch
@@ -340,10 +340,10 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		qdel(original)
 		return new_stack
 	new_stack.set_processed_material(material.name)
-	QDEL_NULL(new_stack.batch_state)
-	new_stack.batch_state = original.copy_for_amount(new_stack.get_amount())
-	QDEL_NULL(batch_state)
-	batch_state = original.copy_for_amount(max(old_amount - new_stack.get_amount(), 0))
+	own_clear(new_stack, "batch_state", OWN_DELETE)
+	own_set(new_stack, "batch_state", original.copy_for_amount(new_stack.get_amount()))
+	own_clear(src, "batch_state", OWN_DELETE)
+	own_set(src, "batch_state", original.copy_for_amount(max(old_amount - new_stack.get_amount(), 0)))
 	qdel(original)
 	return new_stack
 
@@ -377,13 +377,13 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	new_target.energy_spent += source_portion.energy_spent
 	new_target.temperature = (target_batch.temperature * target_before + source_batch.temperature * transferred) / max(target_before + transferred, 1)
 	new_target.recalculate()
-	QDEL_NULL(processed_target.batch_state)
-	processed_target.batch_state = new_target
+	own_clear(processed_target, "batch_state", OWN_DELETE)
+	own_set(processed_target, "batch_state", new_target)
 	processed_target.update_thermal_processing()
 	if(!QDELETED(src))
 		var/datum/material_batch/new_source = source_batch.copy_for_amount(source_before - transferred)
-		QDEL_NULL(batch_state)
-		batch_state = new_source
+		own_clear(src, "batch_state", OWN_DELETE)
+		own_set(src, "batch_state", new_source)
 		update_thermal_processing()
 	qdel(source_portion)
 	qdel(source_batch)

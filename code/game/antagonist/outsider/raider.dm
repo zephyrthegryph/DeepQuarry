@@ -251,14 +251,14 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		var/obj/item/secondary = new /obj/item/gun/projectile/pirate(T)
 		if(!HAS_TAG(primary, TAG_HOLSTERABLE))
 			holster = new new_holster(T)
-			holster.holstered = secondary
+			own_set(holster, "holstered", secondary)
 			secondary.forceMove(holster)
 		else
 			player.equip_to_slot_or_del(secondary, SLOT_ID_BELT)
 
 	if(HAS_TAG(primary, TAG_HOLSTERABLE))
 		holster = new new_holster(T)
-		holster.holstered = primary
+		own_set(holster, "holstered", primary)
 		primary.forceMove(holster)
 	else if(!player.get_equipped_item(SLOT_ID_BELT) && HAS_TAG(primary, TAG_WEAR_BELT))
 		player.equip_to_slot_or_del(primary, SLOT_ID_BELT)
@@ -313,7 +313,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 	player.equip_to_slot_or_del(new /obj/item/tank/vox(player), SLOT_ID_BACK)
 	player.equip_to_slot_or_del(new /obj/item/flashlight(player), SLOT_ID_POCKET_R)
 
-	player.internal = locate_within(player, /obj/item/tank)
+	own_set(player, "internal", locate_within(player, /obj/item/tank))
 	if(istype(player.internal,/obj/item/tank) && player.internals)
 		player.internals.icon_state = "internal1"
 

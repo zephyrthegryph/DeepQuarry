@@ -41,7 +41,7 @@
 
 	if(render_map) // Initialize map objects
 		map_name = "overmap_[REF(src)]_map"
-		cam_screen = new
+		own_set(src, "cam_screen", new /atom/movable/screen/map_view)
 		cam_screen.name = "screen"
 		cam_screen.assigned_map = map_name
 		cam_screen.del_on_map_removal = FALSE
@@ -54,7 +54,7 @@
 			instance.del_on_map_removal = FALSE
 			instance.screen_loc = "[map_name]:CENTER"
 
-		cam_background = new
+		own_set(src, "cam_background", new /atom/movable/screen/background)
 		cam_background.assigned_map = map_name
 		cam_background.del_on_map_removal = FALSE
 		update_screen()

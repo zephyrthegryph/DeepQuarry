@@ -190,7 +190,7 @@ DECLARE_INTERACTIONS(/obj/item/lightreplacer, \
 					to_chat(U, span_notice("\The [src] has fabricated a new bulb from the broken bulbs it has stored. It now has [uses] uses."))
 					playsound(src, 'sound/machines/ding.ogg', 50, 1)
 				target.status = LIGHT_EMPTY
-				target.installed_light = null //Remove the light!
+				own_take(target, "installed_light") //Remove the light!
 				target.latent_bulb = FALSE
 				target.update()
 

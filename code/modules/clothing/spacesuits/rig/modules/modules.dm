@@ -130,18 +130,18 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 
 		charges = processed_charges
 
-	LAZYADD(stat_modules, new/atom/movable/stat_rig_module/activate(src))
-	LAZYADD(stat_modules, new/atom/movable/stat_rig_module/deactivate(src))
-	LAZYADD(stat_modules, new/atom/movable/stat_rig_module/engage(src))
-	LAZYADD(stat_modules, new/atom/movable/stat_rig_module/select(src))
-	LAZYADD(stat_modules, new/atom/movable/stat_rig_module/charge(src))
+	own_add(src, "stat_modules", new/atom/movable/stat_rig_module/activate(src))
+	own_add(src, "stat_modules", new/atom/movable/stat_rig_module/deactivate(src))
+	own_add(src, "stat_modules", new/atom/movable/stat_rig_module/engage(src))
+	own_add(src, "stat_modules", new/atom/movable/stat_rig_module/select(src))
+	own_add(src, "stat_modules", new/atom/movable/stat_rig_module/charge(src))
 
 REL_PAIR(/obj/item/rig_module, holder, installed_modules)
 REL_PAIR_LIST(/obj/item/rig, installed_modules, holder)
 
 // Called when the module is installed into a suit.
 /obj/item/rig_module/proc/installed(obj/item/rig/new_holder)
-	holder = new_holder
+	rel_set(src, "holder", new_holder)
 	return
 
 //Proc for one-use abilities like teleport.
@@ -206,7 +206,7 @@ REL_PAIR_LIST(/obj/item/rig, installed_modules, holder)
 // Called when the module is uninstalled from a suit.
 /obj/item/rig_module/proc/removed()
 	deactivate()
-	holder = null
+	rel_clear(src, "holder")
 	return
 
 // Called by the hardsuit each rig process tick.
@@ -227,7 +227,7 @@ REL_PAIR_LIST(/obj/item/rig, installed_modules, holder)
 
 /atom/movable/stat_rig_module/Initialize(mapload)
 	. = ..()
-	module = loc
+	rel_set(src, "module", loc)
 	if(!istype(module))
 		return INITIALIZE_HINT_QDEL
 

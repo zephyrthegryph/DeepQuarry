@@ -109,7 +109,7 @@
 			return TRUE
 		if(!user.unEquip(O))
 			return TRUE
-		copy_board = O
+		own_set(src, "copy_board", O)
 		O.forceMove(src)
 		user.visible_message("[user] inserts [O] into \the [src]'s circuit reader.", span_notice("You insert [O] into \the [src]'s circuit reader."))
 		return TRUE
@@ -335,7 +335,7 @@
 			if(copy_board)
 				visible_message(span_notice("[copy_board] is ejected from [src]'s circuit reader."))
 				copy_board.forceMove(src.loc)
-				copy_board = null
+				own_take(src, "copy_board")
 			return TRUE
 
 		if("remove_mat")

@@ -52,10 +52,10 @@
 	var/obj/machinery/atmospherics/pipe/simple/hidden/supply/dq_gc_test/A = new(test_turf)
 	var/obj/machinery/atmospherics/pipe/simple/hidden/supply/dq_gc_test/B = new(test_turf)
 	var/obj/machinery/atmospherics/pipe/simple/hidden/supply/dq_gc_test/C = new(test_turf)
-	A.node2 = B
-	B.node1 = A
-	B.node2 = C
-	C.node1 = B
+	rel_set(A, "node2", B)
+	rel_set(B, "node1", A)
+	rel_set(B, "node2", C)
+	rel_set(C, "node1", B)
 	dq_atmos_test_publish_rust_pipenets(list(A, B, C))
 	var/datum/pipeline/line = A.parent
 	var/datum/pipe_network/network = A.return_network()

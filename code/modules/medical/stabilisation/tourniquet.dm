@@ -104,7 +104,7 @@ OWN(/obj/item/organ/external, tourniquet, OWN_CONTAINED)
 /// Clear a tourniquet that is no longer physically on this limb, restoring flow.
 /obj/item/organ/external/proc/release_lost_tourniquet()
 	var/obj/item/tourniquet/T = tourniquet
-	tourniquet = null
+	own_take(src, "tourniquet")
 	if(T)
 		T.applied_at = null
 	log_game("TOURNIQUET: [T] left [key_name(owner)]'s [name] without being loosened; flow restored.")
@@ -130,7 +130,7 @@ OWN(/obj/item/organ/external, tourniquet, OWN_CONTAINED)
 /obj/item/organ/external/proc/apply_tourniquet(obj/item/tourniquet/T, mob/user)
 	if(tourniquet || !istype(T))
 		return FALSE
-	tourniquet = T
+	own_set(src, "tourniquet", T)
 	T.forceMove(src)
 	T.applied_at = world.time
 	afflict_ischemia_below()
@@ -161,7 +161,7 @@ OWN(/obj/item/organ/external, tourniquet, OWN_CONTAINED)
 	if(!tourniquet)
 		return null
 	var/obj/item/tourniquet/T = tourniquet
-	tourniquet = null
+	own_take(src, "tourniquet")
 	var/minutes = T.applied_at ? round((world.time - T.applied_at) / (1 MINUTES), 0.1) : 0
 	T.applied_at = null
 	if(T.loc == src)

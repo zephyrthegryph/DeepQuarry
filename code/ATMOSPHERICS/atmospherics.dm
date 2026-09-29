@@ -49,10 +49,10 @@ Pipelines + Other Objects -> Pipe network
 	var/list/datum/pipe_network/network_memberships
 
 /obj/machinery/atmospherics/proc/register_network_membership(datum/pipe_network/network)
-	LAZYOR(network_memberships, network)
+	rel_add(src, "network_memberships", network)
 
 /obj/machinery/atmospherics/proc/unregister_network_membership(datum/pipe_network/network)
-	LAZYREMOVE(network_memberships, network)
+	rel_remove(src, "network_memberships", network)
 
 /// Phase 1 (unbind): the pipe topology leaves Rust, every node neighbour
 /// (get_neighbor_nodes_for_init(), each type's topology declaration)
@@ -78,16 +78,16 @@ Pipelines + Other Objects -> Pipe network
 			adjacent_machines |= neighbour
 	for(var/obj/machinery/atmospherics/neighbour as anything in adjacent_machines)
 		if(neighbour.node1 == src)
-			neighbour.node1 = null
+			rel_clear(neighbour, "node1")
 		if(neighbour.node2 == src)
-			neighbour.node2 = null
+			rel_clear(neighbour, "node2")
 	for(var/datum/pipe_network/network as anything in network_memberships?.Copy())
 		rust_release_network_wrapper(network)
-	network_memberships = null
+	rel_clear(src, "network_memberships")
 	// Our own side of every edge: a neighbour destroyed in the same batch skips us (it is
 	// QDELETED above), so nothing else clears these and the pair would pin each other.
-	node1 = null
-	node2 = null
+	rel_clear(src, "node1")
+	rel_clear(src, "node2")
 
 /obj/machinery/atmospherics/proc/engineered_material()
 	return material_for_role(MATERIAL_ROLE_STRUCTURE) || (engineered_material_id ? get_material_by_name(engineered_material_id) : null)

@@ -86,7 +86,7 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 	if(!frequency)
 		frequency = new
 		frequency.frequency = new_frequency
-		frequencies[f_text] = frequency
+		own_put(src, "frequencies", f_text, frequency)
 
 	frequency.add_listener(device, radio_filter)
 	return frequency
@@ -100,7 +100,7 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 
 		if(!length(frequency.devices))
 			qdel(frequency)
-			frequencies -= f_text
+			own_take_member(src, "frequencies", f_text)
 
 	return 1
 
@@ -111,7 +111,7 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 	if(!frequency)
 		frequency = new
 		frequency.frequency = new_frequency
-		frequencies[f_text] = frequency
+		own_put(src, "frequencies", f_text, frequency)
 
 	return frequency
 

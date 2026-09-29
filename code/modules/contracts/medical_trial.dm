@@ -65,17 +65,17 @@
 
 
 /datum/contract/medical_trial/proc/initialize_trial(cohort, target_metric)
-	profile = new(cohort, target_metric)
+	own_set(src, "profile", new /datum/medical_trial_profile(cohort, target_metric))
 	participants = list()
 	deadline_duration = 90 MINUTES
 	title = "Experimental Medication Study: [profile.code_name]"
 	description = "VeyMed requests a [profile.cohort] study of [profile.code_name], provisionally indicated for [profile.target_metric] conditions. [profile.protocol_instructions()] For each of three subjects, fax one packet containing the signed consent form, a pre-exposure body-scanner printout, and a body-scanner printout taken at least one minute after exposure."
-	observation_requirement = new(CONTRACT_EVENT_MEDICAL_OBSERVATION_ACCEPTED, 3, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT)
+	own_set(src, "observation_requirement", new /datum/contract_requirement/event_count(CONTRACT_EVENT_MEDICAL_OBSERVATION_ACCEPTED, 3, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT))
 	observation_requirement.name = "Valid clinical observations"
 	observation_requirement.description = "VeyMed requires three evidence packets. Each must contain the subject's signed consent form plus genuine pre-exposure and one-minute post-exposure body-scanner printouts."
 	observation_requirement.unique_field = "subject_id"
 	add_requirement(observation_requirement)
-	analysis_requirement = new(CONTRACT_EVENT_MEDICAL_ANALYSIS_ACCEPTED, 1, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT)
+	own_set(src, "analysis_requirement", new /datum/contract_requirement/event_count(CONTRACT_EVENT_MEDICAL_ANALYSIS_ACCEPTED, 1, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT))
 	analysis_requirement.name = "Clinical interpretation"
 	analysis_requirement.description = "Payment is contingent upon correct identification of the medication's therapeutic target and primary adverse effect."
 	add_requirement(analysis_requirement)
@@ -290,7 +290,7 @@
 		"signature_time" = participant.consent_time,
 		"replacement" = TRUE,
 	))
-	participant.consent_record = document
+	rel_set(participant, "consent_record", document)
 	audit(CONTRACT_AUDIT_RECOVERY, "Issued a certified replacement consent record for [subject?.real_name || subject_id].")
 	return TRUE
 

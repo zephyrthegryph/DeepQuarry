@@ -13,7 +13,7 @@
 		var/obj/item/pda/ourpda = loc.loc
 		if(ourpda.pai == card)
 			ourpda.pai.forceMove(ourpda.loc)
-			ourpda.pai = null
+			own_take(ourpda, "pai")
 			visible_message(span_warning("\The [card] ejects itself from \the [ourpda]."))
 		return
 	if(istype(loc.loc, /obj/item/storage/vore_egg))
@@ -58,7 +58,7 @@
 		return 0 // .
 	else if(istype(card.loc,/obj/item/pda))
 		var/obj/item/pda/holder = card.loc
-		holder.pai = null
+		own_take(holder, "pai")
 
 	src.forceMove(card.loc)
 	card.forceMove(src)

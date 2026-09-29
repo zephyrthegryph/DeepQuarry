@@ -383,7 +383,7 @@ DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_vo
 		var/target_urgency = 0
 
 		if(!valid_target(Target))
-			Target = null
+			rel_clear(src, "Target")
 
 		if(Target)
 			target_urgency = treatable_urgency(Target)
@@ -395,19 +395,19 @@ DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_vo
 			var/urgency = treatable_urgency(Potential)
 
 			if(urgency > target_urgency)
-				Target = Potential
+				rel_set(src, "Target", Potential)
 				target_urgency = urgency
 
 		if(MyBeam && !valid_target(MyBeam.target()))
-			QDEL_NULL(MyBeam)
+			own_clear(src, "MyBeam", OWN_DELETE)
 
 		if(Target)
 			if(MyBeam && MyBeam.target() != Target)
-				QDEL_NULL(MyBeam)
+				own_clear(src, "MyBeam", OWN_DELETE)
 
 			if(valid_target(Target))
 				if(!MyBeam)
-					MyBeam = chassis.Beam(Target,icon='icons/effects/beam.dmi',icon_state=beam_state,time=3 SECONDS,maxdistance=max_distance,beam_type = /obj/effect/ebeam,beam_sleep_time=2)
+					own_set(src, "MyBeam", chassis.Beam(Target,icon='icons/effects/beam.dmi',icon_state=beam_state,time=3 SECONDS,maxdistance=max_distance,beam_type = /obj/effect/ebeam,beam_sleep_time=2))
 				heal_target(Target)
 
 	else
@@ -447,9 +447,9 @@ DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_vo
 		chassis.visible_message(span_notice("\The [chassis]'s [src] buzzes as its drone returns to port."))
 		toggle_drone()
 	if(!isnull(Target))
-		Target = null
+		rel_clear(src, "Target")
 	if(MyBeam)
-		QDEL_NULL(MyBeam)
+		own_clear(src, "MyBeam", OWN_DELETE)
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/unique_patient_checks(mob/living/L)	// Anything special for subtypes. Does it only work on Robots? Fleshies? A species?
 	. = TRUE

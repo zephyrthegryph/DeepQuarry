@@ -46,7 +46,7 @@
 /obj/machinery/vr_sleeper/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	smoke = new
+	own_set(src, "smoke", new /datum/effect/effect/system/smoke_spread/bad)
 	update_icon()
 
 // its occupant exits VR (phase 2, while the slot still holds them; phase 3 spills them).
@@ -295,7 +295,7 @@
 		return
 
 	if(QDELETED(occupant.vr_link)) //Hardrefs...
-		occupant.vr_link = null
+		rel_clear(occupant, "vr_link")
 
 	avatar_handle = om_handle(occupant.vr_link)
 	// If they've already enterred VR, and are reconnecting, prompt if they want a new body
@@ -310,7 +310,7 @@
 		vr_reenter(occupant)
 		return
 	// Delink the mob
-	occupant.vr_link = null
+	rel_clear(occupant, "vr_link")
 	avatar_handle = null
 	vr_choose_avatar(occupant)
 

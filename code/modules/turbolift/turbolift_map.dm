@@ -182,10 +182,10 @@ REGISTRY_MEMBERSHIP(/obj/turbolift_map_holder, REGISTRY_TURBOLIFT_HOLDERS)
 						lift.doors += newdoor
 						newdoor.lift_handle = om_handle(lift)
 					else
-						cfloor.doors += newdoor
+						rel_add(cfloor, "doors", newdoor)
 						newdoor.floor_handle = om_handle(cfloor)
-						cfloor.doors += firedoor //ition for fire doors
-						firedoor.turbolift_floor = cfloor
+						rel_add(cfloor, "doors", firedoor) //ition for fire doors
+						rel_set(firedoor, "turbolift_floor", cfloor)
 						firedoor.glass = cfloor //ition for fire doors
 
 		// Place exterior control panel.
@@ -222,7 +222,7 @@ REGISTRY_MEMBERSHIP(/obj/turbolift_map_holder, REGISTRY_TURBOLIFT_HOLDERS)
 
 	// Place lift panel.
 	var/turf/T = locate(int_panel_x, int_panel_y, uz)
-	lift.control_panel_interior = new(T, lift)
+	own_set(lift, "control_panel_interior", new /obj/structure/lift/panel(T, lift))
 	lift.control_panel_interior.set_dir(udir)
 	lift.current_floor_handle = om_handle(lift.floors[1])
 

@@ -14,7 +14,7 @@
 // the event service forgets its manager panel.
 /datum/event_manager_panel/lifecycle_dematerialize()
 	if(GLOB.event_service?.tgui_event_manager_panel == src)
-		GLOB.event_service.tgui_event_manager_panel = null
+		rel_clear(GLOB.event_service, "tgui_event_manager_panel")
 	..()
 
 /datum/event_manager_panel/tgui_state(mob/user)

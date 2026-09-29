@@ -35,8 +35,8 @@
 
 		for(var/obj/machinery/atmospherics/unary/heat_exchanger/target in get_step(src,partner_connect))
 			if(target.dir & get_dir(src,target))
-				partner = target
-				partner.partner = src
+				rel_set(src, "partner", target)
+				rel_set(partner, "partner", src)
 				break
 
 	..()

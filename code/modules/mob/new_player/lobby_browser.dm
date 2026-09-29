@@ -7,7 +7,7 @@
 		ui.close()
 
 	winset(src, "lobby_browser", "is-disabled=false;is-visible=true")
-	lobby_window = new(client, "lobby_browser")
+	rel_set(src, "lobby_window", new /datum/tgui_window(client, "lobby_browser"))
 	lobby_window.initialize(
 		assets = list(
 			get_asset_datum(/datum/asset/simple/tgui)

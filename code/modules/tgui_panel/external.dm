@@ -30,7 +30,7 @@
 	if(!tgui_panel || !istype(tgui_panel))
 		log_tgui(src, "tgui_panel datum is missing",
 			context = "verb/fix_tgui_panel")
-		tgui_panel = new(src)
+		own_set(src, "tgui_panel", new /datum/tgui_panel(src))
 	tgui_panel.initialize(force = TRUE)
 	// Force show the panel to see if there are any errors
 	winset(src, "outputwindow.legacy_output_selector", "left=output_browser")

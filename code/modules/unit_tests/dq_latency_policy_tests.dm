@@ -231,7 +231,7 @@
 
 /datum/unit_test/dq_latency_fuzz/Run()
 	made = list()
-	floor = dq_latency_floor()
+	rel_set(src, "floor", dq_latency_floor())
 	TEST_ASSERT_NOTNULL(floor, "need a clean floor")
 	var/list/boxes = list()
 	for(var/i in 1 to 4)

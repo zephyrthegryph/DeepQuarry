@@ -8,7 +8,7 @@
 
 /atom/movable/screen/movable/pic_in_pic/ai/Initialize(mapload)
 	. = ..()
-	aiEye = new /mob/observer/eye/aiEye/pic_in_pic() // ALLOW(decl): eye mob is created in nullspace, not inside src
+	own_set(src, "aiEye", new /mob/observer/eye/aiEye/pic_in_pic()) // ALLOW(decl): eye mob is created in nullspace, not inside src
 	aiEye.screen = src
 
 // ALLOW(ownership_cycle): type-level only; a pic_in_pic window is never one of its own eye's hud elements.
@@ -266,10 +266,10 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 	if(master_multicam)
 		master_multicam.set_view_center(get_turf(eyeobj), FALSE)
 		master_multicam.unhighlight()
-		master_multicam = null
+		own_take(src, "master_multicam")
 
 	if(P)
 		P.highlight()
 		eyeobj.setLoc(get_turf(P.center()))
 		P.set_view_center(eyeobj)
-		master_multicam = P
+		own_set(src, "master_multicam", P)

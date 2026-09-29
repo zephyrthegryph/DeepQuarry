@@ -104,7 +104,7 @@
 			return
 		var/obj/item/projectile/destabilizer/D = new /obj/item/projectile/destabilizer(proj_turf)
 		D.preparePixelProjectile(target, user, clickparams)
-		D.firer = user
+		rel_set(D, "firer", user)
 		D.hammer_synced_handle = om_handle(src)
 		playsound(user, 'sound/weapons/plasma_cutter.ogg', 100, 1)
 		D.fire()
@@ -266,14 +266,14 @@ DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(n
 	O.desc = "As much as you'd like to punch things with one hand, [src] is far too unwieldy for that."
 	O.linked_handle = om_handle(src)
 	M.put_in_inactive_hand(O)
-	offhand = O
+	own_set(src, "offhand", O)
 
 /obj/item/kinetic_crusher/machete/gauntlets/proc/unwield(mob/living/M)
 	to_chat(M, span_notice("You unready [src]."))
 	name = "[initial(name)] (unreadied)"
 	wielded = FALSE
 	if(offhand)
-		QDEL_NULL(offhand)
+		own_clear(src, "offhand", OWN_DELETE)
 
 /obj/item/offhand
 	icon = 'icons/obj/weapons.dmi'

@@ -88,20 +88,20 @@
 	if(new_owner.overlay_light)
 		return new_owner.overlay_light
 	var/datum/overlay_lighting/light = new(new_owner, _range, _power, _color, starts_on, is_directional)
-	new_owner.overlay_light = light
+	own_set(new_owner, "overlay_light", light)
 	light.attach()
 	return light
 
 /datum/overlay_lighting/New(atom/movable/new_owner, _range, _power, _color, starts_on, is_directional)
 	..()
-	owner = new_owner
+	rel_set(src, "owner", new_owner)
 	var/atom/movable/movable_parent = owner
 
-	visible_mask = new()
+	own_set(src, "visible_mask", new /obj/effect/overlay/light_visible())
 	if(is_directional)
 		directional = TRUE
-		directional_atom = new()
-		cone = new()
+		own_set(src, "directional_atom", new /obj/effect/abstract/directional_lighting())
+		own_set(src, "cone", new /obj/effect/overlay/light_cone())
 		cone_hint_x = movable_parent.light_cone_x_offset
 		cone_hint_y = movable_parent.light_cone_y_offset
 		set_direction(movable_parent.dir)
@@ -165,17 +165,17 @@
 	set_holder(null)
 	clean_old_turfs()
 	if(owner?.overlay_light == src)
-		owner.overlay_light = null
-	owner = null
+		own_take(owner, "overlay_light")
+	rel_clear(src, "owner")
 	// The mask, cone and directional atom refuse any delete that isn't
 	// forced (only we may delete them). Phase 4's owned-var sweep qdels
 	// without force, so release them here, forced, before it runs.
 	qdel(visible_mask, TRUE)
-	visible_mask = null
+	own_take(src, "visible_mask")
 	qdel(directional_atom, TRUE)
-	directional_atom = null
+	own_take(src, "directional_atom")
 	qdel(cone, TRUE)
-	cone = null
+	own_take(src, "cone")
 
 ///Clears the affected_turfs lazylist, removing from its contents the effects of being near the light.
 /datum/overlay_lighting/proc/clean_old_turfs()

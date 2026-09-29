@@ -27,7 +27,7 @@
 // Parameters: None
 // Description: Adds components to the machine for deconstruction.
 /obj/machinery/exonet_node/Initialize(mapload)
-	soundloop = new(list(src), FALSE)
+	own_set(src, "soundloop", new /datum/looping_sound/tcomms(list(src), FALSE))
 	if(prob(60)) // 60% chance to change the midloop
 		if(prob(40))
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)

@@ -74,7 +74,7 @@
 	if(owner?.body)
 		owner.body.add_affliction(W, src)
 	else
-		W.location = src
+		rel_set(W, "location", src)
 		LAZYADD(detached_afflictions, W)
 	W.sync()
 	integrity_dirty = TRUE
@@ -160,7 +160,7 @@
 /datum/body/proc/detach_part(obj/item/organ/O)
 	for(var/datum/affliction/A as anything in afflictions_at(O))
 		remove_affliction(A)
-		A.location = O
+		rel_set(A, "location", O)
 		LAZYADD(O.detached_afflictions, A)
 
 /// The organ joined this body: adopt what it carries. Called only by

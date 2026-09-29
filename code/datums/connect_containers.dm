@@ -19,7 +19,7 @@
 	if(!ismovable(tracked))
 		log_runtime("CONNECT_CONTAINERS: [listener?.type] tried to track non-movable [tracked] ([tracked?.type])")
 		return
-	src.listener = listener
+	rel_set(src, "listener", listener)
 	src.connections = connections
 	set_tracked(tracked)
 

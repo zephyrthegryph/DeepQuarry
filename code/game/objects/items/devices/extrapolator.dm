@@ -31,10 +31,10 @@
 	. = ..()
 	starting_scanner = starting_scanner || default_scanning_module
 	if(ispath(starting_scanner, /obj/item/stock_parts/scanning_module))
-		scanner = new starting_scanner(src) // ALLOW(decl): scanner from an Initialize argument
+		own_set(src, "scanner", new starting_scanner(src)) // ALLOW(decl): scanner from an Initialize argument
 	else if(istype(starting_scanner))
 		starting_scanner.forceMove(src)
-		scanner = starting_scanner
+		own_set(src, "scanner", starting_scanner)
 
 	refresh_parts()
 
@@ -47,7 +47,7 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 	if(!scanner)
 		user.drop_item()
 		item.forceMove(src)
-		scanner = item
+		own_set(src, "scanner", item)
 		to_chat(user, span_notice("You install \the [scanner] in [src]."))
 		refresh_parts()
 	else
@@ -60,7 +60,7 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You remove \the [scanner] from \the [src]."))
 	scanner.forceMove(drop_location())
-	scanner = null
+	own_take(src, "scanner")
 	playsound(src, tool.usesound, 50, 1)
 	return ITEM_INTERACT_SUCCESS
 

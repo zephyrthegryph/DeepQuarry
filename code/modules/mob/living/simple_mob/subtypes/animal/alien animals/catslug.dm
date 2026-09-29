@@ -229,7 +229,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 		to_chat(user, span_warning("\The [src] is unable to wear \a [hat]."))
 	else
 		user.drop_item(new_hat)
-		hat = new_hat
+		own_set(src, "hat", new_hat)
 		new_hat.forceMove(src)
 		to_chat(user, span_notice("You place \a [new_hat] on \the [src]. How adorable!"))
 		update_icon()
@@ -242,14 +242,14 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 		hat.forceMove(get_turf(src))
 		user.put_in_hands(hat)
 		to_chat(user, span_warning("You take away \the [src]'s [hat.name]. How mean."))
-		hat = null
+		own_take(src, "hat")
 		update_icon()
 
 /mob/living/simple_mob/vore/alienanimals/catslug/proc/drop_hat()
 	if(!hat)
 		return
 	hat.forceMove(get_turf(src))
-	hat = null
+	own_take(src, "hat")
 	update_icon()
 
 /mob/living/simple_mob/vore/alienanimals/catslug/Login()	//If someone plays as us let's just be a passive mob in case accidents happen if the player D/Cs
@@ -690,7 +690,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 	. = ..()
 	mob_radio.set_frequency(PUB_FREQ)
 	mob_radio.ks2type = /obj/item/encryptionkey/heads/captain 		//Might not be able to speak, but the catslug can listen.
-	mob_radio.keyslot2 = new /obj/item/encryptionkey/heads/captain(mob_radio)
+	own_set(mob_radio, "keyslot2", new /obj/item/encryptionkey/heads/captain(mob_radio))
 	mob_radio.recalculateChannels(TRUE)
 
 //=============================================================================
@@ -756,7 +756,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 	mob_radio.set_frequency(SYND_FREQ)
 	mob_radio.syndie = TRUE
 	mob_radio.ks2type = /obj/item/encryptionkey/syndicate
-	mob_radio.keyslot2 = new /obj/item/encryptionkey/syndicate(mob_radio)
+	own_set(mob_radio, "keyslot2", new /obj/item/encryptionkey/syndicate(mob_radio))
 	mob_radio.recalculateChannels(TRUE)
 	myid.access |= SSaccess.get_all_station_access()
 
@@ -790,7 +790,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 	mob_radio.set_frequency(ERT_FREQ)
 	mob_radio.centComm = 1
 	mob_radio.ks2type = /obj/item/encryptionkey/ert
-	mob_radio.keyslot2 = new /obj/item/encryptionkey/ert(mob_radio)
+	own_set(mob_radio, "keyslot2", new /obj/item/encryptionkey/ert(mob_radio))
 	mob_radio.recalculateChannels(TRUE)
 	myid.access |= SSaccess.get_all_station_access()
 

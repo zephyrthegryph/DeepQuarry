@@ -237,7 +237,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 		to_chat(user, span_warning("You don't see how \the [src] could extract reagents from \the [RC]."))
 		return TRUE
 
-	catalyst =  RC
+	own_set(src, "catalyst", RC)
 	user.drop_from_inventory(RC)
 	RC.forceMove(src)
 	to_chat(user, span_notice("You set \the [RC] on \the [src]."))
@@ -396,7 +396,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 			// Removes the catalyst bottle from the machine.
 			if(!busy && catalyst)
 				catalyst.forceMove(get_turf(src))
-				catalyst = null
+				own_take(src, "catalyst")
 				update_icon()
 		if("toggle_catalyst")
 			// Decides if the machine uses the catalyst.

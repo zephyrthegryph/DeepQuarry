@@ -85,9 +85,9 @@
 				if(track.wet==t && track.basecolor==bloodcolor)
 					continue
 				// Remove existing stack entry
-				LAZYREMOVE(stack, track)
+				own_take_member(src, "stack", track)
 			track=new /datum/fluidtrack(b,bloodcolor,t)
-			LAZYADD(stack, track)
+			own_add(src, "stack", track)
 			setdirs["[b]"]=LAZYFIND(stack, track)
 			updatedtracks |= b
 			updated=1
@@ -102,9 +102,9 @@
 				if(track.wet==t && track.basecolor==bloodcolor)
 					continue
 				// Remove existing stack entry
-				LAZYREMOVE(stack, track)
+				own_take_member(src, "stack", track)
 			track=new /datum/fluidtrack(b,bloodcolor,t)
-			LAZYADD(stack, track)
+			own_add(src, "stack", track)
 			setdirs["[b]"]=LAZYFIND(stack, track)
 			updatedtracks |= b
 			updated=1
@@ -135,7 +135,7 @@
 
 		track.fresh=0
 		track.overlay=I
-		LAZYSET(stack, stack_idx, track)
+		own_put(src, "stack", stack_idx, track)
 		add_overlay(I)
 	updatedtracks=0 // Clear our memory of updated tracks.
 	add_janitor_hud_overlay()

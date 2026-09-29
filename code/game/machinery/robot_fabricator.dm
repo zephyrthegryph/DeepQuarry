@@ -122,9 +122,9 @@
 	return TRUE
 
 /obj/machinery/robotic_fabricator/proc/complete_building(building)
-	being_built = new building(src)
+	own_set(src, "being_built", new building(src))
 	being_built.forceMove(get_turf(src))
-	being_built = null
+	own_take(src, "being_built")
 	update_use_power(USE_POWER_IDLE)
 	operating = FALSE
 	cut_overlay("fab-active")

@@ -115,7 +115,7 @@
 	if(isliving(loc))
 		owner_handle = om_handle(loc)
 	if(owner_ref() && !coreless)
-		core = owner_ref().get_technomancer_core()
+		own_set(src, "core", owner_ref().get_technomancer_core())
 		if(!core)
 			to_chat(owner_ref(), span_warning("You need a Core to do that."))
 			return INITIALIZE_HINT_QDEL
@@ -154,7 +154,7 @@
 	if(!owner_ref())
 		return 0
 	if(!core)
-		core = locate_within(owner_ref(), /obj/item/technomancer_core)
+		own_set(src, "core", locate_within(owner_ref(), /obj/item/technomancer_core))
 		if(!core)
 			to_chat(owner_ref(), span_danger("You need to be wearing a core on your back!"))
 			return 0

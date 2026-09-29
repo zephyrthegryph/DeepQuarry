@@ -8,16 +8,16 @@
 
 /atom/movable/screen/map_view_tg/camera/generate_view(map_key)
 	. = ..()
-	cam_background = new()
+	own_set(src, "cam_background", new /atom/movable/screen/background())
 	cam_background.del_on_map_removal = FALSE
 	cam_background.assigned_map = assigned_map
 
-	local_skybox = new()
+	own_set(src, "local_skybox", new /atom/movable/screen/skybox())
 	local_skybox.del_on_map_removal = FALSE
 	local_skybox.assigned_map = assigned_map
 
 	// FG
-	cam_foreground = new
+	own_set(src, "cam_foreground", new /atom/movable/screen/background)
 	cam_foreground.del_on_map_removal = FALSE
 	cam_foreground.assigned_map = assigned_map
 
@@ -84,7 +84,7 @@
 	map_name = "camera_console_[REF(src)]_map"
 
 	// Initialize map objects
-	cam_screen_tg = new
+	own_set(src, "cam_screen_tg", new /atom/movable/screen/map_view_tg/camera)
 	cam_screen_tg.generate_view(map_name)
 
 

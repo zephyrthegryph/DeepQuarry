@@ -151,7 +151,7 @@
 	if(!alarm_area_ref().main_air_alarm_is_operating()) // select main alarm
 		alarm_area_ref().elect_main_air_alarm()
 	set_initial_TLV()
-	soundloop = new(list(src), FALSE)
+	own_set(src, "soundloop", new /datum/looping_sound/alarm/decompression_alarm(list(src), FALSE))
 
 
 /// Phase 2: leaves its area's alarm list; the area elects a new main alarm.

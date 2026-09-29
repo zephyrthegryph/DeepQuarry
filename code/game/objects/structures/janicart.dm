@@ -49,28 +49,28 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 		if(mybag)
 			user.balloon_alert(user, "[src] already has \an [I].")
 			return FALSE
-		mybag = I
+		own_set(src, "mybag", I)
 		setTguiIcon("mybag", mybag)
 
 	else if(istype(I, /obj/item/mop) || istype(I, /obj/item/mop/advanced))
 		if(mymop)
 			user.balloon_alert(user, "[src] already has \an [I].")
 			return FALSE
-		mymop = I
+		own_set(src, "mymop", I)
 		setTguiIcon("mymop", mymop)
 
 	else if(istype(I, /obj/item/reagent_containers/spray))
 		if(myspray)
 			user.balloon_alert(user, "[src] already has \an [I].")
 			return FALSE
-		myspray = I
+		own_set(src, "myspray", I)
 		setTguiIcon("myspray", myspray)
 
 	else if(istype(I, /obj/item/lightreplacer))
 		if(myreplacer)
 			user.balloon_alert(user, "[src] already has \an [I].")
 			return FALSE
-		myreplacer = I
+		own_set(src, "myreplacer", I)
 		setTguiIcon("myreplacer", myreplacer)
 
 	else if(istype(I, /obj/item/clothing/suit/caution))
@@ -132,7 +132,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 /obj/structure/janitorialcart/proc/interaction_drag(mob/living/user, atom/movable/O, datum/interaction/interaction)
 	if (istype(O, /obj/structure/mopbucket) && !mybucket)
 		O.forceMove(src)
-		mybucket = O
+		own_set(src, "mybucket", O)
 		setTguiIcon("mybucket", mybucket)
 		user.balloon_alert(user, "you mount the [O] on the janicart.")
 		update_icon()
@@ -266,7 +266,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 			if(mybag)
 				ui.user.put_in_hands(mybag)
 				ui.user.balloon_alert(ui.user, "you take [mybag] from [src].")
-				mybag = null
+				own_take(src, "mybag")
 				nullTguiIcon("mybag")
 			else if(is_type_in_typecache(I, equippable_item_whitelist))
 				equip_janicart_item(ui.user, I)
@@ -274,7 +274,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 			if(mymop)
 				ui.user.put_in_hands(mymop)
 				ui.user.balloon_alert(ui.user, "you take [mymop] from [src].")
-				mymop = null
+				own_take(src, "mymop")
 				nullTguiIcon("mymop")
 			else if(is_type_in_typecache(I, equippable_item_whitelist))
 				equip_janicart_item(ui.user, I)
@@ -282,7 +282,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 			if(myspray)
 				ui.user.put_in_hands(myspray)
 				ui.user.balloon_alert(ui.user, "you take [myspray] from [src].")
-				myspray = null
+				own_take(src, "myspray")
 				nullTguiIcon("myspray")
 			else if(is_type_in_typecache(I, equippable_item_whitelist))
 				equip_janicart_item(ui.user, I)
@@ -290,7 +290,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 			if(myreplacer)
 				ui.user.put_in_hands(myreplacer)
 				ui.user.balloon_alert(ui.user, "you take [myreplacer] from [src].")
-				myreplacer = null
+				own_take(src, "myreplacer")
 				nullTguiIcon("myreplacer")
 			else if(is_type_in_typecache(I, equippable_item_whitelist))
 				equip_janicart_item(ui.user, I)
@@ -311,7 +311,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 			if(mybucket)
 				mybucket.forceMove(get_turf(ui.user))
 				ui.user.balloon_alert(ui.user, "you unmount [mybucket] from [src].")
-				mybucket = null
+				own_take(src, "mybucket")
 				nullTguiIcon("mybucket")
 			else
 				to_chat(ui.user, span_notice("((Drag and drop a mop bucket onto [src] to equip it.))"))
@@ -346,22 +346,22 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 	if (mymop && prob(chance))
 		mymop.forceMove(dropspot)
 		mymop.tumble(2)
-		mymop = null
+		own_take(src, "mymop")
 
 	if (myspray && prob(chance))
 		myspray.forceMove(dropspot)
 		myspray.tumble(3)
-		myspray = null
+		own_take(src, "myspray")
 
 	if (myreplacer && prob(chance))
 		myreplacer.forceMove(dropspot)
 		myreplacer.tumble(3)
-		myreplacer = null
+		own_take(src, "myreplacer")
 
 	if (mybucket && prob(chance*0.5))//bucket is heavier, harder to knock off
 		mybucket.forceMove(dropspot)
 		mybucket.tumble(1)
-		mybucket = null
+		own_take(src, "mybucket")
 
 	if (signs)
 		for (var/obj/item/clothing/suit/caution/Sign in contents_of(src))
@@ -378,7 +378,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 		mybag.forceMove(dropspot)
 		mybag.tumble(1)
 		mybag.spill()//trashbag spills its contents too
-		mybag = null
+		own_take(src, "mybag")
 
 	update_icon()
 	clearTguiIcons()

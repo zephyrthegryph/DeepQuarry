@@ -186,7 +186,7 @@
 			// We want to be a spawned mob instead of a person aaaaa
 			var/mob/living/carrier = join_props["carrier"]
 			var/vorgans = join_props["vorgans"]
-			cryst.bound_mob = new cryst.spawn_mob_type(cryst)
+			rel_set(cryst, "bound_mob", new cryst.spawn_mob_type(cryst))
 			cryst.spawn_mob_type = null
 			cryst.bound_mob.key = src.key
 			log_and_message_admins("[key_name_admin(src)] joined [cryst.bound_mob] inside a capture crystal [ADMIN_FLW(cryst.bound_mob)]")
@@ -279,7 +279,7 @@
 		for(var/obj/belly/B in character.vore_organs)
 			if(B.name == gut)
 				gut_to_enter = B
-				character.vore_selected = B
+				own_set(character, "vore_selected", B)
 		var/datum/effect/effect/system/teleport_greyscale/tele = new /datum/effect/effect/system/teleport_greyscale()
 		tele.set_up("#00FFFF", get_turf(prey))
 		tele.start()
@@ -306,7 +306,7 @@
 
 /mob/new_player/proc/LateChoices()
 	if(!late_choices_dialog)
-		late_choices_dialog = new(src)
+		own_set(src, "late_choices_dialog", new /datum/tgui_module/late_choices(src))
 	late_choices_dialog.tgui_interact(src)
 
 /mob/new_player/proc/create_character(turf/T)
@@ -389,7 +389,7 @@
 
 /mob/new_player/proc/ViewManifest()
 	if(!manifest_dialog)
-		manifest_dialog = new(src)
+		own_set(src, "manifest_dialog", new /datum/tgui_module/crew_manifest/new_player(src))
 	manifest_dialog.tgui_interact(src)
 
 /mob/new_player/Move()

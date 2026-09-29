@@ -844,7 +844,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 	result.transform = M
 
 	// all done, now delete the old objects
-	H.held_mob = null
+	rel_clear(H, "held_mob")
 	qdel(victim)
 	victim = null
 	qdel(H)

@@ -37,7 +37,7 @@
 	src.one_time = one_time
 
 	//The mind!
-	mind_ref = mind
+	rel_set(src, "mind_ref", mind)
 	mindname = mind.name
 	ckey = ckey(mind.key)
 
@@ -111,7 +111,7 @@
 	destroy_hint = QDEL_HINT_HARDDEL
 
 /datum/transhuman/body_record/on_destroy(force)
-	QDEL_NULL(mydna.dna)
+	own_clear(mydna, "dna", OWN_DELETE)
 	limb_data.Cut()
 	organ_data.Cut()
 	..()
@@ -146,7 +146,7 @@
 	M.dna.check_integrity()
 
 	//The DNA2 stuff
-	mydna = new ()
+	own_set(src, "mydna", new /datum/dna2/record ())
 	QDEL_SWAP(mydna.dna, M.dna.Clone())
 	mydna.ckey = M.ckey
 	mydna.id = copytext(md5(M.real_name), 2, 6)
@@ -156,7 +156,7 @@
 	//My stuff
 	client_ref = M.client
 	ckey = M.ckey
-	mind_ref = M.mind
+	rel_set(src, "mind_ref", M.mind)
 
 	//External organ status. 0:gone, 1:normal, "string":manufacturer
 	for(var/limb in limb_data)
@@ -215,7 +215,7 @@
 			if(BLACKLISTED_COPY_VARS)
 				continue
 			if("mydna")
-				mydna = orig.mydna.copy()
+				own_set(src, "mydna", orig.mydna.copy())
 				continue
 		if(islist(vars[A]))
 			var/list/L = orig.vars[A]
@@ -251,7 +251,7 @@
 	H.name = H.real_name
 	H.suiciding = 0
 	H.losebreath = 0
-	H.mind = null
+	rel_clear(H, "mind")
 
 	return H
 
@@ -314,7 +314,7 @@
 
 	//Apply DNA from record
 	if(!mydna.dna) // This case should never happen, but copied from clone pod... Who knows with this codebase.
-		mydna.dna = new /datum/dna()
+		own_set(mydna, "dna", new /datum/dna())
 	QDEL_SWAP(H.dna, mydna.dna.Clone())
 	H.original_player = ckey
 

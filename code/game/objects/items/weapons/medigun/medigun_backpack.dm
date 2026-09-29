@@ -345,27 +345,27 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 	if(W.has_tool_quality(TOOL_CROWBAR) && maintenance)
 		if(smodule )
 			smodule.forceMove(get_turf(loc))
-			smodule = null
+			own_take(src, "smodule")
 
 		if(smanipulator)
 			om_task_periodic_stop(src)
 			smanipulator.forceMove(get_turf(loc))
-			smanipulator = null
+			own_take(src, "smanipulator")
 			smaniptier = 0
 
 		if(slaser)
 			slaser.forceMove(get_turf(loc))
-			slaser = null
+			own_take(src, "slaser")
 
 		if(scapacitor)
 			om_task_periodic_stop(src)
 			scapacitor.forceMove(get_turf(loc))
-			scapacitor = null
+			own_take(src, "scapacitor")
 
 		if(sbin)
 			om_task_periodic_stop(src)
 			sbin.forceMove(get_turf(loc))
-			sbin = null
+			own_take(src, "sbin")
 			sbintier = 0
 
 		to_chat(user, span_notice("You remove the Components from \the [src]."))
@@ -388,7 +388,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 		W.forceMove(src)
 		if(ccell)
 			to_chat(user, span_notice("You swap the [W] for \the [ccell]."))
-		ccell = W
+		own_set(src, "ccell", W)
 		to_chat(user, span_notice("You install the [W] into \the [src]."))
 		charging = TRUE
 		return INTERACTION_HANDLED_PASS
@@ -401,7 +401,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 				if(!user.unEquip(W))
 					return INTERACTION_HANDLED_PASS
 				W.forceMove(src)
-				smodule = W
+				own_set(src, "smodule", W)
 				to_chat(user, span_notice("You install the [W] into \the [src]."))
 				medigun.beam_range = 3+smodule.get_rating()
 				update_icon()
@@ -414,7 +414,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(!user.unEquip(W))
 				return INTERACTION_HANDLED_PASS
 			W.forceMove(src)
-			smanipulator = W
+			own_set(src, "smanipulator", W)
 			smaniptier = smanipulator.get_rating()
 			if(sbin && scapacitor)om_task_periodic(src, PERIODIC_SLOW)
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
@@ -428,7 +428,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(!user.unEquip(W))
 				return INTERACTION_HANDLED_PASS
 			W.forceMove(src)
-			slaser = W
+			own_set(src, "slaser", W)
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
 			return INTERACTION_HANDLED_PASS
@@ -440,7 +440,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(!user.unEquip(W))
 				return INTERACTION_HANDLED_PASS
 			W.forceMove(src)
-			scapacitor = W
+			own_set(src, "scapacitor", W)
 			var/scaptier = scapacitor.get_rating()
 			if(scaptier == 1)
 				chargecap = 1000
@@ -480,7 +480,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(!user.unEquip(W))
 				return INTERACTION_HANDLED_PASS
 			W.forceMove(src)
-			sbin = W
+			own_set(src, "sbin", W)
 			sbintier = sbin.get_rating()
 			if(sbintier >= 5)
 				chemcap = 300

@@ -41,7 +41,7 @@
 
 	flags |= NOBLUDGEON
 	if(!power_source) // no cell_type
-		power_source = new /obj/item/cell/device(src) // ALLOW(decl): fallback when a subtype clears cell_type
+		own_set(src, "power_source", new /obj/item/cell/device(src)) // ALLOW(decl): fallback when a subtype clears cell_type
 	spk.set_up(5, 0, src)
 	spk.attach(src)
 
@@ -107,7 +107,7 @@ DECLARE_INTERACTIONS(/obj/item/perfect_tele, \
 	if((user.get_inactive_hand() == src || ignore_inactive_hand_check) && power_source)
 		to_chat(user,span_notice("You eject \the [power_source] from \the [src]."))
 		user.put_in_hands(power_source)
-		power_source = null
+		own_take(src, "power_source")
 		update_icon()
 	else
 		to_chat(user,span_notice("[src] does not have a power cell."))
@@ -184,7 +184,7 @@ This device records all warnings given and teleport events for admin review in c
 
 /obj/item/perfect_tele/proc/interaction_item(mob/user, obj/W, datum/interaction/interaction)
 	if(istype(W,cell_type) && !power_source)
-		power_source = W
+		own_set(src, "power_source", W)
 		power_source.update_icon() //Why doesn't a cell do this already? :|
 		user.unEquip(power_source)
 		power_source.forceMove(src)
@@ -195,7 +195,7 @@ This device records all warnings given and teleport events for admin review in c
 		var/obj/item/perfect_tele_beacon/tb = W
 		if(tb.tele_name in beacons)
 			to_chat(user,span_notice("You re-insert \the [tb] into \the [src]."))
-			LAZYREMOVE(beacons, tb.tele_name)
+			rel_remove(src, "beacons", tb.tele_name)
 			consume(tb, user)
 			beacons_left++
 		else

@@ -356,7 +356,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 			return
 	if(isnum(angle))
 		setAngle(angle)
-	starting = get_turf(src)
+	rel_set(src, "starting", get_turf(src))
 	if(!starting)
 		qdel(src)
 		return
@@ -373,7 +373,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	trajectory_ignore_forcemove = TRUE
 	forceMove(starting)
 	trajectory_ignore_forcemove = FALSE
-	trajectory = new(starting.x, starting.y, starting.z, pixel_x, pixel_y, Angle, GLOB.projectile_pixel_speed)
+	own_set(src, "trajectory", new /datum/point/vector(starting.x, starting.y, starting.z, pixel_x, pixel_y, Angle, GLOB.projectile_pixel_speed))
 	last_projectile_move = world.time
 	permutated = list()
 	originalRange = range
@@ -421,7 +421,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	trajectory_ignore_forcemove = TRUE
 	forceMove(get_turf(source))
 	trajectory_ignore_forcemove = FALSE
-	starting = curloc
+	rel_set(src, "starting", curloc)
 	original_handle = om_handle(target)
 	if(targloc)
 		yo = targloc.y - curloc.y
@@ -479,7 +479,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile/proc/old_style_target(atom/target, atom/source)
 	if(!source)
 		source = get_turf(src)
-	starting = get_turf(source)
+	rel_set(src, "starting", get_turf(source))
 	original_handle = om_handle(target)
 	setAngle(Get_Angle(source, target))
 
@@ -516,7 +516,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile/proc/generate_hitscan_tracers(cleanup = TRUE, duration = 5, impacting = TRUE)
 	if(!length(beam_segments))
 		return
-	beam_components = new
+	own_set(src, "beam_components", new /datum/beam_components_cache)
 	if(tracer_type)
 		var/tempref = "\ref[src]"
 		for(var/datum/point/p in beam_segments)
@@ -543,7 +543,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		beam_components.beam_components += thing
 	// The drawn tracers belong to their timer now, not to us (phase 4 would delete them at once).
 	var/datum/beam_components_cache/drawn = beam_components
-	beam_components = null
+	own_take(src, "beam_components")
 	om_qdel_after(drawn, duration)
 
 //Returns true if the target atom is on our current turf and above the right layer
@@ -814,7 +814,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	original_handle = om_handle(target)
 	def_zone = check_zone(target_zone)
-	firer = user
+	rel_set(src, "firer", user)
 	var/direct_target
 	if(get_turf(target) == get_turf(src))
 		direct_target = target
@@ -859,14 +859,14 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	shot_from = launcher.name
 	silenced |= launcher.silenced // Silent bullets (e.g., BBs) are always silent
 	if(user)
-		firer = user
+		rel_set(src, "firer", user)
 
 	return launch_projectile(target, target_zone, user, params, angle_override, forced_spread)
 
 /obj/item/projectile/proc/launch_projectile_from_turf(atom/target, target_zone, mob/user, params, angle_override, forced_spread = 0)
 	original_handle = om_handle(target)
 	def_zone = check_zone(target_zone)
-	firer = user
+	rel_set(src, "firer", user)
 	var/direct_target
 	if(get_turf(target) == get_turf(src))
 		direct_target = target

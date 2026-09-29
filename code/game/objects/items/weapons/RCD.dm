@@ -188,7 +188,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rcd, "spark_system", /datum/effect/effect/system
 
 /obj/item/rcd/electric/Initialize(mapload)
 	if(make_cell)
-		cell = new /obj/item/cell/high(src) // ALLOW(decl): only when make_cell
+		own_set(src, "cell", new /obj/item/cell/high(src)) // ALLOW(decl): only when make_cell
 	return ..()
 
 

@@ -26,7 +26,7 @@
 	// A human builds its body in set_species(), before this, so its organs
 	// have part slots to attach into.
 	if(!body)
-		body = new body_type(src)
+		own_set(src, "body", new body_type(src))
 	return ..()
 
 
@@ -90,9 +90,9 @@
 
 /datum/body/New(mob/living/new_owner)
 	..()
-	owner = new_owner
+	rel_set(src, "owner", new_owner)
 	if(physiology_type)
-		physiology = new physiology_type(src)
+		own_set(src, "physiology", new physiology_type(src))
 
 /// Afflictions leave through remove_affliction(), so their on_removed()
 /// hooks and signals run, then are deleted.
@@ -129,9 +129,9 @@
 /datum/body/proc/add_affliction(datum/affliction/A, location = null)
 	if(!A || A.body == src)
 		return FALSE
-	A.body = src
-	A.owner = owner
-	A.location = location
+	rel_set(A, "body", src)
+	rel_set(A, "owner", owner)
+	rel_set(A, "location", location)
 	LAZYADD(afflictions, A)
 	LAZYADDASSOCLIST(afflictions_by_type, A.type, A)
 	if(location)
@@ -152,8 +152,8 @@
 		LAZYREMOVEASSOC(afflictions_by_location, A.location, A)
 	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_TREATMENT | BODY_DIRTY_FACTORS)
 	A.on_removed()
-	A.body = null
-	A.owner = null
+	rel_clear(A, "body")
+	rel_clear(A, "owner")
 	OM_EMIT(owner, /datum/om/event/body_afflictions_changed, A, FALSE)
 	return TRUE
 
@@ -167,8 +167,8 @@
 	if(A.location)
 		LAZYREMOVEASSOC(afflictions_by_location, A.location, A)
 	A.active_symptoms = null
-	A.body = null
-	A.owner = null
+	rel_clear(A, "body")
+	rel_clear(A, "owner")
 	return TRUE
 
 /// First affliction of exactly `affliction_type` (optionally at `location`).

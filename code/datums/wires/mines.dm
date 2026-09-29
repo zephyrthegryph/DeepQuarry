@@ -33,8 +33,8 @@
 			var/obj/effect/mine/MI = new C.mineitemtype(get_turf(C))
 
 			if(C.trap)
-				MI.trap = C.trap
-				C.trap = null
+				own_set(MI, "trap", C.trap)
+				own_take(C, "trap")
 				MI.trap.forceMove(MI)
 				for(var/wire_color in colors)
 					detach_assembly(wire_color) //Kick all the signallers off!

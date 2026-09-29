@@ -138,7 +138,7 @@
 	if(can_run(user, 1) || !requires_access_to_run)
 		computer().active_program_handle = om_handle(src)
 		if(tguimodule_path)
-			TM = new tguimodule_path(src)
+			own_set(src, "TM", new tguimodule_path(src))
 			// Prefer the card inserted into the computer's card slot for access checks;
 			// fall back to the user's own access if no card is slotted.
 			var/obj/item/card/id/auth_card = computer()?.card_slot?.stored_card()
@@ -156,7 +156,7 @@
 		generate_network_log("Connection to [network_destination] closed.")
 	if(TM)
 		SStgui.close_uis(TM)
-	QDEL_NULL(TM)
+	own_clear(src, "TM", OWN_DELETE)
 	return 1
 
 /datum/computer_file/program/ui_assets(mob/user)

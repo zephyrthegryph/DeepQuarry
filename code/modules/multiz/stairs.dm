@@ -46,13 +46,13 @@
 
 	// Case 4: They're unlinked
 	B.dir = get_dir(get_turf(B), get_turf(M))
-	B.top = T
-	B.middle = M
+	rel_set(B, "top", T)
+	rel_set(B, "middle", M)
 	T.dir	 = B.dir
-	T.middle = M
+	rel_set(T, "middle", M)
 	T.bottom = B
 	M.dir	 = B.dir
-	M.top	 = T
+	rel_set(M, "top", T)
 	M.bottom = B
 	return TRUE
 
@@ -298,8 +298,8 @@ REL_PAIR(/obj/structure/stairs/middle, bottom, middle)
 
 	// The middle stair has some further special logic, in that it can be climbed, and so is technically valid if only the top exists
 	// T is enforced by a prior if
-	T.middle = src
-	src.top = T
+	rel_set(T, "middle", src)
+	rel_set(src, "top", T)
 	src.dir = T.dir
 	return TRUE
 

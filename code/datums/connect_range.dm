@@ -28,7 +28,7 @@
 	if(!isatom(tracked) || isarea(tracked) || range < 0)
 		log_runtime("CONNECT_RANGE: [listener?.type] passed an invalid target [tracked] ([tracked?.type]) or range [range]")
 		return
-	src.listener = listener
+	rel_set(src, "listener", listener)
 	src.connections = connections
 	src.range = range
 	src.works_in_containers = works_in_containers

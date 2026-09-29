@@ -233,7 +233,7 @@
 	var/mob/living/carbon/brain/caught_soul/brainmob = new(nif())
 	brainmob.nif_handle = om_handle(nif())
 	brainmob.soulcatcher_handle = om_handle(src)
-	brainmob.container = src
+	own_set(brainmob, "container", src)
 	brainmob.status_set(EFFECT_MUTED, 0)
 	brainmob.add_language(LANGUAGE_GALCOM)
 	brainmobs |= brainmob
@@ -306,7 +306,7 @@
 		soulcatcher_handle = null
 	if(eyeobj)
 		reenter_soulcatcher()
-	container = null
+	own_take(src, "container")
 	nif_handle = null
 	..()
 

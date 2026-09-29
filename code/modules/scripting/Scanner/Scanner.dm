@@ -103,7 +103,7 @@
 	.=..()
 	ignore+= ascii2text(13) //Carriage return
 	LAZYADD(delim, ignore + options.symbols + end_stmt + string_delim)
-	src.options_ref=options
+	rel_set(src, "options_ref", options)
 	LoadCode(code)
 
 /datum/n_Scanner/nS_Scanner/Scan() //Creates a list of tokens from source code

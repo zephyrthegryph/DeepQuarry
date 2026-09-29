@@ -46,8 +46,8 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 		return
 	new_game = possible_games[new_game]
 	if(game_ui)
-		QDEL_NULL(game_ui)
-	game_ui = new new_game(src)
+		own_clear(src, "game_ui", OWN_DELETE)
+	own_set(src, "game_ui", new new_game(src))
 	icon_state = game_ui.table_icon
 
 /datum/board_game

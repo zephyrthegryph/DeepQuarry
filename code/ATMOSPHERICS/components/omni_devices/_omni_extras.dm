@@ -35,8 +35,8 @@
 	..()
 	dir = direction
 	if(istype(M))
-		master = M
-	air = new
+		rel_set(src, "master", M)
+	own_set(src, "air", new /datum/gas_mixture)
 	air.set_volume(200)
 
 /datum/omni_port/proc/connect()

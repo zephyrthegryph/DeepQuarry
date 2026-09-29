@@ -20,9 +20,9 @@
 	zone = packet.zone
 	flags = packet.flags
 	armor_flag = packet.armor_flag
-	source = packet.source
-	attacker = packet.attacker
-	weapon = packet.weapon
+	rel_set(src, "source", packet.source)
+	rel_set(src, "attacker", packet.attacker)
+	rel_set(src, "weapon", packet.weapon)
 
 
 /// Only `kind` carries damage, and exactly `amount` of it.
@@ -49,8 +49,8 @@
 
 /obj/machinery/dq_damage_probe/receive_damage(datum/damage_packet/packet)
 	received++
-	QDEL_NULL(last)
-	last = new(packet)
+	own_clear(src, "last", OWN_DELETE)
+	own_set(src, "last", new(packet))
 	return 0
 
 
@@ -65,8 +65,8 @@
 
 /mob/living/simple_mob/dq_damage_probe/receive_damage(datum/damage_packet/packet)
 	received++
-	QDEL_NULL(last)
-	last = new(packet)
+	own_clear(src, "last", OWN_DELETE)
+	own_set(src, "last", new(packet))
 	return 0
 
 
@@ -76,8 +76,8 @@
 	var/mob/living/simple_mob/dq_damage_probe/mob_probe
 
 /datum/unit_test/dq_damage_packet/proc/make_probes()
-	probe = allocate(/obj/machinery/dq_damage_probe)
-	mob_probe = allocate(/mob/living/simple_mob/dq_damage_probe)
+	rel_set(src, "probe", allocate(/obj/machinery/dq_damage_probe))
+	rel_set(src, "mob_probe", allocate(/mob/living/simple_mob/dq_damage_probe))
 
 /datum/unit_test/dq_damage_packet/proc/make_projectile(kind, damage, pen = 0)
 	var/obj/item/projectile/P = allocate(/obj/item/projectile)

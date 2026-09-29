@@ -188,7 +188,7 @@
 		return FALSE
 
 	if(!inventory_panel)
-		inventory_panel = new inventory_panel_type(src)
+		own_set(src, "inventory_panel", new inventory_panel_type(src))
 	inventory_panel.tgui_interact(user, null, state)
 
 	return TRUE
@@ -201,7 +201,7 @@
 	if(!istype(new_host))
 		qdel(src)
 		return
-	host = new_host
+	rel_set(src, "host", new_host)
 	. = ..()
 
 /datum/inventory_panel/tgui_host(mob/user)

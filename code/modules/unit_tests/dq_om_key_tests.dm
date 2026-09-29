@@ -15,7 +15,7 @@
 	// Regression (b11/b12 flake): a power step inside the window must not pull S off the test grid.
 	GLOB.machine_service.process_power()
 	TEST_ASSERT_EQUAL(S.power_region, P, "a power step kept the sensor on its detached test grid")
-	M.power_monitor.grid_sensors = null
+	rel_clear(M.power_monitor, "grid_sensors")
 	rel_add(M.power_monitor, "grid_sensors", S)
 	MACHINE_WAKE(M)
 	M.machine_step()
@@ -106,7 +106,7 @@
 	var/mob/living/simple_mob/M = allocate(/mob/living/simple_mob, T)
 	var/datum/ai_brain/B = M.ai_brain
 	TEST_ASSERT_NOTNULL(B, "simple mob did not receive an AI brain")
-	B.primary_threat = null
+	rel_clear(B, "primary_threat")
 	B.active_behavior_type = null
 	var/mob/living/visitor = allocate(/mob/living, locate(world.maxx, world.maxy, T.z))
 	TEST_ASSERT(B.hibernate_calm(), "calm brain refused to hibernate")
@@ -116,9 +116,9 @@
 	TEST_ASSERT(B.loop_running(DQAI_PROCESSING), "woken brain did not rejoin strategic processing")
 	// The audit catches a brain asleep with a threat.
 	B.hibernate_calm()
-	B.primary_threat = visitor
+	rel_set(B, "primary_threat", visitor)
 	TEST_ASSERT(B.om_sleep_violation(), "the audit missed a hibernating brain with a threat")
-	B.primary_threat = null
+	rel_clear(B, "primary_threat")
 
 /// One mob chunk key, two mask bits: a mob without a client wakes any-mob subscribers only.
 /datum/unit_test/dq_om_keys_mob_chunk_masks

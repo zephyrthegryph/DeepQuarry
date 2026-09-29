@@ -116,7 +116,7 @@
 
 	for(var/mob/living/carbon/human/H in view(7, src)) // Time to find a patient!
 		if(confirmTarget(H))
-			target = H
+			rel_set(src, "target", H)
 			if(COOLDOWN_FINISHED(src, newpatient_speak_cooldown))
 				if(vocal)
 					var/message_options = list(
@@ -155,7 +155,7 @@
 	bot_work(3 SECONDS, H, PROC_REF(UnarmedAttack_medbot_done), list(H, t))
 
 	if(H.stat == DEAD) // This is down here because this proc won't be called again due to losing a target because of parent AI loop.
-		target = null
+		rel_clear(src, "target")
 		if(vocal)
 			var/death_messages = list(
 				"No! Stay with me!" = 'sound/voice/medbot/mno.ogg',
@@ -170,7 +170,7 @@
 	else
 		t = confirmTarget(H)
 		if(!t)
-			target = null
+			rel_clear(src, "target")
 			if(vocal)
 				var/possible_messages = list(
 					"All patched up!" = 'sound/voice/medbot/mpatchedup.ogg',
@@ -286,7 +286,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 
 	user.drop_item()
 	O.forceMove(src)
-	reagent_glass = O
+	own_set(src, "reagent_glass", O)
 	to_chat(user, span_notice("You insert [O]."))
 	return TRUE
 
@@ -328,7 +328,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 		if("eject")
 			if(reagent_glass)
 				reagent_glass.forceMove(get_turf(src))
-				reagent_glass = null
+				own_take(src, "reagent_glass")
 			. = TRUE
 
 		if("togglevoice")
@@ -346,7 +346,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 			to_chat(user, span_warning("You short out [src]'s reagent synthesis circuits."))
 		visible_message(span_warning("[src] buzzes oddly!"))
 		flick("medibot_spark", src)
-		target = null
+		rel_clear(src, "target")
 		om_release_busy(src, "emagged")
 		emagged = 1
 		on = 1
@@ -367,7 +367,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 
 	if(reagent_glass)
 		reagent_glass.forceMove(Tsec)
-		reagent_glass = null
+		own_take(src, "reagent_glass")
 
 	if(emagged && prob(25))
 		playsound(src, 'sound/voice/medbot/minsult.ogg', 50, 0)

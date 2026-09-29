@@ -242,7 +242,22 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		qdel(value)
 	return adopted
 
-/// Disposes of everything holder.var_name owns, now, by policy (or `policy` when given).
+/// Detaches everything holder.var_name owns and returns it as a list, all unowned (the caller
+/// adopts or destroys each). The var is emptied.
+/proc/own_take_all(datum/holder, var_name)
+	. = own_values(holder, var_name)
+	var/value = holder.vars[var_name]
+	if(isnull(value))
+		return
+	if(islist(value) && var_name == "contents")
+		OWN_REPORT("own_take_all on [holder.type].contents: move things out through the ledger")
+		return list()
+	holder.vars[var_name] = null // ALLOW(ownership): the accessor
+	for(var/datum/child as anything in .)
+		holder.on_owned_release(var_name, child)
+		own_unstamp(child)
+
+/// Disposes of everything holder.var_name owns, by policy (or `policy` when given).
 /proc/own_clear(datum/holder, var_name, policy = null)
 	var/list/entry = own_entry_of_kind(holder, var_name, OWNK_OWN)
 	var/value = holder.vars[var_name]
@@ -255,8 +270,9 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		return
 	var/list/L = value
 	var/list/copy = L.Copy()
-	L.Cut()
-	holder.vars[var_name] = null // ALLOW(ownership): the accessor
+	if(var_name != "contents") // built in: its members leave by moving, never by a cut
+		L.Cut()
+		holder.vars[var_name] = null // ALLOW(ownership): the accessor
 	if(!entry)
 		return
 	for(var/key in copy)

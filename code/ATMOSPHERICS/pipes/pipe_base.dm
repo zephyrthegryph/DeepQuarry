@@ -136,7 +136,7 @@
 	wake_automatic_shutoff_valves(old_parent?.network)
 	release_sorbed_material_gas()
 	var/list/old_edge_pipelines = edge_pipelines
-	edge_pipelines = null
+	rel_clear(src, "edge_pipelines")
 	for(var/datum/pipeline/edge_owner as anything in old_edge_pipelines)
 		edge_owner.remove_edge(src, FALSE)
 	if(rust_owned_parent)
@@ -146,21 +146,21 @@
 		// to qdel that shared wrapper from every exploded pipe was deliberately
 		// rejected by QDEL_HINT_LETMELIVE and dominated large explosion cost.
 		if(!QDELETED(old_parent))
-			old_parent.members -= src
+			rel_remove(old_parent, "members", src)
 			old_parent.leaks -= src
-		parent = null
+		rel_clear(src, "parent")
 	else
 		// Legacy wrappers still own their own gas and teardown semantics.
 		QDEL_NULL(parent)
 	if(air_temporary)
 		loc.assume_air(air_temporary)
-		QDEL_NULL(air_temporary)
+		own_clear(src, "air_temporary", OWN_DELETE)
 
 /obj/machinery/atmospherics/pipe/proc/register_edge_pipeline(datum/pipeline/edge_owner)
-	LAZYOR(edge_pipelines, edge_owner)
+	rel_add(src, "edge_pipelines", edge_owner)
 
 /obj/machinery/atmospherics/pipe/proc/unregister_edge_pipeline(datum/pipeline/edge_owner)
-	LAZYREMOVE(edge_pipelines, edge_owner)
+	rel_remove(src, "edge_pipelines", edge_owner)
 
 /// Arms its eligibility rule (code/datums/om/watch.dm om_watch_arm_condition()) over both
 /// mixtures either side of the leak: it wakes only once they no longer match, which is when the

@@ -212,7 +212,7 @@ DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 	..()
 	if(!ov_lowhealth)
 		setup_overlays()
-	temp_chem_holder = new()
+	own_set(src, "temp_chem_holder", new /obj())
 	temp_chem_holder.create_reagents(10) // ALLOW(decl): holder on a bare scratch /obj child, not on src
 	if(mechanical)
 		connect()

@@ -14,7 +14,7 @@
 			if(T && !isopenturf(T) && (GLOB.planet_service.z_to_planet.len >= T.z && GLOB.planet_service.z_to_planet[T.z]))
 				make_indoors()
 		if(!shandler_noinit)
-			shandler = new(src)
+			rel_set(src, "shandler", new /datum/sunlight_handler(src))
 			shandler.manualInit()
 
 /turf/simulated/lighting_build_overlay()
@@ -45,7 +45,7 @@
 
 /datum/sunlight_handler/New(parent)
 	. = ..()
-	holder = parent
+	rel_set(src, "holder", parent)
 
 //Moved initialization here to make sure that it doesn't happen too early when replacing turfs.
 /datum/sunlight_handler/proc/manualInit()

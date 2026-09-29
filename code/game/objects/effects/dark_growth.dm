@@ -78,7 +78,7 @@
 
 /obj/effect/dark/proc/unlinked()
 	LAZYREMOVE(linked_node.children_effects, src)
-	linked_node = null
+	rel_clear(src, "linked_node")
 	om_after(src, rand(20, 70), PROC_REF(perform_unlink))
 
 /obj/effect/dark/proc/perform_unlink()
@@ -92,7 +92,7 @@
 	if(isspace(loc))
 		return INITIALIZE_HINT_QDEL
 
-	linked_node = node
+	rel_set(src, "linked_node", node)
 
 /obj/structure/prop/dark_node
 	name = "crystal cluster"
@@ -167,7 +167,7 @@ REL_PAIR_LIST(/obj/structure/prop/dark_node, children_effects, linked_node)
 			if(dark_tile.linked_node)
 				continue
 			LAZYADD(children_effects, dark_tile)
-			dark_tile.linked_node = src
+			rel_set(dark_tile, "linked_node", src)
 		until_full_process = 4
 
 	for(var/obj/effect/dark/dark_tile as anything in children_effects)

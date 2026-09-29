@@ -39,7 +39,7 @@ DECLARE_DEFAULT_CHILD(/obj/vehicle/bike, "ion", /datum/effect/effect/system/ion_
 /obj/vehicle/bike/built/Initialize(mapload)
 	. = ..()
 	qdel(cell)
-	cell = null
+	own_take(src, "cell")
 
 /obj/vehicle/bike/random/Initialize(mapload)
 	paint_color = rgb(rand(1,255),rand(1,255),rand(1,255))

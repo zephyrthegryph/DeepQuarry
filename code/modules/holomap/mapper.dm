@@ -86,7 +86,7 @@
 	if(!mask_icon)
 		mask_icon = icon('icons/effects/64x64.dmi', "mapper_mask")
 
-	extras_holder = new()
+	own_set(src, "extras_holder", new /atom/movable/screen/mapper/extras_holder())
 
 	var/atom/movable/screen/mapper/marker/mark = new()
 	mark.icon = 'icons/effects/64x64.dmi'
@@ -102,7 +102,7 @@
 	LAZYSET(map_image_cache, "bad", tmp)
 
 	if(uses_power && cell_type)
-		cell = new cell_type(src)
+		own_set(src, "cell", new cell_type(src))
 
 	debug_mappers_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_UNITS)
 	debug_beacons_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_BEACONS)
@@ -151,7 +151,7 @@ DECLARE_INTERACTIONS(/obj/item/mapping_unit, \
 	if(cell && user.get_inactive_hand() == src) // click with empty off hand
 		to_chat(user,span_notice("You eject \the [cell] from \the [src]."))
 		user.put_in_hands(cell)
-		cell = null
+		own_take(src, "cell")
 		if(updating)
 			stop_updates()
 	else
@@ -161,7 +161,7 @@ DECLARE_INTERACTIONS(/obj/item/mapping_unit, \
 /// Old attackby.
 /obj/item/mapping_unit/proc/interaction_item(mob/user, obj/W, datum/interaction/interaction)
 	if(istype(W,cell_type) && !cell)
-		cell = W
+		own_set(src, "cell", W)
 		cell.update_icon() //Why doesn't a cell do this already? :|
 		user.unEquip(cell)
 		cell.forceMove(src)
@@ -169,8 +169,8 @@ DECLARE_INTERACTIONS(/obj/item/mapping_unit, \
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/mapping_unit/proc/first_run(mob/user)
-	hud_datum = new(user.hud_used, src)
-	hud_item = hud_datum.screenobjs[1]
+	own_set(src, "hud_datum", new /datum/mini_hud/mapper(user.hud_used, src))
+	own_set(src, "hud_item", hud_datum.screenobjs[1])
 
 /obj/item/mapping_unit/proc/show_device(mob/user)
 	if(!hud_datum)
@@ -200,8 +200,8 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 	stop_updates()
 	if(!QDELETED(hud_datum))
 		qdel(hud_datum)
-	hud_datum = null
-	hud_item = null
+	own_take(src, "hud_datum")
+	own_take(src, "hud_item")
 
 /obj/item/mapping_unit/periodic_step()
 	if(!updating || (uses_power && !cell))

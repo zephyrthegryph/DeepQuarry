@@ -111,7 +111,7 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	. = ..()
 	dir = ndir
 	var/turf/newloc = get_step(src, dir)
-	source_hook = new(newloc)
+	own_set(src, "source_hook", new /obj/effect/hoist_hook(newloc))
 	source_hook.source_hoist_handle = om_handle(src)
 
 
@@ -143,7 +143,7 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	desc += " It looks broken, and the clamp has retracted back into the hoist. Seems like you'd have to re-deploy it to get it to work again."
 	if(hoistee())
 		release_hoistee()
-	QDEL_NULL(source_hook)
+	own_clear(src, "source_hook", OWN_DELETE)
 
 /obj/structure/hoist/ex_act(severity)
 	. = ..()

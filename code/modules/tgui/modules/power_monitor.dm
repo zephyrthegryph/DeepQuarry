@@ -59,7 +59,7 @@
 	return FALSE
 
 /datum/tgui_module/power_monitor/proc/refresh_sensors()
-	grid_sensors = null
+	rel_clear(src, "grid_sensors")
 
 	// Handle ultranested programs
 	var/turf/T = get_turf(tgui_host())

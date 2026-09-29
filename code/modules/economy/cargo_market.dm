@@ -489,7 +489,7 @@
 			var/datum/cargo_market_bid/bid = new
 			bid.id = "MKT-B-[next_market_id++]"
 			bid.counterparty_id = counterparty.id
-			bid.profile = profile
+			own_set(bid, "profile", profile)
 			bid.target_units = rand(profile.minimum_units, profile.maximum_units)
 			bid.price_multiplier = cargo_market_buyer_multiplier(counterparty, profile)
 			bid.expires_at = expiry
@@ -811,7 +811,7 @@
 	var/datum/cargo_market_bid/bid = new
 	bid.id = "MKT-B-[next_market_id++]"
 	bid.counterparty_id = counterparty.id
-	bid.profile = profile
+	own_set(bid, "profile", profile)
 	bid.target_units = max(profile.minimum_units, target_units)
 	bid.price_multiplier = cargo_market_buyer_multiplier(counterparty, profile)
 	bid.expires_at = expires_at

@@ -92,7 +92,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 		// The body is gone (the mob is mid-deletion): clear what we derived.
 		for(var/obj/item/organ/part as anything in dq_part_subtree(src))
 			dq_part_uncache(M, part)
-			part.owner = null
+			rel_clear(part, "owner")
 		return
 	M.body.release_subtree(src, dq_part_holder_destroying(holder) || QDELETED(M))
 
@@ -135,7 +135,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 	var/obj/item/organ/external/parent_limb = holder
 	if(!istype(parent_limb))
 		return
-	parent = parent_limb
+	rel_set(src, "parent", parent_limb)
 	LAZYOR(parent_limb.children, src)
 
 /// Left `holder`'s child or organ slot.
@@ -147,7 +147,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 	if(istype(parent_limb))
 		LAZYREMOVE(parent_limb.children, src)
 	if(parent == holder)
-		parent = null
+		rel_clear(src, "parent")
 
 /// Changes this part's organ_tag, which is its key in its slot and in its
 /// owner's caches.
@@ -226,7 +226,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 		// A move always detaches first, so this is a missed detach.
 		log_runtime("PARTS: [part] ([part.type]) joined [key_name(owner)] still owned by [key_name(part.owner)]")
 		dq_part_uncache(part.owner, part)
-	part.owner = owner
+	rel_set(part, "owner", owner)
 	dq_part_cache(owner, part)
 	attach_part(part)
 	part.joined_body(owner)
@@ -282,7 +282,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 	dq_part_uncache(owner, part)
 	if(!quiet && !QDELETED(part))
 		part.left_body(owner)
-	part.owner = null
+	rel_clear(part, "owner")
 	part.recalc_integrity()
 	OM_EMIT(owner, /datum/om/event/body_part_detached, part)
 

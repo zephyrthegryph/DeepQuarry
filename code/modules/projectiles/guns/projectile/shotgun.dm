@@ -56,14 +56,14 @@
 			qdel(chambered) // Delete casing
 		else
 			chambered.forceMove(get_turf(src)) // Eject casing
-		chambered = null
+		own_take(src, "chambered")
 		M.hud_used?.update_ammo_hud(M, src) // TGMC Ammo HUD Port
 
 	// Load next shell
 	if(loaded.len)
 		var/obj/item/ammo_casing/AC = loaded[1] // Load next casing.
 		loaded -= AC // Remove casing from loaded list.
-		chambered = AC
+		own_set(src, "chambered", AC)
 		M.hud_used?.update_ammo_hud(M, src) // TGMC Ammo HUD Port
 
 	if(pump_animation) // This affects all bolt action and shotguns.

@@ -61,7 +61,7 @@
 	var/mob/living/simple_mob/combat_ai_test_subject/victim = allocate(/mob/living/simple_mob/combat_ai_test_subject, run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/datum/ai_brain/B = victim.ai_brain
-	B.primary_threat = null
+	rel_clear(B, "primary_threat")
 	B.active_behavior_type = null
 	TEST_ASSERT(B.hibernate_calm(), "calm brain refused to hibernate")
 	TEST_ASSERT(!om_attached(victim, /datum/om/behaviour/ai_brain/strategic), "hibernating brain kept its strategic loop")

@@ -13,7 +13,7 @@
 
 /datum/stack_end_detector/New()
 	var/static/next_serial = 0
-	_canary = new()
+	own_set(src, "_canary", new /datum/stack_canary())
 	_canary.serial = ++next_serial
 	_canary_serial = _canary.serial
 	_canary_ref = REF(_canary)
@@ -26,7 +26,7 @@
 	if (!_canary)
 		CRASH("Prime_canary called twice")
 	. = _canary
-	_canary = null
+	own_take(src, "_canary")
 
 /// Returns true if the stack is still going. Calling before the canary has been primed also returns true
 /datum/stack_end_detector/proc/check()

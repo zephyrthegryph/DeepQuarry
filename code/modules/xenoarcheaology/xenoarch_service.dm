@@ -113,7 +113,7 @@ GLOBAL_DATUM_INIT(xenoarch_service, /datum/world_service/xenoarch, new)
 	var/list/artifacts_spawnturf_temp = artifact_spawning_turfs.Copy()
 	while(artifacts_spawnturf_temp.len > 0)
 		var/turf/simulated/mineral/artifact_turf = pop(artifacts_spawnturf_temp)
-		artifact_turf.artifact_find = new()
+		own_set(artifact_turf, "artifact_find", new /datum/artifact_find())
 
 /// This is the proc that is used when a Z level runs out of artifacts. This means you have 'completed' your job and now you get bonus goodies to keep you occupied.
 /datum/world_service/xenoarch/proc/continual_generation(mob/living/user)
@@ -206,7 +206,7 @@ GLOBAL_DATUM_INIT(xenoarch_service, /datum/world_service/xenoarch, new)
 	var/list/artifacts_spawnturf_temp = artifact_spawning_turfs.Copy()
 	while(artifacts_spawnturf_temp.len > 0)
 		var/turf/simulated/mineral/artifact_turf = pop(artifacts_spawnturf_temp)
-		artifact_turf.artifact_find = new()
+		own_set(artifact_turf, "artifact_find", new /datum/artifact_find())
 
 #undef XENOARCH_SPAWN_CHANCE
 #undef DIGSITESIZE_LOWER

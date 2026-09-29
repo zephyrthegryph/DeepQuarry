@@ -160,7 +160,7 @@
 	. = ..()
 	iastamp = new /obj/item/stamp/internalaffairs(src)
 	deniedstamp = new /obj/item/stamp/denied(src)
-	device = iastamp
+	own_set(src, "device", iastamp)
 
 /obj/item/rig_module/device/stamp/engage(atom/target)
 	if(!..() || !device)
@@ -168,10 +168,10 @@
 
 	if(!target)
 		if(device == iastamp)
-			device = deniedstamp
+			own_set(src, "device", deniedstamp)
 			to_chat(holder.wearer(), span_notice("Switched to denied stamp."))
 		else if(device == deniedstamp)
-			device = iastamp
+			own_set(src, "device", iastamp)
 			to_chat(holder.wearer(), span_notice("Switched to internal affairs stamp."))
 		return 1
 

@@ -46,7 +46,7 @@
 
 /datum/feed_channel/proc/clear()
 	src.channel_name = ""
-	src.messages = list()
+	own_set(src, "messages", list())
 	src.locked = 0
 	src.author = ""
 	src.backup_author = ""
@@ -69,7 +69,7 @@
 		newChannel.announcement = announcement_message
 	else
 		newChannel.announcement = "Breaking news from [channel_name]!"
-	LAZYADD(network_channels, newChannel)
+	own_add(src, "network_channels", newChannel)
 
 /datum/feed_network/proc/SubmitArticle(msg, author, channel_name, obj/item/photo/photo, adminMessage = 0, message_type = "", title)
 	var/datum/feed_message/newMsg = new /datum/feed_message
@@ -93,7 +93,7 @@
 			break
 
 /datum/feed_network/proc/insert_message_in_channel(datum/feed_channel/FC, datum/feed_message/newMsg)
-	FC.messages += newMsg
+	own_add(FC, "messages", newMsg)
 	newMsg.parent_channel_handle = om_handle(FC)
 	FC.update()
 	alert_readers(FC.announcement)
@@ -601,14 +601,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	WANTED.backup_author = scanned_user //I know, a bit wacky
 	if(photo_data)
 		WANTED.img = photo_data.photo().img
-	GLOB.news_network.wanted_issue_owned = WANTED
+	rel_set(GLOB.news_network, "wanted_issue_owned", WANTED)
 	GLOB.news_network.alert_readers()
 	set_temp("Wanted issue for [channel_name] is now in Network Circulation.", "success", FALSE)
 	return TRUE
 
 /obj/machinery/newscaster/proc/wanted_removal_confirmed(datum/om/prompt/confirm/ask)
 	if(GLOB.news_network.wanted_issue() && !GLOB.news_network.wanted_issue().is_admin_message)
-		GLOB.news_network.wanted_issue_owned = null
+		rel_clear(GLOB.news_network, "wanted_issue_owned")
 		for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 			NEWSCASTER.update_icon()
 		set_temp("Wanted issue taken down.", "success", FALSE)
@@ -644,14 +644,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 		var/obj/item/photo = user.get_active_hand()
 		user.drop_item()
 		photo.forceMove(src)
-		photo_data = new(photo, 0)
+		own_set(src, "photo_data", new /datum/news_photo(photo, 0))
 	else if(istype(user,/mob/living/silicon))
 		var/mob/living/silicon/tempAI = user
 		var/obj/item/photo/selection = tempAI.GetPicture()
 		if(!selection)
 			return
 
-		photo_data = new(selection, 1)
+		own_set(src, "photo_data", new /datum/news_photo(selection, 1))
 
 ////////////////////////////////////helper procs
 /obj/machinery/newscaster/proc/tgui_user_name(mob/user)

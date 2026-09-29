@@ -23,7 +23,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 
 /datum/shuttle/autodock/ferry/specops/New()
 	..()
-	announcer = new /obj/item/radio/intercom(null)//We need a fake AI to announce some stuff below. Otherwise it will be wonky.
+	own_set(src, "announcer", new /obj/item/radio/intercom(null)) //We need a fake AI to announce some stuff below. Otherwise it will be wonky.
 	announcer.config(list(CHANNEL_RESPONSE_TEAM = 0))
 
 /datum/shuttle/autodock/ferry/specops/proc/radio_announce(message)

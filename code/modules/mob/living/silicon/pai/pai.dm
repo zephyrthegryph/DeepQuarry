@@ -111,15 +111,15 @@
 	. = ..()
 	om_hook(src, /datum/om/event/living_injured, src, PROC_REF(on_injured))
 
-	card = loc
+	own_set(src, "card", loc)
 	if(!istype(card))
-		card = new default_pai_card_path(src) // ALLOW(decl): only when not spawned in a card
-		card.pai = src
+		own_set(src, "card", new default_pai_card_path(src)) // ALLOW(decl): only when not spawned in a card
+		rel_set(card, "pai", src)
 
 	if(card)
 		if(!card.radio)
-			card.radio = new /obj/item/radio/borg/pai(src.card)
-		radio = card.radio
+			own_set(card, "radio", new /obj/item/radio/borg/pai(src.card))
+		own_set(src, "radio", card.radio)
 
 	//Default languages without universal translator software
 	add_language(LANGUAGE_SOL_COMMON, 1)
@@ -552,7 +552,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 
 	cableturf.visible_message("The data cable rapidly retracts back into its spool.", "You hear a click and the sound of wire spooling rapidly.")
 	playsound(src, 'sound/machines/click.ogg', 50, 1)
-	QDEL_NULL(cable)
+	own_clear(src, "cable", OWN_DELETE)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Update icons

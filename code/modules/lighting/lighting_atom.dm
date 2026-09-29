@@ -76,7 +76,7 @@
 		CRASH("update_light() for [src] with following light_system value: [light_system]")
 
 	if (!light_on || !light_power || !light_range) // We won't emit light anyways, destroy the light source.
-		QDEL_NULL(light)
+		own_clear(src, "light", OWN_DELETE)
 	else
 		if (!ismovable(loc)) // We choose what atom should be the top atom of the light here.
 			. = src
@@ -86,7 +86,7 @@
 		if (light) // Update the light or create it if it does not exist.
 			light.update(.)
 		else
-			light = new/datum/light_source(src, .)
+			own_set(src, "light", new/datum/light_source(src, .))
 
 
 /**

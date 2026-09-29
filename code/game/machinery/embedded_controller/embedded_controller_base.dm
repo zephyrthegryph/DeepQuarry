@@ -10,7 +10,7 @@
 
 /obj/machinery/embedded_controller/Initialize(mapload)
 	if(ispath(program))
-		program = new program(src)
+		rel_set(src, "program", new program(src))
 	return ..()
 
 

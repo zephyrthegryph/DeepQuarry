@@ -115,7 +115,7 @@
 
 	B = new /obj/belly(src)
 
-	vore_selected = B
+	own_set(src, "vore_selected", B)
 	B.name = "maw"
 	B.desc = "Slrrrrrp... You get snatched up by the Exotic Leopardmander's large tongue, resulting in you getting dragged into the humid, dank interior of the large drake's cavernous mouth!"
 	//Not going to change the default sounds. Personally I think the non-fancy sounds work good as enterance nom sounds and the fancy ones are better for transfer sounds. -Reo
@@ -216,7 +216,7 @@
 	B.transferlocation = "maw"
 
 	B = new /obj/belly(src)
-	vore_selected = B
+	own_set(src, "vore_selected", B)
 
 	B.name = "maw"
 	B.desc = "Slrrrrrp... You get snatched up by the Exotic Leopardmander's large tongue, resulting in you getting dragged into the humid, dank interior of the large drake's cavernous mouth!"

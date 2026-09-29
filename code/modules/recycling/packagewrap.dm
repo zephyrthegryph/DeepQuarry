@@ -32,7 +32,7 @@
 		if(!istype(O.loc, /turf))
 			if(user.client)
 				user.client.screen -= O
-		P.wrapped = O
+		own_set(P, "wrapped", O)
 		O.forceMove(P)
 		P.w_class = O.w_class
 		var/i = round(O.w_class)

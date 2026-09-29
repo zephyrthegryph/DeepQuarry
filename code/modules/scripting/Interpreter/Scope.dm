@@ -9,8 +9,8 @@
 	var/list/variables
 
 /datum/scope/New(datum/node/BlockDefinition/B, datum/scope/parent)
-	src.block_ref = B
-	src.parent_ref = parent
+	rel_set(src, "block_ref", B)
+	rel_set(src, "parent_ref", parent)
 	src.variables = LAZYCOPY(B.initial_variables)
 	src.functions = B.functions.Copy()
 	.=..()

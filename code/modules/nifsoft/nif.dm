@@ -139,8 +139,8 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		human.nif = src
 		stat = NIF_INSTALLING
 		add_verb(H, /mob/living/carbon/human/proc/set_nif_examine)
-		QDEL_NULL(menu_ref)
-		menu_ref = new /datum/nif_menu(H)
+		own_clear(src, "menu_ref", OWN_DELETE)
+		own_set(src, "menu_ref", new /datum/nif_menu(H))
 		if(starting_software)
 			for(var/path in starting_software)
 				new path(src)
@@ -188,8 +188,8 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	vis_update()
 	if(H)
 		remove_verb(H, /mob/living/carbon/human/proc/set_nif_examine)
-		H.nif = null
-	QDEL_NULL(menu_ref)
+		own_take(H, "nif")
+	own_clear(src, "menu_ref", OWN_DELETE)
 	unregister_human()
 	human = null
 	install_done = null

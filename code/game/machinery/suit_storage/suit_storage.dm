@@ -198,7 +198,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 		return //Do I even need this sanity check? Nyoro~n
 	else
 		HELMET.forceMove(get_turf(src))
-		HELMET = null
+		own_take(src, "HELMET")
 		return
 
 
@@ -207,7 +207,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 		return
 	else
 		SUIT.forceMove(get_turf(src))
-		SUIT = null
+		own_take(src, "SUIT")
 		return
 
 
@@ -216,7 +216,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 		return
 	else
 		MASK.forceMove(get_turf(src))
-		MASK = null
+		own_take(src, "MASK")
 		return
 
 
@@ -225,13 +225,13 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 	islocked = 0 //locks go free
 	if(SUIT)
 		SUIT.forceMove(get_turf(src))
-		SUIT = null
+		own_take(src, "SUIT")
 	if(HELMET)
 		HELMET.forceMove(get_turf(src))
-		HELMET = null
+		own_take(src, "HELMET")
 	if(MASK)
 		MASK.forceMove(get_turf(src))
-		MASK = null
+		own_take(src, "MASK")
 	if(OCCUPANT)
 		eject_occupant(OCCUPANT)
 	return
@@ -305,13 +305,13 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 		else //It was supercycling, destroy everything
 			if(HELMET)
 				qdel(HELMET)
-				HELMET = null
+				own_take(src, "HELMET")
 			if(SUIT)
 				qdel(SUIT)
-				SUIT = null
+				own_take(src, "SUIT")
 			if(MASK)
 				qdel(MASK)
-				MASK = null
+				own_take(src, "MASK")
 			visible_message(span_danger("With a loud whining noise, the Suit Storage Unit's door grinds open. Puffs of ashen smoke come out of its chamber."), 3)
 			isbroken = 1
 			isopen = 1
@@ -437,7 +437,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 		to_chat(user, span_info("You load the [S.name] into the storage compartment."))
 		user.drop_item()
 		S.forceMove(src)
-		SUIT = S
+		own_set(src, "SUIT", S)
 		update_icon()
 		return TRUE
 	if(istype(I,/obj/item/clothing/head/helmet))
@@ -450,7 +450,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 		to_chat(user, span_info("You load the [H.name] into the storage compartment."))
 		user.drop_item()
 		H.forceMove(src)
-		HELMET = H
+		own_set(src, "HELMET", H)
 		update_icon()
 		return TRUE
 	if(istype(I,/obj/item/clothing/mask))
@@ -463,7 +463,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 		to_chat(user, span_info("You load the [M.name] into the storage compartment."))
 		user.drop_item()
 		M.forceMove(src)
-		MASK = M
+		own_set(src, "MASK", M)
 		update_icon()
 		return TRUE
 	update_icon()

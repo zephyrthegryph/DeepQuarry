@@ -172,7 +172,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	transfer_fingerprints_to(finished_light)
 	if(cell())
 		finished_light.latent_cell_charge = null
-		finished_light.cell = cell()
+		own_set(finished_light, "cell", cell())
 		cell().forceMove(finished_light)
 		cell_handle = null
 	replace_with(src, finished_light)
@@ -540,7 +540,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	RETURN_TYPE(/obj/item/light)
 	if(latent_bulb)
 		latent_bulb = FALSE
-		installed_light = new light_type(src)
+		own_set(src, "installed_light", new light_type(src))
 		installed_light.status = status
 		installed_light.switchcount = switchcount
 		installed_light.rigged = rigged
@@ -557,7 +557,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	if(!isnull(latent_cell_charge))
 		var/charge = latent_cell_charge
 		latent_cell_charge = null
-		cell = new /obj/item/cell/emergency_light(src)
+		own_set(src, "cell", new /obj/item/cell/emergency_light(src))
 		cell.charge = charge
 	return cell
 
@@ -608,7 +608,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 /obj/machinery/light/proc/insert_bulb(obj/item/light/L)
 	update_from_bulb(L)
 	latent_bulb = FALSE
-	installed_light = L
+	own_set(src, "installed_light", L)
 	L.forceMove(src) //Move it into the socket!
 
 	on = powered() && !turned_off() // Do not instantly turn on lights if the area lightswitch is off
@@ -625,7 +625,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	//. = new light_type(src.loc, src)
 
 	switchcount = 0
-	installed_light = null
+	own_take(src, "installed_light")
 	latent_bulb = FALSE
 	status = LIGHT_EMPTY
 	update()

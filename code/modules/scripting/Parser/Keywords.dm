@@ -49,20 +49,20 @@
 		. = KW_WARN
 	var/datum/node/statement/ReturnStatement/stmt=new
 	parser.NextToken()   //skip 'return' token
-	stmt.value=parser.ParseExpression()
+	own_set(stmt, "value", parser.ParseExpression())
 	LAZYADD(parser.curBlock().statements, stmt)
 
 /datum/n_Keyword/nS_Keyword/kwIf/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
 	var/datum/node/statement/IfStatement/stmt=new
 	parser.NextToken()  //skip 'if' token
-	stmt.cond=parser.ParseParenExpression()
+	own_set(stmt, "cond", parser.ParseParenExpression())
 	if(!parser.CheckToken(")", /datum/token/symbol))
 		return KW_FAIL
 	if(!parser.CheckToken("{", /datum/token/symbol, skip=0)) //Token needs to be preserved for parse loop, so skip=0
 		return KW_ERR
 	LAZYADD(parser.curBlock().statements, stmt)
-	stmt.block=new
+	own_set(stmt, "block", new /datum/node/BlockDefinition)
 	parser.AddBlock(stmt.block)
 
 /datum/n_Keyword/nS_Keyword/kwElse/Parse(datum/n_Parser/nS_Parser/parser)
@@ -76,20 +76,20 @@
 	parser.NextToken()         //skip 'else' token
 	if(!parser.CheckToken("{", /datum/token/symbol, skip=0))
 		return KW_ERR
-	stmt.else_block=new()
+	own_set(stmt, "else_block", new /datum/node/BlockDefinition())
 	parser.AddBlock(stmt.else_block)
 
 /datum/n_Keyword/nS_Keyword/kwWhile/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
 	var/datum/node/statement/WhileLoop/stmt=new
 	parser.NextToken()  //skip 'while' token
-	stmt.cond=parser.ParseParenExpression()
+	own_set(stmt, "cond", parser.ParseParenExpression())
 	if(!parser.CheckToken(")", /datum/token/symbol))
 		return KW_FAIL
 	if(!parser.CheckToken("{", /datum/token/symbol, skip=0))
 		return KW_ERR
 	LAZYADD(parser.curBlock().statements, stmt)
-	stmt.block=new
+	own_set(stmt, "block", new /datum/node/BlockDefinition)
 	parser.AddBlock(stmt.block)
 
 /datum/n_Keyword/nS_Keyword/kwBreak/Parse(datum/n_Parser/nS_Parser/parser)
@@ -144,7 +144,7 @@
 	if(istype(parser.curToken(), /datum/token/end)) //Function prototype
 		LAZYADD(parser.curBlock().statements, def)
 	else if(parser.curToken().value=="{" && istype(parser.curToken(), /datum/token/symbol))
-		def.block = new
+		own_set(def, "block", new /datum/node/BlockDefinition/FunctionBlock)
 		LAZYADD(parser.curBlock().statements, def)
 		parser.curBlock().functions[def.func_name]=def
 		parser.AddBlock(def.block)

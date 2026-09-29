@@ -55,48 +55,48 @@ GLOBAL_LIST_INIT(global_huds, list(
 
 /datum/global_hud/New()
 	//420erryday psychedellic colours screen overlay for when you are high
-	druggy = new /atom/movable/screen/global_screen()
+	own_set(src, "druggy", new /atom/movable/screen/global_screen())
 	druggy.icon_state = "druggy"
 
 	//that white blurry effect you get when you eyes are damaged
-	blurry = new /atom/movable/screen/global_screen()
+	own_set(src, "blurry", new /atom/movable/screen/global_screen())
 	blurry.icon_state = "blurry"
 
 	//static overlay effect for cameras and the like
-	whitense = new /atom/movable/screen/global_screen()
+	own_set(src, "whitense", new /atom/movable/screen/global_screen())
 	whitense.icon = 'icons/effects/static.dmi'
 	whitense.icon_state = "1 light"
 
 	//static overlay effect for cameras and the like
-	heavy_whitense = new /atom/movable/screen/global_screen()
+	own_set(src, "heavy_whitense", new /atom/movable/screen/global_screen())
 	heavy_whitense.icon = 'icons/effects/static.dmi'
 	heavy_whitense.icon_state = "1 heavy"
 
 	//darksight 'hanger' for attached icons
-	darksight = new /atom/movable/screen()
+	own_set(src, "darksight", new /atom/movable/screen())
 	darksight.icon = null
 	darksight.screen_loc = "1,1"
 	darksight.plane = PLANE_LIGHTING
 
 	//Marks the center of the screen, for things like ventcrawl
-	centermarker = new /atom/movable/screen()
+	own_set(src, "centermarker", new /atom/movable/screen())
 	centermarker.icon = 'icons/mob/screen1.dmi'
 	centermarker.icon_state = "centermarker"
 	centermarker.screen_loc = "CENTER,CENTER"
 
 	//Marks the center of the screen, for things like ventcrawl
-	centermarker = new /atom/movable/screen()
+	own_set(src, "centermarker", new /atom/movable/screen())
 	centermarker.icon = 'icons/mob/screen1.dmi'
 	centermarker.icon_state = "centermarker"
 	centermarker.screen_loc = "CENTER,CENTER"
 
-	nvg = setup_overlay("nvg_hud")
-	thermal = setup_overlay("thermal_hud")
-	meson = setup_overlay("meson_hud")
-	science = setup_overlay("science_hud")
-	material = setup_overlay("material_hud")
+	own_set(src, "nvg", setup_overlay("nvg_hud"))
+	own_set(src, "thermal", setup_overlay("thermal_hud"))
+	own_set(src, "meson", setup_overlay("meson_hud"))
+	own_set(src, "science", setup_overlay("science_hud"))
+	own_set(src, "material", setup_overlay("material_hud"))
 
-	holomap = new /atom/movable/screen()
+	own_set(src, "holomap", new /atom/movable/screen())
 	holomap.name = "holomap"
 	holomap.icon = null
 	holomap.screen_loc = ui_holomap
@@ -307,9 +307,9 @@ GLOBAL_LIST_INIT(global_huds, list(
 	if(!ismob(mymob()))
 		return 0
 
-	toggle_palette = new()
-	palette_down = new()
-	palette_up = new()
+	own_set(src, "toggle_palette", new /atom/movable/screen/button_palette())
+	own_set(src, "palette_down", new /atom/movable/screen/palette_scroll/down())
+	own_set(src, "palette_up", new /atom/movable/screen/palette_scroll/up())
 	mymob().create_mob_hud(src)
 
 	// Past this point, mymob.hud_used is set
@@ -333,7 +333,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 	set_hud_used(HUD)
 
 /mob/proc/set_hud_used(datum/hud/new_hud)
-	hud_used = new_hud
+	own_set(src, "hud_used", new_hud)
 	new_hud.build_action_groups()
 
 /mob/proc/update_ui_style(UI_style_new, UI_style_alpha_new, UI_style_color_new)
@@ -519,17 +519,17 @@ GLOBAL_LIST_INIT(global_huds, list(
 	..()
 
 	var/list/hud_elements = list()
-	shadekin_display = new /atom/movable/screen/shadekin()
+	own_set(src, "shadekin_display", new /atom/movable/screen/shadekin())
 	shadekin_display.screen_loc = ui_shadekin_display
 	shadekin_display.icon_state = "shadekin"
 	hud_elements |= shadekin_display
 
-	xenochimera_danger_display = new /atom/movable/screen/xenochimera/danger_level()
+	own_set(src, "xenochimera_danger_display", new /atom/movable/screen/xenochimera/danger_level())
 	xenochimera_danger_display.screen_loc = ui_xenochimera_danger_display
 	xenochimera_danger_display.icon_state = "danger00"
 	hud_elements |= xenochimera_danger_display
 
-	lleill_display = new /atom/movable/screen/lleill()
+	own_set(src, "lleill_display", new /atom/movable/screen/lleill())
 	lleill_display.screen_loc = ui_lleill_display
 	lleill_display.icon_state = "lleill"
 	hud_elements |= lleill_display
@@ -549,7 +549,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 	if(length(ammo_hud_list) >= MAX_AMMO_HUD_POSSIBLE)
 		return
 	var/atom/movable/screen/ammo/ammo_hud = new
-	LAZYSET(ammo_hud_list, om_handle(G), ammo_hud)
+	own_put(src, "ammo_hud_list", om_handle(G), ammo_hud)
 	ammo_hud.screen_loc = ammo_hud.ammo_screen_loc_list[length(ammo_hud_list)]
 	ammo_hud.our_gun = om_handle(G)
 	ammo_hud.add_hud(user, G)
@@ -564,7 +564,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 	ammo_hud.our_gun = null
 	ammo_hud.remove_hud(user, G)
 	qdel(ammo_hud)
-	LAZYREMOVE(ammo_hud_list, gun_handle)
+	own_take_member(src, "ammo_hud_list", gun_handle)
 	var/i = 1
 	for(var/key in ammo_hud_list)
 		ammo_hud = LAZYACCESS(ammo_hud_list, key)

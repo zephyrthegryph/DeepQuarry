@@ -77,12 +77,12 @@
 // Does most of the repeatative setup.
 /obj/item/clothing/proc/setup_integrated_circuit(new_type)
 	// Set up the internal circuit holder.
-	IC = new new_type(src)
+	own_set(src, "IC", new new_type(src))
 	IC.clothing_handle = om_handle(src)
 	IC.name = name
 
 	// Clothing assemblies can be triggered by clicking on the HUD. This allows that to occur.
-	action_circuit = new(src.IC)
+	own_set(src, "action_circuit", new /obj/item/integrated_circuit/built_in/action_button(src.IC))
 	IC.force_add_circuit(action_circuit)
 
 	add_item_action(new /datum/action/item_action/activate(src, name))

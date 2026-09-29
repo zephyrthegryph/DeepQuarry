@@ -117,9 +117,9 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 					if(!T)
 						continue
 					if(!candidate.bottom_left && locate_within(T, /obj/effect/landmark/unit_test_bottom_left))
-						candidate.bottom_left = T
+						rel_set(candidate, "bottom_left", T)
 					if(!candidate.top_right && locate_within(T, /obj/effect/landmark/unit_test_top_right))
-						candidate.top_right = T
+						rel_set(candidate, "top_right", T)
 			if(candidate.bottom_left && candidate.top_right)
 				block = candidate
 				break
@@ -451,9 +451,9 @@ GLOBAL_VAR(dq_test_select_names)
 		uncreatables = build_list_of_uncreatables()
 
 	allocated = new
-	test_block = acquire_unit_test_block()
-	run_loc_floor_bottom_left = test_block.bottom_left
-	run_loc_floor_top_right = test_block.top_right
+	rel_set(src, "test_block", acquire_unit_test_block())
+	rel_set(src, "run_loc_floor_bottom_left", test_block.bottom_left)
+	rel_set(src, "run_loc_floor_top_right", test_block.top_right)
 
 	// Deterministic per-test RNG: reseed from the test's own type name rather
 	// than leaving the shared world RNG wherever the previous test's rand()

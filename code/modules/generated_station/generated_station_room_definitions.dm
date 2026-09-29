@@ -825,7 +825,7 @@
 	fragment_options = build_fragment_options()
 	constraints = build_constraints()
 	variant_options = build_variant_options()
-	room_style = build_room_style()
+	own_set(src, "room_style", build_room_style())
 
 
 /datum/generated_room_definition/proc/build_required_features()
@@ -1333,24 +1333,24 @@
 	var/datum/generated_room_definition/fallback = new
 	fallback.id = "[department_id]-[role]"
 	fallback.name = capitalize(replacetext(role, "-", " "))
-	QDEL_NULL(fallback.room_style)
+	own_clear(fallback, "room_style", OWN_DELETE)
 	switch(department_id)
 		if("command")
-			fallback.room_style = new /datum/generated_room_style/command
+			own_set(fallback, "room_style", new /datum/generated_room_style/command)
 		if("ai")
-			fallback.room_style = new /datum/generated_room_style/ai/support
+			own_set(fallback, "room_style", new /datum/generated_room_style/ai/support)
 		if("security")
-			fallback.room_style = new /datum/generated_room_style/security
+			own_set(fallback, "room_style", new /datum/generated_room_style/security)
 		if("medical")
-			fallback.room_style = new /datum/generated_room_style/medical
+			own_set(fallback, "room_style", new /datum/generated_room_style/medical)
 		if("engineering")
-			fallback.room_style = new /datum/generated_room_style/engineering
+			own_set(fallback, "room_style", new /datum/generated_room_style/engineering)
 		if("logistics")
-			fallback.room_style = new /datum/generated_room_style/cargo
+			own_set(fallback, "room_style", new /datum/generated_room_style/cargo)
 		if("docking")
-			fallback.room_style = new /datum/generated_room_style/docking
+			own_set(fallback, "room_style", new /datum/generated_room_style/docking)
 		else
-			fallback.room_style = new /datum/generated_room_style
+			own_set(fallback, "room_style", new /datum/generated_room_style)
 	fallback.density_min = 0.2
 	fallback.density_max = 0.5
 	switch("[department_id]/[role]")

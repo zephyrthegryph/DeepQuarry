@@ -18,7 +18,7 @@ GLOBAL_LIST_EMPTY(client_only_images_expiring)
 
 /image/client_only/proc/append_client(client/C)
 	C.images += src
-	LAZYADD(clients, om_handle(C))
+	rel_add(src, "clients", om_handle(C))
 
 // comes off every client it was shown to (clients aren't datums).
 REL_PAIR_LIST(/image/client_only, clients, images)

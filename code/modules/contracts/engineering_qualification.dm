@@ -35,7 +35,7 @@
 
 /datum/contract_requirement/recorded_stages/New(kind, field, _unit, list/thresholds)
 	..()
-	filter = new(CONTRACT_EVIDENCE_SCOPE_ANY)
+	own_set(src, "filter", new /datum/contract_event_filter(CONTRACT_EVIDENCE_SCOPE_ANY))
 	filter.require_value("kind", kind)
 	filter.require_value("destination", CONTRACT_FAX_ENGINEERING)
 	filter.require_number("duration", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 45)

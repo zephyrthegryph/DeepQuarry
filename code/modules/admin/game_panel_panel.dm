@@ -10,7 +10,7 @@
 
 /datum/game_panel/New(datum/admins/owner_admin)
 	..()
-	src.owner_admin = owner_admin
+	rel_set(src, "owner_admin", owner_admin)
 
 REL_PAIR(/datum/game_panel, owner_admin, tgui_game_panel)
 REL_PAIR(/datum/admins, tgui_game_panel, owner_admin)
@@ -63,5 +63,5 @@ REL_PAIR(/datum/admins, tgui_game_panel, owner_admin)
 
 /datum/admins/proc/open_game_panel(mob/user)
 	if(!tgui_game_panel)
-		tgui_game_panel = new(src)
+		rel_set(src, "tgui_game_panel", new /datum/game_panel(src))
 	tgui_game_panel.tgui_interact(user)

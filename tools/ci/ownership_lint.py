@@ -223,8 +223,12 @@ def receiver_type(idx, chain, owner, local_types):
     return got[1] if got else None
 
 
+RAW_SITES = []
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
+    ap.add_argument("--json")
     ap.add_argument("--summary", action="store_true")
     ap.add_argument("--check", action="append")
     ap.add_argument("--under", action="append")
@@ -405,7 +409,13 @@ def main(argv=None):
                 recv = chain.rstrip(".") or "src"
                 report("raw_write", r, no, "%s%s %s in %s/%s: %s var; use the ownership accessors (own_*/rel_*)" % (
                     chain, name, how, owner, proc, "an entity" if kind == "entity" else "an entity list"))
+                RAW_SITES.append(dict(file=r, line=no, chain=chain, name=name, how=how, kind=kind, owner=owner,
+                                      rtype=rtype, dtype=dtype, proc=proc))
 
+    if args.json:
+        import json
+        with open(args.json, "w") as handle:
+            json.dump(RAW_SITES, handle)
     if args.check:
         problems = [p for p in problems if p[0] in args.check]
     if args.under:

@@ -64,20 +64,20 @@ REL_PAIR_LIST(/obj/structure/mob_spawner, spawned_mobs, nest)
 	if(ispath(mob_path, /mob/living))
 		var/mob/living/L = new mob_path(get_turf(src))
 		L.nest = src
-		LAZYADD(spawned_mobs, L)
+		rel_add(src, "spawned_mobs", L)
 		if(mob_faction)
 			L.faction = mob_faction
 		return L
 	if(ispath(mob_path, /obj/structure/closet/crate/mimic))
 		var/obj/structure/closet/crate/mimic/O = new mob_path(get_turf(src))
-		LAZYADD(spawned_mobs, O)
+		rel_add(src, "spawned_mobs", O)
 		O.nest = src
 		return O
 	return 0
 
 /obj/structure/mob_spawner/proc/get_death_report(mob/living/L)
 	if(L in spawned_mobs)
-		LAZYREMOVE(spawned_mobs, L)
+		rel_remove(src, "spawned_mobs", L)
 
 DECLARE_INTERACTIONS(/obj/structure/mob_spawner, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
@@ -129,7 +129,7 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 
 /obj/structure/mob_spawner/scanner/Initialize(mapload)
 	. = ..()
-	prox = new(src, range)
+	own_set(src, "prox", new /datum/proximity_monitor/mobspawner(src, range))
 
 /obj/structure/mob_spawner/scanner/do_spawn(mob_path)
 	if(!ispath(mob_path))
@@ -153,13 +153,13 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	if(ispath(mob_path, /mob/living))
 		var/mob/living/L = new mob_path(get_turf(spawn_turf))
 		L.nest = src
-		LAZYADD(spawned_mobs, L)
+		rel_add(src, "spawned_mobs", L)
 		if(mob_faction)
 			L.faction = mob_faction
 		return L
 	if(ispath(mob_path, /obj/structure/closet/crate/mimic))
 		var/obj/structure/closet/crate/mimic/O = new mob_path(get_turf(spawn_turf))
-		LAZYADD(spawned_mobs, O)
+		rel_add(src, "spawned_mobs", O)
 		O.nest = src
 		return O
 	return 0
@@ -296,7 +296,7 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 
 /obj/structure/mob_spawner/proc/get_used_report(obj/structure/closet/crate/mimic/O)
 	if(O in spawned_mobs)
-		LAZYREMOVE(spawned_mobs, O)
+		rel_remove(src, "spawned_mobs", O)
 
 /obj/structure/mob_spawner/mouse_nest/mousehole
 	name = "small hole"

@@ -37,12 +37,12 @@
 /obj/item/clothing/shoes/proc/make_squeaky(custom_sounds, volume_override, chance_override, step_delay_override, use_delay_override, extrarange)
 	RETURN_TYPE(/datum/squeak)
 	if(!squeak)
-		squeak = new /datum/squeak(src, custom_sounds, volume_override, chance_override, step_delay_override, use_delay_override, extrarange)
+		own_set(src, "squeak", new /datum/squeak(src, custom_sounds, volume_override, chance_override, step_delay_override, use_delay_override, extrarange))
 	return squeak
 
 /datum/squeak/New(obj/item/clothing/shoes/owner, custom_sounds, volume_override, chance_override, step_delay_override, use_delay_override, extrarange)
 	..()
-	src.owner = owner
+	rel_set(src, "owner", owner)
 	om_hook(owner, list(/datum/om/event/atom_entered, /datum/om/event/before/movable_bump, /datum/om/event/movable_impact), src, PROC_REF(on_squeak_event))
 	om_hook(owner, /datum/om/event/before/attack_self, src, PROC_REF(on_attack_self))
 	om_hook(owner, /datum/om/event/item_equipped, src, PROC_REF(on_equip))

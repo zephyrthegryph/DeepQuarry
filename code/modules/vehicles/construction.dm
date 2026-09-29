@@ -211,7 +211,7 @@
 	var/obj/vehicle/train/engine/quadbike/built/product = new(assembly)
 	to_chat(actor, span_notice("You finish \the [product]"))
 	product.forceMove(get_turf(assembly))
-	product.cell = assembly.cell()
+	own_set(product, "cell", assembly.cell())
 	assembly.cell().forceMove(product)
 	assembly.cell_handle = null
 	consume(assembly, actor)
@@ -417,7 +417,7 @@
 	var/obj/vehicle/bike/built/product = new(assembly)
 	to_chat(actor, span_notice("You finish \the [product]"))
 	product.forceMove(get_turf(assembly))
-	product.cell = assembly.cell()
+	own_set(product, "cell", assembly.cell())
 	assembly.cell().forceMove(product)
 	assembly.cell_handle = null
 	consume(assembly, actor)
@@ -576,7 +576,7 @@
 	var/obj/vehicle/train/engine/quadbike/snowmobile/built/product = new(assembly)
 	to_chat(actor, span_notice("You finish \the [product]"))
 	product.forceMove(get_turf(assembly))
-	product.cell = assembly.cell()
+	own_set(product, "cell", assembly.cell())
 	assembly.cell().forceMove(product)
 	assembly.cell_handle = null
 	consume(assembly, actor)

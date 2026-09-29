@@ -156,7 +156,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 			if(!bcell)
 				user.drop_item()
 				W.forceMove(src)
-				bcell = W
+				own_set(src, "bcell", W)
 				to_chat(user, span_notice("You install a cell in [src]."))
 				update_icon()
 			else
@@ -176,7 +176,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 		return ..()
 	bcell.update_icon()
 	bcell.forceMove(get_turf(loc))
-	bcell = null
+	own_take(src, "bcell")
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
 	deactivate()
 	update_icon()

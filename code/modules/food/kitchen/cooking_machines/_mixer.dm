@@ -29,7 +29,7 @@ fundamental differences
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
 	CI.combine_target = selected_option
 
-	mixer_loop = new(list(src), FALSE)
+	own_set(src, "mixer_loop", new /datum/looping_sound/mixer(list(src), FALSE))
 
 
 //Mixers cannot-not do combining mode. So the default option is removed from this. A combine target must be chosen

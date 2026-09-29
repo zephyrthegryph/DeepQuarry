@@ -38,7 +38,7 @@
 	add_hose_connector(/datum/hose_connector/endless_drain) // Cannot suck from toilet... for obvious reasons.
 
 	if(teleplumb_crystal)
-		teleplumb_crystal = new /obj/item/bluespace_crystal(src)
+		own_set(src, "teleplumb_crystal", new /obj/item/bluespace_crystal(src))
 		teleplumb_dest_ref = om_handle(locate(/obj/effect/landmark/teleplumb_exit))
 		desc = "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean."
 
@@ -55,13 +55,13 @@
 	..()
 	if(bin)
 		if(bin.type == /obj/item/stock_parts/matter_bin) //Specifically, if this is a basic bin, you dont get it back. Other bins are returned.
-			QDEL_NULL(bin)
+			own_clear(src, "bin", OWN_DELETE)
 		else
 			bin.forceMove(src.loc)
-			bin = null
+			own_take(src, "bin")
 	if(teleplumb_crystal)
 		teleplumb_crystal.forceMove(src.loc)
-		teleplumb_crystal = null
+		own_take(src, "teleplumb_crystal")
 	for(var/atom/movable/AM in currently_held_objects)
 		AM.forceMove(src.loc)
 	currently_held_objects = null
@@ -76,7 +76,7 @@
 		return
 	user.put_in_hands(teleplumb_crystal)
 	to_chat(user, span_notice("You take \the [teleplumb_crystal]."))
-	teleplumb_crystal = null
+	own_take(src, "teleplumb_crystal")
 	teleplumb_dest_ref = null
 	desc = initial(desc)
 
@@ -219,7 +219,7 @@
 	to_chat(user, span_notice("You insert \the [I] into \the [src]. A deep rumble eminates from within it, and a faint blue glow eminates from the bottom of the bowl for a moment."))
 	user.drop_item()
 	I.forceMove(src)
-	teleplumb_crystal = I
+	own_set(src, "teleplumb_crystal", I)
 	//TODO: add a way to link this to custom destinations.
 	teleplumb_dest_ref = om_handle(locate(/obj/effect/landmark/teleplumb_exit))
 	desc = "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean."
@@ -229,7 +229,7 @@
 	bin.forceMove(src.loc) //Remove the old bin.
 	user.drop_item()
 	I.forceMove(src)
-	bin = I //Set the internally stored bin to the new bin.
+	own_set(src, "bin", I) //Set the internally stored bin to the new bin.
 	return
 
 
@@ -501,7 +501,7 @@
 
 /obj/machinery/shower/Initialize(mapload)
 	. = ..()
-	soundloop = new(list(src), FALSE)
+	own_set(src, "soundloop", new /datum/looping_sound/showering(list(src), FALSE))
 
 DECLARE_REAGENT_FROM_VAR(/obj/machinery/shower, "reaction_volume", "reagent_id", "reaction_volume")
 

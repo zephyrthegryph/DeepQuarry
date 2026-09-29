@@ -73,7 +73,7 @@ OWN(/obj/machinery/computer/rdconsole_tg, d_disk, OWN_SPILL)
 		if(!user.unEquip(D, target = src))
 			to_chat(user, span_warning("[D] is stuck to your hand!"))
 			return TRUE
-		t_disk = D
+		own_set(src, "t_disk", D)
 	else if (istype(D, /obj/item/disk/design_disk))
 		if(d_disk)
 			to_chat(user, span_warning("A design disk is already loaded!"))
@@ -81,7 +81,7 @@ OWN(/obj/machinery/computer/rdconsole_tg, d_disk, OWN_SPILL)
 		if(!user.unEquip(D, target = src))
 			to_chat(user, span_warning("[D] is stuck to your hand!"))
 			return TRUE
-		d_disk = D
+		own_set(src, "d_disk", D)
 	else
 		to_chat(user, span_warning("Machine cannot accept disks in that format."))
 		return TRUE
@@ -397,10 +397,10 @@ OWN(/obj/machinery/computer/rdconsole_tg, d_disk, OWN_SPILL)
 /obj/machinery/computer/rdconsole_tg/proc/eject_disk(type)
 	if(type == RND_DESIGN_DISK && d_disk)
 		d_disk.forceMove(get_turf(src))
-		d_disk = null
+		own_take(src, "d_disk")
 	if(type == RND_TECH_DISK && t_disk)
 		t_disk.forceMove(get_turf(src))
-		t_disk = null
+		own_take(src, "t_disk")
 
 #undef RND_TECH_DISK
 #undef RND_DESIGN_DISK

@@ -37,9 +37,9 @@
 	var/needs_update = LIGHTING_NO_UPDATE
 
 /datum/light_source/New(atom/owner, atom/top)
-	source_atom = owner // Set our new owner.
+	rel_set(src, "source_atom", owner) // Set our new owner.
 	LAZYADD(source_atom.light_sources, src)
-	top_atom = top
+	rel_set(src, "top_atom", top)
 	if (top_atom != source_atom)
 		LAZYADD(top_atom.light_sources, src)
 
@@ -80,7 +80,7 @@
 		if(top_atom != source_atom && top_atom.light_sources) // Remove ourselves from the light sources of that top atom.
 			LAZYREMOVE(top_atom.light_sources, src)
 
-		top_atom = new_top_atom
+		rel_set(src, "top_atom", new_top_atom)
 
 		if (top_atom != source_atom)
 			LAZYADD(top_atom.light_sources, src) // Add ourselves to the light sources of our new top atom.
@@ -198,7 +198,7 @@
 		update = TRUE
 
 	if (!top_atom)
-		top_atom = source_atom
+		rel_set(src, "top_atom", source_atom)
 		update = TRUE
 
 	if (!light_range || !light_power)

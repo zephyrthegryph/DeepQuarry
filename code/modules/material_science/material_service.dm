@@ -72,7 +72,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	if(!admit)
 		return
 	if(!material_service)
-		material_service = new(src)
+		own_set(src, "material_service", new /datum/material_service(src))
 	material_last_service_event = event
 	material_service.last_admission_event = event
 	if(isnum(observed_temperature) && observed_temperature > material_service.temperature)

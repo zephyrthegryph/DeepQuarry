@@ -15,12 +15,12 @@
 	RETURN_TYPE(/datum/disposal_system_connection)
 	if(disposal_connection)
 		qdel(disposal_connection)
-	disposal_connection = new /datum/disposal_system_connection(src, visibly_connects)
+	own_set(src, "disposal_connection", new /datum/disposal_system_connection(src, visibly_connects))
 	return disposal_connection
 
 /datum/disposal_system_connection/New(obj/new_owner, visibly_connects = TRUE)
 	..()
-	owner = new_owner
+	rel_set(src, "owner", new_owner)
 	visible_connection = visibly_connects
 	om_hook(owner, /datum/om/event/before/disposal_flush, src, PROC_REF(on_flush))
 	om_hook(owner, /datum/om/event/disposal_link, src, PROC_REF(link_to_trunk))

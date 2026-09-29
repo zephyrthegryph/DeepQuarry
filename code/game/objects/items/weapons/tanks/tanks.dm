@@ -53,8 +53,8 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 
 /obj/item/tank/proc/init_proxy()
 	var/obj/item/tankassemblyproxy/proxy = new /obj/item/tankassemblyproxy(src)
-	proxy.tank = src
-	src.proxyassembly = proxy
+	rel_set(proxy, "tank", src)
+	own_set(src, "proxyassembly", proxy)
 
 /obj/item/tank/Initialize(mapload)
 	. = ..()
@@ -196,14 +196,14 @@ DECLARE_GAS(/obj/item/tank, "air_contents", "volume", T20C, null)
 	var/obj/item/assembly_holder/assy = src.proxyassembly.assembly
 	if(assy.a_left && assy.a_right)
 		assy.dropInto(user.loc)
-		assy.master = null
-		src.proxyassembly.assembly = null
+		own_take(assy, "master")
+		rel_clear(src.proxyassembly, "assembly")
 	else
 		if(!src.proxyassembly.assembly.a_left)
 			assy.a_right.dropInto(user.loc)
 			assy.a_right.holder_handle = null
-			assy.a_right = null
-			src.proxyassembly.assembly = null
+			own_take(assy, "a_right")
+			rel_clear(src.proxyassembly, "assembly")
 			qdel(assy)
 	cut_overlays()
 	last_gauge_pressure = 0
@@ -336,7 +336,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 	if(istype(loc,/mob/living/carbon))
 		var/mob/living/carbon/location = loc
 		if(location.internal == src)
-			location.internal = null
+			own_take(location, "internal")
 			location.internals.icon_state = "internal0"
 			to_chat(user, span_notice("You close the tank release valve."))
 			if (location.internals)
@@ -351,7 +351,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 					can_open_valve = 1
 
 			if(can_open_valve)
-				location.internal = src
+				own_set(location, "internal", src)
 				to_chat(user, span_notice("You open \the [src] valve."))
 				if (location.internals)
 					location.internals.icon_state = "internal1"
@@ -602,8 +602,8 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 	src.wired = 1
 
 	var/obj/item/assembly_holder/H = new(src)
-	src.proxyassembly.assembly = H
-	H.master = src.proxyassembly
+	rel_set(src.proxyassembly, "assembly", H)
+	own_set(H, "master", src.proxyassembly)
 
 	H.update_icon()
 
@@ -655,8 +655,8 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 	M.remove_from_mob(src)	//Remove the tank from your character,in case you were holding it
 	M.put_in_hands(src)		//Equips the bomb if possible, or puts it on the floor.
 
-	src.proxyassembly.assembly = S	//Tell the bomb about its assembly part
-	S.master = src.proxyassembly		//Tell the assembly about its new owner
+	rel_set(src.proxyassembly, "assembly", S) //Tell the bomb about its assembly part
+	own_set(S, "master", src.proxyassembly) //Tell the assembly about its new owner
 	S.forceMove(src)			//Move the assembly
 
 	src.update_icon()
@@ -677,8 +677,8 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 
 	other.dropInto(get_turf(src))
 	qdel(ign)
-	assy.master = null
-	src.proxyassembly.assembly = null
+	own_take(assy, "master")
+	rel_clear(src.proxyassembly, "assembly")
 	qdel(assy)
 	src.update_icon()
 	src.update_gauge()

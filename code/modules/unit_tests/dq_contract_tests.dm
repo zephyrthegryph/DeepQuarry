@@ -263,7 +263,7 @@
 	var/datum/contract/contract = new
 	contract.title = "Escrow test"
 	contract.funding_mode = CONTRACT_FUNDING_INTERNAL
-	contract.funding_account = funder
+	rel_set(contract, "funding_account", funder)
 	contract.reward = 200
 	contract.add_requirement(new /datum/contract_requirement/event_count("dq_escrow_event", 1))
 	TEST_ASSERT(contract.accept(), "funded contract could not be accepted")
@@ -281,7 +281,7 @@
 	var/datum/contract/completed_contract = new
 	completed_contract.title = "Escrow payout test"
 	completed_contract.funding_mode = CONTRACT_FUNDING_INTERNAL
-	completed_contract.funding_account = funder
+	rel_set(completed_contract, "funding_account", funder)
 	completed_contract.reward = 200
 	completed_contract.add_requirement(new /datum/contract_requirement/event_count("dq_escrow_payout_event", 1))
 	TEST_ASSERT(completed_contract.accept(), "funded payout contract could not be accepted")
@@ -299,7 +299,7 @@
 	var/datum/contract/deferred_contract = new
 	deferred_contract.title = "Deferred escrow payout test"
 	deferred_contract.funding_mode = CONTRACT_FUNDING_INTERNAL
-	deferred_contract.funding_account = funder
+	rel_set(deferred_contract, "funding_account", funder)
 	deferred_contract.reward = 200
 	deferred_contract.station_share = 0
 	deferred_contract.department_share = 0
@@ -1014,7 +1014,7 @@
 	doctor.real_name = "Integration Doctor"
 	var/obj/item/card/id/medical/head/head_id = new(doctor)
 	var/obj/machinery/computer/skills/management = new(test_turf)
-	management.scan = head_id
+	own_set(management, "scan", head_id)
 	var/datum/contract_definition/definition = SScontracts.definitions["experimental_medication_study"]
 	var/datum/contract/medical_trial/trial = definition.create_contract()
 	TEST_ASSERT(management.accept_management_contract(trial, doctor), "department management console rejected a valid medical trial")
@@ -1059,7 +1059,7 @@
 	var/mob/living/carbon/human/doctor = new(test_turf)
 	var/obj/item/card/id/medical/head/head_id = new(doctor)
 	var/obj/machinery/computer/skills/management = new(test_turf)
-	management.scan = head_id
+	own_set(management, "scan", head_id)
 	TEST_ASSERT(management.accept_management_contract(report, doctor), "department console rejected the rare-case report")
 	TEST_ASSERT(report.print_case_forms(test_turf), "rare-case forms did not print (state [report.state], consent time [report.consent_time], location [test_turf])")
 	var/obj/item/paper/consent
@@ -1093,8 +1093,8 @@
 	packet.pages = list(consent, narrative, baseline, followup)
 	var/obj/machinery/photocopier/faxmachine/fax = new(test_turf)
 	fax.stat = 0
-	fax.copyitem = packet
-	fax.scan = head_id
+	own_set(fax, "copyitem", packet)
+	own_set(fax, "scan", head_id)
 	TEST_ASSERT(fax.sendfax(CONTRACT_FAX_CASE_REGISTRY, doctor), "powered fax machine rejected the authenticated rare-case packet")
 	TEST_ASSERT_EQUAL(report.state, CONTRACT_COMPLETED, "real fax-machine submission did not complete the rare-case report")
 	qdel(fax)
@@ -1336,7 +1336,7 @@
 	var/obj/machinery/computer/skills/management = new(test_turf)
 	var/obj/item/card/id/command_id = new(management)
 	command_id.access |= ACCESS_CAPTAIN
-	management.scan = command_id
+	own_set(management, "scan", command_id)
 	management.authenticated = actor.real_name
 	var/list/old_allocations = list()
 	var/list/old_percents = list()

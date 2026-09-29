@@ -23,11 +23,11 @@
 /obj/item/mecha_parts/mecha_equipment/omni_shield/attach(obj/mecha/M as obj)
 	. = ..()
 	if(chassis)
-		shields = new shield_type(chassis)
+		own_set(src, "shields", new shield_type(chassis))
 
 /obj/item/mecha_parts/mecha_equipment/omni_shield/detach()
 	if(chassis)
-		QDEL_NULL(shields)
+		own_clear(src, "shields", OWN_DELETE)
 	. = ..()
 
 /obj/item/mecha_parts/mecha_equipment/omni_shield/handle_movement_action()

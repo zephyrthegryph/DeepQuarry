@@ -10,7 +10,7 @@
 /obj/item/projectile/bullet/chemdart/Initialize(mapload)
 	. = ..()
 	reagents = new/datum/reagents(reagent_amount)
-	reagents.my_atom = src
+	rel_set(reagents, "my_atom", src)
 
 /obj/item/ammo_casing/chemdart
 	name = "chemical dart"

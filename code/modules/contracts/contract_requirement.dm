@@ -198,8 +198,8 @@
 	join_field = _join_field
 	second_join_field = _second_join_field || _join_field
 	target = max(1, _target)
-	first_filter = new(_scope_mode)
-	second_filter = new(_scope_mode)
+	own_set(src, "first_filter", new /datum/contract_event_filter(_scope_mode))
+	own_set(src, "second_filter", new /datum/contract_event_filter(_scope_mode))
 	first_facts = list()
 	second_facts = list()
 	credited_facts = list()
@@ -267,7 +267,7 @@ REL_PAIR_LIST(/datum/contract, requirements, contract)
 	event_type = _event_type
 	target = max(1, _target)
 	value_field = _value_field
-	filter = new(_scope_mode)
+	own_set(src, "filter", new /datum/contract_event_filter(_scope_mode))
 	accepted_unique_values = list()
 	for(var/key in _required_context)
 		filter.require_value(key, _required_context[key])
@@ -344,7 +344,7 @@ REL_PAIR_LIST(/datum/contract, requirements, contract)
 	threshold = _threshold
 	duration = max(1, _duration)
 	target = max(1, _target)
-	filter = new(_scope_mode)
+	own_set(src, "filter", new /datum/contract_event_filter(_scope_mode))
 	pending_tokens = list()
 	pending_timers = list()
 	completed_entities = list()
@@ -426,7 +426,7 @@ REL_PAIR_LIST(/datum/contract, requirements, contract)
 	entity_field = _entity_field
 	numeric_field = _numeric_field
 	comparator = _comparator
-	filter = new(_scope_mode)
+	own_set(src, "filter", new /datum/contract_event_filter(_scope_mode))
 	pending_tokens = list()
 	pending_timers = list()
 	pending_stage_indices = list()
@@ -569,7 +569,7 @@ REL_PAIR_LIST(/datum/contract, requirements, contract)
 	entity_field = _entity_field
 	value_field = _value_field
 	target = max(1, _target)
-	filter = new(_scope_mode)
+	own_set(src, "filter", new /datum/contract_event_filter(_scope_mode))
 	entity_values = list()
 	if(event_type)
 		event_types += event_type
@@ -632,7 +632,7 @@ REL_PAIR_LIST(/datum/contract, requirements, contract)
 	category_field = _category_field
 	value_field = _value_field
 	distinct_category_target = max(0, _distinct_category_target)
-	filter = new(_scope_mode)
+	own_set(src, "filter", new /datum/contract_event_filter(_scope_mode))
 	facts = list()
 	fact_revisions = list()
 	if(event_type)

@@ -220,7 +220,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 	. = ..()
 	GLOB.machine_service.power_material_cables -= src
 	material_overlay?.remove_cable(src)
-	material_overlay = null
+	rel_clear(src, "material_overlay")
 	power_unregister()
 
 /obj/structure/cable/examine(mob/user)

@@ -63,7 +63,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 		cell.update_icon()
 
 		icon_state = "suspension"
-		cell = null
+		own_take(src, "cell")
 		to_chat(user, span_info("You remove the power cell"))
 	return TRUE
 
@@ -142,7 +142,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 		else
 			user.drop_item()
 			W.forceMove(src)
-			cell = W
+			own_set(src, "cell", W)
 			to_chat(user, span_info("You insert the power cell."))
 			icon_state = "suspension"
 	return TRUE
@@ -190,9 +190,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 		anom.immortal = TRUE
 		anom.move_chance = 0
 		if(!anom.stats)
-			anom.stats = new /datum/anomaly_stats(anom)
+			own_set(anom, "stats", new /datum/anomaly_stats(anom))
 
-	suspension_field = new(T)
+	own_set(src, "suspension_field", new /obj/effect/suspension_field(T))
 	MACHINE_WAKE(src)
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] activates with a low hum."))
 	icon_state = "suspension_on"
@@ -232,7 +232,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] deactivates with a gentle shudder."))
 	qdel(suspension_field)
-	suspension_field = null
+	own_take(src, "suspension_field")
 	icon_state = "suspension_wrenched"
 	playsound(loc, 'sound/machines/quiet_beep.ogg', 40)
 	update_icon()

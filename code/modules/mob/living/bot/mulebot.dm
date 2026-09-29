@@ -173,7 +173,7 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 	switch(command)
 		if("Home")
 			resetTarget()
-			target = home
+			rel_set(src, "target", home)
 			targetName = "Home"
 		if("SetD")
 			var/list/beaconlist = GetBeaconList()
@@ -188,7 +188,7 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 
 /mob/living/bot/mulebot/proc/destination_tag_chosen(datum/om/prompt/choice/mulebot_beacon/ask)
 	resetTarget()
-	target = get_turf(ask.choices[ask.choice])
+	rel_set(src, "target", get_turf(ask.choices[ask.choice]))
 	targetName = ask.choice
 
 /mob/living/bot/mulebot/emag_act(remaining_charges, user)
@@ -241,7 +241,7 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 			), "automation:[REF(src)]:delivery:[world.time]", src)
 		resetTarget()
 		if(auto_return && home && (loc != home))
-			target = home
+			rel_set(src, "target", home)
 			targetName = "Home"
 
 /mob/living/bot/mulebot/confirmTarget()
@@ -251,7 +251,7 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 	..()
 	if(!target_path.len && target != home) // I presume that target is not null
 		resetTarget()
-		target = home
+		rel_set(src, "target", home)
 		targetName = "Home"
 
 /mob/living/bot/mulebot/stepToTarget()
@@ -343,7 +343,7 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 	if(C.loc != loc) //To prevent you from going onto more than one bot.
 		return
 	C.forceMove(src)
-	load = C
+	own_set(src, "load", C)
 
 	C.pixel_y += 9
 	if(C.layer < layer)
@@ -363,7 +363,7 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 	if(dirn)
 		step(load, dirn)
 
-	load = null
+	own_take(src, "load")
 
 	for(var/atom/movable/AM in contents_of(src))
 		if(AM == botcard || AM == access_scanner)

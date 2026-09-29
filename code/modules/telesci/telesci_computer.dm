@@ -85,7 +85,7 @@ OWN(/obj/machinery/computer/telescience, inserted_gps, OWN_SPILL)
 
 /obj/machinery/computer/telescience/proc/interaction_insert_gps(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!inserted_gps)
-		inserted_gps = W
+		own_set(src, "inserted_gps", W)
 		user.unEquip(W)
 		W.forceMove(src)
 		user.visible_message("[user] inserts [W] into \the [src]'s GPS device slot.", span_notice("You insert [W] into \the [src]'s GPS device slot."))
@@ -166,7 +166,7 @@ OWN(/obj/machinery/computer/telescience, inserted_gps, OWN_SPILL)
 		if("ejectGPS")
 			if(inserted_gps)
 				inserted_gps.forceMove(loc)
-				inserted_gps = null
+				own_take(src, "inserted_gps")
 
 		if("setMemory")
 			if(last_target() && inserted_gps)
@@ -251,7 +251,7 @@ OWN(/obj/machinery/computer/telescience, inserted_gps, OWN_SPILL)
 		var/trueRotation = rotation + rotation_off
 
 		var/datum/projectile_data/proj_data = simple_projectile_trajectory(telepad().x, telepad().y, trueRotation, trueDistance)
-		last_tele_data = proj_data
+		own_set(src, "last_tele_data", proj_data)
 
 		var/trueX = proj_data.dest_x
 		var/trueY = proj_data.dest_y

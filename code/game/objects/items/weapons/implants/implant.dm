@@ -87,7 +87,7 @@ DECLARE_INTERACTIONS(/obj/item/implant, INTERACT_ITEM(null, PROC_REF(interaction
 			return INTERACTION_HANDLED_PASS
 		user.drop_from_inventory(src)
 		forceMove(implanter)
-		implanter.imp = src
+		own_set(implanter, "imp", src)
 		implanter.update()
 	else
 		return FALSE
@@ -386,7 +386,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	. = ..()
 	var/datum/reagents/R = new/datum/reagents(50)
 	reagents = R
-	R.my_atom = src
+	rel_set(R, "my_atom", src)
 
 /obj/item/implant/chem/trigger(emote, source as mob)
 	if(emote == "deathgasp")

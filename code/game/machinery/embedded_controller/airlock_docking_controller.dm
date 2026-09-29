@@ -19,8 +19,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/embedded_controller/radio/airlock/docking_p
 
 /obj/machinery/embedded_controller/radio/airlock/docking_port/Initialize(mapload)
 	. = ..()
-	docking_program = new/datum/embedded_program/docking/airlock(src, airlock_program)
-	program = docking_program
+	own_set(src, "docking_program", new/datum/embedded_program/docking/airlock(src, airlock_program))
+	rel_set(src, "program", docking_program)
 	if(display_name)
 		docking_program.display_name = display_name
 
@@ -56,8 +56,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/embedded_controller/radio/airlock/docking_p
 
 /datum/embedded_program/docking/airlock/New(obj/machinery/embedded_controller/M, datum/embedded_program/airlock/docking/A)
 	..(M)
-	airlock_program = A
-	airlock_program.master_prog = src
+	rel_set(src, "airlock_program", A)
+	rel_set(airlock_program, "master_prog", src)
 
 
 /datum/embedded_program/docking/airlock/receive_user_command(command)

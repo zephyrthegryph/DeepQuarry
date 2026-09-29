@@ -17,7 +17,7 @@
 	..()
 
 /datum/codex_tree/proc/generate_pages()
-	home = new root_type(src) // This will also generate the others.
+	own_set(src, "home", new root_type(src)) // This will also generate the others.
 	indexed_pages = home.index_page() // changed from current_page to home.
 
 // Changes current_page to its parent, assuming one exists.

@@ -86,7 +86,7 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	if(get_temperature() < limit + BURN_EXTINGUISH_MARGIN)
 		vg_heat_body_set_temperature(heat_body, limit + BURN_EXTINGUISH_MARGIN)
 	vg_heat_body_power(heat_body, BURN_POWER)
-	burn_cool_watch = heat_watch_threshold(src, src, limit, FALSE, TYPE_PROC_REF(/obj, burning_cooled))
+	own_set(src, "burn_cool_watch", heat_watch_threshold(src, src, limit, FALSE, TYPE_PROC_REF(/obj, burning_cooled)))
 
 /// Below this the fire goes out.
 /obj/proc/burn_out_temperature()
@@ -96,7 +96,7 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	return max(T0C + 50, ignition - BURN_EXTINGUISH_MARGIN)
 
 /obj/proc/burning_stop_heat()
-	QDEL_NULL(burn_cool_watch)
+	own_clear(src, "burn_cool_watch", OWN_DELETE)
 	if(QDELETED(src) || isnull(heat_body))
 		return
 	vg_heat_body_power(heat_body, 0)

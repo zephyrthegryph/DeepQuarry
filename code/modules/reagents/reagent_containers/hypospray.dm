@@ -116,7 +116,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/hypospray/vial, \
 			reagents.maximum_volume = 0
 			loaded_vial.update_icon()
 			user.put_in_hands(loaded_vial)
-			loaded_vial = null
+			own_take(src, "loaded_vial")
 			balloon_alert(user, "vial removed from \the [src]")
 			update_icon()
 			playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
@@ -140,7 +140,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/hypospray/vial, \
 		W.update_icon()
 	user.drop_item()
 	W.forceMove(src)
-	loaded_vial = W
+	own_set(src, "loaded_vial", W)
 	reagents.maximum_volume = loaded_vial.reagents.maximum_volume
 	loaded_vial.reagents.trans_to_holder(reagents,volume)
 	balloon_alert_visible("[user] has loaded [W] into \the [src].", "loaded [W] into \the [src].")

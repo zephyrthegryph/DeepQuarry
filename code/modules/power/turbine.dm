@@ -93,7 +93,7 @@
 /obj/machinery/compressor/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	gas_contained = new()
+	own_set(src, "gas_contained", new /datum/gas_mixture())
 	inturf_handle = om_handle(get_step(src, dir))
 	locate_machinery()
 	if(!turbine())

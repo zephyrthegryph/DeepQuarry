@@ -26,7 +26,7 @@
 /obj/item/inducer/Initialize(mapload)
 	. = ..()
 	if(!cell && cell_type)
-		cell = new cell_type // ALLOW(decl): made in nullspace, not in src
+		own_set(src, "cell", new cell_type) // ALLOW(decl): made in nullspace, not in src
 
 /obj/item/inducer/proc/induce(obj/item/cell/target, coefficient)
 	var/totransfer = min(cell.charge,(powertransfer * coefficient))
@@ -79,7 +79,7 @@
 				user.drop_from_inventory(W)
 				W.forceMove(src)
 				to_chat(user, span_notice("You insert [W] into [src]."))
-				cell = W
+				own_set(src, "cell", W)
 				update_icon()
 				return INTERACTION_HANDLED_PASS
 			else
@@ -149,7 +149,7 @@
 		var/filter = filter(type = "outline", size = 1, color = "#22AAFF")
 		A.filters += filter
 
-		spark_system = new /datum/effect/effect/system/spark_spread
+		own_set(src, "spark_system", new /datum/effect/effect/system/spark_spread)
 		spark_system.set_up(5, 0, get_turf(A))
 		spark_system.attach(A)
 
@@ -190,7 +190,7 @@
 	var/mob/user = task.actor
 	var/atom/A = task.charged
 	qdel(task.beam)
-	QDEL_NULL(spark_system)
+	own_clear(src, "spark_system", OWN_DELETE)
 	if(A)
 		A.filters -= task.filter
 	if(task.done_any && user) // Only show a message if we succeeded at least once
@@ -208,7 +208,7 @@ DECLARE_INTERACTIONS(/obj/item/inducer, \
 		user.visible_message(span_notice("[user] removes [cell] from [src]!"), span_notice("You remove [cell]."))
 		cell.update_icon()
 		user.put_in_hands(cell)
-		cell = null
+		own_take(src, "cell")
 		update_icon()
 	return TRUE
 

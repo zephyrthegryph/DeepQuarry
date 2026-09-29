@@ -37,7 +37,7 @@
 	valid_z_levels = get_location_z_levels()
 	valid_z_levels -= using_map.sealed_levels // Space levels only please!
 
-	valid_apcs = null
+	rel_clear(src, "valid_apcs")
 	for(var/obj/machinery/power/apc/A in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if(A.z in valid_z_levels)
 			rel_add(src, "valid_apcs", A)

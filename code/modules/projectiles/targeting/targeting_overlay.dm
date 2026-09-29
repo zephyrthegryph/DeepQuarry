@@ -155,7 +155,7 @@ REL_PAIR_LIST(/mob/living, aimed, aiming_at)
 	if(aiming_at)
 		if(aiming_at == target)
 			return
-		aiming_at.aimed -= src
+		rel_remove(aiming_at, "aimed", src)
 		owner().visible_message(span_danger("\The [owner()] turns \the [thing] on \the [target]!"))
 	else
 		owner().visible_message(span_danger("\The [owner()] aims \the [thing] at \the [target]!"))
@@ -166,13 +166,13 @@ REL_PAIR_LIST(/mob/living, aimed, aiming_at)
 	to_chat(target, span_danger("You now have a gun pointed at you. No sudden moves!"))
 	to_chat(target, span_critical("If you fail to comply with your assailant, you accept the consequences of your actions."))
 	aiming_with_handle = om_handle(thing)
-	aiming_at = target
+	rel_set(src, "aiming_at", target)
 	if(istype(aiming_with(), /obj/item/gun))
 		playsound(owner(), 'sound/weapons/targeton.ogg', 50,1)
 	forceMove(get_turf(target))
 	om_task_periodic(src, PERIODIC_SLOW)
 
-	aiming_at.aimed |= src
+	rel_add(aiming_at, "aimed", src)
 	toggle_active(1)
 	locked = 0
 	update_icon()
@@ -213,8 +213,8 @@ REL_PAIR_LIST(/mob/living, aimed, aiming_at)
 		owner().visible_message(span_infoplain(span_bold("\The [owner()]") + " lowers \the [aiming_with()]."))
 
 	aiming_with_handle = null
-	aiming_at.aimed -= src
-	aiming_at = null
+	rel_remove(aiming_at, "aimed", src)
+	rel_clear(src, "aiming_at")
 	moveToNullspace()
 	om_task_periodic_stop(src)
 

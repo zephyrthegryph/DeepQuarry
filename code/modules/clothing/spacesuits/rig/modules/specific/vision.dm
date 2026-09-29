@@ -17,43 +17,43 @@
 	mode = "night vision"
 
 /datum/rig_vision/nvg/New()
-	glasses = new /obj/item/clothing/glasses/night
+	own_set(src, "glasses", new /obj/item/clothing/glasses/night)
 
 /datum/rig_vision/thermal
 	mode = "thermal scanner"
 
 /datum/rig_vision/thermal/New()
-	glasses = new /obj/item/clothing/glasses/thermal
+	own_set(src, "glasses", new /obj/item/clothing/glasses/thermal)
 
 /datum/rig_vision/meson
 	mode = "meson scanner"
 
 /datum/rig_vision/meson/New()
-	glasses = new /obj/item/clothing/glasses/meson
+	own_set(src, "glasses", new /obj/item/clothing/glasses/meson)
 
 /datum/rig_vision/graviton
 	mode = "graviton scanner"
 
 /datum/rig_vision/graviton/New()
-	glasses = new /obj/item/clothing/glasses/graviton
+	own_set(src, "glasses", new /obj/item/clothing/glasses/graviton)
 
 /datum/rig_vision/sechud
 	mode = "security HUD"
 
 /datum/rig_vision/sechud/New()
-	glasses = new /obj/item/clothing/glasses/hud/security
+	own_set(src, "glasses", new /obj/item/clothing/glasses/hud/security)
 
 /datum/rig_vision/medhud
 	mode = "medical HUD"
 
 /datum/rig_vision/medhud/New()
-	glasses = new /obj/item/clothing/glasses/hud/health
+	own_set(src, "glasses", new /obj/item/clothing/glasses/hud/health)
 
 /datum/rig_vision/material
 	mode = "material scanner"
 
 /datum/rig_vision/material/New()
-	glasses = new /obj/item/clothing/glasses/material
+	own_set(src, "glasses", new /obj/item/clothing/glasses/material)
 
 /obj/item/rig_module/vision
 
@@ -205,7 +205,7 @@
 // There should only ever be one vision module installed in a suit.
 /obj/item/rig_module/vision/installed()
 	..()
-	holder.visor = src
+	rel_set(holder, "visor", src)
 
 REL_PAIR(/obj/item/rig_module/vision, holder, visor)
 REL_PAIR(/obj/item/rig, visor, holder)
@@ -224,7 +224,7 @@ REL_PAIR(/obj/item/rig, visor, holder)
 		vision_index++
 		if(vision_index > vision_modes.len)
 			vision_index = 1
-		vision = vision_modes[vision_index]
+		rel_set(src, "vision", vision_modes[vision_index])
 
 		to_chat(holder.wearer(), span_blue("You cycle your sensors to <b>[vision.mode]</b> mode."))
 	else

@@ -79,16 +79,16 @@
 	switch (dir)
 		if (NORTHEAST)
 			master_NE = master
-			master.lighting_corner_SW = src
+			rel_set(master, "lighting_corner_SW", src)
 		if (SOUTHEAST)
 			master_SE = master
-			master.lighting_corner_NW = src
+			rel_set(master, "lighting_corner_NW", src)
 		if (SOUTHWEST)
 			master_SW = master
-			master.lighting_corner_NE = src
+			rel_set(master, "lighting_corner_NE", src)
 		if (NORTHWEST)
 			master_NW = master
-			master.lighting_corner_SE = src
+			rel_set(master, "lighting_corner_SE", src)
 
 /datum/lighting_corner/proc/self_destruct_if_idle()
 	if (!LAZYLEN(affecting) && !sunlight)
@@ -189,16 +189,16 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_corner)
 	for (var/datum/light_source/light_source as anything in affecting)
 		LAZYREMOVE(light_source.effect_str, src)
 	if (master_NE)
-		master_NE.lighting_corner_SW = null
+		rel_clear(master_NE, "lighting_corner_SW")
 		master_NE.lighting_corners_initialised = FALSE
 	if (master_SE)
-		master_SE.lighting_corner_NW = null
+		rel_clear(master_SE, "lighting_corner_NW")
 		master_SE.lighting_corners_initialised = FALSE
 	if (master_SW)
-		master_SW.lighting_corner_NE = null
+		rel_clear(master_SW, "lighting_corner_NE")
 		master_SW.lighting_corners_initialised = FALSE
 	if (master_NW)
-		master_NW.lighting_corner_SE = null
+		rel_clear(master_NW, "lighting_corner_SE")
 		master_NW.lighting_corners_initialised = FALSE
 
 	..()

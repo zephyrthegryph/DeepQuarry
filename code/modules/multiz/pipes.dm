@@ -96,12 +96,12 @@
 	if(reference == node1)
 		if(istype(node1, /obj/machinery/atmospherics/pipe))
 			qdel(parent)
-		node1 = null
+		rel_clear(src, "node1")
 
 	if(reference == node2)
 		if(istype(node2, /obj/machinery/atmospherics/pipe))
 			qdel(parent)
-		node2 = null
+		rel_clear(src, "node2")
 
 	return null
 /////////////////////////
@@ -125,7 +125,7 @@
 
 	for(var/obj/machinery/atmospherics/target in get_step(src,node1_dir))
 		if(can_be_node(target, 1))
-			node1 = target
+			rel_set(src, "node1", target)
 			break
 
 	var/turf/above = GetAbove(src)
@@ -133,7 +133,7 @@
 		for(var/obj/machinery/atmospherics/target in turf_contents_of_type(above, /obj/machinery/atmospherics))
 			if(istype(target, /obj/machinery/atmospherics/pipe/zpipe/down))
 				if (check_connectable(target) && target.check_connectable(src))
-					node2 = target
+					rel_set(src, "node2", target)
 					break
 
 	var/turf/T = src.loc			// hide if turf is not intact
@@ -161,7 +161,7 @@
 
 	for(var/obj/machinery/atmospherics/target in get_step(src,node1_dir))
 		if(can_be_node(target, 1))
-			node1 = target
+			rel_set(src, "node1", target)
 			break
 
 	var/turf/below = GetBelow(src)
@@ -169,7 +169,7 @@
 		for(var/obj/machinery/atmospherics/target in turf_contents_of_type(below, /obj/machinery/atmospherics))
 			if(istype(target, /obj/machinery/atmospherics/pipe/zpipe/up))
 				if (check_connectable(target) && target.check_connectable(src))
-					node2 = target
+					rel_set(src, "node2", target)
 					break
 
 	var/turf/T = src.loc			// hide if turf is not intact

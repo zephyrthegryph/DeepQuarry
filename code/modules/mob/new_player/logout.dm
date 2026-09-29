@@ -19,7 +19,7 @@
 	if(lobby_window)
 		lobby_window.unsubscribe(src)
 		lobby_window.close()
-		lobby_window = null
+		rel_clear(src, "lobby_window")
 	var/client/exiting_client = persistent_client.client()
 	if(exiting_client)
 		winset(exiting_client, "lobby_browser", "is-disabled=true;is-visible=false")

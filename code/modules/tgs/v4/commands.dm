@@ -33,7 +33,7 @@
 	u.id = user["id"]
 	u.friendly_name = user["friendlyName"]
 	u.mention = user["mention"]
-	u.channel = DecodeChannel(user["channel"])
+	own_set(u, "channel", DecodeChannel(user["channel"]))
 
 	var/datum/tgs_chat_command/sc = custom_commands[command]
 	if(sc)

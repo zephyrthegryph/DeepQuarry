@@ -86,7 +86,7 @@ DECLARE_INTERACTIONS(/obj/item/radio_jammer, \
 	if(user.get_inactive_hand() == src && power_source)
 		to_chat(user,span_notice("You eject \the [power_source] from \the [src]."))
 		user.put_in_hands(power_source)
-		power_source = null
+		own_take(src, "power_source")
 		turn_off()
 		return TRUE
 	return FALSE
@@ -102,7 +102,7 @@ DECLARE_INTERACTIONS(/obj/item/radio_jammer, \
 
 /obj/item/radio_jammer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!power_source)
-		power_source = W
+		own_set(src, "power_source", W)
 		power_source.update_icon() //Why doesn't a cell do this already? :|
 		user.unEquip(power_source)
 		power_source.forceMove(src)

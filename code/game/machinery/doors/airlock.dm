@@ -1090,7 +1090,7 @@ About the new airlock wires panel:
 		if (!electronics) create_electronics()
 
 		electronics.forceMove(get_turf(src))
-		electronics = null
+		own_take(src, "electronics")
 	qdel(src)
 
 /obj/machinery/door/airlock/proc/handleRemoveIce(obj/item/W, mob/user as mob, time = 15)
@@ -1369,7 +1369,7 @@ About the new airlock wires panel:
 	if (assembly && istype(assembly))
 		assembly_type = assembly.type
 
-		electronics = assembly.electronics
+		own_set(src, "electronics", assembly.electronics)
 		electronics.forceMove(src)
 
 		//update the door's access to match the electronics'
@@ -1418,9 +1418,9 @@ About the new airlock wires panel:
 /obj/machinery/door/airlock/proc/create_electronics()
 	//create new electronics
 	if (secured_wires)
-		electronics = new/obj/item/airlock_electronics/secure(get_turf(src))
+		own_set(src, "electronics", new/obj/item/airlock_electronics/secure(get_turf(src)))
 	else
-		electronics = new/obj/item/airlock_electronics(get_turf(src))
+		own_set(src, "electronics", new/obj/item/airlock_electronics(get_turf(src)))
 
 	//update the electronics to match the door's access
 	if(LAZYLEN(req_access))

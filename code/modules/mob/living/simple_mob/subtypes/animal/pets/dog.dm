@@ -142,12 +142,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 		if(self.turns_since_scan > 5)
 			self.turns_since_scan = 0
 			if((self.movement_target) && !(isturf(self.movement_target.loc) || ishuman(self.movement_target.loc) ))
-				self.movement_target = null
+				own_take(self, "movement_target")
 			if(!self.movement_target || !(self.movement_target.loc in oview(self, 7)) )
-				self.movement_target = null
+				own_take(self, "movement_target")
 				for(var/obj/item/reagent_containers/food/snacks/S in oview(self,7))
 					if(isturf(S.loc) || ishuman(S.loc))
-						self.movement_target = S
+						own_set(self, "movement_target", S)
 						break
 			if(self.movement_target)
 				om_after(self, 0, TYPE_PROC_REF(/mob/living/simple_mob, chase_target))

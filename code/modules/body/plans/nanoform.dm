@@ -228,7 +228,7 @@
 /datum/affliction/core_dormancy/on_added()
 	..()
 	set_severity(AFFLICTION_SEVERITY_TERMINAL)
-	held_mob = owner
+	rel_set(src, "held_mob", owner)
 	om_hook(held_mob, /datum/om/event/before/living_body_status, src, PROC_REF(hold_alive))
 	// Without a control cluster to work through, the core is repaired on the body itself.
 	om_hook(held_mob, /datum/om/event/before/atom_tool_act, src, PROC_REF(on_body_screwdriver))
@@ -267,7 +267,7 @@
 	var/datum/forms/protean/F = held_mob.get_protean_forms()
 	F?.rig?.wake()
 	log_game("NANOFORM: [key_name(held_mob)] left core dormancy.")
-	held_mob = null
+	rel_clear(src, "held_mob")
 
 /datum/affliction/core_dormancy/proc/hold_alive(mob/living/source, datum/om/event/before/living_body_status/event)
 	EVENT_HANDLER

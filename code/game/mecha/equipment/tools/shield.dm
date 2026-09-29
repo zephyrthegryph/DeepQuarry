@@ -16,7 +16,7 @@
 
 /obj/item/mecha_parts/mecha_equipment/combat_shield/Initialize(mapload)
 	. = ..()
-	my_shield = new my_shield_type
+	own_set(src, "my_shield", new my_shield_type)
 	my_shield.shield_regen_delay = equip_cooldown
 	my_shield.my_tool_handle = om_handle(src)
 

@@ -181,7 +181,7 @@
 
 /datum/tgui_alert/async/New(mob/user, message, title, list/buttons, callback, timeout, autofocus, ui_state)
 	..(user, message, title, buttons, timeout, autofocus, ui_state)
-	src.callback = callback
+	own_set(src, "callback", callback)
 
 
 /datum/tgui_alert/async/set_choice(choice)

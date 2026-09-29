@@ -98,7 +98,7 @@
 				return FALSE
 			smodule.forceMove(get_turf(loc))
 			to_chat(ui.user, span_notice("You remove the [smodule] from \the [src]."))
-			smodule = null
+			own_take(src, "smodule")
 			update_icon()
 			return TRUE
 
@@ -108,7 +108,7 @@
 			om_task_periodic_stop(src)
 			smanipulator.forceMove(get_turf(loc))
 			to_chat(ui.user, span_notice("You remove the [smanipulator] from \the [src]."))
-			smanipulator = null
+			own_take(src, "smanipulator")
 			smaniptier = 0
 			update_icon()
 			return TRUE
@@ -118,7 +118,7 @@
 				return FALSE
 			slaser.forceMove(get_turf(loc))
 			to_chat(ui.user, span_notice("You remove the [slaser] from \the [src]."))
-			slaser = null
+			own_take(src, "slaser")
 			update_icon()
 			return TRUE
 
@@ -128,7 +128,7 @@
 			om_task_periodic_stop(src)
 			scapacitor.forceMove(get_turf(loc))
 			to_chat(ui.user, span_notice("You remove the [scapacitor] from \the [src]."))
-			scapacitor = null
+			own_take(src, "scapacitor")
 			update_icon()
 			return TRUE
 
@@ -138,7 +138,7 @@
 			om_task_periodic_stop(src)
 			sbin.forceMove(get_turf(loc))
 			to_chat(ui.user, span_notice("You remove the [sbin] from \the [src]."))
-			sbin = null
+			own_take(src, "sbin")
 			sbintier = 0
 			update_icon()
 			return TRUE
@@ -157,6 +157,6 @@
 	ccell.forceMove(get_turf(loc))
 	if(user)
 		to_chat(user, span_notice("You remove the [ccell] from \the [src]."))
-	ccell = null
+	own_take(src, "ccell")
 	update_icon()
 	return TRUE

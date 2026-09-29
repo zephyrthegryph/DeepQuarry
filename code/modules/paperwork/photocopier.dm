@@ -70,7 +70,7 @@
 				copyitem.forceMove(ui.user.loc)
 				ui.user.put_in_hands(copyitem)
 				to_chat(ui.user, span_notice("You take \the [copyitem] out of \the [src]."))
-				copyitem = null
+				own_take(src, "copyitem")
 			else if(has_buckled_mobs())
 				to_chat(src?.buckled_mob_list()[1], span_notice("You feel a slight pressure on your ass.")) // It can't eject your asscheeks, but it'll try.
 			. = TRUE
@@ -162,7 +162,7 @@
 /obj/machinery/photocopier/proc/interaction_insert(mob/user, obj/item/O, datum/interaction/interaction)
 	if(!copyitem)
 		user.drop_item()
-		copyitem = O
+		own_set(src, "copyitem", O)
 		O.forceMove(src)
 		to_chat(user, span_notice("You insert \the [O] into \the [src]."))
 		playsound(src, "sound/machines/click.ogg", 100, 1)

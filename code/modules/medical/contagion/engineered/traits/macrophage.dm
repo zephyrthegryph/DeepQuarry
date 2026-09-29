@@ -92,7 +92,7 @@ BONUS
 	// The creature carries detached copies, never the host's own affliction.
 	var/datum/affliction/contagion/engineered/strain = A.Copy()
 	phage.infections += strain
-	phage.base_disease = strain
+	own_set(phage, "base_disease", strain)
 
 	if(A.transmission >= 12)
 		for(var/datum/affliction/contagion/D in M.get_contagions())

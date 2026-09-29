@@ -159,8 +159,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 			current_T = get_step(current_T, dir_to_search)
 			var/obj/effect/map_effect/portal/line/line = locate_on(current_T, /obj/effect/map_effect/portal/line)
 			if(line)
-				LAZYADD(portal_lines, line)
-				line.my_master = src
+				own_add(src, "portal_lines", line)
+				rel_set(line, "my_master", src)
 			else
 				break
 
@@ -173,14 +173,14 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 			continue
 
 		if(M.portal_id == src.portal_id)
-			counterpart = M
-			M.counterpart = src
+			rel_set(src, "counterpart", M)
+			rel_set(M, "counterpart", src)
 			if(length(portal_lines))
 				for(var/i = 1 to length(portal_lines))
 					var/obj/effect/map_effect/portal/line/our_line = LAZYACCESS(portal_lines, i)
 					var/obj/effect/map_effect/portal/line/their_line = LAZYACCESS(M.portal_lines, i)
-					our_line.counterpart = their_line
-					their_line.counterpart = our_line
+					rel_set(our_line, "counterpart", their_line)
+					rel_set(their_line, "counterpart", our_line)
 			break
 
 	if(!counterpart)

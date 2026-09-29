@@ -382,7 +382,7 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 	return step_towards(src, T)
 
 /mob/living/bot/proc/resetTarget()
-	target = null
+	rel_clear(src, "target")
 	target_path = list()
 
 /mob/living/bot/proc/turn_on()
@@ -535,7 +535,7 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 	if(!card.pai)
 		to_chat(user, span_notice("This card does not currently have a personality!"))
 		return
-	paicard = card
+	own_set(src, "paicard", card)
 	user.unEquip(card)
 	card.forceMove(src)
 	transfer_mind(AI.mind, src, "pAI installed into [src]")
@@ -549,7 +549,7 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 		var/mob/living/silicon/pai/AI = paicard.pai
 		transfer_mind(mind, AI, "pAI ejected from [src]")
 		paicard.forceMove(src.loc)
-		paicard = null
+		own_take(src, "paicard")
 		name = initial(name)
 		botcard.access = botcard_access.Copy()
 		to_chat(AI, span_notice("You feel a tad claustrophobic as your mind closes back into your card, ejecting from \the [initial(src.name)]."))

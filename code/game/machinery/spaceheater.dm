@@ -128,7 +128,7 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 /obj/machinery/space_heater/proc/interaction_insert_cell(mob/user, obj/item/held, datum/interaction/interaction)
 	var/obj/item/cell/C = held
 	user.drop_item()
-	cell = C
+	own_set(src, "cell", C)
 	C.forceMove(src)
 	C.add_fingerprint(user)
 	user.visible_message(span_notice("[user] inserts a power cell into [src]."), span_notice("You insert the power cell into [src]."))
@@ -214,7 +214,7 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 				cell.update_icon()
 				ui.user.put_in_hands(cell)
 				cell.add_fingerprint(ui.user)
-				cell = null
+				own_take(src, "cell")
 				power_change()
 				. = TRUE
 
@@ -224,7 +224,7 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 				var/obj/item/cell/C = ui.user.get_active_hand()
 				if(istype(C))
 					ui.user.drop_item()
-					cell = C
+					own_set(src, "cell", C)
 					C.forceMove(src)
 					C.add_fingerprint(ui.user)
 					power_change()

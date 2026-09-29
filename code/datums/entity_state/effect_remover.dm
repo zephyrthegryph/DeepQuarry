@@ -23,8 +23,8 @@
 		stack_trace("[type] was instantiated without any valid removable effects!")
 		return
 
-	owner = new_owner
-	src.on_clear_callback = on_clear_callback
+	rel_set(src, "owner", new_owner)
+	own_set(src, "on_clear_callback", on_clear_callback)
 	src.effects_we_clear = typecacheof(effects_we_clear)
 	src.time_to_remove = time_to_remove
 	om_hook(owner, /datum/om/event/before/item_pre_attack, src, PROC_REF(try_remove_effect))

@@ -27,7 +27,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/ammo_casing, "BB", "projectile_type")
 //removes the projectile from the ammo casing
 /obj/item/ammo_casing/proc/expend()
 	. = BB
-	BB = null
+	own_take(src, "BB")
 	set_dir(pick(GLOB.cardinal)) //spin spent casings
 	update_icon()
 

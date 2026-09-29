@@ -265,7 +265,7 @@
 		return
 	M.put_in_active_hand(G)
 	G.synch()
-	LAssailant = M
+	rel_set(src, "LAssailant", M)
 
 	M.do_attack_animation(src)
 	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
@@ -518,7 +518,7 @@
 		user.visible_message(span_filter_notice("\The [user] starts applying pressure to [user.p_their()] [organ.name]!"), span_filter_notice("You start applying pressure to your [organ.name]!"))
 	else
 		user.visible_message(span_filter_notice("\The [user] starts applying pressure to [src]'s [organ.name]!"), span_filter_notice("You start applying pressure to [src]'s [organ.name]!"))
-	organ.applied_pressure = user
+	rel_set(organ, "applied_pressure", user)
 
 	//apply pressure as long as they stay still and keep grabbing
 	//This USED to have a 'target_zone' check that never actually worked so whatever.
@@ -539,7 +539,7 @@
 	var/obj/item/organ/external/organ = task.target
 	if(!organ)
 		return
-	organ.applied_pressure = null
+	rel_clear(organ, "applied_pressure")
 	if(!user)
 		return
 	if(user == src)

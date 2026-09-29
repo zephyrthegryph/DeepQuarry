@@ -147,7 +147,7 @@
 	else if(offline)
 		offline = 0
 		if(istype(W) && !W.wearing_rig)
-			W.wearing_rig = holder()
+			own_set(W, "wearing_rig", holder())
 		if(!istype(holder(), /obj/item/rig/protean))
 			holder().slowdown = initial(holder().slowdown)
 

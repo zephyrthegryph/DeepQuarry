@@ -71,9 +71,9 @@
 	var/obj/item/stack/medical/bruise_pack/bandaid = new(src)
 	bandaid.uses_charge = 1
 	bandaid.charge_costs = list(1000)
-	bandaid.synths = list(medicine)
+	rel_set(bandaid, "synths", list(medicine))
 	modules += bandaid
-	synths += medicine
+	own_add(src, "synths", medicine)
 
 	modules += new /obj/item/gun/energy/robotic/phasegun(src)
 

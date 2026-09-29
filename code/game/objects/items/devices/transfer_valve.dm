@@ -23,12 +23,12 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 			return TRUE
 
 		if(!tank_one)
-			tank_one = item
+			own_set(src, "tank_one", item)
 			user.drop_item()
 			item.forceMove(src)
 			to_chat(user, span_notice("You attach the tank to the transfer valve."))
 		else if(!tank_two)
-			tank_two = item
+			own_set(src, "tank_two", item)
 			user.drop_item()
 			item.forceMove(src)
 			to_chat(user, span_notice("You attach the tank to the transfer valve."))
@@ -47,7 +47,7 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 			to_chat(user, span_warning("There is already an device attached to the valve, remove it first."))
 			return TRUE
 		user.remove_from_mob(item)
-		attached_device = A
+		own_set(src, "attached_device", A)
 		A.forceMove(src)
 		to_chat(user, span_notice("You attach the [item] to the valve controls and secure it."))
 		A.holder_handle = om_handle(src)
@@ -113,7 +113,7 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 			if(attached_device)
 				attached_device.forceMove(get_turf(src))
 				attached_device.holder_handle = null
-				attached_device = null
+				own_take(src, "attached_device")
 				update_icon()
 		else
 			. = FALSE
@@ -147,10 +147,10 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 /obj/item/transfer_valve/proc/remove_tank(obj/item/tank/T)
 	if(tank_one == T)
 		split_gases()
-		tank_one = null
+		own_take(src, "tank_one")
 	else if(tank_two == T)
 		split_gases()
-		tank_two = null
+		own_take(src, "tank_two")
 	else
 		return
 

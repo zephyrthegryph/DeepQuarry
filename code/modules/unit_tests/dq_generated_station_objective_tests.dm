@@ -4,8 +4,8 @@
 	var/datum/generated_station_planner/planner = new
 	var/datum/generated_station_spec/spec = planner.plan(5150)
 	var/datum/expedition_site/site = new(world.maxz, EXP_DIFF_MED)
-	site.station_spec = spec
-	site.station_simulation = new(spec)
+	own_set(site, "station_spec", spec)
+	own_set(site, "station_simulation", new(spec))
 	site.station_controls = list()
 	for(var/datum/generated_station_department_instance/department in spec.departments)
 		var/obj/machinery/generated_station_department_control/control = new(null)
@@ -13,7 +13,7 @@
 		control.department_id = department.id
 		site.station_controls += control
 	var/datum/expedition_mission/station_assault/mission = new(EXP_DIFF_MED)
-	site.mission = mission
+	own_set(site, "mission", mission)
 	mission.populate(site)
 	TEST_ASSERT(mission.has_viable_objectives(), "Station assault did not bind required objectives to department controls")
 
@@ -54,8 +54,8 @@
 	var/datum/generated_station_planner/planner = new
 	var/datum/generated_station_spec/spec = planner.plan(6160)
 	var/datum/expedition_site/site = new(world.maxz, EXP_DIFF_MED)
-	site.station_spec = spec
-	site.station_simulation = new(spec)
+	own_set(site, "station_spec", spec)
+	own_set(site, "station_simulation", new(spec))
 	var/obj/machinery/generated_station_department_control/control = new(null)
 	control.station_id = spec.id
 	control.department_id = "engineering-1"

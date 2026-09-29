@@ -81,7 +81,7 @@
 
 /mob/living/silicon/ai/proc/view_core()
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	camera = null
+	rel_clear(src, "camera")
 	unset_machine()
 
 	if(!eyeobj)

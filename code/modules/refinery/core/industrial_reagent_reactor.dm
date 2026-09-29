@@ -107,7 +107,7 @@
 		if(anchored)
 			// Perform the connection, forcibly... we're ignoring adjacency checks with this
 			internal_tank.connected_port_handle = om_handle(pad)
-			pad.connected_device = internal_tank
+			rel_set(pad, "connected_device", internal_tank)
 			pad.on = 1 //Activate port updates
 			// Actually enforce the air sharing
 			pad.rust_attach_external_device(internal_tank)

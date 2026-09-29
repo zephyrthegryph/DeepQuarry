@@ -45,6 +45,6 @@ GLOBAL_DATUM(revs, /datum/antagonist/revolutionary)
 		if(!player.mind || player.stat==2 || !(SSjob.is_job_in_department(player.mind.assigned_role, DEPARTMENT_COMMAND)))
 			continue
 		var/datum/objective/rev/rev_obj = new
-		rev_obj.target = player.mind
+		rel_set(rev_obj, "target", player.mind)
 		rev_obj.explanation_text = "Assassinate, capture or convert [player.real_name], the [player.mind.assigned_role]."
 		LAZYADD(global_objectives, rev_obj)

@@ -50,7 +50,7 @@
 	event_type = _event_type
 	target = _target
 	value_field = _value_field
-	filter = new
+	own_set(src, "filter", new /datum/contract_event_filter)
 	diversity_targets = list()
 
 

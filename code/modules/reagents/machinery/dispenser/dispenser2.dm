@@ -121,7 +121,7 @@
 		to_chat(user, span_warning("You don't see how \the [RC] could fit into \the [src]."))
 		return TRUE
 
-	container =  RC
+	own_set(src, "container", RC)
 	user.drop_from_inventory(RC)
 	RC.forceMove(src)
 	to_chat(user, span_notice("You set \the [RC] on \the [src]."))
@@ -219,7 +219,7 @@
 				container.forceMove(get_turf(src))
 				if(Adjacent(ui.user)) // So the AI doesn't get a beaker somehow.
 					ui.user.put_in_hands(container)
-				container = null
+				own_take(src, "container")
 			. = TRUE
 
 		if("import_config")

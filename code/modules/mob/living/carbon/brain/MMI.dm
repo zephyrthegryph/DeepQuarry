@@ -32,7 +32,7 @@
 
 /// Seat `B` as this MMI's brain tissue: the occupant's status reads it.
 /obj/item/mmi/proc/set_brain(obj/item/organ/internal/brain/B)
-	brainobj = B
+	own_set(src, "brainobj", B)
 	if(B)
 		B.preserved = TRUE
 		if(B.loc != src)
@@ -175,7 +175,7 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 /obj/item/mmi/on_destroy(force)
 	if(isrobot(loc))
 		var/mob/living/silicon/robot/borg = loc
-		borg.mmi = null
+		own_take(borg, "mmi")
 	// The occupant goes first: deleting the tissue under a live view would kill it for nothing.
 	var/datum/mind_host/host = get_mind_host(src)
 	host?.discard_view()
@@ -271,7 +271,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 		return
 	searching = 1
 
-	Q = new ghost_query_type()
+	own_set(src, "Q", new ghost_query_type())
 	om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
 	Q.query()
 
@@ -283,7 +283,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 	else
 		reset_search()
 	om_unhook(Q, /datum/om/event/ghost_query_complete, src)
-	QDEL_NULL(Q) //get rid of the query
+	own_clear(src, "Q", OWN_DELETE) //get rid of the query
 
 /obj/item/mmi/digital/proc/reset_search() //We give the players sixty seconds to decide, then reset the timer.
 	if(get_occupant()?.key)
@@ -380,7 +380,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 
 /obj/item/mmi/inert/Initialize(mapload)
 	. = ..()
-	QDEL_NULL(mind_host)
+	own_clear(src, "mind_host", OWN_DELETE)
 
 // This is a 'fake' MMI that is used to let AIs control borg shells directly.
 // This doesn't inherit from /digital because all that does is add ghost pulling capabilities, which this thing won't need.

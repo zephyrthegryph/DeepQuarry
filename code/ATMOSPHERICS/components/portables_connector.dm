@@ -122,7 +122,7 @@
 
 	for(var/obj/machinery/atmospherics/target in get_step(src,node_connect))
 		if(can_be_node(target, 1))
-			node = target
+			rel_set(src, "node", target)
 			break
 
 	update_icon()
@@ -139,7 +139,7 @@
 
 /obj/machinery/atmospherics/portables_connector/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
 	if(network == old_network)
-		network = new_network
+		rel_set(src, "network", new_network)
 
 	return 1
 
@@ -190,7 +190,7 @@
 	clear_gas_dependency()
 	if(reference==node)
 		rust_release_network_wrapper(network)
-		node = null
+		rel_clear(src, "node")
 	if(reference == connected_device || !connected_device)
 		on = 0
 		MACHINE_SLEEP(src)

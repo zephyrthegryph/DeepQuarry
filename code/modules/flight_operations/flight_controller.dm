@@ -361,7 +361,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 		vessel.active_expedition_handle = om_handle(site)
 	var/datum/flight_destination/origin = destinations[vessel.current_destination_id()]
 	var/datum/flight_plan/plan = new(vessel, origin, destination)
-	vessel.active_plan = plan
+	own_set(vessel, "active_plan", plan)
 	plans[plan.id] = plan
 	return plan
 
@@ -498,7 +498,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 /datum/world_service/flight/proc/finish_plan(datum/flight_plan/plan)
 	plans -= plan.id
 	if(plan.vessel?.active_plan == plan)
-		plan.vessel.active_plan = null
+		rel_clear(plan.vessel, "active_plan")
 	qdel(plan)
 
 /datum/world_service/flight/stat_line()

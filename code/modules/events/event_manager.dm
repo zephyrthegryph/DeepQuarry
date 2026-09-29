@@ -16,7 +16,7 @@
 	// refresh (`Interact(usr)`) just updates the open window via
 	// SStgui.update_uis instead of opening a duplicate.
 	if(!tgui_event_manager_panel)
-		tgui_event_manager_panel = new
+		own_set(src, "tgui_event_manager_panel", new /datum/event_manager_panel)
 	tgui_event_manager_panel.tgui_interact(user)
 	SStgui.update_uis(tgui_event_manager_panel)
 
@@ -231,7 +231,7 @@
 		new_event.severity = selected_event_container().severity
 		selected_event_container().available_events += new_event
 		log_and_message_admins("has added \a [GLOB.severity_to_string[new_event.severity]] event '[new_event.name]' of type [new_event.event_type] with weight [new_event.weight].")
-		new_event = new
+		own_set(src, "new_event", new /datum/event_meta)
 	else if(href_list["clear"])
 		var/datum/event_container/EC = locate(href_list["clear"])
 		if(EC.next_event())

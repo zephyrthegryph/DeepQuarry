@@ -26,7 +26,7 @@
 	var/answered = FALSE
 
 /datum/privacy_poll_dialog/New(mob/new_player/owner)
-	src.owner = owner
+	rel_set(src, "owner", owner)
 
 REL_PAIR(/datum/privacy_poll_dialog, owner, privacy_poll_dialog)
 REL_PAIR(/mob/new_player, privacy_poll_dialog, owner)
@@ -120,7 +120,7 @@ REL_PAIR(/mob/new_player, privacy_poll_dialog, owner)
 	var/list/cached_detail
 
 /datum/poll_browser_dialog/New(mob/new_player/owner)
-	src.owner = owner
+	rel_set(src, "owner", owner)
 	poll_ids = list()
 	poll_meta = list()
 	refresh_poll_list()
