@@ -28,12 +28,10 @@
 	if(. && ai_brain)
 		ai_brain.vision_range = 5   // only reacts when something gets close
 
-/mob/living/simple_mob/vore/scrubble/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/scrubble_skitter,
-		/datum/ai_behavior/idle_wander,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/vore/scrubble, get_ai_behaviors, list( \
+	/datum/ai_behavior/scrubble_skitter, \
+	/datum/ai_behavior/idle_wander, \
+))
 
 TYPE_TABLE(/mob/living/simple_mob/vore/scrubble, get_ai_target_selectors, list( \
 		/datum/target_selector/scrubble_prey, \

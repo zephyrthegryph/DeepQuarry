@@ -34,18 +34,16 @@
 	if(. && ai_brain)
 		ai_brain.vision_range = 16
 
-/mob/living/simple_mob/vr/alchemistbee/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/alchemistbee_chemblast,
-		/datum/ai_behavior/alchemistbee_dangerbolt,
-		/datum/ai_behavior/alchemistbee_homingcluster,
-		/datum/ai_behavior/alchemistbee_aoe_backpedal,
-		/datum/ai_behavior/ranged_attack,
-		/datum/ai_behavior/melee_attack,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/idle_wander,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/vr/alchemistbee, get_ai_behaviors, list( \
+	/datum/ai_behavior/alchemistbee_chemblast, \
+	/datum/ai_behavior/alchemistbee_dangerbolt, \
+	/datum/ai_behavior/alchemistbee_homingcluster, \
+	/datum/ai_behavior/alchemistbee_aoe_backpedal, \
+	/datum/ai_behavior/ranged_attack, \
+	/datum/ai_behavior/melee_attack, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/idle_wander, \
+))
 
 TYPE_TABLE(/mob/living/simple_mob/vr/alchemistbee, get_ai_target_selectors, list(/datum/target_selector/prefer_players, /datum/target_selector/closest))
 

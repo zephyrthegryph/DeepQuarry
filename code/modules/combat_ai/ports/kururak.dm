@@ -24,21 +24,19 @@
 /mob/living/simple_mob/animal/sif/kururak
 	use_modern_ai = TRUE
 
-/mob/living/simple_mob/animal/sif/kururak/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/kururak_pack_instinct,
-		/datum/ai_behavior/kururak_special,
-		/datum/ai_behavior/kururak_pack_rally,
-		/datum/ai_behavior/melee_attack,
-		/datum/ai_behavior/maul_unconscious,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/retaliate_to_attacker,
-		/datum/ai_behavior/follow_leader,
-		/datum/ai_behavior/flee_low_hp,
-		/datum/ai_behavior/idle_wander,
-		/datum/ai_behavior/idle_speak,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/animal/sif/kururak, get_ai_behaviors, list( \
+	/datum/ai_behavior/kururak_pack_instinct, \
+	/datum/ai_behavior/kururak_special, \
+	/datum/ai_behavior/kururak_pack_rally, \
+	/datum/ai_behavior/melee_attack, \
+	/datum/ai_behavior/maul_unconscious, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/retaliate_to_attacker, \
+	/datum/ai_behavior/follow_leader, \
+	/datum/ai_behavior/flee_low_hp, \
+	/datum/ai_behavior/idle_wander, \
+	/datum/ai_behavior/idle_speak, \
+))
 
 // ---------------------------------------------------------------------------
 // Pack instinct — the strategic hierarchy tick. Background-priority (runs even

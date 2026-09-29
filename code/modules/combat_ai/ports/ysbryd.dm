@@ -21,16 +21,14 @@
 	/// find_target_cooldown = 1 MINUTE gate).
 	COOLDOWN_DECLARE(ysbryd_reacquire_after)
 
-/mob/living/simple_mob/ysbryd/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/ysbryd_haunt_bind,
-		/datum/ai_behavior/melee_attack,
-		/datum/ai_behavior/maul_unconscious,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/retaliate_to_attacker,
-		/datum/ai_behavior/idle_wander,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/ysbryd, get_ai_behaviors, list( \
+	/datum/ai_behavior/ysbryd_haunt_bind, \
+	/datum/ai_behavior/melee_attack, \
+	/datum/ai_behavior/maul_unconscious, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/retaliate_to_attacker, \
+	/datum/ai_behavior/idle_wander, \
+))
 
 // ---------------------------------------------------------------------------
 // Haunt binding — keep the one-victim visibility link synced to the brain's

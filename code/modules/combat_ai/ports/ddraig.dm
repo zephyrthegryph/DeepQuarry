@@ -20,21 +20,19 @@
 	/// Once-per-life emergency-invisibility latch (legacy ai_holder.used_invis).
 	var/ddraig_used_invis = FALSE
 
-/mob/living/simple_mob/vore/ddraig/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/ddraig_panic_cloak,
-		/datum/ai_behavior/ddraig_flee_cloaked,
-		/datum/ai_behavior/ddraig_lunge,
-		/datum/ai_behavior/ddraig_firebreath,
-		/datum/ai_behavior/ddraig_tfbeam,
-		/datum/ai_behavior/melee_attack,
-		/datum/ai_behavior/maul_unconscious,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/retaliate_to_attacker,
-		/datum/ai_behavior/idle_wander,
-		/datum/ai_behavior/idle_speak,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/vore/ddraig, get_ai_behaviors, list( \
+	/datum/ai_behavior/ddraig_panic_cloak, \
+	/datum/ai_behavior/ddraig_flee_cloaked, \
+	/datum/ai_behavior/ddraig_lunge, \
+	/datum/ai_behavior/ddraig_firebreath, \
+	/datum/ai_behavior/ddraig_tfbeam, \
+	/datum/ai_behavior/melee_attack, \
+	/datum/ai_behavior/maul_unconscious, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/retaliate_to_attacker, \
+	/datum/ai_behavior/idle_wander, \
+	/datum/ai_behavior/idle_speak, \
+))
 
 TYPE_TABLE(/mob/living/simple_mob/vore/ddraig, get_ai_target_selectors, list( \
 		/datum/target_selector/prefer_players, \

@@ -65,7 +65,7 @@
 	set_use_stance(I_HELP)
 	PounceTarget(L)
 	if(ishuman(L) && L.reagents)
-		var/list/to_inject = list(
+		var/static/list/to_inject = list(
 			REAGENT_ID_MYELAMINE,
 			REAGENT_ID_OSTEODAXON,
 			REAGENT_ID_SPACEACILLIN,
@@ -177,17 +177,15 @@ TYPE_TABLE(/datum/ai_behavior/healbelly_heal_ally, get_player_verb_info, list( \
 /mob/living/simple_mob/vore/leopardmander
 	ai_attack_on_sight = FALSE  // docile; only fights when provoked
 
-/mob/living/simple_mob/vore/leopardmander/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/healbelly_heal_ally,
-		/datum/ai_behavior/retaliate_to_attacker,
-		/datum/ai_behavior/melee_attack,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/flee_low_hp,
-		/datum/ai_behavior/idle_wander,
-		/datum/ai_behavior/idle_speak,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/vore/leopardmander, get_ai_behaviors, list( \
+	/datum/ai_behavior/healbelly_heal_ally, \
+	/datum/ai_behavior/retaliate_to_attacker, \
+	/datum/ai_behavior/melee_attack, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/flee_low_hp, \
+	/datum/ai_behavior/idle_wander, \
+	/datum/ai_behavior/idle_speak, \
+))
 
 // ---------------------------------------------------------------------------
 // Friendly bigdragon — tamed / spawned-jovial dragon. Keeps the hostile
@@ -198,19 +196,17 @@ TYPE_TABLE(/datum/ai_behavior/healbelly_heal_ally, get_player_verb_info, list( \
 /mob/living/simple_mob/vore/bigdragon/friendly
 	ai_attack_on_sight = FALSE
 
-/mob/living/simple_mob/vore/bigdragon/friendly/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/healbelly_heal_ally,
-		/datum/ai_behavior/dragon_friendly_warn,
-		// Specials still usable once enraged (set_hostile flips it back).
-		/datum/ai_behavior/dragon_tail_sweep,
-		/datum/ai_behavior/dragon_charge,
-		/datum/ai_behavior/melee_attack,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/idle_wander,
-		/datum/ai_behavior/idle_speak,
-	)
-	return L
+// Specials still usable once enraged (set_hostile flips it back).
+TYPE_TABLE(/mob/living/simple_mob/vore/bigdragon/friendly, get_ai_behaviors, list( \
+	/datum/ai_behavior/healbelly_heal_ally, \
+	/datum/ai_behavior/dragon_friendly_warn, \
+	/datum/ai_behavior/dragon_tail_sweep, \
+	/datum/ai_behavior/dragon_charge, \
+	/datum/ai_behavior/melee_attack, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/idle_wander, \
+	/datum/ai_behavior/idle_speak, \
+))
 
 // Warn-then-enrage retaliation toward allies. Mirrors the legacy
 // healbelly/retaliate/dragon/react_to_attack three-strike escalation: the

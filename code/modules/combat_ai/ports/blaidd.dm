@@ -24,19 +24,17 @@
 	/// world.time the current uninterrupted stare-down began; 0 if not watched.
 	var/blaidd_watched_since = 0
 
-/mob/living/simple_mob/vore/blaidd/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/blaidd_flee_watched,
-		/datum/ai_behavior/blaidd_freeze_watched,
-		/datum/ai_behavior/blaidd_stealth,
-		/datum/ai_behavior/melee_attack,
-		/datum/ai_behavior/maul_unconscious,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/retaliate_to_attacker,
-		/datum/ai_behavior/idle_wander,
-		/datum/ai_behavior/idle_speak,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/vore/blaidd, get_ai_behaviors, list( \
+	/datum/ai_behavior/blaidd_flee_watched, \
+	/datum/ai_behavior/blaidd_freeze_watched, \
+	/datum/ai_behavior/blaidd_stealth, \
+	/datum/ai_behavior/melee_attack, \
+	/datum/ai_behavior/maul_unconscious, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/retaliate_to_attacker, \
+	/datum/ai_behavior/idle_wander, \
+	/datum/ai_behavior/idle_speak, \
+))
 
 // Blaidd prefers to hunt clients, like the legacy vore predator.
 TYPE_TABLE(/mob/living/simple_mob/vore/blaidd, get_ai_target_selectors, list( \

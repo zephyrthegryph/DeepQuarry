@@ -22,14 +22,12 @@
 	// Not an on-sight predator; it reacts to proximity by fleeing, not chasing.
 	ai_attack_on_sight = FALSE
 
-/mob/living/simple_mob/vore/fluffball/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/fluffball_flee_pounce,
-		/datum/ai_behavior/retaliate_to_attacker,
-		/datum/ai_behavior/idle_wander,
-		/datum/ai_behavior/idle_speak,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/vore/fluffball, get_ai_behaviors, list( \
+	/datum/ai_behavior/fluffball_flee_pounce, \
+	/datum/ai_behavior/retaliate_to_attacker, \
+	/datum/ai_behavior/idle_wander, \
+	/datum/ai_behavior/idle_speak, \
+))
 
 // ---------------------------------------------------------------------------
 // Flee + corner-pounce.

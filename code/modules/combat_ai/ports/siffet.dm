@@ -47,16 +47,14 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/siffet, get_ai_target_selectors, li
 	var/datum/target_selector/closest_selector = dq_get_selector(/datum/target_selector/closest)
 	return closest_selector.select(brain, filtered)
 
-/mob/living/simple_mob/animal/sif/siffet/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/evasive_juke,
-		/datum/ai_behavior/retaliate_to_attacker,
-		/datum/ai_behavior/melee_attack,
-		/datum/ai_behavior/maul_unconscious,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/threaten,
-		/datum/ai_behavior/flee_low_hp,
-		/datum/ai_behavior/idle_wander,
-		/datum/ai_behavior/idle_speak,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/animal/sif/siffet, get_ai_behaviors, list( \
+	/datum/ai_behavior/evasive_juke, \
+	/datum/ai_behavior/retaliate_to_attacker, \
+	/datum/ai_behavior/melee_attack, \
+	/datum/ai_behavior/maul_unconscious, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/threaten, \
+	/datum/ai_behavior/flee_low_hp, \
+	/datum/ai_behavior/idle_wander, \
+	/datum/ai_behavior/idle_speak, \
+))

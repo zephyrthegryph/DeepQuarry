@@ -22,12 +22,12 @@
 		return null
 	// Already holding something? Skip unless we could swap to something better.
 	var/obj/item/current = owner.get_active_held_item()
-	var/current_grants = current ? LAZYLEN(current.get_dq_granted_behaviors()) : 0
+	var/current_grants = current ? LAZYLEN(TYPE_TABLE_GET(current, item_granted_behaviors)) : 0
 
 	var/obj/item/best
 	var/best_grants = current_grants
 	for(var/obj/item/I in view(5, owner))
-		var/grants = LAZYLEN(I.get_dq_granted_behaviors())
+		var/grants = LAZYLEN(TYPE_TABLE_GET(I, item_granted_behaviors))
 		if(grants > best_grants)
 			best_grants = grants
 			best = I

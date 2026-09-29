@@ -112,7 +112,7 @@
 			return TRUE
 		if("set_ai_path")
 			//modern brain has no equivalent of "swap AI subtype at runtime";
-			// behaviors are declared per mob subtype via get_ai_behaviors().
+			// behaviors are declared per mob subtype via the get_ai_behaviors type table.
 			to_chat(ui.user, span_warning("AI path selection no longer available; mob behaviors are per-subtype."))
 			return TRUE
 		if("loc_lock")
