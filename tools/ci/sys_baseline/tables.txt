@@ -9,9 +9,6 @@ static_getter	code/game/atom/armor.dm	var/static/list/result = list(0, 0, 0)
 static_getter	code/game/atom/armor.dm	var/static/list/slots = list(SLOT_ID_HAND_L, SLOT_ID_HAND_R, SLOT_ID_SUIT, SLOT_ID_EAR_L, SLOT_ID_EAR_R)
 static_getter	code/game/atom/damage_packet.dm	var/static/list/ladder = list(100, 70, 40, 10)
 static_getter	code/game/gamemodes/cult/ritual.dm	var/static/list/dictionary = list(
-static_getter	code/game/mecha/equipment/tools/syringe_gun.dm	var/static/list/tags = list(
-static_getter	code/game/mecha/equipment/tools/syringe_gun.dm	var/static/list/tags = list(
-static_getter	code/game/objects/items/weapons/medigun/medigun_backpack.dm	var/static/list/tags = list(
 static_getter	code/modules/balance/balance_scenarios.dm	var/static/list/weapons = list(
 static_getter	code/modules/balance/balance_scenarios.dm	var/static/list/targets = list(
 static_getter	code/modules/balance/balance_scenarios.dm	var/static/list/names = list("hits_to_crit", "time_to_crit_s", "hits_to_kill", "time_to_kill_s", "first_hit_applied")
@@ -26,18 +23,9 @@ static_getter	code/modules/balance/balance_scenarios.dm	var/static/list/names = 
 static_getter	code/modules/balance/balance_scenarios.dm	var/static/list/modes = list(
 static_getter	code/modules/balance/balance_scenarios.dm	var/static/list/names = list("prey_injury_delta", "prey_nutrition_delta", "pred_nutrition_delta", "prey_size_delta", "prey_absorbed", "prey_dead")
 static_getter	code/modules/balance/balance_scenarios.dm	var/static/list/names = list("time_to_unconscious_s", "time_to_death_s", "survival_multiplier")
-static_getter	code/modules/body/mech_body.dm	var/static/list/order = list(MECH_ARMOR, MECH_HULL, MECH_ACTUATOR, MECH_ELECTRIC, MECH_GAS)
 static_getter	code/modules/body/treatment.dm	var/static/list/names = list(
 static_getter	code/modules/body/worn_protection.dm	var/static/list/parts = list(HEAD, UPPER_TORSO, LOWER_TORSO, LEG_LEFT, LEG_RIGHT, FOOT_LEFT, FOOT_RIGHT, ARM_LEFT, ARM_RIGHT, HAND_LEFT, HAND_RIGHT)
-static_getter	code/modules/client/preferences/editors/antag_optin.dm	var/static/list/L = list(
-static_getter	code/modules/client/preferences/editors/birthday.dm	var/static/list/L = list(
 static_getter	code/modules/client/preferences/editors/flavor.dm	var/static/list/zones = list("general", "head", "face", "eyes", "torso", "arms", "hands", "legs", "feet")
-static_getter	code/modules/client/preferences/editors/loadout.dm	var/static/list/L = list(
-static_getter	code/modules/client/preferences/editors/organs.dm	var/static/list/L = list(
-static_getter	code/modules/client/preferences/editors/organs.dm	var/static/list/L = list(
-static_getter	code/modules/clothing/spacesuits/rig/modules/protean.dm	var/static/list/types = list("melee", "bullet", "laser", "energy", "bomb")
-static_getter	code/modules/combat_ai/behaviors/item_grenade.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/behaviors/melee.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/factions/factions.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/factions/factions.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/factions/factions.dm	var/static/list/L = list(
@@ -48,76 +36,35 @@ static_getter	code/modules/combat_ai/factions/factions.dm	var/static/list/L = li
 static_getter	code/modules/combat_ai/integration/item_grants.dm	var/static/list/L = list(/datum/ai_behavior/throw_grenade)
 static_getter	code/modules/combat_ai/integration/item_grants.dm	var/static/list/L = list(/datum/ai_behavior/aimed_shot)
 static_getter	code/modules/combat_ai/ports/alchemistbee.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/alchemistbee.dm	var/static/list/L = list(/datum/target_selector/prefer_players, /datum/target_selector/closest)
 static_getter	code/modules/combat_ai/ports/armadillo.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/bigdragon.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/bigdragon.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/bigdragon.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/bigdragon.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/bigdragon.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/blaidd.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/blaidd.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/broodmother.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/broodmother.dm	var/static/list/L = list(/datum/target_selector/prefer_players, /datum/target_selector/closest)
-static_getter	code/modules/combat_ai/ports/ddraig.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/ddraig.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/ddraig.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/ddraig.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/ddraig.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/fluffball.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/glitch_boss.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/glitch_boss.dm	var/static/list/L = list(/datum/target_selector/prefer_players, /datum/target_selector/closest)
 static_getter	code/modules/combat_ai/ports/glitch_boss_fake.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/glitch_boss_fake.dm	var/static/list/L = list(/datum/target_selector/prefer_players, /datum/target_selector/closest)
-static_getter	code/modules/combat_ai/ports/gryphon.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/gryphon.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/healbelly.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/healbelly.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/healbelly.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/juvenile_metroid.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/juvenile_metroid.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/kururak.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/leech.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/possessed.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/possum.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/sakimm.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/sakimm.dm	var/static/list/L = list(/datum/target_selector/sakimm_loot)
 static_getter	code/modules/combat_ai/ports/sakimm.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/scrubble.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/scrubble.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/siffet.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/siffet.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/slime.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/slime.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/solargrub.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/solargrub.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/solargrub.dm	var/static/list/L = list(/datum/target_selector/larva_machine)
 static_getter	code/modules/combat_ai/ports/spore.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/swoopie.dm	var/static/list/L = list(
-static_getter	code/modules/combat_ai/ports/three_phases.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/three_phases.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/viscerator.dm	var/static/list/L = list(
 static_getter	code/modules/combat_ai/ports/ysbryd.dm	var/static/list/L = list(
 static_getter	code/modules/contracts/medical_case_report.dm	var/static/list/types = list(
-static_getter	code/modules/economy/cargo_market.dm	var/static/list/groups = list("Supplies", "Engineering", "Security", "Vendor Refills")
-static_getter	code/modules/economy/cargo_market.dm	var/static/list/profiles = list(/datum/cargo_market_profile/general_manufactured, /datum/cargo_market_profile/materials)
-static_getter	code/modules/economy/cargo_market.dm	var/static/list/groups = list("Security", "Medical", "Atmospherics")
-static_getter	code/modules/economy/cargo_market.dm	var/static/list/profiles = list(/datum/cargo_market_profile/medical_goods, /datum/cargo_market_profile/food)
-static_getter	code/modules/economy/cargo_market.dm	var/static/list/groups = list("Hydroponics", "Medical")
-static_getter	code/modules/economy/cargo_market.dm	var/static/list/profiles = list(/datum/cargo_market_profile/medical_goods, /datum/cargo_market_profile/food)
-static_getter	code/modules/economy/cargo_market.dm	var/static/list/groups = list("Science", "Robotics", "Munitions")
-static_getter	code/modules/economy/cargo_market.dm	var/static/list/profiles = list(/datum/cargo_market_profile/research_goods, /datum/cargo_market_profile/weapons)
 static_getter	code/modules/economy/cargo_market.dm	var/static/list/names = list(
-static_getter	code/modules/economy/cargo_market.dm	var/static/list/groups = list("Munitions", "Miscellaneous", "Supplies")
-static_getter	code/modules/economy/cargo_market.dm	var/static/list/profiles = list(/datum/cargo_market_profile/weapons, /datum/cargo_market_profile/research_goods, /datum/cargo_market_profile/medical_goods)
-static_getter	code/modules/economy/cargo_market.dm	var/static/list/groups = list("Miscellaneous", "Materials", "Recreation", "Costumes")
-static_getter	code/modules/economy/cargo_market.dm	var/static/list/profiles = list(/datum/cargo_market_profile/general_manufactured, /datum/cargo_market_profile/frontier_salvage)
-static_getter	code/modules/economy/cargo_market.dm	var/static/list/groups = list("Hardsuits", "Voidsuits", "Engineering", "Atmospherics")
-static_getter	code/modules/economy/cargo_market.dm	var/static/list/profiles = list(/datum/cargo_market_profile/frontier_salvage, /datum/cargo_market_profile/engineering_goods)
-static_getter	code/modules/economy/cargo_market.dm	var/static/list/groups = list("Materials", "Supplies", "Hospitality")
-static_getter	code/modules/economy/cargo_market.dm	var/static/list/profiles = list(/datum/cargo_market_profile/food, /datum/cargo_market_profile/engineering_goods, /datum/cargo_market_profile/general_manufactured)
-static_getter	code/modules/economy/cargo_market.dm	var/static/list/groups = list("Medical", "Robotics")
-static_getter	code/modules/economy/cargo_market.dm	var/static/list/profiles = list(/datum/cargo_market_profile/medical_goods, /datum/cargo_market_profile/research_goods)
 static_getter	code/modules/eventkit/medical_issues.dm	var/static/list/L = list(
 static_getter	code/modules/eventkit/medical_issues.dm	var/static/list/L = list(
 static_getter	code/modules/expedition/expedition_faction.dm	var/static/list/xeno = list(/obj/random/awayloot = 20, /obj/item/aliencoin/basic = 12)
@@ -138,139 +85,28 @@ static_getter	code/modules/expedition/expedition_loot.dm	var/static/list/asteroi
 static_getter	code/modules/expedition/expedition_loot.dm	var/static/list/cave = list(
 static_getter	code/modules/expedition/expedition_transport.dm	var/static/list/threat_bands = list("Low" = EXP_DIFF_LOW, "Medium" = EXP_DIFF_MED, "High" = EXP_DIFF_HIGH)
 static_getter	code/modules/expedition/expedition_transport.dm	var/static/list/mission_types = list(
-static_getter	code/modules/generated_station/generated_station_materializer.dm	var/static/list/phases = list(
 static_getter	code/modules/generated_station/generated_station_planner.dm	var/static/list/sections = list("departments", "nodes", "rooms", "doors", "edges", "tile_rows", "content_rooms", "fixtures", "networks")
 static_getter	code/modules/keybindings/adapters.dm	var/static/list/table = list(
-static_getter	code/modules/keybindings/router.dm	var/static/list/table = list(
-static_getter	code/modules/keybindings/router.dm	var/static/list/table = list(list(list(MIDDLE_CLICK), INPUT_ACTION_SWAP_HANDS))
-static_getter	code/modules/keybindings/router.dm	var/static/list/table = list(list(list(SHIFT_CLICK), INPUT_ACTION_INSPECT))
-static_getter	code/modules/keybindings/router.dm	var/static/list/table = list(list(list(ALT_CLICK), INPUT_ACTION_ALTERNATE))
-static_getter	code/modules/keybindings/router.dm	var/static/list/table = list(list(list(RIGHT_CLICK), INPUT_ACTION_ALTERNATE_SECONDARY))
-static_getter	code/modules/keybindings/router.dm	var/static/list/table = list(list(list(LEFT_CLICK), INPUT_ACTION_USE))
 static_getter	code/modules/maps/poi_service.dm	var/static/list/names = list("poi_queue")
 static_getter	code/modules/medical/conditions/environmental.dm	var/static/list/S = list(
-static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/L = list(TREAT_TISSUE_REPAIR = 0.25, TREAT_SURGICAL_REPAIR = 1)
-static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/L = list(TREAT_SURGICAL_REPAIR)
 static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/brain = list(/datum/affliction_symptom/headache = 70, /datum/affliction_symptom/confusion = 40, /datum/affliction_symptom/dizziness = 40)
 static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/heart = list(/datum/affliction_symptom/palpitations = 60, /datum/affliction_symptom/chest_pain_crushing = 30)
 static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/lungs = list(/datum/affliction_symptom/short_breath = 60, /datum/affliction_symptom/sharp_chest_pain = 30)
 static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/eyes = list(/datum/affliction_symptom/blurred_vision = 70)
 static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/abdo = list(/datum/affliction_symptom/abdominal_tenderness = 70)
-static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/L = list(TREAT_SURGICAL_REPAIR = 1, TREAT_HEMOSTATIC = 0.1, TREAT_TISSUE_REPAIR = 0.2)
-static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/L = list(TREAT_SURGICAL_REPAIR)
 static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/L = list(/datum/affliction_symptom/pallor = 60, /datum/affliction_symptom/abdominal_tenderness = 40, /datum/affliction_symptom/internal_pressure = 40)
-static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/L = list(TREAT_SURGICAL_REPAIR = 1, TREAT_ANTIMICROBIAL = 0.1)
-static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/L = list(TREAT_SURGICAL_REPAIR)
 static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/lungs = list(/datum/affliction_symptom/short_breath = 70, /datum/affliction_symptom/sharp_chest_pain = 50)
 static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/gut = list(/datum/affliction_symptom/abdominal_tenderness = 80, /datum/affliction_symptom/nausea = 40, /datum/affliction_symptom/fever_sensation = 30)
-static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/L = list(TREAT_RESECTION = 1, TREAT_GENETIC_REPAIR = 0.2, TREAT_ANTIMICROBIAL = 0.02)
-static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/L = list(TREAT_RESECTION)
 static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/L = list(/datum/affliction_symptom/fever_sensation = 60, /datum/affliction_symptom/fatigue = 50, /datum/affliction_symptom/pallor = 30)
-static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/L = list(TREAT_OXYGENATION = 0.3, TREAT_SURGICAL_REPAIR = 1)
-static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/L = list(TREAT_SURGICAL_REPAIR)
 static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/brain = list(/datum/affliction_symptom/confusion = 60, /datum/affliction_symptom/drowsy = 50)
 static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/heart = list(/datum/affliction_symptom/chest_pain_crushing = 60, /datum/affliction_symptom/palpitations = 40)
 static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/eyes = list(/datum/affliction_symptom/blurred_vision = 70)
 static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/L = list(/datum/affliction_symptom/fatigue = 50)
-static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/L = list(TREAT_ANTITOXIN = 0.3, TREAT_SURGICAL_REPAIR = 1)
-static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/L = list(TREAT_SURGICAL_REPAIR)
 static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/liver = list(/datum/affliction_symptom/jaundice = 70, /datum/affliction_symptom/nausea = 40)
 static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/kidneys = list(/datum/affliction_symptom/fatigue = 50, /datum/affliction_symptom/nausea = 40)
 static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/L = list(/datum/affliction_symptom/nausea = 40)
-static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/L = list(TREAT_PLATING_REPAIR = 1, TREAT_WIRING_REPAIR = 1, TREAT_SYSTEM_RESTORE = 1)
-static_getter	code/modules/medical/conditions/lesions.dm	var/static/list/L = list(TREAT_PLATING_REPAIR, TREAT_WIRING_REPAIR, TREAT_SYSTEM_RESTORE)
-static_getter	code/modules/medical/conditions/nanite.dm	var/static/list/msgs = list("Your mass feels loose, as if it could run off you.", "Bond integrity warnings flicker through your swarm.")
-static_getter	code/modules/medical/conditions/nanite.dm	var/static/list/msgs = list("Your refactory is empty. You need steel.", "Your nanites are cannibalising one another.")
-static_getter	code/modules/medical/conditions/nanite.dm	var/static/list/msgs = list("Your swarm lags behind your intentions.", "Orchestrator fault: control packets dropped.")
-static_getter	code/modules/medical/conditions/nanite.dm	var/static/list/msgs = list("Something foreign is gumming up your nanites.", "Refactory warning: unprocessable matter detected.")
-static_getter	code/modules/medical/conditions/nanite.dm	var/static/list/msgs = list("Holding this shape is getting harder.", "Your swarm aches to settle into its natural form.")
-static_getter	code/modules/medical/conditions/synthetic.dm	var/static/list/emotes = list("drips coolant onto the floor.")
-static_getter	code/modules/medical/conditions/synthetic.dm	var/static/list/msgs = list("WARNING: core temperature rising.", "Thermal management reports reduced heat rejection.")
-static_getter	code/modules/medical/conditions/synthetic.dm	var/static/list/emotes = list("whirs loudly as their fans spin up.")
-static_getter	code/modules/medical/conditions/synthetic.dm	var/static/list/emotes = list("makes a faint grinding noise as they move.")
-static_getter	code/modules/medical/conditions/synthetic.dm	var/static/list/msgs = list("A joint grinds as it moves.", "Actuator feedback doesn't match the commanded position.")
-static_getter	code/modules/medical/conditions/synthetic.dm	var/static/list/msgs = list("ERROR: segmentation fault in cognitive subroutine.", "Memory checksum mismatch. Retrying...", "A thought loops, stalls, and restarts.")
-static_getter	code/modules/medical/conditions/synthetic.dm	var/static/list/msgs = list("WARNING: supply voltage low.", "Your systems brown out for a moment.")
-static_getter	code/modules/medical/conditions/vital_systems.dm	var/static/list/L = list(
-static_getter	code/modules/medical/conditions/vital_systems.dm	var/static/list/L = list("clutches at their throat", "makes a strangled noise")
-static_getter	code/modules/medical/conditions/vital_systems.dm	var/static/list/L = list("Your throat feels tight and narrow.", "Breathing in takes real effort.")
-static_getter	code/modules/medical/conditions/vital_systems.dm	var/static/list/L = list("breathes with a harsh, whistling rasp")
-static_getter	code/modules/medical/conditions/vital_systems.dm	var/static/list/L = list("Your tongue feels too big for your mouth.", "Your lips are tingling and swollen.")
-static_getter	code/modules/medical/conditions/vital_systems.dm	var/static/list/L = list("gasps once, then goes still")
-static_getter	code/modules/medical/symptoms/library/diagnostic.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/diagnostic.dm	var/static/list/L = list("looks confused", "stares blankly")
-static_getter	code/modules/medical/symptoms/library/diagnostic.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/diagnostic.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list("looks pale")
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list("has a faint blue tinge to their lips")
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list("bleeds heavily")
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list("looks faintly yellow")
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list("shivers")
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list("looks flushed", "wipes their brow")
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list("has a patch of skin that looks grey and lifeless")
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list("sways unsteadily", "stumbles slightly")
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list("blinks slowly, one pupil noticeably larger than the other")
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list("squints, one eye unfocused")
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list("can't quite grip with their affected hand", "drags their leg slightly")
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list("has red, raw patches of skin")
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list("yawns deeply", "nods off for a moment")
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list("fidgets restlessly", "shifts from foot to foot")
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/observable.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/pain.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/pain.dm	var/static/list/L = list("winces in pain", "grimaces")
-static_getter	code/modules/medical/symptoms/library/pain.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/pain.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/pain.dm	var/static/list/L = list("clutches their chest", "grimaces and clutches at their chest")
-static_getter	code/modules/medical/symptoms/library/pain.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/pain.dm	var/static/list/L = list("winces while breathing")
-static_getter	code/modules/medical/symptoms/library/respiratory.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/respiratory.dm	var/static/list/L = list("breathes heavily")
-static_getter	code/modules/medical/symptoms/library/respiratory.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/respiratory.dm	var/static/list/L = list("coughs wetly")
-static_getter	code/modules/medical/symptoms/library/respiratory.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/respiratory.dm	var/static/list/L = list("wheezes")
-static_getter	code/modules/medical/symptoms/library/respiratory.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/respiratory.dm	var/static/list/L = list("gasps", "struggles to breathe")
-static_getter	code/modules/medical/symptoms/library/subjective.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/subjective.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/subjective.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/subjective.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/subjective.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/subjective.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/subjective.dm	var/static/list/L = list(
-static_getter	code/modules/medical/symptoms/library/subjective.dm	var/static/list/L = list(
-static_getter	code/modules/mob/living/bot/medbot.dm	var/static/list/reagents = list(REAGENT_ID_TRICORDRAZINE)
-static_getter	code/modules/mob/living/bot/medbot.dm	var/static/list/reagents = list(REAGENT_ID_BICARIDINE, REAGENT_ID_DERMALINE, REAGENT_ID_DEXALIN, REAGENT_ID_ANTITOXIN, REAGENT_ID_TRICORDRAZINE)
-static_getter	code/modules/mob/living/carbon/human/flavor_panel.dm	var/static/list/keys = list("general", "head", "face", "eyes", "torso", "arms", "hands", "legs", "feet")
-static_getter	code/modules/mob/living/carbon/human/flavor_panel.dm	var/static/list/labels = list(
-static_getter	code/modules/mob/living/carbon/human/human.dm	var/static/list/kinds = list(
 static_getter	code/modules/mob/living/carbon/human/species/species.dm	var/static/list/names = list("assisted_langs", "unarmed_types", "cold_discomfort_strings", "heat_discomfort_strings", "has_organ", "genders", "secondary_langs", "inherent_verbs", "default_emotes", "speech_sounds", "species_component")
-static_getter	code/modules/mob/living/carbon/human/species/station/alraune.dm	var/static/list/options = list(
-static_getter	code/modules/mob/living/carbon/human/species/station/prommie_blob.dm	var/static/list/types = list(/datum/form/human, /datum/form/promethean_blob)
-static_getter	code/modules/mob/living/carbon/human/species/station/prommie_blob.dm	var/static/list/form_verbs = list(
-static_getter	code/modules/mob/living/carbon/human/species/station/protean/forms.dm	var/static/list/types = list(/datum/form/human)
-static_getter	code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm	var/static/list/types = list(/datum/form/human, /datum/form/protean_blob)
 static_getter	code/modules/mob/living/silicon/robot/component.dm	var/static/list/types = list(
-static_getter	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	var/static/list/types = list(
-static_getter	code/modules/mob/living/simple_mob/subtypes/animal/animal.dm	var/static/list/types = list(
-static_getter	code/modules/organs/internal/augment/armmounted.dm	var/static/list/types = list(
-static_getter	code/modules/organs/internal/augment/armmounted.dm	var/static/list/types = list(/datum/matter_synth/wire)
-static_getter	code/modules/organs/internal/augment/armmounted.dm	var/static/list/types = list(
-static_getter	code/modules/organs/internal/augment/armmounted.dm	var/static/list/types = list(/datum/matter_synth/bandage)
-static_getter	code/modules/organs/subtypes/replicant.dm	var/static/list/organ_tags = list(O_HEART, O_KIDNEYS, O_VOICE, O_GBLADDER, O_PLASMA)
-static_getter	code/modules/reagents/reagents/medicine.dm	var/static/list/organs = list(O_LUNGS, O_VOICE, O_GBLADDER)
-static_getter	code/modules/reagents/reagents/medicine.dm	var/static/list/partners = list(REAGENT_ID_GASTIRODAXON, REAGENT_ID_PERIDAXON)
-static_getter	code/modules/reagents/reagents/medicine.dm	var/static/list/organs = list(O_APPENDIX, O_STOMACH, O_INTESTINE, O_NUTRIENT, O_PLASMA, O_POLYP)
-static_getter	code/modules/reagents/reagents/medicine.dm	var/static/list/partners = list(REAGENT_ID_HEPANEPHRODAXON, REAGENT_ID_PERIDAXON)
-static_getter	code/modules/reagents/reagents/medicine.dm	var/static/list/organs = list(O_LIVER, O_KIDNEYS, O_APPENDIX, O_ACID, O_HIVE)
-static_getter	code/modules/reagents/reagents/medicine.dm	var/static/list/partners = list(REAGENT_ID_CORDRADAXON, REAGENT_ID_PERIDAXON)
-static_getter	code/modules/reagents/reagents/medicine.dm	var/static/list/organs = list(O_HEART, O_SPLEEN, O_RESPONSE, O_ANCHOR, O_EGG)
-static_getter	code/modules/reagents/reagents/medicine.dm	var/static/list/partners = list(REAGENT_ID_HYRONALIN, REAGENT_ID_PERIDAXON)
 static_getter	code/modules/vore/eating/belly_messages.dm	var/static/list/defaults = list(
 const_list_alloc	code/_helpers/filters.dm	. = list("type" = "alpha")
 const_list_alloc	code/_helpers/filters.dm	. = list("type" = "angular_blur")
@@ -309,7 +145,6 @@ const_list_alloc	code/controllers/subsystems/access.dm	return list(ACCESS_CENT_G
 const_list_alloc	code/controllers/subsystems/access.dm	return list(ACCESS_CENT_GENERAL, ACCESS_CENT_THUNDER, ACCESS_CENT_SPECOPS, ACCESS_CENT_LIVING, ACCESS_CENT_STORAGE, ACCESS_CENT_CREED)
 const_list_alloc	code/controllers/subsystems/contracts.dm	return list("verified" = FALSE, "duration" = 0)
 const_list_alloc	code/controllers/subsystems/job.dm	. = list("turf","msg", "voreny", "prey", "itemtf", "vorgans", "carrier") // Item TF spawnpoints, spawn as mob
-const_list_alloc	code/controllers/subsystems/job.dm	return list("VIP Guest",
 const_list_alloc	code/controllers/subsystems/profiler.dm	return list("missing" = TRUE)
 const_list_alloc	code/controllers/subsystems/profiler.dm	return list("missing" = TRUE)
 const_list_alloc	code/datums/abilities/ability.dm	return list(REQ_SELF) + ..()
@@ -323,30 +158,8 @@ const_list_alloc	code/datums/om/library.dm	. = list("kind" = OM_EFFECT_STATUS, "
 const_list_alloc	code/game/atom/_atom.dm	return list("x" = 0, "y" = 0)
 const_list_alloc	code/game/atom/_atom.dm	. = list(EXTRAPOLATOR_RESULT_DISEASES = list())
 const_list_alloc	code/game/gamemodes/technomancer/equipment.dm	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
-const_list_alloc	code/game/jobs/access.dm	return list("VIP Guest",
 const_list_alloc	code/game/jobs/job/assistant.dm	return list(ACCESS_MAINT_TUNNELS)
 const_list_alloc	code/game/jobs/job/assistant.dm	return list(ACCESS_MAINT_TUNNELS)
-const_list_alloc	code/game/jobs/job/captain.dm	return list("Training crew", "Assembling expedition team")
-const_list_alloc	code/game/jobs/job/captain.dm	return list("ID modification", "Training crew", "Assembling expedition team")
-const_list_alloc	code/game/jobs/job/cargo.dm	return list("Training crew")
-const_list_alloc	code/game/jobs/job/cargo.dm	return list("Assembling expedition team")
-const_list_alloc	code/game/jobs/job/civilian.dm	return list("Assembling expedition team")
-const_list_alloc	code/game/jobs/job/engineering.dm	return list("Engine setup", "Construction project", "Repairs necessary", "Training crew", "Assembling expedition team")
-const_list_alloc	code/game/jobs/job/engineering.dm	return list("Engine setup", "Construction project", "Repairs necessary", "Assembling expedition team")
-const_list_alloc	code/game/jobs/job/engineering.dm	return list("Construction project", "Repairs necessary", "Assembling expedition team")
-const_list_alloc	code/game/jobs/job/exploration.dm	return list("Training crew", "Assembling expedition team")
-const_list_alloc	code/game/jobs/job/exploration.dm	return list("Assembling expedition team")
-const_list_alloc	code/game/jobs/job/exploration.dm	return list("Assembling expedition team")
-const_list_alloc	code/game/jobs/job/medical.dm	return list("Surgery pending", "Viral outbreak", "Training crew", "Assembling expedition team")
-const_list_alloc	code/game/jobs/job/medical.dm	return list("Surgery pending", "Viral outbreak", "Assembling expedition team")
-const_list_alloc	code/game/jobs/job/medical.dm	return list("Assembling expedition team")
-const_list_alloc	code/game/jobs/job/science.dm	return list("Repairs needed", "Training crew", "Assembling expedition team")
-const_list_alloc	code/game/jobs/job/science.dm	return list("Assembling expedition team")
-const_list_alloc	code/game/jobs/job/science.dm	return list("Repairs needed")
-const_list_alloc	code/game/jobs/job/security.dm	return list("Wildlife management", "Forensic investigation", "Training crew", "Assembling expedition team")
-const_list_alloc	code/game/jobs/job/security.dm	return list("Wildlife management")
-const_list_alloc	code/game/jobs/job/security.dm	return list("Forensic investigation")
-const_list_alloc	code/game/jobs/job/security.dm	return list("Wildlife management", "Assembling expedition team")
 const_list_alloc	code/game/jobs/job/special.dm	return list(ACCESS_MAINT_TUNNELS, ACCESS_ENTERTAINMENT, ACCESS_CLOWN, ACCESS_TOMFOOLERY)
 const_list_alloc	code/game/jobs/job/special.dm	return list(ACCESS_ENTERTAINMENT, ACCESS_CLOWN, ACCESS_TOMFOOLERY)
 const_list_alloc	code/game/jobs/job/special.dm	return list(ACCESS_MAINT_TUNNELS, ACCESS_ENTERTAINMENT, ACCESS_TOMFOOLERY, ACCESS_MIME)
@@ -481,7 +294,6 @@ const_list_alloc	code/modules/expedition/expedition_faction.dm	return list(/mob/
 const_list_alloc	code/modules/expedition/expedition_faction.dm	return list(/mob/living/simple_mob/animal/giant_spider, /mob/living/simple_mob/animal/sif/leech)
 const_list_alloc	code/modules/expedition/expedition_faction.dm	return list(/mob/living/simple_mob/animal/space/shark, /mob/living/simple_mob/animal/sif/leech)
 const_list_alloc	code/modules/factions/reputation.dm	return list(AFFILIATION_HOSTILE, AFFILIATION_OPPOSED, AFFILIATION_NEUTRAL, AFFILIATION_FRIENDLY, AFFILIATION_MEMBER)
-const_list_alloc	code/modules/factions/reputation.dm	return list(
 const_list_alloc	code/modules/food/kitchen/cooking_machines/_appliance.dm	return list("average", "Not Cooking.")
 const_list_alloc	code/modules/food/kitchen/cooking_machines/_appliance.dm	return list("blue", "Cold.")
 const_list_alloc	code/modules/food/kitchen/cooking_machines/_appliance.dm	return list("blue", "It's barely started cooking.")
@@ -575,8 +387,6 @@ const_list_alloc	code/modules/generated_station/generated_station_fragments.dm	r
 const_list_alloc	code/modules/generated_station/generated_station_fragments.dm	return list(/datum/generated_room_fragment/activity_motif/engineering_stores, /datum/generated_room_fragment/activity_motif/engineering_tools)
 const_list_alloc	code/modules/generated_station/generated_station_fragments.dm	return list(/datum/generated_room_fragment/activity_motif/logistics_inventory, /datum/generated_room_fragment/activity_motif/logistics_bulk)
 const_list_alloc	code/modules/generated_station/generated_station_fragments.dm	return list(/datum/generated_room_fragment/activity_motif/docking_supply, /datum/generated_room_fragment/activity_motif/docking_equipment)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list("power")
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list("power", "data")
 const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature/surgery_table, /datum/generated_room_feature/operating_computer)
 const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature/waiting_chair)
 const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature/work_table, /datum/generated_room_feature/work_chair)
@@ -598,42 +408,8 @@ const_list_alloc	code/modules/generated_station/generated_station_room_definitio
 const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(list(2, 1), list(3, 1), list(2, 2), list(3, 2))
 const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(list(1, 1), list(2, 1), list(3, 1), list(2, 2))
 const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(list(1, 1), list(2, 1), list(3, 1), list(3, 2))
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list("research", "corporate")
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list("sterile")
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list("salvage")
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list("industrial")
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature/medical_storage, /datum/generated_room_feature/sleeper)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature_group/operating_theatre, /datum/generated_room_feature_group/medical_storage_bank)
 const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_variant/sterile_research, /datum/generated_room_variant/salvage_industrial)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature/reception_desk, /datum/generated_room_feature/reception_chair)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature_group/waiting_area)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_fragment/reception_corner)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature_group/command_desk, /datum/generated_room_feature_group/communications_bank)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature_group/waiting_area)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_fragment/reception_corner)
 const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_variant/sterile_research, /datum/generated_room_variant/salvage_industrial)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature/internals_crate)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature_group/communications_bank, /datum/generated_room_feature_group/workstation_bank)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature/recharger)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature_group/security_console_bank, /datum/generated_room_feature_group/electrical_storage_bank)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature/recharger)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature_group/engineering_bench, /datum/generated_room_feature_group/electrical_storage_bank)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature_group/security_post, /datum/generated_room_feature_group/security_console_bank, /datum/generated_room_feature_group/workstation_bank)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature/work_table)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature_group/brig_bunks, /datum/generated_room_feature_group/security_console_bank)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature_group/patient_bay, /datum/generated_room_feature_group/medical_storage_bank)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature/medical_storage)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature/recharger)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature_group/engineering_bench, /datum/generated_room_feature_group/electrical_storage_bank)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature/internals_crate)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature_group/atmospherics_bench)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature/supply_console, /datum/generated_room_feature/cargo_locker)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature_group/cargo_stack)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature_group/cargo_stack, /datum/generated_room_feature_group/cargo_workstation)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature/internals_crate)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature_group/communications_bank, /datum/generated_room_feature_group/workstation_bank)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature/internals_crate, /datum/generated_room_feature/communications_console)
-const_list_alloc	code/modules/generated_station/generated_station_room_definitions.dm	return list(/datum/generated_room_feature_group/berth_seating)
 const_list_alloc	code/modules/generated_station/generated_station_rust_contract.dm	return list("reception", "operations", "communications", "meeting", "briefing", "records", "liaison", "archive")
 const_list_alloc	code/modules/generated_station/generated_station_rust_contract.dm	return list("foyer", "core", "satellite", "support", "robotics", "monitoring", "secure-storage", "server-closet")
 const_list_alloc	code/modules/generated_station/generated_station_rust_contract.dm	return list("reception", "operations", "brig", "armory", "interrogation", "evidence", "locker-room", "checkpoint")
@@ -656,16 +432,12 @@ const_list_alloc	code/modules/heat/heat.dm	return list(HEAT_TARGET_NONE, 0)
 const_list_alloc	code/modules/heat/heat.dm	return list(HEAT_TARGET_NONE, 0)
 const_list_alloc	code/modules/hydroponics/trays/tray_tools.dm	return list("no_seed" = TRUE)
 const_list_alloc	code/modules/metric/department.dm	return list(DEPARTMENT_UNKNOWN)
-const_list_alloc	code/modules/mob/hear_say.dm	return list("AI") // AI door!
 const_list_alloc	code/modules/mob/living/carbon/human/human_helpers.dm	return list(HUMAN_EATING_NO_MOUTH)
 const_list_alloc	code/modules/mob/living/carbon/human/human_helpers.dm	return list(HUMAN_EATING_NO_ISSUE)
-const_list_alloc	code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm	return list(
-const_list_alloc	code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm	return list(
 const_list_alloc	code/modules/mob/living/living.dm	return list("ooc_notes_likes", /datum/preference/text/living/ooc_notes_likes, "LIKED")
 const_list_alloc	code/modules/mob/living/living.dm	return list("ooc_notes_dislikes", /datum/preference/text/living/ooc_notes_dislikes, "DISLIKED")
 const_list_alloc	code/modules/mob/living/living.dm	return list("ooc_notes_favs", /datum/preference/text/living/ooc_notes_favs, "FAVOURITE")
 const_list_alloc	code/modules/mob/living/living.dm	return list("ooc_notes_maybes", /datum/preference/text/living/ooc_notes_maybes, "MAYBE")
-const_list_alloc	code/modules/mob/living/silicon/robot/drone/drone.dm	return list(
 const_list_alloc	code/modules/mob/living/silicon/robot/robot_simple_items.dm	return list(HOLD_MAX_SIZE(ITEMSIZE_HUGE))
 const_list_alloc	code/modules/mob/living/silicon/robot/robot_simple_items.dm	return list(HOLD_ONLY(list(BASIC_GRIPPER)))
 const_list_alloc	code/modules/mob/living/silicon/robot/robot_simple_items.dm	return list(HOLD_ONLY(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER)))
@@ -685,20 +457,14 @@ const_list_alloc	code/modules/mob/living/silicon/robot/robot_simple_items.dm	ret
 const_list_alloc	code/modules/mob/living/silicon/robot/robot_simple_items.dm	return list(HOLD_ONLY(list(EXOSUIT_GRIPPER)))
 const_list_alloc	code/modules/mob/living/silicon/robot/robot_simple_items.dm	return list(HOLD_ONLY(list(SHEET_GRIPPER)))
 const_list_alloc	code/modules/mob/living/silicon/robot/robot_simple_items.dm	return list(HOLD_ONLY(list(BASIC_GRIPPER, SECURITY_GRIPPER, MINER_GRIPPER, PAPERWORK_GRIPPER, MEDICAL_GRIPPER, RESEARCH_GRIPPER, CIRCUIT_GRIPPER, SERVICE_GRIPPER, GRAVEYARD_GRIPPER, ORGAN_GRIPPER, ROBOTICS_ORGAN_GRIPPER, EXOSUIT_GRIPPER, SHEET_GRIPPER)))
-const_list_alloc	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	return list(
 const_list_alloc	code/modules/mob/living/simple_mob/subtypes/illusion/illusion.dm	return list("???")
-const_list_alloc	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	return list(
 const_list_alloc	code/modules/overmap/ships/engines/engine.dm	return list("All systems nominal")
 const_list_alloc	code/modules/projectiles/guns/energy.dm	return list("unknown", "unknown")
 const_list_alloc	code/modules/projectiles/guns/projectile.dm	return list("unknown", "unknown") // Safety, this shouldn't happen, but just in case
 const_list_alloc	code/modules/projectiles/guns/projectile.dm	return list("unknown", "unknown") // Safety, this shouldn't happen, but just in case
 const_list_alloc	code/modules/projectiles/guns/projectile.dm	return list("unknown", "unknown")
-const_list_alloc	code/modules/reagents/reagents/core.dm	return list("donor", "viruses", "species", "blood_DNA", "blood_type", "blood_colour", "resistances", "trace_chem", REAGENT_ID_ANTIBODIES, "changeling")
-const_list_alloc	code/modules/reagents/reagents/food_drinks.dm	return list("cooked")
-const_list_alloc	code/modules/reagents/reagents/food_drinks.dm	return list("temperature")
 const_list_alloc	code/modules/shuttles/shuttles_web.dm	. = list("reading" = FALSE)
 const_list_alloc	code/modules/tickets/tickets.dm	. = list("total" = list(), "noflags" = list(), "afk" = list(), "stealth" = list(), "present" = list())
-const_list_alloc	code/modules/ventcrawl/ventcrawl.dm	return list(
 const_list_alloc	code/modules/vore/eating/bellymodes_datum.dm	return list("to_update" = TRUE)
 const_list_alloc	code/modules/vore/eating/bellymodes_datum.dm	return list("to_update" = TRUE)
 const_list_alloc	code/modules/vore/eating/bellymodes_datum.dm	return list("to_update" = TRUE)

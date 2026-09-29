@@ -61,30 +61,62 @@ def constant(text):
     return bool(TOKEN_OK.match(body.replace("S", "A").replace("P", "A")))
 
 
+PROC_HDR = re.compile(r"^/[\w/]*\w\((.*)\)")
+OVERRIDE_HDR = re.compile(r"^/[\w/]+/(?!proc/|verb/)\w+\(\s*\)")
+GLOB_RETURN = re.compile(r"^\s+return\s+(?:GLOB|global)\.\w+\s*$")
+STATIC_ANY = re.compile(r"^(\s+)var/static/list/(\w+)\b")
+LOCAL_CONST = re.compile(r"^(\s+)var/list/(\w+)\s*=\s*list\(")
+WRITE = r"\s*(\+=|-=|\|=|&=|\^=|\.Add\(|\.Remove\(|\.Cut\(|\.Insert\(|\.Swap\(|\.Splice\(|\.Copy\(|\[[^\]]*\]\s*(=[^=]|\+=|-=)|\.len\s*[-+]?=|\s*=[^=])"
+
+
+def proc_body(lines, index):
+    """Indices of the rest of the proc body after line `index`."""
+    out = []
+    for later in range(index + 1, len(lines)):
+        text = lines[later]
+        if text.strip() and not text.startswith(("\t", " ")):
+            break
+        out.append(later)
+    return out
+
+
 def scan(files):
     out = {rule: [] for rule in RULES}
     for rel, lines in files:
+        in_proc = False
+        header = None
         for number, line in enumerate(lines, 1):
+            if line.strip() and not line.startswith(("\t", " ")):
+                in_proc = bool(PROC_HDR.match(line)) and not line.lstrip().startswith("//")
+                header = line if in_proc else None
             if NOT_WORTH.search(line):
                 out["not_worth_it_annotation"].append((rel, number))
-            match = STATIC_DECL.match(line)
-            if match:
-                text, _ = gather(lines, number - 1, line.index("list(", match.start(2)))
-                if not constant(text):
-                    continue
-                indent = len(match.group(1).expandtabs(4))
-                name = match.group(2)
-                ret = re.compile(r"^\s+return\s+" + name + r"\s*$")
-                for later in lines[number:]:
-                    stripped = later.strip()
-                    if stripped and not later.startswith(("\t", " ")):
-                        break  # left the proc
-                    if ret.match(later.split("//", 1)[0]):
-                        out["static_getter"].append((rel, number))
-                        break
+            if not in_proc:
                 continue
-            if RETURN_LIST.match(line.split("//", 1)[0]):
+            code = line.split("//", 1)[0]
+            # A per-type override that hands out a global list.
+            if GLOB_RETURN.match(code) and header and OVERRIDE_HDR.match(header)                     and lines[number - 2] == header:
+                out["static_getter"].append((rel, number))
+                continue
+            match = STATIC_ANY.match(code)
+            if match:
+                ret = re.compile(r"^\s+return\s+" + match.group(2) + r"\s*$")
+                if any(ret.match(lines[k].split("//", 1)[0]) for k in proc_body(lines, number - 1)):
+                    out["static_getter"].append((rel, number))
+                continue
+            if RETURN_LIST.match(code):
                 text, _ = gather(lines, number - 1, line.index("list("))
                 if constant(text):
+                    out["const_list_alloc"].append((rel, number))
+                continue
+            match = LOCAL_CONST.match(code)
+            if match:
+                text, end = gather(lines, number - 1, line.index("list("))
+                if not constant(text):
+                    continue
+                name = match.group(2)
+                touched = re.compile(r"\b" + name + WRITE + r"|return\s+" + name + r"\b|[(,]\s*" + name
+                                     + r"\s*[,)]|=\s*" + name + r"\s*$")
+                if not any(touched.search(lines[k].split("//", 1)[0]) for k in proc_body(lines, end)):
                     out["const_list_alloc"].append((rel, number))
     return out

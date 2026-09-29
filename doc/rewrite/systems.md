@@ -148,18 +148,29 @@ INTERACT_USE("Toggle", PROC_REF(toggle), REQ_FIELD("operable"), REQ_FIELD_NOT("l
 ## 7. Per-type constant tables
 
 ```dm
-TYPE_TABLE(/obj/machinery/vending, products, list(/obj/item/soap = 5, ...))
+TYPE_TABLE_DECLARE(/obj/machinery/vending, products, null)          // once per name, on the root
+TYPE_TABLE(/obj/machinery/vending/coffee, products, list(/obj/item/soap = 5, ...))
 var/list/p = TYPE_TABLE_GET(src, products)       // shared, read-only
-COW_LIST(src, products)                           // per-instance copy on first write
+var/list/mine = TYPE_TABLE_COPY(src, products)   // a private copy
+var/list/r = COW_READ(src, products)             // the instance var if set, else the table
+COW_LIST(src, products)[/obj/item/soap] = 3      // per-instance copy on first write
 ```
 
 - `TYPE_TABLE(type, name, value)` declares a per-type constant, inherited and overridable by
-  subtype; stored in the `type_tables` shared cache keyed by `(type, name)`. Replaces the 144
-  "getter returning a proc-local static list" procs and the "not worth it" instance_list
-  annotations.
-- `COW_LIST(instance, name)`: copy-on-write; the instance var is null until written.
-- Procs that allocate the same constant list per call become `TYPE_TABLE` or a module constant.
-- Lint `sys_static_getter`, `sys_const_list_alloc`, and the "not worth it" annotation text.
+  subtype. The value is any expression (a literal or a builder call); it is evaluated once per
+  concrete type on first read and stored in the shared cache `tt_<name>` keyed by type path, so
+  a read is one list index and nothing is allocated per instance or per call.
+- As built: the root needs `TYPE_TABLE_DECLARE(root, name, default)` (it declares the hidden
+  `_tt_<name>()` proc and the cache). Table names are global; a clash is a compile error.
+- `COW_LIST(instance, name)`: copy-on-write; the instance var is null until written (a map
+  varedit sets it, and `COW_READ` then prefers it).
+- Values are shared: test builds runtime on a mutation (the shared-cache guard).
+- Procs that allocate the same constant list per call become `TYPE_TABLE` or a module constant
+  (`GLOBAL_LIST_INIT`, or a proc-free `var/static` table read directly).
+- Lint (`tools/ci/sys_rules/tables.py`): `sys_static_getter` (a proc returning a proc-local
+  `var/static/list` in any form, or a per-type override returning a `GLOB` list),
+  `sys_const_list_alloc` (a non-empty constant `list(...)` returned per call, or a local one
+  that is only read), `sys_not_worth_it_annotation` (the old instance_list "not worth it" keep).
 
 ## 8. One loot system
 
