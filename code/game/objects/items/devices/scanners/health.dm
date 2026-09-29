@@ -143,7 +143,7 @@
 		else
 			. += span_notice("Subject is a Xenochimera. Treat accordingly.")
 
-/obj/item/healthanalyzer/verb/toggle_adv()
+/obj/item/healthanalyzer/proc/toggle_adv()
 	set name = "Toggle Advanced Scan"
 	set category = "Object"
 	set src in usr
@@ -151,11 +151,11 @@
 	showadvscan = !showadvscan
 	to_chat(usr, "The scanner will now perform [showadvscan ? "an advanced" : "a basic"] analysis.")
 
-/// Only a scanner better than the basic profile has a basic report to switch to.
-/obj/item/healthanalyzer/hidden_verbs()
+/// Only a scanner better than the basic profile has a basic report to switch to (a per-type fact).
+/obj/item/healthanalyzer/type_verbs()
 	. = ..()
-	if(profile_type == /datum/diagnostic_profile/health_analyzer)
-		. += /obj/item/healthanalyzer/verb/toggle_adv
+	if(initial(profile_type) != /datum/diagnostic_profile/health_analyzer)
+		. += /obj/item/healthanalyzer/proc/toggle_adv
 
 /obj/item/healthanalyzer/improved //reports localized injuries, blood pressure and more reagents
 	name = "improved health analyzer"

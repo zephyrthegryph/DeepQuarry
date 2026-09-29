@@ -125,6 +125,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 	var/datum/lifecycle_decls/decls = isatom(owner) ? lifecycle_decls_of(owner) : null
 	if(decls && (decls.work & DECL_WORK_VERBS) && decls.verbs_hidden && (key in decls.verbs_hidden))
 		return FALSE
+	// hidden_verbs() (dx_conventions.md §4): derived from state, applied by the refresh engine.
+	if(isatom(owner))
+		var/atom/hider = owner
+		if(hider.refresh_hidden_verbs && (key in hider.refresh_hidden_verbs))
+			return FALSE
 	var/list/grants = E?.om_rec ? om_value_of(E, GRANT_VERB) : null
 	if(grants?[key] > 0)
 		return TRUE
@@ -132,6 +137,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 		return FALSE // a named verb exists only while granted
 	var/owner_type = verb_static_owner(key)
 	if(owner_type && istype(owner, owner_type))
+		return TRUE
+	// type_verbs(): verbs a type has by what it is (a per-type list, no per-instance entry).
+	if(isatom(owner) && (type_derive_flags(owner) & TYPE_DERIVES_TYPE_VERBS) && (key in type_list(owner, TYPE_PROC_REF(/atom, type_verbs))))
 		return TRUE
 	if(!decls || !(decls.work & DECL_WORK_VERBS))
 		return FALSE

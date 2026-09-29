@@ -30,7 +30,15 @@
  *		var/target_pressure = ONE_ATMOSPHERE
  *	TRACKED(/obj/machinery/pump, target_pressure, CHANGE_MACHINE_SETTINGS)
  */
-#define TRACKED(T, V, CHANNEL) ##T/proc/set_##V(value) { if(V == value) { return FALSE }; V = value; changed(src, CHANNEL); return TRUE }
+#define TRACKED(T, V, CHANNEL) ##T/proc/set_##V(value) { if(V == value) { return FALSE }; V = value; changed(src, CHANNEL); return TRUE };SETTER(T, V)
+
+/**
+ * Registers a hand-written `T/proc/set_<V>(value)` as V's setter (a setter with side effects):
+ * admin var edits go through it, and tools/ci/tracked_lint.py treats V as tracked (writes only in the
+ * setter). Only registered setters are called by VV: a proc that merely happens to be named set_<x>
+ * (a verb, another signature) never is.
+ */
+#define SETTER(T, V) ##T/proc/__setter_##V() { return TRUE }
 
 // ---- UI helpers ----
 /// Returned by a ui_<action> proc that refused (refuse() already told the user).
@@ -56,3 +64,12 @@
 /// cover(open_tool = BY_HAND): opened with an empty hand. (DM substitutes a default for an explicit
 /// null argument, so null can't mean "by hand".)
 #define BY_HAND "by_hand"
+
+// ---- what a type derives (type_derive_flags(), cached per type) ----
+#define TYPE_DERIVES_CAPS (1<<0)
+#define TYPE_DERIVES_LOOK (1<<1)
+#define TYPE_DERIVES_VERBS (1<<2)
+/// Not yet known: the type's first refresh fills in LOOK and VERBS.
+#define TYPE_DERIVES_PENDING (1<<3)
+/// type_verbs() lists something.
+#define TYPE_DERIVES_TYPE_VERBS (1<<4)
