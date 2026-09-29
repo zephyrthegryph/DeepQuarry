@@ -235,13 +235,15 @@ REL_LIST(/obj/item/dogborg/sleeper, items_preserved)
 	return FALSE
 
 /obj/item/dogborg/sleeper/proc/go_out()
-	rel_set(src, "hound", src.loc)
+	// On our way out (on_destroy) the module holding us may be dying too: link nothing new.
+	if(!QDELETED(src))
+		rel_set(src, "hound", src.loc)
 	rel_clear(src, "items_preserved")
 	cleaning = 0
 	for(var/list/dlist in deliverylists)
 		dlist.Cut()
 	if(contents_count(src) > 0)
-		hound.visible_message(span_warning("[hound.name] empties out their contents via their [eject_port] port."), span_notice("You empty your contents via your [eject_port] port."))
+		hound?.visible_message(span_warning("[hound.name] empties out their contents via their [eject_port] port."), span_notice("You empty your contents via your [eject_port] port."))
 		for(var/atom/movable/content in contents)
 			content.forceMove(get_turf(src))
 		play_sfx(src, SFX_EFFECTS_SPLAT)
