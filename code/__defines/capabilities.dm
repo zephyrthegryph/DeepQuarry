@@ -52,6 +52,11 @@
 /// The entry refuses while locked.
 #define LOCK CAP_LOCKED
 
+// ---- layers ----
+/// layer = CAP_NO_LAYER: the capability draws nothing (a DMI without that state). DM substitutes the
+/// default for an explicit null argument, so null can't mean "none".
+#define CAP_NO_LAYER "__none"
+
 // ---- change channels a capability raises ----
 /// A capability's state changed (cap_state bit or its data datum).
 #define CHANGE_CAPABILITY CHANGE_EXPLICIT

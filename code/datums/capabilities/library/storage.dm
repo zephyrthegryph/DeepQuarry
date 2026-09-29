@@ -57,8 +57,9 @@
  * max_total: space in storage-cost units; can_hold_proc: the holder's exception proc. behind /
  * locked_by gate every entry (a lockbox: locked_by = LOCK).
  */
-/proc/cap_storage(holds = HOLDS_ANY, slots = null, max_w_class = ITEMSIZE_SMALL, max_total = ITEMSIZE_COST_SMALL * 4, can_hold_proc = null, quick_empty = TRUE, use_sound = SFX_RUSTLE, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/proc/cap_storage(holds = HOLDS_ANY, slots = null, max_w_class = ITEMSIZE_SMALL, max_total = ITEMSIZE_COST_SMALL * 4, can_hold_proc = null, quick_empty = TRUE, use_sound = SFX_RUSTLE, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = CAP_NO_LAYER)
 	var/datum/capability/storage/C = new
+	C.layer_name = layer
 	C.holds = holds
 	C.slots = slots
 	C.max_w_class = max_w_class
@@ -70,10 +71,10 @@
 
 /datum/capability/storage/interactions(atom/holder)
 	. = list()
-	. += cap_claim_entry(src, cap_insert("Put in", /obj/item, TYPE_PROC_REF(/atom, cap_storage_put_in), needs = TYPE_PROC_REF(/atom, cap_storage_insert_reason), works_broken = TRUE, works_unpowered = TRUE, priority = 1), "storage:put_in")
-	. += cap_claim_entry(src, cap_hand("Take out", TYPE_PROC_REF(/atom, cap_storage_take_out), needs = TYPE_PROC_REF(/atom, cap_storage_has_items), else_say = "it's empty", works_broken = TRUE, works_unpowered = TRUE, form = list(choice_field("choice", TYPE_PROC_REF(/atom, cap_storage_choices), message = "Take out what?"))), "storage:take_out", INTERACTION_CAT_OPEN, empty_handed = TRUE)
+	. += adopt_entry(cap_insert("Put in", /obj/item, TYPE_PROC_REF(/atom, cap_storage_put_in), needs = TYPE_PROC_REF(/atom, cap_storage_insert_reason), works_broken = TRUE, works_unpowered = TRUE, priority = 1), id = "storage:put_in", pass_cap = TRUE)
+	. += adopt_entry(cap_hand("Take out", TYPE_PROC_REF(/atom, cap_storage_take_out), needs = TYPE_PROC_REF(/atom, cap_storage_has_items), else_say = "it's empty", works_broken = TRUE, works_unpowered = TRUE, form = list(choice_field("choice", TYPE_PROC_REF(/atom, cap_storage_choices), message = "Take out what?"))), id = "storage:take_out", category = INTERACTION_CAT_OPEN, empty_handed = TRUE, pass_cap = TRUE)
 	if(quick_empty)
-		. += cap_claim_entry(src, cap_hand("Empty out", TYPE_PROC_REF(/atom, cap_storage_empty_out), needs = TYPE_PROC_REF(/atom, cap_storage_has_items), else_say = "it's empty", works_broken = TRUE, works_unpowered = TRUE), "storage:empty_out", INTERACTION_CAT_EJECT, empty_handed = TRUE)
+		. += adopt_entry(cap_hand("Empty out", TYPE_PROC_REF(/atom, cap_storage_empty_out), needs = TYPE_PROC_REF(/atom, cap_storage_has_items), else_say = "it's empty", works_broken = TRUE, works_unpowered = TRUE), id = "storage:empty_out", category = INTERACTION_CAT_EJECT, empty_handed = TRUE, pass_cap = TRUE)
 
 /datum/capability/storage/examine(atom/holder, mob/user)
 	var/count = length(holder.storage_items())

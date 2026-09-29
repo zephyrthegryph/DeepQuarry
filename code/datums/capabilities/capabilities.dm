@@ -24,8 +24,20 @@
 /// its built entries and their compiled predicates are shared too (the flyweight, review 2 H2).
 /proc/caps_intern_list(list/built)
 	. = list()
+	var/list/at_key = list()
 	for(var/entry in built)
-		. += istype(entry, /datum/capability) ? cap_intern(entry) : entry
+		if(!istype(entry, /datum/capability))
+			. += entry
+			continue
+		var/datum/capability/C = cap_intern(entry)
+		// One capability per key: a later entry with the same key replaces the earlier one in its
+		// position (a bundle's plain panel is replaced by maintenance_hatch()'s gated one).
+		var/slot = at_key["[C.key]"]
+		if(slot)
+			.[slot] = C
+			continue
+		. += C
+		at_key["[C.key]"] = length(.)
 
 /// The shared capability equal to C (same type, same saved settings), registering C if it's new.
 /proc/cap_intern(datum/capability/C)
@@ -208,10 +220,19 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 		if(lines)
 			. += lines
 
-/// Adds every capability's UI data. /datum/tgui_data() callers merge it through ..().
+/// Adds every capability's UI data under data["caps"][C.ui_key()], one list per capability, so no
+/// capability key collides with the holder's own (M11). /datum/tgui_data() callers merge it through ..().
 /atom/proc/caps_ui_data(mob/user, list/data)
+	var/list/caps
 	for(var/datum/capability/C as anything in caps_all(src))
-		C.ui_data(src, user, data)
+		var/list/mine = list()
+		C.ui_data(src, user, mine)
+		if(!length(mine))
+			continue
+		caps ||= list()
+		caps[C.ui_key()] = mine
+	if(caps)
+		data["caps"] = caps
 
 /// Every capability's hidden verbs plus the type's own hidden_verbs().
 /atom/proc/caps_hidden_verbs()
@@ -432,16 +453,6 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 
 /datum/capability/entry/interactions(atom/holder)
 	return list(entry)
-
-/// A library capability's own entry: takes the interaction out of a hand()/tool()/use_on()/insert()
-/// wrapper, gives it a stable id (the predicate cache key: it must differ wherever the tool or held
-/// type differs) and makes this capability its owner.
-/datum/capability/proc/own_entry(datum/capability/entry/wrapper, id)
-	var/datum/interaction/capability/E = wrapper.entry
-	E.cap = src
-	if(id)
-		E.id = id
-	return E
 
 /// Shared constructor body for hand()/tool()/use_on()/insert().
 /proc/cap_entry(entry_kind, name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, list/form, held_type, tool_quality, delay, priority, stance, name_proc, applies, blocked_by)
