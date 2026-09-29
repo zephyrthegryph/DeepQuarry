@@ -24,8 +24,20 @@
 /// its built entries and their compiled predicates are shared too (the flyweight, review 2 H2).
 /proc/caps_intern_list(list/built)
 	. = list()
+	var/list/at_key = list()
 	for(var/entry in built)
-		. += istype(entry, /datum/capability) ? cap_intern(entry) : entry
+		if(!istype(entry, /datum/capability))
+			. += entry
+			continue
+		var/datum/capability/C = cap_intern(entry)
+		// One capability per key: a later entry with the same key replaces the earlier one in its
+		// position (a bundle's plain panel is replaced by maintenance_hatch()'s gated one).
+		var/slot = at_key["[C.key]"]
+		if(slot)
+			.[slot] = C
+			continue
+		. += C
+		at_key["[C.key]"] = length(.)
 
 /// The shared capability equal to C (same type, same saved settings), registering C if it's new.
 /proc/cap_intern(datum/capability/C)

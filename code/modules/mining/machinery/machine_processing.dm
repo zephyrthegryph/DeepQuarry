@@ -388,7 +388,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/mineral/processing_unit, MACHINE_PIPEL
 	return output
 
 /// Accessor for the console var.
-/obj/machinery/mineral/processing_unit/proc/console() as /obj/machinery/mineral
+/obj/machinery/mineral/processing_unit/proc/linked_console() as /obj/machinery/mineral
 	return console
 
 /// Accessor for the machine var.
