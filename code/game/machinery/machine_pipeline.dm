@@ -401,6 +401,14 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 	M.power_sync()
 	return STAGE_IDLE
 
+/// The APC draws through draw() (the refresh engine): its present stage has nothing to do. (The
+/// generic one would call update_icon(), whose changed() mark wakes this pipeline again.)
+/datum/om/stage/machine/present/apc
+	of = /obj/machinery/power/apc
+
+/datum/om/stage/machine/present/apc/perform(obj/machinery/power/apc/M, datum/om/frame/machine/F)
+	return STAGE_IDLE
+
 // ---------------------------------------------------------------- SMES
 
 /// Rust charges and discharges; the unit's own power_step() does the rest (buildable units

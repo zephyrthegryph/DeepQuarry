@@ -51,8 +51,9 @@ GLOBAL_LIST_INIT(power_channel_titles, list("Equipment", "Lighting", "Environmen
 	data["nightshiftSetting"] = holder.power_nightshift()
 
 /datum/capability/power_channels/ui_logged()
-	var/static/list/logged = list("channel" = LOG_GAME, "breaker" = LOG_GAME, "nightshift" = LOG_GAME)
-	return logged
+	return GLOB.power_channels_logged
+
+GLOBAL_LIST_INIT(power_channels_logged, list("channel" = LOG_GAME, "breaker" = LOG_GAME, "nightshift" = LOG_GAME))
 
 /// Sets one channel: channel POWER_CHANNEL_*, mode POWERCHAN_OFF_AUTO (off), POWERCHAN_ON or POWERCHAN_ON_AUTO.
 /datum/capability/power_channels/proc/act_channel(mob/user, atom/holder, channel, mode)

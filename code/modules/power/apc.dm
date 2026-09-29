@@ -119,10 +119,10 @@
 	/// Monotonic revision for correction-aware contract power telemetry.
 	var/contract_power_revision = 0
 
-APPEARANCE_NONE(/obj/machinery/power/apc)
+APPEARANCE_NONE(/obj/machinery/power/apc) // ALLOW(sys_dx_old_forms): drops the inherited machinery appearance; draw() is the look
 
 /// The machinery appearance watch (stat, ...) and legacy callers reach draw() through this.
-/obj/machinery/power/apc/update_icon()
+/obj/machinery/power/apc/update_icon() // ALLOW(sys_update_icon): bridge while machinery watches call update_icon(): marks the APC so draw() runs
 	changed(src)
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -191,7 +191,7 @@ MSG_DEF(start/apc/reset, "You begin resetting the APC...", "%U% connects %I% to 
 
 /obj/machinery/power/apc/slot_ejected(slot, obj/item/item, mob/user)
 	if(slot == nameof(cell))
-		item.update_icon()
+		item.update_icon() // ALLOW(sys_dx_old_forms): the cell is a legacy-drawn item
 		charging = 0
 		power_sync()
 
@@ -804,8 +804,9 @@ SETTER(/obj/machinery/power/apc, power_failed)
 	return !is_locked(src) || lock_exempt(user) || action == "nightshift"
 
 /obj/machinery/power/apc/ui_logged()
-	var/static/list/logged = list("lock" = LOG_GAME, "cover" = LOG_GAME, "charge" = LOG_GAME, "reboot" = LOG_GAME, "emergency_lighting" = LOG_GAME, "overload" = LOG_GAME)
-	return logged
+	return GLOB.apc_ui_logged
+
+GLOBAL_LIST_INIT(apc_ui_logged, list("lock" = LOG_GAME, "cover" = LOG_GAME, "charge" = LOG_GAME, "reboot" = LOG_GAME, "emergency_lighting" = LOG_GAME, "overload" = LOG_GAME))
 
 /obj/machinery/power/apc/proc/act_lock(mob/user)
 	if(!lock_exempt(user))

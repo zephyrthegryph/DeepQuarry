@@ -92,7 +92,9 @@
 
 /datum/capability/slot/interactions(atom/holder)
 	. = list()
-	var/slug = dq_interaction_slug("[holder.type]_[slot_var]")
+	// By the var alone: ids are unique per target, and the built entries are shared by every type
+	// holding this (interned) capability, so the first holder's type must not leak into them.
+	var/slug = dq_interaction_slug("_[slot_var]")
 	if(!no_insert)
 		. += new /datum/interaction/capability/slot_insert(src, "slot_insert[slug]")
 	var/static/list/via_entries = list("[SLOT_VIA_ALT]" = INTERACTION_ENTRY_ALT, "[SLOT_VIA_HAND]" = INTERACTION_ENTRY_HAND, "[SLOT_VIA_USE]" = INTERACTION_ENTRY_SELF, "[SLOT_VIA_VERB]" = null)

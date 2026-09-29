@@ -15,6 +15,13 @@
 /obj/machinery/power/apc/dx_test/ui_allowed(mob/user, action)
 	return ui_ok
 
+/// The cell would spill onto the test block (OWN_SPILL): the test APC takes it along.
+/obj/machinery/power/apc/dx_test/on_destroy(force)
+	var/obj/item/cell/C = own_take(src, "cell")
+	if(C)
+		qdel(C)
+	..()
+
 /// The capability entry of A named `name`, or null.
 /proc/dx_apc_entry_named(atom/A, name)
 	for(var/datum/interaction/capability/E as anything in cap_interactions(A))
