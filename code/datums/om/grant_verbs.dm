@@ -133,6 +133,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 	var/list/grants = E?.om_rec ? om_value_of(E, GRANT_VERB) : null
 	if(grants?[key] > 0)
 		return TRUE
+	// granted_verbs() (capabilities' verbs(), a mob's species and traits): derived, applied by the refresh engine.
+	if(isatom(owner))
+		var/atom/granter = owner
+		if(granter.refresh_granted_verbs && (key in granter.refresh_granted_verbs))
+			return TRUE
 	if(istext(key))
 		return FALSE // a named verb exists only while granted
 	var/owner_type = verb_static_owner(key)
