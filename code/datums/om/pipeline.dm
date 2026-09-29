@@ -902,11 +902,24 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 		for(var/datum/E as anything in sample)
 			if(QDELETED(E) || !E.om_rec)
 				continue
+			// Its declared first wake is still queued (a machine's materialize_wakes() after a big
+			// map load): it has not been woken yet, so nothing can have been missed.
+			if(P.first_wake_pending(E))
+				GLOB.om_audit_first_wake_skips++
+				continue
 			var/datum/om/stage/T = P.missed_wake(E)
 			if(!T)
 				continue
 			. += T
 			P.report_missed(E, T, expected)
+
+/// Audit skips of entities whose first wake was still queued (diagnostics; see om_pipeline_audit()).
+GLOBAL_VAR_INIT(om_audit_first_wake_skips, 0)
+
+/// TRUE while `E`'s declared first wake is scheduled but has not run yet. Until it runs, `E`
+/// has armed none of its wake producers, so a parked stage with work is not a lost wake.
+/datum/om/pipeline/proc/first_wake_pending(datum/E)
+	return FALSE
 
 /datum/om/pipeline/proc/report_missed(datum/E, datum/om/stage/T, expected)
 	var/datum/om/frame/S = om_pipe_state(E, src)

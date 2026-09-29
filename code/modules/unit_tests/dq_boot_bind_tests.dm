@@ -98,3 +98,17 @@
 	qdel_batch(list(C))
 	TEST_ASSERT(QDELETED(service), "the batch destroys the service with its owner")
 	TEST_ASSERT(isnull(GLOB.om_watch_registry[key]), "and its gas watches are disarmed by the batch's one pass")
+
+/// A machine whose first wake (materialize_wakes()) is still queued is not a missed wake; once
+/// that wake has run, a parked machine with work and nothing armed is.
+/datum/unit_test/dq_boot_bind_audit_first_wake
+
+/datum/unit_test/dq_boot_bind_audit_first_wake/Run()
+	var/obj/machinery/atmospherics/omni/mixer/M = allocate(/obj/machinery/atmospherics/omni/mixer, test_floor())
+	var/datum/om/pipeline/machine/P = locate_in_list(om_registry().pipelines, /datum/om/pipeline/machine)
+	TEST_ASSERT(P, "the machine pipeline is registered")
+	M.materialize_timer = 1
+	TEST_ASSERT(P.first_wake_pending(M), "a machine with materialize_wakes() queued has its first wake pending")
+	M.materialize_timer = 0
+	TEST_ASSERT(!P.first_wake_pending(M), "after it runs, the machine is audited as usual")
+	TEST_ASSERT(!P.first_wake_pending(null), "a non-machine never counts as pending")

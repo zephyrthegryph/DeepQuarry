@@ -194,6 +194,13 @@
 	if(!M.materialize_timer)
 		M.materialize_timer = om_after(M, 0, /obj/machinery/proc/materialize_wakes)
 
+/// A machine's first wake is materialize_wakes(), queued by on_start(): it arms the machine's
+/// watches (arm_wakes()) and applies its start condition. After a large map load that queue can
+/// take a while to drain (thousands of machines join at once), and a machine still waiting on it
+/// has armed nothing yet -- the audit must not call that a missed wake.
+/datum/om/pipeline/machine/first_wake_pending(obj/machinery/M)
+	return istype(M) && M.materialize_timer != 0
+
 /datum/om/frame/machine
 	facts = list(
 		"powered" = list(/datum/om/frame/machine/proc/fact_powered, CHANGE_MACHINE_POWER),

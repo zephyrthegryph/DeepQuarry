@@ -62,7 +62,16 @@
 /obj/machinery/atmospherics/omni/proc/error_check()
 	return
 
+/// Wake tracing for omni devices (off by default): define DQ_TRACE_OMNI_WAKE to log every
+/// arm/clear/wake/step decision, for chasing OM_AUDIT missed wakes.
+#ifdef DQ_TRACE_OMNI_WAKE
+#define OMNI_WAKE_TRACE(M, what) log_world("OMNI_WAKE_TRACE [REF(M)] [M.name] t=[world.time] [what] stat=[M.stat] use_power=[M.use_power] active=[M.step_active] armed=[om_watch_armed(M)]")
+#else
+#define OMNI_WAKE_TRACE(M, what)
+#endif
+
 /obj/machinery/atmospherics/omni/machine_step()
+	OMNI_WAKE_TRACE(src, "step")
 	last_power_draw = 0
 	last_flow_rate = 0
 
@@ -76,6 +85,7 @@
 /obj/machinery/atmospherics/omni/power_change()
 	var/old_stat = stat
 	..()
+	OMNI_WAKE_TRACE(src, "power_change old_stat=[old_stat]")
 	if(old_stat != stat)
 		update_icon()
 		wake_for_state_change()
@@ -91,6 +101,7 @@
 			mixture_ids |= id
 	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_for_state_change)))
 	MACHINE_SLEEP(src)
+	OMNI_WAKE_TRACE(src, "hibernate mixtures=[length(mixture_ids)]")
 
 /obj/machinery/atmospherics/omni/proc/clear_gas_dependencies()
 	om_watch_disarm(src, "gas")
@@ -105,6 +116,7 @@
 	clear_gas_dependencies()
 	if(use_power && !(stat & (NOPOWER|BROKEN)))
 		MACHINE_WAKE(src)
+	OMNI_WAKE_TRACE(src, "wake_for_state_change")
 
 /obj/machinery/atmospherics/omni/wrench_act(mob/user, obj/item/W)
 	if(!can_unwrench())
