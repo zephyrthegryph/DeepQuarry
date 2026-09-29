@@ -80,15 +80,11 @@ GLOBAL_VAR_INIT(type_list_expect_impure, FALSE)
 #ifdef UNIT_TESTS
 /// The first time a second, different instance of a type asks for a list, rebuild it on that
 /// instance and compare: a per-type list that reads instance state fails the run.
-<<<<<<< HEAD
-/proc/type_list_purity_check(datum/D, proc_ref, list/cached)
+/proc/type_list_purity_check(datum/D, proc_ref, list/cached, post)
 	// A table built during global init (a GLOB datum's New() writing an owned var reads its type's
 	// ownership() list) runs before these globals exist: that type is checked on a later instance.
 	if(!islist(GLOB.type_list_purity))
 		return
-=======
-/proc/type_list_purity_check(datum/D, proc_ref, list/cached, post)
->>>>>>> rewrite/dx-framework
 	var/key = "[D.type]|[proc_ref]"
 	var/seen = GLOB.type_list_purity[key]
 	if(seen == TRUE)
