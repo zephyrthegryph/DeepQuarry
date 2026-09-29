@@ -907,8 +907,9 @@
 			var/datum/trait/T = GLOB.all_traits[trait]
 			T.apply(new_copy, H, new_copy.traits[trait])
 
-	//Set up a mob
-	H.species = new_copy
+	//Set up a mob. The mob's species is PROTO: the copy becomes its private copy, and the private
+	// copy it replaces (often src itself, still read below) is deleted.
+	proto_set(H, "species", new_copy)
 	H.invalidate_factors()
 	H.icon_state = new_copy.get_bodytype()
 

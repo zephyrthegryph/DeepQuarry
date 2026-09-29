@@ -331,7 +331,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 		var/obj/item/organ/external/O = organs_by_name[limb]
 		limb_exists[O.organ_tag] = 1
 
-	species = GLOB.all_species[new_species]
+	proto_set(src, "species", GLOB.all_species[new_species])
 	species.create_organs(src)
 
 	// A copy: deleting a limb that was missing before takes it out of the cache.

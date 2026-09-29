@@ -42,6 +42,23 @@
 			qdel(old)
 	return value
 
+/// proto_set() that hands the replaced private copy back, detached and unowned, instead of
+/// deleting it: for a caller that still reads the old copy (a species change reading the old
+/// species' components). The caller deletes it when done. Null when the old value was shared.
+/proc/proto_replace(datum/holder, var_name, datum/value)
+	var/datum/old = holder.vars[var_name]
+	if(old == value)
+		return null
+	var/old_private = proto_is_private(holder, var_name)
+	if(isdatum(value) && !is_registered(value))
+		if(!own_stamp(value, holder, var_name))
+			return null
+	holder.vars[var_name] = value // ALLOW(ownership): the accessor
+	if(!old_private)
+		return null
+	own_unstamp(old)
+	return old
+
 /// Teardown: a private copy is deleted, a prototype is just let go.
 /proc/proto_teardown(datum/holder, var_name)
 	var/datum/value = holder.vars[var_name]

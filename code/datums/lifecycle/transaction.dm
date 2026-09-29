@@ -254,7 +254,9 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 /// refusal overrides this. Must not sleep or change state.
 /datum/proc/lifecycle_keep(force)
 	SHOULD_NOT_SLEEP(TRUE)
-	return FALSE
+	// A registered singleton (REGISTRY_TYPE, doc/rewrite/ownership.md sec 2) is immortal: an
+	// unforced qdel() of one is refused. Controllers keep the MC's own replacement rules.
+	return !force && !istype(src, /datum/controller) && is_registered(src)
 
 /// The type's destroy hook, run at the start of phase 4, right after
 /// lifecycle_prerelease() and before the links clear: contents are resolved

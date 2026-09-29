@@ -1238,9 +1238,11 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		holder_type = null
 		hunger_rate = initial(hunger_rate)
 
-	species = GLOB.all_species[new_species]
+	var/datum/species/replaced = proto_replace(src, "species", GLOB.all_species[new_species])
 	om_changed(src, CHANGE_MOB_CONDITIONS) // species vision and senses
 	old_species?.remove_components(src, species)
+	if(replaced)
+		qdel(replaced) // the private copy proto_replace() handed back, done with now
 	invalidate_factors()
 
 	if(species.language)

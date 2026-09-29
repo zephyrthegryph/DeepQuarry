@@ -35,3 +35,8 @@
 
 // bloodstr is the same holder as /atom's owned `reagents` (deleted first, so this only lets go of it):
 // left set, it and the holder's my_atom would keep each other alive.
+
+// A mob's species is copy-on-write (doc/rewrite/ownership.md sec 3): the registered
+// GLOB.all_species singleton until traits or a custom base make it a private copy, which the mob
+// owns. proto_set() deletes the private copy it replaces; teardown deletes it with the mob.
+PROTO(/mob/living/carbon, species)
