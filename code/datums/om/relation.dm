@@ -104,14 +104,14 @@
 /// Framework-maintained view vars and the list-undo list, on link.
 /proc/om_edge_views_link(datum/om/relation/R, datum/source, datum/target)
 	if(R.source_view)
-		source.vars[R.source_view] = target // ALLOW(ownership): relation view
+		source.vars[R.source_view] = target // ALLOW(api, ownership): relation view
 	if(R.target_view)
-		target.vars[R.target_view] = source // ALLOW(ownership): relation view
+		target.vars[R.target_view] = source // ALLOW(api, ownership): relation view
 	if(R.undo_list)
 		var/list/L = target.vars[R.undo_list]
 		if(!islist(L))
 			L = list()
-			target.vars[R.undo_list] = L // ALLOW(ownership): relation list-undo
+			target.vars[R.undo_list] = L // ALLOW(api, ownership): relation list-undo
 		L |= source
 	if(R.derived_view && hascall(source, R.derived_view))
 		call(source, R.derived_view)()
@@ -119,15 +119,15 @@
 /// The inverse of om_edge_views_link(): a view is cleared only while it still names the partner.
 /proc/om_edge_views_unlink(datum/om/relation/R, datum/source, datum/target)
 	if(R.source_view && source.vars[R.source_view] == target)
-		source.vars[R.source_view] = null // ALLOW(ownership): relation view
+		source.vars[R.source_view] = null // ALLOW(api, ownership): relation view
 	if(R.target_view && target.vars[R.target_view] == source)
-		target.vars[R.target_view] = null // ALLOW(ownership): relation view
+		target.vars[R.target_view] = null // ALLOW(api, ownership): relation view
 	if(R.undo_list)
 		var/list/L = target.vars[R.undo_list]
 		if(islist(L))
 			L -= source
 			if(!length(L))
-				target.vars[R.undo_list] = null // ALLOW(ownership): relation list-undo
+				target.vars[R.undo_list] = null // ALLOW(api, ownership): relation list-undo
 
 /// A member leaves through its own domain proc: the relation's on_member_leave() runs, then the
 /// edge between `member` and `other` (either direction) is unlinked with RELATION_LEFT.

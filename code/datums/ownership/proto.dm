@@ -22,7 +22,7 @@
 		OWN_REPORT("[value.type]/proto_copy() returned [copy]")
 		return value
 	own_stamp(copy, holder, var_name)
-	holder.vars[var_name] = copy // ALLOW(ownership): the accessor
+	holder.vars[var_name] = copy // ALLOW(api, ownership): the accessor
 	return copy
 
 /// Points holder.var_name at a prototype (a registered instance) or adopts an unowned private
@@ -35,7 +35,7 @@
 	if(isdatum(value) && !is_registered(value))
 		if(!own_stamp(value, holder, var_name))
 			return null
-	holder.vars[var_name] = value // ALLOW(ownership): the accessor
+	holder.vars[var_name] = value // ALLOW(api, ownership): the accessor
 	if(old_private)
 		own_unstamp(old)
 		if(!QDELETED(old))
@@ -53,7 +53,7 @@
 	if(isdatum(value) && !is_registered(value))
 		if(!own_stamp(value, holder, var_name))
 			return null
-	holder.vars[var_name] = value // ALLOW(ownership): the accessor
+	holder.vars[var_name] = value // ALLOW(api, ownership): the accessor
 	if(!old_private)
 		return null
 	own_unstamp(old)
@@ -65,7 +65,7 @@
 	if(isnull(value))
 		return
 	var/private = proto_is_private(holder, var_name)
-	holder.vars[var_name] = null // ALLOW(ownership): lifecycle teardown
+	holder.vars[var_name] = null // ALLOW(api, ownership): lifecycle teardown
 	if(private)
 		own_unstamp(value)
 		if(!QDELETED(value))

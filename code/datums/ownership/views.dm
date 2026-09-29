@@ -12,37 +12,66 @@
 /// Reverse index: source ref text -> var name, or a list of var names.
 /datum/var/tmp/list/om_refs_in
 
-/// z (text) -> flat list, stride 3: source ref text, var name, turf ref text.
+/// z (text) -> turf ref text -> that turf's reverse index (as om_refs_in). A turf keeps no index of
+/// its own: ChangeTurf() resets its vars, while its ref (its position) stays.
 GLOBAL_LIST_EMPTY(rel_turf_index)
 /// Handle id (text) -> flat list, stride 2: source ref text, var name. Edges to an entity that
 /// collapsed into latent data, re-linked when it re-materializes into the same handle slot.
 GLOBAL_LIST_EMPTY(rel_dormant)
 
+/// An index grows past this many sources before it prunes entries whose source was freed without
+/// qdel() (a transient datum or event payload: its views never ran rel_teardown()).
+#define REL_INDEX_PRUNE_AT 48
+
 /// TRUE when references to `target` need tracking.
 /proc/rel_tracked(datum/target)
 	if(!isdatum(target) || isarea(target))
 		return FALSE
-	return !is_registered(target)
+	return isturf(target) || !is_registered(target)
 
-/proc/_rel_index(datum/target, datum/source, var_name)
+/// `target`'s reverse index (source ref text -> var name or list of names), made when `create`.
+/proc/_rel_index_of(datum/target, create = FALSE)
 	if(isturf(target))
 		var/turf/where = target
-		var/key = "[where.z]"
-		var/list/L = GLOB.rel_turf_index[key]
-		if(!L)
-			L = list()
-			GLOB.rel_turf_index[key] = L
-		L += list(ref(source), var_name, ref(target))
-		return
-	if(!rel_tracked(target))
-		return
-	var/source_ref = ref(source)
+		var/zkey = "[where.z]"
+		var/list/by_turf = GLOB.rel_turf_index[zkey]
+		if(!by_turf)
+			if(!create)
+				return null
+			by_turf = list()
+			GLOB.rel_turf_index[zkey] = by_turf
+		var/tkey = ref(where)
+		var/list/index = by_turf[tkey]
+		if(!index && create)
+			index = list()
+			by_turf[tkey] = index
+		return index
 	var/list/index = target.om_refs_in
-	if(!index)
+	if(!index && create)
 		index = list()
 		target.om_refs_in = index
+	return index
+
+/// Drops `target`'s empty index.
+/proc/_rel_index_drop_if_empty(datum/target, list/index)
+	if(length(index))
+		return
+	if(isturf(target))
+		var/turf/where = target
+		var/list/by_turf = GLOB.rel_turf_index["[where.z]"]
+		by_turf?.Remove(ref(where))
+	else
+		target.om_refs_in = null
+
+/proc/_rel_index(datum/target, datum/source, var_name)
+	if(!rel_tracked(target))
+		return
+	var/list/index = _rel_index_of(target, TRUE)
+	var/source_ref = ref(source)
 	var/current = index[source_ref]
 	if(isnull(current))
+		if(length(index) >= REL_INDEX_PRUNE_AT && !(length(index) % REL_INDEX_PRUNE_AT))
+			_rel_index_prune(target, index)
 		index[source_ref] = var_name
 	else if(islist(current))
 		var/list/names = current
@@ -50,10 +79,27 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	else if(current != var_name)
 		index[source_ref] = list(current, var_name)
 
+/// Removes entries whose source no longer exists or no longer names `target` through the var.
+/proc/_rel_index_prune(datum/target, list/index)
+	for(var/source_ref in index.Copy())
+		var/datum/S = locate(source_ref)
+		var/names = index[source_ref]
+		var/keep = FALSE
+		if(isdatum(S) && !QDELETED(S))
+			for(var/name in (islist(names) ? names : list(names)))
+				if(!(name in S.vars))
+					continue
+				var/value = S.vars[name]
+				if(value == target || (islist(value) && (target in value)))
+					keep = TRUE
+					break
+		if(!keep)
+			index -= source_ref
+
 /proc/_rel_unindex(datum/target, datum/source, var_name)
-	if(!isdatum(target) || isturf(target))
-		return // turf entries are validated lazily (rel_drop_z)
-	var/list/index = target.om_refs_in
+	if(!isdatum(target))
+		return
+	var/list/index = _rel_index_of(target)
 	if(!index)
 		return
 	var/source_ref = ref(source)
@@ -70,8 +116,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 			index -= source_ref
 	else if(current == var_name)
 		index -= source_ref
-	if(!length(index))
-		target.om_refs_in = null
+	_rel_index_drop_if_empty(target, index)
 
 /// The REF entry for source.var_name (learned as an implicit REF when undeclared; reported when
 /// the var is another kind).
@@ -85,7 +130,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 /proc/rel_set(datum/source, var_name, datum/target)
 	var/list/entry = _rel_entry(source, var_name)
 	if(!entry)
-		source.vars[var_name] = target // ALLOW(ownership): undeclared view, reported above
+		source.vars[var_name] = target // ALLOW(api, ownership): undeclared view, reported above
 		return target
 	if(entry[OWNE_LIST])
 		OWN_REPORT("rel_set on list view [source.type].[var_name]: use rel_add/rel_remove")
@@ -137,14 +182,14 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	if(isnull(value))
 		return
 	if(!entry)
-		source.vars[var_name] = null // ALLOW(ownership): undeclared view
+		source.vars[var_name] = null // ALLOW(api, ownership): undeclared view
 		return
 	if(islist(value))
 		var/list/L = value
 		for(var/datum/target as anything in L.Copy())
 			_rel_detach(source, var_name, target, entry)
 		if(!length(source.vars[var_name]))
-			source.vars[var_name] = null // ALLOW(ownership): the accessor
+			source.vars[var_name] = null // ALLOW(api, ownership): the accessor
 	else
 		_rel_detach(source, var_name, value, entry)
 
@@ -154,10 +199,10 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		var/list/L = source.vars[var_name]
 		if(!islist(L))
 			L = list()
-			source.vars[var_name] = L // ALLOW(ownership): the accessor
+			source.vars[var_name] = L // ALLOW(api, ownership): the accessor
 		L |= target
 	else
-		source.vars[var_name] = target // ALLOW(ownership): the accessor
+		source.vars[var_name] = target // ALLOW(api, ownership): the accessor
 	_rel_index(target, source, var_name)
 	var/partner_var = entry[OWNE_PARTNER]
 	if(!partner_var || entry[OWNE_ARG] == RELS_PLAIN || !isdatum(target))
@@ -176,7 +221,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		var/list/TL = theirs
 		if(!islist(TL))
 			TL = list()
-			target.vars[partner_var] = TL // ALLOW(ownership): the accessor
+			target.vars[partner_var] = TL // ALLOW(api, ownership): the accessor
 		TL |= source
 		_rel_index(source, target, partner_var)
 		return
@@ -184,7 +229,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		return
 	if(theirs) // exclusive: the partner's old partner loses it
 		_rel_detach(target, partner_var, theirs, pentry)
-	target.vars[partner_var] = source // ALLOW(ownership): the accessor
+	target.vars[partner_var] = source // ALLOW(api, ownership): the accessor
 	_rel_index(source, target, partner_var)
 
 /// Unlinks source.var_name -> target, and the partner side when it names source.
@@ -194,7 +239,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		var/list/L = value
 		L -= target
 	else if(value == target)
-		source.vars[var_name] = null // ALLOW(ownership): the accessor
+		source.vars[var_name] = null // ALLOW(api, ownership): the accessor
 	_rel_unindex(target, source, var_name)
 	var/partner_var = entry?[OWNE_PARTNER]
 	if(!partner_var || entry[OWNE_ARG] == RELS_PLAIN || !isdatum(target) || !(partner_var in target.vars))
@@ -206,7 +251,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 			TL -= source
 			_rel_unindex(source, target, partner_var)
 	else if(theirs == source)
-		target.vars[partner_var] = null // ALLOW(ownership): the accessor
+		target.vars[partner_var] = null // ALLOW(api, ownership): the accessor
 		_rel_unindex(source, target, partner_var)
 
 // ---------------------------------------------------------------- reads
@@ -222,11 +267,12 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 /// Every source whose REF var names `target`, as a list of list(source, var name).
 /proc/rel_sources(datum/target)
 	. = list()
-	for(var/source_ref in target?.om_refs_in)
+	var/list/index = target ? _rel_index_of(target) : null
+	for(var/source_ref in index)
 		var/datum/S = locate(source_ref)
 		if(!isdatum(S))
 			continue
-		var/names = target.om_refs_in[source_ref]
+		var/names = index[source_ref]
 		for(var/name in (islist(names) ? names : list(names)))
 			. += list(list(S, name))
 
@@ -234,7 +280,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 /// holding it). For refcount accounting (latent collapse).
 /proc/rel_incoming_refs(datum/target)
 	. = 0
-	var/list/index = target?.om_refs_in
+	var/list/index = target ? _rel_index_of(target) : null
 	for(var/source_ref in index)
 		var/names = index[source_ref]
 		. += islist(names) ? length(names) : 1
@@ -257,7 +303,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 					continue
 				var/value = S.vars[name]
 				if(value == D)
-					S.vars[name] = null // ALLOW(ownership): relation teardown
+					S.vars[name] = null // ALLOW(api, ownership): relation teardown
 				else if(islist(value))
 					var/list/L = value
 					L -= D
@@ -271,33 +317,40 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 			var/list/L = value
 			for(var/datum/target as anything in L.Copy())
 				_rel_detach(D, var_name, target, entry)
-			D.vars[var_name] = null // ALLOW(ownership): relation teardown
+			D.vars[var_name] = null // ALLOW(api, ownership): relation teardown
 		else
 			_rel_detach(D, var_name, value, entry)
 
-/// z-level release: every REF view naming a turf on `z` is cleared.
+/// z-level release: every relation view naming a turf on `z` is cleared. Returns how many.
 /proc/rel_drop_z(z)
-	var/key = "[z]"
-	var/list/L = GLOB.rel_turf_index[key]
-	if(!L)
+	var/zkey = "[z]"
+	var/list/by_turf = GLOB.rel_turf_index[zkey]
+	if(!by_turf)
 		return 0
-	GLOB.rel_turf_index -= key
+	GLOB.rel_turf_index -= zkey
 	. = 0
-	for(var/i in 1 to length(L) step 3)
-		var/datum/S = locate(L[i])
-		var/name = L[i + 1]
-		var/turf/T = locate(L[i + 2])
-		if(!isdatum(S) || !isturf(T) || !(name in S.vars))
+	for(var/turf_ref in by_turf)
+		var/turf/T = locate(turf_ref)
+		var/list/index = by_turf[turf_ref]
+		if(!isturf(T))
 			continue
-		var/value = S.vars[name]
-		if(value == T)
-			S.vars[name] = null // ALLOW(ownership): z-level release
-			.++
-		else if(islist(value))
-			var/list/views = value
-			if(T in views)
-				views -= T
-				.++
+		for(var/source_ref in index)
+			var/datum/S = locate(source_ref)
+			if(!isdatum(S))
+				continue
+			var/names = index[source_ref]
+			for(var/name in (islist(names) ? names : list(names)))
+				if(!(name in S.vars))
+					continue
+				var/value = S.vars[name]
+				if(value == T)
+					S.vars[name] = null // ALLOW(api, ownership): z-level release
+					.++
+				else if(islist(value))
+					var/list/views = value
+					if(T in views)
+						views -= T
+						.++
 
 // ---------------------------------------------------------------- latent identity
 
@@ -388,7 +441,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 				if(islist(value))
 					var/list/L = value
 					value = L.Copy()
-				successor.vars[name] = value // ALLOW(ownership): declared forwarded state
+				successor.vars[name] = value // ALLOW(api, ownership): declared forwarded state
 
 // ---------------------------------------------------------------- keyed auto-linking
 
@@ -514,6 +567,6 @@ GLOBAL_LIST_EMPTY(rel_key_waiters)
 		var/list/spec = T.entries[var_name][OWNE_EXTRA]
 		if(spec[2] == key_var)
 			rel_clear(D, var_name)
-	D.vars[key_var] = new_value
+	D.vars[key_var] = new_value // ALLOW(api, ownership): the keyed-link accessor writes the id var it re-keys
 	if(materialized)
 		rel_keyed_materialize(D)
