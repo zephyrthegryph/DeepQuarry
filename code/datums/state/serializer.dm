@@ -153,13 +153,20 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	var/list/blob = list()
 	blob[STATE_KEY_TYPE] = "[D.type]"
 	blob[STATE_KEY_VERSION] = D.state_version
+	// A declared latent generator (starts_with) resolves into entries before the delta is taken:
+	// resolving clears the generator, and a delta read first saved the generator as a var, so the
+	// copy came back with the generator restored but not declared (neither latent nor real, and
+	// Destroy() reported it as unreleased contents).
+	var/datum/ledger/L
+	if((flags & STATE_CONTENTS) && isatom(D))
+		var/atom/resolving = D
+		L = resolving.ledger || (resolving.has_latent() ? dq_ledger(resolving) : null)
 	var/list/delta = encode_delta(D, schema)
 	if(length(delta))
 		blob[STATE_KEY_VARS] = delta
 	if((flags & STATE_CONTENTS) && isatom(D))
 		var/atom/A = D
 		var/list/children = list()
-		var/datum/ledger/L = A.ledger || (A.has_latent() ? dq_ledger(A) : null)
 		for(var/atom/movable/child as anything in state_children(A))
 			var/list/child_blob = serialize_datum(child, flags)
 			if(!child_blob)

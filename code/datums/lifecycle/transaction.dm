@@ -141,6 +141,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 			tick = world.tick_usage
 			AM.dq_lifecycle_resolve_contents()
 			own_spill_phase(AM)
+			AM.dq_lifecycle_check_released()
 			dq_lifecycle_time(trash, LIFECYCLE_PHASE_CONTENTS, tick)
 			DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_CONTENTS done")
 

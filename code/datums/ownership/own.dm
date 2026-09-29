@@ -41,6 +41,8 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	var/list/L = value
 	if(D in L)
 		return TRUE
+	if(var_name == "contents") // built in, not associative: indexing it by a member is a "bad index"
+		return FALSE
 	for(var/key in L)
 		if(!isnum(key) && L[key] == D)
 			return TRUE
@@ -283,17 +285,26 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	if(islist(value) && var_name == "contents")
 		OWN_REPORT("own_take_all on [holder.type].contents: move things out through the ledger")
 		return list()
-	// A list is emptied in place, not nulled: code that reads `L.len` on a list declared `= list()`
-	// keeps working after the take (a lazylist reads the same whether empty or null).
+	// A list declared `= list()` is emptied in place, not nulled: code that reads `L.len` on it
+	// keeps working after the take. A lazy list (declared null) goes back to null (own_list_emptied).
 	if(islist(value))
 		var/list/L = value
 		L.Cut()
+		own_list_emptied(holder, var_name)
 	else
 		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
 	own_field_changed(holder, var_name)
 	for(var/datum/child as anything in .)
 		holder.on_owned_release(var_name, child)
 		own_unstamp(child)
+
+/// An owned list var was just emptied. A lazy list (the var's declared value is null) goes back to
+/// null, as the LAZY* macros leave it: an empty list is truthy, so `if(component_parts)`-style
+/// "not built yet" checks and "dropped everything" checks (isnull) read it wrong. A list declared
+/// `= list()` stays an empty list for code that reads its length.
+/proc/own_list_emptied(datum/holder, var_name)
+	if(isnull(initial(holder.vars[var_name])))
+		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
 
 /// Disposes of everything holder.var_name owns, by policy (or `policy` when given).
 /proc/own_clear(datum/holder, var_name, policy = null)
@@ -310,7 +321,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	var/list/L = value
 	var/list/copy = L.Copy()
 	if(var_name != "contents") // built in: its members leave by moving, never by a cut
-		L.Cut() // emptied in place, not nulled (see own_take_all)
+		L.Cut() // emptied in place (see own_take_all); own_teardown() nulls a lazy one afterwards
 		own_field_changed(holder, var_name)
 	if(!entry)
 		return
@@ -329,10 +340,13 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		. += value
 	else if(islist(value))
 		var/list/L = value
+		// Built-in contents is not associative: indexing it by a member is a "bad index" runtime
+		// (it aborted the destroy transaction of every OWN(..., contents, OWN_SPILL) holder).
+		var/assoc = var_name != "contents"
 		for(var/key in L)
 			if(isdatum(key))
 				. += key
-			if(!isnum(key))
+			if(assoc && !isnum(key))
 				var/datum/child = L[key]
 				if(isdatum(child))
 					. += child
@@ -356,6 +370,8 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		own_field_changed(H, var_name)
 		return
 	if(islist(value))
+		if(var_name == "contents")
+			return // built in: the dying movable leaves by moving, never by a cut (see own_release_member)
 		var/list/L = value
 		L -= D
 		for(var/key in L.Copy())
@@ -408,6 +424,10 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		holder.vars[var_name] = null // ALLOW(api, ownership): lifecycle release
 		own_field_changed(holder, var_name)
 	else if(islist(current))
+		// Built-in contents: a member leaves by moving (the caller moves it). Cutting it here
+		// would null its loc, and indexing contents by a member is a "bad index" runtime.
+		if(var_name == "contents")
+			return
 		var/list/L = current
 		L -= value
 		for(var/key in L.Copy())
@@ -420,6 +440,11 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	for(var/var_name in T.own_vars)
 		if(!isnull(D.vars[var_name]))
 			own_clear(D, var_name)
+	// Only once every child is disposed of: a dying child's own teardown may still read its
+	// owner's (now empty) list, e.g. `length(master.ability_objects - src)`.
+	for(var/var_name in T.own_vars)
+		if(islist(D.vars[var_name]) && var_name != "contents" && !length(D.vars[var_name]))
+			own_list_emptied(D, var_name)
 	for(var/var_name in T.proto_vars)
 		proto_teardown(D, var_name)
 	// Owned timers go with the rest of what D owns.
