@@ -10,14 +10,14 @@
 /datum/anomaly_modifiers/proc/get_value()
 	return value
 
-/datum/anomaly_modifiers/proc/on_add(anomaly)
-	rel_set(src, "attached_anomaly", om_resolve(anomaly))
+/datum/anomaly_modifiers/proc/on_add(obj/effect/anomaly/anomaly)
+	rel_set(src, "attached_anomaly", anomaly)
 	if(!istype(attached_anomaly(), /obj/effect/anomaly))
 		return FALSE
 	return TRUE
 
-/datum/anomaly_modifiers/proc/on_remove(anomaly)
-	rel_set(src, "attached_anomaly", om_resolve(anomaly))
+/datum/anomaly_modifiers/proc/on_remove(obj/effect/anomaly/anomaly)
+	rel_set(src, "attached_anomaly", anomaly)
 	if(!istype(attached_anomaly(), /obj/effect/anomaly))
 		return FALSE
 	return TRUE
@@ -79,6 +79,6 @@
 	stats.min_activation = initial(stats.min_activation)
 	stats.max_activation = initial(stats.max_activation)
 
-/// LC-refs: attached anomaly -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The relation view `attached_anomaly` (null once it is gone).
 /datum/anomaly_modifiers/proc/attached_anomaly() as /obj/effect/anomaly
 	return attached_anomaly

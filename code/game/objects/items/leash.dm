@@ -4,7 +4,7 @@
 	icon_state = "leash_master"
 
 /atom/movable/screen/alert/leash_dom/Click()
-	var/obj/item/leash/owner = om_resolve(master_ref)
+	var/obj/item/leash/owner = om_resolve(master_ref) // ALLOW(ownership): /atom/movable/screen.master_ref (code/_onclick) is still a handle var
 	if(owner)
 		owner.unleash()
 
@@ -14,7 +14,7 @@
 	icon_state = "leash_pet"
 
 /atom/movable/screen/alert/leash_pet/Click()
-	var/obj/item/leash/owner = om_resolve(master_ref)
+	var/obj/item/leash/owner = om_resolve(master_ref) // ALLOW(ownership): /atom/movable/screen.master_ref (code/_onclick) is still a handle var
 	if(owner)
 		owner.struggle_leash()
 

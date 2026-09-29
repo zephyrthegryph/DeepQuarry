@@ -82,7 +82,7 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 /obj/effect/map_helper/airlock/door/setup()
 	var/obj/machinery/door/airlock/my_airlock = my_device
 	my_airlock.lock()
-	my_airlock.id_tag = my_controller().id_tag + tag_addon
+	keyed_set_id(my_airlock, "id_tag", my_controller().id_tag + tag_addon) // airlocks are keyed targets by id_tag
 	my_airlock.frequency = my_controller().frequency
 	my_airlock.set_frequency(my_controller().frequency)
 	my_airlock.req_access = my_controller().req_access
@@ -204,6 +204,6 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 	command = "cycle_interior"
 // ition End
 
-/// LC-refs: my controller -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// my controller (a relation view: it reads null once the target is deleted).
 /obj/effect/map_helper/airlock/proc/my_controller() as /obj/machinery/embedded_controller/radio
 	return my_controller

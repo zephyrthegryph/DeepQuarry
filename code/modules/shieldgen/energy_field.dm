@@ -183,6 +183,6 @@ EXTEND_INTERACTIONS(/obj/effect/energy_field, \
 
 #undef FIELD_INTEGRITY_PER_RENWICK
 
-/// LC-refs: the my_gen this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the my_gen this refers to (a relation view: it reads null once the target is deleted).
 /obj/effect/energy_field/proc/my_gen() as /obj/machinery/shield_gen
 	return my_gen

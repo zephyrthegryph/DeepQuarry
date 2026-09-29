@@ -150,6 +150,6 @@
 		icon_state = original_state
 		update_icon()
 
-/// LC-refs: front id -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: front id (reads null once it is gone).
 /obj/item/storage/wallet/proc/front_id() as /obj/item/card/id
 	return front_id

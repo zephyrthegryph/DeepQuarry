@@ -480,6 +480,6 @@
 		if("newsfeed")
 			newsfeed_channel = text2num(params["newsfeed"])
 
-/// LC-refs: last camera turf -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: last camera turf (reads null once it is gone).
 /obj/item/communicator/proc/last_camera_turf() as /turf
 	return last_camera_turf

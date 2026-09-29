@@ -410,10 +410,10 @@ OWN(/obj/machinery/computer/telescience, inserted_gps, OWN_SPILL)
 	investigate_log(log_msg, "telesci")
 
 
-/// LC-refs: the telepad this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the telepad this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telescience/proc/telepad() as /obj/machinery/telepad
 	return telepad
 
-/// LC-refs: the last_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the last_target this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telescience/proc/last_target() as /turf
 	return last_target

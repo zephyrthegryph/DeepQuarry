@@ -9,7 +9,8 @@
 	var/channel = "NCS Northern Star News Feed"
 	var/obj/machinery/camera/network/thunder/camera
 	var/obj/item/radio/radio
-	var/showing
+	/// Relation view: what the feed shows.
+	var/atom/showing
 	var/showing_name
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
@@ -83,7 +84,7 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 	if(showing)
 		hide_tvs(showing)
 
-	showing = om_handle(thing)
+	rel_set(src, "showing", thing)
 	showing_name = "[thing]"
 	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 		ES.show_thing(thing)
@@ -94,9 +95,9 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 	if(!showing)
 		return
 	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
-		ES.maybe_stop_showing(showing)
+		ES.maybe_stop_showing(om_handle(showing)) // ALLOW(ownership): the telescreens (code/game/machinery/computer) still compare handles
 	om_task_periodic_stop(src)
-	showing = null
+	rel_clear(src, "showing")
 	showing_name = null
 
 /obj/item/tvcamera/Moved(atom/old_loc, direction, forced = FALSE, movetime)
@@ -116,11 +117,12 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 
 /obj/item/tvcamera/periodic_step()
 	if(!showing)
-		return PROCESS_KILL
+		if(isnull(showing_name))
+			return PROCESS_KILL
+		show_tvs(loc) // the shown thing is gone (the view cleared): fall back to where we are
+		return
 
-	var/atom/A = om_resolve(showing)
-	if(!A || QDELETED(A))
-		show_tvs(loc)
+	var/atom/A = showing
 
 	if(get_dist(get_turf(src), get_turf(A)) > 0) // No realtime updates
 		show_tvs(loc)
@@ -159,7 +161,8 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 	var/channel = "Default Bodycamera Feed"
 	var/obj/machinery/camera/network/bodycamera/bcamera
 	var/obj/item/radio/bradio
-	var/showing
+	/// Relation view: what the feed shows.
+	var/atom/showing
 	var/showing_name
 	special_handling = TRUE
 
@@ -237,7 +240,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PRO
 	if(showing)
 		hide_bodycamera_tvs(showing)
 
-	showing = om_handle(thing)
+	rel_set(src, "showing", thing)
 	showing_name = "[thing]"
 	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
 		ES.show_thing(thing, src)
@@ -248,9 +251,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PRO
 	if(!showing)
 		return
 	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
-		ES.maybe_stop_showing(showing)
+		ES.maybe_stop_showing(om_handle(showing)) // ALLOW(ownership): the telescreens (code/game/machinery/computer) still compare handles
 	om_task_periodic_stop(src)
-	showing = null
+	rel_clear(src, "showing")
 	showing_name = null
 
 /obj/item/clothing/accessory/bodycam/Moved(atom/old_loc, direction, forced = FALSE, movetime)
@@ -260,11 +263,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PRO
 
 /obj/item/clothing/accessory/bodycam/periodic_step()
 	if(!showing)
-		return PROCESS_KILL
+		if(isnull(showing_name))
+			return PROCESS_KILL
+		show_bodycamera_tvs(loc) // the shown thing is gone (the view cleared): fall back to where we are
+		return
 
-	var/atom/A = om_resolve(showing)
-	if(!A || QDELETED(A))
-		show_bodycamera_tvs(loc)
+	var/atom/A = showing
 
 	if(get_dist(get_turf(src), get_turf(A)) > 0) // No realtime updates
 		update_feed()

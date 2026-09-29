@@ -157,6 +157,6 @@
 
 OWN(/obj/machinery/cablelayer, cable, OWN_CONTAINED)
 
-/// LC-refs: last piece -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// last piece (a relation view: it reads null once the target is deleted).
 /obj/machinery/cablelayer/proc/last_piece() as /obj/structure/cable
 	return last_piece

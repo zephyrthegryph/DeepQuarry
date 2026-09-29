@@ -478,11 +478,11 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 DECLARE_DEFAULT_CHILD(/obj/structure/medical_stand, "tank", "spawn_type")
 DECLARE_DEFAULT_CHILD(/obj/structure/medical_stand, "contained", "mask_type")
 
-/// LC-refs: breather -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: breather (reads null once it is gone).
 /obj/structure/medical_stand/proc/breather() as /mob/living/carbon/human
 	return breather
 
-/// LC-refs: attached -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: attached (reads null once it is gone).
 /obj/structure/medical_stand/proc/attached() as /mob/living/carbon
 	return attached
 

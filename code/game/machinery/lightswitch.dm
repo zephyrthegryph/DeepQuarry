@@ -22,10 +22,10 @@
 /obj/machinery/light_switch/Initialize(mapload)
 	. = ..()
 
-	rel_set(src, "area", get_area(src))
+	area = get_area(src) // a location: a plain var
 
 	if(otherarea)
-		rel_set(src, "area", locate(text2path("/area/[otherarea]")))
+		area = locate(text2path("/area/[otherarea]"))
 
 	if(!name)
 		name = "light switch ([area().name])"
@@ -109,6 +109,6 @@
 	on = 0
 
 
-/// LC-refs: area -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// area (a relation view: it reads null once the target is deleted).
 /obj/machinery/light_switch/proc/area() as /area
 	return area

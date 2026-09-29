@@ -18,8 +18,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	density = TRUE
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/pointdefense_control
-	// ALLOW(instance_list): d: live targeting state
-	var/list/targets = list()  // Targets being engaged by associated batteries
+	/// Meteors being engaged by associated batteries (a relation view: meteors leave when they die).
+	var/list/obj/effect/meteor/targets
 	var/id_tag = null
 
 /obj/machinery/pointdefense_control/Initialize(mapload)
@@ -130,7 +130,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	var/last_shot = 0
 	var/kill_range = 18
 	var/rotation_speed = 4.5 SECONDS  //How quickly we turn to face threats
-	var/engaging = null // The meteor we're shooting at
+	var/obj/effect/meteor/engaging = null // The meteor we're shooting at (a relation view)
 	var/id_tag = null
 	var/fire_sounds = list('sound/weapons/frigate_turret/frigate_turret_fire1.ogg', 'sound/weapons/frigate_turret/frigate_turret_fire2.ogg', 'sound/weapons/frigate_turret/frigate_turret_fire3.ogg', 'sound/weapons/frigate_turret/frigate_turret_fire4.ogg')
 
@@ -191,29 +191,29 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 			return FALSE
 	return TRUE
 
-/obj/machinery/pointdefense/proc/Shoot(target)
-	var/obj/effect/meteor/M = om_resolve(target)
+REL_LIST(/obj/machinery/pointdefense_control, targets)
+
+/obj/machinery/pointdefense/proc/Shoot(obj/effect/meteor/M)
 	if(!istype(M))
-		engaging = null
+		rel_clear(src, "engaging")
 		return
-	engaging = target
+	rel_set(src, "engaging", M)
 	var/Angle = round(Get_Angle(src,M))
 	var/matrix/rot_matrix = matrix()
 	rot_matrix.Turn(Angle)
-	om_after(src, rotation_speed, PROC_REF(finish_shot), target)
+	om_after(src, rotation_speed, PROC_REF(finish_shot), M)
 	animate(src, transform = rot_matrix, rotation_speed, easing = SINE_EASING)
 
 	set_dir(ATAN2(transform.b, transform.a) > 0 ? NORTH : SOUTH)
 
-/obj/machinery/pointdefense/proc/finish_shot(target)
+/obj/machinery/pointdefense/proc/finish_shot(obj/effect/meteor/M)
 
 	var/obj/machinery/pointdefense_control/PC = get_controller()
-	engaging = null
-	if(PC)
-		PC.targets -= target
+	rel_clear(src, "engaging")
+	if(PC && M)
+		rel_remove(PC, "targets", M)
 
 	last_shot = world.time
-	var/obj/effect/meteor/M = om_resolve(target)
 	if(!istype(M))
 		return
 	//We throw a laser but it doesnt have to hit for meteor to explode
@@ -256,26 +256,21 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 
 	// Compile list of known targets
 	var/list/existing_targets = list()
-	for(var/WR in PC.targets)
-		var/obj/effect/meteor/M = om_resolve(WR)
+	for(var/obj/effect/meteor/M as anything in PC.targets)
 		existing_targets += M
 
 	// First, try and acquire new targets
 	var/list/potential_targets = REGISTRY_COPY(REGISTRY_METEORS) - existing_targets
 	for(var/obj/effect/meteor/M in potential_targets)
 		if(targeting_check(M))
-			var/target = om_handle(M)
-			PC.targets += target
-			engaging = target
-			Shoot(target)
+			rel_add(PC, "targets", M)
+			Shoot(M)
 			return
 
 	// Then, focus fire on existing targets
 	for(var/obj/effect/meteor/M in existing_targets)
 		if(targeting_check(M))
-			var/target = om_handle(M)
-			engaging = target
-			Shoot(target)
+			Shoot(M)
 			return
 
 /obj/machinery/pointdefense/proc/targeting_check(obj/effect/meteor/M)

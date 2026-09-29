@@ -3,7 +3,7 @@
 	desc = "You should never see this..."
 	var/list/possible_tooltypes
 	var/current_tooltype = 1
-	var/obj/item/weldingtool/welder // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/obj/item/weldingtool/welder
 	var/weldertype = /obj/item/weldingtool/dummy
 
 /obj/item/tool/transforming/Initialize(mapload, no_counterpart = TRUE)

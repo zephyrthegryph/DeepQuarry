@@ -118,7 +118,7 @@
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		radio_connection = GLOB.radio_service.add_object(src, frequency)
+		rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency))
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/broadcast_status()
 	if(!radio_connection)

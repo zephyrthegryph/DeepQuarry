@@ -1186,6 +1186,7 @@
 #include "code\game\machinery\lightswitch.dm"
 #include "code\game\machinery\machine_pipeline.dm"
 #include "code\game\machinery\machine_service.dm"
+#include "code\game\machinery\keyed_ids.dm"
 #include "code\game\machinery\machinery.dm"
 #include "code\game\machinery\machinery_maintenance.dm"
 #include "code\game\machinery\machinery_interactions.dm"

@@ -571,3 +571,6 @@
 /// Shielding while shut: its plasteel slab, or RAD_EXTREME_INSULATION without one.
 /obj/machinery/door/blast/proc/closed_rad_insulation()
 	return material_rad_insulation(implicit_material?.name, RAD_BLAST_DOOR_THICKNESS_MM, RAD_EXTREME_INSULATION)
+
+// Buttons and consoles find blast doors by id (REL_KEYED sources).
+KEYED_TARGET(/obj/machinery/door/blast, id)

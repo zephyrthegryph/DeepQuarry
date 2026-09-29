@@ -369,6 +369,6 @@ OWN(/obj/effect/spider/cocoon, contents, OWN_SPILL)
 		grown += rand(0, 2)
 		.++
 
-/// LC-refs: entry vent -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: entry vent (reads null once it is gone).
 /obj/effect/spider/spiderling/proc/entry_vent() as /obj/machinery/atmospherics/unary/vent_pump
 	return entry_vent

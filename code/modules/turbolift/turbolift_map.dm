@@ -179,8 +179,7 @@ REGISTRY_MEMBERSHIP(/obj/turbolift_map_holder, REGISTRY_TURBOLIFT_HOLDERS)
 					var/obj/machinery/door/airlock/lift/newdoor = new door_type(checking)
 					var/obj/machinery/door/firedoor/glass/firedoor = new firedoor_type(checking) //ition for fire doors
 					if(internal)
-						lift.doors += newdoor
-						rel_set(newdoor, "lift", lift)
+						rel_set(newdoor, "lift", lift) // REL_PAIR: adds it to lift.doors too
 					else
 						rel_add(cfloor, "doors", newdoor)
 						rel_set(newdoor, "floor", cfloor)

@@ -156,7 +156,7 @@ Thus, the two variables affect pump operation are set in New():
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		radio_connection = GLOB.radio_service.add_object(src, frequency, radio_filter = RADIO_ATMOSIA)
+		rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, radio_filter = RADIO_ATMOSIA))
 
 /obj/machinery/atmospherics/binary/volume_pump/proc/broadcast_status()
 	if(!radio_connection)

@@ -238,14 +238,14 @@ DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
 /obj/machinery/v_garbosystem/step_start_condition()
 	return operating
 
-/// LC-refs: Connects to regular crusher -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Connects to regular crusher (a relation view: it reads null once the target is deleted).
 /obj/machinery/v_garbosystem/proc/crusher() as /obj/machinery/recycling/crusher
 	return crusher
 
-/// LC-refs: the grinder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the grinder this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/button/garbosystem/proc/grinder() as /obj/machinery/v_garbosystem
 	return grinder
 
-/// LC-refs: the button this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the button this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/v_garbosystem/proc/button() as /obj/machinery/button/garbosystem
 	return button

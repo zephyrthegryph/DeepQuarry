@@ -47,8 +47,7 @@ DECLARE_INTERACTIONS(/obj/item/chameleon, INTERACT_USE(null, PROC_REF(toggle)))
 	if(active_dummy)
 		eject_all()
 		playsound(src, 'sound/effects/pop.ogg', 100, 1, -6)
-		qdel(active_dummy)
-		own_take(src, "active_dummy")
+		own_clear(src, "active_dummy", OWN_DELETE)
 		to_chat(user, span_notice("You deactivate the [src]."))
 		var/obj/effect/overlay/T = new /obj/effect/overlay(get_turf(src))
 		T.icon = 'icons/effects/effects.dmi'
@@ -77,8 +76,9 @@ DECLARE_INTERACTIONS(/obj/item/chameleon, INTERACT_USE(null, PROC_REF(toggle)))
 		spark_system.start()
 		eject_all()
 		if(delete_dummy)
-			qdel(active_dummy)
-		own_take(src, "active_dummy")
+			own_clear(src, "active_dummy", OWN_DELETE)
+		else
+			own_take(src, "active_dummy") // the dummy is already being destroyed
 		can_use = 0
 		om_after(src, 5 SECONDS, PROC_REF(allow_use))
 
@@ -158,4 +158,4 @@ EXTEND_INTERACTIONS(/obj/effect/dummy/chameleon, \
 	..()
 	master?.disrupt(0)
 
-REL_PAIR(/obj/effect/dummy/chameleon, master, active_dummy)
+// The projector owns its dummy (implicit OWN); the dummy names the projector (one-sided REL).

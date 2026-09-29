@@ -224,8 +224,8 @@
 
 	user.drop_item()
 	C.add_fingerprint(user)
-	own_set(src, "cell", C)
 	C.forceMove(src)
+	own_set(src, "cell", C) // CONTAINED: in contents first
 	user.visible_message(span_notice("[user] opens the panel on [src] and inserts [C]."), span_notice("You open the panel on [src] and insert [C]."))
 	power_change()
 	return TRUE
@@ -262,6 +262,6 @@
 
 OWN(/obj/machinery/portable_atmospherics/powered, cell, OWN_CONTAINED)
 
-/// LC-refs: connected port -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// connected port (a relation view: it reads null once the target is deleted).
 /obj/machinery/portable_atmospherics/proc/connected_port() as /obj/machinery/atmospherics/portables_connector
 	return connected_port

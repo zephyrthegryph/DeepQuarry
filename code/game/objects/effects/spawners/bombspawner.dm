@@ -65,8 +65,8 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 	own_set(V, "tank_one", PT)
 	own_set(V, "tank_two", OT)
 
-	own_set(PT, "master", V)
-	own_set(OT, "master", V)
+	rel_set(PT, "master", V)
+	rel_set(OT, "master", V)
 
 	PT.valve_welded = 1
 	// XGM exposed total_moles as a writable var; LINDA exposes it only

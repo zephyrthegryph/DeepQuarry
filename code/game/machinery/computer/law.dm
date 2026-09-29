@@ -129,10 +129,10 @@
 	return TRUE
 
 
-/// LC-refs: current -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// current (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/aiupload/proc/current() as /mob/living/silicon/ai
 	return current
 
-/// LC-refs: current -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// current (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/borgupload/proc/current() as /mob/living/silicon/robot
 	return current

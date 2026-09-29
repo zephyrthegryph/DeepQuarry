@@ -12,6 +12,7 @@
 	var/spawn_delay = 150
 	var/randomize_spawning = FALSE
 	var/creature_types = list(/mob/living/simple_mob/animal/sif/diyaab)
+	/// Relation list view: the creatures spawned here that are still alive (they leave it when they die).
 	var/list/den_mobs
 	var/den_faction			//The faction of any spawned creatures.
 	var/max_creatures = 3	//Maximum number of living creatures this nest can have at one time.
@@ -21,7 +22,6 @@
 
 /obj/structure/prop/nest/Initialize(mapload)
 	. = ..()
-	den_mobs = list()
 	COOLDOWN_START(src, spawn_cooldown, spawn_delay)
 	if(randomize_spawning) //Not the biggest shift in spawntime, but it's here.
 		var/delayshift_clamp = spawn_delay / 10
@@ -65,19 +65,18 @@ DECLARE_PERIODIC(/obj/structure/prop/nest, PERIODIC_SLOW)
 	update_creatures() //Paranoia.
 	if(total_creature_max && tally >= total_creature_max)
 		return
-	if(istype(spawnpoint) && den_mobs.len < max_creatures)
+	if(istype(spawnpoint) && length(den_mobs) < max_creatures)
 		COOLDOWN_START(src, spawn_cooldown, spawn_delay)
 		var/spawn_choice = pick(creature_types)
 		var/mob/living/L = new spawn_choice(spawnpoint)
 		if(den_faction)
 			L.faction = den_faction
 		visible_message(span_warning("\The [L] crawls out of \the [src]."))
-		// ALLOW(object_keyed_lists): spawned creatures remove themselves on death/Destroy (remove_creature())
-		den_mobs += L
+		rel_add(src, "den_mobs", L)
 		tally++
 
 /obj/structure/prop/nest/proc/remove_creature(mob/target)
-	den_mobs -= target
+	rel_remove(src, "den_mobs", target)
 
 /obj/structure/prop/nest/proc/update_creatures()
 	for(var/mob/living/L in den_mobs)

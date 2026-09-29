@@ -67,7 +67,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bluespace_denier, INTERACT_SILICON("Pulse", P
 	if(isnull(WF))
 		return
 
-	var/atom/movable/AM = om_resolve(WF)
+	var/atom/movable/AM = WF
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return

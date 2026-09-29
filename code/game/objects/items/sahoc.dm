@@ -171,6 +171,6 @@ DECLARE_INTERACTIONS(/obj/item/daredevice, \
 	else
 		return 1
 
-/// LC-refs: capsuleowner -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: capsuleowner (reads null once it is gone).
 /obj/item/buttonofnormal/proc/capsuleowner() as /mob/living
 	return capsuleowner

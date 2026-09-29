@@ -147,7 +147,7 @@
 /obj/machinery/atmospherics/unary/vent_scrubber/proc/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection = GLOB.radio_service.add_object(src, frequency, radio_filter_in)
+	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, radio_filter_in))
 
 /obj/machinery/atmospherics/unary/vent_scrubber/proc/broadcast_status()
 	if(!radio_connection)

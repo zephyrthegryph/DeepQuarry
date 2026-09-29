@@ -285,6 +285,6 @@
 	name = "written notes"
 	info = "<font face=\"Times New Roman\">" + span_italics("Found this buried in the machine over there after digging through it a bit- I hooked it up to one of our displays so it was a bit more usable- seems to be a spare part, it was right next to another one that actually " + span_bold("was") + " hooked up. Turns things into other materials, probably one of the components that makes that machine work.") + "</font>"
 
-/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// target (a relation view: it reads null once the target is deleted).
 /obj/machinery/petrification/proc/target_ref() as /mob/living/carbon/human
 	return target

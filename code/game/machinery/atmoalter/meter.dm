@@ -209,6 +209,6 @@
 	..()
 	register_gas_dependency()
 
-/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// target (a relation view: it reads null once the target is deleted).
 /obj/machinery/meter/proc/target_ref() as /obj/machinery/atmospherics/pipe
 	return target

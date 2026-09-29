@@ -191,7 +191,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 
 		if(com().one_time_use) //Make one-time-use cards only usable one time!
 			com().one_time_use = 0
-			com().teleport_control.locked = null
+			rel_clear(com().teleport_control, "locked")
 	else
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		s.set_up(5, 1, src)
@@ -290,10 +290,10 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 /obj/machinery/teleport/hub/proc/calibration_lapses()
 	accurate = 0
 
-/// LC-refs: com -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// com (a relation view: it reads null once the target is deleted).
 /obj/machinery/teleport/hub/proc/com() as /obj/machinery/computer/teleporter
 	return com
 
-/// LC-refs: com -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// com (a relation view: it reads null once the target is deleted).
 /obj/machinery/teleport/station/proc/com() as /obj/machinery/teleport/hub
 	return com

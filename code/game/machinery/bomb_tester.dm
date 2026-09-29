@@ -389,6 +389,6 @@
 OWN(/obj/machinery/bomb_tester, tank1, OWN_CONTAINED)
 OWN(/obj/machinery/bomb_tester, tank2, OWN_CONTAINED)
 
-/// LC-refs: test canister -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// test canister (a relation view: it reads null once the target is deleted).
 /obj/machinery/bomb_tester/proc/test_canister() as /obj/machinery/portable_atmospherics/canister
 	return test_canister

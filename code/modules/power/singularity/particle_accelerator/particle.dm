@@ -105,10 +105,10 @@
 	forceMove(dest)
 	return TRUE
 
-/// LC-refs: the source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the source this refers to: a relation view, null once that is deleted.
 /obj/effect/accelerated_particle/proc/source() as /turf
 	return source
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the target this refers to: a relation view, null once that is deleted.
 /obj/effect/accelerated_particle/proc/target() as /turf
 	return target

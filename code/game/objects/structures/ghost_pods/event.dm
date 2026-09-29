@@ -34,8 +34,7 @@
 	var/mobtype = GLOB.maint_mob_pred_options[choice]
 	var/mob/living/simple_mob/newPred = new mobtype(get_turf(src))
 	open_pod()
-	qdel(newPred.ai_brain)
-	own_take(newPred, "ai_brain")
+	own_clear(newPred, "ai_brain", OWN_DELETE)
 	//newPred.movement_cooldown = 0			// The "needless artificial speed cap" exists for a reason
 	// R.has_hands = TRUE // Downstream
 	if(M.mind)

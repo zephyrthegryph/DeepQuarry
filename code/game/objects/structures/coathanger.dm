@@ -75,6 +75,6 @@
 	if (istype(coat(), /obj/item/clothing/suit/storage/det_trench))
 		add_overlay("coat_det")
 
-/// LC-refs: coat -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: coat (reads null once it is gone).
 /obj/structure/coatrack/proc/coat() as /obj/item/clothing/suit
 	return coat
