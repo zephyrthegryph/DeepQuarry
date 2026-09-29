@@ -1,44 +1,32 @@
-// buckle(): wraps the existing buckling system (code/game/objects/buckling.dm). Dragging a mob onto
+// cap_buckle(): wraps the existing buckling system (code/game/objects/buckling.dm). Dragging a mob onto
 // the holder buckles it through the movable's default drag interaction, which offers itself once
 // can_buckle is set; these entries add buckling a mob held in a grab, and unbuckling.
 
 /datum/capability/buckle
-	log = LOG_GAME
-	works_broken = TRUE
-	works_unpowered = TRUE
-	/// How many mobs can be buckled at once (max_buckled_mobs).
-	var/max = 1
-	/// Buckled mobs lie down (a bed) instead of sitting up (a chair).
-	var/lying = FALSE
-	/// Only restrained mobs can be buckled (pipes).
-	var/needs_restraints = FALSE
+	layer_name = CAP_NO_LAYER
 
-/proc/cap_buckle(max = 1, lying = FALSE, needs_restraints = FALSE, behind = NONE, log = LOG_GAME)
+/**
+ * Buckling entries. The buckling rules are the holder TYPE's own vars, which maps may vary per
+ * instance (design review H1), so this writes nothing per instance: set can_buckle = TRUE,
+ * max_buckled_mobs, buckle_lying and buckle_require_restraints on the type.
+ */
+/proc/cap_buckle(behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME, layer = CAP_NO_LAYER)
 	var/datum/capability/buckle/C = new
-	C.max = max
-	C.lying = lying
-	C.needs_restraints = needs_restraints
-	C.behind = behind
-	C.log = log
-	return C
+	C.layer_name = layer
+	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
+#ifdef UNIT_TESTS
 /datum/capability/buckle/on_holder_init(atom/holder, mapload)
 	var/atom/movable/AM = holder
-	if(!istype(AM))
-		return
-	// The args are type defaults (design review H1): a map varedit of these holder vars wins.
-	AM.can_buckle = TRUE
-	if(AM.max_buckled_mobs == initial(AM.max_buckled_mobs))
-		AM.max_buckled_mobs = max
-	if(AM.buckle_lying == initial(AM.buckle_lying))
-		AM.buckle_lying = lying ? 1 : 0
-	if(AM.buckle_require_restraints == initial(AM.buckle_require_restraints))
-		AM.buckle_require_restraints = needs_restraints
+	if(istype(AM) && !initial(AM.can_buckle))
+		stack_trace("[holder.type] declares cap_buckle() but its type doesn't set can_buckle = TRUE")
+#endif
 
 /datum/capability/buckle/interactions(atom/holder)
-	var/datum/capability/entry/grabbed = cap_use_on("Buckle", /obj/item/grab, TYPE_PROC_REF(/atom/movable, cap_buckle_grabbed), behind = behind, works_broken = TRUE, works_unpowered = TRUE, log = log)
-	var/datum/capability/entry/release = cap_hand("Unbuckle", TYPE_PROC_REF(/atom/movable, cap_buckle_release), behind = behind, needs = TYPE_PROC_REF(/atom/movable, cap_buckle_occupied), else_say = "nobody is buckled to it", works_broken = TRUE, works_unpowered = TRUE, log = log)
-	return list(adopt_entry(grabbed), adopt_entry(release))
+	return list(
+		adopt_entry(cap_use_on("Buckle", /obj/item/grab, TYPE_PROC_REF(/atom/movable, cap_buckle_grabbed), works_broken = TRUE, works_unpowered = TRUE)),
+		adopt_entry(cap_hand("Unbuckle", TYPE_PROC_REF(/atom/movable, cap_buckle_release), needs = TYPE_PROC_REF(/atom/movable, cap_buckle_occupied), else_say = "nobody is buckled to it", works_broken = TRUE, works_unpowered = TRUE)),
+	)
 
 /datum/capability/buckle/examine(atom/holder, mob/user)
 	var/atom/movable/AM = holder
