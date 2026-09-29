@@ -91,7 +91,7 @@ GLOBAL_LIST_EMPTY(om_rec_audit_index)
 		// `probe` here stands in for the audit loop's own variable.
 		overhead = refcount(probe) - internal - 1
 		om_teardown_rest(probe)
-		qdel(probe)
+		qdel(probe) // ALLOW(lifecycle): the audit disposes of its own probe
 	return overhead
 
 /datum/own_audit_probe

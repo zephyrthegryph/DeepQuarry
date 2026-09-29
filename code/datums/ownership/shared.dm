@@ -26,7 +26,7 @@
 /proc/shared_set(datum/holder, var_name, datum/value)
 	if(!isnull(value) && !is_registered(value))
 		OWN_REPORT("[holder.type].[var_name] is SHARED but [value.type] is not a registered instance (own it, or make the var PROTO)")
-	holder.vars[var_name] = value // ALLOW(ownership): the accessor
+	holder.vars[var_name] = value // ALLOW(api, ownership): the accessor
 	return value
 
 // ---------------------------------------------------------------- DEF freeze (test builds)
