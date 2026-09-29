@@ -17,7 +17,7 @@ RULES = {
 }
 
 OVERRIDE = re.compile(r"^/[\w/]*?/(?:proc/)?Topic\s*\(")
-DISPATCH = re.compile(r"\b(?:if|switch)\s*\(\s*!?\s*href_list\s*\[")
+DISPATCH = re.compile(r"\b(?:if|switch)\s*\(\s*!?\s*href_list\s*\[|\bIF_VV_OPTION\s*\(")
 LOCATE = re.compile(r"\blocate(?:_in_list)?\s*\([^)]*\bhref_list\s*\[")
 NUM = re.compile(r"\btext2num\s*\(\s*href_list\s*\[")
 
