@@ -333,7 +333,7 @@
 	poll.state = list(generation, jobs, ready, scale_x, scale_y, had_client, list(), world.time + DQ_PREVIEW_JOB_TIMEOUT)
 	rel_set(poll, "prefs", src)
 	own_add(GLOB.character_setup_service, "preview_polls", poll)
-	poll.step()
+	poll.poll_step()
 
 /// One in-flight character preview render: owned by the character setup service.
 /datum/dq_preview_poll
@@ -343,7 +343,7 @@
 	var/list/state
 
 /// One poll of a render's iconforge jobs.
-/datum/dq_preview_poll/proc/step()
+/datum/dq_preview_poll/proc/poll_step()
 	var/list/jobs = state[2]
 	var/list/outputs = state[7]
 	for(var/dir_key in jobs)
@@ -353,7 +353,7 @@
 		if(output != RUSTG_JOB_NO_RESULTS_YET)
 			outputs[dir_key] = output
 	if(length(outputs) < length(jobs) && world.time <= state[8])
-		om_after(src, world.tick_lag, PROC_REF(step))
+		om_after(src, world.tick_lag, PROC_REF(poll_step))
 		return
 	if(prefs)
 		prefs.dq_finish_preview_jobs(state)
