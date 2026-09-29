@@ -435,24 +435,24 @@ frames = 2
 delays = [10]
 
 [[state]]
-name = "apc-spark"
+name = "sparks"
 dirs = 4
 frames = 7
 delays = [1]
 
 [[state]]
-name = "apcewires"
+name = "panel_open"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apcemag"
+name = "emagged"
 dirs = 4
 frames = 2
 delays = [5]
 
 [[state]]
-name = "apc1"
+name = "cover_open"
 dirs = 4
 frames = 1
 
@@ -467,7 +467,7 @@ dirs = 4
 frames = 1
 
 [[state]]
-name = "apc2"
+name = "cell"
 dirs = 4
 frames = 1
 
@@ -482,7 +482,7 @@ dirs = 4
 frames = 1
 
 [[state]]
-name = "apc-b"
+name = "broken"
 dirs = 4
 frames = 1
 
@@ -492,12 +492,12 @@ dirs = 4
 frames = 1
 
 [[state]]
-name = "apcox-0"
+name = "unlocked"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apcox-1"
+name = "locked"
 dirs = 4
 frames = 1
 

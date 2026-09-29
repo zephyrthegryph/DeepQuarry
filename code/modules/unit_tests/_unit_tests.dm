@@ -93,6 +93,7 @@
 #include "construction_tests.dm"
 #include "cosmetic_tests.dm"
 #include "type_list_tests.dm"
+#include "dx_apc_tests.dm"
 #include "dx_core_review_tests.dm"
 #include "dx_core_tests.dm"
 #include "decl_tests.dm"

@@ -67,7 +67,7 @@
 /datum/event2/event/electrical_fault/proc/affect_apc(obj/machinery/power/apc/A)
 	// Main breaker is turned off or is Special(tm). Consider it protected.
 	// Important APCs like the AI or the engine core shouldn't get shut off by this event.
-	if((!A.operating || A.failure_timer > 0) || A.is_critical)
+	if((!A.operating || A.power_failed) || A.is_critical)
 		return
 
 	// In reality this would probably make the lights get brighter but oh well.

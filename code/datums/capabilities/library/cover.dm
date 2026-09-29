@@ -47,7 +47,8 @@
 	return null
 
 /datum/capability/cover/draw(atom/holder, datum/look/look)
-	draw_layer(look, when = cover_is_open(holder))
+	// A removed cover isn't drawn open: the holder draws its coverless sprite (the APC).
+	draw_layer(look, when = cover_is_open(holder) && !cover_removed(holder))
 
 /datum/capability/cover/ui_data(atom/holder, mob/user, list/data)
 	data["open"] = cover_is_open(holder)

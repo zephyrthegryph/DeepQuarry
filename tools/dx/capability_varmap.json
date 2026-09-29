@@ -20,11 +20,18 @@
     "welded": "CAP_WELDED"
   },
   "/obj/machinery/power/apc": {
-    "_default_bits": ["CAP_LOCKED"],
+    "_default_bits": [
+      "CAP_LOCKED"
+    ],
     "locked": "CAP_LOCKED",
-    "opened": {"0": null, "1": "CAP_COVER_OPEN", "2": "CAP_COVER_REMOVED"},
-    "wiresexposed": "CAP_WIRES_EXPOSED",
+    "opened": {
+      "0": null,
+      "1": "CAP_COVER_OPEN",
+      "2": "CAP_COVER_OPEN|CAP_COVER_REMOVED"
+    },
+    "wiresexposed": "CAP_PANEL_OPEN",
     "emagged": "CAP_EMAGGED",
+    "failure_timer": "drop",
     "req_access": "keep"
   },
   "/obj/machinery/vending": {

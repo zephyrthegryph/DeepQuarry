@@ -10,15 +10,13 @@
 /datum/wires/apc/get_status()
 	. = ..()
 	var/obj/machinery/power/apc/A = holder
-	. += "The APC is [A.locked ? "" : "un"]locked."
+	. += "The APC is [is_locked(A) ? "" : "un"]locked."
 	. += A.shorted ? "The APCs power has been shorted." : "The APC is working properly!"
 	. += "The 'AI control allowed' light is [A.aidisabled ? "off" : "on"]."
 
 /datum/wires/apc/interactable(mob/user)
 	var/obj/machinery/power/apc/A = holder
-	if(A.wiresexposed)
-		return 1
-	return 0
+	return panel_is_open(A) && !cover_is_open(A)
 
 /datum/wires/apc/on_pulse(wire)
 	var/obj/machinery/power/apc/A = holder

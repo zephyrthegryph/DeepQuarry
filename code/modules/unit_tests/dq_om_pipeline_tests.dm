@@ -518,8 +518,7 @@
 	R.set_charging(null)
 	qdel(C)
 
-/// An APC and an SMES settle and park on the machine pipeline; an APC power failure ends by the
-/// power stage's rewake; the APC icon updates at most every APC_UPDATE_ICON_COOLDOWN.
+/// An APC and an SMES settle and park on the machine pipeline; an APC power failure is a timed_set().
 /datum/unit_test/om_pipeline/apc_and_smes_park
 
 /datum/unit_test/om_pipeline/apc_and_smes_park/run_pipeline()
@@ -535,13 +534,10 @@
 		om_run_frame_now(A, /datum/om/pipeline/machine)
 	TEST_ASSERT(S.parked, "a settled APC parks")
 	A.energy_fail(1)
-	TEST_ASSERT(A.failure_until > world.time, "the failure is on")
-	A.om_rec.sched.run_pass(1e9)
-	om_run_frame_now(A, /datum/om/pipeline/machine)
-	var/datum/om/stage/T = om_registry().stage_by_type[/datum/om/stage/machine/power/apc]
-	TEST_ASSERT(om_deadline_pending(A, /datum/om/pipeline/machine, OM_DL_STAGE - 1 + T.pos), "the power stage ends the failure by rewake, no timer")
-	A.failure_until = world.time
-	A.failure_timer = 0
+	TEST_ASSERT(A.power_failed, "the failure is on")
+	TEST_ASSERT(time_left(A, nameof(A.power_failed)) > 0, "timed_set() ends the failure, no pipeline rewake")
+	A.act_reboot(null)
+	TEST_ASSERT(!A.power_failed, "a reboot ends it")
 	om_run_frame_now(A, /datum/om/pipeline/machine)
 	A.update()
 	var/obj/machinery/power/smes/M

@@ -393,29 +393,12 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 
 // ---------------------------------------------------------------- APCs
 
-/// Rust runs the distributor; a wake resends the settings, and a power failure ends by rewake.
+/// Rust runs the distributor; a wake resends the settings (a power failure ends through timed_set()).
 /datum/om/stage/machine/power/apc
 	of = /obj/machinery/power/apc
 
 /datum/om/stage/machine/power/apc/perform(obj/machinery/power/apc/M, datum/om/frame/machine/F)
-	if(M.failure_until && EXPIRY_EXPIRED(M, failure_until, CLOCK_WORLD))
-		M.failure_timer = 0
-		M.failure_until = 0
-		M.queue_icon_update()
-		M.update()
 	M.power_sync()
-	return STAGE_IDLE
-
-/datum/om/stage/machine/power/apc/rewake_delay(obj/machinery/power/apc/M)
-	return EXPIRY_LEFT(M, failure_until, CLOCK_WORLD)
-
-/// Icon updates, at most every APC_UPDATE_ICON_COOLDOWN.
-/datum/om/stage/machine/present/apc
-	of = /obj/machinery/power/apc
-	min_interval = APC_UPDATE_ICON_COOLDOWN
-
-/datum/om/stage/machine/present/apc/perform(obj/machinery/power/apc/M, datum/om/frame/machine/F)
-	M.icon_renderer?.apply(M)
 	return STAGE_IDLE
 
 // ---------------------------------------------------------------- SMES
