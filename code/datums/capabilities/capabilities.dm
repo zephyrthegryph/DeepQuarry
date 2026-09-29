@@ -320,6 +320,9 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	/// Whether the handler takes the held item: (mob/user, obj/item/held, ...). hand() handlers are
 	/// (mob/user, ...); tool()/use_on()/insert() and library item entries pass `held`.
 	var/passes_held = TRUE
+	/// Whether the handler also gets its capability as the named arg `cap` (review 2 M15: a handler
+	/// that serves several capability instances is told which, never looks it up after a sleep).
+	var/passes_cap = FALSE
 	/// Form fields (choice_field()/text_field()/number_field()): asked in order, answers passed by name.
 	var/list/form
 	/// A proc on the holder, (mob/user) -> the Menu name for this state ("Open cover"/"Close cover").
@@ -377,6 +380,8 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	var/list/named = list("user" = ctx.user)
 	if(E.passes_held)
 		named["held"] = ctx.held
+	if(E.passes_cap)
+		named["cap"] = E.cap
 	if(length(E.form))
 		return cap_dispatch_form(ctx, named)
 	return dispatch_call(ctx, ctx.target, E.handler, named, E.name, E.log)
@@ -395,6 +400,10 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 		named["held"] = ctx.held
 	else
 		named -= "held"
+	if(E.passes_cap)
+		named["cap"] = E.cap
+	else
+		named -= "cap"
 	dispatch_call(ctx, ctx.target, E.handler, named, E.name, E.log)
 
 /**
@@ -512,3 +521,28 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 /// Putting a held item of `held_type` into the holder (the handler adopts it: own_set moves it).
 /proc/cap_insert(name, held_type, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = TRUE, log, list/form, priority, name_proc, applies, blocked_by = NONE, delay)
 	return cap_entry("insert", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, held_type, null, delay, priority, null, name_proc, applies, blocked_by)
+
+// ---- periodic work from capabilities (cadence / cap_should_run / cap_periodic_step) ----
+
+/// Any capability with periodic work that wants to run keeps the holder stepping.
+/atom/should_run()
+	. = ..()
+	if(. || !(type_derive_flags(src) & TYPE_DERIVES_CAPS))
+		return
+	for(var/datum/capability/C as anything in caps_all(src))
+		if(C.cadence && C.cap_should_run(src))
+			return TRUE
+	return FALSE
+
+/// Steps every capability whose periodic work wants to run. A type with its own periodic_step()
+/// calls ..() to keep its capabilities stepping.
+/atom/periodic_step(delta)
+	if(!(type_derive_flags(src) & TYPE_DERIVES_CAPS))
+		return PROCESS_KILL
+	var/stepped = FALSE
+	for(var/datum/capability/C as anything in caps_all(src))
+		if(C.cadence && C.cap_should_run(src))
+			C.cap_periodic_step(src, delta)
+			stepped = TRUE
+	if(!stepped)
+		return PROCESS_KILL
