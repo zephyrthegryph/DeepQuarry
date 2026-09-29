@@ -42,7 +42,7 @@ Static approximations (documented limits):
     capability's own object: the dispatcher marks it), and reads through a local alias of either
     (`var/obj/machinery/M = holder` / `= src`). In `a.b.c`, b is own only when a is own; a bare
     `cell.charge` reads `charge` on another object.
-  - Context roots are not state: user, held, look, entry, data, ui, state, world, global, GLOB (only
+  - Context roots are not state: user, held, callee (DM's proc reflection), look, entry, data, ui, state, world, global, GLOB (only
     its member after the global var), subsystem/define roots (SSx, ALL_CAPS of 3+ chars), and locals
     holding a capability flyweight or a per-type shared definition (typed /datum/capability/..., or
     `= cap_of(...)` / `= ladder_for(...)` / `= caps_all(...)`: config), and locals read off those.
@@ -74,7 +74,7 @@ RULES = {
 REACTIVE_ANY = {"should_run", "hidden_verbs", "tgui_data"}
 REACTIVE_CAP = {"draw", "gate", "ui_data", "examine", "hidden_verbs"}
 CONTEXT_ROOTS = {"src", "user", "held", "look", "entry", "data", "ui", "state", "world", "global",
-                 "usr", "GLOB", "config"}
+                 "usr", "GLOB", "config", "callee"}
 # Relation vars whose target marks its owner changed on every write (review 2 M8: the reagent
 # holder calls changed(my_atom)), so a read through them stays fresh.
 MARKING_RELATIONS = frozenset({"reagents"})

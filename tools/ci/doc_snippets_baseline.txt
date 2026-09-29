@@ -1,5 +1,8 @@
 # doc_snippets baseline (tools/ci/doc_snippets.py): doc_unknown_name is a ratchet (target 0);
 # doc_legacy_block lists the complete blocks that predate the lint and aren't compiled (first line).
+doc_unknown_name	doc/rewrite/declarative_lifecycle.md	OWN(PATH, var, OWN_SPILL) // how it dies: only when not the default OWN_DELETE
+doc_unknown_name	doc/rewrite/lifecycle.md	POOL_RESET(/datum/damage_packet, source)
+doc_unknown_name	doc/rewrite/lifecycle.md	POOL_RESET(/datum/damage_packet, attacker)
 doc_unknown_name	doc/rewrite/migration_guide.md	set_name(name)
 doc_unknown_name	doc/rewrite/migration_guide.md	if(do_after(user, 6, target = src))
 doc_unknown_name	doc/rewrite/migration_guide.md	. += cap_use_self("Shout", PROC_REF(shout), needs = PROC_REF(can_broadcast))
@@ -7,9 +10,6 @@ doc_unknown_name	doc/rewrite/migration_guide.md	look.gauge("can-o", level = pres
 doc_unknown_name	doc/rewrite/migration_guide.md	look.state(is_powered(src) ? "doorctrl0" : "doorctrl-p")
 doc_unknown_name	doc/rewrite/migration_guide.md	var/why_not = shuttle_api_why_cant_call()
 doc_unknown_name	doc/rewrite/migration_guide.md	shuttle_api_call_evac(caller = user)
-doc_unknown_name	doc/rewrite/migration_guide.md	. += rel_one(nameof(throwing), back = nameof(/datum/thrownthing::subject), other_deleted = DELETE_ME, on_unlink = PROC_REF(throw_ended))
-doc_unknown_name	doc/rewrite/migration_guide.md	... rel_link(src, "throwing", TT)
-doc_unknown_name	doc/rewrite/migration_guide.md	... rel_link(src, "throwing", TT)
 doc_unknown_name	doc/rewrite/migration_guide.md	release_or_move_site(site, new_name = descriptor_name) // emits site_moved
 doc_unknown_name	doc/rewrite/migration_guide.md	set_recharging(TRUE)
 doc_unknown_name	doc/rewrite/migration_guide.md	set_recharging(FALSE)
@@ -30,7 +30,6 @@ doc_unknown_name	doc/rewrite/object_model.md	C.can_reach(user, target)
 doc_unknown_name	doc/rewrite/object_model.md	C.holding(user, tool)
 doc_unknown_name	doc/rewrite/object_model.md	C.tool_active(tool)
 doc_unknown_name	doc/rewrite/object_model.md	C.require(!door.welded, "[door] is already welded.")
-doc_unknown_name	doc/rewrite/object_model.md	door.set_welded(TRUE)
 doc_unknown_name	doc/rewrite/object_model.md	start_task(/task/tool_use/weld_door, user, door, tool) // returns the task, or the failure reason
 doc_unknown_name	doc/rewrite/object_model.md	C.can_reach(user, V)
 doc_unknown_name	doc/rewrite/object_model.md	C.unchanged(V) // V's revision when the prompt opened
@@ -132,8 +131,8 @@ doc_legacy_block	doc/rewrite/om_framework_report.md	/obj/machinery/recharger/pro
 doc_legacy_block	doc/rewrite/om_in_10_minutes.md	/datum/om/behaviour/geiger
 doc_legacy_block	doc/rewrite/om_in_10_minutes.md	/proc/build_edge_overlays(key) ...
 doc_legacy_block	doc/rewrite/om_in_10_minutes.md	DECLARE_INTERACTIONS(/obj/item/binoculars, \
-doc_legacy_block	doc/rewrite/ownership.md	OWN(/obj/machinery/sleeper, beaker, OWN_SPILL) // drops to the floor with the holder
-doc_legacy_block	doc/rewrite/ownership.md	REL_PAIR(/obj/machinery/sleeper, console, sleeper) // two-sided, single on this end
+doc_legacy_block	doc/rewrite/ownership.md	/obj/machinery/sleeper/ownership()
+doc_legacy_block	doc/rewrite/ownership.md	/obj/machinery/sleeper/relations()
 doc_legacy_block	doc/rewrite/ownership.md	own_set(src, nameof(src.beaker), W, user = user)
 doc_legacy_block	doc/rewrite/rules.md	/datum/ability/shadekin_phase_shift
 doc_legacy_block	doc/rewrite/rust_bindings.md	// Which component this type holds (type-level, no per-instance memory).
