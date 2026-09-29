@@ -24,7 +24,6 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
-	var/datum/effect/effect/system/spark_spread/spark_system
 	var/p_dir = NORTH 			// Next pipe will be built with this dir
 	var/p_flipped = FALSE		// If the next pipe should be built flipped
 	var/paint_color = "grey"	// Pipe color index for next pipe painted/built.
@@ -45,8 +44,6 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 
 /obj/item/pipe_dispenser/Initialize(mapload)
 	. = ..()
-	spark_system.set_up(5, 0, src)
-	spark_system.attach(src)
 	// RPDs have wrenches inside of them, so that they can wrench down spawned pipes without being used as superior wrenches themselves.
 
 /obj/item/pipe_dispenser/proc/SetupPipes()
@@ -57,9 +54,7 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 	if(!recipe())
 		recipe_static = first_atmos
 
-DECLARE_REF(/obj/item/pipe_dispenser, "spark_system", OWNED, null)
 DECLARE_REF(/obj/item/pipe_dispenser, "tool", OWNED, null)
-DECLARE_DEFAULT_CHILD(/obj/item/pipe_dispenser, "spark_system", /datum/effect/effect/system/spark_spread)
 DECLARE_DEFAULT_CHILD(/obj/item/pipe_dispenser, "tool", /obj/item/tool/wrench/cyborg)
 
 DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(interaction_self)))
@@ -150,7 +145,7 @@ DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(inter
 			else
 				mode |= n
 	if(playeffect)
-		spark_system.start()
+		fx_sparks(src, 5, FALSE)
 		play_sfx(get_turf(src), SFX_EFFECTS_POP)
 	return TRUE
 

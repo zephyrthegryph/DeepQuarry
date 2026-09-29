@@ -14,6 +14,8 @@ GLOBAL_LIST_INIT(bluespace_item_types, list(
 	if(isnull(precision))
 		precision = 0
 
+	var/default_sparks_in = FALSE // default spark effect when no effectin was supplied
+
 	switch(channel)
 		if(TELEPORT_CHANNEL_BLUESPACE)
 			var/list/bluespace_things = newlist()
@@ -24,22 +26,12 @@ GLOBAL_LIST_INIT(bluespace_item_types, list(
 				if(isliving(teleatom))
 					var/mob/living/mob = teleatom
 					to_chat(mob, span_warning("The bluespace interface on your equipment interferes with the teleport!"))
-			if((!effectin || !effectout) && !no_effects)
-				var/datum/effect/effect/system/spark_spread/sparks = new
-				sparks.set_up(5, 1, teleatom)
-				if(!effectin)
-					effectin = sparks
-				if(!effectout)
-					effectout = sparks
+			if(!effectin && !no_effects)
+				default_sparks_in = TRUE
 
 		if(TELEPORT_CHANNEL_QUANTUM)
-			if((!effectin || !effectout) && !no_effects)
-				var/datum/effect/effect/system/spark_spread/sparks = new
-				sparks.set_up(5, 1, teleatom)
-				if(!effectin)
-					effectin = sparks
-				if(!effectout)
-					effectout = sparks
+			if(!effectin && !no_effects)
+				default_sparks_in = TRUE
 
 	var/turf/curturf = get_turf(teleatom)
 	var/turf/destturf
@@ -80,6 +72,8 @@ GLOBAL_LIST_INIT(bluespace_item_types, list(
 		return TRUE
 
 	tele_play_specials(teleatom, curturf, effectin, asoundin)
+	if(default_sparks_in)
+		fx_sparks(curturf, 5)
 
 	if(teleatom.buckle_movable) // Specifically office chairs. Fuck you.
 		teleatom.buckle_movable = FALSE

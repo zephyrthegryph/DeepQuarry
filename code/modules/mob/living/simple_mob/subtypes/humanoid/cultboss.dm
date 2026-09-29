@@ -89,9 +89,9 @@
 	var/turf/target_turf = pick(valid_turfs)
 	var/turf/T = get_turf(src)
 
-	var/datum/effect/effect/system/spark_spread/s1 = new /datum/effect/effect/system/smoke_spread
+	var/datum/effect/effect/system/smoke_spread/s1 = new /datum/effect/effect/system/smoke_spread
 	s1.set_up(5, 1, T)
-	var/datum/effect/effect/system/spark_spread/s2 = new /datum/effect/effect/system/smoke_spread
+	var/datum/effect/effect/system/smoke_spread/s2 = new /datum/effect/effect/system/smoke_spread
 	s2.set_up(5, 1, target_turf)
 
 

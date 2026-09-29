@@ -1541,11 +1541,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			span_danger("You hear an explosion!"))
 		// owner is already null here (the base removed() detached us): use victim (audit D4).
 		explosion(get_turf(victim),-1,-1,2,3)
-		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-		spark_system.set_up(5, 0, victim)
-		spark_system.attach(victim)
-		spark_system.start()
-		om_qdel_after(spark_system, 1 SECOND)
+		fx_sparks(victim, 5, FALSE)
 		// droplimb() keeps using this limb after removed() returns; delete it once that unwinds.
 		om_qdel_after(src, 1)
 

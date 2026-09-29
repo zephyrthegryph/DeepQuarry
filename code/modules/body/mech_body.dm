@@ -154,7 +154,7 @@
 			return 0
 		pass_damage *= factor
 		if(prob(25))
-			host.spark_system.start()
+			fx_sparks(host, 2, FALSE)
 		. = injure(host, pass_damage, injury_armor_key(P.injury_kind))
 		if(QDELETED(host))
 			return
@@ -415,6 +415,6 @@
 /// Sparks and burns out cell capacity.
 /datum/mech_affliction/short_circuit/tick(obj/mecha/host)
 	if(host.get_charge())
-		host.spark_system.start()
+		fx_sparks(host, 2, FALSE)
 		host.cell.charge -= min(20, host.cell.charge)
 		host.cell.maxcharge -= min(20, host.cell.maxcharge)

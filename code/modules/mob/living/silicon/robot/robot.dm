@@ -112,7 +112,6 @@
 	var/lower_mod = 0
 	var/jetpack = 0
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail = null
-	var/datum/effect/effect/system/spark_spread/spark_system //So they can initialize sparks whenever/N
 	var/jeton = 0
 	/// Timer id of a pending killswitch, or null.
 	var/killswitch
@@ -170,9 +169,6 @@
 /mob/living/silicon/robot/Initialize(mapload, is_decoy)
 	if(islist(req_access))
 		req_access = shared_type_list(type, "req_access", req_access)
-	spark_system = new /datum/effect/effect/system/spark_spread() // ALLOW(decl): configured before parent init
-	spark_system.set_up(5, 0, src)
-	spark_system.attach(src)
 	om_hook(src, /datum/om/event/living_shield_injury, src, PROC_REF(absorb_injury_with_shield))
 
 	add_language(LANGUAGE_ROBOT_TALK, 1)
@@ -747,7 +743,7 @@
 
 /mob/living/silicon/robot/bullet_act(obj/item/projectile/Proj)
 	..(Proj)
-	if(prob(75) && Proj.damage > 0) spark_system.start()
+	if(prob(75) && Proj.damage > 0) fx_sparks(src, 5, FALSE)
 	return 2
 
 // --- Tool and item interactions ---------------------------------------------------------------
@@ -793,7 +789,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		apply_upgrade(W, user)
 		return TRUE
 	if(!(istype(W, /obj/item/robotanalyzer) || istype(W, /obj/item/healthanalyzer)) && W.force > 0)
-		spark_system.start()
+		fx_sparks(src, 5, FALSE)
 	return FALSE
 
 /// Insert a part into its empty slot. Afflictions it carried come back with it.
@@ -1927,7 +1923,6 @@ DECLARE_REF(/mob/living/silicon/robot, "inv2", OWNED, null)
 DECLARE_REF(/mob/living/silicon/robot, "inv3", OWNED, null)
 DECLARE_REF(/mob/living/silicon/robot, "robot_modules_background", OWNED, null)
 DECLARE_REF(/mob/living/silicon/robot, "ion_trail", OWNED, null)
-DECLARE_REF(/mob/living/silicon/robot, "spark_system", OWNED, null)
 DECLARE_REF(/mob/living/silicon/robot, "hat", SPILL, null)
 // on_destroy() still takes these apart in order: the MMI hands its mind on, the cell unhooks.
 // The module, radio, camera and components are deleted by phase 4, after the AI link and shell are undone.

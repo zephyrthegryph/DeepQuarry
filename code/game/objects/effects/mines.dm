@@ -42,10 +42,8 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 /obj/effect/mine/proc/explode(mob/living/M)
 	if(triggered) // Prevents circular mine explosions from two mines detonating eachother
 		return
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
 	triggered = TRUE
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 
 	if(trap)
 		trigger_trap(M)
@@ -55,7 +53,6 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 		explosion(loc, 0, 2, 3, 4) //land mines are dangerous, folks.
 		visible_message("\The [src.name] detonates!")
 
-	qdel(s)
 	qdel(src)
 
 /obj/effect/mine/proc/trigger_trap(mob/living/victim)
@@ -293,10 +290,8 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 /obj/effect/mine/gadget/explode(mob/living/M)
 	if(triggered) // Prevents circular mine explosions from two mines detonating eachother
 		return
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
 	triggered = TRUE
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 
 	if(trap)
 		trigger_trap(M)
@@ -307,7 +302,6 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 		visible_message("\The [src.name] detonates!")
 	GLOB.motiontracker_service.ping(src,100)
 
-	qdel(s)
 	qdel(src)
 
 /////////////////////////////////////////////

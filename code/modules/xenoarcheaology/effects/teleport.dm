@@ -14,15 +14,11 @@
 			var/atom/movable/_tmp_buck_48 = user?.buckled_to()
 			_tmp_buck_48.unbuckle_mob()
 
-		var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-		sparks.set_up(3, 0, get_turf(user))
-		sparks.start()
+		fx_sparks(get_turf(user), 3, FALSE)
 
 		user.Move(pick(trange(50, get_turf(holder))))
 
-		sparks = new /datum/effect/effect/system/spark_spread()
-		sparks.set_up(3, 0, user.loc)
-		sparks.start()
+		fx_sparks(user.loc, 3, FALSE)
 
 /datum/artifact_effect/teleport/DoEffectAura()
 	var/atom/holder = get_master_holder()
@@ -39,14 +35,10 @@
 					var/atom/movable/_tmp_buck_49 = M?.buckled_to()
 					_tmp_buck_49.unbuckle_mob(M)
 
-				var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-				sparks.set_up(3, 0, get_turf(M))
-				sparks.start()
+				fx_sparks(get_turf(M), 3, FALSE)
 
 				M.Move(pick(trange(50, T)))
-				sparks = new /datum/effect/effect/system/spark_spread()
-				sparks.set_up(3, 0, M.loc)
-				sparks.start()
+				fx_sparks(M.loc, 3, FALSE)
 
 /datum/artifact_effect/teleport/DoEffectPulse()
 	var/atom/holder = get_master_holder()
@@ -63,11 +55,7 @@
 					var/atom/movable/_tmp_buck_50 = M?.buckled_to()
 					_tmp_buck_50.unbuckle_mob()
 
-				var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-				sparks.set_up(3, 0, get_turf(M))
-				sparks.start()
+				fx_sparks(get_turf(M), 3, FALSE)
 
 				M.Move(pick(trange(50, T)))
-				sparks = new /datum/effect/effect/system/spark_spread()
-				sparks.set_up(3, 0, M.loc)
-				sparks.start()
+				fx_sparks(M.loc, 3, FALSE)

@@ -197,7 +197,7 @@ EXTEND_INTERACTIONS(/turf/simulated/wall, \
 		else if( istype(W, /obj/item/melee/energy/blade) )
 			var/obj/item/melee/energy/blade/EB = W
 
-			EB.spark_system.start()
+			fx_sparks(EB, 5, FALSE)
 			to_chat(user, span_notice("You slash \the [src] with \the [EB]; the thermite ignites!"))
 			play_sfx(src, SFX_SPARKS)
 			play_sfx(src, SFX_WEAPONS_BLADE1)

@@ -14,7 +14,6 @@
 	var/cell_type = /obj/item/cell/high //Type of cell to spawn in it
 	var/charge_guns = FALSE //Can it charge guns?
 
-	var/datum/effect/effect/system/spark_spread/spark_system
 	var/obj/item/cell/cell
 	var/recharging = FALSE
 	var/opened = FALSE
@@ -149,10 +148,6 @@
 		var/filter = filter(type = "outline", size = 1, color = "#22AAFF")
 		A.filters += filter
 
-		spark_system = new /datum/effect/effect/system/spark_spread
-		spark_system.set_up(5, 0, get_turf(A))
-		spark_system.attach(A)
-
 		om_task_start(/datum/om/task/timed/induce, user, null, duration = 2 SECONDS, receiver = src, charged = A, charging = C, device = O, coefficient = coefficient, beam = charge_beam, filter = filter)
 		return TRUE
 	else //Couldn't find a cell
@@ -181,7 +176,8 @@
 		return STEP_DONE
 	var/obj/item/cell/C = task.charging
 	induce(C, task.coefficient)
-	spark_system?.start()
+	if(task.charged)
+		fx_sparks(task.charged, 5, FALSE)
 	task.device?.update_icon()
 	task.done_any = TRUE
 	return C.charge < C.maxcharge ? STEP_REPEAT(2 SECONDS) : STEP_DONE
@@ -190,7 +186,6 @@
 	var/mob/user = task.actor
 	var/atom/A = task.charged
 	qdel(task.beam)
-	QDEL_NULL(spark_system)
 	if(A)
 		A.filters -= task.filter
 	if(task.done_any && user) // Only show a message if we succeeded at least once
@@ -299,7 +294,6 @@ DECLARE_INTERACTIONS(/obj/item/inducer, \
 /obj/vehicle/get_cell()
 	return cell
 
-DECLARE_REF(/obj/item/inducer, "spark_system", OWNED, null)
 DECLARE_REF(/obj/item/inducer, "cell", HELD, null)
 
 /// LC-refs: hume -- an OM handle (om_handle()), so it reads null once that is deleted.

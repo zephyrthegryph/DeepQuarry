@@ -16,14 +16,9 @@
 	aspect = ASPECT_FORCE
 	toggled = 1
 	var/damage_to_energy_multiplier = 30.0 //Determines how much energy to charge for blocking, e.g. 20 damage attack = 600 energy cost
-	var/datum/effect/effect/system/spark_spread/spark_system = null
-
-DECLARE_DEFAULT_CHILD(/obj/item/spell/shield, "spark_system", /datum/effect/effect/system/spark_spread)
-
 /obj/item/spell/shield/Initialize(mapload, coreless)
 	. = ..()
 	set_light(3, 2, l_color = "#006AFF")
-	spark_system.set_up(5, 0, src)
 
 /obj/item/spell/shield/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(user.incapacitated())
@@ -51,10 +46,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/spell/shield, "spark_system", /datum/effect/effe
 	var/bad_arc = reverse_direction(user.dir) //arc of directions from which we cannot block
 	if(check_shield_arc(user, bad_arc, damage_source, attacker))
 		user.visible_message(span_danger("\The [user]'s [src] blocks [attack_text]!"))
-		spark_system.start()
+		fx_sparks(src, 5, FALSE)
 		play_sfx(src, SFX_WEAPONS_BLADE1)
 		adjust_instability(2)
 		return 1
 	return 0
-
-DECLARE_REF(/obj/item/spell/shield, "spark_system", OWNED, null)

@@ -52,7 +52,6 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	var/charge_stage = 0
 	var/overcharge = 0
 	var/overcharge_modifier = 1.5 //Multiplier in price for using the overcharge mode.
-	var/datum/effect/effect/system/spark_spread/spark_system
 
 	var/static/image/radial_image_steel = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "sheet-metal")
 	var/static/image/radial_image_glass = image(icon= 'icons/mob/radial_vr.dmi', icon_state = "sheet-glass")
@@ -63,12 +62,8 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 
 /obj/item/rms/Initialize(mapload)
 	. = ..()
-	spark_system.set_up(5, 0, src)
-	spark_system.attach(src)
 	update_icon()
 
-DECLARE_REF(/obj/item/rms, "spark_system", OWNED, null)
-DECLARE_DEFAULT_CHILD(/obj/item/rms, "spark_system", /datum/effect/effect/system/spark_spread)
 
 /obj/item/rms/update_icon()
 	charge_stage = round((stored_charge/max_charge)*4)
@@ -161,7 +156,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rms, "spark_system", /datum/effect/effect/system
 	else
 		product = choose_normal(user)
 
-	spark_system.start()
+	fx_sparks(src, 5, FALSE)
 	product.forceMove(get_turf(A))
 
 /obj/item/rms/proc/choose_overcharge(mob/living/user)

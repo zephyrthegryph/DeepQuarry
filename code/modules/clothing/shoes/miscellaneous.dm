@@ -116,11 +116,11 @@
 	if(running)
 		if(footstep >= 2)
 			footstep = 0
-			playsound(src, "clownstep", 50, 1) // this will get annoying very fast.
+			play_sfx(src, SFX_CLOWNSTEP, vary = TRUE) // this will get annoying very fast.
 		else
 			footstep++
 	else
-		playsound(src, "clownstep", 20, 1)
+		play_sfx(src, SFX_CLOWNSTEP, 0.4, vary = TRUE)
 */
 
 /obj/item/clothing/shoes/clown_shoes/fit_constraint()

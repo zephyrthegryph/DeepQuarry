@@ -20,7 +20,6 @@
 	var/beacons_left = 3
 	var/failure_chance = 5 //Percent
 	var/destination_handle
-	var/datum/effect/effect/system/spark_spread/spk
 	var/list/warned_users
 	var/list/logged_events
 
@@ -42,15 +41,10 @@
 	flags |= NOBLUDGEON
 	if(!power_source) // no cell_type
 		power_source = new /obj/item/cell/device(src) // ALLOW(decl): fallback when a subtype clears cell_type
-	spk.set_up(5, 0, src)
-	spk.attach(src)
-
 	rebuild_radial_images()
 
 DECLARE_REF(/obj/item/perfect_tele, "power_source", OWNED, null)
-DECLARE_REF(/obj/item/perfect_tele, "spk", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/perfect_tele, "power_source", "cell_type")
-DECLARE_DEFAULT_CHILD(/obj/item/perfect_tele, "spk", /datum/effect/effect/system/spark_spread)
 
 // its beacons forget it.
 DECLARE_REF(/obj/item/perfect_tele, "beacons", LIST_BACK, "tele_hand_handle")
@@ -382,8 +376,6 @@ This device records all warnings given and teleport events for admin review in c
 	if(!M || !T)
 		return
 
-	spk.set_up(5, 0, M)
-	spk.attach(M)
 	play_sfx(T, SFX_SPARKS)
 	anim(T,M,'icons/mob/mob.dmi',,"phaseout",,M.dir)
 
@@ -392,12 +384,10 @@ This device records all warnings given and teleport events for admin review in c
 	if(!M || !T)
 		return
 
-	spk.start()
+	fx_sparks(M, 5, FALSE)
 	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
 	play_sfx(T, SFX_EFFECTS_SPARKS2)
 	anim(T,M,'icons/mob/mob.dmi',,"phasein",,M.dir)
-	spk.set_up(5, 0, src)
-	spk.attach(src)
 
 /obj/item/perfect_tele_beacon
 	name = "translocator beacon"

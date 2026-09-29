@@ -748,7 +748,7 @@
 		if(!silent)
 			to_chat(H, span_notice("\The [landing] cushions your fall."))
 			landing.visible_message(span_infoplain(span_bold("\The [H]") + " 's fall is cushioned by \The [landing]."))
-			playsound(H, "rustle", 25, 1)
+			play_sfx(H, SFX_RUSTLE, extrarange = 0)
 		if(!soft_landing)
 			H.status_at_least(EFFECT_WEAKENED, 10)
 		return TRUE*/

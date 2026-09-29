@@ -1096,15 +1096,11 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 			var/atom/movable/_tmp_buck_51 = M?.buckled_to()
 			_tmp_buck_51.unbuckle_mob()
 
-		var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-		sparks.set_up(3, 0, get_turf(M))
-		sparks.start()
+		fx_sparks(get_turf(M), 3, FALSE)
 
 		M.forceMove(pick(trange(50, get_turf(holder.my_atom))))
 
-		sparks = new /datum/effect/effect/system/spark_spread()
-		sparks.set_up(3, 0, M.loc)
-		sparks.start()
+		fx_sparks(M.loc, 3, FALSE)
 	..()
 
 /datum/decl/chemical_reaction/instant/slime/bluespace_teleporter

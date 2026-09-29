@@ -15,7 +15,6 @@
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, 50000)
 	preserve_item = TRUE // RCDs are pretty important.
-	var/datum/effect/effect/system/spark_spread/spark_system
 	var/stored_matter = 0
 	var/max_stored_matter = RCD_MAX_CAPACITY
 	var/ranged = FALSE
@@ -27,14 +26,6 @@
 	var/window_type = /obj/structure/window/reinforced/full
 	var/material_to_use = DEFAULT_WALL_MATERIAL // So badmins can make RCDs that print diamond walls.
 	var/make_rwalls = FALSE // If true, when building walls, they will be reinforced.
-/* Unused
-/obj/item/rcd/Initialize(mapload)
-	. = ..()
-	spark_system.set_up(5, 0, src)
-	spark_system.attach(src)
-*/
-DECLARE_REF(/obj/item/rcd, "spark_system", OWNED, null)
-DECLARE_DEFAULT_CHILD(/obj/item/rcd, "spark_system", /datum/effect/effect/system/spark_spread)
 
 /obj/item/rcd/examine(mob/user)
 	. = ..()

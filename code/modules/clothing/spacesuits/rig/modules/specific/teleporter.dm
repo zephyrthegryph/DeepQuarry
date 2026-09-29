@@ -18,7 +18,7 @@
 	if(!M || !T)
 		return
 
-	holder.spark_system.start()
+	fx_sparks(holder, 5, FALSE)
 	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
 	play_sfx(T, SFX_EFFECTS_SPARKS2)
 	anim(T,M,'icons/mob/mob.dmi',,"phasein",,M.dir)

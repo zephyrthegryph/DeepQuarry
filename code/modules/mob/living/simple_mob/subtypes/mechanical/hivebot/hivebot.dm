@@ -26,9 +26,7 @@
 	..()
 	visible_message(span_warning("\The [src] blows apart!"))
 	new /obj/effect/decal/cleanable/blood/gibs/robot(src.loc)
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 
 // The hivebot's default projectile.
 /obj/item/projectile/bullet/hivebot

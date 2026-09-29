@@ -18,7 +18,6 @@
 		if(prob(15 + hackguard))
 			to_chat(user, span_notice("The safe buzzes as a security drone is teleported in!"))
 			new /mob/living/simple_mob/mechanical/combat_drone (src.loc) //if I ever make security stun drones remind me to replace this with those
-			//new /effect/system/spark_spread (src.loc) I am to tired to make this work right now
 			return 1
 		else
 			to_chat(user, span_notice("The safe buzzes but the security systems don't trigger."))

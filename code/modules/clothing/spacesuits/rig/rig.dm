@@ -93,7 +93,6 @@
 	var/emp_protection = 0
 	item_flags = PHORONGUARD // add
 
-	var/datum/effect/effect/system/spark_spread/spark_system
 	var/datum/mini_hud/rig/minihud
 
 	// Decomposed subsystems — see rig_power_system.dm and rig_component_registry.dm
@@ -109,7 +108,6 @@
 	permeability_coefficient = 0  //Protect the squishies, after all this shit should be waterproof.
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
-DECLARE_DEFAULT_CHILD(/obj/item/rig, "spark_system", /datum/effect/effect/system/spark_spread)
 DECLARE_DEFAULT_CHILD(/obj/item/rig, "power_system", /datum/rig_power_system)
 DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_registry)
 
@@ -122,9 +120,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 
 	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access))
 		locked = 0
-
-	spark_system.set_up(5, 0, src)
-	spark_system.attach(src)
 
 	// Instantiate the decomposed subsystems.
 	power_system.cooling_on              = cooling_on
@@ -140,7 +135,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 	update_icon(1)
 
 DECLARE_REF(/obj/item/rig, "power_system", OWNED, null)
-DECLARE_REF(/obj/item/rig, "spark_system", OWNED, null)
 DECLARE_REF(/obj/item/rig, "boots", OWNED, null)
 DECLARE_REF(/obj/item/rig, "chest", OWNED, null)
 DECLARE_REF(/obj/item/rig, "helmet", OWNED, null)
@@ -808,7 +802,7 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 
 /obj/item/rig/proc/shock(mob/user)
 	if (electrocute_mob(user, cell, src)) //electrocute_mob() handles removing charge from the cell, no need to do that here.
-		spark_system.start()
+		fx_sparks(src, 5, FALSE)
 		if(user.has_status(EFFECT_STUNNED))
 			return 1
 	return 0

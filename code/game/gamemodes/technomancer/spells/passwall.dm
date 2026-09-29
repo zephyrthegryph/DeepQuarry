@@ -36,9 +36,6 @@
 
 	visible_message(span_info("[user] rests a hand on \the [hit_atom]."))
 
-	var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-	spark_system.set_up(5, 0, our_turf)
-
 	while(i)
 		checked_turf = get_step(checked_turf, direction) //Advance in the given direction
 		total_cost += check_for_scepter() ? 400 : 800 //Phasing through matter's expensive, you know.
@@ -59,10 +56,10 @@
 	// The search takes a second per tile checked; the spell is busy (a hold claims it) meanwhile.
 	var/search_time = (maximum_distance - i) SECONDS
 	om_hold_busy(src, search_time)
-	om_after(src, search_time, PROC_REF(passwall_found), user, hit_atom, our_turf, found_turf, total_cost, spark_system)
+	om_after(src, search_time, PROC_REF(passwall_found), user, hit_atom, our_turf, found_turf, total_cost)
 	return 1
 
-/obj/item/spell/passwall/proc/passwall_found(mob/living/user, atom/hit_atom, turf/our_turf, turf/found_turf, total_cost, datum/effect/effect/system/spark_spread/spark_system)
+/obj/item/spell/passwall/proc/passwall_found(mob/living/user, atom/hit_atom, turf/our_turf, turf/found_turf, total_cost)
 	if(found_turf)
 		if(user.loc != our_turf)
 			to_chat(user, span_warning("You need to stand still in order to phase through \the [hit_atom]."))
@@ -70,7 +67,7 @@
 		if(pay_energy(total_cost) && !user.incapacitated() )
 			visible_message(span_warning("[user] appears to phase through \the [hit_atom]!"))
 			to_chat(user, span_info("You find a destination on the other side of \the [hit_atom], and phase through it."))
-			spark_system.start()
+			fx_sparks(our_turf, 5, FALSE)
 			user.forceMove(found_turf)
 			consume(src, user)
 			return 1

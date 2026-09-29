@@ -274,12 +274,7 @@
 /mob/living/carbon/human/proc/lleill_ring_teleport_chosen(datum/om/prompt/choice/lleill_energy/lleill_ring_teleport/ask)
 	var/obj/structure/glamour_ring/R = ask.choice
 	var/energy_cost_tele = ask.energy_cost
-	var/datum/effect/effect/system/spark_spread/spk
-	spk = new(src)
-
 	var/T = get_turf(src)
-	spk.set_up(5, 0, src)
-	spk.attach(src)
 	play_sfx(T, SFX_SPARKS)
 	anim(T,src,'icons/mob/mob.dmi',,"phaseout",,src.dir)
 
@@ -287,12 +282,10 @@
 	src.forceMove(S)
 	species.lleill_energy -= energy_cost_tele
 
-	spk.start()
+	fx_sparks(src, 5, FALSE)
 	play_sfx(S, SFX_EFFECTS_PHASEIN, 0.25)
 	play_sfx(S, SFX_EFFECTS_SPARKS2)
 	anim(S,src,'icons/mob/mob.dmi',,"phasein",,src.dir)
-	spk.set_up(5, 0, src)
-	spk.attach(src)
 
 	//Would be fun to eat people standing on your ring...
 	if(can_be_drop_pred && vore_selected)

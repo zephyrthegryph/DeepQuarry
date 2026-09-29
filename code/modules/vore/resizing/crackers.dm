@@ -117,12 +117,7 @@
 		if(TELEPORTING_CRACKER)
 			if(can_spontaneous_vore(loser, winner))
 				winner.visible_message(span_bold("\The [winner]") + " is teleported to somewhere nearby...")
-				var/datum/effect/effect/system/spark_spread/spk
-				spk = new(winner)
-
 				var/T = get_turf(winner)
-				spk.set_up(5, 0, winner)
-				spk.attach(winner)
 				play_sfx(T, SFX_SPARKS)
 				anim(T,winner,'icons/mob/mob.dmi',,"phaseout",,winner.dir)
 				loser.vore_selected.nom_atom(winner)

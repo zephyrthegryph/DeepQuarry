@@ -34,17 +34,12 @@ log transactions
 	var/tmp/held_card_handle
 	var/editing_security_level = 0
 	var/view_screen = NO_SCREEN
-	var/datum/effect/effect/system/spark_spread/spark_system
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/atm, "spark_system", /datum/effect/effect/system/spark_spread)
 
 /obj/machinery/atm/Initialize(mapload)
 	machine_id = "[station_name()] RT #[GLOB.num_financial_terminals++]"
 	. = ..()
-	spark_system.set_up(5, 0, src)
-	spark_system.attach(src)
 
-DECLARE_REF(/obj/machinery/atm, "spark_system", OWNED, null)
 
 /obj/machinery/atm/machine_step()
 	if(stat & NOPOWER)
@@ -81,7 +76,7 @@ DECLARE_REF(/obj/machinery/atm, "spark_system", OWNED, null)
 
 	//short out the machine, shoot sparks, spew money!
 	emagged = 1
-	spark_system.start()
+	fx_sparks(src, 5, FALSE)
 	spawn_money(rand(100,500),src.loc)
 	//we don't want to grief people by locking their id in an emagged ATM
 	release_held_id(user)

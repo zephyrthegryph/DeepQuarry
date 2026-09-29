@@ -1004,7 +1004,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
 		var/mob/living/carbon/human/H = M
 		if(!istype(H))
 			return
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		if(!H.resizable)
 			H.visible_message(span_warning("The space around [H] compresses for a moment but then nothing happens."),span_notice("The space around you distorts but nothing happens to you."))
 			return
@@ -1017,8 +1016,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
 			H.resize(target_size, ignore_prefs = FALSE, allow_stripping = TRUE)		//In case someone else tries to put it on you.
 			H.visible_message(span_warning("The space around [H] distorts as they change size!"),span_notice("The space around you distorts as you change size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
-			s.set_up(3, 1, M)
-			s.start()
+			fx_sparks(M, 3)
 		else
 			last_activated = world.time
 			H.resize(applied_ratio ? (H.size_multiplier / applied_ratio) : H.size_multiplier, ignore_prefs = FALSE, allow_stripping = TRUE)
@@ -1026,8 +1024,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
 			H.visible_message(span_warning("The space around [H] distorts as they return to their original size!"),span_notice("The space around you distorts as you return to your original size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			to_chat(M, span_warning("\The [src] flickers. It is now recharging and will be ready again in ten seconds."))
-			s.set_up(3, 1, M)
-			s.start()
+			fx_sparks(M, 3)
 	return
 
 /obj/item/clothing/accessory/collar/shock/bluespace/relaymove(mob/living/user,direction)
@@ -1098,7 +1095,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/modified
 		var/mob/living/carbon/human/H = M
 		if(!istype(H))
 			return
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		if(!H.resizable)
 			H.visible_message(span_warning("The space around [H] compresses for a moment but then nothing happens."),span_notice("The space around you distorts but nothing happens to you."))
 			return
@@ -1114,8 +1110,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/modified
 			H.resize(target_size, ignore_prefs = FALSE, allow_stripping = TRUE)		//In case someone else tries to put it on you.
 			H.visible_message(span_warning("The space around [H] distorts as they change size!"),span_notice("The space around you distorts as you change size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
-			s.set_up(3, 1, M)
-			s.start()
+			fx_sparks(M, 3)
 		else
 			last_activated = world.time
 			H.resize(applied_ratio ? (H.size_multiplier / applied_ratio) : H.size_multiplier, ignore_prefs = FALSE, allow_stripping = TRUE)
@@ -1123,8 +1118,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/modified
 			H.visible_message(span_warning("The space around [H] distorts as they return to their original size!"),span_notice("The space around you distorts as you return to your original size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			to_chat(M, span_warning("\The [src] flickers. It is now recharging and will be ready again in ten seconds."))
-			s.set_up(3, 1, M)
-			s.start()
+			fx_sparks(M, 3)
 	return
 
 //bluespace collar malfunctioning (random size)
@@ -1169,7 +1163,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunct
 		var/mob/living/carbon/human/H = M
 		if(!istype(H))
 			return
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		if(!H.resizable)
 			H.visible_message(span_warning("The space around [H] compresses for a moment but then nothing happens."),span_notice("The space around you distorts but nothing happens to you."))
 			return
@@ -1186,8 +1179,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunct
 			H.resize(target_size, ignore_prefs = FALSE, allow_stripping = TRUE)		//In case someone else tries to put it on you.
 			H.visible_message(span_warning("The space around [H] distorts as they change size!"),span_notice("The space around you distorts as you change size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
-			s.set_up(3, 1, M)
-			s.start()
+			fx_sparks(M, 3)
 		else if(currently_shrinking == 1)
 			if(applied_ratio == null)
 				H.visible_message(span_warning("The space around [H] twists and turns for a moment but then nothing happens."),span_notice("The space around you distorts but stay the same size."))
@@ -1199,8 +1191,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunct
 			H.visible_message(span_warning("The space around [H] distorts as they return to their original size!"),span_notice("The space around you distorts as you return to your original size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			to_chat(M, span_warning("\The [src] flickers. It is now recharging and will be ready again in ten seconds."))
-			s.set_up(3, 1, M)
-			s.start()
+			fx_sparks(M, 3)
 	return
 
 //Machete Holsters

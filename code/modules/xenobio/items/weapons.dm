@@ -171,12 +171,8 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 
 	user.visible_message(span_warning("[user] fires \the [src]!"),span_warning("You fire \the [src]!"))
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(4, 1, A)
-	s.start()
-	s = new /datum/effect/effect/system/spark_spread
-	s.set_up(4, 1, user)
-	s.start()
+	fx_sparks(A, 4)
+	fx_sparks(user, 4)
 
 /obj/item/xenobio/monkey_gun
 	name = "Bluespace Cube Rehydrator"

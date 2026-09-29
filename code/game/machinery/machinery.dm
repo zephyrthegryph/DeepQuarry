@@ -678,10 +678,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 /obj/machinery/atom_destruction(damage_flag)
 	if(dq_destroy_effects_once(src)) // one per turf per blast (lifecycle/batch.dm)
 		play_sfx(src, SFX_MACHINES_MACHINE_DIE_SHORT)
-		var/datum/effect/effect/system/spark_spread/sparks = new
-		sparks.set_up(5, 0, src)
-		sparks.start()
-		qdel(sparks)
+		fx_sparks(src, 5, FALSE)
 	return ..()
 
 /**

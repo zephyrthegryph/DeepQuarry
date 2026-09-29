@@ -33,7 +33,6 @@
 	var/obj/item/mecha_parts/mecha_equipment/tool/jetpack/active_jetpack
 	/// The attached energy relay; when set, charge reads go through its dyngetcharge().
 	var/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/energy_relay
-	var/datum/effect/effect/system/spark_spread/spark_system
 	var/lights = 0
 	var/lights_power = 6
 	var/force = 0
@@ -200,7 +199,6 @@ DECLARE_DEFAULT_CHILD(/obj/mecha, "cycle_action", /datum/action/innate/mecha/mec
 DECLARE_DEFAULT_CHILD(/obj/mecha, "switch_damtype_action", /datum/action/innate/mecha/mech_switch_damtype)
 DECLARE_DEFAULT_CHILD(/obj/mecha, "phasing_action", /datum/action/innate/mecha/mech_toggle_phasing)
 DECLARE_DEFAULT_CHILD(/obj/mecha, "cloak_action", /datum/action/innate/mecha/mech_toggle_cloaking)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "spark_system", /datum/effect/effect/system/spark_spread)
 DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/smoke_spread)
 
 DECLARE_PERIODIC(/obj/mecha, PERIODIC_SLOW)
@@ -223,9 +221,6 @@ DECLARE_PERIODIC(/obj/mecha, PERIODIC_SLOW)
 	add_radio()
 	add_cabin()
 	add_airtank() // without an internal tank the port/airtank Menu entries are not offered (pred_mecha_has_airtank)
-
-	spark_system.set_up(2, 0, src)
-	spark_system.attach(src)
 
 	if(smoke_possible)//I am pretty sure that's needed here.
 		src.smoke_system.set_up(3, 0, src)
@@ -991,7 +986,7 @@ DECLARE_REF(/obj/mecha, "minihud", PAIR, "owner_mech")
 
 /obj/mecha/proc/update_health()
 	if(get_integrity() > 0)
-		src.spark_system.start()
+		fx_sparks(src, 2, FALSE)
 	else
 		wrecked = TRUE
 		qdel(src)
@@ -2705,7 +2700,6 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 			return "halloss"
 	return "brute"
 
-DECLARE_REF(/obj/mecha, "spark_system", OWNED, null)
 DECLARE_REF(/obj/mecha, "smoke_system", OWNED, null)
 DECLARE_REF(/obj/mecha, "radio", OWNED, null)
 DECLARE_REF(/obj/mecha, "active_jetpack", HELD, null)

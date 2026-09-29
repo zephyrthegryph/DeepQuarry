@@ -441,15 +441,12 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/sword/charge/loaded, "bcell", /obj/
 	flags = NOBLOODY
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	var/creator_handle
-	var/datum/effect/effect/system/spark_spread/spark_system
 	projectile_parry_chance = 60
 	lcolor = "#00FF00"
 	special_handling = TRUE
 
 /obj/item/melee/energy/blade/Initialize(mapload)
 	. = ..()
-	spark_system.set_up(5, 0, src)
-	spark_system.attach(src)
 
 	set_light(lrange, lpower, lcolor)
 
@@ -584,8 +581,6 @@ EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_R
 	om_after(src, 0, PROC_REF(check_held))
 
 DECLARE_REF(/obj/item/melee/energy, "bcell", HELD, null)
-DECLARE_REF(/obj/item/melee/energy/blade, "spark_system", OWNED, null)
-DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/blade, "spark_system", /datum/effect/effect/system/spark_spread)
 DECLARE_START_TIMER(/obj/item/melee/energy/blade, 0, PROC_REF(check_held))
 
 /// LC-refs: creator -- an OM handle (om_handle()), so it reads null once that is deleted.

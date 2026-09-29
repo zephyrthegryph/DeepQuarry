@@ -117,11 +117,7 @@
 			stance_damage += 2
 			if(isturf(loc) && prob(10))
 				visible_message("\The [src]'s [E.name] [pick("twitches", "shudders")] and sparks!")
-				var/datum/effect/effect/system/spark_spread/spark_system = new ()
-				spark_system.set_up(5, 0, src)
-				spark_system.attach(src)
-				spark_system.start()
-				om_qdel_after(spark_system, 1 SECOND)
+				fx_sparks(src, 5, FALSE)
 		else if (E.is_broken())
 			stance_damage += 1
 		else if (E.is_dislocated())
@@ -212,11 +208,7 @@
 			if(!isbelly(loc))
 				automatic_custom_emote(VISIBLE_MESSAGE, "drops what they were holding, their [E.name] malfunctioning!", check_stat = TRUE)
 
-				var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-				spark_system.set_up(5, 0, src)
-				spark_system.attach(src)
-				spark_system.start()
-				om_qdel_after(spark_system, 1 SECOND)
+				fx_sparks(src, 5, FALSE)
 
 //Handles chem traces
 /mob/living/carbon/human/proc/handle_trace_chems()

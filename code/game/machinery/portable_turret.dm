@@ -94,8 +94,6 @@
 	var/shot_sound 				//what sound should play when the turret fires
 	var/lethal_shot_sound		//what sound should play when the emagged turret fires
 
-	var/datum/effect/effect/system/spark_spread/spark_system	//the spark system, used for generating... sparks?
-
 	var/last_target			//last target fired at, prevents turrets from erratically firing at all valid targets in range
 	var/timeout = TURRET_POPCOOLDOWN // When a turret pops up, then finds nothing to shoot at, this number decrements until 0, when it pops down.
 	var/can_salvage = TRUE	// If false, salvaging doesn't give you anything.
@@ -280,11 +278,6 @@
 	return data
 
 /obj/machinery/porta_turret/Initialize(mapload)
-	//Sets up a spark system
-	spark_system = new /datum/effect/effect/system/spark_spread
-	spark_system.set_up(5, 0, src)
-	spark_system.attach(src)
-
 	setup()
 
 	// If turrets ever switch overlays, this will need to be cached and reapplied each time overlays_cut() is called.
@@ -292,8 +285,6 @@
 	turret_opened_overlay.layer = layer-0.1
 	add_overlay(turret_opened_overlay)
 	return ..()
-
-DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 
 /obj/machinery/porta_turret/update_icon()
 	if(stat & BROKEN) // Turret is dead.
@@ -638,7 +629,7 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 /obj/machinery/porta_turret/on_update_integrity(old_value, new_value)
 	. = ..()
 	if(new_value < old_value && (old_value - new_value) > 5 && prob(45))
-		spark_system?.start()
+		fx_sparks(src, 5, FALSE)
 
 // Reaching zero integrity runs the turret's death process (it persists as a
 // broken wreck rather than being deleted).
@@ -692,7 +683,7 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 
 /obj/machinery/porta_turret/proc/die()	//called when the turret dies, ie, integrity <= 0
 	atom_break()
-	spark_system?.start()	//creates some sparks because they look cool
+	fx_sparks(src, 5, FALSE)	//creates some sparks because they look cool
 	update_icon()
 	set_processing_speed(FALSE) // Drop back to slow machine processing
 
@@ -1417,7 +1408,7 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 		icon_state = "turret_cover_[turret_type]"
 
 /obj/machinery/porta_turret/rcd/die()
-	spark_system.start()
+	fx_sparks(src, 5, FALSE)
 	qdel(src)
 
 /// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).

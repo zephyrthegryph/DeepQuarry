@@ -9,8 +9,6 @@
 	circuit = /obj/item/circuitboard/message_monitor
 	//Server linked to.
 	var/linkedServer_handle
-	//Sparks effect - For emag
-	var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread
 	//Messages - Saves me time if I want to change something.
 	var/noserver = list("text" = "ALERT: No server detected.", "style" = "alert")
 	var/incorrectkey = list("text" = "ALERT: Incorrect decryption key!", "style" = "warning")
@@ -45,8 +43,7 @@
 	if(!emag && operable())
 		if(!isnull(linkedServer()))
 			emag = 1
-			spark_system.set_up(5, 0, src)
-			spark_system.start()
+			fx_sparks(src, 5, FALSE)
 			var/obj/item/paper/monitorkey/MK = new/obj/item/paper/monitorkey
 			MK.forceMove(loc)
 			// Will help make emagging the console not so easy to get away with.
@@ -380,8 +377,6 @@
 /obj/machinery/computer/message_monitor/proc/brute_force_done(mob/user)
 	if(linkedServer() && user)
 		BruteForce(user)
-
-DECLARE_REF(/obj/machinery/computer/message_monitor, "spark_system", OWNED, null)
 
 /// LC-refs: linkedServer -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/message_monitor/proc/linkedServer() as /obj/machinery/message_server
