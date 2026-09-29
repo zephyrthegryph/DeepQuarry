@@ -5,6 +5,7 @@
 	icon_state = "randompile"
 	density = TRUE
 	anchored = TRUE
+	loot_decl = LOOT_REF(/loot/trash_pile)
 
 	// ALLOW(instance_list): d: passed to the lootable element, which adds the searcher's ckey to it in place
 	var/list/searchedby	= list()// Characters that have searched this trashpile, with values of searched time.
@@ -25,7 +26,6 @@
 		"boxfort",
 		"trashbag",
 		"brokecomp")
-	loot_table_type = /datum/loot_table/trash_pile
 	make_climbable()
 
 DECLARE_REF(/obj/structure/trash_pile, "mouse_nest", OWNED, null)
@@ -195,7 +195,7 @@ DECLARE_DEFAULT_CHILD(/obj/structure/trash_pile, "mouse_nest", /obj/structure/mo
 		hider_handle = null
 		to_chat(user,span_danger("Some sort of creature leaps out of \the [src]!"))
 	else
-		loot_reward(user, searchedby, 5)
+		loot_search(src, user, searchedby, 5)
 
 /obj/structure/mob_spawner/mouse_nest
 	name = "trash"

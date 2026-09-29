@@ -471,8 +471,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "ripleytoy"
 
-/obj/random/mech_toy/item_to_spawn()
-	return pick(typesof(/obj/item/toy/mecha))
+DECLARE_LOOT(/obj/random/mech_toy, LOOT_TABLE(LOOT_TYPES(1, typesof(/obj/item/toy/mecha))))
 
 /obj/item/toy/mecha/ripley
 	name = "toy ripley"

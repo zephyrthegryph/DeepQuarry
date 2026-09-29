@@ -246,7 +246,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 		new /obj/item/stack/rods(Tsec)
 		new /obj/item/stack/rods(Tsec)
 		new /obj/item/stack/cable_coil/cut(Tsec)
-		new /obj/effect/gibspawner/robot(Tsec)
+		gibs(Tsec, null, /obj/effect/gibspawner/robot)
 		new /obj/effect/decal/cleanable/blood/oil(src.loc)
 
 		if(cell)

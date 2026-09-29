@@ -378,7 +378,7 @@ EXTEND_INTERACTIONS(/obj/effect/meteor, \
 /obj/effect/meteor/medium/meatyore/meteor_effect(gib)
 	..()
 	if(gib)
-		new /obj/effect/gibspawner/human(get_turf(src))
+		gibs(get_turf(src), null, /obj/effect/gibspawner/human)
 
 /obj/effect/meteor/big/meatyore
 	name = "large meatyore"
@@ -393,7 +393,7 @@ EXTEND_INTERACTIONS(/obj/effect/meteor, \
 /obj/effect/meteor/big/meatyore/meteor_effect(gib)
 	..()
 	if(gib)
-		new /obj/effect/gibspawner/human(get_turf(src))
+		gibs(get_turf(src), null, /obj/effect/gibspawner/human)
 
 /obj/effect/meteor/flaming/meatyore
 	name = "flaming meatyore"
@@ -408,7 +408,7 @@ EXTEND_INTERACTIONS(/obj/effect/meteor, \
 /obj/effect/meteor/flaming/meatyore/meteor_effect(gib)
 	..()
 	if(gib)
-		new /obj/effect/gibspawner/human(get_turf(src))
+		gibs(get_turf(src), null, /obj/effect/gibspawner/human)
 
 /obj/effect/meteor/irradiated/meatyore
 	name = "glowing meaty ore"
@@ -423,7 +423,7 @@ EXTEND_INTERACTIONS(/obj/effect/meteor, \
 /obj/effect/meteor/irradiated/meatyore/meteor_effect(gib)
 	..()
 	if(gib)
-		new /obj/effect/gibspawner/human(get_turf(src))
+		gibs(get_turf(src), null, /obj/effect/gibspawner/human)
 
 /obj/effect/meteor/emp/meatyore
 	name = "conducting meaty ore"
@@ -438,7 +438,7 @@ EXTEND_INTERACTIONS(/obj/effect/meteor, \
 /obj/effect/meteor/emp/meatyore/meteor_effect(gib)
 	..()
 	if(gib)
-		new /obj/effect/gibspawner/human(get_turf(src))
+		gibs(get_turf(src), null, /obj/effect/gibspawner/human)
 
 /obj/effect/meteor/tunguska/meatyore
 	name = "tunguska meatyore"
@@ -449,7 +449,7 @@ EXTEND_INTERACTIONS(/obj/effect/meteor, \
 /obj/effect/meteor/tunguska/meatyore/meteor_effect(gib)
 	..()
 	if(gib)
-		new /obj/effect/gibspawner/human(get_turf(src))
+		gibs(get_turf(src), null, /obj/effect/gibspawner/human)
 
 /obj/effect/meteor/tunguska/meatyore/Bump()
 	..()

@@ -679,7 +679,7 @@ DECLARE_REF(/datum/generated_station_materializer, "active_job", OWNED, null)
 					// `borderfloor` is a pre-shaded dark stripe and cannot be
 					// recolored correctly. `bordercolor` is the tintable mask
 					// Southern Cross uses for department paint.
-					new /obj/effect/floor_decal/corner/white/border(floor, direction, accent_color)
+					floor_decal_paint(floor, /obj/effect/floor_decal/corner/white/border, direction, accent_color)
 					result.accent_decal_count++
 				result.styled_floor_count++
 	return TRUE

@@ -93,17 +93,17 @@
 	icon_state = "x4"
 	var/amount_to_spawn = 5
 
-/obj/tcspawner/Initialize(mapload)
-	..()
+MAP_RESOLVER(/obj/tcspawner, GLOBAL_PROC_REF(resolve_tcspawner))
 
-	var/turf/T = get_turf(src)
-	var/obj/item/stack/telecrystal/M = new (T,amount_to_spawn)
-
+/// MAP_RESOLVER for telecrystal spawners: one stack, inside the closet on the tile if there is one.
+/proc/resolve_tcspawner(atom/loc, path, list/varedits)
+	var/obj/tcspawner/P = path
+	var/turf/T = get_turf(loc)
+	var/obj/item/stack/telecrystal/M = new (T, MAP_VAR(P, varedits, amount_to_spawn))
 	var/obj/structure/closet/C = locate_on(T, /obj/structure/closet)
 	if(C)
 		M.forceMove(C)
-
-	return INITIALIZE_HINT_QDEL
+	return TRUE
 
 /obj/tcspawner/stack5
 	desc = "This item spawns stack of 5 telecrystals"

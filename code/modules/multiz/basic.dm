@@ -2,14 +2,20 @@
 GLOBAL_LIST_EMPTY(z_levels)// Each bit re... haha just kidding this is a list of bools now
 
 // If the height is more than 1, we mark all contained levels as connected.
-INITIALIZE_IMMEDIATE(/obj/effect/landmark/map_data)
-/obj/effect/landmark/map_data/Initialize(mapload)
-	for(var/i = (z - height + 1) to (z-1))
-		if (length(GLOB.z_levels) <i)
+MAP_RESOLVER(/obj/effect/landmark/map_data, GLOBAL_PROC_REF(resolve_map_data))
+
+/// MAP_RESOLVER for map data: marks the levels below this one (height) as connected.
+/proc/resolve_map_data(atom/loc, path, list/varedits)
+	var/obj/effect/landmark/map_data/P = path
+	var/turf/T = get_turf(loc)
+	if(!T)
+		return TRUE
+	var/height = MAP_VAR(P, varedits, height)
+	for(var/i = (T.z - height + 1) to (T.z - 1))
+		if(length(GLOB.z_levels) < i)
 			GLOB.z_levels.len = i
 		GLOB.z_levels[i] = TRUE
-	..()
-	return INITIALIZE_HINT_QDEL
+	return TRUE
 
 // The storage of connections between adjacent levels means some bitwise magic is needed.
 /proc/HasAbove(z)

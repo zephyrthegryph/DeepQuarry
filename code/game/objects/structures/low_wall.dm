@@ -562,20 +562,29 @@ DESTROY_EFFECTS(/obj/structure/grille/bay, new /datum/destroy_effects_data(neigh
 
 	icon = null
 
-/obj/effect/low_wall_spawner/Initialize(mapload)
-	. = ..()
-	if(locate_in_list(oview(0, src), /obj/effect/low_wall_spawner))
-		WARNING("Duplicate low wall spawners in [x],[y],[z]!")
-		return INITIALIZE_HINT_QDEL
+MAP_RESOLVER(/obj/effect/low_wall_spawner, GLOBAL_PROC_REF(resolve_low_wall_spawner))
 
+/// MAP_RESOLVER for low wall spawners: the low wall, grille and window (once per tile).
+/proc/resolve_low_wall_spawner(atom/loc, path, list/varedits)
+	var/obj/effect/low_wall_spawner/P = path
+	var/turf/T = get_turf(loc)
+	if(!T)
+		return TRUE
+	if(map_loading())
+		if(T in GLOB.map_resolve_scratch["low_wall_spawner"])
+			WARNING("Duplicate low wall spawners in [T.x],[T.y],[T.z]!")
+			return TRUE
+		LAZYADD(GLOB.map_resolve_scratch["low_wall_spawner"], T)
+	var/low_wall_type = MAP_VAR(P, varedits, low_wall_type)
+	var/grille_type = MAP_VAR(P, varedits, grille_type)
+	var/window_type = MAP_VAR(P, varedits, window_type)
 	if(low_wall_type)
-		new low_wall_type(loc)
+		new low_wall_type(T)
 	if(grille_type)
-		new grille_type(loc)
+		new grille_type(T)
 	if(window_type)
-		new window_type(loc)
-
-	return INITIALIZE_HINT_QDEL
+		new window_type(T)
+	return TRUE
 
 // Bay types
 /obj/effect/low_wall_spawner/bay

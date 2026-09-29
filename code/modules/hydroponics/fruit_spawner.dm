@@ -5,15 +5,18 @@
 	icon_state = "no name"
 	var/seedtype = null
 
-/obj/fruitspawner/Initialize(mapload)
-	..()
+MAP_RESOLVER(/obj/fruitspawner, GLOBAL_PROC_REF(resolve_fruitspawner))
+
+/// MAP_RESOLVER for fruit spawners: one harvest of the seed, into the closet on the tile if any
+/// (or into what holds the spawner).
+/proc/resolve_fruitspawner(atom/loc, path, list/varedits)
+	var/obj/fruitspawner/P = path
+	var/seedtype = MAP_VAR(P, varedits, seedtype)
 	if(!seedtype || !GLOB.plant_service.seeds[seedtype])
-		return
-	var/turf/T = get_turf(src)
-	var/obj/structure/closet/C = locate_on(T, /obj/structure/closet)
+		return TRUE
 	var/datum/seed/S = GLOB.plant_service.seeds[seedtype]
-	S.harvest(C || T,0,0,1)
-	return INITIALIZE_HINT_QDEL
+	S.harvest(map_spawn_container(loc), 0, 0, 1)
+	return TRUE
 
 /obj/fruitspawner/cabbage
 	name = "cabbage spawner"

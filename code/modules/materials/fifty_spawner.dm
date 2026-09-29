@@ -6,13 +6,18 @@
 	icon_state = "x4"
 	var/type_to_spawn = null
 
-/obj/fiftyspawner/Initialize(mapload)
-	..()
-	var/turf/T = get_turf(src)
-	var/obj/structure/closet/C = locate_on(T, /obj/structure/closet)
-	var/obj/item/stack/M = new type_to_spawn(C || T, -1)
+MAP_RESOLVER(/obj/fiftyspawner, GLOBAL_PROC_REF(resolve_fiftyspawner))
+
+/// MAP_RESOLVER for 50-stack spawners: a full stack, into the closet on the tile if any (or into
+/// the crate a supply pack put the spawner in).
+/proc/resolve_fiftyspawner(atom/loc, path, list/varedits)
+	var/obj/fiftyspawner/P = path
+	var/stack_type = MAP_VAR(P, varedits, type_to_spawn)
+	var/obj/item/stack/M = new stack_type(map_spawn_container(loc), -1)
 	M.update_icon() // Some stacks have different sprites depending on how full they are.
-	return INITIALIZE_HINT_QDEL //Bye!
+	if(varedits && ("pixel_y" in varedits))
+		M.pixel_y = varedits["pixel_y"]
+	return TRUE
 
 /obj/fiftyspawner/rods
 	name = "stack of rods" //this needs to be defined for cargo

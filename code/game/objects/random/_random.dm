@@ -1,102 +1,29 @@
+/// A map spawner: resolved at map time by its DECLARE_LOOT (code/datums/loot/loot.dm,
+/// resolve_loot()); it never becomes a live atom.
 /obj/random
 	name = "random object"
 	desc = "This item type is used to spawn random objects at round-start"
 	icon = 'icons/misc/random_spawners.dmi'
 	icon_state = "generic"
-	var/spawn_nothing_percentage = 0 // this variable determines the likelyhood that this random object will not spawn anything
+	/// Spawn on the turf (TRUE) or inside what holds the spawner (a crate, for supply packs).
 	var/drop_get_turf = TRUE
 
-/obj/random/Initialize(mapload)
-	. = INITIALIZE_HINT_QDEL
-	..()
-	if (prob(spawn_nothing_percentage))
-		return
-	try_spawn_item()
+// Junk: 20% clutter, 56% trash and remains, 24% small useful items.
+DECLARE_LOOT(/loot/junk/useful, LOOT_TABLE(	LOOT_TYPES(1, subtypesof(/obj/item/pen/crayon)), 	/obj/item/pen, 	/obj/item/pen/blue, 	/obj/item/pen/red, 	/obj/item/pen/multi, 	/obj/item/storage/box/matches, 	/obj/item/stack/material/cardboard))
 
-/obj/random/proc/try_spawn_item()
-	var/atom/result = spawn_item()
-	if(istype(result) && !QDELETED(result))
-		apply_adjustments(result)
-	else if(islist(result))
-		for(var/atom/A in result)
-			if(!QDELETED(A))
-				apply_adjustments(A)
-
-// this function should return a specific item to spawn
-/obj/random/proc/item_to_spawn()
-	return
-
-/obj/random/proc/apply_adjustments(atom/A)
-	if(istype(A))
-		A.pixel_x = pixel_x
-		A.pixel_y = pixel_y
-		A.set_dir(dir)
-
-/obj/random/drop_location()
-	return drop_get_turf ? get_turf(src) : ..()
-
-// creates the random item
-/obj/random/proc/spawn_item()
-	var/build_path = item_to_spawn()
-	return new build_path(drop_location())
-
-/proc/get_random_useful_type()
-	if(!LAZYLEN(GLOB.random_useful_))
-		GLOB.random_useful_ = subtypesof(/obj/item/pen/crayon)
-		GLOB.random_useful_ += /obj/item/pen
-		GLOB.random_useful_ += /obj/item/pen/blue
-		GLOB.random_useful_ += /obj/item/pen/red
-		GLOB.random_useful_ += /obj/item/pen/multi
-		GLOB.random_useful_ += /obj/item/storage/box/matches
-		GLOB.random_useful_ += /obj/item/stack/material/cardboard
-	return pick(GLOB.random_useful_)
-
-/proc/get_random_junk_type()
-	if(prob(20)) // Misc. clutter
-		return /obj/effect/decal/cleanable/generic
-	if(prob(70)) // Misc. junk
-		if(!LAZYLEN(GLOB.random_junk_))
-			GLOB.random_junk_ = subtypesof(/obj/item/trash)
-			GLOB.random_junk_ += /obj/effect/decal/cleanable/bug_remains
-			GLOB.random_junk_ += /obj/effect/decal/remains/mouse
-			GLOB.random_junk_ += /obj/effect/decal/remains/robot
-			GLOB.random_junk_ += /obj/item/paper/crumpled
-			GLOB.random_junk_ += /obj/item/inflatable/torn
-			GLOB.random_junk_ += /obj/effect/decal/cleanable/molten_item
-			GLOB.random_junk_ += /obj/item/material/shard
-
-			GLOB.random_junk_ -= /obj/item/trash/plate
-			GLOB.random_junk_ -= /obj/item/trash/snack_bowl
-			GLOB.random_junk_ -= /obj/item/trash/syndi_cakes
-			GLOB.random_junk_ -= /obj/item/trash/tray
-		return pick(GLOB.random_junk_)
-	// Misc. actually useful stuff
-	return get_random_useful_type()
+DECLARE_LOOT(/loot/junk/trash, LOOT_TABLE(	LOOT_TYPES(1, subtypesof(/obj/item/trash) - list(/obj/item/trash/plate, /obj/item/trash/snack_bowl, /obj/item/trash/syndi_cakes, /obj/item/trash/tray)), 	/obj/effect/decal/cleanable/bug_remains, 	/obj/effect/decal/remains/mouse, 	/obj/effect/decal/remains/robot, 	/obj/item/paper/crumpled, 	/obj/item/inflatable/torn, 	/obj/effect/decal/cleanable/molten_item, 	/obj/item/material/shard))
 
 /////////////////////////////////////////////////////////////////////////
 
-/obj/random/single
-	name = "randomly spawned object"
-	desc = "This item type is used to randomly spawn a given object at round-start"
-	icon_state = "generic"
-	var/spawn_object = null
-
-/obj/random/single/item_to_spawn()
-	return ispath(spawn_object) ? spawn_object : text2path(spawn_object)
-
-//Multiple Object Spawn
-
+/// Multiple object spawn: its declaration's table entries are LOOT_SETs.
 /obj/random/multiple
-
-/obj/random/multiple/spawn_item()
-	var/list/things_to_make = item_to_spawn()
-	for(var/new_type in things_to_make)
-		LAZYADD(., new new_type(src.loc))
 
 /*
 //	Multi Point Spawn
 //	Selects one spawn point out of a group of points with the same ID and asks it to generate its items
 */
+/// Multi-point spawn groups: group id -> list(list(turf, item path) = weight). Rows are recorded
+/// at map time (resolve_random_multi()); at round start one row per group spawns its item.
 GLOBAL_LIST_EMPTY(multi_point_spawns)
 
 /obj/random_multi
@@ -108,29 +35,29 @@ GLOBAL_LIST_EMPTY(multi_point_spawns)
 	var/id     // Group id
 	var/weight // Probability weight for this spawn point
 
-/obj/random_multi/Initialize(mapload)
-	. = ..()
-	weight = max(1, round(weight))
+/obj/random_multi/single_item
+	var/item_path  // Item type to spawn
 
+MAP_RESOLVER(/obj/random_multi, GLOBAL_PROC_REF(resolve_random_multi))
+
+/// MAP_RESOLVER for multi-point spawn points: a weighted row in the point's group.
+/proc/resolve_random_multi(atom/loc, path, list/varedits)
+	var/turf/T = get_turf(loc)
+	if(!T || !ispath(path, /obj/random_multi/single_item))
+		return TRUE
+	var/obj/random_multi/single_item/P = path
+	var/id = MAP_VAR(P, varedits, id)
 	var/list/spawnpoints = GLOB.multi_point_spawns[id]
 	if(!spawnpoints)
 		spawnpoints = list()
 		GLOB.multi_point_spawns[id] = spawnpoints
-	spawnpoints[src] = weight
+	spawnpoints[list(T, MAP_VAR(P, varedits, item_path))] = max(1, round(MAP_VAR(P, varedits, weight)))
+	return TRUE
 
-/// Phase 2: leaves its multi-point spawn group.
-/obj/random_multi/lifecycle_dematerialize()
-	. = ..()
-	var/list/spawnpoints = GLOB.multi_point_spawns[id]
-	spawnpoints -= src
-	if(!length(spawnpoints))
-		GLOB.multi_point_spawns -= id
-
-/obj/random_multi/proc/generate_items()
-	return
-
-/obj/random_multi/single_item
-	var/item_path  // Item type to spawn
-
-/obj/random_multi/single_item/generate_items()
-	new item_path(loc)
+/// Round start: one point per group spawns its item (a loot declaration rolls).
+/proc/spawn_multi_point_items()
+	for(var/id, value in GLOB.multi_point_spawns)
+		var/list/row = pickweight(value)
+		if(row)
+			loot_spawn(row[2], row[1])
+	GLOB.multi_point_spawns.Cut()

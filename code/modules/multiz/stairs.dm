@@ -494,19 +494,26 @@ DECLARE_REF(/obj/structure/stairs/top, "bottom", PAIR, "top")
 	icon = 'icons/obj/structures/stairs_64x64.dmi'
 	icon_state = ""
 
-/obj/structure/stairs/spawner/Initialize(mapload)
-	..()
-	var/turf/B1 = get_step(get_turf(src), turn(dir, 180))
-	var/turf/B2 = get_turf(src)
+MAP_RESOLVER(/obj/structure/stairs/spawner, GLOBAL_PROC_REF(resolve_stairs_spawner))
+
+/proc/resolve_stairs_spawner(atom/loc, path, list/varedits)
+	map_resolve_later(GLOBAL_PROC_REF(stairs_spawner_build), get_turf(loc), path, varedits)
+	return TRUE
+
+/// Builds the three stair pieces from the bottommost tile `B2` in the spawner's direction.
+/proc/stairs_spawner_build(turf/B2, path, list/varedits)
+	var/obj/structure/stairs/spawner/P = path
+	var/dir = MAP_VAR(P, varedits, dir)
+	var/turf/B1 = get_step(B2, turn(dir, 180))
 	var/turf/T1 = GetAbove(B1)
 	var/turf/T2 = GetAbove(B2)
 
 	if(!istype(B1) || !istype(B2))
-		WARNING("Stair created at invalid loc: ([loc.x], [loc.y], [loc.z])")
-		return INITIALIZE_HINT_QDEL
+		WARNING("Stair created at invalid loc: ([B2?.x], [B2?.y], [B2?.z])")
+		return
 	if(!istype(T1) || !istype(T2))
-		WARNING("Stair created without level above: ([loc.x], [loc.y], [loc.z])")
-		return INITIALIZE_HINT_QDEL
+		WARNING("Stair created without level above: ([B2.x], [B2.y], [B2.z])")
+		return
 
 	// Spawn the stairs
 	// Railings sold separately
@@ -521,8 +528,6 @@ DECLARE_REF(/obj/structure/stairs/top, "bottom", PAIR, "top")
 	M.dir = dir
 	T.dir = dir
 	B.check_integrity(B, M, T, O)
-
-	return INITIALIZE_HINT_QDEL
 
 // For ease of spawning. While you *can* spawn the base type and set its dir, this is useful for adminbus and a little bit quicker to map in
 /obj/structure/stairs/spawner/north

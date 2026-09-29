@@ -203,7 +203,7 @@
 		return FALSE
 
 
-	new /obj/effect/gibspawner/generic(T)
+	gibs(T)
 
 	playsound(src.loc, 'sound/effects/blobattack.ogg', 50, 1)
 

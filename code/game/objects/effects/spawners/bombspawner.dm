@@ -22,7 +22,7 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 	om_ask(actor, /datum/om/prompt/number, PROC_REF(carbon_entered), title = "Carbon Dioxide", message = "Enter carbon dioxide amount (mol):", default = carbon)
 
 /datum/om/flow/ttv_bomb/proc/carbon_entered(datum/om/prompt/number/ask)
-	new /obj/effect/spawner/newbomb/radio/custom(get_turf(actor), phoron, oxygen, ask.number)
+	spawn_ttv_bomb(get_turf(actor), /obj/effect/spawner/newbomb/radio/custom, phoron, oxygen, ask.number)
 
 /obj/effect/spawner/newbomb
 	name = "TTV bomb"
@@ -50,15 +50,22 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 	name = "TTV bomb - proximity"
 	assembly_type = /obj/item/assembly/prox_sensor
 
-/obj/effect/spawner/newbomb/radio/custom/Initialize(mapload, ph, ox, co)
-	if(ph != null) phoron_amt = ph
-	if(ox != null) oxygen_amt = ox
-	if(co != null) carbon_amt = co
-	. = ..()
+/// The admin "Instant TTV" bomb: signaler, gas amounts given by the admin (spawn_ttv_bomb()).
+/obj/effect/spawner/newbomb/radio/custom
 
-/obj/effect/spawner/newbomb/Initialize(mapload)
-	. = ..()
-	var/obj/item/transfer_valve/V = new(src.loc)
+MAP_RESOLVER(/obj/effect/spawner/newbomb, GLOBAL_PROC_REF(resolve_newbomb))
+
+/// MAP_RESOLVER for mapped TTV bombs.
+/proc/resolve_newbomb(atom/loc, path, list/varedits)
+	var/obj/effect/spawner/newbomb/P = path
+	spawn_ttv_bomb(get_turf(loc), path, MAP_VAR(P, varedits, phoron_amt), MAP_VAR(P, varedits, oxygen_amt), MAP_VAR(P, varedits, carbon_amt))
+	return TRUE
+
+/// Builds a welded tank transfer valve bomb of spawner type `path` (its assembly) at `loc`.
+/proc/spawn_ttv_bomb(atom/loc, path, phoron, oxygen, carbon)
+	var/obj/effect/spawner/newbomb/P = path
+	var/assembly_type = initial(P.assembly_type)
+	var/obj/item/transfer_valve/V = new(loc)
 	var/obj/item/tank/phoron/PT = new(V)
 	var/obj/item/tank/oxygen/OT = new(V)
 
@@ -73,12 +80,12 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 	// as a computed proc. The total is implied by the adjust_gas calls above —
 	// dropping the assignment is correct, and update_values() is a no-op under
 	// auxmos archiving.
-	PT.air_contents.adjust_gas(GAS_PHORON, (phoron_amt) - LINDA_GAS_AMT(PT.air_contents, GAS_PHORON))
-	PT.air_contents.adjust_gas(GAS_CO2, (carbon_amt) - LINDA_GAS_AMT(PT.air_contents, GAS_CO2))
+	PT.air_contents.adjust_gas(GAS_PHORON, (phoron) - LINDA_GAS_AMT(PT.air_contents, GAS_PHORON))
+	PT.air_contents.adjust_gas(GAS_CO2, (carbon) - LINDA_GAS_AMT(PT.air_contents, GAS_CO2))
 	PT.air_contents.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE+1)
 
 	OT.valve_welded = 1
-	OT.air_contents.adjust_gas(GAS_O2, (oxygen_amt) - LINDA_GAS_AMT(OT.air_contents, GAS_O2))
+	OT.air_contents.adjust_gas(GAS_O2, (oxygen) - LINDA_GAS_AMT(OT.air_contents, GAS_O2))
 	OT.air_contents.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE+1)
 
 	var/obj/item/assembly/S = new assembly_type(V)
@@ -88,7 +95,7 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 	S.toggle_secure()
 
 	V.update_icon()
-	return INITIALIZE_HINT_QDEL
+
 
 
 ///////////////////////
@@ -105,11 +112,8 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 	var/phoron_amt = 0
 	var/oxygen_amt = 0
 
-/obj/effect/spawner/onetankbomb/Initialize(mapload) //just needs an assembly.
-	. = ..()
-
-	var/type = pick(/obj/item/tank/phoron/onetankbomb, /obj/item/tank/oxygen/onetankbomb)
-	replace_with(src, type)
+MAP_RESOLVER(/obj/effect/spawner/onetankbomb, GLOBAL_PROC_REF(resolve_loot))
+DECLARE_LOOT(/obj/effect/spawner/onetankbomb, LOOT_TABLE(/obj/item/tank/phoron/onetankbomb, /obj/item/tank/oxygen/onetankbomb))
 
 
 /obj/effect/spawner/onetankbomb/full
@@ -119,11 +123,7 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 
 
 	//Note that the maximum amount of gas you can put in a 70L air tank at 1013.25 kPa and 519K is 16.44 mol.
-/obj/effect/spawner/onetankbomb/full/Initialize(mapload) //just needs an assembly.
-	. = ..()
-
-	var/type = pick(/obj/item/tank/phoron/onetankbomb/full, /obj/item/tank/oxygen/onetankbomb/full)
-	replace_with(src, type)
+DECLARE_LOOT(/obj/effect/spawner/onetankbomb/full, LOOT_TABLE(/obj/item/tank/phoron/onetankbomb/full, /obj/item/tank/oxygen/onetankbomb/full))
 
 
 /obj/effect/spawner/onetankbomb/frag

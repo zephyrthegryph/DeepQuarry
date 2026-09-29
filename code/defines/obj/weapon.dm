@@ -414,71 +414,39 @@ MATERIAL_MIX(/obj/item/stock_parts/motor, list(MAT_STEEL = 60, MAT_GLASS = 10))
 /obj/effect/spawner/parts
 	name = "nondescript parts bundle that shouldn't exist"
 	desc = "this qdels itself lol! if you're reading this you're codediving or Someone fucked up"
-	var/list/items
 
-/obj/effect/spawner/parts/Initialize(mapload)
-	..()
-	if(items && items.len)
-		var/turf/T = get_turf(src)
-		for(var/path in items)
-			for(var/i in 1 to 5)
-				new path(T)
-	return INITIALIZE_HINT_QDEL
+// Five of each part: one set rolled five times.
+MAP_RESOLVER(/obj/effect/spawner/parts, GLOBAL_PROC_REF(resolve_loot))
 
 /obj/effect/spawner/parts/t1
 	name = "basic parts bundle"
 	desc = "5 of each T1 part, no more and no less."
-	items = list(
-		/obj/item/stock_parts/matter_bin,
-		/obj/item/stock_parts/manipulator,
-		/obj/item/stock_parts/capacitor,
-		/obj/item/stock_parts/scanning_module,
-		/obj/item/stock_parts/micro_laser
-	)
+
+DECLARE_LOOT(/obj/effect/spawner/parts/t1, LOOT_TABLE(LOOT_SET(1, /obj/item/stock_parts/matter_bin, /obj/item/stock_parts/manipulator, /obj/item/stock_parts/capacitor, /obj/item/stock_parts/scanning_module, /obj/item/stock_parts/micro_laser)), LOOT_COUNT(5))
 
 /obj/effect/spawner/parts/t2
 	name = "advanced parts bundle"
 	desc = "5 of each T2 part, no more and no less."
-	items = list(
-		/obj/item/stock_parts/matter_bin,
-		/obj/item/stock_parts/manipulator,
-		/obj/item/stock_parts/capacitor,
-		/obj/item/stock_parts/scanning_module,
-		/obj/item/stock_parts/micro_laser
-	)
+
+DECLARE_LOOT(/obj/effect/spawner/parts/t2, LOOT_TABLE(LOOT_SET(1, /obj/item/stock_parts/matter_bin, /obj/item/stock_parts/manipulator, /obj/item/stock_parts/capacitor, /obj/item/stock_parts/scanning_module, /obj/item/stock_parts/micro_laser)), LOOT_COUNT(5))
 
 /obj/effect/spawner/parts/t3
 	name = "super parts bundle"
 	desc = "5 of each T3 part, no more and no less."
-	items = list(
-		/obj/item/stock_parts/matter_bin,
-		/obj/item/stock_parts/manipulator,
-		/obj/item/stock_parts/capacitor,
-		/obj/item/stock_parts/scanning_module,
-		/obj/item/stock_parts/micro_laser
-	)
+
+DECLARE_LOOT(/obj/effect/spawner/parts/t3, LOOT_TABLE(LOOT_SET(1, /obj/item/stock_parts/matter_bin, /obj/item/stock_parts/manipulator, /obj/item/stock_parts/capacitor, /obj/item/stock_parts/scanning_module, /obj/item/stock_parts/micro_laser)), LOOT_COUNT(5))
 
 /obj/effect/spawner/parts/t4
 	name = "hyper parts bundle"
 	desc = "5 of each T4 part, no more and no less."
-	items = list(
-		/obj/item/stock_parts/matter_bin,
-		/obj/item/stock_parts/manipulator,
-		/obj/item/stock_parts/capacitor,
-		/obj/item/stock_parts/scanning_module,
-		/obj/item/stock_parts/micro_laser
-	)
+
+DECLARE_LOOT(/obj/effect/spawner/parts/t4, LOOT_TABLE(LOOT_SET(1, /obj/item/stock_parts/matter_bin, /obj/item/stock_parts/manipulator, /obj/item/stock_parts/capacitor, /obj/item/stock_parts/scanning_module, /obj/item/stock_parts/micro_laser)), LOOT_COUNT(5))
 
 /obj/effect/spawner/parts/t5
 	name = "omni parts bundle"
 	desc = "5 of each T5 part, no more and no less."
-	items = list(
-		/obj/item/stock_parts/matter_bin,
-		/obj/item/stock_parts/manipulator,
-		/obj/item/stock_parts/capacitor,
-		/obj/item/stock_parts/scanning_module,
-		/obj/item/stock_parts/micro_laser
-	)
+
+DECLARE_LOOT(/obj/effect/spawner/parts/t5, LOOT_TABLE(LOOT_SET(1, /obj/item/stock_parts/matter_bin, /obj/item/stock_parts/manipulator, /obj/item/stock_parts/capacitor, /obj/item/stock_parts/scanning_module, /obj/item/stock_parts/micro_laser)), LOOT_COUNT(5))
 
 /// LC-refs: the machine this cable is jacked into -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/pai_cable/proc/machine() as /obj/machinery

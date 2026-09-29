@@ -12,52 +12,82 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LANDMARKS)
 
 REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LATEJOIN)
 
+MAP_RESOLVER(/obj/effect/landmark, GLOBAL_PROC_REF(resolve_landmark))
+
+/// MAP_RESOLVER for landmarks: a coordinate-only landmark (spawn points, event starts) becomes a
+/// row in its coordinate registry and never an atom; costume landmarks roll their costume. Any
+/// other landmark (one that stays, or a subtype with work of its own) is made normally.
+/proc/resolve_landmark(atom/loc, path, list/varedits)
+	if(ispath(path, /obj/effect/landmark/costume))
+		loot_spawn(path, loc, varedits)
+		return TRUE
+	if(path != /obj/effect/landmark && !ispath(path, /obj/effect/landmark/start) && !ispath(path, /obj/effect/landmark/virtual_reality))
+		return FALSE
+	var/obj/effect/landmark/P = path
+	var/list/registry = landmark_coordinate_registry(MAP_VAR(P, varedits, name))
+	if(!registry)
+		return FALSE
+	var/turf/T = get_turf(loc)
+	if(T)
+		registry += T
+	return TRUE
+
+/// The coordinate registry a coordinate-only landmark name records into (the landmark itself is
+/// never kept), or null for a landmark that stays an atom.
+/proc/landmark_coordinate_registry(name)
+	switch(name) //some of these are probably obsolete
+		if("monkey")
+			return GLOB.monkeystart
+		if("start")
+			return GLOB.newplayer_start
+		if("JoinLateGateway")
+			return GLOB.latejoin_gateway
+		if("JoinLateStationGateway")
+			return GLOB.latejoin_gatewaystation
+		if("JoinLateSifPlains")
+			return GLOB.latejoin_plainspath
+		if("JoinLateFuelDepot")
+			return GLOB.latejoin_fueldepot
+		if("JoinLateTyrVillage")
+			return GLOB.latejoin_tyrvillage
+		if("JoinLateTheDark")
+			return GLOB.latejoin_thedark
+		if("JoinLateElevator")
+			return GLOB.latejoin_elevator
+		if("JoinLateCryo")
+			return GLOB.latejoin_cryo
+		if("JoinLateCyborg")
+			return GLOB.latejoin_cyborg
+		if("prisonwarp")
+			return GLOB.prisonwarp
+		if("prisonsecuritywarp")
+			return GLOB.prisonsecuritywarp
+		if("blobstart")
+			return GLOB.blobstart
+		if("xeno_spawn")
+			return GLOB.xeno_spawn
+		if("endgame_exit")
+			return GLOB.endgame_safespawns
+		if("bluespacerift")
+			return GLOB.endgame_exits
+		if("vinestart")
+			return GLOB.vinestart
+	return null
+
 /obj/effect/landmark/Initialize(mapload)
 	. = ..()
 	tag = text("landmark*[]", name)
 	invisibility = INVISIBILITY_ABSTRACT
 
-	switch(name)			//some of these are probably obsolete
-		if("monkey")
-			GLOB.monkeystart += loc
-			delete_me = TRUE
-		if("start")
-			GLOB.newplayer_start += loc
-			delete_me = TRUE
+	// A subtype placed with a coordinate-only name still records (it stays: its type has work).
+	var/list/registry = landmark_coordinate_registry(name)
+	if(registry)
+		registry += loc
+	switch(name)
 		if("JoinLate") // Bit difference, since we need the spawn point to move.
 			registry_join(REGISTRY_LATEJOIN, src)
 			simulated = TRUE
-			//delete_me = TRUE // see above, moving, always use this list with get_turf
-		if("JoinLateGateway")
-			GLOB.latejoin_gateway += loc
-			delete_me = TRUE
-		if("JoinLateStationGateway")
-			GLOB.latejoin_gatewaystation += loc
-			delete_me = TRUE
-		if("JoinLateSifPlains")
-			GLOB.latejoin_plainspath += loc
-			delete_me = TRUE
-		if("JoinLateFuelDepot")
-			GLOB.latejoin_fueldepot += loc
-			delete_me = TRUE
-		if("JoinLateTyrVillage")
-			GLOB.latejoin_tyrvillage += loc
-			delete_me = TRUE
-		if("JoinLateTheDark")
-			GLOB.latejoin_thedark += loc
-			delete_me = TRUE
-		if("JoinLateElevator")
-			GLOB.latejoin_elevator += loc
-			delete_me = TRUE
-		if("JoinLateCryo")
-			GLOB.latejoin_cryo += loc
-			delete_me = TRUE
-		if("JoinLateCyborg")
-			GLOB.latejoin_cyborg += loc
-			delete_me = TRUE
-		if("prisonwarp")
-			GLOB.prisonwarp += loc
-			delete_me = TRUE
+			// always use this list with get_turf
 		if("Holding Facility")
 			GLOB.holdingfacility += loc
 		if("tdome1")
@@ -68,29 +98,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LATEJOIN)
 			GLOB.tdomeadmin += loc
 		if("tdomeobserve")
 			GLOB.tdomeobserve += loc
-		if("prisonsecuritywarp")
-			GLOB.prisonsecuritywarp += loc
-			delete_me = TRUE
-		if("blobstart")
-			GLOB.blobstart += loc
-			delete_me = TRUE
-		if("xeno_spawn")
-			GLOB.xeno_spawn += loc
-			delete_me = TRUE
-		if("endgame_exit")
-			GLOB.endgame_safespawns += loc
-			delete_me = TRUE
-		if("bluespacerift")
-			GLOB.endgame_exits += loc
-			delete_me = TRUE
-		if("vinestart")
-			GLOB.vinestart += loc
-			delete_me = TRUE
-
-	if(delete_me)
-		return INITIALIZE_HINT_QDEL
-	else
-		registry_join(REGISTRY_LANDMARKS, src)
+	registry_join(REGISTRY_LANDMARKS, src)
 
 // Landmarks survive deletion unless flagged delete_me or forced.
 /obj/effect/landmark/lifecycle_keep(force)
@@ -117,150 +125,56 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LATEJOIN)
 	tag = "virtual_reality*[name]"
 
 /obj/effect/landmark/costume
-	delete_me = TRUE
 
-//Costume spawner landmarks
-/obj/effect/landmark/costume/Initialize(mapload) //costume spawner, selects a random subclass and disappears
-	. = ..()
-	if(type == /obj/effect/landmark/costume)
-		var/list/options = subtypesof(/obj/effect/landmark/costume)
-		var/PICK= options[rand(1,options.len)]
-		new PICK(src.loc)
+// Costume spawners roll their costume at map time (resolve_landmark()); the base picks one.
+DECLARE_LOOT(/obj/effect/landmark/costume, LOOT_TABLE(LOOT_TYPES(1, subtypesof(/obj/effect/landmark/costume))))
+DECLARE_LOOT(/loot/costume/cueball, LOOT_TABLE(/obj/item/clothing/head/cueball), LOOT_CHANCE(30))
+DECLARE_LOOT(/loot/costume/cyborg_mask, LOOT_TABLE(/obj/item/clothing/mask/gas/cyborg), LOOT_CHANCE(25))
 
-//SUBCLASSES.  Spawn a bunch of items and disappear likewise
-/obj/effect/landmark/costume/chicken/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/suit/chickensuit(src.loc)
-	new /obj/item/clothing/head/chicken(src.loc)
-	new /obj/item/reagent_containers/food/snacks/egg(src.loc)
-
-/obj/effect/landmark/costume/gladiator/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/under/gladiator(src.loc)
-	new /obj/item/clothing/head/helmet/gladiator(src.loc)
-
-/obj/effect/landmark/costume/madscientist/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/under/suit_jacket/green(src.loc)
-	new /obj/item/clothing/head/flatcap(src.loc)
-	new /obj/item/clothing/suit/storage/toggle/labcoat/mad(src.loc)
-	new /obj/item/clothing/glasses/gglasses(src.loc)
-
-/obj/effect/landmark/costume/elpresidente/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/under/suit_jacket/green(src.loc)
-	new /obj/item/clothing/head/flatcap(src.loc)
-	new /obj/item/clothing/mask/smokable/cigarette/cigar/havana(src.loc)
-	new /obj/item/clothing/shoes/boots/jackboots(src.loc)
-
-/obj/effect/landmark/costume/nyangirl/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/under/schoolgirl(src.loc)
-	new /obj/item/clothing/head/kitty(src.loc)
-
-/obj/effect/landmark/costume/maid/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/under/skirt(src.loc)
-	var/CHOICE = pick( /obj/item/clothing/head/beret , /obj/item/clothing/head/rabbitears )
-	new CHOICE(src.loc)
-	new /obj/item/clothing/glasses/sunglasses/blindfold(src.loc)
-
-/obj/effect/landmark/costume/butler/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/accessory/wcoat(src.loc)
-	new /obj/item/clothing/under/suit_jacket(src.loc)
-	new /obj/item/clothing/head/that(src.loc)
-
-/obj/effect/landmark/costume/scratch/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/gloves/white(src.loc)
-	new /obj/item/clothing/shoes/white(src.loc)
-	new /obj/item/clothing/under/scratch(src.loc)
-	if (prob(30))
-		new /obj/item/clothing/head/cueball(src.loc)
-
-/obj/effect/landmark/costume/highlander/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/under/kilt(src.loc)
-	new /obj/item/clothing/head/beret(src.loc)
-
-/obj/effect/landmark/costume/prig/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/accessory/wcoat(src.loc)
-	new /obj/item/clothing/glasses/monocle(src.loc)
-	var/CHOICE= pick( /obj/item/clothing/head/bowler, /obj/item/clothing/head/that)
-	new CHOICE(src.loc)
-	new /obj/item/clothing/shoes/black(src.loc)
-	new /obj/item/cane(src.loc)
-	new /obj/item/clothing/under/sl_suit(src.loc)
-	new /obj/item/clothing/mask/fakemoustache(src.loc)
-
-/obj/effect/landmark/costume/plaguedoctor/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/suit/bio_suit/plaguedoctorsuit(src.loc)
-	new /obj/item/clothing/head/plaguedoctorhat(src.loc)
-
-/obj/effect/landmark/costume/nightowl/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/under/owl(src.loc)
-	new /obj/item/clothing/mask/gas/owl_mask(src.loc)
-
-/obj/effect/landmark/costume/waiter/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/under/waiter(src.loc)
-	var/CHOICE= pick( /obj/item/clothing/head/kitty, /obj/item/clothing/head/rabbitears)
-	new CHOICE(src.loc)
-	new /obj/item/clothing/suit/storage/apron(src.loc)
-
-/obj/effect/landmark/costume/pirate/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/under/pirate(src.loc)
-	new /obj/item/clothing/suit/pirate(src.loc)
-	var/CHOICE = pick( /obj/item/clothing/head/pirate , /obj/item/clothing/head/bandana )
-	new CHOICE(src.loc)
-	new /obj/item/clothing/glasses/eyepatch(src.loc)
-
-/obj/effect/landmark/costume/commie/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/under/soviet(src.loc)
-	new /obj/item/clothing/head/ushanka(src.loc)
-
-/obj/effect/landmark/costume/imperium_monk/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/suit/imperium_monk(src.loc)
-	if (prob(25))
-		new /obj/item/clothing/mask/gas/cyborg(src.loc)
-
-/obj/effect/landmark/costume/holiday_priest/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/suit/holidaypriest(src.loc)
-
-/obj/effect/landmark/costume/marisawizard/fake/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/head/wizard/marisa/fake(src.loc)
-	new/obj/item/clothing/suit/wizrobe/marisa/fake(src.loc)
-
-/obj/effect/landmark/costume/cutewitch/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/under/sundress(src.loc)
-	new /obj/item/clothing/head/witchwig(src.loc)
-	new /obj/item/staff/broom(src.loc)
-
-/obj/effect/landmark/costume/fakewizard/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/suit/wizrobe/fake(src.loc)
-	new /obj/item/clothing/head/wizard/fake(src.loc)
-	new /obj/item/staff/(src.loc)
-
-/obj/effect/landmark/costume/sexyclown/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/mask/gas/sexyclown(src.loc)
-	new /obj/item/clothing/under/sexyclown(src.loc)
-
-/obj/effect/landmark/costume/sexymime/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/mask/gas/sexymime(src.loc)
-	new /obj/item/clothing/under/sexymime(src.loc)
+/obj/effect/landmark/costume/chicken
+DECLARE_LOOT(/obj/effect/landmark/costume/chicken, LOOT_ALL(/obj/item/clothing/suit/chickensuit, /obj/item/clothing/head/chicken, /obj/item/reagent_containers/food/snacks/egg))
+/obj/effect/landmark/costume/gladiator
+DECLARE_LOOT(/obj/effect/landmark/costume/gladiator, LOOT_ALL(/obj/item/clothing/under/gladiator, /obj/item/clothing/head/helmet/gladiator))
+/obj/effect/landmark/costume/madscientist
+DECLARE_LOOT(/obj/effect/landmark/costume/madscientist, LOOT_ALL(/obj/item/clothing/under/suit_jacket/green, /obj/item/clothing/head/flatcap, /obj/item/clothing/suit/storage/toggle/labcoat/mad, /obj/item/clothing/glasses/gglasses))
+/obj/effect/landmark/costume/elpresidente
+DECLARE_LOOT(/obj/effect/landmark/costume/elpresidente, LOOT_ALL(/obj/item/clothing/under/suit_jacket/green, /obj/item/clothing/head/flatcap, /obj/item/clothing/mask/smokable/cigarette/cigar/havana, /obj/item/clothing/shoes/boots/jackboots))
+/obj/effect/landmark/costume/nyangirl
+DECLARE_LOOT(/obj/effect/landmark/costume/nyangirl, LOOT_ALL(/obj/item/clothing/under/schoolgirl, /obj/item/clothing/head/kitty))
+/obj/effect/landmark/costume/maid
+DECLARE_LOOT(/obj/effect/landmark/costume/maid, LOOT_ALL(/obj/item/clothing/under/skirt, LOOT_SUB(1, /obj/item/clothing/head/beret, /obj/item/clothing/head/rabbitears), /obj/item/clothing/glasses/sunglasses/blindfold))
+/obj/effect/landmark/costume/butler
+DECLARE_LOOT(/obj/effect/landmark/costume/butler, LOOT_ALL(/obj/item/clothing/accessory/wcoat, /obj/item/clothing/under/suit_jacket, /obj/item/clothing/head/that))
+/obj/effect/landmark/costume/scratch
+DECLARE_LOOT(/obj/effect/landmark/costume/scratch, LOOT_ALL(/obj/item/clothing/gloves/white, /obj/item/clothing/shoes/white, /obj/item/clothing/under/scratch, LOOT_REF(/loot/costume/cueball)))
+/obj/effect/landmark/costume/highlander
+DECLARE_LOOT(/obj/effect/landmark/costume/highlander, LOOT_ALL(/obj/item/clothing/under/kilt, /obj/item/clothing/head/beret))
+/obj/effect/landmark/costume/prig
+DECLARE_LOOT(/obj/effect/landmark/costume/prig, LOOT_ALL(/obj/item/clothing/accessory/wcoat, /obj/item/clothing/glasses/monocle, LOOT_SUB(1, /obj/item/clothing/head/bowler, /obj/item/clothing/head/that), /obj/item/clothing/shoes/black, /obj/item/cane, /obj/item/clothing/under/sl_suit, /obj/item/clothing/mask/fakemoustache))
+/obj/effect/landmark/costume/plaguedoctor
+DECLARE_LOOT(/obj/effect/landmark/costume/plaguedoctor, LOOT_ALL(/obj/item/clothing/suit/bio_suit/plaguedoctorsuit, /obj/item/clothing/head/plaguedoctorhat))
+/obj/effect/landmark/costume/nightowl
+DECLARE_LOOT(/obj/effect/landmark/costume/nightowl, LOOT_ALL(/obj/item/clothing/under/owl, /obj/item/clothing/mask/gas/owl_mask))
+/obj/effect/landmark/costume/waiter
+DECLARE_LOOT(/obj/effect/landmark/costume/waiter, LOOT_ALL(/obj/item/clothing/under/waiter, LOOT_SUB(1, /obj/item/clothing/head/kitty, /obj/item/clothing/head/rabbitears), /obj/item/clothing/suit/storage/apron))
+/obj/effect/landmark/costume/pirate
+DECLARE_LOOT(/obj/effect/landmark/costume/pirate, LOOT_ALL(/obj/item/clothing/under/pirate, /obj/item/clothing/suit/pirate, LOOT_SUB(1, /obj/item/clothing/head/pirate, /obj/item/clothing/head/bandana), /obj/item/clothing/glasses/eyepatch))
+/obj/effect/landmark/costume/commie
+DECLARE_LOOT(/obj/effect/landmark/costume/commie, LOOT_ALL(/obj/item/clothing/under/soviet, /obj/item/clothing/head/ushanka))
+/obj/effect/landmark/costume/imperium_monk
+DECLARE_LOOT(/obj/effect/landmark/costume/imperium_monk, LOOT_ALL(/obj/item/clothing/suit/imperium_monk, LOOT_REF(/loot/costume/cyborg_mask)))
+/obj/effect/landmark/costume/holiday_priest
+DECLARE_LOOT(/obj/effect/landmark/costume/holiday_priest, LOOT_ALL(/obj/item/clothing/suit/holidaypriest))
+/obj/effect/landmark/costume/marisawizard/fake
+DECLARE_LOOT(/obj/effect/landmark/costume/marisawizard/fake, LOOT_ALL(/obj/item/clothing/head/wizard/marisa/fake, /obj/item/clothing/suit/wizrobe/marisa/fake))
+/obj/effect/landmark/costume/cutewitch
+DECLARE_LOOT(/obj/effect/landmark/costume/cutewitch, LOOT_ALL(/obj/item/clothing/under/sundress, /obj/item/clothing/head/witchwig, /obj/item/staff/broom))
+/obj/effect/landmark/costume/fakewizard
+DECLARE_LOOT(/obj/effect/landmark/costume/fakewizard, LOOT_ALL(/obj/item/clothing/suit/wizrobe/fake, /obj/item/clothing/head/wizard/fake, /obj/item/staff))
+/obj/effect/landmark/costume/sexyclown
+DECLARE_LOOT(/obj/effect/landmark/costume/sexyclown, LOOT_ALL(/obj/item/clothing/mask/gas/sexyclown, /obj/item/clothing/under/sexyclown))
+/obj/effect/landmark/costume/sexymime
+DECLARE_LOOT(/obj/effect/landmark/costume/sexymime, LOOT_ALL(/obj/item/clothing/mask/gas/sexymime, /obj/item/clothing/under/sexymime))
 
 /// Marks the bottom left of the testing zone.
 /// In landmarks.dm and not unit_test.dm so it is always active in the mapping tools.

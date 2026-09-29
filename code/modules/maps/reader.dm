@@ -959,8 +959,12 @@ GLOBAL_LIST_EMPTY(map_model_default)
 
 	//finally instance all remainings objects/mobs
 	for(var/atom_index in 1 to index-1)
-		if(members_attributes[atom_index] != default_list)
-			world.preloader_setup(members_attributes[atom_index], members[atom_index])
+		// Map-time resolvers (map_resolvers.dm): a resolved atom is never created.
+		var/list/member_attributes = members_attributes[atom_index]
+		if(map_resolve_path(members[atom_index], crds, member_attributes != default_list ? member_attributes : null))
+			continue
+		if(member_attributes != default_list)
+			world.preloader_setup(member_attributes, members[atom_index])
 
 		// We make the assertion that only /atom s will be in this portion of the code. if that isn't true, this will fail
 		instance = create_atom(members[atom_index], crds)//first preloader pass

@@ -6,314 +6,126 @@
 	mob_returns_home = 1
 	mob_wander_distance = 7
 
-	var/list/possible_mob_types = list( // ALLOW(instance_list): c: read-only per-subtype constant table (9 subtype overrides); a getter would share it, not worth it on a rare type
-		list(/mob/living/simple_mob/animal/goat),
-		list(
-			/mob/living/simple_mob/animal/passive/bird,
-			/mob/living/simple_mob/animal/passive/bird/azure_tit,
-			/mob/living/simple_mob/animal/passive/bird/black_bird,
-			/mob/living/simple_mob/animal/passive/bird/european_robin,
-			/mob/living/simple_mob/animal/passive/bird/goldcrest,
-			/mob/living/simple_mob/animal/passive/bird/ringneck_dove,
-			/mob/living/simple_mob/animal/passive/bird/parrot,
-			/mob/living/simple_mob/animal/passive/bird/parrot/black_headed_caique,
-			/mob/living/simple_mob/animal/passive/bird/parrot/budgerigar,
-			/mob/living/simple_mob/animal/passive/bird/parrot/budgerigar/blue,
-			/mob/living/simple_mob/animal/passive/bird/parrot/budgerigar/bluegreen,
-			/mob/living/simple_mob/animal/passive/bird/parrot/cockatiel,
-			/mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/grey,
-			/mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/white,
-			/mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/yellowish,
-			/mob/living/simple_mob/animal/passive/bird/parrot/eclectus,
-			/mob/living/simple_mob/animal/passive/bird/parrot/grey_parrot,
-			/mob/living/simple_mob/animal/passive/bird/parrot/kea,
-			/mob/living/simple_mob/animal/passive/bird/parrot/pink_cockatoo,
-			/mob/living/simple_mob/animal/passive/bird/parrot/sulphur_cockatoo,
-			/mob/living/simple_mob/animal/passive/bird/parrot/white_caique,
-			/mob/living/simple_mob/animal/passive/bird/parrot/white_cockatoo
-		),
-		list(
-			/mob/living/simple_mob/animal/passive/cat,
-			/mob/living/simple_mob/animal/passive/cat/black
-		),
-		list(/mob/living/simple_mob/animal/passive/chick),
-		list(/mob/living/simple_mob/animal/passive/cow),
-		list(/mob/living/simple_mob/animal/passive/dog/brittany),
-		list(/mob/living/simple_mob/animal/passive/dog/corgi),
-		list(/mob/living/simple_mob/animal/passive/dog/tamaskan),
-		list(/mob/living/simple_mob/animal/passive/fox),
-		list(/mob/living/simple_mob/animal/passive/hare),
-		list(/mob/living/simple_mob/animal/passive/lizard),
-		list(/mob/living/simple_mob/animal/passive/mouse),
-		list(/mob/living/simple_mob/animal/passive/mouse/jerboa),
-		list(/mob/living/simple_mob/animal/passive/mothroach),
-		list(/mob/living/simple_mob/animal/passive/opossum),
-		list(/mob/living/simple_mob/animal/passive/pillbug),
-		list(/mob/living/simple_mob/animal/passive/snake),
-		list(/mob/living/simple_mob/animal/passive/snake/red),
-		list(/mob/living/simple_mob/animal/passive/snake/python),
-		list(/mob/living/simple_mob/animal/passive/tindalos),
-		list(/mob/living/simple_mob/animal/passive/yithian),
-		list(
-			/mob/living/simple_mob/vore/wolf = 10,
-			/mob/living/simple_mob/vore/wolf/direwolf = 5,
-			/mob/living/simple_mob/vore/greatwolf = 1,
-			/mob/living/simple_mob/vore/greatwolf/black = 1,
-			/mob/living/simple_mob/vore/greatwolf/grey = 1
-			),
-		list(/mob/living/simple_mob/vore/rabbit),
-		list(/mob/living/simple_mob/vore/redpanda),
-		list(/mob/living/simple_mob/vore/woof),
-		list(/mob/living/simple_mob/vore/fennec),
-		list(/mob/living/simple_mob/vore/fennix),
-		list(/mob/living/simple_mob/vore/hippo),
-		list(/mob/living/simple_mob/vore/horse),
-		list(/mob/living/simple_mob/vore/bee),
-		list(
-			/mob/living/simple_mob/animal/space/bear,
-			/mob/living/simple_mob/animal/space/bear/brown
-			),
-		list(
-			/mob/living/simple_mob/vore/otie/feral,
-			/mob/living/simple_mob/vore/otie/feral/chubby,
-			/mob/living/simple_mob/vore/otie/red,
-			/mob/living/simple_mob/vore/otie/red/chubby
-			),
-		list(/mob/living/simple_mob/animal/sif/diyaab),
-		list(/mob/living/simple_mob/animal/sif/duck),
-		list(/mob/living/simple_mob/animal/sif/frostfly),
-		list(
-			/mob/living/simple_mob/animal/sif/glitterfly =50,
-			/mob/living/simple_mob/animal/sif/glitterfly/rare = 1
-			),
-		list(
-			/mob/living/simple_mob/animal/sif/kururak = 10,
-			/mob/living/simple_mob/animal/sif/kururak/leader = 1,
-			/mob/living/simple_mob/animal/sif/kururak/hibernate = 2,
-			),
-		list(
-			/mob/living/simple_mob/animal/sif/sakimm = 10,
-			/mob/living/simple_mob/animal/sif/sakimm/intelligent = 1
-			),
-		list(/mob/living/simple_mob/animal/sif/savik) = 5,
-		list(
-			/mob/living/simple_mob/animal/sif/shantak = 10,
-			/mob/living/simple_mob/animal/sif/shantak/leader = 1
-			),
-		list(/mob/living/simple_mob/animal/sif/siffet),
-		list(/mob/living/simple_mob/animal/sif/tymisian),
-		list(
-			/mob/living/simple_mob/animal/giant_spider/electric = 5,
-			/mob/living/simple_mob/animal/giant_spider/frost = 5,
-			/mob/living/simple_mob/animal/giant_spider/hunter = 10,
-			/mob/living/simple_mob/animal/giant_spider/ion = 5,
-			/mob/living/simple_mob/animal/giant_spider/lurker = 10,
-			/mob/living/simple_mob/animal/giant_spider/pepper = 10,
-			/mob/living/simple_mob/animal/giant_spider/phorogenic = 10,
-			/mob/living/simple_mob/animal/giant_spider/thermic = 5,
-			/mob/living/simple_mob/animal/giant_spider/tunneler = 10,
-			/mob/living/simple_mob/animal/giant_spider/webslinger = 5,
-			/mob/living/simple_mob/animal/giant_spider/broodmother = 1),
-		list(/mob/living/simple_mob/creature/strong),
-		list(/mob/living/simple_mob/faithless/strong),
-		list(/mob/living/simple_mob/animal/goat),
-		list(
-			/mob/living/simple_mob/animal/sif/shantak/leader = 1,
-			/mob/living/simple_mob/animal/sif/shantak = 10),
-		list(/mob/living/simple_mob/animal/sif/savik,),
-		list(/mob/living/simple_mob/animal/sif/hooligan_crab),
-		list(
-			/mob/living/simple_mob/animal/space/alien = 50,
-			/mob/living/simple_mob/animal/space/alien/drone = 40,
-			/mob/living/simple_mob/animal/space/alien/sentinel = 25,
-			/mob/living/simple_mob/animal/space/alien/sentinel/praetorian = 15,
-			/mob/living/simple_mob/animal/space/alien/queen = 10,
-			/mob/living/simple_mob/animal/space/alien/queen/empress = 5,
-			/mob/living/simple_mob/animal/space/alien/queen/empress/mother = 1
-			),
-		list(/mob/living/simple_mob/animal/space/bats/cult/strong),
-		list(
-			/mob/living/simple_mob/animal/space/bear,
-			/mob/living/simple_mob/animal/space/bear/brown
-			),
-		list(
-			/mob/living/simple_mob/animal/space/carp = 50,
-			/mob/living/simple_mob/animal/space/carp/large = 10,
-			/mob/living/simple_mob/animal/space/carp/large/huge = 5
-			),
-		list(/mob/living/simple_mob/animal/space/goose),
-		list(/mob/living/simple_mob/vore/jelly),
-		list(/mob/living/simple_mob/animal/space/tree),
-		list(
-			/mob/living/simple_mob/vore/aggressive/corrupthound = 10,
-			/mob/living/simple_mob/vore/aggressive/corrupthound/prettyboi = 1,
-			),
-		list(/mob/living/simple_mob/vore/aggressive/deathclaw),
-		list(/mob/living/simple_mob/vore/aggressive/dino),
-		list(/mob/living/simple_mob/vore/aggressive/dragon),
-		list(/mob/living/simple_mob/vore/aggressive/dragon/virgo3b),
-		list(/mob/living/simple_mob/vore/aggressive/frog),
-		list(/mob/living/simple_mob/vore/aggressive/giant_snake),
-		list(/mob/living/simple_mob/vore/aggressive/mimic),
-		list(/mob/living/simple_mob/vore/aggressive/panther),
-		list(/mob/living/simple_mob/vore/aggressive/rat),
-		list(/mob/living/simple_mob/vore/bee),
-		list(
-			/mob/living/simple_mob/vore/sect_drone = 10,
-			/mob/living/simple_mob/vore/sect_queen = 1
-			),
-		list(/mob/living/simple_mob/vore/solargrub),
-		list(
-			/mob/living/simple_mob/vore/oregrub = 5,
-			/mob/living/simple_mob/vore/oregrub/lava = 1
-			),
-		list(/mob/living/simple_mob/vore/catgirl),
-		list(/mob/living/simple_mob/vore/wolfgirl),
-		list(
-			/mob/living/simple_mob/vore/lamia,
-			/mob/living/simple_mob/vore/lamia/albino,
-			/mob/living/simple_mob/vore/lamia/albino/bra,
-			/mob/living/simple_mob/vore/lamia/albino/shirt,
-			/mob/living/simple_mob/vore/lamia/bra,
-			/mob/living/simple_mob/vore/lamia/cobra,
-			/mob/living/simple_mob/vore/lamia/cobra/bra,
-			/mob/living/simple_mob/vore/lamia/cobra/shirt,
-			/mob/living/simple_mob/vore/lamia/copper,
-			/mob/living/simple_mob/vore/lamia/copper/bra,
-			/mob/living/simple_mob/vore/lamia/copper/shirt,
-			/mob/living/simple_mob/vore/lamia/green,
-			/mob/living/simple_mob/vore/lamia/green/bra,
-			/mob/living/simple_mob/vore/lamia/green/shirt,
-			/mob/living/simple_mob/vore/lamia/zebra,
-			/mob/living/simple_mob/vore/lamia/zebra/bra,
-			/mob/living/simple_mob/vore/lamia/zebra/shirt
-			),
-		list(
-			/mob/living/simple_mob/humanoid/merc = 100,
-			/mob/living/simple_mob/humanoid/merc/melee/sword = 50,
-			/mob/living/simple_mob/humanoid/merc/ranged = 25,
-			/mob/living/simple_mob/humanoid/merc/ranged/grenadier = 1,
-			/mob/living/simple_mob/humanoid/merc/ranged/ionrifle = 10,
-			/mob/living/simple_mob/humanoid/merc/ranged/laser = 5,
-			/mob/living/simple_mob/humanoid/merc/ranged/rifle = 5,
-			/mob/living/simple_mob/humanoid/merc/ranged/smg = 5,
-			/mob/living/simple_mob/humanoid/merc/ranged/sniper = 1,
-			/mob/living/simple_mob/humanoid/merc/ranged/space = 10,
-			/mob/living/simple_mob/humanoid/merc/ranged/technician = 5
-			),
-		list(
-			/mob/living/simple_mob/humanoid/pirate = 3,
-			/mob/living/simple_mob/humanoid/pirate/ranged = 1
-			),
-		list(/mob/living/simple_mob/mechanical/combat_drone),
-		list(/mob/living/simple_mob/mechanical/corrupt_maint_drone),
-		list(
-			/mob/living/simple_mob/mechanical/hivebot = 100,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage = 20,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/backline = 10,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/basic = 20,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/dot = 5,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/ion = 20,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser = 10,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/rapid = 2,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege = 1,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege/emp = 5,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege/fragmentation = 1,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege/radiation = 1,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong = 3,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong/guard = 3,
-			/mob/living/simple_mob/mechanical/hivebot/support = 8,
-			/mob/living/simple_mob/mechanical/hivebot/support/commander = 5,
-			/mob/living/simple_mob/mechanical/hivebot/support/commander/autofollow = 10,
-			/mob/living/simple_mob/mechanical/hivebot/swarm = 20,
-			/mob/living/simple_mob/mechanical/hivebot/tank = 20,
-			/mob/living/simple_mob/mechanical/hivebot/tank/armored = 20,
-			/mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_bullet = 20,
-			/mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_laser = 20,
-			/mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_melee = 20,
-			/mob/living/simple_mob/mechanical/hivebot/tank/meatshield = 20
-			),
-		list(/mob/living/simple_mob/mechanical/infectionbot),
-		list(/mob/living/simple_mob/mechanical/mining_drone),
-		list(/mob/living/simple_mob/mechanical/technomancer_golem),
-		list(
-			/mob/living/simple_mob/mechanical/viscerator,
-			/mob/living/simple_mob/mechanical/viscerator/piercing
-			),
-		list(/mob/living/simple_mob/mechanical/wahlem),
-		list(/mob/living/simple_mob/animal/passive/fox/syndicate),
-		list(/mob/living/simple_mob/animal/passive/fox),
-		list(/mob/living/simple_mob/vore/jelly),
-		list(
-			/mob/living/simple_mob/vore/otie/feral,
-			/mob/living/simple_mob/vore/otie/feral/chubby,
-			/mob/living/simple_mob/vore/otie/red,
-			/mob/living/simple_mob/vore/otie/red/chubby
-			),
-		list(
-			/mob/living/simple_mob/shadekin/blue = 100,
-			/mob/living/simple_mob/shadekin/green = 50,
-			/mob/living/simple_mob/shadekin/orange = 20,
-			/mob/living/simple_mob/shadekin/purple = 60,
-			/mob/living/simple_mob/shadekin/red = 40,
-			/mob/living/simple_mob/shadekin/yellow = 1
-			),
-		list(
-			/mob/living/simple_mob/vore/aggressive/corrupthound,
-			/mob/living/simple_mob/vore/aggressive/corrupthound/prettyboi
-			),
-		list(/mob/living/simple_mob/vore/aggressive/deathclaw),
-		list(/mob/living/simple_mob/vore/aggressive/dino),
-		list(/mob/living/simple_mob/vore/aggressive/dragon),
-		list(/mob/living/simple_mob/vore/aggressive/dragon/virgo3b),
-		list(/mob/living/simple_mob/vore/aggressive/frog),
-		list(/mob/living/simple_mob/vore/aggressive/giant_snake),
-		list(/mob/living/simple_mob/vore/aggressive/mimic),
-		list(/mob/living/simple_mob/vore/aggressive/panther),
-		list(/mob/living/simple_mob/vore/aggressive/rat),
-		list(/mob/living/simple_mob/vore/bee),
-		list(/mob/living/simple_mob/vore/catgirl),
-		list(/mob/living/simple_mob/vore/cookiegirl),
-		list(/mob/living/simple_mob/vore/fennec),
-		list(/mob/living/simple_mob/vore/fennix),
-		list(/mob/living/simple_mob/vore/hippo),
-		list(/mob/living/simple_mob/vore/horse),
-		list(/mob/living/simple_mob/vore/oregrub),
-		list(/mob/living/simple_mob/vore/rabbit),
-		list(
-			/mob/living/simple_mob/vore/redpanda = 50,
-			/mob/living/simple_mob/vore/redpanda/fae = 1
-			),
-		list(
-			/mob/living/simple_mob/vore/sect_drone = 10,
-			/mob/living/simple_mob/vore/sect_queen = 1
-			),
-		list(/mob/living/simple_mob/vore/solargrub),
-		list(/mob/living/simple_mob/vore/woof),
-		list(/mob/living/simple_mob/vore/alienanimals/space_ghost),
-		list(/mob/living/simple_mob/vore/alienanimals/catslug),
-		list(/mob/living/simple_mob/vore/alienanimals/space_jellyfish),
-		list(/mob/living/simple_mob/vore/alienanimals/startreader),
-		list(
-			/mob/living/simple_mob/vore/bigdragon,
-			/mob/living/simple_mob/vore/bigdragon/friendly),
-		list(
-			/mob/living/simple_mob/vore/leopardmander = 50,
-			/mob/living/simple_mob/vore/leopardmander/blue = 10,
-			/mob/living/simple_mob/vore/leopardmander/exotic = 1
-			),
-		list(/mob/living/simple_mob/vore/sheep),
-		list(/mob/living/simple_mob/vore/weretiger)
-		)
-
-/obj/random/mob/semirandom_mob_spawner/item_to_spawn()
-	var/list/choice = GLOB.semirandom_mob_spawner_decisions[type]
-
-	if(!choice)
-		choice = pickweight(possible_mob_types)
-		GLOB.semirandom_mob_spawner_decisions[type] = choice
-
-	return pickweight(choice)
+DECLARE_LOOT(/obj/random/mob/semirandom_mob_spawner, LOOT_PER_ROUND, LOOT_TABLE(\
+	LOOT_SUB(1, /mob/living/simple_mob/animal/goat), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird, /mob/living/simple_mob/animal/passive/bird/azure_tit, /mob/living/simple_mob/animal/passive/bird/black_bird, /mob/living/simple_mob/animal/passive/bird/european_robin, /mob/living/simple_mob/animal/passive/bird/goldcrest, /mob/living/simple_mob/animal/passive/bird/ringneck_dove, /mob/living/simple_mob/animal/passive/bird/parrot, /mob/living/simple_mob/animal/passive/bird/parrot/black_headed_caique, /mob/living/simple_mob/animal/passive/bird/parrot/budgerigar, /mob/living/simple_mob/animal/passive/bird/parrot/budgerigar/blue, /mob/living/simple_mob/animal/passive/bird/parrot/budgerigar/bluegreen, /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel, /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/grey, /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/white, /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/yellowish, /mob/living/simple_mob/animal/passive/bird/parrot/eclectus, /mob/living/simple_mob/animal/passive/bird/parrot/grey_parrot, /mob/living/simple_mob/animal/passive/bird/parrot/kea, /mob/living/simple_mob/animal/passive/bird/parrot/pink_cockatoo, /mob/living/simple_mob/animal/passive/bird/parrot/sulphur_cockatoo, /mob/living/simple_mob/animal/passive/bird/parrot/white_caique, /mob/living/simple_mob/animal/passive/bird/parrot/white_cockatoo), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/cat, /mob/living/simple_mob/animal/passive/cat/black), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/chick), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/cow), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/dog/brittany), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/dog/corgi), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/dog/tamaskan), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/fox), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/hare), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/lizard), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/mouse), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/mouse/jerboa), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/mothroach), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/opossum), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/pillbug), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/snake), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/snake/red), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/snake/python), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/tindalos), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/yithian), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/wolf = 10, /mob/living/simple_mob/vore/wolf/direwolf = 5, /mob/living/simple_mob/vore/greatwolf = 1, /mob/living/simple_mob/vore/greatwolf/black = 1, /mob/living/simple_mob/vore/greatwolf/grey = 1), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/rabbit), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/redpanda), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/woof), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/fennec), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/fennix), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/hippo), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/horse), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/bee), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/space/bear, /mob/living/simple_mob/animal/space/bear/brown), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/otie/feral, /mob/living/simple_mob/vore/otie/feral/chubby, /mob/living/simple_mob/vore/otie/red, /mob/living/simple_mob/vore/otie/red/chubby), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/sif/diyaab), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/sif/duck), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/sif/frostfly), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/sif/glitterfly = 50, /mob/living/simple_mob/animal/sif/glitterfly/rare = 1), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/sif/kururak = 10, /mob/living/simple_mob/animal/sif/kururak/leader = 1, /mob/living/simple_mob/animal/sif/kururak/hibernate = 2), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/sif/sakimm = 10, /mob/living/simple_mob/animal/sif/sakimm/intelligent = 1), \
+	LOOT_SUB(5, /mob/living/simple_mob/animal/sif/savik), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/sif/shantak = 10, /mob/living/simple_mob/animal/sif/shantak/leader = 1), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/sif/siffet), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/sif/tymisian), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/giant_spider/electric = 5, /mob/living/simple_mob/animal/giant_spider/frost = 5, /mob/living/simple_mob/animal/giant_spider/hunter = 10, /mob/living/simple_mob/animal/giant_spider/ion = 5, /mob/living/simple_mob/animal/giant_spider/lurker = 10, /mob/living/simple_mob/animal/giant_spider/pepper = 10, /mob/living/simple_mob/animal/giant_spider/phorogenic = 10, /mob/living/simple_mob/animal/giant_spider/thermic = 5, /mob/living/simple_mob/animal/giant_spider/tunneler = 10, /mob/living/simple_mob/animal/giant_spider/webslinger = 5, /mob/living/simple_mob/animal/giant_spider/broodmother = 1), \
+	LOOT_SUB(1, /mob/living/simple_mob/creature/strong), \
+	LOOT_SUB(1, /mob/living/simple_mob/faithless/strong), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/goat), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/sif/shantak/leader = 1, /mob/living/simple_mob/animal/sif/shantak = 10), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/sif/savik), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/sif/hooligan_crab), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/space/alien = 50, /mob/living/simple_mob/animal/space/alien/drone = 40, /mob/living/simple_mob/animal/space/alien/sentinel = 25, /mob/living/simple_mob/animal/space/alien/sentinel/praetorian = 15, /mob/living/simple_mob/animal/space/alien/queen = 10, /mob/living/simple_mob/animal/space/alien/queen/empress = 5, /mob/living/simple_mob/animal/space/alien/queen/empress/mother = 1), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/space/bats/cult/strong), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/space/bear, /mob/living/simple_mob/animal/space/bear/brown), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/space/carp = 50, /mob/living/simple_mob/animal/space/carp/large = 10, /mob/living/simple_mob/animal/space/carp/large/huge = 5), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/space/goose), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/jelly), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/space/tree), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/corrupthound = 10, /mob/living/simple_mob/vore/aggressive/corrupthound/prettyboi = 1), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/deathclaw), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/dino), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/dragon), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/dragon/virgo3b), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/frog), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/giant_snake), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/mimic), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/panther), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/rat), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/bee), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/sect_drone = 10, /mob/living/simple_mob/vore/sect_queen = 1), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/solargrub), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/oregrub = 5, /mob/living/simple_mob/vore/oregrub/lava = 1), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/catgirl), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/wolfgirl), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/lamia, /mob/living/simple_mob/vore/lamia/albino, /mob/living/simple_mob/vore/lamia/albino/bra, /mob/living/simple_mob/vore/lamia/albino/shirt, /mob/living/simple_mob/vore/lamia/bra, /mob/living/simple_mob/vore/lamia/cobra, /mob/living/simple_mob/vore/lamia/cobra/bra, /mob/living/simple_mob/vore/lamia/cobra/shirt, /mob/living/simple_mob/vore/lamia/copper, /mob/living/simple_mob/vore/lamia/copper/bra, /mob/living/simple_mob/vore/lamia/copper/shirt, /mob/living/simple_mob/vore/lamia/green, /mob/living/simple_mob/vore/lamia/green/bra, /mob/living/simple_mob/vore/lamia/green/shirt, /mob/living/simple_mob/vore/lamia/zebra, /mob/living/simple_mob/vore/lamia/zebra/bra, /mob/living/simple_mob/vore/lamia/zebra/shirt), \
+	LOOT_SUB(1, /mob/living/simple_mob/humanoid/merc = 100, /mob/living/simple_mob/humanoid/merc/melee/sword = 50, /mob/living/simple_mob/humanoid/merc/ranged = 25, /mob/living/simple_mob/humanoid/merc/ranged/grenadier = 1, /mob/living/simple_mob/humanoid/merc/ranged/ionrifle = 10, /mob/living/simple_mob/humanoid/merc/ranged/laser = 5, /mob/living/simple_mob/humanoid/merc/ranged/rifle = 5, /mob/living/simple_mob/humanoid/merc/ranged/smg = 5, /mob/living/simple_mob/humanoid/merc/ranged/sniper = 1, /mob/living/simple_mob/humanoid/merc/ranged/space = 10, /mob/living/simple_mob/humanoid/merc/ranged/technician = 5), \
+	LOOT_SUB(1, /mob/living/simple_mob/humanoid/pirate = 3, /mob/living/simple_mob/humanoid/pirate/ranged = 1), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/combat_drone), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/corrupt_maint_drone), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/hivebot = 100, /mob/living/simple_mob/mechanical/hivebot/ranged_damage = 20, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/backline = 10, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/basic = 20, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/dot = 5, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/ion = 20, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser = 10, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/rapid = 2, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege = 1, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege/emp = 5, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege/fragmentation = 1, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege/radiation = 1, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong = 3, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong/guard = 3, /mob/living/simple_mob/mechanical/hivebot/support = 8, /mob/living/simple_mob/mechanical/hivebot/support/commander = 5, /mob/living/simple_mob/mechanical/hivebot/support/commander/autofollow = 10, /mob/living/simple_mob/mechanical/hivebot/swarm = 20, /mob/living/simple_mob/mechanical/hivebot/tank = 20, /mob/living/simple_mob/mechanical/hivebot/tank/armored = 20, /mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_bullet = 20, /mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_laser = 20, /mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_melee = 20, /mob/living/simple_mob/mechanical/hivebot/tank/meatshield = 20), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/infectionbot), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mining_drone), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/technomancer_golem), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/viscerator, /mob/living/simple_mob/mechanical/viscerator/piercing), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/wahlem), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/fox/syndicate), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/fox), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/jelly), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/otie/feral, /mob/living/simple_mob/vore/otie/feral/chubby, /mob/living/simple_mob/vore/otie/red, /mob/living/simple_mob/vore/otie/red/chubby), \
+	LOOT_SUB(1, /mob/living/simple_mob/shadekin/blue = 100, /mob/living/simple_mob/shadekin/green = 50, /mob/living/simple_mob/shadekin/orange = 20, /mob/living/simple_mob/shadekin/purple = 60, /mob/living/simple_mob/shadekin/red = 40, /mob/living/simple_mob/shadekin/yellow = 1), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/corrupthound, /mob/living/simple_mob/vore/aggressive/corrupthound/prettyboi), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/deathclaw), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/dino), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/dragon), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/dragon/virgo3b), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/frog), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/giant_snake), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/mimic), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/panther), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/aggressive/rat), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/bee), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/catgirl), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/cookiegirl), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/fennec), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/fennix), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/hippo), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/horse), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/oregrub), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/rabbit), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/redpanda = 50, /mob/living/simple_mob/vore/redpanda/fae = 1), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/sect_drone = 10, /mob/living/simple_mob/vore/sect_queen = 1), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/solargrub), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/woof), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/alienanimals/space_ghost), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/alienanimals/catslug), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/alienanimals/space_jellyfish), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/alienanimals/startreader), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob/vore/bigdragon/friendly), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/leopardmander = 50, /mob/living/simple_mob/vore/leopardmander/blue = 10, /mob/living/simple_mob/vore/leopardmander/exotic = 1), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/sheep), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/weretiger)))
 
 /obj/random/mob/semirandom_mob_spawner/animal
 	name = "Semi-Random Animal"
@@ -323,119 +135,57 @@
 	overwrite_hostility = 1
 	mob_hostile = 0
 
-	possible_mob_types = list(
-		list(/mob/living/simple_mob/animal/goat) = 25,
-		list(
-			/mob/living/simple_mob/animal/passive/bird,
-			/mob/living/simple_mob/animal/passive/bird/azure_tit,
-			/mob/living/simple_mob/animal/passive/bird/black_bird,
-			/mob/living/simple_mob/animal/passive/bird/european_robin,
-			/mob/living/simple_mob/animal/passive/bird/goldcrest,
-			/mob/living/simple_mob/animal/passive/bird/ringneck_dove,
-			/mob/living/simple_mob/animal/passive/bird/parrot,
-			/mob/living/simple_mob/animal/passive/bird/parrot/black_headed_caique,
-			/mob/living/simple_mob/animal/passive/bird/parrot/budgerigar,
-			/mob/living/simple_mob/animal/passive/bird/parrot/budgerigar/blue,
-			/mob/living/simple_mob/animal/passive/bird/parrot/budgerigar/bluegreen,
-			/mob/living/simple_mob/animal/passive/bird/parrot/cockatiel,
-			/mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/grey,
-			/mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/white,
-			/mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/yellowish,
-			/mob/living/simple_mob/animal/passive/bird/parrot/eclectus,
-			/mob/living/simple_mob/animal/passive/bird/parrot/grey_parrot,
-			/mob/living/simple_mob/animal/passive/bird/parrot/kea,
-			/mob/living/simple_mob/animal/passive/bird/parrot/pink_cockatoo,
-			/mob/living/simple_mob/animal/passive/bird/parrot/sulphur_cockatoo,
-			/mob/living/simple_mob/animal/passive/bird/parrot/white_caique,
-			/mob/living/simple_mob/animal/passive/bird/parrot/white_cockatoo,
-			/mob/living/simple_mob/animal/space/goose
-			) = 25,
-		list(
-			/mob/living/simple_mob/animal/passive/cat,
-			/mob/living/simple_mob/animal/passive/cat/black
-			) = 25,
-		list(
-			/mob/living/simple_mob/animal/passive/chick,
-			/mob/living/simple_mob/animal/passive/chicken
-			) = 25,
-		list(/mob/living/simple_mob/animal/passive/cow) = 25,
-		list(/mob/living/simple_mob/animal/passive/dog/brittany) = 10,
-		list(/mob/living/simple_mob/animal/passive/dog/corgi) = 10,
-		list(/mob/living/simple_mob/animal/passive/dog/tamaskan) = 10,
-		list(/mob/living/simple_mob/animal/passive/fox) = 25,
-		list(/mob/living/simple_mob/animal/passive/hare) = 25,
-		list(/mob/living/simple_mob/animal/passive/lizard) = 10,
-		list(/mob/living/simple_mob/animal/passive/mouse) = 15,
-		list(/mob/living/simple_mob/animal/passive/mouse/jerboa) = 5,
-		list(/mob/living/simple_mob/animal/passive/opossum) = 10,
-		list(/mob/living/simple_mob/animal/passive/pillbug) = 10,
-		list(/mob/living/simple_mob/animal/passive/snake) = 10,
-		list(/mob/living/simple_mob/animal/passive/snake/red) = 10,
-		list(/mob/living/simple_mob/animal/passive/snake/python) = 10,
-		list(/mob/living/simple_mob/animal/passive/tindalos) = 10,
-		list(/mob/living/simple_mob/animal/passive/yithian) = 10,
-		list(
-			/mob/living/simple_mob/vore/wolf = 10,
-			/mob/living/simple_mob/vore/wolf/direwolf = 5,
-			/mob/living/simple_mob/vore/greatwolf = 1,
-			/mob/living/simple_mob/vore/greatwolf/black = 1,
-			/mob/living/simple_mob/vore/greatwolf/grey = 1
-			) = 10,
-		list(/mob/living/simple_mob/vore/rabbit) = 10,
-		list(/mob/living/simple_mob/vore/redpanda) = 10,
-		list(/mob/living/simple_mob/vore/woof) = 1,
-		list(/mob/living/simple_mob/vore/fennec) = 10,
-		list(/mob/living/simple_mob/vore/fennix) = 1,
-		list(/mob/living/simple_mob/vore/hippo) = 5,
-		list(/mob/living/simple_mob/vore/horse) = 25,
-		list(/mob/living/simple_mob/vore/bee) = 10,
-		list(
-			/mob/living/simple_mob/animal/space/bear,
-			/mob/living/simple_mob/animal/space/bear/brown
-			) = 1,
-		list(
-			/mob/living/simple_mob/vore/otie/feral = 50,
-			/mob/living/simple_mob/vore/otie/feral/chubby = 10,
-			/mob/living/simple_mob/vore/otie/red = 5,
-			/mob/living/simple_mob/vore/otie/red/chubby = 1
-			) = 5,
-		list(/mob/living/simple_mob/vore/aggressive/rat) = 15,
-		list(/mob/living/simple_mob/animal/sif/diyaab) = 5,
-		list(/mob/living/simple_mob/animal/sif/duck) = 5,
-		list(/mob/living/simple_mob/animal/sif/frostfly) = 5,
-		list(
-			/mob/living/simple_mob/animal/sif/glitterfly = 50,
-			/mob/living/simple_mob/animal/sif/glitterfly/rare = 1
-			) = 5,
-		list(
-			/mob/living/simple_mob/animal/sif/kururak = 10,
-			/mob/living/simple_mob/animal/sif/kururak/leader = 1,
-			/mob/living/simple_mob/animal/sif/kururak/hibernate = 2,
-			) = 5,
-		list(
-			/mob/living/simple_mob/animal/sif/sakimm = 10,
-			/mob/living/simple_mob/animal/sif/sakimm/intelligent = 1
-			) = 5,
-		list(/mob/living/simple_mob/animal/sif/savik) = 5,
-		list(
-			/mob/living/simple_mob/animal/sif/shantak = 10,
-			/mob/living/simple_mob/animal/sif/shantak/leader = 1
-			) = 5,
-		list(/mob/living/simple_mob/animal/sif/siffet) = 5,
-		list(/mob/living/simple_mob/animal/sif/tymisian) = 5,
-		list(/mob/living/simple_mob/vore/alienanimals/teppi) = 10,
-		list(/mob/living/simple_mob/vore/alienanimals/dustjumper) = 5,
-		list(/mob/living/simple_mob/vore/alienanimals/space_jellyfish) = 5,
-		list(/mob/living/simple_mob/vore/alienanimals/space_ghost) = 5,
-		list(
-			/mob/living/simple_mob/vore/leopardmander = 50,
-			/mob/living/simple_mob/vore/leopardmander/blue = 10,
-			/mob/living/simple_mob/vore/leopardmander/exotic = 1
-			) = 5,
-		list(/mob/living/simple_mob/vore/sheep) = 5,
-		list(/mob/living/simple_mob/vore/weretiger) = 5,
-		list(/mob/living/simple_mob/vore/alienanimals/skeleton) = 5
-	)
+DECLARE_LOOT(/obj/random/mob/semirandom_mob_spawner/animal, LOOT_PER_ROUND, LOOT_TABLE(\
+	LOOT_SUB(25, /mob/living/simple_mob/animal/goat), \
+	LOOT_SUB(25, /mob/living/simple_mob/animal/passive/bird, /mob/living/simple_mob/animal/passive/bird/azure_tit, /mob/living/simple_mob/animal/passive/bird/black_bird, /mob/living/simple_mob/animal/passive/bird/european_robin, /mob/living/simple_mob/animal/passive/bird/goldcrest, /mob/living/simple_mob/animal/passive/bird/ringneck_dove, /mob/living/simple_mob/animal/passive/bird/parrot, /mob/living/simple_mob/animal/passive/bird/parrot/black_headed_caique, /mob/living/simple_mob/animal/passive/bird/parrot/budgerigar, /mob/living/simple_mob/animal/passive/bird/parrot/budgerigar/blue, /mob/living/simple_mob/animal/passive/bird/parrot/budgerigar/bluegreen, /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel, /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/grey, /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/white, /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/yellowish, /mob/living/simple_mob/animal/passive/bird/parrot/eclectus, /mob/living/simple_mob/animal/passive/bird/parrot/grey_parrot, /mob/living/simple_mob/animal/passive/bird/parrot/kea, /mob/living/simple_mob/animal/passive/bird/parrot/pink_cockatoo, /mob/living/simple_mob/animal/passive/bird/parrot/sulphur_cockatoo, /mob/living/simple_mob/animal/passive/bird/parrot/white_caique, /mob/living/simple_mob/animal/passive/bird/parrot/white_cockatoo, /mob/living/simple_mob/animal/space/goose), \
+	LOOT_SUB(25, /mob/living/simple_mob/animal/passive/cat, /mob/living/simple_mob/animal/passive/cat/black), \
+	LOOT_SUB(25, /mob/living/simple_mob/animal/passive/chick, /mob/living/simple_mob/animal/passive/chicken), \
+	LOOT_SUB(25, /mob/living/simple_mob/animal/passive/cow), \
+	LOOT_SUB(10, /mob/living/simple_mob/animal/passive/dog/brittany), \
+	LOOT_SUB(10, /mob/living/simple_mob/animal/passive/dog/corgi), \
+	LOOT_SUB(10, /mob/living/simple_mob/animal/passive/dog/tamaskan), \
+	LOOT_SUB(25, /mob/living/simple_mob/animal/passive/fox), \
+	LOOT_SUB(25, /mob/living/simple_mob/animal/passive/hare), \
+	LOOT_SUB(10, /mob/living/simple_mob/animal/passive/lizard), \
+	LOOT_SUB(15, /mob/living/simple_mob/animal/passive/mouse), \
+	LOOT_SUB(5, /mob/living/simple_mob/animal/passive/mouse/jerboa), \
+	LOOT_SUB(10, /mob/living/simple_mob/animal/passive/opossum), \
+	LOOT_SUB(10, /mob/living/simple_mob/animal/passive/pillbug), \
+	LOOT_SUB(10, /mob/living/simple_mob/animal/passive/snake), \
+	LOOT_SUB(10, /mob/living/simple_mob/animal/passive/snake/red), \
+	LOOT_SUB(10, /mob/living/simple_mob/animal/passive/snake/python), \
+	LOOT_SUB(10, /mob/living/simple_mob/animal/passive/tindalos), \
+	LOOT_SUB(10, /mob/living/simple_mob/animal/passive/yithian), \
+	LOOT_SUB(10, /mob/living/simple_mob/vore/wolf = 10, /mob/living/simple_mob/vore/wolf/direwolf = 5, /mob/living/simple_mob/vore/greatwolf = 1, /mob/living/simple_mob/vore/greatwolf/black = 1, /mob/living/simple_mob/vore/greatwolf/grey = 1), \
+	LOOT_SUB(10, /mob/living/simple_mob/vore/rabbit), \
+	LOOT_SUB(10, /mob/living/simple_mob/vore/redpanda), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/woof), \
+	LOOT_SUB(10, /mob/living/simple_mob/vore/fennec), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/fennix), \
+	LOOT_SUB(5, /mob/living/simple_mob/vore/hippo), \
+	LOOT_SUB(25, /mob/living/simple_mob/vore/horse), \
+	LOOT_SUB(10, /mob/living/simple_mob/vore/bee), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/space/bear, /mob/living/simple_mob/animal/space/bear/brown), \
+	LOOT_SUB(5, /mob/living/simple_mob/vore/otie/feral = 50, /mob/living/simple_mob/vore/otie/feral/chubby = 10, /mob/living/simple_mob/vore/otie/red = 5, /mob/living/simple_mob/vore/otie/red/chubby = 1), \
+	LOOT_SUB(15, /mob/living/simple_mob/vore/aggressive/rat), \
+	LOOT_SUB(5, /mob/living/simple_mob/animal/sif/diyaab), \
+	LOOT_SUB(5, /mob/living/simple_mob/animal/sif/duck), \
+	LOOT_SUB(5, /mob/living/simple_mob/animal/sif/frostfly), \
+	LOOT_SUB(5, /mob/living/simple_mob/animal/sif/glitterfly = 50, /mob/living/simple_mob/animal/sif/glitterfly/rare = 1), \
+	LOOT_SUB(5, /mob/living/simple_mob/animal/sif/kururak = 10, /mob/living/simple_mob/animal/sif/kururak/leader = 1, /mob/living/simple_mob/animal/sif/kururak/hibernate = 2), \
+	LOOT_SUB(5, /mob/living/simple_mob/animal/sif/sakimm = 10, /mob/living/simple_mob/animal/sif/sakimm/intelligent = 1), \
+	LOOT_SUB(5, /mob/living/simple_mob/animal/sif/savik), \
+	LOOT_SUB(5, /mob/living/simple_mob/animal/sif/shantak = 10, /mob/living/simple_mob/animal/sif/shantak/leader = 1), \
+	LOOT_SUB(5, /mob/living/simple_mob/animal/sif/siffet), \
+	LOOT_SUB(5, /mob/living/simple_mob/animal/sif/tymisian), \
+	LOOT_SUB(10, /mob/living/simple_mob/vore/alienanimals/teppi), \
+	LOOT_SUB(5, /mob/living/simple_mob/vore/alienanimals/dustjumper), \
+	LOOT_SUB(5, /mob/living/simple_mob/vore/alienanimals/space_jellyfish), \
+	LOOT_SUB(5, /mob/living/simple_mob/vore/alienanimals/space_ghost), \
+	LOOT_SUB(5, /mob/living/simple_mob/vore/leopardmander = 50, /mob/living/simple_mob/vore/leopardmander/blue = 10, /mob/living/simple_mob/vore/leopardmander/exotic = 1), \
+	LOOT_SUB(5, /mob/living/simple_mob/vore/sheep), \
+	LOOT_SUB(5, /mob/living/simple_mob/vore/weretiger), \
+	LOOT_SUB(5, /mob/living/simple_mob/vore/alienanimals/skeleton)))
 
 /obj/random/mob/semirandom_mob_spawner/monster
 	name = "Semi-Random Monster"
@@ -445,104 +195,46 @@
 	mob_hostile = 1
 	mob_retaliate = 1
 
-	possible_mob_types = list(
-		list(
-			/mob/living/simple_mob/animal/giant_spider/electric = 5,
-			/mob/living/simple_mob/animal/giant_spider/frost = 5,
-			/mob/living/simple_mob/animal/giant_spider/hunter = 10,
-			/mob/living/simple_mob/animal/giant_spider/ion = 5,
-			/mob/living/simple_mob/animal/giant_spider/lurker = 10,
-			/mob/living/simple_mob/animal/giant_spider/pepper = 10,
-			/mob/living/simple_mob/animal/giant_spider/phorogenic = 10,
-			/mob/living/simple_mob/animal/giant_spider/thermic = 5,
-			/mob/living/simple_mob/animal/giant_spider/tunneler = 10,
-			/mob/living/simple_mob/animal/giant_spider/webslinger = 5
-			) = 100,
-		list(
-			/mob/living/simple_mob/shadekin/red = 5,
-			/mob/living/simple_mob/shadekin/orange = 1,
-			/mob/living/simple_mob/shadekin/purple = 10
-			) = 1,
-		list(
-			/mob/living/simple_mob/vore/wolf = 10,
-			/mob/living/simple_mob/vore/wolf/direwolf = 5,
-			/mob/living/simple_mob/vore/greatwolf = 1,
-			/mob/living/simple_mob/vore/greatwolf/black = 1,
-			/mob/living/simple_mob/vore/greatwolf/grey = 1
-			) = 40,
-		list(/mob/living/simple_mob/creature/strong) = 40,
-		list(/mob/living/simple_mob/faithless/strong) = 20,
-		list(/mob/living/simple_mob/animal/goat) = 1,
-		list(
-			/mob/living/simple_mob/animal/sif/shantak/leader = 1,
-			/mob/living/simple_mob/animal/sif/shantak = 10
-			) = 50,
-		list(/mob/living/simple_mob/animal/sif/savik,) = 20,
-		list(/mob/living/simple_mob/animal/sif/hooligan_crab) = 10,
-		list(
-			/mob/living/simple_mob/animal/space/alien = 50,
-			/mob/living/simple_mob/animal/space/alien/drone = 40,
-			/mob/living/simple_mob/animal/space/alien/sentinel = 25,
-			/mob/living/simple_mob/animal/space/alien/sentinel/praetorian = 15,
-			/mob/living/simple_mob/animal/space/alien/queen = 10,
-			/mob/living/simple_mob/animal/space/alien/queen/empress = 5,
-			/mob/living/simple_mob/animal/space/alien/queen/empress/mother = 1,
-			) = 40,
-		list(/mob/living/simple_mob/animal/space/bats/cult/strong) = 40,
-		list(
-			/mob/living/simple_mob/animal/space/bear,
-			/mob/living/simple_mob/animal/space/bear/brown
-			) = 40,
-		list(
-			/mob/living/simple_mob/animal/space/carp = 50,
-			/mob/living/simple_mob/animal/space/carp/large = 10,
-			/mob/living/simple_mob/animal/space/carp/large/huge = 5
-			) = 50,
-		list(/mob/living/simple_mob/animal/space/goose) = 50,
-		list(/mob/living/simple_mob/vore/jelly) = 40,
-		list(/mob/living/simple_mob/animal/space/tree) = 15,
-		list(
-			/mob/living/simple_mob/vore/otie/feral = 50,
-			/mob/living/simple_mob/vore/otie/feral/chubby = 10,
-			/mob/living/simple_mob/vore/otie/red = 5,
-			/mob/living/simple_mob/vore/otie/red/chubby = 1
-			) = 40,
-		list(
-			/mob/living/simple_mob/vore/aggressive/corrupthound = 10,
-			/mob/living/simple_mob/vore/aggressive/corrupthound/prettyboi = 1,
-			) = 50,
-		list(/mob/living/simple_mob/vore/aggressive/deathclaw) = 40,
-		list(/mob/living/simple_mob/vore/aggressive/dino) = 40,
-		list(/mob/living/simple_mob/vore/aggressive/dragon) = 40,
-		list(/mob/living/simple_mob/vore/aggressive/dragon/virgo3b) = 40,
-		list(/mob/living/simple_mob/vore/aggressive/frog) = 40,
-		list(/mob/living/simple_mob/vore/aggressive/giant_snake) = 40,
-		list(/mob/living/simple_mob/vore/aggressive/mimic) = 40,
-		list(/mob/living/simple_mob/vore/aggressive/panther) = 25,
-		list(/mob/living/simple_mob/vore/aggressive/rat) = 50,
-		list(/mob/living/simple_mob/vore/bee) = 40,
-		list(
-			/mob/living/simple_mob/vore/sect_drone = 10,
-			/mob/living/simple_mob/vore/sect_queen = 1
-			) = 20,
-		list(/mob/living/simple_mob/vore/solargrub) = 15,
-		list(
-			/mob/living/simple_mob/vore/oregrub = 5,
-			/mob/living/simple_mob/vore/oregrub/lava = 1
-			) = 15,
-		list(/mob/living/simple_mob/vore/alienanimals/teppi) = 15,
-		list(/mob/living/simple_mob/vore/alienanimals/space_jellyfish) = 5,
-		list(/mob/living/simple_mob/vore/alienanimals/space_ghost) = 5,
-		list(
-			/mob/living/simple_mob/vore/leopardmander = 50,
-			/mob/living/simple_mob/vore/leopardmander/blue = 10,
-			/mob/living/simple_mob/vore/leopardmander/exotic = 1
-			) = 5,
-		list(/mob/living/simple_mob/vore/sheep) = 5,
-		list(/mob/living/simple_mob/vore/weretiger) = 5,
-		list(/mob/living/simple_mob/vore/alienanimals/skeleton) = 5,
-		list(/mob/living/simple_mob/vore/alienanimals/catslug) = 5
-		)
+DECLARE_LOOT(/obj/random/mob/semirandom_mob_spawner/monster, LOOT_PER_ROUND, LOOT_TABLE(\
+	LOOT_SUB(100, /mob/living/simple_mob/animal/giant_spider/electric = 5, /mob/living/simple_mob/animal/giant_spider/frost = 5, /mob/living/simple_mob/animal/giant_spider/hunter = 10, /mob/living/simple_mob/animal/giant_spider/ion = 5, /mob/living/simple_mob/animal/giant_spider/lurker = 10, /mob/living/simple_mob/animal/giant_spider/pepper = 10, /mob/living/simple_mob/animal/giant_spider/phorogenic = 10, /mob/living/simple_mob/animal/giant_spider/thermic = 5, /mob/living/simple_mob/animal/giant_spider/tunneler = 10, /mob/living/simple_mob/animal/giant_spider/webslinger = 5), \
+	LOOT_SUB(1, /mob/living/simple_mob/shadekin/red = 5, /mob/living/simple_mob/shadekin/orange = 1, /mob/living/simple_mob/shadekin/purple = 10), \
+	LOOT_SUB(40, /mob/living/simple_mob/vore/wolf = 10, /mob/living/simple_mob/vore/wolf/direwolf = 5, /mob/living/simple_mob/vore/greatwolf = 1, /mob/living/simple_mob/vore/greatwolf/black = 1, /mob/living/simple_mob/vore/greatwolf/grey = 1), \
+	LOOT_SUB(40, /mob/living/simple_mob/creature/strong), \
+	LOOT_SUB(20, /mob/living/simple_mob/faithless/strong), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/goat), \
+	LOOT_SUB(50, /mob/living/simple_mob/animal/sif/shantak/leader = 1, /mob/living/simple_mob/animal/sif/shantak = 10), \
+	LOOT_SUB(20, /mob/living/simple_mob/animal/sif/savik), \
+	LOOT_SUB(10, /mob/living/simple_mob/animal/sif/hooligan_crab), \
+	LOOT_SUB(40, /mob/living/simple_mob/animal/space/alien = 50, /mob/living/simple_mob/animal/space/alien/drone = 40, /mob/living/simple_mob/animal/space/alien/sentinel = 25, /mob/living/simple_mob/animal/space/alien/sentinel/praetorian = 15, /mob/living/simple_mob/animal/space/alien/queen = 10, /mob/living/simple_mob/animal/space/alien/queen/empress = 5, /mob/living/simple_mob/animal/space/alien/queen/empress/mother = 1), \
+	LOOT_SUB(40, /mob/living/simple_mob/animal/space/bats/cult/strong), \
+	LOOT_SUB(40, /mob/living/simple_mob/animal/space/bear, /mob/living/simple_mob/animal/space/bear/brown), \
+	LOOT_SUB(50, /mob/living/simple_mob/animal/space/carp = 50, /mob/living/simple_mob/animal/space/carp/large = 10, /mob/living/simple_mob/animal/space/carp/large/huge = 5), \
+	LOOT_SUB(50, /mob/living/simple_mob/animal/space/goose), \
+	LOOT_SUB(40, /mob/living/simple_mob/vore/jelly), \
+	LOOT_SUB(15, /mob/living/simple_mob/animal/space/tree), \
+	LOOT_SUB(40, /mob/living/simple_mob/vore/otie/feral = 50, /mob/living/simple_mob/vore/otie/feral/chubby = 10, /mob/living/simple_mob/vore/otie/red = 5, /mob/living/simple_mob/vore/otie/red/chubby = 1), \
+	LOOT_SUB(50, /mob/living/simple_mob/vore/aggressive/corrupthound = 10, /mob/living/simple_mob/vore/aggressive/corrupthound/prettyboi = 1), \
+	LOOT_SUB(40, /mob/living/simple_mob/vore/aggressive/deathclaw), \
+	LOOT_SUB(40, /mob/living/simple_mob/vore/aggressive/dino), \
+	LOOT_SUB(40, /mob/living/simple_mob/vore/aggressive/dragon), \
+	LOOT_SUB(40, /mob/living/simple_mob/vore/aggressive/dragon/virgo3b), \
+	LOOT_SUB(40, /mob/living/simple_mob/vore/aggressive/frog), \
+	LOOT_SUB(40, /mob/living/simple_mob/vore/aggressive/giant_snake), \
+	LOOT_SUB(40, /mob/living/simple_mob/vore/aggressive/mimic), \
+	LOOT_SUB(25, /mob/living/simple_mob/vore/aggressive/panther), \
+	LOOT_SUB(50, /mob/living/simple_mob/vore/aggressive/rat), \
+	LOOT_SUB(40, /mob/living/simple_mob/vore/bee), \
+	LOOT_SUB(20, /mob/living/simple_mob/vore/sect_drone = 10, /mob/living/simple_mob/vore/sect_queen = 1), \
+	LOOT_SUB(15, /mob/living/simple_mob/vore/solargrub), \
+	LOOT_SUB(15, /mob/living/simple_mob/vore/oregrub = 5, /mob/living/simple_mob/vore/oregrub/lava = 1), \
+	LOOT_SUB(15, /mob/living/simple_mob/vore/alienanimals/teppi), \
+	LOOT_SUB(5, /mob/living/simple_mob/vore/alienanimals/space_jellyfish), \
+	LOOT_SUB(5, /mob/living/simple_mob/vore/alienanimals/space_ghost), \
+	LOOT_SUB(5, /mob/living/simple_mob/vore/leopardmander = 50, /mob/living/simple_mob/vore/leopardmander/blue = 10, /mob/living/simple_mob/vore/leopardmander/exotic = 1), \
+	LOOT_SUB(5, /mob/living/simple_mob/vore/sheep), \
+	LOOT_SUB(5, /mob/living/simple_mob/vore/weretiger), \
+	LOOT_SUB(5, /mob/living/simple_mob/vore/alienanimals/skeleton), \
+	LOOT_SUB(5, /mob/living/simple_mob/vore/alienanimals/catslug)))
 
 /obj/random/mob/semirandom_mob_spawner/humanoid
 	name = "Semi-Random Humanoid"
@@ -550,55 +242,13 @@
 	icon_state = "humanoid"
 	mob_faction = "humanoid"
 
-	possible_mob_types = list(
-		list(
-			/mob/living/simple_mob/shadekin/blue = 25,
-			/mob/living/simple_mob/shadekin/green = 10,
-			/mob/living/simple_mob/shadekin/purple = 1,
-			) = 1,
-		list(/mob/living/simple_mob/vore/catgirl) = 100,
-		list(/mob/living/simple_mob/vore/wolfgirl) = 100,
-		list(
-			/mob/living/simple_mob/vore/lamia,
-			/mob/living/simple_mob/vore/lamia/albino,
-			/mob/living/simple_mob/vore/lamia/albino/bra,
-			/mob/living/simple_mob/vore/lamia/albino/shirt,
-			/mob/living/simple_mob/vore/lamia/bra,
-			/mob/living/simple_mob/vore/lamia/cobra,
-			/mob/living/simple_mob/vore/lamia/cobra/bra,
-			/mob/living/simple_mob/vore/lamia/cobra/shirt,
-			/mob/living/simple_mob/vore/lamia/copper,
-			/mob/living/simple_mob/vore/lamia/copper/bra,
-			/mob/living/simple_mob/vore/lamia/copper/shirt,
-			/mob/living/simple_mob/vore/lamia/green,
-			/mob/living/simple_mob/vore/lamia/green/bra,
-			/mob/living/simple_mob/vore/lamia/green/shirt,
-			/mob/living/simple_mob/vore/lamia/zebra,
-			/mob/living/simple_mob/vore/lamia/zebra/bra,
-			/mob/living/simple_mob/vore/lamia/zebra/shirt
-			) = 100,
-// LOOK OKAY MERCS ARE HUMANOIDS SO THEY ARE HERE, but they are also kind of bullshit so they probably shouldn't be able to spawn in the same place as catgirls.
-// I want some better potentially hostile humanoids that aren't stupid to fight. If they become a big issue I'll comment them out.
-// For now they are just rare, and the ranged ones are way more rare than the melee ones, which I think will help balance them out.
-		list(
-			/mob/living/simple_mob/humanoid/merc = 100,
-			/mob/living/simple_mob/humanoid/merc/melee/sword = 50,
-			/mob/living/simple_mob/humanoid/merc/ranged = 25,
-			/mob/living/simple_mob/humanoid/merc/ranged/grenadier = 1,
-			/mob/living/simple_mob/humanoid/merc/ranged/ionrifle = 10,
-			/mob/living/simple_mob/humanoid/merc/ranged/laser = 5,
-			/mob/living/simple_mob/humanoid/merc/ranged/rifle = 5,
-			/mob/living/simple_mob/humanoid/merc/ranged/smg = 5,
-			/mob/living/simple_mob/humanoid/merc/ranged/sniper = 1,
-			/mob/living/simple_mob/humanoid/merc/ranged/space = 10,
-			/mob/living/simple_mob/humanoid/merc/ranged/technician = 5
-			) = 5,
-// PIRATES are okay though. They can be kind of a pain but you can kind of slap them around. Also it's not like. A crime. To fight and blow up pirates so it's fine.
-		list(
-			/mob/living/simple_mob/humanoid/pirate = 3,
-			/mob/living/simple_mob/humanoid/pirate/ranged = 1
-			) = 50
-		)
+DECLARE_LOOT(/obj/random/mob/semirandom_mob_spawner/humanoid, LOOT_PER_ROUND, LOOT_TABLE(\
+	LOOT_SUB(1, /mob/living/simple_mob/shadekin/blue = 25, /mob/living/simple_mob/shadekin/green = 10, /mob/living/simple_mob/shadekin/purple = 1), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/catgirl), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/wolfgirl), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/lamia, /mob/living/simple_mob/vore/lamia/albino, /mob/living/simple_mob/vore/lamia/albino/bra, /mob/living/simple_mob/vore/lamia/albino/shirt, /mob/living/simple_mob/vore/lamia/bra, /mob/living/simple_mob/vore/lamia/cobra, /mob/living/simple_mob/vore/lamia/cobra/bra, /mob/living/simple_mob/vore/lamia/cobra/shirt, /mob/living/simple_mob/vore/lamia/copper, /mob/living/simple_mob/vore/lamia/copper/bra, /mob/living/simple_mob/vore/lamia/copper/shirt, /mob/living/simple_mob/vore/lamia/green, /mob/living/simple_mob/vore/lamia/green/bra, /mob/living/simple_mob/vore/lamia/green/shirt, /mob/living/simple_mob/vore/lamia/zebra, /mob/living/simple_mob/vore/lamia/zebra/bra, /mob/living/simple_mob/vore/lamia/zebra/shirt), \
+	LOOT_SUB(5, /mob/living/simple_mob/humanoid/merc = 100, /mob/living/simple_mob/humanoid/merc/melee/sword = 50, /mob/living/simple_mob/humanoid/merc/ranged = 25, /mob/living/simple_mob/humanoid/merc/ranged/grenadier = 1, /mob/living/simple_mob/humanoid/merc/ranged/ionrifle = 10, /mob/living/simple_mob/humanoid/merc/ranged/laser = 5, /mob/living/simple_mob/humanoid/merc/ranged/rifle = 5, /mob/living/simple_mob/humanoid/merc/ranged/smg = 5, /mob/living/simple_mob/humanoid/merc/ranged/sniper = 1, /mob/living/simple_mob/humanoid/merc/ranged/space = 10, /mob/living/simple_mob/humanoid/merc/ranged/technician = 5), \
+	LOOT_SUB(50, /mob/living/simple_mob/humanoid/pirate = 3, /mob/living/simple_mob/humanoid/pirate/ranged = 1)))
 
 // I am not familiar enough with robots to know which ones are fun to fight so this list isn't weighted at all SO YOU KNOW. Be careful.
 /obj/random/mob/semirandom_mob_spawner/robot
@@ -607,45 +257,16 @@
 	icon_state = "robot"
 	mob_faction = "robot"
 
-	possible_mob_types = list(
-		list(/mob/living/simple_mob/mechanical/combat_drone),
-		list(/mob/living/simple_mob/mechanical/corrupt_maint_drone),
-		list(
-			/mob/living/simple_mob/mechanical/hivebot = 100,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage = 20,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/backline = 10,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/basic = 20,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/dot = 5,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/ion = 20,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser = 10,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/rapid = 2,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege = 1,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege/emp = 5,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege/fragmentation = 1,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege/radiation = 1,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong = 3,
-			/mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong/guard = 3,
-			/mob/living/simple_mob/mechanical/hivebot/support = 8,
-			/mob/living/simple_mob/mechanical/hivebot/support/commander = 5,
-			/mob/living/simple_mob/mechanical/hivebot/support/commander/autofollow = 10,
-			/mob/living/simple_mob/mechanical/hivebot/swarm = 20,
-			/mob/living/simple_mob/mechanical/hivebot/tank = 20,
-			/mob/living/simple_mob/mechanical/hivebot/tank/armored = 20,
-			/mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_bullet = 20,
-			/mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_laser = 20,
-			/mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_melee = 20,
-			/mob/living/simple_mob/mechanical/hivebot/tank/meatshield = 20
-			),
-		list(/mob/living/simple_mob/mechanical/infectionbot),
-		list(/mob/living/simple_mob/mechanical/mining_drone),
-		list(/mob/living/simple_mob/mechanical/technomancer_golem),
-		list(
-			/mob/living/simple_mob/mechanical/viscerator,
-			/mob/living/simple_mob/mechanical/viscerator/piercing
-			),
-		list(/mob/living/simple_mob/mechanical/wahlem),
-		list(/mob/living/simple_mob/animal/passive/fox/syndicate)
-		)
+DECLARE_LOOT(/obj/random/mob/semirandom_mob_spawner/robot, LOOT_PER_ROUND, LOOT_TABLE(\
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/combat_drone), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/corrupt_maint_drone), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/hivebot = 100, /mob/living/simple_mob/mechanical/hivebot/ranged_damage = 20, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/backline = 10, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/basic = 20, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/dot = 5, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/ion = 20, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser = 10, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/rapid = 2, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege = 1, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege/emp = 5, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege/fragmentation = 1, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege/radiation = 1, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong = 3, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong/guard = 3, /mob/living/simple_mob/mechanical/hivebot/support = 8, /mob/living/simple_mob/mechanical/hivebot/support/commander = 5, /mob/living/simple_mob/mechanical/hivebot/support/commander/autofollow = 10, /mob/living/simple_mob/mechanical/hivebot/swarm = 20, /mob/living/simple_mob/mechanical/hivebot/tank = 20, /mob/living/simple_mob/mechanical/hivebot/tank/armored = 20, /mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_bullet = 20, /mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_laser = 20, /mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_melee = 20, /mob/living/simple_mob/mechanical/hivebot/tank/meatshield = 20), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/infectionbot), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mining_drone), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/technomancer_golem), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/viscerator, /mob/living/simple_mob/mechanical/viscerator/piercing), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/wahlem), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/fox/syndicate)))
 
 /obj/random/mob/semirandom_mob_spawner/fish
 	name = "Semi-Random Fish"
@@ -656,23 +277,21 @@
 	mob_hostile = 0
 	mob_retaliate = 0
 
-
-	possible_mob_types = list(
-		list(/mob/living/simple_mob/animal/passive/fish/bass) = 20,
-		list(/mob/living/simple_mob/animal/passive/fish/icebass) = 20,
-		list(/mob/living/simple_mob/animal/passive/fish/javelin) = 20,
-		list(/mob/living/simple_mob/animal/passive/fish/koi) = 10,
-		list(/mob/living/simple_mob/animal/passive/fish/measelshark) = 5,
-		list(/mob/living/simple_mob/animal/passive/fish/murkin) = 20,
-		list(/mob/living/simple_mob/animal/passive/fish/perch) = 20,
-		list(/mob/living/simple_mob/animal/passive/fish/pike) = 20,
-		list(/mob/living/simple_mob/animal/passive/fish/rockfish) = 10,
-		list(/mob/living/simple_mob/animal/passive/fish/salmon) = 20,
-		list(/mob/living/simple_mob/animal/passive/fish/solarfish) = 5,
-		list(/mob/living/simple_mob/animal/passive/fish/trout) = 20,
-		list(/mob/living/simple_mob/animal/passive/crab) = 10,
-		list(/mob/living/simple_mob/animal/sif/hooligan_crab) = 1
-		)
+DECLARE_LOOT(/obj/random/mob/semirandom_mob_spawner/fish, LOOT_PER_ROUND, LOOT_TABLE(\
+	LOOT_SUB(20, /mob/living/simple_mob/animal/passive/fish/bass), \
+	LOOT_SUB(20, /mob/living/simple_mob/animal/passive/fish/icebass), \
+	LOOT_SUB(20, /mob/living/simple_mob/animal/passive/fish/javelin), \
+	LOOT_SUB(10, /mob/living/simple_mob/animal/passive/fish/koi), \
+	LOOT_SUB(5, /mob/living/simple_mob/animal/passive/fish/measelshark), \
+	LOOT_SUB(20, /mob/living/simple_mob/animal/passive/fish/murkin), \
+	LOOT_SUB(20, /mob/living/simple_mob/animal/passive/fish/perch), \
+	LOOT_SUB(20, /mob/living/simple_mob/animal/passive/fish/pike), \
+	LOOT_SUB(10, /mob/living/simple_mob/animal/passive/fish/rockfish), \
+	LOOT_SUB(20, /mob/living/simple_mob/animal/passive/fish/salmon), \
+	LOOT_SUB(5, /mob/living/simple_mob/animal/passive/fish/solarfish), \
+	LOOT_SUB(20, /mob/living/simple_mob/animal/passive/fish/trout), \
+	LOOT_SUB(10, /mob/living/simple_mob/animal/passive/crab), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/sif/hooligan_crab)))
 
 /obj/random/mob/semirandom_mob_spawner/bird
 	name = "Semi-Random Bird"
@@ -680,33 +299,32 @@
 	icon_state = "bird"
 	mob_faction = "bird"
 
-	possible_mob_types = list(
-		list(/mob/living/simple_mob/animal/passive/bird),
-		list(/mob/living/simple_mob/animal/passive/bird/azure_tit),
-		list(/mob/living/simple_mob/animal/passive/bird/black_bird),
-		list(/mob/living/simple_mob/animal/passive/bird/european_robin),
-		list(/mob/living/simple_mob/animal/passive/bird/goldcrest),
-		list(/mob/living/simple_mob/animal/passive/bird/ringneck_dove),
-		list(/mob/living/simple_mob/animal/passive/bird/parrot),
-		list(/mob/living/simple_mob/animal/passive/bird/parrot/black_headed_caique),
-		list(/mob/living/simple_mob/animal/passive/bird/parrot/budgerigar),
-		list(/mob/living/simple_mob/animal/passive/bird/parrot/budgerigar/blue),
-		list(/mob/living/simple_mob/animal/passive/bird/parrot/budgerigar/bluegreen),
-		list(/mob/living/simple_mob/animal/passive/bird/parrot/cockatiel),
-		list(/mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/grey),
-		list(/mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/white),
-		list(/mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/yellowish),
-		list(/mob/living/simple_mob/animal/passive/bird/parrot/eclectus),
-		list(/mob/living/simple_mob/animal/passive/bird/parrot/grey_parrot),
-		list(/mob/living/simple_mob/animal/passive/bird/parrot/kea),
-		list(/mob/living/simple_mob/animal/passive/bird/parrot/pink_cockatoo),
-		list(/mob/living/simple_mob/animal/passive/bird/parrot/sulphur_cockatoo),
-		list(/mob/living/simple_mob/animal/passive/bird/parrot/white_caique),
-		list(/mob/living/simple_mob/animal/passive/bird/parrot/white_cockatoo),
-		list(/mob/living/simple_mob/animal/space/goose),
-		list(/mob/living/simple_mob/animal/passive/chicken),
-		list(/mob/living/simple_mob/animal/passive/penguin)
-		)
+DECLARE_LOOT(/obj/random/mob/semirandom_mob_spawner/bird, LOOT_PER_ROUND, LOOT_TABLE(\
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/azure_tit), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/black_bird), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/european_robin), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/goldcrest), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/ringneck_dove), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/parrot), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/parrot/black_headed_caique), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/parrot/budgerigar), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/parrot/budgerigar/blue), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/parrot/budgerigar/bluegreen), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/grey), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/white), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/yellowish), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/parrot/eclectus), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/parrot/grey_parrot), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/parrot/kea), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/parrot/pink_cockatoo), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/parrot/sulphur_cockatoo), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/parrot/white_caique), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/bird/parrot/white_cockatoo), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/space/goose), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/chicken), \
+	LOOT_SUB(1, /mob/living/simple_mob/animal/passive/penguin)))
 
 /obj/random/mob/semirandom_mob_spawner/vore
 	name = "Semi-Random Voremob"
@@ -714,87 +332,42 @@
 	icon_state = "vore"
 	mob_faction = "vore"
 
-	possible_mob_types = list(
-		list(
-			/mob/living/simple_mob/vore/wolf/direwolf = 5,
-			/mob/living/simple_mob/vore/greatwolf = 1,
-			/mob/living/simple_mob/vore/greatwolf/black = 1,
-			/mob/living/simple_mob/vore/greatwolf/grey = 1
-			) = 100,
-		list(/mob/living/simple_mob/vore/jelly) = 70,
-		list(
-			/mob/living/simple_mob/vore/otie/feral,
-			/mob/living/simple_mob/vore/otie/feral/chubby,
-			/mob/living/simple_mob/vore/otie/red,
-			/mob/living/simple_mob/vore/otie/red/chubby
-			) = 50,
-		list(
-			/mob/living/simple_mob/shadekin/blue = 100,
-			/mob/living/simple_mob/shadekin/green = 50,
-			/mob/living/simple_mob/shadekin/orange = 20,
-			/mob/living/simple_mob/shadekin/purple = 60,
-			/mob/living/simple_mob/shadekin/red = 40,
-			/mob/living/simple_mob/shadekin/yellow = 1
-			) = 1,
-		list(
-			/mob/living/simple_mob/vore/aggressive/corrupthound,
-			/mob/living/simple_mob/vore/aggressive/corrupthound/prettyboi
-			) = 70,
-		list(/mob/living/simple_mob/vore/aggressive/deathclaw) = 70,
-		list(/mob/living/simple_mob/vore/aggressive/dino) = 100,
-		list(/mob/living/simple_mob/vore/aggressive/dragon) = 100,
-		list(/mob/living/simple_mob/vore/aggressive/dragon/virgo3b) = 100,
-		list(/mob/living/simple_mob/vore/aggressive/frog) = 100,
-		list(/mob/living/simple_mob/vore/aggressive/giant_snake) = 100,
-		list(/mob/living/simple_mob/vore/aggressive/mimic) = 50,
-		list(/mob/living/simple_mob/vore/aggressive/panther) = 70,
-		list(/mob/living/simple_mob/vore/aggressive/rat) = 100,
-		list(/mob/living/simple_mob/vore/bee) = 100,
-		list(/mob/living/simple_mob/vore/catgirl) = 100,
-		list(/mob/living/simple_mob/vore/wolftaur) = 100,
-		list(/mob/living/simple_mob/vore/cookiegirl) = 100,
-		list(/mob/living/simple_mob/vore/fennec) = 100,
-		list(/mob/living/simple_mob/vore/fennix) = 50,
-		list(/mob/living/simple_mob/vore/hippo) = 70,
-		list(/mob/living/simple_mob/vore/horse) = 100,
-		list(/mob/living/simple_mob/vore/raptor) = 100,
-		list(/mob/living/simple_mob/vore/succubus) = 100,
-		list(/mob/living/simple_mob/vore/vampire) = 50,
-		list(/mob/living/simple_mob/vore/vampire/queen) = 1,
-		list(/mob/living/simple_mob/vore/bat) = 50,
-		list(/mob/living/simple_mob/vore/scel) = 10,
-		list(
-			/mob/living/simple_mob/vore/lamia,
-			/mob/living/simple_mob/vore/lamia/albino,
-			/mob/living/simple_mob/vore/lamia/albino/bra,
-			/mob/living/simple_mob/vore/lamia/albino/shirt,
-			/mob/living/simple_mob/vore/lamia/bra,
-			/mob/living/simple_mob/vore/lamia/cobra,
-			/mob/living/simple_mob/vore/lamia/cobra/bra,
-			/mob/living/simple_mob/vore/lamia/cobra/shirt,
-			/mob/living/simple_mob/vore/lamia/copper,
-			/mob/living/simple_mob/vore/lamia/copper/bra,
-			/mob/living/simple_mob/vore/lamia/copper/shirt,
-			/mob/living/simple_mob/vore/lamia/green,
-			/mob/living/simple_mob/vore/lamia/green/bra,
-			/mob/living/simple_mob/vore/lamia/green/shirt,
-			/mob/living/simple_mob/vore/lamia/zebra,
-			/mob/living/simple_mob/vore/lamia/zebra/bra,
-			/mob/living/simple_mob/vore/lamia/zebra/shirt
-			) = 100,
-		list(/mob/living/simple_mob/vore/rabbit) = 100,
-		list(
-			/mob/living/simple_mob/vore/redpanda = 50,
-			/mob/living/simple_mob/vore/redpanda/fae = 1
-			) = 100,
-		list(
-			/mob/living/simple_mob/vore/sect_drone = 10,
-			/mob/living/simple_mob/vore/sect_queen = 1
-			) = 50,
-		list(/mob/living/simple_mob/vore/solargrub) = 100,
-		list(/mob/living/simple_mob/vore/woof) = 1,
-		list(/mob/living/simple_mob/vore/alienanimals/teppi) = 25
-		)
+DECLARE_LOOT(/obj/random/mob/semirandom_mob_spawner/vore, LOOT_PER_ROUND, LOOT_TABLE(\
+	LOOT_SUB(100, /mob/living/simple_mob/vore/wolf/direwolf = 5, /mob/living/simple_mob/vore/greatwolf = 1, /mob/living/simple_mob/vore/greatwolf/black = 1, /mob/living/simple_mob/vore/greatwolf/grey = 1), \
+	LOOT_SUB(70, /mob/living/simple_mob/vore/jelly), \
+	LOOT_SUB(50, /mob/living/simple_mob/vore/otie/feral, /mob/living/simple_mob/vore/otie/feral/chubby, /mob/living/simple_mob/vore/otie/red, /mob/living/simple_mob/vore/otie/red/chubby), \
+	LOOT_SUB(1, /mob/living/simple_mob/shadekin/blue = 100, /mob/living/simple_mob/shadekin/green = 50, /mob/living/simple_mob/shadekin/orange = 20, /mob/living/simple_mob/shadekin/purple = 60, /mob/living/simple_mob/shadekin/red = 40, /mob/living/simple_mob/shadekin/yellow = 1), \
+	LOOT_SUB(70, /mob/living/simple_mob/vore/aggressive/corrupthound, /mob/living/simple_mob/vore/aggressive/corrupthound/prettyboi), \
+	LOOT_SUB(70, /mob/living/simple_mob/vore/aggressive/deathclaw), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/aggressive/dino), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/aggressive/dragon), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/aggressive/dragon/virgo3b), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/aggressive/frog), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/aggressive/giant_snake), \
+	LOOT_SUB(50, /mob/living/simple_mob/vore/aggressive/mimic), \
+	LOOT_SUB(70, /mob/living/simple_mob/vore/aggressive/panther), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/aggressive/rat), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/bee), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/catgirl), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/wolftaur), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/cookiegirl), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/fennec), \
+	LOOT_SUB(50, /mob/living/simple_mob/vore/fennix), \
+	LOOT_SUB(70, /mob/living/simple_mob/vore/hippo), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/horse), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/raptor), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/succubus), \
+	LOOT_SUB(50, /mob/living/simple_mob/vore/vampire), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/vampire/queen), \
+	LOOT_SUB(50, /mob/living/simple_mob/vore/bat), \
+	LOOT_SUB(10, /mob/living/simple_mob/vore/scel), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/lamia, /mob/living/simple_mob/vore/lamia/albino, /mob/living/simple_mob/vore/lamia/albino/bra, /mob/living/simple_mob/vore/lamia/albino/shirt, /mob/living/simple_mob/vore/lamia/bra, /mob/living/simple_mob/vore/lamia/cobra, /mob/living/simple_mob/vore/lamia/cobra/bra, /mob/living/simple_mob/vore/lamia/cobra/shirt, /mob/living/simple_mob/vore/lamia/copper, /mob/living/simple_mob/vore/lamia/copper/bra, /mob/living/simple_mob/vore/lamia/copper/shirt, /mob/living/simple_mob/vore/lamia/green, /mob/living/simple_mob/vore/lamia/green/bra, /mob/living/simple_mob/vore/lamia/green/shirt, /mob/living/simple_mob/vore/lamia/zebra, /mob/living/simple_mob/vore/lamia/zebra/bra, /mob/living/simple_mob/vore/lamia/zebra/shirt), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/rabbit), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/redpanda = 50, /mob/living/simple_mob/vore/redpanda/fae = 1), \
+	LOOT_SUB(50, /mob/living/simple_mob/vore/sect_drone = 10, /mob/living/simple_mob/vore/sect_queen = 1), \
+	LOOT_SUB(100, /mob/living/simple_mob/vore/solargrub), \
+	LOOT_SUB(1, /mob/living/simple_mob/vore/woof), \
+	LOOT_SUB(25, /mob/living/simple_mob/vore/alienanimals/teppi)))
 
 /obj/random/mob/semirandom_mob_spawner/sus
 	name = "Weird shit"
@@ -802,16 +375,9 @@
 	icon_state = "sus"
 	mob_faction = "sus"
 
-	possible_mob_types = list(
-		list(
-			/mob/living/simple_mob/vore/woof/hostile/melee = 100,
-			/mob/living/simple_mob/vore/woof/hostile/ranged = 20,
-			/mob/living/simple_mob/vore/woof/hostile/horrible = 10,
-			/mob/living/simple_mob/vore/woof/hostile/terrible = 5,
-			/mob/living/simple_mob/vore/woof/cass = 1
-			),
-		list(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced)
-		)
+DECLARE_LOOT(/obj/random/mob/semirandom_mob_spawner/sus, LOOT_PER_ROUND, LOOT_TABLE(\
+	LOOT_SUB(1, /mob/living/simple_mob/vore/woof/hostile/melee = 100, /mob/living/simple_mob/vore/woof/hostile/ranged = 20, /mob/living/simple_mob/vore/woof/hostile/horrible = 10, /mob/living/simple_mob/vore/woof/hostile/terrible = 5, /mob/living/simple_mob/vore/woof/cass = 1), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced)))
 
 /obj/random/mob/semirandom_mob_spawner/mecha
 	name = "Semi-Random Mecha"
@@ -819,35 +385,33 @@
 	icon_state = "mecha"
 	mob_faction = "mecha"
 
-	possible_mob_types = list(
-		list(/mob/living/simple_mob/mechanical/mecha/combat/durand),
-		list(/mob/living/simple_mob/mechanical/mecha/combat/durand/defensive),
-		list(/mob/living/simple_mob/mechanical/mecha/combat/durand/defensive/mercenary),
-		list(/mob/living/simple_mob/mechanical/mecha/combat/gygax),
-		list(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark),
-		list(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced),
-		list(/mob/living/simple_mob/mechanical/mecha/combat/gygax/manned),
-		list(/mob/living/simple_mob/mechanical/mecha/combat/gygax/medgax),
-		list(/mob/living/simple_mob/mechanical/mecha/combat/marauder),
-		list(/mob/living/simple_mob/mechanical/mecha/combat/marauder/mauler),
-		list(/mob/living/simple_mob/mechanical/mecha/combat/marauder/seraph),
-		list(/mob/living/simple_mob/mechanical/mecha/combat/phazon),
-		list(/mob/living/simple_mob/mechanical/mecha/hoverpod),
-		list(/mob/living/simple_mob/mechanical/mecha/hoverpod/manned),
-		list(/mob/living/simple_mob/mechanical/mecha/odysseus),
-		list(/mob/living/simple_mob/mechanical/mecha/odysseus/manned),
-		list(/mob/living/simple_mob/mechanical/mecha/odysseus/murdysseus),
-		list(/mob/living/simple_mob/mechanical/mecha/odysseus/murdysseus/manned),
-		list(/mob/living/simple_mob/mechanical/mecha/ripley),
-		list(/mob/living/simple_mob/mechanical/mecha/ripley/blue_flames),
-		list(/mob/living/simple_mob/mechanical/mecha/ripley/deathripley),
-		list(/mob/living/simple_mob/mechanical/mecha/ripley/deathripley/manned),
-		list(/mob/living/simple_mob/mechanical/mecha/ripley/firefighter),
-		list(/mob/living/simple_mob/mechanical/mecha/ripley/firefighter/manned),
-		list(/mob/living/simple_mob/mechanical/mecha/ripley/manned),
-		list(/mob/living/simple_mob/mechanical/mecha/ripley/red_flames)
-		)
-
+DECLARE_LOOT(/obj/random/mob/semirandom_mob_spawner/mecha, LOOT_PER_ROUND, LOOT_TABLE(\
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/combat/durand), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/combat/durand/defensive), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/combat/durand/defensive/mercenary), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/combat/gygax), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/combat/gygax/manned), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/combat/gygax/medgax), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/combat/marauder), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/combat/marauder/mauler), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/combat/marauder/seraph), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/combat/phazon), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/hoverpod), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/hoverpod/manned), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/odysseus), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/odysseus/manned), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/odysseus/murdysseus), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/odysseus/murdysseus/manned), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/ripley), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/ripley/blue_flames), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/ripley/deathripley), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/ripley/deathripley/manned), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/ripley/firefighter), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/ripley/firefighter/manned), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/ripley/manned), \
+	LOOT_SUB(1, /mob/living/simple_mob/mechanical/mecha/ripley/red_flames)))
 
 /obj/random/mob/semirandom_mob_spawner/monster/b
 	mob_faction = "monsterb"

@@ -186,40 +186,31 @@
 	icon_state = "catwalk_plated"
 	density = TRUE
 	anchored = TRUE
-	var/activated = FALSE
 	plane = DECAL_PLANE
 	layer = DECAL_LAYER
 	var/tile = /obj/item/stack/tile/floor
 	var/platecolor = "#858a8f"
 
-/obj/effect/catwalk_plated/Initialize(mapload)
-	. = ..()
-	activate()
+MAP_RESOLVER(/obj/effect/catwalk_plated, GLOBAL_PROC_REF(resolve_catwalk_plated))
 
-/obj/effect/catwalk_plated/CanPass()
-	return 0
+/// MAP_RESOLVER for plated catwalk spawners: once the load is in place, a plated catwalk (unless
+/// the tile already has one).
+/proc/resolve_catwalk_plated(atom/loc, path, list/varedits)
+	map_resolve_later(GLOBAL_PROC_REF(catwalk_plated_build), get_turf(loc), path, varedits)
+	return TRUE
 
-EXTEND_INTERACTIONS(/obj/effect/catwalk_plated, \
-	INTERACT_HAND(null, PROC_REF(interaction_effect_activate_spawner)), \
-	INTERACT_OBSERVER(null, PROC_REF(interaction_effect_activate_spawner)), \
-)
-
-/obj/effect/catwalk_plated/attack_generic()
-	activate()
-
-/obj/effect/catwalk_plated/proc/activate()
-	if(activated) return
-
-	if(locate_within(loc, /obj/structure/catwalk))
-		WARNING("Frame Spawner: A catwalk already exists at [loc.x]-[loc.y]-[loc.z]")
-	else
-		var/obj/structure/catwalk/C = new /obj/structure/catwalk(loc)
-		C.plated_tile = tile
-		C.plating_color = platecolor
-		C.name = "plated catwalk"
-		C.update_icon()
-	activated = 1
-	qdel(src)
+/proc/catwalk_plated_build(turf/T, path, list/varedits)
+	var/obj/effect/catwalk_plated/P = path
+	if(!T)
+		return
+	if(locate_within(T, /obj/structure/catwalk))
+		WARNING("Frame Spawner: A catwalk already exists at [T.x]-[T.y]-[T.z]")
+		return
+	var/obj/structure/catwalk/C = new /obj/structure/catwalk(T)
+	C.plated_tile = MAP_VAR(P, varedits, tile)
+	C.plating_color = MAP_VAR(P, varedits, platecolor)
+	C.name = "plated catwalk"
+	C.update_icon()
 
 /obj/effect/catwalk_plated/dark
 	icon_state = "catwalk_plateddark"

@@ -666,11 +666,11 @@ DECLARE_REF(/obj/effect/bmode/buildholder, "buildquit", OWNED, null)
 				return
 			if(pa.Find("left") && !pa.Find("ctrl"))
 				if(ispath(holder.buildmode.objholder))
-					new /obj/effect/falling_effect(get_turf(object), holder.buildmode.objholder, FALSE, TRUE)
+					drop_from_sky(get_turf(object), holder.buildmode.objholder, FALSE, TRUE)
 					log_admin("[key_name(usr)] dropped [holder.buildmode.objholder] onto [object] nonlethally.")
 			else if(pa.Find("right"))
 				if(ispath(holder.buildmode.objholder))
-					new /obj/effect/falling_effect(get_turf(object), holder.buildmode.objholder, TRUE, TRUE)
+					drop_from_sky(get_turf(object), holder.buildmode.objholder, TRUE, TRUE)
 					log_admin("[key_name(usr)] dropped [holder.buildmode.objholder] onto [object] lethally.")
 			else if(pa.Find("ctrl"))
 				holder.buildmode.objholder = object.type

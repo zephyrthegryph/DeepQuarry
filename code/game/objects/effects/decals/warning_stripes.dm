@@ -1,10 +1,15 @@
 /obj/effect/decal/warning_stripes
 	icon = 'icons/effects/warning_stripes.dmi'
 
-/obj/effect/decal/warning_stripes/Initialize(mapload)
-	. = ..()
-	var/turf/T=get_turf(src)
-	var/image/I=image(icon, icon_state = icon_state, dir = dir)
-	I.color=color
+MAP_RESOLVER(/obj/effect/decal/warning_stripes, GLOBAL_PROC_REF(resolve_warning_stripes))
+
+/// MAP_RESOLVER for warning stripes: an overlay on the turf.
+/proc/resolve_warning_stripes(atom/loc, path, list/varedits)
+	var/obj/effect/decal/warning_stripes/P = path
+	var/turf/T = get_turf(loc)
+	if(!T)
+		return TRUE
+	var/image/I = image(MAP_VAR(P, varedits, icon), icon_state = MAP_VAR(P, varedits, icon_state), dir = MAP_VAR(P, varedits, dir))
+	I.color = MAP_VAR(P, varedits, color)
 	T.add_overlay(I)
-	return INITIALIZE_HINT_QDEL
+	return TRUE

@@ -31,10 +31,12 @@ GLOBAL_LIST_EMPTY(recycler_locations)
 	density = 0
 	anchored = 1
 
-/obj/effect/recycler_beacon/Initialize(mapload)
-	. = ..()
-	GLOB.recycler_locations |= get_turf(src)
-	return INITIALIZE_HINT_QDEL
+MAP_RESOLVER(/obj/effect/recycler_beacon, GLOBAL_PROC_REF(resolve_recycler_beacon))
+
+/// MAP_RESOLVER for recycler beacons: a row in GLOB.recycler_locations.
+/proc/resolve_recycler_beacon(atom/loc, path, list/varedits)
+	GLOB.recycler_locations |= get_turf(loc)
+	return TRUE
 
 /obj/effect/recycler_vendor_beacon
 	icon = 'code/modules/maint_recycler/icons/maint_vendor.dmi'

@@ -15,22 +15,40 @@
 
 	var/list/areas_to_use
 
-REGISTRY_MEMBERSHIP(/obj/turbolift_map_holder, REGISTRY_TURBOLIFT_HOLDERS)
+// Resolved at map time: the lift is built once the load is in place, and the holder never lives.
+MAP_RESOLVER(/obj/turbolift_map_holder, GLOBAL_PROC_REF(resolve_turbolift_holder))
 
-/obj/turbolift_map_holder/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+/// MAP_RESOLVER for turbolift holders. The per-type area list is a list var, which only an
+/// instance carries: placed by the map reader (no instance yet) the holder is made and resolved
+/// when it initializes.
+/proc/resolve_turbolift_holder(atom/loc, path, list/varedits)
+	if(!varedits || !islist(varedits["areas_to_use"]))
+		return FALSE
+	map_resolve_later(GLOBAL_PROC_REF(turbolift_build), get_turf(loc), path, varedits)
+	return TRUE
 
-/obj/turbolift_map_holder/LateInitialize()
+/// Builds the lift whose holder of type `path` sat on `origin` (bottom left of the shaft).
+/proc/turbolift_build(turf/origin, path, list/varedits)
+	if(!origin)
+		return
+	var/obj/turbolift_map_holder/P = path
+	var/name = MAP_VAR(P, varedits, name)
+	var/depth = MAP_VAR(P, varedits, depth)
+	var/lift_size_x = MAP_VAR(P, varedits, lift_size_x)
+	var/lift_size_y = MAP_VAR(P, varedits, lift_size_y)
+	var/wall_type = MAP_VAR(P, varedits, wall_type)
+	var/floor_type = MAP_VAR(P, varedits, floor_type)
+	var/door_type = MAP_VAR(P, varedits, door_type)
+	var/firedoor_type = MAP_VAR(P, varedits, firedoor_type)
+	var/list/areas_to_use = varedits["areas_to_use"]
+
 	// Create our system controller.
 	var/datum/turbolift/lift = new()
 
-	// Holder values since we're moving this object to null ASAP.
-	var/ux = x
-	var/uy = y
-	var/uz = z
-	var/udir = dir
-	moveToNullspace()
+	var/ux = origin.x
+	var/uy = origin.y
+	var/uz = origin.z
+	var/udir = MAP_VAR(P, varedits, dir)
 
 	// These modifiers are used in relation to the origin
 	// to place the system control panels and doors.
@@ -53,7 +71,7 @@ REGISTRY_MEMBERSHIP(/obj/turbolift_map_holder, REGISTRY_TURBOLIFT_HOLDERS)
 	var/ey = (uy+lift_size_y)
 	var/ez = (uz+(depth-1))
 
-	switch(dir)
+	switch(udir)
 
 		if(NORTH)
 
@@ -138,7 +156,6 @@ REGISTRY_MEMBERSHIP(/obj/turbolift_map_holder, REGISTRY_TURBOLIFT_HOLDERS)
 
 				if(!istype(checking))
 					log_mapping("[name] cannot find a component turf at [tx],[ty] on floor [cz]. Aborting.")
-					qdel(src)
 					return
 
 				// Update path appropriately if needed.
@@ -198,8 +215,8 @@ REGISTRY_MEMBERSHIP(/obj/turbolift_map_holder, REGISTRY_TURBOLIFT_HOLDERS)
 		// Place lights
 		var/turf/placing1 = locate(light_x1, light_y1, cz)
 		var/turf/placing2 = locate(light_x2, light_y2, cz)
-		var/obj/machinery/light/light1 = new(placing1, light)
-		var/obj/machinery/light/light2 = new(placing2, light)
+		var/obj/machinery/light/light1 = new(placing1)
+		var/obj/machinery/light/light2 = new(placing2)
 		if(udir == NORTH || udir == SOUTH)
 			light1.set_dir(WEST)
 			light2.set_dir(EAST)
@@ -210,7 +227,6 @@ REGISTRY_MEMBERSHIP(/obj/turbolift_map_holder, REGISTRY_TURBOLIFT_HOLDERS)
 		// Update area.
 		if(az > length(areas_to_use))
 			log_mapping("[name] at [ux],[uy],[uz] requires [depth] floor areas but has [length(areas_to_use)]; failed while creating z=[cz]. Aborting.")
-			qdel(src)
 			return
 
 		var/area_path = LAZYACCESS(areas_to_use, az)
@@ -227,5 +243,3 @@ REGISTRY_MEMBERSHIP(/obj/turbolift_map_holder, REGISTRY_TURBOLIFT_HOLDERS)
 	lift.current_floor_handle = om_handle(lift.floors[1])
 
 	lift.open_doors()
-
-	qdel(src) // We're done.

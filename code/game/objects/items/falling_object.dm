@@ -10,20 +10,27 @@
 	var/crushing = TRUE
 	var/admin_spawned = FALSE
 
-/obj/effect/falling_effect/Initialize(mapload, type, crushing_type, admin_spawned = FALSE)
-	..()
-	if(!isnull(crushing_type))
-		crushing = crushing_type
-	if(type)
-		falling_type = type
-	if(admin_spawned)
-		src.admin_spawned = admin_spawned
-	return INITIALIZE_HINT_LATELOAD
+MAP_RESOLVER(/obj/effect/falling_effect, GLOBAL_PROC_REF(resolve_falling_effect))
 
-/obj/effect/falling_effect/LateInitialize()
-	new falling_type(src)
-	var/atom/movable/dropped = pick(contents) // Stupid, but allows to get spawn result without efforts if it is other type(Or if it was randomly generated).
-	dropped.forceMove(get_turf(src))
+/// MAP_RESOLVER for falling effects (mapped, or `new` at runtime): drops its falling_type.
+/proc/resolve_falling_effect(atom/loc, path, list/varedits)
+	var/obj/effect/falling_effect/P = path
+	drop_from_sky(get_turf(loc), MAP_VAR(P, varedits, falling_type), MAP_VAR(P, varedits, crushing), MAP_VAR(P, varedits, admin_spawned))
+	return TRUE
+
+/// Drops `falling_type` (a type, or a loot declaration such as an /obj/random) onto `T` from the
+/// sky; `crushing` flattens what it lands on.
+/proc/drop_from_sky(turf/T, falling_type, crushing = TRUE, admin_spawned = FALSE)
+	if(!T || !falling_type)
+		return
+	var/list/made = loot_spawn(falling_type, T)
+	var/atom/movable/dropped
+	for(var/atom/movable/AM as anything in made)
+		if(!QDELETED(AM))
+			dropped = AM
+			break
+	if(!dropped)
+		return
 	var/initial_x = dropped.pixel_x
 	var/initial_y = dropped.pixel_y
 	dropped.plane = 1
@@ -35,7 +42,6 @@
 		dropped.flags |= ADMIN_SPAWNED
 	animate(dropped, pixel_y = initial_y, pixel_x = initial_x , time = 7)
 	om_after(dropped, 0.7 SECONDS, TYPE_PROC_REF(/atom/movable,end_fall), crushing)
-	expire(0)
 
 /atom/movable/proc/end_fall(crushing = FALSE)
 	if(isliving(src))

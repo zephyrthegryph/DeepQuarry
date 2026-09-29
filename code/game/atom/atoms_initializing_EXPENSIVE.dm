@@ -9,6 +9,11 @@
 			BadInitializeCalls[the_type] |= BAD_INIT_QDEL_BEFORE
 		return TRUE
 
+	// Map-time resolver (map_resolvers.dm): the atom's work happens here and it is detached,
+	// never initialized nor qdel'd.
+	if(A.map_resolver && map_resolve_instance(A))
+		return TRUE
+
 	// This is handled and battle tested by dreamchecker. Limit to UNIT_TESTS just in case that ever fails.
 	#ifdef UNIT_TESTS
 	var/start_tick = world.time

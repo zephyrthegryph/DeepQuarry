@@ -191,5 +191,5 @@
 /mob/living/simple_mob/vore/demonAI/gibspam/apply_bonus_melee_damage(atom/A, damage_amount)
 	var/turf/T = get_turf(src)
 	if(dq_get_cloaked(src))
-		new /obj/effect/gibspawner/generic(T)
+		gibs(T)
 	return ..()

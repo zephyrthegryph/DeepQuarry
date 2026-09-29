@@ -324,8 +324,5 @@ EXTEND_INTERACTIONS(/obj/structure/barricade/cutout, \
 	desc = "This is a random wooden figure."
 	icon = 'icons/obj/cardboard_cutout.dmi'
 	icon_state = "cutout_random"
-	spawn_nothing_percentage = 80 //Only spawns 20% of the time to avoid being predictable
 
-/obj/random/cutout/item_to_spawn()
-	var/list/cutout_types = subtypesof(/obj/structure/barricade/cutout)
-	return pick(cutout_types)
+DECLARE_LOOT(/obj/random/cutout, LOOT_TABLE(LOOT_TYPES(1, subtypesof(/obj/structure/barricade/cutout))), LOOT_CHANCE(20)) // Only spawns 20% of the time to avoid being predictable

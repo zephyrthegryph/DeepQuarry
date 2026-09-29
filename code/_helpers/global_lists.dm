@@ -590,7 +590,6 @@ GLOBAL_LIST_EMPTY(random_maps)
 GLOBAL_LIST_EMPTY(map_count)
 GLOBAL_LIST_EMPTY(id_card_states)
 GLOBAL_LIST_EMPTY(allocated_gamma_loot)
-GLOBAL_LIST_EMPTY(semirandom_mob_spawner_decisions)
 
 GLOBAL_LIST_INIT(unique_gamma_loot, list(
 	/obj/item/perfect_tele,
@@ -1101,8 +1100,6 @@ GLOBAL_LIST_INIT(valid_bloodreagents, list("default",REAGENT_ID_IRON,REAGENT_ID_
 GLOBAL_LIST_EMPTY(monitor_states)
 
 GLOBAL_LIST_EMPTY(random_junk)
-GLOBAL_LIST_EMPTY(random_junk_)
-GLOBAL_LIST_EMPTY(random_useful_)
 GLOBAL_LIST_INIT(valid_bloodtypes, list("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"))
 
 //Some simple descriptors for breaches. Global because lazy, TODO: work out a better way to do this.

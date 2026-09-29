@@ -544,13 +544,13 @@ ADMIN_VERB(spawn_custom_item, R_SPAWN, "Spawn Custom Item", "Spawn a custom item
 	var/list/possible_items = GLOB.custom_items[owner]
 	if(!possible_items)
 		return
-	var/datum/custom_item/item_to_spawn = verb_ask(user, "a12", args, /datum/om/prompt/choice, message = "Select an item to spawn.", title = "Spawn Custom Item", choices = possible_items)
-	if(isnull(item_to_spawn))
+	var/datum/custom_item/chosen_item = verb_ask(user, "a12", args, /datum/om/prompt/choice, message = "Select an item to spawn.", title = "Spawn Custom Item", choices = possible_items)
+	if(isnull(chosen_item))
 		return
-	if(!item_to_spawn)
+	if(!chosen_item)
 		return
 
-	item_to_spawn.spawn_item(get_turf(user.mob))
+	chosen_item.spawn_item(get_turf(user.mob))
 
 ADMIN_VERB(check_custom_items, R_SPAWN, "Check Custom Items", "Check the custom item list.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
 	if(!GLOB.custom_items)

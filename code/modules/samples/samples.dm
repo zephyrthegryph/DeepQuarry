@@ -301,10 +301,10 @@ DECLARE_INTERACTIONS(/obj/item/research_sample, \
 	icon = 'icons/obj/samples.dmi'
 	icon_state = "sample_spawner1"
 
-/obj/random/research_sample_type1/item_to_spawn()
-	return pick(prob(50);/obj/item/research_sample/common,
-				prob(35);/obj/item/research_sample/uncommon,
-				prob(15);/obj/item/research_sample/rare)
+DECLARE_LOOT(/obj/random/research_sample_type1, LOOT_TABLE(\
+	/obj/item/research_sample/common = 50, \
+	/obj/item/research_sample/uncommon = 35, \
+	/obj/item/research_sample/rare = 15))
 
 /obj/random/research_sample_type2
 	name = "Random Common/Uncommon Research Sample"
@@ -312,9 +312,7 @@ DECLARE_INTERACTIONS(/obj/item/research_sample, \
 	icon = 'icons/obj/samples.dmi'
 	icon_state = "sample_spawner2"
 
-/obj/random/research_sample_type2/item_to_spawn()
-	return pick(prob(70);/obj/item/research_sample/common,
-				prob(30);/obj/item/research_sample/uncommon)
+DECLARE_LOOT(/obj/random/research_sample_type2, LOOT_TABLE(/obj/item/research_sample/common = 70, /obj/item/research_sample/uncommon = 30))
 
 /obj/random/research_sample_type3
 	name = "Random Uncommon/Rare Research Sample"
@@ -322,6 +320,4 @@ DECLARE_INTERACTIONS(/obj/item/research_sample, \
 	icon = 'icons/obj/samples.dmi'
 	icon_state = "sample_spawner3"
 
-/obj/random/research_sample_type3/item_to_spawn()
-	return pick(prob(70);/obj/item/research_sample/uncommon,
-				prob(30);/obj/item/research_sample/rare)
+DECLARE_LOOT(/obj/random/research_sample_type3, LOOT_TABLE(/obj/item/research_sample/uncommon = 70, /obj/item/research_sample/rare = 30))

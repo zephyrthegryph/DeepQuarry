@@ -9,13 +9,8 @@
 	desc = "It's a fossil."
 	var/animal = 1
 
-/obj/item/fossil/base/Initialize(mapload)
-	..()
-	var/list/l = list(/obj/item/fossil/bone = 9,/obj/item/fossil/skull = 3,
-	/obj/item/fossil/skull/horned = 2)
-	var/t = pickweight(l)
-	new t(src.loc)
-	return INITIALIZE_HINT_QDEL
+DECLARE_LOOT(/obj/item/fossil/base, LOOT_TABLE(/obj/item/fossil/bone = 9, /obj/item/fossil/skull = 3, /obj/item/fossil/skull/horned = 2))
+MAP_RESOLVER(/obj/item/fossil/base, GLOBAL_PROC_REF(resolve_loot))
 
 /obj/item/fossil/bone
 	name = "Fossilised bone"
