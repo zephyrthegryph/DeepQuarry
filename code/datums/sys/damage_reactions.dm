@@ -141,3 +141,15 @@
 /// What else an EMP_DISABLE type does when it goes down (TRUE) or comes back (FALSE).
 /atom/proc/emp_disable_changed(disabled)
 	return
+
+// ---- shared reaction procs ----
+
+/// A hit through the trigger lands nothing (the entry's own effects before the packet, such as
+/// a projectile's on_hit(), still ran). `DAMAGE_REACTION(/obj/effect/decal/x, DAMAGE_PROJECTILE, PROC_REF(damage_reaction_block))`
+/atom/proc/damage_reaction_block(datum/damage_packet/packet)
+	return DAMAGE_REACTION_BLOCK
+
+/// The hit destroys the holder outright (an explosion on something with no integrity).
+/atom/proc/damage_reaction_qdel(datum/damage_packet/packet)
+	qdel(src)
+	return DAMAGE_REACTION_BLOCK
