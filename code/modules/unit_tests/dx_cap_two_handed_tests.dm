@@ -27,7 +27,7 @@
 	TEST_ASSERT_NOTNULL(E, "cap_two_handed() offers its entry")
 	TEST_ASSERT_EQUAL(E.entry, INTERACTION_ENTRY_SELF, "a self-use entry")
 	TEST_ASSERT_EQUAL(E.display_name(H, A), "Wield", "named for its state")
-	TEST_ASSERT_EQUAL(E.why_not(H, A, A), "not in your hand", "wielding needs it in hand")
+	TEST_ASSERT_EQUAL(E.why_not(H, A, A), "it's not in your hand", "wielding needs it in hand")
 	TEST_ASSERT("It can be wielded in both hands." in A.caps_examine(H), "examine says it can be wielded")
 
 	TEST_ASSERT(H.put_in_r_hand(A), "the human holds it")

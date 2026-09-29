@@ -1389,7 +1389,9 @@ EXTEND_INTERACTIONS(/obj/machinery/door/airlock, INTERACT_ROBOT("Use", PROC_REF(
 		return TRUE
 	return FALSE
 
-OWN(/obj/machinery/door/airlock, electronics, OWN_CONTAINED)
+/obj/machinery/door/airlock/ownership()
+	. = ..()
+	. += owns(nameof(electronics), policy = OWN_CONTAINED)
 
 /// closeOther (a relation view: it reads null once the target is deleted).
 /obj/machinery/door/airlock/proc/closeOther() as /obj/machinery/door/airlock
