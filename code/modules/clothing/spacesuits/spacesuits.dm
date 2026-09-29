@@ -31,9 +31,7 @@
 	light_overlay = "helmet_light"
 	light_range = 4
 
-/obj/item/clothing/head/helmet/space/fit_constraint()
-	var/list/bodytypes = list("exclude",SPECIES_DIONA)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/head/helmet/space, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA))))
 
 /obj/item/clothing/head/helmet/space/Initialize(mapload)
 	. = ..()
@@ -96,13 +94,9 @@
 
 // start - use the specially refitted sprites by KBraid. Done this way to avoid breaking subtypes.
 
-/obj/item/clothing/suit/space/fit_constraint()
-	var/list/bodytypes = list("exclude",SPECIES_DIONA)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/suit/space, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA))))
 
-/obj/item/clothing/suit/space/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS))))
 /obj/item/clothing/suit/space/Initialize(mapload)
 	. = ..()
 	if(type == /obj/item/clothing/suit/space)

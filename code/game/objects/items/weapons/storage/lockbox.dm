@@ -15,8 +15,7 @@
 	var/icon_closed = "lockbox"
 	var/icon_broken = "lockbox+b"
 
-/obj/item/storage/lockbox/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/lockbox, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 
 EXTEND_INTERACTIONS(/obj/item/storage/lockbox, INTERACT_ITEM("Put in", PROC_REF(interaction_lockbox_item)))

@@ -29,9 +29,7 @@
 	max_pressure_protection = 20  * ONE_ATMOSPHERE
 	resistance_flags = FIRE_PROOF
 
-/obj/item/clothing/suit/fire/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/extinguisher)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/fire, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/extinguisher))))
 
 /obj/item/clothing/suit/fire/firefighter
 	name = "firesuit"
@@ -86,9 +84,7 @@
  * Radiation protection
  */
 
-/obj/item/clothing/suit/bomb_suit/security/suit_storage_constraint()
-	var/list/stores = list(POCKET_SECURITY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/bomb_suit/security, suit_storage_spec, list(HOLD_ONLY(list(POCKET_SECURITY))))
 /obj/item/clothing/head/radiation
 	name = "Radiation hood"
 	icon_state = "rad"
@@ -114,9 +110,7 @@ DECLARE_BEHAVIOUR(/obj/item/clothing/head/radiation, /datum/om/behaviour/radiati
 	flags_inv = HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
 	item_flags = THICKMATERIAL
 
-/obj/item/clothing/suit/radiation/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/radiation)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/radiation, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/radiation))))
 
 DECLARE_BEHAVIOUR(/obj/item/clothing/suit/radiation, /datum/om/behaviour/radiation_protected_clothing)
 
@@ -128,9 +122,7 @@ DECLARE_BEHAVIOUR(/obj/item/clothing/suit/radiation, /datum/om/behaviour/radiati
 	icon_state = "rad_fitted"
 	slowdown = 0.5
 
-/obj/item/clothing/suit/radiation/teshari/fit_constraint()
-	var/list/bodytypes = list(SPECIES_TESHARI)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/suit/radiation/teshari, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
 /obj/item/clothing/head/radiation/teshari
 	name = "Small radiation hood"
@@ -139,9 +131,7 @@ DECLARE_BEHAVIOUR(/obj/item/clothing/suit/radiation, /datum/om/behaviour/radiati
 	icon_override = 'icons/inventory/head/mob_teshari.dmi'
 	icon_state = "rad_fitted"
 
-/obj/item/clothing/head/radiation/teshari/fit_constraint()
-	var/list/bodytypes = list(SPECIES_TESHARI)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/head/radiation/teshari, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
 
 /obj/item/clothing/head/bomb_hood/security
@@ -159,9 +149,7 @@ DECLARE_BEHAVIOUR(/obj/item/clothing/suit/radiation, /datum/om/behaviour/radiati
 	flags_inv = HIDEHOLSTER
 	armor_spec = "bio=50"
 
-/obj/item/clothing/suit/storage/toggle/paramedic/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/paramedic, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL))))
 
 /obj/item/clothing/head/radiation
 	sprite_sheets = list(

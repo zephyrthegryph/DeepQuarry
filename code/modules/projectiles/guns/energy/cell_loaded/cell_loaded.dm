@@ -241,9 +241,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 	desc = "A storage case for a multi-purpose handgun. Variety hour!"
 	w_class = ITEMSIZE_NORMAL
 
-/obj/item/storage/secure/briefcase/nsfw_pack_hybrid/hold_constraint()
-	var/list/holds = list(/obj/item/gun/projectile/cell_loaded,/obj/item/ammo_magazine/cell_mag,/obj/item/ammo_casing/microbattery)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid, hold_spec, list(HOLD_ONLY(list(/obj/item/gun/projectile/cell_loaded,/obj/item/ammo_magazine/cell_mag,/obj/item/ammo_casing/microbattery)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/secure/briefcase/nsfw_pack_hybrid/Initialize(mapload)
 	. = ..()
@@ -265,9 +263,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 	desc = "A storage case for a multi-purpose handgun. Variety hour!"
 	w_class = ITEMSIZE_NORMAL
 
-/obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat/hold_constraint()
-	var/list/holds = list(/obj/item/gun/projectile/cell_loaded,/obj/item/ammo_magazine/cell_mag,/obj/item/ammo_casing/microbattery)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat, hold_spec, list(HOLD_ONLY(list(/obj/item/gun/projectile/cell_loaded,/obj/item/ammo_magazine/cell_mag,/obj/item/ammo_casing/microbattery)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat/Initialize(mapload)
 	. = ..()

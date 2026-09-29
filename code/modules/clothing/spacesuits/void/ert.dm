@@ -14,13 +14,9 @@
 	max_pressure_protection = 15* ONE_ATMOSPHERE
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000
 
-/obj/item/clothing/suit/space/void/responseteam/fit_constraint()
-	var/list/bodytypes = list("exclude",SPECIES_DIONA,SPECIES_VOX,SPECIES_TESHARI,SPECIES_ALTEVIAN)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/suit/space/void/responseteam, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX,SPECIES_TESHARI,SPECIES_ALTEVIAN))))
 
-/obj/item/clothing/suit/space/void/responseteam/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/void/responseteam, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY))))
 
 /obj/item/clothing/suit/space/void/responseteam/command
 	name = "Mark VII-C Emergency Response Team Commander Suit"
@@ -135,9 +131,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/responseteam, INTERACT_IT
 	max_pressure_protection = 15* ONE_ATMOSPHERE
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000
 
-/obj/item/clothing/head/helmet/space/void/responseteam/fit_constraint()
-	var/list/bodytypes = list("exclude",SPECIES_DIONA,SPECIES_VOX,SPECIES_TESHARI,SPECIES_ALTEVIAN)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/responseteam, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX,SPECIES_TESHARI,SPECIES_ALTEVIAN))))
 
 EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/space/void/responseteam, \
 	INTERACT_VERB("Toggle Mark 7 Suit HUD", PROC_REF(responseteam_toggle_verb), REQ_IN_INVENTORY), \

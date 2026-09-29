@@ -6,9 +6,7 @@
 	armor_spec = "melee=50;bullet=20;laser=30;energy=30;bomb=10;rad=40"
 	siemens_coefficient = 0.75
 
-/obj/item/clothing/suit/technomancer/suit_storage_constraint()
-	var/list/stores = list(POCKET_ALL_TANKS)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/technomancer, suit_storage_spec, list(HOLD_ONLY(list(POCKET_ALL_TANKS))))
 
 /obj/item/clothing/under/technomancer
 	name = "initiate's jumpsuit"

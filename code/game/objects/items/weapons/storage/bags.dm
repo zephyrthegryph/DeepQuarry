@@ -50,9 +50,7 @@
 	max_storage_space = ITEMSIZE_SMALL * 21
 	resistance_flags = FLAMMABLE
 
-/obj/item/storage/bag/trash/hold_constraint()
-	var/list/refuses = list(/obj/item/disk/nuclear)
-	return list(HOLD_NOT(refuses), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/bag/trash, hold_spec, list(HOLD_NOT(list(/obj/item/disk/nuclear)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/bag/trash/update_icon()
 	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
@@ -70,9 +68,7 @@
 	max_storage_space = ITEMSIZE_COST_NORMAL * 10 // Slightly less than BoH
 	resistance_flags = FIRE_PROOF
 
-/obj/item/storage/bag/trash/holding/hold_constraint()
-	var/list/refuses = list(/obj/item/disk/nuclear)
-	return list(HOLD_NOT(refuses), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/bag/trash/holding, hold_spec, list(HOLD_NOT(list(/obj/item/disk/nuclear)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/bag/trash/holding/update_icon()
 	return
@@ -95,9 +91,7 @@
 //          Plant bag
 // -----------------------------
 
-/obj/item/storage/bag/plasticbag/hold_constraint()
-	var/list/refuses = list(/obj/item/disk/nuclear)
-	return list(HOLD_NOT(refuses), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/bag/plasticbag, hold_spec, list(HOLD_NOT(list(/obj/item/disk/nuclear)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 /obj/item/storage/bag/plants
 	name = "plant bag"
 	icon = 'icons/obj/hydroponics_machines.dmi'
@@ -107,9 +101,7 @@
 	w_class = ITEMSIZE_SMALL
 	resistance_flags = FLAMMABLE
 
-/obj/item/storage/bag/plants/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/food/snacks/grown,/obj/item/seeds,/obj/item/grown)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/bag/plants, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/grown,/obj/item/seeds,/obj/item/grown)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/bag/plants/large
 	name = "large plant bag"
@@ -136,9 +128,7 @@
 	allow_quick_empty = 1 // this function is superceded
 	resistance_flags = FIRE_PROOF
 
-/obj/item/storage/bag/sheetsnatcher/hold_constraint()
-	var/list/holds = list(/obj/item/stack/material)
-	return list(HOLD_ONLY(holds))
+TYPE_TABLE(/obj/item/storage/bag/sheetsnatcher, hold_spec, list(HOLD_ONLY(list(/obj/item/stack/material))))
 
 /// Sheets only, counted by the sheet rather than by size or slot.
 /datum/om/relation/slot/storage/sheets
@@ -265,9 +255,7 @@
 //         Chemistry Bag
 // -----------------------------
 
-/obj/item/storage/bag/cash/hold_constraint()
-	var/list/holds = list(/obj/item/coin,/obj/item/spacecash,/obj/item/spacecasinocash)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/bag/cash, hold_spec, list(HOLD_ONLY(list(/obj/item/coin,/obj/item/spacecash,/obj/item/spacecasinocash)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/bag/chemistry
 	name = "chemistry bag"
 	icon = 'icons/obj/storage_vr.dmi'
@@ -282,9 +270,7 @@
 //           Xeno Bag
 // -----------------------------
 
-/obj/item/storage/bag/chemistry/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/pill,/obj/item/reagent_containers/glass/beaker,/obj/item/reagent_containers/glass/bottle, /obj/item/reagent_containers/hypospray/autoinjector)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/bag/chemistry, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/pill,/obj/item/reagent_containers/glass/beaker,/obj/item/reagent_containers/glass/bottle, /obj/item/reagent_containers/hypospray/autoinjector)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 /obj/item/storage/bag/xeno
 	name = "xenobiology bag"
 	icon = 'icons/obj/storage_vr.dmi'
@@ -298,9 +284,7 @@
 //         Virology Bag
 // -----------------------------
 
-/obj/item/storage/bag/xeno/hold_constraint()
-	var/list/holds = list(/obj/item/slime_extract,/obj/item/slimepotion, /obj/item/reagent_containers/food/snacks/monkeycube)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/bag/xeno, hold_spec, list(HOLD_ONLY(list(/obj/item/slime_extract,/obj/item/slimepotion, /obj/item/reagent_containers/food/snacks/monkeycube)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/bag/virology
 	name = "virology bag"
 	icon = 'icons/obj/storage_vr.dmi'
@@ -314,9 +298,7 @@
 //           Food Bag
 // -----------------------------
 
-/obj/item/storage/bag/virology/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/glass/beaker/vial)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/bag/virology, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/glass/beaker/vial)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/bag/food
 	name = "food bag"
 	icon = 'icons/obj/storage_vr.dmi'
@@ -330,9 +312,7 @@
 //    Food Bag (Service Hound)
 // -----------------------------
 
-/obj/item/storage/bag/food/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/food/snacks,/obj/item/reagent_containers/food/condiment)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/bag/food, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks,/obj/item/reagent_containers/food/condiment)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/bag/serviceborg
 	name = "service bag"
 	icon = 'icons/obj/storage_vr.dmi'
@@ -346,11 +326,9 @@
 //           Evidence Bag
 // -----------------------------
 
-/obj/item/storage/bag/serviceborg/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/food/snacks,/obj/item/reagent_containers/food/condiment,
-	/obj/item/reagent_containers/glass/beaker,/obj/item/reagent_containers/glass/bottle,/obj/item/coin,/obj/item/spacecash,
-	/obj/item/reagent_containers/food/snacks/grown,/obj/item/seeds,/obj/item/grown,/obj/item/reagent_containers/pill)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/bag/serviceborg, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks,/obj/item/reagent_containers/food/condiment, \
+	/obj/item/reagent_containers/glass/beaker,/obj/item/reagent_containers/glass/bottle,/obj/item/coin,/obj/item/spacecash, \
+	/obj/item/reagent_containers/food/snacks/grown,/obj/item/seeds,/obj/item/grown,/obj/item/reagent_containers/pill)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/bag/detective
 	name = "secure satchel"
 	icon = 'icons/obj/storage_vr.dmi'
@@ -364,9 +342,7 @@
 //          Santa bag
 // -----------------------------
 
-/obj/item/storage/bag/detective/hold_constraint()
-	var/list/holds = list(/obj/item/forensics/swab,/obj/item/sample/print,/obj/item/sample/fibers,/obj/item/evidencebag)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/bag/detective, hold_spec, list(HOLD_ONLY(list(/obj/item/forensics/swab,/obj/item/sample/print,/obj/item/sample/fibers,/obj/item/evidencebag)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/bag/santabag
 	name = "\improper Santa's gift bag"
 	desc = "Space Santa uses this to deliver toys to all the nice children in space in Christmas! Wow, it's pretty big!"
@@ -378,9 +354,7 @@
 	max_storage_space = ITEMSIZE_COST_NORMAL * 100 // can store a ton of shit!
 	resistance_flags = FIRE_PROOF //ho ho ho
 
-/obj/item/storage/bag/santabag/hold_constraint()
-	var/list/refuses = list(/obj/item/disk/nuclear)
-	return list(HOLD_NOT(refuses), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/bag/santabag, hold_spec, list(HOLD_NOT(list(/obj/item/disk/nuclear)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/bag/santabag/update_icon()
 	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) < 10)

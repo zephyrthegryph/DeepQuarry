@@ -16,9 +16,7 @@
 	drop_sound = 'sound/items/drop/gascan.ogg'
 	pickup_sound = 'sound/items/pickup/gascan.ogg'
 
-/obj/item/storage/sample_container/hold_constraint()
-	var/list/holds = list(/obj/item/research_sample)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_TINY))
+TYPE_TABLE(/obj/item/storage/sample_container, hold_spec, list(HOLD_ONLY(list(/obj/item/research_sample)), HOLD_MAX_SIZE(ITEMSIZE_TINY)))
 
 
 /obj/item/storage/sample_container/update_icon()

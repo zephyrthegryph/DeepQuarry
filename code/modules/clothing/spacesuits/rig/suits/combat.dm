@@ -13,9 +13,7 @@
 
 	helm_type = /obj/item/clothing/head/helmet/space/rig/combat
 
-/obj/item/rig/combat/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/rig/combat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT))))
 
 /obj/item/rig/combat/equipped
 
@@ -50,34 +48,24 @@
 	boot_type = /obj/item/clothing/shoes/magboots/rig/military
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/military
 
-/obj/item/rig/military/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_CE, POCKET_SECURITY, POCKET_MEDICAL, POCKET_HEAVYTOOLS, POCKET_BAYSUIT)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/rig/military, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_CE, POCKET_SECURITY, POCKET_MEDICAL, POCKET_HEAVYTOOLS, POCKET_BAYSUIT))))
 
 /obj/item/clothing/head/helmet/space/rig/military
 	light_overlay = "helmet_light_dual_green"
 
-/obj/item/clothing/head/helmet/space/rig/military/fit_constraint()
-	var/list/bodytypes = list(SPECIES_HUMAN,SPECIES_PROMETHEAN)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/head/helmet/space/rig/military, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN,SPECIES_PROMETHEAN))))
 
 /obj/item/clothing/suit/space/rig/military
 
-/obj/item/clothing/suit/space/rig/military/fit_constraint()
-	var/list/bodytypes = list(SPECIES_HUMAN,SPECIES_PROMETHEAN)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/suit/space/rig/military, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN,SPECIES_PROMETHEAN))))
 
 /obj/item/clothing/shoes/magboots/rig/military
 
-/obj/item/clothing/shoes/magboots/rig/military/fit_constraint()
-	var/list/bodytypes = list(SPECIES_HUMAN,SPECIES_PROMETHEAN)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig/military, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN,SPECIES_PROMETHEAN))))
 
 /obj/item/clothing/gloves/gauntlets/rig/military
 
-/obj/item/clothing/gloves/gauntlets/rig/military/fit_constraint()
-	var/list/bodytypes = list(SPECIES_HUMAN,SPECIES_PROMETHEAN)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/gloves/gauntlets/rig/military, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN,SPECIES_PROMETHEAN))))
 
 /obj/item/rig/military/equipped
 	initial_modules = list(

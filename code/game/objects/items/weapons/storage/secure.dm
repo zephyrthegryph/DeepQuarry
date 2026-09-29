@@ -27,8 +27,7 @@
 	use_sound = 'sound/items/storage/briefcase.ogg'
 	special_handling = TRUE
 
-/obj/item/storage/secure/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/secure, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/secure/examine(mob/user)
 	. = ..()
@@ -190,8 +189,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/secure, \
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_NORMAL * 4
 
-/obj/item/storage/secure/briefcase/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/secure/briefcase, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 EXTEND_INTERACTIONS(/obj/item/storage/secure/briefcase, INTERACT_HAND_UNGATED("Open", PROC_REF(interaction_briefcase_hand)))
 
@@ -229,9 +227,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/secure/briefcase, INTERACT_HAND_UNGATED("O
 		/obj/item/pen
 	)
 
-/obj/item/storage/secure/safe/hold_constraint()
-	var/list/refuses = list(/obj/item/storage/secure/briefcase)
-	return list(HOLD_NOT(refuses), HOLD_MAX_SIZE(ITEMSIZE_LARGE))
+TYPE_TABLE(/obj/item/storage/secure/safe, hold_spec, list(HOLD_NOT(list(/obj/item/storage/secure/briefcase)), HOLD_MAX_SIZE(ITEMSIZE_LARGE)))
 
 EXTEND_INTERACTIONS(/obj/item/storage/secure/safe, INTERACT_HAND_UNGATED("Keypad", TYPE_PROC_REF(/atom, interaction_open_ui)))
 

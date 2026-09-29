@@ -726,7 +726,7 @@ fi;
 part "legacy equip restriction vars"
 # can_hold / cant_hold / species_restricted were replaced by the property
 # registry: predicates (code/datums/properties/predicates.dm) and constraints
-# (code/datums/properties/constraints.dm, fit_constraint()). Declare a
+# (code/datums/properties/constraints.dm, the fit_spec table). Declare a
 # constraint instead of reintroducing the old lists.
 if $grep -n '\b(can_hold|cant_hold|species_restricted)\b' "${code_files[@]}" \
 	| $grep -v ':\s*//|:\s*\*'; then

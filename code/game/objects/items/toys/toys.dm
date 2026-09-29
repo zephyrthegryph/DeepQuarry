@@ -2167,9 +2167,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/AI, INTERACT_USE(null, PROC_REF(interaction_s
  * Toy nuke
  */
 
-/obj/item/storage/box/handcuffs/fake/hold_constraint()
-	var/list/holds = list(/obj/item/handcuffs/fake, /obj/item/handcuffs/legcuffs/fake)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/handcuffs/fake, hold_spec, list(HOLD_ONLY(list(/obj/item/handcuffs/fake, /obj/item/handcuffs/legcuffs/fake)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 /obj/item/toy/nuke
 	name = "\improper Nuclear Fission Explosive toy"
 	desc = "A plastic model of a Nuclear Fission Explosive."
@@ -2580,9 +2578,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/snake_popper, \
  * Action figures
  */
 
-/obj/item/storage/box/timecap/hold_constraint()
-	var/list/holds = list(/obj/item/toy/figure)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_TINY))
+TYPE_TABLE(/obj/item/storage/box/timecap, hold_spec, list(HOLD_ONLY(list(/obj/item/toy/figure)), HOLD_MAX_SIZE(ITEMSIZE_TINY)))
 /obj/item/toy/figure/ranger
 	name = "Space Ranger action figure"
 	desc = "A \"Space Life\" brand Space Ranger action figure."

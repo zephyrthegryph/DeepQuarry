@@ -570,8 +570,7 @@ DECLARE_REF(/obj/item/robotic_multibelt/materials, "cyborg_integrated_tools", OW
 /obj/item/storage/internal/gripper
 	max_storage_space = ITEMSIZE_COST_HUGE
 
-/obj/item/storage/internal/gripper/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_HUGE))
+TYPE_TABLE(/obj/item/storage/internal/gripper, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_HUGE)))
 
 /obj/item/gripper/Initialize(mapload)
 	. = ..()
@@ -756,58 +755,40 @@ EXTEND_INTERACTIONS(/obj/item/gripper, INTERACT_VERB("Drop Item", PROC_REF(gripp
 // What each gripper can pick up: its hold constraint (P3), checked through
 // dq_constraint_refusal() like any other holder.
 
-/obj/item/gripper/hold_constraint()
-	return list(HOLD_ONLY(list(BASIC_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper, hold_spec, list(HOLD_ONLY(list(BASIC_GRIPPER))))
 
-/obj/item/gripper/engineering/hold_constraint()
-	return list(HOLD_ONLY(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/engineering, hold_spec, list(HOLD_ONLY(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER))))
 
-/obj/item/gripper/drone/hold_constraint()
-	return list(HOLD_ONLY(list(BASIC_GRIPPER, SHEET_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/drone, hold_spec, list(HOLD_ONLY(list(BASIC_GRIPPER, SHEET_GRIPPER))))
 
-/obj/item/gripper/omni/hold_constraint()
-	return list(HOLD_ONLY(list(OMNI_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/omni, hold_spec, list(HOLD_ONLY(list(OMNI_GRIPPER))))
 
-/obj/item/gripper/miner/hold_constraint()
-	return list(HOLD_ONLY(list(MINER_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/miner, hold_spec, list(HOLD_ONLY(list(MINER_GRIPPER))))
 
-/obj/item/gripper/security/hold_constraint()
-	return list(HOLD_ONLY(list(SECURITY_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/security, hold_spec, list(HOLD_ONLY(list(SECURITY_GRIPPER))))
 
-/obj/item/gripper/paperwork/hold_constraint()
-	return list(HOLD_ONLY(list(PAPERWORK_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/paperwork, hold_spec, list(HOLD_ONLY(list(PAPERWORK_GRIPPER))))
 
-/obj/item/gripper/medical/hold_constraint()
-	return list(HOLD_ONLY(list(BASIC_GRIPPER, ORGAN_GRIPPER, MEDICAL_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/medical, hold_spec, list(HOLD_ONLY(list(BASIC_GRIPPER, ORGAN_GRIPPER, MEDICAL_GRIPPER))))
 
-/obj/item/gripper/research/hold_constraint()
-	return list(HOLD_ONLY(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER, EXOSUIT_GRIPPER, ROBOTICS_ORGAN_GRIPPER, RESEARCH_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/research, hold_spec, list(HOLD_ONLY(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER, EXOSUIT_GRIPPER, ROBOTICS_ORGAN_GRIPPER, RESEARCH_GRIPPER))))
 
-/obj/item/gripper/circuit/hold_constraint()
-	return list(HOLD_ONLY(list(CIRCUIT_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/circuit, hold_spec, list(HOLD_ONLY(list(CIRCUIT_GRIPPER))))
 
-/obj/item/gripper/service/hold_constraint()
-	return list(HOLD_ONLY(list(SERVICE_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/service, hold_spec, list(HOLD_ONLY(list(SERVICE_GRIPPER))))
 
-/obj/item/gripper/gravekeeper/hold_constraint()
-	return list(HOLD_ONLY(list(GRAVEYARD_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/gravekeeper, hold_spec, list(HOLD_ONLY(list(GRAVEYARD_GRIPPER))))
 
-/obj/item/gripper/scene/hold_constraint()
-	return list(HOLD_ONLY(list(SCENE_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/scene, hold_spec, list(HOLD_ONLY(list(SCENE_GRIPPER))))
 
-/obj/item/gripper/no_use/organ/hold_constraint()
-	return list(HOLD_ONLY(list(ORGAN_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/no_use/organ, hold_spec, list(HOLD_ONLY(list(ORGAN_GRIPPER))))
 
-/obj/item/gripper/no_use/organ/robotics/hold_constraint()
-	return list(HOLD_ONLY(list(ROBOTICS_ORGAN_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/no_use/organ/robotics, hold_spec, list(HOLD_ONLY(list(ROBOTICS_ORGAN_GRIPPER))))
 
-/obj/item/gripper/no_use/mech/hold_constraint()
-	return list(HOLD_ONLY(list(EXOSUIT_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/no_use/mech, hold_spec, list(HOLD_ONLY(list(EXOSUIT_GRIPPER))))
 
-/obj/item/gripper/no_use/loader/hold_constraint()
-	return list(HOLD_ONLY(list(SHEET_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/no_use/loader, hold_spec, list(HOLD_ONLY(list(SHEET_GRIPPER))))
 
-/obj/item/gripper/syndicate/hold_constraint()
-	return list(HOLD_ONLY(list(BASIC_GRIPPER, SECURITY_GRIPPER, MINER_GRIPPER, PAPERWORK_GRIPPER, MEDICAL_GRIPPER, RESEARCH_GRIPPER, CIRCUIT_GRIPPER, SERVICE_GRIPPER, GRAVEYARD_GRIPPER, ORGAN_GRIPPER, ROBOTICS_ORGAN_GRIPPER, EXOSUIT_GRIPPER, SHEET_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/syndicate, hold_spec, list(HOLD_ONLY(list(BASIC_GRIPPER, SECURITY_GRIPPER, MINER_GRIPPER, PAPERWORK_GRIPPER, MEDICAL_GRIPPER, RESEARCH_GRIPPER, CIRCUIT_GRIPPER, SERVICE_GRIPPER, GRAVEYARD_GRIPPER, ORGAN_GRIPPER, ROBOTICS_ORGAN_GRIPPER, EXOSUIT_GRIPPER, SHEET_GRIPPER))))
 
 DECLARE_REF(/obj/item/reagent_containers/glass/bucket/cyborg, "R", HELD, null)

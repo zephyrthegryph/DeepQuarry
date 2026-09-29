@@ -37,8 +37,7 @@
 
 // BubbleWrap - A box can be folded up to make card
 
-/obj/item/storage/box/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 EXTEND_INTERACTIONS(/obj/item/storage/box, \
 	INTERACT_USE_AS(I_HELP, "Fold", PROC_REF(interaction_fold)), \
 	INTERACT_USE_AS(I_DISARM, "Fold", PROC_REF(interaction_fold)), \
@@ -330,9 +329,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/box, \
 	icon_state = "monkeycubebox"
 	starts_with = list(/obj/item/reagent_containers/food/snacks/monkeycube/wrapped = 4)
 
-/obj/item/storage/box/monkeycubes/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/food/snacks/monkeycube)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/monkeycubes, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/monkeycube)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/box/monkeycubes/farwacubes
 	name = "farwa cube box"
@@ -437,9 +434,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/box, \
 	icon_state = "spbox"
 	starts_with = list(/obj/item/toy/snappop = 8)
 
-/obj/item/storage/box/snappops/hold_constraint()
-	var/list/holds = list(/obj/item/toy/snappop)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/snappops, hold_spec, list(HOLD_ONLY(list(/obj/item/toy/snappop)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/box/matches
 	name = "matchbox"
@@ -452,9 +447,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/box, \
 	drop_sound = 'sound/items/drop/matchbox.ogg'
 	pickup_sound =  'sound/items/pickup/matchbox.ogg'
 
-/obj/item/storage/box/matches/hold_constraint()
-	var/list/holds = list(/obj/item/flame/match)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/matches, hold_spec, list(HOLD_ONLY(list(/obj/item/flame/match)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 EXTEND_INTERACTIONS(/obj/item/storage/box/matches, INTERACT_ITEM("Strike", PROC_REF(interaction_strike)))
 
@@ -485,9 +478,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/box/matches, INTERACT_ITEM("Strike", PROC_
 	max_storage_space = ITEMSIZE_COST_SMALL * 24 //holds 24 items of w_class 2
 	use_to_pickup = TRUE // for picking up broken bulbs, not that most people will try
 
-/obj/item/storage/box/lights/hold_constraint()
-	var/list/holds = list(/obj/item/light/tube, /obj/item/light/bulb)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/lights, hold_spec, list(HOLD_ONLY(list(/obj/item/light/tube, /obj/item/light/bulb)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/box/lights/bulbs
 	starts_with = list(
@@ -523,9 +514,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/box/matches, INTERACT_ITEM("Strike", PROC_
 	max_storage_space = ITEMSIZE_COST_NORMAL * 5 // Formally 21.  Odd numbers are bad.
 	use_to_pickup = TRUE // for picking up broken bulbs, not that most people will try
 
-/obj/item/storage/box/freezer/hold_constraint()
-	var/list/holds = list(/obj/item/organ, /obj/item/reagent_containers/blood, /obj/item/reagent_containers/glass, /obj/item/reagent_containers/food)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/box/freezer, hold_spec, list(HOLD_ONLY(list(/obj/item/organ, /obj/item/reagent_containers/blood, /obj/item/reagent_containers/glass, /obj/item/reagent_containers/food)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/box/freezer/red
 	icon_state = "portafreezer_red"
@@ -570,9 +559,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/box/matches, INTERACT_ITEM("Strike", PROC_
 
 //Donk-pockets
 
-/obj/item/storage/box/capguntoy/hold_constraint()
-	var/list/holds = list(/obj/item/gun/projectile/revolver/capgun, /obj/item/ammo_magazine/ammo_box/cap)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/box/capguntoy, hold_spec, list(HOLD_ONLY(list(/obj/item/gun/projectile/revolver/capgun, /obj/item/ammo_magazine/ammo_box/cap)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/box/donkpockets
 	name = "box of donk-pockets"
 	desc = span_bold("Instructions:") + " " + span_italics("Heat in microwave. Product will cool if not eaten within seven minutes.")
@@ -650,9 +637,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/box/matches, INTERACT_ITEM("Strike", PROC_
 	max_storage_space = ITEMSIZE_COST_NORMAL * 6
 	starts_with = list(/obj/item/reagent_containers/food/snacks/canned/brainzsnax = 6)
 
-/obj/item/storage/box/brainzsnax/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/food/snacks/canned)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/brainzsnax, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/canned)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/box/brainzsnax/red
 	starts_with = list(/obj/item/reagent_containers/food/snacks/canned/brainzsnax/red = 6)

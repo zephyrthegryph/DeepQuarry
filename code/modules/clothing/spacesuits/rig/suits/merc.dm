@@ -28,9 +28,7 @@
 
 //Has most of the modules removed
 
-/obj/item/rig/merc/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY, POCKET_BAYSUIT)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/rig/merc, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY, POCKET_BAYSUIT))))
 /obj/item/rig/merc/empty
 	initial_modules = list(
 		/obj/item/rig_module/ai_container,

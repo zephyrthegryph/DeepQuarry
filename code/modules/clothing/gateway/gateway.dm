@@ -23,9 +23,7 @@
 	max_pressure_protection = 3 * ONE_ATMOSPHERE
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
 
-/obj/item/clothing/suit/vrwizard/suit_storage_constraint()
-	var/list/stores = list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword,/obj/item/handcuffs)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/vrwizard, suit_storage_spec, list(HOLD_ONLY(list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword,/obj/item/handcuffs))))
 
 /obj/item/clothing/head/darkvrwizard
 	name = "wizard hat"
@@ -54,9 +52,7 @@
 
 //Candy section
 
-/obj/item/clothing/suit/darkvrwizard/suit_storage_constraint()
-	var/list/stores = list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/darkvrwizard, suit_storage_spec, list(HOLD_ONLY(list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword))))
 /obj/item/clothing/head/psy_crown/candycrown/get_mechanics_info(list/additional_information)
 	return ..(list("It will occasionally give a momentary buff to offensive capabilities.") + additional_information)
 

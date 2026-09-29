@@ -187,9 +187,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(gla
 	name = "Alien Optics"
 	flags = PHORONGUARD
 
-/obj/item/clothing/glasses/night/vox/fit_constraint()
-	var/list/bodytypes = list("Vox")
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/glasses/night/vox, fit_spec, list(REQ_FITS_BODYTYPES(list("Vox"))))
 
 /obj/item/clothing/glasses/night/Initialize(mapload)
 	. = ..()
@@ -630,9 +628,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/aviator, INTERA
 	body_parts_covered = EYES
 	specialty_goggles = TRUE
 
-/obj/item/clothing/glasses/aerogelgoggles/fit_constraint()
-	var/list/bodytypes = list(SPECIES_TESHARI)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/glasses/aerogelgoggles, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
 EXTEND_INTERACTIONS(/obj/item/clothing/glasses/aerogelgoggles, \
 	INTERACT_USE("Flip", PROC_REF(aerogel_goggles_flip_self)), \

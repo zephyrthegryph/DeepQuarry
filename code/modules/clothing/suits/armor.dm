@@ -10,13 +10,10 @@
 	siemens_coefficient = 0.6
 	resistance_flags = FIRE_PROOF
 
-/obj/item/clothing/suit/armor/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/armor, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
 
 /// Suits can't go on over gloves or shoes that cover the same limbs.
-/obj/item/clothing/suit/equip_constraint()
-	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/proc/limb_clearance, null)))
+TYPE_TABLE(/obj/item/clothing/suit, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/proc/limb_clearance, null))))
 
 /obj/item/clothing/suit/proc/limb_clearance(mob/living/carbon/human/H)
 	if(!istype(H))
@@ -146,9 +143,7 @@
 	max_pressure_protection = 20* ONE_ATMOSPHERE
 	siemens_coefficient = 0.6
 
-/obj/item/clothing/suit/armor/swat/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/armor/swat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
 
 /obj/item/clothing/suit/armor/swat/officer
 	name = "officer jacket"
@@ -253,9 +248,7 @@
 	max_heat_protection_temperature = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE
 	siemens_coefficient = 0.6
 
-/obj/item/clothing/suit/storage/vest/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/vest, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
 
 /obj/item/clothing/suit/storage/vest/officer
 	name = "officer armor vest"
@@ -371,9 +364,7 @@
 	desc = "A simple kevlar plate carrier. This one has the word 'Press' embroidered on patches on the back and front."
 	item_state_slots = list(slot_r_hand_str = "armor", slot_l_hand_str = "armor")
 
-/obj/item/clothing/suit/storage/vest/press/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/camera,/obj/item/clothing/head/helmet)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/vest/press, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/camera,/obj/item/clothing/head/helmet))))
 
 /obj/item/clothing/suit/storage/vest/heavy
 	name = "heavy armor vest"
@@ -438,9 +429,7 @@
 	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
 	siemens_coefficient = 0
 
-/obj/item/clothing/suit/armor/centcomm/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/armor/centcomm, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
 
 /obj/item/clothing/suit/armor/heavy
 	name = "heavy armor"
@@ -499,8 +488,7 @@
 		|ACCESSORY_SLOT_ARMBAND) // let pcarriers have fashion
 	blood_overlay_type = "armor"
 
-/obj/item/clothing/suit/armor/pcarrier/equip_constraint()
-	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/armor/pcarrier/proc/plate_clearance, null)))
+TYPE_TABLE(/obj/item/clothing/suit/armor/pcarrier, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/armor/pcarrier/proc/plate_clearance, null))))
 
 /obj/item/clothing/suit/armor/pcarrier/proc/plate_clearance(mob/living/carbon/human/H)
 	if(!istype(H))
@@ -624,11 +612,9 @@
 	icon_state = "wolf_item"
 	item_state = "heavy_wolf_armor"
 
-/obj/item/clothing/suit/armor/vest/wolftaur/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur, fit_spec, null)
 
-/obj/item/clothing/suit/armor/vest/wolftaur/equip_constraint()
-	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/armor/vest/wolftaur/proc/taur_fit, "you need a wolf-taur half to wear this")))
+TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/armor/vest/wolftaur/proc/taur_fit, "you need a wolf-taur half to wear this"))))
 
 /obj/item/clothing/suit/armor/vest/wolftaur/proc/taur_fit(mob/living/carbon/human/H)
 	return istype(H) && istype(H.tail_style, /datum/sprite_accessory/tail/taur/wolf)
@@ -758,9 +744,7 @@
 	siemens_coefficient = 0.9
 	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35" // Inferior to sec vests in bullet/laser but better for environmental protection.
 
-/obj/item/clothing/suit/armor/combat/crusader_explo/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO, POCKET_ALL_TANKS, POCKET_MINING)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/armor/combat/crusader_explo, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO, POCKET_ALL_TANKS, POCKET_MINING))))
 
 /obj/item/clothing/suit/armor/combat/crusader_explo/FM
 	name = "field medic low tech suit"

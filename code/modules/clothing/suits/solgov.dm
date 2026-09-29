@@ -19,9 +19,7 @@
 	valid_accessory_slots = (ACCESSORY_SLOT_ARMBAND|ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_INSIGNIA|ACCESSORY_SLOT_RANK|ACCESSORY_SLOT_DEPT)
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
 
-/obj/item/clothing/suit/storage/solgov/service/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/clothing/head/beret)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/solgov/service, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/clothing/head/beret))))
 
 /obj/item/clothing/suit/storage/solgov/service/sifguard
 	name = "\improper NDF jacket"
@@ -192,9 +190,7 @@
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
 
-/obj/item/clothing/suit/storage/solgov/dress/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/solgov/dress, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret))))
 /obj/item/clothing/suit/storage/solgov/dress/sifguard/chief
 	name = "\improper NDF chief's dress coat"
 	icon_state = "ecdress_cxpl"
@@ -250,9 +246,7 @@
 	siemens_coefficient = 0.9
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
 
-/obj/item/clothing/suit/dress/solgov/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/dress/solgov, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret))))
 
 /obj/item/clothing/suit/dress/solgov/fleet/sailor
 	name = "fleet dress overwear"
@@ -362,9 +356,7 @@
 	siemens_coefficient = 0.9
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
 
-/obj/item/clothing/suit/dress/saare/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/dress/saare, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret))))
 
 /obj/item/clothing/suit/dress/terran/navy
 	name = "Ares dress cloak"

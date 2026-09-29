@@ -17,9 +17,7 @@
 
 //Green syndicate space suit
 
-/obj/item/clothing/suit/space/syndicate/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/syndicate, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
 /obj/item/clothing/head/helmet/space/syndicate/green
 	name = "green space helmet"
 	desc = "A green helmet sporting clean lines and durable plating. Engineered to look menacing."

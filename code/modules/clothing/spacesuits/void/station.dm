@@ -25,9 +25,7 @@
 
 //Engineering HAZMAT Voidsuit
 
-/obj/item/clothing/suit/space/void/engineering/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING, POCKET_ENGINEERING, POCKET_CE)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING, POCKET_ENGINEERING, POCKET_CE))))
 
 /obj/item/clothing/head/helmet/space/void/engineering/hazmat
 	name = "HAZMAT voidsuit helmet"
@@ -107,9 +105,7 @@
 
 //Mining
 
-/obj/item/clothing/suit/space/void/engineering/salvage/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_ENGINEERING, POCKET_CE)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/salvage, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_ENGINEERING, POCKET_CE))))
 /obj/item/clothing/head/helmet/space/void/mining
 	name = "mining voidsuit helmet"
 	desc = "A special helmet designed for work in a hazardous, low pressure environment. Has reinforced plating."
@@ -131,9 +127,7 @@
 
 //Mining Surplus Voidsuit
 
-/obj/item/clothing/suit/space/void/mining/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/void/mining, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING))))
 
 /obj/item/clothing/head/helmet/space/void/mining/alt
 	name = "frontier mining voidsuit helmet"
@@ -164,9 +158,7 @@
 
 //Medical EMT Voidsuit
 
-/obj/item/clothing/suit/space/void/medical/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MEDICAL)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/void/medical, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MEDICAL))))
 
 /obj/item/clothing/head/helmet/space/void/medical/emt
 	name = "emergency medical response voidsuit helmet"
@@ -216,9 +208,7 @@
 	light_overlay = "helmet_light_dual_blue"
 	no_cycle = TRUE
 
-/obj/item/clothing/head/helmet/space/void/medical/veymed/fit_constraint()
-	var/list/bodytypes = list("exclude",SPECIES_DIONA,SPECIES_VOX)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/medical/veymed, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX))))
 
 /obj/item/clothing/suit/space/void/medical/veymed
 	name = "lightweight medical voidsuit"
@@ -228,9 +218,7 @@
 	armor_spec = "melee=20;bullet=5;laser=20;energy=5;bomb=15;bio=100;rad=30;cold=60"
 	no_cycle = TRUE
 
-/obj/item/clothing/suit/space/void/medical/veymed/fit_constraint()
-	var/list/bodytypes = list("exclude",SPECIES_DIONA,SPECIES_VOX)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/suit/space/void/medical/veymed, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX))))
 
 /obj/item/clothing/head/helmet/space/void/medical/veymed_static
 	name = "nonadaptive lightweight medical voidsuit helmet"
@@ -270,9 +258,7 @@
 
 //Security Crowd Control Voidsuit
 
-/obj/item/clothing/suit/space/void/security/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_EXPLO)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/void/security, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_EXPLO))))
 
 /obj/item/clothing/head/helmet/space/void/security/riot
 	name = "crowd control voidsuit helmet"
@@ -369,9 +355,7 @@
 
 //SAR
 
-/obj/item/clothing/suit/space/void/exploration/suit_storage_constraint()
-	var/list/stores = list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_MEDICAL, POCKET_EXPLO)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/void/exploration, suit_storage_spec, list(HOLD_ONLY(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_MEDICAL, POCKET_EXPLO))))
 /obj/item/clothing/head/helmet/space/void/expedition_medical
 	name = "field medic voidsuit helmet"
 	desc = "A radiation-resistant helmet made especially for exploring unknown planetary environments. Has a reinforced high-vis bubble style visor."
@@ -392,9 +376,7 @@
 	resilience = 0.15 //Armored
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+5000
 
-/obj/item/clothing/suit/space/void/expedition_medical/suit_storage_constraint()
-	var/list/stores = list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_MEDICAL, POCKET_EXPLO)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/void/expedition_medical, suit_storage_spec, list(HOLD_ONLY(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_MEDICAL, POCKET_EXPLO))))
 
 /obj/item/clothing/head/helmet/space/void/exploration/alt
 	desc = "A radiation-resistant helmet retrofitted for exploring unknown planetary environments."
@@ -425,9 +407,7 @@
 	name = "pilot voidsuit"
 	armor_spec = "melee=40;bullet=10;laser=25;energy=15;bomb=25;bio=100;rad=60;cold=60"
 
-/obj/item/clothing/suit/space/void/pilot/suit_storage_constraint()
-	var/list/stores = list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, /obj/item/storage/toolbox, /obj/item/storage/briefcase/inflatable)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/void/pilot, suit_storage_spec, list(HOLD_ONLY(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, /obj/item/storage/toolbox, /obj/item/storage/briefcase/inflatable))))
 
 /obj/item/clothing/head/helmet/space/void/pilot/alt
 	icon_state = "rig0_pilot2"

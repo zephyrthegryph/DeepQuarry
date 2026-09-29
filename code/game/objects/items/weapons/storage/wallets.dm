@@ -14,43 +14,41 @@
 
 	var/original_name // Due to loadout customizations and such
 
-/obj/item/storage/wallet/hold_constraint()
-	var/list/holds = list(
-		/obj/item/spacecash,
-		/obj/item/card,
-		/obj/item/clothing/mask/smokable/cigarette/,
-		/obj/item/flashlight/pen,
-		/obj/item/rectape,
-		/obj/item/cartridge,
-		/obj/item/encryptionkey,
-		/obj/item/seeds,
-		/obj/item/stack/medical,
-		/obj/item/coin,
-		/obj/item/dice,
-		/obj/item/disk,
-		/obj/item/implanter,
-		/obj/item/flame/lighter,
-		/obj/item/flame/match,
-		/obj/item/forensics,
-		/obj/item/glass_extra,
-		/obj/item/haircomb,
-		/obj/item/hand,
-		/obj/item/key,
-		/obj/item/lipstick,
-		/obj/item/paper,
-		/obj/item/pen,
-		/obj/item/photo,
-		/obj/item/reagent_containers/dropper,
-		/obj/item/sample,
-		/obj/item/tool/screwdriver,
-		/obj/item/stamp,
-		/obj/item/clothing/accessory/permit,
-		/obj/item/clothing/accessory/badge,
-		/obj/item/makeover,
-		/obj/item/pizzavoucher,
-		/obj/item/card_fluff
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/wallet, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/spacecash, \
+		/obj/item/card, \
+		/obj/item/clothing/mask/smokable/cigarette/, \
+		/obj/item/flashlight/pen, \
+		/obj/item/rectape, \
+		/obj/item/cartridge, \
+		/obj/item/encryptionkey, \
+		/obj/item/seeds, \
+		/obj/item/stack/medical, \
+		/obj/item/coin, \
+		/obj/item/dice, \
+		/obj/item/disk, \
+		/obj/item/implanter, \
+		/obj/item/flame/lighter, \
+		/obj/item/flame/match, \
+		/obj/item/forensics, \
+		/obj/item/glass_extra, \
+		/obj/item/haircomb, \
+		/obj/item/hand, \
+		/obj/item/key, \
+		/obj/item/lipstick, \
+		/obj/item/paper, \
+		/obj/item/pen, \
+		/obj/item/photo, \
+		/obj/item/reagent_containers/dropper, \
+		/obj/item/sample, \
+		/obj/item/tool/screwdriver, \
+		/obj/item/stamp, \
+		/obj/item/clothing/accessory/permit, \
+		/obj/item/clothing/accessory/badge, \
+		/obj/item/makeover, \
+		/obj/item/pizzavoucher, \
+		/obj/item/card_fluff \
+		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/wallet/remove_from_storage(obj/item/W, atom/new_location, mob/user)
 	. = ..()

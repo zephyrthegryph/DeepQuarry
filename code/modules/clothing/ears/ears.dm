@@ -52,9 +52,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears/earmuffs/headphones, \
 	slot_flags = SLOT_EARS
 	resistance_flags = FIRE_PROOF
 
-/obj/item/clothing/ears/skrell/fit_constraint()
-	var/list/bodytypes = list(SPECIES_SKRELL)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/ears/skrell, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_SKRELL))))
 
 /obj/item/clothing/ears/skrell/chain
 	name = "Gold headtail chains"
