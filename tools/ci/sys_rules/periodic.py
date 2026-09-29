@@ -10,7 +10,7 @@ state". Each is replaced by DECLARE_PERIODIC_WHILE / DECLARE_PERIODIC_WHILE_ALL 
                    `||` / `&&`. The body stops itself when a field goes false; the declaration
                    stops it instead.
 `om_after_rearm`   A self-re-arming timer loop: `om_after(src, ..., PROC_REF(p))` (or
-                   om_after_slot) inside `p` whose extra arguments are only constants or `p`'s own
+                   after_slot) inside `p` whose extra arguments are only constants or `p`'s own
                    parameters passed on unchanged. A re-arm that passes a per-step progression
                    (a counter `i + 1`, `left - 1`, `++n`, a local computed this step) is a
                    finite sequence, not a loop over state, and is not this pattern.

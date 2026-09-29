@@ -9,13 +9,20 @@
 
 /// Takes the entry out of a one-entry wrapper built by cap_hand()/cap_tool()/cap_use_on()/cap_insert(),
 /// makes src its capability and, with `id`, gives it a stable id (the predicate cache key: it must
-/// differ wherever the tool or held type differs).
-/datum/capability/proc/adopt_entry(datum/capability/entry/wrapper, id)
+/// differ wherever the tool or held type differs). category: overrides the constructor's;
+/// empty_handed: offered only to an empty hand; pass_cap: the handler also gets this capability as
+/// the named arg `cap` (review 2 M15: a handler never looks its capability up after a sleep).
+/datum/capability/proc/adopt_entry(datum/capability/entry/wrapper, id, category, empty_handed = FALSE, pass_cap = FALSE)
 	var/datum/interaction/capability/E = wrapper.entry
 	E.cap = src
 	wrapper.entry = null
 	if(id)
 		E.id = id
+	if(category)
+		E.category = category
+	if(empty_handed)
+		E.offered_when = list(REQ_EMPTY_HANDED)
+	E.passes_cap = pass_cap
 	return E
 
 /// Draws this capability's layer while `when` holds, unless it draws nothing (CAP_NO_LAYER).

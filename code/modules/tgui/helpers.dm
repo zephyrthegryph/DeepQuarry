@@ -9,7 +9,7 @@ OWN_TIMER(/datum/tgui_say, packet_timeout)
 			return null
 
 		partial_packets = list("chunks" = new /list(total))
-		om_after_slot(src, "packet_timeout", 10 SECONDS, PROC_REF(clear_oversized_payload))
+		after_slot(src, "packet_timeout", 10 SECONDS, PROC_REF(clear_oversized_payload))
 
 	if(!partial_packets)
 		return null
@@ -18,7 +18,7 @@ OWN_TIMER(/datum/tgui_say, packet_timeout)
 
 	if(id != total)
 		if(id > 1)
-			om_after_slot(src, "packet_timeout", 10 SECONDS, PROC_REF(clear_oversized_payload))
+			after_slot(src, "packet_timeout", 10 SECONDS, PROC_REF(clear_oversized_payload))
 		return null
 
 	var/assembled_payload = ""

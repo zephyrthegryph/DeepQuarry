@@ -160,7 +160,7 @@ OWN_TIMER(/obj/machinery/status_display, refresh_token)
 	refresh_at = at
 	if(at)
 		om_attach(src, /datum/om/behaviour/sleeper/status_display) // for the audit
-		om_after_slot(src, "refresh_token", delay, PROC_REF(refresh_timer_fired))
+		after_slot(src, "refresh_token", delay, PROC_REF(refresh_timer_fired))
 
 /obj/machinery/status_display/proc/refresh_timer_fired()
 	refresh_at = 0

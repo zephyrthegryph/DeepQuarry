@@ -15,7 +15,7 @@ OWN_TIMER(/datum/stockMarket, process_timer)
 /datum/stockMarket/proc/schedule_process()
 	if(QDELETED(src) || om_timer_slot_pending(src, "process_timer"))
 		return
-	om_after_slot(src, "process_timer", 10 SECONDS, PROC_REF(market_tick))
+	after_slot(src, "process_timer", 10 SECONDS, PROC_REF(market_tick))
 
 /datum/stockMarket/proc/balanceLog(whose, net)
 	if (!(whose in balances))

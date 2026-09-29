@@ -65,7 +65,7 @@ OWN_TIMER(/datum/pipeline, engineered_exposure_timer)
 		if(!member.check_pressure(pressure))
 			break
 	if(needs_followup && !om_timer_slot_pending(src, "engineered_exposure_timer"))
-		om_after_slot(src, "engineered_exposure_timer", 5 SECONDS, PROC_REF(wake_engineered_exposure))
+		after_slot(src, "engineered_exposure_timer", 5 SECONDS, PROC_REF(wake_engineered_exposure))
 
 /datum/pipeline/proc/wake_engineered_exposure()
 	network?.mark_dirty()

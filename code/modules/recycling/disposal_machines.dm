@@ -693,7 +693,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 			// A station-wide restoration otherwise wakes every empty bin in the
 			// same tick, their combined pump surge drops the grid, and all of them
 			// go back to sleep without charging. Spread retries across the cycle.
-			om_after_slot(src, "power_retry_timer", rand(1 SECOND, 30 SECONDS), PROC_REF(retry_charge_after_power_restore))
+			after_slot(src, "power_retry_timer", rand(1 SECOND, 30 SECONDS), PROC_REF(retry_charge_after_power_restore))
 
 /obj/machinery/disposal/proc/retry_charge_after_power_restore()
 	if(mode == DISPOSALMODE_CHARGING && operable() && can_pressurize_from(loc.return_air()))
