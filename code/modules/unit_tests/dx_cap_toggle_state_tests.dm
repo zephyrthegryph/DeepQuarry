@@ -52,8 +52,7 @@
 	TEST_ASSERT_EQUAL(F.icon_state, "fixture_t", "drawn at once (the worn sprite reads it)")
 	TEST_ASSERT_EQUAL(GLOB.dispatch_last_record["log"], LOG_GAME, "the declared log level")
 	TEST_ASSERT("Its hood is up." in F.caps_examine(H), "examine on")
-	var/list/data = list()
-	F.caps_ui_data(H, data)
+	var/list/data = dx_cap_ui_data(F, H, /datum/capability/toggle_state)
 	TEST_ASSERT(data["hood"], "UI data")
 
 	// apply() refuses: the state stays.
