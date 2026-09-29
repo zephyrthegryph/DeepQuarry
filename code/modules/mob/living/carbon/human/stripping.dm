@@ -7,7 +7,7 @@
 		return
 	hide_underwear[UWC.name] = !hide_underwear[UWC.name]
 	update_underwear(1)
-	visible_message(span_danger("\The [user] [hide_underwear[UWC.name] ? "takes off" : "puts on"] \the [src]'s [UWC.display_name]."))
+	act_message(user, src, others = span_danger("%U% [hide_underwear[UWC.name] ? "takes off" : "puts on"] %T%'s [UWC.display_name]."))
 
 /mob/living/carbon/human/proc/handle_strip(slot_to_strip,mob/living/user)
 
@@ -24,19 +24,19 @@
 	switch(slot_to_strip)
 		// Handle things that are part of this interface but not removing/replacing a given item.
 		if("pockets")
-			visible_message(span_danger("\The [user] is trying to empty \the [src]'s pockets!"))
+			act_message(user, src, others = span_danger("%U% is trying to empty %T%'s pockets!"))
 			om_task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done), done_args = list(user))
 			return
 		if("splints")
-			visible_message(span_danger("\The [user] is trying to remove \the [src]'s splints!"))
+			act_message(user, src, others = span_danger("%U% is trying to remove %T%'s splints!"))
 			om_task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done2), done_args = list(user))
 			return
 		if("sensors")
-			visible_message(span_danger("\The [user] is trying to set \the [src]'s sensors!"))
+			act_message(user, src, others = span_danger("%U% is trying to set %T%'s sensors!"))
 			om_task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done3), done_args = list(user))
 			return
 		if("internals")
-			visible_message(span_danger("\The [user] is trying to set \the [src]'s internals!"))
+			act_message(user, src, others = span_danger("%U% is trying to set %T%'s internals!"))
 			om_task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done4), done_args = list(user))
 			return
 		if("tie")
@@ -46,7 +46,7 @@
 			var/obj/item/clothing/accessory/A = suit.accessories[1]
 			if(!istype(A))
 				return
-			visible_message(span_danger("\The [user] is trying to remove \the [src]'s [A.name]!"))
+			act_message(user, src, others = span_danger("%U% is trying to remove %T%'s [A.name]!"))
 
 			om_task_start(/datum/om/task/timed/human_handle_strip_human, user, src, receiver = src, duration = HUMAN_STRIP_DELAY, suit = suit, A = A)
 			return
@@ -79,19 +79,19 @@
 		if(!target_slot.canremove || (target_slot.item_flags & NOSTRIP))
 			to_chat(user, span_warning("You cannot remove \the [src]'s [target_slot.name]."))
 			return
-		visible_message(span_danger("\The [user] is trying to remove \the [src]'s [target_slot.name]!"))
+		act_message(user, src, others = span_danger("%U% is trying to remove %T%'s [target_slot.name]!"))
 	else if(!istype(held, /obj/item/gripper))
 		if(slot_to_strip == SLOT_ID_MASK && istype(held, /obj/item/grenade))
-			visible_message(span_danger("\The [user] is trying to put \a [held] in \the [src]'s mouth!"))
+			act_message(user, src, others = span_danger("%U% is trying to put \a [held] in %T%'s mouth!"))
 		else
-			visible_message(span_danger("\The [user] is trying to put \a [held] on \the [src]!"))
+			act_message(user, src, others = span_danger("%U% is trying to put \a [held] on %T%!"))
 	else
 		var/obj/item/gripper/G = held
 		var/obj/item/wrapped = G.get_wrapped_item()
 		if(slot_to_strip == SLOT_ID_MASK && istype(wrapped, /obj/item/grenade))
-			visible_message(span_danger("\The [user] is trying to put \a [wrapped] in \the [src]'s mouth!"))
+			act_message(user, src, others = span_danger("%U% is trying to put \a [wrapped] in %T%'s mouth!"))
 		else
-			visible_message(span_danger("\The [user] is trying to put \a [wrapped] on \the [src]!"))
+			act_message(user, src, others = span_danger("%U% is trying to put \a [wrapped] on %T%!"))
 
 	om_task_start(/datum/om/task/timed/human_handle_strip_human2, user, src, receiver = src, duration = HUMAN_STRIP_DELAY, slot_to_strip = slot_to_strip, target_slot = target_slot, stripping = stripping, held_arg = held, max_interact_count = 15)
 	return TRUE
@@ -118,7 +118,7 @@
 		return
 
 	if(istype(A, /obj/item/clothing/accessory/badge) || istype(A, /obj/item/clothing/accessory/medal))
-		user.visible_message(span_danger("\The [user] tears off \the [A] from [src]'s [suit.name]!"))
+		act_message(user, src, others = span_danger("%U% tears off %I% from %T%'s [suit.name]!"), item = A)
 	add_attack_logs(user,src,"Stripped [A.name] off [suit.name]")
 	A.on_removed(user)
 	suit.accessories -= A
@@ -171,7 +171,7 @@
 		unEquip(get_equipped_item(SLOT_ID_POCKET_R))
 	if(get_equipped_item(SLOT_ID_POCKET_L))
 		unEquip(get_equipped_item(SLOT_ID_POCKET_L))
-	visible_message(span_danger("\The [user] empties \the [src]'s pockets!"))
+	act_message(user, src, others = span_danger("%U% empties %T%'s pockets!"))
 
 // Modify the current target sensor level.
 /mob/living/carbon/human/proc/toggle_sensors(mob/living/user)
@@ -206,7 +206,7 @@
 						user.put_in_active_hand(S)
 						removed_splint = 1
 		if(removed_splint)
-			visible_message(span_danger("\The [user] removes \the [src]'s splints!"))
+			act_message(user, src, others = span_danger("%U% removes %T%'s splints!"))
 		else
 			to_chat(user, span_warning("\The [src] has no splints to remove."))
 
@@ -230,9 +230,9 @@
 			internal = get_equipped_item(SLOT_ID_BELT)
 
 	if(internal)
-		visible_message(span_warning("\The [src] is now running on internals!"))
+		act_message(src, null, others = span_warning("%U% is now running on internals!"))
 		internal.add_fingerprint(user)
 		if (internals)
 			internals.icon_state = "internal1"
 	else
-		visible_message(span_danger("\The [user] disables \the [src]'s internals!"))
+		act_message(user, src, others = span_danger("%U% disables %T%'s internals!"))

@@ -58,7 +58,7 @@
 	GLOB.wrapped_species_by_ref["\ref[src]"] = new_species
 	dna.base_species = new_species
 	species.base_species = new_species
-	visible_message(span_infoplain(span_bold("\The [src]") + " shifts and contorts, taking the form of \a [new_species]!"))
+	act_message(src, null, others = span_infoplain(span_bold("%U%") + " shifts and contorts, taking the form of \a [new_species]!"))
 	regenerate_icons()
 
 /mob/living/carbon/human/proc/lleill_select_colour()
@@ -167,7 +167,7 @@
 	var/obj/item/I = ask.item
 	var/energy_cost = ask.energy_cost
 	var/obj/item/transmute_product = ask.choices[ask.choice]
-	visible_message(span_infoplain(span_bold("\The [src]") + " begins to change the form of \the [I]."))
+	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to change the form of %I%."), item = I)
 	om_task_start(/datum/om/task/timed/human_lleill_transmute_human, src, I, energy_cost = energy_cost, transmute_product = transmute_product)
 
 /datum/om/task/timed/human_lleill_transmute_human
@@ -181,7 +181,7 @@
 	var/energy_cost = task.energy_cost
 	var/obj/item/I = task.target
 	var/obj/item/transmute_product = task.transmute_product
-	visible_message(span_infoplain(span_bold("\The [src]") + " transmutes \the [I] into \the [transmute_product.name]."))
+	act_message(src, null, others = span_infoplain(span_bold("%U%") + " transmutes %I% into \the [transmute_product.name]."), item = I)
 	consume(I, src)
 	var/spawnloc = get_turf(src)
 	var/obj/item/N = new transmute_product(spawnloc)
@@ -191,7 +191,7 @@
 
 /mob/living/carbon/human/proc/lleill_transmute_human_failed(datum/om/task/timed/human_lleill_transmute_human/task)
 	var/obj/item/I = task.target
-	visible_message(span_infoplain(span_bold("\The [src]") + " leaves \the [I] in its original form."))
+	act_message(src, null, others = span_infoplain(span_bold("%U%") + " leaves %I% in its original form."), item = I)
 	return 0
 
 /datum/power/lleill/rings
@@ -201,7 +201,7 @@
 	ability_icon_state = "lleill_ring"
 
 /mob/living/carbon/human/proc/lleill_ring_interrupted()
-	src.visible_message(span_infoplain(span_bold("\The [src]") + " begins to form white rings on the ground."))
+	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to form white rings on the ground."))
 
 /mob/living/carbon/human/proc/lleill_ring_placed(energy_cost_spawn)
 	if(species.lleill_energy < energy_cost_spawn)
@@ -383,31 +383,31 @@
 		to_chat(src, span_warning("You need to be standing next to [chosen_target]."))
 		return
 	if(contact_type == "Kiss (lips)")
-		src.visible_message(span_infoplain(span_bold("\The [src]") + " presses their lips up against [chosen_target]'s own."))
+		act_message(src, chosen_target, others = span_infoplain(span_bold("%U%") + " presses their lips up against %T%'s own."))
 	if(contact_type == "Kiss (neck)")
-		src.visible_message(span_infoplain(span_bold("\The [src]") + " presses their lips up against [chosen_target]'s neck."))
+		act_message(src, chosen_target, others = span_infoplain(span_bold("%U%") + " presses their lips up against %T%'s neck."))
 	if(contact_type == "Bite (neck)")
-		src.visible_message(span_infoplain(span_bold("\The [src]") + " bites down on [chosen_target]'s neck."))
+		act_message(src, chosen_target, others = span_infoplain(span_bold("%U%") + " bites down on %T%'s neck."))
 	if(contact_type == "Bite (wrist)")
-		src.visible_message(span_infoplain(span_bold("\The [src]") + " bites down on [chosen_target]'s wrist."))
+		act_message(src, chosen_target, others = span_infoplain(span_bold("%U%") + " bites down on %T%'s wrist."))
 	if(contact_type == "Hold Hand")
-		src.visible_message(span_infoplain(span_bold("\The [src]") + " takes [chosen_target]'s hand into their own."))
+		act_message(src, chosen_target, others = span_infoplain(span_bold("%U%") + " takes %T%'s hand into their own."))
 	if(contact_type == "Embrace")
-		src.visible_message(span_infoplain(span_bold("\The [src]") + " embraces [chosen_target]."))
+		act_message(src, chosen_target, others = span_infoplain(span_bold("%U%") + " embraces %T%."))
 	if(contact_type == "Stroke (hair)")
-		src.visible_message(span_infoplain(span_bold("\The [src]") + " runs their hand through [chosen_target]'s hair."))
+		act_message(src, chosen_target, others = span_infoplain(span_bold("%U%") + " runs their hand through %T%'s hair."))
 	if(contact_type == "Boop (nose)")
-		src.visible_message(span_infoplain(span_bold("\The [src]") + " boops [chosen_target] on the nose."))
+		act_message(src, chosen_target, others = span_infoplain(span_bold("%U%") + " boops %T% on the nose."))
 	if(contact_type == "Custom")
 		src.visible_message(span_infoplain("[custom_text]"))
 	om_task_timed(src, 10 SECONDS, target = chosen_target, receiver = src, on_done = PROC_REF(lleill_contact_done), done_args = list(chosen_target), on_fail = PROC_REF(lleill_contact_broken), fail_args = list(chosen_target))
 	species.update_lleill_hud(src)
 
 /mob/living/carbon/human/proc/lleill_contact_broken(mob/living/carbon/human/chosen_target)
-	src.visible_message(span_infoplain(span_bold("\The [src]") + " and \the [chosen_target] break contact before energy has been transferred."))
+	act_message(src, chosen_target, others = span_infoplain(span_bold("%U%") + " and %T% break contact before energy has been transferred."))
 
 /mob/living/carbon/human/proc/lleill_contact_done(mob/living/carbon/human/chosen_target)
-	src.visible_message(span_infoplain(span_bold("\The [src]") + " and \the [chosen_target] complete their contact."))
+	act_message(src, chosen_target, others = span_infoplain(span_bold("%U%") + " and %T% complete their contact."))
 	species.lleill_energy = species.lleill_energy_max
 	adjust_nutrition((chosen_target.nutrition / 2))
 	to_chat(src, span_warning("You feel revitalised."))
@@ -454,13 +454,13 @@
 		to_chat(src, span_warning("The item is no longer in your hands."))
 		return
 	else
-		visible_message(span_infoplain(span_bold("\The [src]") + " begins to change the form of \the [I]."))
+		act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to change the form of %I%."), item = I)
 		om_task_start(/datum/om/task/timed/human_lleill_alchemy, src, I, transmute_product = transmute_product, energy_cost = energy_cost)
 	species.update_lleill_hud(src)
 
 /mob/living/carbon/human/proc/lleill_alchemy_stopped(datum/om/task/timed/human_lleill_alchemy/task)
 	var/obj/item/potion_material/I = task.target
-	visible_message(span_infoplain(span_bold("\The [src]") + " leaves \the [I] in its original form."))
+	act_message(src, null, others = span_infoplain(span_bold("%U%") + " leaves %I% in its original form."), item = I)
 
 /datum/om/task/timed/human_lleill_alchemy
 	duration = 10 SECONDS
@@ -474,7 +474,7 @@
 	var/transmute_product = task.transmute_product
 	var/energy_cost = task.energy_cost
 	var/obj/item/reagent_containers/glass/bottle/potion/product = transmute_product
-	visible_message(span_infoplain(span_bold("\The [src]") + " transmutes \the [I] into \the [initial(product.name)]."))
+	act_message(src, null, others = span_infoplain(span_bold("%U%") + " transmutes %I% into \the [initial(product.name)]."), item = I)
 	consume(I, src)
 	var/spawnloc = get_turf(src)
 	var/obj/item/N = new transmute_product(spawnloc)
@@ -564,7 +564,7 @@
 		to_chat(src, span_warning("You are too injured to transform into a beast."))
 		return
 
-	visible_message(span_infoplain(span_bold("\The [src]") + " begins significantly shifting their form."))
+	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins significantly shifting their form."))
 	om_task_start(/datum/om/task/timed/human_lleill_beast_form_human, src, src, energy_cost = energy_cost, beast_options = beast_options, chosen_beast = chosen_beast)
 	return TRUE
 
@@ -588,7 +588,7 @@
 	species.update_lleill_hud(src)
 
 /mob/living/carbon/human/proc/lleill_beast_form_human_failed(datum/om/task/timed/human_lleill_beast_form_human/task)
-	visible_message(span_infoplain(span_bold("\The [src]") + " ceases shifting their form."))
+	act_message(src, null, others = span_infoplain(span_bold("%U%") + " ceases shifting their form."))
 	return 0
 
 /mob/living/carbon/human/proc/spawn_beast_mob(chosen_beast)
@@ -607,16 +607,16 @@
 		to_chat(src, span_warning("You can't do that in your condition."))
 		return
 
-	visible_message(span_infoplain(span_bold("\The [src]") + " begins significantly shifting their form."))
+	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins significantly shifting their form."))
 	om_task_timed(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(revert_beast_form_living_done), done_args = list(), on_fail = PROC_REF(revert_beast_form_living_failed), fail_args = list())
 	return TRUE
 
 /mob/living/proc/revert_beast_form_living_done()
-	visible_message(span_infoplain(span_bold("\The [src]") + " has reverted to their original form."))
+	act_message(src, null, others = span_infoplain(span_bold("%U%") + " has reverted to their original form."))
 	revert_beast_tf()
 
 /mob/living/proc/revert_beast_form_living_failed()
-	visible_message(span_infoplain(span_bold("\The [src]") + " ceases shifting their form."))
+	act_message(src, null, others = span_infoplain(span_bold("%U%") + " ceases shifting their form."))
 	return 0
 
 /mob/living/proc/revert_beast_tf()
@@ -728,7 +728,7 @@
 		to_chat(src, span_warning("You are too injured to transform into a beast."))
 		return
 
-	visible_message(span_infoplain(span_bold("\The [src]") + " begins significantly shifting their form."))
+	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins significantly shifting their form."))
 	om_task_start(/datum/om/task/timed/human_hanner_beast_form_human, src, src, energy_cost = energy_cost, beast_options = beast_options, chosen_beast = chosen_beast)
 	return TRUE
 
@@ -764,5 +764,5 @@
 		new_mob.visible_message(span_infoplain(span_bold("\The [src]") + " has transformed into \the [chosen_beast]!"))
 
 /mob/living/carbon/human/proc/hanner_beast_form_human_failed(datum/om/task/timed/human_hanner_beast_form_human/task)
-	visible_message(span_infoplain(span_bold("\The [src]") + " ceases shifting their form."))
+	act_message(src, null, others = span_infoplain(span_bold("%U%") + " ceases shifting their form."))
 	return 0

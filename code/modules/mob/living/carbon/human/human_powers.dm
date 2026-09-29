@@ -27,7 +27,7 @@
 	if(selected_string && h_style != selected_string)
 		h_style = selected_string
 		regenerate_icons()
-		visible_message(span_notice("[src] pauses a moment to style their hair."))
+		act_message(src, null, others = span_notice("%U% pauses a moment to style their hair."))
 	else
 		to_chat(src, span_notice("You're already using that style."))
 
@@ -170,7 +170,7 @@
 	var/obj/item/organ/external/Chest = organs_by_name[BP_TORSO]
 
 	if(Chest.robotic >= 2)
-		visible_message(span_warning("\The [src] shudders slightly, then ejects a cluster of nymphs with a wet slithering noise."))
+		act_message(src, null, others = span_warning("%U% shudders slightly, then ejects a cluster of nymphs with a wet slithering noise."))
 		species = GLOB.all_species[SPECIES_HUMAN] // This is hard-set to default the body to a normal FBP, without changing anything.
 
 		// Bust it
@@ -187,7 +187,7 @@
 			E.droplimb(TRUE)
 
 	else
-		visible_message(span_warning("\The [src] quivers slightly, then splits apart with a wet slithering noise."))
+		act_message(src, null, others = span_warning("%U% quivers slightly, then splits apart with a wet slithering noise."))
 		qdel(src)
 
 /mob/living/carbon/human/proc/self_diagnostics()
@@ -293,7 +293,7 @@
 		return
 	else
 		active_regen = TRUE
-		src.visible_message(span_filter_notice(span_bold("[src]") + "'s flesh begins to mend..."))
+		act_message(src, null, others = span_filter_notice(span_bold("%U%") + "'s flesh begins to mend..."))
 
 	var/delay_length = round(active_regen_delay * species.active_regen_mult)
 	om_task_timed(src, delay_length, target = src, receiver = src, on_done = PROC_REF(regenerate_human_done), done_args = list(), on_fail = PROC_REF(regenerate_human_failed), fail_args = list())
@@ -571,7 +571,7 @@
 	var/mob/living/carbon/human/player1 = actor
 	choice1 = move_of(ask)
 	if(choice1 == "Cancel")
-		player1.visible_message(span_notice("[player1] chickens out!"))
+		act_message(player1, null, others = span_notice("%U% chickens out!"))
 	to_chat(player1, span_warning("[target] is [game == "Rock, Paper, Scissors" ? "deciding" : "getting ready"]."))
 	ask_move(target, PROC_REF(second_choice))
 
@@ -582,28 +582,28 @@
 /mob/living/carbon/human/proc/hand_game_invite_answered(mob/living/carbon/human/player2, game)
 	switch(game)
 		if("Rock, Paper, Scissors")
-			visible_message(span_notice("[src] challenges [player2] to Rock, Paper, Scissors!"))
+			act_message(src, player2, others = span_notice("%U% challenges %T% to Rock, Paper, Scissors!"))
 			to_chat(player2, span_warning("[src] is deciding."))
 		if("Arm Wrestling")
-			visible_message(span_notice("[src] challenges [player2] to Arm Wrestling!"))
+			act_message(src, player2, others = span_notice("%U% challenges %T% to Arm Wrestling!"))
 			to_chat(player2, span_warning("[src] is getting ready."))
 		if("Slap Hands")
-			visible_message(span_notice("[src] challenges [player2] to Slap Hands!"))
+			act_message(src, player2, others = span_notice("%U% challenges %T% to Slap Hands!"))
 			to_chat(player2, span_warning("[src] is getting ready."))
 		if("Thumb Wars")
-			visible_message(span_notice("[src] challenges [player2] to a thumb war!"))
+			act_message(src, player2, others = span_notice("%U% challenges %T% to a thumb war!"))
 			om_task_start(/datum/om/task/timed/human_game_thumbwars_human, src, player2, receiver = src)
 
 /mob/living/carbon/human/proc/hand_game_second_choice(mob/living/carbon/human/player2, game, choice1, choice2)
 	if(choice2 == "Cancel")
-		player2.visible_message(span_notice("[player2] chickens out!"))
+		act_message(player2, null, others = span_notice("%U% chickens out!"))
 	switch(game)
 		if("Rock, Paper, Scissors")
 			if(choice1 == choice2)
-				visible_message(span_notice("[src] and [player2] both choose [choice1], it's a draw!"))
+				act_message(src, player2, others = span_notice("%U% and %T% both choose [choice1], it's a draw!"))
 			else
-				visible_message(span_notice("[src] chooses [choice1]!"))
-				player2.visible_message(span_notice("[player2] chooses [choice2]!"))
+				act_message(src, null, others = span_notice("%U% chooses [choice1]!"))
+				act_message(player2, null, others = span_notice("%U% chooses [choice2]!"))
 		if("Arm Wrestling")
 			// Each player's strength counts for their size.
 			var/score1 = size_multiplier * clamp(choice1, 1, 10)
@@ -632,9 +632,9 @@
 	if(!hand_games_check(player1,player2))
 		return
 	if(competition == player1)
-		player1.visible_message(span_notice("[player1] manages to overpower [player2] and pin their arm down!"))
+		act_message(player1, player2, others = span_notice("%U% manages to overpower %T% and pin their arm down!"))
 	else
-		player2.visible_message(span_notice("[player2] manages to overpower [player1] and pin their arm down!"))
+		act_message(player2, player1, others = span_notice("%U% manages to overpower %T% and pin their arm down!"))
 
 /mob/living/carbon/human/proc/game_armwrestle_human_failed(datum/om/task/timed/human_game_armwrestle_human/task)
 	var/mob/living/carbon/human/player2 = task.target
@@ -657,9 +657,9 @@
 		return
 	play_sfx(player1, SFX_EFFECTS_SNAP, 0.6)
 	if(competition == player1)
-		player1.visible_message(span_notice("[player1] manages to slap [player2]'s hand before they can react!"))
+		act_message(player1, player2, others = span_notice("%U% manages to slap %T%'s hand before they can react!"))
 	else
-		player2.visible_message(span_notice("[player2] manages to slap [player1]'s hand before they can react!"))
+		act_message(player2, player1, others = span_notice("%U% manages to slap %T%'s hand before they can react!"))
 
 /mob/living/carbon/human/proc/game_slaphands_human_failed(datum/om/task/timed/human_game_slaphands_human/task)
 	var/mob/living/carbon/human/player2 = task.target
@@ -679,9 +679,9 @@
 	if(!hand_games_check(player1,player2))
 		return
 	if(prob(50))
-		player1.visible_message(span_notice("After a gruelling battle, [player1] eventually manages to subdue the thumb of [player2]!"))
+		act_message(player1, player2, others = span_notice("After a gruelling battle, %U% eventually manages to subdue the thumb of %T%!"))
 	else
-		player2.visible_message(span_notice("After a gruelling battle, [player2] eventually manages to subdue the thumb of [player1]!"))
+		act_message(player2, player1, others = span_notice("After a gruelling battle, %U% eventually manages to subdue the thumb of %T%!"))
 
 /mob/living/carbon/human/proc/game_thumbwars_human_failed(datum/om/task/timed/human_game_thumbwars_human/task)
 	var/mob/living/carbon/human/player2 = task.target
@@ -703,7 +703,7 @@
 		SetResting(1)
 		apply_body_effect(/datum/body_effect/play_dead, null, src) //Tracks whether they are still resting to remove the status indicator
 		add_status_indicator("dead")
-		visible_message(span_warning("\The [src] literally just dies!"))
+		act_message(src, null, others = span_warning("%U% literally just dies!"))
 	else
 		SetResting(0)
 
@@ -721,4 +721,4 @@
 
 /datum/body_effect/play_dead/on_end(mob/living/L, expired)
 	L.remove_status_indicator("dead")
-	L.visible_message(span_warning("\The [L] literally just dies!"))
+	act_message(L, null, others = span_warning("%U% literally just dies!"))

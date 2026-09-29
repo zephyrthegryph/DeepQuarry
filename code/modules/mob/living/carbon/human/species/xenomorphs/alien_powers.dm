@@ -104,7 +104,7 @@
 		return
 
 	if(check_alien_ability(500,1,O_EGG))
-		visible_message(span_alium(span_bold("[src] has laid an egg!")))
+		act_message(src, null, others = span_alium(span_bold("%U% has laid an egg!")))
 		new /obj/structure/ghost_pod/automatic/xenomorph_egg(loc)
 
 	return
@@ -120,7 +120,7 @@
 		return
 
 	if(check_alien_ability(500))
-		visible_message(span_alium(span_bold("[src] begins to twist and contort!")), span_alium("You begin to evolve!"))
+		act_message(src, null, MSG_SELF(span_alium("You begin to evolve!")), MSG_OTHERS(span_alium(span_bold("%U% begins to twist and contort!"))))
 		src.set_species("Xenomorph Queen")
 
 	return
@@ -131,7 +131,7 @@
 	set category = "Abilities.Alien"
 
 	if(check_alien_ability(50,1,O_RESIN))
-		visible_message(span_alium(span_bold("[src] has planted some alien weeds!")))
+		act_message(src, null, others = span_alium(span_bold("%U% has planted some alien weeds!")))
 		new /obj/effect/alien/weeds/node(get_turf(src), null, "#321D37")
 	return
 
@@ -150,7 +150,7 @@
 		if(!check_alien_ability(20,0,O_ACID))
 			spitting = 0
 			return
-		visible_message(span_warning("[src] spits [spit_name] at \the [A]!"), span_alium("You spit [spit_name] at \the [A]."))
+		act_message(src, A, MSG_SELF(span_alium("You spit [spit_name] at %T%.")), MSG_OTHERS(span_warning("%U% spits [spit_name] at %T%!")))
 		var/obj/item/projectile/P = new spit_projectile(get_turf(src))
 		P.firer = src
 		P.old_style_target(A)
@@ -190,7 +190,7 @@
 
 	if(check_alien_ability(200,0,O_ACID))
 		new /obj/effect/alien/acid(get_turf(O), O)
-		visible_message(span_alium(span_bold("[src] vomits globs of vile stuff all over [O]. It begins to sizzle and melt under the bubbling mess of acid!")))
+		act_message(src, null, others = span_alium(span_bold("%U% vomits globs of vile stuff all over [O]. It begins to sizzle and melt under the bubbling mess of acid!")))
 
 	return
 
@@ -283,7 +283,8 @@
 			else O = new /obj/item/stack/material/resin(targetLoc)
 
 	if(O)
-		visible_message(span_boldwarning("[src] vomits up a thick purple substance and begins to shape it!"), span_alium("You shape a [choice]."))
+		act_message(src, null, MSG_SELF(span_alium("You shape a [choice].")), \
+			MSG_OTHERS(span_boldwarning("%U% vomits up a thick purple substance and begins to shape it!")))
 		play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40)
 
 	return
@@ -323,7 +324,7 @@
 	COOLDOWN_START(src, last_special, 75)
 	status_flags |= LEAPING
 
-	src.visible_message(span_danger("\The [src] leaps at [T]!"))
+	act_message(src, T, others = span_danger("%U% leaps at %T%!"))
 	src.throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
 	play_sfx(src, SFX_VOICE_HISS5)
 	om_after(src, 5, PROC_REF(leap_land), T)
@@ -346,7 +347,7 @@
 		else
 			use_hand = "right"
 
-	src.visible_message(span_boldwarning("\The [src]") + " seizes [T] aggressively!")
+	act_message(src, T, others = span_boldwarning("%U%") + " seizes %T% aggressively!")
 
 	var/obj/item/grab/G = new(src,T)
 	if(!G.move_into(src, use_hand == "left" ? SLOT_ID_HAND_L : SLOT_ID_HAND_R, src))
@@ -380,7 +381,7 @@
 
 	COOLDOWN_START(src, last_special, 50)
 
-	visible_message(span_warning(span_bold("\The [src]") + " rips viciously at \the [G?.grab_target()]'s body with its claws!"))
+	act_message(src, null, others = span_warning(span_bold("%U%") + " rips viciously at \the [G?.grab_target()]'s body with its claws!"))
 
 	if(ishuman(G?.grab_target()))
 		var/mob/living/carbon/human/H = G?.grab_target()

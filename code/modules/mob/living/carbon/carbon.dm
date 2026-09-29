@@ -84,9 +84,8 @@ DECLARE_REF(/mob/living/carbon, "cozyloop", OWNED, null)
 			if(istype(M,/mob/living))
 				var/mob/living/L = M
 				L.injure(INJURY_PIERCE, 3, L.hand ? BP_L_HAND : BP_R_HAND, src)
-				L.visible_message( \
-					span_warning("[L] is hurt by sharp body parts when touching [src]!"), \
-					span_warning("[src] is covered in sharp bits and it hurt when you touched them!"), )
+				act_message(L, src, MSG_SELF(span_warning("%T% is covered in sharp bits and it hurt when you touched them!")), \
+					MSG_OTHERS(span_warning("%U% is hurt by sharp body parts when touching %T%!")))
 
 	if(!istype(M, /mob/living/carbon)) return
 
@@ -175,17 +174,13 @@ DECLARE_REF(/mob/living/carbon, "cozyloop", OWNED, null)
 
 	play_sfx(src, SFX_SPARKS, extrarange = -1)
 	if (shock_damage > 15)
-		src.visible_message(
-			span_warning("[src] was electrocuted[source ? " by the [source]" : ""]!"), \
-			span_danger("You feel a powerful shock course through your body!"), \
-			span_warning("You hear a heavy electrical crack.") \
-		)
+		act_message(src, null, MSG_SELF(span_danger("You feel a powerful shock course through your body!")), \
+			MSG_OTHERS(span_warning("%U% was electrocuted[source ? " by the [source]" : ""]!")), \
+			MSG_BLIND(span_warning("You hear a heavy electrical crack.")))
 	else
-		src.visible_message(
-			span_warning("[src] was shocked[source ? " by the [source]" : ""]."), \
-			span_warning("You feel a shock course through your body."), \
-			span_warning("You hear a zapping sound.") \
-		)
+		act_message(src, null, MSG_SELF(span_warning("You feel a shock course through your body.")), \
+			MSG_OTHERS(span_warning("%U% was shocked[source ? " by the [source]" : ""].")), \
+			MSG_BLIND(span_warning("You hear a zapping sound.")))
 
 	if(stun)
 		switch(shock_damage)
@@ -206,10 +201,8 @@ DECLARE_REF(/mob/living/carbon, "cozyloop", OWNED, null)
 	if (!is_critical() || on_fire)
 		if(src == M && ishuman(src))
 			var/mob/living/carbon/human/H = src
-			visible_message( \
-				span_notice("[src] examines [p_themselves()]."), \
-				span_notice("You check yourself for injuries.") \
-				)
+			act_message(src, null, MSG_SELF(span_notice("You check yourself for injuries.")), \
+				MSG_OTHERS(span_notice("%U% examines %THEMSELVES%.")))
 
 			for(var/obj/item/organ/external/org in H.organs)
 				var/list/status = list()
@@ -263,11 +256,11 @@ DECLARE_REF(/mob/living/carbon, "cozyloop", OWNED, null)
 		else if (on_fire)
 			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 			if (M.on_fire)
-				M.visible_message(span_warning("[M] tries to pat out [src]'s flames, but to no avail!"),
-				span_warning("You try to pat out [src]'s flames, but to no avail! Put yourself out first!"))
+				act_message(M, src, MSG_SELF(span_warning("You try to pat out %T%'s flames, but to no avail! Put yourself out first!")), \
+					MSG_OTHERS(span_warning("%U% tries to pat out %T%'s flames, but to no avail!")))
 			else
-				M.visible_message(span_warning("[M] tries to pat out [src]'s flames!"),
-				span_warning("You try to pat out [src]'s flames! Hot!"))
+				act_message(M, src, MSG_SELF(span_warning("You try to pat out %T%'s flames! Hot!")), \
+					MSG_OTHERS(span_warning("%U% tries to pat out %T%'s flames!")))
 				om_task_timed(M, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(help_shake_act_carbon_done), done_args = list(M))
 		else
 			if (ishuman(src))
@@ -279,19 +272,19 @@ DECLARE_REF(/mob/living/carbon, "cozyloop", OWNED, null)
 			var/mob/living/carbon/human/H = src
 			if(istype(H)) show_ssd = H.species.show_ssd
 			if(show_ssd && !client && !teleop)
-				M.visible_message(span_notice("[M] shakes [src] trying to wake [H.p_them()] up!"), \
-				span_notice("You shake [src], but [p_they()] [p_do()] not respond... Maybe [H.p_theyre()] S.S.D?"))
+				act_message(M, src, MSG_SELF(span_notice("You shake %T%, but [p_they()] [p_do()] not respond... Maybe [H.p_theyre()] S.S.D?")), \
+					MSG_OTHERS(span_notice("%U% shakes %T% trying to wake [H.p_them()] up!")))
 			else if(lying || src.has_status(EFFECT_SLEEPING))
 				status_adjust(EFFECT_SLEEPING, -5)
 				if(!src.has_status(EFFECT_SLEEPING))
 					src.resting = 0
-				M.visible_message(span_notice("[M] shakes [src] trying to wake [H.p_them()] up!"), \
-									span_notice("You shake [src] trying to wake [H.p_them()] up!"))
+				act_message(M, src, MSG_SELF(span_notice("You shake %T% trying to wake [H.p_them()] up!")), \
+					MSG_OTHERS(span_notice("%U% shakes %T% trying to wake [H.p_them()] up!")))
 			else
 				var/mob/living/carbon/human/hugger = M
 				if(M.resting == 1) //Are they resting on the ground?
-					M.visible_message(span_notice("[M] grabs onto [src] and pulls [M.p_themselves()] up"), \
-							span_notice("You grip onto [src] and pull yourself up off the ground!"))
+					act_message(M, src, MSG_SELF(span_notice("You grip onto %T% and pull yourself up off the ground!")), \
+						MSG_OTHERS(span_notice("%U% grabs onto %T% and pulls %THEMSELVES% up")))
 					if(M.fire_stacks >= (src.fire_stacks + 3)) //Fire checks.
 						src.adjust_fire_stacks(1)
 						M.adjust_fire_stacks(-1)
@@ -302,8 +295,8 @@ DECLARE_REF(/mob/living/carbon, "cozyloop", OWNED, null)
 				else if(istype(hugger))
 					hugger.species.hug(hugger,src)
 				else
-					M.visible_message(span_notice("[M] hugs [src] to make [H.p_them()] feel better!"), \
-								span_notice("You hug [src] to make [H.p_them()] feel better!"))
+					act_message(M, src, MSG_SELF(span_notice("You hug %T% to make [H.p_them()] feel better!")), \
+						MSG_OTHERS(span_notice("%U% hugs %T% to make [H.p_them()] feel better!")))
 				if(M.fire_stacks >= (src.fire_stacks + 3))
 					src.adjust_fire_stacks(1)
 					M.adjust_fire_stacks(-1)
@@ -321,13 +314,13 @@ DECLARE_REF(/mob/living/carbon, "cozyloop", OWNED, null)
 		M.adjust_fire_stacks(1)
 	M.ignite_mob()
 	if (M.on_fire)
-		M.visible_message(span_danger("The fire spreads from [src] to [M]!"),
-		span_danger("The fire spreads to you as well!"))
+		act_message(M, src, MSG_SELF(span_danger("The fire spreads to you as well!")), \
+			MSG_OTHERS(span_danger("The fire spreads from %T% to %U%!")))
 	else
 		src.adjust_fire_stacks(-0.5) //Less effective than stop, drop, and roll - also accounting for the fact that it takes half as long.
 		if (src.fire_stacks <= 0)
-			M.visible_message(span_warning("[M] successfully pats out [src]'s flames."),
-			span_warning("You successfully pat out [src]'s flames."))
+			act_message(M, src, MSG_SELF(span_warning("You successfully pat out %T%'s flames.")), \
+				MSG_OTHERS(span_warning("%U% successfully pats out %T%'s flames.")))
 			src.extinguish_mob()
 
 /mob/living/carbon/proc/eyecheck()

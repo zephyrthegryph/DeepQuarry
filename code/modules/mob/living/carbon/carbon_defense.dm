@@ -51,7 +51,7 @@
 	if(!W.edge || !W.force || W.obj_damage_type() != BRUTE)
 		return 0 //unsuitable weapon
 
-	user.visible_message(span_danger("\The [user] begins to slit [src]'s throat with \the [W]!"))
+	act_message(user, src, others = span_danger("%U% begins to slit %T%'s throat with %I%!"), item = W)
 
 	EXPIRY_SET(user, next_move, 20, CLOCK_WORLD) //also should prevent user from triggering this repeatedly
 	om_task_start(/datum/om/task/timed/carbon_attack_throat_carbon, user, src, receiver = src, W = W, G = G)
@@ -90,9 +90,9 @@
 
 	if(total_damage)
 		if(aspirated >= 40)
-			user.visible_message(span_danger("\The [user] slit [src]'s throat open with \the [W]!"))
+			act_message(user, src, others = span_danger("%U% slit %T%'s throat open with %I%!"), item = W)
 		else
-			user.visible_message(span_danger("\The [user] cut [src]'s neck with \the [W]!"))
+			act_message(user, src, others = span_danger("%U% cut %T%'s neck with %I%!"), item = W)
 
 		if(W.hitsound)
 			playsound(src, W.hitsound, 50, 1, -1)
@@ -109,7 +109,7 @@
 	if(!W.sharp || !W.force || W.obj_damage_type() != BRUTE)
 		return 0 //unsuitable weapon
 
-	user.visible_message(span_danger("\The [user] plunges \the [W] into \the [src]!"))
+	act_message(user, src, others = span_danger("%U% plunges %I% into %T%!"), item = W)
 
 	var/damage = shank_armor_helper(W, G, user)
 	receive_weapon_hit(W, user, damage, zone = BP_TORSO, silent = FALSE, armored = FALSE)

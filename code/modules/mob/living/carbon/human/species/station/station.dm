@@ -657,7 +657,7 @@
 		H.mind.transfer_to(S)
 
 	if(HAS_SYNTHETIC_BIOLOGY(H))
-		H.visible_message(span_danger("\The [H] collapses into parts, revealing a solitary diona nymph at the core."))
+		act_message(H, null, others = span_danger("%U% collapses into parts, revealing a solitary diona nymph at the core."))
 
 		H.species = GLOB.all_species[SPECIES_HUMAN] // This is hard-set to default the body to a normal FBP, without changing anything.
 		H.invalidate_factors()
@@ -677,7 +677,7 @@
 		else
 			qdel(D)
 
-	H.visible_message(span_danger("\The [H] splits apart with a wet slithering noise!"))
+	act_message(H, null, others = span_danger("%U% splits apart with a wet slithering noise!"))
 
 /datum/species/sergal
 	name = SPECIES_SERGAL
@@ -1985,7 +1985,7 @@
 	set category = "Abilities.Alien"
 
 	if(check_alien_ability(150,1,O_RESIN))
-		visible_message(span_alium(span_bold("[src] has planted some alien weeds!")))
+		act_message(src, null, others = span_alium(span_bold("%U% has planted some alien weeds!")))
 		new /obj/effect/alien/weeds/node/weak(get_turf(src), null, "#321D37")	// Aliens.dm for weed node origin.
 		play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40)
 	return
@@ -2049,7 +2049,8 @@
 			else O = new /obj/item/stack/material/resin(targetLoc)
 
 	if(O)
-		visible_message(span_warning(span_bold("[src] vomits up a thick purple substance and begins to shape it!")), span_alium("You shape a [choice]."))
+		act_message(src, null, MSG_SELF(span_alium("You shape a [choice].")), \
+			MSG_OTHERS(span_warning(span_bold("%U% vomits up a thick purple substance and begins to shape it!"))))
 		play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40)
 
 	return

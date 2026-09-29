@@ -12,4 +12,4 @@
 		alpha = max(alpha - 100, 0)
 
 	fx_sparks(loc, 5, FALSE)
-	visible_message(span_warning("Electrical sparks manifest around \the [src] as they suddenly appear!"))
+	act_message(src, null, others = span_warning("Electrical sparks manifest around %U% as they suddenly appear!"))

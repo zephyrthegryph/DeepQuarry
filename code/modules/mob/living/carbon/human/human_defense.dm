@@ -199,7 +199,7 @@ emp_act
 	if(!hit_zone)
 		user.do_attack_animation(src)
 		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
-		visible_message(span_danger("\The [user] misses [src] with \the [I]!"))
+		act_message(user, src, others = span_danger("%U% misses %T% with %I%!"), item = I)
 		return null
 
 	if(check_shields(I.force, I, user, target_zone, "the [I.name]"))
@@ -275,7 +275,7 @@ emp_act
 				if(BP_HEAD)//Harder to score a stun but if you do it lasts a bit longer
 					if(prob(effective_force))
 						apply_effect(20, PARALYZE, blocked)
-						visible_message(span_danger("\The [src] has been knocked unconscious!"))
+						act_message(src, null, others = span_danger("%U% has been knocked unconscious!"))
 					if(bloody)//Apply blood
 						if(get_equipped_item(SLOT_ID_MASK))
 							get_equipped_item(SLOT_ID_MASK).add_blood(src)
@@ -289,7 +289,7 @@ emp_act
 				if(BP_TORSO)//Easier to score a stun but lasts less time
 					if(prob(effective_force + 10))
 						apply_effect(6, WEAKEN, blocked)
-						visible_message(span_danger("\The [src] has been knocked down!"))
+						act_message(src, null, others = span_danger("%U% has been knocked down!"))
 					if(bloody)
 						bloody_body(src)
 
@@ -305,7 +305,7 @@ emp_act
 	//want the dislocation chance to be such that the limb is expected to dislocate after dealing a fraction of the damage needed to break the limb
 	var/dislocate_chance = effective_force/(dislocate_mult * organ.min_broken_damage * CONFIG_GET(number/organ_health_multiplier))*100
 	if(prob(dislocate_chance * (100 - blocked)/100))
-		visible_message(span_danger("[src]'s [organ.joint] [pick("gives way","caves in","crumbles","collapses")]!"))
+		act_message(src, null, others = span_danger("%U%'s [organ.joint] [pick("gives way","caves in","crumbles","collapses")]!"))
 		organ.dislocate(1)
 		return 1
 	return 0
@@ -339,14 +339,14 @@ emp_act
 				if(isturf(thrown_object.loc) && can_catch(thrown_object))
 					if(!(om_wants(src, /datum/om/event/before/catch_throw) && om_emit(src, new /datum/om/event/before/catch_throw(source, speed)) == EVENT_VETO))
 						put_in_active_hand(thrown_object)
-						visible_message(span_warning("[src] catches [thrown_object]!"))
+						act_message(src, null, others = span_warning("%U% catches [thrown_object]!"))
 						throw_mode_off()
 						return
 
 		var/throw_damage = thrown_object.throwforce*(speed/THROWFORCE_SPEED_DIVISOR)
 
 		if(species && species.throwforce_absorb_threshold >= throw_damage)
-			visible_message(span_infoplain(span_bold("\The [thrown_object]") + " simply bounces off of [src]'s body!"))
+			act_message(src, null, others = span_infoplain(span_bold("%I%") + " simply bounces off of %U%'s body!"), item = thrown_object)
 			return
 
 		var/zone
@@ -371,13 +371,13 @@ emp_act
 				return
 
 		if(!zone)
-			visible_message(span_infoplain(span_bold("\The [thrown_object]") + " misses [src] narrowly!"))
+			act_message(src, null, others = span_infoplain(span_bold("%I%") + " misses %U% narrowly!"), item = thrown_object)
 			return
 
 		var/obj/item/organ/external/affecting = get_organ(zone)
 		var/hit_area = affecting.name
 
-		src.visible_message(span_filter_warning("[span_red("[src] has been hit in the [hit_area] by [thrown_object].")]"))
+		act_message(src, null, others = span_filter_warning("[span_red("%U% has been hit in the [hit_area] by [thrown_object].")]"))
 
 		if(ismob(thrower))
 			add_attack_logs(thrower,src,"Hit with thrown [thrown_object.name]")
@@ -410,7 +410,8 @@ emp_act
 		if(movable_throw_source(thrown_object) && momentum >= THROWNOBJ_KNOCKBACK_SPEED && !src?.buckled_to())
 			var/dir = get_dir(movable_throw_source(thrown_object), src)
 
-			visible_message(span_filter_warning("[span_red("[src] staggers under the impact!")]"),span_filter_warning("[span_red("You stagger under the impact!")]"))
+			act_message(src, null, MSG_SELF(span_filter_warning("[span_red("You stagger under the impact!")]")), \
+				MSG_OTHERS(span_filter_warning("[span_red("%U% staggers under the impact!")]")))
 			src.throw_at(get_edge_target_turf(src,dir),1,momentum)
 
 			if(!thrown_object || !src) return
@@ -420,7 +421,7 @@ emp_act
 
 				if(T)
 					forceMove(T)
-					visible_message(span_warning("[src] is pinned to the wall by [thrown_object]!"),span_warning("You are pinned to the wall by [thrown_object]!"))
+					act_message(src, null, MSG_SELF(span_warning("You are pinned to the wall by [thrown_object]!")), \n						MSG_OTHERS(span_warning("%U% is pinned to the wall by [thrown_object]!")))
 					set_anchored(TRUE)
 					LAZYADD(src.pinned, thrown_object)
 
@@ -561,7 +562,7 @@ emp_act
 	if(W.edge)
 		organ_chance = 75
 	EXPIRY_SET(user, next_move, 20, CLOCK_WORLD)
-	user.visible_message(span_danger("\The [user] begins to twist \the [W] around inside [src]'s [chest]!"))
+	act_message(user, src, others = span_danger("%U% begins to twist %I% around inside %T%'s [chest]!"), item = W)
 	om_task_start(/datum/om/task/timed/human_shank_attack_human, user, src, receiver = src, W = W, G = G, organ_chance = organ_chance, damage = damage, chest = chest)
 	return TRUE
 
@@ -584,7 +585,7 @@ emp_act
 	if(!(G && G?.grab_assailant() == user && G?.grab_target() == src)) //check that we still have a grab
 		return 0
 
-	user.visible_message(span_danger("\The [user] twists \the [W] around inside [src]'s [chest]!"))
+	act_message(user, src, others = span_danger("%U% twists %I% around inside %T%'s [chest]!"), item = W)
 
 	if(prob(organ_chance))
 		var/obj/item/organ/internal/selected_organ = pick(chest.held_organs())

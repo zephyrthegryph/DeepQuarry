@@ -22,7 +22,7 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 	user.setClickCooldown(user.get_attack_speed(W))
 
 	if(W.force)
-		visible_message(span_warning("\The [src] has been [LAZYLEN(W.attack_verb) ? pick(W.attack_verb) : "attacked"] with \the [W][(user ? " by [user]." : ".")]"))
+		act_message(user, src, others = span_warning("%T% has been [LAZYLEN(W.attack_verb) ? pick(W.attack_verb) : "attacked"] with %I% by %U%."), item = W)
 		qdel(src)
 	return INTERACTION_HANDLED_PASS
 
@@ -117,11 +117,9 @@ EXTEND_INTERACTIONS(/obj/structure/bed/double/weaversilk_nest, \
 		return
 	if(isliving(AM) && trap_active)
 		if(L.m_intent == I_RUN)
-			L.visible_message(
-				span_danger("[L] steps on \the [src]."),
-				span_danger("You step on \the [src]!"),
-				span_infoplain(span_bold("You hear a squishy noise!"))
-				)
+			act_message(L, src, MSG_SELF(span_danger("You step on %T%!")), \
+				MSG_OTHERS(span_danger("%U% steps on %T%.")), \
+				MSG_BLIND(span_infoplain(span_bold("You hear a squishy noise!"))))
 			set_dir(L.dir)
 			buckle_mob(L)
 			L.status_at_least(EFFECT_STUNNED, 1)

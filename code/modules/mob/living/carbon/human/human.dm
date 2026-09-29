@@ -793,7 +793,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 /mob/living/carbon/human/proc/play_xylophone()
 	if(COOLDOWN_FINISHED(src, xylophone))
-		visible_message(span_filter_notice("[span_red("\The [src] begins playing [p_their()] ribcage like a xylophone. It's quite spooky.")]"),span_notice("You begin to play a spooky refrain on your ribcage."),span_filter_notice("[span_red("You hear a spooky xylophone melody.")]"))
+		act_message(src, null, MSG_SELF(span_notice("You begin to play a spooky refrain on your ribcage.")), \n			MSG_OTHERS(span_filter_notice("[span_red("%U% begins playing %THEIR% ribcage like a xylophone. It's quite spooky.")]")), \n			MSG_BLIND(span_filter_notice("[span_red("You hear a spooky xylophone melody.")]")))
 		var/song = SFX_EFFECTS_XYLOPHONE_MIX
 		playsound(src, song, 50, 1, -1)
 		COOLDOWN_START(src, xylophone, 2 MINUTES)
@@ -915,7 +915,9 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 			gender = NEUTER
 	regenerate_icons()
 	check_dna()
-	visible_message(span_notice("\The [src] morphs and changes [p_their()] appearance!"), span_notice("You change your appearance!"), span_filter_notice("[span_red("Oh, god!  What the hell was that?  It sounded like flesh getting squished and bone ground into a different shape!")]"))
+	act_message(src, null, MSG_SELF(span_notice("You change your appearance!")), \
+		MSG_OTHERS(span_notice("%U% morphs and changes %THEIR% appearance!")), \
+		MSG_BLIND(span_filter_notice("[span_red("Oh, god!  What the hell was that?  It sounded like flesh getting squished and bone ground into a different shape!")]")))
 
 /mob/living/carbon/human/proc/remotesay()
 	set name = "Project mind"
@@ -1208,11 +1210,11 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	if(usr == src)
 		self = 1
 	if(!self)
-		usr.visible_message(span_notice("[usr] kneels down, puts [usr.p_their()] hand on [src]'s wrist and begins counting [p_their()] pulse."),\
-		span_filter_notice("You begin counting [src]'s pulse."))
+		act_message(usr, src, MSG_SELF(span_filter_notice("You begin counting %T%'s pulse.")), \
+			MSG_OTHERS(span_notice("%U% kneels down, puts %THEIR% hand on %T%'s wrist and begins counting [p_their()] pulse.")))
 	else
-		usr.visible_message(span_notice("[usr] begins counting [p_their()] pulse."),\
-		span_filter_notice("You begin counting your pulse."))
+		act_message(usr, null, MSG_SELF(span_filter_notice("You begin counting your pulse.")), \
+			MSG_OTHERS(span_notice("%U% begins counting [p_their()] pulse.")))
 
 	if(src.pulse)
 		to_chat(usr, span_notice("[self ? "You have a" : "[src] has a"] pulse! Counting..."))

@@ -179,8 +179,8 @@
 			if(FEMALE)
 				t_him = "her"
 
-	H.visible_message(span_infoplain(span_bold("\The [H]") + " glomps [target] to make [t_him] feel better!"), \
-					span_notice("You glomp [target] to make [t_him] feel better!"))
+	act_message(H, target, MSG_SELF(span_notice("You glomp %T% to make [t_him] feel better!")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " glomps %T% to make [t_him] feel better!")))
 	H.apply_stored_shock_to(target)
 
 /datum/species/shapeshifter/promethean/handle_death(mob/living/carbon/human/H)

@@ -159,9 +159,7 @@
 	for(var/obj/item/organ/external/child in E.children)
 		child.status &= ~ORGAN_CUT_AWAY
 
-	visible_message(
-		span_notice("\The [src] attaches \the [E] to [p_their()] body!"),
-		span_notice("You attach \the [E] to your body!"))
+	act_message(src, null, MSG_SELF(span_notice("You attach %I% to your body!")), MSG_OTHERS(span_notice("%U% attaches %I% to %THEIR% body!")), item = E)
 	regenerate_icons() // Not sure why this isn't called by removed(), but without it we don't update our limb appearance.
 	return TRUE
 
@@ -198,7 +196,5 @@
 	E.removed(src)
 	E.dropInto(loc)
 	put_in_hands(E)
-	visible_message(
-		span_notice("\The [src] detaches [p_their()] [E.name]!"),
-		span_notice("You detach your [E.name]!"))
+	act_message(src, null, MSG_SELF(span_notice("You detach your [E.name]!")), MSG_OTHERS(span_notice("%U% detaches %THEIR% [E.name]!")))
 	return TRUE

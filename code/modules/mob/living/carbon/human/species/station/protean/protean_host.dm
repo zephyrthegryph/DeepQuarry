@@ -73,7 +73,7 @@
 	if(G.state < GRAB_AGGRESSIVE)
 		to_chat(H, span_warning("You need a more aggressive grab to do this!"))
 		return
-	H.visible_message(span_warning("[H] is attempting to latch onto [target]!"), span_danger("You attempt to latch onto [target]!"))
+	act_message(H, target, MSG_SELF(span_danger("You attempt to latch onto %T%!")), MSG_OTHERS(span_warning("%U% is attempting to latch onto %T%!")))
 	om_task_start(/datum/om/task/timed/latch_host_activate_latch_host, H, target, receiver = src, F = F, G = G)
 	return TRUE
 
@@ -92,7 +92,7 @@
 		return
 	if(target.get_equipped_item(SLOT_ID_BACK))
 		target.drop_from_inventory(target.get_equipped_item(SLOT_ID_BACK))
-	H.visible_message(span_danger("[H] latched onto [target]!"), span_danger("You latch yourself onto [target]!"))
+	act_message(H, target, MSG_SELF(span_danger("You latch yourself onto %T%!")), MSG_OTHERS(span_danger("%U% latched onto %T%!")))
 	target.status_at_least(EFFECT_WEAKENED, 3)
 	if(!F.enter_rig())
 		return
