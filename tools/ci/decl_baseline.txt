@@ -145,9 +145,6 @@ init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_C
 init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_N2, MolesForPressure())
 init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_CO2, MolesForPressure())
 init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_PHORON, MolesForPressure())
-init_gas	code/game/objects/effects/spawners/bombspawner.dm	PT.air_contents.adjust_gas(GAS_PHORON, (phoron_amt) - LINDA_GAS_AMT(PT.air_contents, GAS_PHORON))
-init_gas	code/game/objects/effects/spawners/bombspawner.dm	PT.air_contents.adjust_gas(GAS_CO2, (carbon_amt) - LINDA_GAS_AMT(PT.air_contents, GAS_CO2))
-init_gas	code/game/objects/effects/spawners/bombspawner.dm	OT.air_contents.adjust_gas(GAS_O2, (oxygen_amt) - LINDA_GAS_AMT(OT.air_contents, GAS_O2))
 init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LATEJOIN, src)
 init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LANDMARKS, src)
 init_registry	code/modules/holomap/mapper.dm	registry_join(REGISTRY_MAPPING_BEACONS, src)
@@ -213,7 +210,6 @@ init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = D
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = "writing1"
 init_visuals	code/game/objects/effects/decals/cleanable.dm	src.icon_state = DEFAULTPICK(src.random_icon_states, null)
 init_visuals	code/game/objects/effects/decals/posters/posters.dm	icon_state = poster_decl.icon_state
-init_visuals	code/game/objects/effects/decals/warning_stripes.dm	T.add_overlay(I)
 init_visuals	code/game/objects/effects/spiders.dm	icon_state = "stickyweb2"
 init_visuals	code/game/objects/effects/spiders.dm	icon_state = pick("cocoon1","cocoon2","cocoon3")
 init_visuals	code/game/objects/structures/barsign.dm	icon_state = pick(get_valid_states())
@@ -269,8 +265,6 @@ init_visuals	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	add_ove
 init_visuals	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	add_overlay(I)
 init_visuals	code/game/objects/structures/trash_pile.dm	icon_state = pick(
 init_visuals	code/game/objects/structures/trash_pile.dm	icon_state = pick(
-init_visuals	code/game/turfs/flooring/flooring_decals.dm	icon_state = "asteroid[rand(0,9)]"
-init_visuals	code/game/turfs/simulated/fancy_shuttles.dm	icon_state = "floors [x - F.x],[y - F.y]"
 init_visuals	code/game/turfs/simulated/floor_types.dm	icon_state = "alienpod[rand(1, 9)]"
 init_visuals	code/game/turfs/simulated/floor_types.dm	icon_state = "carry_ingame"
 init_visuals	code/game/turfs/simulated/floor_types.dm	icon_state = "carry_ingame"
@@ -403,7 +397,6 @@ init_new_child	code/game/machinery/frame.dm	own_set(src, "circuit", new frame_ty
 init_new_child	code/game/machinery/gear_dispenser.dm	own_set(src, "one_setting", new one_setting)
 init_new_child	code/game/machinery/jukebox.dm	own_set(src, "wires", new/datum/wires/jukebox(src))
 init_new_child	code/game/machinery/pda_multicaster.dm	own_set(src, "soundloop", new /datum/looping_sound/tcomms(list(src), FALSE))
-init_new_child	code/game/machinery/portable_turret.dm	own_set(src, "spark_system", new /datum/effect/effect/system/spark_spread)
 init_new_child	code/game/machinery/requests_console.dm	own_set(src, "announcement", new /datum/announcement)
 init_new_child	code/game/machinery/telecomms/telecomunications.dm	own_set(src, "Compiler", new /datum/TCS_Compiler())
 init_new_child	code/game/machinery/telecomms/telecomunications.dm	own_set(src, "server_radio", new /obj/item/radio/headset())
@@ -447,7 +440,6 @@ init_new_child	code/game/objects/items/weapons/weldbackpack.dm	own_set(src, "noz
 init_new_child	code/game/objects/mob_spawner.dm	own_set(src, "prox", new /datum/proximity_monitor/mobspawner(src, range))
 init_new_child	code/game/objects/structures/droppod.dm	own_set(src, "air", new /datum/gas_mixture/pod_air)
 init_new_child	code/game/objects/structures/extinguisher.dm	own_set(src, "has_extinguisher", new/obj/item/extinguisher(src))
-init_new_child	code/game/objects/structures/fireaxe.dm	own_set(src, "fireaxe", new /obj/item/material/twohanded/fireaxe())
 init_new_child	code/game/objects/structures/mirror.dm	own_set(src, "M", new /datum/tgui_module/appearance_changer/mirror(src, null))
 init_new_child	code/game/objects/structures/pillows.dm	own_set(src, "front", new pillowpilefront(T))
 init_new_child	code/game/objects/structures/props/transmitter.dm	own_set(src, "soundloop", new /datum/looping_sound/sequence/morse(list(src), FALSE))
@@ -531,8 +523,6 @@ init_new_child	code/modules/projectiles/ammunition.dm	own_add(src, "stored_ammo"
 init_new_child	code/modules/projectiles/gun.dm	own_set(src, "attached_lock", new /obj/item/dnalockingchip(src))
 init_new_child	code/modules/projectiles/guns/magnetic/bore.dm	own_set(src, "soundloop", new /datum/looping_sound/small_motor(list(src), 0))
 init_new_child	code/modules/projectiles/guns/magnetic/magnetic.dm	own_set(src, "capacitor", new capacitor(src))
-init_new_child	code/modules/projectiles/guns/magnetic/magnetic.dm	own_set(src, "cell", new /obj/item/cell/high)
-init_new_child	code/modules/projectiles/guns/magnetic/magnetic.dm	own_set(src, "capacitor", new /obj/item/stock_parts/capacitor)
 init_new_child	code/modules/projectiles/guns/modular_guns.dm	own_add(src, "guncomponents", new /obj/item/stock_parts/capacitor(src))
 init_new_child	code/modules/projectiles/guns/modular_guns.dm	own_add(src, "guncomponents", new /obj/item/stock_parts/micro_laser(src))
 init_new_child	code/modules/projectiles/guns/modular_guns.dm	own_add(src, "guncomponents", new /obj/item/stock_parts/manipulator(src))
@@ -583,11 +573,9 @@ destroy_drop	code/modules/ventcrawl/ventcrawl_atmospherics.dm	for(var/mob/living
 destroy_drop	code/modules/vore/eating/belly_obj.dm	for(var/mob/observer/G in contents_of(src))
 destroy_effects	code/game/objects/micro_structures.dm	visible_message(span_warning("\The [src] collapses!"))
 destroy_effects	code/game/objects/micro_structures.dm	visible_message(span_warning("\The [thing] tumbles out!"))
-destroy_effects	code/game/objects/objs.dm	m.visible_message(span_notice("\The [m] tumbles out of \the [src]!"))
 destroy_effects	code/game/objects/structures/gargoyle.dm	visible_message(span_warning("The [identifier] loses shape and crumbles into a pile of [material]!"))
 destroy_effects	code/modules/artifice/telecube.dm	mate().visible_message(span_critical("\The [mate()] collapses into itself!"))
 destroy_effects	code/modules/xenoarcheaology/artifacts/crystal.dm	src.visible_message(span_bolddanger("[src] shatters!"))
 destroy_effects	code/modules/xenoarcheaology/artifacts/crystal.dm	new /obj/item/material/shard/phoron(src.loc)
 destroy_effects	code/modules/xenoarcheaology/artifacts/crystal.dm	new /obj/item/material/shard(src.loc)
 destroy_effects	code/modules/xenoarcheaology/finds/Weapons/archeo_melee.dm	visible_message(span_cult("\The [src] screeches as it's destroyed"))
-destroy_effects	code/modules/xenoarcheaology/finds/Weapons/archeo_melee.dm	playsound(src, 'sound/goonstation/spooky/creepyshriek.ogg', 100, 1, 75) //It plays VERY far.

@@ -183,7 +183,7 @@
 	var/list/sides = splittext(dq_resolution_text(resolution), "|")
 	TEST_ASSERT("lattice_item" in splittext(sides[1], ","), "rods should be offered to a lattice: [dq_resolution_text(resolution)]")
 	lattice.interaction_item(H, rods, INTERACTION_BY_ID("lattice_item"))
-	var/obj/structure/catwalk/catwalk = locate() in gap
+	var/obj/structure/catwalk/catwalk = locate_within(gap, /obj/structure/catwalk)
 	TEST_ASSERT_NOTNULL(own(catwalk), "rods should turn the lattice into a catwalk")
 	TEST_ASSERT_EQUAL(rods.get_amount(), 4, "the upgrade should use one rod")
 	qdel(catwalk)

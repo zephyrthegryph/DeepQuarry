@@ -249,8 +249,8 @@
 	if(ispath(type, /obj/machinery/shieldwall))
 		var/obj/machinery/shieldwallgen/A = allocate(/obj/machinery/shieldwallgen, T)
 		var/obj/machinery/shieldwallgen/B = allocate(/obj/machinery/shieldwallgen, T)
-		A.active = 1 // a wall stands only between two running generators
-		B.active = 1
+		A.set_active(1) // a wall stands only between two running generators
+		B.set_active(1)
 		return allocate(type, T, A, B)
 	if(ispath(type, /obj/item/reagent_containers/food/snacks/grown))
 		var/list/seeds = GLOB.plant_service.seeds

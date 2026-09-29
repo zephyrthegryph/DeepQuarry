@@ -407,9 +407,7 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	// the old cell out of the mount and deletes it, instead of orphaning it in contents (a
 	// suit-built borg's default cell, overwritten by the chest's).
 	if(old_cell && new_cell && mount?.wrapped == old_cell)
-		var/obj/item/cell/removed = mount.uninstall()
-		if(removed && !QDELETED(removed))
-			qdel(removed)
+		consume(mount.uninstall())
 	if(new_cell)
 		om_hook(new_cell, /datum/om/event/before/atom_pre_emp_act, src, PROC_REF(shield_cell_from_emp))
 		om_hook(new_cell, /datum/om/event/qdeleting, src, PROC_REF(on_cell_deleted))

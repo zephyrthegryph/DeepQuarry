@@ -364,7 +364,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	if(!isatom(holder))
 		return
 	var/holder_ref = ref(holder)
-	for(var/atom/movable/thing as anything in holder.contents)
+	FOR_CONTENTS(var/atom/movable/thing, holder)
 		if(thing.own_holder_ref == holder_ref && thing.own_slot && thing.own_slot != "contents")
 			continue
 		. += thing

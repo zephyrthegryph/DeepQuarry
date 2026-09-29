@@ -250,6 +250,8 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 
 /obj/item/gun/magnetic/fuelrod
 	name = "Fuel-Rod Cannon"
+	cell = /obj/item/cell/high // the declared default child (DECLARE_DEFAULT_CHILD on /obj/item/gun/magnetic)
+	capacitor = /obj/item/stock_parts/capacitor
 	desc = "A bulky weapon designed to fire reactor core fuel rods at absurd velocities... who thought this was a good idea?!"
 	description_antag = "This device is capable of firing reactor fuel assemblies, acquired from a R-UST fuel compressor and an appropriate fueltype. Be warned, Supermatter rods may have unforseen consequences."
 	description_fluff = "Morpheus' second entry into the arms manufacturing field, the Morpheus B.F.G, or 'Big Fuel-rod Gun' made some noise when it was initially sent to the market. By noise, they mean it was rapidly declared 'incredibly dangerous to the wielder and civilians within a mile radius alike'."
@@ -384,10 +386,6 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 	else if(M.ear_damage >= 5)
 		to_chat(M, span_danger("Your ears start to ring!"))
 
-/obj/item/gun/magnetic/fuelrod/Initialize(mapload)
-	own_set(src, "cell", new /obj/item/cell/high(src))
-	own_set(src, "capacitor", new /obj/item/stock_parts/capacitor(src))
-	. = ..()
 
 #undef ICON_CELL
 #undef ICON_CAP

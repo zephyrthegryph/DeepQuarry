@@ -13,12 +13,13 @@
 	var/hitstaken = 0
 	var/locked = 1
 	var/smashed = 0
-	var/starts_with_axe = TRUE
+	/// The axe it starts with (a declared default child), or null for an empty cabinet.
+	var/fireaxe_type = /obj/item/material/twohanded/fireaxe
+
+DECLARE_DEFAULT_CHILD(/obj/structure/fireaxecabinet, "fireaxe", "fireaxe_type")
 
 /obj/structure/fireaxecabinet/Initialize(mapload)
 	. = ..()
-	if(starts_with_axe)
-		own_set(src, "fireaxe", new /obj/item/material/twohanded/fireaxe(src))
 	update_icon()
 
 /obj/structure/fireaxecabinet/declare_interactions(list/into)
@@ -205,6 +206,6 @@
 	icon_state = text("fireaxe[][][][]",hasaxe,open,hitstaken,smashed)
 
 /obj/structure/fireaxecabinet/empty
-	starts_with_axe = FALSE
+	fireaxe_type = null
 
 OWN(/obj/structure/fireaxecabinet, fireaxe, OWN_CONTAINED)
