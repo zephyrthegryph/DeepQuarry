@@ -296,7 +296,10 @@
 		plasma.set_temperature(plasma_temperature/2)
 		// plasma.update_values() removed; no-op under LINDA.
 		T.assume_air(plasma)
-		T.hotspot_expose(plasma_temperature)
+		// A field that never heated (plasma_temperature 0) ignites nothing; hotspot_expose() refuses
+		// anything below the background temperature.
+		if(plasma_temperature > TCMB)
+			T.hotspot_expose(plasma_temperature)
 		plasma = null
 
 	// Radiate all our unspent fuel and energy.

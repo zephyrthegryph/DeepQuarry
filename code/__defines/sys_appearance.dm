@@ -62,6 +62,10 @@
 /// machine still refreshes on its core fields). A later line on the same type may declare anew.
 #define APPEARANCE_NONE(PATH) _LIFECYCLE_DECL(PATH, clear_appearance())
 
+/// atom.appearance_queued while a latent (unmaterialized) movable has a refresh waiting: it joins the
+/// presentation queue when it materializes (appearance_queue(), /atom/proc/materialize()).
+#define APPEARANCE_PENDING_LATENT 2
+
 // Template part kinds (code/datums/sys/appearance.dm).
 #define APPEARANCE_PART_READ 1
 #define APPEARANCE_PART_TERNARY 2

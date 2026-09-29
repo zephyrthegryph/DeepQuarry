@@ -17,6 +17,11 @@ GLOBAL_LIST_INIT(dq_lifecycle_snapshot_ignored, list(
 /// material) warms a different key on every instance.
 GLOBAL_LIST_INIT(dq_lifecycle_snapshot_ignored_globs, list(
 	"material_recipe_cache",
+	// Type -> the registries it joins, filled lazily the first time a type joins (registries.dm):
+	// a per-type cache, not a registration (those are the "registry <id>" counts). The warm-up
+	// instance can't pre-fill it for randomised contents (an MRE's meal picks), so a content type
+	// first seen on materialize() would read as a round-trip change.
+	"registries_by_type",
 ))
 
 /// Cached (container, varname) pairs for every list-valued var on GLOB and on

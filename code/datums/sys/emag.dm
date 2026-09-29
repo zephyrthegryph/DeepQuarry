@@ -60,19 +60,22 @@ TYPE_TABLE_DECLARE(/atom, emag_decl, null)
 	priority = 50
 	held_type = /obj/item/card/emag
 	requires = list(REQ_INTERACTION_REACH)
+	effect = /atom/proc/emag_interaction_effect
 
 /datum/interaction/emag/applies_to(atom/target)
 	var/list/decl = EMAG_DECL(target)
 	return decl && !decl[EMAG_DECL_GATED]
 
-/datum/interaction/emag/run_effect(mob/actor, atom/target, obj/item/held)
+/// The Emag interaction's effect, on the target (like every interaction effect): runs its declared
+/// emag with the card's remaining uses and spends what it consumed.
+/atom/proc/emag_interaction_effect(mob/actor, obj/item/held, datum/interaction/interaction)
 	var/obj/item/card/emag/card = held
 	if(!istype(card) || !card.can_emag(actor))
 		return FALSE
-	var/used = emag_target(target, card.uses, actor, card)
+	var/used = emag_target(src, card.uses, actor, card)
 	if(used == EMAG_DECLINED)
 		return FALSE
-	card.spend(actor, target, used)
+	card.spend(actor, src, used)
 	return TRUE
 
 /// DECLARE_EMAG: the same, refused once the target is emagged.

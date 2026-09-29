@@ -284,6 +284,10 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 		var/rsc_path = "[value]"
 		if(!length(rsc_path))
 			return null
+		// A repacked icon restored from its icons/gen/ copy (decode below) saves as its source
+		// path again, so a round trip gives back the same state.
+		if(findtext(rsc_path, "icons/gen/") == 1)
+			rsc_path = copytext(rsc_path, length("icons/gen/") + 1)
 		return list(STATE_WRAP_RESOURCE = rsc_path)
 	if(isdatum(value))
 		var/value_handle = ids && om_handle(value)
@@ -627,7 +631,9 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 						refuse("registry entry [json_encode(inner)] is gone")
 					return found
 				if(STATE_WRAP_RESOURCE)
-					return file(inner)
+					// A repacked .dmi exists on disk only under icons/gen/ (the build's icon repack):
+					// file() of its source path would give back nothing.
+					return file(resolve_icon_dmi_path(inner))
 				if(STATE_WRAP_PAIRS)
 					. = list()
 					for(var/list/pair as anything in inner)

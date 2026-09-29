@@ -219,7 +219,8 @@
 	var/tmp/decl_appearance_key
 	/// What the DECLARE_APPEARANCE_PROC provider returned last (the overlays the runtime owns for it).
 	var/tmp/list/appearance_proc_overlays
-	/// TRUE while queued for a refresh on the presentation lane (appearance_queue()).
+	/// TRUE while queued for a refresh on the presentation lane (appearance_queue()), or
+	/// APPEARANCE_PENDING_LATENT while a latent movable waits to materialize before it joins.
 	var/tmp/appearance_queued = FALSE
 
 /// The value of declared name `name` on A: a proc's result or a var.
@@ -447,6 +448,11 @@ GLOBAL_LIST_EMPTY(appearance_queue)
 /// when a raised channel is in the watch mask).
 /proc/appearance_queue(atom/A)
 	if(A.appearance_queued || QDELING(A))
+		return
+	// A latent movable (a sandboxed Initialize(), a collapsed ledger's contents) is not in the live
+	// world: the queue would hold it and draw it for nobody. It joins when it materializes.
+	if(ismovable(A) && !(A.flags & ATOM_MATERIALIZED))
+		A.appearance_queued = APPEARANCE_PENDING_LATENT
 		return
 	A.appearance_queued = TRUE
 	GLOB.appearance_queue += A

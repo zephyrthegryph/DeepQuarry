@@ -128,6 +128,24 @@ DECLARE_APPEARANCE_PROC(/obj/structure/dq_appearance_provider, TYPE_PROC_REF(/at
 	P.set_on(TRUE)
 	TEST_ASSERT(!P.appearance_queued, "a setter that changes nothing queues nothing")
 
+/// A latent (unmaterialized) atom's refresh waits for it to materialize instead of holding a place
+/// in the presentation queue (a sandboxed Initialize() leaves the queue as it found it).
+/datum/unit_test/dq_sys_appearance_latent_waits
+
+/datum/unit_test/dq_sys_appearance_latent_waits/Run()
+	appearance_flush()
+	var/obj/machinery/dq_appearance_probe/P = new_unmaterialized(/obj/machinery/dq_appearance_probe, null)
+	TEST_ASSERT(!(P.flags & ATOM_MATERIALIZED), "the sandbox leaves it latent")
+	P.set_on(!P.on)
+	TEST_ASSERT_EQUAL(P.appearance_queued, APPEARANCE_PENDING_LATENT, "a latent atom's refresh is kept pending")
+	TEST_ASSERT(!(P in GLOB.appearance_queue), "a latent atom stays out of the presentation queue")
+	P.materialize()
+	TEST_ASSERT_EQUAL(P.appearance_queued, TRUE, "materializing queues the pending refresh")
+	TEST_ASSERT(P in GLOB.appearance_queue, "the pending refresh joins the queue")
+	appearance_flush()
+	TEST_ASSERT(!P.appearance_queued, "drained")
+	qdel(P)
+
 /// APPEARANCE_WATCH re-runs a procedural update_icon() when a watched field changes.
 /datum/unit_test/dq_sys_appearance_watch_procedural
 

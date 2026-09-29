@@ -110,7 +110,9 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 	if(isnull(stage))
 		stage = 1
 	..(null)
-	lifecycle_decls_init(src)
+	// Its declared spread work starts when it joins a body (on_added()), not here: a contagion is
+	// also a template that is copied into a body and dropped, and a declaration started on the
+	// template would give it an OM record that keeps it alive (an ownership-audit orphan).
 
 // --- Joining and leaving a body ----------------------------------------------------
 
@@ -140,6 +142,9 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 /datum/affliction/contagion/on_added()
 	..()
 	rel_set(src, "host", owner)
+	// Starts its DECLARE_PERIODIC_WHILE (a non-atom has no materialize) once it has a host, and
+	// again on each body it is handed on to (starting re-evaluates; it doesn't stack).
+	lifecycle_decls_init(src)
 	sync_severity()
 	registry_join(REGISTRY_ACTIVE_DISEASES, src)
 
