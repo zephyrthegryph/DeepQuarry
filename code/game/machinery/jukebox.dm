@@ -452,14 +452,18 @@
 	VV_DROPDOWN_OPTION("add_track", "Add New Track")
 	VV_DROPDOWN_OPTION("remove_track", "Remove Track")
 
-/obj/machinery/media/jukebox/ghost/vv_do_topic(list/href_list)
-	. = ..()
-	IF_VV_OPTION("add_track")
-		manual_track_add()
-		href_list[VV_HK_DATUM_REFRESH] = "\ref[src]"
-	IF_VV_OPTION("remove_track")
-		manual_track_remove()
-		href_list[VV_HK_DATUM_REFRESH] = "\ref[src]"
+VV_TOPIC_ACTION(/obj/machinery/media/jukebox/ghost, "add_track", PROC_REF(vv_topic_add_track))
+VV_TOPIC_ACTION(/obj/machinery/media/jukebox/ghost, "remove_track", PROC_REF(vv_topic_remove_track))
+
+/obj/machinery/media/jukebox/ghost/proc/vv_topic_add_track(mob/user, list/args)
+	manual_track_add()
+	user.client?.debug_variables(src)
+	return TRUE
+
+/obj/machinery/media/jukebox/ghost/proc/vv_topic_remove_track(mob/user, list/args)
+	manual_track_remove()
+	user.client?.debug_variables(src)
+	return TRUE
 
 /obj/machinery/media/jukebox/casinojukebox
 	name = "space casino jukebox"

@@ -16,30 +16,47 @@ GLOBAL_LIST_EMPTY(topic_tables)
 /datum/proc/topic_forward()
 	return null
 
-/// Appends one row (list(key, proc, specs)) to `rows`; used by TOPIC_ACTION.
-/proc/topic_register(list/rows, key, proc_name, list/specs)
+/// Appends one row (list(key, proc, specs, namespace)) to `rows`; used by TOPIC_ACTION and
+/// TOPIC_NS_ACTION. A row with a namespace is only reachable through a dispatch naming it.
+/proc/topic_register(list/rows, key, proc_name, list/specs, namespace = null)
 	if(!rows)
 		rows = list()
-	rows += list(list(key, proc_name, specs))
+	rows += list(list(key, proc_name, specs, namespace))
 	return rows
 
 /// The type of `target` (a client counts as a datum here).
 /proc/topic_target_type(datum/target)
 	return target.type
 
-/// The key -> row table of `target`'s type.
-/proc/topic_table(target)
+/// The key -> row table of `target`'s type in `namespace` (null: the plain href rows).
+/proc/topic_table(target, namespace = null)
 	var/target_type = topic_target_type(target)
-	var/list/table = GLOB.topic_tables[target_type]
+	var/cache_key = isnull(namespace) ? target_type : "[namespace]|[target_type]"
+	var/list/table = GLOB.topic_tables[cache_key]
 	if(table)
 		return table
 	table = list()
 	var/datum/D = target
 	var/list/rows = D.topic_actions()
 	for(var/list/row as anything in rows)
-		table[row[1]] = row
-	GLOB.topic_tables[target_type] = table
+		if(row[4] == namespace)
+			table[row[1]] = row
+	GLOB.topic_tables[cache_key] = table
 	return table
+
+/// The row of `target`'s table (in `namespace`) matching `href_list`, or null.
+/proc/topic_find_row(target, list/href_list, namespace = null)
+	var/list/table = topic_table(target, namespace)
+	for(var/key in href_list)
+		if(!istext(key))
+			continue
+		var/value = href_list[key]
+		var/list/row = istext(value) ? table["[key]=[value]"] : null
+		if(!row)
+			row = table[key]
+		if(row)
+			return row
+	return null
 
 /// Finds the row matching `href_list` in `target`'s table and runs it for `user`.
 /// Returns the handler's return value, or null when nothing matched or a check failed.
@@ -49,17 +66,7 @@ GLOBAL_LIST_EMPTY(topic_tables)
 	if(istype(user, /client))
 		var/client/UC = user
 		user = UC.mob
-	var/list/table = topic_table(target)
-	var/list/row
-	for(var/key in href_list)
-		if(!istext(key))
-			continue
-		var/value = href_list[key]
-		row = istext(value) ? table["[key]=[value]"] : null
-		if(!row)
-			row = table[key]
-		if(row)
-			break
+	var/list/row = topic_find_row(target, href_list)
 	if(!row)
 		var/datum/D = target
 		var/datum/forward = D.topic_forward()
@@ -68,10 +75,11 @@ GLOBAL_LIST_EMPTY(topic_tables)
 		return null
 	return topic_run(target, user, href_list, row)
 
-/// Runs one row: gate, rights, typed args, handler.
-/proc/topic_run(target, mob/user, list/href_list, list/row)
+/// Runs one row: gate (unless `gate` is FALSE: a namespace with its own gate), rights, typed
+/// args, handler.
+/proc/topic_run(target, mob/user, list/href_list, list/row, gate = TRUE)
 	var/datum/D = target
-	if(QDELETED(D) || !D.topic_allowed(user, href_list))
+	if(QDELETED(D) || (gate && !D.topic_allowed(user, href_list)))
 		return null
 	var/list/handler_args = list()
 	handler_args[TOPIC_HREF] = href_list
@@ -134,7 +142,17 @@ GLOBAL_LIST_EMPTY(topic_tables)
 			if(!islist(pool))
 				return null
 			found = locate(raw) in pool
-	if(isnull(found) || !istype(found, wanted))
+	if(isnull(found))
+		return null
+	if(islist(wanted)) // any of several types
+		var/matched = FALSE
+		for(var/wanted_type in wanted)
+			if(istype(found, wanted_type))
+				matched = TRUE
+				break
+		if(!matched)
+			return null
+	else if(!isnull(wanted) && !istype(found, wanted)) // null: whatever locate() finds (the handler validates)
 		return null
 	if(isdatum(found))
 		var/datum/FD = found

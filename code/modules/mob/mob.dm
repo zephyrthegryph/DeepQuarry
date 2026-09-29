@@ -1435,176 +1435,124 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	if(seq.wake)
 		L.status_adjust(EFFECT_SLEEPING, -100)
 
-/mob/vv_do_topic(list/href_list)
-	. = ..()
+VV_TOPIC_ACTION(/mob, VV_HK_REGEN_ICONS, PROC_REF(vv_topic_regen_icons))
+VV_TOPIC_ACTION(/mob, VV_HK_REGEN_ICONS_FULL, PROC_REF(vv_topic_regen_icons_full))
+VV_TOPIC_ACTION(/mob, VV_HK_PLAYER_PANEL, PROC_REF(vv_topic_player_panel))
+VV_TOPIC_ACTION(/mob, VV_HK_GODMODE, PROC_REF(vv_topic_godmode), TOPIC_RIGHTS(R_ADMIN))
+VV_TOPIC_ACTION(/mob, VV_HK_ADDLANGUAGE, PROC_REF(vv_topic_add_language), TOPIC_RIGHTS(R_SPAWN))
+VV_TOPIC_ACTION(/mob, VV_HK_REMOVELANGUAGE, PROC_REF(vv_topic_remove_language), TOPIC_RIGHTS(R_SPAWN))
+VV_TOPIC_ACTION(/mob, VV_HK_ADDVERB, PROC_REF(vv_topic_add_verb), TOPIC_RIGHTS(R_DEBUG))
+VV_TOPIC_ACTION(/mob, VV_HK_REMOVEVERB, PROC_REF(vv_topic_remove_verb), TOPIC_RIGHTS(R_DEBUG))
+VV_TOPIC_ACTION(/mob/living/carbon, VV_HK_ADDORGAN, PROC_REF(vv_topic_add_organ), TOPIC_RIGHTS(R_SPAWN))
+VV_TOPIC_ACTION(/mob/living/carbon, VV_HK_REMOVEORGAN, PROC_REF(vv_topic_remove_organ), TOPIC_RIGHTS(R_SPAWN))
+VV_TOPIC_ACTION(/mob/living, VV_HK_GIVE_AI, PROC_REF(vv_topic_give_ai), TOPIC_RIGHTS(R_HOLDER))
+VV_TOPIC_ACTION(/mob, VV_HK_GIVE_SPELL, PROC_REF(vv_topic_give_spell))
+VV_TOPIC_ACTION(/mob, VV_HK_REMOVE_SPELL, PROC_REF(vv_topic_remove_spell))
+VV_TOPIC_ACTION(/mob, VV_HK_GIVE_MODIFIER, PROC_REF(vv_topic_give_modifier))
+VV_TOPIC_ACTION(/mob, VV_HK_GIB, PROC_REF(vv_topic_gib))
+VV_TOPIC_ACTION(/mob, VV_HK_BUILDMODE, PROC_REF(vv_topic_buildmode), TOPIC_RIGHTS(R_BUILDMODE))
+VV_TOPIC_ACTION(/mob, VV_HK_DROP_ALL, PROC_REF(vv_topic_drop_all))
+VV_TOPIC_ACTION(/mob, VV_HK_DIRECT_CONTROL, PROC_REF(vv_topic_direct_control))
 
-	if(!.)
+/mob/proc/vv_topic_regen_icons(mob/user, list/args)
+	regenerate_icons()
+	return TRUE
+
+/mob/proc/vv_topic_regen_icons_full(mob/user, list/args)
+	cut_overlays()
+	regenerate_icons()
+	return TRUE
+
+/mob/proc/vv_topic_player_panel(mob/user, list/args)
+	return SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_player_panel, src)
+
+/mob/proc/vv_topic_godmode(mob/user, list/args)
+	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/cmd_admin_godmode, src)
+	return TRUE
+
+/mob/proc/vv_topic_add_language(mob/user, list/args)
+	om_ask(user, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_language_added), title = "Language", message = "Please choose a language to add.", choices = GLOB.all_languages)
+	return TRUE
+
+/mob/proc/vv_topic_remove_language(mob/user, list/args)
+	if(!languages.len)
+		to_chat(user, "This mob knows no languages.")
+		return
+	om_ask(user, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_language_removed), title = "Language", message = "Please choose a language to remove.", choices = languages)
+	return TRUE
+
+/mob/proc/vv_topic_add_verb(mob/user, list/args)
+	om_ask(user, /datum/om/prompt/choice/vv_debug, PROC_REF(vv_verb_added), title = "Verbs", message = "Select a verb!", choices = vv_addable_verbs(src))
+	return TRUE
+
+/// The verbs VV can add to `H` (a global proc: typesof(/mob/proc) inside a /mob proc is a cross-reference loop).
+/proc/vv_addable_verbs(mob/H)
+	var/list/possibleverbs = list()
+	possibleverbs += "Cancel" 								// One for the top...
+	possibleverbs += typesof(/mob/proc, /mob/verb)
+	if(isobserver(H))
+		possibleverbs += typesof(/mob/observer/dead/proc,/mob/observer/dead/verb)
+	if(isliving(H))
+		possibleverbs += typesof(/mob/living/proc,/mob/living/verb)
+	if(ishuman(H))
+		possibleverbs += typesof(/mob/living/carbon/proc,/mob/living/carbon/verb,/mob/living/carbon/human/verb,/mob/living/carbon/human/proc)
+	if(isrobot(H))
+		possibleverbs += typesof(/mob/living/silicon/proc,/mob/living/silicon/robot/proc,/mob/living/silicon/robot/verb)
+	if(isAI(H))
+		possibleverbs += typesof(/mob/living/silicon/proc,/mob/living/silicon/ai/proc,/mob/living/silicon/ai/verb)
+	if(isanimal(H))
+		possibleverbs += typesof(/mob/living/simple_mob/proc)
+	possibleverbs -= H.verbs
+	possibleverbs += "Cancel" 								// ...And one for the bottom
+
+	return possibleverbs
+
+/mob/proc/vv_topic_remove_verb(mob/user, list/args)
+	om_ask(user, /datum/om/prompt/choice/vv_debug, PROC_REF(vv_verb_removed), title = "Verbs", message = "Please choose a verb to remove.", choices = verbs)
+	return TRUE
+
+/mob/living/carbon/proc/vv_topic_add_organ(mob/user, list/args)
+	om_ask(user, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_organ_added), title = "Organ", message = "Please choose an organ to add.", choices = subtypesof(/obj/item/organ))
+	return TRUE
+
+/mob/living/carbon/proc/vv_topic_remove_organ(mob/user, list/args)
+	om_ask(user, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_organ_removed), title = "Organ", message = "Please choose an organ to remove.", choices = internal_organ_list())
+	return TRUE
+
+/mob/living/proc/vv_topic_give_ai(mob/user, list/args)
+	if(client || teleop)
+		to_chat(user, span_warning("This cannot be used on player mobs!"))
 		return
 
-	if(href_list[VV_HK_REGEN_ICONS])
-		if(!check_rights(NONE))
-			return
-		regenerate_icons()
+	if(ai_brain)	//Cleaning up the original ai
+		var/datum/ai_brain/old_brain = ai_brain
+		ai_brain = null
+		qdel(old_brain)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
+	initialize_ai_brain()
+	om_ask_sequence(/datum/om/flow/ask_sequence/vv_ai_setup, user, null, steps = list(/datum/om/prompt/text/vv_ai_faction, /datum/om/prompt/choice/vv_ai_stance, /datum/om/prompt/confirm/vv_ai_wake), on_done = PROC_REF(vv_ai_configured), requires = PROMPT_ADMIN(R_HOLDER))
+	return TRUE
 
-	if(href_list[VV_HK_REGEN_ICONS_FULL])
-		if(!check_rights(NONE))
-			return
-		cut_overlays()
-		regenerate_icons()
+/mob/proc/vv_topic_give_spell(mob/user, list/args)
+	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/give_spell, src)
 
-	if(href_list[VV_HK_PLAYER_PANEL])
-		return SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/show_player_panel, src)
+/mob/proc/vv_topic_remove_spell(mob/user, list/args)
+	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/remove_spell, src)
 
-	if(href_list[VV_HK_GODMODE])
-		if(!check_rights(R_ADMIN))
-			return
-		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/cmd_admin_godmode, src)
+/mob/proc/vv_topic_give_modifier(mob/user, list/args)
+	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/admin_give_modifier, src)
 
-	if(href_list[VV_HK_ADDLANGUAGE])
-		if(!check_rights(R_SPAWN))
-			return
+/mob/proc/vv_topic_gib(mob/user, list/args)
+	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/gib_them, src)
 
-		var/mob/H = src
-		if(!istype(H))
-			to_chat(usr, "This can only be done to instances of type /mob")
-			return
+/mob/proc/vv_topic_buildmode(mob/user, list/args)
+	togglebuildmode(src)
+	return TRUE
 
-		om_ask(usr, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_language_added), title = "Language", message = "Please choose a language to add.", choices = GLOB.all_languages)
+/mob/proc/vv_topic_drop_all(mob/user, list/args)
+	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/drop_everything, src)
 
-	if(href_list[VV_HK_REMOVELANGUAGE])
-		if(!check_rights(R_SPAWN))
-			return
-
-		var/mob/H = src
-		if(!istype(H))
-			to_chat(usr, "This can only be done to instances of type /mob")
-			return
-
-		if(!H.languages.len)
-			to_chat(usr, "This mob knows no languages.")
-			return
-
-		om_ask(usr, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_language_removed), title = "Language", message = "Please choose a language to remove.", choices = H.languages)
-
-	if(href_list[VV_HK_ADDVERB])
-		if(!check_rights(R_DEBUG))
-			return
-
-		var/mob/H = src
-
-		if(!ismob(H))
-			to_chat(usr, "This can only be done to instances of type /mob")
-			return
-		var/list/possibleverbs = list()
-		possibleverbs += "Cancel" 								// One for the top...
-		possibleverbs += typesof(/mob/proc, /mob/verb)
-		if(isobserver(H))
-			possibleverbs += typesof(/mob/observer/dead/proc,/mob/observer/dead/verb)
-		if(isliving(H))
-			possibleverbs += typesof(/mob/living/proc,/mob/living/verb)
-		if(ishuman(H))
-			possibleverbs += typesof(/mob/living/carbon/proc,/mob/living/carbon/verb,/mob/living/carbon/human/verb,/mob/living/carbon/human/proc)
-		if(isrobot(H))
-			possibleverbs += typesof(/mob/living/silicon/proc,/mob/living/silicon/robot/proc,/mob/living/silicon/robot/verb)
-		if(isAI(H))
-			possibleverbs += typesof(/mob/living/silicon/proc,/mob/living/silicon/ai/proc,/mob/living/silicon/ai/verb)
-		if(isanimal(H))
-			possibleverbs += typesof(/mob/living/simple_mob/proc)
-		possibleverbs -= H.verbs
-		possibleverbs += "Cancel" 								// ...And one for the bottom
-
-		om_ask(usr, /datum/om/prompt/choice/vv_debug, PROC_REF(vv_verb_added), title = "Verbs", message = "Select a verb!", choices = possibleverbs)
-
-	if(href_list[VV_HK_REMOVEVERB])
-		if(!check_rights(R_DEBUG))
-			return
-
-		var/mob/H = src
-
-		if(!istype(H))
-			to_chat(usr, "This can only be done to instances of type /mob")
-			return
-		om_ask(usr, /datum/om/prompt/choice/vv_debug, PROC_REF(vv_verb_removed), title = "Verbs", message = "Please choose a verb to remove.", choices = H.verbs)
-
-	if(href_list[VV_HK_ADDORGAN])
-		if(!check_rights(R_SPAWN))
-			return
-
-		var/mob/living/carbon/M = src
-		if(!istype(M))
-			to_chat(usr, "This can only be done to instances of type /mob/living/carbon")
-			return
-
-		om_ask(usr, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_organ_added), title = "Organ", message = "Please choose an organ to add.", choices = subtypesof(/obj/item/organ))
-
-	if(href_list[VV_HK_REMOVEORGAN])
-		if(!check_rights(R_SPAWN))
-			return
-
-		var/mob/living/carbon/M = src
-		if(!istype(M))
-			to_chat(usr, "This can only be done to instances of type /mob/living/carbon")
-			return
-
-		om_ask(usr, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_organ_removed), title = "Organ", message = "Please choose an organ to remove.", choices = M.internal_organ_list())
-
-	if(href_list[VV_HK_GIVE_AI])
-		if(!check_rights(R_HOLDER))
-			return
-
-		var/mob/M = src
-		if(!isliving(M))
-			to_chat(src, span_notice("This can only be used on instances of type /mob/living"))
-			return
-		var/mob/living/L = M
-		if(L.client || L.teleop)
-			to_chat(src, span_warning("This cannot be used on player mobs!"))
-			return
-
-		if(L.ai_brain)	//Cleaning up the original ai
-			var/datum/ai_brain/old_brain = L.ai_brain
-			L.ai_brain = null
-			qdel(old_brain)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
-		L.initialize_ai_brain()
-		om_ask_sequence(/datum/om/flow/ask_sequence/vv_ai_setup, usr, null, steps = list(/datum/om/prompt/text/vv_ai_faction, /datum/om/prompt/choice/vv_ai_stance, /datum/om/prompt/confirm/vv_ai_wake), on_done = PROC_REF(vv_ai_configured), requires = PROMPT_ADMIN(R_HOLDER))
-
-	//if(href_list[VV_HK_GIVE_AI_SPEECH])
-	//	return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/give_ai_speech, src)
-
-	//if(href_list[VV_HK_GIVE_MOB_ACTION])
-	//	return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/give_mob_action, src)
-
-	//if(href_list[VV_HK_REMOVE_MOB_ACTION])
-	//	return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/remove_mob_action, src)
-
-	if(href_list[VV_HK_GIVE_SPELL])
-		return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/give_spell, src)
-
-	if(href_list[VV_HK_REMOVE_SPELL])
-		return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/remove_spell, src)
-
-	if(href_list[VV_HK_GIVE_MODIFIER])
-		return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/admin_give_modifier, src)
-
-	//if(href_list[VV_HK_GIVE_DISEASE])
-	//	return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/give_disease, src)
-
-	if(href_list[VV_HK_GIB])
-		return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/gib_them, src)
-
-	if(href_list[VV_HK_BUILDMODE])
-		if(!check_rights(R_BUILDMODE))
-			return
-		togglebuildmode(src)
-
-	if(href_list[VV_HK_DROP_ALL])
-		return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/drop_everything, src)
-
-	if(href_list[VV_HK_DIRECT_CONTROL])
-		return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/cmd_assume_direct_control, src)
-
-	//if(href_list[VV_HK_GIVE_DIRECT_CONTROL])
-	//	return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/cmd_give_direct_control, src)
+/mob/proc/vv_topic_direct_control(mob/user, list/args)
+	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/cmd_assume_direct_control, src)
 
 
 /**

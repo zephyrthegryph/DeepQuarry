@@ -120,7 +120,7 @@
 			SStgui.update_uis(src)
 			return TRUE
 		if("vv")
-			holder().topic_internal(ui.user, list("_src_" = "vars", "Vars" = ref))
+			ui.user.client?.vv_topic(list("Vars" = ref), TRUE)
 			return TRUE
 		if("pp")
 			holder().topic_internal(ui.user, list("_src_" = "holder", "playerpanel" = ref))

@@ -214,30 +214,16 @@
 	VV_DROPDOWN_OPTION(VV_HK_MASS_DEL_TYPE, "Delete all of type")
 	VV_DROPDOWN_OPTION(VV_HK_FAKE_CONVO, "Add Fake Prop Conversation")
 
-/obj/vv_do_topic(list/href_list)
-	. = ..()
+VV_TOPIC_ACTION(/obj, VV_HK_MASS_DEL_TYPE, PROC_REF(vv_topic_mass_delete_type), TOPIC_RIGHTS(R_DEBUG|R_SERVER))
+VV_TOPIC_ACTION(/obj/item/pda, VV_HK_FAKE_CONVO, PROC_REF(vv_topic_fake_convo), TOPIC_RIGHTS(R_FUN))
 
-	if(!.)
-		return
+/obj/proc/vv_topic_mass_delete_type(mob/user, list/args)
+	om_ask(user, /datum/om/prompt/choice/mass_delete_scope, PROC_REF(mass_delete_scope_chosen))
+	return TRUE
 
-	//if(href_list[VV_HK_OSAY])
-	//	return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/object_say, src)
-
-	if(href_list[VV_HK_MASS_DEL_TYPE])
-		if(!check_rights(R_DEBUG|R_SERVER))
-			return
-		om_ask(usr, /datum/om/prompt/choice/mass_delete_scope, PROC_REF(mass_delete_scope_chosen))
-		return
-	if(href_list[VV_HK_FAKE_CONVO])
-		if(!check_rights(R_FUN))
-			return
-
-		var/obj/item/pda/P = src
-		if(!istype(P))
-			to_chat(usr, span_warning("This can only be done to instances of type /pda"))
-			return
-
-		P.createPropFakeConversation_admin(usr)
+/obj/item/pda/proc/vv_topic_fake_convo(mob/user, list/args)
+	createPropFakeConversation_admin(user)
+	return TRUE
 
 /datum/om/prompt/choice/mass_delete_scope
 	choices = list("Strict type","Type and subtypes","Cancel")

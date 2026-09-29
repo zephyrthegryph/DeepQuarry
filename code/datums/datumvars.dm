@@ -40,18 +40,9 @@
 	VV_DROPDOWN_OPTION(VV_HK_REMOVECOMPONENT, "Detach OM Behaviour")
 	VV_DROPDOWN_OPTION(VV_HK_MASS_REMOVECOMPONENT, "Mass Detach OM Behaviour")
 
-/**
- * This proc is only called if everything topic-wise is verified. The only verifications that should happen here is things like permission checks!
- * href_list is a reference, modifying it in these procs WILL change the rest of the proc in topic.dm of admin/view_variables!
- * This proc is for "high level" actions like admin heal/set species/etc/etc. The low level debugging things should go in admin/view_variables/topic_basic.dm in case this runtimes.
- */
-/datum/proc/vv_do_topic(list/href_list)
-	if(!usr || !usr.client || !usr.client.holder || !check_rights(R_VAREDIT))
-		return FALSE //This is VV, not to be called by anything else.
-	return TRUE
-
-//This proc is only called if everything topic-wise is verified. The only verifications that should happen here is things like permission checks!
-//href_list is a reference, modifying it in these procs WILL change the rest of the proc in topic.dm of admin/view_variables!
+// The dropdown's "high level" actions (admin heal, set species, ...) are VV_TOPIC_ACTION rows on
+// the type (code/__defines/vv.dm); the low level ones are the admin client's rows in
+// admin/view_variables/topic_basic.dm, in case the type's own code runtimes.
 
 /datum/proc/vv_get_header()
 	. = list()

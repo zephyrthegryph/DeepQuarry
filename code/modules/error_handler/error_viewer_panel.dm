@@ -124,7 +124,7 @@
 			if(istype(src, /datum/error_viewer/error_entry))
 				var/datum/error_viewer/error_entry/E = src
 				if(E.usr_ref)
-					ui.user.client?.view_var_Topic("Vars=[E.usr_ref]", list("_src_" = "vars", "Vars" = E.usr_ref))
+					ui.user.client?.vv_topic(list("Vars" = E.usr_ref), TRUE)
 			return TRUE
 		if("pp_usr")
 			if(istype(src, /datum/error_viewer/error_entry))
@@ -143,7 +143,7 @@
 				var/datum/error_viewer/error_entry/E = src
 				if(E.usr_loc())
 					var/ref = "[REF(E.usr_loc())]"
-					ui.user.client?.view_var_Topic("Vars=[ref]", list("_src_" = "vars", "Vars" = ref))
+					ui.user.client?.vv_topic(list("Vars" = ref), TRUE)
 			return TRUE
 		if("jmp_usr_loc")
 			if(istype(src, /datum/error_viewer/error_entry))

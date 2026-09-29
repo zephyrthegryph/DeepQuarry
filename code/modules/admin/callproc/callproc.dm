@@ -35,10 +35,8 @@ GLOBAL_PROTECT(AdminProcCallHandler)
 		return ..()
 	return FALSE
 
-/mob/proccall_handler/vv_do_topic(list/href_list)
-	if(GLOB.AdminProcCallHandler != src)
-		return ..()
-	return FALSE
+/mob/proccall_handler/vv_topic_allowed(mob/user)
+	return GLOB.AdminProcCallHandler != src && ..()
 
 /mob/proccall_handler/CanProcCall(procname)
 	if(GLOB.AdminProcCallHandler != src)

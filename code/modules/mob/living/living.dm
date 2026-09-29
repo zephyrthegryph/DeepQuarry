@@ -953,7 +953,7 @@
 
 /// The VV body editor: injure with a chosen kind, mend with a chosen tag, add
 /// or remove an affliction, or set oxygen debt. Returns the log line (what was
-/// done), or null when cancelled or still asking. Runs inside view_var_Topic()'s
+/// done), or null when cancelled or still asking. Runs inside vv_topic()'s
 /// prompt flow: each flow_ask() answer re-runs the topic, which re-locates this
 /// mob, so every check below is made again before anything changes.
 /mob/living/proc/vv_adjust_body(client/C, action)

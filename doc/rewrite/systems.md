@@ -301,6 +301,17 @@ TOPIC_ACTION(/datum/admins, "adminplayeropts", PROC_REF(topic_player_opts), TOPI
   `TOPIC_REF(name, type)` with `locate(ref) in <declared source>` and type check, then calls the
   proc with typed args. The 1,352-line admin topic becomes rows.
 - Lint `sys_topic_override`.
+- **As built, View Variables namespace.** VV hrefs keep their `_src_=vars` shape. They reach
+  `/client/proc/vv_topic(href_list, trusted = FALSE)`, which checks R_VAREDIT and the admin href
+  token (`trusted` skips only the token, for server-side tgui callers). It then calls
+  `topic_dispatch_vv()`. That tries the `target` datum's `VV_TOPIC_ACTION(type, VV_HK_X,
+  PROC_REF(h), specs...)` rows first (these replaced `vv_do_topic()`), then the admin client's
+  `VV_ADMIN_TOPIC_ACTION(key, ...)` rows: basic edits, lists, `Vars`, rotate, the body editor.
+  Namespaced rows come from `TOPIC_NS_ACTION` and live in their own per-namespace table, so a
+  plain `Topic()` href never reaches them. The VV path skips the target's `topic_allowed()`; a
+  datum can refuse its VV rows with `vv_topic_allowed(user)`. `TOPIC_REF` also takes a list of
+  types, or `null` (whatever `locate()` finds, and the handler validates it). A handler that
+  changes what VV shows calls `user.client.debug_variables(src)`; the `datumrefresh` key is gone.
 
 As built (`code/__defines/topic.dm`, `code/datums/topic/topic_dispatch.dm`):
 
