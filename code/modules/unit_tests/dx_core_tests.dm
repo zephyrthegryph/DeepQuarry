@@ -6,7 +6,6 @@
 
 /datum/capability/dx_test
 	var/label
-	var/layer_name
 
 /datum/capability/dx_test/examine(atom/holder, mob/user)
 	return list(label)
@@ -62,7 +61,7 @@ TRACKED(/obj/cap_fixture/dx_core, power_level, CHANGE_EFFECTS)
 	. = ..()
 	. += dx_test_cap(/datum/capability/dx_test/a, "alpha")
 	. += dx_test_cap(/datum/capability/dx_test/b, "beta")
-	. += hand("Configure", PROC_REF(dx_configure), form = list(dx_canned_field("mode", "fast"), dx_canned_field("count", 3)))
+	. += cap_hand("Configure", PROC_REF(dx_configure), form = list(dx_canned_field("mode", "fast"), dx_canned_field("count", 3)))
 
 /obj/cap_fixture/dx_core/draw(datum/look/look)
 	..()
