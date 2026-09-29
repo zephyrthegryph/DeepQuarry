@@ -16,8 +16,8 @@
 	src.mecha_log_message("Rearmed [src.name].")
 	return
 
-/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/Topic(href, href_list)
-	..()
-	if (href_list["rearm"])
-		src.rearm()
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/weapon/ballistic, "rearm", PROC_REF(topic_rearm))
+
+/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/topic_rearm(mob/user, list/args)
+	src.rearm()
 	return

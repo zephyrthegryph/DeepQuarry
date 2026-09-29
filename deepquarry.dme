@@ -698,7 +698,6 @@
 #include "code\datums\helper_datums\stack_end_detector.dm"
 #include "code\datums\abilities\ability.dm"
 #include "code\datums\helper_datums\teleport.dm"
-#include "code\datums\helper_datums\topic_input.dm"
 #include "code\datums\interactions\construction.dm"
 #include "code\datums\interactions\interaction.dm"
 #include "code\datums\interactions\compact.dm"
