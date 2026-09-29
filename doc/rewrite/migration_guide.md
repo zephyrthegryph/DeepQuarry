@@ -262,6 +262,7 @@ The decision table. **Read it before writing anything with a timer.**
 
 - **Base types:** never add a var to `/atom`, `/obj`, `/obj/item`, `/obj/machinery`, `/mob`, `/mob/living` or `/mob/living/carbon/human` without asking. A ratchet counts them [planned].
 - **No `= list()` on instance vars:** use lazy lists.
+- **Null policy (library and framework code):** accessors never return null (a count is 0, a list is empty, a state is FALSE); use a null object or a sentinel where "nothing" must be represented; relations, timers (`after`, `om_after_slot`, `timed_set`) and dispatch drop dead targets, so a handler never receives a null or deleted target.
 - **Accessors never return null.** Use a null object (`/datum/thermal_profile/default`) or a defined sentinel (`NIGHTSHIFT_AUTO`), not null.
 - **No defensive guards in converted code:** no `?.` chains or `if(!x) return` on values the framework guarantees (owned vars, relation targets inside their hooks, timer and callback args). `QDELETED()` checks belong only at edges: I/O callbacks and user input.
 
