@@ -11,12 +11,12 @@
 	medical.requirements += new /datum/generated_station_capability_requirement("power", 1)
 	var/datum/generated_station_department_instance/engineering_instance = new
 	engineering_instance.id = "engineering-1"
-	engineering_instance.definition_static = engineering
+	rel_set(engineering_instance, "definition_static", engineering)
 	engineering_instance.desired_area = 24
 	engineering_instance.layout_node_id = "engineering-node"
 	var/datum/generated_station_department_instance/medical_instance = new
 	medical_instance.id = "medical-1"
-	medical_instance.definition_static = medical
+	rel_set(medical_instance, "definition_static", medical)
 	medical_instance.desired_area = 12
 	medical_instance.layout_node_id = "medical-node"
 	var/datum/generated_station_layout_node/engineering_node = new
@@ -63,7 +63,7 @@
 	department_definition.requirements += new /datum/generated_station_capability_requirement("optional-network", 1, TRUE)
 	var/datum/generated_station_department_instance/department = new
 	department.id = "isolated-1"
-	department.definition_static = department_definition
+	rel_set(department, "definition_static", department_definition)
 	department.desired_area = 5
 	department.layout_node_id = "missing-node"
 	var/datum/generated_station_spec/spec = new

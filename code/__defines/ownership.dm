@@ -86,5 +86,9 @@
 /// Pooling: pool_release() resets VAR to its initial value. Only on POOL_DECLAREd types.
 #define POOL_RESET(PATH, VAR) ##PATH/declared_pool_reset() { . = ..(); LAZYADD(., nameof(PATH::VAR)); }
 
+/// replace_with(): VAR is carried to the successor (om_handle_forward()). An owned value moves
+/// (own_move), a relation view re-links, anything else is copied.
+#define FORWARD_STATE(PATH, VAR) ##PATH/declared_forward_vars() { . = ..(); LAZYADD(., nameof(PATH::VAR)); }
+
 /// Reports an ownership violation (a runtime, so a test fails; captured in tests of the checks).
 #define OWN_REPORT(msg) dq_lifecycle_report("OWN: [msg]")

@@ -79,7 +79,8 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 /// A client's is "@ckey", resolved through GLOB.directory.
 /proc/om_handle(datum/D)
 	if(isturf(D))
-		return REF(D)
+		var/turf/T = D
+		return "[REF(T)]#[om_z_generation(T.z)]"
 	if(isclient(D))
 		var/client/C = D
 		return "@[C.ckey]" // a client is its ckey: it reads null while that player is disconnected
@@ -125,14 +126,66 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 		return FALSE
 	return h == om_handle_of(D)
 
+/// A handle slot parked for a thing that collapsed into latent data (containment.md sec 4.5): it
+/// resolves to null until the entry re-materializes into the same slot (om_handle_unpark()).
+#define OM_HANDLE_PARKED "\[latent]"
+
+/// Collapse into latent data keeps the identity: `D`'s handle slot is parked (not freed, generation
+/// unchanged) and every relation view naming D goes dormant under it (rel_go_dormant()). Returns the
+/// slot id to keep on the latent entry, or 0 when D never had a handle.
+/proc/om_handle_park(datum/D)
+	var/id = D.om_hid
+	if(!id)
+		return 0
+	rel_go_dormant(D)
+	var/list/slots = GLOB.om_handle_slots
+	if(id <= length(slots) && slots[id] == REF(D))
+		slots[id] = OM_HANDLE_PARKED
+	D.om_hid = 0
+	return id
+
+/// The re-materialized `D` takes over parked slot `id`: every old handle to the collapsed thing
+/// resolves to D again, and its dormant relation views re-link (rel_wake()).
+/proc/om_handle_unpark(datum/D, id)
+	var/list/slots = GLOB.om_handle_slots
+	if(!id || id > length(slots) || slots[id] != OM_HANDLE_PARKED)
+		return FALSE
+	if(D.om_hid)
+		om_handle_release(D)
+	slots[id] = REF(D)
+	var/list/types = GLOB.om_handle_types
+	if(length(types) >= id)
+		types[id] = D.type
+	D.om_hid = id
+	rel_wake(D, id)
+	return TRUE
+
+/// A parked slot whose latent thing is gone for good (discarded, deleted as data): the slot is
+/// freed and its generation bumped, and its dormant views are dropped.
+/proc/om_handle_release_parked(id)
+	var/list/slots = GLOB.om_handle_slots
+	if(!id || id > length(slots) || slots[id] != OM_HANDLE_PARKED)
+		return
+	slots[id] = null
+	GLOB.om_handle_gens[id]++
+	GLOB.om_handle_free += id
+	GLOB.rel_dormant -= "[id]"
+
 /// The datum a handle names, or null if it has been deleted (whatever now uses its id).
 /proc/om_resolve(h)
 	if(!istext(h))
 		return null
 	switch(text2ascii(h))
-		if(91) // "[": a turf's ref (om_handle())
-			var/turf/T = locate(h)
-			return isturf(T) ? T : null
+		if(91) // "[": a turf's ref and its z-level's generation (om_handle())
+			var/hash = findtext(h, "#")
+			var/turf/T = locate(hash ? copytext(h, 1, hash) : h)
+			if(!isturf(T))
+				return null
+			// A released and recycled z-level bumps its generation: an old turf handle stops
+			// resolving instead of naming a turf of whatever site reuses the level.
+			if(hash && text2num(copytext(h, hash + 1)) != om_z_generation(T.z))
+				return null
+			return T
 		if(64) // "@": a client's ckey
 			return GLOB.directory[copytext(h, 2)]
 	var/sep = findtext(h, ":")
@@ -145,7 +198,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	if(GLOB.om_handle_gens[id] != text2num(copytext(h, sep + 1)))
 		return null
 	var/ref = slots[id]
-	if(!ref)
+	if(!ref || ref == OM_HANDLE_PARKED)
 		return null
 	var/datum/D = locate(ref)
 	if(!isdatum(D) || D.om_hid != id)
@@ -186,7 +239,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 /// TRUE if `h` is text shaped like an OM handle ("id:gen"). Says nothing about
 /// whether it still resolves.
 /proc/om_is_handle(h)
-	var/static/regex/shape = regex(@"^(\d+:\d+|\[0x[0-9a-fA-F]+\]|@\w+)$")
+	var/static/regex/shape = regex(@"^(\d+:\d+|\[0x[0-9a-fA-F]+\](#\d+)?|@\w+)$")
 	return istext(h) && shape.Find(h)
 
 /// qdel()s whatever handle `h` names, if it still exists (QDEL_IN's deferred form).
@@ -532,7 +585,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 
 /// om_run() without waiting: the call runs in its own stack (INVOKE_ASYNC for a stored spec).
 /proc/om_run_async(list/spec, ...)
-	set waitfor = FALSE
+	set waitfor = FALSE // ALLOW(scheduler): the async half of a stored call spec, as /datum/callback/InvokeAsync() was
 	return om_run(arglist(args))
 
 /// Resolves captured handles in place. FALSE if any is gone (or, with `nulls_for_gone`, passes
