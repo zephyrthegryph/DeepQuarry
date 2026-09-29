@@ -1239,9 +1239,10 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		holder_type = null
 		hunger_rate = initial(hunger_rate)
 
-	species = GLOB.all_species[new_species]
+	adopt_species(GLOB.all_species[new_species])
 	om_changed(src, CHANGE_MOB_CONDITIONS) // species vision and senses
 	old_species?.remove_components(src, species)
+	release_species_copy(old_species)
 	invalidate_factors()
 
 	if(species.language)

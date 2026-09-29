@@ -37,7 +37,8 @@ for lint in \
 	om_internal_lint.py \
 	init_lint.py \
 	organ_slots_lint.py \
-	stance_examine_lint.py; do
+	stance_examine_lint.py \
+	static_ref_new_lint.py; do
 	echo "::group::$lint"
 	if ! "$PY" "tools/ci/$lint"; then
 		failed+=("$lint")

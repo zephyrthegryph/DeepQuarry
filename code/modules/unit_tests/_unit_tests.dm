@@ -106,6 +106,8 @@
 #include "nuke_cinematic.dm"
 #include "pai_tests.dm"
 #include "preview_async_tests.dm"
+#include "species_copy_ownership_tests.dm"
+#include "mc_post_init_tests.dm"
 #include "poster_tests.dm"
 #include "special_roles.dm"
 #include "preferences.dm"
