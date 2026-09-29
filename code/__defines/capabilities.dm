@@ -122,3 +122,6 @@
 #define CADENCE_SECOND /datum/om/pipeline/periodic/second
 /// Every 0.2 seconds (continuous lanes need a reason).
 #define CADENCE_FAST /datum/om/pipeline/periodic/fast
+
+/// /datum/capability/condition `blocks`: the condition refuses every other capability entry of its holder.
+#define ALL_ENTRIES "all_entries"

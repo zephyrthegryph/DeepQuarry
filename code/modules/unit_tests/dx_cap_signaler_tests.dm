@@ -74,8 +74,7 @@
 	set_freq.form = freq_form
 	set_code.form = code_form
 
-	var/list/data = list()
-	F.caps_ui_data(H, data)
+	var/list/data = dx_cap_ui_data(F, H, /datum/capability/signaler)
 	TEST_ASSERT_EQUAL(data["frequency"], 1457, "ui_data frequency")
 	TEST_ASSERT_EQUAL(data["code"], 100, "ui_data code")
 	TEST_ASSERT_EQUAL(data["minFrequency"], RADIO_LOW_FREQ, "ui_data band")

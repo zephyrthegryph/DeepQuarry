@@ -38,8 +38,7 @@
 	TEST_ASSERT_EQUAL(stamp_entry.why_not(H, F, stamp), "there's no room left for another stamp", "max_stamps refuses a third")
 	TEST_ASSERT(!cap_stamp_add(F, stamp), "and the direct add refuses too")
 
-	var/list/data = list()
-	F.caps_ui_data(H, data)
+	var/list/data = dx_cap_ui_data(F, H, /datum/capability/stamp_target)
 	TEST_ASSERT_EQUAL(length(data["stamps"]), 2, "ui_data lists the stamps")
 	TEST_ASSERT_EQUAL(stamp_mark_text(stamp, "paper"), "This paper has been stamped with the rubber stamp.", "the helper paper uses")
 	TEST_ASSERT(stamp_usable_by(stamp, H), "an ordinary stamp works for anyone")
