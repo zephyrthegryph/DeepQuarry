@@ -78,15 +78,19 @@ GLOBAL_LIST_EMPTY(refresh_self_marks)
 
 // ---- "why did this redraw?" (M10): the last marks of each entity, with where they came from ----
 
-/// Entities whose marks are being traced (the admin verb turns one on). Empty: tracing costs one check.
+/// Ref text of entities whose marks are being traced (the admin verb turns one on); refs, so a
+/// forgotten trace keeps nothing alive. Empty: tracing costs one check.
 GLOBAL_LIST_EMPTY(refresh_traced)
 
 /proc/refresh_trace_note(datum/E, channel)
-	if(!length(GLOB.refresh_traced) || !(E in GLOB.refresh_traced))
+	if(!length(GLOB.refresh_traced))
 		return
-	var/list/lines = GLOB.refresh_traced[E]
+	var/ref_text = REF(E)
+	if(!(ref_text in GLOB.refresh_traced))
+		return
+	var/list/lines = GLOB.refresh_traced[ref_text]
 	if(!islist(lines))
-		lines = GLOB.refresh_traced[E] = list()
+		lines = GLOB.refresh_traced[ref_text] = list()
 	var/callee/source = callee?.caller?.caller
 	lines += "[world.time]: channel [channel] from [source ? "[source.proc]" : "?"]"
 	if(length(lines) > 20)
@@ -123,14 +127,22 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 /// Runs queued refreshes within the lane budget. TRUE when the queue is empty.
 /proc/refresh_drain(datum/om/scheduler/sched)
 	var/list/Q = GLOB.refresh_queue
+	// review 2 M4: each entity refreshes at most once per drain; one re-queued by its own refresh (or
+	// by a chain that comes back to it) waits for the next frame instead of spinning here.
+	var/list/done = list()
+	var/list/deferred
 	var/i = 0
 	while(i < length(Q))
 		i++
 		var/datum/D = Q[i]
+		if(done[D])
+			LAZYADD(deferred, D)
+			continue
 		D.refresh_queued = FALSE
 		if(QDELETED(D))
 			D.refresh_bits = 0
 			continue
+		done[D] = TRUE
 		var/bits = D.refresh_bits
 		D.refresh_bits = 0
 		try
@@ -142,14 +154,28 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 				stack_trace("refresh of [D.type]: [e] ([e.file]:[e.line])")
 		if(sched?.out_of_budget() && i < length(Q))
 			Q.Cut(1, i + 1)
+			if(deferred)
+				Q += deferred
 			return FALSE
 	Q.Cut()
+	if(deferred)
+		Q += deferred
+		return FALSE
 	return TRUE
 
-/// Every queued refresh now, ignoring the budget (tests, admin tools).
+/// Every queued refresh now, ignoring the budget (tests, admin tools). A self-re-marking entity is
+/// refreshed a bounded number of times, then reported.
 /proc/refresh_flush()
+	var/passes = 0
 	while(length(GLOB.refresh_queue))
 		refresh_drain(null)
+		if(++passes > 20)
+			stack_trace("refresh_flush: still queued after 20 passes (a reactive proc re-marks its entity?): [jointext(GLOB.refresh_queue, ", ")]")
+			for(var/datum/D as anything in GLOB.refresh_queue)
+				D.refresh_queued = FALSE
+				D.refresh_bits = 0
+			GLOB.refresh_queue.Cut()
+			return
 
 /// One entity's refresh: periodic gate, look, hidden verbs, open windows, then on_state_changed.
 /proc/refresh_one(datum/D, bits)
@@ -168,8 +194,15 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 	refresh_periodic(D)
 	if(isatom(D))
 		var/atom/A = D
-		refresh_look(A)
-		refresh_verbs(A)
+		// A type known to draw nothing and hide nothing skips both (review 2 H3): capabilities can
+		// draw and hide, and a type not seen yet is tried once and recorded.
+		var/flags = type_derive_flags(A)
+		var/may_draw = flags & (TYPE_DERIVES_LOOK | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || !isnull(A.look_key)
+		var/may_hide = flags & (TYPE_DERIVES_VERBS | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || A.refresh_hidden_verbs
+		var/drew = may_draw ? !isnull(refresh_look(A)) : FALSE
+		var/hid = may_hide ? length(refresh_verbs(A)) : FALSE
+		if(flags & TYPE_DERIVES_PENDING)
+			type_derive_record(A, drew, hid)
 		refresh_sweep_track(A)
 	if(LAZYLEN(D.open_tguis))
 		SStgui.update_uis(D)
@@ -203,6 +236,9 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 		A.look_key = key
 	return key
 
+/// Brings A's derived verb hides in line with hidden_verbs(). The verb store stays the only writer of a
+/// verbs list: a hidden verb is one more reason verb_store_wants() says no, and only the keys whose
+/// hidden state flipped are re-synced.
 /proc/refresh_verbs(atom/A, apply = TRUE)
 	var/list/hidden = A.hidden_verbs() || list()
 	if(!length(hidden) && !length(A.refresh_hidden_verbs))
@@ -210,11 +246,10 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 	if(!apply)
 		return hidden
 	var/list/was = A.refresh_hidden_verbs || list()
-	for(var/V in was - hidden)
-		A.verbs += V
-	for(var/V in hidden - was)
-		A.verbs -= V
+	var/list/flipped = (was - hidden) + (hidden - was)
 	A.refresh_hidden_verbs = length(hidden) ? hidden : null
+	if(length(flipped))
+		verb_store_refresh(A, flipped)
 	return hidden
 
 // ---- the background sweep ----
@@ -240,14 +275,22 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 /// Re-checks up to `budget` swept atoms: a derived result that differs from what is applied means a
 /// change was never marked. Production applies it; test builds report REFRESH DRIFT and fail.
 /proc/refresh_sweep_step(budget = 50)
-	// H3: test builds sweep everything strictly (drift fails the run). Production sweeps only what a
-	// player can see or has open, at a small budget: the CI rules are the real protection.
-#if !defined(UNIT_TESTS)
+	// H3 / review 2 M3: test builds sweep everything strictly (drift fails the run). Production checks
+	// only atoms a player can see or has open, at a small budget; skipping a far atom costs a scan,
+	// not a check, so a full cycle over the near atoms takes seconds.
+#if defined(UNIT_TESTS)
+	var/scan_budget = budget
+#else
 	budget = min(budget, 10)
+	var/scan_budget = 400
+	var/list/client_turfs = refresh_client_turfs()
+	if(!length(client_turfs))
+		return
 #endif
 	var/list/L = GLOB.refresh_sweep_list
 	var/checked = 0
-	while(checked < budget && length(L))
+	var/scanned = 0
+	while(checked < budget && scanned < scan_budget && length(L))
 		if(GLOB.refresh_sweep_index > length(L))
 			GLOB.refresh_sweep_index = 1
 		var/atom/A = locate(L[GLOB.refresh_sweep_index])
@@ -255,23 +298,31 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 			L.Cut(GLOB.refresh_sweep_index, GLOB.refresh_sweep_index + 1)
 			continue
 		GLOB.refresh_sweep_index++
-		checked++
+		scanned++
 		if(A.refresh_queued)
 			continue
 #if !defined(UNIT_TESTS)
-		if(!LAZYLEN(A.open_tguis) && !refresh_near_client(A))
+		if(!LAZYLEN(A.open_tguis) && !refresh_near(A, client_turfs))
 			continue
 #endif
+		checked++
 		refresh_check_drift(A)
 
-/// Whether any client's mob is on A's z-level within a screen of it.
-/proc/refresh_near_client(atom/A)
+/// The turfs of every client's mob, once per sweep step.
+/proc/refresh_client_turfs()
+	. = list()
+	for(var/client/C as anything in GLOB.clients)
+		var/turf/where = get_turf(C?.mob)
+		if(where)
+			. += where
+
+/// Whether A is on a client's z-level within a screen of them.
+/proc/refresh_near(atom/A, list/client_turfs)
 	var/turf/T = get_turf(A)
 	if(!T)
 		return FALSE
-	for(var/client/C as anything in GLOB.clients)
-		var/turf/where = get_turf(C.mob)
-		if(where && where.z == T.z && get_dist(where, T) <= world.view + 2)
+	for(var/turf/where as anything in client_turfs)
+		if(where.z == T.z && get_dist(where, T) <= world.view + 2)
 			return TRUE
 	return FALSE
 

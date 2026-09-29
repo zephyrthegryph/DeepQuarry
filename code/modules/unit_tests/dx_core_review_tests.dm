@@ -95,7 +95,8 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 	var/list/entries = cap_interactions(F)
 	TEST_ASSERT_EQUAL(length(entries), 1, "one entry")
 	var/datum/interaction/capability/E = entries[1]
-	TEST_ASSERT(interaction_by_id(E.id) == E, "interaction_by_id() finds the capability entry")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, get_turf(F))
+	TEST_ASSERT(run_chosen_interaction(H, F, E.id), "the Menu runs the capability entry by its id on this target")
 	TEST_ASSERT(E.applies_to(F), "offered while pokeable")
 	F.can_poke = FALSE
 	TEST_ASSERT(!E.applies_to(F), "not offered once applies says no")
@@ -209,3 +210,32 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 	TEST_ASSERT_EQUAL(ui_action_key("setScreen"), "set_screen", "camelCase normalises")
 	TEST_ASSERT_NULL(ui_action_key("../x"), "anything else is refused")
 	qdel(ui)
+
+/// Review 2 M10: a static per-type verb difference is type_verbs() (no per-instance hide, no sweep).
+/datum/unit_test/dx_review_type_verbs/Run()
+	var/obj/item/healthanalyzer/basic = allocate(/obj/item/healthanalyzer)
+	var/obj/item/healthanalyzer/advanced/adv = allocate(/obj/item/healthanalyzer/advanced)
+	refresh_flush()
+	TEST_ASSERT(!(/obj/item/healthanalyzer/proc/toggle_adv in basic.verbs), "a basic analyzer has no toggle")
+	TEST_ASSERT(/obj/item/healthanalyzer/proc/toggle_adv in adv.verbs, "an advanced analyzer has the toggle from init")
+	TEST_ASSERT(!basic.refresh_hidden_verbs, "no per-instance hide list on the basic one")
+
+/obj/cap_fixture/dx_review_light
+	var/lit = TRUE
+
+/obj/cap_fixture/dx_review_light/draw(datum/look/look)
+	..()
+	look.state("lamp")
+	if(lit)
+		look.light(2, 1, "#ffcc00")
+
+/// Review 2 H4: look.light() applies with the look and is taken back when the look stops setting it.
+/datum/unit_test/dx_review_look_light/Run()
+	var/obj/cap_fixture/dx_review_light/F = allocate(/obj/cap_fixture/dx_review_light)
+	changed(F)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(F.light_range, 2, "the look's light applied")
+	F.lit = FALSE
+	changed(F)
+	refresh_flush()
+	TEST_ASSERT(!F.light_range, "the light went off when the look stopped setting it")

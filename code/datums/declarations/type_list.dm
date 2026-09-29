@@ -5,23 +5,68 @@
  * built once per (type, proc) by calling it on the first instance that asks, and shared: never
  * write into it. Nested lists stay as the proc returned them; a null result is an empty list.
  */
-/proc/type_list(datum/D, proc_ref)
+/proc/type_list(datum/D, proc_ref, post)
 	RETURN_TYPE(/list)
-	var/list/result = CACHED_KEY(type_lists, "[D.type]|[proc_ref]", D, proc_ref)
+	var/list/result = CACHED_KEY(type_lists, "[D.type]|[proc_ref]", D, proc_ref, post)
 #ifdef UNIT_TESTS
 	type_list_purity_check(D, proc_ref, result)
 #endif
 	return result
 
-/// Builder for type_lists.
-/proc/build_type_list(datum/D, proc_ref)
+/// Builder for type_lists. `post` (a global proc ref, optional) maps the built list once, before it
+/// is cached (capabilities are interned through it).
+/proc/build_type_list(datum/D, proc_ref, post)
 	var/result = call(D, proc_ref)()
 	if(isnull(result))
-		return list()
-	if(!islist(result))
+		result = list()
+	else if(!islist(result))
 		stack_trace("type_list: [D.type].[proc_ref] returned [result], not a list")
-		return list(result)
+		result = list(result)
+	if(post)
+		result = call(post)(result)
 	return result
+
+/**
+ * A stable text signature of a value, for interning shared declaration data: numbers, text, paths,
+ * lists (keys and values) and non-atom datums (their type and every saved var that differs from its
+ * initial value; tmp vars are caches and don't count). Atoms are keyed by a never-reused uid.
+ */
+/proc/datum_signature(value, depth = 0)
+	if(isnull(value))
+		return "~"
+	if(isnum(value))
+		return "n[value]"
+	if(istext(value))
+		return "t[length(value)]:[value]"
+	if(ispath(value))
+		return "p[value]"
+	if(depth > 8)
+		return "?"
+	if(islist(value))
+		var/list/L = value
+		var/list/parts = list()
+		for(var/i in 1 to length(L))
+			var/k = L[i]
+			var/entry = datum_signature(k, depth + 1)
+			if(!isnum(k) && !isnull(k) && !isnull(L[k]))
+				entry += "=" + datum_signature(L[k], depth + 1)
+			parts += entry
+		return "\[[jointext(parts, ",")]]"
+	if(isatom(value))
+		var/atom/A = value
+		return "a[SHARED_CACHE_UID(A)]"
+	if(isdatum(value))
+		var/datum/D = value
+		var/list/parts = list()
+		for(var/name in D.vars)
+			if(name == "vars" || name == "tag" || !issaved(D.vars[name]))
+				continue
+			var/v = D.vars[name]
+			if(v == initial(D.vars[name]))
+				continue
+			parts += "[name]:[datum_signature(v, depth + 1)]"
+		return "d[D.type]{[jointext(parts, ";")]}"
+	return "x[value]"
 
 DECLARE_SHARED_CACHE(type_lists, GLOBAL_PROC_REF(build_type_list), SC_NEVER)
 
