@@ -369,6 +369,30 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		)
 		return json_encode(d)
 
+	// Localhost-only on-demand proc profiling for live triage: mcprof_start begins a BYOND proc +
+	// sendmaps profile, mcprof_dump writes both as JSON into the round log dir and returns the paths,
+	// mcprof_stop ends collection.
+	if ((T == "mcprof_start" || T == "mcprof_dump" || T == "mcprof_stop") && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
+		if(T == "mcprof_start")
+			world.Profile(PROFILE_CLEAR)
+			world.Profile(PROFILE_CLEAR, type = "sendmaps")
+			world.Profile(PROFILE_START)
+			world.Profile(PROFILE_START, type = "sendmaps")
+			log_runtime("MCPROF: started at [world.time]")
+			return "started"
+		if(T == "mcprof_stop")
+			world.Profile(PROFILE_STOP)
+			world.Profile(PROFILE_STOP, type = "sendmaps")
+			log_runtime("MCPROF: stopped at [world.time]")
+			return "stopped"
+		var/stamp = "[world.time]"
+		var/proc_path = "[GLOB.log_directory]/profiler/mcprof-[stamp].json"
+		var/maps_path = "[GLOB.log_directory]/profiler/mcprof-sendmaps-[stamp].json"
+		WRITE_FILE(file(proc_path), world.Profile(PROFILE_REFRESH, format = "json"))
+		WRITE_FILE(file(maps_path), world.Profile(PROFILE_REFRESH, type = "sendmaps", format = "json"))
+		log_runtime("MCPROF: dumped [proc_path] and [maps_path]")
+		return "[proc_path]|[maps_path]"
+
 	if (T == "ping")
 		var/x = 1
 		for (var/client/C)
