@@ -16,8 +16,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	base_species = SPECIES_HUMAN
 	selects_bodytype = SELECTS_BODYTYPE_SHAPESHIFTER
 
-/datum/species/shapeshifter/shared_table_vars()
-	return ..() + "valid_transform_species"
+TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs", "unarmed_types", "cold_discomfort_strings", "heat_discomfort_strings", "has_organ", "genders", "secondary_langs", "inherent_verbs", "default_emotes", "speech_sounds", "species_component", "valid_transform_species"))
 
 /datum/species/shapeshifter/get_valid_shapeshifter_forms(mob/living/carbon/human/H)
 	return list(vanity_base_fit)|valid_transform_species

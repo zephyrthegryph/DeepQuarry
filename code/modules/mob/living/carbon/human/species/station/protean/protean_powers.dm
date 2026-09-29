@@ -6,30 +6,27 @@
 #define PER_LIMB_STEEL_COST SHEET_MATERIAL_AMOUNT
 #define TOTAL_REBUILD_STEEL_COST 10000
 
-/// Power type -> instance.
-/proc/protean_powers()
-	var/static/list/powers
-	if(powers)
-		return powers
-	powers = list()
+/// Builds power type -> instance. Read via GLOBAL_TABLE_GET(protean_powers).
+/proc/build_protean_powers()
+	var/list/powers = list()
 	for(var/power_type in subtypesof(/datum/protean_power))
 		powers[power_type] = new power_type()
 	return powers
+GLOBAL_TABLE(protean_powers, GLOBAL_PROC_REF(build_protean_powers))
 
-/// Every hotkey verb the registry provides; the forms component grants them.
-/proc/protean_power_verbs()
-	var/static/list/power_verbs
-	if(power_verbs)
-		return power_verbs
-	power_verbs = list()
-	for(var/power_type in protean_powers())
-		var/datum/protean_power/P = protean_powers()[power_type]
+/// Builds every hotkey verb the registry provides; the forms component grants them.
+/proc/build_protean_power_verbs()
+	var/list/power_verbs = list()
+	var/list/powers = GLOBAL_TABLE_GET(protean_powers)
+	for(var/power_type in powers)
+		var/datum/protean_power/P = powers[power_type]
 		if(P.verb_path)
 			power_verbs += P.verb_path
 	return power_verbs
+GLOBAL_TABLE(protean_power_verbs, GLOBAL_PROC_REF(build_protean_power_verbs))
 
 /mob/living/carbon/human/proc/activate_protean_power(power_type)
-	var/datum/protean_power/P = protean_powers()[power_type]
+	var/datum/protean_power/P = GLOBAL_TABLE_GET(protean_powers)[power_type]
 	return P?.try_activate(src)
 
 /datum/protean_power

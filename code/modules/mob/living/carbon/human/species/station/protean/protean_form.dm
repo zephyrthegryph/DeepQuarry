@@ -14,13 +14,13 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 /datum/forms/protean/attach()
 	. = ..()
 	var/mob/living/carbon/human/H = owner
-	var/list/power_verbs = protean_power_verbs()
+	var/list/power_verbs = GLOBAL_TABLE_GET(protean_power_verbs)
 	if(length(power_verbs))
 		add_verb(H, power_verbs)
 
 /datum/forms/protean/detach()
 	var/mob/living/carbon/human/H = owner
-	var/list/power_verbs = protean_power_verbs()
+	var/list/power_verbs = GLOBAL_TABLE_GET(protean_power_verbs)
 	if(length(power_verbs))
 		remove_verb(H, power_verbs)
 	return ..()
@@ -152,7 +152,7 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 
 /datum/form/protean_blob/proc/get_style()
 	RETURN_TYPE(/datum/protean_blob_style)
-	return protean_blob_styles()[style_id] || protean_blob_styles()["puddle1"]
+	return GLOBAL_TABLE_GET(protean_blob_styles)[style_id] || GLOBAL_TABLE_GET(protean_blob_styles)["puddle1"]
 
 /datum/form/protean_blob/on_enter(datum/forms/F, mob/living/carbon/human/H)
 	release_everything(H)
@@ -179,7 +179,7 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 
 /// Change style; keeps the holder sprite and belly capacity in step.
 /datum/form/protean_blob/proc/set_style(new_style_id, mob/living/carbon/human/H)
-	if(!protean_blob_styles()[new_style_id])
+	if(!GLOBAL_TABLE_GET(protean_blob_styles)[new_style_id])
 		return FALSE
 	style_id = new_style_id
 	H.vore_capacity = get_style().vore_capacity
@@ -220,12 +220,9 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 
 // --- Blob styles: appearance as data ---------------------------------------------------
 
-/// id -> /datum/protean_blob_style, in radial-menu order.
-/proc/protean_blob_styles()
-	var/static/list/styles
-	if(styles)
-		return styles
-	styles = list()
+/// Builds id -> /datum/protean_blob_style, in radial-menu order. Read via GLOBAL_TABLE_GET(protean_blob_styles).
+/proc/build_protean_blob_styles()
+	var/list/styles = list()
 	for(var/style_type in subtypesof(/datum/protean_blob_style))
 		var/datum/protean_blob_style/S = style_type
 		if(!initial(S.id))
@@ -233,6 +230,7 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 		S = new style_type()
 		styles[S.id] = S
 	return styles
+GLOBAL_TABLE(protean_blob_styles, GLOBAL_PROC_REF(build_protean_blob_styles))
 
 /// A single-sprite style: a body tinted with the primary colour and eyes
 /// tinted with the highlight colour.

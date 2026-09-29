@@ -326,7 +326,7 @@
 /datum/unit_test/dq_expedition_threat_band_values
 
 /datum/unit_test/dq_expedition_threat_band_values/Run()
-	var/list/threat_bands = expedition_threat_bands()
+	var/list/threat_bands = GLOB.expedition_threat_bands
 	for(var/label in threat_bands)
 		var/difficulty = threat_bands[label]
 		TEST_ASSERT(isnum(difficulty), "Threat band '[label]' resolved to non-numeric value '[difficulty]'")

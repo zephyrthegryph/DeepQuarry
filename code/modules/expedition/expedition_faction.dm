@@ -40,38 +40,38 @@
 				EXP_FACTION_MERC, EXP_FACTION_MERC, EXP_FACTION_MERC)
 	return pick(pool)
 
+// The grunt roster per faction per difficulty band: [EXP_FACTION_*][EXP_DIFF_*].
+GLOBAL_LIST_INIT(expedition_hostile_pools, list(
+	list( // EXP_FACTION_FAUNA
+		list(/mob/living/simple_mob/animal/space/carp, /mob/living/simple_mob/animal/giant_spider),
+		list(/mob/living/simple_mob/animal/giant_spider, /mob/living/simple_mob/animal/sif/leech),
+		list(/mob/living/simple_mob/animal/space/shark, /mob/living/simple_mob/animal/sif/leech),
+	),
+	list( // EXP_FACTION_XENO
+		list(/mob/living/simple_mob/animal/space/alien/drone),
+		list(/mob/living/simple_mob/animal/space/alien/drone, /mob/living/simple_mob/animal/space/alien/hunterling),
+		list(/mob/living/simple_mob/animal/space/alien/hunterling, /mob/living/simple_mob/animal/space/alien/hunterlisk, /mob/living/simple_mob/animal/space/alien/sentinel),
+	),
+	list( // EXP_FACTION_SYNTH
+		list(/mob/living/simple_mob/mechanical/viscerator, /mob/living/simple_mob/mechanical/combat_drone/lesser),
+		list(/mob/living/simple_mob/mechanical/combat_drone, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/basic),
+		list(/mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong, /mob/living/simple_mob/mechanical/hivebot/tank),
+	),
+	list( // EXP_FACTION_MERC
+		list(/mob/living/simple_mob/humanoid/merc/melee/poi, /mob/living/simple_mob/humanoid/merc/ranged/poi),
+		list(/mob/living/simple_mob/humanoid/merc/melee/sword/poi, /mob/living/simple_mob/humanoid/merc/ranged/smg/poi, /mob/living/simple_mob/humanoid/merc/ranged/rifle/poi),
+		list(/mob/living/simple_mob/humanoid/merc/ranged/rifle/mag/poi, /mob/living/simple_mob/humanoid/merc/ranged/laser/poi, /mob/living/simple_mob/humanoid/merc/ranged/technician/poi),
+	),
+))
+
+/// Index into the per-faction tables; unknown factions fall back to fauna.
+#define EXP_FACTION_INDEX(faction) ((faction == EXP_FACTION_XENO || faction == EXP_FACTION_SYNTH || faction == EXP_FACTION_MERC) ? faction : EXP_FACTION_FAUNA)
+
 // The grunt roster for a faction at a difficulty band. Used by missions/POIs/the
-// controller for every ambient and objective hostile spawn.
+// controller for every ambient and objective hostile spawn. Shared: read-only.
 /proc/expedition_hostile_pool(difficulty, faction = EXP_FACTION_FAUNA)
-	switch(faction)
-		if(EXP_FACTION_XENO)
-			switch(difficulty)
-				if(EXP_DIFF_LOW)
-					return list(/mob/living/simple_mob/animal/space/alien/drone)
-				if(EXP_DIFF_MED)
-					return list(/mob/living/simple_mob/animal/space/alien/drone, /mob/living/simple_mob/animal/space/alien/hunterling)
-			return list(/mob/living/simple_mob/animal/space/alien/hunterling, /mob/living/simple_mob/animal/space/alien/hunterlisk, /mob/living/simple_mob/animal/space/alien/sentinel)
-		if(EXP_FACTION_SYNTH)
-			switch(difficulty)
-				if(EXP_DIFF_LOW)
-					return list(/mob/living/simple_mob/mechanical/viscerator, /mob/living/simple_mob/mechanical/combat_drone/lesser)
-				if(EXP_DIFF_MED)
-					return list(/mob/living/simple_mob/mechanical/combat_drone, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/basic)
-			return list(/mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong, /mob/living/simple_mob/mechanical/hivebot/tank)
-		if(EXP_FACTION_MERC)
-			switch(difficulty)
-				if(EXP_DIFF_LOW)
-					return list(/mob/living/simple_mob/humanoid/merc/melee/poi, /mob/living/simple_mob/humanoid/merc/ranged/poi)
-				if(EXP_DIFF_MED)
-					return list(/mob/living/simple_mob/humanoid/merc/melee/sword/poi, /mob/living/simple_mob/humanoid/merc/ranged/smg/poi, /mob/living/simple_mob/humanoid/merc/ranged/rifle/poi)
-			return list(/mob/living/simple_mob/humanoid/merc/ranged/rifle/mag/poi, /mob/living/simple_mob/humanoid/merc/ranged/laser/poi, /mob/living/simple_mob/humanoid/merc/ranged/technician/poi)
-	// EXP_FACTION_FAUNA (default)
-	switch(difficulty)
-		if(EXP_DIFF_LOW)
-			return list(/mob/living/simple_mob/animal/space/carp, /mob/living/simple_mob/animal/giant_spider)
-		if(EXP_DIFF_MED)
-			return list(/mob/living/simple_mob/animal/giant_spider, /mob/living/simple_mob/animal/sif/leech)
-	return list(/mob/living/simple_mob/animal/space/shark, /mob/living/simple_mob/animal/sif/leech)
+	var/list/by_difficulty = GLOB.expedition_hostile_pools[EXP_FACTION_INDEX(faction)]
+	return by_difficulty[(difficulty == EXP_DIFF_LOW || difficulty == EXP_DIFF_MED) ? difficulty : EXP_DIFF_HIGH]
 
 // The elite a faction fields. Bigger threats at higher difficulty where it matters.
 /proc/expedition_faction_boss(faction, difficulty = EXP_DIFF_MED)
@@ -106,21 +106,18 @@
 			return 1.4
 	return 1.0
 
-// Themed kill-loot a grunt may drop (path = drop-chance %). Appended to each
+// Themed kill-loot a grunt may drop (path = drop-chance %), per EXP_FACTION_*. Appended to each
 // spawned guard's simple_mob loot_list, so the spoils match who you're fighting.
+GLOBAL_LIST_INIT(expedition_faction_loot_pools, list(
+	list(/obj/random/awayloot = 12), // EXP_FACTION_FAUNA
+	list(/obj/random/awayloot = 20, /obj/item/aliencoin/basic = 12), // EXP_FACTION_XENO
+	list(/obj/random/powercell = 30, /obj/random/tech_supply = 22, /obj/random/tool = 18), // EXP_FACTION_SYNTH
+	list(/obj/random/contraband = 28, /obj/random/cash/big = 22), // EXP_FACTION_MERC
+))
+
+/// The faction's kill-loot pool (shared, read-only).
 /proc/expedition_faction_loot_pool(faction)
-	switch(faction)
-		if(EXP_FACTION_XENO)
-			var/static/list/xeno = list(/obj/random/awayloot = 20, /obj/item/aliencoin/basic = 12)
-			return xeno
-		if(EXP_FACTION_SYNTH)
-			var/static/list/synth = list(/obj/random/powercell = 30, /obj/random/tech_supply = 22, /obj/random/tool = 18)
-			return synth
-		if(EXP_FACTION_MERC)
-			var/static/list/merc = list(/obj/random/contraband = 28, /obj/random/cash/big = 22)
-			return merc
-	var/static/list/fauna = list(/obj/random/awayloot = 12)
-	return fauna
+	return GLOB.expedition_faction_loot_pools[EXP_FACTION_INDEX(faction)]
 
 // The prize the faction's elite is guaranteed to be guarding.
 /proc/expedition_faction_boss_loot(faction)
@@ -133,31 +130,29 @@
 			return /obj/item/aliencoin/gold
 	return /obj/item/aliencoin/silver
 
-// Faction set-dressing pool (cheap decals / props), layered over biome decor.
+// Faction set-dressing pool (cheap decals / props), layered over biome decor, per EXP_FACTION_*.
+GLOBAL_LIST_INIT(expedition_faction_decor_pools, list(
+	null, // EXP_FACTION_FAUNA: fauna leans on the biome's own decor
+	list( // EXP_FACTION_XENO
+		/obj/effect/alien/weeds = 10,
+		/obj/effect/decal/cleanable/blood = 5,
+		/obj/structure/alien/membrane = 2,
+	),
+	list( // EXP_FACTION_SYNTH
+		/obj/effect/decal/cleanable/blood/oil = 8,
+		/obj/effect/decal/remains/robot = 5,
+		/obj/effect/decal/mecha_wreckage = 3,
+	),
+	list( // EXP_FACTION_MERC
+		/obj/effect/decal/cleanable/dirt = 8,
+		/obj/effect/decal/cleanable/blood = 5,
+		/obj/effect/decal/remains/human = 3,
+	),
+))
+
+/// The faction's decor pool (shared, read-only), or null.
 /proc/expedition_faction_decor_pool(faction)
-	switch(faction)
-		if(EXP_FACTION_XENO)
-			var/static/list/xeno = list(
-				/obj/effect/alien/weeds = 10,
-				/obj/effect/decal/cleanable/blood = 5,
-				/obj/structure/alien/membrane = 2,
-			)
-			return xeno
-		if(EXP_FACTION_SYNTH)
-			var/static/list/synth = list(
-				/obj/effect/decal/cleanable/blood/oil = 8,
-				/obj/effect/decal/remains/robot = 5,
-				/obj/effect/decal/mecha_wreckage = 3,
-			)
-			return synth
-		if(EXP_FACTION_MERC)
-			var/static/list/merc = list(
-				/obj/effect/decal/cleanable/dirt = 8,
-				/obj/effect/decal/cleanable/blood = 5,
-				/obj/effect/decal/remains/human = 3,
-			)
-			return merc
-	return null // fauna leans on the biome's own decor
+	return GLOB.expedition_faction_decor_pools[EXP_FACTION_INDEX(faction)]
 
 // Scatter `count` faction props on walkable floors near a centre. No-op for fauna.
 /proc/expedition_faction_decorate(turf/center, radius, faction, count)
@@ -206,3 +201,5 @@
 		SM.loot_list = SM.loot_list ? SM.loot_list.Copy() : list()
 		SM.loot_list[expedition_faction_boss_loot(faction)] = 100
 	return M
+
+#undef EXP_FACTION_INDEX
