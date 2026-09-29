@@ -119,7 +119,7 @@ TOPIC_ACTION(/datum/data/pda/app/messenger, "choice=Message", PROC_REF(topic_mes
 	unnotify()
 	var/obj/item/pda/P = args["target"]
 	create_message(user, P)
-	var/target_ref = "ef[P]"
+	var/target_ref = "\ref[P]"
 	if(target_ref in conversations)            // Need to make sure the message went through, if not welp.
 		active_conversation = target_ref
 	return TRUE
