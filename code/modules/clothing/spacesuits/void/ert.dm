@@ -97,7 +97,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/responseteam, suit_storage_spec, l
 		to_chat(user, "\The [src] does not have anything installed.")
 	return ITEM_INTERACT_SUCCESS
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/responseteam, INTERACT_ITEM(null, PROC_REF(responseteam_worn_item)))
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/responseteam, INTERACT_ITEM(null, PROC_REF(responseteam_worn_item), REQ_TARGET_STATE(/obj/item/clothing/suit/space/void/proc/can_modify_unworn)))
 
 /// Old attackby: no modifying it while worn.
 /obj/item/clothing/suit/space/void/responseteam/proc/responseteam_worn_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -107,10 +107,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/responseteam, INTERACT_IT
 
 	if(istype(W, /obj/item/clothing/accessory) || istype(W, /obj/item/hand_labeler))
 		return FALSE
-
-	if(user.inventory_slot_id(src) == SLOT_ID_SUIT)
-		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
-		return INTERACTION_HANDLED_PASS
 
 	return FALSE
 

@@ -237,10 +237,20 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 	return TRUE
 
 EXTEND_INTERACTIONS(/obj/machinery/appliance, \
-	INTERACT_ITEM(null, PROC_REF(appliance_interaction_item)), \
+	INTERACT_ITEM(null, PROC_REF(appliance_interaction_item), REQ_TARGET_STATE(/obj/machinery/appliance/proc/can_take_item)), \
 	INTERACT_HAND(null, PROC_REF(appliance_interaction_hand)), \
-	INTERACT_VERB("Toggle Power", PROC_REF(appliance_toggle_power_effect)), \
+	INTERACT_VERB("Toggle Power", PROC_REF(appliance_toggle_power_effect), REQ_TARGET_STATE(/obj/machinery/appliance/proc/can_toggle_power_verb)), \
 )
+
+/// Requirement: the appliance works.
+/obj/machinery/appliance/proc/can_take_item(mob/user, atom/target, obj/item/held)
+	if(!cook_type || has_stat(BROKEN))
+		return "\The [src] is not working"
+	return TRUE
+
+/// Requirement: TRUE, or why the power verb is refused (subtypes add their own conditions).
+/obj/machinery/appliance/proc/can_toggle_power_verb(mob/user, atom/target, obj/item/held)
+	return TRUE
 
 /// Old subtype attackby: part replacement first, then the appliance's own item handling.
 /obj/machinery/appliance/proc/appliance_interaction_part_replace(mob/user, obj/item/O, datum/interaction/interaction)
@@ -250,10 +260,6 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 
 /// Old attackby.
 /obj/machinery/appliance/proc/appliance_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(!cook_type || (has_stat(BROKEN)))
-		to_chat(user, span_warning("\The [src] is not working."))
-		return INTERACTION_HANDLED_PASS
-
 	var/obj/item/ToCook = I
 
 	if(istype(I, /obj/item/gripper))

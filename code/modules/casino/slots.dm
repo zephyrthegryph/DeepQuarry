@@ -72,17 +72,17 @@
 	id = "slot_machine_use"
 	name = "Insert chip"
 	held_type = /obj/item
+	also_requires = list(
+		REQ_BECAUSE(REQ_TARGET_STATE(/obj/machinery/slot_machine/proc/not_running), "the slot machine is currently running"),
+		REQ_BECAUSE(REQ_ANCHORED, "the slot machine isn't secured"),
+	)
 	effect = /obj/machinery/slot_machine/proc/interaction_attackby
 
+/// Requirement: the reels aren't spinning.
+/obj/machinery/slot_machine/proc/not_running(mob/user, atom/target, obj/item/held)
+	return !om_busy(src)
+
 /obj/machinery/slot_machine/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
-	if(om_busy(src))
-		to_chat(user, span_notice("The slot machine is currently running."))
-		return TRUE
-
-	if(!anchored)
-		to_chat(user, span_notice(" The slot machine isn't secured."))
-		return TRUE
-
 	if(istype(held, /obj/item/spacecasinocash))
 		var/obj/item/spacecasinocash/C = held
 		var/paid = insert_chip(C, user)
@@ -218,17 +218,17 @@
 	id = "station_slot_machine_use"
 	name = "Insert cash"
 	held_type = /obj/item
+	also_requires = list(
+		REQ_BECAUSE(REQ_TARGET_STATE(/obj/machinery/station_slot_machine/proc/not_running), "the slot machine is currently running"),
+		REQ_BECAUSE(REQ_ANCHORED, "the slot machine isn't secured"),
+	)
 	effect = /obj/machinery/station_slot_machine/proc/interaction_attackby
 
+/// Requirement: the reels aren't spinning.
+/obj/machinery/station_slot_machine/proc/not_running(mob/user, atom/target, obj/item/held)
+	return !om_busy(src)
+
 /obj/machinery/station_slot_machine/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
-	if(om_busy(src))
-		to_chat(user, span_notice("The slot machine is currently running."))
-		return TRUE
-
-	if(!anchored)
-		to_chat(user, span_notice(" The slot machine isn't secured."))
-		return TRUE
-
 	if(istype(held, /obj/item/spacecash))
 		var/obj/item/spacecash/C = held
 		var/paid = insert_cash(C, user)

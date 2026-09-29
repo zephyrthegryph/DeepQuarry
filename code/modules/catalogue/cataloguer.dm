@@ -314,13 +314,19 @@ DECLARE_INTERACTIONS(/obj/item/cataloguer, \
 		icon_state = initial(icon_state)
 
 /obj/item/cataloguer/compact/ui_action_click(mob/user, actiontype)
+	var/why = can_toggle_compact(user, src, null)
+	if(why != TRUE)
+		to_chat(user, span_warning("[why]."))
+		return
 	compact_toggle_effect(user)
 
-/obj/item/cataloguer/compact/proc/compact_toggle_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
+/// Requirement: TRUE, or why the cataloguer can't be folded or deployed.
+/obj/item/cataloguer/compact/proc/can_toggle_compact(mob/user, atom/target, obj/item/held)
 	if(om_busy(src))
-		to_chat(user, span_warning("\The [src] is currently scanning something."))
-		return
+		return "\The [src] is currently scanning something"
+	return TRUE
+
+/obj/item/cataloguer/compact/proc/compact_toggle_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	deployed = !(deployed)
 	if(deployed)
 		w_class = ITEMSIZE_NORMAL
@@ -349,7 +355,7 @@ DECLARE_INTERACTIONS(/obj/item/cataloguer, \
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/cataloguer/compact, \
-	INTERACT_VERB("Toggle Cataloguer", PROC_REF(compact_toggle_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Toggle Cataloguer", PROC_REF(compact_toggle_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/cataloguer/compact/proc/can_toggle_compact)), \
 )
 
 // The shown entry is a round-long catalogue definition.

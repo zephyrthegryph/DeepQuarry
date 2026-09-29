@@ -14,7 +14,7 @@
 
 EXTEND_INTERACTIONS(/obj/item/clothing/accessory/locket, \
 	INTERACT_USE("Flip open", PROC_REF(locket_flip_self)), \
-	INTERACT_ITEM(null, PROC_REF(locket_insert_item)), \
+	INTERACT_ITEM(null, PROC_REF(locket_insert_item), REQ_FIELD("open", "you have to open it first")), \
 )
 
 /// Old attack_self: flip the locket open or closed.
@@ -39,10 +39,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/locket, \
 
 /// Old attackby: slip a paper or photo inside.
 /obj/item/clothing/accessory/locket/proc/locket_insert_item(mob/user, obj/item/O, datum/interaction/interaction)
-	if(!open)
-		to_chat(user, "You have to open it first.")
-		return INTERACTION_HANDLED_PASS
-
 	if(istype(O,/obj/item/paper) || istype(O, /obj/item/photo))
 		if(held())
 			to_chat(user, "\The [src] already has something inside it.")

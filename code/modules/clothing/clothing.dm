@@ -688,9 +688,6 @@ DECLARE_REF(/obj/item/clothing/shoes, "holding", OWNED, null)
 
 /// Old verb "Switch Shoe Layer".
 /obj/item/clothing/shoes/proc/shoes_toggle_layer_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	if(shoes_under_pants == -1)
-		to_chat(user, span_notice("\The [src] cannot be worn above your suit!"))
-		return
 	shoes_under_pants = !shoes_under_pants
 	update_icon()
 
@@ -1459,7 +1456,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(shoes_draw_knife_hand)), \
 	INTERACT_USE(null, PROC_REF(shoes_shake_out_self)), \
 	INTERACT_ITEM(null, PROC_REF(shoes_stuff_item)), \
-	INTERACT_VERB("Switch Shoe Layer", PROC_REF(shoes_toggle_layer_verb), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Switch Shoe Layer", PROC_REF(shoes_toggle_layer_verb), REQ_IN_INVENTORY, REQ_BECAUSE(REQ_NOT(REQ_FIELD_EQ("shoes_under_pants", -1)), "it cannot be worn above your suit")), \
 	INTERACT_VERB("Draw Boot Knife", PROC_REF(shoes_draw_knife_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/clothing/shoes/proc/pred_holding_knife, "there is no knife in it")), \
 )
 

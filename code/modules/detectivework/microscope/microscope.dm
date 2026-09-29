@@ -22,13 +22,10 @@
 	id = "microscope_insert_sample"
 	name = "Insert sample"
 	held_type = /obj/item
+	also_requires = list(REQ_FIELD_NOT("sample", "there is already a slide in the microscope"))
 	effect = /obj/machinery/microscope/proc/interaction_attackby
 
 /obj/machinery/microscope/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
-	if(sample())
-		to_chat(user, span_warning("There is already a slide in the microscope."))
-		return TRUE
-
 	if(!istype(held, /obj/item/forensics/swab) && !istype(held, /obj/item/sample/fibers) && !istype(held, /obj/item/sample/print))
 		return FALSE
 
@@ -42,6 +39,7 @@
 /datum/interaction/machine_hand/ungated/microscope_examine
 	id = "microscope_examine"
 	name = "Examine sample"
+	also_requires = list(REQ_FIELD("sample", "the microscope has no sample to examine"))
 	effect = /obj/machinery/microscope/proc/interaction_examine
 
 /datum/interaction/machine_alt/microscope_remove_sample
@@ -55,10 +53,6 @@
 	return TRUE
 
 /obj/machinery/microscope/proc/interaction_examine(mob/user, obj/item/held, datum/interaction/interaction)
-
-	if(!sample())
-		to_chat(user, span_warning("The microscope has no sample to examine."))
-		return TRUE
 
 	to_chat(user, span_notice("The microscope whirrs as you examine \the [sample()]."))
 

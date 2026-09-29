@@ -20,12 +20,10 @@
 	name = "Press coins"
 	category = INTERACTION_CAT_INSERT
 	held_type = /obj/item/stack/material
+	also_requires = list(REQ_BECAUSE(REQ_ANCHORED, "it must be properly secured to operate"))
 	effect = /obj/machinery/mineral/mint/proc/interaction_press
 
 /obj/machinery/mineral/mint/proc/interaction_press(mob/user, obj/item/stack/material/M, datum/interaction/interaction)
-	if(!anchored)
-		user.visible_message(span_warning("\The [src] must be properly secured to operate!"))
-		return TRUE
 	if(!M.coin_type)
 		user.visible_message(span_notice("You can't make coins out of that."))
 		return TRUE

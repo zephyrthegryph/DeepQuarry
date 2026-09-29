@@ -142,7 +142,16 @@
 	name = "Store"
 	category = INTERACTION_CAT_INSERT
 	held_type = /obj/item
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/item_bank/proc/can_store))
 	effect = /obj/machinery/item_bank/proc/interaction_store
+
+/// Requirement: TRUE, or why nothing can be stored right now (a non-human is refused silently by the effect).
+/obj/machinery/item_bank/proc/can_store(mob/living/user, atom/target, obj/item/held)
+	if(!ishuman(user))
+		return TRUE
+	if(busy_bank)
+		return "\The [src] is already in use"
+	return TRUE
 
 /obj/machinery/item_bank/proc/store_done(mob/living/user, obj/item/O)
 	if(!operable())
@@ -158,8 +167,7 @@
 /obj/machinery/item_bank/proc/interaction_store(mob/living/user, obj/item/O, datum/interaction/interaction)
 	if(!ishuman(user))
 		return TRUE
-	if(busy_bank)
-		to_chat(user, span_warning("\The [src] is already in use."))
+	if(busy_bank) // re-entered after the confirm prompt (rerun_ask): the bank may have been claimed meanwhile
 		return TRUE
 	var/I = persist_item_savefile_load(user, "type")
 	if(!istool(O) && O.persist_storable)
