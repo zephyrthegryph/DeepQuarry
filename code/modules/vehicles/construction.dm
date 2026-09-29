@@ -211,9 +211,10 @@
 	var/obj/vehicle/train/engine/quadbike/built/product = new(assembly)
 	to_chat(actor, span_notice("You finish \the [product]"))
 	product.forceMove(get_turf(assembly))
-	own_set(product, "cell", assembly.cell())
-	assembly.cell().forceMove(product)
+	var/obj/item/cell/moved_cell = assembly.cell()
+	moved_cell?.forceMove(product) // CONTAINED: in the product's contents before own_set()
 	rel_clear(assembly, "cell")
+	own_set(product, "cell", moved_cell)
 	consume(assembly, actor)
 	return TRUE
 
@@ -417,9 +418,10 @@
 	var/obj/vehicle/bike/built/product = new(assembly)
 	to_chat(actor, span_notice("You finish \the [product]"))
 	product.forceMove(get_turf(assembly))
-	own_set(product, "cell", assembly.cell())
-	assembly.cell().forceMove(product)
+	var/obj/item/cell/moved_cell = assembly.cell()
+	moved_cell?.forceMove(product) // CONTAINED: in the product's contents before own_set()
 	rel_clear(assembly, "cell")
+	own_set(product, "cell", moved_cell)
 	consume(assembly, actor)
 	return TRUE
 
@@ -576,9 +578,10 @@
 	var/obj/vehicle/train/engine/quadbike/snowmobile/built/product = new(assembly)
 	to_chat(actor, span_notice("You finish \the [product]"))
 	product.forceMove(get_turf(assembly))
-	own_set(product, "cell", assembly.cell())
-	assembly.cell().forceMove(product)
+	var/obj/item/cell/moved_cell = assembly.cell()
+	moved_cell?.forceMove(product) // CONTAINED: in the product's contents before own_set()
 	rel_clear(assembly, "cell")
+	own_set(product, "cell", moved_cell)
 	consume(assembly, actor)
 	return TRUE
 

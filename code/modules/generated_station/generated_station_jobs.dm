@@ -126,10 +126,10 @@
 		failure_reason = materializer().last_failure_details || phase
 		rel_clear(src, "materialization")
 		return null
-	var/datum/generated_station_materialization/done = materializer().result
-	// Hand-off: the materializer owns its result (DECLARE_REF(..., OWNED)) only while building it, so
-	// deleting the materializer afterwards must not delete the station it built.
-	materializer().result = null
+	// Hand-off: the materializer owns its result only while building it, so it lets go here
+	// (deleting the materializer afterwards must not delete the station it built). The expedition
+	// site adopts it (own_set) when it is published.
+	var/datum/generated_station_materialization/done = own_take(materializer(), "result")
 	rel_set(src, "materialization", done)
 	checkpoint("Station materialization complete", 62)
 	return done

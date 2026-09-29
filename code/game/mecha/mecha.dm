@@ -1317,7 +1317,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 			return 0
 		brainmob.canmove = 1 //should allow relaymove
 		mmi_as_oc.forceMove(src)
-		own_set(mmi_as_oc, "mecha", src)
+		rel_set(mmi_as_oc, "mecha", src)
 		src.Entered(mmi_as_oc)
 		src.Move(src.loc)
 		update_icon()
@@ -1725,7 +1725,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 			mmi.forceMove(src.loc)
 			if(mmi.get_occupant())
 				occupant.forceMove(mmi)
-			own_take(mmi, "mecha")
+			rel_clear(mmi, "mecha")
 			occupant.canmove = 0
 		occupant.clear_alert("charge")
 		occupant.clear_alert("mech damage")

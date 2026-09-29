@@ -79,7 +79,8 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	// preallocates a z-level through load_new_z(), which needs the map system up and should
 	// follow the station mapload, so boot right after SSmapping.
 	boot_after = /datum/controller/subsystem/mapping
-	/// "[z]" -> /datum/expedition_site for every live site (owned assoc values, own_put).
+	/// "[z]" -> /datum/expedition_site for every live site (a lookup of live sites, like a keyed
+	/// registry; a released site is owned by its teardown job).
 	var/list/sites = list()
 	/// Surveyed site descriptors not yet materialized (z_level 0). Flight
 	/// destinations and vessels name a descriptor only through relation views, so this
@@ -259,7 +260,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	for(var/key in sites.Copy())
 		var/datum/expedition_site/site = sites[key]
 		if(!istype(site))
-			own_take_member(src, "sites", key)
+			sites -= key
 			continue
 
 		// Poll mission completion (cheap per-mission check).
@@ -606,7 +607,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		flight_plan.generation_stage = "Validating objectives and approach"
 
 	site.status = EXP_STATUS_READY
-	own_put(src, "sites", "[z]", site)
+	sites["[z]"] = site
 	demand()
 	GLOB.flight_service?.register_expedition(site)
 	log_world("Expedition: generated [site.name] on z[z] (seed [generation_seed], difficulty [difficulty][mission ? ", mission '[mission.name]'" : ""]).")
@@ -692,8 +693,8 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		return
 	var/z = site.z_level
 	site.status = EXP_STATUS_EXPIRED
-	// The service lets go of the site; the teardown job owns it until the wipe finishes.
-	own_take_member(src, "sites", "[z]")
+	// The teardown job owns the site (own_move in its New()) until the wipe finishes.
+	sites -= "[z]"
 	if(site.flight_destination_id)
 		GLOB.flight_service?.unregister_destination(site.flight_destination_id)
 	if(site.origin_console() && site.origin_console().active_expedition() == site)

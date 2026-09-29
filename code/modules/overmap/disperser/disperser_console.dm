@@ -52,7 +52,7 @@
 		rel_set(src, "front", F)
 		rel_set(src, "middle", M)
 		rel_set(src, "back", B)
-		// The parts are OM handles: one that is destroyed reads null, so is_valid_setup() fails
+		// The parts are relation views: one that is destroyed reads null, so is_valid_setup() fails
 		// without a destruction signal on each.
 		if(is_valid_setup())
 			return TRUE
