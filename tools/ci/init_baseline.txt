@@ -5030,8 +5030,6 @@ world_reads	code/game/machinery/atm_ret_field.dm	for(var/direction in GLOB.cardi
 world_reads	code/game/machinery/autolathe.dm	stored_research_static = GLOB.research_service.autounlock_techweb(/datum/techweb/autounlocking/autolathe)
 world_reads	code/game/machinery/camera/camera.dm	LAZYOR(client_huds, GLOB.global_hud.whitense)
 world_reads	code/game/machinery/computer/atmos_alert.dm	GLOB.atmosphere_alarm.register_alarm(src, /atom/proc/update_icon)
-world_reads	code/game/machinery/computer/bodycamera.dm	own_set(src, "bpinboard", GLOB.vis_overlays_service.add_vis_overlay(src, icon = icon, iconstate = "pinboard", layer = 0.1, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
-world_reads	code/game/machinery/computer/camera.dm	own_set(src, "pinboard", GLOB.vis_overlays_service.add_vis_overlay(src, icon = icon, iconstate = "pinboard", layer = 0.1, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
 world_reads	code/game/machinery/doors/alarmlock.dm	GLOB.radio_service.remove_object(src, air_frequency)
 world_reads	code/game/machinery/doors/alarmlock.dm	rel_set(src, "air_connection", GLOB.radio_service.add_object(src, air_frequency, RADIO_TO_AIRALARM))
 world_reads	code/game/machinery/doors/firedoor.dm	for(var/direction in GLOB.cardinal)
