@@ -59,27 +59,24 @@ channel (`om_changed(E, bits)`), which queues wakes. Never assign a declared fie
 - World-wide: `OM_EMIT_WORLD()` / hook `OM_WORLD`.
 - Deferred or state-driven reactions use a channel, a watch or `om_after()` instead.
 
-## 3. References: every object var is declared (lifecycle.md §4, §4.11)
+## 3. References: own, shared, proto, relation ([ownership.md](ownership.md))
 
-An undeclared object-typed var fails lint. Pick the kind by who owns the target:
+Every object var is one of four kinds. Most need no declaration: how you write the var decides.
 
-| Kind | Declare | Use for |
-|---|---|---|
-| owned child | `DECLARE_REF(type, "var", OWNED, null)` (or `OWNED_LIST` / `OWNED_VALUES`) | a datum I created and nothing else owns; deleted with me |
-| static | `DECLARE_REF(..., STATIC)` (`DECLARE_REF(..., DEF)` for `DEF_TYPES`, implicit) | singletons, services, materials, decls |
-| held | `DECLARE_REF(..., HELD)` | something in my contents with no policy of its own |
-| pair | `DECLARE_REF(..., PAIR)` via `link_set()` / `link_clear()` | two-sided links (sleeper and console) |
-| back | `DECLARE_REF(type, "our_var", BACK, "their_var")` | a child naming its owner (ownership is a tree) |
-| backlist | `DECLARE_REF(..., BACKLIST)` | my membership in another object's list |
-| handle | a text var: `om_handle(X)` / `om_resolve(h)` | another live entity whose lifetime someone else manages |
-| back via handle | `DECLARE_REF(type, "owner_handle", BACK_HANDLE, "panel")`, `DECLARE_REF(..., BACKLIST_HANDLE)` | a partner I name by handle whose var or list names me back |
-| weak list | `DECLARE_REF(type, "name", WEAK_LIST, null)` + `WEAK_LIST_ADD` / `WEAK_LIST_REMOVE` / `WEAK_LIST_HAS` / `weak_list_live()` | a list of live entities I don't own (hearers, sensors, queued items) |
-| cache | `declared_cache_vars()` with `CACHE_ON_CHANGE/EVENT/RELATION` | derivable data the core nulls when its rule fires |
-| pooled field | `DECLARE_REF(..., TRANSIENT)` on a `POOL_DECLARE`d type | per-use fields of scratch objects |
+| Kind | Write it with | Declare only for | Use for |
+|---|---|---|---|
+| owned | `own_set` / `own_take` / `own_add` / `own_put` / `own_transfer` / `own_move` / `own_clear` | `OWN(type, var, OWN_SPILL / OWN_CONTAINED)`, `OWN_POLICY`, `OWN_IF` | what I create or hold and destroy with me (children, parts, mixtures, inserted items) |
+| shared | plain assignment of a registered instance (`shared_set` for untyped vars) | `SHARED(type, var)` on an untyped var | species, materials, decls, reagent definitions, jobs, services (`REGISTRY_TYPE`) |
+| proto | `proto_set` / `proto_private` / `proto_replace` | `PROTO(type, var)` | a shared prototype until I change it, then my own copy (species, seeds, contagions) |
+| relation | `rel_set` / `rel_clear` / `rel_add` / `rel_remove` | `REL_PAIR`, `REL_PAIR_LIST`, `REL_SET`, `REL_KEYED` + `KEYED_TARGET` | another live entity I don't own: the framework clears the view when it dies |
+| cache | `declared_cache_vars()` with `CACHE_ON_CHANGE/EVENT/RELATION` | always | derivable data the core nulls when its rule fires |
+| pooled field | anything | `POOL_RESET(type, var)` on a `POOL_DECLARE`d type | per-use fields of scratch objects |
 
-Relations and slots (§7) are read through typed accessors (`M.buckled_to()`,
-`I.slot_item(slot)`). Sets of live instances are registries (`REGISTRY_MEMBERS(REGISTRY_X)`),
-not `GLOB` lists. Compare a handle to a dying object with `om_handle_is(h, src)`.
+Rich relations with state or behaviour (grab, pull, buckle, orbit, grants, tgui sessions) are
+`/datum/om/relation` kinds read through typed accessors (`M.buckled_to()`), and slots through
+`I.slot_item(slot)`. A deferred call is `om_callable(target, PROC_REF(x), args...)` run with
+`om_run(spec)` (never `CALLBACK`). Sets of live instances are registries
+(`REGISTRY_MEMBERS(REGISTRY_X)`), not `GLOB` lists. `tools/ci/ownership_lint.py` checks all of it.
 
 ## 4. Lifecycle: destroying things (lifecycle.md §2)
 

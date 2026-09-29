@@ -11,6 +11,10 @@
 /datum/proc/declared_keep_vars()
 	return null
 
+/// FORWARD_STATE vars (om_handle_forward() carries them to a replace_with() successor).
+/datum/proc/declared_forward_vars()
+	return null
+
 /// POOL_RESET vars (pool_release() resets them).
 /datum/proc/declared_pool_reset()
 	return null
@@ -165,3 +169,27 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		OWN_REPORT("[holder.type].[var_name] is [own_kind_name(entry[OWNE_KIND])], not [own_kind_name(kind)]")
 		return null
 	return entry
+
+/// Boot validation (doc/rewrite/ownership.md sec 8): builds the ownership table of every atom type
+/// present in the world after map load, and of every registered datum's type, so a declaration
+/// conflict (two kinds for one var across the hierarchy, a missing var, a bad policy) is reported
+/// at boot rather than on first use. The static half is tools/ci/ownership_lint.py. Returns the
+/// number of types checked.
+/proc/own_validate_boot()
+	var/list/seen = list()
+	for(var/atom/A in world)
+		if(seen[A.type])
+			continue
+		seen[A.type] = TRUE
+		own_table_of(A)
+		CHECK_TICK
+	for(var/enum_proc in GLOB.registry_enum_procs)
+		var/list/instances = call(enum_proc)()
+		for(var/key in instances)
+			var/datum/D = isdatum(key) ? key : instances[key]
+			if(isdatum(D) && !seen[D.type])
+				seen[D.type] = TRUE
+				own_table_of(D)
+	log_world("OWNERSHIP: validated the tables of [length(seen)] types at boot")
+	return length(seen)
+

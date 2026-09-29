@@ -1,306 +1,260 @@
 # Ownership: own, shared, proto, relations
 
-Status: **authoritative**. This replaces the 20 `REFKIND_*` kinds and
-`DECLARE_REF()` (`lifecycle.md` §4, `object_model.md` §4–5 where they
-disagree). There is no compatibility layer. The old kinds, macros and lint
-exemptions are gone.
+Status: **authoritative**. This replaced the 20 `REFKIND_*` kinds and `DECLARE_REF()`
+(`lifecycle.md` §4, `object_model.md` §4–5). There is no compatibility layer: the old kinds,
+their macros, `WEAK_LIST_*`, `OM_STATIC_TYPE`, `link_set()`, `DuplicateObject()` and the lints that
+enforced them are gone.
 
-Every object-typed var, and every list that holds objects, is exactly one of
-four things:
+Every object-typed var, and every list that holds objects, is exactly one of four things:
 
-| Concept | What the var holds | Who clears it | Declaration |
+| Concept | The var holds | Cleared by | Declared |
 |---|---|---|---|
-| **Own** | the one owner's child | the owner's teardown, by policy | `OWN(PATH, var, POLICY)` |
-| **Shared** | an immortal registered singleton or DEF | nobody, since it never dies | `SHARED(PATH, var)`, or implicit via `REGISTRY_TYPE` |
-| **Proto** | a shared prototype, or an owner-stamped private copy of one | teardown deletes private copies only | `PROTO(PATH, var)` |
-| **Relation** | a non-owning reference to an entity | the framework, when either end dies | `REL(PATH, var)`, `REL_PAIR(...)`, `/datum/om/relation/*` |
+| **Own** | the one owner's child(ren) | the owner's teardown, by policy | implicit (`own_*` writes); `OWN(...)` for other policies |
+| **Shared** | an immortal registered singleton or DEF | nobody: it never dies | implicit for registry-typed vars; `SHARED(...)` for untyped ones |
+| **Proto** | a shared prototype, or an owner-stamped private copy of it | teardown deletes private copies only | `PROTO(...)` |
+| **Relation** | a non-owning reference to an entity | the framework, when either end dies | implicit (`rel_*` writes); `REL_PAIR(...)` etc. for two-sided, keyed or symmetric shapes |
 
 Locals inside a running proc are the only unowned references.
+
+Code: `code/__defines/ownership.dm` (declarations), `code/datums/ownership/` (own.dm, views.dm,
+proto.dm, shared.dm, registry_types.dm, clone.dm, audit.dm, table.dm), the rich-relation engine in
+`code/datums/om/relation.dm`, handles and callables in `code/datums/om/timer.dm`. Static half:
+`tools/ci/ownership_lint.py`.
 
 ## 1. Own
 
 ### 1.1 Invariants (checked in every build)
 
-- **O1 One owner.** An owned entity records its owner on itself:
-  `own_holder` (the owning datum) and `own_slot` (the var name). Both are
-  `tmp` and cost nothing while null. Movables in contents are owned by their
-  ledger slot (`containment.md`). For them `own_holder` is their holder
-  and `own_slot` is the slot id.
-- **O2 Writes only through accessors.** An owned var is written only by
-  `own_set`, `own_take`, `own_add`, `own_remove`, `own_put` and
-  `own_transfer`. `ownership_lint.py` bans raw assignment, `+=`, `-=`, `Cut`,
-  `[k] =` and `Remove` on a declared owned var.
-- **O3 No double ownership.** Adopting a value that already has an owner is
-  an error: `OWN: <type> already owned by <holder>.<slot>`. The only
-  exception is `own_transfer`, which is an explicit move.
-- **O4 No orphans.** Overwriting or dropping an owned value is an error
-  (`OWN: orphaned owned value`) unless the old value is destroyed by the
-  accessor (`own_set` destroys it by policy) or moved out (`own_take` /
-  `own_transfer`). `own_take` hands the value to the caller, who must adopt it
-  or destroy it before the proc returns. The orphan audit (§1.5) catches the
-  ones that don't.
-- **O5 Teardown.** Owned values resolve in lifecycle phase 3 (contained) and
-  phase 4 (everything else), by policy. From phase 0 the dying entity's rec
-  refuses new timers, hooks, tasks and relation links (`OM: refused <what> on
-  destroying <type>`).
-- **O6 Phase 8 re-set check.** After core `Destroy()`, any owned var that
-  holds a value again was re-set during teardown. Phase 8 deletes that value
-  and reports it (`OWN: <type>.<var> re-set during teardown`). Nothing is
-  nulled silently.
+- **O1 One owner.** An owned entity records its owner on itself: `own_holder_ref` (the owner's ref
+  text, weak, so owner and child never form a reference cycle) and `own_slot` (the var). Read with
+  `owner_of(D)` / `owner_slot_of(D)`; both re-check that the owner still names D. Movables in
+  contents are owned by their ledger slot (`containment.md`); an `OWN(..., OWN_CONTAINED)` var
+  names one of them.
+- **O2 Writes only through accessors.** `ownership_lint.py` (`raw_write`) rejects assignment, `+=`,
+  `-=`, `|=`, `[k] =`, `Cut/Add/Remove/Insert` and the `QDEL_*` / `LAZY*` list macros on an owned
+  or relation var anywhere but the accessors.
+- **O3 No double ownership.** Adopting a value another holder owns is refused and reported
+  (`OWN: ... already owned by ...`). Moves are explicit: `own_transfer` / `own_move`.
+- **O4 No orphans.** `own_set` disposes of the value it replaces by policy; `own_take` hands the
+  value to the caller, who adopts or destroys it. The orphan audit (§1.5) reports anything that
+  slipped out (a raw drop, an owner that died without disposing of it).
+- **O5 Teardown.** Phase 2: a dying owned entity leaves its owner's var. Phase 3: `OWN_SPILL`
+  movables drop out. Phase 4: every owned var is disposed of by policy, then relation views clear
+  on both ends. From phase 0 the dying entity refuses new timers, hooks, tasks and relation links
+  (`OWN: refused ...`).
+- **O6 Phase 8.** An owned var that holds a value again after phase 4 was re-set during teardown:
+  phase 8 deletes the value and reports it. Nothing is nulled silently.
 
 ### 1.2 Declaring
 
+Most owned vars need no declaration: the first `own_set()` / `own_add()` / `own_put()` on a var
+records it in its type's table as an implicit `OWN(..., OWN_DELETE)`. A var that is never written
+through an accessor holds nothing owned. Declare only the exceptions:
+
 ```dm
-OWN(/obj/machinery/sleeper, beaker, SPILL)        // one child
-OWN(/datum/body, afflictions, DELETE)             // list of children
-OWN(/datum/reagents, by_id, DELETE)               // assoc: values are children
-OWN(/obj/item/storage, contents, CONTAINED)       // movables in contents
-OWN_POLICY(/obj/machinery/computer, circuit, /obj/machinery/computer/proc/circuit_policy)
+OWN(/obj/machinery/sleeper, beaker, OWN_SPILL)          // drops to the floor with the holder
+OWN(/obj/item/device/radio, keyslot, OWN_CONTAINED)     // in contents: the ledger slot decides
+OWN_POLICY(/obj/item/modular_computer, hard_drive, /obj/item/modular_computer/proc/part_policy)
+OWN_IF(/obj/mecha, cell, OWN_SPILL, salvageable, OWN_DELETE)
 ```
 
-- The var is written bare. The macro stringifies it and validates it with
-  `PATH::var` at compile time.
-- **Shape comes from the value.** A non-list is *one*. A list whose members
-  are datums is *list*. A list with datum assoc values is *values*. At boot,
-  `ownership_lint.py` checks the declared var type against the shape.
-- **Policies:**
-  - `DELETE`: destroyed with the owner.
-  - `SPILL`: a movable goes to the owner's drop location. A non-movable is
-    deleted, and the lint forbids `SPILL` on non-movable var types.
-  - `CONTAINED`: a movable that is in the owner's contents. It is left to the
-    ledger slot policy. `own_set` asserts `value.loc == holder`, and teardown
-    asserts it again.
-- **Conditional policy.** `OWN_POLICY(PATH, var, proc)` names a proc on the
-  holder that returns a policy per call. It replaces the old
-  `OWNED`-plus-`HELD` double declarations: modular computer hardware,
-  mecha minihud, morgue tray, NIF comm, fusion `owned_field`. `OWN_IF(PATH,
-  var, POLICY, flag)` is a shorthand for "POLICY while `flag` is set, else a
-  relation-only drop".
-- **Resources.** `OWN_RESOURCE(PATH, var)` marks a var holding a
-  `/datum/gas_mixture` (or another arena-backed handle). It is `DELETE`, and
-  deleting it releases the arena slot. Gas mixtures are never `HELD`.
-  Machines own their mixtures, and pipe networks own `air1/air2/air3` (§3).
+- The var is written bare; `nameof(PATH::VAR)` makes the compiler check it.
+- **Shape comes from the value**: one value, a list of members, or an assoc list of values.
+- **Policies.** `OWN_DELETE` destroys. `OWN_SPILL` moves a movable still inside the holder to its
+  drop location (anything else is destroyed). `OWN_CONTAINED` leaves a movable in the holder's
+  contents to the ledger slot policy; `own_set` asserts `loc == holder`.
+- **Conditional policy**: `OWN_POLICY` names a holder proc returning the policy at teardown;
+  `OWN_IF` picks between two by a flag var.
+- **Gas mixtures and other arena resources** are owned by the holder that makes them (deleting a
+  mixture frees its arena slot); a pipe network's shared mixture is the network's, and components
+  hold it as a relation or `PROTO`, never as a second owner (lint `matrix`).
 
 ### 1.3 Accessors (`code/datums/ownership/own.dm`)
 
 | Proc | Meaning |
 |---|---|
-| `own_set(holder, "var", value)` | adopt `value` into a one-shape var. Destroys the previous value by policy. Returns `value`. |
-| `own_take(holder, "var")` | detach and return the value, now unowned (the caller must adopt or destroy it) |
-| `own_add(holder, "var", value)` / `own_remove(holder, "var", value)` | list shape. `own_remove` destroys. |
-| `own_put(holder, "var", key, value)` | values shape. Destroys the value it replaces. |
-| `own_take_member(holder, "var", value_or_key)` | list or values: detach one and return it |
-| `own_transfer(from, "var", to, "var")` | move one value between owners. It is never destroyed or orphaned. |
-| `own_clear(holder, "var")` | destroy everything the var owns, now |
-| `owner_of(D)` / `owner_slot_of(D)` | read `own_holder` / `own_slot` |
+| `own_set(holder, "var", value)` | adopt `value`; the previous value is disposed of by policy. Returns `value` (null when refused). |
+| `own_take(holder, "var")` | detach and return the value, now unowned |
+| `own_add` / `own_remove(holder, "var", value)` | list shape; `own_remove` disposes |
+| `own_put(holder, "var", key, value)` | assoc values; disposes of the value it replaces |
+| `own_take_member(holder, "var", value_or_key)` / `own_take_all(holder, "var")` | detach members |
+| `own_transfer(from, "var", to, "var", member, key)` | move one value between owners |
+| `own_move(value, to, "var", key)` | move a value from whatever owns it now (or adopt it) |
+| `own_clear(holder, "var", policy)` | dispose of everything the var owns, now (`OWN_DELETE` for the old `QDEL_NULL`/`QDEL_LIST`) |
+| `own_values(holder, "var")` | the owned values as a list |
+| `/datum/proc/on_owned_release(var, child)` | hook: a child is leaving (disposed, taken or moved), still intact |
 
-`DECLARE_DEFAULT_CHILD(PATH, var, default)` adopts through `own_set`. On a
-non-movable, the var must be declared `OWN`, and boot validation refuses it
-otherwise. The child's back relation (a `REF` named in the child's
-`owner_ref_var`) is wired automatically.
+The accessors are generic procs keyed by the var name rather than generated `set_x()` procs: a
+generated setter per var collided with the domain setters many types already have (`set_species`,
+`set_cell`, ...), and the lint enforces the single write path either way.
+
+`DECLARE_DEFAULT_CHILD(PATH, var, default)` adopts through `own_set`/`own_add`; a var declared as
+another kind is refused at boot. A child type naming its maker in a relation view returns that
+var from `default_child_backref()`, and the declaration wires it.
 
 ### 1.4 Clone
 
-`entity_clone(D, new_owner, slot)` serialises `D`'s owned subtree with the
-declared codecs (`state.md`) and re-materialises it under `new_owner`.
+`entity_clone(D, new_owner, slot, loc)` serialises `D` with the declared codecs (§6) and
+re-materialises it: owned children become new owned children, shared and proto references are
+copied by id, relation views inside the subtree re-link to the clones and views leaving it are
+dropped. A mob stays real (the serializer refuses mobs) and clones as a fresh instance of its type.
+`DuplicateObject()` is deleted; the holodeck's `copy_contents_to()` uses `entity_clone`.
 
-- Shared and proto references are copied by id.
-- Relations *inside* the subtree are rewired to the clones. Relations leaving
-  it are re-linked only if the relation kind says `clone_follows = TRUE`.
+### 1.5 Orphan audit (`audit.dm`)
 
-`DuplicateObject` is deleted. The holodeck and `replace_with` use
-`entity_clone`.
+`own_audit()` reports and fixes two things:
 
-### 1.5 Orphan audit
+- **orphan**: an entity stamped as owned whose owner no longer names it, or whose owner is gone;
+- **dropped with a rec**: an unowned, unrooted entity whose `refcount()` is fully accounted for by
+  its own OM record (the `rec.owner` cycle kept it alive with live timers or hooks). The audit tears
+  the record down.
 
-`own_audit()` runs every 5 minutes in test builds and on demand
-(`Debug → Ownership audit`). It visits every entity in the handle table and
-every live rec:
-
-- **orphan:** owned (`own_holder` set), but its holder no longer names it in
-  `own_slot`, or the holder is QDELETED;
-- **dropped with a rec:** a live rec whose owner is unowned and unrooted.
-  `refcount(owner)` equals the rec's own references (rec.owner, the
-  scheduler rings), so only the rec cycle keeps it alive. The audit
-  force-tears the rec down (timers and hooks with it) and reports
-  `OWN AUDIT: dropped entity kept alive by its rec`.
-
-Roots are services, locations, `GLOB`, registries and clients.
+Test builds keep an index of every stamped entity and every rec, audit every 5 minutes and at the
+end of the run (a finding fails the run). Servers audit on demand (admin verb "Ownership Audit").
 
 ## 2. Shared
 
-- `REGISTRY_TYPE(path, getter)` declares that `path` and its subtypes are
-  registry singletons, and names the getter proc. The getter takes an
-  instance and returns TRUE if that exact instance is the registered one (for
-  example `species_registered(S)` is TRUE if `GLOB.all_species[S.name] == S`).
-  It replaces `OM_STATIC_TYPE`, which asserted membership by fiat.
-- A var whose declared type is a registry type is **implicitly SHARED**, and
-  needs no declaration. `SHARED(PATH, var)` exists for untyped vars.
-- `shared_set(holder, "var", value)` asserts `getter(value)`. A raw write to
-  an implicit-shared var is allowed, but in test builds the kind matrix check
-  verifies it at teardown and in audits.
-- **Kind × declared-type matrix.** At boot (`own_validate_tables()`) and in
-  `ownership_lint.py`:
-  - one kind per var across the whole type hierarchy;
-  - `OWN` of a registry type is an error, unless it is a `PROTO`;
-  - `SHARED` of a non-registry type is an error;
-  - `REF` of a registry, DEF or location type is an error, because it needs
-    no tracking.
-- **DEF freeze** (test builds). `def_freeze_snapshot()` at boot records a
-  hash of every registry instance's vars. `def_freeze_verify()` at test end
-  diffs them and fails on any write.
+- `REGISTRY_TYPE(path, getter)` declares that `path` and its subtypes are registry types; the getter
+  returns the registered instance D stands for, so `is_registered(D)` is `getter(D) == D`. It
+  replaced the fiat `OM_STATIC_TYPE` list; the declarations are in `registry_types.dm`.
+- A per-holder copy of a registry type is **not** registered: it is owned or `PROTO`.
+- A var typed as a registry type is implicitly shared. `SHARED(PATH, var)` declares an untyped one;
+  `shared_set()` asserts the value is registered.
+- A registered instance refuses an unforced `qdel()` (core `lifecycle_keep()`), is never tracked by
+  relation views, and is skipped by the leak check only when proven registered.
+- **Kind × type matrix** (lint `matrix` and `kinds`, and `own_validate_table()` when a type's table
+  is built; `own_validate_boot()` builds the table of every mapped type at boot): one kind per var
+  across the hierarchy; no `OWN`/`REL` of a registry type; no `SHARED` of a non-registry type;
+  `SPILL`/`CONTAINED` only on movable var types; gas mixtures never written as relations.
+- **DEF freeze** (test builds): `def_freeze_snapshot()` digests every enumerable registry instance at
+  the start of the run and `def_freeze_verify()` reports any that changed by its end.
 
 ## 3. Proto (copy-on-write)
 
-A proto var holds either the registered prototype (shared) or a private copy
-stamped with the holder as its owner.
+`PROTO(PATH, var)`: the var holds a registered prototype or a private copy stamped with the holder.
 
 | Proc | Meaning |
 |---|---|
-| `proto_get(holder, "var")` | read. The same as reading the var. |
-| `proto_private(holder, "var")` | return a private copy, making one first (`D.proto_copy()`) if the var still holds the prototype. The copy is owned by `holder`. |
-| `proto_set(holder, "var", value)` | point at a prototype or adopt a private value. Deletes the private copy it replaces. |
-| `proto_is_private(holder, "var")` | TRUE when the value is owned by the holder |
+| `proto_private(holder, "var")` | a private copy the holder may mutate, made (`D.proto_copy()`) and owned on first call |
+| `proto_set(holder, "var", value)` | point at a prototype or adopt an unowned private value; deletes the private copy it replaces |
+| `proto_replace(holder, "var", value)` | as `proto_set`, but hands the replaced private copy back detached, for a caller still reading it |
+| `proto_is_private(holder, "var")` | TRUE when the holder owns the value |
 
-- Teardown deletes private copies only.
-- The serializer saves a prototype by registry id and a private copy as an
-  owned blob.
-
-**Users:**
-
-- Species: per-mob changes go through `proto_private`, not `produceCopy()`
-  into the shared var.
-- Seeds: `diverge()` returns a private copy.
-- Contagions: `cleanable.viruses`, and `infectedroom`'s shared
-  `chosen_disease`.
-- Gas mixtures: a machine owns its mixture, and a network's `air1/2/3` is the
-  proto.
-- Robot and AI sprite datums.
+Teardown deletes private copies only. The serializer saves a prototype by registry id and a private
+copy as an owned blob. Users: species (the mob's `species`; `produceCopy()` makes the private copy),
+seeds, contagions (cleanables, infected rooms), network gas, robot and AI sprite datums.
 
 ## 4. Relations
 
-Every non-owning reference to an entity is a relation edge. There are two
-weights.
+### 4.1 Light edges: relation views (`views.dm`)
 
-### 4.1 Light edges: `REF` views
+A view var holds a direct reference (reads are free). The target keeps a lazy weak reverse index,
+`om_refs_in` (source ref text → var names). When either end dies the framework clears its side.
 
 ```dm
-REF(/mob/living/bot, target)                      // 1:1 view var
-REF(/obj/machinery/camera, viewers)               // list view (1:N)
-REL_PAIR(/obj/machinery/sleeper, console, /obj/machinery/sleeper_console, sleeper)
-REL_MEMBER(/obj/item/organ, owner, /mob/living/carbon/human, internal_organs)
-REL_KEYED(/obj/machinery/door/blast, id_tag, /obj/machinery/button/remote/blast_door, id)
+REL_PAIR(/obj/machinery/sleeper, console, sleeper)             // two-sided, single on this end
+REL_PAIR(/obj/machinery/sleeper_console, sleeper, console)
+REL_PAIR(/obj/effect/directional_shield, projector, active_shields)
+REL_PAIR_LIST(/obj/item/shield_projector, active_shields, projector)   // the "many" side
+REL_SET(/obj/machinery/atmospherics, nodes)                    // symmetric membership
+REL_KEYED(/obj/machinery/button/remote/blast_door, door, id, /obj/machinery/door/blast)
+KEYED_TARGET(/obj/machinery/door/blast, id_tag)
 ```
 
-- The view var holds a direct reference, so reads are free. The target keeps
-  a lazy reverse index `om_refs_in` (an alist: source → var names).
-- When either end dies, the framework clears its side:
-  - the target's death nulls every source view, or removes it from list views;
-  - the source's death drops its entries from each target's index.
-- There is no manual bookkeeping.
-- **Writes:** `rel_set(src, "var", target)`, `rel_add`, `rel_remove`,
-  `rel_clear`. `REL_PAIR` / `REL_MEMBER` writes set both sides (`rel_set` on
-  either side sets the partner's view too). Exclusivity is implied for 1:1
-  views, so linking a new partner unlinks the old one.
-- `ownership_lint.py` bans raw writes to a view var (framework write only).
-- **Keyed auto-linking.** `REL_KEYED(PATH, var, TARGET_PATH, key_var)` links
-  by matching id when either end materializes, through the registry id index.
-  It replaces init-time machine scans and id matching.
-- **Symmetric membership:** `REL_SET(PATH, var)`, a many-to-many where both
-  ends list each other (atmos node topology).
-- **Identity across collapse.** An edge to an entity that collapses to latent
-  (`containment.md` §4) goes dormant, keyed by the target's handle id. When
-  the entry re-materializes into the same handle slot, dormant edges
-  re-link. When the owner of a dormant edge dies, it drops its entries.
-- **z-level release.** `rel_drop_z(z)` bulk-unlinks every edge whose end is on
-  the z-level (turf handles carry the z generation, `loc_gen`).
+- **Writes**: `rel_set`, `rel_clear`, `rel_add`, `rel_remove`. An undeclared var written with them is
+  an implicit one-sided `REL` (single for `rel_set`, list for `rel_add`). A pair write sets both
+  sides; a single end is exclusive, so linking a new partner unlinks the old one on both sides. A
+  link to an entity being destroyed is refused.
+- **Reads**: the var itself; `rel_targets(src, "var")`, `rel_sources(target)`.
+- **Keyed auto-linking** replaces init-time scans and id matching: when a `KEYED_TARGET` or a
+  `REL_KEYED` source materializes, sources and targets with matching keys link.
+- **Turfs** can be targets (indexed per z-level, since `ChangeTurf` resets a turf's vars).
+  `om_drop_z(z)` clears every view naming a turf on a released level and bumps the level's
+  generation. Areas are plain vars.
 
 ### 4.2 Rich edges: `/datum/om/relation`
 
-These are for edges with state, hooks or conditions. Grab, pull, buckle, tgui
-sessions and grants are examples. They use the existing
-`om_link`/`om_unlink`. Completed per `object_model.md` §5:
+Edges with state, hooks or conditions (grab, pull, buckle, orbit, grants, tgui sessions) are DEF
+types used with `om_link` / `om_unlink` (`code/datums/om/relation.dm`):
 
-| Field / hook | Meaning |
+| Field / proc | Meaning |
 |---|---|
-| `shape` | `REL_1_1`, `REL_1_N`, `REL_N_N`, `REL_SYMMETRIC` (sets `source_single`/`target_single`) |
-| `exclusive` | a new link replaces (`OM_REL_REPLACE`) or refuses |
-| `holds_while` | a check spec. When it fails, the edge breaks with a reason (was `break_if`). |
-| `source_view` / `target_view` | framework-maintained 1:1 view var names on each end |
-| `on_link`, `on_unlink(reason)`, `on_end_changed` | hooks |
-| `on_member_leave(member)` | a member unlinking itself through a domain proc (cloning pod, jukebox, resleever, conveyor) |
-| `undo_list` | list-undo: on unlink, remove from a declared list on the target (alternate_appearance, lg_imageholder, song, multicam) |
-| `derived_view` | a proc recomputing a view var from `linked()` (omni filter/mixer) |
-| `on_owned_release(child)` | runs when an owned child is released (media, tooltip, overmap) |
+| `shape` | `REL_ONE_TO_ONE`, `REL_ONE_TO_MANY`, `REL_MANY_TO_MANY`, `REL_SYMMETRIC` |
+| `conflict` | a new link replaces (`OM_REL_REPLACE`, exclusivity) or is refused |
+| `holds_while` | a check spec; the edge breaks (`RELATION_BROKEN`) the moment it fails |
+| `source_view` / `target_view` | framework-maintained 1:1 view vars on each end |
+| `undo_list` | list-undo: the source joins a list on the target while linked |
+| `derived_view` | a source proc re-deriving a view from `linked()` after each change |
+| `on_link`, `on_unlink` (`edge.unlink_reason`), `on_end_changed` | hooks |
+| `on_member_leave` + `om_leave(member, rel)` | a member leaving through its own domain proc |
 | `clone_follows` | re-link to the clone in `entity_clone` |
 
-Reads:
+Reads: `linked(E, rel)`, `linked_to(E, rel)`, `link_of(E, rel)`, `link_source_of(E, rel)`, and the
+typed accessors in `ref_relations.dm`.
 
-- `linked(E, rel)` returns the targets (a shared empty list when there are none);
-- `linked_to(E, rel)` returns the sources;
-- `link_of(E, rel)` returns the single target, typed by accessor procs
-  (`relation_accessors.dm`).
+### 4.3 Handles and deferred calls
 
-Hand-cast `om_resolve` is gone from content.
+`om_handle()` / `om_resolve()` are core-internal: deferred arguments, latent identity, the
+serializer. A content var naming an entity is a relation view (lint `handle`).
 
-### 4.3 Handles
+`CALLBACK` and `/datum/callback` are gone from content (lint `callback`). A stored call is
+`om_callable(target_or_null, PROC_REF(x), args...)`, a plain list holding every datum argument as a
+handle; `om_run(spec, extra...)` / `om_run_async` run it, and drop it when the target or an
+argument is gone. Timers are `om_after()`. `om_capture_args()` captures deeply (nested lists and
+assoc values) and refuses a datum used as an assoc key.
 
-`om_handle()` is internal to the core:
+### 4.4 Identity
 
-- deferred arguments (timers, I/O, tasks): `om_capture_args` captures deeply
-  (nested lists and assoc values) and refuses anything else;
-- the latent identity slot;
-- the serializer.
-
-A content var holding a handle is a relation. `CALLBACK` is banned outside
-`code/datums/om`, `code/controllers` and the core helpers. A deferred call is
-`om_after()`, which holds its arguments as handles.
+- **Latent collapse** parks the thing's handle slot (`om_handle_park()`) and puts the views naming it
+  to sleep under that slot; re-materializing into the entry unparks it into the same slot, so old
+  handles resolve again and the views re-link (`om_handle_unpark()`, `rel_wake()`). Views count as
+  accounted references in the collapse refcount check.
+- **`replace_with()`** hands the original's handle slot, relation views and `FORWARD_STATE(PATH,
+  var)` vars to its successor (`om_handle_forward()`).
+- **Turf handles** carry their z-level's generation, so a handle to a recycled level's turf stops
+  resolving.
 
 ## 5. Annotations that are not kinds
 
-- `KEEP_AFTER_DESTROY(PATH, var)`: diagnostic. The leak check skips it (an id
-  the GC report reads).
-- `POOL_RESET(PATH, var)`: pooling. `pool_release()` resets it.
-- `CACHE_VAR` rules (`declared_cache_vars()`) are unchanged.
+- `KEEP_AFTER_DESTROY(PATH, var)`: diagnostics; the leak check skips it.
+- `POOL_RESET(PATH, var)`: pooling; `pool_release()` resets it.
+- `FORWARD_STATE(PATH, var)`: carried to a `replace_with()` successor.
+- `declared_cache_vars()` rules are unchanged.
 
 ## 6. Serialisation
 
-State codecs derive from the declarations:
+A saved var with no codec of its own gets one from its ownership kind (`state_ownership_codec()`,
+`code/datums/state/codecs.dm`): owned values nest as blobs, and on load the owned codec reuses an
+existing child of the same type (applying the blob onto it) or disposes of it and adopts the new
+one; proto vars save a registry id or a private blob; relation views save child ids inside the
+subtree and re-link on load, and views leaving the subtree are dropped. `state_schema_lint.py`
+accepts a saved reference var with an ownership kind; `ALLOW(state_ref)` is gone.
 
-- an owned var saves as an owned blob, and the owned codec reuses the
-  existing child when the type matches, or deletes it and adopts the new one;
-- a shared var saves its registry id;
-- a proto var saves a prototype id or a private blob;
-- a relation saves its target's handle id and re-links on load.
+## 7. Kind inference and the lint
 
-`ALLOW(state_ref)` is gone. Reagent `data` has a declared codec
-(`reagent_data_codec()`), so `data["viruses"]` is copied, not aliased.
+`tools/ci/ownership_lint.py` builds a codebase-wide index of declarations and accessor writes, and
+fails on:
 
-## 7. Kind inference
-
-`tools/ci/ownership_infer.py` builds a codebase-wide assignment index. For
-each object var it records who creates the value (`new`), who assigns a
-foreign value, and who deletes it. It infers:
-
-| Evidence | Inferred kind |
+| Check | What |
 |---|---|
-| created by the holder and never assigned a foreign value | Own/DELETE |
-| typed as a registry type | Shared |
-| foreign assignment and never created by the holder | Ref |
+| `raw_write` | an entity var (typed as an entity, or a list of them, or known owned/relation) written outside the accessors |
+| `contradiction` | one var written both as owned and as a relation, or against its declaration |
+| `kinds` | related types declaring different kinds for one var |
+| `matrix` | the kind × type rules of §2 |
+| `callback` | `CALLBACK(` outside the core |
+| `handle` | `om_handle`/`om_resolve` or a `*_handle` var in content |
+| `removed` | a deleted form (`DECLARE_REF`, `OM_STATIC_TYPE`, `REFKIND_*`, `link_set`, `WEAK_LIST_*`, `DuplicateObject`) |
 
-It fails on contradictions: a declaration that disagrees with the evidence,
-or a var both created and assigned foreign without an `OWN_POLICY` or
-`PROTO`. Declarations are required only where inference can't decide:
-teardown policy other than DELETE, pairs, keyed links, protos.
+A site kept on purpose carries `// ALLOW(ownership): <reason>`.
 
-## 8. Checks
+## 8. Checks, in one place
 
 | Check | Where |
 |---|---|
-| one kind per var across the hierarchy, and the kind × type matrix | `own_validate_tables()` at boot, `ownership_lint.py` |
-| raw writes to owned or view vars | `ownership_lint.py` |
-| `CALLBACK` outside core, `GLOB.x[key] = src` | `ownership_lint.py`, `registry_lint.py` |
-| double ownership, orphans, phase 8 re-sets, refused links on dying | runtime (all builds) |
-| orphan and rec-cycle audit | `own_audit()` (test builds and verb) |
+| raw writes, contradictions, kinds, matrix, callbacks, handles | `ownership_lint.py` |
+| `GLOB.x[key] = src` self-registration | `registry_lint.py` |
+| double ownership, orphaned replacement, phase 8 re-sets, refused work on dying entities | runtime, every build |
+| one kind per var, policy procs, matrix | `own_validate_table()` (first instance of a type), `own_validate_boot()` |
+| orphans and rec cycles | `own_audit()` (test builds, admin verb) |
 | DEF freeze | test builds |
-| arena slot leak | `gas_retain_mixtures` test |
+| framework behaviour | `code/modules/unit_tests/dq_ownership_tests.dm` |

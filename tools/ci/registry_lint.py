@@ -1,7 +1,7 @@
 """Registry lint (roadmap L3, doc/rewrite/state.md sections 7 and 10).
 
 No new ad-hoc global lists of instances; use a registry. An object that adds
-itself to a global list (GLOB.x += src, |= src, .Add(src), .Insert(..., src))
+itself to a global list (GLOB.x += src, |= src, .Add(src), .Insert(..., src), GLOB.x[key] = src)
 or declares GLOBAL_LIST_BOILERPLATE() fails unless the site carries
 `// ALLOW(registry): <reason>` (tools/ci/allow_annotations.py): an object pool,
 or a list of non-datums such as clients. New kinds of instance sets declare
@@ -21,7 +21,8 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 SELF_ADD = re.compile(
     r"\bGLOB\.(\w+)\s*(?:\+=|\|=)\s*src\b"
-    r"|\bGLOB\.(\w+)\.(?:Add|Insert)\((?:[^()]*,\s*)?src\)")
+    r"|\bGLOB\.(\w+)\.(?:Add|Insert)\((?:[^()]*,\s*)?src\)"
+    r"|\bGLOB\.(\w+)\[[^\]]*\]\s*=\s*src\b")
 BOILERPLATE = re.compile(r"^\s*GLOBAL_LIST_BOILERPLATE\(\s*(\w+)\s*,")
 
 
@@ -39,7 +40,7 @@ def main():
                 lines = f.read().split("\n")
             for number, line in enumerate(lines, 1):
                 code = line.split("//", 1)[0]
-                hits = [m.group(1) or m.group(2) for m in SELF_ADD.finditer(code)]
+                hits = [m.group(1) or m.group(2) or m.group(3) for m in SELF_ADD.finditer(code)]
                 m = BOILERPLATE.match(code)
                 if m:
                     hits.append(m.group(1))

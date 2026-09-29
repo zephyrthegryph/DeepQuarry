@@ -1,79 +1,71 @@
-// DECLARE_REF(..., BACK_VIA), DECLARE_REF(..., LIST_BACK), DECLARE_REF(..., DROP) and DECLARE_REF(..., QUEUE) (doc/rewrite/lifecycle.md §4.2):
-// the bookkeeping kinds phase 4 clears without an on_destroy() body.
-
-GLOBAL_LIST_EMPTY(dq_decl_kinds_queue)
-
-/proc/dq_decl_kinds_queue()
-	return GLOB.dq_decl_kinds_queue
+// Relation views (doc/rewrite/ownership.md): every non-owning reference to a dying entity is
+// cleared by phase 4 without an on_destroy() body. Replaces the old BACK_VIA / LIST_BACK /
+// DROP / QUEUE bookkeeping-kind test: members naming the owner, list memberships, two-hop
+// references and one-sided views all clear, and unrelated entries survive.
 
 /// The object whose destruction is tested.
 /datum/dq_decl_kinds_owner
 	var/list/members
-	var/list/scratch
-	var/datum/hub
-	var/queued = FALSE
+	var/datum/dq_decl_kinds_hub/hub
 
-
-/// A member of the owner's list, naming it back three ways.
+/// A member of the owner's list, naming it back two ways.
 /datum/dq_decl_kinds_member
-	var/back
-	var/back_handle
+	var/datum/dq_decl_kinds_owner/back
 	var/list/names
 
-/// Reached through the owner's hub_handle; names the owner in `slot`.
+/// Reached through the owner's hub; names the owner in `slot`.
 /datum/dq_decl_kinds_hub
-	var/slot
-	var/datum/inner
+	var/datum/dq_decl_kinds_owner/slot
+	var/datum/dq_decl_kinds_inner/inner
 
-/// Two hops away; holds the owner (by handle) in a list.
+/// Two hops away; holds the owner in a list.
 /datum/dq_decl_kinds_inner
 	var/list/owners
+
+REL_PAIR_LIST(/datum/dq_decl_kinds_owner, members, back)
+REL_PAIR(/datum/dq_decl_kinds_member, back, members)
+REL_LIST(/datum/dq_decl_kinds_member, names)
+REL(/datum/dq_decl_kinds_owner, hub)
+REL(/datum/dq_decl_kinds_hub, slot)
+REL(/datum/dq_decl_kinds_hub, inner)
+REL_LIST(/datum/dq_decl_kinds_inner, owners)
 
 /datum/unit_test/dq_lifecycle_declared_kinds
 
 /datum/unit_test/dq_lifecycle_declared_kinds/Run()
 	var/datum/dq_decl_kinds_owner/owner = new
-	var/datum/dq_decl_kinds_member/by_ref = new
-	var/datum/dq_decl_kinds_member/by_handle = new
+	var/datum/dq_decl_kinds_owner/other = new
+	var/datum/dq_decl_kinds_member/first = new
+	var/datum/dq_decl_kinds_member/second = new
 	var/datum/dq_decl_kinds_hub/hub = new
 	var/datum/dq_decl_kinds_inner/inner = new
-	var/list/shared = list("kept")
 
-	var/owner_h = om_handle(owner)
-	by_ref.back = owner
-	by_ref.names = list(owner, "other") // ALLOW(object_keyed_lists): test fixture for DECLARE_REF(..., LIST_BACK)
-	by_handle.back_handle = owner_h
-	owner.members = list(by_ref, om_handle(by_handle)) // ALLOW(object_keyed_lists): test fixture for DECLARE_REF(..., LIST_BACK)
-	owner.scratch = shared
-	hub.slot = owner
+	rel_add(owner, "members", first)
+	rel_set(second, "back", owner)
+	TEST_ASSERT_EQUAL(first.back, owner, "REL_PAIR_LIST sets the member's partner side")
+	TEST_ASSERT((second in owner.members), "REL_PAIR sets the owner's list side")
+	rel_add(first, "names", owner)
+	rel_add(first, "names", other)
+	rel_set(hub, "slot", owner)
 	rel_set(hub, "inner", inner)
 	rel_set(owner, "hub", hub)
-	inner.owners = list(owner_h, "someone") // ALLOW(object_keyed_lists): test fixture for DECLARE_REF(..., BACK_VIA)
-	owner.queued = TRUE
-	GLOB.dq_decl_kinds_queue += owner // ALLOW(object_keyed_lists): test fixture for DECLARE_REF(..., QUEUE)
+	rel_add(inner, "owners", owner)
+	rel_add(inner, "owners", other)
 
 	qdel(owner)
 
-	TEST_ASSERT_NULL(by_ref.back, "DECLARE_REF(..., LIST_BACK) nulls a member's reference back")
-	TEST_ASSERT(!(owner in by_ref.names), "DECLARE_REF(..., LIST_BACK) removes us from a member's list")
-	TEST_ASSERT(("other" in by_ref.names), "DECLARE_REF(..., LIST_BACK) leaves the member's other entries")
-	TEST_ASSERT_NULL(by_handle.back_handle, "DECLARE_REF(..., LIST_BACK) reaches a member held by handle and clears its handle back")
-	TEST_ASSERT_NULL(owner.members, "DECLARE_REF(..., LIST_BACK) drops the owner's list")
-	TEST_ASSERT_NULL(owner.scratch, "DECLARE_REF(..., DROP) nulls the var")
-	TEST_ASSERT_EQUAL(length(shared), 1, "DECLARE_REF(..., DROP) leaves a shared list's contents alone")
-	TEST_ASSERT_NULL(hub.slot, "DECLARE_REF(..., BACK_VIA) nulls the partner's var naming us")
-	TEST_ASSERT(!(owner_h in inner.owners), "DECLARE_REF(..., BACK_VIA) follows a two-hop path and removes our handle from a list")
-	TEST_ASSERT(("someone" in inner.owners), "DECLARE_REF(..., BACK_VIA) leaves the list's other entries")
-	TEST_ASSERT(!(owner in GLOB.dq_decl_kinds_queue), "DECLARE_REF(..., QUEUE) leaves the queue when flagged")
+	TEST_ASSERT_NULL(first.back, "a pair member's view back clears")
+	TEST_ASSERT_NULL(second.back, "a pair member set from its own side clears")
+	TEST_ASSERT(!(owner in first.names), "the dying entity leaves a member's list view")
+	TEST_ASSERT((other in first.names), "a list view keeps its other entries")
+	TEST_ASSERT_NULL(owner.members, "the owner's own list view drops")
+	TEST_ASSERT_NULL(hub.slot, "a one-sided view naming the entity clears")
+	TEST_ASSERT(!(owner in inner.owners), "a view two hops away clears")
+	TEST_ASSERT((other in inner.owners), "the two-hop list keeps its other entries")
+	TEST_ASSERT_EQUAL(hub.inner, inner, "views not naming the dying entity are untouched")
 
-	// Unflagged: the queue isn't touched.
-	var/datum/dq_decl_kinds_owner/idle = new
-	GLOB.dq_decl_kinds_queue += idle // ALLOW(object_keyed_lists): test fixture for DECLARE_REF(..., QUEUE)
-	qdel(idle)
-	TEST_ASSERT((idle in GLOB.dq_decl_kinds_queue), "DECLARE_REF(..., QUEUE) skips an owner whose flag is clear")
-	GLOB.dq_decl_kinds_queue.Cut()
-
-	qdel(by_ref)
-	qdel(by_handle)
+	qdel(first)
+	qdel(second)
 	qdel(hub)
 	qdel(inner)
+	qdel(other)

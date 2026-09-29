@@ -902,6 +902,11 @@ GLOBAL_VAR(dq_test_select_names)
 	var/current_test_index = 0
 	log_test("Unit-test suite starting: [total_tests] test types[LAZYLEN(focused_tests) ? " (focused run)" : ""].")
 
+	// Ownership framework checks (doc/rewrite/ownership.md): snapshot every frozen shared
+	// definition and start the periodic owner-stamp audit before the first test.
+	def_freeze_snapshot()
+	own_audit_periodic()
+
 	//Hell code, we're bound to end the round somehow so let's stop if from ending while we work
 	SSticker.delay_end = TRUE
 	for(var/unit_path in tests_to_run)
@@ -920,6 +925,21 @@ GLOBAL_VAR(dq_test_select_names)
 			log_test("HARNESS RUNTIME in [unit_path]: [e.name] at [e.file]:[e.line] -- [e.desc]")
 			test_results[unit_path] = list("status" = UNIT_TEST_FAILED, "message" = "harness runtime: [e.name] at [e.file]:[e.line]", "name" = unit_path, "duration_ds" = 0, "runtimes" = 1, "ticks" = null)
 	SSticker.delay_end = FALSE
+	// Ownership framework checks after the last test: a mutated shared definition or an
+	// orphaned/stale owner stamp fails the run like a failed test, one line per finding.
+	var/list/frozen = def_freeze_verify()
+	var/list/orphans = own_audit(quiet = TRUE)
+	var/list/framework_failures = list()
+	for(var/line in frozen)
+		framework_failures += "DEF FREEZE: [line]"
+	for(var/line in orphans)
+		framework_failures += "OWN AUDIT: [line]"
+	for(var/line in framework_failures)
+		GLOB.failed_any_test = TRUE
+		log_world("::error::[TEST_OUTPUT_RED("FAIL")] [line]")
+		log_test(line)
+	if(length(framework_failures))
+		test_results["ownership_framework_checks"] = list("status" = UNIT_TEST_FAILED, "message" = jointext(framework_failures, "\n"), "name" = "ownership_framework_checks", "duration_ds" = 0, "runtimes" = 0, "ticks" = null)
 	if(length(GLOB.dq_refsearch_type_counts))
 		var/list/searched = list()
 		for(var/type in GLOB.dq_refsearch_type_counts)

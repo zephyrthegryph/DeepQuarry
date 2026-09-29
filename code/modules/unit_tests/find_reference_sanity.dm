@@ -7,7 +7,7 @@
 	var/list/test_list = list() // ALLOW(instance_list): d: unit-test fixture; the ref-tracking test needs a real list to find
 	var/list/test_assoc_list = list() // ALLOW(instance_list): d: unit-test fixture; the ref-tracking test needs a real list to find
 
-OWN(/atom/movable/ref_holder, test, OWN_CONTAINED)
+REL(/atom/movable/ref_holder, test)
 
 /atom/movable/ref_holder/on_destroy(force)
 	// A static var outlives the instance: clear it by hand.
@@ -19,7 +19,7 @@ OWN(/atom/movable/ref_holder, test, OWN_CONTAINED)
 	references_to_clear = INFINITY
 	var/atom/movable/ref_test/self_ref
 
-OWN(/atom/movable/ref_test, self_ref, OWN_CONTAINED)
+REL(/atom/movable/ref_test, self_ref)
 
 /datum/unit_test/find_reference_sanity/Run()
 	var/atom/movable/ref_test/victim = allocate(/atom/movable/ref_test)
@@ -42,7 +42,7 @@ OWN(/atom/movable/ref_test, self_ref, OWN_CONTAINED)
 	SSgarbage.should_save_refs = TRUE
 
 	//Set up for the first round of tests
-	own_set(testbed, "test", victim)
+	rel_set(testbed, "test", victim)
 	testbed.test_list += victim
 	testbed.test_assoc_list["baseline"] = victim
 
@@ -81,7 +81,7 @@ OWN(/atom/movable/ref_test, self_ref, OWN_CONTAINED)
 	SSgarbage.should_save_refs = TRUE
 
 	//Let's get a bit esoteric
-	own_set(victim, "self_ref", victim)
+	rel_set(victim, "self_ref", victim)
 	var/list/to_find = list(victim)
 	testbed.test_list += list(to_find)
 	var/list/to_find_assoc = list(victim)
