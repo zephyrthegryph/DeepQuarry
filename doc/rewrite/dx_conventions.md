@@ -245,7 +245,7 @@ Every old form is banned once its migration lands, each with a baseline of 0.
   constructor's `delay =`; ratcheted.
 - **`dx_string_names`:** a string literal where a var name goes (the var-name argument of every
   global `own_*`/`rel_*` accessor, `om_set`, `timed_set`, `time_left`, `timed_cancel`); ratcheted.
-- **`dx_constructor_shadow`:** a type proc or verb named like a global `cap_*` constructor or a
+- **`dx_constructor_shadow`:** a type proc or verb named like a global `cap_*` constructor or
   preset, which a bare call inside `capabilities()` would reach first (review 2, H7).
 - **`dx_raw_overlays`:** `add_overlay`/`cut_overlay(s)`/`overlays +=`/`overlays -=` outside the
   look builder and the legacy appearance runtime; ratcheted.
@@ -260,10 +260,14 @@ Every old form is banned once its migration lands, each with a baseline of 0.
   validator (`ui_unvalidated_param`).
 - **`cap_bits_lint`:** a `CAP_*` bit allocated outside `cap_bits.dm`, a shared or out-of-range bit,
   or a raw `cap_state` write outside `cap_set()`.
-- **Purity (DreamChecker):** `should_run()` and the capability `draw`/`gate`/`ui_data`/`examine`/
-  `hidden_verbs` hooks carry `SHOULD_BE_PURE(TRUE)`. `/atom/draw()` and `/atom/hidden_verbs()` don't
-  yet, because `caps_of()` memoizes through a shared_cache, and neither does `tgui_data()`, whose
-  legacy overrides write state.
+- **`dx_reactive_write`:** a reactive proc (the same set) writes state: a src var, a member of
+  anything, a writer call (`changed`, `cap_set`, `timed_set`, `own_*`, `set_<x>()`, `qdel`, ...)
+  or a list mutation on something not local. Locals, the `data` list, `.` and `look.*` are fine.
+- **Purity (DreamChecker):** `should_run()` and the capability `gate`/`ui_data`/`hidden_verbs`
+  hooks carry `SHOULD_BE_PURE(TRUE)`. DreamChecker's purity is transitive over every write, so the
+  `draw` hooks (every `look.*` call writes the builder), `examine` (memoized tables),
+  `/atom/draw()`/`/atom/hidden_verbs()` (`caps_of()` memoizes) and `tgui_data()` (legacy overrides)
+  can't carry it; `dx_reactive_write` covers them.
 - **`allow_tags`:** an unregistered `ALLOW()` tag.
 - **`doc_snippets`:** a complete ```` ```dm ```` block in `doc/rewrite` that doesn't compile
   (`python tools/ci/doc_snippets.py --write`, then build with `-DDOC_SNIPPETS`), and a call in any
