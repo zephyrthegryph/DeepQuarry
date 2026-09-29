@@ -8,8 +8,8 @@ points or `tools\build\build.bat`; on Linux (and in Git Bash) use
 
 | Goal | Command | Typical time |
 |---|---|---|
-| Unit-test suite, normal tier (every merge) | `bin/test.cmd` · `tools/build/build.sh dm-test` (sharded; `--shards=1` for one world) | NORMAL_SHARDED plus compile (NORMAL_SINGLE in one world) |
-| Every tier, as CI and nightly run it | `tools/build/build.sh dm-test --tier=all` | EXHAUSTIVE_SHARDED plus compile |
+| Unit-test suite, normal tier (every merge) | `bin/test.cmd` · `tools/build/build.sh dm-test` (sharded; `--shards=1` for one world) | 2–3 minutes plus compile (about 5 in one world) |
+| Every tier, as CI and nightly run it | `tools/build/build.sh dm-test --tier=all` | 5–6 minutes plus compile, sharded |
 | Profile each test's procs | add `--profile-tests` to `dm-test` or `dq_focused_test.sh` | about twice as slow |
 | A few tests only (use this while developing) | `bash tools/dq_focused_test.sh <name> [...]` (bare names, `/datum/unit_test/` paths or quoted `*` globs; `--repeat=N`) | compile + about 25 s |
 | Unit tests on Southern Cross | `tools/build/build.sh dm-test -DCITESTING_FULL_MAP` | much longer |
@@ -46,7 +46,7 @@ shuts down. It also repacks icons and builds Verdigris first if they are stale.
 only when you integrate** (before merging, or when asked to). An integration run
 is the normal tier (`dm-test`); CI and nightly add the exhaustive tier (see
 "Tiers" below). A full run costs about 3 minutes of compile plus the suite
-(NORMAL_SHARDED sharded); a focused run costs the compile plus about 25 seconds.
+(two to three minutes, sharded); a focused run costs the compile plus about 25 seconds.
 
 `tools/dq_focused_test.sh` is that loop. It runs `dm-test --focus=<names>`:
 the names reach the world as the `test-focus` param, so no source file is

@@ -245,7 +245,7 @@ warning.
   a git worktree. It costs the compile plus about 25 seconds.
 - **Run the full suite only at integration** (before merging, or when asked).
   `dm-test` runs the **normal tier**, sharded across up to 4 worlds, in about
-  NORMAL_SHARDED plus the compile.
+  two to three minutes plus the compile (about five in one world).
 - **Integration merges run the normal tier; CI and nightly run the exhaustive
   tier too** (`dm-test --tier=all`). Exhaustive tests are whole-type sweeps
   (`tier = TEST_TIER_EXHAUSTIVE`); each one has a small normal-tier
