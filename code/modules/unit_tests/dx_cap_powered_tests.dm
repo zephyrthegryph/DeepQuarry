@@ -51,6 +51,7 @@
 		M.stat_add(NOPOWER)
 	else
 		M.stat_remove(NOPOWER)
+	changed(M)
 	refresh_flush()
 	var/was_dark = cap_test_has_layer(M, "dark")
 	TEST_ASSERT(M.power_change(), "power_change() flips the power state")

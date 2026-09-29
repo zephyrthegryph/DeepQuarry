@@ -58,3 +58,8 @@
 #define EMAG_ONCE 0
 /// The emag works every time (its effect runs again).
 #define EMAG_REPEATABLE 1
+
+// ---- tool arguments ----
+/// cover(open_tool = BY_HAND): opened with an empty hand. (DM substitutes a default for an explicit
+/// null argument, so null can't mean "by hand".)
+#define BY_HAND "by_hand"

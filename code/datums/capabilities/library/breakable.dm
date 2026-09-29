@@ -9,7 +9,8 @@
 	var/repair_tool
 	var/repair_delay
 
-/// Breaks with the holder; `repair_tool` over `repair_delay` repairs it (null: no repair entry).
+/// Breaks with the holder; `repair_tool` over `repair_delay` repairs it. repair_tool = NONE: no repair
+/// entry (null can't be passed: DM would substitute the default).
 /proc/breakable(repair_tool = TOOL_WELDER, repair_delay = 3 SECONDS, log)
 	var/datum/capability/breakable/C = new
 	C.repair_tool = repair_tool

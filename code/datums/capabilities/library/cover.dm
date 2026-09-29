@@ -3,13 +3,14 @@
 // only while it is open (cap_gate_reason()). Layer: "cover_open". Accessor: cover_is_open().
 //
 //	. += cover(open_tool = TOOL_CROWBAR, locked_by = LOCK)
+//	. += cover(open_tool = BY_HAND)
 
 /datum/capability/cover
-	/// TOOL_* needed to open and close it, or null for by hand.
+	/// TOOL_* needed to open and close it, or BY_HAND.
 	var/open_tool
 	var/delay = 0
 
-/// A cover. open_tool: TOOL_* or null (by hand). locked_by = LOCK refuses while locked; behind gates
+/// A cover. open_tool: TOOL_* or BY_HAND (null can't be passed: DM would substitute the default). locked_by = LOCK refuses while locked; behind gates
 /// the cover itself behind something else.
 /proc/cover(open_tool = TOOL_CROWBAR, locked_by = NONE, behind = NONE, delay = 0, log)
 	var/datum/capability/cover/C = new
@@ -22,11 +23,11 @@
 
 /datum/capability/cover/interactions(atom/holder)
 	var/datum/capability/entry/wrapper
-	if(open_tool)
+	if(open_tool && open_tool != BY_HAND)
 		wrapper = tool("Open cover", open_tool, TYPE_PROC_REF(/atom, cap_cover_toggle), delay = delay, behind = behind, locked_by = locked_by, log = log, priority = 10, name_proc = TYPE_PROC_REF(/atom, cap_cover_name))
 	else
 		wrapper = hand("Open cover", TYPE_PROC_REF(/atom, cap_cover_toggle), behind = behind, locked_by = locked_by, works_broken = TRUE, works_unpowered = TRUE, log = log, name_proc = TYPE_PROC_REF(/atom, cap_cover_name))
-	return list(own_entry(wrapper, id = "cover:[open_tool || "hand"]"))
+	return list(own_entry(wrapper, id = "cover:[open_tool]"))
 
 /datum/capability/cover/examine(atom/holder, mob/user)
 	if(cover_is_open(holder))

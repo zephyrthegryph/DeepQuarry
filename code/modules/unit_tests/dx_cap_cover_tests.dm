@@ -18,7 +18,7 @@
 
 /obj/cap_fixture/cover_hand/capabilities()
 	. = ..()
-	. += cover(open_tool = null, locked_by = LOCK)
+	. += cover(open_tool = BY_HAND, locked_by = LOCK)
 	. += access_lock(access = list(ACCESS_SECURITY))
 	. += panel(behind = COVER)
 
@@ -31,7 +31,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/cap_fixture/cover_hand/A = allocate(/obj/cap_fixture/cover_hand, T)
-	var/datum/interaction/capability/toggle = cap_test_entry(A, "cover:hand")
+	var/datum/interaction/capability/toggle = cap_test_entry(A, "cover:[BY_HAND]")
 	var/datum/interaction/capability/panel_entry = cap_test_entry(A, "panel:[TOOL_SCREWDRIVER]")
 	TEST_ASSERT_NOTNULL(toggle, "the cover offers a by-hand entry")
 	TEST_ASSERT_NOTNULL(panel_entry, "the panel offers its entry")
@@ -57,7 +57,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/cap_fixture/cover_hand/A = allocate(/obj/cap_fixture/cover_hand, T)
-	var/datum/interaction/capability/toggle = cap_test_entry(A, "cover:hand")
+	var/datum/interaction/capability/toggle = cap_test_entry(A, "cover:[BY_HAND]")
 	cap_set(A, CAP_LOCKED, TRUE)
 	TEST_ASSERT_EQUAL(toggle.why_not(H, A, null), "it's locked", "a locked cover refuses")
 	TEST_ASSERT(!toggle.perform(H, A, null), "the refused toggle does not run")
