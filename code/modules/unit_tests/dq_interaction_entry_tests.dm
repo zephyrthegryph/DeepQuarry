@@ -247,6 +247,11 @@
 	var/list/actual = list()
 	for(var/type in snapshot_types)
 		var/atom/target = allocate(type, T)
+		// A type that deletes itself here (a lattice off open space) offers nothing: resolving
+		// against the dying husk only links to a thing being destroyed.
+		if(QDELETED(target))
+			actual += "[type]|deleted in Initialize()"
+			continue
 		actual += dq_snapshot_lines(target, T, actors)
 		qdel(target)
 	// On a mismatch, write the actual lines out so the snapshot can be reviewed

@@ -200,6 +200,7 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 			if(!O)	return INTERACTION_HANDLED_PASS
 
 			user.drop_item()
+			W.forceMove(O) // CONTAINED: in the robot's contents before own_set()
 
 			own_set(O, "mmi", W)
 			O.post_mmi_setup()

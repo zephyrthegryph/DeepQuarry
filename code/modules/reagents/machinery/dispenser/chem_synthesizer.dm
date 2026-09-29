@@ -235,9 +235,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 
 /obj/machinery/chemical_synthesizer/proc/interaction_add_catalyst(mob/user, obj/item/reagent_containers/RC, datum/interaction/interaction)
 
-	own_set(src, "catalyst", RC)
 	user.drop_from_inventory(RC)
 	RC.forceMove(src)
+	own_set(src, "catalyst", RC) // CONTAINED: in our contents first
 	to_chat(user, span_notice("You set \the [RC] on \the [src]."))
 	update_icon()
 

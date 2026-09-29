@@ -172,6 +172,6 @@
 	TEST_ASSERT(E in GLOB.event_service.active_events(), "a new event is not active")
 	E.kill()
 	TEST_ASSERT(!(E in GLOB.event_service.active_events()), "a killed event is still active")
-	rel_remove(GLOB.event_service, "finished_events", E)
+	own_remove(GLOB.event_service, "finished_events", E) // the service owns finished events
 
 #endif

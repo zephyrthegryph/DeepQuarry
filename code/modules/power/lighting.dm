@@ -618,8 +618,8 @@ OWN_TIMER(/obj/machinery/light, light_timer_token)
 /obj/machinery/light/proc/insert_bulb(obj/item/light/L)
 	update_from_bulb(L)
 	latent_bulb = FALSE
-	own_set(src, "installed_light", L)
 	L.forceMove(src) //Move it into the socket!
+	own_set(src, "installed_light", L) // CONTAINED: in our contents first
 
 	set_on(powered() && !turned_off()) // Do not instantly turn on lights if the area lightswitch is off
 	update()

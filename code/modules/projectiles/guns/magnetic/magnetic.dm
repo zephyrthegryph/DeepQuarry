@@ -159,9 +159,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
 			if(cell)
 				to_chat(user, span_warning("\The [src] already has \a [cell] installed."))
 				return
+			user.drop_from_inventory(thing, src)
 			own_set(src, "cell", thing)
 			om_task_periodic(src, PERIODIC_SLOW)
-			user.drop_from_inventory(cell, src)
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%."), item = cell)
 			update_icon()
@@ -385,8 +385,8 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 		to_chat(M, span_danger("Your ears start to ring!"))
 
 /obj/item/gun/magnetic/fuelrod/Initialize(mapload)
-	own_set(src, "cell", new /obj/item/cell/high)
-	own_set(src, "capacitor", new /obj/item/stock_parts/capacitor)
+	own_set(src, "cell", new /obj/item/cell/high(src))
+	own_set(src, "capacitor", new /obj/item/stock_parts/capacitor(src))
 	. = ..()
 
 #undef ICON_CELL

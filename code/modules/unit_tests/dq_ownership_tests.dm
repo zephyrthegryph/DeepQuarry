@@ -330,8 +330,16 @@ KEYED_TARGET(/obj/own_test_keyed_target, id)
 	om_handle_forward(B, C)
 	TEST_ASSERT_EQUAL(H.view, C, "om_handle_forward re-points views to the successor")
 	TEST_ASSERT_EQUAL(om_resolve(h), C, "and hands it the handle slot")
+	// A successor of another family (an airlock torn down into an assembly) is a new thing:
+	// the views and handle stay with the original and end with it.
+	var/datum/own_test_holder/other = new
+	om_handle_forward(C, other)
+	TEST_ASSERT_EQUAL(H.view, C, "om_handle_forward leaves views on the original for a successor of another family")
+	TEST_ASSERT_EQUAL(om_resolve(h), C, "and keeps the handle slot")
+	qdel(other)
 	qdel(B)
 	qdel(C)
+	TEST_ASSERT(isnull(H.view), "the view ends with the original")
 	qdel(H)
 
 /datum/unit_test/ownership_rec_audit

@@ -33,7 +33,7 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 /obj/item/laser_pointer/Initialize(mapload, laser_path)
 	. = ..()
 	if(ispath(laser_path))
-		own_set(src, "diode", new laser_path) // ALLOW(decl): diode from an Initialize argument
+		own_set(src, "diode", new laser_path(src)) // ALLOW(decl): diode from an Initialize argument
 	else
 		own_set(src, "diode", new /obj/item/stock_parts/micro_laser(src)) // ALLOW(decl): paired with the argument branch above
 	if(!pointer_icon_state)
