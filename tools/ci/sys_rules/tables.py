@@ -63,7 +63,8 @@ def constant(text):
 
 PROC_HDR = re.compile(r"^/[\w/]*\w\((.*)\)")
 OVERRIDE_HDR = re.compile(r"^/[\w/]+/(?!proc/|verb/)\w+\(\s*\)")
-GLOB_RETURN = re.compile(r"^\s+return\s+(?:GLOB|global)\.\w+\s*$")
+GLOB_RETURN = re.compile(r"^\s+return\s+(?:GLOB|global)\.(\w+)\s*$")
+GLOBAL_LIST_DECL = re.compile(r"\bGLOBAL_LIST(?:_INIT|_EMPTY|_INIT_TYPED|_EMPTY_TYPED)?\(\s*(\w+)")
 STATIC_ANY = re.compile(r"^(\s+)var/static/list/(\w+)\b")
 DOT_WRITE = re.compile(r"^\s*\.\s*(\[|\+=|-=|\|=|\.Add\(|\.Insert\()")
 LOCAL_CONST = re.compile(r"^(\s+)var/list/(\w+)\s*=\s*list\(")
@@ -83,6 +84,11 @@ def proc_body(lines, index):
 
 def scan(files):
     out = {rule: [] for rule in RULES}
+    global_lists = set()
+    for rel, lines in files:
+        for line in lines:
+            if "GLOBAL_LIST" in line:
+                global_lists.update(GLOBAL_LIST_DECL.findall(line))
     for rel, lines in files:
         in_proc = False
         header = None
@@ -96,7 +102,8 @@ def scan(files):
                 continue
             code = line.split("//", 1)[0]
             # A per-type override that hands out a global list.
-            if GLOB_RETURN.match(code) and header and OVERRIDE_HDR.match(header)                     and lines[number - 2] == header:
+            glob = GLOB_RETURN.match(code)
+            if glob and glob.group(1) in global_lists and header and OVERRIDE_HDR.match(header)                     and lines[number - 2] == header:
                 out["static_getter"].append((rel, number))
                 continue
             match = STATIC_ANY.match(code)
