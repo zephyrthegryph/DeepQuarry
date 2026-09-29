@@ -84,7 +84,12 @@
 	return !!(A.cap_state & CAP_EMAGGED)
 /proc/is_broken(atom/A)
 	return !!(A.cap_state & CAP_BROKEN)
+/// The wires capability's wires are exposed when everything they sit behind is open; without one,
+/// the CAP_WIRES_EXPOSED bit answers.
 /proc/wires_exposed(atom/A)
+	var/datum/capability/wires/W = cap_of(A, /datum/capability/wires)
+	if(W)
+		return (A.cap_state & W.behind) == W.behind
 	return !!(A.cap_state & CAP_WIRES_EXPOSED)
 
 /// Whether A has power for its entries. Machines answer through their power state; anything else
@@ -305,6 +310,16 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 
 /datum/capability/entry/interactions(atom/holder)
 	return list(entry)
+
+/// A library capability's own entry: takes the interaction out of a hand()/tool()/use_on()/insert()
+/// wrapper, gives it a stable id (the predicate cache key: it must differ wherever the tool or held
+/// type differs) and makes this capability its owner.
+/datum/capability/proc/own_entry(datum/capability/entry/wrapper, id)
+	var/datum/interaction/capability/E = wrapper.entry
+	E.cap = src
+	if(id)
+		E.id = id
+	return E
 
 /// Shared constructor body for hand()/tool()/use_on()/insert().
 /proc/cap_entry(entry_kind, name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, list/form, held_type, tool_quality, delay, priority, stance, name_proc)
